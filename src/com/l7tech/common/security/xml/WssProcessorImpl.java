@@ -412,7 +412,7 @@ public class WssProcessorImpl implements WssProcessor {
         // unpad
         byte[] unencryptedKey = null;
         try {
-            unencryptedKey = unPadRSADecryptedSymettricKey(decryptedPadded);
+            unencryptedKey = unPadRSADecryptedSymmetricKey(decryptedPadded);
         } catch (IllegalArgumentException e) {
             logger.log(Level.WARNING, "The key could not be unpadded", e);
             throw new ProcessorException(e);
@@ -451,7 +451,7 @@ public class WssProcessorImpl implements WssProcessor {
      * @param paddedKey the decrpted but still padded key
      * @return the unpadded decrypted key
      */
-    private static byte[] unPadRSADecryptedSymettricKey(byte[] paddedKey) throws IllegalArgumentException {
+    private static byte[] unPadRSADecryptedSymmetricKey(byte[] paddedKey) throws IllegalArgumentException {
         // the first byte should be 02
         if (paddedKey[0] != 2) throw new IllegalArgumentException("paddedKey has wrong format");
         // traverse the next series of byte until we get to the first 00
