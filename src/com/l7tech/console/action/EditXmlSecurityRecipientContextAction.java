@@ -7,11 +7,16 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.tree.policy.XpathBasedAssertionTreeNode;
+import com.l7tech.console.tree.policy.PolicyTreeModel;
+import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.panels.XmlSecurityRecipientContextEditor;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertionBase;
 import com.l7tech.common.gui.util.Utilities;
+
+import javax.swing.*;
+import java.util.logging.Level;
 
 /**
  * Action that lets the manager admin change the {@link com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext}
@@ -46,7 +51,13 @@ public class EditXmlSecurityRecipientContextAction extends NodeAction {
         Utilities.centerOnScreen(dlg);
         dlg.show();
         if (dlg.hasAssertionChanged()) {
-            // todo, update the tree, make saveable
+            JTree tree = TopComponents.getInstance().getPolicyTree();
+            if (tree != null) {
+                PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+                model.assertionTreeNodeChanged((AssertionTreeNode)node);
+            } else {
+                log.log(Level.WARNING, "Unable to reach the palette tree.");
+            }
         }
     }
 }
