@@ -8,6 +8,7 @@ package com.l7tech.message;
 
 import com.l7tech.policy.assertion.AssertionResult;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.common.protocol.SecureSpanConstants;
 
 import java.io.InputStream;
 import java.io.IOException;
@@ -20,6 +21,9 @@ public interface Response extends Message {
     /** WWW-Authenticate header */
     public static final String PARAM_HTTP_WWWAUTHENTICATE = PREFIX_HTTP_HEADER + ".WWW-Authenticate";
     public static final String PARAM_HTTP_STATUS = PREFIX_HTTP + ".status";
+    public static final String PARAM_HTTP_SESSION_STATUS    = PREFIX_HTTP_HEADER + "." + SecureSpanConstants.HttpHeaders.SESSION_STATUS_HTTP_HEADER;
+    public static final String PARAM_HTTP_POLICYURL         = PREFIX_HTTP_HEADER + "." + SecureSpanConstants.HttpHeaders.POLICYURL_HEADER;
+    public static final String PARAM_HTTP_CERT_CHECK_PREFIX = PREFIX_HTTP_HEADER + "." + SecureSpanConstants.HttpHeaders.CERT_CHECK_PREFIX;
 
     /**
      * Sets the InputStream pointing to the response from the protected service.
