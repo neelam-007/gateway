@@ -234,14 +234,14 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
         final JTextField _5;
         _5 = new JTextField();
         foreignProviderName = _5;
-        _5.setText("blah name");
         _5.setEditable(false);
+        _5.setText("blah name");
         _2.add(_5, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
         final JTextField _6;
         _6 = new JTextField();
         foreignProviderType = _6;
-        _6.setText("blah provider type");
         _6.setEditable(false);
+        _6.setText("blah provider type");
         _2.add(_6, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
         final JScrollPane _7;
         _7 = new JScrollPane();
@@ -249,8 +249,8 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
         final JTable _8;
         _8 = new JTable();
         providerPropsTable = _8;
-        _8.setAutoResizeMode(4);
         _8.setPreferredScrollableViewportSize(new Dimension(450, 150));
+        _8.setAutoResizeMode(4);
         _7.setViewportView(_8);
         final JPanel _9;
         _9 = new JPanel();
@@ -273,8 +273,8 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
         ignoreRadio = _12;
         _12.setText("Import erroneous assertions as-is");
         _12.setLabel("Import erroneous assertions as-is");
-        _12.setRequestFocusEnabled(false);
         _12.setFocusPainted(false);
+        _12.setRequestFocusEnabled(false);
         _9.add(_12, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JComboBox _13;
         _13 = new JComboBox();
