@@ -54,7 +54,7 @@ public class RequestHandler extends AbstractHttpHandler {
                        final HttpResponse response)
             throws HttpException, IOException
     {
-        log.info("Incoming request: " + request);
+        log.info("Incoming request: " + request.getURI().getPath());
 
         validateRequestMethod(request);
 
