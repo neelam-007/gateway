@@ -357,7 +357,7 @@ public class IdentityProviderDialog extends JDialog {
               }
           });
         panel.add(cancelButton);
-
+        panel.add(Box.createRigidArea(new Dimension(5, 0)));
         // equalize buttons
         Utilities.equalizeButtonSizes(new JButton[]{saveButton, cancelButton});
 
@@ -628,7 +628,7 @@ public class IdentityProviderDialog extends JDialog {
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.EAST;
         constraints.weightx = 0.0;
-        constraints.insets = new Insets(12, 7, 0, 0);
+        constraints.insets = new Insets(12, 7, 0, 10);
 
         panel.add(testButton, constraints);
 
