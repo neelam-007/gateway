@@ -401,7 +401,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
      * @return the index value in the children list where the
      *         child should go
      */
-    protected int getInsertPosition(MutableTreeNode node) {
+    public int getInsertPosition(MutableTreeNode node) {
         if (children == null) {
             return 0;
         }

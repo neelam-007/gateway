@@ -10,7 +10,6 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
-import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
@@ -76,13 +75,14 @@ public class PublishServiceAction extends BaseAction implements ConnectionListen
             EntityHeader eh = (EntityHeader)ev.getEntity();
             JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesTree.NAME);
             if (tree != null) {
-                DefaultMutableTreeNode root = (DefaultMutableTreeNode)tree.getModel().getRoot();
+                AbstractTreeNode root = (AbstractTreeNode)tree.getModel().getRoot();
                 TreeNode[] nodes = root.getPath();
                 TreePath nPath = new TreePath(nodes);
                 if (tree.hasBeenExpanded(nPath)) {
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                     final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(eh);
-                    model.insertNodeInto(sn, root, root.getChildCount());
+                    model.insertNodeInto(sn, root, root.getInsertPosition(sn));
+                    
                     tree.setSelectionPath(new TreePath(sn.getPath()));
                     SwingUtilities.invokeLater(new Runnable() {
                         public void run() {

@@ -24,12 +24,25 @@ public class PoliciesFolderNode extends AbstractTreeNode {
     public static final String NAME = "Policy Templates";
     public static final String TEMPLATES_DIR = "policy.templates";
 
+    /** The entity name comparator  */
+      protected static final Comparator FILENAME_COMPARATOR = new Comparator() {
+          public int compare(Object o1, Object o2) {
+              if (o1 instanceof PolicyTemplateNode && o2 instanceof PolicyTemplateNode) {
+                  String name1 = ((PolicyTemplateNode)o1).getFile().getName();
+                  String name2 = ((PolicyTemplateNode)o2).getFile().getName();
+                  return name1.compareTo(name2);
+              }
+              throw new ClassCastException("Expected "+PolicyTemplateNode.class +
+                                           " received "+o1.getClass() + " and "+o2.getClass());
+          }
+      };
+
     /**
      * construct the <CODE>PoliciesFolderNode</CODE> instance for
      * a given home path
      */
     public PoliciesFolderNode(String path) {
-        super(path+File.separator+TEMPLATES_DIR);
+        super(path+File.separator+TEMPLATES_DIR, FILENAME_COMPARATOR);
         if (path == null)
             throw new IllegalArgumentException();
     }
@@ -66,11 +79,11 @@ public class PoliciesFolderNode extends AbstractTreeNode {
             });
             sorted.addAll(Arrays.asList(files));
             files = (File[])sorted.toArray(new File[] {});
-            int index = 0;
             children = null;
             for (int i = 0; i < files.length; i++) {
                 File file = files[i];
-                insert((MutableTreeNode) new PolicyTemplateNode(file), index++);
+                PolicyTemplateNode ptn = new PolicyTemplateNode(file);
+                insert((MutableTreeNode) ptn, getInsertPosition(ptn));
             }
         } catch (IOException e) {
             ErrorManager.getDefault().notify(Level.WARNING, e, "There was an error loading policy templates.");

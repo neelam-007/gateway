@@ -153,9 +153,8 @@ public class SavePolicyTemplateAction extends BaseAction {
                 TreePath nPath = new TreePath(nodes);
                 if (tree.hasBeenExpanded(nPath)) {
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                    model.
-                      insertNodeInto(new PolicyTemplateNode(policyFile),
-                        node, node.getChildCount());
+                    PolicyTemplateNode ptn = new PolicyTemplateNode(policyFile);
+                    model.insertNodeInto(ptn, node, node.getInsertPosition(ptn));
                 }
             } else {
                 log.log(Level.WARNING, "Unable to reach the palette tree.");
