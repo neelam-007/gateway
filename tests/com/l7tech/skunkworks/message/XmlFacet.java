@@ -39,11 +39,12 @@ class XmlFacet extends MessageFacet {
     }
 
     public Knob getKnob(Class c) {
-        final MimeKnob mk = (MimeKnob)super.getKnob(c);
         if (c == MimeKnob.class) {
             // Wrap it with one that DTRT
+            final MimeKnob mk = (MimeKnob)super.getKnob(MimeKnob.class);
             return new MimeKnobImpl(mk);
         } else if (c == XmlKnob.class) {
+            final MimeKnob mk = (MimeKnob)super.getKnob(MimeKnob.class);
             return new XmlKnobImpl(mk);
         }
         return super.getKnob(c);
@@ -53,6 +54,7 @@ class XmlFacet extends MessageFacet {
         private final MimeKnob mk;
 
         public MimeKnobImpl(MimeKnob mk) {
+            if (mk == null) throw new NullPointerException();
             this.mk = mk;
         }
 
@@ -113,21 +115,22 @@ class XmlFacet extends MessageFacet {
     }
 
     private class XmlKnobImpl implements XmlKnob {
+        private final MimeKnob mk;
+
         public XmlKnobImpl(MimeKnob mk) {
+            if (mk == null) throw new NullPointerException();
             this.mk = mk;
         }
 
         public Document getDocument() throws SAXException, IOException {
             if (document == null) {
                 final PartInfo firstPart = mk.getFirstPart();
-                if (firstPart.getContentType().isXml()) {
-                    try {
-                        document = XmlUtil.parse(firstPart.getInputStream(false));
-                    } catch (NoSuchPartException e) {
-                        throw new SAXException(e);
-                    }
-                } else {
+                if (!firstPart.getContentType().isXml())
                     throw new SAXException("Content type of first part of message is not XML");
+                try {
+                    document = XmlUtil.parse(firstPart.getInputStream(false));
+                } catch (NoSuchPartException e) {
+                    throw new SAXException(e);
                 }
             }
             firstPartValid = false; // Assume caller is going to run roughshod over document
@@ -138,7 +141,5 @@ class XmlFacet extends MessageFacet {
             firstPartValid = false;
             XmlFacet.this.document = document;
         }
-
-        private final MimeKnob mk;
     }
 }
