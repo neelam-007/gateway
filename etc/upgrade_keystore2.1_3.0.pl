@@ -17,6 +17,11 @@ while (<PROPS>) {
 	}
 }
 
+if ( ! -e "/ssg/tomcat/webapps/ROOT/WEB-INF" ) {
+	print STDERR "run fix_config_keystores.sh first to expand the WAR\n";
+	exit;
+}
+
 fix_keystore("$props{keystoredir}/$props{sslkstorename}",$props{sslkspasswd});
 fix_keystore("$props{keystoredir}/$props{rootcakstorename}",$props{rootcakspasswd});
 
