@@ -6,12 +6,7 @@
 
 package com.l7tech.proxy.datamodel;
 
-import com.l7tech.proxy.ConfigurationException;
-import com.l7tech.proxy.datamodel.exceptions.*;
-import com.l7tech.proxy.message.PolicyApplicationContext;
-
 import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.util.Set;
 
 /**
@@ -45,9 +40,15 @@ public interface PolicyManager {
 
     /**
      * Get the set of PolicyAttachmentKey that we currently know about.  These are the ones that
-     * are immediatley available from {@link #getPolicy} without requiring a call to {@link #updatePolicy}.
+     * are immediateley available from {@link #getPolicy}.
      *
      * @return a defensively-copied Set of PolicyAttachmentKey objects.  Might be read-only.  Never null.
      */
     Set getPolicyAttachmentKeys();
+
+    /**
+     * Clear all policies in this PolicyManager.  This is a shallow deletion -- it does not affect any
+     * child PolicyManagers that might exist.
+     */
+    void clearPolicies();
 }

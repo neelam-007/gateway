@@ -59,9 +59,6 @@ public class LocalPolicyManager implements PolicyManager, Serializable {
             delegate.flushPolicy(policyAttachmentKey);
     }
 
-    /**
-     * Clear policies in this LocalPolicyManager.  Does not affect the delegate.
-     */
     public synchronized void clearPolicies() {
         policyMap.clear();
     }

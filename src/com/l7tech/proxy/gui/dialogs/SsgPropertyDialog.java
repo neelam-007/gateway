@@ -439,7 +439,6 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     /** Set the Ssg object being edited by this panel. */
     private void setSsg(final Ssg ssg) {
         this.ssg = ssg;
-        getPoliciesPane().setPolicyManager(ssg.rootPolicyManager());
         synchronized (ssg) {
 
             // override the default (trusted SSG) if the ssg is a federated SSG
@@ -481,15 +480,14 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                       ssg.getLocalEndpoint() + ClientProxy.WSIL_SUFFIX);
             fieldServerAddress.setText(ssg.getSsgAddress());
 
-            getPoliciesPane().policyFlushRequested = false;
             getNetworkPane().setSsgPort(ssg.getSsgPort());
             getNetworkPane().setSslPort(ssg.getSslPort());
             getNetworkPane().setUseOverrideIpAddresses(ssg.isUseOverrideIpAddresses());
             getNetworkPane().setCustomIpAddresses(ssg.getOverrideIpAddresses());
             cbUseSslByDefault.setSelected(ssg.isUseSslByDefault());
             getNetworkPane().updateCustomPortsEnableState();
-            getPoliciesPane().updatePolicyPanel();
         }
+        getPoliciesPane().setPolicyManager(ssg.rootPolicyManager());
 
         if (!isNew) {
             identityPane.getTrustedSSGRadioButton().setEnabled(false);
@@ -563,8 +561,6 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 ssg.setSsgPort(referenceSsg.getSsgPort());
                 ssg.setSslPort(referenceSsg.getSslPort());
             }
-            if (getPoliciesPane().policyFlushRequested)
-                ssg.rootPolicyManager().clearPolicies();
             ssg.resetSslContext();
         }
         setSsg(ssg);

@@ -31,22 +31,22 @@ import java.util.logging.Logger;
 class SsgPoliciesPanel extends JPanel {
     private static final Logger log = Logger.getLogger(SsgPoliciesPanel.class.getName());
 
-    PolicyManager policyManager;
+    private PolicyManager policyManager;
 
     //   View for Service Policies pane
-    JTree policyTree;
-    JTable policyTable;
-    ArrayList displayPolicies;
-    DisplayPolicyTableModel displayPolicyTableModel;
-    JButton buttonFlushPolicies;
-    boolean policyFlushRequested = false;
+    private JTree policyTree;
+    private JTable policyTable;
+    private ArrayList displayPolicies;
+    private DisplayPolicyTableModel displayPolicyTableModel;
+    private JButton buttonFlushPolicies;
 
     public SsgPoliciesPanel() {
         init();
     }
 
-    void setPolicyManager(PolicyManager pm) {
+    public void setPolicyManager(PolicyManager pm) {
         this.policyManager = pm;
+        updatePolicyPanel();
     }
 
     private void init() {
@@ -70,7 +70,7 @@ class SsgPoliciesPanel extends JPanel {
         buttonFlushPolicies = new JButton("Clear Policy Cache");
         buttonFlushPolicies.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                policyFlushRequested = true;
+                policyManager.clearPolicies();
                 updatePolicyPanel();
             }
         });
@@ -165,10 +165,9 @@ class SsgPoliciesPanel extends JPanel {
     }
 
     /** Update the policy display panel with information from the Ssg bean. */
-    void updatePolicyPanel() {
+    public void updatePolicyPanel() {
         displayPolicies.clear();
-        if (!policyFlushRequested)
-            displayPolicies = new ArrayList(policyManager.getPolicyAttachmentKeys());
+        displayPolicies = new ArrayList(policyManager.getPolicyAttachmentKeys());
         displayPolicyTableModel.fireTableDataChanged();
         displaySelectedPolicy();
     }
