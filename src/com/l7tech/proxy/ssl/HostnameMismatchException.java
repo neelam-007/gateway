@@ -15,18 +15,37 @@ package com.l7tech.proxy.ssl;
  * Time: 3:55:55 PM
  */
 public class HostnameMismatchException extends RuntimeException {
-    public HostnameMismatchException() {
+    private String whatWasWanted;
+    private String whatWeGotInstead;
+
+    public HostnameMismatchException(String whatWasWanted, String whatWeGotInstead) {
+        this.whatWasWanted = whatWasWanted;
+        this.whatWeGotInstead = whatWeGotInstead;
     }
 
-    public HostnameMismatchException(String message) {
+    public HostnameMismatchException(String whatWasWanted, String whatWeGotInstead, String message) {
         super(message);
+        this.whatWasWanted = whatWasWanted;
+        this.whatWeGotInstead = whatWeGotInstead;
     }
 
-    public HostnameMismatchException(String message, Throwable cause) {
+    public HostnameMismatchException(String whatWasWanted, String whatWeGotInstead, String message, Throwable cause) {
         super(message, cause);
+        this.whatWasWanted = whatWasWanted;
+        this.whatWeGotInstead = whatWeGotInstead;
     }
 
-    public HostnameMismatchException(Throwable cause) {
+    public HostnameMismatchException(String whatWasWanted, String whatWeGotInstead, Throwable cause) {
         super(cause);
+        this.whatWasWanted = whatWasWanted;
+        this.whatWeGotInstead = whatWeGotInstead;
+    }
+
+    public String getWhatWasWanted() {
+        return whatWasWanted;
+    }
+
+    public String getWhatWeGotInstead() {
+        return whatWeGotInstead;
     }
 }
