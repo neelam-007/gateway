@@ -13,7 +13,18 @@ import java.util.logging.*;
  * Date: Jul 3, 2003
  * Time: 11:42:08 AM
  *
- * instance of the log manager that is meant to be used on the server-side
+ * Instance of the log manager that is meant to be used on the server-side.
+ *
+ * Reads properties from ssglog.properties file. Tries to get this file from
+ * /ssg/etc/conf/ssglog.properties. If not present, gets is from
+ * webapps/ROOT/WEB-INF/classes/ssglog.properties
+ * Creates log rotation files, in a path provided in properties file. If this path
+ * is invalid, use home dir instead.
+ *
+ * NOTE: Please avoid calling any external class that uses logging itself.
+ *
+ * NOTE: Unusual exception handling because of the fact that logging subsystem
+ * is not initialized yet.
  */
 public class ServerLogManager extends LogManager {
     public Logger getSystemLogger() {
@@ -103,13 +114,22 @@ public class ServerLogManager extends LogManager {
     }
 
     private String getLogFilesPath() {
+        String path = null;
         try {
-            return getProps().getProperty(FILEPATH_PROP_NAME);
+            path = getProps().getProperty(FILEPATH_PROP_NAME);
         } catch (Throwable e) {
             System.err.println("can't read props " + e.getMessage());
             // if cant' read from props file, default to home dir
-            return System.getProperties().getProperty("user.home");
+            path = null;
         }
+        // check that the path is valid
+        File f = new File(path);
+        if (!f.exists()) {
+            path = System.getProperties().getProperty("user.home");
+            System.err.println("Path provided for log files does not exist, using " + path +
+                               " instead");
+        }
+        return path;
     }
 
     private int getLogFilesSizeLimit() {
