@@ -135,6 +135,13 @@ public class XmlUtil {
 
     public static String elementToString(Element element) throws IOException {
         final StringWriter sw = new StringWriter();
+        getTransparentXMLSerializer().setOutputCharStream(sw);
+        getTransparentXMLSerializer().serialize(element);
+        return sw.toString();
+    }
+
+    public static String elementToFormattedString(Element element) throws IOException {
+        final StringWriter sw = new StringWriter();
         getFormattedXmlSerializer().setOutputCharStream(sw);
         getFormattedXmlSerializer().serialize(element);
         return sw.toString();
