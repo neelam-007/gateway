@@ -15,6 +15,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.logging.LogManager;
 
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author alex
@@ -40,15 +41,17 @@ public class ServerSpecificUser extends ServerIdentityAssertion implements Serve
     /**
      * Verifies that the authenticated <code>User</code> matches the <code>User</code>
      * corresponding to this Assertion's <code>userLogin</code> property.
-     * @param u the <code>User</code> to check
+     * @param requestingUser the <code>User</code> to check
      * @return <code>AssertionStatus.NONE</code> if the <code>User</code> matches.
      */
-    public AssertionStatus checkUser( User u ) {
+    public AssertionStatus checkUser( User requestingUser ) {
         try {
-            if ( u.equals( getUser() ) )
+            User specifiedUser = getUser();
+            if ( requestingUser.equals( specifiedUser ) )
                 return AssertionStatus.NONE;
             else {
-                LogManager.getInstance().getSystemLogger().log(Level.INFO, "User does not match");
+                _log.log( Level.WARNING, "Requesting user " + requestingUser.getLogin() +
+                                         " does not match specified user " + specifiedUser.getLogin() );
                 return AssertionStatus.UNAUTHORIZED;
             }
         } catch ( FindException fe ) {
@@ -58,4 +61,5 @@ public class ServerSpecificUser extends ServerIdentityAssertion implements Serve
     }
 
     protected SpecificUser _data;
+    protected Logger _log = LogManager.getInstance().getSystemLogger();
 }
