@@ -70,4 +70,15 @@
 
         <many-to-one name="auditRecord" class="com.l7tech.common.audit.AuditRecord" column="audit_oid"/>
     </class>
+
+    <class name="com.l7tech.common.audit.AuditDetailMessage" table="audit_detail_message">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
+            <generator class="native"/>
+        </id>
+
+        <property name="className" column="class_name" type="string"/>
+        <property name="methodName" column="method_name" type="string"/>
+        <property name="level" type="string"/>
+        <property name="message" type="string"/>
+    </class>
 </hibernate-mapping>
