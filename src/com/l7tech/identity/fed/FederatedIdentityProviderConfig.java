@@ -24,8 +24,16 @@ public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
         return getBooleanProperty(PROP_SAML_SUPPORTED);
     }
 
+    public void setSamlSupported(boolean saml) {
+        props.put(PROP_SAML_SUPPORTED,Boolean.valueOf(saml));
+    }
+
     public boolean isX509Supported() {
         return getBooleanProperty(PROP_X509_SUPPORTED);
+    }
+
+    public void setX509Supported(boolean x509) {
+        props.put(PROP_X509_SUPPORTED,Boolean.valueOf(x509));
     }
 
     public SamlConfig getSamlConfig() {
@@ -46,18 +54,22 @@ public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
         return config;
     }
 
-    public Set getTrustedCerts() {
-        return trustedCerts;
+    public long[] getTrustedCertOids() {
+        long[] oids = (long[])props.get(PROP_CERT_OIDS);
+        if ( oids == null ) {
+            oids = new long[0];
+            props.put(PROP_CERT_OIDS, oids);
+        }
+        return oids;
     }
 
-    public void setTrustedCerts( Set trustedCerts ) {
-        this.trustedCerts = trustedCerts;
+    public void setTrustedCertOids(long[] oids) {
+        props.put(PROP_CERT_OIDS, oids);
     }
 
-    private Set trustedCerts;
-    
     private static final String PROP_SAML_SUPPORTED = "samlSupported";
     private static final String PROP_X509_SUPPORTED = "x509Supported";
     private static final String PROP_SAML_CONFIG = "samlConfig";
     private static final String PROP_X509_CONFIG = "x509Config";
+    private static final String PROP_CERT_OIDS = "trustedCertOids";
 }
