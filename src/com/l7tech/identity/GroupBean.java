@@ -1,8 +1,8 @@
 package com.l7tech.identity;
 
-import java.security.Principal;
+import java.util.Set;
 
-public class GroupBean implements Principal {
+public class GroupBean implements Group {
     public String getUniqueIdentifier() {
         return _uniqueId;
     }
@@ -13,6 +13,18 @@ public class GroupBean implements Principal {
 
     public String getDescription() {
         return _description;
+    }
+
+    public Set getMembers() {
+        throw new UnsupportedOperationException();
+    }
+
+    public Set getMemberHeaders() {
+        throw new UnsupportedOperationException();
+    }
+
+    public GroupBean getGroupBean() {
+        return this;
     }
 
     public void setDescription(String description) {
