@@ -201,7 +201,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
 
     private boolean docIsSchema(String str) {
         if (str == null || str.length() < 1) {
-            log.finest("empty doc");
+            log.warning("empty doc");
             return false;
         }
         Document doc = stringToDoc(str);
