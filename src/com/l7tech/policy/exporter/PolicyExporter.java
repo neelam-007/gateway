@@ -113,4 +113,11 @@ public class PolicyExporter {
         originalPolicy.appendChild(exportRoot);
         return referencesEl;
     }
+
+    public static boolean isExportedPolicy(Document doc) {
+        Element rootel = doc.getDocumentElement();
+        if (!rootel.getNamespaceURI().equals(ExporterConstants.EXPORTED_POL_NS)) return false;
+        if (!rootel.getLocalName().equals(ExporterConstants.EXPORTED_DOCROOT_ELNAME)) return false;
+        return true;
+    }
 }
