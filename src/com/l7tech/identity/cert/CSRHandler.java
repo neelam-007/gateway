@@ -9,6 +9,8 @@ import com.l7tech.util.Locator;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.UpdateException;
+
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -82,7 +84,9 @@ public class CSRHandler extends HttpServlet {
         InternalUserManagerServer userMan = (InternalUserManagerServer)getConfigManager().getInternalIdentityProvider().getUserManager();
         try {
             if (!userMan.userCanResetCert(Long.toString(authenticatedUser.getOid()))) {
-                // todo
+                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "user is refused csr: " + authenticatedUser.getLogin());
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "CSR Forbidden. Contact your administrator for more info.");
+                return;
             }
         } catch (FindException e) {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
@@ -102,8 +106,22 @@ public class CSRHandler extends HttpServlet {
             return;
         }
 
-        // todo, record cert
-        // ClientCertManager.recordCert
+        // record new cert
+        try {
+            userMan.recordNewCert(Long.toString(authenticatedUser.getOid()), cert);
+        } catch (UpdateException e) {
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Could not record cert. " + e.getMessage());
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Could not record cert. " + e.getMessage(), e);
+        }
+
+        /*// test verify that the cert is indeed retrieveable
+        try {
+            Certificate cert2 = userMan.retrieveUserCert(Long.toString(authenticatedUser.getOid()));
+            if (cert2.equals(cert)) LogManager.getInstance().getSystemLogger().log(Level.INFO, "retrieved cert success");
+        } catch (FindException e) {
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Could not record cert. " + e.getMessage());
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Could not record cert. " + e.getMessage(), e);
+        }*/
 
         // send cert back
         try {
