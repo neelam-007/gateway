@@ -6,7 +6,7 @@ import com.l7tech.policy.assertion.Regex;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.text.JTextComponent;
+import javax.swing.text.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -47,6 +47,7 @@ public class RegexDialog extends JDialog {
 
     public RegexDialog(Frame owner, Regex regexAssertion) throws HeadlessException {
         super(owner, true);
+        setTitle("Regular Expression Assertion");
         if (regexAssertion == null) {
             throw new IllegalArgumentException();
         }
@@ -103,9 +104,56 @@ public class RegexDialog extends JDialog {
         testButton.setEnabled(false);
         testButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                updatePattern();
                 Matcher matcher = pattern.matcher(testInputTextArea.getText());
-                testResultTextPane.setText(matcher.replaceAll(replaceTextArea.getText()));
+                StyledDocument doc = (StyledDocument)testResultTextPane.getDocument();
+                SimpleAttributeSet sas = new SimpleAttributeSet();
+                sas.addAttribute(StyleConstants.ColorConstants.Background, Color.yellow);
+                SimpleAttributeSet nas = new SimpleAttributeSet();
+                if (matchAndReplaceRadioButton.isSelected()) {
+                    String replaceText = replaceTextArea.getText();
+                    StringBuffer sb = new StringBuffer();
+                    while (matcher.find()) {
+                        int offset = sb.length();
+                        matcher.appendReplacement(sb, replaceText);
+                        String s = sb.substring(offset, sb.length());
+                        try {
+                            String beforeMatchString = s.substring(0, matcher.start());
+                            doc.insertString(offset, beforeMatchString, nas);
+                            doc.insertString(offset + beforeMatchString.length(), replaceText, sas);
+                        } catch (BadLocationException e1) {
+                            throw new RuntimeException(e1);
+                        }
+                    }
+                    int offset = sb.length();
+                    matcher.appendTail(sb);
+                    String appendString = sb.substring(offset);
+                    try {
+                        doc.insertString(offset, appendString, nas);
+                    } catch (BadLocationException e1) {
+                        throw new RuntimeException(e1);
+                    }
+                } else {
+                    String testInputString = testInputTextArea.getText();
+                    int offset = 0;
+                    while (matcher.find()) {
+                        String beforeMatchString = testInputString.substring(offset, matcher.start());
+                        try {
+                            doc.insertString(offset, beforeMatchString, nas);
+                            offset+=beforeMatchString.length();
+                            doc.insertString(offset, matcher.group(), sas);
+                            offset +=matcher.group().length();
+                        } catch (BadLocationException e1) {
+                            throw new RuntimeException(e1);
+                        }
+                    }
+                    if (offset < testInputString.length()) {
+                        try {
+                            doc.insertString(offset, testInputString.substring(offset), nas);
+                        } catch (BadLocationException e1) {
+                            throw new RuntimeException(e1);
+                        }
+                    }
+                }
             }
         });
 
@@ -118,16 +166,19 @@ public class RegexDialog extends JDialog {
             public void insertUpdate(DocumentEvent e) {
                 updatePattern();
                 okButton.setEnabled(pattern != null);
+                testButton.setEnabled(shouldEnableTestButton());
             }
 
             public void removeUpdate(DocumentEvent e) {
                 updatePattern();
                 okButton.setEnabled(pattern != null);
+                testButton.setEnabled(shouldEnableTestButton());
             }
 
             public void changedUpdate(DocumentEvent e) {
                 updatePattern();
                 okButton.setEnabled(pattern != null);
+                testButton.setEnabled(shouldEnableTestButton());
             }
 
         });
@@ -147,10 +198,13 @@ public class RegexDialog extends JDialog {
         });
         updatePattern();
         okButton.setEnabled(pattern != null);
+        testResultTextPane.setEditable(false);
+        testResultTextPane.setFont(testInputTextArea.getFont());
+
     }
 
     private boolean shouldEnableTestButton() {
-        return !empty(testInputTextArea) && pattern != null && matchAndReplaceRadioButton.isSelected();
+        return !empty(testInputTextArea) && pattern != null;
     }
 
 
@@ -164,6 +218,7 @@ public class RegexDialog extends JDialog {
 
 
     private void updatePattern() {
+        regexTextArea.setToolTipText("");
         if (!empty(regexTextArea)) {
             try {
                 int flags = Pattern.DOTALL | Pattern.MULTILINE;
@@ -172,6 +227,7 @@ public class RegexDialog extends JDialog {
                 }
                 pattern = Pattern.compile(regexTextArea.getText(), flags);
             } catch (PatternSyntaxException e1) {
+                regexTextArea.setToolTipText(e1.getDescription()+" index: "+e1.getIndex());
                 pattern = null;
             }
         } else {
