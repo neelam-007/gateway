@@ -84,5 +84,8 @@ case "$1" in
 		target="com.l7tech.proxy.gui.Main";
 		exec $JAVA_HOME/bin/java $JAVA_OPTS ${target}
 		;;
+	*)
+		echo "Usage: run.sh (ssg|console|proxy)"
+		;;
 esac 
     
