@@ -119,7 +119,7 @@ public class SignedSamlTest extends TestCase {
         AuthenticationStatementType samlAuthStatement = samlAssertion.addNewAuthenticationStatement();
         samlAuthStatement.setAuthenticationInstant(cal);
         samlAuthStatement.setSubject(samlSubject);
-        samlAuthStatement.setAuthenticationMethod(Constants.X509_PKI_AUTHENTICATION);
+        samlAuthStatement.setAuthenticationMethod(Constants.XML_DSIG_AUTHENTICATION);
         samlAuthStatement.addNewSubjectLocality().setIPAddress(addressToString(InetAddress.getLocalHost()));
 
         ConditionsType conditions = samlAssertion.addNewConditions();
