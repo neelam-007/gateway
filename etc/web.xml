@@ -4,6 +4,12 @@
 <web-app>
     <display-name>Layer7 Secure Span Gateway</display-name>
 
+    <context-param>
+        <param-name>contextConfigLocation</param-name>
+        <param-value>/WEB-INF/webApplicationContext.xml</param-value>
+    </context-param>
+
+
     <!--
     Map all requests that would otherwise be 404s to the SOAP servlet, for
     transparency purposes
@@ -21,7 +27,11 @@
     <filter-mapping>
         <filter-name>namespace</filter-name>
         <url-pattern>/*</url-pattern>
-    </filter-mapping>                                            
+    </filter-mapping>
+
+    <listener>
+        <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+    </listener>
 
     <!-- class servlet registered frst, in case boot process requires it -->
     <servlet>

@@ -135,7 +135,7 @@ public class JmsReceiver implements ServerComponentLifecycle {
      * @param config
      * @throws LifecycleException
      */
-    public synchronized void init(ComponentConfig config) throws LifecycleException {
+    public synchronized void setComponentConfig(ComponentConfig config) throws LifecycleException {
         _logger.info( "Initializing " + toString() + "..." );
         try {
             _initialized = true;

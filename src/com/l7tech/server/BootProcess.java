@@ -11,6 +11,7 @@ import com.l7tech.common.Component;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.common.util.Locator;
+import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.logging.ServerLogHandler;
 import com.l7tech.objectmodel.HibernatePersistenceContext;
 import com.l7tech.objectmodel.HibernatePersistenceManager;
@@ -36,7 +37,8 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class BootProcess implements ServerComponentLifecycle {
-      public static final String DEFAULT_LOGPROPERTIES_PATH  = "/ssg/etc/conf/ssglog.properties";
+    public static final String DEFAULT_LOGPROPERTIES_PATH = "/ssg/etc/conf/ssglog.properties";
+
     static {
         JdkLoggerConfigurator.configure("com.l7tech.logging",
                                         new File(DEFAULT_LOGPROPERTIES_PATH).exists() ?
@@ -62,11 +64,11 @@ public class BootProcess implements ServerComponentLifecycle {
         }
     }
 
-    public void init(ComponentConfig config) throws LifecycleException {
+    public void setComponentConfig(ComponentConfig config) throws LifecycleException {
         try {
             ipAddress = InetAddress.getLocalHost().getHostAddress();
-        } catch ( UnknownHostException e ) {
-            logger.log( Level.SEVERE, "Couldn't get local IP address. Will use 127.0.0.1 in audit records.", e );
+        } catch (UnknownHostException e) {
+            logger.log(Level.SEVERE, "Couldn't get local IP address. Will use 127.0.0.1 in audit records.", e);
             ipAddress = LOCALHOST_IP;
         }
 
@@ -88,8 +90,8 @@ public class BootProcess implements ServerComponentLifecycle {
             context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
             try {
                 EventManager.fireInNewTransaction(new Initializing(this, Component.GW_SERVER, ipAddress));
-            } catch ( TransactionException e ) {
-                logger.log( Level.WARNING, "Couldn't commit event transaction", e );
+            } catch (TransactionException e) {
+                logger.log(Level.WARNING, "Couldn't commit event transaction", e);
             }
             logger.info("Initializing server");
 
@@ -121,7 +123,7 @@ public class BootProcess implements ServerComponentLifecycle {
                 if (component != null) {
                     try {
                         if (component instanceof TransactionalComponent) context.beginTransaction();
-                        component.init(config);
+                        component.setComponentConfig(config);
                         _components.add(component);
                         if (component instanceof TransactionalComponent) context.commitTransaction();
                     } catch (LifecycleException e) {
@@ -134,8 +136,8 @@ public class BootProcess implements ServerComponentLifecycle {
 
             try {
                 EventManager.fireInNewTransaction(new Initialized(this, Component.GW_SERVER, ipAddress));
-            } catch ( TransactionException e ) {
-                logger.log( Level.WARNING, "Couldn't commit event transaction", e );
+            } catch (TransactionException e) {
+                logger.log(Level.WARNING, "Couldn't commit event transaction", e);
             }
 
             logger.info("Initialized server");
@@ -154,8 +156,8 @@ public class BootProcess implements ServerComponentLifecycle {
             context = PersistenceContext.getCurrent();
             try {
                 EventManager.fireInNewTransaction(new Starting(this, Component.GW_SERVER, ipAddress));
-            } catch ( TransactionException e ) {
-                logger.log( Level.WARNING, "Couldn't commit event transaction", e );
+            } catch (TransactionException e) {
+                logger.log(Level.WARNING, "Couldn't commit event transaction", e);
             }
             logger.info("Starting server");
 
@@ -167,7 +169,7 @@ public class BootProcess implements ServerComponentLifecycle {
                 }
                 context.rollbackTransaction();
             } catch (TransactionException e) {
-                logger.log( Level.WARNING, "Couldn't set up Service Cache", e );
+                logger.log(Level.WARNING, "Couldn't set up Service Cache", e);
             }
 
             DefaultGatewayPolicies.getInstance();
@@ -188,8 +190,8 @@ public class BootProcess implements ServerComponentLifecycle {
             logger.info(BuildInfo.getLongBuildString());
             try {
                 EventManager.fireInNewTransaction(new Started(this, Component.GW_SERVER, ipAddress));
-            } catch ( TransactionException e ) {
-                logger.log( Level.WARNING, "Couldn't commit event transaction", e );
+            } catch (TransactionException e) {
+                logger.log(Level.WARNING, "Couldn't commit event transaction", e);
             }
             logger.info("Boot process complete.");
         } catch (SQLException se) {
@@ -202,8 +204,8 @@ public class BootProcess implements ServerComponentLifecycle {
     public void stop() throws LifecycleException {
         try {
             EventManager.fireInNewTransaction(new Stopping(this, Component.GW_SERVER, ipAddress));
-        } catch ( TransactionException e ) {
-            logger.log( Level.WARNING, "Couldn't commit event transaction", e );
+        } catch (TransactionException e) {
+            logger.log(Level.WARNING, "Couldn't commit event transaction", e);
         }
 
         logger.info("Stopping server components");
@@ -225,8 +227,8 @@ public class BootProcess implements ServerComponentLifecycle {
     public void close() throws LifecycleException {
         try {
             EventManager.fireInNewTransaction(new Closing(this, Component.GW_SERVER, ipAddress));
-        } catch ( TransactionException e ) {
-            logger.log( Level.WARNING, "Couldn't commit event transaction", e );
+        } catch (TransactionException e) {
+            logger.log(Level.WARNING, "Couldn't commit event transaction", e);
         }
 
         logger.info("Closing server components");
@@ -259,7 +261,7 @@ public class BootProcess implements ServerComponentLifecycle {
 
         // Set default properties
         props.setProperty("com.sun.jndi.ldap.connect.pool.timeout", new Integer(30 * 1000).toString());
-
+        
         InputStream is = null;
         try {
             if (propsFile.exists()) {

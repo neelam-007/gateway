@@ -5,7 +5,7 @@ package com.l7tech.server;
  * @version $Revision$
  */
 public interface ServerComponentLifecycle {
-    void init(ComponentConfig config) throws LifecycleException;
+    void setComponentConfig(ComponentConfig config) throws LifecycleException;
 
     void start() throws LifecycleException;
 

@@ -40,7 +40,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
         return "JMS Boot Process";
     }
 
-    public synchronized void init(ComponentConfig config) throws LifecycleException {
+    public synchronized void setComponentConfig(ComponentConfig config) throws LifecycleException {
         if ( !_valid ) return;
         if (_booted) throw new LifecycleException("Can't boot JmsBootProcess twice!");
         _booted = true;
@@ -108,7 +108,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
                     JmsReceiver receiver = makeReceiver( connection, endpoint );
 
                     try {
-                        receiver.init( ServerConfig.getInstance() );
+                        receiver.setComponentConfig( ServerConfig.getInstance() );
                         receiver.start();
                         _activeReceivers.add( receiver );
                     } catch ( LifecycleException e ) {
@@ -284,7 +284,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
             try {
                 JmsConnection connection = _connectionManager.findConnectionByPrimaryKey( updatedEndpoint.getConnectionOid() );
                 receiver = makeReceiver( connection, updatedEndpoint);
-                receiver.init(ServerConfig.getInstance());
+                receiver.setComponentConfig(ServerConfig.getInstance());
                 receiver.start();
                 _activeReceivers.add(receiver);
             } catch (LifecycleException e) {

@@ -717,6 +717,22 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
         }
     }
 
+    /**
+     * Parse the String service ID to long (database format). Throws runtime exc
+     * @param ID the ID, must not be null, and .
+     * @return the ID representing <code>long</code>
+     *
+     * @throws IllegalArgumentException if service ID is null
+     * @throws NumberFormatException on parse error
+     */
+    private long toLong(String ID)
+      throws IllegalArgumentException, NumberFormatException {
+        if (ID == null) {
+                throw new IllegalArgumentException();
+            }
+        return Long.parseLong(ID);
+    }
+
     IdentityProviderConfigManager identityProviderConfigManager = null;
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final LdapConfigTemplateManager ldapTemplateManager = new LdapConfigTemplateManager();

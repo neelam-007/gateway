@@ -369,9 +369,12 @@
                 <include name="commons-pool-1.2.jar"/>
                 <include name="dom4j.jar"/>
                 <include name="hibernate2.jar"/>
+                <include name="spring-aop.jar"/>
+                <include name="spring-context.jar"/>
                 <include name="spring-core.jar"/>
-                <include name="spring-orm.jar"/>
                 <include name="spring-dao.jar"/>
+                <include name="spring-orm.jar"/>
+                <include name="spring-web.jar"/>
                 <include name="cglib-full-2.0.2.jar"/>
                 <include name="ehcache-0.9.jar"/>
                 <include name="jaxen-1.1-beta-2-l7.jar"/>
@@ -435,6 +438,8 @@
             <!-- Jini config -->
             <zipfileset dir="${src.root}/etc/jini" includes="start-services.config, services.config, services.policy" prefix="WEB-INF/classes"/>
             <zipfileset dir="${src.root}/etc/jini" includes="PREFERRED.LIST" prefix="WEB-INF/classes/META-INF"/>
+            <!-- Spring config -->
+            <zipfileset dir="${src.root}/etc" includes="webApplicationContext.xml" prefix="WEB-INF"/>
         </war>
 
         <!--    * keep prebuilt version in src.root/lib

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE beans PUBLIC  "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
+
+<beans>
+    <bean id="ssgBoot" class="com.l7tech.server.BootProcess">
+         <property name="componentConfig">
+            <ref bean="serverConfig"/>
+        </property>
+    </bean>
+
+    <!--
+    * singleton using the factory method. This is transitional, as it is referrencef from
+    * too many places.
+    -->
+    <bean id="serverConfig" class="com.l7tech.server.ServerConfig" factory-method="getInstance" />
+</beans>

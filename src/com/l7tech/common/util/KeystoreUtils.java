@@ -99,6 +99,12 @@ public class KeystoreUtils {
         return getProps().getProperty(SSL_KSTORE_PASSWD);
     }
 
+    public KeystoreInfo getSslKeystoreInfo() {
+        return new KeystoreInfo(getProps().getProperty(KSTORE_PATH_PROP_NAME) + PS + getProps().getProperty(SSL_KSTORE_NAME),
+                                getProps().getProperty(SSL_KSTORE_PASSWD),
+                                getKeyStoreType());
+    }
+
     public String getKeyStoreType() {
         String type = getProps().getProperty(KSTORE_TYPE);
         if ( type == null || type.length() == 0 ) type = KeyStore.getDefaultType();

@@ -27,7 +27,7 @@ public class AuditBootProcess implements ServerComponentLifecycle {
         servicePromoter = new ServiceEventPromoter();
     }
 
-    public void init( ComponentConfig config ) throws LifecycleException {
+    public void setComponentConfig( ComponentConfig config ) throws LifecycleException {
     }
 
     public void start() throws LifecycleException {

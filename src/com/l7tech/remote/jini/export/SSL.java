@@ -15,32 +15,34 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.cert.*;
 import java.util.LinkedList;
-import java.util.logging.Logger;
 
 /**
+ * Utility class that creates and holds the Subject based on the SSL private key and cert.
+ * The subject is used on export the admin services over SSL.
  * @author emil
  * @version Nov 1, 2004
  */
 public class SSL {
-    private static final Logger logger = Logger.getLogger(SSL.class.getName());
-
-    public static X500Principal getSslPrincipal() throws IOException, CertificateException {
-        return KeystoreUtils.getInstance().getSslCert().getSubjectX500Principal();
-    }
 
     private static Subject subject = null;
     public synchronized static Subject getSslSubject() throws IOException, CertificateException, KeyStoreException {
         if (subject !=null) {
             return subject;
         }
+        X500PrivateCredential privateCredential = getSslPrivateCredential();
+        CertPath sslCertificateChain = getSslCertificateChain();
+        X500Principal sslPrincipal = getSslPrincipal();
         Subject s = new Subject();
-        X500PrivateCredential pc = getSslPrivateCredential();
-        s.getPrivateCredentials().add(pc);
-        s.getPublicCredentials().add(getSslCertificateChain());
-        s.getPrincipals().add(getSslPrincipal());
+        s.getPrivateCredentials().add(privateCredential);
+        s.getPublicCredentials().add(sslCertificateChain);
+        s.getPrincipals().add(sslPrincipal);
         s.setReadOnly();
         subject = s;
         return subject;
+    }
+
+    public static X500Principal getSslPrincipal() throws IOException, CertificateException {
+        return KeystoreUtils.getInstance().getSslCert().getSubjectX500Principal();
     }
 
     public static CertPath getSslCertificateChain() throws KeyStoreException, CertificateException {
@@ -62,7 +64,8 @@ public class SSL {
         }
     }
 
-    private static X500PrivateCredential getSslPrivateCredential() throws IOException, CertificateException, KeyStoreException {
+    private static X500PrivateCredential getSslPrivateCredential()
+      throws IOException, CertificateException, KeyStoreException {
         final KeystoreUtils ki = KeystoreUtils.getInstance();
         return new X500PrivateCredential(ki.getSslCert(), ki.getSSLPrivateKey(), KeystoreUtils.TOMCATALIAS);
     }
