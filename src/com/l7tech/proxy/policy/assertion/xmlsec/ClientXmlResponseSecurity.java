@@ -8,6 +8,7 @@ import com.l7tech.common.security.xml.SignatureNotFoundException;
 import com.l7tech.common.security.xml.SoapMsgSigner;
 import com.l7tech.common.security.xml.XMLSecurityElementNotFoundException;
 import com.l7tech.common.security.xml.XmlMangler;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
 import com.l7tech.proxy.datamodel.PendingRequest;
@@ -156,6 +157,12 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
             }
             log.info("response message decrypted");
         }
+
+        // clean empty security element and header if necessary
+        SoapUtil.cleanEmptySecurityElement(doc);
+        SoapUtil.cleanEmptyHeaderElement(doc);
+
+        response.setResponse(doc);
 
         return AssertionStatus.NONE;
     }
