@@ -39,6 +39,8 @@ public class ServerConfig {
     public static final String PARAM_HOSTNAME          = "hostname";
     public static final String PARAM_SYSTEMPROPS       = "systemPropertiesPath";
     public static final String PARAM_SERVERCOMPONENTS  = "serverComponents";
+    public static final String PARAM_JMS_THREAD_POOL_SIZE = "jmsThreadPoolSize";
+    public static final int DEFAULT_JMS_THREAD_POOL_SIZE = 200;
 
     public static final String PROPS_PATH_PROPERTY = "com.l7tech.server.serverConfigPropertiesPath";
     public static final String PROPS_PATH_DEFAULT = "/ssg/etc/conf/serverconfig.properties";
