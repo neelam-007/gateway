@@ -18,12 +18,6 @@ import java.security.cert.Certificate;
  * stripped out the se.anatom.ejbca dependencies and removed deprecated calls
  */
 public class RSASigner {
-
-    static {
-        // Make sure our provider is installed.
-        JceProvider.init();
-    }
-
     private RsaSignerEngine rsaSignerEngine;
 
     /**
