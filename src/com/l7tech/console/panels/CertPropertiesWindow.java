@@ -51,7 +51,7 @@ public class CertPropertiesWindow extends JDialog {
     private JButton cancelButton;
     private TrustedCert trustedCert = null;
 
-    private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.EditCertsDialog", Locale.getDefault());
+    private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
     private static Logger logger = Logger.getLogger(CertPropertiesWindow.class.getName());
 
 
@@ -62,7 +62,7 @@ public class CertPropertiesWindow extends JDialog {
      * @param tc   The trusted certificate.
      */
     public CertPropertiesWindow(Dialog owner, TrustedCert tc) {
-        super(owner, resources.getString("dialog.title"), true);
+        super(owner, resources.getString("cert.properties.dialog.title"), true);
         trustedCert = tc;
         initialize();
         pack();
