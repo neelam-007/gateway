@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.*;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
+import java.io.Serializable;
 
 /**
  * Remote interface for managaging JMS connections and endpoints.
@@ -12,17 +13,44 @@ import java.rmi.RemoteException;
  * @version $Revision$
  */
 public interface JmsAdmin extends Remote {
+    public static final class JmsTuple implements Serializable {
+        public JmsTuple( JmsConnection conn, JmsEndpoint end ) {
+            this.connection = conn;
+            this.endpoint = end;
+        }
+
+        public JmsConnection getConnection() {
+            return connection;
+        }
+
+        public JmsEndpoint getEndpoint() {
+            return endpoint;
+        }
+
+        private final JmsConnection connection;
+        private final JmsEndpoint endpoint;
+    }
+
     JmsProvider[] getProviderList() throws RemoteException, FindException;
 
     /**
      * Finds all {@link JmsConnection}s in the database.
-     * Returns transient instances that are not enrolled in the Hibernate session.
      *
-     * @return an array of transient {@link JmsConnection}s
+     * @return an array of {@link JmsConnection}s
      * @throws RemoteException
      * @throws FindException
      */
     JmsConnection[] findAllConnections() throws RemoteException, FindException;
+
+    /**
+     * Finds all {@link JmsEndpoint}s in the database, wrapped in a {@link JmsTuple} that also
+     * includes its associated {@link JmsConnection}.
+     *
+     * @return An array of {@link JmsTuple}s
+     * @throws RemoteException
+     * @throws FindException
+     */
+    JmsTuple[] findAllTuples() throws RemoteException, FindException;
 
     /**
      * Finds the {@link JmsConnection} with the given OID.

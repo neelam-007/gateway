@@ -69,6 +69,39 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
     }
 
     /**
+     * Must be called in a transaction!
+     * @return
+     * @throws RemoteException
+     * @throws FindException
+     */
+    public JmsAdmin.JmsTuple[] findAllTuples() throws RemoteException, FindException {
+        PersistenceContext context = null;
+        try {
+            context = PersistenceContext.getCurrent();
+            context.beginTransaction();
+            JmsTuple tuple;
+            ArrayList result = new ArrayList();
+            JmsConnection[] connections = findAllConnections();
+            for ( int i = 0; i < connections.length; i++ ) {
+                JmsConnection connection = connections[i];
+                JmsEndpoint[] endpoints = getEndpointsForConnection( connection.getOid() );
+                for ( int j = 0; j < endpoints.length; j++ ) {
+                    tuple = new JmsTuple( connection, endpoints[j] );
+                    result.add( tuple );
+                }
+            }
+            context.commitTransaction();
+            return (JmsTuple[])result.toArray( new JmsTuple[0] );
+        } catch ( TransactionException e ) {
+            throw new FindException( "Caught transaction exception", e );
+        } catch ( SQLException e ) {
+            throw new FindException( "Caught SQL exception", e );
+        } finally {
+            context.close();
+        }
+    }
+
+    /**
      * Finds the {@link JmsConnection} with the provided OID.
      *
      * @return the {@link JmsConnection} with the provided OID.

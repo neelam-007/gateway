@@ -43,6 +43,16 @@ public class JmsAdminStub implements JmsAdmin {
         return (JmsConnection[]) list.toArray(new JmsConnection[0]);
     }
 
+    public JmsAdmin.JmsTuple[] findAllTuples() throws RemoteException, FindException {
+        List found = new ArrayList();
+        Set keys = endpoints.keySet();
+        for (Iterator i = keys.iterator(); i.hasNext();) {
+            JmsEndpoint endpoint = (JmsEndpoint) endpoints.get(i.next());
+            found.add(new JmsTuple( findConnectionByPrimaryKey( endpoint.getConnectionOid() ), endpoint ));
+        }
+        return (JmsTuple[]) found.toArray(new JmsEndpoint[0]);
+    }
+
     public synchronized JmsConnection findConnectionByPrimaryKey(long oid) throws RemoteException, FindException {
         return (JmsConnection) connections.get(new Long(oid));
     }

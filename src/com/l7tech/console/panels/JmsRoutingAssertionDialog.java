@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.console.event.PolicyEvent;
@@ -18,7 +19,6 @@ import javax.swing.event.EventListenerList;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
 import java.util.EventListener;
 import java.util.logging.Logger;
 
@@ -42,7 +42,6 @@ public class JmsRoutingAssertionDialog extends JDialog {
     private EventListenerList listenerList = new EventListenerList();
 
     private JmsConnection newlyCreatedConnection = null;
-    private JmsEndpoint serviceEndpoint;
     private JmsEndpoint newlyCreatedEndpoint = null;
     private JPanel serviceEndpointPanel;
     private JPanel mainPanel;
@@ -185,26 +184,22 @@ public class JmsRoutingAssertionDialog extends JDialog {
     }
 
     private static class QueueItem {
-        private JmsUtilities.JmsQueue queue;
+        private JmsAdmin.JmsTuple queue;
 
-        QueueItem(JmsUtilities.JmsQueue q) {
+        QueueItem(JmsAdmin.JmsTuple q) {
             this.queue = q;
         }
 
         public String toString() {
-            if (queue.endpoint == null) {
-                return "(no endpoints) on " + queue.connection.getJndiUrl();
-            } else {
-                return queue.endpoint.getName() + " on " + queue.connection.getJndiUrl();
-            }
+            return queue.getEndpoint().getName() + " on " + queue.getConnection().getJndiUrl();
         }
     }
 
     private QueueItem[] loadQueueItems() {
-        ArrayList queues = JmsUtilities.loadJmsQueues(false, true);
+        java.util.List queues = JmsUtilities.loadJmsQueues(true);
         QueueItem[] items = new QueueItem[queues.size()];
         for (int i = 0; i < queues.size(); ++i)
-            items[i] = new QueueItem((JmsUtilities.JmsQueue) queues.get(i));
+            items[i] = new QueueItem((JmsAdmin.JmsTuple) queues.get(i));
         return queueItems = items;
     }
 
@@ -233,10 +228,10 @@ public class JmsRoutingAssertionDialog extends JDialog {
                     Utilities.centerOnScreen(pd);
                     pd.show();
                     if (!pd.isCanceled()) {
-                        newlyCreatedEndpoint = serviceEndpoint = pd.getEndpoint();
+                        newlyCreatedEndpoint = pd.getEndpoint();
                         newlyCreatedConnection = pd.getConnection();
                         getQueueComboBox().setModel(new DefaultComboBoxModel(loadQueueItems()));
-                        selectCurrentEndpoint();
+                        selectEndpoint(newlyCreatedEndpoint);
                     }
                 }
             });
@@ -254,7 +249,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
         dispose();
     }
 
-    private void selectCurrentEndpoint() {
+    private void selectEndpoint( JmsEndpoint serviceEndpoint ) {
         if (serviceEndpoint == null ||
             serviceEndpoint.getOid() == JmsEndpoint.DEFAULT_OID) {
             getQueueComboBox().setSelectedIndex(-1);
@@ -264,7 +259,7 @@ public class JmsRoutingAssertionDialog extends JDialog {
         QueueItem[] items = getQueueItems();
         for (int i = 0; i < items.length; i++) {
             QueueItem item = items[i];
-            if (item.queue.endpoint.getOid() == serviceEndpoint.getOid()) {
+            if (item.queue.getEndpoint().getOid() == serviceEndpoint.getOid()) {
                 getQueueComboBox().setSelectedItem(item);
                 return;
             }
@@ -326,19 +321,22 @@ public class JmsRoutingAssertionDialog extends JDialog {
             okButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     // copy view into model
-                    if (serviceEndpoint == null) {
+                    QueueItem item = (QueueItem)getQueueComboBox().getSelectedItem();
+
+                    if ( item == null ) {
                         assertion.setEndpointOid(null);
                         assertion.setEndpointName(null);
                     } else {
-                        assertion.setEndpointOid(new Long(serviceEndpoint.getOid()));
-                        assertion.setEndpointName(serviceEndpoint.getName());
+                        JmsEndpoint endpoint = item.queue.getEndpoint();
+                        assertion.setEndpointOid(new Long(endpoint.getOid()));
+                        assertion.setEndpointName(endpoint.getName());
                     }
 
                     assertion.setGroupMembershipStatement(false);
                     assertion.setAttachSamlSenderVouches(false);
                     fireEventAssertionChanged(assertion);
                     wasOkButtonPressed = true;
-                    newlyCreatedConnection = null; // prevent disposal from deleting our new queue
+                    newlyCreatedConnection = null; // prevent disposal from deleting our new serviceQueue
                     newlyCreatedEndpoint = null;
                     JmsRoutingAssertionDialog.this.dispose();
                 }
@@ -392,10 +390,11 @@ public class JmsRoutingAssertionDialog extends JDialog {
     private void initFormData() {
         Long endpointOid = assertion.getEndpointOid();
         try {
+            JmsEndpoint serviceEndpoint = null;
             if (endpointOid != null) {
                 serviceEndpoint = Registry.getDefault().getJmsManager().findEndpointByPrimaryKey(endpointOid.longValue());
             }
-            selectCurrentEndpoint();
+            selectEndpoint(serviceEndpoint);
         } catch (Exception e) {
             throw new RuntimeException("Unable to look up JMS Queue for this routing assertion", e);
         }

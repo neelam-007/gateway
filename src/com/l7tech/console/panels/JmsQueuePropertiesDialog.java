@@ -539,6 +539,8 @@ public class JmsQueuePropertiesDialog extends JDialog {
         }
 
         JmsEndpoint ep = new JmsEndpoint();
+        if (endpoint != null)
+            ep.copyFrom(endpoint);
         String name = getNameTextField().getText();
         ep.setName(name);
         ep.setDestinationName(name);
@@ -550,8 +552,12 @@ public class JmsQueuePropertiesDialog extends JDialog {
         }
 
         // Preserve old OID, if we have one
-        if (endpoint != null)
+/*
+        if (endpoint != null) {
             ep.setOid(endpoint.getOid());
+            ep.setVersion( endpoint.getVersion() );
+        }
+*/
 
         return ep;
     }
@@ -633,7 +639,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private JRadioButton getInboundButton() {
         if (inboundButton == null) {
             inboundButton = new JRadioButton("Inbound - Gateway will drain messages from Queue");
-            inboundButton.setEnabled(!outboundOnly);
+            inboundButton.setEnabled(!isOutboundOnly());
             getDirectionButtonGroup().add(inboundButton);
         }
         return inboundButton;
@@ -642,10 +648,11 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private JRadioButton getOutboundButton() {
         if (outboundButton == null) {
             outboundButton = new JRadioButton("Outbound - Gateway can route messages to Queue");
-            outboundButton.setEnabled(!outboundOnly);
+            outboundButton.setEnabled(!isOutboundOnly());
             getDirectionButtonGroup().add(outboundButton);
         }
 
         return outboundButton;
     }
+
 }

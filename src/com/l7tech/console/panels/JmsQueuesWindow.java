@@ -8,6 +8,8 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.transport.jms.JmsEndpoint;
+import com.l7tech.common.transport.jms.JmsAdmin;
+import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.console.util.JmsUtilities;
 import com.l7tech.console.util.Registry;
 
@@ -15,10 +17,11 @@ import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
-import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
+import java.awt.*;
+import java.util.*;
+import java.util.List;
 
 /**
  * Simple modal dialog that allows management of the known JMS queues, and designation of which
@@ -85,7 +88,7 @@ public class JmsQueuesWindow extends JDialog {
     }
 
     private class JmsQueueTableModel extends AbstractTableModel {
-        private ArrayList jmsQueues = JmsUtilities.loadJmsQueues(true, false);
+        private java.util.List jmsQueues = JmsUtilities.loadJmsQueues(false);
 
         public int getColumnCount() {
             return 3;
@@ -108,25 +111,21 @@ public class JmsQueuesWindow extends JDialog {
         }
 
         public Object getValueAt(int rowIndex, int columnIndex) {
-            JmsUtilities.JmsQueue i = (JmsUtilities.JmsQueue) getJmsQueues().get(rowIndex);
+            JmsAdmin.JmsTuple i = (JmsAdmin.JmsTuple)getJmsQueues().get(rowIndex);
+            JmsConnection conn = i.getConnection();
+            JmsEndpoint end = i.getEndpoint();
             switch (columnIndex) {
                 case 0:
-                    return i.connection.getJndiUrl();
+                    return conn.getJndiUrl();
                 case 1:
-                    return i.endpoint == null
-                            ? i.connection.getName() + " (no endpoints)"
-                            : i.endpoint.getName();
+                    return end.getName();
                 case MESSAGE_SOURCE_COL:
-                    if (i.endpoint == null) {
-                        return "";
-                    } else {
-                        return i.endpoint.isMessageSource() ? "Inbound (Monitored)" : "Outbound from Gateway";
-                    }
+                    return end.isMessageSource() ? "Inbound (Monitored)" : "Outbound from Gateway";
             }
             return "?";
         }
 
-        public ArrayList getJmsQueues() {
+        public List getJmsQueues() {
             return jmsQueues;
         }
 
@@ -177,43 +176,37 @@ public class JmsQueuesWindow extends JDialog {
                 public void actionPerformed(ActionEvent e) {
                     int row = getJmsQueueTable().getSelectedRow();
                     if (row >= 0) {
-                        JmsUtilities.JmsQueue i = (JmsUtilities.JmsQueue) getJmsQueueTableModel().getJmsQueues().get(row);
+                        JmsAdmin.JmsTuple i = (JmsAdmin.JmsTuple)getJmsQueueTableModel().getJmsQueues().get(row);
                         if (i != null) {
-                            if (i.endpoint == null)
-                                try {
-                                    // Won't bother with confirmation screen for removing connection with no endpoints
-                                    Registry.getDefault().getJmsManager().deleteConnection(i.connection.getOid());
-                                } catch (Exception e1) {
-                                    throw new RuntimeException("Unable to delete connection " + i.connection, e1);
-                                }
-                            else
-                                try {
-                                    Object[] options = { "Remove", "Cancel" };
-                                    String name = i.endpoint == null
-                                            ? i.connection.getName() + " (no endpoints)"
-                                            : i.endpoint.getName();
-                                    int result = JOptionPane.showOptionDialog(null,
-                                                                              "<HTML>Are you sure you want to remove the " +
-                                                                              "registration for the JMS Queue " +
-                                                                              name + "?<br>" +
-                                                                              "<center>This action cannot be undone." +
-                                                                              "</center></html>",
-                                                                              "Remove Queue?",
-                                                                              0, JOptionPane.WARNING_MESSAGE,
-                                                                              null, options, options[1]);
-                                    if (result == 0) {
-                                        Registry.getDefault().getJmsManager().deleteEndpoint(i.endpoint.getOid());
+                            JmsEndpoint end = i.getEndpoint();
+                            JmsConnection conn = i.getConnection();
+                            String name = end.getName();
 
-                                        // If the new connection would be empty, delete it too (normal operation)
-                                        JmsEndpoint[] endpoints = Registry.getDefault().getJmsManager().getEndpointsForConnection(i.connection.getOid());
-                                        if (endpoints.length < 1)
-                                            Registry.getDefault().getJmsManager().deleteConnection(i.connection.getOid());
-                                    }
-                                } catch (Exception e1) {
-                                    throw new RuntimeException("Unable to delete queue " + i.endpoint, e1);
-                                }
+                            try {
+                                Object[] options = { "Remove", "Cancel" };
 
-                            updateEndpointList(null);
+                                int result = JOptionPane.showOptionDialog(null,
+                                                                          "<HTML>Are you sure you want to remove the " +
+                                                                          "registration for the JMS Queue " +
+                                                                          name + "?<br>" +
+                                                                          "<center>This action cannot be undone." +
+                                                                          "</center></html>",
+                                                                          "Remove Queue?",
+                                                                          0, JOptionPane.WARNING_MESSAGE,
+                                                                          null, options, options[1]);
+                                if (result == 0) {
+                                    Registry.getDefault().getJmsManager().deleteEndpoint(end.getOid());
+
+                                    // If the new connection would be empty, delete it too (normal operation)
+                                    JmsEndpoint[] endpoints = Registry.getDefault().getJmsManager().getEndpointsForConnection(i.getConnection().getOid());
+                                    if (endpoints.length < 1)
+                                        Registry.getDefault().getJmsManager().deleteConnection(conn.getOid());
+                                }
+                            } catch (Exception e1) {
+                                throw new RuntimeException("Unable to delete queue " + name, e1);
+                            }
+
+                        updateEndpointList(null);
                         }
                     }
                 }
@@ -260,10 +253,10 @@ public class JmsQueuesWindow extends JDialog {
                 public void actionPerformed(ActionEvent e) {
                     int row = getJmsQueueTable().getSelectedRow();
                     if (row >= 0) {
-                        JmsUtilities.JmsQueue i = (JmsUtilities.JmsQueue) getJmsQueueTableModel().getJmsQueues().get(row);
-                        if (i != null && i.endpoint != null) {
+                        JmsAdmin.JmsTuple i = (JmsAdmin.JmsTuple) getJmsQueueTableModel().getJmsQueues().get(row);
+                        if (i != null) {
                             JmsQueuePropertiesDialog pd =
-                                    JmsQueuePropertiesDialog.createInstance(getOwner(), i.connection,  i.endpoint, false);
+                                    JmsQueuePropertiesDialog.createInstance(getOwner(), i.getConnection(),  i.getEndpoint(), false);
                             Utilities.centerOnScreen(pd);
                             pd.show();
                             if (!pd.isCanceled()) {
@@ -295,11 +288,10 @@ public class JmsQueuesWindow extends JDialog {
         boolean removeEnabled = false;
         int row = getJmsQueueTable().getSelectedRow();
         if (row >= 0) {
-            JmsUtilities.JmsQueue i = (JmsUtilities.JmsQueue) getJmsQueueTableModel().getJmsQueues().get(row);
+            JmsAdmin.JmsTuple i = (JmsAdmin.JmsTuple)getJmsQueueTableModel().getJmsQueues().get(row);
             if (i != null) {
                 removeEnabled = true;
-                if (i.endpoint != null)
-                    propsEnabled = true;
+                propsEnabled = true;
             }
         }
         getRemoveButton().setEnabled(removeEnabled);
@@ -322,15 +314,16 @@ public class JmsQueuesWindow extends JDialog {
      * Rebuild the endpoints table model, reloading the list from the server.  If an endpoint argument is
      * given, the row containing the specified endpoint will be selected in the new table.
      *
-     * @param endpoint endpoint to select after the update, or null
+     * @param selectedEndpoint endpoint to select after the update, or null
      */
-    private void updateEndpointList(JmsEndpoint endpoint) {
+    private void updateEndpointList(JmsEndpoint selectedEndpoint) {
         getJmsQueueTable().setModel(createJmsQueueTableModel());
-        if (endpoint != null) {
-            ArrayList rows = getJmsQueueTableModel().getJmsQueues();
+        if (selectedEndpoint != null) {
+            List rows = getJmsQueueTableModel().getJmsQueues();
             for (int i = 0; i < rows.size(); ++i) {
-                JmsUtilities.JmsQueue item = (JmsUtilities.JmsQueue) rows.get(i);
-                if (item.endpoint != null && item.endpoint.getOid() == endpoint.getOid()) {
+                JmsAdmin.JmsTuple item = (JmsAdmin.JmsTuple) rows.get(i);
+                JmsEndpoint end = item.getEndpoint();
+                if (end != null && end.getOid() == selectedEndpoint.getOid()) {
                     getJmsQueueTable().getSelectionModel().setSelectionInterval(i, i);
                     break;
                 }
