@@ -92,6 +92,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         HttpSoapResponse sresp = new HttpSoapResponse(htm);
 
         BufferedWriter respWriter = null;
+        OutputStream os = hresponse.getOutputStream();
         AssertionStatus status = AssertionStatus.UNDEFINED;
         try {
             try {
@@ -111,8 +112,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                             hresponse.setContentType(ctype);
                         }
 
-                        respWriter = new BufferedWriter(new OutputStreamWriter(hresponse.getOutputStream(), ENCODING));
-
                         if(sresp.isMultipart()) {
                             StringBuffer sb = new StringBuffer();
 
@@ -128,16 +127,15 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                             // push the modified SOAP part back to the input stream
                             pbis.unread(sb.toString().getBytes());
 
-                            BufferedReader reader = new BufferedReader(new InputStreamReader(pbis, ENCODING));
-
-                            char[] buf = new char[1024];
+                            byte[] buf = new byte[1024];
                             int read;
 
-                            while ((read = reader.read(buf, 0, buf.length)) > 0) {
-                                respWriter.write(buf, 0, read);
+                            while ((read = pbis.read(buf, 0, buf.length)) > 0) {
+                                os.write(buf, 0, read);
                             }
 
                         } else {
+                            respWriter = new BufferedWriter(new OutputStreamWriter(os, ENCODING));
                             respWriter.write(protRespXml);
                         }
                     }
