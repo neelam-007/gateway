@@ -5,6 +5,7 @@
     <display-name>Layer7 Secure Span Gateway</display-name>
 
 
+
     <!-- ssg boot servlet properties -->
 
     <servlet>
@@ -98,7 +99,6 @@
     <!-- -->
      <servlet-mapping>
        <servlet-name>AdminServlet</servlet-name>
-       <url-pattern>/servlet/AdminServlet</url-pattern>
      </servlet-mapping>
 
     <welcome-file-list id="WelcomeFileList_1">
@@ -108,12 +108,13 @@
     </welcome-file-list>
 
     <env-entry>
+        <description>List of concrete ServiceResolver implementations</description>
         <env-entry-name>ServiceResolvers</env-entry-name>
-        <env-entry-type>java.lang.String</env-entry-type>
         <env-entry-value>
             com.l7tech.service.resolution.SoapActionResolver
             com.l7tech.service.resolution.UrnResolver
         </env-entry-value>
+        <env-entry-type>java.lang.String</env-entry-type>
     </env-entry>
 
    <!-- jdbc configuration -->
