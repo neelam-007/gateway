@@ -109,7 +109,6 @@ public class AuditExporter {
             if (rs == null) throw new SQLException("Unable to obtain audit count with query: " + COUNT_SQL);
             rs.next();
             final long ante = rs.getLong(1);
-            logger.warning("Total audits: " + ante);
             rs.close();
             rs = null;
             synchronized (this) { approxNumToExport = ante; }
