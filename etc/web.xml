@@ -97,6 +97,15 @@
         <welcome-file>index.jws</welcome-file>
     </welcome-file-list>
 
+    <env-entry>
+        <env-entry-name>ServiceResolvers</env-entry-name>
+        <env-entry-type>java.lang.String</env-entry-type>
+        <env-entry-value>
+            com.l7tech.service.resolution.SoapActionResolver
+            com.l7tech.service.resolution.UrnResolver
+        </env-entry-value>
+    </env-entry>
+
    <!-- jdbc configuration -->
     <!-- No more JNDI! -->
     <!--
