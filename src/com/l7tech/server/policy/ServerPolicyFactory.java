@@ -8,10 +8,7 @@ package com.l7tech.server.policy;
 
 import com.l7tech.policy.PolicyFactory;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-
-import java.util.List;
 
 /**
  * @author alex
