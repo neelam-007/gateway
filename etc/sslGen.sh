@@ -4,7 +4,8 @@
 # LAYER 7 TECHNOLOGIES
 # $Id$
 #
-# THIS SCRIPT GENERATES A CERTIFICATE FOR SSL USE OF TOMCAT
+# THIS SCRIPT GENERATES A KEYSTORE FOR SSL USE OF TOMCAT, GENERATES A CSR FILE SO THAT A PROPER CERT CAN BE
+# CREATED AND UPDATES $TOMCAT_HOME/conf/server.xml so that it knows the kstore password.
 #
 # PREREQUISITES
 # 1. THE DIRECTORY JAVA_HOME/bin IS PART OF THE PATH
@@ -13,9 +14,9 @@
 #   Server/Service/Connector/Factory@keystorePass attribute
 #
 # POSTREQUISITES:
-# 1. Once the certificate has been generated, the certificate must be imported on the console PC.
+# 1. Once the keystore and csr files are generated, the signsslcsr.sh script will create the actual ssl cert.
 #
-# Command to import the certificate in the console store:
+# (optional) Command to import the certificate in the console store:
 # keytool -import -v -trustcacerts -alias tomcat -file ssg.cer -keystore somedirectory/client.keystore -keypass changeit -storepass changeit
 # Command to explicitely declare the trustStore on the console:
 # System.setProperty("javax.net.ssl.trustStore", "somedirectory/client.keystore");
@@ -107,22 +108,24 @@ then
 # GENERATE A LOCAL CERTIFICATE SIGNING REQUEST
         $KEYTOOL -certreq -keyalg RSA -alias tomcat -file "$CSR_FILE_OSPATH" -keystore "$KEYSTORE_FILE_OSPATH" -storepass "$KEYSTORE_PASSWORD"
 
-# EDIT THE server.xml file so that the magic value "__FunkySsgMojo__" is replaced by the actual password
-perl -pi.bak -e s/keystorePass=\".*\"/keystorePass=\"$KEYSTORE_PASSWORD\"/ "$SERVER_XML_FILE"
+# SIGN THE SSL CERT WITH ROOT KEY
+# TODO
 
+# EDIT THE server.xml file so that the magic value "__FunkySsgMojo__" is replaced by the actual password
+        perl -pi.bak -e s/keystorePass=\".*\"/keystorePass=\"$KEYSTORE_PASSWORD\"/ "$SERVER_XML_FILE"
 
 # ASK THE USER IF HE WANTS TO COPY THE CERTIFICATE TO FLOPPY?
-        echo
-        echo
-        echo "The certificate was generated successfully."
-        echo "It must be imported in your Admin Console."
-        echo
-        echo 'DO YOU WANT TO COPY THE CERTIFICATE TO A FLOPPY? [y/n]'
-        read QUERY_ANSWER
-        if [ $QUERY_ANSWER = "y" ]; then
-                mount /mnt/floppy
-                cp "$CERTIFICATE_FILE" /mnt/floppy/ssg.cer
-        fi
+#        echo
+#        echo
+#        echo "The certificate was generated successfully."
+#        echo "It must be imported in your Admin Console."
+#        echo
+#        echo 'DO YOU WANT TO COPY THE CERTIFICATE TO A FLOPPY? [y/n]'
+#        read QUERY_ANSWER
+#        if [ $QUERY_ANSWER = "y" ]; then
+#                mount /mnt/floppy
+#                cp "$CERTIFICATE_FILE" /mnt/floppy/ssg.cer
+#        fi
 
 else
 # INFORM THE USER OF THE FAILURE
