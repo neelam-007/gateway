@@ -449,6 +449,7 @@
                 <exclude name="com/l7tech/common/security/prov/ncipher/**/*"/>
                 <exclude name="com/l7tech/common/security/prov/entrust/**/*"/>
                 <exclude name="com/l7tech/common/security/TrustedCert**"/>
+                <exclude name="com/l7tech/common/audit/**"/>
 
                 <exclude name="com/l7tech/policy/server/**/*"/>
                 <exclude name="com/l7tech/policy/exporter/**/*"/>
