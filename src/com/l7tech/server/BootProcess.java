@@ -61,8 +61,12 @@ public class BootProcess implements ServerComponentLifecycle {
                 }
 
                 if ( component != null ) {
-                    component.init( config );
-                    _components.add( component );
+                    try {
+                        component.init( config );
+                        _components.add( component );
+                    } catch ( LifecycleException e ) {
+                        logger.log( Level.WARNING, "Component " + component + " failed to initialize!", e );
+                    }
                 }
             }
         } catch ( IOException e ) {
