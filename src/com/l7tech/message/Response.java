@@ -51,6 +51,16 @@ public interface Response extends Message {
     void addResult( AssertionResult result );
 
     /**
+     * Specify the fault details for an error that occured in this request.
+     */
+    void setFaultDetail(SoapFaultDetail sfd);
+
+    /**
+     * Get the soap fault details if applicable.
+     */
+    SoapFaultDetail getFaultDetail();
+
+    /**
      * Returns an Iterator containing all the <code>AssertionResult</code>s that have been attached to this <code>Response</code>.
      * @return
      */

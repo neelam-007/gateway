@@ -153,6 +153,20 @@ public abstract class SoapResponse extends XmlMessageAdapter implements SoapMess
         return _decorationRequirements = new WssDecorator.DecorationRequirements();
     }
 
+    /**
+     * Specify the fault details for an error that occured in this request.
+     */
+    public void setFaultDetail(SoapFaultDetail sfd) {
+        fault = sfd;
+    }
+
+    /**
+     * Get the soap fault details if applicable.
+     */
+    public SoapFaultDetail getFaultDetail() {
+        return fault;
+    }
+
     protected List _assertionResults = Collections.EMPTY_LIST;
     protected InputStream _responseStream;
     protected String _responseXml;
@@ -161,4 +175,5 @@ public abstract class SoapResponse extends XmlMessageAdapter implements SoapMess
     protected WssDecorator.DecorationRequirements _decorationRequirements = null;
 
     protected transient List _runOnClose = Collections.EMPTY_LIST;
+    protected SoapFaultDetail fault = null;
 }
