@@ -46,7 +46,11 @@ public class HttpTransportMetadata extends TransportMetadata {
             int ppos;
             String subname;
 
-            if ( Request.PARAM_HTTP_REQUEST_URI.equals( name ) )
+            if ( name.startsWith( Request.PREFIX_HTTP_HEADER ) ) {
+                ppos = name.indexOf( ".", Request.PREFIX_HTTP_HEADER.length() - 1 );
+                subname = name.substring( ppos + 1 );
+                value = _request.getHeader( subname );
+            } else if ( Request.PARAM_HTTP_REQUEST_URI.equals( name ) )
                 return _request.getRequestURI();
             else if ( Request.PARAM_HTTP_METHOD.equals( name ) )
                 return _request.getMethod();
@@ -56,11 +60,7 @@ public class HttpTransportMetadata extends TransportMetadata {
                 return _request.getRemoteAddr();
             else if ( Request.PARAM_SERVER_PORT.equals( name ) )
                 return new Integer( _request.getServerPort() );
-            else if ( name.startsWith( Request.PREFIX_HTTP_HEADER ) ) {
-                ppos = name.indexOf( ".", Request.PREFIX_HTTP_HEADER.length() - 1 );
-                subname = name.substring( ppos + 1 );
-                value = _request.getHeader( subname );
-            } else if ( Request.PARAM_HTTP_REQUEST_URI.equals( name ) ) {
+            else if ( Request.PARAM_HTTP_REQUEST_URI.equals( name ) ) {
                 return _request.getRequestURI();
             } else if ( Request.PARAM_HTTP_METHOD.equals( name ) ) {
                 return _request.getMethod();
