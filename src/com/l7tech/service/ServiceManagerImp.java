@@ -18,9 +18,7 @@ import com.l7tech.message.Request;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.sql.SQLException;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -280,6 +278,40 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
             return ServiceCache.getInstance().getServiceStatistics(serviceOid);
         } catch (InterruptedException e) {
             throw new FindException("error accessing statistics from cache", e);
+        }
+    }
+
+    /**
+     * get the service versions as currently recorded in database
+     * @return a map whose keys is a Long with service id and values is an Integer with the service version
+     * @throws FindException if the query fails for some reason
+     */
+    public Map getServiceVersions() throws FindException {
+        String query = "SELECT " + getTableName() + "." + F_OID + ", " + getTableName() + "." + F_VERSION +
+                       " FROM " + getTableName() + " in class " + getImpClass().getName();
+        Map output = new HashMap();
+
+        try {
+            HibernatePersistenceContext context = (HibernatePersistenceContext)getContext();
+            Session s = context.getSession();
+            List results = s.find(query);
+            if (results == null || results.isEmpty()) {
+                logger.fine("no version info to return");
+            } else {
+                for (Iterator i = results.iterator(); i.hasNext();) {
+                    Object[] toto = (Object[])i.next();
+                    output.put(toto[0], toto[1]);
+                }
+            }
+            return output;
+        } catch (SQLException e) {
+            String msg = "error getting versions";
+            logger.log(Level.SEVERE, msg, e);
+            throw new FindException(msg, e);
+        } catch (HibernateException e) {
+            String msg = "error getting versions";
+            logger.log(Level.SEVERE, msg, e);
+            throw new FindException(msg, e);
         }
     }
 
