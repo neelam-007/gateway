@@ -1,10 +1,10 @@
 package com.l7tech.proxy;
 
-import org.apache.axis.message.SOAPEnvelope;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgResponse;
-import com.l7tech.policy.assertion.Assertion;
+import org.w3c.dom.Document;
 
 /**
  * Interface implemented by someone who wants to trace progress of each client proxy request.
@@ -18,7 +18,7 @@ public interface RequestInterceptor {
      * Fired when a message is received from a client, after it is parsed.
      * @param message
      */
-    void onReceiveMessage(SOAPEnvelope message);
+    void onReceiveMessage(Document message);
 
     /**
      * Fired when a reply is read from the SSG, after it is parsed.

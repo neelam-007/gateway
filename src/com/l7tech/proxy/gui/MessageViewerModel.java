@@ -7,10 +7,10 @@ import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.console.tree.EntityTreeCellRenderer;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
-import org.apache.axis.message.SOAPEnvelope;
 import org.apache.log4j.Category;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
+import org.w3c.dom.Document;
 
 import javax.swing.*;
 import javax.swing.tree.TreeModel;
@@ -92,7 +92,7 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
      */
     private static class SavedXmlMessage extends SavedMessage {
         private static final XMLSerializer xmlSerializer = new XMLSerializer();
-        private SOAPEnvelope soapEnvelope;
+        private Document soapEnvelope;
 
         static {
             // Set up the output format for the xmlSerializer
@@ -103,7 +103,7 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
             xmlSerializer.setOutputFormat(outputFormat);
         }
 
-        SavedXmlMessage(final String title, final SOAPEnvelope msg) {
+        SavedXmlMessage(final String title, final Document msg) {
             super(title);
             this.soapEnvelope = msg;
         }
@@ -112,7 +112,7 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
             final StringWriter sw = new StringWriter();
             xmlSerializer.setOutputCharStream(sw);
             try {
-                xmlSerializer.serialize(soapEnvelope.getAsDOM());
+                xmlSerializer.serialize(soapEnvelope);
             } catch (Exception e) {
                 log.error(e);
                 return "(Internal error)";
@@ -167,7 +167,7 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
      * Can be called from any thread.
      * @param message
      */
-    public void onReceiveMessage(final SOAPEnvelope message) {
+    public void onReceiveMessage(final Document message) {
         appendMessage(new SavedXmlMessage("From Client", message));
     }
 
@@ -177,7 +177,7 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
      * @param reply
      */
     public void onReceiveReply(final SsgResponse reply) {
-        appendMessage(new SavedTextMessage("From Server", reply.getResponseAsString()));
+        appendMessage(new SavedTextMessage("From Server", reply.toString()));
     }
 
     /**

@@ -7,7 +7,7 @@ import com.l7tech.proxy.datamodel.SsgNotFoundException;
 import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.util.SoapUtil;
-import org.apache.axis.message.SOAPEnvelope;
+import com.l7tech.util.XmlUtil;
 import org.apache.log4j.Category;
 import org.mortbay.http.HttpException;
 import org.mortbay.http.HttpRequest;
@@ -137,20 +137,22 @@ public class RequestHandler extends AbstractHttpHandler {
      * Extract the SOAPEnvelope from this request.
      * @param request   the Request to look at
      * @return          the SOAPEnvelope it contained
-     * @throws HttpException    if no valid SOAPEnvelope could be extracted
      */
-    private Document getRequestEnvelope(final HttpRequest request) throws Exception {
-        // Read the envelope
-        final SOAPEnvelope requestEnvelope;
+    private Document getRequestEnvelope(final HttpRequest request) throws IOException, SAXException {
         try {
-            requestEnvelope = new SOAPEnvelope(request.getInputStream());
-            interceptor.onReceiveMessage(requestEnvelope);
+            Document doc = XmlUtil.parse(request.getInputStream());
+            interceptor.onReceiveMessage(doc);
+            return doc;
+        } catch (RuntimeException e) {
+            interceptor.onMessageError(e);
+            throw e;
+        } catch (IOException e) {
+            interceptor.onMessageError(e);
+            throw e;
         } catch (SAXException e) {
-            final HttpException t = new HttpException(400, "Couldn't parse SOAP envelope: " + e.getMessage());
-            interceptor.onMessageError(t);
-            throw t;
+            interceptor.onMessageError(e);
+            throw e;
         }
-        return requestEnvelope.getAsDocument();
     }
 
     /**

@@ -6,12 +6,15 @@
 
 package com.l7tech.proxy;
 
-import org.apache.axis.message.SOAPEnvelope;
-import org.apache.log4j.Category;
-import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
-import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
+import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.SsgResponse;
+import com.l7tech.util.XmlUtil;
+import org.apache.log4j.Category;
+import org.w3c.dom.Document;
+
+import java.io.IOException;
 
 /**
  * RequestInterceptor that logs all messages in and out.
@@ -29,8 +32,12 @@ public class MessageLogger implements RequestInterceptor {
      * Fired when a message is received from a client, after it is parsed.
      * @param message
      */
-    public void onReceiveMessage(SOAPEnvelope message) {
-        log.info("Received client request: " + message);
+    public void onReceiveMessage(Document message) {
+        try {
+            log.info("Received client request: " + XmlUtil.documentToString(message));
+        } catch (IOException e) {
+            log.error("Error examining client request", e);
+        }
     }
 
     /**

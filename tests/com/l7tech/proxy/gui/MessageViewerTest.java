@@ -6,18 +6,17 @@
 
 package com.l7tech.proxy.gui;
 
+import com.l7tech.policy.assertion.FalseAssertion;
+import com.l7tech.proxy.RequestInterceptor;
+import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
+import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.SsgResponse;
+import com.l7tech.util.XmlUtil;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import java.util.logging.Logger;
-
-import org.apache.axis.message.SOAPEnvelope;
-import com.l7tech.proxy.RequestInterceptor;
-import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
-import com.l7tech.proxy.datamodel.SsgResponse;
-import com.l7tech.policy.assertion.FalseAssertion;
 
 /**
  *
@@ -44,7 +43,7 @@ public class MessageViewerTest extends TestCase {
         MessageViewer mv = new MessageViewer("Message viewer test");
         mv.show();
         RequestInterceptor ri = mv.getMessageViewerModel();
-        ri.onReceiveMessage(new SOAPEnvelope());
+        ri.onReceiveMessage(XmlUtil.stringToDocument("<foo><bar/><baz/></foo>"));
         ri.onReceiveReply(new SsgResponse("<reply>blah blah blah, if this were an actual response, this would be a real SOAPEnvelope document.</reply>"));
         ri.onPolicyUpdated(new Ssg(22, "My SSG", "http://whatever"),
                            new PolicyAttachmentKey("http://example.com/schemas/wompfoo",
