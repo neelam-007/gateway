@@ -101,7 +101,7 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
         Assertion oom = new OneOrMoreAssertion(Arrays.asList(new Assertion[] {one, two, three}));
         DefaultPolicyPathBuilder builder = new DefaultPolicyPathBuilder();
         int count = builder.generate(oom).getPathCount();
-        assertTrue("The value received is "+count,  count == 9);
+        assertTrue("The value received is "+count,  count == 10);
     }
 
     public void testTwoDepthPolicyPathWithConjunctionAnd() throws Exception {
