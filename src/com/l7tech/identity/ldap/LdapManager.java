@@ -23,7 +23,7 @@ public class LdapManager {
         this.config = config;
     }
 
-    protected Object extractOneAttributeValue(Attributes attributes, String attrName) throws NamingException {
+    static Object extractOneAttributeValue(Attributes attributes, String attrName) throws NamingException {
         Attribute valuesWereLookingFor = attributes.get(attrName);
         if (valuesWereLookingFor != null && valuesWereLookingFor.size() > 0) {
                 return valuesWereLookingFor.get(0);
@@ -58,9 +58,9 @@ public class LdapManager {
     //protected DirContext anonymousContext = null;
     protected IdentityProviderConfig config;
 
-    protected static final String DESCRIPTION_ATTR = "description";
-    protected static final String NAME_ATTR_NAME = "cn";
-    protected static final String GROUPOBJ_MEMBER_ATTR = "memberUid";
-    protected static final String USER_OBJCLASS = "inetOrgPerson";
-    protected static final String LOGIN_ATTR_NAME = "uid";
+    static final String DESCRIPTION_ATTR = "description";
+    static final String NAME_ATTR_NAME = "cn";
+    static final String GROUPOBJ_MEMBER_ATTR = "memberUid";
+    static final String USER_OBJCLASS = "inetOrgPerson";
+    static final String LOGIN_ATTR_NAME = "uid";
 }
