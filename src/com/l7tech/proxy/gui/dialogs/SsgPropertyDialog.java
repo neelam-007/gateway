@@ -237,13 +237,17 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                     }
                                 }
                             } catch (CertificateAlreadyIssuedException csrex) {
-                                Gui.errorMessage("Unable to obtain certificate from the SecureSpan Gateway " +
-                                                 ssgName() + " because this account already has a valid " +
-                                                 "certificate. Contact the gateway administrator for more information");
+                                final String msg = "Unable to obtain certificate from the SecureSpan Gateway " +
+                                        ssgName() + " because this account already has a valid " +
+                                        "certificate. Contact the gateway administrator for more information";
+                                log.log(Level.WARNING, msg, csrex);
+                                Gui.errorMessage(msg);
                             } catch (BadCredentialsException csrex) {
-                                Gui.errorMessage("Unable to obtain certificate from the SecureSpan Gateway " +
-                                                 ssgName() + " because of credentials provided. Contact the " +
-                                                 "gateway administrator for more information.");
+                                final String msg = "Unable to obtain certificate from the SecureSpan Gateway " +
+                                        ssgName() + " because of credentials provided. Contact the " +
+                                        "gateway administrator for more information.";
+                                log.log(Level.WARNING, msg, csrex);
+                                Gui.errorMessage(msg);
                             }
                         }
                         return;
@@ -252,9 +256,9 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 } catch (OperationCanceledException e1) {
                     return;
                 } catch (Exception e1) {
-                    log.log(Level.SEVERE, "Unable to access client certificate", e1);
                     String mess = ExceptionUtils.unnestToRoot(e1).getMessage();
                     if (mess == null) mess = "An exception occurred.";
+                    log.log(Level.SEVERE, "Unable to access client certificate: " + mess, e1);
                     Gui.errorMessage("Unable to Access Client Certificate",
                                          "Unable to access client certificate for the SecureSpan Gateway " + ssgName() + ".",
                                          mess,
@@ -298,17 +302,23 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         PasswordAuthentication creds = ssg.getRuntime().getCredentialManager().getCredentials(ssg);
 
         // make sure that the hostname is set
-        if (ssg.getHostname() == null || ssg.getHostname().length() < 1) {
-            String tmpValue = fieldServerAddress.getText();
-            if (tmpValue == null || tmpValue.length() < 1) {
-                JOptionPane.showMessageDialog(this,
-                                              "You must set a gateway hostname before you can apply for a client " +
-                                              "cert", "Cannot apply for client cert",
-                                              JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-            ssg.setSsgAddress(tmpValue);
+        String newHost = fieldServerAddress.getText();
+        if (newHost == null || newHost.length() < 1)
+            newHost = ssg.getSsgAddress();
+        if (newHost == null || newHost.length() < 1) {
+            newHost = JOptionPane.showInputDialog(this, "Please enter a Gateway hostname.");
+            if (newHost == null) throw new OperationCanceledException();
         }
+        if (newHost == null || newHost.length() < 1) {
+            JOptionPane.showMessageDialog(this,
+                                          "You must set a gateway hostname before you can apply for a client " +
+                                          "certificate.", "Cannot apply for client certificate",
+                                          JOptionPane.ERROR_MESSAGE);
+            throw new OperationCanceledException();
+        }
+        fieldServerAddress.setText(newHost);
+        ssg.setSsgAddress(newHost);
+
         if (ssg.getServerCertificate() == null) {
             ssg.getRuntime().getSsgKeyStoreManager().installSsgServerCertificate(ssg, creds);
         }

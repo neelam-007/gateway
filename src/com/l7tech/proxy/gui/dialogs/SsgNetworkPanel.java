@@ -124,6 +124,12 @@ class SsgNetworkPanel extends JPanel {
         fieldSslPort.setPreferredSize(new Dimension(50, 20));
         sslPortFieldPanel.add(fieldSslPort, gc);
 
+        // TODO the IP list panel code was moved to the class IpListPanel.  Need to use that class and remove this code
+        // TODO the IP list panel code was moved to the class IpListPanel.  Need to use that class and remove this code
+        // TODO the IP list panel code was moved to the class IpListPanel.  Need to use that class and remove this code
+        // TODO the IP list panel code was moved to the class IpListPanel.  Need to use that class and remove this code
+        // TODO the IP list panel code was moved to the class IpListPanel.  Need to use that class and remove this code
+
         ButtonGroup ipBg = new ButtonGroup();
         radioDefaultIpAddresses.addChangeListener(changeListener);
         ipBg.add(radioDefaultIpAddresses);

@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.widgets.IpListPanel;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.PolicyEvent;
@@ -70,6 +71,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private JRadioButton removeSecHeaderRadio;
     private JRadioButton passthroughSecHeaderRadio;
     private JComboBox promoteActorCombo;
+    private IpListPanel ipListPanel;
 
     /**
      * Creates new form ServicePanel
@@ -304,21 +306,33 @@ public class HttpRoutingAssertionDialog extends JDialog {
         return String.valueOf(cpass).getBytes();
     }
 
+    private IpListPanel getIpListPanel() {
+        if (ipListPanel != null)
+            return ipListPanel;
+
+        ipListPanel = new IpListPanel();
+        return ipListPanel;
+    }
+
     private JPanel getServiceUrlPanel() {
         if (serviceUrlPanel != null)
             return serviceUrlPanel;
 
         serviceUrlPanel = new JPanel();
-        serviceUrlPanel.setLayout(new BoxLayout(serviceUrlPanel, BoxLayout.X_AXIS));
+        serviceUrlPanel.setLayout(new BoxLayout(serviceUrlPanel, BoxLayout.Y_AXIS));
+        JPanel urlBarPanel = new JPanel();
+        urlBarPanel.setLayout(new BoxLayout(urlBarPanel, BoxLayout.X_AXIS));
+        serviceUrlPanel.add(urlBarPanel);
+        serviceUrlPanel.add(getIpListPanel());
 
         JLabel serviceUrlLabel = new JLabel();
         serviceUrlLabel.setText("Service URL:");
         serviceUrlLabel.setBorder(new EmptyBorder(new Insets(1, 1, 1, 5)));
-        serviceUrlPanel.add(serviceUrlLabel);
+        urlBarPanel.add(serviceUrlLabel);
 
         serviceUrlTextField = new JTextField();
         serviceUrlTextField.setPreferredSize(new Dimension(300, 20));
-        serviceUrlPanel.add(serviceUrlTextField);
+        urlBarPanel.add(serviceUrlTextField);
 
         JButton buttonDefaultUrl = new JButton();
         buttonDefaultUrl.addActionListener(new ActionListener() {
@@ -347,9 +361,9 @@ public class HttpRoutingAssertionDialog extends JDialog {
             }
         });
         buttonDefaultUrl.setText("Default");
-        serviceUrlPanel.add(buttonDefaultUrl);
+        urlBarPanel.add(buttonDefaultUrl);
 
-        return serviceUrlPanel;
+        return urlBarPanel;
     }
 
 
@@ -561,6 +575,11 @@ public class HttpRoutingAssertionDialog extends JDialog {
                         assertion.setTaiCredentialChaining(taiCredentialChaining.isSelected());
                         fireEventAssertionChanged(assertion);
 
+                        if (getIpListPanel().isAddressesEnabled())
+                            assertion.setCustomIpAddresses(getIpListPanel().getAddresses());
+                        else
+                            assertion.setCustomIpAddresses(null);
+
                         if (promoteActorRadio.isSelected()) {
                             String currentVal = (String)promoteActorCombo.getSelectedItem();
                             if (currentVal != null && currentVal.length() > 0) {
@@ -615,6 +634,8 @@ public class HttpRoutingAssertionDialog extends JDialog {
         realmTextField.setText(assertion.getRealm());
         serviceUrlTextField.setText(assertion.getProtectedServiceUrl());
         taiCredentialChaining.setSelected(assertion.isTaiCredentialChaining());
+        getIpListPanel().setAddressesEnabled(assertion.getCustomIpAddresses() != null);
+        getIpListPanel().setAddresses(assertion.getCustomIpAddresses());
 
         //memebershipStatementCheck.setSelected(assertion.isGroupMembershipStatement()); // Bugzilla 1269
         int expiry = assertion.getSamlAssertionExpiry();

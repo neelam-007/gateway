@@ -6,6 +6,9 @@
 
 package com.l7tech.proxy.util;
 
+import com.l7tech.common.http.GenericHttpRequestParamsImpl;
+import com.l7tech.common.http.SimpleHttpClient;
+import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.CertificateRequest;
@@ -194,47 +197,39 @@ public class SslUtils {
                    SignatureException, CertificateAlreadyIssuedException
     {
         URL url = ssg.getServerCertificateSigningRequestUrl();
+        SimpleHttpClient client = ssg.getRuntime().getHttpClient();
+        GenericHttpRequestParamsImpl params = new GenericHttpRequestParamsImpl(url);
+        params.setContentType(ContentTypeHeader.parseValue("application/pkcs10"));
+        final byte[] csrBytes = csr.getEncoded();
+        params.setContentLength(new Long(csrBytes.length));
+        SimpleHttpClient.SimpleHttpResponse result = client.post(params, csrBytes);
+        int status = result.getStatus();
+        if ( status == 401 ) throw new BadCredentialsException("HTTP POST to certificate signer returned status " + status );
+        if ( status == 403 ) throw new CertificateAlreadyIssuedException("HTTP POST to certificate signer returned status " + status);
+        if ( status != 200 ) throw new CertificateException( "HTTP POST to certificate signer generated status " + status );
+        
+        byte[] certBytes = result.getBytes();
+        X509Certificate cert = (X509Certificate)CertUtils.getFactory().generateCertificate(new ByteArrayInputStream(certBytes));
+
+        // The name in our CSR
         X500Principal csrName = new X500Principal(csr.getSubjectAsString());
         String csrNameString = csrName.getName(X500Principal.RFC2253);
-        HttpClient hc = new HttpClient();
-        hc.getState().setAuthenticationPreemptive(true);
-        hc.getState().setCredentials(null, null,
-                                     new UsernamePasswordCredentials(username,
-                                                                     new String(password)));
-        PostMethod post = new PostMethod(url.toExternalForm());
-        try {
-            byte[] csrBytes = csr.getEncoded();
-            ByteArrayInputStream bais = new ByteArrayInputStream(csrBytes);
-            post.setRequestBody(bais);
-            post.setRequestHeader(MimeUtil.CONTENT_TYPE, "application/pkcs10");
-            post.setRequestHeader(MimeUtil.CONTENT_LENGTH, String.valueOf(csrBytes.length));
 
-            CurrentSslPeer.set(ssg);
-            int result = hc.executeMethod(post);
-            CurrentSslPeer.set(null);
-            if ( result == 401 ) throw new BadCredentialsException("HTTP POST to certificate signer returned status " + result );
-            if ( result == 403 ) throw new CertificateAlreadyIssuedException("HTTP POST to certificate signer returned status " + result);
-            if ( result != 200 ) throw new CertificateException( "HTTP POST to certificate signer generated status " + result );
-            X509Certificate cert = (X509Certificate)CertUtils.getFactory().generateCertificate(post.getResponseBodyAsStream());
-            post.releaseConnection();
-            post = null;
-            X500Principal certName = new X500Principal(cert.getSubjectDN().toString());
-            String certNameString = certName.getName(X500Principal.RFC2253);
+        // The name in the cert we got
+        X500Principal certName = new X500Principal(cert.getSubjectDN().toString());
+        String certNameString = certName.getName(X500Principal.RFC2253);
 
-            if (!certNameString.equals(csrNameString))
-                throw new CertificateException("We got a certificate, but it's distinguished name didn't match what we asked for.");
-            if (!cert.getPublicKey().equals(csr.getPublicKey()))
-                throw new CertificateException("We got a certificate, but it certified the wrong public key.");
+        // Make sure they match
+        if (!certNameString.equals(csrNameString))
+            throw new CertificateException("We got a certificate, but it's distinguished name didn't match what we asked for.");
+        if (!cert.getPublicKey().equals(csr.getPublicKey()))
+            throw new CertificateException("We got a certificate, but it certified the wrong public key.");
 
-            // TODO this doesn't work now that caCert is actually the SSL cert.  Might not be a problem though:
-            // why do we even care what the server signed our client cert with, as long as the server is happy with it?
-            // cert.verify(caCert.getPublicKey());
+        // TODO this doesn't work now that caCert is actually the SSL cert.  Might not be a problem though:
+        // why do we even care what the server signed our client cert with, as long as the server is happy with it?
+        // cert.verify(caCert.getPublicKey());
 
-            return cert;
-        } finally {
-            if (post != null)
-                post.releaseConnection();
-        }
+         return cert;
     }
 
 }
