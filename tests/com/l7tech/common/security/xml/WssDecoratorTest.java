@@ -60,12 +60,18 @@ public class WssDecoratorTest extends TestCase {
             message = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
             soapNs = message.getDocumentElement().getNamespaceURI();
             body = (Element)message.getElementsByTagNameNS(soapNs, SoapUtil.BODY_EL_NAME).item(0);
+            assertNotNull(body);
             payload = XmlUtil.findFirstChildElement(body);
+            assertNotNull(payload);
             payloadNs = payload.getNamespaceURI();
             price = (Element)message.getElementsByTagNameNS("", "price").item(0);
+            assertNotNull(price);
             amount = (Element)message.getElementsByTagNameNS("", "amount").item(0);
+            assertNotNull(amount);
             productid = (Element)message.getElementsByTagNameNS("", "productid").item(0);
+            assertNotNull(productid);
             accountid = (Element)message.getElementsByTagNameNS("", "accountid").item(0);
+            assertNotNull(accountid);
         }
     }
 
