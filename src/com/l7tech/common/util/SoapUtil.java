@@ -137,13 +137,14 @@ public class SoapUtil {
     public static final String VALUETYPE_X509_2 = SECURITY_NAMESPACE_PREFIX + ":" + VALUETYPE_X509_SUFFIX;
     public static final String VALUETYPE_SAML = "http://www.docs.oasis-open.org/wss/2004/01/oasis-200401-wss-saml-token-profile-1.0#SAMLAssertion-1.0"; // TODO CONFIRM PERMANENT URI -- this might have been changed in the final spec
     public static final String VALUETYPE_SAML_ASSERTIONID = "http://www.docs.oasis-open.org/wss/2004/01/oasis-200401-wss-saml-token-profile-1.0#SAMLAssertionID"; // TODO CONFIRM PERMANENT URI -- this might have been changed in the final spec
+    public static final String VALUETYPE_SAML_ASSERTION1_1 = "http://docs.oasis-open.org/wss/2004/XX/oasis-2004XX-wss-saml-token-profile-1.0#SAMLAssertion-1.1"; // TODO CONFIRM PERMANENT URI -- this might have been changed in the final spec
     public static final String VALUETYPE_DERIVEDKEY = "http://schemas.xmlsoap.org/ws/2004/04/security/sc/dk";
     public static final String VALUETYPE_SECURECONV = "http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct";
     public static final String ENCODINGTYPE_BASE64BINARY_SUFFIX = "Base64Binary";
     public static final String ENCODINGTYPE_BASE64BINARY = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#" + ENCODINGTYPE_BASE64BINARY_SUFFIX;
     public static final String ENCODINGTYPE_BASE64BINARY_2 = SECURITY_NAMESPACE_PREFIX + ":" + ENCODINGTYPE_BASE64BINARY_SUFFIX;
     public static final String ALGORITHM_PSHA = "http://schemas.xmlsoap.org/ws/2004/04/security/sc/dk/p_sha1";
-    public static final String TRANSFORM_STR = "http://www.docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#STR-Transform";
+    public static final String TRANSFORM_STR = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#STR-Transform";
 
     // Well-known actors (SOAP 1.1)
     public static final String ACTOR_VALUE_NEXT = "http://schemas.xmlsoap.org/soap/actor/next";
@@ -975,5 +976,16 @@ public class SoapUtil {
             String wsuPrefix = XmlUtil.getOrCreatePrefixForNamespace(element, wsuNs, "wsu");
             element.setAttributeNS(wsuNs, wsuPrefix + ":Id", id);
         }
+    }
+
+    /**
+     * Test whether the valueType is one of the know Saml ValueType identifiers.
+     * @param valueType the saml valuetype
+     * @return true if valueType matches one of known Saml valueType constants, false otherwise
+     */
+    public static boolean isValueTypeSaml(String valueType) {
+        return VALUETYPE_SAML.equals(valueType) ||
+               VALUETYPE_SAML_ASSERTIONID.equals(valueType) ||
+               VALUETYPE_SAML_ASSERTION1_1.equals(valueType);
     }
 }

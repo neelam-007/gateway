@@ -7,6 +7,7 @@
 package com.l7tech.common.security.xml.decorator;
 
 import com.ibm.xml.dsig.*;
+import com.ibm.xml.dsig.transform.ExclusiveC11r;
 import com.ibm.xml.enc.AlgorithmFactoryExtn;
 import com.ibm.xml.enc.EncryptionContext;
 import com.ibm.xml.enc.KeyInfoResolvingException;
@@ -38,6 +39,7 @@ import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
 import java.io.IOException;
+import java.io.ByteArrayOutputStream;
 import java.security.*;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
@@ -430,15 +432,14 @@ public class WssDecoratorImpl implements WssDecorator {
                             if (source == null) throw new TransformException("Source node is null");
                             final Node result = (Node)strTransformsNodeToNode.get(source);
                             if (result == null) throw new TransformException("Destination node is null");
-                            c.setContent(new NodeList() {
-                                public int getLength() {
-                                    return 1;
-                                }
-
-                                public Node item(int index) {
-                                    return result;
-                                }
-                            });
+                            ExclusiveC11r canon = new ExclusiveC11r();
+                            ByteArrayOutputStream bo = new ByteArrayOutputStream();
+                            try {
+                                canon.canonicalize(result, bo);
+                            } catch (IOException e) {
+                                throw (TransformException) new TransformException().initCause(e);
+                            }
+                            c.setContent(bo.toByteArray(), "UTF-8");
                         }
                     };
                 return super.getTransform(s);

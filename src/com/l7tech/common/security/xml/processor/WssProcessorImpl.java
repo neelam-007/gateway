@@ -1,6 +1,7 @@
 package com.l7tech.common.security.xml.processor;
 
 import com.ibm.xml.dsig.*;
+import com.ibm.xml.dsig.transform.ExclusiveC11r;
 import com.ibm.xml.enc.AlgorithmFactoryExtn;
 import com.ibm.xml.enc.DecryptionContext;
 import com.ibm.xml.enc.KeyInfoResolvingException;
@@ -23,6 +24,7 @@ import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
+import java.io.ByteArrayOutputStream;
 import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
@@ -239,6 +241,24 @@ public class WssProcessorImpl implements WssProcessor {
         return produceResult(cntx);
     }
 
+    /**
+     * Process the SecurityTokeReference. different mechanisms for referencing security tokens using the
+     * <wsse:SecurityTokenReference> exist, and currently the supported are:
+     * <ul>
+     * <li> Key Identifier <wsse:KeyIdentifier>
+     * <li> Security Token Reference <wsse:Reference>
+     * </ul>
+     * The usupported SecurityTokeReference types are:
+     * <ul>
+     * <li> X509 issuer name and issuer serial <ds:X509IssuerName>,  <ds:X509SerialNumber>
+     * <li> Embedded token <wsse:Embedded>
+     * <li> Key Name <ds:KeyName>
+     * </ul>
+     * This is as per <i>Web Services Security: SOAP Message Security 1.0 (WS-Security 2004) OASIS standard</i>
+     * @param str the SecurityTokeReference element
+     * @param cntx thge processing status holder/accumulator
+     * @throws InvalidDocumentFormatException
+     */
     private void processSecurityTokenReference(Element str, ProcessingStatusHolder cntx) throws InvalidDocumentFormatException {
         String id = SoapUtil.getElementWsuId(str);
         if (id == null || id.length() < 1) {
@@ -247,22 +267,37 @@ public class WssProcessorImpl implements WssProcessor {
         }
 
         Element keyid = XmlUtil.findFirstChildElementByName(str, str.getNamespaceURI(), "KeyIdentifier");
+        String value = null;
         if (keyid == null) {
-            logger.warning("Ignoring SecurityTokenReference ID=" + id + " with no KeyIdentifier");
-            return;
+            keyid = XmlUtil.findFirstChildElementByName(str, str.getNamespaceURI(), "Reference");
+            if (keyid == null) { //try reference
+                logger.warning("Ignoring SecurityTokenReference ID=" + id + " with no KeyIdentifier or Reference");
+                return;
+            } else {
+                value = keyid.getAttribute("URI");
+                if (value !=null && value.charAt(0) == '#') {
+                    value = value.substring(1);
+                }
+            }
+        } else {
+            value = XmlUtil.getTextValue(keyid).trim();
+            String encodingType = keyid.getAttribute("EncodingType");
+            if (encodingType != null && encodingType.length() > 0) {
+                logger.warning("Ignoring SecurityTokenReference ID=" + id + " with non-empty KeyIdentifier/@EncodingType=" + encodingType);
+                return;
+            }
+        }
+        if (value == null) {
+            final String msg = "Rejecting SecurityTokenReference ID=" + id + " as the target reference ID is missing or could not be determined.";
+            logger.warning(msg);
+            throw new InvalidDocumentFormatException(msg);
         }
 
         String valueType = keyid.getAttribute("ValueType");
-        String encodingType = keyid.getAttribute("EncodingType");
-        if (encodingType != null && encodingType.length() > 0) {
-            logger.warning("Ignoring SecurityTokenReference ID=" + id + " with non-empty KeyIdentifier/@EncodingType=" + encodingType);
-            return;
-        }
-        String value = XmlUtil.getTextValue(keyid).trim();
-        if (SoapUtil.VALUETYPE_SAML_ASSERTIONID.equals(valueType)) {
+        if (SoapUtil.isValueTypeSaml(valueType)) {
             Element target = (Element)cntx.elementsByWsuId.get(value);
             if (target == null || !target.getLocalName().equals("Assertion") || !target.getNamespaceURI().equals(SamlConstants.NS_SAML)) {
-                final String msg = "Rejecting SecurityTokenReference ID=" + id + " with ValueType of #SamlAssertionID because its target is either missing or not a SAML assertion";
+                final String msg = "Rejecting SecurityTokenReference ID=" + id + " with ValueType of "+valueType+" because its target is either missing or not a SAML assertion";
                 logger.warning(msg); // TODO remove redundant logging after debugging complete
                 throw new InvalidDocumentFormatException(msg);
             }
@@ -840,7 +875,7 @@ public class WssProcessorImpl implements WssProcessor {
                                });
         sigContext.setAlgorithmFactory(new AlgorithmFactoryExtn() {
             public Transform getTransform(String s) throws NoSuchAlgorithmException {
-                if (SoapUtil.TRANSFORM_STR.equals(s))
+                if (SoapUtil.TRANSFORM_STR.equals(s)) {
                     return new Transform() {
                         public String getURI() {
                             return SoapUtil.TRANSFORM_STR;
@@ -851,18 +886,18 @@ public class WssProcessorImpl implements WssProcessor {
                             if (source == null) throw new TransformException("Source node is null");
                             final Node result = (Node)cntx.securityTokenReferenceElementToTargetElement.get(source);
                             if (result == null) throw new TransformException("Unable to check signature of element signed indirectly through SecurityTokenReference transform: the referenced SecurityTokenReference has not yet been seen");
-                            c.setContent(new NodeList() {
-                                public int getLength() {
-                                    return 1;
-                                }
-
-                                public Node item(int index) {
-                                    return result;
-                                }
-                            });
+                            ExclusiveC11r canon = new ExclusiveC11r();
+                            ByteArrayOutputStream bo = new ByteArrayOutputStream();
+                            try {
+                                canon.canonicalize(result, bo);
+                            } catch (IOException e) {
+                                throw (TransformException) new TransformException().initCause(e);
+                            }
+                            c.setContent(bo.toByteArray(), "UTF-8");
                         }
                     };
-                return super.getTransform(s);
+                } else
+                    return super.getTransform(s);
             }
         });
         Validity validity = sigContext.verify(sigElement, signingKey);
