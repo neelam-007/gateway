@@ -41,6 +41,7 @@ import java.util.logging.Logger;
 
 /**
  * Holds message processing state needed by policy application point (SSB) message processor and policy assertions.
+ * This class is not intended to be used across multiple threads (nor would it make sense if it were).
  */
 public class PolicyApplicationContext extends ProcessingContext {
 
@@ -73,7 +74,7 @@ public class PolicyApplicationContext extends ProcessingContext {
         /**
          * these wss requirements are the default ones as opposed to the ones meant for a downstream recipient
          */
-        private DecorationRequirements defaultWSSRequirements = new DecorationRequirements();
+        private DecorationRequirements defaultWSSRequirements = null;
         private Map downstreamRecipientWSSRequirements = new HashMap();
         private String messageId = null;
         private Map pendingDecorations = new LinkedHashMap();
@@ -248,19 +249,27 @@ public class PolicyApplicationContext extends ProcessingContext {
     }
 
     /**
+     * Those requirements will be created the first time this is called.
+     * Not intended to be used across multiple threads.
      * @return the decoration requirements for the immediate recipient (as opposed to further downstream recipients)
      */
     public DecorationRequirements getDefaultWssRequirements() {
+        if (policySettings.defaultWSSRequirements == null) {
+            policySettings.defaultWSSRequirements = new DecorationRequirements();
+        }
         return policySettings.defaultWSSRequirements;
     }
 
     /**
-     * @return all decoration requirements (default at the end of course)
+     * @return all decoration requirements (may return empty array)
      */
     public DecorationRequirements[] getAllDecorationRequirements() {
         Set keys = policySettings.downstreamRecipientWSSRequirements.keySet();
-        int size = 1;
+        int size = 0;
         size += keys.size();
+        if (policySettings.defaultWSSRequirements != null) {
+            size++;
+        }
         DecorationRequirements[] output = new DecorationRequirements[size];
         int i = 0;
         for (Iterator iterator = keys.iterator(); iterator.hasNext();) {
@@ -268,7 +277,9 @@ public class PolicyApplicationContext extends ProcessingContext {
             output[i] = (DecorationRequirements)policySettings.downstreamRecipientWSSRequirements.get(key);
             i++;
         }
-        output[size-1] = policySettings.defaultWSSRequirements;
+        if (policySettings.defaultWSSRequirements != null) {
+            output[size-1] = policySettings.defaultWSSRequirements;
+        }
         return output;
     }
 
