@@ -9,6 +9,7 @@ package com.l7tech.policy.assertion.identity;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.User;
 import com.l7tech.credential.PrincipalCredentials;
 import com.l7tech.policy.assertion.AssertionError;
 
@@ -24,6 +25,18 @@ public class SpecificUser extends IdentityAssertion {
     public SpecificUser( IdentityProvider provider, Principal user ) {
         super( provider );
         _user = user;
+    }
+
+    public SpecificUser() {
+        super();
+    }
+
+    public void setUser( Principal user ) {
+        _user = user;
+    }
+
+    public Principal getUser() {
+        return _user;
     }
 
     public AssertionError doCheckPrincipal( Principal p ) {
