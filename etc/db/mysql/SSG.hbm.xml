@@ -153,7 +153,6 @@
         <id name="oid" column="oid" type="long">
             <generator class="hilo"/>
         </id>
-        <property name="sequenceNumber" column="sequencenumber" type="long"/>
         <property name="nodeId" column="nodeid" type="string"/>
         <property name="message" column="message" type="string"/>
         <property name="strLvl" column="strlvl" type="string"/>

@@ -215,7 +215,6 @@ DROP TABLE ssg_logs;
 CREATE TABLE ssg_logs (
   objectid bigint NOT NULL default '0',
   nodeid varchar(18) NOT NULL default '',
-  sequencenumber bigint NOT NULL default '0',
   message text,
   strlvl varchar(12),
   loggername varchar(128),
@@ -226,7 +225,6 @@ CREATE TABLE ssg_logs (
   PRIMARY KEY(objectid)
 );
 CREATE INDEX idx_nodeid ON ssg_logs (nodeid);
-CREATE INDEX idx_sequencenumber ON ssg_logs (sequencenumber);
 CREATE INDEX idx_millis ON ssg_logs (millis);
 
 --
