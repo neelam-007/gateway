@@ -15,17 +15,12 @@ public class ServiceEntitiesCollection implements EntitiesCollection {
     final ServiceManager manager;
     private boolean exhausted = false;
 
-    /**
-     *
-     * @param sm the <code>ServiceManager</code>
-     */
     ServiceEntitiesCollection(ServiceManager sm) {
         manager = sm;
     }
 
     /**
-     * @return Returns the collection of <code>User</code> headers returned by the
-     *         <code>UserManager</code>
+     * @return Returns the collection of <code>EntityHeader</code> instances
      * @throws RuntimeException thrown on error retrieving the user collection
      */
     public Collection getNextBatch() throws RuntimeException {
