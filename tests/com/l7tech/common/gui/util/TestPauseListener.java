@@ -6,6 +6,8 @@
 
 package com.l7tech.common.gui.util;
 
+import com.l7tech.common.gui.widgets.SquigglyTextField;
+
 import javax.swing.*;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
@@ -22,12 +24,20 @@ public class TestPauseListener extends JFrame implements PauseListener {
         super( "Test Pause Listener" );
         super.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
 
+/*
+        Dimension size = _textField.getSize();
+        size.height = size.height + 10;
+        _textField.setSize(size);
+*/
+
         TextComponentPauseListenerManager.registerPauseListener(
                 _textField, this, 1000 );
 
         Container cp = getContentPane();
-        cp.setLayout(new GridBagLayout());
-        cp.add( _textField );
+        final GridBagLayout layout = new GridBagLayout();
+        layout.rowHeights = new int[] {30};
+        cp.setLayout(layout);
+        cp.add( _textField, new GridBagConstraints(0,0,1,1,0,0,GridBagConstraints.WEST,GridBagConstraints.VERTICAL,new Insets(0,0,0,0), 0, 0) );
         cp.add( _label );
         cp.add(statusLabel,new GridBagConstraints(0,1,2,1,0,0,GridBagConstraints.NORTH,0,new Insets(0,0,0,0),0,0));
         pack();
@@ -46,8 +56,11 @@ public class TestPauseListener extends JFrame implements PauseListener {
             try {
                 URL url = new URL(value);
                 is = url.openStream();
+                _textField.setNone();
                 statusLabel.setText("OK");
             } catch ( IOException e ) {
+                _textField.setSquiggly();
+                _textField.setAll();
                 statusLabel.setText(e.toString());
             } finally {
                 try {
@@ -65,7 +78,7 @@ public class TestPauseListener extends JFrame implements PauseListener {
     }
 
     private String oldvalue = null;
-    private JTextField _textField = new JTextField(80);
+    private SquigglyTextField _textField = new SquigglyTextField(80);
     private JLabel _label = new JLabel("initial value");
     private JLabel statusLabel = new JLabel(" ");
 }
