@@ -1,5 +1,7 @@
 package com.l7tech.policy.assertion.xmlsec;
 
+import com.l7tech.policy.assertion.Assertion;
+
 /**
  * User: flascell
  * Date: Aug 26, 2003
@@ -13,5 +15,5 @@ package com.l7tech.policy.assertion.xmlsec;
  *
  * @author flascell
  */
-public class XmlDsigResAssertion {
+public class XmlDsigResAssertion extends Assertion {
 }
