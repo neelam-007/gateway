@@ -65,18 +65,21 @@ public class RequestIdGeneratorTest extends TestCase {
         CounterThread ct1 = new CounterThread();
         CounterThread ct2 = new CounterThread();
         CounterThread ct3 = new CounterThread();
+
         System.err.println( "Starting thread #1" );
         ct1.start();
         System.err.println( "Starting thread #2" );
         ct2.start();
         System.err.println( "Starting thread #3" );
         ct3.start();
+
         System.err.println( "Waiting for thread #1" );
         ct1.join();
         System.err.println( "Waiting for thread #2" );
         ct2.join();
         System.err.println( "Waiting for thread #3" );
         ct3.join();
+
         Set set1 = ct1._ids;
         Set set2 = ct2._ids;
         Set set3 = ct3._ids;
