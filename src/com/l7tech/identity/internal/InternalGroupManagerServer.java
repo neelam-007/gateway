@@ -18,9 +18,10 @@ import java.util.logging.Logger;
  * Date: Jun 24, 2003
  */
 public class InternalGroupManagerServer extends HibernateEntityManager implements GroupManager {
-    public InternalGroupManagerServer() {
+    public InternalGroupManagerServer( InternalIdentityProviderServer provider ) {
         super();
         logger = LogManager.getInstance().getSystemLogger();
+        _provider = provider;
     }
 
     public Group findByName(String name) throws FindException {
@@ -75,7 +76,7 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
         searchString = searchString.replace('?', '_');
         try {
             List results = PersistenceManager.find(getContext(),
-              allHeadersQuery + " where " + getTableName() + ".name like ?",
+              getAllHeadersQuery() + " where " + getTableName() + ".name like ?",
               searchString, String.class);
             List headers = new ArrayList();
             for (Iterator i = results.iterator(); i.hasNext();) {
@@ -111,7 +112,11 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
         delete( imp );
     }
 
-    public String save(Group group) throws SaveException {
+    public String save( Group group ) throws SaveException {
+        return save( group, null );
+    }
+
+    public String save(Group group, Set userHeaders) throws SaveException {
         try {
             InternalGroup imp = cast(group);
             // check that no existing group have same name
@@ -124,7 +129,21 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
             if (existingGrp != null) {
                 throw new SaveException("This group cannot be saved because an existing group already uses the name '" + group.getName() + "'");
             }
-            return new Long( _manager.save(getContext(), imp) ).toString();
+            String oid = Long.toString( _manager.save(getContext(), imp) );
+
+            if ( userHeaders != null ) {
+                try {
+                    setUserHeaders( oid, userHeaders );
+                } catch (FindException e) {
+                    logger.log( Level.SEVERE, e.getMessage() );
+                    throw new SaveException( e.getMessage(), e );
+                } catch (UpdateException e) {
+                    logger.log( Level.SEVERE, e.getMessage() );
+                    throw new SaveException( e.getMessage(), e );
+                }
+            }
+
+            return oid;
         } catch (SQLException se) {
             throw new SaveException(se.toString(), se);
         }
@@ -140,13 +159,18 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
         return imp;
     }
 
-    public void update(Group group) throws UpdateException {
+    public void update( Group group ) throws UpdateException {
+        update( group, null );
+    }
+
+    public void update(Group group, Set userHeaders) throws UpdateException {
         InternalGroup imp = cast( group );
 
         try {
             // if this is the admin group, make sure that we are not removing all memberships
             if (Group.ADMIN_GROUP_NAME.equals(group.getName())) {
-                if (group.getMembers().size() < 1) {
+                Set oldAdminUserHeaders = getUserHeaders( group );
+                if (oldAdminUserHeaders.size() < 1) {
                     logger.severe("Blocked update on admin group because all members were deleted.");
                     throw new UpdateException("Cannot update admin group with no memberships!");
                 }
@@ -159,6 +183,8 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
                 logger.info(msg);
                 throw new StaleUpdateException(msg);
             }
+
+            setUserHeaders( group.getUniqueIdentifier(), userHeaders );
 
             originalGroup.copyFrom(imp);
             _manager.update(getContext(), originalGroup);
@@ -183,6 +209,8 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
             hpc = context();
             Session s = hpc.getSession();
             Query query = s.createQuery( HQL_ISMEMBER );
+            query.setString( 0, user.getUniqueIdentifier() );
+            query.setString( 1, group.getUniqueIdentifier() );
             return ( query.iterate().hasNext() );
         } catch (SQLException e) {
             throw new FindException( e.getMessage(), e );
@@ -344,6 +372,15 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
             for (Iterator i = existingGids.iterator(); i.hasNext();) {
                 String existingGid = (String) i.next();
                 if ( !newGids.contains( existingGid ) ) {
+                    Group g = findByPrimaryKey( existingGid );
+                    if ( Group.ADMIN_GROUP_NAME.equals( g.getName() ) ) {
+                        Set adminUserHeaders = getUserHeaders(g);
+                        if ( adminUserHeaders.size() < 2 ) {
+                            String msg = "Can't remove last administrator membership!";
+                            logger.info( msg );
+                            throw new UpdateException( msg );
+                        }
+                    }
                     gm = new GroupMembership( uoid, new Long( existingGid ).longValue() );
                     s.delete( gm );
                 }
@@ -384,7 +421,7 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
         query.setString( 0, groupId );
         for (Iterator i = query.iterate(); i.hasNext();) {
             InternalUser user = (InternalUser)i.next();
-            headers.add( new EntityHeader( user.getOid(), EntityType.USER, user.getName(), null ) );
+            headers.add( new EntityHeader( user.getOid(), EntityType.USER, user.getLogin(), null ) );
         }
         return headers;
     }
@@ -424,6 +461,14 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
 
             Set newUids = headersToIds( userHeaders );
             Set existingUids = headersToIds( doGetUserHeaders( hpc, groupId ) );
+
+            Group group = findByPrimaryKey( groupId );
+            if ( Group.ADMIN_GROUP_NAME.equals( group.getName() ) &&
+                userHeaders.size() == 0 ) {
+                String msg = "Can't delete last administrator";
+                logger.info( msg );
+                throw new UpdateException( msg );
+            }
 
             GroupMembership gm;
             long goid = new Long( groupId ).longValue();
@@ -469,6 +514,7 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
     }
 
     private Logger logger = null;
+    private InternalIdentityProviderServer _provider;
 
     public static final String HQL_GETGROUPS = "select grp from grp in class " + IMPCLASSNAME + ", " +
              "membership in class " + GMCLASSNAME + " " +
