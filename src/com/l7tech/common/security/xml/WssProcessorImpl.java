@@ -838,7 +838,7 @@ public class WssProcessorImpl implements WssProcessor {
             // if this is a timestamp in the security header, note that it was signed
             if (SoapUtil.WSU_URIS.contains(elementCovered.getNamespaceURI()) &&
                 SoapUtil.TIMESTAMP_EL_NAME.equals(elementCovered.getLocalName()) &&
-                cntx.originalDocumentSecurityHeader == elementCovered.getParentNode())
+                cntx.releventSecurityHeader == elementCovered.getParentNode())
             {
                 // Make sure we've seen this timestamp
                 // TODO: would be very, very good to verify here that elementCovered == cntx.timestamp.asElement()
