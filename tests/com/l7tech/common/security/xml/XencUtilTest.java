@@ -11,10 +11,10 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import java.util.logging.Logger;
-import java.util.Random;
+import java.util.Arrays;
 import java.security.cert.X509Certificate;
-import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.PrivateKey;
 import java.security.interfaces.RSAPublicKey;
 
 import com.l7tech.common.xml.TestDocuments;
@@ -69,6 +69,18 @@ public class XencUtilTest extends TestCase {
 
         String paddedB64 = XencUtil.encryptKeyWithRsaAndPad(keyBytes, publicKey, rand);
         logger.info("Got back: " + paddedB64 + "\n(length:" + paddedB64.length() + ")");
+    }
+
+    public void testRoundTripRsaEncryptedKey() throws Exception {
+        System.out.println("USING PROVIDER: " + JceProvider.getAsymmetricJceProvider().getName());
+        PrivateKey pkey = TestDocuments.getDotNetServerPrivateKey();
+        X509Certificate recipientCert = TestDocuments.getDotNetServerCertificate();
+        RSAPublicKey publicKey = (RSAPublicKey)recipientCert.getPublicKey();
+        byte[] keyBytes = HexUtils.unHexDump("954daf423cea7911cc5cb9b664d4c38d");
+        SecureRandom rand = new SecureRandom();
+        String paddedB64 = XencUtil.encryptKeyWithRsaAndPad(keyBytes, publicKey, rand);
+        byte[] decrypted = XencUtil.decryptKey(paddedB64, pkey);
+        assertTrue(Arrays.equals(keyBytes, decrypted));
     }
 
 }
