@@ -49,8 +49,25 @@ public abstract class WizardStepPanel extends JPanel {
 
 
     /**
-     * Test whether the step is finished and it is safe to advance to the next
-     * one.
+     * Perform any panel-specific last-second checking at the time the user presses the "Next" button
+     * while this panel is showing.  The panel may veto the move by returning false here.
+     * Since this method is called in response to user input it may take possibly-lengthy actions
+     * such as downloading a remote file.
+     *
+     * This differs from canAdvance() in that it is called when the user actually hits the Next button,
+     * whereas canAdvance() is used to determine if the Next button is even enabled.
+     *
+     * @return true if it is safe to advance to the next step; false if not (and the user may have
+     *            been pestered with an error dialog).
+     */
+    public boolean onNextButton() {
+        return true;
+    }
+
+
+    /**
+     * Test whether the step is finished and it is safe to advance to the next one.  This method
+     * should return quickly.
      *
      * @return true if the panel is valid, false otherwis
      */
@@ -143,6 +160,4 @@ public abstract class WizardStepPanel extends JPanel {
     public String getStepLabel() {
         return "implement " + getClass() + "getStepLabel()";
     }
-
-    private ChangeListener changeListener;
 }
