@@ -1,11 +1,15 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.util.Locator;
+
 import javax.swing.*;
 import java.awt.*;
 import java.security.cert.*;
 import java.security.NoSuchAlgorithmException;
 import java.io.*;
 import java.net.URL;
+import java.rmi.RemoteException;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -25,6 +29,15 @@ public class CertDetailsPanel extends WizardStepPanel {
     private void initialize() {
         setLayout(new BorderLayout());
         add(mainPanel);
+    }
+
+     /**
+     * Test whether the step is finished and it is safe to finish the wizard.
+     *
+     * @return true if the panel is valid, false otherwis
+     */
+     public boolean canFinish() {
+        return false;
     }
 
     public void readSettings(Object settings) throws IllegalArgumentException {
@@ -61,6 +74,31 @@ public class CertDetailsPanel extends WizardStepPanel {
 
                     }
                 } else if (ci.getCertDataSource() instanceof URL) {
+                    try {
+
+                        URL url = (URL) ci.getCertDataSource();
+
+                        String urlStr = url.getProtocol() + ":" + "//" + url.getHost();
+
+                        if(url.getPort() > 0) {
+                            urlStr = urlStr +  ":" + url.getPort();
+                        }
+
+                        if(url.getPath() != null) {
+                            urlStr += url.getPath();
+                        }
+
+                        System.out.println("Retriving cert from URL: " + urlStr);
+
+                        X509Certificate[] certs = getTrustedCertAdmin().retrieveCertFromUrl(urlStr);
+                        cert = certs[0];
+
+                        // todo: ignore the rest?
+
+                    } catch (IOException e) {
+                        //todo:
+                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    }
 
                 } else if (ci.getCertDataSource() instanceof String) {
 
@@ -112,6 +150,17 @@ public class CertDetailsPanel extends WizardStepPanel {
                 }
             }
         }
+    }
+
+    private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
+        TrustedCertAdmin tca =
+                (TrustedCertAdmin) Locator.
+                getDefault().lookup(TrustedCertAdmin.class);
+        if (tca == null) {
+            throw new RuntimeException("Could not find registered " + TrustedCertAdmin.class);
+        }
+
+        return tca;
     }
 
     /**
