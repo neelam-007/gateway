@@ -410,8 +410,10 @@
          -->
         <jar jarfile="${build.dir}/layer7-api.jar" manifest="${src.root}/etc/layer7-api.mf">
             <fileset dir="${build.dir}/classes">
-                <include name="com/l7tech/policy/assertion/ext/Category.class"/>
                 <include name="com/l7tech/policy/assertion/Assertion.class"/>
+                <include name="com/l7tech/policy/assertion/PolicyAssertionException.class"/>
+                <include name="com/l7tech/policy/assertion/composite/CompositeAssertion.class"/>
+                <include name="com/l7tech/policy/assertion/ext/Category.class"/>
                 <include name="com/l7tech/policy/assertion/ext/CustomAssertion.class"/>
                 <include name="com/l7tech/policy/assertion/ext/SecurityContext.class"/>
                 <include name="com/l7tech/policy/assertion/ext/ServiceRequest.class"/>
