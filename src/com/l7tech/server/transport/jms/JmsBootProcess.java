@@ -12,12 +12,10 @@ import com.l7tech.common.util.Locator;
 import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.Entity;
 import com.l7tech.server.*;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -25,7 +23,7 @@ import java.util.logging.Level;
  * @author alex
  * @version $Revision$
  */
-public class JmsBootProcess implements ServerComponentLifecycle, JmsCrudListener {
+public class JmsBootProcess implements ServerComponentLifecycle {
     public JmsBootProcess() {
         _connectionManager = (JmsConnectionManager)Locator.getDefault().lookup( JmsConnectionManager.class );
         _endpointManager = (JmsEndpointManager)Locator.getDefault().lookup( JmsEndpointManager.class );
@@ -64,6 +62,40 @@ public class JmsBootProcess implements ServerComponentLifecycle, JmsCrudListener
         }
     }
 
+    private class EndpointVersionChecker extends PeriodicVersionCheck {
+        EndpointVersionChecker( JmsEndpointManager mgr ) {
+            super( mgr );
+        }
+
+        protected void onDelete( long removedOid ) {
+            _logger.info( "Endpoint " + removedOid + " deleted!" );
+            endpointDeleted( removedOid );
+        }
+
+        protected void onSave( Entity updatedEntity ) {
+            _logger.info( "Endpoint " + updatedEntity.getOid() + " created or updated!" );
+            endpointUpdated( (JmsEndpoint)updatedEntity );
+        }
+    }
+
+    private class ConnectionVersionChecker extends PeriodicVersionCheck {
+        ConnectionVersionChecker( JmsConnectionManager mgr ) {
+            super(mgr);
+        }
+
+        protected void onDelete( long removedOid ) {
+            _logger.info( "Connection " + removedOid + " deleted!" );
+            connectionDeleted( removedOid );
+        }
+
+        protected void onSave( Entity updatedEntity ) {
+            _logger.info( "Connection " + updatedEntity.getOid() + " created or updated!" );
+            connectionUpdated( (JmsConnection)updatedEntity );
+        }
+
+    }
+
+
     /**
      * Attempts to start all JMS receivers.
      * <p/>
@@ -76,6 +108,15 @@ public class JmsBootProcess implements ServerComponentLifecycle, JmsCrudListener
             _logger.info("Starting JMS receiver '" + receiver.toString() + "'...");
             start(receiver);
         }
+
+        ConnectionVersionChecker connectionChecker = new ConnectionVersionChecker( _connectionManager );
+        EndpointVersionChecker endpointChecker = new EndpointVersionChecker( _endpointManager );
+
+        _connectionVersionTimer.schedule( connectionChecker, connectionChecker.getFrequency() * 2,
+                                          connectionChecker.getFrequency() );
+
+        _endpointVersionTimer.schedule( endpointChecker, endpointChecker.getFrequency() * 2,
+                                        endpointChecker.getFrequency() );
     }
 
     /**
@@ -87,6 +128,9 @@ public class JmsBootProcess implements ServerComponentLifecycle, JmsCrudListener
             _logger.info("Stopping JMS receiver '" + receiver.toString() + "'");
             stop(receiver);
         }
+
+        _connectionVersionTimer.cancel();
+        _endpointVersionTimer.cancel();
     }
 
     /**
@@ -148,14 +192,13 @@ public class JmsBootProcess implements ServerComponentLifecycle, JmsCrudListener
     /**
      * Handles the event fired by the deletion of a JmsConnection.
      */
-    public void connectionDeleted(JmsConnection connection) {
-        _logger.info( "Connection " + connection + " deleted!" );
-
+    private synchronized void connectionDeleted( long deletedConnectionOid ) {
         for (Iterator i = _receivers.iterator(); i.hasNext();) {
             JmsReceiver receiver = (JmsReceiver)i.next();
-            if (receiver.getConnection().getOid() == connection.getOid()) {
+            if (receiver.getConnection().getOid() == deletedConnectionOid ) {
                 stop(receiver);
                 close(receiver);
+                i.remove();
             }
         }
     }
@@ -163,21 +206,18 @@ public class JmsBootProcess implements ServerComponentLifecycle, JmsCrudListener
     /**
      * Handles the event fired by the update of a JmsConnection.
      */
-    public synchronized void connectionUpdated(JmsConnection updatedConnection) {
-        _logger.info( "Connection " + updatedConnection + " updated!" );
+    private synchronized void connectionUpdated(JmsConnection updatedConnection) {
+        long updatedOid = updatedConnection.getOid();
 
-        for (Iterator i = _receivers.iterator(); i.hasNext();) {
-            JmsReceiver receiver = (JmsReceiver)i.next();
-            stop(receiver);
-            close(receiver);
-            _receivers.remove(receiver);
-        }
+        // Stop and remove any existing receivers for this connection
+        connectionDeleted( updatedOid );
 
         try {
-            EntityHeader[] endpoints = _endpointManager.findEndpointHeadersForConnection( updatedConnection.getOid() );
+            EntityHeader[] endpoints = _endpointManager.findEndpointHeadersForConnection( updatedOid );
             for ( int i = 0; i < endpoints.length; i++ ) {
                 EntityHeader header = endpoints[i];
                 JmsEndpoint endpoint = _endpointManager.findByPrimaryKey( header.getOid() );
+                endpointDeleted( endpoint.getOid() );
                 JmsReceiver receiver = makeReceiver( updatedConnection, endpoint);
 
                 try {
@@ -196,15 +236,14 @@ public class JmsBootProcess implements ServerComponentLifecycle, JmsCrudListener
     /**
      * Handles the event fired by the deletion of a JmsEndpoint.
      */
-    public synchronized void endpointDeleted(JmsEndpoint deletedEndpoint) {
-        _logger.info( "Endpoint " + deletedEndpoint + " deleted!" );
-
+    private synchronized void endpointDeleted( long deletedEndpointOid ) {
         for (Iterator i = _receivers.iterator(); i.hasNext();) {
             JmsReceiver receiver = (JmsReceiver)i.next();
             JmsEndpoint existingEndpoint = receiver.getInboundRequestEndpoint();
-            if (existingEndpoint.getOid() == deletedEndpoint.getOid()) {
+            if (existingEndpoint.getOid() == deletedEndpointOid ) {
                 stop(receiver);
                 close(receiver);
+                i.remove();
             }
         }
     }
@@ -212,18 +251,9 @@ public class JmsBootProcess implements ServerComponentLifecycle, JmsCrudListener
     /**
      * Handles the event fired by the update of a JmsEndpoint.
      */
-    public synchronized void endpointUpdated(JmsEndpoint updatedEndpoint) {
-        _logger.info( "Endpoint " + updatedEndpoint + " updated!" );
-
-        for (Iterator i = _receivers.iterator(); i.hasNext();) {
-            JmsReceiver receiver = (JmsReceiver)i.next();
-            JmsEndpoint originalEndpoint = receiver.getInboundRequestEndpoint();
-            if (originalEndpoint.getOid() == updatedEndpoint.getOid()) {
-                stop(receiver);
-                close(receiver);
-                _receivers.remove(receiver);
-            }
-        }
+    private synchronized void endpointUpdated( JmsEndpoint updatedEndpoint ) {
+        // Stop any existing receivers for this endpoint
+        endpointDeleted( updatedEndpoint.getOid() );
 
         if (updatedEndpoint.isMessageSource()) {
             JmsReceiver receiver = null;
@@ -251,17 +281,12 @@ public class JmsBootProcess implements ServerComponentLifecycle, JmsCrudListener
         return receiver;
     }
 
-    public long getFrequency() {
-        return FREQUENCY;  //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public void checkIntegrity() {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
     private JmsConnectionManager _connectionManager;
     private JmsEndpointManager _endpointManager;
     private Set _receivers = new HashSet();
+
+    private final Timer _connectionVersionTimer = new Timer(true);
+    private final Timer _endpointVersionTimer = new Timer(true);
 
     private Logger _logger = LogManager.getInstance().getSystemLogger();
     private boolean _booted = false;

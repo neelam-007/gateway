@@ -57,8 +57,8 @@ public abstract class PeriodicVersionCheck extends TimerTask {
                 }
 
                 // actual check logic
-                ArrayList updatesAndAdditions = new ArrayList();
-                ArrayList deletions = new ArrayList();
+                List updatesAndAdditions = new ArrayList();
+                List deletions = new ArrayList();
 
                 // 1. check that all that is in db is present in cache and that version is same
                 for (Iterator i = dbversions.keySet().iterator(); i.hasNext();) {
@@ -95,17 +95,17 @@ public abstract class PeriodicVersionCheck extends TimerTask {
                     // nothing to do. we're done
                 } else {
                     for (Iterator i = updatesAndAdditions.iterator(); i.hasNext();) {
-                        Long svcid = (Long)i.next();
-                        Entity toUpdateOrAdd = null;
+                        Long updatedOid = (Long)i.next();
+                        Entity updatedEntity = null;
                         try {
-                            toUpdateOrAdd = _manager.findEntity(svcid.longValue());
+                            updatedEntity = _manager.findEntity(updatedOid.longValue());
                         } catch (FindException e) {
-                            toUpdateOrAdd = null;
+                            updatedEntity = null;
                             logger.log(Level.WARNING, "Entity that was updated or created " +
                                                       "cannot be retrieved", e);
                         }
-                        if (toUpdateOrAdd != null) {
-                            addOrUpdate(toUpdateOrAdd);
+                        if (updatedEntity != null) {
+                            addOrUpdate(updatedEntity);
                         } // otherwise, next version check shall delete this service from cache
                     }
                     for (Iterator i = deletions.iterator(); i.hasNext();) {
@@ -129,16 +129,16 @@ public abstract class PeriodicVersionCheck extends TimerTask {
 
     private void remove( Long oid ) {
         _cachedVersionMap.remove( oid );
-        removed( oid.longValue() );
+        onDelete( oid.longValue() );
     }
 
     private void addOrUpdate( Entity updatedEntity ) {
         _cachedVersionMap.put( new Long( updatedEntity.getOid() ), new Integer( updatedEntity.getVersion() ) );
-        createdOrUpdated( updatedEntity );
+        onSave( updatedEntity );
     }
 
-    protected abstract void removed( long removedOid );
-    protected abstract void createdOrUpdated( Entity updatedEntity );
+    protected abstract void onDelete( long removedOid );
+    protected abstract void onSave( Entity updatedEntity );
 
     public long getFrequency() {
         return DEFAULT_FREQUENCY;
