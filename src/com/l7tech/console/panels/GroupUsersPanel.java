@@ -227,6 +227,7 @@ class GroupUsersPanel extends JPanel {
      * enable/disable add/remove buttons
      */
     private void setAddRemoveButtons() {
+      getGroupRemove().setEnabled(listInModel.getSize() >0);
 
     }
 
@@ -305,7 +306,12 @@ class GroupUsersPanel extends JPanel {
 
             groupRemove.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    ;
+                    Object[] removals = groupMemberList.getSelectedValues();
+
+                    for (int i =0; removals !=null && i < removals.length;i++) {
+                        listInModel.removeElement(removals[i]);
+                    }
+                    setAddRemoveButtons();
                 }
             });
         }
