@@ -130,6 +130,6 @@ public class SSGLogRecord extends LogRecord implements Serializable {
     }
 
     private long oid;
-    public String requestId;
-    public String nodeId;
+    protected String requestId;
+    protected String nodeId;
 }
