@@ -92,6 +92,8 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                     logger.finest("Verifying client cert against current root cert...");
                     Certificate rootcacert = null;
                     try {
+                        //todo: coonsider moving reading the rootCacert in ctor, or in lazy init; it may save few
+                        // cycles - em 20040520 
                         String rootCertLoc = KeystoreUtils.getInstance().getRootCertPath();
                         InputStream certStream = new FileInputStream(rootCertLoc);
                         byte[] rootcacertbytes = HexUtils.slurpStream(certStream, 16384);
