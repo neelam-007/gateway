@@ -95,7 +95,7 @@ public class GroupPanel extends EntityEditorPanel {
 
             groupHeader = (EntityHeader)object;
 
-            if (!Group.class.equals(groupHeader.getType())) {
+            if (!EntityType.GROUP.equals(groupHeader.getType())) {
                 throw new IllegalArgumentException("Invalid argument type: "
                         + "\nExpected: Group "
                         + "\nReceived: " + groupHeader.getType());

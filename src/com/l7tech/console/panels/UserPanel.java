@@ -19,7 +19,10 @@ import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
 
 /**
- * GroupPanel is the main entry point panel for the <CODE>Group</CODE>.
+ * UserPanel - edits the <CODE>User/CODE> instances.
+ *
+ * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @version 1.1
  */
 public class UserPanel extends EntityEditorPanel {
     private static final Category log = Category.getInstance(UserPanel.class.getName());
@@ -103,7 +106,7 @@ public class UserPanel extends EntityEditorPanel {
 
             userHeader = (EntityHeader)object;
 
-            if (!User.class.equals(userHeader.getType())) {
+            if (!EntityType.USER.equals(userHeader.getType())) {
                 throw new IllegalArgumentException("Invalid argument type: "
                         + "\nExpected: User "
                         + "\nReceived: " + userHeader.getType());
@@ -125,6 +128,7 @@ public class UserPanel extends EntityEditorPanel {
             setData(user);
         } catch (Exception e) {
             log.error("GroupPanel Edit Exception: " + e.toString());
+            e.printStackTrace();
         }
     }
 

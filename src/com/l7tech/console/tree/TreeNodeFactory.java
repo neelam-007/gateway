@@ -4,6 +4,7 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 
 
 import java.util.Enumeration;
@@ -36,14 +37,13 @@ public class TreeNodeFactory {
         if (entity == null) {
             throw new NullPointerException("entity");
         }
-        if (IdentityProviderConfig.class.equals(entity.getType())) {
+        if (EntityType.ID_PROVIDER_CONFIG.equals(entity.getType())) {
             return new ProviderNode(entity);
-        } else if (Group.class.equals(entity.getType())) {
+        } else if (EntityType.GROUP.equals(entity.getType())) {
                return new GroupNode(entity);
-        } else if (User.class.equals(entity.getType())) {
+        } else if (EntityType.USER.equals(entity.getType())) {
              return new UserNode(entity);
         }
-
 
         throw new IllegalArgumentException("Unknown entity type "+entity.getType());
     }

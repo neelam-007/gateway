@@ -81,7 +81,7 @@ public class IconManager {
     /**
        * Get the Icon for the Class passed.
        *
-       * @param clazz   the class
+       * @param type   the entity type enum
        * @return ImageIcon for the given node
        */
       public ImageIcon getIcon(EntityType type) {
