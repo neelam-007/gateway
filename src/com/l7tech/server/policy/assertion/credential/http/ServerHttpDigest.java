@@ -34,11 +34,20 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
     public ServerHttpDigest( HttpDigest data ) {
         super( data );
         _data = data;
-        try {
-            _md5 = MessageDigest.getInstance( "MD5" );
-        } catch ( NoSuchAlgorithmException e ) {
-            throw new RuntimeException( e );
+    }
+
+    private ThreadLocal md5s = new ThreadLocal();
+    private MessageDigest getMd5() {
+        MessageDigest md5 = (MessageDigest)md5s.get();
+        if (md5 == null) {
+            try {
+                md5 = MessageDigest.getInstance("MD5");
+                md5s.set(md5);
+            } catch ( NoSuchAlgorithmException e ) {
+                throw new RuntimeException(e);
+            }
         }
+        return md5;
     }
 
     public static final String ENCODING = "UTF-8";
@@ -108,7 +117,7 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
         Map params = new HashMap();
         params.put( HttpDigest.PARAM_QOP, HttpDigest.QOP_AUTH );
         params.put( HttpDigest.PARAM_NONCE, nonce );
-        params.put( HttpDigest.PARAM_OPAQUE, HexUtils.encodeMd5Digest( _md5.digest( nonce.getBytes() ) ) );
+        params.put( HttpDigest.PARAM_OPAQUE, HexUtils.encodeMd5Digest( getMd5().digest( nonce.getBytes() ) ) );
         return params;
     }
 
@@ -211,6 +220,5 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
     }
 
     protected HttpDigest _data;
-    protected MessageDigest _md5;
     protected Map _nonceTokens = new HashMap(37);
 }
