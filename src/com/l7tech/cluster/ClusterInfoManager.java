@@ -94,6 +94,15 @@ public class ClusterInfoManager {
             logger.log(Level.WARNING, msg);
             throw new DeleteException(msg);
         }
+        // check that the node is indeed stale
+        long lastUpdateForNodeToDelete = node.getLastUpdateTimeStamp();
+        // node must be stale for at least 30 seconds to allow for delete
+        if ((System.currentTimeMillis() - lastUpdateForNodeToDelete) < 30000) {
+            String msg = "the node to delete has not been stale long enough to" +
+                         "allow for deletion from database. Try again later.";
+            logger.warning("admin trying to delete un-stale node " + msg);
+            throw new DeleteException(msg);
+        }
         HibernatePersistenceContext context = null;
         try {
             context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
