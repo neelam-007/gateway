@@ -8,6 +8,7 @@ import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.UserManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.ServiceAdmin;
+import com.l7tech.jms.JmsAdmin;
 
 
 
@@ -79,5 +80,16 @@ public class RegistryImpl extends Registry {
             throw new RuntimeException("Could not find registered " + ServiceAdmin.class);
         }
         return sm;
+    }
+
+    /**
+     * @return the JMS manager
+     */
+    public JmsAdmin getJmsManager() {
+        JmsAdmin ja = (JmsAdmin)Locator.getDefault().lookup(JmsAdmin.class);
+        if (ja == null) {
+            throw new RuntimeException("Could not find registered " + JmsAdmin.class);
+        }
+        return ja;
     }
 }
