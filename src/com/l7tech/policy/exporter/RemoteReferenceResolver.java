@@ -1,9 +1,13 @@
 package com.l7tech.policy.exporter;
 
-import org.w3c.dom.Element;
-import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.wsp.InvalidPolicyStreamException;
+import com.l7tech.policy.wsp.WspReader;
+import org.w3c.dom.Element;
+
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * This class takes a set of remote references that were exported with a policy
@@ -33,11 +37,31 @@ public class RemoteReferenceResolver {
                 // todo, get the administrator involved somehow
             }
         }
+        resolvedReferences = references;
         return true;
     }
 
     public Assertion localizePolicy(Element policyXML) throws InvalidPolicyStreamException {
-        // todo
-        return WspReader.parse(policyXML);
+        // Go through each assertion and fix the changed references.
+        Assertion root = WspReader.parse(policyXML);
+        traverseAssertionTreeForLocalization(root);
+        return root;
     }
+
+    private void traverseAssertionTreeForLocalization(Assertion rootAssertion) {
+        if (rootAssertion instanceof CompositeAssertion) {
+            CompositeAssertion ca = (CompositeAssertion)rootAssertion;
+            List children = ca.getChildren();
+            for (Iterator i = children.iterator(); i.hasNext();) {
+                Assertion child = (Assertion)i.next();
+                traverseAssertionTreeForLocalization(child);
+            }
+        } else {
+            for (int i = 0; i < resolvedReferences.length; i++) {
+                resolvedReferences[i].localizeAssertion(rootAssertion);
+            }
+        }
+    }
+
+    private ExternalReference[] resolvedReferences = null;
 }
