@@ -3,6 +3,7 @@ package com.l7tech.common.transport.jms;
 import com.l7tech.objectmodel.*;
 
 import javax.jms.JMSException;
+import javax.naming.NamingException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
@@ -76,7 +77,7 @@ public interface JmsAdmin extends Remote {
      * @throws RemoteException
      * @throws JMSException if a test connection could not be established
      */
-    void testConnection(JmsConnection connection) throws RemoteException, JMSException;
+    void testConnection(JmsConnection connection) throws RemoteException, JMSException, NamingException;
 
     /**
      * Test the specified JmsEndpoint, which may or may not exist in the database.  The JmsEndpoint's JmsConnection
