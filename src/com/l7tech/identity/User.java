@@ -132,13 +132,12 @@ public class User extends NamedEntityImp implements Principal {
     }
 
     public int hashCode() {
-        if ( _login == null )
-            return System.identityHashCode(this);
-        else {
-            int hash = _login.hashCode();
-            hash += 29 * (int)providerId;
-            return hash;
-        }
+        if ( _oid > 0 ) return (int)_oid;
+        if ( _login == null ) return System.identityHashCode(this);
+
+        int hash = _login.hashCode();
+        hash += 29 * (int)providerId;
+        return hash;
     }
 
     public static String encodePasswd(String login, String passwd) {
