@@ -23,31 +23,28 @@ public interface ClientCertManager {
      * return true
      *
      * @param providerId the provider to which this user belongs to
-     * @param userid the user id (valid in the provider passed)
      */
-    boolean userCanGenCert(long providerId, String userid);
+    boolean userCanGenCert(long providerId, String login);
 
     /**
      * Records new cert for the user (if user is allowed)
      *
      * @param providerId the provider to which this user belongs to
-     * @param userid the user id (valid in the provider passed)
      * @param cert the cert to record
      * @throws IllegalStateException if user was not in a state that allowes the creation
      * of a cert
      */
-    void recordNewUserCert(long providerId, String userid, Certificate cert) throws IllegalStateException;
+    void recordNewUserCert(long providerId, String login, Certificate cert) throws IllegalStateException;
 
     /**
      * retrieves existing cert for this user
      */
-    Certificate getUserCert(long providerId, String userid) throws FindException;
+    Certificate getUserCert(long providerId, String login) throws FindException;
 
     /**
      * revokes the cert (if applicable) for this user
      *
      * @param providerId the provider to which this user belongs to
-     * @param userid the user id (valid in the provider passed)
      */
-    void revokeUserCert(long providerId, String userid);
+    void revokeUserCert(long providerId, String login);
 }
