@@ -68,7 +68,14 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         String serviceId = req.getParameter(PARAM_SERVICEOID);
 
         // let's see if we can get credentials...
-        User user = authenticateRequestBasic(req);
+        User user = null;
+        try {
+            user = authenticateRequestBasic(req);
+        } catch (BadCredentialsException e) {
+            logger.log(Level.SEVERE, "returning 401 to requestor because invalid creds were provided", e);
+            res.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
+            return;
+        }
 
         // NOTE: sending credentials over insecure channel is treated as an anonymous request
         // (i dont care if you send me credentials in non secure manner, that is your problem

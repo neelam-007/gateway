@@ -46,9 +46,10 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
 
     /**
      * Look for basic creds in the request and authenticate them against id providers available in this ssg.
-     * @return the authenticated user, null if authentication failed or no creds provided
+     * If credentials are provided but they are invalid, this will throw a BadCredentialsException
+     * @return the authenticated user, null if no creds provided
      */
-    protected User authenticateRequestBasic(HttpServletRequest req) throws IOException {
+    protected User authenticateRequestBasic(HttpServletRequest req) throws IOException, BadCredentialsException {
         // get the credentials
         String authorizationHeader = req.getHeader("Authorization");
         if (authorizationHeader == null || authorizationHeader.length() < 1) {
@@ -95,8 +96,9 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
                 logger.log(Level.WARNING, null, te);
             }
         }
-        logger.warning("Creds do not authenticate against any registered id provider.");
-        return null;
+        String msg = "Creds do not authenticate against any registered id provider.";
+        logger.warning(msg);
+        throw new BadCredentialsException(msg);
     }
 
     /**

@@ -110,8 +110,14 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         }
         // get credentials and check that they are valid for this policy
         User user = null;
-        if (!anonymousok) {
+        try {
             user = authenticateRequestBasic(httpServletRequest);
+        } catch (BadCredentialsException e) {
+            logger.log(Level.SEVERE, "returning 401 to requestor because invalid creds were provided", e);
+            httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
+            return;
+        }
+        if (!anonymousok) {
             if (user == null) {
                 // send error back with a hint that credentials should be provided
                 String newUrl = "https://"  + httpServletRequest.getServerName();
