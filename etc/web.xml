@@ -7,13 +7,11 @@
 
     <!-- ssg boot servlet properties -->
 
-    <!-- 
-       <servlet>
-        <servlet-name> boot </servlet-name>
-        <servlet-class> com.l7tech.boot.BootServlet </servlet-class>
-        <load-on-startup> 1 </load-on-startup>
-       </servlet>
-     -->
+    <servlet>
+        <servlet-name>boot</servlet-name>
+        <servlet-class>com.l7tech.server.BootServlet</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
 
     <!-- Axis servlet properties -->
     <servlet>
