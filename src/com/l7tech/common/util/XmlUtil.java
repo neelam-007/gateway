@@ -8,10 +8,7 @@ package com.l7tech.common.util;
 
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
+import org.w3c.dom.*;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -364,6 +361,47 @@ public class XmlUtil {
             }
         }
         return output.toString();
+    }
+
+    /**
+     * If the specified element has a declaration of the specified namespace already in scope, returns a
+     * ready-to-use prefix string for this namespace.  Otherwise returns null.
+     * <p>
+     * Element is searched for xmlns:* attributes defining the requested namespace.  If it doesn't have one,
+     * it's parent is searched, and so on until it is located or we have searched all the way up to the documentElement.
+     *<p>
+     * This method only finds declarations that define a namespace prefix, and
+     * will ignore declarations changing the default namespace.  So in this example:
+     *
+     *    &lt;foo xmlns="http://wanted_namespace /&gt;
+     *
+     * a query for wanted_namespace will return null.
+     *
+     * @param element   the element at which to start searching
+     * @param namespace the namespace URI to look for
+     * @return the prefix for this namespace in scope at the specified elment, or null if it is not declared with a prefix.
+     *         Note that the default namespace is not considered to have been declared with a prefix.
+     */
+    public static String findActivePrefixForNamespace(Element element, String namespace) {
+
+        while (element != null) {
+            NamedNodeMap attrs = element.getAttributes();
+            int numAttr = attrs.getLength();
+            for (int i = 0; i < numAttr; ++i) {
+                Attr attr = (Attr)attrs.item(i);
+                if (!"xmlns".equals(attr.getPrefix()))
+                    continue;
+                if (namespace.equals(attr.getValue()))
+                    return attr.getLocalName();
+            }
+
+            if (element == element.getOwnerDocument().getDocumentElement())
+                return null;
+            
+            element = (Element)element.getParentNode();
+        }
+
+        return null;
     }
 
     private static final Logger logger = Logger.getLogger(XmlUtil.class.getName());

@@ -138,15 +138,7 @@ public class XmlUtilTest extends TestCase {
     }
 
     public void testFindChildElementsByNameWithNSArray() throws Exception {
-        Document d = XmlUtil.stringToDocument("<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
-                                              "    <s:Header>\n" +
-                                              "        <sec1:Security xmlns:sec1=\"http://schemas.xmlsoap.org/ws/2002/xx/secext\"/>\n" +
-                                              "        <sec2:Security xmlns:sec2=\"http://schemas.xmlsoap.org/ws/2002/12/secext\"/>\n" +
-                                              "        <sec3:Security xmlns:sec3=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\"/>\n" +
-                                              "        <sec4:Security xmlns:sec4=\"http://docs.oasis-open.org/asdfhalsfhasldkhf\"/>\n" +
-                                              "    </s:Header>\n" +
-                                              "    <s:Body/>\n" +
-                                              "</s:Envelope>");
+        Document d = XmlUtil.stringToDocument(DOC_WITH_SEC_HEADERS);
         Element env = d.getDocumentElement();
         Element header = XmlUtil.findFirstChildElement(env);
         List children = XmlUtil.findChildElementsByName(header, SoapUtil.SECURITY_URIS_ARRAY, SoapUtil.SECURITY_EL_NAME);
@@ -158,4 +150,35 @@ public class XmlUtilTest extends TestCase {
         assertTrue(SoapUtil.SECURITY_NAMESPACE2.equals(sec2.getNamespaceURI()));
         assertTrue(SoapUtil.SECURITY_NAMESPACE.equals(sec3.getNamespaceURI()));
     }
+
+    public void testFindActivePrefixForNamespace() throws Exception {
+        Document d = XmlUtil.stringToDocument(DOC_WITH_SEC_HEADERS);
+
+        Element env = d.getDocumentElement();
+        Element header = XmlUtil.findFirstChildElement(env);
+        Element sec1 = XmlUtil.findFirstChildElement(header);
+
+        String prefix = XmlUtil.findActivePrefixForNamespace(sec1, SoapUtil.SECURITY_NAMESPACE4);
+        assertEquals(prefix, "sec1");
+
+        prefix = XmlUtil.findActivePrefixForNamespace(sec1, "http://schemas.xmlsoap.org/soap/envelope/");
+        assertEquals(prefix, "s");
+
+        prefix = XmlUtil.findActivePrefixForNamespace(sec1, "http://blah.bletch");
+        assertNull(prefix);
+
+        prefix = XmlUtil.findActivePrefixForNamespace(header, SoapUtil.SECURITY_NAMESPACE4);
+        assertNull(prefix);
+
+    }
+
+    public static final String DOC_WITH_SEC_HEADERS = "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
+                                                  "    <s:Header>\n" +
+                                                  "        <sec1:Security xmlns:sec1=\"http://schemas.xmlsoap.org/ws/2002/xx/secext\"/>\n" +
+                                                  "        <sec2:Security xmlns:sec2=\"http://schemas.xmlsoap.org/ws/2002/12/secext\"/>\n" +
+                                                  "        <sec3:Security xmlns:sec3=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\"/>\n" +
+                                                  "        <sec4:Security xmlns:sec4=\"http://docs.oasis-open.org/asdfhalsfhasldkhf\"/>\n" +
+                                                  "    </s:Header>\n" +
+                                                  "    <s:Body/>\n" +
+                                                  "</s:Envelope>";
 }
