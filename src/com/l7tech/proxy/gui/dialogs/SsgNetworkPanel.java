@@ -10,18 +10,14 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.l7tech.common.gui.NumberField;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.ContextMenuTextField;
-import com.l7tech.common.gui.widgets.SquigglyTextField;
+import com.l7tech.common.gui.widgets.IpListPanel;
 import com.l7tech.common.gui.widgets.WrappingLabel;
 import com.l7tech.proxy.datamodel.Ssg;
 
 import javax.swing.*;
-import javax.swing.event.*;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.ArrayList;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * The Network panel for the SSG Property Dialog.
@@ -38,11 +34,6 @@ class SsgNetworkPanel extends JPanel {
     private JRadioButton radioNonstandardPorts;
     private JTextField fieldSsgPort;
     private JTextField fieldSslPort;
-    private JRadioButton radioDefaultIpAddresses;
-    private JRadioButton radioCustomIpAddresses;
-    private JList jlistCustomIpAddresses;
-    private JButton buttonRemoveIpAddress;
-    private JButton buttonAddIpAddress;
     private JPanel wsdlUrlLabelPanel;
     private JPanel proxyUrlLabelPanel;
     private JPanel wsdlUrlPanel;
@@ -51,6 +42,8 @@ class SsgNetworkPanel extends JPanel {
     private JLabel defaultSslPortLabel;
     private JPanel sslPortFieldPanel;
     private JPanel ssgPortFieldPanel;
+    private JPanel ipListPanel;
+    private IpListPanel ipList;
 
     public SsgNetworkPanel() {
         initialize();
@@ -124,63 +117,10 @@ class SsgNetworkPanel extends JPanel {
         fieldSslPort.setPreferredSize(new Dimension(50, 20));
         sslPortFieldPanel.add(fieldSslPort, gc);
 
-        // TODO the IP list panel code was moved to the class IpListPanel.  Need to use that class and remove this code
-        // TODO the IP list panel code was moved to the class IpListPanel.  Need to use that class and remove this code
-        // TODO the IP list panel code was moved to the class IpListPanel.  Need to use that class and remove this code
-        // TODO the IP list panel code was moved to the class IpListPanel.  Need to use that class and remove this code
-        // TODO the IP list panel code was moved to the class IpListPanel.  Need to use that class and remove this code
-
-        ButtonGroup ipBg = new ButtonGroup();
-        radioDefaultIpAddresses.addChangeListener(changeListener);
-        ipBg.add(radioDefaultIpAddresses);
-        radioCustomIpAddresses.addChangeListener(changeListener);
-        ipBg.add(radioCustomIpAddresses);
-
-        jlistCustomIpAddresses.addListSelectionListener(new ListSelectionListener() {
-            public void valueChanged(ListSelectionEvent e) {
-                updateCustomPortsEnableState();
-            }
-        });
-
-        buttonRemoveIpAddress.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                Object val = jlistCustomIpAddresses.getSelectedValue();
-                if (val != null) {
-                    java.util.List addrList = getCustomIpAddressesList();
-                    addrList.remove(val);
-                    setCustomIpAddresses((String[])addrList.toArray(new String[0]));
-                }
-            }
-        });
-
-        buttonAddIpAddress.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-
-                Container rootPane = SsgNetworkPanel.this.getTopLevelAncestor();
-                AddIpDialog dlg;
-                if (rootPane instanceof Frame)
-                    dlg = new AddIpDialog((Frame)rootPane);
-                else if (rootPane instanceof Dialog)
-                    dlg = new AddIpDialog((Dialog)rootPane);
-                else
-                    dlg = new AddIpDialog((Dialog)null);
-
-                dlg.pack();
-                Utilities.centerOnScreen(dlg);
-                dlg.show();
-                String addr = dlg.getAddress();
-                dlg.dispose();
-                if (addr != null) {
-                    java.util.List addrList = getCustomIpAddressesList();
-                    addrList.add(addr);
-                    setCustomIpAddresses((String[])addrList.toArray(new String[0]));
-                }
-            }
-        });
-
-        Utilities.enableGrayOnDisabled(jlistCustomIpAddresses);
-        Utilities.enableGrayOnDisabled(buttonAddIpAddress);
-        Utilities.enableGrayOnDisabled(buttonRemoveIpAddress);
+        ipList = new IpListPanel();
+        ipListPanel.removeAll();
+        ipListPanel.setLayout(new BorderLayout());
+        ipListPanel.add(ipList, BorderLayout.CENTER);
 
         updateCustomPortsEnableState();
     }
@@ -189,37 +129,16 @@ class SsgNetworkPanel extends JPanel {
         boolean en = radioNonstandardPorts.isSelected();
         fieldSsgPort.setEnabled(en);
         fieldSslPort.setEnabled(en);
-
-        boolean ips = radioCustomIpAddresses.isSelected();
-        jlistCustomIpAddresses.setEnabled(ips);
-        buttonAddIpAddress.setEnabled(ips);
-        buttonRemoveIpAddress.setEnabled(ips && jlistCustomIpAddresses.getSelectedValue() != null);
     }
 
 
     void setCustomIpAddresses(String[] ips) {
-        if (ips == null) ips = new String[0];
-        jlistCustomIpAddresses.setListData(ips);
-        updateCustomPortsEnableState();
+        ipList.setAddresses(ips);
     }
 
     String[] getCustomIpAddresses() {
-        java.util.List got = getCustomIpAddressesList();
-        return (String[])got.toArray(new String[0]);
+        return ipList.getAddresses();
     }
-
-    private java.util.List getCustomIpAddressesList() {
-        ListModel model = jlistCustomIpAddresses.getModel();
-        java.util.List got = new ArrayList();
-        int size = model.getSize();
-        for (int i = 0; i < size; ++i) {
-            Object element = model.getElementAt(i);
-            if (element != null)
-                got.add(element.toString());
-        }
-        return got;
-    }
-
     void setCustomPorts(boolean customPorts) {
         radioStandardPorts.setSelected(!customPorts);
         radioNonstandardPorts.setSelected(customPorts);
@@ -254,141 +173,10 @@ class SsgNetworkPanel extends JPanel {
     }
 
     public boolean isUseOverrideIpAddresses() {
-        return radioCustomIpAddresses.isSelected();
+        return ipList.isAddressesEnabled();
     }
 
     public void setUseOverrideIpAddresses(boolean useOverrideIpAddresses) {
-        radioCustomIpAddresses.setSelected(useOverrideIpAddresses);
-        radioDefaultIpAddresses.setSelected(!useOverrideIpAddresses);
-        updateCustomPortsEnableState();
-    }
-
-    private static class AddIpDialog extends JDialog {
-        private static final String ADD_IP = "Add IP Address";
-        private String retval = null;
-        private SquigglyTextField ipRangeTextField = null;
-        private JButton okButton;
-
-        AddIpDialog(Frame owner) {
-            super(owner, ADD_IP, true);
-            init();
-        }
-
-        AddIpDialog(Dialog owner) {
-            super(owner, ADD_IP, true);
-            init();
-        }
-
-        /** @return the address that was entered, if Ok button was pressed; else null. */
-        String getAddress() {
-            return retval;
-        }
-
-        private void init() {
-            Container p = getContentPane();
-            p.setLayout(new GridBagLayout());
-            p.add(new JLabel("IP Address: "),
-                  new GridBagConstraints(0, 0, 3, 1, 1.0, 1.0,
-                                         GridBagConstraints.NORTHWEST,
-                                         GridBagConstraints.BOTH,
-                                         new Insets(5, 5, 5, 5), 0, 0));
-            p.add(getIpRangeTextField(),
-                  new GridBagConstraints(0, 1, 3, 1, 1.0, 1.0,
-                                         GridBagConstraints.NORTHWEST,
-                                         GridBagConstraints.BOTH,
-                                         new Insets(0, 5, 0, 5), 0, 0));
-
-            okButton = new JButton("Ok");
-            JButton cancelButton = new JButton("Cancel");
-            Action buttonAction = new AbstractAction() {
-                public void actionPerformed(ActionEvent e) {
-                    if (e.getSource() == okButton) {
-                        String s = getIpRangeTextField().getText();
-                        if (isValidIp(s))
-                            retval = s;
-                    }
-                    AddIpDialog.this.hide();
-                }
-            };
-            okButton.addActionListener(buttonAction);
-            cancelButton.addActionListener(buttonAction);
-            p.add(Box.createGlue(),
-                  new GridBagConstraints(0, 2, 1, 1, 1.0, 1.0,
-                                         GridBagConstraints.EAST,
-                                         GridBagConstraints.HORIZONTAL,
-                                         new Insets(0, 20, 0, 0), 0, 0));
-            Utilities.equalizeButtonSizes(new AbstractButton[] { okButton, cancelButton });
-            p.add(okButton,
-                  new GridBagConstraints(1, 2, 1, 1, 0.0, 0.0,
-                                         GridBagConstraints.EAST,
-                                         GridBagConstraints.NONE,
-                                         new Insets(5, 0, 5, 0), 0, 0));
-            p.add(cancelButton,
-                  new GridBagConstraints(2, 2, 1, 1, 0.0, 0.0,
-                                         GridBagConstraints.EAST,
-                                         GridBagConstraints.NONE,
-                                         new Insets(5, 5, 5, 5), 0, 0));
-            Utilities.runActionOnEscapeKey(getIpRangeTextField(), buttonAction);
-            getRootPane().setDefaultButton(okButton);
-            pack();
-            checkValid();
-
-        }
-
-        private static final Pattern ipPattern = Pattern.compile("(\\d+)\\.(\\d+)\\.(\\d+)\\.(\\d+)");
-        private static final Pattern badIpChars = Pattern.compile("[^0-9.]");
-        private boolean isValidIp(String s) {
-            boolean ret = false;
-            int pos = -1;
-            int end = -1;
-            try {
-                Matcher matcher = ipPattern.matcher(s);
-                if (!matcher.matches())
-                    return false;
-
-                for (int i = 0; i < 4; ++i) {
-                    final String matched = matcher.group(i + 1);
-                    pos = matcher.start(i + 1);
-                    end = matcher.end(i + 1);
-                    int c = Integer.parseInt(matched);
-                    if (c < 0 || c > 255)
-                        return false;
-                }
-
-                getIpRangeTextField().setNone();
-                ret = true;
-                return true;
-            } catch (NumberFormatException nfe) {
-                return false;
-            } finally {
-                if (ret) {
-                    getIpRangeTextField().setNone();
-                } else {
-                    if (pos < 0)
-                        getIpRangeTextField().setAll();
-                    else
-                        getIpRangeTextField().setRange(pos, end);
-                }
-            }
-        }
-
-        private void checkValid() {
-            okButton.setEnabled(isValidIp(getIpRangeTextField().getText()));
-        }
-
-        private SquigglyTextField getIpRangeTextField() {
-            if (ipRangeTextField == null) {
-                ipRangeTextField = new SquigglyTextField();
-                // Block bad inserts immediately
-                ipRangeTextField.getDocument().addUndoableEditListener(new UndoableEditListener() {
-                    public void undoableEditHappened(UndoableEditEvent e) {
-                        if (badIpChars.matcher(ipRangeTextField.getText()).find())
-                            e.getEdit().undo();
-                        checkValid();
-                    }
-                });
-            }
-            return ipRangeTextField;
-        }
+        ipList.setAddressesEnabled(useOverrideIpAddresses);
     }
 }
