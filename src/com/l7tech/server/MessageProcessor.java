@@ -81,7 +81,8 @@ public class MessageProcessor {
                     req.setDocument(wssOutput.getUndecoratedMessage());
                 }
             } catch (MessageNotSoapException e) {
-                
+                logger.log(Level.FINE, "Message is not SOAP; will not have any WSS results.");
+                // pass through, leaving wssOutput as null
             } catch (ProcessorException e) {
                 logger.log(Level.SEVERE, "Error in WSS processing of request", e);
                 return AssertionStatus.SERVER_ERROR;
