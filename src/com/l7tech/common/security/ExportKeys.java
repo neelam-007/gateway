@@ -12,7 +12,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.security.Key;
 import java.security.KeyStore;
-import java.security.PublicKey;
+import java.security.cert.Certificate;
 import java.util.Enumeration;
 
 /**
@@ -36,7 +36,6 @@ public class ExportKeys {
 
             if ( ks.isKeyEntry(alias) ){
                 Key privkey = ks.getKey( alias, keypassword.toCharArray() );
-                PublicKey pubkey = (ks.getCertificate(alias)).getPublicKey();
 
                 System.err.println("private key format=" + privkey.getFormat());
                 FileOutputStream fos = null;
@@ -51,13 +50,13 @@ public class ExportKeys {
                     if ( fos != null ) fos.close();
                 }
 
-                System.err.println("public key format=" + pubkey.getFormat());
+                Certificate cert = ks.getCertificate(alias);
                 try {
-                    byte encoded[] = pubkey.getEncoded();
+                    byte encoded[] = cert.getEncoded();
                     fos = new FileOutputStream(pubout);
-                    fos.write("-----BEGIN RSA PUBLIC KEY-----\n".getBytes());
+                    fos.write("-----BEGIN TRUSTED CERTIFICATE-----\n".getBytes());
                     fos.write(HexUtils.encodeBase64(encoded).getBytes("UTF-8"));
-                    fos.write("\n-----END RSA PUBLIC KEY-----\n".getBytes());
+                    fos.write("\n-----END TRUSTED CERTIFICATE-----\n".getBytes());
                     System.err.println( "Wrote " + pubout);
                 } finally {
                     if ( fos != null ) fos.close();
