@@ -5,7 +5,6 @@ import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.RemoteIpRangePropertiesDialog;
 import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.console.tree.policy.PolicyException;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RemoteIpRange;
