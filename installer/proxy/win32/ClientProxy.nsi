@@ -4,8 +4,8 @@
 
 !define J2RE "j2re1.4.2"  ;Name of directory containing JRE
 !define J2RE_PATH "C:\${J2RE}"   ;Full path to directory containing JRE (at .nsi compile-time)
-!define COMPANY "Layer 7 Technologies"
-!define MUI_PRODUCT "Client Proxy" ;Define your own software name here
+!define COMPANY "Layer7 Technologies"
+!define MUI_PRODUCT "Layer7 Client Proxy" ;Define your own software name here
 !define MUI_VERSION "0.9b" ;Define your own software version here
 !define BUILD_DIR "..\..\..\build" ;UneasyRooster\build dir, root of jar files and things
 
@@ -15,7 +15,7 @@
 ;Configuration
 
   ;General
-  OutFile "Layer 7 ${MUI_PRODUCT} ${MUI_VERSION} Installer.exe"
+  OutFile "${MUI_PRODUCT} ${MUI_VERSION} Installer.exe"
 
   ;Folder selection page
   InstallDir "$PROGRAMFILES\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}"
@@ -72,10 +72,10 @@ Section "Client Proxy" SecCopyUI
   ;ADD YOUR OWN STUFF HERE!
 
   SetOutPath "$INSTDIR"
-  File "ClientProxy.exe"
-  File "ClientProxy.ini"
-  File "ClientProxy Debug.bat"
-  File "ClientProxy Text Mode.bat"
+  File "Layer7 Client Proxy.exe"
+  File "Layer7 Client Proxy.ini"
+  File "Layer7 Client Proxy.bat"
+  File "Layer7 Client Proxy in Text Mode.bat"
   File "${BUILD_DIR}\ClientProxy.jar"
   File /r "${BUILD_DIR}\lib"
   File /r "${J2RE_PATH}"
@@ -87,10 +87,10 @@ Section "Client Proxy" SecCopyUI
     
     ;Create shortcuts
     CreateDirectory "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}"
-    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Start Client Proxy.lnk" "$INSTDIR\ClientProxy.exe" parameters "$INSTDIR\ClientProxy.exe" 0
-    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Start Client Proxy in Troubleshooting Mode.lnk" "$INSTDIR\ClientProxy Debug.bat" parameters "$INSTDIR\ClientProxy.exe" 1
-    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Start Client Proxy in Text Mode.lnk" "$INSTDIR\ClientProxy Text Mode.bat" parameters "$INSTDIR\ClientProxy.exe" 2
-    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Uninstall Client Proxy.lnk" "$INSTDIR\Uninstall.exe"
+    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Start Layer7 Client Proxy.lnk" "$INSTDIR\Layer7 Client Proxy.exe" parameters "$INSTDIR\Layer7 Client Proxy.exe" 0
+    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Start Layer7 Client Proxy in Troubleshooting Mode.lnk" "$INSTDIR\Layer7 Client Proxy.bat" parameters "$INSTDIR\Layer7 Client Proxy.exe" 1
+    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Start Layer7 Client Proxy in Text Mode.lnk" "$INSTDIR\Layer7 Client Proxy in Text Mode.bat" parameters "$INSTDIR\Layer7 Client Proxy.exe" 2
+    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Uninstall Layer7 Client Proxy.lnk" "$INSTDIR\Uninstall.exe"
   
   !insertmacro MUI_STARTMENU_WRITE_END
   
@@ -117,10 +117,10 @@ Section "Uninstall"
 
   ;ADD YOUR OWN STUFF HERE!
 
-  Delete "$INSTDIR\ClientProxy.exe"
-  Delete "$INSTDIR\ClientProxy.ini"
-  Delete "$INSTDIR\ClientProxy Debug.bat"
-  Delete "$INSTDIR\ClientProxy Text Mode.bat"
+  Delete "$INSTDIR\Layer7 Client Proxy.exe"
+  Delete "$INSTDIR\Layer7 Client Proxy.ini"
+  Delete "$INSTDIR\Layer7 Client Proxy.bat"
+  Delete "$INSTDIR\Layer7 Client Proxy in Text Mode.bat"
   Delete "$INSTDIR\ClientProxy.jar"
   RMDir /r "$INSTDIR\lib"
   RMDir /r "$INSTDIR\${J2RE}"
@@ -131,10 +131,10 @@ Section "Uninstall"
 
   StrCmp ${TEMP} "" noshortcuts
   
-    Delete "$SMPROGRAMS\${TEMP}\Start Client Proxy.lnk"
-    Delete "$SMPROGRAMS\${TEMP}\Start Client Proxy in Troubleshooting Mode.lnk"
-    Delete "$SMPROGRAMS\${TEMP}\Start Client Proxy in Text Mode.lnk"
-    Delete "$SMPROGRAMS\${TEMP}\Uninstall Client Proxy.lnk"
+    Delete "$SMPROGRAMS\${TEMP}\Start Layer7 Client Proxy.lnk"
+    Delete "$SMPROGRAMS\${TEMP}\Start Layer7 Client Proxy in Troubleshooting Mode.lnk"
+    Delete "$SMPROGRAMS\${TEMP}\Start Layer7 Client Proxy in Text Mode.lnk"
+    Delete "$SMPROGRAMS\${TEMP}\Uninstall Layer7 Client Proxy.lnk"
     RMDir "$SMPROGRAMS\${TEMP}" ;Only if empty, so it won't delete other shortcuts
     
   noshortcuts:
