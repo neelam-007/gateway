@@ -109,6 +109,7 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
             log.info("Encrypted request OK");
         }
 
+        // DIGITAL SIGNATURE
         SoapMsgSigner dsigHelper = new SoapMsgSigner();
         try {
             dsigHelper.signEnvelope(soapmsg, userPrivateKey, userCert);
@@ -119,6 +120,7 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
         }
         log.info("Signed request OK");
 
+        // SET BACK ALL THIS IN PENDING REQUEST
         request.setSoapEnvelope(soapmsg);
 
         return AssertionStatus.NONE;
