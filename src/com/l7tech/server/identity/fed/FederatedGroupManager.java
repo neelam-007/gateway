@@ -11,8 +11,11 @@ import com.l7tech.identity.*;
 import com.l7tech.identity.fed.*;
 import com.l7tech.identity.internal.GroupMembership;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.PersistenceManager;
+import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.identity.PersistentGroupManager;
 
+import java.sql.SQLException;
 import java.util.logging.Logger;
 
 /**
@@ -33,6 +36,26 @@ public class FederatedGroupManager extends PersistentGroupManager {
         return FederatedGroupMembership.class;
     }
 
+    protected void preSave( PersistentGroup group ) throws SaveException {
+        if ( group instanceof VirtualGroup && providerConfig.getTrustedCertOids().length == 0 )
+            throw new SaveException("Virtual groups cannot be created in a Federated Identity Provider with no Trusted Certificates");
+    }
+
+    public Group findByPrimaryKey( String oid ) throws FindException {
+        try {
+            Group g = super.findByPrimaryKey(oid);
+            if ( g == null ) {
+                g = (PersistentGroup)PersistenceManager.findByPrimaryKey(getContext(), VirtualGroup.class, Long.parseLong(oid));
+                g.setProviderId(providerConfig.getOid());
+            }
+            return g;
+        } catch (SQLException se) {
+            throw new FindException(se.toString(), se);
+        } catch (NumberFormatException nfe) {
+            throw new FindException("Can't find groups with non-numeric OIDs!", nfe);
+        }
+    }
+
     public boolean isMember( User user, Group genericGroup ) throws FindException {
         PersistentGroup group = cast(genericGroup);
         if ( group instanceof VirtualGroup ) {
@@ -40,7 +63,9 @@ public class FederatedGroupManager extends PersistentGroupManager {
                 String pattern = ((VirtualGroup)group).getX509SubjectDnPattern();
                 if ( pattern != null ) {
                     String dn = user.getSubjectDn();
-                    return dn == null ? false : CertUtils.dnMatchesPattern( user.getSubjectDn(), pattern );
+                    if ( dn != null &&
+                         CertUtils.dnMatchesPattern( user.getSubjectDn(), pattern ) )
+                        return true;
                 }
             }
 
@@ -50,7 +75,7 @@ public class FederatedGroupManager extends PersistentGroupManager {
                 return false;
             }
 
-            logger.warning("Neither X.509 nor SAML are supported by this Federated Identity Provider. Cannot use Virtual Groups.");
+            logger.info("User '" + user.getSubjectDn() + "' does not appear to be a member of the selected VirtualGroup");
             return false;
         } else {
             // Same as internal groups
