@@ -124,8 +124,8 @@ public class GuiCredentialManager extends CredentialManager {
                             // canceled it.  We can take a hint -- we'll turn off logon prompts until the proxy is
                             // restarted or the user manually changes the password.
                             ssg.promptForUsernameAndPassword(false);
-                            return;
                         }
+                        return;
                     }
                     ssg.setUsername(pw.getUserName());
                     ssg.cmPassword(pw.getPassword()); // TODO: encoding?
