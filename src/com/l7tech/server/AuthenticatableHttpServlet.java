@@ -82,10 +82,12 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
                 IdentityProvider provider = (IdentityProvider) i.next();
                 try {
                     provider.authenticate(creds);
-                    logger.fine("Authentication success for user " + creds.getUser().getLogin() + " on identity provider: " + provider.getConfig().getName());
+                    logger.fine("Authentication success for user " + creds.getUser().getLogin() +
+                                " on identity provider: " + provider.getConfig().getName());
                     users.add( creds.getUser() );
                 } catch (AuthenticationException e) {
-                    logger.fine("Authentication failed for user " + creds.getUser().getLogin() + " on identity provider: " + provider.getConfig().getName());
+                    logger.fine("Authentication failed for user " + creds.getUser().getLogin() +
+                                " on identity provider: " + provider.getConfig().getName());
                     continue;
                 }
             }
