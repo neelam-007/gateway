@@ -28,6 +28,8 @@ import java.awt.event.ActionEvent;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.EventListener;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The <code>JDialog</code> wizard that drives the publish service
@@ -88,6 +90,7 @@ public class PublishServiceWizard extends Wizard {
     }
 
     private ServiceAndAssertion saBundle = new ServiceAndAssertion();
+    private static final Logger logger = Logger.getLogger(PublishServiceWizard.class.getName());
 
     private EventListenerList localListenerList = new EventListenerList();
 
@@ -166,13 +169,19 @@ public class PublishServiceWizard extends Wizard {
             header.setOid(oid);
             PublishServiceWizard.this.notify(header);
         } catch (Exception e) {
+            logger.log(Level.WARNING, "Cannot publish service as is", e);
             if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
-                JOptionPane.showMessageDialog(null,
-                  "Unable to save the service '" + saBundle.service.getName() + "'\n" +
-                  "because an existing service is already using that namespace URI\n" +
-                  "and SOAPAction combination.",
-                  "Service already exists",
-                  JOptionPane.ERROR_MESSAGE);
+                String msg = "This Web service cannot be saved as is because its resolution\n" +
+                             "parameters (SOAPAction, namespace, and possibly routing URI)\n" +
+                             "are already used by an existing published service.\n\nWould " +
+                             "you like to publish this service using a different routing URI?";
+                int answer = JOptionPane.showConfirmDialog(null, msg, "Service Resolution Conflict", JOptionPane.YES_NO_OPTION);
+                if (answer == JOptionPane.YES_OPTION) {
+                    // todo, get new routing URI
+                    // todo, try to publish again
+                } else {
+                    logger.info("Service publication aborted.");
+                }
             } else {
                 e.printStackTrace();
                 JOptionPane.showMessageDialog(null,
