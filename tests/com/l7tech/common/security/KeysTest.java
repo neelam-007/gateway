@@ -1,12 +1,19 @@
 package com.l7tech.common.security;
 
-import junit.framework.TestCase;
+import com.l7tech.common.util.KeystoreUtils;
 import junit.framework.Test;
+import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.security.Key;
+import java.security.KeyStore;
+import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Properties;
 
 /**
  * The <code>Keys</code> class test.
@@ -22,15 +29,14 @@ public class KeysTest extends TestCase {
      */
     public static Test suite() {
         return new TestSuite(KeysTest.class);
-
     }
 
     /**
-     *
      * @throws Exception
      */
     public void testCreateKeysAndCertificate() throws Exception {
-        Keys kc = new Keys();
+        final String subject = "CN=fred";
+        Keys kc = new Keys(subject);
         Date notBefore = new Date();
         Calendar cal = Calendar.getInstance();
         // clear the time part
@@ -43,14 +49,41 @@ public class KeysTest extends TestCase {
 
         cal.roll(Calendar.YEAR, 1);
         Date notAfter = cal.getTime();
-        String subject = "CN=fred";
 
-        X509Certificate cert = kc.generateSelfSignedCertificate(notBefore, notAfter, subject);
+        X509Certificate cert = kc.generateSelfSignedCertificate(notBefore, notAfter);
         assertTrue("Wrong subject", cert.getSubjectDN().getName().equals(subject));
         assertTrue("Wrong issuer", cert.getIssuerDN().getName().equals(subject));
 
         assertTrue("Wrong not before", cert.getNotBefore().equals(notBefore));
         assertTrue("Wrong not after", cert.getNotAfter().equals(notAfter));
+    }
+
+
+    /**
+     * @throws Exception
+     */
+    public void testWriteRead() throws Exception {
+        final String subject = "CN=fred";
+        Keys kc = new Keys(subject);
+        File f = File.createTempFile("testKeys", null);
+        final char[] password = "password".toCharArray();
+        final String alias = "testSigner";
+        kc.write(f.getAbsolutePath(), alias, password);
+        KeyStore ks = KeyStore.getInstance(Keys.KEYSTORE_TYPE);
+        FileInputStream fi = new FileInputStream(f);
+        ks.load(fi, password);
+        fi.close();
+        Key key = ks.getKey(alias, password);
+        assertTrue(key !=null);
+        Certificate cert = ks.getCertificate(alias);
+        assertTrue(cert != null);
+    }
+
+    public void testSsgKestoreProperties() throws Exception {
+        Properties props = Keys.createTestSsgKeystoreProperties();
+        KeystoreUtils ku = KeystoreUtils.getInstance();
+        assertTrue(Keys.KEYSTORE_TYPE.equals(ku.getKeyStoreType()));
+        assertTrue(props.getProperty(KeystoreUtils.ROOT_STOREPASSWD).equals(ku.getRootKeystorePasswd()));
     }
 
     /**
