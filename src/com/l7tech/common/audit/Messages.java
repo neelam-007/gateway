@@ -5,8 +5,6 @@
  */
 package com.l7tech.common.audit;
 
-import com.l7tech.common.audit.AuditDetailMessage;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -19,11 +17,11 @@ public class Messages {
     /**
      * Reserved IDs:
      *
-     * Messages:                  0001 - 0999  (Generic messages, e.g. Exception)
-     * BootMessages:              1000 - 1999
-     * AuditMessages:             2000 - 2999
-     * MessageProcessingMessages: 3000 - 3999
-     * AssertionMessagess:        4000 - 7999
+     * Messages:                       0001 - 0999  (Generic messages, e.g. Exception)
+     * BootMessages:                   1000 - 1999
+     * Unassigned (was AuditMessages): 2000 - 2999
+     * MessageProcessingMessages:      3000 - 3999
+     * AssertionMessagess:             4000 - 7999
      *
      *
      */

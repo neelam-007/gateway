@@ -16,23 +16,6 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
 public class TarariPlayground {
-
-    public static final String[] ISSOAP1_2 = {
-        "/*[local-name()=\"Envelope\" and namespace-uri()=\"http://www.w3.org/2003/05/soap-envelope\"]",
-        "/*/*[local-name()=\"Header\" and namespace-uri()=\"http://www.w3.org/2003/05/soap-envelope\"]",
-        "/*/*/*[local-name()=\"Body\" and namespace-uri()=\"http://www.w3.org/2003/05/soap-envelope\"]",
-    };
-    public static final String[] ISSOAP1_1 = {
-        "/*[local-name()=\"Envelope\" and namespace-uri()=\"http://schemas.xmlsoap.org/soap/envelope/\"]",
-        "/*/*[local-name()=\"Header\" and namespace-uri()=\"http://schemas.xmlsoap.org/soap/envelope/\"]",
-        "/*/*[local-name()=\"Body\" and namespace-uri()=\"http://schemas.xmlsoap.org/soap/envelope/\"]",
-    };
-
-    public static final String[] ISFAULT = {
-        "//*[local-name()=\"Fault\" and namespace-uri()=\"http://schemas.xmlsoap.org/soap/envelope/\"]",
-        "//*[local-name()=\"Fault\" and namespace-uri()=\"http://schemas.xmlsoap.org/soap/envelope/\"]/*[local-name()=\"faultcode\"]/text()",
-    };
-
     public static void main(String[] args) throws Exception {
         TarariUtil.setupIsSoap();
 
