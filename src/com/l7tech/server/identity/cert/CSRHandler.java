@@ -126,18 +126,22 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         byte[] csr = readCSRFromRequest(request);
         Certificate cert = null;
 
+        String certSubject = "cn=" + authenticatedUser.getLogin();
+        // todo: perhaps we should use the real dn in the case of ldap users but then we
+        // would need to change our runtime authentication mechanism
+
         // sign request
         try {
             // for internal users, if an account expiration is specified, make sure the cert created matches it
             if (authenticatedUser instanceof InternalUser) {
                 InternalUser iu = (InternalUser)authenticatedUser;
                 if (iu.getExpiration() != -1) {
-                    cert = sign(csr, iu.getExpiration());
+                    cert = sign(csr, certSubject, iu.getExpiration());
                 } else {
-                    cert = sign(csr);
+                    cert = sign(csr, certSubject);
                 }
             } else {
-                cert = sign(csr);
+                cert = sign(csr, certSubject);
             }
         } catch (Exception e) {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
@@ -193,17 +197,17 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         return HexUtils.decodeBase64(b64str);
     }
 
-    private Certificate sign(byte[] csr) throws Exception {
+    private Certificate sign(byte[] csr, String subject) throws Exception {
         RsaCertificateSigner signer = getSigner();
         // todo, refactor RsaCertificateSigner to throw more precise exceptions
-        Certificate cert = signer.createCertificate(csr);
+        Certificate cert = signer.createCertificate(csr, subject);
         return cert;
     }
 
-    private Certificate sign(byte[] csr, long expiration) throws Exception {
+    private Certificate sign(byte[] csr, String subject, long expiration) throws Exception {
         RsaCertificateSigner signer = getSigner();
         // todo, refactor RsaCertificateSigner to throw more precise exceptions
-        Certificate cert = signer.createCertificate(csr, expiration);
+        Certificate cert = signer.createCertificate(csr, subject, expiration);
         return cert;
     }
 

@@ -189,11 +189,12 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
      * Create a certificate from the given PKCS10 Certificate Request.
      *
      * @param pkcs10req  the PKCS10 certificate signing request, expressed in binary form.
+     * @param subject the subject for the cert, if null, use the subject contained in the csr
      * @return a signed X509 client certificate
      * @throws Exception if something bad happens
      */
-    public Certificate createCertificate(byte[] pkcs10req) throws Exception {
-        return createCertificate(pkcs10req, -1);
+    public Certificate createCertificate(byte[] pkcs10req, String subject) throws Exception {
+        return createCertificate(pkcs10req, subject, -1);
     }
 
     /**
@@ -201,13 +202,17 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
      *
      * @param pkcs10req  the PKCS10 certificate signing request, expressed in binary form.
      * @param expiration the desired expiration date of the cert, -1 to fallback on default
+     * @param subject the subject for the cert, if null, use the subject contained in the csr
      * @return a signed X509 client certificate
      * @throws Exception if something bad happens
      */
-    public Certificate createCertificate(byte[] pkcs10req, long expiration) throws Exception {
+    public Certificate createCertificate(byte[] pkcs10req, String subject, long expiration) throws Exception {
         PKCS10CertificationRequest pkcs10 = new PKCS10CertificationRequest(pkcs10req);
         CertificationRequestInfo certReqInfo = pkcs10.getCertificationRequestInfo();
-        String dn= certReqInfo.getSubject().toString();
+        String dn = subject;
+        if (dn == null) {
+            dn = certReqInfo.getSubject().toString();
+        }
         logger.info("Signing cert for subject DN = " + dn);
         if (pkcs10.verify() == false) {
             logger.severe("POPO verification failed for " + dn);

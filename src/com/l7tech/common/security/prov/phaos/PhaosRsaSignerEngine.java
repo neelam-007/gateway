@@ -9,6 +9,7 @@ package com.l7tech.common.security.prov.phaos;
 import com.l7tech.common.security.RsaSignerEngine;
 import com.phaos.cert.CertificateRequest;
 import com.phaos.cert.X509;
+import com.phaos.cert.X500Name;
 import sun.security.x509.X509CertImpl;
 
 import java.io.FileInputStream;
@@ -92,8 +93,11 @@ public class PhaosRsaSignerEngine implements RsaSignerEngine {
      * @return a signed X509 client certificate
      * @throws Exception if something bad happens
      */
-    public Certificate createCertificate(byte[] pkcs10req) throws Exception {
+    public Certificate createCertificate(byte[] pkcs10req, String subject) throws Exception {
         CertificateRequest csr = new CertificateRequest(pkcs10req);
+        if (subject != null) {
+            csr.setSubject(new X500Name(subject));
+        }
         X509 phaosCaCert = new X509(caCert.getEncoded());
         com.phaos.crypto.PrivateKey phaosPrivateKey = new com.phaos.crypto.RSAPrivateKey(privateKey.getEncoded());
 
@@ -112,7 +116,7 @@ public class PhaosRsaSignerEngine implements RsaSignerEngine {
      * @return a signed X509 client certificate
      * @throws Exception if something bad happens
      */
-    public Certificate createCertificate(byte[] pkcs10req, long expiration) throws Exception {
+    public Certificate createCertificate(byte[] pkcs10req, String subject, long expiration) throws Exception {
         /*CertificateRequest csr = new CertificateRequest(pkcs10req);
         X509 phaosCaCert = new X509(caCert.getEncoded());
         com.phaos.crypto.PrivateKey phaosPrivateKey = new com.phaos.crypto.RSAPrivateKey(privateKey.getEncoded());

@@ -10,13 +10,11 @@ import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Query;
 import net.sf.hibernate.Session;
 import org.springframework.orm.hibernate.support.HibernateDaoSupport;
-import sun.security.x509.X500Name;
 
 import java.io.IOException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
@@ -52,6 +50,9 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
         if (user == null) throw new IllegalArgumentException("can't call this with null");
         logger.finest("recordNewUserCert for " + getName(user));
 
+        /*
+        We dont check that anymore. instead, we ensure that we use the subject of authenticated users
+        instead of the subject of received csr's when creating certs
         // check that the cert's subject matches the user's login
         try {
             X500Name x500name = new X500Name(((X509Certificate)(cert)).getSubjectX500Principal().getName());
@@ -59,17 +60,18 @@ public class ClientCertManagerImp extends HibernateDaoSupport implements ClientC
             if (login == null || login.length() == 0) {
                 logger.log(Level.INFO, "User " + user.getName() + " has no login. Will save cert anyway.");
             } else if (!x500name.getCommonName().equals(login)) {
-                logger.log(Level.SEVERE, "User " + user.getLogin() +
-                                         " tried to csr for subject other than self (" +
-                                         x500name.getCommonName() + ")");
-                throw new UpdateException("Attempt to create cert for identity " + x500name.getCommonName() +
-                                          " with login " + user.getLogin());
+                String msg = "login value \'" + login + "\' does not match the cert subject \'" +
+                             x500name.getCommonName() + "\'.";
+                logger.log(Level.SEVERE, msg);
+                throw new UpdateException(msg);
+
             } else {
                 logger.finest("Cert's subject matches authenticated user's login (" + user.getLogin() + ")");
             }
         } catch (IOException e) {
             throw new UpdateException("could not verify the cert subject", e);
         }
+        */
 
         // check if operation is permitted
         if (!userCanGenCert(user)) {

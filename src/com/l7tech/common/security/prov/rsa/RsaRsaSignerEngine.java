@@ -94,8 +94,8 @@ public class RsaRsaSignerEngine implements RsaSignerEngine {
      * @return a signed X509 client certificate
      * @throws Exception if something bad happens
      */
-    public Certificate createCertificate(byte[] pkcs10req) throws Exception {
-        return createCertificate(pkcs10req, -1);
+    public Certificate createCertificate(byte[] pkcs10req, String subject) throws Exception {
+        return createCertificate(pkcs10req, subject, -1);
     }
 
     /**
@@ -106,7 +106,7 @@ public class RsaRsaSignerEngine implements RsaSignerEngine {
      * @return a signed X509 client certificate
      * @throws Exception if something bad happens
      */
-    public Certificate createCertificate(byte[] pkcs10req, long expiration) throws Exception {
+    public Certificate createCertificate(byte[] pkcs10req, String subject, long expiration) throws Exception {
         PKCS10CertRequest csr = new PKCS10CertRequest(pkcs10req, 0, 0);
         JSAFE_PrivateKey caKey = JSAFE_PrivateKey.getInstance(privateKey.getEncoded(), 0, "Native/Java");
         com.rsa.certj.cert.X509Certificate cert = new com.rsa.certj.cert.X509Certificate();
@@ -128,7 +128,11 @@ public class RsaRsaSignerEngine implements RsaSignerEngine {
         cert.setValidity(notBefore, notAfter);
 
         cert.setIssuerName(new X500Name(caCert.getSubjectDN().getName().toString()));
-        cert.setSubjectName(csr.getSubjectName());
+        if (subject == null) {
+            cert.setSubjectName(csr.getSubjectName());
+        } else {
+            cert.setSubjectName(new X500Name(subject));
+        }
         cert.setSubjectPublicKey(csr.getSubjectPublicKey("Native/Java"));
 
         cert.signCertificate ("SHA1/RSA/PKCS1Block01Pad", "Native/Java", caKey, new SecureRandom());

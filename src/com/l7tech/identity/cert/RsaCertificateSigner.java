@@ -58,7 +58,7 @@ public class RsaCertificateSigner {
 
         // instantiate the signer
         RsaCertificateSigner me = new RsaCertificateSigner(args[0], args[1], args[2], args[3], type);
-        Certificate cert = me.createCertificate(csrfromfile);
+        Certificate cert = me.createCertificate(csrfromfile, null);
 
         // serialize the cert to the path provided
         byte[] certbytes = cert.getEncoded();
@@ -75,22 +75,24 @@ public class RsaCertificateSigner {
      * Create a certificate from the given PKCS10 Certificate Request.
      *
      * @param pkcs10req  the PKCS10 certificate signing request, expressed in binary form.
+     * @param subject the subject for the cert, if null, use the subject contained in the csr
      * @return a signed X509 client certificate
      * @throws Exception if something bad happens
      */
-    public Certificate createCertificate(byte[] pkcs10req) throws Exception {
-        return rsaSignerEngine.createCertificate(pkcs10req);
+    public Certificate createCertificate(byte[] pkcs10req, String subject) throws Exception {
+        return rsaSignerEngine.createCertificate(pkcs10req, subject);
     }
 
     /**
      * Create a certificate from the given PKCS10 Certificate Request.
      *
      * @param pkcs10req  the PKCS10 certificate signing request, expressed in binary form.
+     * @param subject the subject for the cert, if null, use the subject contained in the csr
      * @param expiration expiration of the cert (millis since era)
      * @return a signed X509 client certificate
      * @throws Exception if something bad happens
      */
-    public Certificate createCertificate(byte[] pkcs10req, long expiration) throws Exception {
-        return rsaSignerEngine.createCertificate(pkcs10req, expiration);
+    public Certificate createCertificate(byte[] pkcs10req, String subject, long expiration) throws Exception {
+        return rsaSignerEngine.createCertificate(pkcs10req, subject, expiration);
     }
 }

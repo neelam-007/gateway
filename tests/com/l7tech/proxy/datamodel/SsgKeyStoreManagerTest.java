@@ -44,7 +44,7 @@ public class SsgKeyStoreManagerTest extends TestCase {
         KeyPair kp = JceProvider.generateRsaKeyPair();
         CertificateRequest csr = JceProvider.makeCsr("mike", kp);
         RsaSignerEngine rsaSigner = JceProvider.createRsaSignerEngine("/tomcat4.1/kstores/ca.ks", "tralala", "ssgroot", "tralala", KeyStore.getDefaultType());
-        X509Certificate cert = (X509Certificate)rsaSigner.createCertificate(csr.getEncoded());
+        X509Certificate cert = (X509Certificate)rsaSigner.createCertificate(csr.getEncoded(), null);
 
         System.out.println("Using client cert:" + CertUtils.toString(cert));
 
