@@ -24,6 +24,7 @@ public abstract class JceProvider {
     public static final String PHAOS_ENGINE = "com.l7tech.common.security.prov.phaos.PhaosJceProviderEngine";
     public static final String RSA_ENGINE = "com.l7tech.common.security.prov.rsa.RsaJceProviderEngine";
     public static final String NCIPHER_ENGINE = "com.l7tech.common.security.prov.ncipher.NcipherJceProviderEngine";
+    public static final String ENTRUST_ENGINE = "com.l7tech.common.security.prov.entrust.EntrustJceProviderEngine";
 
     // Default driver
     private static final String DEFAULT_ENGINE = BC_ENGINE;
