@@ -20,7 +20,7 @@ import java.awt.event.HierarchyListener;
 /**
  * UserPanel - edits the <CODE>User/CODE> instances.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
 public class UserPanel extends EntityEditorPanel {

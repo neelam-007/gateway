@@ -1,23 +1,22 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.IconManager;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.IconManager2;
+import com.l7tech.console.util.Registry;
+import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
-import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.service.PublishedService;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
-import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.console.panels.PublishServiceWizard.ServiceAndAssertion;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -29,10 +28,9 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.Arrays;
-import java.io.ByteArrayOutputStream;
 
 
 /**
@@ -40,7 +38,7 @@ import java.io.ByteArrayOutputStream;
  * <code>WizardStepPanel</code> that collects the published service identities
  * info.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
 public class IdentityProviderPanel extends WizardStepPanel {
@@ -347,12 +345,13 @@ public class IdentityProviderPanel extends WizardStepPanel {
      * by the wizard are not valid.
      */
     public void readSettings(Object settings) throws IllegalArgumentException {
-        PublishedService publishedService = (PublishedService)settings;
+        PublishServiceWizard.ServiceAndAssertion
+          collect = (PublishServiceWizard.ServiceAndAssertion)settings;
 
 
         IdentityProvider ip = (IdentityProvider)providersComboBoxModel.getSelectedItem();
         if (ip == null) {
-            publishedService.setPolicyXml(null);
+            collect.getService().setPolicyXml(null);
         }
         java.util.List identityAssertions = new ArrayList();
         Iterator it = getIdentitiesInTableModel().getDataVector().iterator();
@@ -369,16 +368,16 @@ public class IdentityProviderPanel extends WizardStepPanel {
                 identityAssertions.add(new MemberOfGroup(ip, g));
             }
         }
-        java.util.List allAssertions =
-          Arrays.asList(new Assertion[] {
-            new OneOrMoreAssertion(identityAssertions), new HttpBasic()});
+
+        java.util.List allAssertions =  new ArrayList();
 
         if (ssljCheckBox.isSelected()) {
             allAssertions.add(new SslAssertion());
         }
-        ByteArrayOutputStream bo = new ByteArrayOutputStream();
-        WspWriter.writePolicy(new AllAssertion(allAssertions), bo);
-        publishedService.setPolicyXml(bo.toString());
+        allAssertions.add(new HttpBasic());
+        allAssertions.add(new OneOrMoreAssertion(identityAssertions));
+
+        collect.setAssertion(new AllAssertion(allAssertions));
     }
 
     /** @return the wizard step label    */

@@ -6,7 +6,7 @@ package com.l7tech.console.action;
  * The <code>DeleteAssertionAction</code> action deletes
  * the assertion from the target policy.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
 public abstract class DeleteAssertionAction extends BaseAction {

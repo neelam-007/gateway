@@ -7,7 +7,7 @@ import java.util.Collection;
  * list of elements/entities.. Successive calls to the
  * getNextBatch() method return successive elements of the series.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
 public interface EntitiesCollection {

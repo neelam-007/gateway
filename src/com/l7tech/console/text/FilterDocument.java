@@ -14,7 +14,7 @@ import javax.swing.text.BadLocationException;
  * length defined by the 'max' parameter passed in constructor.
  * with optional filtering support.
  * 
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version $Revision$, $Date$
  * @see javax.swing.text.Document
  */

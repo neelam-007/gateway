@@ -14,7 +14,7 @@ import java.net.URL;
 /**
  * The <code>HomeAction</code> displays the dds the new user.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
 public class HomeAction extends BaseAction {

@@ -13,7 +13,7 @@ import java.net.URL;
  * internal <code>Map</code> as <code>SoftReference</code> instancese
  * so Images are not loaded twice.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public final class IconManager2 {
     /** singleton instance */

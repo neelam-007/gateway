@@ -9,7 +9,7 @@ import java.util.Enumeration;
  * The class represents an entity gui node element in the
  * TreeModel.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
 public abstract class EntityHeaderNode extends AbstractTreeNode {

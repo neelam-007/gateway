@@ -32,7 +32,7 @@ import java.util.Properties;
  *
  * The class is not synchronized.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @see java.beans.PropertyChangeSupport
  */
 public class Preferences extends PropertyChangeSupport {

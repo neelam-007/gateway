@@ -12,7 +12,7 @@ import java.lang.ref.WeakReference;
  * Handles the work with workspaces, trees etc.
  *
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version
  */
 public class WindowManager {

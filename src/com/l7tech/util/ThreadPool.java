@@ -27,7 +27,7 @@ import java.util.*;
  * that receives pool events. The listener methods are invoked on the
  * thread that generated the event.
  * 
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a> 
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1 $
  *
  * @see ThreadPoolListener

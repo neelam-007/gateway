@@ -12,7 +12,7 @@ import java.awt.geom.Rectangle2D;
 /**
  * This class is a bag if utilites shared by panels.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class Utilities {
 

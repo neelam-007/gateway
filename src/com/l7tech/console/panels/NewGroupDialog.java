@@ -20,7 +20,7 @@ import java.util.EventListener;
 /**
  * New Group dialog.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class NewGroupDialog extends JDialog {
 

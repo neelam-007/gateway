@@ -15,7 +15,7 @@ import java.util.*;
  * <code>MutableListMode</code> that provides several
  * methods to access and alter the data model.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class SortedListModel extends AbstractListModel {
 

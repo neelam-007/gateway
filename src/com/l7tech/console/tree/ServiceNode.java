@@ -22,7 +22,7 @@ import java.util.Enumeration;
  * The class represents a node element in the TreeModel.
  * It represents the published service.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
 public class ServiceNode extends AbstractTreeNode {

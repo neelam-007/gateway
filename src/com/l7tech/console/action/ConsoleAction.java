@@ -7,7 +7,7 @@ import com.l7tech.console.logging.ConsoleDialog;
  * The <code>ConsoleAction</code> shows the application console
  * with log.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
 public class ConsoleAction extends BaseAction {

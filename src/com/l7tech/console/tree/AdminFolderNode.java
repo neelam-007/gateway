@@ -10,7 +10,7 @@ import java.util.Enumeration;
  * It represents the folder with admins for Root, Realm or
  * Company.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
 public class AdminFolderNode extends AbstractTreeNode {

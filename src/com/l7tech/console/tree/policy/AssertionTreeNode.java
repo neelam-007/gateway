@@ -13,7 +13,7 @@ import java.awt.*;
 
 /**
  * Class AssertionTreeNode.
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 abstract class AssertionTreeNode extends AbstractTreeNode {
 

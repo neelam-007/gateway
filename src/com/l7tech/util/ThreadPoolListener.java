@@ -5,7 +5,7 @@ import java.util.EventListener;
 /**
  * Interface used to receive events from a {@link ThreadPool}.
  * 
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a> 
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * 
  */
 public interface ThreadPoolListener extends EventListener {

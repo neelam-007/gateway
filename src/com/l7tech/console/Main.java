@@ -11,7 +11,7 @@ import java.io.IOException;
 /**
  * This class is the SSG console Main entry point.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class Main {
     // splash screen

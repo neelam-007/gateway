@@ -10,7 +10,7 @@ import java.util.NoSuchElementException;
  * interface. The element list retrieveal is delegated to the
  * ContextList interface passed on construction.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
 public class EntitiesEnumeration implements Enumeration {

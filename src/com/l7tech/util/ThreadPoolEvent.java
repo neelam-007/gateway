@@ -7,7 +7,7 @@ import java.util.EventObject;
  * ThreadPoolEvents can be received by implementing a
  * {@link ThreadPoolListener}.
  * 
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a> 
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class ThreadPoolEvent extends EventObject {
   private Thread mThread;

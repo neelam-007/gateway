@@ -8,7 +8,7 @@ import java.util.Collections;
 
 /**
  * Class UserEntitiesCollection.
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class UserEntitiesCollection implements EntitiesCollection {
     final UserManager manager;

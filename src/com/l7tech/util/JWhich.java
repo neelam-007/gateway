@@ -7,7 +7,7 @@ import java.net.URL;
  * containing the specified class name, as prescribed  by the
  * current classpath.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class JWhich {
     private String className;

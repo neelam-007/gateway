@@ -21,7 +21,7 @@ import javax.swing.AbstractListModel;
  *
  * The class is not thread safe.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
 public class FilterListModel extends AbstractListModel {

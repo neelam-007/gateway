@@ -20,7 +20,7 @@ import javax.jnlp.PersistenceService;
  * The <code>PersistenceStorage</code> is a wrapper arround
  * the JNLP PersistenceService.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class PersistenceStorage {
 

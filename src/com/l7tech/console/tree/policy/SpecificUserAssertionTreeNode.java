@@ -10,7 +10,7 @@ import java.awt.*;
 
 /**
  * Class SpecificUserAssertionTreeNode.
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 class SpecificUserAssertionTreeNode extends LeafAssertionTreeNode {
 

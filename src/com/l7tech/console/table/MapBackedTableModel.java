@@ -13,7 +13,7 @@ import javax.swing.table.DefaultTableModel;
  * class implementing the Map interface may be used as a source
  * for the <CODE>MapBackedTableModel</CODE>
  * 
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.2
  *
  * @see javax.swing.table.DefaultTableModel

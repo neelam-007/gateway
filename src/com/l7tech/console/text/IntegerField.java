@@ -14,7 +14,7 @@ import javax.swing.text.BadLocationException;
  * The instance may be creted by specifiyng the min and max
  * values, thus limiting the integer range.
  * 
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  * @see javax.swing.text.Document
  * @see javax.swing.JTextField

@@ -4,7 +4,7 @@ import java.util.EventListener;
 
 /** Listener to changes with Entities.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
 public interface EntityListener extends EventListener {

@@ -32,7 +32,7 @@ import java.util.ResourceBundle;
 /**
  * The console main window <CODE>MainWindow</CODE> class.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class MainWindow extends JFrame {
     static final Category log = Category.getInstance(MainWindow.class.getName());

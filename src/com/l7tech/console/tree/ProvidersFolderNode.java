@@ -13,7 +13,7 @@ import java.util.List;
  * The class represents an entry gui node element in the
  * TreeModel.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
 public class ProvidersFolderNode extends AbstractTreeNode {

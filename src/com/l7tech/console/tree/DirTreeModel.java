@@ -8,7 +8,7 @@ import javax.swing.tree.TreeNode;
  * DirTreeModel extends DefaultTreeModel to override the reload()
  * method.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.2
  */
 public class DirTreeModel extends DefaultTreeModel {

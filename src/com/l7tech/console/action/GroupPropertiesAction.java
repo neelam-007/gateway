@@ -13,7 +13,7 @@ import javax.swing.*;
 /**
  * The <code>GroupPropertiesAction</code> edits the group entity.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
 public class GroupPropertiesAction extends NodeAction {

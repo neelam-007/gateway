@@ -9,7 +9,7 @@ import javax.swing.*;
  * A singleton class that contains icon resources.
  * todo: rework this with weak cache and icons lazy loading
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class IconManager {
     /* this class classloader */

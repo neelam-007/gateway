@@ -5,7 +5,7 @@ package com.l7tech.console.panels;
  * that is interested in processing an event implements this interface, 
  * and the object created with that class is registered with a Panel.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
 public interface PanelListener {

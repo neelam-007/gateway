@@ -15,7 +15,7 @@ import java.util.Map;
 /**
  * the WSDL Tree Node represents the WSDL backed model.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @see com.l7tech.console.tree.AbstractTreeNode
  */
 public abstract class WsdlTreeNode extends AbstractTreeNode {

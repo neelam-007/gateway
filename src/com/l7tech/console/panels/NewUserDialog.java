@@ -20,7 +20,7 @@ import java.util.EventListener;
 /**
  * New User dialog.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class NewUserDialog extends JDialog {
     /** Resource bundle with default locale */

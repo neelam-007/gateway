@@ -6,7 +6,7 @@ package com.l7tech.console.action;
  * The <code>AddAssertionAction</code> action assigns
  * the current assertion  to the target policy.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
 public class AddAssertionAction extends BaseAction {

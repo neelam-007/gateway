@@ -4,6 +4,8 @@ import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.Wsdl;
+import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.console.panels.PublishServiceWizard.ServiceAndAssertion;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -19,7 +21,7 @@ import java.rmi.RemoteException;
 
 /**
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.2
  */
 public class ServicePanel extends WizardStepPanel {
@@ -107,7 +109,6 @@ public class ServicePanel extends WizardStepPanel {
                       JOptionPane.ERROR_MESSAGE);
                 }
             }
-
         });
         serviceUrljPanel.add(resolvejButton);
         add(serviceUrljPanel, BorderLayout.NORTH);
@@ -134,11 +135,13 @@ public class ServicePanel extends WizardStepPanel {
     }
 
     public void readSettings(Object settings) throws IllegalStateException {
-        if (!(settings instanceof PublishedService)) {
+        if (!(settings instanceof ServiceAndAssertion)) {
             throw new IllegalArgumentException();
         }
         try {
-            PublishedService publishedService = (PublishedService) settings;
+            PublishServiceWizard.ServiceAndAssertion
+              sa = (PublishServiceWizard.ServiceAndAssertion) settings;
+            PublishedService publishedService = sa.getService();
 
             publishedService.setName(service.getName());
             publishedService.setUrn(service.getUrn());

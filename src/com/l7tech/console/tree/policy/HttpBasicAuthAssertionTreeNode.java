@@ -14,7 +14,7 @@ import java.awt.*;
 /**
  * Class HttpBasicAuthAssertionTreeNode is a tree node that correspinds
  * to the <code>HttpBAsic</code> asseriton.
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 class HttpBasicAuthAssertionTreeNode extends LeafAssertionTreeNode {
 

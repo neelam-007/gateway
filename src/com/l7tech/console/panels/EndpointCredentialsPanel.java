@@ -15,7 +15,7 @@ import java.awt.*;
  * <code>EndpointCredentialsPanel</code> that represent a step in the wizard
  * <code>WizardStepPanel</code> that collects endpoint access control attributes.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
 public class EndpointCredentialsPanel extends WizardStepPanel {

@@ -7,7 +7,7 @@ import com.l7tech.console.AboutBox;
  * The <code>AboutAction</code> shows the about the applcation
  * information.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
 public class AboutAction extends BaseAction {

@@ -5,7 +5,7 @@ import javax.swing.tree.TreeNode;
 /**
  * FilteredTreeModel extends DirTreeModel and provides basic
  * filtering.
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
 public class FilteredTreeModel extends DirTreeModel {

@@ -10,7 +10,7 @@ import javax.swing.*;
  * The class represents a node element in the TreeModel.
  * It represents the group.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.2
  */
 public class GroupNode extends EntityHeaderNode {

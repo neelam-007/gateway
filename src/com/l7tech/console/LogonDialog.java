@@ -22,7 +22,7 @@ import java.util.ResourceBundle;
 /**
  * This class is the SSG console Logon dialog.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class LogonDialog extends JDialog {
   private static final Category log = Category.getInstance(LogonDialog.class.getName());

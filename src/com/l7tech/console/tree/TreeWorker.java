@@ -11,7 +11,7 @@ import javax.swing.tree.TreePath;
  * The class performs a JTree loading on a dedicated thread.
  * It is used for async node loading, with the goal of making
  * the UI more responsive.
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.5
  */
 public class TreeWorker extends SwingWorker {

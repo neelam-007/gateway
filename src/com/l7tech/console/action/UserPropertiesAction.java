@@ -15,7 +15,7 @@ import javax.swing.*;
 /**
  * The <code>UserPropertiesAction</code> edits the user entity.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
 public class UserPropertiesAction extends NodeAction {

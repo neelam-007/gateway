@@ -12,7 +12,7 @@ import java.util.Enumeration;
  * The class represents a node element in the TreeModel.
  * It represents the folder with users.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
 public class UserFolderNode extends AbstractTreeNode {

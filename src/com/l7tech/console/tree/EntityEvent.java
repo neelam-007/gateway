@@ -5,7 +5,7 @@ import java.util.EventObject;
 /**
  *  Event describing a change in Entities.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
 public class EntityEvent extends EventObject {

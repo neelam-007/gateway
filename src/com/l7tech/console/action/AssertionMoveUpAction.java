@@ -6,7 +6,7 @@ package com.l7tech.console.action;
  * The <code>AssertionMoveUpAction</code> is the action that moves
  * the assertion up in the policy tree.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
 public abstract class AssertionMoveUpAction extends BaseAction {

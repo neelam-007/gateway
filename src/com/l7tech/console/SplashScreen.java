@@ -8,7 +8,7 @@ import javax.swing.JWindow;
 /**
  * The splash screen class
  * 
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.2
  */
 class SplashScreen extends JWindow {

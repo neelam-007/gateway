@@ -10,7 +10,7 @@ import javax.swing.tree.DefaultTreeModel;
 /**
  * <code>PolicyTreeModel</code> is the policy assrtions tree data model.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
 public class PolicyTreeModel extends DefaultTreeModel {

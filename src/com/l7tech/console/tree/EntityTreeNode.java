@@ -12,7 +12,7 @@ import java.util.*;
  * the Tree Node encapsulating a <code>AbstractTreeNode</code>.
  *
  * todo: eradicate this class.
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @see com.l7tech.console.tree.AbstractTreeNode
  */
 public class EntityTreeNode extends DefaultMutableTreeNode {

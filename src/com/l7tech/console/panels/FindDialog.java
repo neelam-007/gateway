@@ -17,7 +17,7 @@ import java.util.*;
 
 /**
  * Find Dialog
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.2
  */
 public class FindDialog extends JDialog {

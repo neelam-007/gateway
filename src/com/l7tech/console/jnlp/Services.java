@@ -8,7 +8,7 @@ import javax.jnlp.UnavailableServiceException;
 /**
  * Utility class for locating JNLP services.
  * 
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
 class Services {

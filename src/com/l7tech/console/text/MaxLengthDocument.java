@@ -10,7 +10,7 @@ import javax.swing.text.BadLocationException;
  * <CODE>PlainDocument</CODE> accepting fields up to the
  * length defined by the 'max' parameter passed in constructor.
  * 
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  * @see javax.swing.text.Document
  * @see javax.swing.JTextField

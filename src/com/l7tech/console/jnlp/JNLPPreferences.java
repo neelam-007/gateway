@@ -26,7 +26,7 @@ import com.l7tech.console.util.Preferences;
 /**
  * The <code>JNLPPreferencs</code> class extends the default
  * PMC property manager <code>Preferencse</code>.
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class JNLPPreferences extends Preferences {
 

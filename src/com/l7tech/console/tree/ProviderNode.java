@@ -11,7 +11,7 @@ import java.util.List;
  * The class represents an tree node gui node element that
  * corresponds to the Provider entity.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.2
  */
 public class ProviderNode extends EntityHeaderNode {

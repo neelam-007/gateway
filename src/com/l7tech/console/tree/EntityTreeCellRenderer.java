@@ -8,7 +8,7 @@ import java.awt.*;
  * Default <CODE>TreeCellRenderer</CODE> implementaiton that handles
  * <code>AbstractTreeNode</code> nodes.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class EntityTreeCellRenderer
   extends DefaultTreeCellRenderer {

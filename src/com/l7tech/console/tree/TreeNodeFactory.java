@@ -12,7 +12,7 @@ import java.util.Enumeration;
  * are placed in <code>DirTreeModel.</code>.
  *
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
 public class TreeNodeFactory {

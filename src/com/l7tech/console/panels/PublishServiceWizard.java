@@ -1,37 +1,65 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.service.PublishedService;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.tree.EntityListener;
 import com.l7tech.console.tree.EntityEvent;
-import com.l7tech.objectmodel.SaveException;
+import com.l7tech.console.tree.EntityListener;
+import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
-import javax.swing.event.ChangeListener;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.EventListenerList;
-import javax.swing.border.EtchedBorder;
-import javax.swing.border.EmptyBorder;
 import javax.swing.border.CompoundBorder;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.EtchedBorder;
 import javax.swing.border.MatteBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.EventListenerList;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.Iterator;
 import java.util.EventListener;
+import java.util.ArrayList;
+import java.io.ByteArrayOutputStream;
 
 /**
  * The <code>JDialog</code> wizard that drives the publish service
  * use case.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
-
  */
 public class PublishServiceWizard extends JDialog {
+    /** the bag of service and assertions that his wizard collects */
+    static class ServiceAndAssertion {
+        /** @return the service */
+        public PublishedService getService() {
+            return service;
+        }
 
-    PublishedService service = new PublishedService();
+        public CompositeAssertion getAssertion() {
+            return assertions;
+        }
+
+        public void setAssertion(CompositeAssertion assertion) {
+            this.assertions = assertion;
+        }
+
+        public void addAssertion(Assertion a) {
+            java.util.List list = new ArrayList(assertions.getChildren());
+            list.add(a);
+            assertions.setChildren(list);
+        }
+
+        private PublishedService service = new PublishedService();
+        private CompositeAssertion assertions = new AllAssertion();
+    }
+
+    private ServiceAndAssertion saBundle = new ServiceAndAssertion();
 
     private WizardStepPanel[] panels =
       new WizardStepPanel[]{
@@ -71,7 +99,6 @@ public class PublishServiceWizard extends JDialog {
     public void removeEntityListener(EntityListener listener) {
         listenerList.remove(EntityListener.class, listener);
     }
-
 
     /**
      * This method is called from within the constructor to
@@ -146,23 +173,26 @@ public class PublishServiceWizard extends JDialog {
             public void actionPerformed(ActionEvent evt) {
                 try {
                     for (int i = 0; i < panels.length; i++) {
-                        panels[i].readSettings(service);
+                        panels[i].readSettings(saBundle);
                     }
+                    ByteArrayOutputStream bo = new ByteArrayOutputStream();
+                    WspWriter.writePolicy(saBundle.getAssertion(), bo);
+                    saBundle.getService().setPolicyXml(bo.toString());
+
                     long oid =
-                      Registry.getDefault().getServiceManager().save(service);
+                      Registry.getDefault().getServiceManager().save(saBundle.getService());
                     EntityHeader header = new EntityHeader();
                     header.setType(EntityType.SERVICE);
-                    header.setName(service.getName());
+                    header.setName(saBundle.service.getName());
                     header.setOid(oid);
                     PublishServiceWizard.this.notify(header);
                 } catch (SaveException e) {
                     e.printStackTrace();
                     JOptionPane.showMessageDialog(null,
-                      "Unable to save the service '" + service.getName() + "'\n",
+                      "Unable to save the service '" + saBundle.service.getName() + "'\n",
                       "Error",
                       JOptionPane.ERROR_MESSAGE);
                 }
-
                 setVisible(false);
                 dispose();
             }

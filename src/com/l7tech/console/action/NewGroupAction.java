@@ -16,7 +16,7 @@ import java.util.logging.Logger;
 /**
  * The <code>NewGroupAction</code> action adds the new group.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
 public class NewGroupAction extends NodeAction {

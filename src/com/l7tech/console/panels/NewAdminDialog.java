@@ -14,7 +14,7 @@ import java.util.ResourceBundle;
  * This class is the New Admin dialog.
  * todo: implement listeners and action for this form.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class NewAdminDialog extends JDialog {
     private static final Category log = Category.getInstance(NewAdminDialog.class.getName());

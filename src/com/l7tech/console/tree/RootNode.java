@@ -10,7 +10,7 @@ import java.util.*;
  * The class represents an entry gui node element that
  * corresponds to the Root data element.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
 public class RootNode extends AbstractTreeNode {

@@ -2,6 +2,7 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
@@ -21,7 +22,7 @@ import java.lang.reflect.InvocationTargetException;
  * <code>Assertion</code> instances.
  *
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
 class AssertionTreeNodeFactory {
@@ -35,6 +36,7 @@ class AssertionTreeNodeFactory {
         assertionMap.put(OneOrMoreAssertion.class, OneOrMoreAssertionTreeNode.class);
         assertionMap.put(AllAssertion.class, AllAssertionTreeNode.class);
         assertionMap.put(HttpBasic.class, HttpBasicAuthAssertionTreeNode.class);
+        assertionMap.put(RoutingAssertion.class, RoutingAssertionTreeNode.class);
     }
 
     /**

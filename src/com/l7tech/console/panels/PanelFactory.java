@@ -11,7 +11,7 @@ import javax.swing.*;
  * The Panel Factory class provides panels for entities.
  *
  * todo: extract interface, and move to factory package.
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class PanelFactory {
     PanelFactory() {

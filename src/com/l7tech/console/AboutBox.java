@@ -14,7 +14,7 @@ import java.util.TreeMap;
  * About box showing logo, memory stats and environment
  * properties.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.2
  */
 public class AboutBox extends JDialog implements ActionListener {
