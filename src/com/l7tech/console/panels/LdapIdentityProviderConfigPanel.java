@@ -73,11 +73,16 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         return providerNameTextField;
     }
 
-    private JComponent getLdapHostList() {
-        if (ldapUrlList != null) return ldapUrlList;
-        DefaultComboBoxModel model = new DefaultComboBoxModel();
-        ldapUrlList = new JList(model);
-        JScrollPane panel = new JScrollPane(ldapUrlList);
+    private JList getLdapHostList() {
+        if (ldapUrlList == null) {
+            DefaultComboBoxModel model = new DefaultComboBoxModel();
+            ldapUrlList = new JList(model);
+        }
+        return ldapUrlList;
+    }
+
+    private JComponent getLdapHostListPanel() {
+        JScrollPane panel = new JScrollPane(getLdapHostList());
         panel.setMinimumSize(new Dimension(217, 40));
         return panel;
     }
@@ -88,7 +93,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         addButt.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 String newUrl = JOptionPane.showInputDialog("Enter new ldap URL");
-                DefaultComboBoxModel model = (DefaultComboBoxModel)ldapUrlList.getModel();
+                DefaultComboBoxModel model = (DefaultComboBoxModel)getLdapHostList().getModel();
                 if (newUrl != null) {
                     if (model.getIndexOf(newUrl) < 0) {
                         model.addElement(newUrl);
@@ -104,9 +109,9 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         removeButt = new JButton("Remove");
         removeButt.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                int selected = ldapUrlList.getSelectedIndex();
+                int selected = getLdapHostList().getSelectedIndex();
                 if (selected > -1) {
-                    ((DefaultComboBoxModel)ldapUrlList.getModel()).removeElementAt(selected);
+                    ((DefaultComboBoxModel)getLdapHostList().getModel()).removeElementAt(selected);
                 }
             }
         });
@@ -288,7 +293,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(12, 7, 0, 11);
-        configPanel.add(getLdapHostList(), constraints);
+        configPanel.add(getLdapHostListPanel(), constraints);
 
         // add button
         constraints = new GridBagConstraints();
@@ -484,7 +489,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
     private void updateControlButtonState() {
         if (getProviderNameTextField().getText().length() > 0 &&
                 //getLdapHostTextField().getText().length() > 0 &&
-                ldapUrlList.getModel().getSize() > 0 &&
+                getLdapHostList().getModel().getSize() > 0 &&
                 getLdapSearchBaseTextField().getText().length() > 0) {
             // can advance to next panel only when the above three fields are not empty
             advanceAllowed = true;
@@ -516,7 +521,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                     String[] listdata = iProviderConfig.getLdapUrl();
                     for (int i = 0; i < listdata.length; i++) {
                         String s = listdata[i];
-                        ((DefaultComboBoxModel)ldapUrlList.getModel()).addElement(s);
+                        ((DefaultComboBoxModel)getLdapHostList().getModel()).addElement(s);
                     }
                 }
                 for (int i = providerTypesCombo.getModel().getSize() - 1; i >= 0; i--) {
@@ -561,7 +566,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                 }
 
                 ((LdapIdentityProviderConfig) settings).setTemplateName(ldapType.getTemplateName());
-                DefaultComboBoxModel model = (DefaultComboBoxModel)ldapUrlList.getModel();
+                DefaultComboBoxModel model = (DefaultComboBoxModel)getLdapHostList().getModel();
                 String[] newlist = new String[model.getSize()];
                 for (int i = 0; i < newlist.length; i++) {
                     newlist[i] = (String)model.getElementAt(i);
