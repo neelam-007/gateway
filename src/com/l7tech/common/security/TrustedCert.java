@@ -85,6 +85,7 @@ public class TrustedCert extends NamedEntityImp implements Serializable, Cloneab
      */
     public synchronized X509Certificate getCertificate() throws CertificateException, IOException {
         if ( cachedCert == null ) {
+            if (certBase64 == null) return null;
             cachedCert = (X509Certificate)CertUtils.decodeCert(HexUtils.decodeBase64(certBase64));
         }
         return cachedCert;
