@@ -10,6 +10,10 @@ import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
+import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
+import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -30,7 +34,23 @@ public class XpathBasedAssertionPropertiesAction extends NodeAction {
     static final Logger log = Logger.getLogger(XpathBasedAssertionPropertiesAction.class.getName());
     private XpathEvaluator testEvaluator;
 
-    public XpathBasedAssertionPropertiesAction(XpathBasedAssertionTreeNode node) {
+    public static XpathBasedAssertionPropertiesAction actionForNode(XpathBasedAssertionTreeNode node) {
+        if (node instanceof RequestWssConfidentialityTreeNode) {
+            RequestWssConfidentialityTreeNode n = (RequestWssConfidentialityTreeNode)node;
+            return new RequestConfidentialityPropertiesAction(n);
+        } else if (node instanceof RequestWssIntegrityTreeNode) {
+            RequestWssIntegrityTreeNode n = (RequestWssIntegrityTreeNode)node;
+            return new RequestIntegrityPropertiesAction(n);
+        } else if (node instanceof ResponseWssConfidentialityTreeNode) {
+            ResponseWssConfidentialityTreeNode n = (ResponseWssConfidentialityTreeNode)node;
+            return new ResponseConfidentialityPropertiesAction(n);
+        } else if (node instanceof ResponseWssIntegrityTreeNode) {
+            ResponseWssIntegrityTreeNode n = (ResponseWssIntegrityTreeNode)node;
+            return new ResponseIntegrityPropertiesAction(n);
+        } else return new XpathBasedAssertionPropertiesAction(node);
+    }
+
+    protected XpathBasedAssertionPropertiesAction(XpathBasedAssertionTreeNode node) {
         super(node);
         try {
             testEvaluator = XpathEvaluator.newEvaluator(XmlUtil.stringToDocument("<blah xmlns=\"http://bzzt.com\"/>"),
@@ -46,14 +66,14 @@ public class XpathBasedAssertionPropertiesAction extends NodeAction {
      * @return the action name
      */
     public String getName() {
-        return "Edit XPath Expression";
+        return "Edit XPath Properties";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "Edit XPath Expression";
+        return getName();
     }
 
     /**

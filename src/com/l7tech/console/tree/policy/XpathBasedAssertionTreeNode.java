@@ -35,7 +35,7 @@ public abstract class XpathBasedAssertionTreeNode extends LeafAssertionTreeNode 
      */
     public Action[] getActions() {
         java.util.List list = new ArrayList();
-        Action a = new XpathBasedAssertionPropertiesAction(this);
+        Action a = XpathBasedAssertionPropertiesAction.actionForNode(this);
         list.add(a);
         list.addAll(Arrays.asList(super.getActions()));
         return (Action[]) list.toArray(new Action[]{});
@@ -47,7 +47,7 @@ public abstract class XpathBasedAssertionTreeNode extends LeafAssertionTreeNode 
        * @return <code>null</code> indicating there should be none default action
        */
       public Action getPreferredAction() {
-          return new XpathBasedAssertionPropertiesAction(this);
+          return XpathBasedAssertionPropertiesAction.actionForNode(this);
       }
 
     /**
