@@ -288,7 +288,7 @@ public class MessageProcessor {
             throws OperationCanceledException, GeneralSecurityException, BadCredentialsException,
             IOException, SAXException, ClientCertificateException, KeyStoreCorruptException,
             HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException,
-            InvalidDocumentFormatException, WssDecorator.DecoratorException
+            InvalidDocumentFormatException, WssDecorator.DecoratorException, ConfigurationException
     {
         Policy policy = policyManager.getPolicy(req);
         if (policy == null || !policy.isValid()) {
@@ -312,23 +312,31 @@ public class MessageProcessor {
                 result = rootAssertion.decorateRequest(req);
 
                 // Do any deferred decorations that weren't rolled back
-                Map deferredDecorations = req.getPendingDecorations();
-                for (Iterator i = deferredDecorations.values().iterator(); i.hasNext();) {
-                    ClientDecorator decorator = (ClientDecorator)i.next();
-                    decorator.decorateRequest(req);
+                if (result == AssertionStatus.NONE) {
+                    Map deferredDecorations = req.getPendingDecorations();
+                    for (Iterator i = deferredDecorations.values().iterator(); i.hasNext();) {
+                        ClientDecorator decorator = (ClientDecorator)i.next();
+                        result = decorator.decorateRequest(req);
+                        if (result != AssertionStatus.NONE)
+                            break;
+                    }
                 }
 
-                // Do all WSS processing all at once
-                log.info("Running pending request through WS-Security decorator");
-                wssDecorator.decorateMessage(req.getDecoratedSoapEnvelope(), req.getWssRequirements());
+                if (result == AssertionStatus.NONE) {
+                    // Do all WSS processing all at once
+                    log.info("Running pending request through WS-Security decorator");
+                    wssDecorator.decorateMessage(req.getDecoratedSoapEnvelope(), req.getWssRequirements());
+                }
 
             } catch (PolicyAssertionException e) {
                 // Before rethrowing, make sure we deactivate this cached policy.
                 policy.invalidate();
                 throw e;
             }
-            if (result != AssertionStatus.NONE)
-                log.warning("Policy evaluated with an error: " + result + "; will attempt to continue anyway.");
+            if (result != AssertionStatus.NONE) {
+                log.warning("Policy evaluated with an error: " + result + "; aborting");
+                throw new ConfigurationException("Unable to decorate request; policy evaluated with error: " + result);
+            }
         }
     }
 
@@ -341,8 +349,9 @@ public class MessageProcessor {
      */
     private void undecorateResponse(PendingRequest req, SsgResponse res)
             throws OperationCanceledException,
-                   GeneralSecurityException, BadCredentialsException, IOException,
-                   ResponseValidationException, SAXException, KeyStoreCorruptException, PolicyAssertionException
+            GeneralSecurityException, BadCredentialsException, IOException,
+            ResponseValidationException, SAXException, KeyStoreCorruptException, PolicyAssertionException,
+            ConfigurationException
     {
         Policy appliedPolicy = req.getActivePolicy();
         log.info(appliedPolicy == null ? "skipping undecorate step" : "undecorating response");
@@ -351,8 +360,10 @@ public class MessageProcessor {
         ClientAssertion rootAssertion = appliedPolicy.getClientAssertion();
         if (rootAssertion != null) {
             AssertionStatus result = rootAssertion.unDecorateReply(req, res);
-            if (result != AssertionStatus.NONE)
-                log.warning("Response policy processing failed with status " + result + "; continuing anyway");
+            if (result != AssertionStatus.NONE) {
+                log.warning("Response policy processing failed with status " + result + "; aborting");
+                throw new ConfigurationException("Unable to undecorate response; policy evaluated with error: " + result);
+            }
         }
     }
 
