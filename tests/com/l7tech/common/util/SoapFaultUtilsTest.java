@@ -26,11 +26,15 @@ public class SoapFaultUtilsTest extends TestCase {
     }
 
     public void testNormalFault() throws Exception {
-        Document parsedBack = tryThis("CODE", "String", "Details", "Actor");
+        Document parsedBack = tryThis("SpaceCrocodile", "Leakage detected in space suit", "Dont forget to floss", "John");
     }
 
     public void testSpecialCharacters() throws Exception {
-        Document parsedBack = tryThis("<fault>", "[string]", "\"details\"", ">actor=");
+        Document parsedBack = tryThis("<fault>", "![string]?", "\"details\"", ">actor=");
+    }
+
+    public void testEmptyStuff() throws Exception {
+        Document parsedBack = tryThis("Le Code", "La String", "", null);
     }
 
     public Document tryThis(String faultCode, String faultString, String faultDetails, String faultActor) throws Exception {
