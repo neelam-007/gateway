@@ -13,6 +13,9 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.util.Locator;
 import org.apache.log4j.Category;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * Asserts that the requester's credentials were found, and using a particular authentication mechanism.
  *
@@ -30,8 +33,15 @@ public abstract class CredentialSourceAssertion extends Assertion {
             if ( pc == null ) {
                 // No finder has been run yet!
                 Class credFinderClass = getCredentialFinderClass();
-                CredentialFinder finder = (CredentialFinder)Locator.getDefault().lookup( credFinderClass );
-                if ( finder == null ) throw new PolicyAssertionException( "Couldn't locate an appropriate CredentialFinder!" );
+                String classname = credFinderClass.getName();
+                CredentialFinder finder = null;
+                synchronized( _credentialFinders ) {
+                    finder = (CredentialFinder)_credentialFinders.get( classname );
+                    if ( finder == null ) {
+                        finder = (CredentialFinder)credFinderClass.newInstance();
+                        _credentialFinders.put( classname, finder );
+                    }
+                }
                 pc = finder.findCredentials( request );
             }
 
@@ -44,12 +54,22 @@ public abstract class CredentialSourceAssertion extends Assertion {
                 return doCheckRequest( request, response );
             }
         } catch ( CredentialFinderException cfe ) {
+            _log.error( cfe );
             throw new PolicyAssertionException( cfe.getMessage(), cfe );
+        } catch ( IllegalAccessException iae ) {
+            _log.error( iae );
+            throw new PolicyAssertionException( iae.getMessage(), iae );
+        } catch ( InstantiationException ie ) {
+            _log.error( ie );
+            throw new PolicyAssertionException( ie.getMessage(), ie );
         }
+
+
     }
 
     public abstract AssertionStatus doCheckRequest( Request request, Response response ) throws CredentialFinderException;
     public abstract Class getCredentialFinderClass();
 
+    protected transient Map _credentialFinders = new HashMap();
     protected Category _log = Category.getInstance( getClass() );
 }
