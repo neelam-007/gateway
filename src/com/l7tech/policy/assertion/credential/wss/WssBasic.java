@@ -7,6 +7,7 @@
 package com.l7tech.policy.assertion.credential.wss;
 
 import com.l7tech.credential.CredentialFinderException;
+import com.l7tech.credential.PrincipalCredentials;
 import com.l7tech.credential.wss.WssBasicCredentialFinder;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
@@ -18,8 +19,15 @@ import com.l7tech.policy.assertion.AssertionStatus;
  */
 public class WssBasic extends WssCredentialSourceAssertion {
     public AssertionStatus checkCredentials(Request request, Response response) throws CredentialFinderException {
-        // FIXME: Implement
-        return AssertionStatus.NOT_YET_IMPLEMENTED;
+        // this is only called once we have credentials
+        // there is nothing more to check here, if the creds were not in the right format,
+        // the WssBasicCredentialFinder would not have returned credentials
+
+        // (just to make sure)
+        PrincipalCredentials pc = request.getPrincipalCredentials();
+        // yes, we're good
+        if (pc != null) return AssertionStatus.NONE;
+        else return AssertionStatus.AUTH_REQUIRED;
     }
 
     public Class getCredentialFinderClass() {
