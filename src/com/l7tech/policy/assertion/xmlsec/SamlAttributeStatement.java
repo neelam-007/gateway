@@ -7,6 +7,8 @@ import java.io.Serializable;
  * the SAML Attribute Statement constraints.
  */
 public class SamlAttributeStatement implements Serializable {
+   private static final long serialVersionUID = -6705395184198994425L;
+
     private Attribute[] attributes = new Attribute[]{};
 
     public Attribute[] getAttributes() {
@@ -22,7 +24,9 @@ public class SamlAttributeStatement implements Serializable {
         }
     }
 
-    public static class Attribute {
+    public static class Attribute implements Serializable {
+        private static final long serialVersionUID = -3850839202915371688L;
+
         private String name;
         private String namespace;
         private String value;
