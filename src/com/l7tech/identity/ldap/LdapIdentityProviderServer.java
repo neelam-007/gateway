@@ -56,35 +56,41 @@ public class LdapIdentityProviderServer implements IdentityProvider {
         return groupManager;
     }
 
-    public boolean authenticate( PrincipalCredentials pc ) {
+    public void authenticate( PrincipalCredentials pc ) throws AuthenticationException {
         if (!valid) {
-            logger.log(Level.INFO, "invalid id provider asked to authenticate");
-            return false;
+            String msg = "invalid id provider asked to authenticate";
+            logger.log(Level.INFO, msg);
+            throw new AuthenticationException(msg);
         }
         User realUser = null;
         try {
             realUser = userManager.findByLogin(pc.getUser().getLogin());
         } catch (FindException e) {
             logger.log(Level.INFO, "invalid user", e);
-            return false;
+            throw new BadCredentialsException("invalid user");
         }
         if (realUser == null) {
             logger.log(Level.INFO, "invalid user");
-            return false;
+            throw new BadCredentialsException("invalid user");
         }
 
         if (pc.getFormat() == CredentialFormat.CLEARTEXT) {
             // basic authentication
             boolean res = userManager.authenticateBasic(realUser.getName(), new String(pc.getCredentials()));
-            if (res) pc.getUser().copyFrom(realUser);
-            return res;
+            if (res) {
+                pc.getUser().copyFrom(realUser);
+                // success
+                return;
+            }
+            throw new BadCredentialsException("credentials did not authenticate");
         } else if (pc.getFormat() == CredentialFormat.DIGEST) {
             String dbPassHash = realUser.getPassword();
             byte[] credentials = pc.getCredentials();
             Map authParams = (Map)pc.getPayload();
             if (authParams == null) {
-                logger.log(Level.SEVERE, "No Digest authentication parameters found in PrincipalCredentials payload!");
-                return false;
+                String msg = "No Digest authentication parameters found in PrincipalCredentials payload!";
+                logger.log(Level.SEVERE, msg);
+                throw new AuthenticationException(msg);
             }
 
             String qop = (String)authParams.get(HttpDigest.PARAM_QOP);
@@ -113,14 +119,15 @@ public class LdapIdentityProviderServer implements IdentityProvider {
             if ( response.equals( expectedResponse ) ) {
                 logger.info("User " + authUser.getLogin() + " authenticated successfully with digest credentials.");
                 authUser.copyFrom( realUser );
-                return true;
+                return;
             } else {
-                logger.warning("User " + authUser.getLogin() + " failed to match.");
-                return false;
+                String msg = "User " + authUser.getLogin() + " failed to match.";
+                logger.warning(msg);
+                throw new AuthenticationException(msg);
             }
         } else {
             logger.log(Level.SEVERE, "Attempt to authenticate using unsupported method" + pc.getFormat());
-            throw new IllegalArgumentException( "Only cleartext credentials are currently supported!" );
+            throw new AuthenticationException( "Only cleartext credentials are currently supported!" );
         }
     }
 
