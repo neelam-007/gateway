@@ -363,7 +363,7 @@
             </fileset>
 
             <fileset dir="${src.root}/src">
-                <include name="com/l7tech/jini/lookup/*.config"/>
+                <include name="com/l7tech/remote/jini/lookup/*.config"/>
             </fileset>
         </copy>
 
