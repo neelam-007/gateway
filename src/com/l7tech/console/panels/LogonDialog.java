@@ -368,8 +368,7 @@ public class LogonDialog extends JDialog {
         // service URL
         String serviceURL = null;
         try {
-            serviceURL =
-              Preferences.getPreferences().getString(Preferences.SERVICE_URL);
+            serviceURL = Preferences.getPreferences().getServiceUrl();
         } catch (IOException e) {
             ; // swallow
         }
