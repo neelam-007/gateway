@@ -134,7 +134,7 @@ class UserGroupsPanel extends JPanel {
 
     private void applyFormSecurity() {
         // list components that are subject to security (they require the full admin role)
-        userPanel.securityFormPreparer.prepare(new Component[]{
+        userPanel.securityFormAuthorizationPreparer.prepare(new Component[]{
             getGroupAdd(),
             getGroupRemove()
         });

@@ -5,7 +5,7 @@ import com.l7tech.common.util.Locator;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.console.security.RoleFormPreparer;
+import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.Registry;
@@ -68,7 +68,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
     protected IdentityProviderConfig config;
     private final String GROUP_DOES_NOT_EXIST_MSG = "This group no longer exists";
     private final MainWindow mainWindow = TopComponents.getInstance().getMainWindow();
-    protected RoleFormPreparer securityFormPreparer;
+    protected FormAuthorizationPreparer securityFormAuthorizationPreparer;
 
     private final ActionListener closeDlgListener = new ActionListener() {
         public void actionPerformed(ActionEvent e) {
@@ -83,7 +83,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
         if (provider == null) {
             throw new IllegalStateException("Could not instantiate security provider");
         }
-        securityFormPreparer = new RoleFormPreparer(provider, new String[]{Group.ADMIN_GROUP_NAME});
+        securityFormAuthorizationPreparer = new FormAuthorizationPreparer(provider, new String[]{Group.ADMIN_GROUP_NAME});
     }
 
     public static GroupPanel newInstance(IdentityProviderConfig config, EntityHeader header) {
@@ -443,7 +443,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
 
     protected void applyFormSecurity() {
         // list components that are subject to security (they require the full admin role)
-        securityFormPreparer.prepare(new Component[]{
+        securityFormAuthorizationPreparer.prepare(new Component[]{
             descriptionTextField
         });
     }

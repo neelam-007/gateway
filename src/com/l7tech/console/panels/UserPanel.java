@@ -2,7 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.util.Locator;
 import com.l7tech.console.MainWindow;
-import com.l7tech.console.security.RoleFormPreparer;
+import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.Group;
@@ -34,7 +34,7 @@ abstract public class UserPanel extends EntityEditorPanel {
     protected boolean formModified;
     protected IdentityProviderConfig config;
     protected final MainWindow mainWindow = TopComponents.getInstance().getMainWindow();
-    protected RoleFormPreparer securityFormPreparer;
+    protected FormAuthorizationPreparer securityFormAuthorizationPreparer;
 
     abstract public boolean certExist();
 
@@ -43,7 +43,7 @@ abstract public class UserPanel extends EntityEditorPanel {
         if (provider == null) {
             throw new IllegalStateException("Could not instantiate security provider");
         }
-        securityFormPreparer = new RoleFormPreparer(provider, new String[]{Group.ADMIN_GROUP_NAME});
+        securityFormAuthorizationPreparer = new FormAuthorizationPreparer(provider, new String[]{Group.ADMIN_GROUP_NAME});
     }
 
     /**

@@ -26,7 +26,7 @@ public class VirtualGroupDetailsPanel extends JPanel {
     }
 
     private void applyFormSecurity() {
-        virtualGroupPanel.securityFormPreparer.prepare(new Component[]{
+        virtualGroupPanel.securityFormAuthorizationPreparer.prepare(new Component[]{
             groupDescTextField,
             x509SubjectDNTextField,
             emailTextField

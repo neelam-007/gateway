@@ -71,7 +71,7 @@ class GroupUsersPanel extends JPanel {
     }
 
     private void applyFormSecurity() {
-        groupPanel.securityFormPreparer.prepare(new Component[]{
+        groupPanel.securityFormAuthorizationPreparer.prepare(new Component[]{
             groupAdd,
             groupRemove
         });

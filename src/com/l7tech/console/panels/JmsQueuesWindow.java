@@ -12,7 +12,7 @@ import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.util.Locator;
 import com.l7tech.console.action.Actions;
-import com.l7tech.console.security.RoleFormPreparer;
+import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.JmsUtilities;
 import com.l7tech.console.util.Registry;
@@ -43,7 +43,7 @@ public class JmsQueuesWindow extends JDialog {
     private JPanel sideButtonPanel;
     private JButton addButton;
     private JButton removeButton;
-    private RoleFormPreparer securityFormPreparer;
+    private FormAuthorizationPreparer securityFormAuthorizationPreparer;
 
     private JmsQueuesWindow(Frame owner) {
         super(owner, "Manage JMS Queues", true);
@@ -66,7 +66,7 @@ public class JmsQueuesWindow extends JDialog {
         if (provider == null) {
             throw new IllegalStateException("Could not instantiate security provider");
         }
-        that.securityFormPreparer = new RoleFormPreparer(provider, new String[]{Group.ADMIN_GROUP_NAME});
+        that.securityFormAuthorizationPreparer = new FormAuthorizationPreparer(provider, new String[]{Group.ADMIN_GROUP_NAME});
 
 
         Container p = that.getContentPane();
@@ -315,7 +315,7 @@ public class JmsQueuesWindow extends JDialog {
 
     private void applyFormSecurity() {
         // list components that are subject to security (they require the full admin role)
-        securityFormPreparer.prepare(new Component[]{
+        securityFormAuthorizationPreparer.prepare(new Component[]{
             getRemoveButton(),
             getAddButton()
         });

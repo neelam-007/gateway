@@ -13,7 +13,7 @@ import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.transport.jms.JmsProvider;
 import com.l7tech.common.util.Locator;
 import com.l7tech.console.action.Actions;
-import com.l7tech.console.security.RoleFormPreparer;
+import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.Group;
@@ -50,7 +50,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
     private JmsEndpoint endpoint = null;
     private boolean wasClosedByOkButton = false;
     private boolean outboundOnly = false;
-    private RoleFormPreparer securityFormPreparer;
+    private FormAuthorizationPreparer securityFormAuthorizationPreparer;
 
     private static class ProviderComboBoxItem {
         private JmsProvider provider;
@@ -101,7 +101,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
         if (provider == null) {
             throw new IllegalStateException("Could not instantiate security provider");
         }
-        that.securityFormPreparer = new RoleFormPreparer(provider, new String[]{Group.ADMIN_GROUP_NAME});
+        that.securityFormAuthorizationPreparer = new FormAuthorizationPreparer(provider, new String[]{Group.ADMIN_GROUP_NAME});
 
 
         that.connection = connection;
@@ -669,7 +669,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
     private void applyFormSecurity() {
         // list components that are subject to security (they require the full admin role)
-        securityFormPreparer.prepare(new Component[]{
+        securityFormAuthorizationPreparer.prepare(new Component[]{
             addButton,
             getInboundButton(),
             getOutboundButton(),
@@ -680,7 +680,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
             getNameTextField()
 
         });
-        securityFormPreparer.prepare(optionalCredentialsPanel.getComponents());
+        securityFormAuthorizationPreparer.prepare(optionalCredentialsPanel.getComponents());
     }
 
     private ButtonGroup getDirectionButtonGroup() {

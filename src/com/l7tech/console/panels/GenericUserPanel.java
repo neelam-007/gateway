@@ -90,7 +90,7 @@ public class GenericUserPanel extends UserPanel {
 
     protected void applyFormSecurity() {
         // list components that are subject to security (they require the full admin role)
-        securityFormPreparer.prepare(new Component[]{
+        securityFormAuthorizationPreparer.prepare(new Component[]{
             emailTextField,
             changePassButton,
             firstNameTextField,

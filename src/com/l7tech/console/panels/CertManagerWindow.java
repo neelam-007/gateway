@@ -8,7 +8,7 @@ import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.event.WizardListener;
-import com.l7tech.console.security.RoleFormPreparer;
+import com.l7tech.console.security.FormAuthorizationPreparer;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.table.TrustedCertTableSorter;
 import com.l7tech.console.table.TrustedCertsTable;
@@ -46,7 +46,7 @@ public class CertManagerWindow extends JDialog {
     private TrustedCertsTable trustedCertTable = null;
     private JScrollPane certTableScrollPane;
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
-    private RoleFormPreparer securityFormPreparer;
+    private FormAuthorizationPreparer securityFormAuthorizationPreparer;
 
     /**
      * Constructor
@@ -60,7 +60,7 @@ public class CertManagerWindow extends JDialog {
         if (provider == null) {
             throw new IllegalStateException("Could not instantiate security provider");
         }
-        securityFormPreparer = new RoleFormPreparer(provider, new String[]{Group.ADMIN_GROUP_NAME});
+        securityFormAuthorizationPreparer = new FormAuthorizationPreparer(provider, new String[]{Group.ADMIN_GROUP_NAME});
 
         initialize();
         loadTrustedCerts();
@@ -251,7 +251,7 @@ public class CertManagerWindow extends JDialog {
 
     private void applyFormSecurity() {
         // list components that are subject to security (they require the full admin role)
-        securityFormPreparer.prepare(new Component[]{
+        securityFormAuthorizationPreparer.prepare(new Component[]{
             removeButton,
             addButton
         });

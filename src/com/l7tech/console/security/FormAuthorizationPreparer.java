@@ -15,20 +15,20 @@ import java.awt.*;
 import java.security.AccessController;
 
 /**
- * The <code>RoleFormPreparer</code> authorizes the the form or given form components
- * for the given user role.
+ * The <code>FormAuthorizationPreparer</code> authorizes the the form or given form
+ * components for the given user role.
  *
  * @author emil
  * @version Sep 24, 2004
  */
-public class RoleFormPreparer extends FormPreparer {
+public class FormAuthorizationPreparer extends FormPreparer {
     /**
      * Create the form preparer with the security provider and the edit roles
      *
      * @param provider         the security provider that will perform the authorization
-     * @param editGrantedRoles the roles that allow edit
+     * @param editGrantedRoles the roles that have permission
      */
-    public RoleFormPreparer(Authorizer provider, String[] editGrantedRoles) {
+    public FormAuthorizationPreparer(Authorizer provider, String[] editGrantedRoles) {
         super(new GrantToRolePreparer(editGrantedRoles, provider));
     }
 
