@@ -47,7 +47,7 @@ public class MockServletApiTest extends TestCase {
                 System.setProperty(
                   "com.l7tech.common.locator.properties", "/com/l7tech/common/locator/test.properties");
 
-                ServiceCache.initialize(); // need to do this, otherwise is a no go
+                //ServiceCache.initialize(); // need to do this, otherwise is a no go
             }
 
             protected void tearDown() throws Exception {

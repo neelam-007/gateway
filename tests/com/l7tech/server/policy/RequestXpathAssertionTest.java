@@ -180,7 +180,7 @@ public class RequestXpathAssertionTest extends TestCase {
 
         ServiceManager sman = (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
         _service = (PublishedService)sman.findAll().iterator().next();
-        ServiceCache.initialize(); // need to do this, otherwise is a no go
+        //ServiceCache.initialize(); // need to do this, otherwise is a no go
         _serviceCache = ServiceCache.getInstance();
         _servlet.init( _servletApi.getServletConfig() );
 
