@@ -13,7 +13,13 @@ import org.w3c.dom.Element;
  */
 public abstract class ExternalReference {
     public abstract void serializeToRefElement(Element referencesParentElement);
-    public static ExternalReference fromElement(Element serializedReference) {
+
+    /**
+     * Parse references from an exported 
+     * @param serializedReferences a EXPORTED_REFERENCES_ELNAME element
+     * @return
+     */
+    public static ExternalReference[] parseReferences(Element serializedReferences) {
         // todo
         return null;
     }
