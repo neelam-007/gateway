@@ -12,23 +12,20 @@ import org.xml.sax.SAXException;
 import x0Protocol.oasisNamesTcSAML1.RequestDocument;
 
 import javax.xml.soap.SOAPException;
-import javax.xml.soap.SOAPMessage;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.logging.Logger;
 
 /**
  * Class with support methods that deal with creting saml requests as SOAP messages.
  *
  * @author emil
  */
-public class SoapRequestGenerator {
-    private static final Logger logger = Logger.getLogger(SoapRequestGenerator.class.getName());
+class SoapRequestGenerator {
 
-    public SoapRequestGenerator() {
+    SoapRequestGenerator() {
     }
 
-    public RequestDocument fromSoapInputStream(InputStream in)
+    RequestDocument fromSoapInputStream(InputStream in)
       throws XmlException, InvalidDocumentFormatException, IOException, SAXException {
         if (in == null) {
             throw new IllegalArgumentException();
@@ -44,7 +41,7 @@ public class SoapRequestGenerator {
      * @throws XmlException                   on parsing error
      * @throws InvalidDocumentFormatException on invalid document format
      */
-    public RequestDocument fromSoapMessage(Document doc)
+    RequestDocument fromSoapMessage(Document doc)
       throws XmlException, InvalidDocumentFormatException {
         if (doc == null) {
             throw new IllegalArgumentException();
@@ -67,10 +64,8 @@ public class SoapRequestGenerator {
      * @return
      * @throws SOAPException
      */
-    public Document asSoapMessage(RequestDocument document) throws SOAPException {
-        Document domDocument = (Document)document.newDomNode(Utilities.xmlOptions());
-        SOAPMessage sm = SoapUtil.makeMessage();
-        SoapUtil.domToSOAPElement(sm.getSOAPPart().getEnvelope().getBody(), domDocument.getDocumentElement());
-        return domDocument;
+    Document asSoapMessage(RequestDocument document)
+      throws SOAPException, IOException, SAXException {
+        return Utilities.asSoapMessage(document);
     }
 }

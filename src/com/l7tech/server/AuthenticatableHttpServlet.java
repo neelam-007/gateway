@@ -63,7 +63,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
      *
      * @return the authenticated user, null if no creds provided
      */
-    protected List authenticateRequestBasic(HttpServletRequest req) throws IOException, BadCredentialsException {
+    protected List authenticateRequestBasic(HttpServletRequest req) throws BadCredentialsException {
         List users = new ArrayList();
         try {
             users = getUsers(req);
@@ -248,7 +248,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
      * @param req the servlet request
      * @return the <code>LoginCredentials</code> or null if not found
      */
-    private LoginCredentials findCredentialsBasic(HttpServletRequest req) {
+    protected LoginCredentials findCredentialsBasic(HttpServletRequest req) {
         String authorizationHeader = req.getHeader("Authorization");
         if (authorizationHeader == null || authorizationHeader.length() < 1) {
             logger.warning("No authorization header found.");

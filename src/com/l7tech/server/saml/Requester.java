@@ -1,12 +1,16 @@
 package com.l7tech.server.saml;
 
-import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.security.saml.Constants;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.xmlbeans.XmlException;
 import org.xml.sax.SAXException;
+import x0Assertion.oasisNamesTcSAML1.NameIdentifierType;
+import x0Assertion.oasisNamesTcSAML1.SubjectType;
+import x0Protocol.oasisNamesTcSAML1.AuthenticationQueryType;
 import x0Protocol.oasisNamesTcSAML1.RequestDocument;
+import x0Protocol.oasisNamesTcSAML1.RequestType;
 import x0Protocol.oasisNamesTcSAML1.ResponseDocument;
 
 import java.io.IOException;
@@ -32,22 +36,61 @@ public class Requester {
         this.serviceUrl = serviceUrl;
     }
 
-    public ResponseDocument sendRequest(RequestDocument doc) throws IOException {
+    /**
+     * Returns the authentication statements for a subject name, optionally specifying
+     * the authentication method filter.
+     * @param subjectName
+     * @param authMethod
+     * @return the response document containing the authentication statements for the
+     *         given subjectand authenticatin method
+     *
+     * @throws SamlException wrapping the cause or
+     * @throws IllegalArgumentException if the subject name is null
+     */
+    public ResponseDocument getAuthenticationStatements(String subjectName, String authMethod)
+      throws SamlException, IllegalArgumentException {
+        if (subjectName == null) {
+            throw new IllegalArgumentException();
+        }
+        RequestDocument rdoc = RequestDocument.Factory.newInstance();
+        RequestType rt = rdoc.addNewRequest();
+        AuthenticationQueryType at = rt.addNewAuthenticationQuery();
+        if (authMethod == null) {
+            at.setAuthenticationMethod(authMethod);
+        }
+        SubjectType subject = at.addNewSubject();
+        NameIdentifierType nameIdentifier = subject.addNewNameIdentifier();
+        nameIdentifier.setFormat(Constants.NAMEIDENTIFIER_UNSPECIFIED);
+        nameIdentifier.setStringValue(subjectName);
+
+        return sendRequest(rdoc);
+
+    }
+
+    /**
+     * General method for SAML protocol request/response exchange with the saml authorty.
+     * @param doc the request document
+     * @return  the response document
+     * @throws SamlException on error
+     */
+    public ResponseDocument sendRequest(RequestDocument doc) throws SamlException {
         PostMethod postMethod = new PostMethod(serviceUrl);
         postMethod.setRequestHeader(CONTENT_TYPE, TEXT_XML + "; charset=" + ENCODING.toLowerCase());
         postMethod.setRequestBody(doc.newInputStream(Utilities.xmlOptions()));
-        int status = client.executeMethod(postMethod);
-        if (status !=200) {
-            throw new IOException(serviceUrl +" returns status "+status);
-        }
         try {
+            int status = client.executeMethod(postMethod);
+            if (status !=200) {
+                throw new SamlException(serviceUrl +" returns status "+status);
+            }
             return responseGenerator.fromSoapInputStream(postMethod.getResponseBodyAsStream());
         } catch (XmlException e) {
-            throw new CausedIOException(e);
+            throw new SamlException(e);
         } catch (InvalidDocumentFormatException e) {
-            throw new CausedIOException(e);
+            throw new SamlException(e);
         } catch (SAXException e) {
-            throw new CausedIOException(e);
+            throw new SamlException(e);
+        } catch (IOException e) {
+            throw new SamlException(e);
         }
     }
 }

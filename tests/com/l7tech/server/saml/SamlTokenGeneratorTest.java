@@ -1,7 +1,9 @@
 package com.l7tech.server.saml;
 
-import junit.framework.TestCase;
+import com.l7tech.common.security.Keys;
+import junit.extensions.TestSetup;
 import junit.framework.Test;
+import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 /**
@@ -12,11 +14,27 @@ public class SamlTokenGeneratorTest extends TestCase {
 
     /**
      * create the <code>TestSuite</code> for the
-     * SamlTokenGeneratorTest <code>TestCase</code>
+     * SamlPolicyTest <code>TestCase</code>
      */
     public static Test suite() {
         TestSuite suite = new TestSuite(SamlTokenGeneratorTest.class);
-        return suite;
+        TestSetup wrapper = new TestSetup(suite) {
+
+            /**
+             * sets the test environment
+             *
+             * @throws Exception on error deleting the stub data store
+             */
+            protected void setUp() throws Exception {
+                System.setProperty("com.l7tech.common.locator.properties", "/com/l7tech/common/locator/test.properties");
+                Keys.createTestSsgKeystoreProperties();
+            }
+
+            protected void tearDown() throws Exception {
+                ;
+            }
+        };
+        return wrapper;
     }
 
 

@@ -12,8 +12,8 @@ import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.VersionException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.MockServletApi;
@@ -39,7 +39,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetAddress;
 
 
 /**
@@ -62,7 +61,7 @@ public class SamlPolicyTest extends TestCase {
 
     /**
      * create the <code>TestSuite</code> for the
-     * ServerPolicyFactoryTest <code>TestCase</code>
+     * SamlPolicyTest <code>TestCase</code>
      */
     public static Test suite() {
         TestSuite suite = new TestSuite(SamlPolicyTest.class);

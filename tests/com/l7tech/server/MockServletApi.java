@@ -62,7 +62,6 @@ public class MockServletApi {
                 servletRequestMock.matchAndReturn("getAttribute", Response.PARAM_HTTP_STATUS, new Integer(200));
 
                 servletRequestMock.matchAndReturn("getAttribute", Request.PARAM_HTTP_AUTHORIZATION, null);
-                servletRequestMock.matchAndReturn("getHeader", "Authorization", null);
 
                 servletRequestMock.matchAndReturn("getAttribute", Response.PARAM_HTTP_WWWAUTHENTICATE, null);
                 servletRequestMock.matchAndReturn("getHeader", "WWW-Authenticate", null);
@@ -70,6 +69,8 @@ public class MockServletApi {
                 servletRequestMock.matchAndReturn("getScheme", "http");
                 servletRequestMock.matchAndReturn("getServerName", InetAddress.getLocalHost().getHostName());
                 servletRequestMock.matchAndReturn("getServerPort", 8080);
+                servletRequestMock.matchAndReturn("getRemoteAddr", InetAddress.getLocalHost().getHostAddress());
+
                 servletRequestMock.matchAndReturn("getContextPath", "/ssg");
 
                 servletResponseMock.matchAndReturn( "setContentType", "text/xml; charset=utf-8", null );

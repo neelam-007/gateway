@@ -1,15 +1,25 @@
 package com.l7tech.server.saml;
 
 import com.l7tech.common.security.saml.Constants;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import org.apache.xmlbeans.XmlOptions;
+import org.apache.xmlbeans.XmlObject;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 import x0Protocol.oasisNamesTcSAML1.ResponseDocument;
 import x0Protocol.oasisNamesTcSAML1.ResponseType;
 import x0Protocol.oasisNamesTcSAML1.StatusCodeType;
 import x0Protocol.oasisNamesTcSAML1.StatusType;
 
 import javax.xml.namespace.QName;
+import javax.xml.soap.SOAPException;
+import javax.xml.soap.SOAPMessage;
+import javax.xml.soap.SOAPBody;
 import java.util.HashMap;
 import java.util.Map;
+import java.io.IOException;
 
 /**
  * Package private class with saml protocol utility methods.
@@ -52,4 +62,18 @@ class Utilities {
         options.setSaveSuggestedPrefixes(prefixes);
         return options;
     }
+
+    static Document asSoapMessage(XmlObject doc) throws SOAPException, IOException, SAXException {
+        SOAPMessage sm = SoapUtil.makeMessage();
+        SOAPBody body = sm.getSOAPPart().getEnvelope().getBody();
+
+        final Document document = (Document)doc.newDomNode(Utilities.xmlOptions());
+        final Element documentElement = document.getDocumentElement();
+        SoapUtil.domToSOAPElement(body, documentElement);
+        String strMsg = SoapUtil.soapMessageToString(sm, "UTF-8");
+        Document domDocument = XmlUtil.stringToDocument(strMsg);
+
+        return domDocument;
+    }
+
 }
