@@ -63,16 +63,19 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
         if (this.config.getLdapUrl() == null || this.config.getLdapUrl().length < 1) {
             throw new IllegalArgumentException("This config does not contain an ldap url"); // should not happen
         }
-        initializeFallbackMechanism();
     }
 
     /** for subclassing such as class proxying */
     protected LdapIdentityProvider() {
     }
 
+    public void setServerConfig(ServerConfig serverConfig) {
+        this.serverConfig = serverConfig;
+    }
+
     public void initializeFallbackMechanism() {
         // configure timeout period
-        String property = ServerConfig.getInstance().getProperty("ldap.reconnect.timeout");
+        String property = serverConfig.getProperty("ldap.reconnect.timeout");
         if (property == null || property.length() < 1) {
             retryFailedConnectionTimeout = 60000;
             logger.warning("ldap.reconnect.timeout server property not set. using default");
@@ -669,6 +672,7 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
         if (clientCertManager == null) {
             throw new IllegalArgumentException("The Client Certificate Manager is required");
         }
+        initializeFallbackMechanism();
     }
 
 
@@ -825,6 +829,5 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
     private String[] ldapUrls;
     private Long[] urlStatus;
     private final Logger logger = Logger.getLogger(getClass().getName());
-
-
+    private ServerConfig serverConfig;
 }

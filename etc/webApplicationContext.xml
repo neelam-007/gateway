@@ -118,6 +118,9 @@
            </property>
        </bean>
       </property>
+      <property name="serverConfig">
+          <ref local="serverConfig"/>
+      </property>
   </bean>
 
     <!-- server side log manager -->
