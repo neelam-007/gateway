@@ -35,10 +35,15 @@ public class TrustedCert extends NamedEntityImp implements Serializable {
      */
     public String getUsageDescription() {
         StringBuffer buf = new StringBuffer();
-        if (trustedForSsl) add(buf, "SSL");
-        if (trustedForSigningServerCerts) add(buf, "Sign Server");
-        if (trustedForSigningClientCerts) add(buf, "Sign Client");
-        if (trustedForSigningSamlTokens) add(buf, "Sign SAML");
+        if (trustedForSsl && trustedForSigningClientCerts && trustedForSigningServerCerts && trustedForSigningSamlTokens ) {
+            buf.append("All");
+        } else {
+            if (trustedForSsl) add(buf, "SSL");
+            if (trustedForSigningServerCerts) add(buf, "Sign Server");
+            if (trustedForSigningClientCerts) add(buf, "Sign Client");
+            if (trustedForSigningSamlTokens) add(buf, "Sign SAML");
+            if (buf.length() == 0) buf.append("None");
+        }
         return buf.toString();
     }
 
