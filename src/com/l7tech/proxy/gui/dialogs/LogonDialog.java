@@ -7,6 +7,7 @@
 package com.l7tech.proxy.gui.dialogs;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.widgets.ContextMenuTextField;
 import com.l7tech.proxy.util.ClientLogger;
 
 import javax.swing.*;
@@ -122,7 +123,7 @@ public class LogonDialog extends JDialog {
             constraints.gridheight = 1;
         }
 
-        userNameTextField = new JTextField(); //needed below
+        userNameTextField = new ContextMenuTextField(); //needed below
         userNameTextField.getDocument().addDocumentListener(new DocumentListener() {
             public void insertUpdate(DocumentEvent e) { updateOkButton(); }
             public void removeUpdate(DocumentEvent e) { updateOkButton(); }
