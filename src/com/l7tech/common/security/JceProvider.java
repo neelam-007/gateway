@@ -17,7 +17,7 @@ import java.security.SignatureException;
  * @version 1.0
  */
 public abstract class JceProvider {
-    public static final String ENGINE_PROPERTY = "com.l7tech.common.security.JceProviderEngine";
+    public static final String ENGINE_PROPERTY = "com.l7tech.common.security.jceProviderEngine";
 
     private static final String BC_ENGINE = "com.l7tech.common.security.prov.bc.BouncyCastleJceProviderEngine";
     private static final String PHAOS_ENGINE = "com.l7tech.common.security.prov.phaos.PhaosJceProviderEngine";
