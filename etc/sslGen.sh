@@ -21,6 +21,8 @@
 # Command to explicitely declare the trustStore on the console:
 # System.setProperty("javax.net.ssl.trustStore", "somedirectory/client.keystore");
 #
+# INPUT
+# When called by the rootcaGen, the root ks passwd is passed in $1
 # -----------------------------------------------------------------------------
 #
 
@@ -56,6 +58,19 @@ if [ ! "$TOMCAT_HOME" ]; then
         exit -1
 fi
 
+# RESOLVE THE DIRECTORY WHERE THESE SCRIPTS RESIDE
+PRG="$0"
+while [ -h "$PRG" ]; do
+  ls=`ls -ld "$PRG"`
+  link=`expr "$ls" : '.*-> \(.*\)$'`
+  if expr "$link" : '.*/.*' > /dev/null; then
+    PRG="$link"
+  else
+    PRG=`dirname "$PRG"`/"$link"
+  fi
+done
+PRGDIR=`dirname "$PRG"`
+
 # VERIFY THAT THE KEYSTORE IS NOT YET SET
 if [ -e "$KEYSTORE_FILE" ]; then
         echo "THE KEYSTORE ALREADY EXIST."
@@ -74,7 +89,7 @@ fi
 mkdir "$KEYSTORE_DIR"
 
 # GET A KEYSTORE PASSWORD FROM CALLER
-echo "Please provide an keystore password"
+echo "Please provide a keystore password for the SSL store"
 read -s KEYSTORE_PASSWORD
 echo "Please repeat"
 read -s KEYSTORE_PASSWORD_REPEAT
@@ -131,16 +146,21 @@ then
                 SUBSTITUTE_FROM=sslkspasswd=.*
                 SUBSTITUTE_TO=sslkspasswd=${KEYSTORE_PASSWORD}
                 perl -pi.bak -e s/$SUBSTITUTE_FROM/$SUBSTITUTE_TO/ "$KEYSTORE_PROPERTIES_FILE"
-                echo "Recording the location of the root cert"
         else
         # INFORM THE USER OF THE FAILURE
                 echo "ERROR"
                 echo "The keystore password was not recorded because the properties file was not found."
                 echo "This should be done manually"
+                exit
         fi
 else
         # INFORM THE USER OF THE FAILURE
         echo "ERROR: The keystore file was not generated"
         echo
-        exit 255
+        exit
 fi
+
+# WHEN YOU GEN THE SSL KS, THE SSL CERT MUST BE SIGNED
+echo
+echo "The SSL keystore was generated. Calling signsslcsr.sh to prepare the ssl cert."
+. $PRGDIR/signsslcsr.sh $KEYSTORE_PASSWORD $1
