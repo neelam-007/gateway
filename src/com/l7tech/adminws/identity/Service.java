@@ -96,10 +96,10 @@ public class Service implements IdentityService {
                 IdentityProviderConfig originalConfig = manager.findByPrimaryKey(identityProviderConfig.getOid());
                 originalConfig.copyFrom(identityProviderConfig);
                 manager.update(originalConfig);
-                logger.log(Level.INFO, "Updated IDProviderConfig: " + identityProviderConfig.getOid());
+                logger.info("Updated IDProviderConfig: " + identityProviderConfig.getOid());
                 return identityProviderConfig.getOid();
             }
-            logger.log(Level.INFO, "Saving IDProviderConfig: " + identityProviderConfig.getOid());
+            logger.info("Saving IDProviderConfig: " + identityProviderConfig.getOid());
             return getIdentityProviderConfigManagerAndBeginTransaction().save(identityProviderConfig);
         } catch (Exception e) {
             logger.log(Level.SEVERE, null, e);
@@ -112,7 +112,7 @@ public class Service implements IdentityService {
         try {
             IdentityProviderConfigManager manager = getIdentityProviderConfigManagerAndBeginTransaction();
             manager.delete(manager.findByPrimaryKey(oid));
-            logger.log(Level.INFO, "Deleted IDProviderConfig: " + oid);
+            logger.info("Deleted IDProviderConfig: " + oid);
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
             throw new java.rmi.RemoteException("FindException in deleteIdentityProviderConfig", e);
@@ -203,7 +203,7 @@ public class Service implements IdentityService {
         try {
             com.l7tech.identity.User user = userManager.findByPrimaryKey(userId);
             userManager.delete(user);
-            logger.log(Level.INFO, "Deleted User: " + user.getName());
+            logger.info("Deleted User: " + user.getName());
         } catch (DeleteException e) {
             logger.log(Level.SEVERE, null, e);
             throw new java.rmi.RemoteException("DeleteException in deleteUser", e);
@@ -236,10 +236,10 @@ public class Service implements IdentityService {
 
             if (user.getOid() > 0) {
                 userManager.update(user);
-                logger.log(Level.INFO, "Updated User: " + user.getName() + "[" + user.getOid() + "]");
+                logger.info("Updated User: " + user.getName() + "[" + user.getOid() + "]");
                 return user.getOid();
             }
-            logger.log(Level.INFO, "Saving User: " + user.getName());
+            logger.info("Saving User: " + user.getName());
             return userManager.save(user);
         } catch (Exception e) {
             logger.log(Level.SEVERE, null, e);
@@ -308,7 +308,7 @@ public class Service implements IdentityService {
             com.l7tech.identity.Group grp = groupManager.findByPrimaryKey(groupId);
             if (grp == null) throw new java.rmi.RemoteException("Group does not exist");
             groupManager.delete(grp);
-            logger.log(Level.INFO, "Deleted Group: " + grp.getName());
+            logger.info("Deleted Group: " + grp.getName());
         } catch (ObjectModelException e) {
             logger.log(Level.SEVERE, null, e);
             throw new RemoteException("ObjectModelException in deleteGroup", e);
@@ -337,10 +337,10 @@ public class Service implements IdentityService {
 
             if (group.getOid() > 0) {
                 groupManager.update(group);
-                logger.log(Level.INFO, "Updated Group: " + group.getName() + "[" + group.getOid() + "]");
+                logger.info("Updated Group: " + group.getName() + "[" + group.getOid() + "]");
                 return group.getOid();
             }
-            logger.log(Level.INFO, "Saving Group: " + group.getName());
+            logger.info("Saving Group: " + group.getName());
             return groupManager.save(group);
         } catch (SaveException e) {
             logger.log(Level.SEVERE, null, e);
