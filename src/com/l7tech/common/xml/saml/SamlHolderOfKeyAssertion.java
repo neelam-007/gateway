@@ -29,6 +29,8 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Calendar;
+import java.util.TimeZone;
 
 /**
  * @author mike
@@ -42,6 +44,7 @@ public class SamlHolderOfKeyAssertion extends SamlAssertion {
     X509Certificate subjectCertificate = null;
     X509Certificate issuerCertificate = null;
     private String assertionId = null;
+    private Calendar expires = null;
 
     public SamlHolderOfKeyAssertion(Element ass) throws SAXException {
         assertionElement = ass;
@@ -61,6 +64,17 @@ public class SamlHolderOfKeyAssertion extends SamlAssertion {
                 this.nameQualifier = nameIdentifier.getNameQualifier();
                 this.nameIdentifierValue = nameIdentifier.getStringValue();
             }
+
+            ConditionsType conditions = assertion.getConditions();
+            if (conditions == null)
+                throw new SAXException("Assertion has no Conditions");
+            expires = conditions.getNotOnOrAfter();
+            if (expires == null)
+                throw new SAXException("Assertion has no NotOnOrAfter (expiry date)");
+            TimeZone expiresTz = expires.getTimeZone();
+            if (!TimeZone.getTimeZone("UTC").equals(expiresTz))
+                throw new SAXException("Assertion NotOnOrAfter date is not in UTC timezone");            
+
             SubjectConfirmationType subjectConfirmation = subject.getSubjectConfirmation();
 
             KeyInfoType keyInfo = subjectConfirmation.getKeyInfo();
@@ -179,6 +193,10 @@ public class SamlHolderOfKeyAssertion extends SamlAssertion {
 
     public String getNameIdentifierValue() {
         return nameIdentifierValue;
+    }
+
+    public Calendar getExpires() {
+        return expires;
     }
 
     private String nameIdentifierFormat;

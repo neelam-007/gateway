@@ -7,14 +7,12 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.security.xml.WssDecorator;
-import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
 import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.util.TokenServiceClient;
-import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
 import org.w3c.dom.Document;
 
 import java.io.IOException;
@@ -22,8 +20,10 @@ import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
+import java.util.Calendar;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -35,6 +35,7 @@ import java.util.logging.Logger;
  */
 public class PendingRequest {
     private static final Logger log = Logger.getLogger(PendingRequest.class.getName());
+    private static final TimeZone UTC_TIME_ZONE = TimeZone.getTimeZone("UTC");
 
     //private ClientProxy clientProxy;
     private final CredentialManager credentialManager = Managers.getCredentialManager();
@@ -426,6 +427,19 @@ public class PendingRequest {
         return secureConversationSharedSecret = ssg.secureConversationSharedSecret();
     }
 
+    /** Check the expiry date of our hok, and throw it away if it has started to smell a bit off. */
+    private void checkExpiredHolderOfKeyAssertion() {
+        if (samlHolderOfKeyAssertion != null) {
+            Calendar expires = samlHolderOfKeyAssertion.getExpires();
+            Calendar nowUtc = Calendar.getInstance(UTC_TIME_ZONE);
+            if (!expires.after(nowUtc)) {
+                log.log(Level.INFO, "Our SAML Holder-of-key assertion has expired.  Will throw it away and get a new one.");
+                samlHolderOfKeyAssertion = null;
+                ssg.samlHolderOfKeyAssertion(null);
+            }
+        }
+    }
+
     /**
      * Get a valid holder-of-key SAML assertion for this SSG (or the Trusted SSG if this is a federated SSG).
      * If we don't currently hold a valid holder-of-key SAML assertion we will apply for a new one.
@@ -443,8 +457,8 @@ public class PendingRequest {
             throws OperationCanceledException, GeneralSecurityException, IOException, KeyStoreCorruptException,
                    ClientCertificateException, BadCredentialsException, PolicyRetryableException
     {
+        checkExpiredHolderOfKeyAssertion();
         if (samlHolderOfKeyAssertion != null) {
-            // TODO check for expired assertion here
             return samlHolderOfKeyAssertion;
         }
         SamlHolderOfKeyAssertion ssghok = ssg.samlHolderOfKeyAssertion();
@@ -456,8 +470,8 @@ public class PendingRequest {
      * @return our currently valid SAML holder-of-key assertion or null if we don't have one.
      */
     public SamlHolderOfKeyAssertion getSamlHolderOfKeyAssertion() {
+        checkExpiredHolderOfKeyAssertion();
         if (samlHolderOfKeyAssertion != null) {
-            // TODO check for expired assertion here
             return samlHolderOfKeyAssertion;
         }
         return samlHolderOfKeyAssertion = ssg.samlHolderOfKeyAssertion();
