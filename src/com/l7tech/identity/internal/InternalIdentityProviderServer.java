@@ -37,8 +37,8 @@ public class InternalIdentityProviderServer implements IdentityProvider {
     public static final String ENCODING = "UTF-8";
 
     public InternalIdentityProviderServer() {
-        userManager = new InternalUserManagerServer();
-        groupManager = new InternalGroupManagerServer();
+        userManager = new InternalUserManagerServer( this );
+        groupManager = new InternalGroupManagerServer( this );
         try {
             _md5 = MessageDigest.getInstance( "MD5" );
         } catch (NoSuchAlgorithmException e) {
