@@ -136,12 +136,14 @@ public class SoapUtil {
     public static final String VALUETYPE_X509 = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-x509-token-profile-1.0#" + VALUETYPE_X509_SUFFIX;
     public static final String VALUETYPE_X509_2 = SECURITY_NAMESPACE_PREFIX + ":" + VALUETYPE_X509_SUFFIX;
     public static final String VALUETYPE_SAML = "http://www.docs.oasis-open.org/wss/2004/01/oasis-200401-wss-saml-token-profile-1.0#SAMLAssertion-1.0"; // TODO CONFIRM PERMANENT URI -- this might have been changed in the final spec
+    public static final String VALUETYPE_SAML_ASSERTIONID = "http://www.docs.oasis-open.org/wss/2004/01/oasis-200401-wss-saml-token-profile-1.0#SAMLAssertionID"; // TODO CONFIRM PERMANENT URI -- this might have been changed in the final spec
     public static final String VALUETYPE_DERIVEDKEY = "http://schemas.xmlsoap.org/ws/2004/04/security/sc/dk";
     public static final String VALUETYPE_SECURECONV = "http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct";
     public static final String ENCODINGTYPE_BASE64BINARY_SUFFIX = "Base64Binary";
     public static final String ENCODINGTYPE_BASE64BINARY = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#" + ENCODINGTYPE_BASE64BINARY_SUFFIX;
     public static final String ENCODINGTYPE_BASE64BINARY_2 = SECURITY_NAMESPACE_PREFIX + ":" + ENCODINGTYPE_BASE64BINARY_SUFFIX;
     public static final String ALGORITHM_PSHA = "http://schemas.xmlsoap.org/ws/2004/04/security/sc/dk/p_sha1";
+    public static final String TRANSFORM_STR = "http://www.docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#STR-Transform";
 
     // Well-known actors (SOAP 1.1)
     public static final String ACTOR_VALUE_NEXT = "http://schemas.xmlsoap.org/soap/actor/next";
@@ -440,6 +442,23 @@ public class SoapUtil {
                                               prefix + ":" + attrName,
                                               attrValue);
         }
+    }
+
+    /**
+     * Creates a map of wsu:Id values to target elements in the specified document.
+     *
+     * @param doc  the Document to examine.
+     * @return a Map of wsu:Id String to Element.  May be empty, but never null.
+     */
+    public static Map getElementByWsuIdMap(Document doc) {
+        Map map = new HashMap();
+        NodeList elements = doc.getElementsByTagName("*");
+        for (int i = 0; i < elements.getLength(); i++) {
+            Element element = (Element)elements.item(i);
+            String id = getElementWsuId(element);
+            map.put(id, element);
+        }
+        return map;
     }
 
     /**

@@ -17,6 +17,7 @@ import com.ibm.xml.enc.type.EncryptedData;
 import com.ibm.xml.enc.type.EncryptionMethod;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.token.UsernameTokenImpl;
 import com.l7tech.common.security.xml.SecureConversationKeyDeriver;
 import com.l7tech.common.security.xml.XencUtil;
@@ -332,16 +333,30 @@ public class WssDecoratorImpl implements WssDecorator {
         TemplateGenerator template = new TemplateGenerator(elementsToSign[0].getOwnerDocument(),
           XSignature.SHA1, Canonicalizer.EXCLUSIVE, signaturemethod);
         template.setPrefix("ds");
+        final Map strTransformsNodeToNode = new HashMap();
         for (int i = 0; i < elementsToSign.length; i++) {
             final Element element = elementsToSign[i];
             final String id = signedIds[i];
 
-            Reference ref = template.createReference("#" + id);
+            final Reference ref;
+            if ("Assertion".equals(element.getLocalName()) && SamlConstants.NS_SAML.equals(element.getNamespaceURI())) {
+                // Bug #1434 -- unable to refer to SAML assertion directly using its AssertionID -- need intermediate STR with wsu:Id
+                final String assId = element.getAttribute("AssertionID");
+                if (assId == null || assId.length() < 1)
+                    throw new InvalidDocumentFormatException("Unable to decorate: SAML Assertion has missing or empty AssertionID");
+                Element str = addSamlSecurityTokenReference(securityHeader, assId);
+                ref = template.createReference("#" + getOrCreateWsuId(c, str, "SamlSTR"));
+                ref.addTransform(SoapUtil.TRANSFORM_STR); // need SecurityTokenReference transform to go through indirection
+                strTransformsNodeToNode.put(str, element);
+            } else
+                ref = template.createReference("#" + id);
+
             if (XmlUtil.isElementAncestor(securityHeader, element)) {
                 logger.fine("Per policy, breaking Basic Security Profile rules with enveloped signature" +
                   " of element " + element.getLocalName() + " with Id=\"" + id + "\"");
                 ref.addTransform(Transform.ENVELOPED);
             }
+
             ref.addTransform(Transform.C14N_EXCLUSIVE);
             template.addReference(ref);
         }
@@ -402,6 +417,33 @@ public class WssDecoratorImpl implements WssDecorator {
                   ", systemId=" + systemId);
             }
         });
+        sigContext.setAlgorithmFactory(new AlgorithmFactoryExtn() {
+            public Transform getTransform(String s) throws NoSuchAlgorithmException {
+                if (SoapUtil.TRANSFORM_STR.equals(s))
+                    return new Transform() {
+                        public String getURI() {
+                            return SoapUtil.TRANSFORM_STR;
+                        }
+
+                        public void transform(TransformContext c) throws TransformException {
+                            Node source = c.getNode();
+                            if (source == null) throw new TransformException("Source node is null");
+                            final Node result = (Node)strTransformsNodeToNode.get(source);
+                            if (result == null) throw new TransformException("Destination node is null");
+                            c.setContent(new NodeList() {
+                                public int getLength() {
+                                    return 1;
+                                }
+
+                                public Node item(int index) {
+                                    return result;
+                                }
+                            });
+                        }
+                    };
+                return super.getTransform(s);
+            }
+        });
         try {
             sigContext.sign(emptySignatureElement, senderSigningKey);
         } catch (XSignatureException e) {
@@ -415,6 +457,16 @@ public class WssDecoratorImpl implements WssDecorator {
         signatureElement.appendChild(keyInfoEl);
 
         return signatureElement;
+    }
+
+    private Element addSamlSecurityTokenReference(Element securityHeader, String assertionId) {
+        String wsseNs = securityHeader.getNamespaceURI();
+        String wsse = securityHeader.getPrefix();
+        Element str = XmlUtil.createAndAppendElementNS(securityHeader, SoapUtil.SECURITYTOKENREFERENCE_EL_NAME, wsseNs, wsse);
+        Element keyid = XmlUtil.createAndAppendElementNS(str, SoapUtil.KEYIDENTIFIER_EL_NAME, wsseNs, wsse);
+        keyid.setAttribute("ValueType", SoapUtil.VALUETYPE_SAML_ASSERTIONID);
+        keyid.appendChild(XmlUtil.createTextNode(keyid, assertionId));
+        return str;
     }
 
     /**
