@@ -19,6 +19,7 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel{
 
      private static final int MAX_MESSAGE_BLOCK_SIZE = 100;
      private static final int MAX_NUMBER_OF_LOG_MESSGAES = 4096;
+     private Log log = null;
 
      private Vector logsCache = new Vector();
 
@@ -45,8 +46,10 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel{
 
      public void refreshLogs(int msgFilterLevel){
 
-         Log log = (Log) Locator.getDefault().lookup(Log.class);
-         if (log == null) throw new IllegalStateException("cannot obtain log remote reference");
+         if (log == null) {
+             log = (Log) Locator.getDefault().lookup(Log.class);
+             if (log == null) throw new IllegalStateException("cannot obtain log remote reference");
+         }
 
          String[] rawLogs = new String[]{};
          long startMsgNumber = -1;
