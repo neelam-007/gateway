@@ -97,9 +97,8 @@ public class MessageProcessor {
                     undecorateResponse(req, res, appliedPolicy);
                     return res;
                 } catch (SSLException e) {
-                    if (ExceptionUtils.causedBy(e, BadCredentialsException.class))
-                        throw e;
-                    if (ExceptionUtils.causedBy(e, UnrecoverableKeyException.class))
+                    if (ExceptionUtils.causedBy(e, BadCredentialsException.class) ||
+                        ExceptionUtils.causedBy(e, UnrecoverableKeyException.class))
                         throw new BadCredentialsException(e);
 
                     if (ExceptionUtils.causedBy(e, ServerCertificateUntrustedException.class))
