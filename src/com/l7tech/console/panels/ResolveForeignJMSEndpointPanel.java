@@ -66,6 +66,19 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
                 queueSelector.setEnabled(false);
             }
         });
+
+        manageJMSEndpoints.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                manageJMSPressed();
+            }
+        });
+    }
+
+    /**
+     * called when the user presses the button to manage JMS queues.
+     */
+    private void manageJMSPressed() {
+        // todo
     }
 
     public boolean onNextButton() {
@@ -156,6 +169,7 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
     private JRadioButton deleteRadio;
     private JRadioButton ignoreRadio;
     private JComboBox queueSelector;
+    private JButton manageJMSEndpoints;
     private ButtonGroup actionRadios;
 
     private final Logger logger = Logger.getLogger(ResolveForeignJMSEndpointPanel.class.getName());
@@ -220,6 +234,7 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
         _10.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Action"));
         final JButton _11;
         _11 = new JButton();
+        manageJMSEndpoints = _11;
         _11.setText("Create New JMS Endpoint");
         _10.add(_11, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JRadioButton _12;
