@@ -36,7 +36,7 @@ public class Service {
      * @return Array of entity headers for all existing id provider config
      * @throws java.rmi.RemoteException
      */
-    public com.l7tech.objectmodel.EntityHeader[] findAllIdentityProviderConfig() throws java.rmi.RemoteException {
+    public EntityHeader[] findAllIdentityProviderConfig() throws java.rmi.RemoteException {
         try {
             java.util.Collection res = getIdentityProviderConfigManagerAndBeginTransaction().findAllHeaders();
             return collectionToHeaderArray(res);
@@ -55,7 +55,7 @@ public class Service {
      * @return Array of entity headers for all existing id provider config
      * @throws java.rmi.RemoteException
      */
-    public com.l7tech.objectmodel.EntityHeader[] findAllIdentityProviderConfigByOffset(int offset, int windowSize) throws java.rmi.RemoteException {
+    public EntityHeader[] findAllIdentityProviderConfigByOffset(int offset, int windowSize) throws java.rmi.RemoteException {
         try {
             java.util.Collection res = getIdentityProviderConfigManagerAndBeginTransaction().findAllHeaders(offset, windowSize);
             return collectionToHeaderArray(res);
@@ -119,7 +119,7 @@ public class Service {
             endTransaction();
         }
     }
-    public com.l7tech.objectmodel.EntityHeader[] findAllUsers(long identityProviderConfigId) throws java.rmi.RemoteException {
+    public EntityHeader[] findAllUsers(long identityProviderConfigId) throws java.rmi.RemoteException {
         try {
             UserManager userManager = retrieveUserManagerAndBeginTransaction(identityProviderConfigId);
             java.util.Collection res = userManager.findAllHeaders();
@@ -131,7 +131,7 @@ public class Service {
             endTransaction();
         }
     }
-    public com.l7tech.objectmodel.EntityHeader[] findAllUsersByOffset(long identityProviderConfigId, int offset, int windowSize) throws java.rmi.RemoteException {
+    public EntityHeader[] findAllUsersByOffset(long identityProviderConfigId, int offset, int windowSize) throws java.rmi.RemoteException {
         try {
             UserManager userManager = retrieveUserManagerAndBeginTransaction(identityProviderConfigId);
             java.util.Collection res = userManager.findAllHeaders(offset, windowSize);
@@ -143,6 +143,21 @@ public class Service {
             endTransaction();
         }
     }
+
+    public EntityHeader[] searchUsers(long identityProviderConfigId, String pattern) throws java.rmi.RemoteException {
+        try {
+            UserManager userManager = retrieveUserManagerAndBeginTransaction(identityProviderConfigId);
+            Collection res = userManager.search(pattern);
+            return collectionToHeaderArray(res);
+        } catch (FindException e) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
+            throw new RemoteException("FindException in searchUsers", e);
+        } finally {
+            endTransaction();
+        }
+    }
+
+
     public com.l7tech.identity.User findUserByPrimaryKey(long identityProviderConfigId, String userId) throws java.rmi.RemoteException {
         try {
             IdentityProviderConfig cfg = getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(identityProviderConfigId);
@@ -231,7 +246,7 @@ public class Service {
     }
 
 
-    public com.l7tech.objectmodel.EntityHeader[] findAllGroups(long identityProviderConfigId) throws java.rmi.RemoteException {
+    public EntityHeader[] findAllGroups(long identityProviderConfigId) throws java.rmi.RemoteException {
         try {
             java.util.Collection res = retrieveGroupManagerAndBeginTransaction(identityProviderConfigId).findAllHeaders();
             return collectionToHeaderArray(res);
@@ -242,7 +257,21 @@ public class Service {
             endTransaction();
         }
     }
-    public com.l7tech.objectmodel.EntityHeader[] findAllGroupsByOffset(long identityProviderConfigId, int offset, int windowSize) throws java.rmi.RemoteException {
+
+    public EntityHeader[] searchGroups(long identityProviderConfigId, String pattern) throws java.rmi.RemoteException {
+        try {
+            java.util.Collection res = retrieveGroupManagerAndBeginTransaction(identityProviderConfigId).search(pattern);
+            return collectionToHeaderArray(res);
+        } catch (FindException e) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
+            throw new RemoteException("FindException in searchGroups", e);
+        } finally {
+            endTransaction();
+        }
+    }
+
+
+    public EntityHeader[] findAllGroupsByOffset(long identityProviderConfigId, int offset, int windowSize) throws java.rmi.RemoteException {
         try {
             java.util.Collection res = retrieveGroupManagerAndBeginTransaction(identityProviderConfigId).findAllHeaders(offset, windowSize);
             return collectionToHeaderArray(res);
@@ -411,14 +440,14 @@ public class Service {
         }
     }
 
-    private com.l7tech.objectmodel.EntityHeader[] collectionToHeaderArray(java.util.Collection input) throws java.rmi.RemoteException {
-        if (input == null) return new com.l7tech.objectmodel.EntityHeader[0];
-        com.l7tech.objectmodel.EntityHeader[] output = new com.l7tech.objectmodel.EntityHeader[input.size()];
+    private EntityHeader[] collectionToHeaderArray(java.util.Collection input) throws java.rmi.RemoteException {
+        if (input == null) return new EntityHeader[0];
+        EntityHeader[] output = new EntityHeader[input.size()];
         int count = 0;
         java.util.Iterator i = input.iterator();
         while (i.hasNext()) {
             try {
-                output[count] = (com.l7tech.objectmodel.EntityHeader)i.next();
+                output[count] = (EntityHeader)i.next();
             } catch (ClassCastException e) {
                 LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
                 throw new java.rmi.RemoteException("Collection contained something other than a com.l7tech.objectmodel.EntityHeader", e);
