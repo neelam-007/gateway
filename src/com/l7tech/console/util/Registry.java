@@ -5,6 +5,7 @@ import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.UserManager;
+import com.l7tech.jms.JmsAdmin;
 import com.l7tech.service.ServiceAdmin;
 
 
@@ -79,6 +80,11 @@ public abstract class Registry {
      */
     abstract public ServiceAdmin getServiceManager();
 
+    /**
+     * @return the jms provider manager
+     */
+    abstract public JmsAdmin getJmsManager();
+
 
     /**
      * Implementation of the default 'no-op' registry
@@ -114,6 +120,10 @@ public abstract class Registry {
          * @return the service managerr
          */
         public ServiceAdmin getServiceManager() {
+            return null;
+        }
+
+        public JmsAdmin getJmsManager() {
             return null;
         }
     }

@@ -15,6 +15,8 @@ import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.service.ServiceAdminStub;
+import com.l7tech.service.JmsAdminStub;
+import com.l7tech.jms.JmsAdmin;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
@@ -44,6 +46,7 @@ public class PublishServiceWizardTest extends Locator {
         public static final IdentityProviderConfigManagerStub IDENTITY_PROVIDER_CONFIG_MANAGER_STUB = new IdentityProviderConfigManagerStub();
         public static final IdentityProviderStub IDENTITY_PROVIDER_STUB = new IdentityProviderStub();
         public static final ServiceAdminStub SERVICE_MANAGER_STUB = new ServiceAdminStub();
+        public static final JmsAdminStub JMS_MANAGER_STUB = new JmsAdminStub();
 
         public IdentityProviderConfigManager getProviderConfigManager() {
             return IDENTITY_PROVIDER_CONFIG_MANAGER_STUB;
@@ -63,6 +66,10 @@ public class PublishServiceWizardTest extends Locator {
 
         public ServiceAdmin getServiceManager() {
             return SERVICE_MANAGER_STUB;
+        }
+
+        public JmsAdmin getJmsManager() {
+            return JMS_MANAGER_STUB;
         }
 
         public IdentityProvider getIdentityProvider(long idProviderOid) {

@@ -4,6 +4,7 @@ import com.l7tech.common.util.Locator;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.*;
 import com.l7tech.service.ServiceAdmin;
+import com.l7tech.jms.JmsAdmin;
 
 
 /**
@@ -56,6 +57,13 @@ public class RegistryStub extends Registry {
      */
     public ServiceAdmin getServiceManager() {
         return (ServiceAdmin)Locator.getDefault().lookup(ServiceAdmin.class);
+    }
+
+    /**
+     * @return the jms provider manager
+     */
+    public JmsAdmin getJmsManager() {
+        return (JmsAdmin) Locator.getDefault().lookup(JmsAdmin.class);
     }
 
     StubDataStore dataStore = StubDataStore.defaultStore();
