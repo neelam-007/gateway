@@ -39,11 +39,11 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         InitialContext ic = new InitialContext();
         String serviceResolvers = (String)ic.lookup( "java:comp/env/ServiceResolvers" );
         if ( serviceResolvers == null ) {
-            StringBuffer resolvers = new StringBuffer();
-            resolvers.append( UrnResolver.class.getName() );
-            resolvers.append( " " );
-            resolvers.append( SoapActionResolver.class.getName() );
-            serviceResolvers = resolvers.toString();
+            StringBuffer classnames = new StringBuffer();
+            classnames.append( UrnResolver.class.getName() );
+            classnames.append( " " );
+            classnames.append( SoapActionResolver.class.getName() );
+            serviceResolvers = classnames.toString();
         }
 
         _resolvers = new TreeSet();
