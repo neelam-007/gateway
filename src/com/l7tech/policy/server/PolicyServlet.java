@@ -94,6 +94,7 @@ public class PolicyServlet extends HttpServlet {
             String err = PARAM_SERVICEOID + " parameter is required";
             logger.warning( err );
             httpServletResponse.sendError( HttpServletResponse.SC_BAD_REQUEST, err );
+            return;
         } else {
             targetService = resolveService(Long.parseLong(str_oid));
         }
