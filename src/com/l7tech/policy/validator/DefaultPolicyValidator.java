@@ -1,7 +1,6 @@
 package com.l7tech.policy.validator;
 
 import com.l7tech.common.util.Locator;
-import com.l7tech.common.util.SoapUtil;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.Assertion;
@@ -15,7 +14,6 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.xmlsec.ElementSecurity;
 import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
 import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
 
@@ -169,6 +167,14 @@ public class DefaultPolicyValidator extends PolicyValidator {
         }
 
         private void processCredentialSource(Assertion a) {
+            // process XmlRequestSecurity first as it may not be credential assertion
+            if (a instanceof XmlRequestSecurity) {
+                seenCredAssertionThatRequiresClientCert = true;
+                XmlRequestSecurity xmlSec = (XmlRequestSecurity)a;
+                if (!xmlSec.hasAuthenticationElement()) return;
+            }
+
+
             if (seenAccessControl) {
                 result.addError(new PolicyValidatorResult.
                   Error(a, "Access control already set, this assertion might get ignored.", null));
@@ -187,24 +193,6 @@ public class DefaultPolicyValidator extends PolicyValidator {
             if (a instanceof HttpClientCert) {
                 seenCredAssertionThatRequiresClientCert = true;
             }
-            //
-            if (a instanceof XmlRequestSecurity) {
-                seenCredAssertionThatRequiresClientCert = true;
-                XmlRequestSecurity xmlSec = (XmlRequestSecurity)a;
-                ElementSecurity[] elements = xmlSec.getElements();
-                boolean envelope = false;
-                for (int i = 0; i < elements.length; i++) {
-                    ElementSecurity elementSecurity = xmlSec.getElements()[i];
-                    if (SoapUtil.SOAP_ENVELOPE_XPATH.equals(elementSecurity.getxPath().getExpression())) {
-                        envelope = true;
-                        break;
-                    }
-                }
-                if (!envelope) { // not considered credential source
-                    return;
-                }
-            }
-
 
             if (a instanceof HttpDigest) {
                 seenDigestAssertion = true;
