@@ -1,4 +1,4 @@
-package com.l7tech.policy.server.filter;
+package com.l7tech.server.policy.filter;
 
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.Assertion;

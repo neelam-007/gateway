@@ -1,4 +1,4 @@
-package com.l7tech.policy.server;
+package com.l7tech.server.policy;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.*;
@@ -16,7 +16,7 @@ import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
-import com.l7tech.policy.server.filter.FilteringException;
+import com.l7tech.server.policy.filter.FilteringException;
 import com.l7tech.server.AuthenticatableHttpServlet;
 import com.l7tech.server.identity.IdProvConfManagerServer;
 import com.l7tech.server.policy.PolicyService;

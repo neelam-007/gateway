@@ -39,7 +39,7 @@
 
     <servlet>
         <servlet-name>PolicyServlet</servlet-name>
-        <servlet-class>com.l7tech.policy.server.PolicyServlet</servlet-class>
+        <servlet-class>com.l7tech.server.policy.PolicyServlet</servlet-class>
     </servlet>
 
     <servlet>

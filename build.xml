@@ -242,7 +242,7 @@
             <test name="com.l7tech.proxy.policy.ClientPolicyFactoryTest" haltonfailure="no"/>
             <test name="com.l7tech.proxy.policy.ClientXpathAssertionsTest" haltonfailure="no"/>
             <test name="com.l7tech.server.policy.ServerPolicyFactoryTest" haltonfailure="no"/>
-            <test name="com.l7tech.policy.server.filter.FilterTest" haltonfailure="no"/>
+            <test name="com.l7tech.server.policy.filter.FilterTest" haltonfailure="no"/>
             <test name="com.l7tech.common.util.ExceptionUtilsTest" haltonfailure="no"/>
             <test name="com.l7tech.identity.StubDataStoreTest" haltonfailure="no"/>
             <test name="com.l7tech.server.policy.RequestXpathAssertionTest" fork="yes" haltonfailure="no"/>
