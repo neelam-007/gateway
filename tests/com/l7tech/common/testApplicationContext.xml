@@ -9,7 +9,7 @@
      * too many places.
      -->
     <bean id="serverConfig" class="com.l7tech.server.ServerConfig" factory-method="getInstance"/>
-        
+
     <!-- server side identity provider factory (same as the prod)-->
     <bean id="identityProviderFactory" class="com.l7tech.server.identity.IdentityProviderFactory">
     </bean>
@@ -21,7 +21,7 @@
         </property>
     </bean>
 
-<!--
+    <!--
         Test Identity Provider
     -->
     <bean id="testIdentityProvider" factory-bean="identityProviderFactory" factory-method="createProviderInstance"
@@ -68,7 +68,6 @@
     <bean id="clientCertManager" class="com.l7tech.server.identity.cert.ClientCertManagerStub">
     </bean>
 
-
     <!-- server side HTTP routing client trust manager -->
     <bean id="httpRoutingAssertionTrustManager" class="com.l7tech.server.transport.http.SslClientTrustManager">
         <property name="trustedCertManager">
@@ -84,12 +83,12 @@
     </bean>
 
     <!-- ssl config  -->
-    <bean id="sslKeystore" class="com.l7tech.common.util.KeystoreUtils" factory-method="getInstance"
+    <bean id="keystore" class="com.l7tech.common.util.KeystoreUtils" factory-method="getInstance"
           depends-on="testKeys"/>
 
     <bean id="sslKeystoreType" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="targetObject">
-            <ref local='sslKeystore'/>
+            <ref local='keystore'/>
         </property>
         <property name="targetMethod">
             <value>getKeyStoreType</value>
@@ -98,7 +97,7 @@
 
     <bean id="sslKeystorePassword" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="targetObject">
-            <ref local='sslKeystore'/>
+            <ref local='keystore'/>
         </property>
         <property name="targetMethod">
             <value>getSslKeystorePasswd</value>
@@ -107,7 +106,7 @@
 
     <bean id="sslKeystoreFile" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="targetObject">
-            <ref local='sslKeystore'/>
+            <ref local='keystore'/>
         </property>
         <property name="targetMethod">
             <value>getSslKeystorePath</value>
@@ -116,7 +115,7 @@
 
     <bean id="sslKeystoreCertificate" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="targetObject">
-            <ref local='sslKeystore'/>
+            <ref local='keystore'/>
         </property>
         <property name="targetMethod">
             <value>getSslCert</value>
@@ -125,7 +124,7 @@
 
     <bean id="sslKeystorePrivateKey" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="targetObject">
-            <ref local='sslKeystore'/>
+            <ref local='keystore'/>
         </property>
         <property name="targetMethod">
             <value>getSSLPrivateKey</value>

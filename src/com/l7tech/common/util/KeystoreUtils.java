@@ -209,7 +209,7 @@ public class KeystoreUtils {
      * @return the <code>SignerInfo</code> instance
      */
     public SignerInfo getSignerInfo() throws IOException {
-        byte[] buf = KeystoreUtils.getInstance().readSSLCert();
+        byte[] buf = readSSLCert();
         X509Certificate[] certChain;
         try {
             certChain = CertUtils.decodeCertChain(buf);
@@ -223,7 +223,7 @@ public class KeystoreUtils {
 
         PrivateKey pkey = null;
         try {
-            pkey = KeystoreUtils.getInstance().getSSLPrivateKey();
+            pkey = getSSLPrivateKey();
         } catch (KeyStoreException e) {
             String msg = "cannot get ssl private key";
             logger.severe(msg);

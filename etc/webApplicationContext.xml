@@ -47,6 +47,10 @@
         <property name="clientCertManager">
             <ref bean="clientCertManager"/>
         </property>
+        <property name="keystore">
+            <ref local='keystore'/>
+        </property>
+
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
@@ -77,6 +81,9 @@
         <property name="trustedCertManager">
             <ref bean="trustedCertManager"/>
         </property>
+        <property name="keystore">
+            <ref local='keystore'/>
+        </property>
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
@@ -104,10 +111,14 @@
         <property name="clientCertManager">
             <ref local="clientCertManager"/>
         </property>
+        <property name="keystore">
+            <ref local='keystore'/>
+        </property>
         <property name="serverConfig">
             <ref local="serverConfig"/>
         </property>
     </bean>
+
     <!-- LDAP UserManager -->
     <bean id="ldapUserManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
         class="com.l7tech.server.identity.ldap.LdapUserManager" singleton="false"></bean>
@@ -127,6 +138,9 @@
     <bean id="clusterInfoManager" class="com.l7tech.cluster.ClusterInfoManager">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
+        </property>
+        <property name="keystore">
+            <ref local='keystore'/>
         </property>
     </bean>
     <!-- server side Service Usage  manager -->
@@ -253,12 +267,13 @@
             <ref bean="clusterInfoManager"/>
         </constructor-arg>
     </bean>
-    <!-- ssl config  -->
-    <bean id="sslKeystore" class="com.l7tech.common.util.KeystoreUtils" factory-method="getInstance"/>
+
+    <!-- keystore root cert and ssl config  -->
+    <bean id="keystore" class="com.l7tech.common.util.KeystoreUtils" factory-method="getInstance"/>
 
     <bean id="sslKeystoreType" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="targetObject">
-            <ref local='sslKeystore'/>
+            <ref local='keystore'/>
         </property>
         <property name="targetMethod">
             <value>getKeyStoreType</value>
@@ -267,7 +282,7 @@
 
     <bean id="sslKeystorePassword" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="targetObject">
-            <ref local='sslKeystore'/>
+            <ref local='keystore'/>
         </property>
         <property name="targetMethod">
             <value>getSslKeystorePasswd</value>
@@ -276,7 +291,7 @@
 
     <bean id="sslKeystoreFile" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="targetObject">
-            <ref local='sslKeystore'/>
+            <ref local='keystore'/>
         </property>
         <property name="targetMethod">
             <value>getSslKeystorePath</value>
@@ -285,7 +300,7 @@
 
     <bean id="sslKeystoreCertificate" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="targetObject">
-            <ref local='sslKeystore'/>
+            <ref local='keystore'/>
         </property>
         <property name="targetMethod">
             <value>getSslCert</value>
@@ -294,7 +309,7 @@
 
     <bean id="sslKeystorePrivateKey" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="targetObject">
-            <ref local='sslKeystore'/>
+            <ref local='keystore'/>
         </property>
         <property name="targetMethod">
             <value>getSSLPrivateKey</value>
@@ -303,7 +318,7 @@
 
     <bean id="rootCertificate" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
           <property name="targetObject">
-              <ref local='sslKeystore'/>
+              <ref local='keystore'/>
           </property>
           <property name="targetMethod">
               <value>getRootCert</value>

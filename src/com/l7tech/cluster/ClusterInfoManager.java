@@ -16,7 +16,6 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.SecureRandom;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,6 +39,12 @@ import java.util.regex.Pattern;
  *
  */
 public class ClusterInfoManager extends HibernateDaoSupport {
+    private KeystoreUtils keystore;
+
+    public void setKeystore(KeystoreUtils keystore) {
+        this.keystore = keystore;
+    }
+
     /**
      * returns the node id to which this server applies to
      */
@@ -126,10 +131,6 @@ public class ClusterInfoManager extends HibernateDaoSupport {
         node.setName(newnodename);
         try {
             recordNodeInDB(node);
-        } catch (SQLException e) {
-            String msg = "error saving node's new name";
-            logger.log(Level.WARNING, msg, e);
-            throw new UpdateException(msg, e);
         } catch (HibernateException e) {
             String msg = "error saving node's new name";
             logger.log(Level.WARNING, msg, e);
@@ -252,9 +253,6 @@ public class ClusterInfoManager extends HibernateDaoSupport {
         selfId = macid;
         try {
             recordNodeInDB(newClusterInfo);
-        } catch (SQLException e) {
-            String msg = "cannot record new cluster node";
-            logger.log(Level.SEVERE, msg, e);
         } catch (HibernateException e) {
             String msg = "cannot record new cluster node";
             logger.log(Level.SEVERE, msg, e);
@@ -266,14 +264,14 @@ public class ClusterInfoManager extends HibernateDaoSupport {
 
     // returns true if this server has access to a root ca key
     private boolean isMasterMode() {
-        String rootKeystorePath = KeystoreUtils.getInstance().getRootKeystorePath();
+        String rootKeystorePath = keystore.getRootKeystorePath();
         if (rootKeystorePath != null) {
-            if ((new File(rootKeystorePath)).exists()) return true;
+            return new File(rootKeystorePath).exists();
         }
         return false;
     }
 
-    private void recordNodeInDB(ClusterNodeInfo node) throws SQLException, HibernateException {
+    private void recordNodeInDB(ClusterNodeInfo node) throws HibernateException {
         getSession().save(node);
     }
 

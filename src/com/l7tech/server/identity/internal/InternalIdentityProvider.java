@@ -2,7 +2,6 @@ package com.l7tech.server.identity.internal;
 
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
@@ -107,7 +106,7 @@ public class InternalIdentityProvider extends PersistentIdentityProvider {
                     try {
                         //todo: coonsider moving reading the rootCacert in ctor, or in lazy init; it may save few
                         // cycles - em 20040520
-                        String rootCertLoc = KeystoreUtils.getInstance().getRootCertPath();
+                        String rootCertLoc = keystore.getRootCertPath();
                         InputStream certStream = new FileInputStream(rootCertLoc);
                         byte[] rootcacertbytes = HexUtils.slurpStream(certStream, 16384);
                         certStream.close();

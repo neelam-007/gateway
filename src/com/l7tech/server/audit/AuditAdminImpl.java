@@ -46,6 +46,10 @@ public class AuditAdminImpl extends HibernateDaoSupport implements AuditAdmin, A
     private static final long CONTEXT_TIMEOUT = 1000L * 60 * 5; // expire after 5 min of inactivity
     private static final int DEFAULT_DOWNLOAD_CHUNK_LENGTH = 8192;
     private static Map downloadContexts = Collections.synchronizedMap(new HashMap());
+
+    private final AccessManager accessManager;
+    private AuditRecordManager auditRecordManager;
+
     private static TimerTask downloadReaperTask = new TimerTask() {
         public void run() {
             Collection c = new ArrayList(downloadContexts.values());
@@ -60,6 +64,7 @@ public class AuditAdminImpl extends HibernateDaoSupport implements AuditAdmin, A
         }
     };
     private ApplicationContext applicationContext;
+    private KeystoreUtils keystore;
 
     static {
         Background.schedule(downloadReaperTask, CONTEXT_TIMEOUT, CONTEXT_TIMEOUT);
@@ -73,6 +78,9 @@ public class AuditAdminImpl extends HibernateDaoSupport implements AuditAdmin, A
         this.auditRecordManager = auditRecordManager;
     }
 
+    public void setKeystore(KeystoreUtils keystore) {
+        this.keystore = keystore;
+    }
 
     public AuditRecord findByPrimaryKey( final long oid ) throws FindException, RemoteException {
         return auditRecordManager.findByPrimaryKey(oid);
@@ -137,11 +145,11 @@ public class AuditAdminImpl extends HibernateDaoSupport implements AuditAdmin, A
         private Throwable producerException = null;
         private long lastUsed = System.currentTimeMillis();
 
-        private DownloadContext(int chunkLength, AuditExporter exporter) throws KeyStoreException, IOException, CertificateException {
+        private DownloadContext(int chunkLength, AuditExporter exporter, X509Certificate sslCert, PrivateKey sslPrivateKey) throws IOException {
             if (chunkLength < 1) chunkLength = DEFAULT_DOWNLOAD_CHUNK_LENGTH;
             chunk = new byte[chunkLength];
-            sslCert = KeystoreUtils.getInstance().getSslCert();
-            sslPrivateKey = KeystoreUtils.getInstance().getSSLPrivateKey();
+            this.sslCert = sslCert;
+            this.sslPrivateKey = sslPrivateKey;
             this.auditExporter = exporter;
             producerThread.start();
             logger.info("Created audit download context " + this);
@@ -213,7 +221,7 @@ public class AuditAdminImpl extends HibernateDaoSupport implements AuditAdmin, A
         accessManager.enforceAdminRole();
         try {
             final DownloadContext downloadContext;
-            downloadContext = new DownloadContext(0, (AuditExporter)applicationContext.getBean("auditExporter"));
+            downloadContext = new DownloadContext(0, (AuditExporter)applicationContext.getBean("auditExporter"), keystore.getSslCert(), keystore.getSSLPrivateKey());
             downloadContexts.put(downloadContext.getOpaqueId(), downloadContext);
             return downloadContext.getOpaqueId();
         } catch (KeyStoreException e) {
@@ -256,6 +264,4 @@ public class AuditAdminImpl extends HibernateDaoSupport implements AuditAdmin, A
                                       "' is not a valid number. Using " + age + " (one week) by default" );
         }
     }
-    private final AccessManager accessManager;
-    private AuditRecordManager auditRecordManager;
 }

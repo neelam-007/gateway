@@ -11,6 +11,7 @@ import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.EntityHeaderComparator;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.common.util.KeystoreUtils;
 
 import java.util.Collection;
 import java.util.TreeSet;
@@ -23,6 +24,7 @@ import org.springframework.orm.hibernate.support.HibernateDaoSupport;
  */
 public abstract class PersistentIdentityProvider extends HibernateDaoSupport implements IdentityProvider {
     protected ClientCertManager clientCertManager;
+    protected KeystoreUtils keystore;
 
     /**
      * searches for users and groups whose name (cn) match the pattern described in searchString
@@ -48,6 +50,10 @@ public abstract class PersistentIdentityProvider extends HibernateDaoSupport imp
 
     public void setClientCertManager(ClientCertManager clientCertManager) {
         this.clientCertManager = clientCertManager;
+    }
+
+    public void setKeystore(KeystoreUtils keystore) {
+        this.keystore = keystore;
     }
 
     /**

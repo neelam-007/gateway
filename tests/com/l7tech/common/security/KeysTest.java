@@ -1,6 +1,7 @@
 package com.l7tech.common.security;
 
 import com.l7tech.common.util.KeystoreUtils;
+import com.l7tech.common.ApplicationContexts;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -15,10 +16,13 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Properties;
 
+import org.springframework.context.ApplicationContext;
+
 /**
  * The <code>Keys</code> class test.
  */
 public class KeysTest extends TestCase {
+    private ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
 
     public KeysTest(String name) throws Exception {
         super(name);
@@ -81,7 +85,7 @@ public class KeysTest extends TestCase {
 
     public void testSsgKestoreProperties() throws Exception {
         Properties props = Keys.createTestSsgKeystoreProperties();
-        KeystoreUtils ku = KeystoreUtils.getInstance();
+        KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore");
         assertTrue(Keys.KEYSTORE_TYPE.equals(ku.getKeyStoreType()));
         assertTrue(props.getProperty(KeystoreUtils.ROOT_STOREPASSWD).equals(ku.getRootKeystorePasswd()));
     }

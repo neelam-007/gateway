@@ -58,6 +58,7 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
      * An unused LDAP connection will be closed after 30 seconds of inactivity
      */
     public static final String LDAP_POOL_IDLE_TIMEOUT = new Integer(30 * 1000).toString();
+    private KeystoreUtils keystore;
 
     public LdapIdentityProvider(IdentityProviderConfig config) {
         this.config = (LdapIdentityProviderConfig)config;
@@ -73,6 +74,11 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
     public void setServerConfig(ServerConfig serverConfig) {
         this.serverConfig = serverConfig;
     }
+
+    public void setKeystore(KeystoreUtils keystore) {
+        this.keystore = keystore;
+    }
+
 
     public void initializeFallbackMechanism() {
         // configure timeout period
@@ -263,7 +269,7 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
                 logger.finest("Verifying client cert against current root cert...");
                 Certificate rootcacert = null;
                 try {
-                    String rootCertLoc = KeystoreUtils.getInstance().getRootCertPath();
+                    String rootCertLoc = keystore.getRootCertPath();
                     InputStream certStream = new FileInputStream(rootCertLoc);
                     byte[] rootcacertbytes = HexUtils.slurpStream(certStream, 16384);
                     certStream.close();

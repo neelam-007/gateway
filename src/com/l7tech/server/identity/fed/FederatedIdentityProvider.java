@@ -8,7 +8,6 @@ package com.l7tech.server.identity.fed;
 
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.cert.TrustedCertManager;
@@ -99,7 +98,7 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
         if (validTrustedCertOids.isEmpty()) {
             X509Certificate caCert = null;
             try {
-                caCert = KeystoreUtils.getInstance().getRootCert();
+                caCert = keystore.getRootCert();
                 if (clientCertChain.length > 1) {
                     if (CertUtils.certsAreEqual(caCert, clientCertChain[1]) || caCert.getSubjectDN().equals(clientCertChain[1].getIssuerDN())) {
                         throw new ClientCertManager.VetoSave("User's cert was issued by the internal certificate authority");
