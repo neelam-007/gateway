@@ -280,61 +280,6 @@ public class XmlMangler {
     }
 
     /**
-     * In-place decrypt of the specified encrypted SOAP document.  Caller is responsible for ensuring that the
-     * correct key is used for the document, of the proper format for the encryption scheme it used.  Callers can use
-     * getKeyName() to help decide which Key to use to decrypt the document.
-     * <p/>
-     * If this method returns normally the document will have been successfully decrypted.
-     *
-     * @deprecated Do not use this method, ever.  It's contract is badly broken as designed
-     *
-     * @param soapMsg The SOAP document to decrypt.
-     * @param key     The key to use to decrypt it. If the document was encrypted with
-     *                a call to encryptXml(), the Key will be a 16 byte AES128 symmetric key.
-     * @throws GeneralSecurityException     if there was a problem with a key or crypto provider
-     * @throws ParserConfigurationException if there was a problem with the XML parser
-     * @throws IOException                  if there was an IO error while reading the document or a key
-     * @throws SAXException                 if there was a problem parsing the document
-     */
-    private static void decryptXml_OLD(Document soapMsg, Key key)
-      throws GeneralSecurityException, ParserConfigurationException, IOException,
-      SAXException, XMLSecurityElementNotFoundException {
-        // Locate EncryptedData element by its reference in the Security header
-        Element dataRefEl = (Element)soapMsg.getElementsByTagNameNS(SoapUtil.XMLENC_NS, "DataReference").item(0);
-        if (dataRefEl == null)
-            throw new XMLSecurityElementNotFoundException("no DataReference tag in the message");
-        AdHocIdResolver idResolver = new AdHocIdResolver();
-        Element encryptedDataEl = idResolver.resolveID(soapMsg, dataRefEl.getAttribute(SoapUtil.REFERENCE_URI_ATTR_NAME));
-
-        // Strip out processed DataReferece element
-        Element RefListEl = (Element)dataRefEl.getParentNode();
-        RefListEl.removeChild(dataRefEl);
-
-        // Create decryption context and decrypt the EncryptedData subtree. Note that this effects the
-        // soapMsg document
-        DecryptionContext dc = new DecryptionContext();
-        AlgorithmFactoryExtn af = new AlgorithmFactoryExtn();
-        af.setProvider(JceProvider.getProvider().getName());
-        dc.setAlgorithmFactory(af);
-        dc.setEncryptedType(encryptedDataEl, EncryptedData.CONTENT, null, null);
-        dc.setKey(key);
-
-        try {
-            dc.decrypt();
-            dc.replace();
-        } catch (XSignatureException e) {
-            throw new XmlManglerException(e);
-        } catch (StructureException e) {
-            throw new XmlManglerException(e);
-        } catch (KeyInfoResolvingException e) {
-            throw new XmlManglerException(e);
-        }
-
-        // clean up the document
-        SoapUtil.cleanEmptyRefList(soapMsg);
-    }
-
-    /**
      * In-place decrypt of the specified document's document element.  Caller is responsible for ensuring that the
      * correct key is used for the document, of the proper format for the encryption scheme it used.  Caller can use
      * getKeyName() to help decide which Key to use to decrypt the document.  Caller is responsible for
