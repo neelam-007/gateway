@@ -44,11 +44,13 @@ public class AddRoutingAssertionAdvice implements Advice {
             HttpRoutingAssertion ra = (HttpRoutingAssertion) assertions[0];
             String url = "Unable to determine the service url. Please edit";
             try {
-                url = pc.getService().parsedWsdl().getServiceURI();
+                if (null == ra.getProtectedServiceUrl()) {
+                    url = pc.getService().parsedWsdl().getServiceURI();
+                    ra.setProtectedServiceUrl(url);
+                }
             } catch (WSDLException e) {
                 log.log(Level.WARNING, "Wsdl error", e);
             }
-            ra.setProtectedServiceUrl(url);
             pc.proceed();
         } else if (assertions[0] instanceof JmsRoutingAssertion) {
             JmsRoutingAssertion ra = (JmsRoutingAssertion) assertions[0];
