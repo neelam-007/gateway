@@ -3,18 +3,26 @@ package com.l7tech.service;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.apache.log4j.Category;
 
-import java.io.FileReader;
+import javax.wsdl.Port;
+import javax.wsdl.WSDLException;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.io.StringReader;
 import java.io.StringWriter;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 /**
  * Class WsdlTest tests the {@link com.l7tech.service.Wsdl}
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
 public class WsdlTest extends TestCase {
-    // this relatinve path from $SRC_ROOT
-    private final String WSDL = "tests/com/l7tech/service/StockQuoteService.wsdl";
+    private static final Category log = Category.getInstance(WsdlTest.class);
+    private static final String WSDL = "com/l7tech/service/resources/StockQuoteService.wsdl";
 
     /**
      * test <code>AbstractLocatorTest</code> constructor
@@ -40,12 +48,19 @@ public class WsdlTest extends TestCase {
         // put tear down code here
     }
 
+    private static Reader getWsdlReader() {
+        ClassLoader cl = WsdlTest.class.getClassLoader();
+        InputStream i = cl.getResourceAsStream(WSDL);
+        InputStreamReader r = new InputStreamReader(i);
+        return r;
+    }
+
     /**
      * Read the well formed WSDL using StringReader.
      * @throws Exception on tesat errors
      */
     public void testReadWsdlFromString() throws Exception {
-        FileReader fr = new FileReader(WSDL);
+        Reader fr = getWsdlReader();
         StringWriter sw = new StringWriter();
         char[] buf = new char[500];
         int len = 0;
@@ -69,12 +84,24 @@ public class WsdlTest extends TestCase {
      */
     public void testReadWsdlFromFile() throws Exception {
         Wsdl wsdl =
-                Wsdl.newInstance(null, new FileReader(WSDL));
+                Wsdl.newInstance(null, getWsdlReader());
         wsdl.getTypes();
         wsdl.getBindings();
         wsdl.getMessages();
         wsdl.getPortTypes();
         wsdl.getServices();
+    }
+
+    public void testGetAndSetPortUrl() throws FileNotFoundException, WSDLException, MalformedURLException {
+        Wsdl wsdl = Wsdl.newInstance(null, getWsdlReader());
+        Port port = wsdl.getSoapPort();
+        URL url = wsdl.getUrlFromPort(port);
+        log.info("Read port URL: " + url);
+        wsdl.setPortUrl(port, new URL("http://blee.blah.baz:9823/foo/bar/baz?whoomp=foomp&feez=gleez&atlue=42"));
+        log.info("Changed port URL");
+        port = wsdl.getSoapPort();
+        url = wsdl.getUrlFromPort(port);
+        log.info("Read back port URL: " + url);
     }
 
     /**
