@@ -196,11 +196,9 @@ public class Preferences extends PropertyChangeSupport {
      * configure well known application properties.
      * If the property has not been set use the default
      * value.
-     *
-     * @exception IOException
      *                   thrown if an I/O error occurs
      */
-    private void configureProperties() throws IOException {
+    private void configureProperties() {
         // well known/predefined properties
 
         Map knownProps = new HashMap();
