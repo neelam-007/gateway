@@ -4,9 +4,6 @@
 package com.l7tech.objectmodel.imp;
 
 import com.l7tech.objectmodel.Entity;
-import cirrus.hibernate.*;
-
-import java.io.Serializable;
 
 /**
  * @author alex
