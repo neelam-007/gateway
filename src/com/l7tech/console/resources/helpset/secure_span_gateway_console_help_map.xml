@@ -1,0 +1,38 @@
+<?xml version='1.0' encoding='ISO-8859-1' ?>
+<!DOCTYPE map PUBLIC "-//Sun Microsystems Inc.//DTD JavaHelp Map Version 1.0//EN" "http://java.sun.com/products/javahelp/map_1_0.dtd">
+
+<map version="1.0">
+  <mapID target="overview_product_overview_htm" url="overview/product_overview.htm" />
+  <mapID target="overview_audience_htm" url="overview/audience.htm" />
+  <mapID target="overview_product_architecture_model_htm" url="overview/product_architecture_model.htm" />
+  <mapID target="overview_contact_information_htm" url="overview/contact_information.htm" />
+  <mapID target="security_policy_product_design_logic_htm" url="security_policy/product_design_logic.htm" />
+  <mapID target="security_policy_key_concepts_htm" url="security_policy/key_concepts.htm" />
+  <mapID target="security_policy_examples_htm" url="security_policy/examples.htm" />
+  <mapID target="user_interface_preferences_htm" url="user_interface/preferences.htm" />
+  <mapID target="user_interface_menus_htm" url="user_interface/menus.htm" />
+  <mapID target="user_interface_screen_sections_htm" url="user_interface/screen_sections.htm" />
+  <mapID target="user_interface_default_settings_htm" url="user_interface/default_settings.htm" />
+  <mapID target="setup_overview_htm" url="setup/overview.htm" />
+  <mapID target="setup_connecting_and_disconnecting_htm" url="setup/connecting_and_disconnecting.htm" />
+  <mapID target="setup_creating_users_and_groups_htm" url="setup/creating_users_and_groups.htm" />
+  <mapID target="setup_identity_providers_htm" url="setup/identity_providers.htm" />
+  <mapID target="setup_policy_templates_htm" url="setup/policy_templates.htm" />
+  <mapID target="setup_importing_certificates_htm" url="setup/importing_certificates.htm" />
+  <mapID target="publish_services_publish_services_overview_htm" url="publish_services/publish_services_overview.htm" />
+  <mapID target="publish_services_creating_policies_htm" url="publish_services/creating_policies.htm" />
+  <mapID target="publish_services_publishing_services_htm" url="publish_services/publishing_services.htm" />
+  <mapID target="publish_services_validating_policies_htm" url="publish_services/validating_policies.htm" />
+  <mapID target="publish_services_identity_view_htm" url="publish_services/identity_view.htm" />
+  <mapID target="publish_services_examples_htm" url="publish_services/examples.htm" />
+  <mapID target="gateway_management_gateway_controls_htm" url="gateway_management/gateway_controls.htm" />
+  <mapID target="logs_and_audits_logs_and_audits_overview_htm" url="logs_and_audits/logs_and_audits_overview.htm" />
+  <mapID target="logs_and_audits_performing_audits_htm" url="logs_and_audits/performing_audits.htm" />
+  <mapID target="logs_and_audits_reviewing_logs_htm" url="logs_and_audits/reviewing_logs.htm" />
+  <mapID target="client_proxy_client_proxy_overview_htm" url="client_proxy/client_proxy_overview.htm" />
+  <mapID target="client_proxy_client_user_interface_htm" url="client_proxy/client_user_interface.htm" />
+  <mapID target="client_proxy_licensing_clients_htm" url="client_proxy/licensing_clients.htm" />
+  <mapID target="client_proxy_managing_clients_htm" url="client_proxy/managing_clients.htm" />
+  <mapID target="troubleshooting_troubleshooting_htm" url="troubleshooting/troubleshooting.htm" />
+  <mapID target="welcome_htm" url="welcome.htm" />
+</map>
