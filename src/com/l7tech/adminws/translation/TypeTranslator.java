@@ -4,6 +4,8 @@ import com.l7tech.identity.imp.IdentityProviderConfigImp;
 import com.l7tech.identity.imp.IdentityProviderTypeImp;
 import com.l7tech.objectmodel.imp.EntityHeaderImp;
 
+import java.util.Collection;
+
 /**
  * Layer 7 Technologies, inc.
  * User: flascelles
@@ -53,5 +55,17 @@ public class TypeTranslator {
             System.err.println(e.getMessage());
         }
         return ret;
+    }
+
+    public static Collection transferHeaderArrayToCollection(com.l7tech.adminws.clientstub.Header[] headerArray) {
+        if (headerArray != null && headerArray.length > 0) {
+            Collection ret = new java.util.ArrayList(headerArray.length);
+            for (int i = 0; i < headerArray.length; i++) {
+                // add the header
+                ret.add(TypeTranslator.transferStubHeaderToGenHeader(headerArray[i]));
+            }
+            return ret;
+        }
+        else return new java.util.ArrayList();
     }
 }

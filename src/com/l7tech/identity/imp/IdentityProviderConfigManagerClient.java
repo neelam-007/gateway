@@ -65,19 +65,18 @@ public class IdentityProviderConfigManagerClient implements IdentityProviderConf
             // todo, show nice user message?
             System.err.println(e.getMessage());
         }
-        if (array != null && array.length > 0) {
-            Collection ret = new java.util.ArrayList(array.length);
-            for (int i = 0; i < array.length; i++) {
-                // add the header
-                ret.add(TypeTranslator.transferStubHeaderToGenHeader(array[i]));
-            }
-            return ret;
-        }
-        return new java.util.ArrayList();
+        return TypeTranslator.transferHeaderArrayToCollection(array);
     }
 
     public Collection findAllHeaders(int offset, int windowSize) {
-        return null;
+        com.l7tech.adminws.clientstub.Header[] array = null;
+        try {
+            array = getStub().findAllIdentityProviderConfigByOffset(offset, windowSize);
+        } catch (Exception e) {
+            // todo, show nice user message?
+            System.err.println(e.getMessage());
+        }
+        return TypeTranslator.transferHeaderArrayToCollection(array);
     }
 
     public Collection findAll() {
