@@ -17,6 +17,7 @@ public class EntityImp implements Entity, Lifecycle, Validatable {
 	public void setOid( long oid ) { _oid = oid; }
 
     public EntityImp() {
+        _oid = DEFAULT_OID;
     }
 
 	protected long _oid;

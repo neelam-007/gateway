@@ -10,17 +10,6 @@ import java.util.Collection;
  * @author alex
  */
 public class AddressManagerImp implements AddressManager {
-    public void delete(Address address) {
-    }
-
-    public Address create() {
-        return null;
-    }
-
-    public Collection findByPrimaryKey(long oid) {
-        return null;
-    }
-
     public Collection findAll() {
         return null;
     }
@@ -29,6 +18,13 @@ public class AddressManagerImp implements AddressManager {
         return null;
     }
 
+    public Address findByPrimaryKey(long oid) {
+        return null;
+    }
+
     public void delete(Address address) {
+    }
+
+    public void save(Address address) {
     }
 }

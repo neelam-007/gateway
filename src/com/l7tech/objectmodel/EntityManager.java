@@ -7,7 +7,7 @@ import java.util.Collection;
 /**
  * @author alex
  */
-public interface Manager {
+public interface EntityManager {
     public Collection findAll();
     public Collection findAll( int offset, int windowSize );
 }

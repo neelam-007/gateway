@@ -1,13 +1,14 @@
 package com.l7tech.identity.provider.internal;
 
-import com.l7tech.objectmodel.Manager;
+import com.l7tech.objectmodel.EntityManager;
 
 import java.util.Collection;
 
 /**
  * @author alex
  */
-public interface AddressManager extends Manager {
+public interface AddressManager extends EntityManager {
+    public Address findByPrimaryKey( long oid );
     public void delete( Address address );
-    public Address create();
+    public void save( Address address );
 }

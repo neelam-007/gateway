@@ -10,8 +10,8 @@ public class Locator {
     public static final String PROPERTIES_RESOURCE_PATH_PROPERTY = "com.l7tech.misc.locator.propertiespath";
     public static final String DEFAULT_PROPERTIES_RESOURCE_PATH = "com/l7tech/misc/Locator.properties";
 
-    public Object locate( Class objectInterface ) {
-        String interfaceClassName = objectInterface.getName();
+    public Object locate( Class interfaceClass ) {
+        String interfaceClassName = interfaceClass.getName();
         String implClassName = (String)_properties.get( interfaceClassName );
         Object impl = _classnameToInstanceMap.get( implClassName );
 
@@ -22,6 +22,9 @@ public class Locator {
             } catch ( ClassNotFoundException cnfe ) {
                 throw new RuntimeException( "Couldn't load implementation class " + implClassName + " for interface " + interfaceClassName );
             }
+
+            if ( !interfaceClass.isAssignableFrom( implClass ) )
+                throw new RuntimeException( "Implementation class " + implClassName + " is not compatible with the specified interface class " + interfaceClassName + "!");
 
             try {
                 impl = implClass.newInstance();

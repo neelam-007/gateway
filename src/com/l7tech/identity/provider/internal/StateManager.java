@@ -1,11 +1,12 @@
 package com.l7tech.identity.provider.internal;
 
-import com.l7tech.objectmodel.Manager;
+import com.l7tech.objectmodel.EntityManager;
 
 /**
  * @author alex
  */
-public interface StateManager extends Manager {
+public interface StateManager extends EntityManager {
+    public State findByPrimaryKey( long oid );
     public void delete( State state );
-    public State create();
+    public void save( State state );
 }
