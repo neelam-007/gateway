@@ -1,8 +1,8 @@
 # $Id$
 Summary: Secure Span Gateway
 Name: ssg
-Version: 3.0
-Release: 1
+Version: 3.0.1
+Release: 3
 Group: Applications/Internet
 Copyright: Copyright Layer7 Technologies 2003-2004
 URL: http://www.layer7tech.com
@@ -52,25 +52,26 @@ rm -rf %{buildroot}/ssg/j2sdk1.4.2_05/demo
 /etc/profile.d/ssgruntimedefs.sh
 %config(noreplace) /etc/my.cnf.ssg
 %config(noreplace) /etc/sysconfig/iptables
-
 %defattr(-,gateway,gateway)
-/ssg/*
+%config(noreplace) /ssg/etc/conf/*
+%config(noreplace) /ssg/tomcat/conf/*
+/ssg/
+
+
 %pre
 adduser gateway
 %post
+# Check for existence of install crumbs left by install.pl
 if [ -e /etc/SSG_INSTALL ]; then 
 	echo "Running upgrade script"
 	/ssg/bin/upgrade.sh
 else 
 	echo "Run /ssg/bin/install.pl to configure this system"
 fi
-
-# replace 
-
+# Enable required services
 /sbin/chkconfig ssg on
 /sbin/chkconfig tcp_tune on
 /sbin/chkconfig back_route on
-
 
 %postun
 if [ -e /etc/SSG_INSTALL ]; then
