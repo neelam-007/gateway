@@ -116,11 +116,11 @@ public class HibernatePersistenceContext extends PersistenceContext {
                     rs = pingStmt.executeQuery();
                     return _session;
                 } catch ( SQLException se ) {
-                    LogManager.getInstance().getSystemLogger().log( Level.WARNING, "Retry #" + i+1 + " caught SQLException", se );
+                    LogManager.getInstance().getSystemLogger().log( Level.WARNING, "Try #" + i+1 + " caught SQLException", se );
                     _session = null;
                     sqlException = se;
                 } catch ( HibernateException he ) {
-                    LogManager.getInstance().getSystemLogger().log( Level.WARNING, "Retry #" + i+1 + " caught HibernateException", he );
+                    LogManager.getInstance().getSystemLogger().log( Level.WARNING, "Try #" + i+1 + " caught HibernateException", he );
                     _session = null;
                     hibernateException = he;
                 }
