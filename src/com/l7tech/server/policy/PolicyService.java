@@ -18,8 +18,10 @@ import com.l7tech.common.security.xml.WssProcessorImpl;
 import com.l7tech.common.security.xml.ProcessorException;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MissingRequiredElementException;
+import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.identity.User;
@@ -27,6 +29,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
+import javax.xml.soap.SOAPConstants;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Iterator;
@@ -85,7 +88,8 @@ public class PolicyService {
      */
     public void respondToPolicyDownloadRequest(SoapRequest request,
                                                SoapResponse response,
-                                               PolicyGetter policyGetter) {
+                                               PolicyGetter policyGetter)
+    {
         // We need a Document
         Document requestDoc = null;
         try {
@@ -163,7 +167,23 @@ public class PolicyService {
     }
 
     private void wrapFilteredPolicyInResponse(Document policyDoc, SoapResponse response) {
-        // todo
+        Document responseDoc;
+        try {
+            responseDoc = XmlUtil.stringToDocument("<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\">" +
+                                                   "<soap:Body>" +
+                                                   "<wsx:GetPolicyResponse xmlns:wsx=\"" + SoapUtil.WSX_NAMESPACE + "\"/>" +
+                                                   "</soap:Body></soap:Envelope>");
+            Element body = SoapUtil.getBodyElement(responseDoc);
+            Element gpr = XmlUtil.findFirstChildElement(body);
+            gpr.appendChild(responseDoc.importNode(policyDoc.getDocumentElement(), true));
+            response.setResponseXml(XmlUtil.nodeToString(responseDoc));
+        } catch (IOException e) {
+            throw new RuntimeException(e); // can't happen
+        } catch (SAXException e) {
+            throw new RuntimeException(e); // can't happen
+        } catch (InvalidDocumentFormatException e) {
+            throw new RuntimeException(e); // can't happen
+        }
     }
 
     private String getRequestedPolicyId(Document requestDoc) throws InvalidDocumentFormatException {
@@ -186,9 +206,22 @@ public class PolicyService {
         return serviceId;
     }
 
-    private SoapResponse exceptionToFault(Exception e, SoapResponse response) {
-        // todo
-        return null;
+    private void exceptionToFault(Exception e, SoapResponse response) {
+        try {
+            Document fault;
+            if (e instanceof SoapFaultDetail)
+                fault = SoapFaultUtils.generateSoapFault((SoapFaultDetail)e, SoapFaultUtils.FC_SERVER);
+            else
+                fault = SoapFaultUtils.generateSoapFault(e.getClass().getName(),
+                                                         e.getMessage(),
+                                                         e.toString(),
+                                                         SoapFaultUtils.FC_SERVER);
+            response.setDocument(fault);
+        } catch (IOException e1) {
+            throw new RuntimeException(e1); // can't happen
+        } catch (SAXException e1) {
+            throw new RuntimeException(e1); // can't happen
+        }
     }
 
     private WssProcessor.ProcessorResult processMessageLevelSecurity(Document request)
@@ -206,7 +239,7 @@ public class PolicyService {
      * @param targetPolicy the policy targeted by a requestor.
      * @return the policy that should be validated by the policy download request for the passed target
      */
-    ServerAssertion constructPolicyPolicy(AllAssertion targetPolicy) {
+    ServerAssertion constructPolicyPolicy(Assertion targetPolicy) {
         AllAssertion base = new AllAssertion();
         base.getChildren().add(new OneOrMoreAssertion(allCredentialAssertions));
         List allTargetIdentities = new ArrayList();
@@ -215,14 +248,15 @@ public class PolicyService {
         return ServerPolicyFactory.getInstance().makeServerPolicy(base);
     }
 
-    private void addIdAssertionToList(CompositeAssertion composite, List receptacle) {
+    private void addIdAssertionToList(Assertion assertion, List receptacle) {
+        if (assertion instanceof IdentityAssertion)
+            receptacle.add(assertion);
+        if (!(assertion instanceof CompositeAssertion))
+            return;
+        CompositeAssertion composite = (CompositeAssertion)assertion;
         for (Iterator i = composite.getChildren().iterator(); i.hasNext();) {
             Assertion a = (Assertion)i.next();
-            if (a instanceof IdentityAssertion) {
-                receptacle.add(a);
-            } else if (a instanceof CompositeAssertion) {
-                addIdAssertionToList((CompositeAssertion)a, receptacle);
-            }
+            addIdAssertionToList(a, receptacle);
         }
     }
 

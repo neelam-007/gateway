@@ -27,7 +27,7 @@ import com.l7tech.server.transport.jms.JmsTransportMetadata;
 import org.w3c.dom.Document;
 
 /**
- * @author mike
+ * Unit tests for PolicyService.
  */
 public class PolicyServiceTest extends TestCase {
     private static Logger log = Logger.getLogger(PolicyServiceTest.class.getName());
