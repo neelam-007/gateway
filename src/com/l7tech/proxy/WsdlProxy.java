@@ -158,7 +158,7 @@ public class WsdlProxy {
                         try {
                             log.info("Attempting to discover Gateway server certificate for " + ssg);
                             try {
-                                ClientProxy.installSsgServerCertificate(ssg);
+                                ClientProxy.installSsgServerCertificate(ssg, pw);
                             } catch (KeyStoreCorruptException e1) {
                                 Managers.getCredentialManager().notifyKeyStoreCorrupt(ssg);
                                 SsgKeyStoreManager.deleteKeyStore(ssg);

@@ -115,10 +115,10 @@ public class MessageProcessor {
                         undecorateResponse(req, res, appliedPolicy);
                         return res;
                     } catch (SSLException e) {
-                        handleSslException(e, ssg);
+                        handleSslException(e, req);
                         // FALLTHROUGH -- retry with new server certificate
                     } catch (ServerCertificateUntrustedException e) {
-                        ClientProxy.installSsgServerCertificate(ssg); // might throw BadCredentialsException
+                        ClientProxy.installSsgServerCertificate(ssg, req.getCredentials()); // might throw BadCredentialsException
                         // FALLTHROUGH allow policy to reset and retry
                     }
                 } catch (PolicyRetryableException e) {
@@ -173,12 +173,13 @@ public class MessageProcessor {
         req.getNewCredentials();
     }
 
-    private static void handleSslException(SSLException e, Ssg ssg)
+    private static void handleSslException(SSLException e, PendingRequest req)
             throws BadCredentialsException, IOException, OperationCanceledException, GeneralSecurityException,
                    KeyStoreCorruptException
     {
         // An SSL handshake with the SSG has failed.
         // See if we can identify the cause and correct it.
+        Ssg ssg = req.getSsg();
 
         // Do we not have the right password to access our keystore?
         if (ExceptionUtils.causedBy(e, BadCredentialsException.class) ||
@@ -205,7 +206,7 @@ public class MessageProcessor {
         }
 
         // We don't trust the server cert.  Perform certificate discovery and try again
-        ClientProxy.installSsgServerCertificate(ssg); // might throw BadCredentialsException
+        ClientProxy.installSsgServerCertificate(ssg, req.getCredentials()); // might throw BadCredentialsException
     }
 
     /**

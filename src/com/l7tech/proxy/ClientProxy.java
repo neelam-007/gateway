@@ -351,8 +351,9 @@ public class ClientProxy {
     }
 
     /**
-     * Get credentials, and download and install the SSG certificate.  If this completes successfully, the
-     * next attempt to connect to the SSG via SSL should at least get past the SSL handshake.
+     * Download and install the SSG certificate.  If this completes successfully, the
+     * next attempt to connect to the SSG via SSL should at least get past the SSL handshake.  Uses the
+     * specified credentials for the download.
      *
      * @throws IOException if there was a network problem downloading the server cert
      * @throws IOException if there was a problem reading or writing the keystore for this SSG
@@ -360,13 +361,12 @@ public class ClientProxy {
      * @throws OperationCanceledException if credentials were needed but the user declined to enter them
      * @throws GeneralSecurityException for miscellaneous and mostly unlikely certificate or key store problems
      */
-    public static void installSsgServerCertificate(Ssg ssg)
+    public static void installSsgServerCertificate(Ssg ssg, PasswordAuthentication credentials)
             throws IOException, BadCredentialsException, OperationCanceledException, GeneralSecurityException, KeyStoreCorruptException
     {
-        PasswordAuthentication pw = Managers.getCredentialManager().getCredentials(ssg);
         CertificateDownloader cd = new CertificateDownloader(ssg.getServerUrl(),
-                                                             pw.getUserName(),
-                                                             pw.getPassword());
+                                                             credentials.getUserName(),
+                                                             credentials.getPassword());
 
         boolean isValidated = cd.downloadCertificate();
         if (!isValidated) {
