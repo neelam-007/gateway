@@ -48,7 +48,6 @@ public class JmsBag {
 
     public void close() {
         _closed = true;
-        _logger.info( "Closing JmsBag" );
         try {
             if ( _session != null ) _session.close();
         } catch ( JMSException e ) {
