@@ -14,15 +14,16 @@
 
 # programs used
 IFCONFIG="/sbin/ifconfig"
-GARP="/usr/local/bin/garp"
-WGET="/usr/bin/wget"
-NC="/usr/bin/nc"
+GARP="/ssg/bin/garp"
+NC="/ssg/bin/nc"
 PING="/bin/ping"
 # Default netmask. Linux (helpfully) supplies a /8 route on
 # 10. networks
 NETMASK="255.255.255.0"
 
+DEFAULT_ROUTE=`/sbin/route -n | egrep ^0.0.0.0 | cut -c 17-32 | tr -d [:blank:]`
 BACK_END_ROUTE=""
+
 # If network has routes on secure side
 # Fill in back end router if there is one
 # We test that machine to see if we're the ones cut off from the world
@@ -35,7 +36,6 @@ EMAIL="NEED_A_REAL_EMAIL"
 DBHOST="NEED_A_REAL_DB_CLUSTER_ADDRESS"
 # cluster IP addresss
 
-DEFAULT_ROUTE=`/sbin/route -n | egrep ^0.0.0.0 | cut -c 17-32 | tr -d [:blank:]`
 
 if [ -z "$DEFAULT_ROUTE" ] ;  then
      echo "No default route, Exiting"
@@ -95,10 +95,10 @@ EOF
 selfmaster() {
     iface=`/sbin/ifconfig | grep $INTERFACE_ALIAS`
     if [ -z "$iface" ] ; then
-        echo "Alias Interface not found"
+        # echo "Alias Interface not found"
         return 1
     else
-        echo "Alias interface found"
+        # echo "Alias interface found"
         return 0
     fi
 }
@@ -129,24 +129,22 @@ failure() {
 
 doiptakeover() {
     date
-    echo
-	echo "Taking over IP $DBHOST";
-	$IFCONFIG $INTERFACE_ALIAS $DBHOST netmask $NETMASK
-	echo "Sending gratuitous arp"
-	$GARP -i $INTERFACE -a $DBHOST
-#	echo "echo 'SSG DB Failover' | mail -s 'SSG DB Failover' $EMAIL"
+    echo " Taking over IP $DBHOST";
+    $IFCONFIG $INTERFACE_ALIAS $DBHOST netmask $NETMASK 
+    echo "Sending gratuitous arp"
+    $GARP -i $INTERFACE -a $DBHOST
+#    echo "echo 'SSG DB Failover' | mail -s 'SSG DB Failover' $EMAIL"
 }
 
 takedownalias() {
     date
-    echo
-    echo "Network failure detected, relinquishing cluster IP"
+    echo " Network failure detected: relinquishing cluster IP"
     $IFCONFIG $INTERFACE_ALIAS 99.99.99.99
     # needed to make local machine not be able to reach a formerly
     # configured address - linux bug(ette) workaround
     $IFCONFIG $INTERFACE_ALIAS down
-	echo "Sending gratuitous arp"
-	$GARP -i $INTERFACE -a $DBHOST
+    echo "Sending gratuitous arp"
+    $GARP -i $INTERFACE -a $DBHOST
 }
 
 pinggw() {
