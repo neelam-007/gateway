@@ -1,7 +1,6 @@
 package com.l7tech.credential.wss;
 
 import org.xml.sax.*;
-import org.xml.sax.helpers.XMLReaderFactory;
 import com.l7tech.util.SAXParsingCompleteException;
 
 /**
@@ -29,9 +28,20 @@ import com.l7tech.util.SAXParsingCompleteException;
  * </S:Envelope>
  *
  * This handler will throw a SAXParsingCompleteException to indicate that all the information was extracted
- * out of the document. This stops parsing early and makes this operation faster.
+ * out of the document. This stops parsing early and makes this operation faster. If no username and password info
+ * is found passwd the soap header, the handler will also throw a SAXParsingCompleteException but the password and
+ * username properties would then be null.
+ *
+ * The optional password type is captured in the passwdType property. If not present it is set to the
+ * DEFAULT_PASSWORD_TYPE constant.
  */
 public class WsseBasicSaxHandler implements ContentHandler {
+
+    /**
+     * type of password that is cleartext password.
+     * query passwdType property and make sure you are getting a cleartext password.
+     */
+    public static final String DEFAULT_PASSWORD_TYPE = "wsse:PasswordText";
 
     public void endElement(String namespaceURI, String localName, String qName) throws SAXException {
         if (localName.equals(USERNAME_TAGNAME) && insideUsername) {
@@ -50,7 +60,11 @@ public class WsseBasicSaxHandler implements ContentHandler {
         }
         else if (localName.equals(USERNAMETOKEN_TAGNAME) && insideUsernameToken) insideUsernameToken = false;
         else if (localName.equals(SECURITY_TAGNAME) && insideSecurity) insideSecurity = false;
-        else if (localName.equals(HEADER_TAGNAME) && insideHeader) insideHeader = false;
+        else if (localName.equals(HEADER_TAGNAME) && insideHeader) {
+            insideHeader = false;
+            // passed that, we are not going to find what we are seeking
+            throw new SAXParsingCompleteException();
+        }
         else if (localName.equals(ENVELOPE_TAGNAME) && insideEnvelope) insideEnvelope = false;
     }
 
@@ -60,7 +74,17 @@ public class WsseBasicSaxHandler implements ContentHandler {
         else if (localName.equals(SECURITY_TAGNAME) && insideEnvelope && insideHeader) insideSecurity = true;
         else if (localName.equals(USERNAMETOKEN_TAGNAME) && insideEnvelope && insideHeader && insideSecurity) insideUsernameToken = true;
         else if (localName.equals(USERNAME_TAGNAME) && insideEnvelope && insideHeader && insideSecurity) insideUsername = true;
-        else if (localName.equals(PASSWORD_TAGNAME) && insideEnvelope && insideHeader && insideSecurity) insidePassword = true;
+        else if (localName.equals(PASSWORD_TAGNAME) && insideEnvelope && insideHeader && insideSecurity) {
+            // capture the password type
+            for (int i = 0; i < atts.getLength(); i++) {
+                if (atts.getLocalName(i).equals(PASSWORD_TYPE_ATTRIBUTE_NAME)) {
+                    passwdType = atts.getValue(i);
+                    break;
+                }
+            }
+            if (passwdType == null) passwdType = DEFAULT_PASSWORD_TYPE;
+            insidePassword = true;
+        }
     }
 
     public void characters(char ch[], int start, int length) throws SAXException {
@@ -74,17 +98,14 @@ public class WsseBasicSaxHandler implements ContentHandler {
         return parsedUsername;
     }
 
-    public void setParsedUsername(String parsedUsername) {
-        this.parsedUsername = parsedUsername;
-    }
-
     public String getParsedPassword() {
         return parsedPassword;
     }
 
-    public void setParsedPassword(String parsedPassword) {
-        this.parsedPassword = parsedPassword;
+    public String getPasswdType() {
+        return passwdType;
     }
+
 
     public void ignorableWhitespace(char ch[], int start, int length) throws SAXException {}
     public void processingInstruction(String target, String data) throws SAXException {}
@@ -95,23 +116,9 @@ public class WsseBasicSaxHandler implements ContentHandler {
     public void startPrefixMapping(String prefix, String uri) throws SAXException {}
     public void endPrefixMapping(String prefix) throws SAXException {}
 
-    // todo, move this to a test class
-    public static void main(String[] args) throws Exception {
-        System.setProperty("org.xml.sax.driver", "org.apache.xerces.parsers.SAXParser");
-        XMLReader reader = XMLReaderFactory.createXMLReader();
-        WsseBasicSaxHandler handler = new WsseBasicSaxHandler();
-        reader.setContentHandler(handler);
-        try {
-            reader.parse(new InputSource("/home/flascell/dev/wssebasic.xml"));
-        } catch (SAXParsingCompleteException e) {
-            System.out.println("parsing complete");
-        }
-        System.out.println("Parsed username: " + handler.getParsedUsername());
-        System.out.println("Parsed password: " + handler.getParsedPassword());
-    }
-
     private String parsedPassword = null;
     private String parsedUsername = null;
+    private String passwdType = null;
 
     protected StringBuffer databuf = null;
     protected boolean insideEnvelope = false;
@@ -126,5 +133,5 @@ public class WsseBasicSaxHandler implements ContentHandler {
     protected static final String USERNAMETOKEN_TAGNAME = "UsernameToken";
     protected static final String USERNAME_TAGNAME = "Username";
     protected static final String PASSWORD_TAGNAME = "Password";
+    protected static final String PASSWORD_TYPE_ATTRIBUTE_NAME = "Type";
 }
-
