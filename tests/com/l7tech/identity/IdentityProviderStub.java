@@ -1,6 +1,5 @@
 package com.l7tech.identity;
 
-import com.l7tech.identity.imp.IdentityProviderConfigImp;
 import com.l7tech.console.util.Registry;
 
 import java.security.Principal;
