@@ -87,6 +87,18 @@ public class KeystoreUtils {
         return getProps().getProperty(ROOT_STOREPASSWD);
     }
 
+    public String getSslKeystorePath() {
+        return getProps().getProperty(KSTORE_PATH_PROP_NAME) + PS + getProps().getProperty(SSL_KSTORE_NAME);
+    }
+
+    public String getSslCertPath() {
+        return getProps().getProperty(KSTORE_PATH_PROP_NAME) + PS + getProps().getProperty(SSL_CERT_NAME);
+    }
+
+    public String getSslKeystorePasswd() {
+        return getProps().getProperty(SSL_KSTORE_PASSWD);
+    }
+
     public String getKeyStoreType() {
         String type = getProps().getProperty(KSTORE_TYPE);
         if ( type == null || type.length() == 0 ) type = KeyStore.getDefaultType();
