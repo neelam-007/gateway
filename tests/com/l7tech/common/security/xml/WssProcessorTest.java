@@ -37,67 +37,65 @@ public class WssProcessorTest extends TestCase {
         junit.textui.TestRunner.run(suite());
     }
 
-    public void testInteroperableDocumentProcessing() throws Exception {
+    private void doTest(TestDocument testDocument) throws Exception {
         WssProcessor wssProcessor = new WssProcessorImpl();
-        for (int i = 0; i < TEST_DOCUMENTS.length; i++) {
-            TestDocument testDocument = TEST_DOCUMENTS[i];
-            Document request = testDocument.document;
-            X509Certificate recipientCertificate = testDocument.recipientCertificate;
-            PrivateKey recipientPrivateKey = testDocument.recipientPrivateKey;
+        Document request = testDocument.document;
+        X509Certificate recipientCertificate = testDocument.recipientCertificate;
+        PrivateKey recipientPrivateKey = testDocument.recipientPrivateKey;
 
 
-            log.info("Testing document: " + testDocument.name);
-            WssProcessor.ProcessorResult result = wssProcessor.undecorateMessage(request,
-                                                                                 recipientCertificate,
-                                                                                 recipientPrivateKey,
-                                                                                 testDocument.securityContextFinder);
-            assertTrue(result != null);
+        log.info("Testing document: " + testDocument.name);
+        log.info("Original decorated message (reformatted): " + XmlUtil.nodeToFormattedString(request));
+        WssProcessor.ProcessorResult result = wssProcessor.undecorateMessage(request,
+                                                                             recipientCertificate,
+                                                                             recipientPrivateKey,
+                                                                             testDocument.securityContextFinder);
+        assertTrue(result != null);
 
-            Element[] encrypted = result.getElementsThatWereEncrypted();
-            assertTrue(encrypted != null);
-            if (encrypted.length > 0) {
-                log.info("The following elements were encrypted:");
-                for (int j = 0; j < encrypted.length; j++) {
-                    Element element = encrypted[j];
-                    log.info("  " + element.getNodeName() + " (" + element.getNamespaceURI() + ")");
-                }
-            } else
-                log.info("No elements were encrypted.");
+        Element[] encrypted = result.getElementsThatWereEncrypted();
+        assertTrue(encrypted != null);
+        if (encrypted.length > 0) {
+            log.info("The following elements were encrypted:");
+            for (int j = 0; j < encrypted.length; j++) {
+                Element element = encrypted[j];
+                log.info("  " + element.getNodeName() + " (" + element.getNamespaceURI() + ")");
+            }
+        } else
+            log.info("No elements were encrypted.");
 
-            WssProcessor.SignedElement[] signed = result.getElementsThatWereSigned();
-            assertTrue(signed != null);
-            if (signed.length > 0) {
-                log.info("The following elements were signed:");
-                for (int j = 0; j < signed.length; j++) {
-                    Element element = signed[j].asElement();
-                    log.info("  " + element.getNodeName() + " (" + element.getNamespaceURI() + ")");
-                }
-            } else
-                log.info("No elements were signed.");
+        WssProcessor.SignedElement[] signed = result.getElementsThatWereSigned();
+        assertTrue(signed != null);
+        if (signed.length > 0) {
+            log.info("The following elements were signed:");
+            for (int j = 0; j < signed.length; j++) {
+                Element element = signed[j].asElement();
+                log.info("  " + element.getNodeName() + " (" + element.getNamespaceURI() + ")");
+            }
+        } else
+            log.info("No elements were signed.");
 
 
-            WssProcessor.SecurityToken[] tokens = result.getSecurityTokens();
-            assertTrue(tokens != null);
-            if (tokens.length > 0) {
-                log.info("The following security tokens were found:");
-                for (int j = 0; j < tokens.length; j++) {
-                    WssProcessor.SecurityToken token = tokens[j];
-                    log.info("  " + token.asObject());
-                }
-            } else
-                log.info("No security tokens were found.");
+        WssProcessor.SecurityToken[] tokens = result.getSecurityTokens();
+        assertTrue(tokens != null);
+        if (tokens.length > 0) {
+            log.info("The following security tokens were found:");
+            for (int j = 0; j < tokens.length; j++) {
+                WssProcessor.SecurityToken token = tokens[j];
+                log.info("  " + token.asObject());
+            }
+        } else
+            log.info("No security tokens were found.");
 
-            WssProcessor.Timestamp timestamp = result.getTimestamp();
-            if (timestamp != null) {
-                log.info("Timestamp created = " + timestamp.getCreated().asDate());
-                log.info("Timestamp expires = " + timestamp.getExpires().asDate());
-            } else
-                log.info("No timestamp was found.");
+        WssProcessor.Timestamp timestamp = result.getTimestamp();
+        if (timestamp != null) {
+            log.info("Timestamp created = " + timestamp.getCreated().asDate());
+            log.info("Timestamp expires = " + timestamp.getExpires().asDate());
+        } else
+            log.info("No timestamp was found.");
 
-            Document undecorated = result.getUndecoratedMessage();
-            assertTrue(undecorated != null);
-            log.info("Undecorated document:\n" + XmlUtil.nodeToFormattedString(undecorated));
-        }
+        Document undecorated = result.getUndecoratedMessage();
+        assertTrue(undecorated != null);
+        log.info("Undecorated document:\n" + XmlUtil.nodeToFormattedString(undecorated));
     }
 
     private static class TestDocument {
@@ -117,23 +115,57 @@ public class WssProcessorTest extends TestCase {
         }
     }
 
-    TestDocument[] TEST_DOCUMENTS = {
-        makeDotNetTestDocument("dotnet encrypted request", TestDocuments.DOTNET_ENCRYPTED_REQUEST),
-        makeDotNetTestDocument("dotnet signed request", TestDocuments.DOTNET_SIGNED_REQUEST),
-        makeDotNetTestDocument("dotnet request with username token", TestDocuments.DOTNET_USERNAME_TOKEN),
-        makeEttkTestDocument("ettk signed request", TestDocuments.ETTK_SIGNED_REQUEST),
-        makeEttkTestDocument("ettk encrypted request", TestDocuments.ETTK_ENCRYPTED_REQUEST),
-        makeEttkTestDocument("ettk signed encrypted request", TestDocuments.ETTK_SIGNED_ENCRYPTED_REQUEST),
+    public void testDotnetEncryptedRequest() throws Exception {
+        doTest(makeDotNetTestDocument("dotnet encrypted request", TestDocuments.DOTNET_ENCRYPTED_REQUEST));
+    }
 
-        makeDotNetTestDocument("request wrapped l7 actor", TestDocuments.WRAPED_L7ACTOR),
-        makeDotNetTestDocument("request multiple wrapped l7 actor", TestDocuments.MULTIPLE_WRAPED_L7ACTOR),
+    public void testDotnetSignedRequest() throws Exception {
+        doTest(makeDotNetTestDocument("dotnet signed request", TestDocuments.DOTNET_SIGNED_REQUEST));
+    }
 
-        makeDotNetTestDocument("dotnet signed SecureConversation request", TestDocuments.DOTNET_SIGNED_USING_DERIVED_KEY_TOKEN),
-        makeDotNetTestDocument("dotnet signed encrypted SecureConversation request", TestDocuments.DOTNET_ENCRYPTED_USING_DERIVED_KEY_TOKEN),
+    public void testDotnetRequestWithUsernameToken() throws Exception {
+        doTest(makeDotNetTestDocument("dotnet request with username token", TestDocuments.DOTNET_USERNAME_TOKEN));
+    }
 
-        makeDotNetTestDocument("dotnet signed request 2", TestDocuments.DOTNET_SIGNED_REQUEST2),
-        makeEttkTestDocument("websphere signed request", TestDocuments.WEBSPHERE_SIGNED_REQUEST),
-    };
+    public void testEttkSignedRequest() throws Exception {
+        doTest(makeEttkTestDocument("ettk signed request", TestDocuments.ETTK_SIGNED_REQUEST));
+    }
+
+    public void testEttkEncryptedRequest() throws Exception {
+        doTest(makeEttkTestDocument("ettk encrypted request", TestDocuments.ETTK_ENCRYPTED_REQUEST));
+    }
+
+    public void testEttkSignedEncryptedRequest() throws Exception {
+        doTest(makeEttkTestDocument("ettk signed encrypted request", TestDocuments.ETTK_SIGNED_ENCRYPTED_REQUEST));
+    }
+
+    public void testRequestWrappedL7Actor() throws Exception {
+        doTest(makeDotNetTestDocument("request wrapped l7 actor", TestDocuments.WRAPED_L7ACTOR));
+    }
+
+    public void testRequestMultipleWrappedL7Actor() throws Exception {
+        doTest(makeDotNetTestDocument("request multiple wrapped l7 actor", TestDocuments.MULTIPLE_WRAPED_L7ACTOR));
+    }
+
+    public void testDotnetSignedSecureConversationRequest() throws Exception {
+        doTest(makeDotNetTestDocument("dotnet signed SecureConversation request", TestDocuments.DOTNET_SIGNED_USING_DERIVED_KEY_TOKEN));
+    }
+
+    public void testDotnetSignedEncryptedSecureConversationRequest() throws Exception {
+        doTest(makeDotNetTestDocument("dotnet signed encrypted SecureConversation request", TestDocuments.DOTNET_ENCRYPTED_USING_DERIVED_KEY_TOKEN));
+    }
+
+    public void testDotnetSignedRequest2() throws Exception {
+        doTest(makeDotNetTestDocument("dotnet signed request 2", TestDocuments.DOTNET_SIGNED_REQUEST2));
+    }
+
+    public void testWebsphereSignedRequest() throws Exception {
+        doTest(makeEttkTestDocument("websphere signed request", TestDocuments.WEBSPHERE_SIGNED_REQUEST));
+    }
+
+    public void testFrancoisAgentSignedRequest() throws Exception {
+        doTest(makeDotNetTestDocument("agent failing signed request", TestDocuments.AGENT_FAILING_SIGNED_REQUEST));
+    }
 
     private TestDocument makeEttkTestDocument(String testname, String docname) {
         try {
