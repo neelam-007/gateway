@@ -159,11 +159,11 @@ public class SoapRequestGenerator {
             Name operationName = envelope.createName(bindingOperation.getName(), "ns1", targetNameSpace);
             bodyElement = body.addBodyElement(operationName);
         } else {
-            Name operationName = envelope.createName(bindingOperation.getName(), "ns1", targetNameSpace);
-            bodyElement = body.addBodyElement(operationName);
+            processDocumentStyle(bindingOperation, envelope);
+            return soapMessage;
         }
 
-
+        // default rpc processing
         Operation operation = bindingOperation.getOperation();
         Input input = operation.getInput();
         if (input == null) { // nothing more to do here
@@ -175,48 +175,29 @@ public class SoapRequestGenerator {
         for (Iterator iterator = parts.iterator(); iterator.hasNext();) {
             Part part = (Part)iterator.next();
             String elementName = "";
-            QName elementQName = part.getElementName();
             String value = "value";
             SOAPElement parameterElement = null;
 
-            if (elementQName != null) {
-                elementName = elementQName.getLocalPart();
-                NameTypePair[] npair = getSchemaParameterElements(elementName);
-                for (int i = 0; i < npair.length; i++) {
-                    NameTypePair nameTypePair = npair[i];
-                    System.out.println(nameTypePair);
-                }
-                String uri = elementQName.getNamespaceURI();
-                String prefix = null;
-                if (uri != null) {
-                    prefix = wsdl.getDefinition().getPrefix(uri);
-                }
-                Name partName = envelope.createName(elementName, prefix, uri);
-                parameterElement = bodyElement.addChildElement(partName);
 
-            } else {
-                elementName = part.getName();
-                Name partName = envelope.createName(elementName);
-                parameterElement = bodyElement.addChildElement(partName);
-                QName typeName = part.getTypeName();
-                if (typeName != null) {
-                    String typeNameLocalPart = typeName.getLocalPart();
-                    String uri = typeName.getNamespaceURI();
-                    if (uri != null) {
-                        Iterator prefixes = envelope.getNamespacePrefixes();
-                        while (prefixes.hasNext()) {
-                            String prefix = (String)prefixes.next();
-                            String nsURI = envelope.getNamespaceURI(prefix);
-                            if (nsURI.equals(typeName.getNamespaceURI())) {
-                                typeNameLocalPart = prefix + ":" + typeNameLocalPart;
-                            }
+            elementName = part.getName();
+            Name partName = envelope.createName(elementName);
+            parameterElement = bodyElement.addChildElement(partName);
+            QName typeName = part.getTypeName();
+            if (typeName != null) {
+                String typeNameLocalPart = typeName.getLocalPart();
+                String uri = typeName.getNamespaceURI();
+                if (uri != null) {
+                    Iterator prefixes = envelope.getNamespacePrefixes();
+                    while (prefixes.hasNext()) {
+                        String prefix = (String)prefixes.next();
+                        String nsURI = envelope.getNamespaceURI(prefix);
+                        if (nsURI.equals(typeName.getNamespaceURI())) {
+                            typeNameLocalPart = prefix + ":" + typeNameLocalPart;
                         }
                     }
-                    if ("rpc".equals(bindingStyle)) {
-                        parameterElement.addAttribute(envelope.createName("xsi:type"), typeNameLocalPart);
-                    }
-                    value = typeName.getLocalPart();
                 }
+                parameterElement.addAttribute(envelope.createName("xsi:type"), typeNameLocalPart);
+                value = typeName.getLocalPart();
             }
             if (messageInputGenerator != null) {
                 value = messageInputGenerator.generate(elementName,
@@ -228,6 +209,68 @@ public class SoapRequestGenerator {
             }
         }
         return soapMessage;
+    }
+
+    /**
+     * Process the document style binding operation
+     *
+     * @param bo       the binding operation
+     * @param envelope the soap envelope
+     */
+    private void processDocumentStyle(BindingOperation bo, SOAPEnvelope envelope)
+      throws SOAPException {
+        Operation operation = bo.getOperation();
+        Input input = operation.getInput();
+        if (input == null) { // nothing more to do here
+            return;
+        }
+        Message message = input.getMessage();
+        List parts = message.getOrderedParts(null);
+        if (parts == null || parts.isEmpty()) return;
+        Part part = (Part)parts.get(0);
+
+        String operationElementName = "";
+        QName elementQName = part.getElementName();
+        String value = "value";
+        SOAPElement parameterElement = null;
+
+        if (elementQName != null) {
+            operationElementName = elementQName.getLocalPart();
+            String uri = elementQName.getNamespaceURI();
+            String prefix = null;
+            if (uri != null) {
+                prefix = wsdl.getDefinition().getPrefix(uri);
+            }
+            Name operationName = envelope.createName(operationElementName, prefix, uri);
+            SOAPBody body = envelope.getBody();
+
+            SOAPElement bodyElement = body.addBodyElement(operationName);
+
+            NameTypePair[] npair = getSchemaParameterElements(operationElementName);
+            for (int i = 0; i < npair.length; i++) {
+                NameTypePair nameTypePair = npair[i];
+                String pUri = nameTypePair.nameSpaceUri;
+                String pPrefix = wsdl.getDefinition().getPrefix(pUri);
+                Name partName = envelope.createName(nameTypePair.name, pPrefix, pUri);
+                parameterElement = bodyElement.addChildElement(partName);
+                if (nameTypePair.type != null) {
+                    value = nameTypePair.type;
+                    if (value !=null) {
+                        int pos = value.indexOf(':');
+                        if (pos !=-1) {
+                            value = value.substring(pos+1);
+                        }
+                    }
+                }
+                if (messageInputGenerator != null) {
+                    value = messageInputGenerator.generate(nameTypePair.name, operationElementName, wsdl.getDefinition());
+                }
+                if (value != null) {
+                    parameterElement.addTextNode(value);
+                }
+
+            }
+        }
     }
 
     /**
@@ -244,15 +287,19 @@ public class SoapRequestGenerator {
 
         Iterator iter = l.iterator();
         Element elem = null;
-
+        String targetNamespace = wsdl.getDefinition().getTargetNamespace();
         while (iter.hasNext()) {
             ExtensibilityElement el = (ExtensibilityElement)iter.next();
             if (el.getElementType().getLocalPart().equals("schema")) {
                 UnknownExtensibilityElement uee = (UnknownExtensibilityElement)el;
                 elem = uee.getElement();
-
+                String tns = elem.getAttribute("targetNamespace");
+                if (tns != null) {
+                    targetNamespace = tns;
+                }
                 NodeList nl = elem.getChildNodes();
-                for (int i = 0; i < nl.getLength(); i++) {
+                final int length = nl.getLength();
+                for (int i = 0; i < length; i++) {
                     Node child = nl.item(i);
                     if (!(child instanceof Element)) continue;
                     Element element = (Element)child;
@@ -269,9 +316,9 @@ public class SoapRequestGenerator {
                         Node n = nodeIterator.nextNode();
                         if (n == null) return new NameTypePair[]{};
                         n = nodeIterator.nextNode();
-                        for (;n != null; n = nodeIterator.nextNode()) {
+                        for (; n != null; n = nodeIterator.nextNode()) {
                             Element e = (Element)n;
-                            elements.add(new NameTypePair(e.getAttribute("name"), e.getAttribute("type")));
+                            elements.add(new NameTypePair(e.getAttribute("name"), targetNamespace, e.getAttribute("type")));
                         }
                         return (NameTypePair[])elements.toArray(new NameTypePair[]{});
                     }
@@ -311,9 +358,12 @@ public class SoapRequestGenerator {
      */
     private static class NameTypePair {
         String name;
+        String nameSpaceUri;
         String type;
-        public NameTypePair(String name, String type) {
+
+        public NameTypePair(String name, String uri, String type) {
             this.name = name;
+            this.nameSpaceUri = uri;
             this.type = type;
         }
 
@@ -321,7 +371,7 @@ public class SoapRequestGenerator {
          * @return a string representation of the name type pair.
          */
         public String toString() {
-            return "[ name = "+name+", type = "+type+" ]";
+            return "[ name = " + name + ", type = " + type + " ]";
         }
     }
 
@@ -356,10 +406,8 @@ public class SoapRequestGenerator {
 
         public String toString() {
             StringBuffer sb = new StringBuffer("[");
-            boolean coma = false;
             if (soapOperation != null) {
                 sb.append(" SOAP operation " + soapOperation);
-                coma = true;
             }
             sb.append("]");
             if (soapMessage != null) {
