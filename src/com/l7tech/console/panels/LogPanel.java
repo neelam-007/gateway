@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.table.LogTableModel;
 import com.l7tech.console.table.FilteredLogTableSorter;
 import com.l7tech.console.util.ArrowIcon;
+import com.l7tech.common.gui.widgets.ContextMenuTextArea;
 
 import javax.swing.*;
 import javax.swing.table.*;
@@ -355,7 +356,7 @@ public class LogPanel extends JPanel {
     {
         if(msgDetails != null) return msgDetails;
 
-        msgDetails = new JTextArea();
+        msgDetails = new ContextMenuTextArea();
         msgDetails.setEditable(false);
 
         return msgDetails;
