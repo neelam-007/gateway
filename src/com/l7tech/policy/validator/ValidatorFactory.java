@@ -134,7 +134,7 @@ class ValidatorFactory {
 
 
     /**
-     * special assertion tree node that describesd unknown assertion
+     * special 'nullvalidator'
      */
     static class NullValidator implements AssertionValidator {
         private Assertion assertion;
