@@ -106,7 +106,7 @@ public class JceProviderTest {
         } else if ("entrust".equalsIgnoreCase(prov)) {
             driver = JceProvider.ENTRUST_ENGINE;
         } else if ("ibm".equalsIgnoreCase(prov)) {
-            driver = JceProvider.IBM_ENGINE;
+            driver = "com.l7tech.common.security.prov.ibm.IbmJceProviderEngine";
         }else
             throw new IllegalArgumentException("Unknown provider " + USAGE);
         System.setProperty(JceProvider.ENGINE_PROPERTY, driver);
