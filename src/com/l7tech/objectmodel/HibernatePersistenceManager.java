@@ -98,6 +98,7 @@ public class HibernatePersistenceManager extends PersistenceManager {
         return holder;
     }
 
+    /*
     void doBeginTransaction( PersistenceContext context ) throws TransactionException {
         context.beginTransaction();
     }
@@ -109,6 +110,7 @@ public class HibernatePersistenceManager extends PersistenceManager {
     void doRollbackTransaction( PersistenceContext context ) throws TransactionException {
         context.rollbackTransaction();
     }
+    */
 
     List doFind( PersistenceContext context, String query ) throws FindException {
         try {
@@ -140,9 +142,7 @@ public class HibernatePersistenceManager extends PersistenceManager {
 
     public void close( PersistenceContext context ) {
         try {
-            ContextHolder h = getContextHolder( context );
-            Session s = h._session;
-            s.close();
+            context.close();
         } catch ( Exception e ) {
             LogManager.getInstance().getSystemLogger().throwing( getClass().getName(), "Session.close()", e );
         }
