@@ -14,8 +14,6 @@ import java.awt.event.ActionEvent;
  */
 public class EditFederatedIPWizard extends IdentityProviderWizard {
 
-    public static final String NAME = "Edit Federated Identity Provider";
-
     /**
      * Constructor
      *

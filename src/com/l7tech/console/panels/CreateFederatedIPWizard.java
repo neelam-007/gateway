@@ -17,15 +17,9 @@ import java.awt.event.ActionListener;
  */
 public class CreateFederatedIPWizard extends IdentityProviderWizard {
 
-    public static final String NAME = "Create Federated Identity Provider";
-
     public CreateFederatedIPWizard(Frame parent, WizardStepPanel panel) {
         super(parent, panel);
 
-        // unregister the old wizard if any
-        TopComponents.getInstance().unregisterComponent(CreateFederatedIPWizard.NAME);
-
-        TopComponents.getInstance().registerComponent(CreateFederatedIPWizard.NAME, this);
         setResizable(true);
         setTitle("Create Federated Identity Provider Wizard");
         setShowDescription(false);
@@ -43,10 +37,5 @@ public class CreateFederatedIPWizard extends IdentityProviderWizard {
             }
         });
 
-    }
-
-    protected void finish(ActionEvent evt) {
-        TopComponents.getInstance().unregisterComponent(CreateFederatedIPWizard.NAME);
-        super.finish(evt);
     }
 }
