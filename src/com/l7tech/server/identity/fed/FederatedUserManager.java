@@ -15,6 +15,7 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistenceManager;
+import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.identity.PersistentUserManager;
 
 import java.sql.SQLException;
@@ -80,6 +81,10 @@ public class FederatedUserManager extends PersistentUserManager {
         } catch ( SQLException e ) {
             throw new FindException("Couldn't find user", e);
         }
+    }
+
+    protected void preSave( User user ) throws SaveException {
+        // Don't care, duplicate logins are allowed
     }
 
     private final String FIND_BY_DN = "FROM " + getTableName() + " IN CLASS " + getImpClass() +

@@ -165,17 +165,7 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
         PersistentUser imp = cast(user);
 
         try {
-            // check to see if an existing user with same login exist
-            User existingDude = null;
-            try {
-                existingDude = findByLogin(user.getLogin());
-            } catch (FindException e) {
-                existingDude = null;
-            }
-            if (existingDude != null) {
-                throw new SaveException("Cannot save this user. Existing user with login \'"
-                                        + user.getLogin() + "\' present.");
-            }
+            preSave( user );
 
             String oid = Long.toString( PersistenceManager.save( getContext(), imp ) );
 
@@ -197,6 +187,8 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
             throw new SaveException( se.toString(), se );
         }
     }
+
+    protected abstract void preSave( User user ) throws SaveException;
 
     public void update( User user ) throws UpdateException , ObjectNotFoundException{
         update( user, null );

@@ -5,6 +5,7 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.identity.PersistentUserManager;
 
 import java.util.Iterator;
@@ -23,6 +24,20 @@ import java.util.logging.Logger;
  *
  */
 public class InternalUserManagerServer extends PersistentUserManager {
+    protected void preSave( User user ) throws SaveException {
+        // check to see if an existing user with same login exist
+        User existingDude = null;
+        try {
+            existingDude = findByLogin(user.getLogin());
+        } catch (FindException e) {
+            existingDude = null;
+        }
+        if (existingDude != null) {
+            throw new SaveException("Cannot save this user. Existing user with login \'"
+                                    + user.getLogin() + "\' present.");
+        }
+    }
+
     public static final String IMPCLASSNAME = InternalUser.class.getName();
 
     public InternalUserManagerServer(IdentityProvider provider) {
