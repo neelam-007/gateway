@@ -16,6 +16,9 @@ import com.l7tech.identity.GroupManager;
  * User: flascelles
  * Date: Jun 19, 2003
  *
+ * Tests LdapIdentityProviderServer, LdapGroupManagerServer and LdapUserManagerServer
+ * requires to be able to resolve the hostname "spock" and the directory on spock to be on
+ * and containing at least one user and one group.
  */
 public class LdapIdentityProviderServerTest extends junit.framework.TestCase {
     public static Test suite() {
