@@ -1,8 +1,8 @@
 package com.l7tech.service;
 
 import com.l7tech.adminws.ClientCredentialManager;
-import com.l7tech.adminws.service.Client;
 import com.l7tech.util.Locator;
+
 import java.net.PasswordAuthentication;
 
 /**
