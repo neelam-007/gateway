@@ -1,13 +1,12 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.SsmApplication;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
-import com.l7tech.identity.UserBean;
 import com.l7tech.identity.IdentityAdmin;
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.CertUtils;
@@ -275,7 +274,7 @@ class CertificatePanel extends JPanel {
     /**
      * The Bridge whose certificate we are inspecting.
      */
-    private UserBean user;
+    private User user;
 
 }
 

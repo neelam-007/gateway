@@ -9,7 +9,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.User;
-import com.l7tech.identity.UserBean;
+import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.ObjectNotFoundException;
@@ -130,8 +130,8 @@ public class FederatedUserPanel extends UserPanel {
 
             boolean isNew = userHeader.getOid() == 0;
             if (isNew) {
-                user = new UserBean();
-                user.setName(userHeader.getName());
+                user = new FederatedUser();
+                user.getUserBean().setName(userHeader.getName());
                 userGroups = null;
             } else {
                 IdentityAdmin admin = getIdentityAdmin();
@@ -140,7 +140,7 @@ public class FederatedUserPanel extends UserPanel {
                     JOptionPane.showMessageDialog(mainWindow, USER_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
                     throw new NoSuchElementException("User missing " + userHeader.getOid());
                 }
-                user = u.getUserBean();
+                user = u;
                 userGroups = admin.getGroupHeaders(config.getOid(), u.getUniqueIdentifier());
             }
             // Populate the form for insert/update
@@ -627,7 +627,7 @@ public class FederatedUserPanel extends UserPanel {
      *
      * @param user
      */
-    private void setData(UserBean user) {
+    private void setData(User user) {
         // Set tabbed panels (add/remove extranet tab)
         nameLabel.setText(user.getName());
         getFirstNameTextField().setText(user.getFirstName());
@@ -644,12 +644,12 @@ public class FederatedUserPanel extends UserPanel {
      *
      * @return User   the instance with changes applied
      */
-    private UserBean collectChanges() {
-        user.setLastName(this.getLastNameTextField().getText());
-        user.setFirstName(this.getFirstNameTextField().getText());
-        user.setEmail(getEmailTextField().getText());
-        user.setLogin(getLoginTextField().getText());
-        user.setSubjectDn(getX509SubjectNameTextField().getText());
+    private User collectChanges() {
+        user.getUserBean().setLastName(this.getLastNameTextField().getText());
+        user.getUserBean().setFirstName(this.getFirstNameTextField().getText());
+        user.getUserBean().setEmail(getEmailTextField().getText());
+        user.getUserBean().setLogin(getLoginTextField().getText());
+        user.getUserBean().setSubjectDn(getX509SubjectNameTextField().getText());
         // user.setGroupHeaders(groupPanel.getCurrentGroups());
         return user;
     }

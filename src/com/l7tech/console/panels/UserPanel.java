@@ -7,7 +7,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.UserBean;
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.event.DocumentEvent;
@@ -28,7 +28,7 @@ abstract public class UserPanel extends EntityEditorPanel {
 
     // user
     protected EntityHeader userHeader;
-    protected UserBean user;
+    protected User user;
     protected Set userGroups;
 
     protected boolean formModified;
@@ -72,7 +72,7 @@ abstract public class UserPanel extends EntityEditorPanel {
      *
      * @return the user that this panel is currently editing
      */
-    UserBean getUser() {
+    User getUser() {
         return user;
     }
 

@@ -9,10 +9,9 @@ import com.l7tech.console.event.EntityListenerAdapter;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.Registry;
-import com.l7tech.identity.Group;
-import com.l7tech.identity.IdentityAdmin;
-import com.l7tech.identity.User;
-import com.l7tech.identity.UserBean;
+import com.l7tech.identity.*;
+import com.l7tech.identity.ldap.LdapUser;
+import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.ObjectNotFoundException;
@@ -130,8 +129,12 @@ public class GenericUserPanel extends UserPanel {
 
             boolean isNew = userHeader.getOid() == 0;
             if (isNew) {
-                user = new UserBean();
-                user.setName(userHeader.getName());
+                if (config.type().equals(IdentityProviderType.INTERNAL)) {
+                    user = new InternalUser();
+                } else if (config.type().equals(IdentityProviderType.LDAP)) {
+                    user = new LdapUser();
+                }
+                user.getUserBean().setName(userHeader.getName());
                 userGroups = null;
             } else {
                 User u = getIdentityAdmin().findUserByID(config.getOid(), userHeader.getStrId());
@@ -139,7 +142,7 @@ public class GenericUserPanel extends UserPanel {
                     JOptionPane.showMessageDialog(mainWindow, USER_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
                     throw new NoSuchElementException("User missing " + userHeader.getOid());
                 }
-                user = u.getUserBean();
+                user = u;
                 userGroups = getIdentityAdmin().getGroupHeaders(config.getOid(), u.getUniqueIdentifier());
             }
             // Populate the form for insert/update
@@ -560,7 +563,7 @@ public class GenericUserPanel extends UserPanel {
               addActionListener(new ActionListener() {
                   public void actionPerformed(ActionEvent e) {
                       new PasswordDialog(mainWindow, userPanel,
-                        user, passwordChangeListener).show();
+                                         user.getUserBean(), passwordChangeListener).show();
                       // Refresh the panel (since the Bridge's cert might have been revoked)
                   }
               });
@@ -598,10 +601,9 @@ public class GenericUserPanel extends UserPanel {
 
     /**
      * Populates the form from the user bean
-     *
      * @param user
      */
-    private void setData(UserBean user) {
+    private void setData(User user) {
         // Set tabbed panels (add/remove extranet tab)
         nameLabel.setText(user.getName());
         getFirstNameTextField().setText(user.getFirstName());
@@ -613,13 +615,12 @@ public class GenericUserPanel extends UserPanel {
 
     /**
      * Collect changes from the form into the user instance.
-     *
-     * @return User   the instance with changes applied
+     * @return User the instance with changes applied
      */
-    private UserBean collectChanges() {
-        user.setLastName(this.getLastNameTextField().getText());
-        user.setFirstName(this.getFirstNameTextField().getText());
-        user.setEmail(getEmailTextField().getText());
+    private User collectChanges() {
+        user.getUserBean().setLastName(this.getLastNameTextField().getText());
+        user.getUserBean().setFirstName(this.getFirstNameTextField().getText());
+        user.getUserBean().setEmail(getEmailTextField().getText());
         // user.setGroupHeaders(groupPanel.getCurrentGroups());
         return user;
     }

@@ -11,7 +11,7 @@ import com.l7tech.console.event.WizardListener;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.IdentityAdmin;
-import com.l7tech.identity.UserBean;
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.UpdateException;
@@ -43,7 +43,7 @@ public class UserCertPanel extends JPanel {
 
     private JButton removeCertButton;
     private JButton importCertButton;
-    private UserBean user;
+    private User user;
     private X509Certificate cert;
     private UserPanel userPanel;
     private JLabel certStatusLabel;
