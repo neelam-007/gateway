@@ -44,10 +44,12 @@ public class HexUtils {
     }
 
     /**
-     * Slurp a stream into a byte array and return it.
-     * @param stream
-     * @param maxSize maximum size to read
-     * @return a byte array.
+     * Slurp a stream into a byte array and return it.  The stream will be read until EOF or until the maximum
+     * specified number of bytes have been read.
+     * @param stream the stream to read
+     * @param maxSize maximum size to read in bytes
+     * @return a byte array no larger than maxSize; the actual size will depend on the number of bytes read.
+     *         If the returned array is exactly maxSize bytes the stream may have unread data remaining on it.
      */
     public static byte[] slurpStream(InputStream stream, int maxSize) throws IOException {
         byte[] bb = new byte[maxSize];
