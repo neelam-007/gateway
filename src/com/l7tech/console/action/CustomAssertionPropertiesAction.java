@@ -32,7 +32,7 @@ public class CustomAssertionPropertiesAction extends NodeAction {
      * @return the action name
      */
     public String getName() {
-        return "Custome Assertion Properties";
+        return "Custom Assertion Properties";
     }
 
     /**
