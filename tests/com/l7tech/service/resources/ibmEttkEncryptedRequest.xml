@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <soapenv:Header>
+    <wsse:Security soapenv:mustUnderstand="1" xmlns:wsse="http://schemas.xmlsoap.org/ws/2002/07/secext">
+      <EncryptedKey xmlns="http://www.w3.org/2001/04/xmlenc#">
+        <EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#rsa-1_5"/>
+        <KeyInfo xmlns="http://www.w3.org/2000/09/xmldsig#">
+          <wsse:SecurityTokenReference>
+            <wsse:KeyIdentifier>nclLOyAe5FQ+k5TEacPMDUFkCc8=</wsse:KeyIdentifier>
+          </wsse:SecurityTokenReference>
+        </KeyInfo>
+        <CipherData>
+          <CipherValue>Fbx+Bc9+OmNN7sl7Aq0dhpgSFHPd6B0ISubsVHACwlN2qwYuMFgZe+FhkvJNFHvrtD/LMBSc+KLz1omvw5xD/xJBdyxzM6PtHDgsIwnfwV3h/gcjLa8dm4IHqPB4y0C3tf/XBJNQyl7d2Af9yg2Vf58BVCKvW6nE9EyMlxvFlko=</CipherValue>
+        </CipherData>
+        <ReferenceList>
+          <DataReference URI="#wssecurity_encryption_id_8391955304441448737_1088636301812"/>
+          <DataReference URI="#wssecurity_encryption_id_7947822171416982853_1088636301719"/>
+        </ReferenceList>
+      </EncryptedKey>
+      <EncryptedData Id="wssecurity_encryption_id_7947822171416982853_1088636301719" Type="http://www.w3.org/2001/04/xmlenc#Element" xmlns="http://www.w3.org/2001/04/xmlenc#"><EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#tripledes-cbc"/><CipherData><CipherValue>iUWPQ59oa/ylYb+T3a38AlJ5KCwPZE/3UfSABotoeKDVmez0u1dbYwuzV9CpF+yjhFx8IcMjE+vnC03jXqObq/Y1Gt/8INspy5qSq+kDCahlGy2Hj1T+zjbU31PPq5Rb1TZTyGG7zb/b9NQV9DPEiQcLN+YfVO3yvhpHXrDDC3Qd5ZJCXTg42tq+VwEko+P0XorC9rIMZTyDghdGIyLB42zNzEIyXh2LnxUi50gLPtQIwMMxdyU1i1xkEogZcW0E+hXQapcrupvNstOBfmC70uSBzj+xZ61TQVw0gnRE/XQoQCHyscV4RdwEtrK5UimZffnLZOavwUN59xBOkxBt5oHeDlUVPSIQ</CipherValue></CipherData></EncryptedData>
+    </wsse:Security>
+    <wsu:Timestamp xmlns:wsu="http://schemas.xmlsoap.org/ws/2002/07/utility">
+      <wsu:Created>2004-06-30T22:58:21Z</wsu:Created>
+      <wsu:Expires>2004-07-30T22:58:21Z</wsu:Expires>
+    </wsu:Timestamp>
+  </soapenv:Header>
+ <soapenv:Body><EncryptedData Id="wssecurity_encryption_id_8391955304441448737_1088636301812" Type="http://www.w3.org/2001/04/xmlenc#Content" xmlns="http://www.w3.org/2001/04/xmlenc#"><EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#tripledes-cbc"/><CipherData><CipherValue>5es18whr706HIsrOCS3oHWD6fX5umB8Z6kXeKwknSEQ8BGoUrvATz6jFRaLkA1lz1y2rgveEKF31OlAX/8I9XCjhIBRjmXvxnYFglESeSiiw278avw+CCMw2Osz0NbSBPgYqI7o5/f+Dv6NhEzVWQABdzv/dQ9uMMAJrMuhgqUY4vMwURiVcemyLutuzQMp7wm4hHlFBwaKVXj1wAMXt3ZqiGz7BDdUn6jTOaN6B2wGX0yXZ+gVIms/N7Za0sZ1fD4x3t0PAy4o=</CipherValue></CipherData></EncryptedData></soapenv:Body>
+</soapenv:Envelope>

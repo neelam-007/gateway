@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <soapenv:Header>
+    <wsse:Security soapenv:mustUnderstand="1" xmlns:wsse="http://schemas.xmlsoap.org/ws/2002/07/secext">
+      <wsse:BinarySecurityToken EncodingType="wsse:Base64Binary" ValueType="wsse:X509v3" wsu:Id="wssecurity_binary_security_token_id_83887585640487474_1088636071891" xmlns:wsu="http://schemas.xmlsoap.org/ws/2002/07/utility">
+        MIICZjCCAc8CBD2+61QwDQYJKoZIhvcNAQEEBQAwejELMAkGA1UEBhMCVVMxEzARBgNV
+        BAgTCkNhbGlmb3JuaWExEjAQBgNVBAcTCUN1cGVydGlubzEMMAoGA1UEChMDSUJNMR8w
+        HQYDVQQLExZKYXZhIFRlY2hub2xvZ3kgQ2VudGVyMRMwEQYDVQQDEwpKb2huIFNtaXRo
+        MB4XDTAyMTAyOTIwMTEwMFoXDTA3MTAwMzIwMTEwMFowejELMAkGA1UEBhMCVVMxEzAR
+        BgNVBAgTCkNhbGlmb3JuaWExEjAQBgNVBAcTCUN1cGVydGlubzEMMAoGA1UEChMDSUJN
+        MR8wHQYDVQQLExZKYXZhIFRlY2hub2xvZ3kgQ2VudGVyMRMwEQYDVQQDEwpKb2huIFNt
+        aXRoMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCtitis5FONvv236Xw1CKOvKAOQ
+        0NYlvRd/FKwuf+T1XCFadHMrtvHhq/+Z/Dlcn2YQYOCp9auS+WkBcL0AUrJJPUbwZIB2
+        CyBZJjnS7+jdb37RKYQUsNRNlgdIcoZM8bvCZldBSfnat4xDPyQOJB7ExDrMmI9tP0NY
+        9GN0npfnwwIDAQABMA0GCSqGSIb3DQEBBAUAA4GBAFLNrEP8Y0xwUVIl4XigEiDM6jAd
+        DJFCI+m8EA07nAsYWmV/Ic8kkqDzXaWyLkIBJQ0gElRlWHYe+W/K/pT9CNEWRFViKbZG
+        evivBKek7GQXhuEgo+pWalpEtg4nA741+46iKeKpEQILL6OYEj7aHcreIxaQ1WH2v1iM
+        ig33Q0+S
+      </wsse:BinarySecurityToken>
+      <Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
+        <SignedInfo>
+          <CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+          <SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+          <Reference URI="#wssecurity_body_id_513048314477033528_1088636071891">
+            <Transforms>
+              <Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+            </Transforms>
+            <DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+            <DigestValue>sDz0UHsV12F267jlEZijGOX0l/8=</DigestValue>
+          </Reference>
+          <Reference URI="#tsc_8403499464478784195_1088636071891">
+            <Transforms>
+              <Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+            </Transforms>
+            <DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+            <DigestValue>tqa7LkKCwKyO/QeRFFtvV2Pp3Pw=</DigestValue>
+          </Reference>
+          <Reference URI="#tse_3308692968300561793_1088636071891">
+            <Transforms>
+              <Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+            </Transforms>
+            <DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+            <DigestValue>z9UobQOmE4+Dua1jzbOgsxVp2M0=</DigestValue>
+          </Reference>
+        </SignedInfo>
+        <SignatureValue>
+          Wwqz/a0d1GDnCmiC6vPGSr46ZSfol6HjRduryCC9SP4Sfn/3GYS4/TU5MDAxI0rsz1
+          BIh/mSa2ohnaZ8Cc1bgARKpDnSGKD+DA8i+9edWb4UzgH5M9JJBp5FD9Z8WpTFAa5c
+          okz26tQVJZmx6zGMQIBfnWL57LrHreD4BygB92Y=
+        </SignatureValue>
+        <KeyInfo>
+          <wsse:SecurityTokenReference>
+            <wsse:Reference URI="#wssecurity_binary_security_token_id_83887585640487474_1088636071891"/>
+          </wsse:SecurityTokenReference>
+        </KeyInfo>
+      </Signature>
+    </wsse:Security>
+    <wsu:Timestamp xmlns:wsu="http://schemas.xmlsoap.org/ws/2002/07/utility">
+      <wsu:Created wsu:Id="tsc_8403499464478784195_1088636071891">2004-06-30T22:54:31Z</wsu:Created>
+      <wsu:Expires wsu:Id="tse_3308692968300561793_1088636071891">2004-07-30T22:54:31Z</wsu:Expires>
+    </wsu:Timestamp>
+  </soapenv:Header>
+ <soapenv:Body wsu:Id="wssecurity_body_id_513048314477033528_1088636071891" xmlns:wsu="http://schemas.xmlsoap.org/ws/2002/07/utility">
+  <ns1:getQuote soapenv:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" xmlns:ns1="urn:xmltoday-delayed-quotes">
+   <symbol xsi:type="xsd:string">XXX</symbol>
+  </ns1:getQuote>
+ </soapenv:Body>
+</soapenv:Envelope>
