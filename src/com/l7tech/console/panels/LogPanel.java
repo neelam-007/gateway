@@ -457,6 +457,9 @@ public class LogPanel extends JPanel {
 
     }
 
+    public void clearMsgTable(){
+       ((FilteredLogTableModel)getMsgTable().getModel()).clearTable();
+    }
 /*
      private JTabbedPane getLogTabbedPane() {
         // If tabbed pane not already created

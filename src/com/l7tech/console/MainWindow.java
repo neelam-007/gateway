@@ -602,7 +602,7 @@ public class MainWindow extends JFrame {
                             // store the current divider location
                             try {
                                 Preferences prefs = Preferences.getPreferences();
-                                int l = mainJSplitPane.getDividerLocation();
+                                int l = getMainJSplitPane().getDividerLocation();
                                 prefs.putProperty("main.log.split.divider.location", Integer.toString(l));
                             } catch (IOException e1) {
                             } catch (NullPointerException e1) {
@@ -610,6 +610,22 @@ public class MainWindow extends JFrame {
 
                             getMainJSplitPane().setDividerSize(0);
                         }
+                    }
+
+                    ConnectionListener listener = new ConnectionListener() {
+                        public void onConnect(ConnectionEvent e) {
+                            if(logMenuItem.isSelected()){
+                                restoreLogPane();
+                            }
+                        }
+
+                        public void onDisconnect(ConnectionEvent e) {
+                            getLogPane().clearMsgTable();
+                        }
+                    };
+
+                    {
+                        MainWindow.this.addConnectionListener(listener);
                     }
                 };
 
@@ -1693,9 +1709,6 @@ public class MainWindow extends JFrame {
                 });
               toggleConnectedMenus(true);
               homeAction.actionPerformed(null);
-              if(logMenuItem.isSelected()){
-                  restoreLogPane();
-              }
           }
 
           /* invoked on authentication failure */

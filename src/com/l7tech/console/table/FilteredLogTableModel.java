@@ -28,7 +28,15 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel{
          }
          updateLogTable(logsCache, newFilterLevel);
          realModel.fireTableDataChanged();
+     }
 
+     public void clearTable(){
+
+         while (realModel.getRowCount() > 0) {
+             realModel.removeRow(0);
+         }
+
+         realModel.fireTableDataChanged();
      }
 
      public void refreshLogs(int msgFilterLevel){
