@@ -270,11 +270,20 @@ public class LdapIdentityProvider implements IdentityProvider {
             NamingEnumeration answer = null;
             // search string for users and or groups based on passed types wanted
             if (wantUsers && wantGroups) {
-                filter = "(|" + userSearchFilterWithParam(searchString) + groupSearchFilterWithParam(searchString) + ")";
+                String userFilter = userSearchFilterWithParam(searchString);
+                String grpFilter = groupSearchFilterWithParam(searchString);
+                // no group mapping is now allowed
+                if (grpFilter == null) {
+                    filter = userFilter;
+                } else filter = "(|" + userFilter + grpFilter + ")";
             } else if (wantUsers) {
                 filter = userSearchFilterWithParam(searchString);
             } else if (wantGroups) {
                 filter = groupSearchFilterWithParam(searchString);
+                // no group mapping is now allowed
+                if (filter == null) {
+                    return Collections.EMPTY_SET;
+                }
             }
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
@@ -325,11 +334,13 @@ public class LdapIdentityProvider implements IdentityProvider {
 
     /**
      * builds a search filter for all group object classes based on the config object
+     * @return the search filter or null if no group mappings are declared for this config
      */
     public String groupSearchFilterWithParam(String param) {
         if (cfg == null) throw new IllegalStateException("this provider needs a config!");
-        StringBuffer output = new StringBuffer("(|");
         GroupMappingConfig[] groupTypes = cfg.getGroupMappings();
+        if (groupTypes == null || groupTypes.length <= 0) return null;
+        StringBuffer output = new StringBuffer("(|");
         for (int i = 0; i < groupTypes.length; i++) {
             output.append("(&" +
                             "(objectClass=" + groupTypes[i].getObjClass() + ")" +
@@ -463,7 +474,7 @@ public class LdapIdentityProvider implements IdentityProvider {
             throw new InvalidIdProviderCfgException("This configuration did not yeild any users");
         }
 
-        if (!atLeastOneGroup) {
+        if (!atLeastOneGroup && groupTypes.length > 0) {
             throw new InvalidIdProviderCfgException("This configuration did not yeild any group");
         }
         logger.finest("this ldap config was tested successfully");
