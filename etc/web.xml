@@ -19,6 +19,11 @@
         <servlet-class>com.l7tech.policy.server.PolicyServlet</servlet-class>
     </servlet>
 
+    <servlet>
+        <servlet-name>SoapMessageProcessingServlet</servlet-name>
+        <servlet-class>com.l7tech.server.SoapMessageProcessingServlet</servlet-class>
+    </servlet>
+
     <!-- Axis servlet properties -->
     <servlet>
         <servlet-name>AxisServlet</servlet-name>
@@ -59,6 +64,11 @@
         <servlet-name>TestServlet</servlet-name>
         <servlet-class>com.l7tech.server.TestServlet</servlet-class>
     </servlet>
+
+    <servlet-mapping>
+        <servlet-name>SoapMessageProcessingServlet</servlet-name>
+        <url-pattern>/servlet/soap</url-pattern>
+    </servlet-mapping>
 
     <servlet-mapping>
         <servlet-name>AxisServlet</servlet-name>
