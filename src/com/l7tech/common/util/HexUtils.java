@@ -6,11 +6,16 @@
 
 package com.l7tech.common.util;
 
+import sun.misc.BASE64Encoder;
+import sun.misc.BASE64Decoder;
+
 import java.io.InputStream;
 import java.io.IOException;
 import java.net.URLConnection;
 import java.net.URL;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Utility for hex encoding.
@@ -21,7 +26,38 @@ import java.util.Map;
 public class HexUtils {
     private HexUtils() {}
 
-    private static final char[] hexadecimal ={'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+    private static final char[] hexadecimal = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+
+    private static ThreadLocal localDecoder = new ThreadLocal() {
+        protected Object initialValue() {
+            return new BASE64Decoder();
+        }
+    };
+    private static ThreadLocal localEncoder = new ThreadLocal() {
+        protected Object initialValue() {
+            return new BASE64Encoder();
+        }
+    };
+
+    public static String encodeBase64(byte[] binaryData) {
+        return encodeBase64(binaryData, false);
+    }
+
+    private static Pattern whitespacePattern = Pattern.compile("\\s+", Pattern.MULTILINE | Pattern.DOTALL);
+    public static String encodeBase64(byte[] binaryData, boolean strip) {
+        BASE64Encoder encoder = (BASE64Encoder)localEncoder.get();
+        String s = encoder.encode( binaryData );
+        if (strip) {
+            Matcher matcher = whitespacePattern.matcher(s);
+            return matcher.replaceAll("");
+        }
+        return s;
+    }
+
+    public static byte[] decodeBase64(String s) throws IOException {
+        BASE64Decoder decoder = (BASE64Decoder)localDecoder.get();
+        return decoder.decodeBuffer(s);
+    }
 
     /**
      * Encodes the 128 bit (16 bytes) MD5 into a 32 character String.
