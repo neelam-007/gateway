@@ -106,7 +106,9 @@ class SplashScreen extends JWindow implements MouseListener {
     }
 
     public void mouseClicked(MouseEvent e) {
-            labelSplash.setIcon(new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/rooster.gif")));
+        ImageIcon roosterIcon = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/rooster.gif"));
+        setSize( roosterIcon.getIconWidth(), roosterIcon.getIconHeight() );
+        labelSplash.setIcon( roosterIcon );
     }
     public void mousePressed(MouseEvent e) {}
     public void mouseReleased(MouseEvent e) {}
