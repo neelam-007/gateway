@@ -192,7 +192,7 @@ class CertificatePanel extends JPanel {
                     int answer = (JOptionPane.showConfirmDialog(
                       ComponentRegistry.getInstance().getMainWindow(),
                       "<html><center><b>Please confirm certificate revoke " +
-                      "for user '" + user.getName() + "'<br>This will also revoke the user's password.</b></center></html>",
+                      "for user '" + user.getLogin() + "'<br>This will also revoke the user's password.</b></center></html>",
                       "Revoke User Certificate",
                       JOptionPane.YES_NO_OPTION));
                     if (answer == JOptionPane.YES_OPTION) {
