@@ -6,23 +6,21 @@
 
 package com.l7tech.credential.http;
 
-import com.l7tech.credential.PrincipalCredentials;
-import com.l7tech.credential.CredentialFormat;
 import com.l7tech.credential.CredentialFinderException;
-import com.l7tech.message.Request;
-import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.credential.CredentialFormat;
+import com.l7tech.credential.PrincipalCredentials;
 import com.l7tech.identity.User;
 import com.l7tech.logging.LogManager;
+import com.l7tech.message.Request;
+import com.l7tech.policy.assertion.AssertionStatus;
+import sun.security.x509.X500Name;
 
-import java.security.cert.X509Certificate;
+import java.io.IOException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
-import java.security.cert.CertificateEncodingException;
-import java.util.logging.Logger;
+import java.security.cert.X509Certificate;
 import java.util.logging.Level;
-import java.io.IOException;
-
-import sun.security.x509.X500Name;
+import java.util.logging.Logger;
 
 /**
  * @author alex
