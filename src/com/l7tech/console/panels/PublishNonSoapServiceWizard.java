@@ -76,7 +76,7 @@ public class PublishNonSoapServiceWizard extends Wizard {
             if (ExceptionUtils.causedBy(e, TransactionException.class)) {
                 JOptionPane.showMessageDialog(null,
                   "Unable to save the service '" + service.getName() + "'\n" +
-                  "because an existing service is already using the URL " + service.getRoutingUri(),
+                  "because an existing service is already using the URI " + service.getRoutingUri(),
                   "Service already exists",
                   JOptionPane.ERROR_MESSAGE);
             } else {
