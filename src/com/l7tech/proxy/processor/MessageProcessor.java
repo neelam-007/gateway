@@ -98,34 +98,42 @@ public class MessageProcessor {
                     undecorateResponse(req, res, appliedPolicy);
                     return res;
                 } catch (SSLException e) {
+                    // An SSL handshake with the SSG has failed.
+                    // See if we can identify the cause and correct it.
+
+                    // Do we not have the right password to access our keystore?
                     if (ExceptionUtils.causedBy(e, BadCredentialsException.class) ||
                         ExceptionUtils.causedBy(e, UnrecoverableKeyException.class))
                         throw new BadCredentialsException(e);
 
-                    if (ExceptionUtils.causedBy(e, ServerCertificateUntrustedException.class))
-                        installSsgServerCertificate(ssg); // might throw BadCredentialsException
-                        // FALLTHROUGH
-                    else {
+                    // Was this server cert untrusted?
+                    if (!ExceptionUtils.causedBy(e, ServerCertificateUntrustedException.class)) {
+                        // No, that wasn't the problem.  Was it a cert hostname mismatch?
                         HostnameMismatchException hme = (HostnameMismatchException)
                                         ExceptionUtils.getCauseIfCausedBy(e, HostnameMismatchException.class);
                         if (hme != null) {
+                            // Notify user of the hostname mismatch and then abort this request
                             String wanted = hme.getWhatWasWanted();
                             String got = hme.getWhatWeGotInstead();
                             Managers.getCredentialManager().notifySsgHostnameMismatch(ssg,
                                                                                       wanted,
                                                                                       got);
+                            throw e;
                         }
 
                         // not sure what happened; throw it up and abort the request
                         throw e;
                     }
-                    // FALLTHROUGH
+
+                    // We don't trust the server cert.  Perform certificate discovery and try again
+                    installSsgServerCertificate(ssg); // might throw BadCredentialsException
+                    // FALLTHROUGH -- retry with new server certificate
                 } catch (ServerCertificateUntrustedException e) {
                     installSsgServerCertificate(ssg); // might throw BadCredentialsException
-                    // allow policy to reset and retry
+                    // FALLTHROUGH allow policy to reset and retry
                 }
             } catch (PolicyRetryableException e) {
-                // allow policy to reset and retry
+                // FALLTHROUGH allow policy to reset and retry
             } catch (BadCredentialsException e) {
                 // If we have a client cert, and the current password worked to decrypt it's private key, but something
                 // has rejected the password anyway, we need to reestablish the validity of this account with the SSG.
@@ -145,7 +153,7 @@ public class MessageProcessor {
 
                 Managers.getCredentialManager().notifyInvalidCredentials(ssg);
                 Managers.getCredentialManager().getCredentials(ssg);
-                // allow policy to reset and retry
+                // FALLTHROUGH allow policy to reset and retry
             }
             req.reset();
         }
