@@ -2,6 +2,7 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.EntityTreeCellRenderer;
+import com.l7tech.console.util.PopUpMouseListener;
 
 import javax.swing.*;
 import javax.swing.tree.TreeNode;
@@ -62,14 +63,7 @@ public class PolicyTree extends JTree {
         }
     }
 
-    class TreeMouseListener extends MouseAdapter {
-        public void mousePressed(MouseEvent e) {
-            popUpMenuHandler(e);
-        }
-
-        public void mouseReleased(MouseEvent e) {
-            popUpMenuHandler(e);
-        }
+    class TreeMouseListener extends PopUpMouseListener {
 
         /**
          * Handle the mouse click popup when the Tree item is right clicked. The context sensitive
@@ -77,7 +71,7 @@ public class PolicyTree extends JTree {
          *
          * @param mouseEvent
          */
-        private void popUpMenuHandler(MouseEvent mouseEvent) {
+        protected void popUpMenuHandler(MouseEvent mouseEvent) {
             JTree tree = (JTree)mouseEvent.getSource();
 
             if (mouseEvent.isPopupTrigger()) {

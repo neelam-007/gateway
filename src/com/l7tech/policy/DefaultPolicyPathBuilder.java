@@ -61,25 +61,67 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
      */
     private Set generatePaths(Assertion assertion) {
         Set assertionPaths = new LinkedHashSet();
-        AssertionPath lastPath = null;
-        for (Iterator preorder = assertion.preorderIterator(); preorder.hasNext();) {
+        //AssertionPath lastPath = null;
+        Iterator preorder = assertion.preorderIterator();
+        assertionPaths.add(new AssertionPath(new Assertion[]{(Assertion)preorder.next()}));
+        pathStack.push(lastPath(assertionPaths));
+        AssertionPath stackPath = (AssertionPath)pathStack.peek();
+
+        for (; preorder.hasNext();) {
             Assertion anext = (Assertion)preorder.next();
-            AssertionPath newPath = null;
             if (parentCreatesNewPaths(anext)) {
-                if (anext.getParent() == null) {
-                    newPath = new AssertionPath(new Assertion[]{anext});
-                } else {
-                    newPath = new AssertionPath(anext.getPath());
+                Set paths = generatePaths(anext);
+                AssertionPath cp = (AssertionPath)pathStack.peek();
+                 assertionPaths.remove(cp);
+                for (Iterator iterator = paths.iterator(); iterator.hasNext();) {
+                    AssertionPath assertionPath = (AssertionPath)iterator.next();
+                    for (int i = 0; i < assertionPath.getPath().length; i++) {
+                        Assertion a = assertionPath.getPath()[i];
+                        assertionPaths.add(cp.addAssertion(a));
+                    }
                 }
-                lastPath = newPath;
+
             } else {
-                newPath = lastPath.addAssertion(anext);
-                assertionPaths.remove(lastPath);
-                lastPath = newPath;
+
+                AssertionPath ap = null;
+
+                if (assertionPaths.size() == 0) {
+                    ap = (AssertionPath)pathStack.peek();
+                }else {
+                    ap = lastPath(assertionPaths);
+                }
+
+                Set add = new HashSet();
+                Set remove = new HashSet();
+                for (Iterator iterator = assertionPaths.iterator(); iterator.hasNext();) {
+                    AssertionPath assertionPath = (AssertionPath)iterator.next();
+                    if (stackPath.isDescendant(assertionPath)) {
+                        AssertionPath a = assertionPath.addAssertion(anext);
+                        add.add(a);
+                        remove.add(assertionPath);
+                    }
+                }
+                AssertionPath[] paths = (AssertionPath[])add.toArray(new AssertionPath[] {});
+                if (paths.length > 0) {
+                    pathStack.push(paths[paths.length - 1]);
+                }
+                assertionPaths.addAll(add);
+                assertionPaths.removeAll(remove);
             }
-            assertionPaths.add(newPath);
         }
+        pathStack.pop();
         return pruneEmptyComposites(assertionPaths);
+    }
+
+    private Stack pathStack = new Stack();
+
+    private AssertionPath lastPath(Set set) {
+        AssertionPath[] apaths =
+          (AssertionPath[])set.toArray(new AssertionPath[]{});
+        if (apaths.length == 0) {
+            throw new IllegalArgumentException("path size is " + 0);
+        }
+        return apaths[apaths.length - 1];
     }
 
     /**
@@ -141,14 +183,6 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
      */
     static boolean parentCreatesNewPaths(Assertion a) {
         if (a.getParent() == null) return true;
-
-        Assertion[] path = a.getPath();
-        if (path == null || path.length == 0)
-            throw new IllegalArgumentException("path null or empty");
-
-        for (int i = path.length - 2; i >= 0; i--) {
-            if (path[i] instanceof AllAssertion) return false;
-        }
-        return true;
+        return a.getParent() instanceof OneOrMoreAssertion;
     }
 }

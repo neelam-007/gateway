@@ -9,6 +9,7 @@ import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.WindowManager;
+import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.AssertionPath;
@@ -25,6 +26,7 @@ import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseEvent;
 import java.io.StringReader;
 import java.util.Iterator;
 import java.util.Set;
@@ -88,7 +90,31 @@ public class PolicyEditorPanel extends JPanel {
         JTabbedPane tabbedPane = new JTabbedPane();
         JScrollPane scrollPane = new JScrollPane(messagesTextPane);
         tabbedPane.addTab("Messages", scrollPane);
+        messagesTextPane.addMouseListener(new PopUpMouseListener() {
+            protected void popUpMenuHandler(MouseEvent mouseEvent) {
+                JPopupMenu menu = new JPopupMenu();
+                menu.add(new ClearMessageAreaAction());
+                if (menu != null) {
+                    menu.show(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY());
+                }
+            }
+
+        });
         return tabbedPane;
+    }
+
+    private class ClearMessageAreaAction extends AbstractAction {
+        public ClearMessageAreaAction() {
+            putValue(Action.NAME, "Clear All");
+            putValue(Action.SHORT_DESCRIPTION, "Clear message area");
+        }
+
+        /**
+         * Invoked when an action occurs.
+         */
+        public void actionPerformed(ActionEvent e) {
+            overWriteMessageArea("");
+        }
     }
 
 
@@ -149,7 +175,7 @@ public class PolicyEditorPanel extends JPanel {
                   }
               });
             identityViewButton = new JToggleButton(new PolicyIdentityViewAction());
-            identityViewButton.addActionListener( new ActionListener() {
+            identityViewButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     boolean selected = identityViewButton.isSelected();
                     if (selected) {
@@ -198,10 +224,11 @@ public class PolicyEditorPanel extends JPanel {
          */
         public boolean accept(TreeNode node) {
             if (node instanceof SpecificUserAssertionTreeNode ||
-                node instanceof MemberOfGroupAssertionTreeNode) return false;
+              node instanceof MemberOfGroupAssertionTreeNode)
+                return false;
 
             if (node instanceof CompositeAssertionTreeNode) {
-                if (((CompositeAssertionTreeNode)node).getChildCount(this)==0)
+                if (((CompositeAssertionTreeNode)node).getChildCount(this) == 0)
                     return false;
             }
 
