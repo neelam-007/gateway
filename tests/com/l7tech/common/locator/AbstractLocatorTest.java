@@ -1,16 +1,15 @@
 package com.l7tech.common.locator;
 
 import com.l7tech.common.util.Locator;
-import com.l7tech.common.locator.AbstractLocator;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.StubDataStore;
+import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import junit.extensions.TestSetup;
 
-import java.util.logging.Logger;
 import java.io.File;
+import java.util.logging.Logger;
 
 /**
  * Class AbstractLocatorTest.
@@ -47,7 +46,7 @@ public class AbstractLocatorTest extends TestCase {
                 }
 
                 System.setProperty("com.l7tech.common.locator.properties",
-                        "/com/l7tech/util/locator/test.properties");
+                        "/com/l7tech/common/locator/test.properties");
 
             }
 
