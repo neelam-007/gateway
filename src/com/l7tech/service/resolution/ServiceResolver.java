@@ -77,4 +77,11 @@ public abstract class ServiceResolver implements Comparable, ServiceListener {
         else
             return -1;
     }
+
+    /**
+     * a set of distinct parameters for this service
+     * @param candidateService object from which to extract parameters from
+     * @return a Set containing distinct strings
+     */
+    public abstract Set getDistinctParameters(PublishedService candidateService);
 }
