@@ -1,14 +1,14 @@
 # $Id$
 Summary: Secure Span Gateway
 Name: ssg
-Version: 3.0.1
-Release: 3
+Version: 3.1.0
+Release: 1
 Group: Applications/Internet
 Copyright: Copyright Layer7 Technologies 2003-2004
 URL: http://www.layer7tech.com
 Packager: Layer7 Technologies, <support@layer7tech.com> 
 Source0: /tmp/ssg.tar.gz
-buildroot: %{_tmppath}/%{name}-builddir
+buildroot: %{_builddir}/%{name}-%{version}
 provides: ssg
 Requires: MySQL-Max >= 4.0.17
 
