@@ -28,16 +28,16 @@ public class IdentityProviderFactory {
 
     public static IdentityProvider makeProvider( IdentityProviderConfig config ) {
         IdentityProviderType type = config.getType();
-        String implClassName = type.getClassName();
+        String interfaceClassName = type.getClassName();
         IdentityProvider provider;
 
         try {
-            Class implClass = Class.forName( implClassName );
-            provider = (IdentityProvider)implClass.newInstance();
+            Class interfaceClass = Class.forName( interfaceClassName );
+            provider = (IdentityProvider)Locator.getDefault().lookup(interfaceClass);
             provider.initialize( config );
             return provider;
         } catch ( Exception e ) {
-            throw new IllegalArgumentException( "Couldn't load class " + implClassName + " for IdentityProviderConfig " + config.getName() + " (#" + config.getOid() + "): " + e.toString() );
+            throw new IllegalArgumentException( "Couldn't locate an implementation of " + interfaceClassName + " for IdentityProviderConfig " + config.getName() + " (#" + config.getOid() + "): " + e.toString() );
         }
     }
 }
