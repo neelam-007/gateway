@@ -197,7 +197,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
 
         usersLabelPanel.add(buttonRemove);
 
-        buttonRemoveAll.setText("Remove all");
+        buttonRemoveAll.setText("Remove All");
         buttonRemoveAll.setHorizontalTextPosition(SwingConstants.RIGHT);
         buttonRemoveAll.setHorizontalAlignment(SwingConstants.RIGHT);
         buttonRemoveAll.setIcon(IconManager.getInstance().getIconRemoveAll());
@@ -234,7 +234,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         identitiesjPanel.add(buttonPanel);
 
 
-        sslCheckBox.setText("Require SSL/TLS encryption");
+        sslCheckBox.setText("Require SSL/TLS Encryption");
         add(sslCheckBox,
           new GridBagConstraints(0, 0, GridBagConstraints.REMAINDER, 1, 1.0, 0.0,
             GridBagConstraints.WEST,
@@ -259,7 +259,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             GridBagConstraints.HORIZONTAL,
             new Insets(0, 0, 5, 0), 0, 0));
 
-        add(new JLabel("Authentication method:"),
+        add(new JLabel("Authentication Method:"),
           new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
             GridBagConstraints.EAST,
             GridBagConstraints.NONE,
@@ -270,7 +270,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             GridBagConstraints.HORIZONTAL,
             new Insets(0, 0, 4, 5), 0, 0));
 
-        add(new JLabel("Identity provider:"),
+        add(new JLabel("Identity Provider:"),
           new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
             GridBagConstraints.EAST,
             GridBagConstraints.NONE,
@@ -387,7 +387,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
                 return false;
             }
         };
-        identitiesInTableModel.addColumn("Have permission");
+        identitiesInTableModel.addColumn("Have Permission");
         return identitiesInTableModel;
     }
 
@@ -413,7 +413,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             }
         };
 
-        identitiesOutTableModel.addColumn("No permission");
+        identitiesOutTableModel.addColumn("No Permission");
         return identitiesOutTableModel;
     }
 
@@ -670,7 +670,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
 
     private JRadioButton getAnonRadio() {
         if (anonRadio == null) {
-            anonRadio = new JRadioButton("Allow anonymous access");
+            anonRadio = new JRadioButton("Allow Anonymous Access");
             anonRadio.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     populateIdentityTables();
@@ -682,7 +682,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
 
     private JRadioButton getAuthRadio() {
         if (authRadio == null) {
-            authRadio = new JRadioButton("Require users to authenticate");
+            authRadio = new JRadioButton("Require Users to Authenticate");
             authRadio.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     populateIdentityTables();
