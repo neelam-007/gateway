@@ -1,8 +1,8 @@
 package com.l7tech.console.util;
 
 
-import com.l7tech.adminws.logging.Log;
 import com.l7tech.logging.LogMessage;
+import com.l7tech.logging.LogAdmin;
 import com.l7tech.console.table.FilteredLogTableModel;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
@@ -18,13 +18,13 @@ import java.util.Vector;
  */
 public class LogsWorker  extends SwingWorker {
 
-    private Log log = null;
+    private LogAdmin log = null;
     private long startMsgNumber = -1;
     private long endMsgNumber = -1;
     private Vector newLogs;
     static Logger logger = Logger.getLogger(LogsWorker.class.getName());
 
-    public LogsWorker(Log logService, long startNumber, long endNumber){
+    public LogsWorker(LogAdmin logService, long startNumber, long endNumber){
         log = logService;
         startMsgNumber = startNumber;
         endMsgNumber = endNumber;

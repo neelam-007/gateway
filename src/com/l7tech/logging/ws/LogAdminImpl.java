@@ -1,6 +1,7 @@
-package com.l7tech.adminws.logging;
+package com.l7tech.logging.ws;
 
 import com.l7tech.logging.LogManager;
+import com.l7tech.logging.LogAdmin;
 import com.l7tech.common.util.UptimeMetrics;
 import com.l7tech.common.util.UptimeMonitor;
 
@@ -20,7 +21,7 @@ import java.io.FileNotFoundException;
  *
  * AdminWS for consulting the server system log
  */
-public class Service implements Log {
+public class LogAdminImpl implements LogAdmin {
     public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/loggingAdmin";
 
     public String[] getSystemLog(int offset, int size) throws RemoteException {

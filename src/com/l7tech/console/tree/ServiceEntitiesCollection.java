@@ -1,7 +1,6 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.adminws.service.ServiceManager;
+import com.l7tech.service.ServiceAdmin;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -12,10 +11,10 @@ import java.util.Arrays;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class ServiceEntitiesCollection implements EntitiesCollection {
-    final ServiceManager manager;
+    final ServiceAdmin manager;
     private boolean exhausted = false;
 
-    ServiceEntitiesCollection(ServiceManager sm) {
+    ServiceEntitiesCollection(ServiceAdmin sm) {
         manager = sm;
     }
 

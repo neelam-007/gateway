@@ -5,7 +5,7 @@ import com.l7tech.identity.UserManager;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.common.util.Locator;
-import com.l7tech.adminws.service.ServiceManager;
+import com.l7tech.service.ServiceAdmin;
 
 
 /**
@@ -72,7 +72,7 @@ public abstract class Registry {
     /**
      * @return the service managerr
      */
-    abstract public ServiceManager getServiceManager();
+    abstract public ServiceAdmin getServiceManager();
 
 
     /**
@@ -104,7 +104,7 @@ public abstract class Registry {
         /**
          * @return the service managerr
          */
-        public ServiceManager getServiceManager() {
+        public ServiceAdmin getServiceManager() {
             return null;
         }
     }

@@ -1,6 +1,6 @@
 package com.l7tech.adminws;
 
-import com.l7tech.adminws.logging.Log;
+import com.l7tech.logging.LogAdmin;
 import com.l7tech.identity.StubDataStore;
 import com.l7tech.common.util.Locator;
 import junit.extensions.TestSetup;
@@ -64,7 +64,7 @@ public class LogCLientTest extends TestCase {
     }
 
     public void testInvokeLogService() throws Exception {
-        Log log = (Log)Locator.getDefault().lookup(Log.class);
+        LogAdmin log = (LogAdmin)Locator.getDefault().lookup(LogAdmin.class);
         if (log == null) throw new IllegalStateException("cannot obtain log remote reference");
 
         String[] logs = log.getSystemLog(0, 50);

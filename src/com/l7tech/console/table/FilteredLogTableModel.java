@@ -1,8 +1,8 @@
 package com.l7tech.console.table;
 
-import com.l7tech.adminws.logging.Log;
 import com.l7tech.common.util.Locator;
 import com.l7tech.logging.LogMessage;
+import com.l7tech.logging.LogAdmin;
 import com.l7tech.console.panels.LogPanel;
 import com.l7tech.console.util.LogsWorker;
 
@@ -20,7 +20,7 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel{
 
      public static final int MAX_MESSAGE_BLOCK_SIZE = 100;
      public static final int MAX_NUMBER_OF_LOG_MESSGAES = 4096;
-     private Log log = null;
+     private LogAdmin log = null;
       static Logger logger = Logger.getLogger(FilteredLogTableModel.class.getName());
 
      private Vector logsCache = new Vector();
@@ -49,7 +49,7 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel{
      public void refreshLogs(final int msgFilterLevel, final LogPanel logPane, final String msgNumSelected, final boolean restartTimer){
 
          if (log == null) {
-             log = (Log) Locator.getDefault().lookup(Log.class);
+             log = (LogAdmin) Locator.getDefault().lookup(LogAdmin.class);
              if (log == null) throw new IllegalStateException("cannot obtain log remote reference");
          }
 

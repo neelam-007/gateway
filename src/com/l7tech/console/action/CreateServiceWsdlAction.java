@@ -1,6 +1,5 @@
 package com.l7tech.console.action;
 
-import com.l7tech.adminws.service.ServiceManager;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.MainWindow;
@@ -14,6 +13,7 @@ import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.service.PublishedService;
+import com.l7tech.service.ServiceAdmin;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.policy.assertion.TrueAssertion;
@@ -137,7 +137,7 @@ public class CreateServiceWsdlAction extends BaseAction implements ConnectionLis
                 service.setWsdlXml(sw.toString());
                 service.setWsdlUrl(getServiceAddress(def));
 
-                ServiceManager serviceManager = Registry.getDefault().getServiceManager();
+                ServiceAdmin serviceManager = Registry.getDefault().getServiceManager();
                 long oid = serviceManager.savePublishedService(service);
                 EntityHeader header = new EntityHeader();
                 header.setType(EntityType.SERVICE);

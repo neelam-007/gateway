@@ -8,7 +8,7 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.UserManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.adminws.identity.UserManagerClient;
+import com.l7tech.identity.UserManagerClient;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;

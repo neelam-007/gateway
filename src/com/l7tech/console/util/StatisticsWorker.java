@@ -1,13 +1,11 @@
 package com.l7tech.console.util;
 
-import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.UptimeMetrics;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.ServiceStatistics;
-import com.l7tech.console.table.FilteredLogTableModel;
-import com.l7tech.adminws.logging.Log;
-import com.ibm.xml.policy.xacl.builtIn.provisional_action.log;
+import com.l7tech.service.ServiceAdmin;
+import com.l7tech.logging.LogAdmin;
 
 import java.util.Vector;
 import java.util.logging.Level;
@@ -26,11 +24,11 @@ public class StatisticsWorker extends SwingWorker {
     private UptimeMetrics metrics = null;
     private Vector statsList = new Vector();
 
-    private Log logstub = null;
-    private com.l7tech.adminws.service.ServiceManager serviceManager = null;
+    private LogAdmin logstub = null;
+    private ServiceAdmin serviceManager = null;
     static Logger logger = Logger.getLogger(StatisticsWorker.class.getName());
 
-    public StatisticsWorker(com.l7tech.adminws.service.ServiceManager manager, Log log){
+    public StatisticsWorker(ServiceAdmin manager, LogAdmin log){
         serviceManager = manager;
         logstub = log;
     }

@@ -1,4 +1,4 @@
-package com.l7tech.adminws.logging;
+package com.l7tech.logging;
 
 import com.l7tech.common.util.UptimeMetrics;
 
@@ -11,7 +11,7 @@ import java.rmi.Remote;
  * @author  <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version $Revision$, $Date$
  */
-public interface Log extends Remote {
+public interface LogAdmin extends Remote {
     String[] getSystemLog(int offset, int size) throws RemoteException;
 
     /**

@@ -5,7 +5,8 @@ import com.l7tech.common.util.Locator;
 import com.l7tech.console.table.LogTableModel;
 import com.l7tech.console.util.StatisticsWorker;
 import com.l7tech.service.ServiceStatistics;
-import com.l7tech.adminws.logging.Log;
+import com.l7tech.service.ServiceAdmin;
+import com.l7tech.logging.LogAdmin;
 
 import javax.swing.*;
 import javax.swing.event.TableColumnModelListener;
@@ -40,8 +41,8 @@ public class StatisticsPanel extends JPanel {
     private static final String MIDDLE_SPACE = "     ";
     private static final String END_SPACE    = "   ";
     static Logger logger = Logger.getLogger(StatisticsPanel.class.getName());
-    static Log logstub = (Log) Locator.getDefault().lookup(Log.class);
-    private com.l7tech.adminws.service.ServiceManager serviceManager = null;
+    static LogAdmin logstub = (LogAdmin) Locator.getDefault().lookup(LogAdmin.class);
+    private ServiceAdmin serviceManager = null;
 
     // IMPORTANT NOTE:
     // 1. need to make sure that NUMBER_OF_SAMPLE_PER_MINUTE has no fraction when REFRESH_INTERVAL is changed
@@ -325,7 +326,7 @@ public class StatisticsPanel extends JPanel {
         getStatRefreshTimer().stop();
 
         if (serviceManager == null) {
-            serviceManager = (com.l7tech.adminws.service.ServiceManager) Locator.getDefault().lookup(com.l7tech.adminws.service.ServiceManager.class);
+            serviceManager = (ServiceAdmin) Locator.getDefault().lookup(ServiceAdmin.class);
             if (serviceManager == null) throw new RuntimeException("Cannot instantiate the ServiceManager");
         }
 

@@ -3,8 +3,8 @@ package com.l7tech.console.panels;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.UptimeMetrics;
-import com.l7tech.adminws.logging.Log;
 import com.l7tech.console.action.Actions;
+import com.l7tech.logging.LogAdmin;
 
 import javax.swing.*;
 import java.awt.*;
@@ -41,7 +41,7 @@ public class ServerLoadDialog extends JDialog implements ActionListener, KeyList
      */
     public ServerLoadDialog(Frame parent, boolean modal) {
         super(parent, modal);
-        logstub = (Log) Locator.getDefault().lookup(Log.class);
+        logstub = (LogAdmin) Locator.getDefault().lookup(LogAdmin.class);
         initResources();
         initComponents();
         loadValues();
@@ -311,5 +311,5 @@ public class ServerLoadDialog extends JDialog implements ActionListener, KeyList
 
     public void keyReleased(KeyEvent e) {}
 
-    private Log logstub = null;
+    private LogAdmin logstub = null;
 }

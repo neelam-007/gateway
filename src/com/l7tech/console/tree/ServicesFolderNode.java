@@ -3,7 +3,7 @@ package com.l7tech.console.tree;
 import com.l7tech.console.action.PublishServiceAction;
 import com.l7tech.console.action.CreateServiceWsdlAction;
 import com.l7tech.console.action.RefreshAction;
-import com.l7tech.adminws.service.ServiceManager;
+import com.l7tech.service.ServiceAdmin;
 
 import javax.swing.*;
 import javax.swing.tree.MutableTreeNode;
@@ -21,14 +21,14 @@ import java.awt.*;
  * @version 1.1
  */
 public class ServicesFolderNode extends AbstractTreeNode {
-    private ServiceManager serviceManager;
+    private ServiceAdmin serviceManager;
     private String title;
 
     /**
      * construct the <CODE>ServicesFolderNode</CODE> instance for
      * a given service manager with the name.
      */
-    public ServicesFolderNode(ServiceManager sm, String name) {
+    public ServicesFolderNode(ServiceAdmin sm, String name) {
         super(null);
         serviceManager = sm;
         title = name;
