@@ -500,7 +500,7 @@ public class RequestHandler extends AbstractHttpHandler {
                 location.setNodeValue(newval);
             }
             //response.addField(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML + "; charset=utf-8");
-            response.setCharacterEncoding("utf-8");
+            response.setCharacterEncoding("utf-8", true);
             response.setContentType(XmlUtil.TEXT_XML);
             XmlUtil.nodeToFormattedOutputStream(wsil, response.getOutputStream());
             response.getOutputStream().close();

@@ -9,7 +9,6 @@ package com.l7tech.proxy;
 import org.mortbay.http.*;
 import org.mortbay.http.handler.AbstractHttpHandler;
 import org.mortbay.util.InetAddrPort;
-import org.mortbay.util.MultiException;
 import org.mortbay.util.MultiMap;
 
 import javax.net.ssl.*;
@@ -162,7 +161,7 @@ public class ClientCertSslServer {
     }
 
     // Entry point for using Jetty.
-    private static void mainw() throws MultiException {
+    private static void mainw() throws Exception {
         HttpServer httpServer = new HttpServer();
         SunJsseListener jl = new SunJsseListener(getInetAddrPort());
         jl.setKeystore(KEYSTORE);

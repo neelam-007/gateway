@@ -153,7 +153,7 @@ public class ClientProxy {
             init();
         try {
             getHttpServer().start();
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.log(Level.SEVERE, "Unable to start HTTP server: ", e);
             MultiException me = new MultiException();
             me.add(e);
