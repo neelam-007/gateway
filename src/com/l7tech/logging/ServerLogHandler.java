@@ -211,7 +211,7 @@ public class ServerLogHandler extends Handler {
                 String deleteSQLStatement = "from " + TABLE_NAME + " in class " + SSGLogRecord.class.getName() +
                                             " where " + TABLE_NAME + "." + NODEID_COLNAME +
                                             " = \'" + nodeid + "\'";
-                session.delete(deleteSQLStatement);
+                session.iterate(deleteSQLStatement);
                 session.flush();
             }*/
             // flush new records
