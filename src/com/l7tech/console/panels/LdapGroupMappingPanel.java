@@ -258,11 +258,18 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
                 getGroupListModel().add(newEntry);
 
                 getGroupList().setSelectedValue(newEntry, true);
-
+                enableGroupMappingTextFields(true);
             }
         });
 
         return addButton;
+    }
+
+    private void enableGroupMappingTextFields(boolean enable) {
+        memberAttribute.setEnabled(enable);
+        nameAttribute.setEnabled(enable);
+        objectClass.setEnabled(enable);
+        memberStrategy.setEnabled(enable);
     }
 
     /**
@@ -296,6 +303,8 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
                     } else {
                         // clear the fields
                         clearDisplay();
+                        // gray out the fields
+                        enableGroupMappingTextFields(false);
                     }
                 }
             }
