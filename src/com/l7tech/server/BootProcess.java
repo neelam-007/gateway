@@ -15,6 +15,7 @@ import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.ServiceManagerImp;
+import com.l7tech.server.secureconversation.SecureConversationContextManager;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -127,6 +128,8 @@ public class BootProcess implements ServerComponentLifecycle {
             }
 
             logger.info(BuildInfo.getLongBuildString());
+
+            SecureConversationContextManager.getInstance().loadFakeSession();
 
             logger.info("Boot process complete.");
         } catch (SQLException se) {
