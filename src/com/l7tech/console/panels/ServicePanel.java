@@ -9,7 +9,7 @@ import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.service.PublishedService;
-import com.l7tech.service.Wsdl;
+import com.l7tech.common.xml.Wsdl;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;

@@ -10,7 +10,7 @@ import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
-import com.l7tech.service.Wsdl;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.service.WsdlTest;
 
 import javax.wsdl.WSDLException;

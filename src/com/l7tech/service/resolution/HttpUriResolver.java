@@ -9,7 +9,7 @@ package com.l7tech.service.resolution;
 import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.service.PublishedService;
-import com.l7tech.service.Wsdl;
+import com.l7tech.common.xml.Wsdl;
 
 import javax.wsdl.Port;
 import javax.wsdl.WSDLException;

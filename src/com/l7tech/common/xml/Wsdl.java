@@ -1,4 +1,4 @@
-package com.l7tech.service;
+package com.l7tech.common.xml;
 
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
@@ -65,7 +65,7 @@ public class Wsdl {
      * ...
      * </pre>
      *
-     * @exception WSDLException
+     * @exception javax.wsdl.WSDLException
      *                   throw on error parsing the WSDL definition
      */
     public static Wsdl newInstance(String documentBaseURI, Reader reader)
@@ -90,7 +90,7 @@ public class Wsdl {
      *               schema.
      *
      * @return the <code>Wsdl</code> instance
-     * @exception WSDLException
+     * @exception javax.wsdl.WSDLException
      *                   throw on error parsing the WSDL definition
      */
     public static Wsdl newInstance(String documentBaseURI, Document wsdlDocument)
@@ -114,7 +114,7 @@ public class Wsdl {
      *               the WSDL schema.
      *
      * @return the <code>Wsdl</code> instance
-     * @exception WSDLException
+     * @exception javax.wsdl.WSDLException
      *                   throw on error parsing the WSDL definition
      */
     public static Wsdl newInstance(String documentBaseURI, InputSource inputSource)
@@ -241,7 +241,7 @@ public class Wsdl {
      * ...
      * </pre>
      *
-     * @exception WSDLException
+     * @exception javax.wsdl.WSDLException
      *                   throw on error parsing the WSDL definition
      */
     public void toWriter(Writer writer) throws WSDLException {
@@ -269,7 +269,7 @@ public class Wsdl {
      * ...
      * </pre>
      *
-     * @exception WSDLException
+     * @exception javax.wsdl.WSDLException
      *                   throw on error parsing the WSDL definition
      */
     public void toOutputStream(OutputStream os) throws WSDLException {

@@ -7,6 +7,7 @@
 package com.l7tech.service;
 
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.objectmodel.imp.NamedEntityImp;

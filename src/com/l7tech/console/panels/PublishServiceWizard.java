@@ -16,7 +16,7 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
-import com.l7tech.service.Wsdl;
+import com.l7tech.common.xml.Wsdl;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;

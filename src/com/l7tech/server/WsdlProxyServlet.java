@@ -3,7 +3,7 @@ package com.l7tech.server;
 import com.l7tech.identity.*;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceManager;
-import com.l7tech.service.Wsdl;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.objectmodel.PersistenceContext;

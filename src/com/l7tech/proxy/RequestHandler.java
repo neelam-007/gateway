@@ -11,7 +11,7 @@ import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
 import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.proxy.util.ClientLogger;
-import com.l7tech.service.Wsdl;
+import com.l7tech.common.xml.Wsdl;
 import org.mortbay.http.HttpException;
 import org.mortbay.http.HttpRequest;
 import org.mortbay.http.HttpResponse;

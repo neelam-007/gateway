@@ -14,7 +14,7 @@ import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.service.PublishedService;
-import com.l7tech.service.Wsdl;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.Assertion;

@@ -7,7 +7,7 @@
 package com.l7tech.service.resolution;
 
 import com.l7tech.service.PublishedService;
-import com.l7tech.service.Wsdl;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.logging.LogManager;
 
 import javax.wsdl.*;

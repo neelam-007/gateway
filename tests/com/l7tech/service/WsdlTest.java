@@ -16,8 +16,10 @@ import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import com.l7tech.common.xml.Wsdl;
+
 /**
- * Class WsdlTest tests the {@link com.l7tech.service.Wsdl}
+ * Class WsdlTest tests the {@link com.l7tech.common.xml.Wsdl}
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
 public class WsdlTest extends TestCase {

@@ -1,7 +1,7 @@
 package com.l7tech.console.tree.wsdl;
 
 import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.service.Wsdl;
+import com.l7tech.common.xml.Wsdl;
 
 import javax.swing.tree.MutableTreeNode;
 import javax.wsdl.*;
