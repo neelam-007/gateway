@@ -1,10 +1,13 @@
 package com.l7tech.logging;
 
+import com.l7tech.server.ServerConfig;
+
 import java.util.logging.*;
 import java.util.Properties;
 import java.io.File;
 import java.io.InputStream;
 import java.io.IOException;
+import java.io.FileInputStream;
 
 /**
  * Layer 7 technologies, inc.
@@ -117,9 +120,27 @@ public class ServerLogManager extends LogManager {
 
     private synchronized Properties getProps() {
         if (props == null) {
-            InputStream inputStream = getClass().getResourceAsStream(PROPS_PATH);
-            props = new Properties();
             try {
+                InputStream inputStream = null;
+
+                String path = ServerConfig.getInstance().getLogPropertiesPath();
+                if ( path != null && path.length() > 0 ) {
+                    File f = new File( path );
+                    if ( f.exists() ) {
+                        try {
+                            inputStream = new FileInputStream( f );
+                        } catch ( IOException ioe ) {
+                            ioe.printStackTrace( System.err );
+                            // inputStream stays null
+                        }
+                    }
+                }
+
+                if ( inputStream == null ) {
+                    inputStream = getClass().getResourceAsStream(PROPS_PATH);
+                }
+
+                props = new Properties();
                 props.load(inputStream);
             } catch (IOException e) {
                 throw new RuntimeException(e);
