@@ -27,7 +27,8 @@ public abstract class XmlSecurityTreeNode extends LeafAssertionTreeNode {
     public String getName() {
         if (userObject instanceof XmlSecurityAssertion) {
             XmlSecurityAssertion ass = (XmlSecurityAssertion) userObject;
-            return getBaseName() + " - " + (ass.isEncryption() ? "sign and encrypt" : "sign only");
+            // return getBaseName() + " - " + (ass.isEncryption() ? "sign and encrypt" : "sign only");
+            return getBaseName();
         } else
             return getBaseName();
     }

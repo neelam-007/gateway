@@ -8,6 +8,7 @@ import com.l7tech.console.tree.policy.XmlSecurityTreeNode;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertion;
+import com.l7tech.policy.assertion.xmlsec.ElementSecurity;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -90,18 +91,22 @@ public class XmlSecurityPropertiesAction extends NodeAction {
 
         String signOnly = "Sign only";
         String encrypt = "Sign and encrypt";
-
-        String s =
-          (String)JOptionPane.showInputDialog(Registry.getDefault().
+        ElementSecurity[] ese = ass.elements();
+        if (ese == null || ese.length == 0) {
+            throw new IllegalArgumentException("empty elements");
+        }
+        ElementSecurity es = ese[0];
+        String s = (String)JOptionPane.showInputDialog(Registry.getDefault().
           getComponentRegistry().getMainWindow(),
             "Please select the " + n.getBaseName() + " options:\n",
             n.getBaseName() + " assertion properties",
             JOptionPane.PLAIN_MESSAGE,
             new ImageIcon(new XmlRequestSecurityNode().getIcon()),
             new Object[]{signOnly, encrypt},
-            ass.isEncryption() ? encrypt : signOnly);
+            es.isEncryption() ? encrypt : signOnly);
+
         if ((s != null) && (s.length() > 0)) {
-            ass.setEncryption(!s.equalsIgnoreCase(signOnly));
+            es.setEncryption(!s.equalsIgnoreCase(signOnly));
             assertionChanged();
         }
     }

@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
+import com.l7tech.policy.assertion.xmlsec.ElementSecurity;
 import com.l7tech.server.SessionManager;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.w3c.dom.Document;
@@ -46,7 +47,11 @@ import java.util.logging.Logger;
  */
 public class ServerXmlRequestSecurity implements ServerAssertion {
     public ServerXmlRequestSecurity(XmlRequestSecurity data ) {
-        this.data = data;
+        /*
+            todo: temporary change in migration to multielement sign/encrypt
+            need to upgrade the multielement handling below  
+        */
+        this.data = data.elements()[0];
         logger = LogManager.getInstance().getSystemLogger();
     }
 
@@ -63,7 +68,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             response.setParameter( Response.PARAM_HTTP_SESSION_STATUS, "invalid" );
             return AssertionStatus.FALSIFIED;
         }
-        
+
         if (xmlsecSession == null) {
             response.setPolicyViolated(true);
             response.setAuthenticationMissing(true);
@@ -237,7 +242,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
         return soapmsg;
     }
 
-    protected XmlRequestSecurity data;
+    protected ElementSecurity data;
     private Logger logger = null;
 
 

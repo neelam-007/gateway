@@ -24,11 +24,6 @@ public class SamlTreeNode extends LeafAssertionTreeNode {
         SamlSecurity ss = (SamlSecurity)asAssertion();
         StringBuffer sb = new StringBuffer("[");
         int nprops = 0;
-        if (ss.isEncryption()) {
-            sb = new StringBuffer("[");
-            sb.append("require encryption");
-            nprops++;
-        }
         if (ss.isValidateValidityPeriod()) {
             if (nprops > 0) {
                 sb.append(", ");

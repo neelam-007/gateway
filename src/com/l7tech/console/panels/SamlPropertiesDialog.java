@@ -36,7 +36,6 @@ public class SamlPropertiesDialog extends JDialog {
 
     private void initialize() {
         setContentPane(mainPanel);
-        requireEncryption.setSelected(samlSecurity.isEncryption());
         requireSignature.setSelected(samlSecurity.isValidateSignature());
         requireEncryption.setEnabled(false);
         requireSignature.setEnabled(false);
@@ -45,7 +44,6 @@ public class SamlPropertiesDialog extends JDialog {
 
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                samlSecurity.setEncryption(requireEncryption.isSelected());
                 samlSecurity.setValidateSignature(requireSignature.isSelected());
                 samlSecurity.setValidateValidityPeriod(requireTimeValidity.isSelected());
                 SamlPropertiesDialog.this.dispose();
@@ -118,15 +116,15 @@ public class SamlPropertiesDialog extends JDialog {
         final JCheckBox _10;
         _10 = new JCheckBox();
         requireTimeValidity = _10;
-        _10.setHorizontalAlignment(10);
         _10.setHorizontalTextPosition(11);
+        _10.setHorizontalAlignment(10);
         _10.setText("Check time and date on ticket");
         _9.add(_10, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 8, 0, 3, 0, null, null, null));
         final JCheckBox _11;
         _11 = new JCheckBox();
         requireEncryption = _11;
-        _11.setHorizontalAlignment(10);
         _11.setHorizontalTextPosition(11);
+        _11.setHorizontalAlignment(10);
         _11.setText("Require encrypted ticket");
         _9.add(_11, new com.intellij.uiDesigner.core.GridConstraints(2, 1, 1, 1, 8, 0, 3, 0, null, null, null));
         final JCheckBox _12;

@@ -9,6 +9,7 @@ import com.l7tech.message.XmlResponse;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
+import com.l7tech.policy.assertion.xmlsec.ElementSecurity;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.ServerSoapUtil;
 import com.l7tech.common.util.KeystoreUtils;
@@ -50,7 +51,11 @@ import java.util.logging.Logger;
 public class ServerXmlResponseSecurity implements ServerAssertion {
 
     public ServerXmlResponseSecurity(XmlResponseSecurity data) {
-        this.data = data;
+        /*
+            todo: temporary change in migration to multielement sign/encrypt
+            need to upgrade the multielement handling below
+        */
+        this.data = data.elements()[0];
     }
 
     /**
@@ -179,5 +184,5 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
     }
 
     private Logger logger = LogManager.getInstance().getSystemLogger();
-    private XmlResponseSecurity data = null;
+    private ElementSecurity data = null;
 }

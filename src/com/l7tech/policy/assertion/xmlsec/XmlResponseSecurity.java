@@ -2,67 +2,45 @@ package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.policy.assertion.Assertion;
 
+import java.util.List;
+import java.util.ArrayList;
+
 /**
- * Enforces XML digital signature on the entire envelope of the request and maybe XML encryption on the body
- * element of the request.
+ * Enforces XML security on the message elements or the entire message.
  *
- * Whether XML encryption is used depends on the property encryption.
- *
- * <br/><br/>
- * LAYER 7 TECHNOLOGIES, INC<br/>
- *
- * User: flascell<br/>
- * Date: Aug 27, 2003<br/>
- * $Id$
+ * <code>ElementSecurity</code> list.
+ * <p>
+ * @author flascell<br/>
+ * @version Aug 27, 2003<br/>
  */
 public class XmlResponseSecurity extends Assertion implements XmlSecurityAssertion {
+
     /**
-     * This property describes whether or not the body should be encrypted as opposed to only signed
+     * Return the array of security elements that are specified
+     *
+     * @return the array of XML security elements
      */
-    public boolean isEncryption() {
-        return encryption;
+    public ElementSecurity[] elements() {
+        return (ElementSecurity[])elements.toArray(new ElementSecurity[]{});
     }
 
     /**
-     * This property describes whether or not the body should be encrypted as opposed to only signed
+     * Add the security element to the list of elements
+     *
+     * @param xse the security element
      */
-    public void setEncryption(boolean encryption) {
-        this.encryption = encryption;
+    public void addSecurityElement(XmlSecurityAssertion xse) {
+        elements.add(xse);
     }
 
     /**
-     * Set the cipher to use when encryption is enabled.
-     * @param cipherName the cipher to use, ie "AES"
+     * Remove the security element from the list of elements
+     *
+     * @param xse the security element
      */
-    public void setCipher(String cipherName) {
-        this.cipherName = cipherName;
+    public void removeSecurityElement(XmlSecurityAssertion xse) {
+        elements.remove(xse);
     }
 
-    /**
-     * Get the cipher to use when encryption is enabled.
-     * @return the cipher to use, ie "AES"
-     */
-    public String getCipher() {
-        return cipherName;
-    }
-
-    /**
-     * Set the symmetric key length to use when encryption is enabled.
-     * @param keyBits the size of the key in bits, ie 128
-     */
-    public void setKeyLength(int keyBits) {
-        this.keyBits = keyBits;
-    }
-
-    /**
-     * Get the symmetric key length to use when encryption is enabled.
-     * @return the size of the key in bits, ie 128
-     */
-    public int getKeyLength() {
-        return keyBits;
-    }
-
-    private boolean encryption = false;
-    private String cipherName = DEFAULT_CIPHER;
-    private int keyBits = DEFAULT_KEYBITS;
+    private List elements = new ArrayList();
 }

@@ -8,6 +8,7 @@ import com.l7tech.common.security.xml.SoapMsgSigner;
 import com.l7tech.common.security.xml.XmlMangler;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
+import com.l7tech.policy.assertion.xmlsec.ElementSecurity;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
@@ -47,7 +48,11 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
     private static final ClientLogger log = ClientLogger.getInstance(ClientHttpClientCert.class);
 
     public ClientXmlRequestSecurity(XmlRequestSecurity data) {
-        this.data = data;
+        /*
+            todo: temporary change in migration to multielement sign/encrypt
+            need to upgrade the multielement handling below
+        */   
+        this.data = data.elements()[0];
     }
 
     /**
@@ -128,5 +133,5 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
         return "com/l7tech/proxy/resources/tree/xmlencryption.gif";
     }
 
-    protected XmlRequestSecurity data;
+    protected ElementSecurity data;
 }
