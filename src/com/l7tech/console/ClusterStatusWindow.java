@@ -189,8 +189,18 @@ public class ClusterStatusWindow extends JFrame {
         messagePane.setMinimumSize(new java.awt.Dimension(136, 40));
         messagePane.setMaximumSize(new java.awt.Dimension(136, 40));
         messagePane.add(getLastUpdateLabel(), java.awt.BorderLayout.EAST);
+        messagePane.add(getClusterConnectionStatusLabel(), java.awt.BorderLayout.WEST);
 
         return messagePane;
+    }
+
+    private JLabel getClusterConnectionStatusLabel(){
+        if(clusterConnectionStatus != null) return clusterConnectionStatus;
+
+        clusterConnectionStatus = new JLabel();
+        clusterConnectionStatus.setText("");
+
+        return clusterConnectionStatus;
     }
 
     private JLabel getLastUpdateLabel(){
@@ -504,11 +514,13 @@ public class ClusterStatusWindow extends JFrame {
     public void onConnect() {
         initAdminConnection();
         initCaches();
-
+        getClusterConnectionStatusLabel().setText("");
         getStatusRefreshTimer().start();
     }
 
     public void onDisconnect() {
+        getClusterConnectionStatusLabel().setText("      Error: Connection to the gateway cluster is down.");
+        getClusterConnectionStatusLabel().setForeground(Color.red);
         getStatusRefreshTimer().stop();
         serviceManager = null;
         clusterStatusAdmin = null;
@@ -556,6 +568,7 @@ public class ClusterStatusWindow extends JFrame {
     private javax.swing.JLabel serviceStatTitle;
     private javax.swing.JLabel clusterStatusTitle;
     private javax.swing.JLabel updateTimeStamp;
+    private javax.swing.JLabel clusterConnectionStatus;
     private javax.swing.JPanel messagePane;
     private javax.swing.JPanel frameContentPane;
     private javax.swing.JPanel mainPane;
