@@ -5,11 +5,10 @@ import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.Locator;
 import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.User;
-import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.PersistenceContext;
-import com.l7tech.objectmodel.TransactionException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.server.AuthenticatableHttpServlet;
+import com.l7tech.cluster.ClusterInfoManager;
+import com.l7tech.cluster.ClusterNodeInfo;
 import sun.security.x509.X500Name;
 
 import javax.servlet.ServletConfig;
@@ -22,6 +21,8 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.logging.Level;
 
 
@@ -61,7 +62,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
 
         // if the kstore cannot be found, try to proxy the request to the ssg that has the kstore
         if (!keystorePresent()) {
-            proxyRequestToSsgThatHasRootKStore(request, response);
+            proxyReqToSsgWithRootKStore(request, response);
             return;
         }
 
@@ -222,8 +223,38 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         return true;
     }
 
-    private void proxyRequestToSsgThatHasRootKStore(HttpServletRequest request, HttpServletResponse response) {
-        // todo, implement this for cluster configs
+    private void proxyReqToSsgWithRootKStore(HttpServletRequest req, HttpServletResponse res) throws IOException {
+        // look for ip address of master server
+        ClusterInfoManager manager = new ClusterInfoManager();
+        Collection clusterNodes = null;
+        try {
+            clusterNodes = manager.retrieveClusterStatus();
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "cannot get cluster info", e);
+            clusterNodes = null;
+        }
+        if (clusterNodes == null) {
+            String msg = "could not get root key for signing";
+            logger.warning(msg);
+            res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
+            return;
+        }
+        String masterhostname = null;
+        for (Iterator i = clusterNodes.iterator(); i.hasNext();) {
+            ClusterNodeInfo node = (ClusterNodeInfo)i.next();
+            if (node.getIsMaster()) {
+                masterhostname = node.getAddress();
+                break;
+            }
+        }
+        if (masterhostname == null) {
+            String msg = "could not get root key for signing";
+            logger.warning(msg);
+            res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
+            return;
+        }
+        logger.finest("redirecting request to master " + masterhostname);
+        // todo, implement proxying of request
         return;
     }
 
