@@ -116,6 +116,26 @@ public final class TestDocuments {
         return ettkServerCertificate = (X509Certificate)keyStore.getCertificate(serverAlias);
     }
 
+    private static PrivateKey ettkClientPrivateKey = null;
+    public static synchronized PrivateKey getEttkClientPrivateKey() throws GeneralSecurityException, IOException
+    {
+        if (ettkClientPrivateKey != null) return ettkClientPrivateKey;
+        KeyStore keyStore = getEttkKeystore();
+        Properties ksp = getEttkKeystoreProperties();
+        String clientAlias = ksp.getProperty("keystore.client.alias");
+        String clientKeyPassword = ksp.getProperty("keystore.client.keypass");
+        return ettkClientPrivateKey = (PrivateKey)keyStore.getKey(clientAlias, clientKeyPassword.toCharArray());
+    }
+
+    private static X509Certificate ettkClientCertificate = null;
+    public static synchronized X509Certificate getEttkClientCertificate() throws GeneralSecurityException, IOException {
+        if (ettkClientCertificate != null) return ettkClientCertificate;
+        KeyStore keyStore = getEttkKeystore();
+        Properties ksp = getEttkKeystoreProperties();
+        String clientAlias = ksp.getProperty("keystore.client.alias");
+        return ettkClientCertificate = (X509Certificate)keyStore.getCertificate(clientAlias);
+    }
+
     private static PrivateKey dotNetServerPrivateKey = null;
     public static synchronized PrivateKey getDotNetServerPrivateKey() throws Exception {
         if (dotNetServerPrivateKey != null) return dotNetServerPrivateKey;
