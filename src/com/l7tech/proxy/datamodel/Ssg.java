@@ -9,6 +9,7 @@ import com.l7tech.proxy.ssl.ClientProxyKeyManager;
 import com.l7tech.proxy.ssl.ClientProxyTrustManager;
 import org.apache.commons.httpclient.Cookie;
 import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509KeyManager;
@@ -46,6 +47,9 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     // The file that contains the trusted server cert for this Ssg
     private static final String TRUST_FILE = ClientProxy.PROXY_CONFIG + File.separator + "certs";
     private static final String TRUST_EXT = ".p12";
+
+    // Maximum simultaneous outbound connections.  Throttled wide-open.
+    public static final int MAX_CONNECTIONS = 60000;
 
     // Hack to allow lazy initialization of SSL stuff
     private static class SslInstanceHolder {
@@ -95,6 +99,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private transient long timeOffset = 0;
 
     private transient ThreadLocal httpClient = new ThreadLocalHttpClient();
+    private transient MultiThreadedHttpConnectionManager httpConnectionManager = null;
 
     public int compareTo(final Object o) {
         long id0 = getId();
@@ -805,6 +810,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         sslContext = createSslContext();
         serverCert = null;
         clientCert = null;
+        httpConnectionManager = createHttpConnectionManager();
         httpClient = new ThreadLocalHttpClient();
     }
 
@@ -956,9 +962,22 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         return (HttpClient)this.httpClient.get();
     }
 
-    private static class ThreadLocalHttpClient extends ThreadLocal {
+    private synchronized MultiThreadedHttpConnectionManager getHttpConnectionManager() {
+        if (httpConnectionManager == null)
+            httpConnectionManager = createHttpConnectionManager();
+        return httpConnectionManager;
+    }
+
+    private MultiThreadedHttpConnectionManager createHttpConnectionManager() {
+        MultiThreadedHttpConnectionManager cm = new MultiThreadedHttpConnectionManager();
+        cm.setMaxConnectionsPerHost(MAX_CONNECTIONS);
+        cm.setMaxTotalConnections(MAX_CONNECTIONS);
+        return cm;
+    }
+
+    private class ThreadLocalHttpClient extends ThreadLocal {
         protected Object initialValue() {
-            HttpClient hc = new HttpClient();
+            HttpClient hc = new HttpClient(getHttpConnectionManager());
             return hc;
         }
     }
