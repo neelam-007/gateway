@@ -87,21 +87,30 @@ public class Client {
     // PRIVATES
     // ************************************************
 
-    /*
+
     public static void main(String[] args) throws Exception {
+        System.out.println("Start test");
+
         Client me = new Client("http://localhost:8080/ssg/services/serviceAdmin", "ssgadmin", "ssgadminpasswd");
-        if (me == null) System.err.println("!!!!!!!");
-        System.out.println(me.resolveWsdlTarget("http://localhost:8080/simplewsdl.xml"));
-        System.out.println(me.findServiceByPrimaryKey(654));
+
+        System.out.println("FIND ALL SERVICES");
         com.l7tech.objectmodel.EntityHeader[] res = me.findAllPublishedServices();
-        for (int i = 0; i < res.length; i++) System.out.println(res[i].toString());
-        res = me.findAllPublishedServicesByOffset(231,5466);
-        for (int i = 0; i < res.length; i++) System.out.println(res[i].toString());
-        me.savePublishedService(me.findServiceByPrimaryKey(654));
-        me.deletePublishedService(654);
+        
+        for (int i = 0; i < res.length; i++) {
+            System.out.println(res[i].toString());
+
+            PublishedService service = me.findServiceByPrimaryKey(res[i].getOid());
+
+            System.out.println("SERVICE FOUND");
+            System.out.println(service);
+
+            System.out.println("SAVING SERVICE");
+            me.savePublishedService(service);
+        }
+
         System.out.println("done");
     }
-    */
+
 
     private Call createStubCall() throws java.rmi.RemoteException {
         // create service, call
