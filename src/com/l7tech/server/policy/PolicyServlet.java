@@ -391,7 +391,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     private ArrayList findCheckInfos(String username) throws FindException {
         IdentityProviderConfigManager configManager = new IdProvConfManagerServer();
         ArrayList checkInfos = new ArrayList();
-
+        /* TODO fix the problem with the IdProvConfManagerServer. Something was changed where the factory need to be set now (?)
         try {
             Collection idps = configManager.findAllIdentityProviders();
             for (Iterator i = idps.iterator(); i.hasNext();) {
@@ -419,7 +419,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         } catch (RemoteException e) {
             logger.log(Level.WARNING, "Custom assertions error", e);
         }
-
+        */
         return checkInfos;
     }
 
