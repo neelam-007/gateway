@@ -1,0 +1,59 @@
+package com.l7tech.console.panels;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+
+/**
+ * A dialog that lets a user specify a namespace URI and an associated prefix.
+ * <p/>
+ * <br/><br/>
+ * LAYER 7 TECHNOLOGIES, INC<br/>
+ * User: flascell<br/>
+ * Date: Nov 16, 2004<br/>
+ * $Id$
+ */
+public class NamespacePrefixQueryForm extends JDialog {
+    private JPanel mainPanel;
+    private JTextField uritxt;
+    private JTextField prefixtxt;
+    private JButton cancelbutton;
+    private JButton okbutton;
+    boolean cancelled = false;
+
+    public String nsuri;
+    public String prefix;
+
+    public NamespacePrefixQueryForm(Dialog owner) {
+        super(owner, true);
+        initialize();
+    }
+
+    private void initialize() {
+        setContentPane(mainPanel);
+        setTitle("XML Namespace");
+        okbutton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                ok();
+            }
+        });
+
+        cancelbutton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                cancel();
+            }
+        });
+    }
+
+    private void ok() {
+        nsuri = uritxt.getText();
+        prefix = prefixtxt.getText();
+        NamespacePrefixQueryForm.this.dispose();
+    }
+
+    private void cancel() {
+        cancelled = true;
+        NamespacePrefixQueryForm.this.dispose();
+    }
+}
