@@ -45,9 +45,9 @@ fi
 # Set Java system properties
 if  [ -e "/ssg/etc/conf/cluster_hostname" ];
 then
-        JAVA_OPTS="$JAVA_OPTS -Djava.awt.headless=true -Djini.server.hostname=`cat /ssg/etc/conf/cluster_hostname`"
+        JAVA_OPTS="$JAVA_OPTS -Djava.awt.headless=true -Djava.rmi.server.hostname=`cat /ssg/etc/conf/cluster_hostname`"
 else
-        JAVA_OPTS="$JAVA_OPTS -Djava.awt.headless=true -Djini.server.hostname=`hostname -f`"
+        JAVA_OPTS="$JAVA_OPTS -Djava.awt.headless=true -Djava.rmi.server.hostname=`hostname -f`"
 fi
 
 if $cygwin; then
