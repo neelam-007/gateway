@@ -303,7 +303,7 @@ public class RequestSwAAssertionDialog extends JDialog {
         }
     }
 
-    public void populateMimePartsData(Map mimeParts) {
+    private void populateMimePartsData(Map mimeParts) {
         if(mimeParts == null) throw new RuntimeException("mimeParts is NULL");
 
         // clear the MIME part table
@@ -325,7 +325,7 @@ public class RequestSwAAssertionDialog extends JDialog {
 
             Collection bindingList = parsedWsdl.getBindings();
 
-            // for each binding
+            // for each binding in WSDL
             for (Iterator iterator = bindingList.iterator(); iterator.hasNext();) {
                 Binding binding = (Binding) iterator.next();
 
@@ -333,13 +333,14 @@ public class RequestSwAAssertionDialog extends JDialog {
                 Collection boList = binding.getBindingOperations();
                 HashMap operations = new HashMap();
                 
-                // for each operation
+                // for each operation in WSDL
                 for (Iterator iterator1 = boList.iterator(); iterator1.hasNext();) {
                     BindingOperation bo = (BindingOperation) iterator1.next();
 
                     HashMap partList = new HashMap();
                     Collection elements = parsedWsdl.getInputParameters(bo);
 
+                    // for each input parameter of the operation in WSDL
                     for (Iterator itr = elements.iterator(); itr.hasNext();) {
 
                         Object o = (Object) itr.next();
@@ -348,25 +349,36 @@ public class RequestSwAAssertionDialog extends JDialog {
                             MIMEMultipartRelated multipart = (MIMEMultipartRelated) o;
 
                             List parts = multipart.getMIMEParts();
+
+                            // for each MIME part of the input parameter of the operation in WSDL
                             for (Iterator partsItr = parts.iterator(); partsItr.hasNext();) {
 
                                 MIMEPart mimePart = (MIMEPart) partsItr.next();
                                 Collection mimePartSubElements = parsedWsdl.getMimePartSubElements(mimePart);
 
+                                // for each extensible part of the MIME part of the input parameter of the operation in WSDL
                                 for (Iterator subElementItr = mimePartSubElements.iterator(); subElementItr.hasNext();) {
                                     Object subElement = (Object) subElementItr.next();
 
                                     if (subElement instanceof MIMEContent) {
                                         MIMEContent mimeContent = (MIMEContent) subElement;
-                                        MimePartInfo part = new MimePartInfo(mimeContent.getPart(), mimeContent.getType());
 
                                         //concat the content type if the part alreay exists
-                                        MimePartInfo partInfo = (MimePartInfo) partList.get(mimeContent.getPart());
-                                        if (partInfo != null) {
-                                            partInfo.setContentType(partInfo.getContentType() + mimeContent.getPart());
+                                        MimePartInfo retrievedPart = (MimePartInfo) partList.get(mimeContent.getPart());
+                                        if (retrievedPart != null) {
+                                            retrievedPart.setContentType(retrievedPart.getContentType() + mimeContent.getType());
                                         } else {
-                                            partList.put(mimeContent.getPart(), part);
+                                            MimePartInfo newPart = new MimePartInfo(mimeContent.getPart(), mimeContent.getType());
+                                            newPart.setContentType( mimeContent.getType());
+
+                                            // default length 1000 Kbytes
+                                            newPart.setMaxLength(1000);
+
+                                            // add the new part
+                                            partList.put(mimeContent.getPart(), newPart);
                                         }
+
+                                        // add the new part
                                     } else if (subElement instanceof SOAPBody) {
                                         // don't care about soapPart for now
                                         //SOAPBody soapBody = (SOAPBody) subElement;
@@ -376,7 +388,6 @@ public class RequestSwAAssertionDialog extends JDialog {
                         }
                         // create BindingOperationInfo
                         BindingOperationInfo operation = new BindingOperationInfo(bo.getOperation().getName(), partList);
-                      //todo:  operation.setXpath();
                         operations.put(bo.getOperation().getName(), operation);
                     }
                 }
