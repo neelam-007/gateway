@@ -22,7 +22,10 @@ import java.awt.event.ActionEvent;
  */
 
 public class IdentityProviderWizard extends Wizard {
-    static private JButton buttonTest = null;
+
+    // don't set the buttonTest to null as the parent class will initialize it when calling createButtonPanel()
+    // setting the buttonTest variable to something here will override the value initialized by the the parent class
+    private JButton buttonTest;
     private ResourceBundle resources = null;
 
     /**
