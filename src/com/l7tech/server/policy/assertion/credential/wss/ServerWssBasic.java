@@ -12,6 +12,7 @@ import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.message.XmlRequest;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.PrincipalCredentials;
@@ -26,15 +27,35 @@ import org.xml.sax.helpers.XMLReaderFactory;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author alex
  * @version $Revision$
  */
-public class ServerWssBasic extends ServerWssCredentialSource implements ServerAssertion {
-    public ServerWssBasic( WssBasic data ) {
-        super( data );
+public class ServerWssBasic implements ServerAssertion {
+    public ServerWssBasic(WssBasic data) {
         _data = data;
+        logger = LogManager.getInstance().getSystemLogger();
+    }
+
+    public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
+        PrincipalCredentials creds = null;
+        try {
+            creds = findCredentials(request, response);
+        } catch (IOException e) {
+            logger.log(Level.SEVERE, "cannot find credentials", e);
+            throw new PolicyAssertionException(e);
+        } catch (CredentialFinderException e) {
+            logger.log(Level.SEVERE, "cannot find credentials", e);
+            return AssertionStatus.AUTH_REQUIRED;
+        }
+        if (creds == null) {
+            response.setPolicyViolated(true);
+            return AssertionStatus.FALSIFIED;
+        }
+        request.setPrincipalCredentials(creds);
+        return AssertionStatus.NONE;
     }
 
     public PrincipalCredentials findCredentials( Request grequest, Response gresponse ) throws IOException, CredentialFinderException {
@@ -48,12 +69,12 @@ public class ServerWssBasic extends ServerWssCredentialSource implements ServerA
         try {
             xmlreq = request.getRequestXml();
         } catch (IOException e) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Exception getting a xml request " + e.getMessage(), e);
+            logger.log(Level.SEVERE, "Exception getting a xml request " + e.getMessage(), e);
             throw new CredentialFinderException("Exception getting the xml request " + e.getMessage(), e);
         }
         // in order to get WSS credentials, we need a soap document
         if (xmlreq == null || xmlreq.length() < 1) {
-            LogManager.getInstance().getSystemLogger().log(Level.WARNING, "No xml request provided to extract wss element from");
+            logger.log(Level.WARNING, "No xml request provided to extract wss element from");
             return null;
         }
 
@@ -64,7 +85,7 @@ public class ServerWssBasic extends ServerWssCredentialSource implements ServerA
         try {
             reader = XMLReaderFactory.createXMLReader();
         } catch (SAXException e) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Exception getting an XMLReader " + e.getMessage(), e);
+            logger.log(Level.SEVERE, "Exception getting an XMLReader " + e.getMessage(), e);
             throw new CredentialFinderException("Exception getting an XMLReader " + e.getMessage(), e);
         }
         WsseBasicSaxHandler handler = new WsseBasicSaxHandler();
@@ -78,33 +99,37 @@ public class ServerWssBasic extends ServerWssCredentialSource implements ServerA
             String passwd = handler.getParsedPassword();
             // make sure we got a password (avoid a NPE)
             if (passwd == null || passwd.length() < 1) {
-                LogManager.getInstance().getSystemLogger().log(Level.WARNING, "parsing completed but no password available.");
+                logger.log(Level.WARNING, "parsing completed but no password available.");
                 return null;
             }
             // make sure we have a clear text passwd
-            if (!handler.DEFAULT_PASSWORD_TYPE.equals(handler.getPasswdType())) return null;
+            if (!handler.DEFAULT_PASSWORD_TYPE.equals(handler.getPasswdType())) {
+                logger.warning("password is of wrong type: " + handler.getPasswdType());
+                return null;
+            }
 
             // return the whole thing
             // this is good, we got what we needed
             User u = new User();
             u.setLogin(handler.getParsedUsername());
-            LogManager.getInstance().getSystemLogger().log(Level.INFO, "Found credentials for user " + handler.getParsedUsername());
+            logger.info("Found credentials for user " + handler.getParsedUsername());
             return new PrincipalCredentials(u, passwd.getBytes(), CredentialFormat.CLEARTEXT);
         } catch (IOException e) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Exception parsing xml request " + e.getMessage(), e);
+            logger.log(Level.SEVERE, "Exception parsing xml request " + e.getMessage(), e);
             throw new CredentialFinderException("Exception parsing xml request " + e.getMessage(), e);
         } catch (SAXException e) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Exception parsing xml request " + e.getMessage(), e);
+            logger.log(Level.SEVERE, "Exception parsing xml request " + e.getMessage(), e);
             throw new CredentialFinderException("Exception parsing xml request " + e.getMessage(), e);
         } finally {
             stringReader.close();
         }
         // note: the actual result is returned in the handling of the SAXParsingCompleteException
+        logger.warning("no credentials found");
         return null;
     }
 
 
-    public AssertionStatus checkCredentials(Request request, Response response) throws CredentialFinderException {
+    /*public AssertionStatus checkCredentials(Request request, Response response) throws CredentialFinderException {
         // this is only called once we have credentials
         // there is nothing more to check here, if the creds were not in the right format,
         // the WssBasicCredentialFinder would not have returned credentials
@@ -114,7 +139,8 @@ public class ServerWssBasic extends ServerWssCredentialSource implements ServerA
         // yes, we're good
         if (pc != null) return AssertionStatus.NONE;
         else return AssertionStatus.AUTH_REQUIRED;
-    }
+    }*/
 
     protected WssBasic _data;
+    private Logger logger = null;
 }
