@@ -48,6 +48,9 @@ import java.util.logging.Logger;
 public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
     public static final String USER_AGENT = "User-Agent";
     public static final String HOST = "Host";
+    public static final String PROP_SSL_SESSION_TIMEOUT = HttpRoutingAssertion.class.getName() +
+                                                          ".sslSessionTimeoutSeconds";
+    public static final int DEFAULT_SSL_SESSION_TIMEOUT = 10 * 60;
 
     public ServerHttpRoutingAssertion(HttpRoutingAssertion assertion) {
         this.httpRoutingAssertion = assertion;
@@ -62,6 +65,9 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         try {
             sslContext = SSLContext.getInstance("SSL");
             sslContext.init(null, new TrustManager[] { SslClientTrustManager.getInstance() }, null);
+            final int timeout = Integer.getInteger(PROP_SSL_SESSION_TIMEOUT, DEFAULT_SSL_SESSION_TIMEOUT).intValue();
+            logger.info("SSL session timeout = " + timeout + " seconds");
+            sslContext.getClientSessionContext().setSessionTimeout(timeout);
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Couldn't initialize SSL Context", e);
             throw new RuntimeException(e);
