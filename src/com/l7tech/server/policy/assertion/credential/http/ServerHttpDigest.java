@@ -98,7 +98,8 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
         String realmName = (String)authParams.get( HttpDigest.PARAM_REALM );
         String digestResponse = (String)authParams.get( HttpDigest.PARAM_RESPONSE );
 
-        authParams.put( HttpDigest.PARAM_METHOD, request.getParameter( Request.PARAM_HTTP_REQUEST_URI ) );
+        authParams.put( HttpDigest.PARAM_URI, request.getParameter( Request.PARAM_HTTP_REQUEST_URI ) );
+        authParams.put( HttpDigest.PARAM_METHOD, request.getParameter( Request.PARAM_HTTP_METHOD ) );
 
         if ( (userName == null) || (realmName == null) || ( digestResponse == null) )
             return null;
