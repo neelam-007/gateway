@@ -6,15 +6,19 @@
 <!-- $Id$ -->
 
 <hibernate-mapping>
-    <class name="com.l7tech.identity.imp.IdentityProviderConfigImp" table="identity_provider">
+    <class name="com.l7tech.identity.IdentityProviderConfig" table="identity_provider">
         <id name="oid" column="oid" type="long">
             <generator class="hilo.long"/>
         </id>
-
         <property name="description" type="string"/>
         <property name="name" type="string"/>
+
+        <property name="typeVal" type="int" column="type" />
+
+        <property name="serializedProps" type="string" column="properties" />
     </class>
 
+    <!--
     <class name="com.l7tech.identity.ldap.LdapIdentityProviderConfig" table="ldap_identity_provider">
         <id name="oid" column="oid" type="long">
             <generator class="hilo.long"/>
@@ -24,6 +28,7 @@
         <property name="ldapHostURL" type="string" column="ldap_host_url" />
         <property name="searchBase" type="string" column="search_base" />
     </class>
+    -->
 
    <class name="com.l7tech.objectmodel.imp.ObjectIdentityImp" table="object_identity">
         <id name="oid" column="oid" type="long">
