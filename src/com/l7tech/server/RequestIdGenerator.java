@@ -6,26 +6,25 @@
 
 package com.l7tech.server;
 
-import com.l7tech.server.ServerConfig;
-
-import java.math.BigInteger;
+import com.l7tech.common.RequestId;
 
 /**
- * Generates reasonably-unique request identifiers incorporating a server ID, (see {@link ServerConfig#getServerId()}) a boot time and sequence number.
+ * Generates probably-unique request identifiers incorporating a server ID,
+ * (see {@link ServerConfig#getServerId()}) a boot time and sequence number.
  *
  * @author alex
  * @version $Revision$
  */
 public class RequestIdGenerator {
-    public static BigInteger next() {
+    public static RequestId next() {
         RequestIdGenerator instance = getInstance();
         long seq;
-        BigInteger next;
+        long time;
         synchronized( instance ) {
             seq = instance.nextSequence();
-            next = new BigInteger( instance._seed.toString() );
+            time = instance._bootTime;
         }
-        return next.add( new BigInteger( new Long( seq ).toString() ) );
+        return new RequestId( instance._serverId, time, seq );
     }
 
     private static synchronized RequestIdGenerator getInstance() {
@@ -34,10 +33,7 @@ public class RequestIdGenerator {
     }
 
     private void reseed( long time ) {
-        BigInteger seedServerId = new BigInteger( new Integer( _serverId ).toString() ).shiftLeft(120);
-        BigInteger bigTime = new BigInteger( new Long( time ).toString() ).shiftLeft(72);
-
-        _seed = seedServerId.or( bigTime );
+        _bootTime = time;
     }
 
     private RequestIdGenerator() {
@@ -54,10 +50,10 @@ public class RequestIdGenerator {
         return _sequence++;
     }
 
-    private BigInteger _seed;
+    private long _bootTime;
     private int _serverId;
     private long _sequence;
 
     private static RequestIdGenerator _instance;
-    public static final long MAX_SEQ = 0xffffffffffffffL; // 2^56 - 1
+    public static final long MAX_SEQ = Long.MAX_VALUE;
 }

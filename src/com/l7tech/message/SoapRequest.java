@@ -1,5 +1,6 @@
 package com.l7tech.message;
 
+import com.l7tech.common.RequestId;
 import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.RequestIdGenerator;
@@ -9,7 +10,6 @@ import org.xml.sax.SAXException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.math.BigInteger;
 
 /**
  * Encapsulates a SOAP request. Not thread-safe. Don't forget to call close() when you're done!
@@ -120,7 +120,7 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
 
     protected abstract Reader doGetRequestReader() throws IOException;
 
-    protected BigInteger _id;
+    protected RequestId _id;
     protected boolean _authenticated;
     protected boolean _routed;
     protected Reader _requestReader;

@@ -8,6 +8,8 @@ import java.math.BigInteger;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.l7tech.common.RequestId;
+
 /**
  * @author alex
  * @version $Revision$
@@ -31,7 +33,7 @@ public class RequestIdGeneratorTest extends TestCase {
 
     class CounterThread extends Thread {
         public void run() {
-            BigInteger id = null, lastId = null;
+            RequestId id = null, lastId = null;
             for ( int i = 0; i < 100000; i++ ) {
                 id = RequestIdGenerator.next();
                 _ids.add( id );
@@ -52,28 +54,35 @@ public class RequestIdGeneratorTest extends TestCase {
         BigInteger bigTime = new BigInteger( new Long( ServerConfig.getInstance().getServerBootTime() ).toString() );
         System.err.println( "bigTime = " + bigTime + " (" + bytesToHex( bigTime.toByteArray() ) + ")" );
 
-        BigInteger id1 = RequestIdGenerator.next();
-        System.err.println( "id1 = " + id1 + " (" + bytesToHex( id1.toByteArray() ) + ")" );
-        BigInteger id2 = RequestIdGenerator.next();
-        System.err.println( "id2 = " + id2 + " (" + bytesToHex( id2.toByteArray() ) + ")" );
+        RequestId id1 = RequestIdGenerator.next();
+        System.err.println( "id1 = " + id1 + " (" + id1.toString() + ")" );
+        RequestId id2 = RequestIdGenerator.next();
+        System.err.println( "id2 = " + id2 + " (" + id2.toString() + ")" );
         assertNotSame( "Generated IDs the same", id1, id2 );
     }
 
     public void testMonotonicity() throws Exception {
         CounterThread ct1 = new CounterThread();
         CounterThread ct2 = new CounterThread();
+        CounterThread ct3 = new CounterThread();
         System.err.println( "Starting thread #1" );
         ct1.start();
         System.err.println( "Starting thread #2" );
         ct2.start();
+        System.err.println( "Starting thread #3" );
+        ct3.start();
         System.err.println( "Waiting for thread #1" );
         ct1.join();
         System.err.println( "Waiting for thread #2" );
         ct2.join();
+        System.err.println( "Waiting for thread #3" );
+        ct3.join();
         Set set1 = ct1._ids;
         Set set2 = ct2._ids;
+        Set set3 = ct3._ids;
 
-        set1.retainAll(set2);
+        set2.retainAll( set3 );
+        set1.retainAll( set2 );
         assertTrue( "Overlapping ID sets!", set1.isEmpty() );
     }
 
