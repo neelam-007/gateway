@@ -1,7 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.panels.Utilities;
-import com.l7tech.console.tree.policy.IdentityPolicyView;
+//import com.l7tech.console.tree.policy.IdentityPolicyView;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 
@@ -55,10 +55,10 @@ public class IdentityPolicyAction extends BaseAction {
      * without explicitly asking for the AWT event thread!
      */
     public void performAction() {
-        Frame f = Registry.getDefault().getWindowManager().getMainWindow();
+     /*   Frame f = Registry.getDefault().getWindowManager().getMainWindow();
         IdentityPolicyView pw = new IdentityPolicyView(f, assertion);
         pw.pack();
         Utilities.centerOnScreen(pw);
-        pw.show();
+        pw.show();*/
     }
 }
