@@ -44,7 +44,6 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
     private JButton addButton;
     private JButton removeButton;
     private JButton propertiesButton;
-    private boolean holderOfKeySelected = false;
     private boolean x509CertSelected = false;
     private boolean limitationsAccepted = true;
 
@@ -94,7 +93,6 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
 
         FederatedIdentityProviderConfig iProviderConfig = (FederatedIdentityProviderConfig) settings;
 
-        holderOfKeySelected = iProviderConfig.isSamlSupported() && iProviderConfig.getSamlConfig().isSubjConfHolderOfKey();
         x509CertSelected = iProviderConfig.isX509Supported();
 
         long[] oids = iProviderConfig.getTrustedCertOids();
@@ -218,14 +216,6 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
             x509Msg.setIcon(icon);
             panel1.add(x509Msg, new GridConstraints(position++, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
         }
-
-        if(holderOfKeySelected) {
-            final JLabel holderOfKeyMsg = new JLabel();
-            holderOfKeyMsg.setText(" Holder-of-Key Subject Confirmation Method not supported");
-            holderOfKeyMsg.setIcon(icon);
-            panel1.add(holderOfKeyMsg, new GridConstraints(position++, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
-        }
-
         return panel1;
     }
 

@@ -38,15 +38,6 @@ public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
         setProperty(PROP_X509_SUPPORTED,Boolean.valueOf(x509));
     }
 
-    public SamlConfig getSamlConfig() {
-        SamlConfig config = (SamlConfig)getProperty(PROP_SAML_CONFIG);
-        if ( config == null ) {
-            config = new SamlConfig();
-            setProperty(PROP_SAML_CONFIG,config);
-        }
-        return config;
-    }
-
     public X509Config getX509Config() {
         X509Config config = (X509Config)getProperty(PROP_X509_CONFIG);
         if ( config == null ) {
@@ -75,7 +66,6 @@ public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
         sb.append("name=\"").append(_name).append("\" ");
         sb.append("samlSupported=\"").append(isSamlSupported()).append("\" ");
         sb.append("x509Supported=\"").append(isX509Supported()).append("\">\n  ");
-        sb.append(getSamlConfig().toString()).append("\n  ");
         sb.append(getX509Config().toString());
         sb.append("</FederatedIdentityProviderConfig>");
         return sb.toString();
@@ -83,7 +73,6 @@ public class FederatedIdentityProviderConfig extends IdentityProviderConfig {
 
     private static final String PROP_SAML_SUPPORTED = "samlSupported";
     private static final String PROP_X509_SUPPORTED = "x509Supported";
-    private static final String PROP_SAML_CONFIG = "samlConfig";
     private static final String PROP_X509_CONFIG = "x509Config";
     private static final String PROP_CERT_OIDS = "trustedCertOids";
 }

@@ -90,7 +90,7 @@ public class IdentityProviderPropertiesAction extends NodeAction {
                             w = new EditIdentityProviderWizard(f, configPanel, iProvider);
 
                         } else if (iProvider.type() == IdentityProviderType.FEDERATED) {
-                            configPanel = new FederatedIPGeneralPanel(new FederatedIPSamlPanel(new FederatedIPTrustedCertsPanel(null)));
+                            configPanel = new FederatedIPGeneralPanel(new FederatedIPTrustedCertsPanel(null));
                             w = new EditFederatedIPWizard(f, configPanel, (FederatedIdentityProviderConfig)iProvider);
 
 

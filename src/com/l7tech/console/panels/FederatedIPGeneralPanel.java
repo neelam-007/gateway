@@ -111,7 +111,6 @@ public class FederatedIPGeneralPanel extends IdentityProviderStepPanel {
         }
 
         java.util.ArrayList skippedPanels = new java.util.ArrayList();
-        if (!samlCheckbox.isSelected()) skippedPanels.add(FederatedIPSamlPanel.class.getName());
 
         setSkippedPanels(skippedPanels.toArray());
         return true;

@@ -15,7 +15,6 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.identity.fed.FederatedUser;
-import com.l7tech.identity.fed.SamlConfig;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 
@@ -40,8 +39,6 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
     User authorize(LoginCredentials pc) throws AuthenticationException {
         if ( !providerConfig.isSamlSupported() )
             throw new BadCredentialsException("This identity provider is not configured to support SAML credentials");
-        final SamlConfig samlConfig = providerConfig.getSamlConfig();
-        if (samlConfig == null) throw new AuthenticationException("SAML enabled but not configured");
         Object maybeAssertion = pc.getPayload();
 
         if (maybeAssertion instanceof SamlAssertion) {
@@ -117,33 +114,8 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
             }
 
             final String niFormat = assertion.getNameIdentifierFormat();
-
-            if ( (SamlConstants.NAMEIDENTIFIER_EMAIL.equals(niFormat) && !samlConfig.isNameIdEmail())
-                    || (SamlConstants.NAMEIDENTIFIER_WINDOWS.equals(niFormat) && !samlConfig.isNameIdWindowsDomain())
-                    || (SamlConstants.NAMEIDENTIFIER_X509_SUBJECT.equals(niFormat) && !samlConfig.isNameIdX509SubjectName()) )
-                throw new BadCredentialsException("NameIdentifier format '" + niFormat + "' not supported by this provider");
-
             final String niValue = assertion.getNameIdentifierValue();
             final String niQualifier = assertion.getNameQualifier();
-            final String configNameQualifier = samlConfig.getNameQualifier();
-
-            if (configNameQualifier != null && configNameQualifier.length() > 0) {
-                // Make sure NameQualifier matches, if specified
-                if (niQualifier == null) {
-                    throw new BadCredentialsException("NameQualifier '" + configNameQualifier +
-                                                      "' is required but not present");
-                } else if (!niQualifier.equals(configNameQualifier)) {
-                    throw new BadCredentialsException("SAML Assertion's NameQualifier '" + niQualifier +
-                                                      "' does not match configured value '" + configNameQualifier + "'");
-                }
-            }
-
-            final String configDomain = samlConfig.getNameIdWindowsDomainName();
-            if (configDomain != null && configDomain.length() > 0) {
-                // TODO
-                throw new BadCredentialsException("Domain '" + configDomain + "' required but not present");
-            }
-
             try {
                 FederatedUser u = getUserManager().findBySubjectDN(certSubjectDn);
                 if (u == null) {
@@ -155,8 +127,9 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
                     u.setSubjectDn(certSubjectDn);
                     if (SamlConstants.NAMEIDENTIFIER_EMAIL.equals(niFormat)) {
                         u.setEmail(niValue);
-                    } else if (SamlConstants.NAMEIDENTIFIER_WINDOWS.equals(niFormat)) {
-                        u.setLogin(niValue);
+                    } else if (SamlConstants.NAMEIDENTIFIER_WINDOWS.equals(niFormat)
+                      || SamlConstants.NAMEIDENTIFIER_UNSPECIFIED.equals(niFormat)) {
+                        u.setLogin(niValue + niQualifier !=null ? niQualifier : "");
                     } else if (SamlConstants.NAMEIDENTIFIER_X509_SUBJECT.equals(niFormat)) {
                         if (!certSubjectDn.equals(niValue)) {
                             throw new BadCredentialsException("NameIdentifier '" + niValue +

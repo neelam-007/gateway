@@ -94,8 +94,7 @@ public class FederatedGroupManager extends PersistentGroupManager {
             }
 
             if (!checkProvider(user)) return false;
-            SamlConfig samlConfig = providerConfig.getSamlConfig();
-            if ( providerConfig.isX509Supported() || (providerConfig.isSamlSupported() && samlConfig.isNameIdX509SubjectName()) ) {
+            if ( providerConfig.isX509Supported() || providerConfig.isSamlSupported()) {
                 String dnPattern = ((VirtualGroup)group).getX509SubjectDnPattern();
                 if ( dnPattern != null && dnPattern.length() > 0 ) {
                     String userDn = user.getSubjectDn();
@@ -108,7 +107,7 @@ public class FederatedGroupManager extends PersistentGroupManager {
                 }
             }
 
-            if (providerConfig.isSamlSupported() && samlConfig.isNameIdEmail()) {
+            if (providerConfig.isSamlSupported()) {
                 String emailPattern = ((VirtualGroup)group).getSamlEmailPattern();
                 String userEmail = user.getEmail();
                 if (emailPattern != null && emailPattern.length() > 0 &&

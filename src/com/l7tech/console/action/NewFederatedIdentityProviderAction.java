@@ -69,7 +69,7 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
 
                 JFrame f = TopComponents.getInstance().getMainWindow();
 
-                FederatedIPGeneralPanel configPanel = new FederatedIPGeneralPanel(new FederatedIPSamlPanel(new FederatedIPTrustedCertsPanel(null)));
+                FederatedIPGeneralPanel configPanel = new FederatedIPGeneralPanel(new FederatedIPTrustedCertsPanel(null));
                 CreateFederatedIPWizard w = new CreateFederatedIPWizard(f, configPanel);
                 //FederatedIdentityProviderWindow w = new FederatedIdentityProviderWindow(f);
 

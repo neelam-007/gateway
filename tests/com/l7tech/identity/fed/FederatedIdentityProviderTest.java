@@ -1,19 +1,17 @@
 package com.l7tech.identity.fed;
 
+import com.l7tech.admin.AdminContext;
+import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
-import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.SsgAdminSession;
-import com.l7tech.admin.AdminContext;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import javax.security.auth.Subject;
-import java.util.ArrayList;
-import java.util.List;
 import java.security.PrivilegedAction;
 
 /**
@@ -51,29 +49,10 @@ public class FederatedIdentityProviderTest extends TestCase {
         config.setX509Supported(true);
         config.setSamlSupported(true);
         config.setName("Example FIP");
-        SamlConfig saml = config.getSamlConfig();
-        saml.setNameQualifier("www.example.com");
-        List configs = new ArrayList();
-        SamlConfig.AttributeStatementConfig att = saml.new AttributeStatementConfig();
-        att.setName("foo");
-        att.setNamespaceUri("urn:example.com:foo");
-        att.setValues(new String[]{"bar", "baz"});
-        configs.add(att);
-        saml.setAttributeStatementConfigs(configs);
     }
 
     public void tearDown() throws Exception {
         // put tear down code here
-    }
-
-    public void testCreateConfig() throws Exception {
-        SamlConfig saml = config.getSamlConfig();
-        assertNotNull(saml);
-        System.err.println(saml);
-
-        X509Config x509 = config.getX509Config();
-        assertNotNull(x509);
-        System.err.println(x509);
     }
 
     public void testSaveConfig() throws Exception {
