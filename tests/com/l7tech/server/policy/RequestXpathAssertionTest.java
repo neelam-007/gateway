@@ -2,7 +2,7 @@ package com.l7tech.server.policy;
 
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.Locator;
-import com.l7tech.common.xml.SoapRequestGenerator;
+import com.l7tech.common.xml.SoapMessageGenerator;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.policy.wsp.WspWriter;
@@ -100,7 +100,7 @@ public class RequestXpathAssertionTest extends TestCase {
         _service.setWsdlXml(xml);
         _serviceCache.cache(_service);
 
-        SoapRequestGenerator.MessageInputGenerator mig = new SoapRequestGenerator.MessageInputGenerator() {
+        SoapMessageGenerator.MessageInputGenerator mig = new SoapMessageGenerator.MessageInputGenerator() {
             public String generate(String messagePartName, String operationName, Definition definition) {
                 if (operationName.equals("getQuote")) {
                     if (messagePartName.equals("symbol")) {
@@ -111,9 +111,9 @@ public class RequestXpathAssertionTest extends TestCase {
             }
         };
 
-        SoapRequestGenerator srg = new SoapRequestGenerator(mig);
+        SoapMessageGenerator srg = new SoapMessageGenerator(mig);
 
-        SoapRequestGenerator.Message[] requests = srg.generateRequests(xmethodsWsdl);
+        SoapMessageGenerator.Message[] requests = srg.generateRequests(xmethodsWsdl);
 
         String[] passingXpaths =
           {
@@ -139,7 +139,7 @@ public class RequestXpathAssertionTest extends TestCase {
         namespaceMap.put("soapenv", SOAPConstants.URI_NS_SOAP_ENVELOPE);
 
         for (int i = 0; i < requests.length; i++) {
-            SoapRequestGenerator.Message request = requests[i];
+            SoapMessageGenerator.Message request = requests[i];
 
             for (int j = 0; j < passingXpaths.length; j++) {
                 newServletApi();

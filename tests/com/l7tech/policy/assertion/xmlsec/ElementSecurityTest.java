@@ -5,7 +5,7 @@ import com.l7tech.common.security.Keys;
 import com.l7tech.common.security.xml.Session;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.xml.SoapRequestGenerator;
+import com.l7tech.common.xml.SoapMessageGenerator;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
@@ -54,8 +54,8 @@ public class ElementSecurityTest extends TestCase {
 
 
     public void testSignerSignsBody() throws Exception {
-        SoapRequestGenerator sg = new SoapRequestGenerator();
-        SoapRequestGenerator.Message[] requests = sg.generateRequests(TestDocuments.WSDL);
+        SoapMessageGenerator sg = new SoapMessageGenerator();
+        SoapMessageGenerator.Message[] requests = sg.generateRequests(TestDocuments.WSDL);
 
         Map namespaces = XpathEvaluator.getNamespaces(requests[0].getSOAPMessage());
         XpathExpression xpathExpression = new XpathExpression("/soapenv:Envelope/soapenv:Body", namespaces);
@@ -79,8 +79,8 @@ public class ElementSecurityTest extends TestCase {
     }
 
     public void testSignerSignsAndEncryptsBody() throws Exception {
-        SoapRequestGenerator sg = new SoapRequestGenerator();
-        SoapRequestGenerator.Message[] requests = sg.generateRequests(TestDocuments.WSDL);
+        SoapMessageGenerator sg = new SoapMessageGenerator();
+        SoapMessageGenerator.Message[] requests = sg.generateRequests(TestDocuments.WSDL);
         Document[] documents = soapMessagesAsDocuments(requests);
 
         Map namespaces = XpathEvaluator.getNamespaces(requests[0].getSOAPMessage());
@@ -108,8 +108,8 @@ public class ElementSecurityTest extends TestCase {
     }
 
     public void testKeyNotSpecifiedAndEncryptRequested() throws Exception {
-        SoapRequestGenerator sg = new SoapRequestGenerator();
-        SoapRequestGenerator.Message[] requests = sg.generateRequests(TestDocuments.WSDL);
+        SoapMessageGenerator sg = new SoapMessageGenerator();
+        SoapMessageGenerator.Message[] requests = sg.generateRequests(TestDocuments.WSDL);
         Document[] documents = soapMessagesAsDocuments(requests);
 
         Map namespaces = XpathEvaluator.getNamespaces(requests[0].getSOAPMessage());
@@ -146,8 +146,8 @@ public class ElementSecurityTest extends TestCase {
     }
 
     public void testVerifyUnsecureDocument() throws Exception {
-        SoapRequestGenerator sg = new SoapRequestGenerator();
-        SoapRequestGenerator.Message[] requests = sg.generateRequests(TestDocuments.WSDL);
+        SoapMessageGenerator sg = new SoapMessageGenerator();
+        SoapMessageGenerator.Message[] requests = sg.generateRequests(TestDocuments.WSDL);
         Document[] documents = soapMessagesAsDocuments(requests);
 
         Map namespaces = XpathEvaluator.getNamespaces(requests[0].getSOAPMessage());
@@ -172,11 +172,11 @@ public class ElementSecurityTest extends TestCase {
     }
 
 
-    private Document[] soapMessagesAsDocuments(SoapRequestGenerator.Message[] requests)
+    private Document[] soapMessagesAsDocuments(SoapMessageGenerator.Message[] requests)
       throws IOException, SOAPException, SAXException {
         Document[] documents = new Document[requests.length];
         for (int i = 0; i < requests.length; i++) {
-            SoapRequestGenerator.Message request = requests[i];
+            SoapMessageGenerator.Message request = requests[i];
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             request.getSOAPMessage().writeTo(bos);
             documents[i] = XmlUtil.stringToDocument(bos.toString());

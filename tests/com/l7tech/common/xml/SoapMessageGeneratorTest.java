@@ -15,18 +15,18 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * Class SoapRequestGeneratorTest tests the {@link com.l7tech.common.xml.SoapRequestGenerator}
+ * Class SoapRequestGeneratorTest tests the {@link com.l7tech.common.xml.SoapMessageGenerator}
  * 
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
-public class SoapRequestGeneratorTest extends TestCase {
+public class SoapMessageGeneratorTest extends TestCase {
     boolean messageGeneratorInvoked = false;
 
 
     /**
      * test <code>AbstractLocatorTest</code> constructor
      */
-    public SoapRequestGeneratorTest(String name) {
+    public SoapMessageGeneratorTest(String name) {
         super(name);
     }
 
@@ -35,7 +35,7 @@ public class SoapRequestGeneratorTest extends TestCase {
      * AbstractLocatorTest <code>TestCase</code>
      */
     public static Test suite() {
-        TestSuite suite = new TestSuite(SoapRequestGeneratorTest.class);
+        TestSuite suite = new TestSuite(SoapMessageGeneratorTest.class);
         return suite;
     }
 
@@ -53,12 +53,12 @@ public class SoapRequestGeneratorTest extends TestCase {
      * @throws Exception 
      */
     public void xtestGenerateAndPrintSoapMessages() throws Exception {
-        SoapRequestGenerator sg = new SoapRequestGenerator();
+        SoapMessageGenerator sg = new SoapMessageGenerator();
 
-        SoapRequestGenerator.Message[] requests = sg.generateRequests(TestDocuments.WSDL);
+        SoapMessageGenerator.Message[] requests = sg.generateRequests(TestDocuments.WSDL);
 
         for (int i = 0; i < requests.length; i++) {
-            SoapRequestGenerator.Message request = requests[i];
+            SoapMessageGenerator.Message request = requests[i];
             // request.getSOAPMessage().writeTo(System.out);
         }
     }
@@ -70,7 +70,7 @@ public class SoapRequestGeneratorTest extends TestCase {
      * @throws Exception 
      */
     public void testGenerateSoapMessagesWithUserParamValues() throws Exception {
-        SoapRequestGenerator sg = new SoapRequestGenerator(new SoapRequestGenerator.MessageInputGenerator() {
+        SoapMessageGenerator sg = new SoapMessageGenerator(new SoapMessageGenerator.MessageInputGenerator() {
             public String generate(String messagePartName, String operationName, Definition definition) {
                 messageGeneratorInvoked = true;
                 if ("symbol".equalsIgnoreCase(messagePartName)) {
@@ -79,11 +79,11 @@ public class SoapRequestGeneratorTest extends TestCase {
                 return "NA";
             }
         });
-        SoapRequestGenerator.Message[] requests = sg.generateRequests(TestDocuments.WSDL);
+        SoapMessageGenerator.Message[] requests = sg.generateRequests(TestDocuments.WSDL);
         assertTrue("Expected message input invoke. ", messageGeneratorInvoked);
 
         for (int i = 0; i < requests.length; i++) {
-            SoapRequestGenerator.Message request = requests[i];
+            SoapMessageGenerator.Message request = requests[i];
             // request.getSOAPMessage().writeTo(System.out);
         }
     }
@@ -96,10 +96,10 @@ public class SoapRequestGeneratorTest extends TestCase {
      */
     public void testGenerateSoapMessagesValidateWithWsdl() throws Exception {
         Wsdl wsdl = Wsdl.newInstance(null, new WsdlTest("blah").getWsdlReader(TestDocuments.WSDL));
-        SoapRequestGenerator sg = new SoapRequestGenerator();
-        SoapRequestGenerator.Message[] requests = sg.generateRequests(TestDocuments.WSDL);
+        SoapMessageGenerator sg = new SoapMessageGenerator();
+        SoapMessageGenerator.Message[] requests = sg.generateRequests(TestDocuments.WSDL);
         for (int i = 0; i < requests.length; i++) {
-            SoapRequestGenerator.Message request = requests[i];
+            SoapMessageGenerator.Message request = requests[i];
             //request.getSOAPMessage().writeTo(System.out);
         }
 
@@ -114,7 +114,7 @@ public class SoapRequestGeneratorTest extends TestCase {
 
                 boolean found = false;
                 for (int i = 0; i < requests.length && !found; i++) {
-                    SoapRequestGenerator.Message request = requests[i];
+                    SoapMessageGenerator.Message request = requests[i];
                     SOAPBody sb = request.getSOAPMessage().getSOAPPart().getEnvelope().getBody();
                     Iterator elements = sb.getChildElements();
                     while (elements.hasNext() && !found) {
@@ -135,12 +135,12 @@ public class SoapRequestGeneratorTest extends TestCase {
      * @throws Exception
      */
     public void testGenerateAndPrintSoapMessagesDocumentStyle() throws Exception {
-        SoapRequestGenerator sg = new SoapRequestGenerator();
+        SoapMessageGenerator sg = new SoapMessageGenerator();
 
-        SoapRequestGenerator.Message[] requests = sg.generateRequests(TestDocuments.WSDL_DOC_LITERAL2);
+        SoapMessageGenerator.Message[] requests = sg.generateRequests(TestDocuments.WSDL_DOC_LITERAL2);
 
         for (int i = 0; i < requests.length; i++) {
-            SoapRequestGenerator.Message request = requests[i];
+            SoapMessageGenerator.Message request = requests[i];
             request.getSOAPMessage().writeTo(System.out);
         }
     }

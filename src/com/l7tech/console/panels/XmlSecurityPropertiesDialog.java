@@ -1,8 +1,8 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.xml.SoapRequestGenerator;
-import com.l7tech.common.xml.SoapRequestGenerator.Message;
+import com.l7tech.common.xml.SoapMessageGenerator;
+import com.l7tech.common.xml.SoapMessageGenerator.Message;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
@@ -117,7 +117,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         try {
             serviceWsdl = serviceNode.getPublishedService().parsedWsdl();
             serviceWsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
-            SoapRequestGenerator sg = new SoapRequestGenerator();
+            SoapMessageGenerator sg = new SoapMessageGenerator();
             if (isEditingRequest()) {
                 soapMessages = sg.generateRequests(serviceWsdl);
             } else {

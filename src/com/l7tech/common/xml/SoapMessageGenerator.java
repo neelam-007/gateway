@@ -33,14 +33,14 @@ import java.util.List;
  * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class SoapRequestGenerator {
+public class SoapMessageGenerator {
     private MessageInputGenerator messageInputGenerator;
     private Wsdl wsdl;
 
     /**
      * default constructor
      */
-    public SoapRequestGenerator() {
+    public SoapMessageGenerator() {
         this(null);
     }
 
@@ -51,7 +51,7 @@ public class SoapRequestGenerator {
      * @param messageInputGenerator 
      * @see MessageInputGenerator
      */
-    public SoapRequestGenerator(MessageInputGenerator messageInputGenerator) {
+    public SoapMessageGenerator(MessageInputGenerator messageInputGenerator) {
         this.messageInputGenerator = messageInputGenerator;
     }
 
@@ -226,7 +226,12 @@ public class SoapRequestGenerator {
             Name operationName = envelope.createName(bindingOperation.getName(), "ns1", targetNameSpace);
             bodyElement = body.addBodyElement(operationName);
         } else {
-            processDocumentStyle(bindingOperation, envelope);
+            Input input = bindingOperation.getOperation().getInput();
+            if (input != null && input.getMessage() != null) { // nothing more to do here
+                javax.wsdl.Message message = input.getMessage();
+                processDocumentStyle(bindingOperation, envelope, message);
+            }
+
             return soapMessage;
         }
 
@@ -312,7 +317,7 @@ public class SoapRequestGenerator {
             Name responseName = envelope.createName(message.getQName().getLocalPart(), "ns1", targetNameSpace);
             bodyElement = body.addBodyElement(responseName);
         } else {
-            processDocumentStyle(bindingOperation, envelope);
+            processDocumentStyle(bindingOperation, envelope, message);
             return soapMessage;
         }
 
@@ -363,15 +368,11 @@ public class SoapRequestGenerator {
      *
      * @param bo       the binding operation
      * @param envelope the soap envelope
+     * @param message  the operation message (input or output)
      */
-    private void processDocumentStyle(BindingOperation bo, SOAPEnvelope envelope)
+    private void processDocumentStyle(BindingOperation bo, SOAPEnvelope envelope, javax.wsdl.Message message)
       throws SOAPException {
         Operation operation = bo.getOperation();
-        Input input = operation.getInput();
-        if (input == null) { // nothing more to do here
-            return;
-        }
-        javax.wsdl.Message message = input.getMessage();
         List parts = message.getOrderedParts(null);
         if (parts == null || parts.isEmpty()) return;
         Part part = (Part)parts.get(0);

@@ -1,35 +1,35 @@
 package com.l7tech.console.tree.policy;
 
+import com.l7tech.console.action.SchemaValidationPropertiesAction;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
-import com.l7tech.console.action.SchemaValidationPropertiesAction;
 import com.l7tech.service.PublishedService;
-import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
+import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.rmi.RemoteException;
+import java.util.logging.Logger;
 
 /**
  * Policy tree node for Schema Validation Assertion.
- *
+ * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Feb 5, 2004<br/>
  * $Id$<br/>
- *
  */
 public class SchemaValidationTreeNode extends LeafAssertionTreeNode {
     public SchemaValidationTreeNode(Assertion assertion) {
         super(assertion);
         if (assertion instanceof SchemaValidation) {
             nodeAssertion = (SchemaValidation)assertion;
-        } else throw new IllegalArgumentException("assertion passed must be of type " +
-                                                   SchemaValidation.class.getName());
+        } else
+            throw new IllegalArgumentException("assertion passed must be of type " +
+              SchemaValidation.class.getName());
         try {
             if (getServiceNodeCookie() != null) {
                 service = getServiceNodeCookie().getPublishedService();
@@ -44,6 +44,7 @@ public class SchemaValidationTreeNode extends LeafAssertionTreeNode {
         }
 
     }
+
     public String getName() {
         return "[Validate message's schema]";
     }
@@ -62,7 +63,13 @@ public class SchemaValidationTreeNode extends LeafAssertionTreeNode {
     public Action[] getActions() {
         java.util.List list = new ArrayList();
 
-        list.add(new SchemaValidationPropertiesAction(this, service));
+        final PublishedService publishedService;
+        try {
+            publishedService = getServiceNodeCookie().getPublishedService();
+            list.add(new SchemaValidationPropertiesAction(this, publishedService));
+        } catch (Exception e) {
+            // tango down!
+        }
         list.addAll(Arrays.asList(super.getActions()));
         return (Action[])list.toArray(new Action[]{});
     }
@@ -73,7 +80,13 @@ public class SchemaValidationTreeNode extends LeafAssertionTreeNode {
      * @return <code>null</code> indicating there should be none default action
      */
     public Action getPreferredAction() {
-        return new SchemaValidationPropertiesAction(this, service);
+        try {
+            final PublishedService publishedService = getServiceNodeCookie().getPublishedService();
+            return new SchemaValidationPropertiesAction(this, publishedService);
+        } catch (Exception e) {
+            // tango down!
+        }
+        return null;
     }
 
     /**

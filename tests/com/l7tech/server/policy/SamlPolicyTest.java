@@ -2,7 +2,7 @@ package com.l7tech.server.policy;
 
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.xml.SoapRequestGenerator;
+import com.l7tech.common.xml.SoapMessageGenerator;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.message.Request;
 import com.l7tech.objectmodel.EntityHeader;
@@ -46,7 +46,7 @@ import java.io.InputStream;
 public class SamlPolicyTest extends TestCase {
     private SoapMessageProcessingServlet messageProcessingServlet;
     private ServiceAdmin serviceAdmin;
-    private SoapRequestGenerator.Message[] soapRequests;
+    private SoapMessageGenerator.Message[] soapRequests;
     private PublishedService publishedService;
 
     /**
@@ -89,7 +89,7 @@ public class SamlPolicyTest extends TestCase {
         publishedService = serviceAdmin.findServiceByPrimaryKey(headers[0].getOid());
         Wsdl wsdl = publishedService.parsedWsdl();
 
-        SoapRequestGenerator sg = new SoapRequestGenerator();
+        SoapMessageGenerator sg = new SoapMessageGenerator();
         soapRequests = sg.generateRequests(wsdl);
         assertTrue("no operations could be located in the wsdlt", soapRequests.length > 0);
 
@@ -103,7 +103,7 @@ public class SamlPolicyTest extends TestCase {
     public void testSecurityElementCheck() throws Exception {
         for (int i = 0; i < soapRequests.length; i++) {
             MockServletApi servletApi = MockServletApi.defaultMessageProcessingServletApi();
-            SoapRequestGenerator.Message soapRequest = soapRequests[i];
+            SoapMessageGenerator.Message soapRequest = soapRequests[i];
             prepareServicePolicy(new SamlSecurity());
             servletApi.setPublishedService(publishedService);
             Document samlHeader = getDocument("com/l7tech/common/security/saml/saml1.xml");
@@ -122,7 +122,7 @@ public class SamlPolicyTest extends TestCase {
     public void testSenderVouches() throws Exception {
         for (int i = 0; i < soapRequests.length; i++) {
             MockServletApi servletApi = MockServletApi.defaultMessageProcessingServletApi();
-            SoapRequestGenerator.Message soapRequest = soapRequests[i];
+            SoapMessageGenerator.Message soapRequest = soapRequests[i];
             HttpRoutingAssertion assertion = new HttpRoutingAssertion();
             assertion.setAttachSamlSenderVouches(true);
             assertion.setProtectedServiceUrl("http://localhost:8081");
@@ -145,7 +145,7 @@ public class SamlPolicyTest extends TestCase {
     public void testSamlSecurityDateRange() throws Exception {
         for (int i = 0; i < soapRequests.length; i++) {
             MockServletApi servletApi = MockServletApi.defaultMessageProcessingServletApi();
-            SoapRequestGenerator.Message soapRequest = soapRequests[i];
+            SoapMessageGenerator.Message soapRequest = soapRequests[i];
             SamlSecurity assertion = new SamlSecurity();
             assertion.setValidateValidityPeriod(true);
             prepareServicePolicy(assertion);
