@@ -34,7 +34,7 @@ public class RequestIdGenerator {
     }
 
     private void reseed( long time ) {
-        BigInteger seedServerId = new BigInteger( new Byte( _serverId ).toString() ).shiftLeft(120);
+        BigInteger seedServerId = new BigInteger( new Integer( _serverId ).toString() ).shiftLeft(120);
         BigInteger bigTime = new BigInteger( new Long( time ).toString() ).shiftLeft(72);
 
         _seed = seedServerId.or( bigTime );
@@ -55,7 +55,7 @@ public class RequestIdGenerator {
     }
 
     private BigInteger _seed;
-    private byte _serverId;
+    private int _serverId;
     private long _sequence;
 
     private static RequestIdGenerator _instance;
