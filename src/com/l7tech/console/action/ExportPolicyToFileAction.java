@@ -129,7 +129,8 @@ public class ExportPolicyToFileAction extends BaseAction {
         PolicyExporter exporter = new PolicyExporter();
         try {
             exporter.exportToFile(node.asAssertion(), policyFile);
-            if (!policyFileExists) {
+            // only update template folder if this policy is saved in templates directory
+            if (!policyFileExists && templateDir.equals(chooser.getSelectedFile().getParentFile())) {
                 insertIntoAssertionTree(policyFile);
             }
         } catch (IOException e) {
