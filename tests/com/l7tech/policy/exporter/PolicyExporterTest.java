@@ -4,9 +4,11 @@ import junit.framework.TestCase;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import org.w3c.dom.Document;
 
 /**
@@ -31,8 +33,13 @@ public class PolicyExporterTest extends TestCase {
 
     private Assertion createTestPolicy() {
         AllAssertion root = new AllAssertion();
-        SpecificUser suass = new SpecificUser(125, "john");
+        SpecificUser suass = new SpecificUser(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, "john");
         root.getChildren().add(suass);
+        JmsRoutingAssertion jrass = new JmsRoutingAssertion();
+        jrass.setEndpointName("blah");
+        jrass.setEndpointOid(new Long(25));
+        jrass.setResponseTimeout(55);
+        root.getChildren().add(jrass);
         // todo, more
         return root;
     }
