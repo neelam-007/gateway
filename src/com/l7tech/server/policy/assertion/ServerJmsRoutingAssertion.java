@@ -52,11 +52,43 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
         MessageConsumer jmsConsumer = null;
 
         try {
-            JmsBag bag = getJmsBag();
-            Session jmsSession = bag.getSession();
+            Session jmsSession = null;
+            Message jmsOutboundRequest = null;
+            int oopses = 0;
 
-            // Make outbound request
-            Message jmsOutboundRequest = makeRequest( request );
+            while ( true ) {
+                try {
+                    JmsBag bag = getJmsBag();
+                    jmsSession = bag.getSession();
+                    jmsOutboundRequest = makeRequest( request );
+                    break; // if successful, no need for further retries
+                } catch ( Throwable t ) {
+                    if ( ++oopses < MAX_OOPSES ) {
+                        logger.log( Level.WARNING, "Failed to establish JMS connection on try #" + oopses +
+                                                   ".  Will retry after " + RETRY_DELAY + "ms.", t );
+                        if ( jmsSession != null ) try { jmsSession.close(); } catch ( Exception e ) { }
+                        closeBag();
+
+                        jmsSession = null;
+                        jmsOutboundRequest = null;
+
+                        try {
+                            Thread.sleep(RETRY_DELAY);
+                        } catch ( InterruptedException e ) {
+                            logger.fine("Interrupted during retry delay");
+                        }
+                    } else {
+                        logger.severe( "Tried " + MAX_OOPSES + " times to establish JMS connection and failed." );
+                        // Catcher will log the stack trace
+                        throw t;
+                    }
+                }
+            }
+
+            if ( jmsSession == null || jmsOutboundRequest == null ) {
+                String msg = "Null session or request escaped from retry loop!";
+                throw new PolicyAssertionException(msg);
+            }
 
             Destination jmsOutboundDest = getRoutedRequestDestination();
             jmsInboundDest = jmsOutboundRequest.getJMSReplyTo();
@@ -148,6 +180,10 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
             String msg = "Invalid JMS configuration";
             logger.log( Level.SEVERE, msg, e );
             throw new PolicyAssertionException(msg, e);
+        } catch ( Throwable t ) {
+            logger.log( Level.SEVERE, "Caught unexpected Throwable in outbound JMS request processing", t );
+            closeBag();
+            return AssertionStatus.SERVER_ERROR;
         } finally {
             try {
                 if ( jmsInboundDest instanceof TemporaryQueue ) {
@@ -334,4 +370,6 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
 
     private Logger logger = LogManager.getInstance().getSystemLogger();
     public static final int BUFFER_SIZE = 8192;
+    private static final int MAX_OOPSES = 5;
+    private static final long RETRY_DELAY = 1000;
 }
