@@ -5,20 +5,19 @@ import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.HibernatePersistenceContext;
 import com.l7tech.objectmodel.PersistenceContext;
+import com.l7tech.objectmodel.UpdateException;
 import net.sf.hibernate.HibernateException;
+import net.sf.hibernate.Session;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.SQLException;
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Collections;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Hibernate layer over the cluster_info table.
@@ -28,7 +27,7 @@ import java.util.logging.Logger;
  * User: flascell<br/>
  * Date: Dec 17, 2003<br/>
  * $Id$
- * 
+ *
  */
 public class ClusterInfoManager {
 
@@ -38,19 +37,19 @@ public class ClusterInfoManager {
      */
     public boolean isCluster() {
         synchronized (this) {
-            // only do this once
-            if (nrNodes < 0) {
-                try {
-                    Collection res = retrieveClusterStatus();
-                    nrNodes = res.size();
-                } catch (FindException e) {
-                    logger.log(Level.WARNING, "error in retrieveClusterStatus", e);
+            if (isCluster < 0) {
+                ClusterInfo selfCI = getSelfNodeId();
+                if (selfCI != null) {
+                    isCluster = 1;
+                } else {
+                    isCluster = 0;
                 }
             }
-            // more than one node == cluster
-            if (nrNodes > 0) return true;
-            return false;
         }
+        if (isCluster == 1) return true;
+        if (isCluster == 0) return false;
+        logger.warning("should not get here");
+        return false;
     }
 
     /**
@@ -58,26 +57,57 @@ public class ClusterInfoManager {
      *
      * @param avgLoad the average load for the last minute
      */
-    public void updateSelfStatus(double avgLoad) {
-        // determine which node id we belong to
-        // todo
-        // retrieve the ClusterInfo object
-        // todo
-        // update value in the ClusterInfo object and save object
-        // todo
+    public void updateSelfStatus(double avgLoad) throws UpdateException {
+        long now = System.currentTimeMillis();
+        ClusterInfo selfCI = getSelfNodeId();
+        if (selfCI != null) {
+            selfCI.setAvgLoad(avgLoad);
+            selfCI.setLastUpdateTimeStamp(now);
+            try {
+                HibernatePersistenceContext pc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
+                Session session = pc.getSession();
+                // update existing data
+                session.update(selfCI);
+            } catch (SQLException e) {
+                String msg = "error updating db";
+                logger.log(Level.WARNING, msg, e);
+                throw new UpdateException(msg, e);
+            } catch (HibernateException e) {
+                String msg = "error updating db";
+                logger.log(Level.WARNING, msg, e);
+                throw new UpdateException(msg, e);
+            }
+        } else {
+            logger.warning("cannot retrieve db entry for this node.");
+        }
     }
 
     /**
      * allows a node to update its boot timestamp in the cluster_info table
      */
-    public void updateSelfUptime() {
+    public void updateSelfUptime() throws UpdateException {
         long newuptimevalue = System.currentTimeMillis();
-        // determine which node id we belong to
-        // todo
-        // retrieve the ClusterInfo object
-        // todo
-        // update value in the ClusterInfo object and save object
-        // todo
+        ClusterInfo selfCI = getSelfNodeId();
+        if (selfCI != null) {
+            selfCI.setUptime(newuptimevalue);
+            selfCI.setLastUpdateTimeStamp(newuptimevalue);
+            try {
+                HibernatePersistenceContext pc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
+                Session session = pc.getSession();
+                // update existing data
+                session.update(selfCI);
+            } catch (SQLException e) {
+                String msg = "error updating db";
+                logger.log(Level.WARNING, msg, e);
+                throw new UpdateException(msg, e);
+            } catch (HibernateException e) {
+                String msg = "error updating db";
+                logger.log(Level.WARNING, msg, e);
+                throw new UpdateException(msg, e);
+            }
+        } else {
+            logger.warning("cannot retrieve db entry for this node.");
+        }
     }
 
     /**
@@ -106,8 +136,56 @@ public class ClusterInfoManager {
     /**
      * determines this node's nodeid value
      */
-    private long selfNodeId() {
-        return 0;
+    private ClusterInfo getSelfNodeId() {
+        synchronized (this) {
+            // special query, dont do this everytime
+            // (cache return value as this will not change while the server is up)
+            if (selfId == null) {
+                Iterator macs = getMacs().iterator();
+                // find out which mac works for us
+                while (macs.hasNext()) {
+                    String mac = (String)macs.next();
+                    ClusterInfo output = getNodeStatusFromDB(mac);
+                    if (output != null) {
+                        selfId = mac;
+                        return output;
+                    }
+                }
+            }
+        }
+        if (selfId != null) return getNodeStatusFromDB(selfId);
+        else return null;
+    }
+
+    private ClusterInfo getNodeStatusFromDB(String mac) {
+        String query = "from " + TABLE_NAME + " in class " + ClusterInfo.class.getName() +
+                       " where " + TABLE_NAME + "." + MAC_COLUMN_NAME + " = " + mac;
+        HibernatePersistenceContext context = null;
+        List hibResults = null;
+        try {
+            context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
+            hibResults = context.getSession().find(query);
+        } catch (SQLException e) {
+            String msg = "error retrieving cluster status";
+            logger.log(Level.WARNING, msg, e);
+        }  catch (HibernateException e) {
+            String msg = "error retrieving cluster status";
+            logger.log(Level.WARNING, msg, e);
+        }
+        if (hibResults == null || hibResults.isEmpty()) {
+            return null;
+        }
+        switch (hibResults.size()) {
+            case 0:
+                break;
+            case 1:
+                return (ClusterInfo)hibResults.get(0);
+            default:
+                logger.warning("this should not happen. more than one entry found" +
+                                          "for mac: " + selfId);
+                break;
+        }
+        return null;
     }
 
     /**
@@ -235,11 +313,13 @@ public class ClusterInfoManager {
         }
     }
 
-    private  static final String TABLE_NAME = "cluster_info";
+    private static final String TABLE_NAME = "cluster_info";
+    private static final String MAC_COLUMN_NAME = "mac";
     private static Pattern ifconfigMacPattern = Pattern.compile(".*HWaddr\\s+(\\w\\w.\\w\\w.\\w\\w." +
                                                                 "\\w\\w.\\w\\w.\\w\\w).*", Pattern.DOTALL);
     private static Pattern ipconfigMacPattern = Pattern.compile(".*Physical Address.*(\\w\\w.\\w\\w.\\w\\w." +
                                                                 "\\w\\w.\\w\\w.\\w\\w).*", Pattern.DOTALL);
     private final Logger logger = LogManager.getInstance().getSystemLogger();
-    private int nrNodes = -1;
+    private int isCluster = -1;
+    private String selfId = null;
 }
