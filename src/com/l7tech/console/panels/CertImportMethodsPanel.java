@@ -1,19 +1,21 @@
 package com.l7tech.console.panels;
 
+import com.intellij.uiDesigner.core.GridConstraints;
+import com.intellij.uiDesigner.core.GridLayoutManager;
+import com.intellij.uiDesigner.core.Spacer;
+import com.l7tech.common.gui.util.FontUtil;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.Locator;
-import com.l7tech.common.gui.util.FontUtil;
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.GridConstraints;
-import com.intellij.uiDesigner.core.Spacer;
 
 import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.*;
@@ -312,6 +314,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
                 JOptionPane.showMessageDialog(this, resources.getString("view.error.cert.generate"),
                                        resources.getString("view.error.title"),
                                        JOptionPane.ERROR_MESSAGE);
+                return false;
             }
 
         }
