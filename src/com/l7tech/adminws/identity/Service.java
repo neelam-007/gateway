@@ -22,7 +22,7 @@ import java.security.cert.CertificateEncodingException;
  */
 public class Service implements IdentityService {
 
-    public static final String VERSION = "20030922";
+    public static final String VERSION = "20030926";
     public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/identityAdmin";
 
     public Service() {
