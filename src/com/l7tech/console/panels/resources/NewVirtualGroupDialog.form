@@ -18,13 +18,13 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="650bb" class="javax.swing.JButton" binding="saveButton">
+          <component id="650bb" class="javax.swing.JButton" binding="createButton">
             <constraints>
-              <xy x="234" y="13" width="58" height="24"/>
+              <xy x="225" y="13" width="67" height="24"/>
               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
             </constraints>
             <properties>
-              <text value="Save"/>
+              <text value="Create"/>
             </properties>
           </component>
           <component id="9c20c" class="javax.swing.JButton" binding="cancelButton">
@@ -38,7 +38,7 @@
           </component>
           <hspacer id="f83f">
             <constraints>
-              <xy x="0" y="20" width="234" height="11"/>
+              <xy x="0" y="20" width="225" height="11"/>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
             </constraints>
           </hspacer>
@@ -55,7 +55,7 @@
         <children>
           <component id="a03f1" class="javax.swing.JTextField" binding="groupNameTextField">
             <constraints>
-              <xy x="78" y="7" width="280" height="21"/>
+              <xy x="78" y="7" width="200" height="21"/>
               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
                 <preferred-size width="150" height="-1"/>
                 <maximum-size width="200" height="-1"/>
@@ -83,7 +83,7 @@
               <text value="Description:"/>
             </properties>
           </component>
-          <component id="695c0" class="javax.swing.JTextField" binding="textField1">
+          <component id="3d93d" class="javax.swing.JTextField" binding="groupDescriptionTextField">
             <constraints>
               <xy x="78" y="46" width="280" height="21"/>
               <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
