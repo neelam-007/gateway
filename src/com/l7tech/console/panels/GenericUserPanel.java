@@ -2,17 +2,17 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.EntityListenerAdapter;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.action.SecureAction;
+import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
-import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.ObjectNotFoundException;
@@ -602,12 +602,12 @@ public class GenericUserPanel extends UserPanel {
         } catch (ObjectNotFoundException e) {
             JOptionPane.showMessageDialog(mainWindow, USER_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
             result = false;
-        } catch (Exception e) {
+        } catch (Exception e) {  // todo rethrow as runtime and handle with ErrorHandler em
             StringBuffer msg = new StringBuffer();
             msg.append("There was an error updating ");
             msg.append("User ").append(userHeader.getName()).append(".\n");
             JOptionPane.showMessageDialog(mainWindow, msg.toString(), "Error", JOptionPane.ERROR_MESSAGE);
-            log.log(Level.SEVERE, "Error updating User: " + e.toString());
+            log.log(Level.SEVERE, "Error updating User: " + e.toString(), e);
             result = false;
         }
         return result;
@@ -625,7 +625,7 @@ public class GenericUserPanel extends UserPanel {
          * Actually perform the action.
          */
         protected void performAction() {
-            if (config.isWritable() && isInRole(new String[] {Group.ADMIN_GROUP_NAME})) {
+            if (config.isWritable() && isInRole(new String[]{Group.ADMIN_GROUP_NAME})) {
                 // Apply changes if possible
                 if (!collectAndSaveChanges()) {
                     // Error - just return

@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.MainWindow;
+import com.l7tech.console.action.SecureAction;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.Registry;
@@ -31,30 +32,30 @@ import java.util.logging.Logger;
  * GroupPanel is the main entry point panel for the <CODE>Group</CODE>.
  */
 public abstract class GroupPanel extends EntityEditorPanel {
-    public static GroupPanel newInstance( IdentityProviderConfig config, EntityHeader header ) {
+    public static GroupPanel newInstance(IdentityProviderConfig config, EntityHeader header) {
         Group g = null;
         try {
             g = getIdentityAdmin().findGroupByPrimaryKey(config.getOid(), header.getStrId());
 
             if (g instanceof VirtualGroup) {
-                return newVirtualGroupPanel( config );
+                return newVirtualGroupPanel(config);
             } else if (g instanceof PersistentGroup) {
-                return newPhysicalGroupPanel( config );
+                return newPhysicalGroupPanel(config);
             } else {
                 throw new RuntimeException("Can't create a GroupPanel implementation for " + g.getClass().getName());
             }
-        } catch ( RemoteException e ) {
+        } catch (RemoteException e) {
             throw new RuntimeException(e);
-        } catch ( FindException e ) {
+        } catch (FindException e) {
             throw new RuntimeException(e);
         }
     }
 
-    static PhysicalGroupPanel newPhysicalGroupPanel( IdentityProviderConfig config ) {
+    static PhysicalGroupPanel newPhysicalGroupPanel(IdentityProviderConfig config) {
         return new PhysicalGroupPanel(config);
     }
 
-    static VirtualGroupPanel newVirtualGroupPanel( IdentityProviderConfig config ) {
+    static VirtualGroupPanel newVirtualGroupPanel(IdentityProviderConfig config) {
         return new VirtualGroupPanel(config);
     }
 
@@ -87,7 +88,6 @@ public abstract class GroupPanel extends EntityEditorPanel {
     protected static final String MEMBERSHIP_LABEL = "Membership";
     private static final String GROUP_DESCRIPTION_TITLE = "Description:";
 
-    private static final String OK_BUTTON = "OK";
     private static final String CANCEL_BUTTON = "Cancel";
     private static final int MAX_DESC_LENGTH = 256;
     private boolean formModified;
@@ -96,10 +96,10 @@ public abstract class GroupPanel extends EntityEditorPanel {
     private final String GROUP_DOES_NOT_EXIST_MSG = "This group no longer exists";
     private final MainWindow mainWindow = TopComponents.getInstance().getMainWindow();
     private final ActionListener closeDlgListener = new ActionListener() {
-                                                      public void actionPerformed(ActionEvent e) {
-                                                          SwingUtilities.windowForComponent(GroupPanel.this).dispose();
-                                                      }
-                                                    };
+        public void actionPerformed(ActionEvent e) {
+            SwingUtilities.windowForComponent(GroupPanel.this).dispose();
+        }
+    };
 
     protected GroupPanel(IdentityProviderConfig config) {
         this.config = config;
@@ -116,8 +116,8 @@ public abstract class GroupPanel extends EntityEditorPanel {
 
     /**
      * Constructs the panel
-     * 
-     * @param grpHeader  
+     *
+     * @param grpHeader
      * @param config
      */
     public void edit(EntityHeader grpHeader, IdentityProviderConfig config) {
@@ -128,8 +128,8 @@ public abstract class GroupPanel extends EntityEditorPanel {
 
     /**
      * Retrieves the Group and constructs the Panel
-     * 
-     * @param object 
+     *
+     * @param object
      */
     public void edit(Object object) {
         try {
@@ -170,7 +170,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
             setData(group);
         } catch (FindException e) {
             ErrorManager.getDefault().notify(Level.SEVERE, e, "Error while editing user " + groupHeader.getName());
-        } catch ( RemoteException e ) {
+        } catch (RemoteException e) {
             ErrorManager.getDefault().notify(Level.SEVERE, e, "Error while editing user " + groupHeader.getName());
         }
     }
@@ -179,8 +179,9 @@ public abstract class GroupPanel extends EntityEditorPanel {
         return Registry.getDefault().getIdentityAdmin();
     }
 
-    protected abstract void loadedGroup( Group g ) throws RemoteException, FindException;
-    protected abstract Group newGroup( EntityHeader groupHeader );
+    protected abstract void loadedGroup(Group g) throws RemoteException, FindException;
+
+    protected abstract Group newGroup(EntityHeader groupHeader);
 
     protected void initialize() {
         layoutComponents();
@@ -191,7 +192,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
      * Retrieve the <code>Group</code> this panel is editing.
      * It is a convenience, and package private method, for
      * interested panels.
-     * 
+     *
      * @return the group that this panel is currently editing
      */
     Group getGroup() {
@@ -270,6 +271,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
     }
 
     protected abstract JPanel getDetailsPanel();
+
     protected abstract JPanel getMembershipPanel();
 
     /**
@@ -374,26 +376,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
         // If button not already created
         if (null == okButton) {
             // Create button
-            okButton = new JButton(OK_BUTTON);
-
-            // Register listener
-
-            if (config.isWritable()) {
-                okButton.addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        // Apply changes if possible
-                        if (!collectAndSaveChanges()) {
-                            // Error - just return
-                            return;
-                        }
-                        Window dlg = SwingUtilities.windowForComponent(GroupPanel.this);
-                        dlg.setVisible(false);
-                        dlg.dispose();
-                    }
-                });
-            } else {
-                okButton.addActionListener(closeDlgListener);
-            }
+            okButton = new JButton(new OkAction());
         }
 
         // Return button
@@ -421,15 +404,15 @@ public abstract class GroupPanel extends EntityEditorPanel {
 
     /**
      * Populates the form from the group bean
-     * 
-     * @param group 
+     *
+     * @param group
      */
     protected void setData(Group group) {
         // Set tabbed panels (add/remove extranet tab)
         nameLabel.setText(group.getName());
         String desc = group.getDescription();
         if (desc != null && desc.length() > MAX_DESC_LENGTH) {
-            desc = desc.substring(0, MAX_DESC_LENGTH-1);
+            desc = desc.substring(0, MAX_DESC_LENGTH - 1);
         }
         getDescriptionTextField().setText(desc);
         setModified(false);
@@ -438,7 +421,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
 
     /**
      * Collect changes from the form into the group instance.
-     * 
+     *
      * @return Group   the instance with changes applied
      */
     protected Group collectChanges() {
@@ -451,7 +434,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
     /**
      * Applies the changes on the form to the group bean and update the database;
      * Returns indication if the changes were applied successfully.
-     * 
+     *
      * @return boolean - the indication if the changes were applied successfully
      */
     private boolean collectAndSaveChanges() {
@@ -475,12 +458,12 @@ public abstract class GroupPanel extends EntityEditorPanel {
         } catch (ObjectNotFoundException e) {
             JOptionPane.showMessageDialog(mainWindow, GROUP_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
             result = true;
-        } catch (Exception e) {
+        } catch (Exception e) {  // todo rethrow as runtime and handle with ErrorHandler em
             StringBuffer msg = new StringBuffer();
             msg.append("There was an error updating ");
             msg.append("Group ").append(groupHeader.getName()).append(".\n");
             JOptionPane.showMessageDialog(mainWindow, msg.toString(), "Error", JOptionPane.ERROR_MESSAGE);
-            log.log(Level.SEVERE, "Error updating Group: " + e.toString());
+            log.log(Level.SEVERE, "Error updating Group: " + e.toString(), e);
             result = false;
         }
         return result;
@@ -492,7 +475,7 @@ public abstract class GroupPanel extends EntityEditorPanel {
     /**
      * Validates form data and returns if group Id and description form fields
      * are valid or not.
-     * 
+     *
      * @return boolean indicating if the form fields are valid or not.
      */
     private boolean validateForm() {
@@ -526,6 +509,55 @@ public abstract class GroupPanel extends EntityEditorPanel {
             setModified(true);
         }
     };
+
+    class OkAction extends SecureAction {
+        /**
+         * Actually perform the action.
+         */
+        protected void performAction() {
+            if (config.isWritable() && isInRole(new String[]{Group.ADMIN_GROUP_NAME})) {
+                // Apply changes if possible
+                if (!collectAndSaveChanges()) {
+                    // Error - just return
+                    return;
+                }
+            }
+            Window dlg = SwingUtilities.windowForComponent(GroupPanel.this);
+            dlg.setVisible(false);
+            dlg.dispose();
+        }
+
+        /**
+         * Return the required roles for this action, one of the roles.
+         *
+         * @return the list of roles that are allowed to carry out the action
+         */
+        protected String[] requiredRoles() {
+            return new String[]{Group.ADMIN_GROUP_NAME, Group.OPERATOR_GROUP_NAME};
+        }
+
+        /**
+         * @return the action name
+         */
+        public String getName() {
+            return "OK";
+        }
+
+        /**
+         * subclasses override this method specifying the resource name
+         */
+        protected String iconResource() {
+            return null;
+        }
+
+        /**
+         * @return the aciton description
+         */
+        public String getDescription() {
+            return null;
+        }
+    }
+
 
     // hierarchy listener
     protected final
