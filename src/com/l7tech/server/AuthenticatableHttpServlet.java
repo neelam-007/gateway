@@ -102,7 +102,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
             return null;
         } finally {
             try {
-                endTransaction();
+                rollbackTransaction();
             } catch ( SQLException se ) {
                 logger.log(Level.WARNING, null, se);
             } catch ( TransactionException te ) {
@@ -149,9 +149,15 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         return null;
     }
 
-    private void endTransaction() throws java.sql.SQLException, TransactionException {
+    private void commitTransaction() throws java.sql.SQLException, TransactionException {
         PersistenceContext context = PersistenceContext.getCurrent();
         context.commitTransaction();
+        context.close();
+    }
+
+    private void rollbackTransaction() throws java.sql.SQLException, TransactionException {
+        PersistenceContext context = PersistenceContext.getCurrent();
+        context.rollbackTransaction();
         context.close();
     }
 
