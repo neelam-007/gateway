@@ -9,16 +9,22 @@ import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.AuthenticatableHttpServlet;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.methods.PostMethod;
 import sun.security.x509.X500Name;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLSession;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
@@ -32,6 +38,11 @@ import java.util.logging.Level;
 /**
  * Servlet which handles the CSR requests coming from the Client Proxy. Must come
  * through ssl and must contain valid credentials embedded in basic auth header.
+ *
+ * When the node handling the csr request does not have access to the master key, it tries
+ * to forward the request to the master node. In order for this to work, the root cert of the
+ * cluster must be previously inserted in the trust store of this node
+ * ($JAVA_HOME/jre/lib/security/cacerts).
  *
  * <br/><br/>
  * Layer 7 Technologies, inc.<br/>
@@ -69,13 +80,10 @@ public class CSRHandler extends AuthenticatableHttpServlet {
             return;
         }
 
-        //PersistenceContext pc = null;
-
         try {
             // Authentication
             List users = null;
             try {
-                //pc = PersistenceContext.getCurrent();
                 users = authenticateRequestBasic(request);
             } catch (IOException e) {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "authentication error");
@@ -227,10 +235,17 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         return (new File(rootkstore)).exists();
     }
 
-    private void proxyReqToSsgWithRootKStore(HttpServletRequest req, HttpServletResponse res) throws IOException {
-        // these requests should not be routed more than once!
+    private boolean isRequestAlreadyRoutedFromOtherPeer(HttpServletRequest req) {
         String isalreadyrouted = req.getHeader(ROUTED_FROM_PEER);
         if (isalreadyrouted != null && isalreadyrouted.length() > 0) {
+            return true;
+        }
+        return false;
+    }
+
+    private void proxyReqToSsgWithRootKStore(HttpServletRequest req, HttpServletResponse res) throws IOException {
+        // these requests should not be routed more than once!
+        if (isRequestAlreadyRoutedFromOtherPeer(req)) {
             String msg = "could not get root key for signing";
             logger.warning(msg + ". request re-routed!");
             res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
@@ -269,64 +284,77 @@ public class CSRHandler extends AuthenticatableHttpServlet {
 
         logger.finest("redirecting request to master " + masterhostname);
         // reconstruct url with master server host name
-        String url = req.getProtocol() + "://" + masterhostname + ":" + req.getServerPort() + req.getRequestURI();
+        int pork = req.getServerPort();
+        String protocol = "https";
+        if (pork == 8080 || pork == 80) protocol = "http";
+        String url = protocol + "://" + masterhostname + ":" + pork + req.getRequestURI();
         if (req.getQueryString() != null && req.getQueryString().length() > 0) {
             url += "?" + req.getQueryString();
         }
         logger.finest("using url " + url);
 
-        /*// using HttpURLConnection
+        // using HttpURLConnection
         HttpURLConnection connection = (HttpURLConnection)(new URL(url)).openConnection();
         connection.setDoOutput(true);
         connection.setRequestMethod("POST");
-        // loose hostname verifier
-        if (connection instanceof HttpsURLConnection) {
-            ((HttpsURLConnection)connection).setHostnameVerifier(
-              new HostnameVerifier() {
-                  public boolean verify(String s, SSLSession sslSession) {
-                      return true;
-                  }
-              });
-        }
-        connection.setRequestProperty(CONTENT_TYPE, req.getContentType());
-        connection.setRequestProperty(ROUTED_FROM_PEER, "Yes");
-        connection.setRequestProperty(AUTH_HEADER_NAME, req.getHeader(AUTH_HEADER_NAME));
-        OutputStream outputstream = connection.getOutputStream();
-        InputStream inputSream = req.getInputStream();
-        byte[] buff = new byte[256];
-        int read = inputSream.read(buff);
-        while (read > 0) {
-            outputstream.write(buff, 0, read);
+        try {
+            // loose hostname verifier
+            if (connection instanceof HttpsURLConnection) {
+                ((HttpsURLConnection)connection).setHostnameVerifier(
+                  new HostnameVerifier() {
+                      public boolean verify(String s, SSLSession sslSession) {
+                          return true;
+                      }
+                  });
+            } else if (connection instanceof com.sun.net.ssl.HttpsURLConnection) {
+                ((com.sun.net.ssl.HttpsURLConnection)connection).setHostnameVerifier(
+                  new com.sun.net.ssl.HostnameVerifier() {
+                      public boolean verify(String s, SSLSession sslSession) {
+                          return true;
+                      }
+                      public boolean verify(String s, String s1) {
+                          return true;
+                      }
+                  });
+            } else {
+                // this should not happen
+                logger.finest("non https connection(?): " + connection.getClass().getName());
+            }
+
+            connection.setRequestProperty(CONTENT_TYPE, req.getContentType());
+            connection.setRequestProperty(ROUTED_FROM_PEER, "Yes");
+            connection.setRequestProperty(AUTH_HEADER_NAME, req.getHeader(AUTH_HEADER_NAME));
+            OutputStream outputstream = connection.getOutputStream();
+            InputStream inputSream = req.getInputStream();
+            byte[] buff = new byte[256];
+            // send the actual csr request
+            int read = inputSream.read(buff);
+            while (read > 0) {
+                outputstream.write(buff, 0, read);
+                read = inputSream.read(buff);
+            }
+            inputSream.close();
+            outputstream.close();
+            int status = connection.getResponseCode();
+            res.setStatus(status);
+            res.setContentType(connection.getContentType());
+            // get response and send back
+            inputSream = connection.getInputStream();
+            outputstream = res.getOutputStream();
             read = inputSream.read(buff);
+            while (read > 0) {
+                outputstream.write(buff, 0, read);
+                read = inputSream.read(buff);
+            }
+            inputSream.close();
+            outputstream.close();
+        } catch (SSLHandshakeException e) {
+            logger.severe("forwarding this csr to the master failed because this node does not " +
+                          "have the root cert in its trusted store. import root.cer into " +
+                          "JAVA_HOME/jre/lib/security/cacerts " + e.getMessage());
+            res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "cannot forward csr to master");
         }
-        outputstream.close();
-        int status = connection.getResponseCode();
-        res.setStatus(status);
-        connection.getContentType()
-        res.setContentType();
-        todo finish this
-        */
 
-
-        // using apache HttpClient
-        HttpClient client = new HttpClient();
-        PostMethod postMethod = new PostMethod(url.toString());
-        postMethod.setRequestHeader(CONTENT_TYPE, req.getContentType());
-        postMethod.setRequestHeader(ROUTED_FROM_PEER, "Yes");
-        // set the auth header
-        postMethod.setRequestHeader(AUTH_HEADER_NAME, req.getHeader(AUTH_HEADER_NAME));
-        // set the csr
-        postMethod.setRequestBody(req.getInputStream());
-        // send the request
-        client.executeMethod(postMethod);
-        // send back to requestor whatever we are getting back from this server
-        int status = postMethod.getStatusCode();
-        res.setStatus(status);
-        res.setContentType(postMethod.getResponseHeader(CONTENT_TYPE).getValue());
-        byte[] certbytes = postMethod.getResponseBody();
-        if (certbytes != null && certbytes.length > 0) {
-            res.getOutputStream().write(certbytes);
-        }
         return;
     }
 
