@@ -102,8 +102,8 @@ public class PreferencesDialog extends JDialog {
 
         // look and feel label
         JLabel lfLabel = new JLabel();
-        lfLabel.setDisplayedMnemonic(
-          resources.getString("lookAndFeelComboBox.mnemonic").charAt(0));
+        //lfLabel.setDisplayedMnemonic(
+        //  resources.getString("lookAndFeelComboBox.mnemonic").charAt(0));
         // setLabelFor() allows the label's mnemonic to work for the component
         lfLabel.setLabelFor(lfComboBox);
         lfLabel.setText(resources.getString("lookAndFeelComboBox.label"));
