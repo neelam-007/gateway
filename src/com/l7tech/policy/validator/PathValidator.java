@@ -362,7 +362,7 @@ class PathValidator {
             a instanceof RequestWssConfidentiality  || a instanceof RequestWssIntegrity  ||
             a instanceof RequestWssReplayProtection || a instanceof RequestWssX509Cert ||
             a instanceof ResponseWssConfidentiality  || a instanceof ResponseWssIntegrity ||
-            a instanceof SamlSecurity)
+            a instanceof SamlSecurity || a instanceof SwAAssertion)
             return true;
         return false;
     }
