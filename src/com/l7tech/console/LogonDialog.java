@@ -399,8 +399,7 @@ public class LogonDialog extends JDialog {
 
         // if the service is not avail, format the message and show to te client
         if (!isServiceAvailable(serviceURL)) {
-          String msg =
-            MessageFormat.format(
+          String msg = MessageFormat.format(
                                 dialog.resources.getString("logon.connect.error"),
                                 new Object[] {getHostPart(serviceURL)});
           JOptionPane.
@@ -408,7 +407,13 @@ public class LogonDialog extends JDialog {
           break;
         }
 
-        authenticated = true;
+        authenticated = com.l7tech.adminws.ClientCredentialManager.validateAdminCredentials(pw);
+
+          if (!authenticated) {
+              JOptionPane.showMessageDialog(null, "Authentication failure.", "Error", JOptionPane.ERROR_MESSAGE);
+              continue;
+          }
+
         break;
       } catch (Exception e) { // everything else, generic error message
         log.warn("logon()", e);
