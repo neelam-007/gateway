@@ -3,10 +3,19 @@ package com.l7tech.console.panels;
 import com.l7tech.console.util.IconManager;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.User;
+import com.l7tech.identity.Group;
+import com.l7tech.identity.internal.imp.UserImp;
+import com.l7tech.identity.internal.imp.GroupImp;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.PublishedService;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.identity.MemberOfGroup;
+import com.l7tech.policy.wsp.WspWriter;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -20,6 +29,7 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.io.ByteArrayOutputStream;
 
 
 /**
@@ -32,11 +42,9 @@ import java.util.Iterator;
  */
 public class IdentityProviderPanel extends WizardStepPanel {
     private DefaultComboBoxModel providersComboBoxModel;
-    private PublishedService service;
 
     /** Creates new form IdentityProviderPanel */
-    public IdentityProviderPanel(PublishedService service) {
-        this.service = service;
+    public IdentityProviderPanel() {
         initComponents();
         equalizeButtons();
     }
@@ -46,7 +54,6 @@ public class IdentityProviderPanel extends WizardStepPanel {
      * initialize the form.
      */
     private void initComponents() {
-
         providerSelectorjPanel = new JPanel();
         selecProviderjLabel = new JLabel();
         providersjComboBox = new JComboBox();
@@ -315,6 +322,53 @@ public class IdentityProviderPanel extends WizardStepPanel {
     public String getDescription() {
         return "Select the identities (users, groups) that are allowed to access the published service" +
                 " Specify where the credentials are located and transport layewr security";
+    }
+
+    /**
+     * Test whether the step is finished and it is safe to proceed to the next
+     * one.
+     * If the step is valid, the "Next" (or "Finish") button will be enabled.
+     *
+     * @return true if the panel is valid, false otherwis
+     */
+    public boolean isValid() {
+        return true;
+    }
+
+    /**
+     * Provides the wizard with the current data
+     *
+     * @param settings the object representing wizard panel state
+     * @exception IllegalArgumentException if the the data provided
+     * by the wizard are not valid.
+     */
+    public void readSettings(Object settings) throws IllegalArgumentException {
+        PublishedService publishedService = (PublishedService)settings;
+
+
+       IdentityProvider ip = (IdentityProvider)providersComboBoxModel.getSelectedItem();
+       if (ip == null) {
+          publishedService.setPolicyXml(null);
+       }
+       java.util.List assertions = new ArrayList();
+        Iterator it = getIdentitiesInTableModel().getDataVector().iterator();
+        while(it.hasNext()) {
+            java.util.List row = (java.util.List)it.next();
+            EntityHeader eh = (EntityHeader)row.get(0);
+            if (EntityType.USER.equals(eh.getType())) {
+                User u = new UserImp();
+                u.setName(eh.getName());
+                assertions.add(new SpecificUser(ip, u));
+            } else if (EntityType.GROUP.equals(eh.getType())) {
+                Group g = new GroupImp();
+                g.setName(eh.getName());
+                assertions.add(new MemberOfGroup(ip, g));
+            }
+        }
+        Assertion assertion = new OneOrMoreAssertion(assertions);
+        ByteArrayOutputStream bo = new ByteArrayOutputStream();
+        WspWriter.writePolicy(assertion, bo);
+        publishedService.setPolicyXml(bo.toString());
     }
 
     /** @return the wizard step label    */

@@ -1,37 +1,37 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.IconManager;
 import com.l7tech.console.tree.WsdlTreeNode;
-import com.l7tech.service.Wsdl;
+import com.l7tech.console.util.IconManager;
+import com.l7tech.console.util.Registry;
 import com.l7tech.service.PublishedService;
+import com.l7tech.service.Wsdl;
 
 import javax.swing.*;
-import javax.swing.tree.*;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ChangeEvent;
 import javax.swing.border.EmptyBorder;
+import javax.swing.tree.*;
 import javax.wsdl.WSDLException;
-import javax.wsdl.PortType;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.rmi.RemoteException;
+import java.awt.event.ActionListener;
 import java.io.StringReader;
-import java.util.Iterator;
-import java.util.ArrayList;
+import java.io.StringWriter;
 import java.net.MalformedURLException;
+import java.rmi.RemoteException;
 
 /**
  *
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.2
-
  */
 public class ServicePanel extends WizardStepPanel {
-    private PublishedService service;
+
+    // local service copy
+    private PublishedService service = new PublishedService();
 
     /** Creates new form ServicePanel */
-    public ServicePanel(PublishedService service) {
-        this.service = service;
+    public ServicePanel() {
         initComponents();
     }
 
@@ -58,7 +58,7 @@ public class ServicePanel extends WizardStepPanel {
         serviceUrljLabel.setBorder(new EmptyBorder(new Insets(1, 1, 1, 5)));
         serviceUrljPanel.add(serviceUrljLabel);
 
-        wsdlUrljTextField.setText("http://localhost/urn:QuoteService?wsdl");
+        wsdlUrljTextField.setText("http://www.xmethods.net/sd/2001/BabelFishService.wsdl");
         wsdlUrljTextFieldFont = wsdlUrljTextField.getFont();
 
         wsdlUrljTextField.setPreferredSize(new Dimension(150, 20));
@@ -72,65 +72,88 @@ public class ServicePanel extends WizardStepPanel {
         resolvejButton.addActionListener(new ActionListener() {
             /** Invoked when an action occurs. */
             public void actionPerformed(ActionEvent e) {
+                isValid = false;
+                notifyListeners();
                 try {
-                    String sw =
-                            Registry.getDefault().getServiceManager().resolveWsdlTarget(wsdlUrljTextField.getText());
-                    Wsdl wsdl = Wsdl.newInstance(null, new StringReader(sw));
+                    String url =
+                      Registry.getDefault().getServiceManager().resolveWsdlTarget(wsdlUrljTextField.getText());
+                    Wsdl wsdl = Wsdl.newInstance(null, new StringReader(url));
                     TreeNode node = WsdlTreeNode.newInstance(wsdl);
-                    service.setName(wsdl.getDefinition().getTargetNamespace());
-                    service.setUrn(wsdl.getDefinition().getTargetNamespace());
-                    service.setWsdlXml(wsdl.toString());
-                    service.setWsdlUrl(wsdlUrljTextField.getText());
                     wsdlJTree.setModel(new DefaultTreeModel(node));
                     wsdlJTree.setCellRenderer(wsdlTreeRenderer);
+
+                    service.setName(wsdl.getDefinition().getTargetNamespace());
+                    service.setUrn(wsdl.getDefinition().getTargetNamespace());
+                    StringWriter sw = new StringWriter();
+                    wsdl.toWriter(sw);
+                    service.setWsdlXml(sw.toString());
+                    service.setWsdlUrl(wsdlUrljTextField.getText());
+                    isValid = true;
+                    notifyListeners();
                 } catch (RemoteException e1) {
                     e1.printStackTrace();
                     JOptionPane.showMessageDialog(null,
-                            "Unable to resolve the WSDL at location '" + wsdlUrljTextField.getText() + "'\n",
-                            "Error",
-                            JOptionPane.ERROR_MESSAGE);
+                      "Unable to resolve the WSDL at location '" + wsdlUrljTextField.getText() + "'\n",
+                      "Error",
+                      JOptionPane.ERROR_MESSAGE);
                 } catch (WSDLException e1) {
                     e1.printStackTrace();
                     JOptionPane.showMessageDialog(null,
-                            "Unable to parse the WSDL at location '" + wsdlUrljTextField.getText() + "'\n",
-                            "Error",
-                            JOptionPane.ERROR_MESSAGE);
+                      "Unable to parse the WSDL at location '" + wsdlUrljTextField.getText() + "'\n",
+                      "Error",
+                      JOptionPane.ERROR_MESSAGE);
                 } catch (MalformedURLException e1) {
                     e1.printStackTrace();
                     JOptionPane.showMessageDialog(null,
-                            "Illegal URL string '" + wsdlUrljTextField.getText() + "'\n",
-                            "Error",
-                            JOptionPane.ERROR_MESSAGE);
+                      "Illegal URL string '" + wsdlUrljTextField.getText() + "'\n",
+                      "Error",
+                      JOptionPane.ERROR_MESSAGE);
                 }
             }
 
         });
         serviceUrljPanel.add(resolvejButton);
-
         add(serviceUrljPanel, BorderLayout.NORTH);
-
         serviceOperationsjPanel.setLayout(new BoxLayout(serviceOperationsjPanel, BoxLayout.X_AXIS));
-
         serviceOperationsjPanel.setBorder(new EmptyBorder(new Insets(10, 10, 10, 10)));
         methodsjScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         methodsjScrollPane.setPreferredSize(new Dimension(200, 150));
-
         wsdlJTree.setModel(new DefaultTreeModel(EMPTY_ROOT));
         methodsjScrollPane.setViewportView(wsdlJTree);
-
         serviceOperationsjPanel.add(methodsjScrollPane);
-
         rigidAreatjPanel.setLayout(new GridBagLayout());
-
         serviceOperationsjPanel.add(rigidAreatjPanel);
-
         add(serviceOperationsjPanel, BorderLayout.CENTER);
 
     }
 
     public String getDescription() {
         return "Retrieve the protected service description."
-                + " Specify the service WSDL URL. Note that the request is performed on SSG (server side)";
+          + " Specify the service WSDL URL. Note that the request is performed on SSG (server side)";
+    }
+
+    public boolean isValid() {
+        return isValid;
+    }
+
+    public void readSettings(Object settings) throws IllegalStateException {
+        if (!(settings instanceof PublishedService)) {
+            throw new IllegalArgumentException();
+        }
+        try {
+            PublishedService publishedService = (PublishedService)settings;
+
+            publishedService.setName(service.getName());
+            publishedService.setUrn(service.getUrn());
+            publishedService.setWsdlXml(service.getWsdlXml());
+            publishedService.setWsdlUrl(service.getWsdlUrl());
+        } catch (Exception e) {
+            e.printStackTrace();
+            isValid = false;
+        }
+    }
+
+    public void storeSettings(Object settings) throws IllegalStateException {
     }
 
     /** @return the wizard step label    */
@@ -200,5 +223,6 @@ public class ServicePanel extends WizardStepPanel {
     private JPanel serviceOperationsjPanel;
     private JTextField wsdlUrljTextField;
     private Font wsdlUrljTextFieldFont;
+    private boolean isValid;
 
 }

@@ -7,6 +7,8 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 
 import javax.swing.*;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ChangeEvent;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.CompoundBorder;
@@ -27,11 +29,11 @@ public class PublishServiceWizard extends JDialog {
     PublishedService service = new PublishedService();
 
     private WizardStepPanel[] panels =
-            new WizardStepPanel[]{
-                new ServicePanel(service),
-                new EndpointCredentialsPanel(service),
-                new IdentityProviderPanel(service)
-            };
+      new WizardStepPanel[]{
+          new ServicePanel(),
+          new EndpointCredentialsPanel(),
+          new IdentityProviderPanel()
+      };
 
     private int currentPanel = 0;
     private PanelListener panelListener;
@@ -42,6 +44,9 @@ public class PublishServiceWizard extends JDialog {
         super(parent, modal);
         initComponents();
         stepjPanel.add(panels[0], BorderLayout.CENTER);
+        for (int i = 0; i < panels.length; i++) {
+            panels[i].addChangeListener(changeListener);
+        }
     }
 
     /**
@@ -125,19 +130,22 @@ public class PublishServiceWizard extends JDialog {
         buttonFinish.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
                 try {
+                    for (int i = 0; i < panels.length; i++) {
+                        panels[i].readSettings(service);
+                    }
                     Registry.getDefault().getServiceManager().save(service);
                     EntityHeader header = new EntityHeader();
                     header.setType(EntityType.SERVICE);
                     header.setName(service.getName());
-                    if (panelListener !=null) {
+                    if (panelListener != null) {
                         panelListener.onInsert(header);
                     }
                 } catch (SaveException e) {
                     e.printStackTrace();
                     JOptionPane.showMessageDialog(null,
-                            "Unable to save the service '" + service.getName() + "'\n",
-                            "Error",
-                            JOptionPane.ERROR_MESSAGE);
+                      "Unable to save the service '" + service.getName() + "'\n",
+                      "Error",
+                      JOptionPane.ERROR_MESSAGE);
                 }
 
                 setVisible(false);
@@ -171,8 +179,8 @@ public class PublishServiceWizard extends JDialog {
 
         stepsTitlejPanel.setBackground(new java.awt.Color(213, 222, 222));
         stepsTitlejPanel.
-                setBorder(new CompoundBorder(new EmptyBorder(new java.awt.Insets(5, 5, 5, 5)),
-                        new MatteBorder(new Insets(0, 0, 1, 0), new Color(0, 0, 0))));
+          setBorder(new CompoundBorder(new EmptyBorder(new java.awt.Insets(5, 5, 5, 5)),
+            new MatteBorder(new Insets(0, 0, 1, 0), new Color(0, 0, 0))));
 
         stepsjLabel.setFont(new java.awt.Font("Dialog", 1, 14));
         stepsjLabel.setText("Steps");
@@ -209,7 +217,7 @@ public class PublishServiceWizard extends JDialog {
         long flags = evt.getChangeFlags();
 
         if (eID == evt.HIERARCHY_CHANGED &&
-                ((flags & evt.DISPLAYABILITY_CHANGED) == evt.DISPLAYABILITY_CHANGED)) {
+          ((flags & evt.DISPLAYABILITY_CHANGED) == evt.DISPLAYABILITY_CHANGED)) {
             if (PublishServiceWizard.this.isDisplayable()) {
                 stepLabels = new JLabel[panels.length];
 
@@ -236,7 +244,6 @@ public class PublishServiceWizard extends JDialog {
     }
 
     private void buttonNextActionPerformed(ActionEvent evt) {
-        // Add your handling code here:
         stepjPanel.remove(panels[currentPanel]);
         stepjPanel.add(panels[++currentPanel], BorderLayout.CENTER);
         stepjPanel.updateUI();
@@ -256,9 +263,9 @@ public class PublishServiceWizard extends JDialog {
     }
 
     private void updateButtonsNavigate() {
-        buttonFinish.setEnabled(currentPanel > 0);
+        buttonFinish.setEnabled(currentPanel > 0 && panels[currentPanel].isValid());
         buttonBack.setEnabled(currentPanel > 0);
-        buttonNext.setEnabled(currentPanel < panels.length - 1);
+        buttonNext.setEnabled(currentPanel < panels.length - 1 && panels[currentPanel].isValid());
         if (panels.length > 0)
             stepDescriptionjTextArea.setText(panels[currentPanel].getDescription());
     }
@@ -278,6 +285,20 @@ public class PublishServiceWizard extends JDialog {
         }
     }
 
+    /**
+     * the change listener collects state changes from 'step' panels
+     */
+    private final ChangeListener changeListener = new ChangeListener() {
+        /**
+         * Invoked when the target of the listener has changed its state.
+         *
+         * @param e  a ChangeEvent object
+         */
+        public void stateChanged(ChangeEvent e) {
+            updateWizardUiState();
+        }
+
+    };
     private JPanel titlePanel;
     private JLabel stepsjLabel;
     private JScrollPane stepDescriptionjScrollPane;
@@ -296,4 +317,6 @@ public class PublishServiceWizard extends JDialog {
     private JButton buttonHelp;
 
     private JLabel[] stepLabels = new JLabel[0];
+
+
 }

@@ -19,10 +19,9 @@ import java.awt.*;
  * @version 1.0
  */
 public class EndpointCredentialsPanel extends WizardStepPanel {
-    PublishedService service;
+
     /** Creates new form ServicePanel */
-    public EndpointCredentialsPanel(PublishedService service) {
-        service = service;
+    public EndpointCredentialsPanel() {
         initComponents();
     }
     
@@ -134,7 +133,17 @@ public class EndpointCredentialsPanel extends WizardStepPanel {
     /** @return the wizard step description as string  */
     public String getDescription() {
         return "Enter the protected service credentials and credentials policy";
+    }
 
+    /**
+     * Test whether the step is finished and it is safe to proceed to the next
+     * one.
+     * If the step is valid, the "Next" (or "Finish") button will be enabled.
+     *
+     * @return true if the panel is valid, false otherwis
+     */
+    public boolean isValid() {
+        return true;
     }
 
     /** @return the wizard step label    */
