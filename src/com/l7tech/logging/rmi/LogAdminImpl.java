@@ -2,12 +2,16 @@ package com.l7tech.logging.rmi;
 
 import com.l7tech.logging.LogAdmin;
 import com.l7tech.logging.SSGLogRecord;
+import com.l7tech.logging.ServerLogManager;
 import com.l7tech.remote.jini.export.RemoteService;
+import com.l7tech.objectmodel.PersistenceContext;
 import com.sun.jini.start.LifeCycle;
 import net.jini.config.ConfigurationException;
 
 import java.io.IOException;
 import java.rmi.RemoteException;
+import java.sql.SQLException;
+import java.util.logging.Logger;
 
 /**
  * <code>Log</code> service implementation.
@@ -26,7 +30,6 @@ public class LogAdminImpl extends RemoteService implements LogAdmin {
     public LogAdminImpl(String[] configOptions, LifeCycle lc)
       throws ConfigurationException, IOException {
         super(configOptions, lc);
-        delegate = new com.l7tech.logging.ws.LogAdminImpl();
     }
 
     /**
@@ -82,11 +85,19 @@ public class LogAdminImpl extends RemoteService implements LogAdmin {
      *
      */
     public SSGLogRecord[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, int size) throws RemoteException {
-        return delegate.getSystemLog(nodeid, startMsgNumber, endMsgNumber, size);
+        try {
+            return (SSGLogRecord[])ServerLogManager.getInstance().getLogRecords(nodeid, startMsgNumber, endMsgNumber, size).toArray(new SSGLogRecord[]{});
+        } finally {
+            try {
+                PersistenceContext.getCurrent().close();
+            } catch (SQLException e) {
+                logger.fine("error closing context");
+            }
+        }
     }
 
     // ************************************************
     // PRIVATES
     // ************************************************
-    private com.l7tech.logging.ws.LogAdminImpl delegate = null;
+    private final Logger logger = Logger.getLogger(getClass().getName());
 }
