@@ -100,7 +100,7 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
                 logger.log(Level.WARNING, "Authorization (access control) failed", e);
                 return AssertionStatus.UNAUTHORIZED;
             }
-            logger.log(Level.SEVERE, "Error invking the custom assertion", e);
+            logger.log(Level.SEVERE, "Failed to invoke the custom assertion", e);
             return AssertionStatus.FAILED;
         } catch (AccessControlException e) {
             logger.log(Level.WARNING, "Authorization (access control) failed", e);
