@@ -6,8 +6,10 @@ import com.l7tech.identity.Group;
 import com.l7tech.identity.IdProvConfManagerServer;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserManager;
+import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.*;
+import com.l7tech.common.util.Locator;
 
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
@@ -197,14 +199,17 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
             String originalPasswd = originalUser.getPassword();
             String newPasswd = user.getPassword();
 
+            // if password has changed, any cert should be revoked
             if (!originalPasswd.equals(newPasswd)) {
                 logger.info("Revoking cert for user " + originalUser.getLogin() + " because he is changing his passwd.");
                 // must revoke the cert
-                // todo, refactor this using new ClientCertManager
-                /*originalUser.setCert( null );
-                originalUser.setCertResetCounter( 0 );
-                user.setCert( null );
-                user.setCertResetCounter( 0 );*/
+                ClientCertManager man = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
+                try {
+                    man.revokeUserCert(originalUser);
+                } catch (UpdateException e) {
+                    logger.log(Level.FINE, "could not revoke cert for user " + originalUser.getLogin() +
+                            " perhaps this user had no existing cert", e);
+                }
             }
             // update user
             originalUser.copyFrom(user);
