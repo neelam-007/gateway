@@ -1,11 +1,14 @@
 package com.l7tech.remote.jini.l7code;
 
-import java.rmi.RemoteException;
+import java.io.IOException;
+import java.rmi.Remote;
 
 /**
+ * <code>CodeServer</code> implementations provide the code downloading
+ * service to the clients. 
  * @author emil
  * @version 24-Mar-2004
  */
-public interface CodeServer {
-    public byte[] geResource(String resource) throws RemoteException;
+public interface CodeServer extends Remote {
+    public byte[] geResource(String resource) throws IOException;
 }
