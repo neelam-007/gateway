@@ -7,11 +7,13 @@ import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.datamodel.SsgManagerImpl;
+import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.processor.MessageProcessor;
 import org.mortbay.util.MultiException;
 
 import java.net.BindException;
 import java.util.logging.Logger;
+import java.io.File;
 
 /**
  * Begin execution of client proxy along with an attached GUI.
@@ -38,6 +40,9 @@ public class Main {
 
     /** Start a GUI-equipped client proxy and run it until it's shut down. */
     public static void main(final String[] argv) {
+        // Prepare .l7tech directory before initializing logging (Bug #1288)
+        new File(ClientProxy.PROXY_CONFIG).mkdirs(); // expected to fail on all but the very first execution
+        
         JdkLoggerConfigurator.configure("com.l7tech.proxy", "com/l7tech/proxy/resources/logging.properties");
         log.info("Starting SecureSpan Bridge; " + BuildInfo.getLongBuildString());
         JceProvider.init();
