@@ -6,7 +6,6 @@
 
 package com.l7tech.policy.wsp;
 
-import com.l7tech.common.security.xml.TokenServiceRequestType;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.wsdl.BindingInfo;
 import com.l7tech.common.wsdl.BindingOperationInfo;
@@ -14,7 +13,6 @@ import com.l7tech.common.wsdl.MimePartInfo;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
@@ -28,23 +26,18 @@ import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
 import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.*;
-import java.util.logging.Logger;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Contains the guts of the WspReader and WspWriter, and the registry of types we can serialize.
  */
 public class WspConstants {
-    private static final Logger log = Logger.getLogger(WspConstants.class.getName());
-
     public static final String WSP_POLICY_NS = SoapUtil.WSP_NAMESPACE;
     public static final String L7_POLICY_NS = "http://www.layer7tech.com/ws/policy";
     public static final String POLICY_ELNAME = "Policy";
@@ -57,520 +50,6 @@ public class WspConstants {
           double.class.equals(type) ||
           byte.class.equals(type) ||
           char.class.equals(type));
-    }
-
-    interface TypeMapping {
-        Class getMappedClass();
-
-        String getExternalName();
-
-        /**
-         * Serialize the specified Object as a child element of the specified container element.  The serialized
-         * element will be added to container with appendChild(), and will also be returned for reference.
-         * <p/>
-         * If object has a non-null name field, then "Named" format will be used for the returned Element:
-         * the returned element will look like <code>&lt;name typeValueNull="null"/&gt;</code> if null, like
-         * <code>&lt;name typeValue="..."/&gt;</code> if a non-null simple type, or like
-         * <code>&lt;name typeValue="included"&gt;...&lt;/name&gt;</code> if a non-null complex type.
-         * <p/>
-         * If object has a null name field, then "Anonymous" format will be used for the returned Element:
-         * the object may not be null, and the returned element will look like <code>&lt;Type&gt;...&lt;/Type&gt;</code>
-         *
-         * @param object    the object to serialize
-         * @param container the container to receive it
-         * @return the newly created Element, which has also been appended underneath container
-         */
-        Element freeze(TypedReference object, Element container);
-
-        /**
-         * De-serialize the specified XML element into an Object and return a TypedReference the new Object.
-         * The returned TypedReference will have a name if one is known.
-         *
-         * @param source
-         * @return
-         */
-        TypedReference thaw(Element source, WspVisitor visitor) throws InvalidPolicyStreamException;
-    }
-
-    /**
-     * TypeMapping to use for basic concrete types whose values are represented most naturally by simple strings.
-     */
-    static class BasicTypeMapping implements TypeMapping {
-        protected String externalName;
-        protected Class clazz;
-        protected boolean isNullable;
-        protected Constructor stringConstructor;  // constructor-from-string, if this type has one
-
-        BasicTypeMapping(Class clazz, String externalName) {
-            this.clazz = clazz;
-            this.externalName = externalName;
-            this.isNullable = isNullableType(clazz);
-            try {
-                stringConstructor = clazz.getConstructor(new Class[]{String.class});
-            } catch (Exception e) {
-                stringConstructor = null;
-            }
-        }
-
-        public Class getMappedClass() { return clazz; }
-
-        public String getExternalName() { return externalName; }
-
-        public Element freeze(TypedReference object, Element container) {
-            if (object == null)
-                throw new IllegalArgumentException("a non-null TypedReference must be provided");
-            if (container == null)
-                throw new IllegalArgumentException("a non-null container must be provided");
-            if (object.type != clazz)
-                throw new IllegalArgumentException("this TypeMapper is only for " + clazz + "; can't use with " + object.type);
-            Element elm = object.name == null ? freezeAnonymous(object, container) : freezeNamed(object, container);
-            container.appendChild(elm);
-            return elm;
-        }
-
-        /**
-         * Return the new element, without appending it to the container yet.
-         */
-        protected Element freezeAnonymous(TypedReference object, Element container) {
-            throw new IllegalArgumentException("BasicTypeMapping supports only Named format");
-        }
-
-        /**
-         * Return the new element, without appending it to the container yet.
-         */
-        protected Element freezeNamed(TypedReference object, Element container) {
-            Element elm = container.getOwnerDocument().createElementNS(L7_POLICY_NS, object.name);
-            if (object.target == null) {
-                if (!isNullable)  // sanity check
-                    throw new InvalidPolicyTreeException("Assertion has property \"" + object.name + "\" which mustn't be null yet is");
-                elm.setAttribute(externalName + "Null", "null");
-            } else {
-                String stringValue = objectToString(object.target);
-                elm.setAttribute(externalName, stringValue);
-                populateElement(elm, object); // hook for more complex types
-            }
-            return elm;
-        }
-
-        /**
-         * Do any extra work that might be requried by this element.
-         *
-         * @param newElement the newly-created element that needs to have properties filled in from object, whose
-         *                   target may not be null.
-         * @param object
-         */
-        protected void populateElement(Element newElement, TypedReference object) throws InvalidPolicyTreeException {
-            // no action required for simple types
-        }
-
-        /**
-         * Convert object into a string that can be saved as an attribute value.
-         *
-         * @param target the object to examine. must not be null
-         * @return the object in string form, or null if the object was null
-         */
-        protected String objectToString(Object target) {
-            return target.toString();
-        }
-
-        public TypedReference thaw(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
-            try {
-                return doThaw(source, visitor, false);
-            } catch (InvalidPolicyStreamException e) {
-                return doThaw(visitor.invalidElement(source, e), visitor, true);
-            }
-        }
-
-        private TypedReference doThaw(Element source, WspVisitor visitor, boolean recursing)
-                throws InvalidPolicyStreamException
-        {
-            NamedNodeMap attrs = source.getAttributes();
-            switch (attrs.getLength()) {
-                case 0:
-                    // Anonymous element
-                    return thawAnonymous(source, visitor);
-
-                case 1:
-                    // Named element
-                    return thawNamed(source, visitor);
-
-                default:
-                    final BadAttributeCountException e = new BadAttributeCountException(
-                            "Policy contains a " + source.getNodeName() +
-                            " element with more than one attribute");
-                    if (recursing) throw e;
-                    return doThaw(visitor.invalidElement(source, e), visitor, true);
-            }
-        }
-
-        protected TypedReference thawNamed(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
-            return doThawNamed(source, visitor, false);
-        }
-
-        private TypedReference doThawNamed(Element source, WspVisitor visitor, boolean recursing) throws InvalidPolicyStreamException {
-            NamedNodeMap attrs = source.getAttributes();
-            if (attrs.getLength() != 1)
-            {
-                final BadAttributeCountException e = new BadAttributeCountException("Policy contains a " +
-                                                                                                       source.getNodeName() +
-                                                                                                       " element that doesn't have exactly one attribute");
-                if (recursing) throw e;
-                return doThawNamed(visitor.invalidElement(source, e), visitor, true);
-            }
-            Node attr = attrs.item(0);
-            String typeName = attr.getLocalName();
-            if (typeName == null) typeName = attr.getNodeName();
-            String value = attr.getNodeValue();
-
-            if (typeName.endsWith("Null") && typeName.length() > 4) {
-                typeName = typeName.substring(0, typeName.length() - 4);
-                value = null;
-                if (!isNullable) {
-                    final InvalidPolicyStreamException e = new InvalidPolicyStreamException("Policy contains a null " + externalName);
-                    if (recursing) throw e;
-                    return doThawNamed(visitor.invalidElement(source, e), visitor, true);
-                }
-            }
-
-            if (!externalName.equals(typeName)) {
-                final InvalidPolicyStreamException e = new InvalidPolicyStreamException("TypeMapping for " + clazz + ": unrecognized attr " + typeName);
-                if (recursing) throw e;
-                return doThawNamed(visitor.invalidElement(source, e), visitor, true);
-            }
-
-            if (value == null)
-                return new TypedReference(clazz, null, source.getNodeName());
-
-            return createObject(source, value, visitor);
-        }
-
-        /**
-         * Inspect the DOM element and construct the actual object, which at this point is known to be non-null.
-         * The default implementation calls stringToObject(value) to create the object, and populateObject() to fill
-         * out its fields.
-         *
-         * @param element The element being deserialized
-         * @param value   The simple string value represented by element, if meaningful for this TypeMapping; otherwise "included"
-         * @return A TypedReference to the newly deserialized object
-         * @throws InvalidPolicyStreamException if the element cannot be deserialized
-         */
-        protected TypedReference createObject(Element element, String value, WspVisitor visitor) throws InvalidPolicyStreamException {
-            if (value == null)
-                throw new InvalidPolicyStreamException("Null values not supported"); // can't happen
-            TypedReference tr = new TypedReference(clazz, stringToObject(value), element.getNodeName());
-            if (tr.target != null)
-                populateObject(tr, element, visitor);
-            return tr;
-        }
-
-        /**
-         * Do any extra work that might be requried by this new object deserialized from this element.
-         *
-         * @param object the newly-created object that needs to have properties filled in from source. target may not be null
-         * @param source the element from which object is being created
-         */
-        protected void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
-            // no action required for simple types
-        }
-
-        protected TypedReference thawAnonymous(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
-            throw new IllegalArgumentException("BasicTypeMapping supports only Named format");
-        }
-
-        /**
-         * This method is responsible for constructing the newly deserialized object, but doesn't populate its fields.
-         * For simple types, perform the reverse of objectToString.
-         */
-        protected Object stringToObject(String value) throws InvalidPolicyStreamException {
-            if (stringConstructor == null)
-                throw new InvalidPolicyStreamException("No stringToObject defined for TypeMapping for class " + clazz);
-            try {
-                return stringConstructor.newInstance(new Object[]{value});
-            } catch (Exception e) {
-                throw new InvalidPolicyStreamException("Unable to convert string into " + clazz, e);
-            }
-        };
-    }
-
-    static class ComplexTypeMapping extends BasicTypeMapping {
-        protected Constructor constructor; // default, no-arguments constructor for this type
-
-        ComplexTypeMapping(Class clazz, String externalName) {
-            super(clazz, externalName);
-            try {
-                // Try to find the default constructor
-                constructor = clazz.getConstructor(new Class[0]);
-            } catch (Exception e) {
-                constructor = null;
-            }
-        }
-
-        ComplexTypeMapping(Class clazz, String externalName, Constructor constructor) {
-            super(clazz, externalName);
-            this.constructor = constructor;
-        }
-
-        protected Element freezeAnonymous(TypedReference object, Element container) {
-            Element elm = container.getOwnerDocument().createElementNS(L7_POLICY_NS, externalName);
-            if (object.target == null)
-                throw new InvalidPolicyTreeException("Null objects may not be serialized in Anonymous format");
-            populateElement(elm, object);
-            return elm;
-        }
-
-        protected Object stringToObject(String value) throws InvalidPolicyStreamException {
-            if (!"included".equals(value))
-                throw new InvalidPolicyStreamException("Complex type's value must be \"included\" if it is non-null");
-            if (constructor == null)
-                throw new InvalidPolicyStreamException("No default constructor known for class " + clazz);
-            try {
-                return constructor.newInstance(new Object[0]);
-            } catch (Exception e) {
-                throw new InvalidPolicyStreamException("Unable to construct class " + clazz, e);
-            }
-        }
-
-        protected TypedReference thawAnonymous(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
-            return createObject(source, "included", visitor);
-        }
-
-        protected String objectToString(Object value) throws InvalidPolicyTreeException {
-            return value == null ? "null" : "included";
-        }
-    }
-
-    static class BeanTypeMapping extends ComplexTypeMapping {
-        BeanTypeMapping(Class clazz, String externalName) {
-            super(clazz, externalName);
-        }
-
-        protected void populateElement(Element element, TypedReference object) {
-            try {
-                emitBeanProperties(object.target, element);
-            } catch (InvocationTargetException e) {
-                throw new InvalidPolicyTreeException(e);
-            } catch (IllegalAccessException e) {
-                throw new InvalidPolicyTreeException(e);
-            }
-        }
-
-        protected void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
-            Object target = object.target;
-
-            // gather properties
-            List properties = WspConstants.getChildElements(source);
-            for (Iterator i = properties.iterator(); i.hasNext();) {
-                Element kid = (Element)i.next();
-                String parm = kid.getLocalName();
-
-                TypedReference thawedReference = typeMappingObject.thaw(kid, visitor);
-                callSetMethod(source, kid, target, parm, thawedReference, visitor);
-            }
-        }
-
-        private void callSetMethod(Element targetSource,
-                                   Element propertySource,
-                                   Object target,
-                                   String parm,
-                                   TypedReference value,
-                                   WspVisitor visitor)
-                throws InvalidPolicyStreamException
-        {
-            Object[] parameter = new Object[] { value.target };
-            Class tryType = value.type;
-            String methodName = "set" + parm;
-            log.finest("Trying to set property: " + target.getClass() + ".set" + parm + "(" +
-                          (value.target == null ? "null" : value.target.getClass().getName()) + ")");
-            try {
-                Method setter = null;
-                do {
-                    try {
-                        setter = target.getClass().getMethod(methodName, new Class[]{tryType});
-                    } catch (NoSuchMethodException e) {
-                        tryType = tryType.getSuperclass();
-                        if (tryType == null) {
-                            // out of superclasses; buck stops here
-                            visitor.unknownProperty(targetSource, propertySource, target, parm, value, null);
-                            return;
-                        }
-                    }
-                } while (setter == null);
-                invokeMethod(setter, target, parameter);
-            } catch (SecurityException e) {
-                visitor.unknownProperty(targetSource, propertySource, target, parm, value, e);
-            } catch (IllegalAccessException e) {
-                visitor.unknownProperty(targetSource, propertySource, target, parm, value, e);
-            } catch (InvocationTargetException e) {
-                visitor.unknownProperty(targetSource, propertySource, target, parm, value, e);
-            }
-        }
-    }
-
-    static class ObjectTypeMapping extends BasicTypeMapping {
-        ObjectTypeMapping(Class clazz, String externalName) {
-            super(clazz, externalName);
-        }
-
-        public Element freeze(TypedReference object, Element container) {
-            // Before delegating to generic Bean serialize, check if there's a serializer
-            // specific to this concrete type.
-            if (object.target != null) {
-                Class c = object.target.getClass();
-                if (c != Object.class) {
-                    TypeMapping tm = findTypeMappingByClass(c);
-                    if (tm != null)
-                        return tm.freeze(new TypedReference(c, object.target, object.name), container);
-
-                    throw new InvalidPolicyTreeException("Don't know how to safely serialize instance of class " + c);
-                }
-            }
-
-            // The target is either null or a concrete instance of Object (and not some subclass), so this is safe
-            return super.freeze(object, container);
-        }
-
-        public TypedReference thaw(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
-            try {
-                return doThaw(source, visitor, false);
-            } catch (InvalidPolicyStreamException e) {
-                return doThaw(visitor.invalidElement(source, e), visitor, true);
-            }
-        }
-
-        private TypedReference doThaw(Element source, WspVisitor visitor, boolean recursing) throws InvalidPolicyStreamException {
-            if (!L7_POLICY_NS.equals(source.getNamespaceURI()))
-                throw new InvalidPolicyStreamException("Policy contains node \"" + source.getNodeName() +
-                  "\" with unrecognized namespace URI \"" + source.getNamespaceURI() + "\"");
-
-            NamedNodeMap attrs = source.getAttributes();
-            if (attrs.getLength() == 0) {
-                // Appears to be an anonymous element  <Typename>..</Typename>
-                TypeMapping tm = WspConstants.findTypeMappingByExternalName(source.getNodeName());
-                if (tm == null) {
-                    final InvalidPolicyStreamException e = new InvalidPolicyStreamException("Unrecognized anonymous element " + source.getNodeName());
-                    if (recursing) throw e;
-                    final Element newSource = visitor.invalidElement(source, e);
-
-                    return doThaw(newSource, visitor, true);
-                }
-                return tm.thaw(source, visitor);
-            }
-
-            // Nope, must be a named element   <Refname typenameValue="..."/>
-            if (attrs.getLength() != 1) {
-                final InvalidPolicyStreamException e = new BadAttributeCountException("Policy contains a " + source.getNodeName() +
-                                  " element that doesn't have exactly one attribute");
-                if (recursing) throw e;
-                return doThaw(visitor.invalidElement(source, e), visitor, true);
-            }
-            Node attr = attrs.item(0);
-            String typeName = attr.getLocalName();
-            if (typeName == null)
-                typeName = attr.getNodeName();
-            if (typeName == null)
-                throw new RuntimeException("Policy contains an attribute with a null LocalName");
-            boolean isNull = false;
-            if (typeName.endsWith("Null") && typeName.length() > 4) {
-                typeName = typeName.substring(0, typeName.length() - 4);
-                isNull = true;
-            }
-
-            if (externalName.equals(typeName)) {
-                // This is describing an actual Object, and not some subclass
-                return new TypedReference(clazz, isNull ? null : new Object(), source.getNodeName());
-            }
-
-            TypeMapping tm = findTypeMappingByExternalName(typeName);
-            if (tm == null)
-                throw new InvalidPolicyStreamException("Policy contains unrecognized type name \"" + source.getNodeName() + "\"");
-
-            return tm.thaw(source, visitor);
-        }
-    }
-
-    private static class ArrayTypeMapping extends ComplexTypeMapping {
-        private final Object[] prototype;
-
-        public ArrayTypeMapping(Object[] prototype, String externalName) {
-            super(prototype.getClass(), externalName);
-            this.prototype = prototype;
-        }
-
-        protected void populateElement(Element newElement, TypedReference object) throws InvalidPolicyTreeException {
-            Object[] array = (Object[])object.target;
-            for (int i = 0; i < array.length; i++) {
-                Object o = array[i];
-                typeMappingObject.freeze(new TypedReference(Object.class, o, "item"), newElement);
-            }
-        }
-
-        protected TypedReference createObject(Element element, String value, WspVisitor visitor) throws InvalidPolicyStreamException {
-            List objects = new ArrayList();
-            List arrayElements = getChildElements(element, "item");
-            for (Iterator i = arrayElements.iterator(); i.hasNext();) {
-                Element kidElement = (Element)i.next();
-                TypedReference ktr = typeMappingObject.thaw(kidElement, visitor);
-                objects.add(ktr.target);
-            }
-            try {
-                return new TypedReference(clazz, objects.toArray(prototype), element.getNodeName());
-            } catch (ArrayStoreException e) {
-                throw new InvalidPolicyStreamException("Array item with incompatible type", e);
-            }
-        }
-    }
-
-    static class AssertionMapping extends BeanTypeMapping {
-        Assertion source;
-
-        AssertionMapping(Assertion a, String externalName) {
-            super(a.getClass(), externalName);
-            this.source = a;
-        }
-    }
-
-    static class CompositeAssertionMapping extends AssertionMapping {
-        CompositeAssertion source;
-
-        CompositeAssertionMapping(CompositeAssertion a, String externalName) {
-            super(a, externalName);
-        }
-
-        protected void populateElement(Element element, TypedReference object) throws InvalidPolicyTreeException {
-            // Do not serialize any properties of the CompositeAssertion itself: shouldn't be any, and it'll include kid list
-            // NO super.populateElement(element, object);
-            CompositeAssertion cass = (CompositeAssertion)object.target;
-
-            List kids = cass.getChildren();
-            for (Iterator i = kids.iterator(); i.hasNext();) {
-                Assertion kid = (Assertion)i.next();
-                if (kid == null)
-                    throw new InvalidPolicyTreeException("Unable to serialize a null assertion");
-                Class kidClass = kid.getClass();
-                TypeMapping tm = findTypeMappingByClass(kidClass);
-                if (tm == null)
-                    throw new InvalidPolicyTreeException("No TypeMapping found for class " + kidClass);
-                tm.freeze(new TypedReference(kidClass, kid), element);
-            }
-        }
-
-        protected void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
-            // Do not deserialize any properties of the CompositeAssertion itself: shouldn't be any, and it'll include kid list
-            // NO super.populateObject(object, source);
-            CompositeAssertion cass = (CompositeAssertion)object.target;
-
-            // gather children
-            List convertedKids = new LinkedList();
-            List kids = WspConstants.getChildElements(source);
-            for (Iterator i = kids.iterator(); i.hasNext();) {
-                Element kidNode = (Element)i.next();
-                TypedReference tr = typeMappingObject.thaw(kidNode, visitor);
-                if (tr.target == null)
-                    throw new InvalidPolicyStreamException("CompositeAssertion " + cass + " has null child");
-                convertedKids.add(tr.target);
-            }
-            cass.setChildren(convertedKids);
-        }
     }
 
     static String[] ignoreAssertionProperties = {
@@ -596,70 +75,6 @@ public class WspConstants {
 
     static final TypeMapping typeMappingObject = new ObjectTypeMapping(Object.class, "objectValue");
     static final TypeMapping typeMappingString = new BasicTypeMapping(String.class, "stringValue");
-    static final TypeMapping typeMappingArray = new ArrayTypeMapping(new Object[0], "arrayValue");
-    static final TypeMapping typeMappingStringArray = new ArrayTypeMapping(new String[0], "stringArrayValue");
-
-    // This is utterly grotesque, but it's all Java's fault.  Please close eyes here
-    static final Constructor hashMapConstructor;
-
-    static {
-        try {
-            hashMapConstructor = HashMap.class.getConstructor(new Class[0]);
-        } catch (Exception e) {
-            throw new LinkageError("Couldn't find HashMap's default constructor");
-        }
-    }
-    // You may now open your eyes
-
-    static final TypeMapping typeMappingMap = new ComplexTypeMapping(Map.class, "mapValue", hashMapConstructor) {
-        protected void populateElement(Element newElement, TypedReference object) {
-            Map map = (Map)object.target;
-            Set entries = map.entrySet();
-            for (Iterator i = entries.iterator(); i.hasNext();) {
-                Map.Entry entry = (Map.Entry)i.next();
-                Object key = entry.getKey();
-                if (key == null)
-                    throw new InvalidPolicyTreeException("Maps with null keys are not currently permitted within a policy");
-                if (!(key instanceof String))
-                    throw new InvalidPolicyTreeException("Maps with non-string keys are not currently permitted within a policy");
-                Object value = entry.getValue();
-                //if (value != null && !(value instanceof String))
-                //    throw new InvalidPolicyTreeException("Maps with non-string values are not currently permitted within a policy");
-                Element entryElement = newElement.getOwnerDocument().createElementNS(L7_POLICY_NS, "entry");
-                newElement.appendChild(entryElement);
-                typeMappingString.freeze(new TypedReference(String.class, key, "key"), entryElement);
-                typeMappingObject.freeze(new TypedReference(value.getClass(), value, "value"), entryElement);
-                //typeMappingString.freeze(new TypedReference(String.class, value, "value"), entryElement);
-            }
-        }
-
-        protected void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
-            Map map = (Map)object.target;
-            List entryElements = getChildElements(source, "entry");
-            for (Iterator i = entryElements.iterator(); i.hasNext();) {
-                Element element = (Element)i.next();
-                List keyValueElements = getChildElements(element);
-                if (keyValueElements.size() != 2)
-                    throw new InvalidPolicyStreamException("Map entry does not have exactly two child elements (key and value)");
-                Element keyElement = (Element)keyValueElements.get(0);
-                if (keyElement == null || keyElement.getNodeType() != Node.ELEMENT_NODE || !"key".equals(keyElement.getLocalName()))
-                    throw new InvalidPolicyStreamException("Map entry first child element is not a key element");
-                Element valueElement = (Element)keyValueElements.get(1);
-                if (valueElement == null || valueElement.getNodeType() != Node.ELEMENT_NODE || !"value".equals(valueElement.getLocalName()))
-                    throw new InvalidPolicyStreamException("Map entry last child element is not a value element");
-
-                TypedReference ktr = typeMappingObject.thaw(keyElement, visitor);
-                if (!String.class.equals(ktr.type))
-                    throw new InvalidPolicyStreamException("Maps with non-string keys are not currently permitted within a policy");
-                if (ktr.target == null)
-                    throw new InvalidPolicyStreamException("Maps with null keys are not currently permitted within a policy");
-                String key = (String)ktr.target;
-
-                TypedReference vtr = typeMappingObject.thaw(valueElement, visitor);
-                map.put(key, vtr.target);
-            }
-        }
-    };
 
     /**
      * This is our master list of supported type mappings.
@@ -689,11 +104,6 @@ public class WspConstants {
         },
         new BasicTypeMapping(Boolean.class, "boxedBooleanValue"),
 
-        new BeanTypeMapping(XmlSecurityRecipientContext.class, "xmlSecurityRecipientContext"),
-
-        new BeanTypeMapping(TimeOfDayRange.class, "timeOfDayRange"),
-        new BeanTypeMapping(TimeOfDay.class, "timeOfDay"),
-
         // Typesafe enumerations
         new BasicTypeMapping(SslAssertion.Option.class, "optionValue") {
             protected String objectToString(Object in) {
@@ -705,20 +115,20 @@ public class WspConstants {
             }
         },
 
-        new BasicTypeMapping(TokenServiceRequestType.class, "requestType") {
-            protected Object stringToObject(String value) throws InvalidPolicyStreamException {
-                return TokenServiceRequestType.fromString(value);
+        new BasicTypeMapping(WsTrustCredentialExchange.TokenServiceRequestType.class, "requestType") {
+            protected Object stringToObject(String value) {
+                return WsTrustCredentialExchange.TokenServiceRequestType.fromString(value);
             }
 
             protected String objectToString(Object target) {
-                return ((TokenServiceRequestType)target).getUri();
+                return ((WsTrustCredentialExchange.TokenServiceRequestType)target).getUri();
             }
         },
 
         // Container types
-        typeMappingArray,
-        typeMappingStringArray,
-        typeMappingMap,
+        new ArrayTypeMapping(new Object[0], "arrayValue"),
+        new ArrayTypeMapping(new String[0], "stringArrayValue"),
+        new MapTypeMapping(),
 
         // Composite assertions
         new CompositeAssertionMapping(new OneOrMoreAssertion(), "OneOrMore"),
@@ -769,6 +179,10 @@ public class WspConstants {
         new BeanTypeMapping(SamlAuthorizationStatement.class, "samlAuthorizationInfo"),
         new BeanTypeMapping(SamlAttributeStatement.Attribute.class, "samlAttributeElementInfo"),
         new ArrayTypeMapping(new SamlAttributeStatement.Attribute[0], "samlAttributeElementInfoArray"),
+        new BeanTypeMapping(XmlSecurityRecipientContext.class, "xmlSecurityRecipientContext"),
+        new BeanTypeMapping(TimeOfDayRange.class, "timeOfDayRange"),
+        new BeanTypeMapping(TimeOfDay.class, "timeOfDay"),
+
     };
 
     /**
@@ -841,58 +255,6 @@ public class WspConstants {
     }
 
     /**
-     * Add the properties of a Bean style object to its already-created node in a document.
-     *
-     * @param bean    The bean to serialize
-     * @param element The assertion's already-created node, to which we will appendChild() each property we find.
-     * @throws InvocationTargetException
-     * @throws IllegalAccessException
-     */
-    static void emitBeanProperties(Object bean, Element element)
-      throws InvocationTargetException, IllegalAccessException {
-        Class ac = bean.getClass();
-        Map setters = new HashMap();
-        Map getters = new HashMap();
-        Method[] methods = ac.getMethods();
-        for (int i = 0; i < methods.length; i++) {
-            Method method = methods[i];
-            String name = method.getName();
-            if (name.startsWith("is") && name.length() > 2 && method.getReturnType().equals(boolean.class))
-                getters.put(name.substring(2), method);
-            else if (name.startsWith("get") && name.length() > 3)
-                getters.put(name.substring(3), method);
-            else if (name.startsWith("set") && name.length() > 3)
-                setters.put(name.substring(3) + ":" + method.getParameterTypes()[0], method);
-        }
-        for (Iterator i = getters.keySet().iterator(); i.hasNext();) {
-            String parm = (String)i.next();
-            if (isIgnorableProperty(parm))
-                continue;
-            Method getter = (Method)getters.get(parm);
-            if (getter == null)
-                throw new InvalidPolicyTreeException("Internal error"); // can't happen
-
-            if (Modifier.isStatic(getter.getModifiers())) { // ignore statics
-                continue;
-            }
-
-            Method setter = (Method)setters.get(parm + ":" + getter.getReturnType());
-            if (setter == null)
-                throw new InvalidPolicyTreeException("WspWriter: Warning: class " + bean.getClass() + ": no setter found for parameter " + parm);
-            Class returnType = getter.getReturnType();
-            if (!setter.getParameterTypes()[0].equals(returnType))
-                throw new InvalidPolicyTreeException("class has getter and setter for " + parm + " which disagree about its type");
-            TypeMapping tm = findTypeMappingByClass(returnType);
-            if (tm == null)
-                throw new InvalidPolicyTreeException("class " + bean.getClass() + " has property \"" + parm + "\" with unsupported type " + returnType);
-            final Object[] args = new Object[0];
-            Object value = invokeMethod(getter, bean, args);
-            TypedReference tr = new TypedReference(returnType, value, parm);
-            tm.freeze(tr, element);
-        }
-    }
-
-    /**
      * Invoke the public method attempting to avoid the jvm bug
      * see bug parade 4071957, 4852768. The bug is apparently fixed in Tiger - 1.5
      * @param method the method to invoke
@@ -902,7 +264,7 @@ public class WspConstants {
      * @throws IllegalAccessException see contract in {@link Method#invoke(Object, Object[])}
      * @throws InvocationTargetException see contract in {@link Method#invoke(Object, Object[])}
      */
-    private static Object invokeMethod(Method method, Object targetObject, final Object[] args)
+    static Object invokeMethod(Method method, Object targetObject, final Object[] args)
       throws IllegalAccessException, InvocationTargetException {
         boolean accessible = method.isAccessible();
         boolean accessibilityChanged = false;
@@ -930,4 +292,5 @@ public class WspConstants {
     static TypedReference thawElement(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
         return typeMappingObject.thaw(source, visitor);
     }
+
 }

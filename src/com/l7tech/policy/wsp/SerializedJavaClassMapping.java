@@ -17,7 +17,7 @@ import java.util.List;
  * @author emil
  * @version 16-Feb-2004
  */
-class SerializedJavaClassMapping extends WspConstants.BeanTypeMapping {
+class SerializedJavaClassMapping extends BeanTypeMapping {
     static final String ELEMENT_NAME = "base64SerializedValue";
 
     public SerializedJavaClassMapping(Class clazz, String externalName) {

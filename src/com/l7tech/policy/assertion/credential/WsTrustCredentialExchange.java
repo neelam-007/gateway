@@ -5,8 +5,11 @@
  */
 package com.l7tech.policy.assertion.credential;
 
-import com.l7tech.common.security.xml.TokenServiceRequestType;
 import com.l7tech.policy.assertion.Assertion;
+
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * An assertion that sends the current request's credentials to a WS-Trust token service and replaces them with
@@ -49,4 +52,33 @@ public class WsTrustCredentialExchange extends Assertion {
     private String tokenServiceUrl;
     private String appliesTo;
     private TokenServiceRequestType requestType;
+
+    public static final class TokenServiceRequestType implements Serializable {
+        private static final Map valueMap = new HashMap();
+        public static final TokenServiceRequestType ISSUE = new TokenServiceRequestType("Issue", "http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue");
+        public static final TokenServiceRequestType VALIDATE = new TokenServiceRequestType("Validate", "http://schemas.xmlsoap.org/ws/2004/04/security/trust/Validate");
+
+        private final String name;
+        private final String uri;
+
+        private TokenServiceRequestType(String name, String uri) {
+            this.name = name;
+            this.uri = uri;
+            valueMap.put(uri, this);
+        }
+
+        public String toString() {
+            return name;
+        }
+
+        public static TokenServiceRequestType fromString(String uri) {
+            return (TokenServiceRequestType)valueMap.get(uri);
+        }
+
+        protected Object readResolve() {
+            return fromString(uri);
+        }
+
+        public String getUri() { return uri; }
+    }
 }

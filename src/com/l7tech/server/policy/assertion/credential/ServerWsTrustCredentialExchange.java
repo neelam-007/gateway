@@ -14,7 +14,7 @@ import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.token.UsernameTokenImpl;
-import com.l7tech.common.security.xml.TokenServiceClient;
+import com.l7tech.common.security.wstrust.TokenServiceClient;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;

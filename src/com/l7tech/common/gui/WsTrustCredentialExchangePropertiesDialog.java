@@ -3,16 +3,14 @@
  *
  * $Id$
  */
-package com.l7tech.proxy.gui.dialogs;
+package com.l7tech.common.gui;
 
-import com.l7tech.common.security.xml.TokenServiceRequestType;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import java.awt.Frame;
-import java.awt.HeadlessException;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.MalformedURLException;
@@ -40,9 +38,9 @@ public class WsTrustCredentialExchangePropertiesDialog extends JDialog {
     public WsTrustCredentialExchangePropertiesDialog(WsTrustCredentialExchange assertion, Frame owner, boolean modal) throws HeadlessException {
         super(owner, "Configure WS-Trust Credential Exchange", modal);
         this.wsTrustAssertion = assertion;
-        requestTypeCombo.setModel(new DefaultComboBoxModel(new TokenServiceRequestType[] {TokenServiceRequestType.ISSUE, TokenServiceRequestType.VALIDATE}));
+        requestTypeCombo.setModel(new DefaultComboBoxModel(new WsTrustCredentialExchange.TokenServiceRequestType[] {WsTrustCredentialExchange.TokenServiceRequestType.ISSUE, WsTrustCredentialExchange.TokenServiceRequestType.VALIDATE}));
 
-        TokenServiceRequestType type = assertion.getRequestType();
+        WsTrustCredentialExchange.TokenServiceRequestType type = assertion.getRequestType();
         if (type == null) {
             requestTypeCombo.setSelectedIndex(0);
         } else {
@@ -57,7 +55,7 @@ public class WsTrustCredentialExchangePropertiesDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 wsTrustAssertion.setAppliesTo(appliesToField.getText());
                 wsTrustAssertion.setTokenServiceUrl(tokenServiceUrlField.getText());
-                wsTrustAssertion.setRequestType((TokenServiceRequestType)requestTypeCombo.getSelectedItem());
+                wsTrustAssertion.setRequestType((WsTrustCredentialExchange.TokenServiceRequestType)requestTypeCombo.getSelectedItem());
                 assertionChanged = true;
                 dispose();
             }

@@ -8,15 +8,16 @@ package com.l7tech.proxy.message;
 
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.ProcessingContext;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.token.SecurityTokenType;
+import com.l7tech.common.security.wstrust.TokenServiceClient;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
-import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
@@ -25,7 +26,6 @@ import com.l7tech.proxy.NullRequestInterceptor;
 import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.*;
-import com.l7tech.common.security.xml.TokenServiceClient;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 

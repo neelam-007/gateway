@@ -1,5 +1,6 @@
 package com.l7tech.console.tree.policy.advice;
 
+import com.l7tech.common.gui.WsTrustCredentialExchangePropertiesDialog;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.tree.policy.PolicyChange;
@@ -7,9 +8,8 @@ import com.l7tech.console.tree.policy.PolicyException;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
-import com.l7tech.proxy.gui.dialogs.WsTrustCredentialExchangePropertiesDialog;
 
-import javax.swing.JFrame;
+import javax.swing.*;
 
 /**
  * Invoked when a WS-Trust Credential Exchange Assertion is dropped to a policy tree to

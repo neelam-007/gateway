@@ -4,7 +4,7 @@
  * $Id$
  */
 
-package com.l7tech.common.security.xml;
+package com.l7tech.common.security.wstrust;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.message.Message;
@@ -12,6 +12,7 @@ import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.saml.SamlException;
 import com.l7tech.common.security.token.*;
+import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
@@ -23,6 +24,7 @@ import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.MissingRequiredElementException;
 import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.common.xml.saml.SamlAssertion;
+import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -64,7 +66,7 @@ public class TokenServiceClient {
     public static Document createRequestSecurityTokenMessage(X509Certificate clientCertificate,
                                                              PrivateKey clientPrivateKey,
                                                              SecurityTokenType desiredTokenType,
-                                                             TokenServiceRequestType requestType,
+                                                             WsTrustCredentialExchange.TokenServiceRequestType requestType,
                                                              SecurityToken base,
                                                              String appliesToAddress,
                                                              Date timestampCreatedDate)
@@ -104,7 +106,7 @@ public class TokenServiceClient {
     }
 
     private static Document requestSecurityTokenMessageTemplate(SecurityTokenType desiredTokenType,
-                                                                TokenServiceRequestType requestType,
+                                                                WsTrustCredentialExchange.TokenServiceRequestType requestType,
                                                                 String appliesToAddress,
                                                                 SecurityToken base)
             throws IOException, SAXException
@@ -156,7 +158,7 @@ public class TokenServiceClient {
         return msg;
     }
 
-    public static Document createRequestSecurityTokenMessage(SecurityTokenType desiredTokenType, TokenServiceRequestType requestType, SecurityToken base, String appliesToAddress) {
+    public static Document createRequestSecurityTokenMessage(SecurityTokenType desiredTokenType, WsTrustCredentialExchange.TokenServiceRequestType requestType, SecurityToken base, String appliesToAddress) {
         try {
             return requestSecurityTokenMessageTemplate(desiredTokenType, requestType, appliesToAddress, base);
         } catch (IOException e) {
@@ -183,7 +185,7 @@ public class TokenServiceClient {
             throws IOException, GeneralSecurityException
     {
         Document requestDoc = createRequestSecurityTokenMessage(clientCertificate, clientPrivateKey,
-                                                                SecurityTokenType.WSSC_CONTEXT, TokenServiceRequestType.ISSUE, null, null, timestampCreatedDate);
+                                                                SecurityTokenType.WSSC_CONTEXT, WsTrustCredentialExchange.TokenServiceRequestType.ISSUE, null, null, timestampCreatedDate);
         Object result = obtainResponse(httpClient, clientCertificate, url, requestDoc, clientPrivateKey, serverCertificate, null, true);
 
         if (!(result instanceof SecureConversationSession))
@@ -200,7 +202,7 @@ public class TokenServiceClient {
             throws IOException, GeneralSecurityException
     {
         if (!("https".equals(url.getProtocol()))) throw new IllegalArgumentException("URL must be HTTPS");
-        Document requestDoc = createRequestSecurityTokenMessage(SecurityTokenType.WSSC_CONTEXT, TokenServiceRequestType.ISSUE, null, null);
+        Document requestDoc = createRequestSecurityTokenMessage(SecurityTokenType.WSSC_CONTEXT, WsTrustCredentialExchange.TokenServiceRequestType.ISSUE, null, null);
         Object result = obtainResponse(httpClient, null, url, requestDoc, null, serverCertificate, httpBasicCredentials, false);
 
         if (!(result instanceof SecureConversationSession))
@@ -235,7 +237,7 @@ public class TokenServiceClient {
                                                     Date timestampCreatedDate,
                                                     X509Certificate clientCertificate,
                                                     PrivateKey clientPrivateKey,
-                                                    TokenServiceRequestType requestType,
+                                                    WsTrustCredentialExchange.TokenServiceRequestType requestType,
                                                     SecurityTokenType tokenType,
                                                     SecurityToken base,
                                                     String appliesToAddress,

@@ -481,8 +481,10 @@
                 <exclude name="com/l7tech/common/xml/tarari/TarariUtil.class"/>
                 <exclude name="com/l7tech/common/xml/tarari/TarariFactories.class"/>
                 <exclude name="com/l7tech/common/xml/tarari/TarariMessageContextImpl.class"/>
+                <exclude name="com/l7tech/common/xml/tarari/util/**/*" />
 
                 <exclude name="com/l7tech/common/audit/**/*"/>
+                <exclude name="com/l7tech/common/alert/**/*"/>
 
                 <exclude name="com/l7tech/policy/server/**/*"/>
                 <exclude name="com/l7tech/policy/exporter/**/*"/>
@@ -514,6 +516,7 @@
                 <exclude name="com/l7tech/common/message/**/*"/>
                 <exclude name="com/l7tech/common/xml/saml/**/*"/>
                 <exclude name="com/l7tech/common/xml/tarari/**/*"/>
+                <exclude name="com/l7tech/common/security/wstrust/**/*" />
                 <include name="com/l7tech/common/security/TrustedCert*.class"/>
                 <exclude name="com/l7tech/common/security/AesKey.class"/>
                 <exclude name="com/l7tech/common/security/Cert*.class"/>
@@ -547,6 +550,7 @@
                 <include name="com/l7tech/objectmodel/EntityManager.class"/>
                 <include name="com/l7tech/objectmodel/ObjectPermission.class"/>
                 <include name="com/l7tech/objectmodel/imp/*"/>
+                <include name="com/l7tech/objectmodel/alert/**/*"/>
                 <include name="com/l7tech/policy/**/*"/>
                 <include name="com/l7tech/objectmodel/ObjectIdentity.class"/>
                 <include name="com/l7tech/policy/assertion/ext/Category.class"/>

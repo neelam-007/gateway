@@ -46,7 +46,7 @@ public class WspWriter {
         if (assertion == null)
             return null;
         Document dom = createSkeleton();
-        WspConstants.TypeMapping tm = WspConstants.findTypeMappingByClass(assertion.getClass());
+        TypeMapping tm = WspConstants.findTypeMappingByClass(assertion.getClass());
         if (tm == null)
             throw new InvalidPolicyTreeException("No TypeMapping for assertion class " + assertion.getClass());
         TypedReference ref = new TypedReference(assertion.getClass(), assertion);
@@ -74,7 +74,7 @@ public class WspWriter {
         WspWriter writer = new WspWriter(output);
         try {
             if (assertion != null) {
-                WspConstants.TypeMapping tm = WspConstants.findTypeMappingByClass(assertion.getClass());
+                TypeMapping tm = WspConstants.findTypeMappingByClass(assertion.getClass());
                 if (tm == null)
                     throw new InvalidPolicyTreeException("No TypeMapping for assertion class " + assertion.getClass());
                 TypedReference ref = new TypedReference(assertion.getClass(), assertion);

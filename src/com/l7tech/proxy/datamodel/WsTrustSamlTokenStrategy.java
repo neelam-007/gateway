@@ -11,12 +11,12 @@ import com.l7tech.common.http.prov.jdk.UrlConnectionHttpClient;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.security.token.UsernameToken;
 import com.l7tech.common.security.token.UsernameTokenImpl;
-import com.l7tech.common.security.xml.TokenServiceClient;
-import com.l7tech.common.security.xml.TokenServiceRequestType;
+import com.l7tech.common.security.wstrust.TokenServiceClient;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.saml.SamlAssertion;
+import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
@@ -106,7 +106,7 @@ public class WsTrustSamlTokenStrategy extends AbstractSamlTokenStrategy implemen
                                                    null, // not overriding timestamp created date
                                                    null, // no client cert (not signing message)
                                                    null, // no client private key (not signing message)
-                                                   TokenServiceRequestType.VALIDATE,
+                                                   WsTrustCredentialExchange.TokenServiceRequestType.VALIDATE,
                                                    null, // no token type (FIM doesn't like it)
                                                    usernameToken,
                                                    getAppliesTo(),
