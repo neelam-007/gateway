@@ -4,13 +4,12 @@ import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.identity.User;
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.Group;
-import com.l7tech.identity.CannotDeleteAdminAccountException;
+import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 
 import javax.swing.*;
+import javax.swing.tree.TreeNode;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.io.File;
@@ -49,6 +48,14 @@ public class Actions {
 
     // Deletes the given user
     private static boolean deleteUser(UserNode node) {
+        // Check that the user is not read-only
+        if (!isParentIdProviderInternal(node)) {
+            JOptionPane.showMessageDialog(null, "This user is read-only.",
+                                                "Read-only",
+                                                JOptionPane.INFORMATION_MESSAGE);
+            return false;
+        }
+
         // Make sure
         if ((JOptionPane.showConfirmDialog(
           getMainWindow(),
@@ -93,6 +100,14 @@ public class Actions {
 
     // Deletes the given user
     private static boolean deleteGroup(GroupNode node) {
+        // Check that the group is not read-only
+        if (!isParentIdProviderInternal(node)) {
+            JOptionPane.showMessageDialog(null, "This user is read-only.",
+                                                "Read-only",
+                                                JOptionPane.INFORMATION_MESSAGE);
+            return false;
+        }
+
         // Make sure
         if ((JOptionPane.showConfirmDialog(
           getMainWindow(),
@@ -255,5 +270,22 @@ public class Actions {
             }
         };
         SwingUtilities.invokeLater(r);
+    }
+
+    private static boolean isParentIdProviderInternal(EntityHeaderNode usernode) {
+        TreeNode parentNode = usernode.getParent();
+        while (parentNode != null) {
+            if (parentNode instanceof EntityHeaderNode) {
+                EntityHeader header = ((EntityHeaderNode)parentNode).getEntityHeader();
+                if (header.getType().equals(EntityType.ID_PROVIDER_CONFIG)) {
+                    // we found the parent, see if it's internal one
+                    if (header.getOid() != IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID) return false;
+                    return true;
+                }
+            }
+            parentNode = parentNode.getParent();
+        }
+        // assume it is unless proven otherwise
+        return true;
     }
 }
