@@ -20,7 +20,7 @@ import java.io.Serializable;
  */
 public class ResolutionParameters extends EntityImp implements Serializable {
     // todo, ideally, this should fail at the database layer but mysql truncs silently
-    public static final int MAX_LENGTH_RES_PARAMETER = 128;
+    public static final int MAX_LENGTH_RES_PARAMETER = 255;
     public String getSoapaction() {
         return soapaction;
     }
