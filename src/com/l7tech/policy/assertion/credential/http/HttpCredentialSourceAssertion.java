@@ -13,4 +13,13 @@ import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
  * @version $Revision$
  */
 public abstract class HttpCredentialSourceAssertion extends CredentialSourceAssertion {
+    public String getRealm() {
+        return _realm;
+    }
+
+    public void setRealm(String realm) {
+        _realm = realm;
+    }
+
+    protected String _realm;
 }
