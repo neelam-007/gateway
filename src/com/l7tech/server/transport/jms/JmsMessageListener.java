@@ -6,18 +6,18 @@
 
 package com.l7tech.server.transport.jms;
 
+import com.l7tech.logging.LogManager;
+import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerComponentLifecycle;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.LifecycleException;
-import com.l7tech.server.MessageProcessor;
-import com.l7tech.logging.LogManager;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.common.transport.jms.JmsConnection;
+import com.l7tech.common.transport.jms.JmsEndpoint;
 
 import javax.jms.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.IOException;
+import EDU.oswego.cs.dl.util.concurrent.PooledExecutor;
 
 /**
  * @author alex
@@ -27,6 +27,18 @@ public class JmsMessageListener implements MessageListener, ServerComponentLifec
     JmsMessageListener(QueueSession session, JmsReceiver receiver) {
         _session = session;
         _receiver = receiver;
+
+        String jmsThreadpoolSize = ServerConfig.getInstance().getProperty( ServerConfig.PARAM_JMS_THREAD_POOL_SIZE );
+        int poolsize = ServerConfig.DEFAULT_JMS_THREAD_POOL_SIZE;
+        if ( jmsThreadpoolSize != null && jmsThreadpoolSize.length() > 0 ) {
+            try {
+                poolsize = Integer.parseInt(jmsThreadpoolSize);
+            } catch ( NumberFormatException nfe ) {
+                _logger.info( "Invalid JMS thread pool size parameter '" + jmsThreadpoolSize + "'... Using default of " + poolsize );
+            }
+        }
+        _threadPool = new PooledExecutor(poolsize);
+        _threadPool.waitWhenBlocked();
     }
 
     public void onMessage(Message jmsRequest) {
@@ -34,23 +46,12 @@ public class JmsMessageListener implements MessageListener, ServerComponentLifec
         try {
             jmsResponse = _session.createTextMessage();
             JmsTransportMetadata jtm = new JmsTransportMetadata( jmsRequest, jmsResponse );
-
-            JmsSoapRequest soapRequest = new JmsSoapRequest( jtm );
-            JmsSoapResponse soapResponse = new JmsSoapResponse( jtm );
-
-            AssertionStatus status = _messageProcessor.processMessage( soapRequest, soapResponse );
-
-            // TODO build response
-
-            jmsRequest.acknowledge(); // TODO ack semantics
-
+            JmsRequestHandler handler = new JmsRequestHandler(this, jtm );
+            _threadPool.execute( handler );
         } catch (JMSException e) {
             _logger.log( Level.WARNING, "Couldn't create response message!", e );
-        } catch (PolicyAssertionException e) {
-            _logger.log( Level.SEVERE, e.toString(), e );
-        } catch (IOException e) {
+        } catch (InterruptedException e) {
             _logger.log( Level.WARNING, e.toString(), e );
-            e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
     }
 
@@ -59,7 +60,6 @@ public class JmsMessageListener implements MessageListener, ServerComponentLifec
     }
 
     public void init(ServerConfig config) throws LifecycleException {
-        _messageProcessor = MessageProcessor.getInstance();
     }
 
     public void start() throws LifecycleException {
@@ -74,8 +74,20 @@ public class JmsMessageListener implements MessageListener, ServerComponentLifec
         _session = null;
     }
 
+    public void sendResponse( JmsSoapRequest soapRequest, JmsSoapResponse soapResponse,
+                              AssertionStatus status ) {
+        JmsEndpoint out = _receiver.getOutboundResponseEndpoint();
+        JmsEndpoint fail = _receiver.getFailureEndpoint();
+        if ( status == AssertionStatus.NONE ) {
+            if ( out != null ) {
+                String qname = out.getDestinationName();
+            }
+        }
+
+    }
+
+    private static PooledExecutor _threadPool;
     private QueueSession _session;
-    private JmsReceiver _receiver;
-    private MessageProcessor _messageProcessor;
     private final Logger _logger = LogManager.getInstance().getSystemLogger();
+    private JmsReceiver _receiver;
 }
