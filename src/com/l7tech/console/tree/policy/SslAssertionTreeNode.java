@@ -8,7 +8,7 @@ import com.l7tech.policy.assertion.Assertion;
  * assertion requirement.
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-class SslAssertionTreeNode extends LeafAssertionTreeNode {
+public class SslAssertionTreeNode extends LeafAssertionTreeNode {
 
     public SslAssertionTreeNode(Assertion assertion) {
         super(assertion);

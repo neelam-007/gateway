@@ -2,6 +2,11 @@ package com.l7tech.console.tree.policy;
 
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.console.action.XmlDsigPropertiesAction;
+
+import javax.swing.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Class <code>XmlDsigAssertionTreeNode</code> specifies the policy
@@ -9,7 +14,7 @@ import com.l7tech.policy.assertion.Assertion;
  * <p>
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-class XmlDsigAssertionTreeNode extends LeafAssertionTreeNode {
+public class XmlDsigAssertionTreeNode extends LeafAssertionTreeNode {
 
     public XmlDsigAssertionTreeNode(Assertion assertion) {
         super(assertion);
@@ -23,6 +28,20 @@ class XmlDsigAssertionTreeNode extends LeafAssertionTreeNode {
     }
 
     /**
+     * Get the set of actions associated with this node.
+     * This may be used e.g. in constructing a context menu.
+     *
+     * @return actions appropriate to the node
+     */
+    public Action[] getActions() {
+        java.util.List list = new ArrayList();
+        Action a = new XmlDsigPropertiesAction(this);
+        list.add(a);
+        list.addAll(Arrays.asList(super.getActions()));
+        return (Action[])list.toArray(new Action[]{});
+    }
+
+      /**
      *Test if the node can be deleted. Default is <code>true</code>
      *
      * @return true if the node can be deleted, false otherwise
