@@ -1,9 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
   * Sample service for WSDL parsing tests.
 -->
-
-<?xml version="1.0" ?>
-<definitions name="StockQuoteService" 
+<definitions name="StockQuoteService"
              targetNamespace="urn:xmltoday-delayed-quotes"
              xmlns:tns="urn:xmltoday-delayed-quotes"
              xmlns="http://schemas.xmlsoap.org/wsdl/"
