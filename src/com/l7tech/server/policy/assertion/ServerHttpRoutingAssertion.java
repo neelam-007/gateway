@@ -135,6 +135,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 if(request.isMultipart()) {
                     postMethod.setRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.MULTIPART_CONTENT_TYPE +
                             "; type=\"" + XmlUtil.TEXT_XML + "\"" +
+                            "; start=\"" + request.getMultipartReader().getSoapPart().getHeader(XmlUtil.CONTENT_ID).getValue() + "\"" +
                             "; " + XmlUtil.MULTIPART_BOUNDARY + "=\"" + request.getMultipartBoundary()  + "\"");
                 } else {
                     postMethod.setRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML + "; charset=" + ENCODING.toLowerCase());

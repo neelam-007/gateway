@@ -9,6 +9,8 @@ import java.util.*;
  * $Id$
  */
 public class MultipartUtil {
+    public static final String ENCODING = "UTF-8";
+    public static final String XML_VERSION = "1.0";
 
     static public void addModifiedSoapPart(StringBuffer sbuf, String modifiedSoapEnvelope, Part part, String boundary) {
 
@@ -17,7 +19,7 @@ public class MultipartUtil {
         if(part == null) throw new IllegalArgumentException("The SOAP part is NULL");
         if(boundary == null) throw new IllegalArgumentException("The StringBuffer is NULL");
 
-        sbuf.append(XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + "\n");
+        sbuf.append(XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + "\r\n");
         Map headerMap = part.getHeaders();
         Set headerKeys = headerMap.keySet();
         Iterator headerItr = headerKeys.iterator();
@@ -33,10 +35,11 @@ public class MultipartUtil {
                 String paramName = (String) paramItr.next();
                 sbuf.append("; ").append(paramName).append("=").append(parameters.get(paramName));
             }
-            sbuf.append("\n");
+            sbuf.append("\r\n");
         }
-        sbuf.append("\n").append(modifiedSoapEnvelope).append("\n");
-        sbuf.append(XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + "\n");
+        sbuf.append("\r\n").append("<?xml version=\"" + XML_VERSION + "\" encoding=\"" + ENCODING.toLowerCase() + "\"?>" + "\n");
+        sbuf.append(modifiedSoapEnvelope);
+        sbuf.append("\r\n" + XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + "\r\n");
     }
 
 
@@ -53,7 +56,7 @@ public class MultipartUtil {
         Iterator itr = attachmentKeys.iterator();
         while (itr.hasNext()) {
             if(!fisrtAttachment)
-                sbuf.append("\n" + XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + "\n");
+                sbuf.append("\r\n" + XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + "\r\n");
 
             Object o = (Object) itr.next();
             Part part = (Part) multiparts.get(o);
@@ -74,13 +77,13 @@ public class MultipartUtil {
                     String paramName = (String) paramItr.next();
                     sbuf.append("; ").append(paramName).append("=").append(parameters.get(paramName));
                 }
-                sbuf.append("\n");
+                sbuf.append("\r\n");
             }
-            sbuf.append("\n" + part.getContent());
+            sbuf.append("\r\n" + part.getContent());
         }
 
         // the last boundary has delimiter after the boundary
-        sbuf.append("\n" + XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + XmlUtil.MULTIPART_BOUNDARY_PREFIX + "\n");
+        sbuf.append("\r\n" + XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + XmlUtil.MULTIPART_BOUNDARY_PREFIX + "\r\n");
     }
 
     static public HeaderValue parseHeader(String header) throws IOException {
