@@ -19,6 +19,7 @@ import javax.servlet.ServletConfig;
 import java.io.IOException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
 import java.security.NoSuchAlgorithmException;
 import java.util.logging.Level;
 import java.sql.SQLException;
@@ -155,7 +156,9 @@ public class CSRHandler extends HttpServlet {
     private Certificate sign(byte[] csr) throws Exception {
         RSASigner signer = getSigner();
         // todo, refactor RSASigner to throw more precise exceptions
-        return signer.createCertificate(csr);
+        Certificate cert = signer.createCertificate(csr);
+        LogManager.getInstance().getSystemLogger().log(Level.INFO, "CSRHandler.sign() exit subject dn= " + ((X509Certificate)(cert)).getSubjectDN().toString());
+        return cert;
     }
 
     private User authenticateBasicToken(String value) throws FindException {
