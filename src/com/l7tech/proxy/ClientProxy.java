@@ -7,6 +7,7 @@ import org.mortbay.http.HttpContext;
 import org.mortbay.http.HttpServer;
 import org.mortbay.http.SocketListener;
 import org.mortbay.util.MultiException;
+import org.mortbay.util.InetAddrPort;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -15,6 +16,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -102,13 +105,15 @@ public class ClientProxy {
     /**
      * Get our HttpServer.
      */
-    private synchronized HttpServer getHttpServer() {
+    private synchronized HttpServer getHttpServer() throws UnknownHostException {
         mustNotBeDestroyed();
         if (httpServer == null) {
             httpServer = new HttpServer();
-            final SocketListener socketListener = new SocketListener();
+            final SocketListener socketListener;
+            socketListener = new SocketListener();
             socketListener.setMaxThreads(maxThreads);
             socketListener.setMinThreads(minThreads);
+            socketListener.setHost("127.0.0.1");
             socketListener.setPort(bindPort);
             final HttpContext context = new HttpContext(httpServer, "/");
             context.addHandler(getRequestHandler());
@@ -127,11 +132,18 @@ public class ClientProxy {
         mustNotBeRunning();
         if (!isInitialized)
             init();
-        getHttpServer().start();
+        try {
+            getHttpServer().start();
+        } catch (IOException e) {
+            log.error("Unable to start HTTP server: ", e);
+            MultiException me = new MultiException();
+            me.add(e);
+            throw me;
+        }
         isRunning = true;
         URL url;
         try {
-            url = new URL("http", "localhost", bindPort, "/");
+            url = new URL("http", "127.0.0.1", bindPort, "/");
         } catch (MalformedURLException e) {
             log.error(e);
             throw new MultiException();
@@ -152,6 +164,8 @@ public class ClientProxy {
                 getHttpServer().stop();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+            } catch (IOException e) {
+                log.warn("impossible error: ", e); // can't happen
             }
         }
 
