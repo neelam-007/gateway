@@ -26,6 +26,9 @@ public class Ssg implements Cloneable, Comparable {
     private String keyStorePath = null;
     private HashMap policiesByUri = new HashMap();
     private HashMap policiesBySoapAction = new HashMap();
+    private boolean promptForUsernameAndPassword = true;
+
+    private transient int numTimesLogonDialogCanceled = 0;
 
     public int compareTo(final Object o) {
         long id0 = getId();
@@ -248,5 +251,25 @@ public class Ssg implements Cloneable, Comparable {
      */
     public void setPoliciesBySoapAction(HashMap policiesBySoapAction) {
         this.policiesBySoapAction = policiesBySoapAction;
+    }
+
+    public boolean isPromptForUsernameAndPassword() {
+        return promptForUsernameAndPassword;
+    }
+
+    public void setPromptForUsernameAndPassword(boolean promptForUsernameAndPassword) {
+        this.promptForUsernameAndPassword = promptForUsernameAndPassword;
+    }
+
+    public int getNumTimesLogonDialogCanceled() {
+        return numTimesLogonDialogCanceled;
+    }
+
+    public void setNumTimesLogonDialogCanceled(int numTimesLogonDialogCanceled) {
+        this.numTimesLogonDialogCanceled = numTimesLogonDialogCanceled;
+    }
+
+    public synchronized int incrementNumTimesLogonDialogCanceled() {
+        return ++this.numTimesLogonDialogCanceled;
     }
 }
