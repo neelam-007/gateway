@@ -28,10 +28,13 @@ public class L7HeaderHandler {
 
     public void appendNonceToDocument(Document soapmsg, long nonce) {
         Element header = SoapUtil.getOrMakeHeader(soapmsg);
-        Element nonceEl = soapmsg.createElementNS(NAMESPACE, PREFIX + ":" + NONCE_EL_NAME);
+        Element nonceEl = soapmsg.createElementNS(NAMESPACE, NONCE_EL_NAME);
+        nonceEl.setPrefix(PREFIX);
+        nonceEl.setAttribute("xmlns:" + PREFIX, NAMESPACE);
         Text val = soapmsg.createTextNode(Long.toString(nonce));
         nonceEl.appendChild(val);
-        header.appendChild(nonceEl);
+        header.insertBefore(nonceEl, null);
+
     }
 
     public long readNonceFromDocument(Document soapmsg) {
