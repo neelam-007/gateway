@@ -202,7 +202,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
                   QName on = message.getQName();
                   QName nn =
                     new QName(on.getNamespaceURI(), (String)delegate.getCellEditorValue());
-                  Message nm = definition.createMessage();
+                  Message nm = new WsdlMessagesTableModel.MessageElement();
                   nm.setUndefined(false);
                   nm.setQName(nn);
                   return nm;
@@ -445,6 +445,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
               }
           }
       };
+
 
     {
 // do not edit this generated initializer!!! do not add your code here!!!

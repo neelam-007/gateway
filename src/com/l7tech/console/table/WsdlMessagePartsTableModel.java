@@ -158,6 +158,12 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
     public Part removePart(String name) {
         Part removed = (Part)message.getParts().remove(name);
         if (removed != null) {
+            // if hacked type
+            if (message instanceof WsdlMessagesTableModel.MessageElement) {
+                WsdlMessagesTableModel.MessageElement wm =
+                  (WsdlMessagesTableModel.MessageElement)message;
+                wm.getadditionOrderOfParts().remove(name);
+            }
             partsList.remove(removed);
             this.fireTableStructureChanged();
         }

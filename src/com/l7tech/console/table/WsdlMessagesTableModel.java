@@ -1,5 +1,7 @@
 package com.l7tech.console.table;
 
+import com.ibm.wsdl.MessageImpl;
+
 import javax.swing.table.AbstractTableModel;
 import javax.wsdl.Definition;
 import javax.wsdl.Message;
@@ -98,7 +100,7 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
      * @return the newly created message
      */
     public Message addMessage(QName name) {
-        Message m = definition.createMessage();
+        Message m = new MessageElement();
         m.setQName(name);
         addMessage(m);
         return m;
@@ -243,6 +245,15 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
             }
         }
         throw new IndexOutOfBoundsException("" + rowIndex + " > " + messageList.size());
+    }
+
+    // hack, so the internal list can be modified
+    // the list in question is not exposed, while
+    // the, parts map is.
+    public static class MessageElement extends MessageImpl {
+        public List getadditionOrderOfParts() {
+            return additionOrderOfParts;
+        }
     }
 
 }
