@@ -399,7 +399,7 @@ public class PolicyServiceClient {
         URL url = new URL("https", ssg.getSsgAddress(), ssg.getSslPort(), SecureSpanConstants.POLICY_SERVICE_FILE);
         Document requestDoc = createGetPolicyRequest(serviceId);
         String auth = "Basic " + HexUtils.encodeBase64(
-                (basicCredentials.getUserName() + ":" + basicCredentials.getPassword()).getBytes());        
+                (basicCredentials.getUserName() + ":" + new String(basicCredentials.getPassword())).getBytes());        
         return obtainResponse(url, ssg, requestDoc, auth, serverCertificate, null, null);
     }
     
