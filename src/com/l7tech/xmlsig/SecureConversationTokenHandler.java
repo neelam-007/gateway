@@ -73,7 +73,6 @@ public class SecureConversationTokenHandler {
     public static final String WSU_NAMESPACE_PREFIX = "wsu";
 
     public static final String SECURITY_NAMESPACE_PREFIX = "wsse";
-    public static final String SECURITY_NAMESPACE = "http://schemas.xmlsoap.org/ws/2002/12/secext";
 
     public static final String SECURITY_CONTEXT_TOKEN_EL_NAME = "SecurityContextToken";
 
@@ -121,6 +120,14 @@ public class SecureConversationTokenHandler {
             throw new XMLSecurityElementNotFoundException(SECURITY_CONTEXT_TOKEN_EL_NAME + " element not present.");
         }
         return Long.parseLong(readSeqNrValueFromSecurityContextToken(secContxTokEl));
+    }
+
+    /**
+     * remove any WS Secure Conversation tokens if present
+     */
+    public static void consumeSessionInfoFromDocument(Document soapmsg) {
+        Element secContxTokEl = getSecurityContextTokenElement(soapmsg);
+        if (secContxTokEl != null) secContxTokEl.getParentNode().removeChild(secContxTokEl);
     }
 
     private static String readSeqNrValueFromSecurityContextToken(Element securityContextTokenEl) throws XMLSecurityElementNotFoundException {
@@ -174,7 +181,10 @@ public class SecureConversationTokenHandler {
     }
 
     private static Element getSecurityContextTokenElement(Document soapMsg) {
-        NodeList listSecurityElements = soapMsg.getElementsByTagNameNS(SECURITY_NAMESPACE, SECURITY_CONTEXT_TOKEN_EL_NAME);
+        NodeList listSecurityElements = soapMsg.getElementsByTagNameNS(SoapUtil.SECURITY_NAMESPACE, SECURITY_CONTEXT_TOKEN_EL_NAME);
+        if (listSecurityElements.getLength() < 1) {
+            listSecurityElements = soapMsg.getElementsByTagNameNS(SoapUtil.SECURITY_NAMESPACE2, SECURITY_CONTEXT_TOKEN_EL_NAME);
+        }
         if (listSecurityElements.getLength() < 1) {
             return null;
         } else {
@@ -183,11 +193,14 @@ public class SecureConversationTokenHandler {
     }
 
     private static Element getOrMakeSecurityContextTokenElement(Document soapMsg) {
-        NodeList listSecurityElements = soapMsg.getElementsByTagNameNS(SECURITY_NAMESPACE, SECURITY_CONTEXT_TOKEN_EL_NAME);
+        NodeList listSecurityElements = soapMsg.getElementsByTagNameNS(SoapUtil.SECURITY_NAMESPACE, SECURITY_CONTEXT_TOKEN_EL_NAME);
+        if (listSecurityElements.getLength() < 1) {
+            listSecurityElements = soapMsg.getElementsByTagNameNS(SoapUtil.SECURITY_NAMESPACE2, SECURITY_CONTEXT_TOKEN_EL_NAME);
+        }
         if (listSecurityElements.getLength() < 1) {
             // element does not exist
             Element securityEl = SoapUtil.getOrMakeSecurityElement(soapMsg);
-            Element securityContxTokEl = soapMsg.createElementNS(SECURITY_NAMESPACE, SECURITY_CONTEXT_TOKEN_EL_NAME);
+            Element securityContxTokEl = soapMsg.createElementNS(SoapUtil.SECURITY_NAMESPACE, SECURITY_CONTEXT_TOKEN_EL_NAME);
             // use same prefix as parent
             securityContxTokEl.setPrefix(securityEl.getPrefix());
             securityEl.insertBefore(securityContxTokEl, null);
