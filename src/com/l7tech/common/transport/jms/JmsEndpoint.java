@@ -7,6 +7,8 @@
 package com.l7tech.common.transport.jms;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 
 import java.io.Serializable;
 
@@ -32,6 +34,10 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
 
     /** Optional */
     private JmsEndpoint _failureEndpoint;
+
+    public EntityHeader toEntityHeader() {
+        return new EntityHeader(getOid(), EntityType.UNDEFINED,  getDestinationName(), getName());
+    }
 
     public String getUsername() {
         return _username;

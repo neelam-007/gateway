@@ -8,17 +8,10 @@ package com.l7tech.service;
 
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.transport.jms.JmsConnection;
-import com.l7tech.common.transport.jms.JmsProvider;
 import com.l7tech.common.transport.jms.JmsEndpoint;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.VersionException;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.Entity;
+import com.l7tech.common.transport.jms.JmsProvider;
 import com.l7tech.identity.StubDataStore;
+import com.l7tech.objectmodel.*;
 
 import java.rmi.RemoteException;
 import java.util.*;
@@ -47,13 +40,9 @@ public class JmsAdminStub implements JmsAdmin {
         Collection list = new ArrayList();
         for (Iterator i = connections.keySet().iterator(); i.hasNext();) {
             Long key = (Long) i.next();
-            list.add(fromConnection((JmsConnection) connections.get(key)));
+            list.add(((JmsConnection) connections.get(key)).toEntityHeader());
         }
         return (EntityHeader[]) list.toArray(new EntityHeader[] {});
-    }
-
-    private synchronized EntityHeader fromConnection(JmsConnection p) {
-        return new EntityHeader(p.getOid(), EntityType.JMS_CONNECTION, p.getName(), null);
     }
 
     public synchronized JmsConnection findConnectionByPrimaryKey(long oid) throws RemoteException, FindException {
@@ -64,7 +53,7 @@ public class JmsAdminStub implements JmsAdmin {
         Collection list = new ArrayList();
         for (Iterator i = monitoredEndpoints.iterator(); i.hasNext();) {
             JmsEndpoint endpoint = (JmsEndpoint) i.next();
-            list.add(fromEndpoint(endpoint));
+            list.add(endpoint.toEntityHeader());
         }
         return (EntityHeader[]) list.toArray(new EntityHeader[0]);
     }
@@ -80,13 +69,9 @@ public class JmsAdminStub implements JmsAdmin {
         List monitoredHeaders = new ArrayList();
         for (Iterator i = foundEndpoints.iterator(); i.hasNext();) {
             JmsEndpoint endpoint = (JmsEndpoint) i.next();
-            monitoredHeaders.add(fromEndpoint(endpoint));
+            monitoredHeaders.add(endpoint.toEntityHeader());
         }
         monitoredEndpoints = monitoredHeaders;
-    }
-
-    private EntityHeader fromEndpoint(JmsEndpoint endpoint) {
-        return new EntityHeader(endpoint.getOid(), EntityType.UNDEFINED,  endpoint.getDestinationName(), endpoint.getName());
     }
 
     public synchronized long saveConnection(JmsConnection connection) throws RemoteException, UpdateException, SaveException, VersionException {
