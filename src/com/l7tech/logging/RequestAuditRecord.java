@@ -8,10 +8,7 @@ package com.l7tech.logging;
 
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.PrincipalCredentials;
-import com.l7tech.message.Request;
-import com.l7tech.message.XmlRequest;
-import com.l7tech.message.Response;
-import com.l7tech.message.XmlResponse;
+import com.l7tech.message.*;
 import com.l7tech.identity.User;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.service.PublishedService;
@@ -45,6 +42,12 @@ public class RequestAuditRecord extends AuditRecord {
                 }
             }
 
+            try {
+                _requestContentLength = new Integer( (String)currentRequest.getParameter( Request.PARAM_HTTP_CONTENT_LENGTH ) ).intValue();
+            } catch ( NumberFormatException nfe ) {
+            }
+            if ( _requestContentLength == -1 && _requestXml != null ) _requestContentLength = _requestXml.length();
+
             PrincipalCredentials pc = currentRequest.getPrincipalCredentials();
             if ( pc != null ) {
                 User u = pc.getUser();
@@ -70,6 +73,12 @@ public class RequestAuditRecord extends AuditRecord {
                     _responseXml = null;
                 }
             }
+
+            try {
+                _responseContentLength = new Integer( (String)currentResponse.getParameter( Response.PARAM_HTTP_CONTENT_LENGTH ) ).intValue();
+            } catch ( NumberFormatException nfe ) {
+            }
+            if ( _responseContentLength == -1 && _responseXml != null ) _responseContentLength = _responseXml.length();
         }
 
     }
@@ -101,8 +110,8 @@ public class RequestAuditRecord extends AuditRecord {
     protected String _remoteAddr;
 
     /** Length of the request */
-    protected int _requestContentLength;
+    protected int _requestContentLength = -1;
 
     /** Length of the response */
-    protected int _responseContentLength;
+    protected int _responseContentLength = -1;
 }
