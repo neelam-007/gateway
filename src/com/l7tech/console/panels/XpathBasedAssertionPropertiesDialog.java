@@ -455,8 +455,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private final TreeSelectionListener
       messageSelectionListener = new TreeSelectionListener() {
           public void valueChanged(TreeSelectionEvent e) {
-              okButton.setEnabled(e.getNewLeadSelectionPath() != null &&
-                                  isValidValue(messageViewerToolBar.getxpathField().getText()));
+              okButton.setEnabled(isValidValue(messageViewerToolBar.getxpathField().getText()));
           }
       };
 
