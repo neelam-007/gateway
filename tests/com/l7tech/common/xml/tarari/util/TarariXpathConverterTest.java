@@ -42,8 +42,6 @@ public class TarariXpathConverterTest extends TestCase {
 
         gave = "/foo[@*[local-name()=\"blah\"]]";
         got = TarariXpathConverter.convertToTarariXpath(m, gave);
-        log.info("Gave: " + gave);
-        log.info("Got: " + got);
         assertEquals("/foo[@*[local-name()=\"blah\"]]", got);
     }
 
@@ -55,9 +53,7 @@ public class TarariXpathConverterTest extends TestCase {
         String gave;
 
         gave = "/foo[@s:blah]";
-        log.info("Gave: " + gave);
         got = TarariXpathConverter.convertToTarariXpath(m, gave);
-        log.info("Got: " + got);
         assertEquals("/foo[@*[local-name() = \"blah\"  and namespace-uri() =\"urn:s\" ]]", got);
     }
 
@@ -69,37 +65,31 @@ public class TarariXpathConverterTest extends TestCase {
 
         gave = "/foo/@*[local-name()=\"blah\"]";
         got = TarariXpathConverter.convertToTarariXpath(m, gave);
-        log.info("Gave: " + gave);
-        log.info("Got: " + got);
         assertEquals(gave, got);
 
         gave = "/foo/*[local-name()=\"blah\"]/s:bar/@s:bletch";
         got = TarariXpathConverter.convertToTarariXpath(m, gave);
-        log.info("Gave: " + gave);
-        log.info("Got: " + got);
         assertEquals("/foo/*[local-name()=\"blah\"]/*[local-name() = \"bar\"  and namespace-uri() =\"urn:s\" ]/@*[local-name() = \"bletch\"  and namespace-uri() =\"urn:s\" ]", got);
 
         gave = "/s:Envelope/s:Body";
         got = TarariXpathConverter.convertToTarariXpath(m, gave);
-        log.info("Gave: " + gave);
-        log.info("Got: " + got);
         assertEquals("/*[local-name() = \"Envelope\"  and namespace-uri() =\"urn:s\" ]/*[local-name() = \"Body\"  and namespace-uri() =\"urn:s\" ]", got);
     }
 
-    public void TOTALLY_BROKEN_testConverter() throws Exception {
+    public void testConverter() throws Exception {
         {
             Map smallMap = new HashMap();
             smallMap.put("e", "http://junk.com/emp");
 
             String got;
             got = TarariXpathConverter.convertToTarariXpath(smallMap, "/e:employees/e:emp");
-            assertEquals(got, "/employees[namespace-uri() =\"http://junk.com/emp\" ]/emp[namespace-uri() =\"http://junk.com/emp\" ]");
+            assertEquals("/*[local-name() = \"employees\"  and namespace-uri() =\"http://junk.com/emp\" ]/*[local-name() = \"emp\"  and namespace-uri() =\"http://junk.com/emp\" ]", got);
 
             got = TarariXpathConverter.convertToTarariXpath(smallMap, "//e:emp");
-            assertEquals(got, "//emp[namespace-uri() =\"http://junk.com/emp\" ]");
+            assertEquals("//*[local-name() = \"emp\"  and namespace-uri() =\"http://junk.com/emp\" ]", got);
 
             got = TarariXpathConverter.convertToTarariXpath(smallMap, "//e:*");
-            assertEquals(got, "//*[namespace-uri() =\"http://junk.com/emp\" ]");
+            assertEquals("//*[namespace-uri() =\"http://junk.com/emp\" ]", got);
         }
 
         {
@@ -110,16 +100,16 @@ public class TarariXpathConverterTest extends TestCase {
 
             String got;
             got = TarariXpathConverter.convertToTarariXpath(bigMap, "/e:employees/e:emp");
-            assertEquals(got, "/employees[namespace-uri() =\"http://junk.com/emp\" ]/emp[namespace-uri() =\"http://junk.com/emp\" ]");
+            assertEquals("/*[local-name() = \"employees\"  and namespace-uri() =\"http://junk.com/emp\" ]/*[local-name() = \"emp\"  and namespace-uri() =\"http://junk.com/emp\" ]", got);
 
             got = TarariXpathConverter.convertToTarariXpath(bigMap, "/foo:ducksoup[1]/foo1:*/foo:ducksoup[position()=1]");
-            assertEquals(got, "/ducksoup[namespace-uri() =\"http://www.foo.com\"  and (position() = 1)]/*[namespace-uri() =\"http://www.food.com\" ]/ducksoup[namespace-uri() =\"http://www.foo.com\"  and (position()=1)]");
+            assertEquals("/*[local-name() = \"ducksoup\"  and namespace-uri() =\"http://www.foo.com\"  and (position() = 1)]/*[namespace-uri() =\"http://www.food.com\" ]/*[local-name() = \"ducksoup\"  and namespace-uri() =\"http://www.foo.com\"  and (position()=1)]", got);
 
             got = TarariXpathConverter.convertToTarariXpath(bigMap, "//e:emp");
-            assertEquals(got, "//emp[namespace-uri() =\"http://junk.com/emp\" ]");
+            assertEquals("//*[local-name() = \"emp\"  and namespace-uri() =\"http://junk.com/emp\" ]", got);
 
             got = TarariXpathConverter.convertToTarariXpath(bigMap, "//e:*");
-            assertEquals(got, "//*[namespace-uri() =\"http://junk.com/emp\" ]");
+            assertEquals("//*[namespace-uri() =\"http://junk.com/emp\" ]", got);
         }
     }
 
