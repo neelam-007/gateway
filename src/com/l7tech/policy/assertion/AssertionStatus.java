@@ -29,7 +29,6 @@ public class AssertionStatus {
     /** Couldn't resolve a service for this request */
     public static final AssertionStatus SERVICE_NOT_FOUND = make( CLIENT +  4, "Service Not Found" );
     public static final AssertionStatus UNAUTHORIZED      = make( CLIENT +  2, "Unauthorized" );
-    public static final AssertionStatus BALEETED          = make( CLIENT + 99, "BALEETED!" );
 
     /** Assertion not yet implemented. */
     public static final AssertionStatus NOT_YET_IMPLEMENTED = make( MISC + 0, "Not yet implemented!" );

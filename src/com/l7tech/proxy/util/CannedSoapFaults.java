@@ -59,19 +59,4 @@ public class CannedSoapFaults {
             "  </soapenv:Fault>\n" +
             " </soapenv:Body>\n" +
             "</soapenv:Envelope>\n";
-
-    public static final String RESPONSE_SMELLS =
-            "<soapenv:Envelope" +
-            " xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"" +
-            " xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"" +
-            " xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
-            " <soapenv:Body>\n" +
-            "  <soapenv:Fault>\n" +
-            "   <faultcode>soapenv:Server</faultcode>\n" +
-            "   <faultstring>Response Smells</faultstring>\n" +
-            "   <faultactor></faultactor>\n" +
-            "   <detail>The response from the Gateway smelled like week-old mackerel.</detail>\n" +
-            "  </soapenv:Fault>\n" +
-            " </soapenv:Body>\n" +
-            "</soapenv:Envelope>\n";
 }
