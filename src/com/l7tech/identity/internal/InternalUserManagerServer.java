@@ -259,6 +259,17 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
 
     public long save(User user) throws SaveException {
         try {
+            // check to see if an existing user with same login exist
+            User existingDude = null;
+            try {
+                existingDude = findByLogin(user.getLogin());
+            } catch (FindException e) {
+                existingDude = null;
+            }
+            if (existingDude != null) {
+                throw new SaveException("Cannot save this user. Existing user with login \'"
+                                        + user.getLogin() + "\' present.");
+            }
             return _manager.save( getContext(), user );
         } catch ( SQLException se ) {
             logger.log(Level.SEVERE, null, se);
