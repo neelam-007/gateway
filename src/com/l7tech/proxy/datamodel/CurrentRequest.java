@@ -14,13 +14,13 @@ package com.l7tech.proxy.datamodel;
  * Time: 5:03:33 PM
  */
 public class CurrentRequest {
-    private ThreadLocal currentRequest = new ThreadLocal();
+    private static ThreadLocal currentRequest = new ThreadLocal();
 
-    public void setCurrentRequest(PendingRequest req) {
+    public static void setCurrentRequest(PendingRequest req) {
         currentRequest.set(req);
     }
 
-    public PendingRequest getCurrentRequest() {
+    public static PendingRequest getCurrentRequest() {
         return (PendingRequest) currentRequest.get();
     }
 }
