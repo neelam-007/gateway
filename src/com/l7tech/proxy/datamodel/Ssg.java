@@ -216,14 +216,14 @@ public class Ssg implements Serializable, Cloneable, Comparable {
      * @param policy
      * @throws IllegalArgumentException if neither uri nor soapAction is specified, or policy is null
      */
-    public synchronized void attachPolicy(String uri, String soapAction, Policy policy )
+    public synchronized void attachPolicy(String uri, String soapAction, String localUri, Policy policy )
             throws IllegalArgumentException
     {
         if (uri == null)
             uri = "";
         if (soapAction == null)
             soapAction = "";
-        PolicyAttachmentKey key = new PolicyAttachmentKey( uri, soapAction );
+        PolicyAttachmentKey key = new PolicyAttachmentKey( uri, soapAction, localUri );
         attachPolicy( key, policy );
     }
 
@@ -251,8 +251,8 @@ public class Ssg implements Serializable, Cloneable, Comparable {
      * @param uri The namespace of the first element within the SOAP message body.
      * @param soapAction the contents of the SOAPAction HTTP header.
      */
-    public synchronized void removePolicy(String uri, String soapAction) {
-        policyMap.remove(new PolicyAttachmentKey(uri, soapAction));
+    public synchronized void removePolicy(String uri, String soapAction, String localUri) {
+        policyMap.remove(new PolicyAttachmentKey(uri, soapAction, localUri));
     }
 
     /**
@@ -270,8 +270,8 @@ public class Ssg implements Serializable, Cloneable, Comparable {
      * @param soapAction the contents of the SOAPAction HTTP header.
      * @return A policy if found, or null
      */
-    public synchronized Policy lookupPolicy(String uri, String soapAction) {
-        return lookupPolicy(new PolicyAttachmentKey(uri, soapAction));
+    public synchronized Policy lookupPolicy(String uri, String soapAction, String localUri) {
+        return lookupPolicy(new PolicyAttachmentKey(uri, soapAction, localUri));
     }
 
     /**

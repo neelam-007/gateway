@@ -1,20 +1,12 @@
 package com.l7tech.proxy.gui;
 
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.gui.widgets.ContextMenuTextArea;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.proxy.RequestInterceptor;
-import com.l7tech.proxy.datamodel.HttpHeaders;
-import com.l7tech.proxy.datamodel.PendingRequest;
-import com.l7tech.proxy.datamodel.Policy;
-import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
-import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.SsgResponse;
+import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.gui.policy.PolicyTreeCellRenderer;
 import com.l7tech.proxy.gui.policy.PolicyTreeModel;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-
 import org.w3c.dom.Document;
 
 import javax.swing.*;
@@ -25,6 +17,8 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Keep track of messages that have come and gone.
@@ -114,6 +108,18 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
                                              GridBagConstraints.WEST,
                                              GridBagConstraints.HORIZONTAL,
                                              new Insets(0, 0, 5, 5), 0, 0));
+            final JLabel proxyUriLabel = new JLabel("Proxy URI:  ");
+            panel.add(proxyUriLabel,
+                      new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
+                                             GridBagConstraints.EAST,
+                                             GridBagConstraints.NONE,
+                                             new Insets(0, 5, 5, 0), 0, 0));
+            final JLabel proxyUri = new JLabel(key.getProxyUri());
+            panel.add(proxyUri,
+                      new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
+                                             GridBagConstraints.WEST,
+                                             GridBagConstraints.HORIZONTAL,
+                                             new Insets(0, 0, 5, 5), 0, 0));
 
             JTree policyTree = new JTree((TreeModel)null);
             policyTree.setCellRenderer(new PolicyTreeCellRenderer());
@@ -122,7 +128,7 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
             while (erow < policyTree.getRowCount())
                 policyTree.expandRow(erow++);            
             panel.add(policyTree,
-                      new GridBagConstraints(0, 2, GridBagConstraints.REMAINDER, 1, 1.0, 1.0,
+                      new GridBagConstraints(0, 3, GridBagConstraints.REMAINDER, 1, 1.0, 1.0,
                                              GridBagConstraints.SOUTH,
                                              GridBagConstraints.BOTH,
                                              new Insets(0, 0, 0, 0), 0, 0));

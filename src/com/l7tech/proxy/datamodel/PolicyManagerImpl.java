@@ -52,7 +52,7 @@ public class PolicyManagerImpl implements PolicyManager {
      * @return The Policy we found, or null if we didn't find one.
      */
     public Policy getPolicy(PendingRequest request) {
-        Policy policy = request.getSsg().lookupPolicy(request.getUri(), request.getSoapAction());
+        Policy policy = request.getSsg().lookupPolicy(request.getUri(), request.getSoapAction(), request.getOriginalUrl().getFile());
         if (policy != null) {
             if (LogFlags.logPolicies)
                 log.info("PolicyManager: Found a policy for this request: " + policy.getAssertion());
@@ -69,7 +69,7 @@ public class PolicyManagerImpl implements PolicyManager {
      * @param request The request that failed in a way suggestive that its policy may be out-of-date.
      */
     public void flushPolicy(PendingRequest request) {
-        request.getSsg().removePolicy(request.getUri(), request.getSoapAction());
+        request.getSsg().removePolicy(request.getUri(), request.getSoapAction(), request.getOriginalUrl().getFile());
     }
 
     /**
@@ -89,7 +89,7 @@ public class PolicyManagerImpl implements PolicyManager {
                    OperationCanceledException, HttpChallengeRequiredException, KeyStoreCorruptException,
                    ClientCertificateException, PolicyRetryableException
     {
-        PolicyAttachmentKey pak = new PolicyAttachmentKey(request.getUri(), request.getSoapAction());
+        PolicyAttachmentKey pak = new PolicyAttachmentKey(request.getUri(), request.getSoapAction(), request.getOriginalUrl().getFile());
         Ssg ssg = request.getSsg();
         boolean useSsl = ssg.isUseSslByDefault();
         X509Certificate serverCert = SsgKeyStoreManager.getServerCert(ssg);

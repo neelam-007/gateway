@@ -116,7 +116,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         }
 
         public int getColumnCount() {
-            return 2;
+            return 3;
         }
 
         public Object getValueAt(int rowIndex, int columnIndex) {
@@ -125,6 +125,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                     return ((PolicyAttachmentKey)displayPolicies.get(rowIndex)).getUri();
                 case 1:
                     return ((PolicyAttachmentKey)displayPolicies.get(rowIndex)).getSoapAction();
+                case 2:
+                    return ((PolicyAttachmentKey)displayPolicies.get(rowIndex)).getProxyUri();
             }
             log.log(Level.WARNING, "SsgPropertyDialog: policyTable: invalid columnIndex: " + columnIndex);
             return null;
@@ -201,6 +203,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             policyTable.setAutoCreateColumnsFromModel(true);
             policyTable.getColumnModel().getColumn(0).setHeaderValue("Body Namespace");
             policyTable.getColumnModel().getColumn(1).setHeaderValue("SOAPAction");
+            policyTable.getColumnModel().getColumn(2).setHeaderValue("Proxy URI");
             policyTable.getTableHeader().setReorderingAllowed(false);
             JScrollPane policyTableSp = new JScrollPane(policyTable);
             policyTableSp.setPreferredSize(new Dimension(120, 120));

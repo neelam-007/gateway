@@ -48,12 +48,12 @@ public class SsgPropertyDialogTest extends TestCase {
 
     public void testSomeStuff() throws Exception {
         Ssg ssg = new Ssg(1, "blah.bloof.com");
-        ssg.attachPolicy("http://blah",  "http://gwerg.asd.gfa", new Policy(new AllAssertion(Arrays.asList(new Assertion[] {
+        ssg.attachPolicy("http://blah",  "http://gwerg.asd.gfa", null, new Policy(new AllAssertion(Arrays.asList(new Assertion[] {
             new HttpBasic(),
             new SpecificUser(444, "blahuser", null, null),
         })), "testpolicy"));
         ssg.attachPolicy("http://HugeTree.com/Other",
-                         "http://example.com/soapaction/other", new Policy(
+                         "http://example.com/soapaction/other", null, new Policy(
                          new AllAssertion(Arrays.asList(new Assertion[] {
                              new OneOrMoreAssertion(Arrays.asList(new Assertion[] {
                                  new TrueAssertion(),
@@ -126,20 +126,20 @@ public class SsgPropertyDialogTest extends TestCase {
                              }))
                          })), "testpoliciy"));
         Policy tp = new Policy(new TrueAssertion(), "foo");
-        ssg.attachPolicy("http://example.com/Qpuotoer", "http://gwerg.asd.gfa", tp);
-        ssg.attachPolicy("http://exwoamdple.coom/Quodoter", "http://gwearg.asdf.gfa", tp);
-        ssg.attachPolicy("http://exasmple.com/Quotesr", "http://gwerg.asd.gfa", tp);
-        ssg.attachPolicy("http://edxamopdle.com/Qusoter", "http://gwderg.assd.gfa", tp);
-        ssg.attachPolicy("http://dexdample.com/Qsuoter", "http://gwdrg.asd.fgfa", tp);
-        ssg.attachPolicy("http://exdample.com/Quoater", "http://gwderg.asd.gfa", tp);
-        ssg.attachPolicy("http://example.com/Quooter", "http://gwerg.asd.gfa", tp);
-        ssg.attachPolicy("http://sexample.com/Quoadter", "http:/d/gwerg.asd.gfa", tp);
-        ssg.attachPolicy("http://exawmple.com/Qduoter", "http://gwerg.asd.gfa", tp);
-        ssg.attachPolicy("http://eoxaample.coms/Qfuoter", "http://gwerg.asd.gfaf", tp);
-        ssg.attachPolicy("http://exoampdle.com/Quotzer", "http://gwerg.asd.gfa", tp);
-        ssg.attachPolicy("http://exampale.cosm/Quzopter", "http://gwergs.asd.gfa", tp);
-        ssg.attachPolicy("http://exampdles.com/Quzoter", "http://gwerfg.asdf.gfa", tp);
-        ssg.attachPolicy("http://exsample.com/Quoater", "http://gwserg.asd.gfs", tp);
+        ssg.attachPolicy("http://example.com/Qpuotoer", "http://gwerg.asd.gfa", "/blah/bloo", tp);
+        ssg.attachPolicy("http://exwoamdple.coom/Quodoter", "http://gwearg.asdf.gfa", "/bloo/bloo", tp);
+        ssg.attachPolicy("http://exasmple.com/Quotesr", "http://gwerg.asd.gfa", null, tp);
+        ssg.attachPolicy("http://edxamopdle.com/Qusoter", "http://gwderg.assd.gfa", null, tp);
+        ssg.attachPolicy("http://dexdample.com/Qsuoter", "http://gwdrg.asd.fgfa", null, tp);
+        ssg.attachPolicy("http://exdample.com/Quoater", "http://gwderg.asd.gfa", null, tp);
+        ssg.attachPolicy("http://example.com/Quooter", "http://gwerg.asd.gfa", null, tp);
+        ssg.attachPolicy("http://sexample.com/Quoadter", "http:/d/gwerg.asd.gfa", null, tp);
+        ssg.attachPolicy("http://exawmple.com/Qduoter", "http://gwerg.asd.gfa", null, tp);
+        ssg.attachPolicy("http://eoxaample.coms/Qfuoter", "http://gwerg.asd.gfaf", null, tp);
+        ssg.attachPolicy("http://exoampdle.com/Quotzer", "http://gwerg.asd.gfa", null, tp);
+        ssg.attachPolicy("http://exampale.cosm/Quzopter", "http://gwergs.asd.gfa", null, tp);
+        ssg.attachPolicy("http://exampdles.com/Quzoter", "http://gwerfg.asdf.gfa", null, tp);
+        ssg.attachPolicy("http://exsample.com/Quoater", "http://gwserg.asd.gfs", null, tp);
 
         log.info("Firing up an example SsgPropertyDialog");
         ClientProxy clientProxy = new ClientProxyStub(9797);

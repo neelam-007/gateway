@@ -15,18 +15,20 @@ import java.io.Serializable;
  * Time: 6:29:56 PM
  */
 public class PolicyAttachmentKey implements Serializable, Cloneable, Comparable {
-    private String uri;
-    private String soapAction;
+    private final String uri;
+    private final String soapAction;
+    private final String proxyUri;
 
     /**
-     * @deprecated This is just here for the bean serializer.  You should pass the arguments to the constructor
-     *             and avoid calling the mutators.
+     * Create a PolicyAttachmentKey using the specified namespace URI, soapAction, and proxy URI local part.
+     * @param uri          the namespace URI, or null if there isn't one
+     * @param soapAction   the soapAction, or null if there isn't one
+     * @param proxyUri     the local part of the original local URL for this request (see URL.getFile())
      */
-    public PolicyAttachmentKey() {}
-
-    public PolicyAttachmentKey(String uri, String soapAction) {
+    public PolicyAttachmentKey(String uri, String soapAction, String proxyUri) {
         this.uri = uri;
         this.soapAction = soapAction;
+        this.proxyUri = proxyUri;
     }
 
     // String compare that treats null as being less than any other string
@@ -53,6 +55,10 @@ public class PolicyAttachmentKey implements Serializable, Cloneable, Comparable 
         if (result != 0)
             return result;
 
+        result = compareStrings(proxyUri, other.proxyUri);
+        if (result != 0)
+            return result;
+
         return result;
     }
 
@@ -60,6 +66,7 @@ public class PolicyAttachmentKey implements Serializable, Cloneable, Comparable 
         int code = 0;
         if (uri != null) code += uri.hashCode();
         if (soapAction != null) code += soapAction.hashCode();
+        if (proxyUri != null) code += proxyUri.hashCode();
         return code;
     }
 
@@ -69,29 +76,20 @@ public class PolicyAttachmentKey implements Serializable, Cloneable, Comparable 
         return compareTo(obj) == 0;
     }
 
-    // Generated accessors and mutators
+    // accessors
 
+    /** @return   the namespace URI, or null if there isn't one */
     public String getUri() {
         return uri;
     }
 
-    /**
-     * @deprecated this is just here for the bean serializer. You should create a new PolicyAttachmentKey instead.
-     * @param uri
-     */
-    public void setUri(String uri) {
-        this.uri = uri;
-    }
-
+    /** @return  the soapAction, or null if there isn't one */
     public String getSoapAction() {
         return soapAction;
     }
 
-    /**
-     * @deprecated this is just here for the bean serializer. You should create a new PolicyAttachmentKey instead.
-     * @param soapAction
-     */
-    public void setSoapAction(String soapAction) {
-        this.soapAction = soapAction;
+    /** @return the local part of the original local URL for this request (see URL.getFile()) */
+    public String getProxyUri() {
+        return proxyUri;
     }
 }

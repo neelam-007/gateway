@@ -17,6 +17,7 @@ import com.l7tech.proxy.util.TokenServiceClient;
 import org.w3c.dom.Document;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.security.GeneralSecurityException;
@@ -50,7 +51,7 @@ public class PendingRequest {
     private String uri = "";
     private SsgResponse lastErrorResponse = null; // Last response received from SSG in the case of 401 or 500 status
     private boolean isPolicyUpdated = false;
-    private URL originalUrl = null;
+    private final URL originalUrl;
     private Long nonce = null; // nonce.  set on-demand, and only set once
     private HttpHeaders headers = null;
     private PasswordAuthentication pw = null;
@@ -77,18 +78,32 @@ public class PendingRequest {
     }
     private PolicySettings policySettings = new PolicySettings();
 
-    /** Construct a PendingRequest around the given SOAPEnvelope going to the given SSG. */
+    /**
+     * Construct a PendingRequest around the given SOAPEnvelope going to the given SSG.
+     * @deprecated this constructor is for legacy unit tests only; it does not make a proper origUrl
+     */
     public PendingRequest(Document soapEnvelope, Ssg ssg, RequestInterceptor requestInterceptor) {
         this.soapEnvelope = soapEnvelope;
         this.initialEnvelope = soapEnvelope;
         this.ssg = ssg;
         this.requestInterceptor = requestInterceptor;
+        try {
+            this.originalUrl = new URL("http://localhost/");
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e); // can't happen
+        }
+        this.headers = null;
     }
 
     public PendingRequest(Document soapEnvelope, Ssg ssg, RequestInterceptor ri, URL origUrl, HttpHeaders headers) {
-        this(soapEnvelope, ssg, ri);
+        this.soapEnvelope = soapEnvelope;
+        this.initialEnvelope = soapEnvelope;
+        this.ssg = ssg;
+        this.requestInterceptor = ri;
         this.originalUrl = origUrl;
         this.headers = headers;
+        if (origUrl == null)
+            throw new IllegalArgumentException("An original URL must be provided.");
     }
 
     /**
@@ -327,12 +342,9 @@ public class PendingRequest {
         this.lastErrorResponse = lastErrorResponse;
     }
 
+    /** @return the original url, or null if there wasn't one. */
     public URL getOriginalUrl() {
         return originalUrl;
-    }
-
-    public void setOriginalUrl(URL originalUrl) {
-        this.originalUrl = originalUrl;
     }
 
     public void setSslForbidden(boolean sslForbidden) {
