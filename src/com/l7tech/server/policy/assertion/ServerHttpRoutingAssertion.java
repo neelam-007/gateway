@@ -11,7 +11,6 @@ import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.identity.UserBean;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
@@ -38,6 +37,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.*;
 import java.security.SignatureException;
+import java.security.cert.CertificateException;
 import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -161,9 +161,18 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                     SamlAssertionGenerator ag = new SamlAssertionGenerator();
     //                SignerInfo si = new com.l7tech.common.security.Keys().asSignerInfo("CN="+ServerConfig.getInstance().getHostname());
                     SignerInfo si = KeystoreUtils.getInstance().getSignerInfo();
-                    UserBean ub = new UserBean();
-                    ub.setName("CN="+login);
-                    ag.attachSenderVouches(document, ub, si);
+                    SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
+                    final TransportMetadata tm = request.getTransportMetadata();
+                    if ( tm instanceof HttpTransportMetadata ) {
+                        final HttpTransportMetadata htm = (HttpTransportMetadata)tm;
+                        try {
+                            InetAddress clientAddress = InetAddress.getByName(htm.getRequest().getRemoteAddr());
+                            samlOptions.setClientAddress(clientAddress);
+                        } catch (UnknownHostException e) {
+                            logger.warning("Couldn't resolve client IP address");
+                        }
+                    }
+                    ag.attachSenderVouches(document, si, request.getPrincipalCredentials(), samlOptions);
                     requestXml = XmlUtil.nodeToString(document);
                 }
                 attachCookies(client, request.getTransportMetadata());
@@ -201,6 +210,9 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 logger.log(Level.SEVERE, null, e);
                 return AssertionStatus.FAILED;
             } catch (SignatureException e) {
+                logger.log(Level.SEVERE, null, e);
+                return AssertionStatus.FAILED;
+            } catch (CertificateException e) {
                 logger.log(Level.SEVERE, null, e);
                 return AssertionStatus.FAILED;
             }

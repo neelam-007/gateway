@@ -1,3 +1,9 @@
+/*
+ * Copyright (C) 2004 Layer 7 Technologies Inc.
+ *
+ * $Id$
+ */
+
 package com.l7tech.server.saml;
 
 import com.l7tech.common.security.saml.Constants;
@@ -10,45 +16,55 @@ import x0Assertion.oasisNamesTcSAML1.AuthenticationStatementType;
 import x0Assertion.oasisNamesTcSAML1.SubjectConfirmationType;
 
 import java.io.IOException;
+import java.net.InetAddress;
 import java.security.cert.CertificateException;
 import java.util.Calendar;
+import java.util.TimeZone;
 import java.util.logging.Logger;
 
 /**
- * Class <code>SenderVouchesHelper</code> is the package private class
- * that provisions the sender voucher saml scenario.
- * 
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
+ * @author alex
+ * @version $Revision$
  */
-class SenderVouchesHelper extends SamlAssertionHelper {
-    static final Logger log = Logger.getLogger(SenderVouchesHelper.class.getName());
+public class HolderOfKeyHelper extends SamlAssertionHelper {
+    public static String addressToString(InetAddress address) {
+        StringBuffer sb = new StringBuffer();
+        byte[] bytes = address.getAddress();
+        for ( int i = 0; i < bytes.length; i++ ) {
+            byte b = bytes[i];
+            sb.append(b & 0xff);
+            if ( i < bytes.length-1 ) sb.append(".");
+        }
+        return sb.toString();
+    }
+
+    static final Logger log = Logger.getLogger(HolderOfKeyHelper.class.getName());
 
     /**
-     * Instantiate the sender vouches helper
-     * 
+     * Instantiate the sender voucher helper
+     *
      * @param soapDom               the soap message as a dom.w3c.org document
-     * @param options               the options for this operation
-     * @param creds
      * @param signer                the signer
      */
-    SenderVouchesHelper( Document soapDom, SamlAssertionGenerator.Options options, LoginCredentials creds, SignerInfo signer ) {
+    public HolderOfKeyHelper(Document soapDom, SamlAssertionGenerator.Options options, LoginCredentials creds, SignerInfo signer) {
         super(soapDom, options, creds, signer);
     }
 
     /**
      * create saml sender vouches assertion
-     * 
+     *
      * @return the saml assertion as a dom.w3c.org document
-     * @throws IOException  
-     * @throws SAXException 
+     * @throws IOException
+     * @throws SAXException
      */
-    Document createAssertion() throws IOException, SAXException, CertificateException {
-        Calendar now = Calendar.getInstance();
+    public Document createAssertion() throws IOException, SAXException, CertificateException {
+        Calendar now = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+
         AssertionType assertion = getGenericAssertion( now );
         AuthenticationStatementType at = attachAuthenticationStatement(assertion, now);
 
         SubjectConfirmationType st = at.getSubject().addNewSubjectConfirmation();
-        st.addConfirmationMethod(Constants.CONFIRMATION_SENDER_VOUCHES);
+        st.addConfirmationMethod(Constants.CONFIRMATION_HOLDER_OF_KEY);
 
         return getAssertionDocument( assertion );
     }

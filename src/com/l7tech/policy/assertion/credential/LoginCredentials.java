@@ -88,6 +88,14 @@ public class LoginCredentials {
                                          CredentialSourceAssertion.class.getName() );
     }
 
+    public long getAuthInstant() {
+        return authInstant;
+    }
+
+    public void authenticated() {
+        this.authInstant = System.currentTimeMillis();
+    }
+
     public String toString() {
         return getClass().getName() + "\n\t" +
                 "format: " + format.toString() + "\n\t" +
@@ -100,4 +108,5 @@ public class LoginCredentials {
     private Class credentialSourceAssertion;
     private CredentialFormat format;
     private Object payload;
+    private long authInstant;
 }

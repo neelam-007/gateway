@@ -1,19 +1,23 @@
 package com.l7tech.common.security.saml;
 
 import com.ibm.xml.dsig.*;
+import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.KeystoreUtils;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.policy.assertion.credential.CredentialFormat;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.server.saml.HolderOfKeyHelper;
+import com.l7tech.server.saml.SamlAssertionGenerator;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.w3.x2000.x09.xmldsig.KeyInfoType;
-import org.w3.x2000.x09.xmldsig.X509DataType;
+import org.apache.xerces.dom.DocumentImpl;
+import org.apache.xmlbeans.XmlOptions;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.apache.xmlbeans.XmlOptions;
-import x0Assertion.oasisNamesTcSAML1.*;
 
 import javax.xml.namespace.QName;
 import java.net.InetAddress;
@@ -22,9 +26,9 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.util.*;
-import java.io.StringWriter;
-import java.math.BigInteger;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author alex
@@ -84,7 +88,7 @@ public class SignedSamlTest extends TestCase {
         System.out.println("Client cert: " + clientCertChain[0]);
     }
 
-    private AssertionType getUnsignedHolderOfKeyAssertion() throws Exception {
+    private Document getUnsignedHolderOfKeyAssertion() throws Exception {
         final String clientDn = clientCertChain[0].getSubjectDN().getName();
         final Map clientCertDnMap = CertUtils.dnToAttributeMap(clientDn);
         final String clientCertCn = (String)((List)clientCertDnMap.get("CN")).get(0);
@@ -95,60 +99,18 @@ public class SignedSamlTest extends TestCase {
         final String caCertCn = (String)((List)caCertDnMap.get("CN")).get(0);
         System.out.println("CA CN = " + caCertCn);
 
-        AssertionType samlAssertion = AssertionType.Factory.newInstance();
-        samlAssertion.setAssertionID(ASSERTION_ID);
-        samlAssertion.setMajorVersion(BigInteger.ONE);
-        samlAssertion.setMinorVersion(BigInteger.ONE);
-        samlAssertion.setIssuer(caCertCn);
-
-        final SubjectType samlSubject = SubjectType.Factory.newInstance();
-        NameIdentifierType nameIdentifier = samlSubject.addNewNameIdentifier();
-        nameIdentifier.setNameQualifier(caCertCn);
-        nameIdentifier.setFormat(Constants.NAMEIDENTIFIER_X509_SUBJECT);
-        nameIdentifier.setStringValue(clientDn);
-
-        SubjectConfirmationType samlSubjectConfirmation = samlSubject.addNewSubjectConfirmation();
-        samlSubjectConfirmation.addConfirmationMethod(Constants.CONFIRMATION_HOLDER_OF_KEY);
-        KeyInfoType samlKeyInfo = samlSubjectConfirmation.addNewKeyInfo();
-
-        X509DataType samlX509 = samlKeyInfo.addNewX509Data();
-        samlX509.addX509SubjectName(clientDn);
-        samlX509.addX509Certificate(clientCertChain[0].getEncoded());
-
-        final Calendar cal = Calendar.getInstance();
-        cal.setTimeZone(TimeZone.getTimeZone("UTC"));
-
-        samlAssertion.setIssueInstant(cal);
-        AuthenticationStatementType samlAuthStatement = samlAssertion.addNewAuthenticationStatement();
-        samlAuthStatement.setAuthenticationInstant(cal);
-        samlAuthStatement.setSubject(samlSubject);
-        samlAuthStatement.setAuthenticationMethod(Constants.XML_DSIG_AUTHENTICATION);
-        final SubjectLocalityType subjectLocality = samlAuthStatement.addNewSubjectLocality();
-        final InetAddress localHost = InetAddress.getLocalHost();
-        subjectLocality.setIPAddress(addressToString(localHost));
-        subjectLocality.setDNSAddress(localHost.getCanonicalHostName());
-
-        ConditionsType conditions = samlAssertion.addNewConditions();
-        conditions.setNotBefore(cal);
-        cal.add(Calendar.SECOND, EXPIRY_SECONDS);
-        conditions.setNotOnOrAfter(cal);
-
-        return samlAssertion;
-    }
-
-    private String addressToString(InetAddress address) {
-        StringBuffer sb = new StringBuffer();
-        byte[] bytes = address.getAddress();
-        for ( int i = 0; i < bytes.length; i++ ) {
-            byte b = bytes[i];
-            sb.append(b & 0xff);
-            if ( i < bytes.length-1 ) sb.append(".");
-        }
-        return sb.toString();
+        LoginCredentials creds = new LoginCredentials(null, null, CredentialFormat.CLIENTCERT, RequestWssX509Cert.class, null, clientCertChain[0]);
+        SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
+        samlOptions.setClientAddress(InetAddress.getLocalHost());
+        Document doc = new DocumentImpl();
+        SignerInfo si = new SignerInfo(caPrivateKey, caCertChain);
+        HolderOfKeyHelper hh = new HolderOfKeyHelper(doc, samlOptions, creds, si);
+        Document samlDoc = hh.createAssertion();
+        return samlDoc;
     }
 
     public void testSignedHolderOfKey() throws Exception {
-        final AssertionType samlAssertion = getUnsignedHolderOfKeyAssertion();
+        final Document assertionDoc = getUnsignedHolderOfKeyAssertion();
 
         final HashMap prefixMap = new HashMap();
         prefixMap.put(Constants.NS_SAML, "saml");
@@ -160,16 +122,8 @@ public class SignedSamlTest extends TestCase {
         xmlOptions.setSaveAggresiveNamespaces();
         xmlOptions.setSaveSuggestedPrefixes(prefixMap);
 
-        //todo: just a heads up, the 4 lines below could be replaced by:
-        //  final Document assertionDoc = samlAssertion.newdomNode();
-        StringWriter stringWriter = new StringWriter();
-        samlAssertion.save(stringWriter, xmlOptions);
-        String s = stringWriter.toString();
-        final Document assertionDoc = XmlUtil.stringToDocument(s);
-
         String s2 = XmlUtil.nodeToFormattedString(assertionDoc);
         System.out.println("Before signing: " + s2);
-        stringWriter.close();
 
         TemplateGenerator template = new TemplateGenerator( assertionDoc, XSignature.SHA1,
                                                             Canonicalizer.EXCLUSIVE, SignatureMethod.RSA);
@@ -227,5 +181,4 @@ public class SignedSamlTest extends TestCase {
                                                   "/.l7tech/key1.p12";
     private static final String ASSERTION_ID = "mySamlAssertion";
     private static final String CA_ALIAS = "ssgroot";
-    private static final int EXPIRY_SECONDS = 2 * 60;
 }
