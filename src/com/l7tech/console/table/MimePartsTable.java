@@ -50,8 +50,10 @@ public class MimePartsTable extends JTable {
 
             tableSorter = new MimePartsTableSorter(new DefaultTableModel(rows, cols) {
                 public boolean isCellEditable(int row, int col) {
-                    // the table cells are not editable
-                    return false;
+                    if(col == MimePartsTableSorter.MIME_PART_TABLE_MAX_LENGTH_COLUMN_INDEX)
+                        return true;
+                    else
+                        return false;
                 }
             });
         }

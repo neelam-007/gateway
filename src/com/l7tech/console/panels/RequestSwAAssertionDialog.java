@@ -125,63 +125,54 @@ public class RequestSwAAssertionDialog extends JDialog {
 
         if (assertion.getBindings().size() == 0) {
             // this is the first time
-            populateDataFromWSDL();
+            populateData(bindings);
         } else {
             // check if the WSDL changed
-            populateDataFromAssertion();
+            populateData(assertion.getBindings());
         }
     }
 
-    private void populateDataFromAssertion() {
-       bindings = assertion.getBindings();
+    private void populateData(Map bindings) {
 
         // populate the binding operation table
-        if(bindings != null) {
-            Iterator bindingsItr = bindings.keySet().iterator();
-            while (bindingsItr.hasNext()) {
-                String bindingName = (String) bindingsItr.next();
-                BindingInfo binding = (BindingInfo) bindings.get(bindingName);
+        if(bindings == null) throw new RuntimeException("bindings map is NULL");
 
-                // add the entry the the binding list
-                bindingsList.add(binding);
-                bindingsListComboxBox.addItem(binding);
+        boolean firstEntry = true;
+        Iterator bindingsItr = bindings.keySet().iterator();
+        while (bindingsItr.hasNext()) {
+            String bindingName = (String) bindingsItr.next();
+            BindingInfo binding = (BindingInfo) bindings.get(bindingName);
 
-                Iterator bindingOperationsItr = binding.getBindingOperations().keySet().iterator();
-                while(bindingOperationsItr.hasNext()) {
-                    String bindingOperationName = (String) bindingOperationsItr.next();
-                    // add the entry to the binding operation table
-                    BindingOperationInfo bo = (BindingOperationInfo) binding.getBindingOperations().get(bindingOperationName);
-                    getBindingOperationsTableModel().addRow(bo);
+            // add the entry the the binding list
+            bindingsList.add(binding);
+            bindingsListComboxBox.addItem(binding);
 
-                    // todo: need to change
-                    Iterator parts = bo.getMultipart().keySet().iterator();
-                    Vector pv = new Vector();
-                    while (parts.hasNext()) {
-                        String partName = (String) parts.next();
-                        pv.add(bo.getMultipart().get(partName));
-
-                    }
-                    getMimePartsTable().getTableSorter().setData(pv);
-                }
+            if(firstEntry) {
+                populateData(binding);
+                firstEntry = false;
             }
         }
 
-        getBindingOperationsTableModel().fireTableDataChanged();
-
     }
 
-    private void populateDataFromWSDL() {
-        //todo: the following line must be removed
-        assertion.setBindings(bindings);
+    private void populateData(BindingInfo binding) {
+        if(binding == null) throw new RuntimeException("binding info is NULL");
 
-        // populate the binding operation table
-        if(bindings != null) {
-            Iterator bindingsItr = bindings.keySet().iterator();
-            while (bindingsItr.hasNext()) {
-                String bindingOperationName = (String) bindingsItr.next();
+        Iterator bindingOperationsItr = binding.getBindingOperations().keySet().iterator();
+        while(bindingOperationsItr.hasNext()) {
+            String bindingOperationName = (String) bindingOperationsItr.next();
+            // add the entry to the binding operation table
+            BindingOperationInfo bo = (BindingOperationInfo) binding.getBindingOperations().get(bindingOperationName);
+            getBindingOperationsTableModel().addRow(bo);
 
-                getBindingOperationsTableModel().addRow(bindings.get(bindingOperationName));
+            Iterator parts = bo.getMultipart().keySet().iterator();
+            Vector pv = new Vector();
+            while (parts.hasNext()) {
+                String partName = (String) parts.next();
+                pv.add(bo.getMultipart().get(partName));
+
             }
+            getMimePartsTable().getTableSorter().setData(pv);
         }
         getBindingOperationsTableModel().fireTableDataChanged();
     }
@@ -191,7 +182,6 @@ public class RequestSwAAssertionDialog extends JDialog {
             Wsdl parsedWsdl = serviceNode.getPublishedService().parsedWsdl();
 
             Collection bindingList = parsedWsdl.getBindings();
-            HashMap operations = new HashMap();
 
             // for each binding
             for (Iterator iterator = bindingList.iterator(); iterator.hasNext();) {
@@ -199,11 +189,11 @@ public class RequestSwAAssertionDialog extends JDialog {
 
                 //todo: should filter out non-SOAP binding
                 Collection boList = binding.getBindingOperations();
-
+                HashMap operations = new HashMap();
+                
                 // for each operation
                 for (Iterator iterator1 = boList.iterator(); iterator1.hasNext();) {
                     BindingOperation bo = (BindingOperation) iterator1.next();
-                //    System.out.println(bo.getOperation().toString());
 
                     HashMap partList = new HashMap();
                     Collection elements = parsedWsdl.getInputParameters(bo);
@@ -434,61 +424,4 @@ public class RequestSwAAssertionDialog extends JDialog {
         }
     });
 
-    {
-// GUI initializer generated by IntelliJ IDEA GUI Designer
-// !!! IMPORTANT !!!
-// DO NOT EDIT OR ADD ANY CODE HERE!
-        $$$setupUI$$$();
-    }
-
-    /**
-     * Method generated by IntelliJ IDEA GUI Designer
-     * !!! IMPORTANT !!!
-     * DO NOT edit this method OR call it in your code!
-     */
-    private void $$$setupUI$$$() {
-        mainPanel = new JPanel();
-        mainPanel.setLayout(new GridLayoutManager(2, 1, new Insets(10, 10, 10, 10), -1, -1));
-        final JPanel panel1 = new JPanel();
-        panel1.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
-        mainPanel.add(panel1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null));
-        final JPanel panel2 = new JPanel();
-        panel2.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
-        panel1.add(panel2, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null));
-        final JPanel panel3 = new JPanel();
-        panel3.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
-        panel2.add(panel3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null));
-        final JLabel label1 = new JLabel();
-        label1.setText("Operations:");
-        panel3.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
-        operationsScrollPane = new JScrollPane();
-        panel3.add(operationsScrollPane, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, new Dimension(150, -1), new Dimension(150, 200), new Dimension(200, -1)));
-        final JPanel panel4 = new JPanel();
-        panel4.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
-        panel2.add(panel4, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null));
-        final JLabel label2 = new JLabel();
-        label2.setText("Input parameters (only those referring to an attachment are shown):");
-        panel4.add(label2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
-        multipartScrollPane = new JScrollPane();
-        panel4.add(multipartScrollPane, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, new Dimension(400, -1), new Dimension(400, 200), null));
-        final JPanel panel5 = new JPanel();
-        panel5.setLayout(new GridLayoutManager(2, 1, new Insets(10, 0, 10, 0), -1, -1));
-        panel1.add(panel5, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
-        final JLabel label3 = new JLabel();
-        label3.setText("Bindings:");
-        panel5.add(label3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
-        bindingsListComboxBox = new JComboBox();
-        panel5.add(bindingsListComboxBox, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), new Dimension(200, -1)));
-        final JPanel panel6 = new JPanel();
-        panel6.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
-        mainPanel.add(panel6, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null));
-        cancelButton = new JButton();
-        cancelButton.setText("Canel");
-        panel6.add(cancelButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
-        final Spacer spacer1 = new Spacer();
-        panel6.add(spacer1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null));
-        okButton = new JButton();
-        okButton.setText("OK");
-        panel6.add(okButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
-    }
 }

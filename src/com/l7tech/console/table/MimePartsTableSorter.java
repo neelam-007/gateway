@@ -116,6 +116,14 @@ public class MimePartsTableSorter  extends FilteredDefaultTableModel {
         return columnToSort;
     }
 
+    public Class getColumnClass(int columnIndex) {
+        if(columnIndex == MIME_PART_TABLE_MAX_LENGTH_COLUMN_INDEX) {
+            return Integer.class;
+        } else {
+            return String.class;
+        }
+    }
+
     public Object getData(int index) {
         if(index <= sortedData.length) {
             return sortedData[index];
