@@ -1,14 +1,12 @@
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.common.util.FileUtils;
 import org.apache.log4j.Category;
 
 import java.beans.XMLEncoder;
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Iterator;
-
-import com.l7tech.common.util.FileUtils;
 
 /**
  * Extends SsgFinderImpl to support saving state back to the ssgs.xml file.
@@ -56,6 +54,8 @@ public class SsgManagerImpl extends SsgFinderImpl implements SsgManager {
                 }
             }
         });
+
+        rebuildHostCache();
     }
 
     /**
@@ -79,7 +79,9 @@ public class SsgManagerImpl extends SsgFinderImpl implements SsgManager {
             initialize();
         if (ssg.getId() == 0)
             throw new IllegalArgumentException("Unable to register ssg: it has not been assigned an ID");
-        return ssgs.add(ssg);
+        boolean result = ssgs.add(ssg);
+        rebuildHostCache();
+        return result;
     }
 
     /**
@@ -93,6 +95,7 @@ public class SsgManagerImpl extends SsgFinderImpl implements SsgManager {
             initialize();
         if (!ssgs.remove(ssg))
             throw new SsgNotFoundException("The specified SSG was not found");
+        rebuildHostCache();
     }
 
     /**
@@ -115,5 +118,6 @@ public class SsgManagerImpl extends SsgFinderImpl implements SsgManager {
         }
         if (!found)
             throw new SsgNotFoundException("The requested default SSG is not currently registered.");
+        rebuildHostCache();
     }
 }
