@@ -46,6 +46,7 @@ public class TokenServiceServlet extends HttpServlet {
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
         dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
     }
 
     public void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
@@ -118,7 +119,7 @@ public class TokenServiceServlet extends HttpServlet {
                             User authenticatedUser = provider.authenticate(creds);
                             if (authenticatedUser != null) return authenticatedUser;
                         } catch (AuthenticationException e) {
-                            logger.log(Level.INFO, "excetion trying to authenticate credentials against " +
+                            logger.log(Level.INFO, "exception trying to authenticate credentials against " +
                                                    provider.getConfig().getName(), e);
                         } catch (IOException e) {
                             logger.log(Level.INFO, "excetion trying to authenticate credentials against " +
