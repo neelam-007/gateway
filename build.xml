@@ -171,7 +171,7 @@
           make the ssl cert and record it's keystore password in it
         -->
         <copy todir="${tomcat.home}/conf">
-            <fileset dir="${src.root}/etc" includes="server.xml, catalina.policy"/>
+            <fileset dir="${src.root}/etc/tomcat" includes="server.xml, catalina.policy"/>
         </copy>
         <copy todir="${tomcat.home}/bin">
             <fileset dir="${src.root}/etc/tomcat" includes="setclasspath.*"/>
@@ -882,7 +882,7 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         <copy file="${build.dir}/${war}" tofile="${install.src.war}"/>
         <!-- Copy server.xml & catalina.policy -->
         <copy todir="${install.src.tomcat}/conf">
-            <fileset dir="${src.root}/etc" includes="server.xml, catalina.policy"/>
+            <fileset dir="${src.root}/etc/tomcat" includes="server.xml, catalina.policy"/>
         </copy>
 
         <!-- Copy LDAP templates -->
