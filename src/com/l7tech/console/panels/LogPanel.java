@@ -498,7 +498,7 @@ public class LogPanel extends JPanel {
         getLogsRefreshTimer().stop();
 
         // retrieve the new logs
-        ((FilteredLogTableSorter) getMsgTable().getModel()).refreshLogs(getMsgFilterLevel(), this, autoRefresh.isSelected(), new Vector(), true);
+        ((FilteredLogTableSorter) getMsgTable().getModel()).refreshLogs(this, autoRefresh.isSelected(), new Vector(), true);
 
     }
 

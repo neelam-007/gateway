@@ -401,13 +401,12 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     /**
      * Retreive logs from the cluster.
      *
-     * @param msgFilterLevel  The filter level.
      * @param logPane   The object reference to the LogPanel.
      * @param restartTimer  Specifying whether the refresh timer is restarted after the data retrieval.
      * @param requests  The list of requests for retrieving logs. One request per node.
      * @param newRefresh  Specifying whether this refresh call is a new one or a part of the current refresh cycle.
      */
-    public void refreshLogs(final int msgFilterLevel, final LogPanel logPane, final boolean restartTimer, Vector requests, final boolean newRefresh) {
+    public void refreshLogs(final LogPanel logPane, final boolean restartTimer, Vector requests, final boolean newRefresh) {
 
         long endMsgNumber = -1;
 
@@ -452,7 +451,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                         String msgNumSelected = logPane.getSelectedMsgNumber();
 
                         // filter the logs
-                        filterData(msgFilterLevel);
+                        filterData(logPane.getMsgFilterLevel());
 
                         // sort the logs
                         sortData(columnToSort, false);
@@ -471,7 +470,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                             SwingUtilities.invokeLater(
                                     new Runnable() {
                                         public void run() {
-                                            refreshLogs(msgFilterLevel, logPane, restartTimer, unfilledRequest, false);
+                                            refreshLogs(logPane, restartTimer, unfilledRequest, false);
                                         }
                                     });
 
