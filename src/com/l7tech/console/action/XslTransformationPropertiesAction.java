@@ -30,7 +30,7 @@ public class XslTransformationPropertiesAction extends SecureAction {
     }
 
     public String getName() {
-        return "Xsl transformation properties";
+        return "XSL Transformation Properties";
     }
 
     public String getDescription() {
