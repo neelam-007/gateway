@@ -20,7 +20,7 @@ public class JmsUtilities {
     /**
      * Get the current list of JMS endpoints from the server.
      * @param outboundOnly if true, only queues set to the Outbound direction will be returned.
-     * @return an ArrayList of JmsQueue instances.  Each JmsQueue will have a non-null connection, but might have
+     * @return an ArrayList of JmsAdmin.JmsTuple instances.  Each JmsQueue will have a non-null connection, but might have
      *         a null endpoint if the server was configured outside of the current version of this GUI.  The
      *         returned JmsConnection instances might be shared across multiple JmsEndpoint instances, even though
      *         the current GUI provides no way to configure Queues this way.
