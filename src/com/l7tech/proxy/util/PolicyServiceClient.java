@@ -14,6 +14,7 @@ import com.l7tech.common.xml.MissingRequiredElementException;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
+import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
@@ -28,11 +29,13 @@ import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.logging.Logger;
 
 /**
  * Builds request messages for the PolicyService and helps parse the responses.
  */
 public class PolicyServiceClient {
+    public static final Logger log = Logger.getLogger(PolicyServiceClient.class.getName());
 
 
     public static Document createSignedGetPolicyRequest(String serviceId,
@@ -48,11 +51,17 @@ public class PolicyServiceClient {
         req.setSignTimestamp(true);
         try {
             Element header = SoapUtil.getHeaderElement(msg);
+            if (header == null) throw new IllegalStateException("missing header"); // can't happen
             Element body = SoapUtil.getBodyElement(msg);
+            if (body == null) throw new IllegalStateException("missing body"); // can't happen
             Element sid = XmlUtil.findOnlyOneChildElementByName(header, SoapUtil.L7_MESSAGEID_NAMESPACE,
                                                                 SoapUtil.L7_SERVICEID_ELEMENT);
+            if (sid == null) throw new IllegalStateException("missing sid"); // can't happen
+            Element mid = SoapUtil.getL7aMessageIdElement(msg); // correlation ID
+            if (mid == null) throw new IllegalStateException("missing mid"); // can't happen
             req.getElementsToSign().add(sid);
             req.getElementsToSign().add(body);
+            req.getElementsToSign().add(mid);
             decorator.decorateMessage(msg, req);
         } catch (InvalidDocumentFormatException e) {
             throw new RuntimeException(e); // can't happen
@@ -63,7 +72,6 @@ public class PolicyServiceClient {
     }
 
     public static Document createGetPolicyRequest(String serviceId) {
-        // TODO add correlation ID in the request (L7a:MessageID)
         Document msg;
         try {
             msg = XmlUtil.stringToDocument("<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\">" +
@@ -78,7 +86,7 @@ public class PolicyServiceClient {
             Element sid = XmlUtil.findOnlyOneChildElementByName(header, SoapUtil.L7_MESSAGEID_NAMESPACE,
                                                                 SoapUtil.L7_SERVICEID_ELEMENT);
             sid.appendChild(msg.createTextNode(serviceId));
-
+            SoapUtil.setL7aMessageId(msg, SoapUtil.generateUniqeUri()); // correlation ID
         } catch (IOException e) {
             throw new RuntimeException(e); // can't happen
         } catch (SAXException e) {
@@ -89,10 +97,20 @@ public class PolicyServiceClient {
         return msg;
     }
 
-    /** Parse a response and ensure that it was properly signed by the specified server certificate. */
-    public static Policy parseGetPolicyResponse(Document response, X509Certificate serverCertificate)
+    /**
+     * Examine a response from the policy service and extract the policy.  This variant ensures that the
+     * response was properly signed by the specified server certificate.
+     *
+     * @param originalRequest the original request as sent to the policy service.
+     *                        Used to verify that the correlation ID matches up in the reply (preventing replay attacks).
+     * @param response the reponse from the policy service, which must by a SOAP message signed by serverCertificate.
+     * @return the Policy retrieved from the policy service
+     * @throws InvalidDocumentFormatException if the policy service response was not formatted correctly
+     * @throws BadCredentialsException if the policy service denies access to this policy to your credentials
+     */
+    public static Policy parseGetPolicyResponse(Document originalRequest, Document response, X509Certificate serverCertificate)
             throws InvalidDocumentFormatException, GeneralSecurityException, ProcessorException,
-                   ServerCertificateUntrustedException
+            ServerCertificateUntrustedException, BadCredentialsException
     {
         WssProcessor wssProcessor = new WssProcessorImpl();
         WssProcessor.ProcessorResult result;
@@ -119,20 +137,40 @@ public class PolicyServiceClient {
             }
         }
 
-        return parseGetPolicyResponse(result.getUndecoratedMessage(), result.getElementsThatWereSigned());
+        return parseGetPolicyResponse(originalRequest, result.getUndecoratedMessage(), result.getElementsThatWereSigned());
     }
 
-    public static Policy parseGetPolicyResponse(Document response)
-            throws InvalidDocumentFormatException
+    /**
+     * Examine a response from the policy service and extract the policy.  This variant does no checking
+     * of signatures in the response.
+     *
+     * @param originalRequest the original request as sent to the policy service.
+     *                        Used to verify that the correlation ID matches up in the reply (preventing replay attacks).
+     * @param response the reponse from the policy service, which may or may not have been signed.
+     * @return the Policy retrieved from the policy service
+     * @throws InvalidDocumentFormatException if the policy service response was not formatted correctly
+     * @throws BadCredentialsException if the policy service denies access to this policy to your credentials
+     */
+    private static Policy parseGetPolicyResponse(Document originalRequest, Document response)
+            throws InvalidDocumentFormatException, BadCredentialsException
     {
-        return parseGetPolicyResponse(response, (WssProcessor.ParsedElement[])null);
+        return parseGetPolicyResponse(originalRequest, response, (WssProcessor.ParsedElement[])null);
     }
 
-    private static Policy parseGetPolicyResponse(Document response, WssProcessor.ParsedElement[] elementsThatWereSigned)
-            throws InvalidDocumentFormatException
+    private static Policy parseGetPolicyResponse(Document originalRequest, Document response, WssProcessor.ParsedElement[] elementsThatWereSigned)
+            throws InvalidDocumentFormatException, BadCredentialsException
     {
         // TODO check for fault message from server
+        {
+            Element payload = SoapUtil.getPayloadElement(response);
+            if (payload == null) throw new MissingRequiredElementException("Policy server response is missing SOAP Body or payload element");
+            if (response.getDocumentElement().getNamespaceURI().equals(payload.getNamespaceURI()) && "Fault".equals(payload.getLocalName()))
+                translateSoapFault(payload);
+        }
+
         // TODO check correlation ID in the response
+
+
         Element header = SoapUtil.getHeaderElement(response);
         if (header == null) throw new MissingRequiredElementException("Policy server response is missing SOAP Header element");
         Element policyVersion = XmlUtil.findOnlyOneChildElementByName(header,
@@ -166,5 +204,19 @@ public class PolicyServiceClient {
             throw new InvalidDocumentFormatException("Policy server response contained a Policy that could not be parsed", e);
         }
         return new Policy(assertion, version);
+    }
+
+    private static void translateSoapFault(Element fault) throws InvalidDocumentFormatException, BadCredentialsException {
+        final String s = "unauthorized policy download";
+        final String faultXml;
+        try {
+            faultXml = XmlUtil.nodeToString(fault);
+            if (faultXml.indexOf(s) >= 0)
+                throw new BadCredentialsException(s);
+            log.severe("Unexpected SOAP fault from policy service: " + faultXml);
+            throw new InvalidDocumentFormatException("Unexpected SOAP fault from policy service");
+        } catch (IOException e) {
+            throw new InvalidDocumentFormatException(e);
+        }
     }
 }

@@ -6,10 +6,10 @@
 
 package com.l7tech.common.util;
 
+import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.xml.ElementAlreadyExistsException;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
-import com.l7tech.common.security.saml.SamlConstants;
 import org.w3c.dom.*;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
@@ -20,6 +20,7 @@ import javax.xml.transform.dom.DOMSource;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -782,4 +783,16 @@ public class SoapUtil {
         msg.writeTo(baos);
         return baos.toByteArray();
     }
+
+    /** @return a new unique URI in the form http://www.layer7tech.com/uuid/XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX, where the
+     * Xes stand for random hexadecimal digits. */
+    public static String generateUniqeUri() {
+        String id;
+        byte[] randbytes = new byte[16];
+        rand.nextBytes(randbytes);
+        id = "http://www.layer7tech.com/uuid/" + HexUtils.hexDump(randbytes);
+        return id;
+    }
+
+    private static final SecureRandom rand = new SecureRandom();
 }

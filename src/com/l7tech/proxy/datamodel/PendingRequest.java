@@ -35,7 +35,6 @@ import java.util.logging.Logger;
  */
 public class PendingRequest {
     private static final Logger log = Logger.getLogger(PendingRequest.class.getName());
-    private static final SecureRandom rand = new SecureRandom();
 
     //private ClientProxy clientProxy;
     private final CredentialManager credentialManager = Managers.getCredentialManager();
@@ -361,9 +360,7 @@ public class PendingRequest {
             String id = SoapUtil.getL7aMessageId(getUndecoratedSoapEnvelope());
 
             if (id == null) {
-                byte[] randbytes = new byte[16];
-                rand.nextBytes(randbytes);
-                id = "http://www.layer7tech.com/uuid/" + HexUtils.hexDump(randbytes);
+                id = SoapUtil.generateUniqeUri();
             } else if (id.trim().length() < 1)
                 throw new InvalidDocumentFormatException("Request has existing L7a:MessageID field that is empty or contains only whitespace");
 
