@@ -878,6 +878,7 @@
                 <include name="hibernate.properties"/>
             </fileset>
         </move>
+
     </target>
 
     <target name="INTERNAL-ssg-install-genpass" if="install.full">
@@ -906,11 +907,6 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
     </target>
 
     <target name="INTERNAL-ssg-install-properties-full" if="install.full">
-        <!-- Copy server.xml & catalina.policy -->
-        <copy todir="${install.src.tomcat}/conf">
-            <fileset dir="${src.root}/etc/tomcat" includes="server.xml, catalina.policy"/>
-        </copy>
-
         <copy file="${src.root}/etc/keystore.properties" tofile="${install.src.keystore.properties}"/>
         <echo>Patching ${install.src.keystore.properties}...</echo>
 
@@ -939,9 +935,11 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
     </target>
 
     <target name="INTERNAL-ssg-install-properties-upgrade" unless="install.full">
-        <!-- Delete stock server.xml & catalina.policy so as not to replace in-place ones -->
+        <!-- Delete stock server.xml, catalina.policy & hibernate.properties so as not to replace in-place ones -->
         <delete file="${install.src.tomcat}/conf/server.xml"/> 
         <delete file="${install.src.tomcat}/conf/catalina.policy"/>
+        <delete file="${install.src.conf}/hibernate.properties"/>
+
         <copy file="${src.root}/etc/tomcat/server.xml" tofile="${install.src.tomcat}/conf/server.xml-dist"/>
         <copy file="${src.root}/etc/tomcat/catalina.policy" tofile="${install.src.tomcat}/conf/catalina.policy-dist"/>
 
@@ -1058,6 +1056,10 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
             <arg line="-storepass ${install.pass.ssl.keystore}"/>
         </java>
 
+        <!-- Copy server.xml & catalina.policy -->
+        <copy todir="${install.src.tomcat}/conf">
+            <fileset dir="${src.root}/etc/tomcat" includes="server.xml, catalina.policy"/>
+        </copy>
 
         <!-- Hack server.xml -->
         <echo>Patching ${install.src.server.xml}...</echo>
