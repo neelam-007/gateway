@@ -30,8 +30,11 @@ import java.util.logging.Logger;
  */
 public class MessageProcessor {
     public AssertionStatus processMessage( Request request, Response response ) throws IOException, PolicyAssertionException, MessageProcessingException {
-        if ( _serviceManager == null ) throw new IllegalStateException( "ServiceManager is null!" );
         try {
+            _currentRequest.set( request );
+
+            if ( _serviceManager == null ) throw new IllegalStateException( "ServiceManager is null!" );
+
             PublishedService service = _serviceManager.resolveService( request );
             AssertionStatus status;
             if ( service == null || service.isDisabled() ) {
@@ -79,6 +82,8 @@ public class MessageProcessor {
         } catch ( ServiceResolutionException sre ) {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, sre.getMessage(), sre);
             return AssertionStatus.SERVER_ERROR;
+        } finally {
+            _currentRequest.set( null );
         }
     }
 
@@ -94,7 +99,13 @@ public class MessageProcessor {
         _serviceManager = (ServiceManager)Locator.getDefault().lookup( ServiceManager.class );
     }
 
+    /** Returns the thread-local current request. Could be null! */
+    public static Request currentRequest() {
+        return (Request)_currentRequest.get();
+    }
+
     private static MessageProcessor _instance = null;
+    private static ThreadLocal _currentRequest = new ThreadLocal();
 
     private ServiceManager _serviceManager;
     private Logger _log = LogManager.getInstance().getSystemLogger();
