@@ -232,6 +232,7 @@ public class LogPanel extends JPanel {
             msgTablePane = new JScrollPane();
         }
         msgTablePane.setViewportView(getMsgTable());
+        msgTablePane.setBackground(getMsgTable().getBackground());
 
         return msgTablePane;
     }
@@ -368,8 +369,12 @@ public class LogPanel extends JPanel {
     private void updateMsgFilterLevel(int newFilterLevel) {
 
         if(msgFilterLevel != newFilterLevel){
+
              msgFilterLevel = newFilterLevel;
+
              ((FilteredLogTableModel)getMsgTable().getModel()).applyNewMsgFilter(msgFilterLevel);
+
+              getMsgDetails().setText("");
 
         }
 
