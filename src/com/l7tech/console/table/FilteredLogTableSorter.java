@@ -22,7 +22,7 @@ import java.util.*;
 public class FilteredLogTableSorter extends FilteredLogTableModel {
     static Logger logger = Logger.getLogger(StatisticsTableSorter.class.getName());
     boolean ascending = false;
-    int columnToSort = 0;
+    int columnToSort = LogPanel.LOG_TIMESTAMP_COLUMN_INDEX;
     int compares;
     private Object[] sortedData = null;
     private ClusterStatusAdmin clusterStatusAdmin = null;
