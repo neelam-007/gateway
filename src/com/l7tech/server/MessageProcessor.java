@@ -24,14 +24,20 @@ public class MessageProcessor {
         if ( _serviceManager == null ) throw new IllegalStateException( "ServiceManager is null!" );
         try {
             PublishedService service = _serviceManager.resolveService( request );
-            request.setParameter( Request.PARAM_SERVICE, service );
-            Assertion ass = service.rootAssertion();
 
-            AssertionStatus status = ass.checkRequest( request, response );
-            if ( status == AssertionStatus.NONE ) {
-                _log.info( status );
+            AssertionStatus status;
+            if ( service == null ) {
+                status = AssertionStatus.NOT_FOUND;
             } else {
-                _log.warn( status );
+                request.setParameter( Request.PARAM_SERVICE, service );
+                Assertion ass = service.rootAssertion();
+
+                status = ass.checkRequest( request, response );
+                if ( status == AssertionStatus.NONE ) {
+                    _log.info( status );
+                } else {
+                    _log.warn( status );
+                }
             }
 
             return status;
