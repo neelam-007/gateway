@@ -27,13 +27,12 @@ fi
 
 # =================================================================================
 KEYSTORE_DIR="$TOMCAT_HOME/kstores"
-CSR_FILE="$TOMCAT_HOME/kstores/tomcatSsl.csr"
-CERTIFICATE_FILE="$TOMCAT_HOME/kstores/ssl_rootcerted.cer"
+CSR_FILE="$TOMCAT_HOME/kstores/ssl.csr"
+CERTIFICATE_FILE="$TOMCAT_HOME/kstores/ssl.cer"
 WAR_FILE="$TOMCAT_HOME/webapps/ROOT.war"
-ROOT_KEY_STORE="$TOMCAT_HOME/kstores/ssgroot"
+ROOT_KEY_STORE="$TOMCAT_HOME/kstores/ca.ks"
 ROOT_KEY_ALIAS=ssgroot
 WEBAPPS_ROOT="$TOMCAT_HOME/webapps/ROOT"
-WEB_XML_FILE="$TOMCAT_HOME/webapps/ROOT/WEB-INF/web.xml"
 # =================================================================================
 
 # VERIFY THAT THE ROOT KEYSTORE IS PRESENT
@@ -69,12 +68,7 @@ java -cp $CP com.l7tech.identity.cert.RSASigner $ROOT_KEY_STORE $ROOT_KSTORE_PAS
 
 # CHECK IF THE CERT WAS CREATED
 if [ -e "$CERTIFICATE_FILE" ]; then
-        # SUCCESS, MAKE SURE IT'S REFERENCED IN WEB.XML
-        echo "SSL Cert created successfully with root ca"
-        echo "web.xml will be updated to use this cert"
-        SUBSTITUTE_FROM='..\/..\/kstores\/ssg.cer'
-        SUBSTITUTE_TO='..\/..\/kstores\/ssl_rootcerted.cer'
-        perl -pi.bak -e s/$SUBSTITUTE_FROM/$SUBSTITUTE_TO/ "$WEB_XML_FILE"
+        echo
 else
         # FAILURE
         echo "ERROR WILE SIGNING SSL CERT WITH ROOT CA"
