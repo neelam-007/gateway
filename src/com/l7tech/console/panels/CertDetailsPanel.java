@@ -56,6 +56,14 @@ public class CertDetailsPanel extends WizardStepPanel {
         return false;
     }
 
+    /**
+     * Provide the description for the step being taken on this panel.
+     *
+     * @return  String  The descritpion of the step.
+     */
+    public String getDescription() {
+        return "This panel shows the contents of certificate.";
+    }
 
     /**
      * Provides the wizard with the current data--either

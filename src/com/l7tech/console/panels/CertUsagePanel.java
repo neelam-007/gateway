@@ -64,6 +64,15 @@ public class CertUsagePanel extends WizardStepPanel{
         return "Specify Certificate Usage";
     }
 
+    /**
+     * Provide the description for the step being taken on this panel.
+     *
+     * @return  String  The descritpion of the step.
+     */
+    public String getDescription() {
+        return "This panel select the usage of the certificate. A combination of the usage in the list is allowed.";
+    }
+
      /**
      * Test whether the step is finished and it is safe to finish the wizard.
      *

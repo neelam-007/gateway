@@ -144,6 +144,15 @@ public class CertImportMethodsPanel extends WizardStepPanel {
     }
 
     /**
+     * Provide the description for the step being taken on this panel.
+     *
+     * @return  String  The descritpion of the step.
+     */
+    public String getDescription() {
+        return "This panel allows you to enter the information about where the certifcate can be retrieved from, or the certificate itself in PEM format.";
+    }
+
+    /**
      * Perform the task upon the Next button being clicked.
      *
      * @return true if it is ok to proceed to the next panel. otherwise, false.
@@ -191,6 +200,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
                 JOptionPane.showMessageDialog(this, resources.getString("view.error.urlMalformed"),
                                        resources.getString("view.error.title"),
                                        JOptionPane.ERROR_MESSAGE);
+                return false;
             }
 
             try {
@@ -252,7 +262,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
             int index = -1;
 
             if((index = certPEM.indexOf(PEM_CERT_BEGIN_MARKER)) == -1) {
-                JOptionPane.showMessageDialog(this, resources.getString("view.error.pem.cert.begin.marker.missing") + PEM_CERT_BEGIN_MARKER,
+                JOptionPane.showMessageDialog(this, resources.getString("view.error.pem.cert.begin.marker.missing") + PEM_CERT_BEGIN_MARKER + "\n",
                         resources.getString("view.error.title"),
                         JOptionPane.ERROR_MESSAGE);
                 return false;
@@ -262,7 +272,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
             }
 
             if((index = certPEM.indexOf(PEM_CERT_END_MARKER)) == -1) {
-                JOptionPane.showMessageDialog(this, resources.getString("view.error.pem.cert.end.marker.missing") + PEM_CERT_END_MARKER,
+                JOptionPane.showMessageDialog(this, resources.getString("view.error.pem.cert.end.marker.missing") + PEM_CERT_END_MARKER + "\n",
                         resources.getString("view.error.title"),
                         JOptionPane.ERROR_MESSAGE);
 
@@ -385,15 +395,15 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         final JRadioButton _3;
         _3 = new JRadioButton();
         urlConnRadioButton = _3;
-        _3.setSelected(false);
         _3.setText("Retrieve via SSL Connection");
+        _3.setSelected(false);
         _2.add(_3, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JRadioButton _4;
         _4 = new JRadioButton();
         fileRadioButton = _4;
+        _4.setText("Import from a File");
         _4.setSelected(false);
         _4.setEnabled(true);
-        _4.setText("Import from a File");
         _2.add(_4, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JRadioButton _5;
         _5 = new JRadioButton();
