@@ -111,7 +111,7 @@ public class PolicyTreeModel extends DefaultTreeModel {
      * 
      * @param root the assertion root
      */
-    public static PolicyTreeModel identitityModel(Assertion root) {
+    public static PolicyTreeModel identityModel(Assertion root) {
         Set paths = IdentityPath.getPaths(root);
         return new PolicyTreeModel(new IdentityViewRootNode(paths, root));
     }

@@ -231,7 +231,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
 
         if (identityView) {
-            PolicyTreeModel model = PolicyTreeModel.identitityModel(rootAssertion.asAssertion());
+            PolicyTreeModel model = PolicyTreeModel.identityModel(rootAssertion.asAssertion());
             policyTreeModel = new FilteredTreeModel((TreeNode)model.getRoot());
             ((FilteredTreeModel)policyTreeModel).setFilter(new PolicyTreeModel.IdentityNodeFilter());
 

@@ -17,17 +17,37 @@ import java.util.*;
 /**
  * Class <code>IdentityPath</code> represents a collection of
  * assertion paths for an identity within given policy.
- * <p>
+ * <p/>
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class IdentityPath {
+    protected static final Comparator DEFAULT_COMPARATOR = new Comparator() {
+        public int compare(Object o1, Object o2) {
+            if (o1.equals(o2)) return 0;
+            if (o1 instanceof User && o2 instanceof User)  {
+                User u1 = (User)o1;
+                User u2 = (User)o2;
+                long ret = u1.getProviderId() - u2.getProviderId();
+                if (ret != 0) return (int)ret;
+                return u2.getLogin().compareTo(u1.getLogin());
+            } else if (o1 instanceof Group && o2 instanceof Group) {
+                Group g1 = (Group)o1;
+                Group g2 = (Group)o2;
+                long ret = g1.getProviderId() - g2.getProviderId();
+                if (ret != 0) return (int)ret;
+                return g2.getName().compareTo(g1.getName());
+            }
+            return o1 instanceof Group ? 1 : - 1;
+        }
+    };
 
     /**
      * Extract the identities from the assertion tree.
      *
      * @param root the root of assertion tree
      * @return the <code>Set</code> of identities that
-     * are specified in this assertion tree.
+     *         are specified in this assertion tree.
      */
     public static Set getIdentities(Assertion root) {
         Set identities = new TreeSet(IDCOMPARATOR);
@@ -49,8 +69,23 @@ public class IdentityPath {
      * @return the set of identity paths that exist in thi policy tree
      */
     public static Set getPaths(Assertion root) {
+        return getPaths(root, DEFAULT_COMPARATOR);
+    }
+
+    /**
+     * Create the set of <code>IdentityPaths</code> that exist in this
+     * assertion tree. This returns all the meniotned identities with
+     * their paths.
+     * The identities are sorted according to the specified comparator.
+     *
+     * @param root the assertion root
+     * @param c   the the comparator that will be used to sort the identities
+     *             set.
+     * @return the set of identity paths that exist in thi policy tree
+     */
+    public static Set getPaths(Assertion root, Comparator c) {
         Set identities = getIdentities(root);
-        Set paths = new HashSet();
+        Set paths = new TreeSet(c);
         for (Iterator i = identities.iterator(); i.hasNext();) {
             Principal principal = (Principal)i.next();
             paths.add(forIdentity(principal, root));
@@ -62,11 +97,12 @@ public class IdentityPath {
         return paths;
     }
 
+
     /**
      * Create the <code>IdentityPath</code> from the assertion for the
      * the given principal.
      *
-     * @param p the principal
+     * @param p    the principal
      * @param root the assertion root
      * @return the identity path with the collection of assertion paths
      *         for the
@@ -154,6 +190,7 @@ public class IdentityPath {
     /**
      * return a set of assertion instances from this identity path
      * that are equal to the given type.
+     *
      * @param cl the assertion type
      * @return the <code>Set</code> of the assertion instances.
      */
@@ -178,6 +215,7 @@ public class IdentityPath {
     /**
      * return a set of assertion instances from this identity path
      * that are assignable to the given type.
+     *
      * @param cl the assertion type
      * @return the <code>Set</code> of the assertion instances.
      */
@@ -201,6 +239,7 @@ public class IdentityPath {
 
     /**
      * is the object passed an identity
+     *
      * @param assertion
      * @return whether the assertion is an identity
      */
@@ -213,6 +252,7 @@ public class IdentityPath {
     /**
      * Extract the user or from the object. The expected
      * object must be assertion of
+     *
      * @param assertion
      * @return whether the assertion is an identity
      */
@@ -235,7 +275,9 @@ public class IdentityPath {
     }
 
 
-    /** user or group */
+    /**
+     * user or group
+     */
     private Principal principal;
     private Set identityPaths = new HashSet();
 
@@ -244,14 +286,14 @@ public class IdentityPath {
          * Compares its two arguments for order.  This compares users and groups
          * by provider and name. Two users or groups are considered equal if they
          * have the same provider, and name.
-
+         *
          * @param o1 the first object to be compared (user or group).
          * @param o2 the second object to be compared (user or group).
          * @return a negative integer, zero, or a positive integer as the
-         * 	       first argument is less than, equal to, or greater than the
-         *	       second.
+         *         first argument is less than, equal to, or greater than the
+         *         second.
          * @throws ClassCastException if the arguments' types prevent them from
-         * 	       being compared by this Comparator.
+         *                            being compared by this Comparator.
          */
         public int compare(Object o1, Object o2) {
             if (o1.getClass() != o2.getClass()) {

@@ -4,11 +4,16 @@ package com.l7tech.console.tree.policy;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.identity.IdentityAssertion;
+import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.identity.Group;
+import com.l7tech.identity.User;
 
 import java.util.Iterator;
 import java.util.Set;
+import java.security.Principal;
 
 /**
  * Class IdentityPolicyTreeNode.
@@ -18,6 +23,7 @@ import java.util.Set;
 public class IdentityPolicyTreeNode extends AssertionTreeNode {
     private IdentityPath path;
     private final String iconResource;
+    private AssertionTreeNode identityAssertionTreeNode;
 
     /**
      * Construct the new <code>IdentityPolicyTreeNode</code> for
@@ -31,11 +37,21 @@ public class IdentityPolicyTreeNode extends AssertionTreeNode {
         if (path == null) {
             throw new IllegalArgumentException();
         }
+        IdentityAssertion identityAssertion;
         this.setAllowsChildren(true);
-        if (path.getPrincipal() instanceof Group)
+        Principal principal = path.getPrincipal();
+        if (principal instanceof Group) {
+            Group g = (Group)principal;
+            identityAssertion = new MemberOfGroup(g.getProviderId(), g.getName(), g.getUniqueIdentifier());
             iconResource = "com/l7tech/console/resources/group16.png";
-        else
+        }  else if (principal instanceof User) {
+            User u = (User)principal;
+            identityAssertion = new SpecificUser(u.getProviderId(), u.getLogin());
             iconResource = "com/l7tech/console/resources/user16.png";
+        } else {
+            throw new IllegalArgumentException("Unknown principal class "+principal.getClass());
+        }
+        identityAssertionTreeNode = AssertionTreeNodeFactory.asTreeNode(identityAssertion);
     }
 
     /**
@@ -90,7 +106,7 @@ public class IdentityPolicyTreeNode extends AssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return getIdentityPath().getPrincipal().getName();
+        return identityAssertionTreeNode.getName();
     }
 
     public IdentityPath getIdentityPath() {
