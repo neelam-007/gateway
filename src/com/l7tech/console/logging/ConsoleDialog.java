@@ -3,6 +3,8 @@ package com.l7tech.console.logging;
 import com.l7tech.console.panels.Utilities;
 
 import javax.swing.*;
+import javax.swing.text.Document;
+import javax.swing.text.BadLocationException;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.awt.*;
@@ -155,7 +157,15 @@ public class ConsoleDialog extends JFrame {
         SwingUtilities.
           invokeLater(new Runnable() {
               public void run() {
-                  logTextArea.append(msg);
+                  Document doc = logTextArea.getDocument();
+                  try {
+                      if (doc.getLength() >= MAX_LOG_SIZE) {
+                        doc.remove(0, msg.length());
+                      }
+                      doc.insertString(0, msg, null);
+                  } catch (BadLocationException e) {
+                      e.printStackTrace(System.err);
+                  }
               }
           });
     }
@@ -168,6 +178,7 @@ public class ConsoleDialog extends JFrame {
                 handlers[i].setLevel(l);
             }
         }
-
     }
+
+    private static final int MAX_LOG_SIZE = 1024*1024;
 }
