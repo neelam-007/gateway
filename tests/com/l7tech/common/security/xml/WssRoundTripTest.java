@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.lang.reflect.Method;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import com.l7tech.common.util.XmlUtil;
 
 /**
@@ -144,7 +145,7 @@ public class WssRoundTripTest extends TestCase {
         // Ooh, an incoming message has just arrived!
         Document incomingMessage = XmlUtil.stringToDocument(new String(decoratedMessage));
 
-        log.info("Message just before undecoration:" + XmlUtil.documentToString(message));
+        log.info("Message just before undecoration:" + XmlUtil.documentToFormattedString(message));
 
         WssProcessor.ProcessorResult r = trogdor.undecorateMessage(incomingMessage,
                                                                    td.recipientCert,
@@ -152,5 +153,27 @@ public class WssRoundTripTest extends TestCase {
 
         Document undecorated = r.getUndecoratedMessage();
         log.info("After undecoration:" + XmlUtil.documentToString(undecorated));
+
+        Element[] encrypted = r.getElementsThatWereEncrypted();
+            assertTrue(encrypted != null);
+            if (encrypted.length > 0) {
+                log.info("The following elements were encrypted:");
+                for (int j = 0; j < encrypted.length; j++) {
+                    Element element = encrypted[j];
+                    log.info("  " + element.getNodeName() + " (" + element.getNamespaceURI() + ")");
+                }
+            } else
+                log.info("No elements were encrypted.");
+
+            Element[] signed = r.getElementsThatWereSigned();
+            assertTrue(signed != null);
+            if (signed.length > 0) {
+                log.info("The following elements were signed:");
+                for (int j = 0; j < signed.length; j++) {
+                    Element element = signed[j];
+                    log.info("  " + element.getNodeName() + " (" + element.getNamespaceURI() + ")");
+                }
+            } else
+                log.info("No elements were signed.");
     }
 }
