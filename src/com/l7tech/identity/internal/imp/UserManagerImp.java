@@ -54,7 +54,7 @@ public class UserManagerImp extends ProviderSpecificEntityManager implements Use
     }
 
     public String getTableName() {
-        return "user";
+        return "internal_user";
     }
 
     public Class getImpClass() {
