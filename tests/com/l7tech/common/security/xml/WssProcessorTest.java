@@ -114,6 +114,7 @@ public class WssProcessorTest extends TestCase {
     TestDocument[] TEST_DOCUMENTS = {
         makeDotNetTestDocument("dotnet encrypted request", TestDocuments.DOTNET_ENCRYPTED_REQUEST),
         makeDotNetTestDocument("dotnet signed request", TestDocuments.DOTNET_SIGNED_REQUEST),
+        makeDotNetTestDocument("dotnet request with username token", TestDocuments.DOTNET_USERNAME_TOKEN),
         makeEttkTestDocument("ettk signed request", TestDocuments.ETTK_SIGNED_REQUEST),
         makeEttkTestDocument("ettk encrypted request", TestDocuments.ETTK_ENCRYPTED_REQUEST),
         makeEttkTestDocument("ettk signed encrypted request", TestDocuments.ETTK_SIGNED_ENCRYPTED_REQUEST),

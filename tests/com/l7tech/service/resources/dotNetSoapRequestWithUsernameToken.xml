@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<soap:Envelope	xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/03/addressing" xmlns:wsse="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+	<soap:Header>
+		<wsa:Action>http://warehouse.acme.com/ws/listProducts</wsa:Action>
+		<wsa:MessageID>uuid:40a1db26-2697-4798-a2b7-803c73b07b2f</wsa:MessageID>
+		<wsa:ReplyTo>
+			<wsa:Address>http://schemas.xmlsoap.org/ws/2004/03/addressing/role/anonymous</wsa:Address>
+		</wsa:ReplyTo>
+		<wsa:To>http://riker:8888/ACMEWarehouseWS/Service1.asmx</wsa:To>
+		<wsse:Security soap:mustUnderstand="1">
+			<wsu:Timestamp wsu:Id="Timestamp-df09bb3d-d605-4870-b7a5-ceb1fbcd47bb">
+				<wsu:Created>2004-06-14T18:49:05Z</wsu:Created>
+				<wsu:Expires>2004-06-14T18:54:05Z</wsu:Expires>
+			</wsu:Timestamp>
+			<wsse:UsernameToken xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd" wsu:Id="SecurityToken-03adc7f3-165f-4afc-8c29-da3c6a3f85bf">
+				<wsse:Username>username</wsse:Username>
+				<wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">password</wsse:Password>
+				<wsse:Nonce>RHikQraeN7wC2sc98h6UcQ==</wsse:Nonce>
+				<wsu:Created>2004-06-14T18:49:05Z</wsu:Created>
+			</wsse:UsernameToken>
+		</wsse:Security>
+	</soap:Header>
+	<soap:Body wsu:Id="Id-3a85394b-e6dc-469d-aa5a-dba4d787c035">
+		<listProducts xmlns="http://warehouse.acme.com/ws" />
+	</soap:Body>
+</soap:Envelope>
