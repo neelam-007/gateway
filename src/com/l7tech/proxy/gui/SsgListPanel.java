@@ -93,9 +93,8 @@ public class SsgListPanel extends JPanel {
         toolBar.add(new AbstractAction("Delete", IconManager.getRemove()) {
             public void actionPerformed(ActionEvent e) {
                 Ssg ssg = (Ssg)ssgList.getSelectedValue();
-                if (ssg != null) {
+                if (ssg != null)
                     ssgListModel.removeSsg(ssg);
-                }
             }
         });
     }
