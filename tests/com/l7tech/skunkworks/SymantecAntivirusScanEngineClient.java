@@ -140,6 +140,20 @@ public class SymantecAntivirusScanEngineClient {
         String statusString;
         long statusCode;
         Map headers;
+        public String toString() {
+            StringBuffer output = new StringBuffer();
+            output.append("Response from Scan Engine\n");
+            output.append("\tStatus: " + statusCode + "\n");
+            String str = (String)headers.get("X-Infection-Found");
+            if (str != null) {
+                output.append("\tX-Infection-Found: " + str + "\n");
+            }
+            str = (String)headers.get("X-Violations-Found");
+            if (str != null) {
+                output.append("\tX-Violations-Found: " + str + "\n");
+            }
+            return output.toString();
+        }
     }
 
     /**
