@@ -1,7 +1,7 @@
 package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.ExactlyOneAssertion;
+import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.wsp.WspWriter;
@@ -36,11 +36,10 @@ public class WspWriterTest extends TestCase {
     }
 
     public void testWritePolicy() throws IOException {
-        List kids = new ArrayList(Arrays.asList(new Assertion[] {
+        Assertion policy = new ExactlyOneAssertion(Arrays.asList(new Assertion[] {
             new TrueAssertion(),
             new FalseAssertion()
         }));
-        Assertion policy = new ExactlyOneAssertion(kids);
 
         log.info("Created policy tree: " + policy);
 
@@ -48,6 +47,11 @@ public class WspWriterTest extends TestCase {
         WspWriter.writePolicy(policy, out);
 
         log.info("Encoded to XML: " + out.toString());
+
+        //uncomment to save the XML to a file
+        //FileOutputStream fos = new FileOutputStream("WspWriterTest_encoded.xml");
+        //fos.write(out.toString().getBytes());
+        //fos.close();
 
         // See what it should look like
         InputStream knownStream = cl.getResourceAsStream(SIMPLE_POLICY);

@@ -9,10 +9,12 @@ package com.l7tech.policy.assertion;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 
+import java.io.Serializable;
+
 /**
  * @author alex
  */
-public class RoutingAssertion extends Assertion {
+public class RoutingAssertion extends Assertion implements Cloneable, Serializable {
     public RoutingAssertion(String protectedServiceUrl) {
         this();
         this.protectedServiceUrl = protectedServiceUrl;
@@ -21,6 +23,12 @@ public class RoutingAssertion extends Assertion {
     /** Default constructor, for Hibernate only, don't call! */
     public RoutingAssertion() {
         super();
+    }
+
+    public Object clone() throws CloneNotSupportedException {
+        RoutingAssertion n = (RoutingAssertion)super.clone();
+        n.setProtectedServiceUrl(new String(protectedServiceUrl));
+        return n;
     }
 
     public String getProtectedServiceUrl() {

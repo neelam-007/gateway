@@ -4,10 +4,14 @@
  * $Id$
  */
 
-package com.l7tech.policy.assertion;
+package com.l7tech.policy.assertion.composite;
 
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.AssertionError;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.Assertion;
 
 import java.util.Iterator;
 import java.util.List;

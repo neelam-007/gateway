@@ -1,13 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?> 
 <java version="1.4.1_02" class="java.beans.XMLDecoder"> 
- <object class="com.l7tech.policy.assertion.ExactlyOneAssertion"> 
+ <object id="ExactlyOneAssertion0" class="com.l7tech.policy.assertion.composite.ExactlyOneAssertion"> 
   <void property="children"> 
-   <object class="java.util.ArrayList"> 
+   <object class="java.util.LinkedList"> 
     <void method="add"> 
-     <object class="com.l7tech.policy.assertion.TrueAssertion"/> 
+     <object class="com.l7tech.policy.assertion.TrueAssertion"> 
+      <void property="parent"> 
+       <object idref="ExactlyOneAssertion0"/> 
+      </void> 
+     </object> 
     </void> 
     <void method="add"> 
-     <object class="com.l7tech.policy.assertion.FalseAssertion"/> 
+     <object class="com.l7tech.policy.assertion.FalseAssertion"> 
+      <void property="parent"> 
+       <object idref="ExactlyOneAssertion0"/> 
+      </void> 
+     </object> 
     </void> 
    </object> 
   </void> 

@@ -1,7 +1,7 @@
 package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.ExactlyOneAssertion;
+import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.wsp.WspReader;
