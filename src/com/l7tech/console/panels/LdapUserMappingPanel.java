@@ -63,7 +63,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
      * @return  String  The descritpion of the step.
      */
     public String getDescription() {
-        return "The page shows the attribute mappings of the LDAP user object classes. You can add/delete/modify the attributes mappings on this page.";
+        return "Map the attributes for each user objectclass in the LDAP Identity Provider.";
     }
 
     /** @return the wizard step label    */
