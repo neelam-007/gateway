@@ -178,6 +178,9 @@ public class ServiceCache extends ApplicationObjectSupport {
         }
     }
 
+    /**
+     * Caller must hold locks protecting {@link #services} and {@link #serverPolicies}
+     */
     private void cacheNoLock(PublishedService service) {
         boolean update = false;
         Long key = new Long(service.getOid());
@@ -230,6 +233,9 @@ public class ServiceCache extends ApplicationObjectSupport {
         }
     }
 
+    /**
+     * Caller must hold locks protecting {@link #services}, {@link #serverPolicies} and {@link #serviceStatistics}.
+     */
     private void removeNoLock(PublishedService service) {
         Long key = new Long(service.getOid());
         services.remove(key);
