@@ -67,10 +67,10 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
         return "<html><b>Port Type Binding</b><br>" +
           "The <i>binding</i> element contains binding definitions that specify message formatting and" +
           "protocol details. " +
-          "The <i>soapAction</i> attribute specifies the value of the SOAPAction header for this operation."+
+          "The <i>soapAction</i> attribute specifies the value of the SOAPAction header for this operation." +
           "The transport attribute indicates which SOAP transport this binding corresponds to. The value " +
-          "http://schemas.xmlsoap.org/soap/http corresponds to the HTTP binding in the SOAP specification."+
-          "The style attribute is set to either rpc or document."+
+          "http://schemas.xmlsoap.org/soap/http corresponds to the HTTP binding in the SOAP specification." +
+          "The style attribute is set to either rpc or document." +
           "</html>";
     }
 
@@ -161,7 +161,7 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
     }
 
     /**
-     * returns the binding that is being edited (single binidng support only)
+     * returns the binding that is being edited (single bindng support only)
      * creats the binding first time
      * @return the binding
      */
@@ -175,39 +175,41 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
             binding.setUndefined(false);
             collectSoapBinding(binding);
             definition.addBinding(binding);
-            for (Iterator it = portType.getOperations().iterator(); it.hasNext();) {
-                Operation op = (Operation)it.next();
-                BindingOperation bop = definition.createBindingOperation();
-                bop.setName(op.getName());
-                bop.setOperation(op);
-
-                BindingInput bi = definition.createBindingInput();
-                bi.setName(op.getInput().getName());
-                bop.setBindingInput(bi);
-
-                BindingOutput bout = definition.createBindingOutput();
-                bout.setName(op.getOutput().getName());
-                bop.setBindingOutput(bout);
-
-                binding.addBindingOperation(bop);
-                // soap action
-                String action =
-                  portType.getQName().getLocalPart() + "#" + bop.getName();
-                ExtensibilityElement ee = null;
-                ExtensionRegistry extensionRegistry = definition.getExtensionRegistry();
-                ee = extensionRegistry.createExtension(BindingOperation.class,
-                  SOAPConstants.Q_ELEM_SOAP_OPERATION);
-                if (ee instanceof SOAPOperation) {
-                    SOAPOperation sop = (SOAPOperation)ee;
-                    sop.setSoapActionURI(action);
-                } else {
-                    throw new RuntimeException("expected SOAPOperation, received " + ee.getClass());
-                }
-                bop.addExtensibilityElement(ee);
-            }
         } else {
             binding = (Binding)bindings.values().iterator().next();
         }
+        binding.getBindingOperations().clear();
+        for (Iterator it = portType.getOperations().iterator(); it.hasNext();) {
+            Operation op = (Operation)it.next();
+            BindingOperation bop = definition.createBindingOperation();
+            bop.setName(op.getName());
+            bop.setOperation(op);
+
+            BindingInput bi = definition.createBindingInput();
+            bi.setName(op.getInput().getName());
+            bop.setBindingInput(bi);
+
+            BindingOutput bout = definition.createBindingOutput();
+            bout.setName(op.getOutput().getName());
+            bop.setBindingOutput(bout);
+
+            binding.addBindingOperation(bop);
+            // soap action
+            String action =
+              portType.getQName().getLocalPart() + "#" + bop.getName();
+            ExtensibilityElement ee = null;
+            ExtensionRegistry extensionRegistry = definition.getExtensionRegistry();
+            ee = extensionRegistry.createExtension(BindingOperation.class,
+              SOAPConstants.Q_ELEM_SOAP_OPERATION);
+            if (ee instanceof SOAPOperation) {
+                SOAPOperation sop = (SOAPOperation)ee;
+                sop.setSoapActionURI(action);
+            } else {
+                throw new RuntimeException("expected SOAPOperation, received " + ee.getClass());
+            }
+            bop.addExtensibilityElement(ee);
+        }
+
         return binding;
     }
 
