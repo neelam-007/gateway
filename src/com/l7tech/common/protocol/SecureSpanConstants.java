@@ -234,4 +234,6 @@ public class SecureSpanConstants {
          */
         public static final String HEADER_KEYRES = "keyres";
     }
+
+    public static final String NOPASS = "NOPASS";
 }
