@@ -3,9 +3,6 @@ package com.l7tech.console.panels;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.MainWindow;
-import com.l7tech.console.event.EntityEvent;
-import com.l7tech.console.event.EntityListener;
-import com.l7tech.console.event.EntityListenerAdapter;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.Registry;
@@ -24,7 +21,6 @@ import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
 import java.util.NoSuchElementException;
-import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -63,11 +59,6 @@ public class FederatedUserPanel extends UserPanel {
     // Apply/Revert buttons
     private JButton okButton;
     private JButton cancelButton;
-
-    // user
-    protected EntityHeader userHeader;
-    protected UserBean user;
-    protected Set userGroups;
 
     // Titles/Labels
     private static final String DETAILS_LABEL = "General";
@@ -633,24 +624,6 @@ public class FederatedUserPanel extends UserPanel {
         // Return button
         return cancelButton;
     }
-
-
-/*    private EntityListener
-            passwordChangeListener = new EntityListenerAdapter() {
-
-                public void entityUpdated(EntityEvent ev) {
-                    try {
-                        user = getIdentityAdmin().findUserByPrimaryKey(config.getOid(), userHeader.getStrId()).getUserBean();
-                        user = collectChanges();
-                        boolean b = formModified;
-                        setData(user);
-                        setModified(b);
-                    } catch (Exception ex) {
-                        ErrorManager.getDefault().notify(Level.WARNING, ex, "Error retrieving the user " + userHeader.getStrId());
-                    }
-
-                }
-            };*/
 
     /**
      * Populates the form from the user bean
