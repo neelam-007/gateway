@@ -146,4 +146,15 @@ public class AllAssertions {
         // TODO new InetAddressAssertion(),
     };
 
+    public static Assertion[] CREDENTIAL_ASSERTIONS = new Assertion[] {
+        new HttpBasic(),
+        new HttpClientCert(),
+        new HttpDigest(),
+        new WssBasic(),
+        new WssDigest(),
+        new RequestWssX509Cert(),
+        new SecureConversation(),
+        new SamlSecurity()
+    };
+
 }
