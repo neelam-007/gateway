@@ -10,8 +10,8 @@ import com.l7tech.admin.AdminLogin;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.server.identity.IdentityProviderFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -22,7 +22,6 @@ import java.rmi.RemoteException;
 import java.rmi.server.ServerNotActiveException;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.AccessControlException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -37,6 +36,7 @@ public class AdminLoginImpl extends ApplicationObjectSupport
     //todo: consider moving to Spring bean configuration
     private final List adminGroups = Arrays.asList(new String[]{Group.ADMIN_GROUP_NAME, Group.OPERATOR_GROUP_NAME});
     private IdentityProviderConfigManager identityProviderConfigManager;
+    private IdentityProviderFactory identityProviderFactory;
 
     public AdminContext login(String username, String password)
       throws RemoteException, AccessControlException, LoginException {
@@ -45,12 +45,12 @@ public class AdminLoginImpl extends ApplicationObjectSupport
         }
         try {
             LoginCredentials creds = new LoginCredentials(username, password.toCharArray(), null);
-            User user = identityProviderConfigManager.getInternalIdentityProvider().authenticate(creds);
+            User user = getInternalIdentityProvider().authenticate(creds);
             if (user == null) {
                 throw new FailedLoginException("'" + creds.getLogin() + "'" + " could not be authenticated");
             }
             String[] roles = getUserRoles(user);
-            if (!hasPermission(user, roles)) {
+            if (!containsAdminAccessRole(roles)) {
                 throw new AccessControlException(user.getName() + " does not have privilege to access administrative services");
             }
             logger.info(""+getHighestRole(roles)+" user.getLogin() "+"logged in from IP " + UnicastRemoteObject.getClientHost());
@@ -58,24 +58,28 @@ public class AdminLoginImpl extends ApplicationObjectSupport
             return adminContext;
         } catch (AuthenticationException e) {
             logger.trace("Authentication failed", e);
-            AccessControlException ae = new AccessControlException("Authentication failed");
-            ae.initCause(e);
-            throw ae;
+            throw (AccessControlException) new AccessControlException("Authentication failed").initCause(e);
         } catch (FindException e) {
             logger.warn("Authentication provider error", e);
-            AccessControlException ae = new AccessControlException("Authentication failed");
-            ae.initCause(e);
-            throw ae;
+            throw (AccessControlException) new AccessControlException("Authentication failed").initCause(e);
         } catch (IOException e) {
             logger.warn("Authentication provider error", e);
-            AccessControlException ae = new AccessControlException("Authentication failed");
-            ae.initCause(e);
-            throw ae;
+            throw (AccessControlException) new AccessControlException("Authentication failed").initCause(e);
         } catch (ServerNotActiveException e) {
             throw new RemoteException("Illegal state/server not exported", e);
-        } finally {
-            closeContext();
+        } catch (InvalidIdProviderCfgException e) {
+            logger.warn("Authentication provider error", e);
+            throw (AccessControlException)new AccessControlException("Authentication provider error").initCause(e);
         }
+    }
+
+    private IdentityProvider getInternalIdentityProvider() throws FindException, InvalidIdProviderCfgException {
+        IdentityProviderConfig cfg = identityProviderConfigManager.findByPrimaryKey(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+        if (cfg == null) {
+            throw new IllegalStateException("Could not find the internal identoty manager!");
+        }
+
+        return identityProviderFactory.makeProvider(cfg);
     }
 
 
@@ -83,6 +87,9 @@ public class AdminLoginImpl extends ApplicationObjectSupport
         this.identityProviderConfigManager = cm;
     }
 
+    public void setIdentityProviderFactory(IdentityProviderFactory identityProviderFactory) {
+        this.identityProviderFactory = identityProviderFactory;
+    }
 
     private String getHighestRole(String[] roles) {
         List aRoles = Arrays.asList(roles);
@@ -106,9 +113,7 @@ public class AdminLoginImpl extends ApplicationObjectSupport
         }
     }
 
-    private boolean hasPermission(User user, String[] groups) {
-        IdentityProvider provider = identityProviderConfigManager.getInternalIdentityProvider();
-        GroupManager gman = provider.getGroupManager();
+    private boolean containsAdminAccessRole(String[] groups) {
         for (int i = 0; i < groups.length; i++) {
             String group = groups[i];
             if (adminGroups.contains(group)) {
@@ -118,8 +123,8 @@ public class AdminLoginImpl extends ApplicationObjectSupport
         return false;
     }
 
-    private String[] getUserRoles(User user) throws FindException {
-        IdentityProvider provider = identityProviderConfigManager.getInternalIdentityProvider();
+    private String[] getUserRoles(User user) throws FindException, InvalidIdProviderCfgException {
+        IdentityProvider provider = getInternalIdentityProvider();
         GroupManager gman = provider.getGroupManager();
         List roles = new ArrayList();
         for (Iterator i = gman.getGroupHeaders(user).iterator(); i.hasNext();) {
@@ -128,13 +133,4 @@ public class AdminLoginImpl extends ApplicationObjectSupport
         }
         return (String[])roles.toArray(new String[]{});
     }
-
-    private void closeContext() {
-        try {
-            PersistenceContext.getCurrent().close();
-        } catch (SQLException e) {
-            logger.warn("error closing context", e);
-        }
-    }
-
 }

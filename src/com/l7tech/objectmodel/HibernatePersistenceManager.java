@@ -6,104 +6,45 @@
 
 package com.l7tech.objectmodel;
 
-import com.l7tech.server.PersistenceEventInterceptor;
-import com.l7tech.server.ServerConfig;
 import net.sf.hibernate.*;
-import net.sf.hibernate.cfg.Configuration;
 import net.sf.hibernate.type.Type;
+import org.springframework.context.ApplicationContext;
+import org.springframework.orm.hibernate.SessionFactoryUtils;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
-import java.util.Properties;
 import java.util.logging.Logger;
-
-import org.springframework.context.ApplicationContext;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public class HibernatePersistenceManager extends PersistenceManager {
-    public static final String DEFAULT_HIBERNATE_RESOURCEPATH = "SSG.hbm.xml";
-    public static final String AUDIT_HIBERNATE_RESOURCEPATH = "audit.hbm.xml";
     public static final String DEFAULT_PINGSQL = "select 1";
     public static String pingStatement = DEFAULT_PINGSQL;
 
     private ApplicationContext springContext = null;
 
-    public static void initialize(ApplicationContext springContext) throws IOException, SQLException {
+    public static void initialize(ApplicationContext springContext) {
         HibernatePersistenceManager me = new HibernatePersistenceManager(springContext);
         PersistenceManager.setInstance(me);
     }
 
 
-    private HibernatePersistenceManager(ApplicationContext springContext) throws IOException, SQLException {
-        FileInputStream fis = null;
-        this.springContext = springContext;
-        this.interceptor = new PersistenceEventInterceptor(springContext);
-        try {
-            Configuration mainConfig = new Configuration();
-            Configuration auditConfig = new Configuration();
-
-            ServerConfig serverConfig = (ServerConfig)springContext.getBean("serverConfig");
-            String propsPath = serverConfig.getProperty(ServerConfig.PARAM_HIBERNATE);
-
-            if (new File(propsPath).exists()) {
-                logger.info("Loading database configuration from " + propsPath);
-                Properties props = new Properties();
-                fis = new FileInputStream(propsPath);
-                props.load(fis);
-                mainConfig.setProperties(props);
-                auditConfig.setProperties(props);
-            } else {
-                logger.info("Loading database configuration from system classpath");
-            }
-            mainConfig.addResource(DEFAULT_HIBERNATE_RESOURCEPATH, getClass().getClassLoader());
-            _sessionFactory = mainConfig.buildSessionFactory();
-
-            auditConfig.addResource(AUDIT_HIBERNATE_RESOURCEPATH, getClass().getClassLoader());
-            _auditSessionFactory = auditConfig.buildSessionFactory();
-
-            String temp = mainConfig.getProperty("hibernate.dbcp.validationQuery");
-            if (temp != null && temp.length() > 0) pingStatement = temp;
-        } catch (HibernateException he) {
-            logger.throwing(getClass().getName(), "<init>", he);
-            throw new SQLException(he.toString());
-        } finally {
-            if (fis != null) fis.close();
+    private HibernatePersistenceManager(ApplicationContext ctx)  {
+        if (ctx == null)  {
+            throw new IllegalArgumentException("Spring Context is required");
         }
-    }
-
-    public PersistenceContext doMakeContext() throws SQLException {
-        try {
-            return new HibernatePersistenceContext(makeSession(), makeAuditSession());
-        } catch (HibernateException he) {
-            throw new SQLException(he.toString());
-        }
+        this.springContext = ctx;
+        _sessionFactory = (SessionFactory)springContext.getBean("sessionFactory");
     }
 
     Session makeSession() throws HibernateException, SQLException {
-        if (_sessionFactory == null) throw new IllegalStateException("HibernatePersistenceManager must be initialized before calling makeSession()!");
-        Session mainSession = _sessionFactory.openSession(interceptor);
-        // make sure this session is clean
-        mainSession.clear();
+        Session mainSession = SessionFactoryUtils.getSession(_sessionFactory, true);
         return mainSession;
     }
 
-    Session makeAuditSession() throws HibernateException, SQLException {
-        if (_auditSessionFactory == null) throw new IllegalStateException("HibernatePersistenceManager must be initialized before calling makeSession()!");
-        Session auditSession = _auditSessionFactory.openSession();
-        // make sure this session is clean
-        auditSession.clear();
-        return auditSession;
-    }
-
-    private final PersistenceEventInterceptor interceptor;
     private SessionFactory _sessionFactory;
-    private SessionFactory _auditSessionFactory;
 
     List doFind(PersistenceContext context, String query) throws FindException {
         try {
@@ -116,7 +57,6 @@ public class HibernatePersistenceManager extends PersistenceManager {
             throw new FindException(he.toString(), he);
         } catch (SQLException se) {
             logger.throwing(getClass().getName(), "doFind", se);
-            close(context);
             throw new FindException(se.toString(), se);
         }
     }
@@ -132,13 +72,6 @@ public class HibernatePersistenceManager extends PersistenceManager {
             throw new FindException("I don't know how to find with parameters of type " + clazz.getName());
     }
 
-    public void close(PersistenceContext context) {
-        try {
-            context.close();
-        } catch (Exception e) {
-            logger.throwing(getClass().getName(), "Session.close()", e);
-        }
-    }
 
     List doFind(PersistenceContext context, String query, Object param, Class paramClass) throws FindException {
         try {
@@ -149,7 +82,6 @@ public class HibernatePersistenceManager extends PersistenceManager {
             throw new FindException(he.toString(), he);
         } catch (SQLException se) {
             logger.throwing(getClass().getName(), "doFind", se);
-            close(context);
             throw new FindException(se.toString(), se);
         }
     }
@@ -166,7 +98,6 @@ public class HibernatePersistenceManager extends PersistenceManager {
             throw new FindException(he.toString(), he);
         } catch (SQLException se) {
             logger.throwing(getClass().getName(), "doFind", se);
-            close(context);
             throw new FindException(se.toString(), se);
         }
     }
@@ -182,7 +113,6 @@ public class HibernatePersistenceManager extends PersistenceManager {
             return (Entity)o;
         } catch (SQLException se) {
             logger.throwing(getClass().getName(), "doFindByPrimaryKey", se);
-            close(context);
             throw new FindException(se.toString(), se);
         } catch (net.sf.hibernate.ObjectNotFoundException e) {
             // object not found, returning null
@@ -203,7 +133,6 @@ public class HibernatePersistenceManager extends PersistenceManager {
             throw new UpdateException(he.toString(), he);
         } catch (SQLException se) {
             logger.throwing(getClass().getName(), "doUpdate", se);
-            close(context);
             throw new UpdateException(se.toString(), se);
         }
     }
@@ -223,7 +152,6 @@ public class HibernatePersistenceManager extends PersistenceManager {
             throw new SaveException(he.toString(), he);
         } catch (SQLException se) {
             logger.throwing(getClass().getName(), "doSave", se);
-            close(context);
             throw new SaveException(se.toString(), se);
         }
     }
@@ -235,7 +163,6 @@ public class HibernatePersistenceManager extends PersistenceManager {
             throw new DeleteException(he.toString(), he);
         } catch (SQLException se) {
             logger.throwing(getClass().getName(), "doDelete", se);
-            close(context);
             throw new DeleteException(se.toString(), se);
         }
     }
@@ -250,7 +177,6 @@ public class HibernatePersistenceManager extends PersistenceManager {
             throw new DeleteException(he.toString(), he);
         } catch (SQLException se) {
             logger.throwing(getClass().getName(), "doDelete", se);
-            close(context);
             throw new DeleteException(se.toString(), se);
         }
     }

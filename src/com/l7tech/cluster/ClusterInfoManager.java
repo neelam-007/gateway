@@ -2,9 +2,12 @@ package com.l7tech.cluster;
 
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.KeystoreUtils;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.UpdateException;
 import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Session;
+import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -19,8 +22,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.springframework.context.support.ApplicationObjectSupport;
 
 /**
  * Hibernate layer over the cluster_info table.
@@ -38,7 +39,7 @@ import org.springframework.context.support.ApplicationObjectSupport;
  * $Id$
  *
  */
-public class ClusterInfoManager extends ApplicationObjectSupport {
+public class ClusterInfoManager extends HibernateDaoSupport {
     /**
      * returns the node id to which this server applies to
      */
@@ -81,14 +82,9 @@ public class ClusterInfoManager extends ApplicationObjectSupport {
      */
     public void updateSelfStatus( ClusterNodeInfo selfCI ) throws UpdateException {
         try {
-            HibernatePersistenceContext pc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-            Session session = pc.getSession();
+            Session session = getSession();
             // update existing data
             session.update(selfCI);
-        } catch (SQLException e) {
-            String msg = "error updating db";
-            logger.log(Level.WARNING, msg, e);
-            throw new UpdateException(msg, e);
         } catch (HibernateException e) {
             String msg = "error updating db";
             logger.log(Level.WARNING, msg, e);
@@ -112,13 +108,8 @@ public class ClusterInfoManager extends ApplicationObjectSupport {
             logger.warning("admin trying to delete un-stale node " + msg);
             throw new DeleteException(msg);
         }
-        HibernatePersistenceContext context = null;
         try {
-            context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-            context.getSession().delete(node);
-        } catch (SQLException e) {
-            String msg = "error deleting cluster status";
-            logger.log(Level.WARNING, msg, e);
+            getSession().delete(node);
         }  catch (HibernateException e) {
             String msg = "error deleting cluster status";
             logger.log(Level.WARNING, msg, e);
@@ -173,14 +164,8 @@ public class ClusterInfoManager extends ApplicationObjectSupport {
     public Collection retrieveClusterStatus() throws FindException {
         // get all objects from that table
         String queryall = "from " + TABLE_NAME + " in class " + ClusterNodeInfo.class.getName();
-        HibernatePersistenceContext context = null;
         try {
-            context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-            return context.getSession().find(queryall);
-        } catch (SQLException e) {
-            String msg = "error retrieving cluster status";
-            logger.log(Level.WARNING, msg, e);
-            throw new FindException(msg, e);
+            return getSession().find(queryall);
         }  catch (HibernateException e) {
             String msg = "error retrieving cluster status";
             logger.log(Level.WARNING, msg, e);
@@ -248,14 +233,9 @@ public class ClusterInfoManager extends ApplicationObjectSupport {
             String query = "from " + TABLE_NAME + " in class " + ClusterNodeInfo.class.getName() +
                            " where " + TABLE_NAME + "." + NAME_COLUMN_NAME + " = \'" + maybenodename + "\'";
 
-            HibernatePersistenceContext context = null;
             List hibResults = null;
             try {
-                context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-                hibResults = context.getSession().find(query);
-            } catch (SQLException e) {
-                String msg = "error looking for available node name";
-                logger.log(Level.WARNING, msg, e);
+                hibResults = getSession().find(query);
             }  catch (HibernateException e) {
                 String msg = "error looking for available node name";
                 logger.log(Level.WARNING, msg, e);
@@ -294,22 +274,15 @@ public class ClusterInfoManager extends ApplicationObjectSupport {
     }
 
     private void recordNodeInDB(ClusterNodeInfo node) throws SQLException, HibernateException {
-        HibernatePersistenceContext context = null;
-        context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-        context.getSession().save(node);
+        getSession().save(node);
     }
 
     private ClusterNodeInfo getNodeStatusFromDB(String mac) {
         String query = "from " + TABLE_NAME + " in class " + ClusterNodeInfo.class.getName() +
                        " where " + TABLE_NAME + "." + MAC_COLUMN_NAME + " = \'" + mac + "\'";
-        HibernatePersistenceContext context = null;
         List hibResults = null;
         try {
-            context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-            hibResults = context.getSession().find(query);
-        } catch (SQLException e) {
-            String msg = "error retrieving cluster status";
-            logger.log(Level.WARNING, msg, e);
+            hibResults = getSession().find(query);
         }  catch (HibernateException e) {
             String msg = "error retrieving cluster status";
             logger.log(Level.WARNING, msg, e);
@@ -525,16 +498,6 @@ public class ClusterInfoManager extends ApplicationObjectSupport {
         return thisNodeIPAddress;
     }
 
-    public static void main(String[] args) throws Exception {
-        ClusterInfoManager me = new ClusterInfoManager();
-        for (Iterator i = me.getMacs().iterator(); i.hasNext();) {
-            System.out.println("MAC Match: " + i.next());
-        }
-
-        String tested = me.getIPAddress();
-        System.out.println("IP Parsed:" + tested);
-    }
-
     public static String generateMulticastAddress() {
         StringBuffer addr = new StringBuffer("224.0.7.");
         addr.append(Math.abs(random.nextInt() % 256));
@@ -545,13 +508,6 @@ public class ClusterInfoManager extends ApplicationObjectSupport {
     private static final String MAC_COLUMN_NAME = "mac";
     private static final String NAME_COLUMN_NAME = "name";
 
-    private static class SingletonHolder {
-        private static final ClusterInfoManager singleton = new ClusterInfoManager();
-    }
-
-    private ClusterInfoManager() {
-        // do nothing. just enforce the singleton pattern
-    }
 
     private static Pattern ifconfigMacPattern = Pattern.compile(".*HWaddr\\s+(\\w\\w.\\w\\w.\\w\\w." +
                                                                 "\\w\\w.\\w\\w.\\w\\w).*", Pattern.DOTALL);

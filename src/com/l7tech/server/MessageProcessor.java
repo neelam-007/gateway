@@ -53,6 +53,7 @@ public class MessageProcessor extends ApplicationObjectSupport {
     private final WssDecorator wssDecorator;
     private final PrivateKey serverPrivateKey;
     private final X509Certificate serverCertificate;
+    private final EventManager eventManager;
 
     /**
      * Create the new <code>MessageProcessor</code> instance with the service
@@ -64,7 +65,7 @@ public class MessageProcessor extends ApplicationObjectSupport {
      * @param pkey the server certificate
      * @throws IllegalArgumentException if any of the arguments is null
      */
-    public MessageProcessor(ServiceManager sm, WssDecorator wssd, PrivateKey pkey, X509Certificate cert)
+    public MessageProcessor(ServiceManager sm, WssDecorator wssd, PrivateKey pkey, X509Certificate cert, EventManager em)
         throws IllegalArgumentException {
         if (sm == null) {
             throw new IllegalArgumentException("Service Manager is required");
@@ -78,10 +79,14 @@ public class MessageProcessor extends ApplicationObjectSupport {
         if (cert == null) {
             throw new IllegalArgumentException("Server Certificate is required");
         }
+        if (em == null) {
+            throw new IllegalArgumentException("Event Manager is required");
+        }
         this.serviceManager = sm;
         this.wssDecorator = wssd;
         this.serverPrivateKey = pkey;
         this.serverCertificate = cert;
+        this.eventManager = em;
 
         try {
             _xppf = XmlPullParserFactory.newInstance();
@@ -311,7 +316,7 @@ public class MessageProcessor extends ApplicationObjectSupport {
             return AssertionStatus.SERVER_ERROR;
         } finally {
             try {
-                EventManager.fire(new MessageProcessed(context, status, this));
+                eventManager.fire(new MessageProcessed(context, status, this));
             } catch (Throwable t) {
                 logger.log(Level.WARNING, "EventManager threw exception logging message processing result", t);
             }

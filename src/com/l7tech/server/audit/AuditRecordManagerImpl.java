@@ -19,14 +19,12 @@ import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Session;
 import net.sf.hibernate.expression.Expression;
 import net.sf.hibernate.type.Type;
+import org.springframework.beans.BeansException;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 
-import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
-
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationContext;
-import org.springframework.beans.BeansException;
 
 /**
  * Manages the finding and saving of {@link AuditRecord}s.
@@ -38,6 +36,7 @@ import org.springframework.beans.BeansException;
  */
 public class AuditRecordManagerImpl extends HibernateEntityManager implements AuditRecordManager, ApplicationContextAware {
     private ApplicationContext applicationCOntext;
+    private EventManager eventManager;
 
     public AuditRecord findByPrimaryKey(long oid) throws FindException {
         Entity obj = findEntity(oid);
@@ -52,7 +51,7 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
             Class findClass = criteria.recordClass;
             if (findClass == null) findClass = getInterfaceClass();
 
-            Criteria query = getContext().getAuditSession().createCriteria(findClass);
+            Criteria query = getSession().createCriteria(findClass);
             int maxRecords = criteria.maxRecords;
             if (maxRecords <= 0) maxRecords = 4096;
             query.setMaxResults(maxRecords);
@@ -92,15 +91,13 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
             return l;
         } catch ( HibernateException e ) {
             throw new FindException("Couldn't find Audit Records", e);
-        } catch ( SQLException e ) {
-            throw new FindException("Couldn't find Audit Records", e);
         }
     }
 
     public long save(AuditRecord rec) throws SaveException {
         try {
             logger.fine("Saving AuditRecord " + rec);
-            final Session auditSession = getContext().getAuditSession();
+            final Session auditSession = getSession();
             Object id = auditSession.save(rec);
             if (id instanceof Long)
                 return ((Long)id).longValue();
@@ -108,14 +105,18 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
                 throw new SaveException("Primary key was " + id.getClass().getName() + ", expected Long");
         } catch ( HibernateException e ) {
             throw new SaveException("Couldn't save AuditRecord", e);
-        } catch ( SQLException e ) {
-            throw new SaveException("Couldn't save AuditRecord", e);
+        }
+    }
+
+    public void save(Collection records) throws SaveException {
+        for (Iterator iterator = records.iterator(); iterator.hasNext();) {
+            AuditRecord record = (AuditRecord)iterator.next();
+            save(record);
         }
     }
 
     public void deleteOldAuditRecords() throws DeleteException {
-        EventManager.fire(new AuditPurgeInitiated(this));
-        HibernatePersistenceContext context = null;
+        eventManager.fire(new AuditPurgeInitiated(this));
         try {
             String sMinAgeHours = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_AUDIT_PURGE_MINIMUM_AGE);
             if (sMinAgeHours == null || sMinAgeHours.length() == 0) sMinAgeHours = "168";
@@ -129,17 +130,14 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
 
             long maxTime = System.currentTimeMillis() - (minAgeHours * 60 * 60 * 1000);
 
-            context = (HibernatePersistenceContext)HibernatePersistenceContext.getCurrent();
-            Session s = context.getAuditSession();
+            Session s = getSession();
             StringBuffer query = new StringBuffer("FROM audit IN CLASS ").append(getInterfaceClass().getName());
             query.append(" WHERE audit.").append(PROP_LEVEL).append(" <> ?");
             query.append(" AND audit.").append(PROP_TIME).append(" < ?");
             int numDeleted = s.delete( query.toString(),
                                        new Object[] { Level.SEVERE.getName(), new Long(maxTime) },
                                        new Type[] { Hibernate.STRING, Hibernate.LONG } );
-            EventManager.fire(new AuditPurgeEvent( this, numDeleted ));
-        } catch ( SQLException e ) {
-            throw new DeleteException("Couldn't purge audit events", e);
+            eventManager.fire(new AuditPurgeEvent( this, numDeleted ));
         } catch ( HibernateException e ) {
             throw new DeleteException("Couldn't purge audit events", e);
         }
@@ -159,5 +157,9 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
 
     public void setApplicationContext(ApplicationContext ctx) throws BeansException {
         applicationCOntext = ctx;
+    }
+
+    public void setEventManager(EventManager eventManager) {
+        this.eventManager = eventManager;
     }
 }

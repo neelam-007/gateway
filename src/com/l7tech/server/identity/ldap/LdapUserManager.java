@@ -15,32 +15,41 @@ import java.util.logging.Logger;
 
 /**
  * UserManager for ldap identity provider.
- *
+ * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Jan 21, 2004<br/>
  * $Id$<br/>
- *
  */
 public class LdapUserManager implements UserManager {
 
-    public LdapUserManager(LdapIdentityProviderConfig cfg, LdapIdentityProvider daddy) {
-        this.cfg = cfg;
-        this.parent = daddy;
+    public LdapUserManager(LdapIdentityProvider identityProvider) {
+        if (identityProvider == null) {
+            throw new IllegalArgumentException("Identity Provider is required");
+        }
+        this.identityProvider = identityProvider;
+        ldapIdentityProviderConfig = (LdapIdentityProviderConfig)identityProvider.getConfig();
     }
 
     /**
+       * fo subclasing and class proxying
+       */
+      protected LdapUserManager() {
+      }
+
+    /**
      * find user based on dn
+     *
      * @return a LdapUser object, null if not found
      */
     public User findByPrimaryKey(String dn) throws FindException {
         DirContext context = null;
         try {
-            context = parent.getBrowseContext();
+            context = identityProvider.getBrowseContext();
             Attributes attributes = context.getAttributes(dn);
 
-            if (!parent.isValidEntryBasedOnUserAccountControlAttribute(attributes)) {
+            if (!identityProvider.isValidEntryBasedOnUserAccountControlAttribute(attributes)) {
                 // This is warning level because it could
                 // be caused by a locked out user trying to
                 // get in using certificate granted by ssg.
@@ -48,13 +57,13 @@ public class LdapUserManager implements UserManager {
                 return null;
             }
 
-            UserMappingConfig[] userTypes = cfg.getUserMappings();
+            UserMappingConfig[] userTypes = ldapIdentityProviderConfig.getUserMappings();
             Attribute objectclasses = attributes.get("objectclass");
-            for (int i = 0; i < userTypes.length; i ++) {
+            for (int i = 0; i < userTypes.length; i++) {
                 String userclass = userTypes[i].getObjClass();
                 if (LdapIdentityProvider.attrContainsCaseIndependent(objectclasses, userclass)) {
                     LdapUser out = new LdapUser();
-                    out.setProviderId(cfg.getOid());
+                    out.setProviderId(ldapIdentityProviderConfig.getOid());
                     out.setDn(dn);
                     Object tmp = LdapIdentityProvider.extractOneAttributeValue(attributes, userTypes[i].getEmailNameAttrName());
                     if (tmp != null) out.setEmail(tmp.toString());
@@ -77,16 +86,16 @@ public class LdapUserManager implements UserManager {
             }
             return null;
         } catch (NameNotFoundException e) {
-            logger.finest("user " + dn + " does not exist in" + cfg.getName() + "(" + e.getMessage() + ")");
+            logger.finest("user " + dn + " does not exist in" + ldapIdentityProviderConfig.getName() + "(" + e.getMessage() + ")");
             return null;
-        } catch ( NamingException ne ) {
-            logger.log( Level.WARNING, ne.getMessage(), ne );
+        } catch (NamingException ne) {
+            logger.log(Level.WARNING, ne.getMessage(), ne);
             return null;
         } finally {
             try {
-                if ( context != null ) context.close();
+                if (context != null) context.close();
             } catch (NamingException e) {
-                logger.log( Level.WARNING, e.getMessage(), e );
+                logger.log(Level.WARNING, e.getMessage(), e);
                 return null;
             }
         }
@@ -94,17 +103,18 @@ public class LdapUserManager implements UserManager {
 
     /**
      * find a user based on his login attribute
+     *
      * @return a LdapUser object, null if not found
      */
     public User findByLogin(String login) throws FindException {
         DirContext context = null;
         try {
-            context = parent.getBrowseContext();
+            context = identityProvider.getBrowseContext();
 
             StringBuffer filter = new StringBuffer("(|");
-            UserMappingConfig[] userTypes = cfg.getUserMappings();
+            UserMappingConfig[] userTypes = ldapIdentityProviderConfig.getUserMappings();
 
-            for (int i = 0; i < userTypes.length; i ++) {
+            for (int i = 0; i < userTypes.length; i++) {
                 filter.append("(");
                 filter.append(userTypes[i].getLoginAttrName());
                 filter.append("=");
@@ -116,15 +126,15 @@ public class LdapUserManager implements UserManager {
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
             NamingEnumeration answer = null;
-            answer = context.search(cfg.getSearchBase(), filter.toString(), sc);
+            answer = context.search(ldapIdentityProviderConfig.getSearchBase(), filter.toString(), sc);
 
             String dn = null;
             try {
                 if (answer.hasMore()) {
                     SearchResult sr = (SearchResult)answer.next();
-                    dn = sr.getName() + "," + cfg.getSearchBase();
+                    dn = sr.getName() + "," + ldapIdentityProviderConfig.getSearchBase();
                 } else {
-                    logger.fine(cfg.getName() + " cannot find cn=" + login);
+                    logger.fine(ldapIdentityProviderConfig.getName() + " cannot find cn=" + login);
                     return null;
                 }
             } finally {
@@ -135,8 +145,8 @@ public class LdapUserManager implements UserManager {
             logger.log(Level.WARNING, e.getMessage(), e);
         } finally {
             try {
-                if ( context != null ) context.close();
-            } catch ( NamingException e ) {
+                if (context != null) context.close();
+            } catch (NamingException e) {
                 logger.log(Level.WARNING, "Caught NamingException while closing LDAP Context", e);
             }
         }
@@ -200,7 +210,7 @@ public class LdapUserManager implements UserManager {
      * practical equivalent to LdapIdentityProvider.search(new EntityType[] {EntityType.USER}, "*");
      */
     public Collection findAllHeaders() throws FindException {
-        return parent.search(new EntityType[] {EntityType.USER}, "*");
+        return identityProvider.search(new EntityType[]{EntityType.USER}, "*");
     }
 
     /**
@@ -211,10 +221,10 @@ public class LdapUserManager implements UserManager {
     }
 
     public Collection search(String searchString) throws FindException {
-        return parent.search(new EntityType[] { EntityType.USER }, "*" );
+        return identityProvider.search(new EntityType[]{EntityType.USER}, "*");
     }
 
-    public EntityHeader userToHeader( User user ) {
+    public EntityHeader userToHeader(User user) {
         return new EntityHeader(user.getUniqueIdentifier(), EntityType.USER, user.getLogin(), user.getName());
     }
 
@@ -246,7 +256,7 @@ public class LdapUserManager implements UserManager {
         return output;
     }
 
-    public Integer getVersion( long oid ) throws FindException {
+    public Integer getVersion(long oid) throws FindException {
         return new Integer(0);
     }
 
@@ -254,14 +264,14 @@ public class LdapUserManager implements UserManager {
         return Collections.EMPTY_MAP;
     }
 
-    public Entity getCachedEntity( long o, int maxAge ) throws FindException, CacheVeto {
+    public Entity getCachedEntity(long o, int maxAge) throws FindException, CacheVeto {
         throw new UnsupportedOperationException();
     }
 
     public boolean authenticateBasic(String dn, String passwd) {
-        String ldapurl = parent.getLastWorkingLdapUrl();
+        String ldapurl = identityProvider.getLastWorkingLdapUrl();
         if (ldapurl == null) {
-            ldapurl = parent.markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
+            ldapurl = identityProvider.markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
         }
         while (ldapurl != null) {
             UnsynchronizedNamingProperties env = new UnsynchronizedNamingProperties();
@@ -271,28 +281,27 @@ public class LdapUserManager implements UserManager {
             env.put(Context.SECURITY_PRINCIPAL, dn);
             env.put(Context.SECURITY_CREDENTIALS, passwd);
             env.put("com.sun.jndi.ldap.connect.pool", "true");
-            env.put("com.sun.jndi.ldap.connect.timeout", LdapIdentityProvider.LDAP_CONNECT_TIMEOUT );
-            env.put("com.sun.jndi.ldap.connect.pool.timeout", LdapIdentityProvider.LDAP_POOL_IDLE_TIMEOUT );
+            env.put("com.sun.jndi.ldap.connect.timeout", LdapIdentityProvider.LDAP_CONNECT_TIMEOUT);
+            env.put("com.sun.jndi.ldap.connect.pool.timeout", LdapIdentityProvider.LDAP_POOL_IDLE_TIMEOUT);
             env.lock();
 
             DirContext userCtx = null;
-            try
-            {
+            try {
                 userCtx = new InitialDirContext(env);
                 // Close the context when we're done
                 userCtx.close();
-                logger.info("User: "+ dn +" authenticated successfully in provider " + cfg.getName());
+                logger.info("User: " + dn + " authenticated successfully in provider " + ldapIdentityProviderConfig.getName());
                 return true;
             } catch (CommunicationException e) {
                 logger.log(Level.INFO, "Could not establish context using LDAP URL " + ldapurl, e);
-                ldapurl = parent.markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
+                ldapurl = identityProvider.markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
                 continue;
             } catch (AuthenticationException e) {
                 // when you get bad credentials
-                logger.info( "User failed to authenticate: " + dn  + " in provider " + cfg.getName());
+                logger.info("User failed to authenticate: " + dn + " in provider " + ldapIdentityProviderConfig.getName());
                 return false;
             } catch (NamingException e) {
-                logger.log( Level.WARNING, "General naming failure for user: " + dn + " in provider " + cfg.getName(), e);
+                logger.log(Level.WARNING, "General naming failure for user: " + dn + " in provider " + ldapIdentityProviderConfig.getName(), e);
                 return false;
             }
         }
@@ -300,7 +309,7 @@ public class LdapUserManager implements UserManager {
         return false;
     }
 
-    private LdapIdentityProviderConfig cfg;
+    private LdapIdentityProviderConfig ldapIdentityProviderConfig;
     private final Logger logger = Logger.getLogger(getClass().getName());
-    private LdapIdentityProvider parent;
+    private LdapIdentityProvider identityProvider;
 }

@@ -28,21 +28,22 @@ public class AuditBootProcess implements ServerComponentLifecycle {
 
     public void setServerConfig(ServerConfig config) throws LifecycleException {
         ApplicationContext appCtx = config.getSpringContext();
+        eventManager = (EventManager)appCtx.getBean("eventManager");
         messageAuditListener = new MessageProcessingAuditListener(appCtx);
         adminAuditListener = new AdminAuditListener(appCtx);
         servicePromoter = new ServiceEventPromoter();
     }
 
     public void start() throws LifecycleException {
-        EventManager.addListener(MessageProcessed.class, messageAuditListener);
-        EventManager.addListener(AdminEvent.class, adminAuditListener);
-        EventManager.addPromoter(AdminEvent.class, servicePromoter);
+        eventManager.addListener(MessageProcessed.class, messageAuditListener);
+        eventManager.addListener(AdminEvent.class, adminAuditListener);
+        eventManager.addPromoter(AdminEvent.class, servicePromoter);
     }
 
     public void stop() throws LifecycleException {
-        EventManager.removeListener(messageAuditListener);
-        EventManager.removeListener(adminAuditListener);
-        EventManager.removePromoter(servicePromoter);
+        eventManager.removeListener(messageAuditListener);
+        eventManager.removeListener(adminAuditListener);
+        eventManager.removePromoter(servicePromoter);
     }
 
     public void close() throws LifecycleException {
@@ -51,4 +52,5 @@ public class AuditBootProcess implements ServerComponentLifecycle {
     private AdminAuditListener adminAuditListener;
     private ServiceEventPromoter servicePromoter;
     private MessageProcessingAuditListener messageAuditListener;
+    private EventManager eventManager;
 }

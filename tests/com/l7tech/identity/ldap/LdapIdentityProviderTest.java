@@ -20,7 +20,7 @@ import org.springframework.context.ApplicationContext;
 
 /**
  * A test class for the ldap redesign.
- *
+ * todo: make this test work again
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
@@ -99,32 +99,32 @@ public class LdapIdentityProviderTest extends TestCase {
     }
 
     private LdapIdentityProvider getSpockProviderWithBadSearchBase() throws IOException {
-        LdapIdentityProvider spock =  new LdapIdentityProvider(getConfigForSpockWithBadSearchBase(), applicationContext);
+        LdapIdentityProvider spock =  new LdapIdentityProvider(getConfigForSpockWithBadSearchBase());
         return spock;
     }
 
     private LdapIdentityProvider getSpockProvider() throws IOException {
-        LdapIdentityProvider spock =  new LdapIdentityProvider(getConfigForSpock(), applicationContext);
+        LdapIdentityProvider spock =  new LdapIdentityProvider(getConfigForSpock());
         return spock;
     }
 
     private LdapIdentityProvider getTimTamProvider() throws IOException {
-        LdapIdentityProvider timtam =  new LdapIdentityProvider(getConfigForTimTam(), applicationContext);
+        LdapIdentityProvider timtam =  new LdapIdentityProvider(getConfigForTimTam());
         return timtam;
     }
 
     private LdapIdentityProvider getMSADProvider() throws IOException {
-        LdapIdentityProvider spock =  new LdapIdentityProvider(getConfigForMSAD(), applicationContext);
+        LdapIdentityProvider spock =  new LdapIdentityProvider(getConfigForMSAD());
         return spock;
     }
 
     private LdapIdentityProvider getOracleProvider() throws IOException {
-        LdapIdentityProvider orcl =  new LdapIdentityProvider(getConfigForOracle(), applicationContext);
+        LdapIdentityProvider orcl =  new LdapIdentityProvider(getConfigForOracle());
         return orcl;
     }
 
     private LdapIdentityProvider getModifiedOracleProvider() throws IOException {
-        LdapIdentityProvider orcl =  new LdapIdentityProvider(getModifiedConfigForOracle(), applicationContext);
+        LdapIdentityProvider orcl =  new LdapIdentityProvider(getModifiedConfigForOracle());
         return orcl;
     }
 

@@ -33,10 +33,22 @@ import java.util.regex.PatternSyntaxException;
  * @version $Revision$
  */
 public class FederatedGroupManager extends PersistentGroupManager {
-    public FederatedGroupManager( IdentityProvider provider ) {
-        super( provider );
-        this.federatedProvider = (FederatedIdentityProvider)provider;
-        this.providerConfig = (FederatedIdentityProviderConfig)provider.getConfig();
+    private FederatedIdentityProvider federatedProvider;
+
+    public FederatedGroupManager(IdentityProvider identityProvider) {
+        super(identityProvider);
+        if (identityProvider instanceof FederatedIdentityProvider) {
+            federatedProvider = (FederatedIdentityProvider)identityProvider;
+            providerConfig = (FederatedIdentityProviderConfig)federatedProvider.getConfig();
+        } else {
+            throw new IllegalArgumentException("Expected Federated Provider");
+        }
+    }
+
+    /**
+     * empty subclassing constructor (required for class proxying)
+     */
+    protected FederatedGroupManager() {
     }
 
     protected GroupMembership newMembership( long userOid, long groupOid ) {
@@ -145,7 +157,8 @@ public class FederatedGroupManager extends PersistentGroupManager {
         return "fed_group";
     }
 
-    private final Logger logger = Logger.getLogger(getClass().getName());
+
     private FederatedIdentityProviderConfig providerConfig;
-    private FederatedIdentityProvider federatedProvider;
+
+    private final Logger logger = Logger.getLogger(getClass().getName());
 }

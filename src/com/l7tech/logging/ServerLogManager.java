@@ -1,35 +1,17 @@
 package com.l7tech.logging;
 
 import com.l7tech.cluster.ClusterInfoManager;
-import com.l7tech.objectmodel.HibernatePersistenceContext;
-import com.l7tech.objectmodel.PersistenceContext;
-import com.l7tech.objectmodel.TransactionException;
+import com.l7tech.objectmodel.SaveException;
 import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Query;
+import net.sf.hibernate.Session;
+import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 
-import org.springframework.context.support.ApplicationObjectSupport;
-import org.springframework.beans.BeansException;
-
 /**
- * SSG log manager that sets the right handlers to the root logger and
- * prepares the hibernate dumper when ready. This must be instantiated when
- * the server boots and once hibernate is ready, a call to suscribeDBHandler
- * must be made.
- * <p/>
- * Reads properties from ssglog.properties file. Tries to get this file from
- * /ssg/etc/conf/ssglog.properties. If not present, gets is from
- * webapps/ROOT/WEB-INF/classes/ssglog.properties
- * Creates log rotation files, in a path provided in properties file. If this path
- * is invalid, use home dir instead.
- * <p/>
- * NOTE: Please avoid calling any external class that uses logging itself.
- * <p/>
- * NOTE: Unusual exception handling because of the fact that logging subsystem
- * is not initialized yet.
+ * SSG log manager is a central log component for retrieving ands saving the logs.
  * <p/>
  * <br/><br/>
  * Layer 7 technologies, inc.<br/>
@@ -37,7 +19,10 @@ import org.springframework.beans.BeansException;
  * Date: Jul 3, 2003<br/>
  * Time: 11:42:08 AM<br/><br/>
  */
-public class ServerLogManager extends ApplicationObjectSupport {
+public class ServerLogManager extends HibernateDaoSupport {
+    private ClusterInfoManager clusterInfoManager;
+    private String thisNodeId;
+
 
     /**
      * Retrieve the system logs in between the startMsgNumber and endMsgNumber specified
@@ -56,66 +41,71 @@ public class ServerLogManager extends ApplicationObjectSupport {
      * @return LogRecord[] the array of log records retrieved
      */
     public Collection getLogRecords(String nodeId, long highMsgNumber, long lowMsgNumber, int size) {
-        HibernatePersistenceContext context = null;
-        boolean ok = false;
-        try {
-            context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-            context.beginTransaction();
-            ok = true;
-        } catch (SQLException e) {
-            reportException("cannot get persistence context", e);
-            return Collections.EMPTY_LIST;
-        } catch (TransactionException e) {
-            reportException("cannot get persistence context", e);
-            return Collections.EMPTY_LIST;
-        } finally {
-            if (context != null && !ok) context.close();
-        }
 
         String reqnode = nodeId;
-        if (reqnode == null) reqnode = nodeid;
+        if (reqnode == null) reqnode = getNodeid();
         Collection res = null;
         try {
             if (lowMsgNumber < 0 && highMsgNumber >= 0) {
-                res = getRecordsBeforeLowId(reqnode, size, context, highMsgNumber);
+                res = getRecordsBeforeLowId(reqnode, size, highMsgNumber);
             } else if (lowMsgNumber >= 0 && highMsgNumber < 0) {
-                res = getRecordsBeyondHighId(reqnode, size, context, lowMsgNumber);
+                res = getRecordsBeyondHighId(reqnode, size, lowMsgNumber);
             } else if (lowMsgNumber >= 0 && highMsgNumber >= 0) {
-                res = getRecordsInRange(reqnode, size, context, lowMsgNumber, highMsgNumber);
+                res = getRecordsInRange(reqnode, size, lowMsgNumber, highMsgNumber);
             } else {
-                res = getLastRecords(reqnode, size, context);
+                res = getLastRecords(reqnode, size);
             }
         } catch (HibernateException e) {
             reportException("Error getting log records", e);
             return Collections.EMPTY_LIST;
-        } catch (SQLException e) {
-            reportException("Error getting log records", e);
-            return Collections.EMPTY_LIST;
-        } finally {
-            try {
-                if (context != null) context.commitTransaction();
-            } catch (TransactionException e) {
-                reportException("Error getting log records", e);
-                return Collections.EMPTY_LIST;
-            }
         }
         if (res == null) return Collections.EMPTY_LIST;
         return res;
     }
 
-    protected void initApplicationContext() throws BeansException {
-        ClusterInfoManager cim = (ClusterInfoManager)getApplicationContext().getBean("clusterInfoManager");
-        nodeid = cim.thisNodeId();
+    /**
+     * Save the log records
+     *
+     * @param data the array of log records
+     */
+    public void save(SSGLogRecord[] data) throws SaveException {
+        if (data == null) {
+            throw new IllegalArgumentException();
+        }
+        Session session = getSession();
+        try {
+            for (int i = data.length - 1; i >= 0; i--) {
+                SSGLogRecord ssgLogRecord = data[i];
+                session.save(ssgLogRecord);
+            }
+        } catch (HibernateException e) {
+            throw new SaveException("Error saving log records", e);
+        }
     }
-    // ************************************************
-    // PRIVATES
-    // ************************************************
 
-    private ServerLogManager() {
+    /**
+     * Return the server id
+     *
+     * @return
+     */
+    public String getNodeid() {
+        if (thisNodeId == null) {
+            thisNodeId = clusterInfoManager.thisNodeId();
+        }
+        return thisNodeId;
     }
 
-    private Collection getRecordsInRange(String nodeId, int maxSize, HibernatePersistenceContext context,
-                                         long startid, long endid) throws HibernateException, SQLException {
+    public void setClusterInfoManager(ClusterInfoManager clusterInfoManager) {
+        this.clusterInfoManager = clusterInfoManager;
+    }
+
+    protected void initiDao() throws Exception {
+        if (clusterInfoManager == null) {
+            throw new IllegalArgumentException("Cluster Info Manager is required");
+        }
+    }
+
+    private Collection getRecordsInRange(String nodeId, int maxSize, long startid, long endid) throws HibernateException {
         //
         // NOTE
         // it's ok to use order by limit here because we have other criteria before the node id
@@ -126,7 +116,7 @@ public class ServerLogManager extends ApplicationObjectSupport {
         hql.append("AND log.").append(OID_COLNAME).append(" > ? ");
         hql.append("AND log.").append(OID_COLNAME).append(" < ? ");
         hql.append("ORDER BY log.").append(OID_COLNAME).append(" DESC");
-        Query q = context.getSession().createQuery(hql.toString());
+        Query q = getSession().createQuery(hql.toString());
         q.setString(0, nodeId);
         q.setLong(1, startid);
         q.setLong(2, endid);
@@ -136,19 +126,9 @@ public class ServerLogManager extends ApplicationObjectSupport {
     }
 
     /**
-     * Return the server id
-     *
-     * @return
-     */
-    public String getNodeid() {
-        return nodeid;
-    }
-
-    /**
      * we dont have to worry about this query here
      */
-    private Collection getRecordsBeyondHighId(String nodeId, int maxSize, HibernatePersistenceContext context,
-                                              long startid) throws HibernateException, SQLException {
+    private Collection getRecordsBeyondHighId(String nodeId, int maxSize, long startid) throws HibernateException {
         //
         // NOTE
         // it's ok to use order by limit here because we have a "low" criteria before the node id
@@ -158,7 +138,7 @@ public class ServerLogManager extends ApplicationObjectSupport {
         hql.append(" WHERE log.").append(NODEID_COLNAME).append(" = ? ");
         hql.append("AND log.").append(OID_COLNAME).append(" > ? ");
         hql.append("ORDER BY log.").append(OID_COLNAME).append(" DESC");
-        Query q = context.getSession().createQuery(hql.toString());
+        Query q = getSession().createQuery(hql.toString());
         q.setString(0, nodeId);
         q.setLong(1, startid);
         q.setMaxResults(maxSize);
@@ -166,13 +146,13 @@ public class ServerLogManager extends ApplicationObjectSupport {
         return found;
     }
 
-    private Collection getRecordsBeforeLowId(String nodeId, int maxSize, HibernatePersistenceContext context, long endid) throws HibernateException, SQLException {
+    private Collection getRecordsBeforeLowId(String nodeId, int maxSize, long endid) throws HibernateException {
         StringBuffer hql = new StringBuffer("FROM log IN CLASS ");
         hql.append(SSGLogRecord.class.getName());
         hql.append(" WHERE log.").append(NODEID_COLNAME).append(" = ? ");
         hql.append("AND log.").append(OID_COLNAME).append(" < ? ");
         hql.append("ORDER BY log.").append(OID_COLNAME).append(" DESC");
-        Query q = context.getSession().createQuery(hql.toString());
+        Query q = getSession().createQuery(hql.toString());
         q.setString(0, nodeId);
         q.setLong(1, endid);
         q.setMaxResults(maxSize);
@@ -181,8 +161,8 @@ public class ServerLogManager extends ApplicationObjectSupport {
     }
 
 
-    private Collection getLastRecords(String nodeId, int maxSize, HibernatePersistenceContext context)
-      throws HibernateException, SQLException {
+    private Collection getLastRecords(String nodeId, int maxSize)
+      throws HibernateException {
         StringBuffer hql = new StringBuffer("FROM log IN CLASS ");
         hql.append(SSGLogRecord.class.getName());
         hql.append(" WHERE log.");
@@ -191,7 +171,7 @@ public class ServerLogManager extends ApplicationObjectSupport {
         hql.append(" ORDER BY log.");
         hql.append(OID_COLNAME);
         hql.append(" DESC");
-        Query q = context.getSession().createQuery(hql.toString());
+        Query q = getSession().createQuery(hql.toString());
         q.setString(0, nodeId);
         q.setMaxResults(maxSize);
         Collection found = q.list();
@@ -210,8 +190,6 @@ public class ServerLogManager extends ApplicationObjectSupport {
             e.printStackTrace(System.err);
         }
     }
-
-    private String nodeid;
 
     private static final String NODEID_COLNAME = "nodeId";
     private static final String OID_COLNAME = "oid";

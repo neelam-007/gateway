@@ -11,7 +11,6 @@ import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.PeriodicVersionCheck;
 import com.l7tech.server.ServerComponentLifecycle;
@@ -19,7 +18,6 @@ import com.l7tech.server.ServerConfig;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 
-import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -242,16 +240,6 @@ public class JmsBootProcess implements ServerComponentLifecycle {
             }
         } catch ( FindException e ) {
             _logger.log( Level.SEVERE, "Caught exception finding endpoints for a connection!", e );
-        } finally {
-            closeContext();
-        }
-    }
-
-    private void closeContext() {
-        try {
-            PersistenceContext.getCurrent().close();
-        } catch ( SQLException e ) {
-            _logger.log( Level.WARNING, "Caught exception while closing persistence context", e );
         }
     }
 
@@ -326,5 +314,5 @@ public class JmsBootProcess implements ServerComponentLifecycle {
     private boolean initialized = false;
     public static final int FREQUENCY = 4 * 1000;
     private ConnectionVersionChecker connectionChecker;
-    private EndpointVersionChecker endpointChecker;
+    private PeriodicVersionCheck endpointChecker;
 }

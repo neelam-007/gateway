@@ -9,7 +9,6 @@ package com.l7tech.identity;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.security.cert.X509Certificate;
@@ -35,14 +34,12 @@ public class TestIdentityProvider implements IdentityProvider {
     }
 
 
-    private ApplicationContext applicationContext;
     private TestUserManager userman = new TestUserManager();
     private TestGroupManager groupman = new TestGroupManager();
     private IdentityProviderConfig config;
 
-    public TestIdentityProvider(IdentityProviderConfig config, ApplicationContext applicationContext) {
+    public TestIdentityProvider(IdentityProviderConfig config) {
         this.config = config;
-        this.applicationContext = applicationContext;
     }
 
 

@@ -3,8 +3,6 @@ package com.l7tech.server;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.PersistenceContext;
-import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
@@ -18,9 +16,9 @@ import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.service.PublishedService;
+import org.springframework.context.ApplicationContext;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.context.support.WebApplicationContextUtils;
-import org.springframework.context.ApplicationContext;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -29,7 +27,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -355,18 +352,6 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
     }
 
 
-    protected void endTransaction() {
-        try {
-            PersistenceContext context = PersistenceContext.getCurrent();
-            context.commitIfPresent();
-            context.close();
-        } catch (SQLException e) {
-            logger.log(Level.WARNING, "end transaction error", e);
-        } catch (TransactionException e) {
-            logger.log(Level.WARNING, "end transaction error", e);
-        }
-    }
-
     protected ApplicationContext getApplicationContext() {
         return applicationContext;
     }
@@ -375,23 +360,19 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         serviceManagerInstance = (ServiceManager)applicationContext.getBean("serviceManager");
     }
 
-    protected synchronized ServiceManager getServiceManagerAndBeginTransaction()
-      throws SQLException, TransactionException {
+    protected synchronized ServiceManager getServiceManager() {
         if (serviceManagerInstance == null) {
             initialiseServiceManager();
         }
-        PersistenceContext.getCurrent().beginTransaction();
         return serviceManagerInstance;
     }
 
     protected PublishedService resolveService(long oid) {
         try {
-            return getServiceManagerAndBeginTransaction().findByPrimaryKey(oid);
+            return getServiceManager().findByPrimaryKey(oid);
         } catch (Exception e) {
             logger.log(Level.WARNING, "Cannot retrieve service " + oid, e);
             return null;
-        } finally {
-            endTransaction();
         }
     }
 }

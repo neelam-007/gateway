@@ -4,10 +4,12 @@ import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.User;
 import com.l7tech.identity.cert.ClientCertManager;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.UpdateException;
 import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Query;
 import net.sf.hibernate.Session;
+import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 import sun.security.x509.X500Name;
 
 import java.io.IOException;
@@ -15,7 +17,6 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.sql.SQLException;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
@@ -32,15 +33,7 @@ import java.util.logging.Logger;
  * Date: Oct 23, 2003<br/>
  * $Id$
  */
-public class ClientCertManagerImp implements ClientCertManager {
-
-    public ClientCertManagerImp() {
-        manager = PersistenceManager.getInstance();
-        if (!(manager instanceof HibernatePersistenceManager)) {
-            throw new IllegalStateException("Can't instantiate a " + getClass().getName() +
-                        "without first initializing a HibernatePersistenceManager!");
-        }
-    }
+public class ClientCertManagerImp extends HibernateDaoSupport implements ClientCertManager {
 
     public boolean userCanGenCert(User user) {
         if (user == null) throw new IllegalArgumentException("can't call this with null");
@@ -110,8 +103,7 @@ public class ClientCertManagerImp implements ClientCertManager {
 
         // record new data
         try {
-            HibernatePersistenceContext pc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-            Session session = pc.getSession();
+            Session session = getSession();
             if (newentry) {
                 Object res = session.save(userData);
                 logger.finest("saving cert entry " + res);
@@ -121,10 +113,6 @@ public class ClientCertManagerImp implements ClientCertManager {
             }
         } catch (HibernateException e) {
             String msg = "Hibernate exception recording cert";
-            logger.log(Level.WARNING, msg, e);
-            throw new UpdateException(msg, e);
-        } catch (SQLException e) {
-            String msg = "SQL exception recording cert";
             logger.log(Level.WARNING, msg, e);
             throw new UpdateException(msg, e);
         }
@@ -174,16 +162,11 @@ public class ClientCertManagerImp implements ClientCertManager {
             currentdata.setCert(null);
             currentdata.setResetCounter(0);
             try {
-                HibernatePersistenceContext pc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-                Session session = pc.getSession();
+                Session session = getSession();
                 // update existing data
                 session.update(currentdata);
             } catch (HibernateException e) {
                 String msg = "Hibernate exception revoking cert";
-                logger.log(Level.WARNING, msg, e);
-                throw new UpdateException(msg, e);
-            } catch (SQLException e) {
-                String msg = "SQL exception revoking cert";
                 logger.log(Level.WARNING, msg, e);
                 throw new UpdateException(msg, e);
             }
@@ -199,16 +182,11 @@ public class ClientCertManagerImp implements ClientCertManager {
         if (currentdata != null) {
             currentdata.setResetCounter(10);
             try {
-                HibernatePersistenceContext pc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-                Session session = pc.getSession();
+                Session session = getSession();
                 // update existing data
                 session.update(currentdata);
             } catch (HibernateException e) {
                 String msg = "Hibernate exception updating cert info";
-                logger.log(Level.WARNING, msg, e);
-                throw new UpdateException(msg, e);
-            } catch (SQLException e) {
-                String msg = "SQL exception updating cert info";
                 logger.log(Level.WARNING, msg, e);
                 throw new UpdateException(msg, e);
             }
@@ -226,24 +204,19 @@ public class ClientCertManagerImp implements ClientCertManager {
      */
     private CertEntryRow getFromTable(User user) {
         List hibResults = null;
-        HibernatePersistenceContext context = null;
         try {
-            context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-            Query q = context.getSession().createQuery(FIND_BY_USER_ID);
+            Query q = getSession().createQuery(FIND_BY_USER_ID);
             q.setLong(0, user.getProviderId());
             q.setString(1, user.getUniqueIdentifier());
             hibResults = q.list();
             if (hibResults.size() == 0 && user.getLogin() != null && user.getLogin().length() > 0) {
                 // Try searching by login if userId fails
-                q = context.getSession().createQuery(FIND_BY_LOGIN);
+                q = getSession().createQuery(FIND_BY_LOGIN);
                 q.setLong(0, user.getProviderId());
                 q.setString(1, user.getLogin());
                 hibResults = q.list();
             }
-        } catch (SQLException e) {
-            hibResults = Collections.EMPTY_LIST;
-            logger.log(Level.WARNING, "hibernate error finding cert entry for " + getName(user), e);
-        }  catch (HibernateException e) {
+        } catch (HibernateException e) {
             hibResults = Collections.EMPTY_LIST;
             logger.log(Level.WARNING, "hibernate error finding cert entry for " + getName(user), e);
         } /*finally {
@@ -262,7 +235,6 @@ public class ClientCertManagerImp implements ClientCertManager {
         }
     }
 
-    protected PersistenceManager manager = null;
     protected final Logger logger = Logger.getLogger(getClass().getName());
 
     private static final String TABLE_NAME = "client_cert";

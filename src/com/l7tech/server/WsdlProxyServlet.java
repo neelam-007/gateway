@@ -5,7 +5,6 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
@@ -29,7 +28,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URL;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -108,13 +106,6 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         if (svcId != null && svcId.length() > 0) {
             // get this service
             ServiceManager manager = getServiceManager();
-            try {
-                beginTransaction();
-            } catch (TransactionException e) {
-                logger.log(Level.SEVERE, "cannot begin transaction", e);
-                res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
-                return;
-            }
             PublishedService svc = null;
             try {
                 svc = manager.findByPrimaryKey(Long.parseLong(svcId));
@@ -156,7 +147,6 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 }
             }
             outputServiceDescription(req, res, svc);
-            endTransaction();
             logger.info("Returned description for service, " + svcId);
         } else { // HANDLE REQUEST FOR LIST OF SERVICES
             Collection services = null;
@@ -256,7 +246,6 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     private Collection listAnonymouslyViewableAndProtectedServices(List users) throws TransactionException, IOException, FindException {
 
         ServiceManager manager = getServiceManager();
-        beginTransaction();
         // get all services
         Collection allServices = null;
         allServices = manager.findAll();
@@ -284,7 +273,6 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             }
         }
 
-        endTransaction();
         return output;
     }
 
@@ -324,20 +312,6 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             return false;
         } else
             return false;
-    }
-
-    private ServiceManager getServiceManager() {
-        ServiceManager output = (ServiceManager)getApplicationContext().getBean("serviceManager");
-        return output;
-    }
-
-    private void beginTransaction() throws TransactionException {
-        try {
-            PersistenceContext.getCurrent().beginTransaction();
-        } catch (SQLException e) {
-            logger.log(Level.SEVERE, "cannot begin transaction", e);
-            throw new TransactionException("cannot begin transaction", e);
-        }
     }
 
 

@@ -17,7 +17,6 @@ import net.sf.hibernate.Hibernate;
 import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Session;
 import net.sf.hibernate.expression.Expression;
-import org.springframework.context.ApplicationContext;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -28,13 +27,14 @@ import java.util.logging.Level;
  * @version $Revision$
  */
 public abstract class PersistentUserManager extends HibernateEntityManager implements UserManager {
-    protected ApplicationContext applicationContext;
+    protected PersistentUserManager(IdentityProvider identityProvider) {
+        this.identityProvider = identityProvider;
+    }
 
-    public PersistentUserManager(ApplicationContext applicationContext) {
-        this.applicationContext = applicationContext;
-        if (applicationContext == null) {
-            throw new IllegalArgumentException("Application Context is required");
-        }
+    /**
+     * empty subclassing constructor (required for class proxying)
+     */
+    protected PersistentUserManager() {
     }
 
     public User findByPrimaryKey(String oid) throws FindException {
@@ -45,7 +45,7 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
             }
             PersistentUser out = (PersistentUser)PersistenceManager.findByPrimaryKey(getContext(), getImpClass(), Long.parseLong(oid));
             if (out == null) return null;
-            out.setProviderId(provider.getConfig().getOid());
+            out.setProviderId(identityProvider.getConfig().getOid());
             return out;
         } catch (SQLException se) {
             logger.log(Level.SEVERE, null, se);
@@ -67,7 +67,7 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
                     return null;
                 case 1:
                     PersistentUser u = (PersistentUser)users.get(0);
-                    u.setProviderId(provider.getConfig().getOid());
+                    u.setProviderId(identityProvider.getConfig().getOid());
                     return u;
                 default:
                     String err = "Found more than one user with the login " + login;
@@ -121,7 +121,7 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
     }
 
     protected long getProviderOid() {
-        return provider.getConfig().getOid();
+        return identityProvider.getConfig().getOid();
     }
 
     /**
@@ -141,7 +141,7 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
             preDelete(originalUser);
 
             Session s = context.getSession();
-            PersistentGroupManager groupManager = (PersistentGroupManager)provider.getGroupManager();
+            PersistentGroupManager groupManager = (PersistentGroupManager)identityProvider.getGroupManager();
             Set groupHeaders = groupManager.getGroupHeaders(userImp);
             for (Iterator i = groupHeaders.iterator(); i.hasNext();) {
                 EntityHeader groupHeader = (EntityHeader)i.next();
@@ -216,7 +216,7 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
 
             if (groupHeaders != null) {
                 try {
-                    provider.getGroupManager().setGroupHeaders(user, groupHeaders);
+                    identityProvider.getGroupManager().setGroupHeaders(user, groupHeaders);
                 } catch (FindException e) {
                     logger.log(Level.SEVERE, e.getMessage(), e);
                     throw new SaveException(e.getMessage(), e);
@@ -263,7 +263,7 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
             checkUpdate(originalUser, imp);
 
             if (groupHeaders != null)
-                provider.getGroupManager().setGroupHeaders(user.getUniqueIdentifier(), groupHeaders);
+                identityProvider.getGroupManager().setGroupHeaders(user.getUniqueIdentifier(), groupHeaders);
 
             // update user
             originalUser.copyFrom(imp);
@@ -278,12 +278,31 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
         }
     }
 
+    public void setClientCertManager(ClientCertManager clientCertManager) {
+        this.clientCertManager = clientCertManager;
+    }
+
+
+    /**
+     * Subclasses can override this for custom initialization behavior.
+     * Gets called after population of this instance's bean properties.
+     *
+     * @throws Exception if initialization fails
+     */
+    protected void initDao() throws Exception {
+        super.initDao();
+        if (clientCertManager == null) {
+            throw new IllegalArgumentException("The Client Certificate Manager is required");
+        }
+    }
+
     /**
      * Override this method to check something before a user is saved
      *
      * @throws SaveException to veto the save
      */
-    protected void preSave(PersistentUser user) throws SaveException { }
+    protected void preSave(PersistentUser user) throws SaveException {
+    }
 
     /**
      * Override this method to verify changes to a user before it's updated
@@ -298,12 +317,12 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
      *
      * @throws DeleteException to veto the deletion
      */
-    protected void preDelete(PersistentUser user) throws DeleteException { }
+    protected void preDelete(PersistentUser user) throws DeleteException {
+    }
 
     protected void revokeCert(PersistentUser originalUser) throws ObjectNotFoundException {
-        ClientCertManager man = (ClientCertManager)applicationContext.getBean("clientCertManager");
         try {
-            man.revokeUserCert(originalUser);
+            clientCertManager.revokeUserCert(originalUser);
         } catch (UpdateException e) {
             logger.log(Level.FINE, "could not revoke cert for user " + originalUser.getLogin() +
               " perhaps this user had no existing cert", e);
@@ -317,5 +336,6 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
      */
     protected abstract String getNameFieldname();
 
-    protected IdentityProvider provider;
+    protected IdentityProvider identityProvider;
+    protected ClientCertManager clientCertManager;
 }

@@ -13,6 +13,7 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.MessageId;
 import com.l7tech.server.util.MessageIdManager;
 import org.xml.sax.SAXException;
+import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.security.MessageDigest;
@@ -37,9 +38,11 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
     private static final long MAXIMUM_MESSAGE_AGE_MILLIS = 1000L * 60 * 60 * 24 * 30; // hard cap of 30 days old
     private static final long CACHE_ID_EXTRA_TIME_MILLIS = 1000L * 60 * 5; // cache IDs for at least 5 min extra
     private static final long DEFAULT_EXPIRY_TIME = 1000L * 60 * 10; // if no Expires, assume expiry after 10 min
+    private ApplicationContext applicationContext;
 
-    public ServerRequestWssReplayProtection(RequestWssReplayProtection subject) {
+    public ServerRequestWssReplayProtection(RequestWssReplayProtection subject, ApplicationContext ctx) {
         this.subject = subject;
+        this.applicationContext = ctx;
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context)
@@ -139,7 +142,8 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
 
         MessageId messageId = new MessageId(messageIdStr, expires + CACHE_ID_EXTRA_TIME_MILLIS);
         try {
-            DistributedMessageIdManager.getInstance().assertMessageIdIsUnique(messageId);
+            DistributedMessageIdManager dmm = (DistributedMessageIdManager)applicationContext.getBean("distributedMessageIdManager");
+            dmm.assertMessageIdIsUnique(messageId);
             logger.finest("Message ID " + messageIdStr + " has not been seen before unique; assertion succeeds");
         } catch (MessageIdManager.DuplicateMessageIdException e) {
             // TODO we need a better exception for this than IOException

@@ -3,12 +3,8 @@ package com.l7tech.server.identity;
 import com.l7tech.identity.*;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
-import com.l7tech.server.identity.internal.InternalIdentityProviderServer;
+import com.l7tech.server.identity.internal.InternalIdentityProvider;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -26,12 +22,7 @@ import java.util.logging.Level;
  * Date: Jun 20, 2003
  */
 public class IdProvConfManagerServer
-  extends HibernateEntityManager implements IdentityProviderConfigManager, ApplicationContextAware, InitializingBean {
-    private ApplicationContext applicationContext;
-
-    public IdentityProvider getInternalIdentityProvider() {
-        return internalProvider;
-    }
+  extends HibernateEntityManager implements IdentityProviderConfigManager {
 
     public IdentityProviderConfig findByPrimaryKey(long oid) throws FindException {
         if (oid == INTERNALPROVIDER_SPECIAL_OID)
@@ -170,10 +161,6 @@ public class IdProvConfManagerServer
         return ldapTemplateManager.getTemplates();
     }
 
-    public void setApplicationContext(ApplicationContext ctx) throws BeansException {
-        applicationContext = ctx;
-    }
-
     public void setIdentityProviderFactory(IdentityProviderFactory identityProviderFactory) {
         this.identityProviderFactory = identityProviderFactory;
     }
@@ -191,28 +178,18 @@ public class IdProvConfManagerServer
         return out;
     }
 
-    protected InternalIdentityProviderServer internalProvider;
+    protected InternalIdentityProvider internalProvider;
     private final LdapConfigTemplateManager ldapTemplateManager = new LdapConfigTemplateManager();
 
     private IdentityProviderFactory identityProviderFactory;
 
-    /**
-     * Invoked by a BeanFactory after it has set all bean properties supplied
-     * (and satisfied BeanFactoryAware and ApplicationContextAware).
-     * <p>This method allows the bean instance to perform initialization only
-     * possible when all bean properties have been set and to throw an
-     * exception in the event of misconfiguration.
-     *
-     * @throws Exception in the event of misconfiguration (such
-     *                   as failure to set an essential property) or if initialization fails.
-     */
-    public void afterPropertiesSet() throws Exception {
+    protected void initDao() throws Exception {
         // construct the internal id provider
         IdentityProviderConfig cfg = new IdentityProviderConfig(IdentityProviderType.INTERNAL);
         cfg.setName("Internal Identity Provider");
         cfg.setDescription("Internal Identity Provider");
         cfg.setOid(INTERNALPROVIDER_SPECIAL_OID);
-        internalProvider = new InternalIdentityProviderServer(cfg, applicationContext);
+        internalProvider = (InternalIdentityProvider)identityProviderFactory.makeProvider(cfg);
 
     }
 }

@@ -1,11 +1,8 @@
 package com.l7tech.logging;
 
-import com.l7tech.objectmodel.PersistenceContext;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.context.support.ApplicationObjectSupport;
 
 import java.rmi.RemoteException;
-import java.sql.SQLException;
 import java.util.logging.Logger;
 
 /**
@@ -14,7 +11,7 @@ import java.util.logging.Logger;
  * @author  <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version $Id$
  */
-public class LogAdminImpl extends ApplicationObjectSupport implements LogAdmin, InitializingBean {
+public class LogAdminImpl implements LogAdmin, InitializingBean {
     private ServerLogManager serverLogManager;
 
     /**
@@ -70,16 +67,8 @@ public class LogAdminImpl extends ApplicationObjectSupport implements LogAdmin, 
      *
      */
     public SSGLogRecord[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, int size) throws RemoteException {
-        try {
             logger.finest("get server logs interval ["+startMsgNumber+", "+endMsgNumber+"] for node '"+nodeid+"'");
             return (SSGLogRecord[])serverLogManager.getLogRecords(nodeid, startMsgNumber, endMsgNumber, size).toArray(new SSGLogRecord[]{});
-        } finally {
-            try {
-                PersistenceContext.getCurrent().close();
-            } catch (SQLException e) {
-                logger.fine("error closing context");
-            }
-        }
     }
 
     public void setServerLogManager(ServerLogManager serverLogManager) {

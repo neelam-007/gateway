@@ -99,6 +99,6 @@ public class TestIdentityProviderConfigManager extends ApplicationObjectSupport
         if (identityProviderFactory == null) {
             throw new IllegalArgumentException("Identity Provider Factory is required");
         }
-        idprovider =  identityProviderFactory.makeProvider(TestIdentityProvider.TEST_IDENTITY_PROVIDER_CONFIG);
+        idprovider =  identityProviderFactory.createProviderInstance(TestIdentityProvider.TEST_IDENTITY_PROVIDER_CONFIG);
     }
 }

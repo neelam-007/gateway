@@ -1,13 +1,15 @@
 package com.l7tech.server.service.resolution;
 
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.DuplicateObjectException;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ResolutionParameterTooLongException;
 import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Query;
 import net.sf.hibernate.Session;
+import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
-import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -25,7 +27,7 @@ import java.util.logging.Logger;
  * Date: Nov 25, 2003<br/>
  * $Id$
  */
-public class ResolutionManager {
+public class ResolutionManager extends HibernateDaoSupport {
 
     /**
      * Records resolution parameters for the passed service.
@@ -51,21 +53,7 @@ public class ResolutionManager {
             return;
         }
 
-        // get the hibernate session
-        HibernatePersistenceContext pc = null;
-        Session session = null;
-        try {
-            pc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-            session = pc.getSession();
-        } catch (SQLException e) {
-            String msg = "cannot get hibernate session";
-            logger.log(Level.WARNING, msg, e);
-            throw new UpdateException(msg, e);
-        } catch (HibernateException e) {
-            String msg = "cannot get hibernate session";
-            logger.log(Level.WARNING, msg, e);
-            throw new UpdateException(msg, e);
-        }
+        Session session = getSession();
 
         try {
             for (Iterator i = existingParameters.iterator(); i.hasNext();) {
@@ -88,8 +76,6 @@ public class ResolutionManager {
             logger.fine("saved " + distinctItemsToSave.size() + " parameters for service " + service.getOid());
         } catch (HibernateException e) {
             throw new UpdateException("error adding resolution parameters.", e);
-        } catch (SQLException e) {
-            throw new UpdateException("error adding resolution parameters.", e);
         }
     }
 
@@ -101,17 +87,11 @@ public class ResolutionManager {
     public void deleteResolutionParameters(long serviceOid) throws DeleteException {
         String query = "from " + TABLE_NAME + " in class " + ResolutionParameters.class.getName() +
           " where " + TABLE_NAME + "." + SVCID_COLUMN + " = " + serviceOid;
-        HibernatePersistenceContext context = null;
         Session session = null;
         try {
-            context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-            session = context.getSession();
+            session = getSession();
             int deleted = session.delete(query);
             logger.finest("deleted " + deleted + " resolution parameters.");
-        } catch (SQLException e) {
-            String msg = "error deleting resolution parameters with query " + query;
-            logger.log(Level.WARNING, msg, e);
-            throw new DeleteException(msg, e);
         } catch (HibernateException e) {
             String msg = "error deleting resolution parameters with query " + query;
             logger.log(Level.WARNING, msg, e);
@@ -152,15 +132,10 @@ public class ResolutionManager {
           " where " + TABLE_NAME + "." + SVCID_COLUMN + " = ?";
 
         List hibResults = null;
-        HibernatePersistenceContext context = null;
         try {
-            context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-            Query q = context.getSession().createQuery(query);
+            Query q = getSession().createQuery(query);
             q.setLong(0, serviceid);
             hibResults = q.list();
-        } catch (SQLException e) {
-            hibResults = Collections.EMPTY_LIST;
-            logger.log(Level.WARNING, "hibernate error finding resolution parameters for " + serviceid, e);
         } catch (HibernateException e) {
             hibResults = Collections.EMPTY_LIST;
             logger.log(Level.WARNING, "hibernate error finding resolution parameters for " + serviceid, e);
@@ -186,18 +161,15 @@ public class ResolutionManager {
      * quite correct
      *
      * @param parameters the resolution parameters to check
-     * @throws SQLException             on SQL error
      * @throws DuplicateObjectException on duplicate detect
      * @throws HibernateException       on hibernate error
      */
     private void checkForDuplicateResolutionParameters(Collection parameters)
-      throws SQLException, HibernateException, DuplicateObjectException {
+      throws HibernateException, DuplicateObjectException {
         String query = "from " + TABLE_NAME + " in class " + ResolutionParameters.class.getName();
 
         Set duplicates = new HashSet();
-        HibernatePersistenceContext context = null;
-        context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-        Query q = context.getSession().createQuery(query);
+        Query q = getSession().createQuery(query);
         List results = q.list();
         for (Iterator ir = results.iterator(); ir.hasNext();) {
             ResolutionParameters rp = (ResolutionParameters)ir.next();

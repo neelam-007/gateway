@@ -16,6 +16,9 @@ import com.l7tech.service.ResolutionParameterTooLongException;
 import com.l7tech.service.ServiceStatistics;
 import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Session;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.*;
 
 import java.io.IOException;
 import java.rmi.RemoteException;
@@ -24,11 +27,6 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationContext;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.BeansException;
-
 /**
  * Manages PublishedService instances.
  * Note that this object has state, so it should be effectively a Singleton!
@@ -36,10 +34,8 @@ import org.springframework.beans.BeansException;
  * @author alex
  * @version $Revision$
  */
-public class ServiceManagerImp extends HibernateEntityManager
-  implements ServiceManager, ApplicationContextAware, InitializingBean {
+public class ServiceManagerImp extends HibernateEntityManager implements ServiceManager {
     private ServiceCache serviceCache;
-    private ApplicationContext applicationContext;
 
     public String resolveWsdlTarget(String url) throws RemoteException {
         throw new UnsupportedOperationException();
@@ -55,18 +51,10 @@ public class ServiceManagerImp extends HibernateEntityManager
 
     public long save(PublishedService service) throws SaveException, ResolutionParameterTooLongException {
         // 1. record the service
-        PersistenceContext context = null;
-        try {
-            context = getContext();
-            long oid = PersistenceManager.save(context, service);
-            logger.info("Saved service #" + oid);
-            service.setOid(oid);
-        } catch (SQLException se) {
-            logger.log(Level.SEVERE, se.toString(), se);
-            throw new SaveException(se.toString(), se);
-        }
+        long oid = ((Long)getHibernateTemplate().save(service)).longValue();
+        logger.info("Saved service #" + oid);
+        service.setOid(oid);
         // 2. record resolution parameters
-        ResolutionManager resolutionManager = new ResolutionManager();
         try {
             resolutionManager.recordResolutionParameters(service);
         } catch (DuplicateObjectException e) {
@@ -80,11 +68,10 @@ public class ServiceManagerImp extends HibernateEntityManager
         }
 
         // 3. update cache on callback
-        try {
-            final long passedServiceId = service.getOid();
-
-            TransactionListener inlineListener = new TransactionListener() {
-                public void postCommit() {
+        final long passedServiceId = service.getOid();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+            public void afterCompletion(int status) {
+                if (status == TransactionSynchronization.STATUS_COMMITTED) {
                     // get service. version property must be up-to-date
                     PublishedService svcnow = null;
                     try {
@@ -101,26 +88,15 @@ public class ServiceManagerImp extends HibernateEntityManager
                         }
                     }
                 }
-
-                public void postRollback() {
-                    // nothing
-                }
-            };
-            context.registerTransactionListener(inlineListener);
-        } catch (TransactionException e) {
-            String msg = "could not register for transaction callback";
-            logger.log(Level.WARNING, msg, e);
-            throw new SaveException(msg, e);
-        }
+            }
+        });
 
         return service.getOid();
     }
 
     public int getCurrentPolicyVersion(long policyId) throws FindException {
-        HibernatePersistenceContext context = null;
         try {
-            context = getContext();
-            Session s = context.getSession();
+            Session s = getSession();
             List results = s.find(getFieldQuery(new Long(policyId).toString(), F_VERSION));
             if (results == null || results.isEmpty()) {
                 throw new FindException("cannot get version for service " + Long.toString(policyId));
@@ -129,8 +105,6 @@ public class ServiceManagerImp extends HibernateEntityManager
             int res = i.intValue();
             return res;
         } catch (HibernateException e) {
-            throw new FindException("cannot get version", e);
-        } catch (SQLException e) {
             throw new FindException("cannot get version", e);
         }
     }
@@ -157,7 +131,6 @@ public class ServiceManagerImp extends HibernateEntityManager
         }
 
         // try recording resolution parameters
-        ResolutionManager resolutionManager = new ResolutionManager();
         try {
             resolutionManager.recordResolutionParameters(service);
         } catch (DuplicateObjectException e) {
@@ -167,27 +140,20 @@ public class ServiceManagerImp extends HibernateEntityManager
         }
 
         // update
-        PersistenceContext context = null;
         try {
-            try {
-                original.copyFrom(service);
-            } catch (IOException e) {
-                throw new UpdateException("could not copy published service", e);
-            }
-            context = getContext();
-            PersistenceManager.update(context, original);
-            logger.info("Updated service " + service.getName() + "  #" + service.getOid());
-
-        } catch (SQLException se) {
-            logger.log(Level.SEVERE, se.toString(), se);
-            throw new UpdateException(se.toString(), se);
+            original.copyFrom(service);
+        } catch (IOException e) {
+            throw new UpdateException("could not copy published service", e);
         }
+        getHibernateTemplate().update(original);
+        logger.info("Updated service " + service.getName() + "  #" + service.getOid());
+
 
         // update cache after commit
-        try {
-            final long passedServiceId = service.getOid();
-            TransactionListener inlineListener = new TransactionListener() {
-                public void postCommit() {
+        final long passedServiceId = service.getOid();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+            public void afterCompletion(int status) {
+                if (status == TransactionSynchronization.STATUS_COMMITTED) {
                     // get service. version property must be up-to-date
                     PublishedService svcnow = null;
                     try {
@@ -204,52 +170,27 @@ public class ServiceManagerImp extends HibernateEntityManager
                         }
                     }
                 }
-
-                public void postRollback() {
-                    // nothing
-                }
-            };
-            context.registerTransactionListener(inlineListener);
-        } catch (TransactionException e) {
-            String msg = "could not register for transaction callback";
-            logger.log(Level.WARNING, msg, e);
-            throw new UpdateException(msg, e);
-        }
+            }
+        });
     }
 
     public void delete(PublishedService service) throws DeleteException {
-        ResolutionManager resolutionManager = new ResolutionManager();
-        PersistenceContext context = null;
-        try {
-            context = getContext();
-            PersistenceManager.delete(context, service);
-            resolutionManager.deleteResolutionParameters(service.getOid());
-            logger.info("Deleted service " + service.getName() + " #" + service.getOid());
-        } catch (SQLException se) {
-            throw new DeleteException(se.toString(), se);
-        }
+        getHibernateTemplate().delete(service);
+        resolutionManager.deleteResolutionParameters(service.getOid());
+        logger.info("Deleted service " + service.getName() + " #" + service.getOid());
 
-        try {
-            final PublishedService deletedService = service;
-            TransactionListener inlineListener = new TransactionListener() {
-                public void postCommit() {
+        final PublishedService deletedService = service;
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+            public void afterCompletion(int status) {
+                if (status == TransactionSynchronization.STATUS_COMMITTED) {
                     try {
                         serviceCache.removeFromCache(deletedService);
                     } catch (InterruptedException e) {
                         logger.log(Level.WARNING, "could not update cache", e);
                     }
                 }
-
-                public void postRollback() {
-                    // nothing
-                }
-            };
-            context.registerTransactionListener(inlineListener);
-        } catch (TransactionException e) {
-            String msg = "could not register for transaction callback";
-            logger.log(Level.WARNING, msg, e);
-            throw new DeleteException(msg, e);
-        }
+            }
+        });
     }
 
     public ServerAssertion getServerPolicy(long serviceOid) throws FindException {
@@ -292,8 +233,7 @@ public class ServiceManagerImp extends HibernateEntityManager
         Map output = new HashMap();
 
         try {
-            HibernatePersistenceContext context = getContext();
-            Session s = context.getSession();
+            Session s = getSession();
             List results = s.find(query);
             if (results == null || results.isEmpty()) {
                 // logger.fine("no version info to return");
@@ -304,10 +244,6 @@ public class ServiceManagerImp extends HibernateEntityManager
                 }
             }
             return output;
-        } catch (SQLException e) {
-            String msg = "error getting versions";
-            logger.log(Level.SEVERE, msg, e);
-            throw new FindException(msg, e);
         } catch (HibernateException e) {
             String msg = "error getting versions";
             logger.log(Level.SEVERE, msg, e);
@@ -331,21 +267,44 @@ public class ServiceManagerImp extends HibernateEntityManager
         serviceCache.destroy();
     }
 
-    public void setApplicationContext(ApplicationContext applicationContext)
-      throws BeansException {
-        this.applicationContext = applicationContext;
-    }
-
     public void setServiceCache(ServiceCache serviceCache) {
         this.serviceCache = serviceCache;
     }
 
-    public void afterPropertiesSet() throws Exception {
+    /**
+     * Set the resolution manager. This is managed by Spring runtime.
+     *
+     * @param resolutionManager
+     */
+    public void setResolutionManager(ResolutionManager resolutionManager) {
+        this.resolutionManager = resolutionManager;
+    }
+
+    public void setTransactionManager(PlatformTransactionManager transactionManager) {
+        this.transactionManager = transactionManager;
+    }
+
+    protected void initDao() throws Exception {
         if (serviceCache == null) {
             throw new IllegalArgumentException("Service Cache is required");
         }
+        if (transactionManager == null) {
+            throw new IllegalArgumentException("Transaction Manager is required");
+        }
 
-        // build the cache if necessary
+        new TransactionTemplate(transactionManager).execute(new TransactionCallbackWithoutResult() {
+            protected void doInTransactionWithoutResult(TransactionStatus status) {
+                try {
+                    initializeServiceCache();
+                } catch (ObjectModelException e) {
+                    throw new RuntimeException("Error intializing service cache", e);
+                }
+            }
+        });
+    }
+
+    private void initializeServiceCache() throws ObjectModelException {
+// build the cache if necessary
         try {
             if (serviceCache.size() > 0) {
                 logger.finest("cache already built (?)");
@@ -363,10 +322,10 @@ public class ServiceManagerImp extends HibernateEntityManager
         } catch (InterruptedException e) {
             throw new ObjectModelException("Exception building cache", e);
         }
-
     }
+
+    private ResolutionManager resolutionManager;
+    private PlatformTransactionManager transactionManager; // required for TransactionTemplate
     private static final Logger logger = Logger.getLogger(ServiceManagerImp.class.getName());
     private static final String F_VERSION = "version";
-
-
 }

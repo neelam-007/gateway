@@ -7,9 +7,10 @@
 package com.l7tech.server;
 
 import com.l7tech.common.BuildInfo;
-import com.l7tech.objectmodel.HibernatePersistenceContext;
-import com.l7tech.objectmodel.PersistenceContext;
 import net.sf.hibernate.Session;
+import net.sf.hibernate.SessionFactory;
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -27,17 +28,23 @@ import java.util.logging.Logger;
  */
 public class PingServlet extends HttpServlet {
     private static final Logger logger = Logger.getLogger(PingServlet.class.getName());
+    private WebApplicationContext applicationContext;
 
     public void init( ServletConfig config ) throws ServletException {
         super.init(config);
+        applicationContext = WebApplicationContextUtils.getWebApplicationContext(getServletContext());
+
+        if (applicationContext == null) {
+            throw new ServletException("Configuration error; could not get application context");
+        }
+
     }
 
     public void doGet( HttpServletRequest request, HttpServletResponse response ) throws ServletException, IOException {
-        HibernatePersistenceContext context = null;
         Writer out = null;
         try {
-            context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-            Session s = context.getSession();
+            SessionFactory sessionFactory = (SessionFactory)applicationContext.getBean("sessionFactory");
+            Session s = sessionFactory.openSession();
             if ( s.isOpen() ) {
                 response.setStatus( HttpServletResponse.SC_OK );
                 out = response.getWriter();
@@ -53,7 +60,6 @@ public class PingServlet extends HttpServlet {
             out = response.getWriter();
             writePage( out, ERROR_TITLE, ERROR_MESSAGE );
         } finally {
-            if ( context != null ) try { context.close(); } catch ( Throwable e ) { }
             if ( out != null ) try { out.flush(); } catch ( Throwable e ) { }
             if ( out != null ) try { out.close(); } catch ( Throwable e ) { }
         }

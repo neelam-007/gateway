@@ -11,6 +11,13 @@
         <property name="identityProviderFactory"><ref bean='identityProviderFactory'/></property>
     </bean>
 
+    <!--
+        Test Identity Provider
+    -->
+  <bean id="testIdentityProvider" factory-bean="identityProviderFactory" factory-method="createProviderInstance"
+      class="com.l7tech.identity.TestIdentityProvider" singleton="false">
+  </bean>
+
     <!--  test service admin -->
     <bean id="serviceAdmin" class="com.l7tech.service.ServiceAdminStub">
         <property name="policyValidator"><ref bean="policyValidator"/></property>

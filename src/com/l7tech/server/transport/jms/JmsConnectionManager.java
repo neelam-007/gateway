@@ -35,38 +35,38 @@ public class JmsConnectionManager extends HibernateEntityManager
 
     public Collection findAllProviders() throws FindException {
         // TODO make this real, eh?!!
-        if ( _allProviders == null ) {
-            JmsProvider openjms = new JmsProvider( "OpenJMS", "org.exolab.jms.jndi.InitialContextFactory", "QueueConnectionFactory" );
-            JmsProvider jbossmq = new JmsProvider( "JBossMQ", "org.jnp.interfaces.NamingContextFactory", "QueueConnectionFactory" );
-            JmsProvider mqLdap = new JmsProvider( "WebSphere MQ over LDAP", "com.sun.jndi.ldap.LdapCtxFactory", "L7QueueConnectionFactory" );
+        if (_allProviders == null) {
+            JmsProvider openjms = new JmsProvider("OpenJMS", "org.exolab.jms.jndi.InitialContextFactory", "QueueConnectionFactory");
+            JmsProvider jbossmq = new JmsProvider("JBossMQ", "org.jnp.interfaces.NamingContextFactory", "QueueConnectionFactory");
+            JmsProvider mqLdap = new JmsProvider("WebSphere MQ over LDAP", "com.sun.jndi.ldap.LdapCtxFactory", "L7QueueConnectionFactory");
             List list = new ArrayList();
-            list.add( openjms );
-            list.add( jbossmq );
-            list.add( mqLdap );        
+            list.add(openjms);
+            list.add(jbossmq);
+            list.add(mqLdap);
             _allProviders = list;
         }
         return _allProviders;
     }
 
-    public JmsConnection findConnectionByPrimaryKey( long oid ) throws FindException {
+    public JmsConnection findConnectionByPrimaryKey(long oid) throws FindException {
         try {
-            return (JmsConnection)PersistenceManager.findByPrimaryKey( getContext(), JmsConnection.class, oid );
-        } catch ( SQLException e ) {
-            throw new FindException( e.toString(), e );
+            return (JmsConnection)PersistenceManager.findByPrimaryKey(getContext(), JmsConnection.class, oid);
+        } catch (SQLException e) {
+            throw new FindException(e.toString(), e);
         }
     }
 
-    public long save( final JmsConnection conn ) throws SaveException {
-        _logger.info( "Saving JmsConnection " + conn );
+    public long save(final JmsConnection conn) throws SaveException {
+        _logger.info("Saving JmsConnection " + conn);
         try {
-            return PersistenceManager.save( getContext(), conn );
-        } catch ( SQLException e ) {
+            return PersistenceManager.save(getContext(), conn);
+        } catch (SQLException e) {
             throw new SaveException(e.toString(), e);
         }
     }
 
-    public void update( final JmsConnection conn ) throws VersionException, UpdateException {
-        _logger.info( "Updating JmsConnection " + conn );
+    public void update(final JmsConnection conn) throws VersionException, UpdateException {
+        _logger.info("Updating JmsConnection " + conn);
 
         JmsConnection original = null;
         // check for original connection
@@ -79,56 +79,50 @@ public class JmsConnectionManager extends HibernateEntityManager
         // check version
         if (original.getVersion() != conn.getVersion()) {
             logger.severe("db connection has version: " + original.getVersion() + ". requestor connection has version: "
-                          + conn.getVersion());
+              + conn.getVersion());
             throw new VersionException("the connection you are trying to update is no longer valid.");
         }
 
         // update
-        PersistenceContext context = null;
-        try {
-            original.copyFrom(conn);
-
-            context = getContext();
-            PersistenceManager.update(context, original);
-            logger.info( "Updated JmsConnection #" + conn.getOid() );
-        } catch ( SQLException se ) {
-            logger.log( Level.SEVERE, se.toString(), se );
-            throw new UpdateException( se.toString(), se );
-        }
+        original.copyFrom(conn);
+        getHibernateTemplate().update(original);
+        logger.info("Updated JmsConnection #" + conn.getOid());
     }
 
 
     /**
      * Deletes a {@link JmsConnection} and all associated {@link com.l7tech.common.transport.jms.JmsEndpoint}s.
-     *
+     * <p/>
      * Must be called within a transaction!
+     *
      * @param connection the object to be deleted.
      * @throws DeleteException if the connection, or one of its dependent endpoints, cannot be deleted.
-     * @throws FindException if the connection, or one of its dependent endpoints, cannot be found.
+     * @throws FindException   if the connection, or one of its dependent endpoints, cannot be found.
      */
-    public void delete( final JmsConnection connection ) throws DeleteException, FindException {
-        _logger.info( "Deleting JmsConnection " + connection );
+    public void delete(final JmsConnection connection) throws DeleteException, FindException {
+        _logger.info("Deleting JmsConnection " + connection);
 
         try {
-            EntityHeader[] endpoints = jmsEndpointManager.findEndpointHeadersForConnection( connection.getOid() );
+            EntityHeader[] endpoints = jmsEndpointManager.findEndpointHeadersForConnection(connection.getOid());
 
-            for ( int i = 0; i < endpoints.length; i++ )
-                jmsEndpointManager.delete( endpoints[i].getOid() );
+            for (int i = 0; i < endpoints.length; i++)
+                jmsEndpointManager.delete(endpoints[i].getOid());
 
-            PersistenceManager.delete( getContext(),  connection );
-        } catch ( SQLException e ) {
-            throw new DeleteException( e.toString(), e );
+            PersistenceManager.delete(getContext(), connection);
+        } catch (SQLException e) {
+            throw new DeleteException(e.toString(), e);
         }
     }
 
     /**
      * Overridden to take care of dependent objects
+     *
      * @param oid
      * @throws DeleteException
      * @throws FindException
      */
-    public void delete( long oid ) throws DeleteException, FindException {
-        delete( findConnectionByPrimaryKey( oid ) );
+    public void delete(long oid) throws DeleteException, FindException {
+        delete(findConnectionByPrimaryKey(oid));
     }
 
     public Class getImpClass() {
@@ -148,14 +142,16 @@ public class JmsConnectionManager extends HibernateEntityManager
     public void setApplicationContext(ApplicationContext ctx) throws BeansException {
         applicationContext = ctx;
     }
+
     public void setJmsEndpointManager(JmsEndpointManager jmsEndpointManager) {
         this.jmsEndpointManager = jmsEndpointManager;
     }
 
-    public void afterPropertiesSet() throws Exception {
+    protected void initDao() throws Exception {
         if (jmsEndpointManager == null) {
             throw new IllegalArgumentException("Endpoint Manager is required");
         }
     }
+
     private final Logger _logger = Logger.getLogger(getClass().getName());
 }

@@ -9,16 +9,11 @@ package com.l7tech.server.audit;
 import com.l7tech.common.audit.AdminAuditRecord;
 import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.common.audit.MessageSummaryAuditRecord;
-import com.l7tech.objectmodel.HibernatePersistenceContext;
+import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.ServerConfig;
-import net.sf.hibernate.HibernateException;
-import net.sf.hibernate.Session;
-import net.sf.hibernate.Transaction;
 import org.springframework.context.ApplicationContext;
 
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -45,11 +40,8 @@ public class AuditContext {
 
     public void flush() {
         if (closed) throw new IllegalStateException("Can't flush a closed AuditContext");
-        HibernatePersistenceContext context = null;
-        Transaction tx = null;
+        Collection toSave = new ArrayList();
         try {
-            context = (HibernatePersistenceContext)HibernatePersistenceContext.getCurrent();
-            Session s = context.getAuditSession();
             for ( Iterator i = records.iterator(); i.hasNext(); ) {
                 AuditRecord auditRecord = (AuditRecord)i.next();
                 i.remove();
@@ -71,17 +63,11 @@ public class AuditContext {
                 } else {
                     // System audit records are always saved
                 }
-                if (tx == null) tx = s.beginTransaction();
-                auditRecordManager.save(auditRecord);
+                toSave.add(auditRecord);
             }
-            if (tx != null) tx.commit();
-        } catch (Throwable e) {
-            try {
-                if (tx != null) tx.rollback();
-                logger.log(Level.SEVERE, "Couldn't save audit records", e);
-            } catch ( HibernateException e2 ) {
-                logger.log(Level.WARNING, "Couldn't rollback audit transaction after failed flush", e2);
-            }
+            auditRecordManager.save(toSave);
+        } catch (SaveException e) {
+            logger.log(Level.SEVERE, "Couldn't save audit records", e);
         } finally {
             flushed = true;
         }

@@ -7,6 +7,7 @@
 package com.l7tech.server.identity;
 
 import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.EntityHeaderComparator;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
@@ -14,11 +15,15 @@ import com.l7tech.objectmodel.FindException;
 import java.util.Collection;
 import java.util.TreeSet;
 
+import org.springframework.orm.hibernate.support.HibernateDaoSupport;
+
 /**
  * @author alex
  * @version $Revision$
  */
-public abstract class PersistentIdentityProvider implements IdentityProvider {
+public abstract class PersistentIdentityProvider extends HibernateDaoSupport implements IdentityProvider {
+    protected ClientCertManager clientCertManager;
+
     /**
      * searches for users and groups whose name (cn) match the pattern described in searchString
      * pattern may include wildcard such as * character. result is sorted by name property
@@ -41,4 +46,19 @@ public abstract class PersistentIdentityProvider implements IdentityProvider {
         return searchResults;
     }
 
+    public void setClientCertManager(ClientCertManager clientCertManager) {
+        this.clientCertManager = clientCertManager;
+    }
+
+    /**
+     * Subclasses can override this for custom initialization behavior.
+     * Gets called after population of this instance's bean properties.
+     *
+     * @throws Exception if initialization fails
+     */
+    protected void initDao() throws Exception {
+        if (clientCertManager == null) {
+            throw new IllegalArgumentException("The Client Certificate Manager is required");
+        }
+    }
 }

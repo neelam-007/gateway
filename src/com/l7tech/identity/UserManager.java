@@ -19,7 +19,7 @@ public interface UserManager extends EntityManager {
      * Retrieves the {@link User} with the specified login.
      *
      * This method's return value presumes that there exists at most one user in each provider with a given login,
-     * but this isn't always guaranteed.  This constraint is enforced in the {@link com.l7tech.server.identity.internal.InternalIdentityProviderServer}
+     * but this isn't always guaranteed.  This constraint is enforced in the {@link com.l7tech.server.identity.internal.InternalIdentityProvider}
      * but not in others.
      */
     User findByLogin( String login ) throws FindException;

@@ -5,8 +5,6 @@ import EDU.oswego.cs.dl.util.concurrent.Sync;
 import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
 import com.l7tech.common.message.Message;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.PersistenceContext;
-import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.service.resolution.*;
@@ -15,7 +13,6 @@ import com.l7tech.service.ServiceStatistics;
 import org.springframework.context.support.ApplicationObjectSupport;
 
 import java.io.IOException;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -330,7 +327,7 @@ public class ServiceCache extends ApplicationObjectSupport {
         checker.cancel();
     }
 
-    public void checkIntegrity() {
+    private void checkIntegrity() {
         Sync ciReadLock = rwlock.readLock();
         try {
             ciReadLock.acquire();
@@ -341,116 +338,90 @@ public class ServiceCache extends ApplicationObjectSupport {
         }
         try {
             Map cacheversions = versionSnapshot();
-            PersistenceContext context = null;
+            Map dbversions = null;
+
+            // get db versions
             try {
-                context = PersistenceContext.getCurrent();
-            } catch (SQLException e) {
-                logger.log(Level.SEVERE, "error getting persistence context. " +
+                ServiceManager serviceManager = (ServiceManager)getApplicationContext().getBean("serviceManager");
+                dbversions = serviceManager.getServiceVersions();
+            } catch (FindException e) {
+                logger.log(Level.SEVERE, "error getting versions. " +
                   "this integrity check is stopping prematurely", e);
                 return;
             }
-            try {
-                Map dbversions = null;
-                // begin transaction
-                try {
-                    context.beginTransaction();
-                } catch (TransactionException e) {
-                    logger.log(Level.SEVERE, "error begining transaction. " +
-                      "this integrity check is stopping prematurely", e);
-                    return;
-                }
 
-                // get db versions
-                try {
-                    ServiceManager serviceManager = (ServiceManager)getApplicationContext().getBean("serviceManager");
-                    dbversions = serviceManager.getServiceVersions();
-                } catch (FindException e) {
-                    logger.log(Level.SEVERE, "error getting versions. " +
-                      "this integrity check is stopping prematurely", e);
-                    return;
-                }
-
-                // actual check logic
-                ArrayList updatesAndAdditions = new ArrayList();
-                ArrayList deletions = new ArrayList();
-                // 1. check that all that is in db is present in cache and that version is same
-                for (Iterator i = dbversions.keySet().iterator(); i.hasNext();) {
-                    Long dbid = (Long)i.next();
-                    // is it already in cache?
-                    Integer cacheversion = (Integer)cacheversions.get(dbid);
-                    if (cacheversion == null) {
-                        logger.fine("service " + dbid + " to be added to cache.");
-                        updatesAndAdditions.add(dbid);
-                    } else {
-                        // check actual version
-                        Integer dbversion = (Integer)dbversions.get(dbid);
-                        if (!dbversion.equals(cacheversion)) {
-                            updatesAndAdditions.add(dbid);
-                            logger.fine("service " + dbid + " to be updated in cache because outdated.");
-                        }
-
-                    }
-                }
-                // 2. check for things in cache not in db (deletions)
-                for (Iterator i = cacheversions.keySet().iterator(); i.hasNext();) {
-                    Long cacheid = (Long)i.next();
-                    if (dbversions.get(cacheid) == null) {
-                        deletions.add(cacheid);
-                        logger.fine("service " + cacheid + " to be deleted from cache because no longer in database.");
-                    }
-                }
-
-                // 3. make the updates
-                if (updatesAndAdditions.isEmpty() && deletions.isEmpty()) {
-                    // nothing to do. we're done
-                    ciReadLock.release();
-                    ciReadLock = null;
+            // actual check logic
+            ArrayList updatesAndAdditions = new ArrayList();
+            ArrayList deletions = new ArrayList();
+            // 1. check that all that is in db is present in cache and that version is same
+            for (Iterator i = dbversions.keySet().iterator(); i.hasNext();) {
+                Long dbid = (Long)i.next();
+                // is it already in cache?
+                Integer cacheversion = (Integer)cacheversions.get(dbid);
+                if (cacheversion == null) {
+                    logger.fine("service " + dbid + " to be added to cache.");
+                    updatesAndAdditions.add(dbid);
                 } else {
-                    Sync ciWriteLock = rwlock.writeLock();
-                    ciReadLock.release();
-                    ciReadLock = null;
-                    try {
-                        ciWriteLock.acquire();
-                    } catch (InterruptedException e) {
-                        logger.log(Level.SEVERE, "could not get write lock. this integrity" +
-                          "check is stopping prematurely", e);
-                        return;
+                    // check actual version
+                    Integer dbversion = (Integer)dbversions.get(dbid);
+                    if (!dbversion.equals(cacheversion)) {
+                        updatesAndAdditions.add(dbid);
+                        logger.fine("service " + dbid + " to be updated in cache because outdated.");
                     }
-                    try {
-                        for (Iterator i = updatesAndAdditions.iterator(); i.hasNext();) {
-                            Long svcid = (Long)i.next();
-                            PublishedService toUpdateOrAdd = null;
-                            try {
-                                ServiceManager serviceManager = (ServiceManager)getApplicationContext().getBean("serviceManager");
-                                toUpdateOrAdd = serviceManager.findByPrimaryKey(svcid.longValue());
-                            } catch (FindException e) {
-                                toUpdateOrAdd = null;
-                                logger.log(Level.WARNING, "service scheduled for update or addition" +
-                                  "cannot be retrieved", e);
-                            }
-                            if (toUpdateOrAdd != null) {
-                                cacheNoLock(toUpdateOrAdd);
-                            } // otherwise, next integrity check shall delete this service from cache
-                        }
-                        for (Iterator i = deletions.iterator(); i.hasNext();) {
-                            Long key = (Long)i.next();
-                            PublishedService serviceToDelete = (PublishedService)services.get(key);
-                            removeNoLock(serviceToDelete);
-                        }
-                    } finally {
-                        ciWriteLock.release();
-                    }
-                }
 
-                // close hib transaction
-                try {
-                    context.rollbackTransaction();
-                } catch (TransactionException e) {
-                    logger.log(Level.WARNING, "error rollbacking transaction", e);
                 }
-            } finally {
-                context.close();
             }
+            // 2. check for things in cache not in db (deletions)
+            for (Iterator i = cacheversions.keySet().iterator(); i.hasNext();) {
+                Long cacheid = (Long)i.next();
+                if (dbversions.get(cacheid) == null) {
+                    deletions.add(cacheid);
+                    logger.fine("service " + cacheid + " to be deleted from cache because no longer in database.");
+                }
+            }
+
+            // 3. make the updates
+            if (updatesAndAdditions.isEmpty() && deletions.isEmpty()) {
+                // nothing to do. we're done
+                ciReadLock.release();
+                ciReadLock = null;
+            } else {
+                Sync ciWriteLock = rwlock.writeLock();
+                ciReadLock.release();
+                ciReadLock = null;
+                try {
+                    ciWriteLock.acquire();
+                } catch (InterruptedException e) {
+                    logger.log(Level.SEVERE, "could not get write lock. this integrity" +
+                      "check is stopping prematurely", e);
+                    return;
+                }
+                try {
+                    for (Iterator i = updatesAndAdditions.iterator(); i.hasNext();) {
+                        Long svcid = (Long)i.next();
+                        PublishedService toUpdateOrAdd = null;
+                        try {
+                            ServiceManager serviceManager = (ServiceManager)getApplicationContext().getBean("serviceManager");
+                            toUpdateOrAdd = serviceManager.findByPrimaryKey(svcid.longValue());
+                        } catch (FindException e) {
+                            toUpdateOrAdd = null;
+                            logger.log(Level.WARNING, "service scheduled for update or addition" +
+                              "cannot be retrieved", e);
+                        }
+                        if (toUpdateOrAdd != null) {
+                            cacheNoLock(toUpdateOrAdd);
+                        } // otherwise, next integrity check shall delete this service from cache
+                    }
+                    for (Iterator i = deletions.iterator(); i.hasNext();) {
+                        Long key = (Long)i.next();
+                        PublishedService serviceToDelete = (PublishedService)services.get(key);
+                        removeNoLock(serviceToDelete);
+                    }
+                } finally {
+                    ciWriteLock.release();
+                }
+            }
+
         } finally {
             if (ciReadLock != null) ciReadLock.release();
         }

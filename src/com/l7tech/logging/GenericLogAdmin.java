@@ -6,6 +6,8 @@
 
 package com.l7tech.logging;
 
+import com.l7tech.objectmodel.FindException;
+
 import java.rmi.RemoteException;
 
 /**
@@ -67,5 +69,5 @@ public interface GenericLogAdmin {
      * @see com.l7tech.logging.SSGLogRecord
      *
      */
-    SSGLogRecord[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, int size) throws RemoteException;
+    SSGLogRecord[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, int size) throws RemoteException, FindException;
 }

@@ -9,14 +9,16 @@ package com.l7tech.server.transport.jms;
 import com.l7tech.admin.RoleUtils;
 import com.l7tech.common.transport.jms.*;
 import com.l7tech.objectmodel.*;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.context.support.ApplicationObjectSupport;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
 import javax.jms.*;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import java.rmi.RemoteException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -28,16 +30,13 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class JmsAdminImpl extends ApplicationObjectSupport implements JmsAdmin, InitializingBean {
+public class JmsAdminImpl extends HibernateDaoSupport implements JmsAdmin, InitializingBean, ApplicationContextAware {
     private JmsConnectionManager jmsConnectionManager;
     private JmsEndpointManager jmsEndpointManager;
+    private ApplicationContext applicationContext;
 
     public JmsProvider[] getProviderList() throws RemoteException, FindException {
-        try {
-            return (JmsProvider[])jmsConnectionManager.findAllProviders().toArray(new JmsProvider[0]);
-        } finally {
-            closeContext();
-        }
+        return (JmsProvider[])jmsConnectionManager.findAllProviders().toArray(new JmsProvider[0]);
     }
 
     /**
@@ -48,53 +47,36 @@ public class JmsAdminImpl extends ApplicationObjectSupport implements JmsAdmin, 
      * @throws FindException
      */
     public JmsConnection[] findAllConnections() throws RemoteException, FindException {
-        try {
-            Collection found = jmsConnectionManager.findAll();
-            if (found == null || found.size() < 1) return new JmsConnection[0];
+        Collection found = jmsConnectionManager.findAll();
+        if (found == null || found.size() < 1) return new JmsConnection[0];
 
-            List results = new ArrayList();
-            for (Iterator i = found.iterator(); i.hasNext();) {
-                JmsConnection conn = (JmsConnection)i.next();
-                results.add(conn);
-            }
-
-            return (JmsConnection[])results.toArray(new JmsConnection[0]);
-        } finally {
-            closeContext();
+        List results = new ArrayList();
+        for (Iterator i = found.iterator(); i.hasNext();) {
+            JmsConnection conn = (JmsConnection)i.next();
+            results.add(conn);
         }
+
+        return (JmsConnection[])results.toArray(new JmsConnection[0]);
     }
 
     /**
      * Must be called in a transaction!
      */
     public JmsAdmin.JmsTuple[] findAllTuples() throws RemoteException, FindException {
-        PersistenceContext context = null;
-        try {
-            context = PersistenceContext.getCurrent();
-            context.beginTransaction();
-
-            JmsTuple tuple;
-            ArrayList result = new ArrayList();
-            Collection connections = jmsConnectionManager.findAll();
-            for (Iterator i = connections.iterator(); i.hasNext();) {
-                JmsConnection connection = (JmsConnection)i.next();
-                JmsEndpoint[] endpoints = jmsEndpointManager.findEndpointsForConnection(connection.getOid());
-                for (int j = 0; j < endpoints.length; j++) {
-                    JmsEndpoint endpoint = endpoints[j];
-                    tuple = new JmsTuple(connection, endpoint);
-                    result.add(tuple);
-                }
+        JmsTuple tuple;
+        ArrayList result = new ArrayList();
+        Collection connections = jmsConnectionManager.findAll();
+        for (Iterator i = connections.iterator(); i.hasNext();) {
+            JmsConnection connection = (JmsConnection)i.next();
+            JmsEndpoint[] endpoints = jmsEndpointManager.findEndpointsForConnection(connection.getOid());
+            for (int j = 0; j < endpoints.length; j++) {
+                JmsEndpoint endpoint = endpoints[j];
+                tuple = new JmsTuple(connection, endpoint);
+                result.add(tuple);
             }
-
-            context.commitTransaction();
-            return (JmsTuple[])result.toArray(new JmsTuple[0]);
-        } catch (TransactionException e) {
-            throw new FindException("Couldn't find endpoints", e);
-        } catch (SQLException e) {
-            throw new FindException("Couldn't find endpoints", e);
-        } finally {
-            context.close();
         }
+
+        return (JmsTuple[])result.toArray(new JmsTuple[0]);
     }
 
     /**
@@ -105,11 +87,7 @@ public class JmsAdminImpl extends ApplicationObjectSupport implements JmsAdmin, 
      * @throws FindException
      */
     public JmsConnection findConnectionByPrimaryKey(long oid) throws RemoteException, FindException {
-        try {
-            return jmsConnectionManager.findConnectionByPrimaryKey(oid);
-        } finally {
-            closeContext();
-        }
+        return jmsConnectionManager.findConnectionByPrimaryKey(oid);
     }
 
     public JmsEndpoint findEndpointByPrimaryKey(long oid) throws RemoteException, FindException {
@@ -117,20 +95,10 @@ public class JmsAdminImpl extends ApplicationObjectSupport implements JmsAdmin, 
     }
 
     public void setEndpointMessageSource(long oid, boolean isMessageSource) throws RemoteException, FindException, UpdateException {
-        try {
-            RoleUtils.enforceAdminRole(getApplicationContext());
-            PersistenceContext.getCurrent().beginTransaction();
-            JmsEndpoint endpoint = findEndpointByPrimaryKey(oid);
-            if (endpoint == null) throw new FindException("No endpoint with OID " + oid + " could be found");
-            endpoint.setMessageSource(isMessageSource);
-            PersistenceContext.getCurrent().commitTransaction();
-        } catch (TransactionException e) {
-            throw new UpdateException("Couldn't update endpoint", e);
-        } catch (SQLException e) {
-            throw new FindException("Couldn't update endpoint", e);
-        } finally {
-            closeContext();
-        }
+        RoleUtils.enforceAdminRole(getApplicationContext());
+        JmsEndpoint endpoint = findEndpointByPrimaryKey(oid);
+        if (endpoint == null) throw new FindException("No endpoint with OID " + oid + " could be found");
+        endpoint.setMessageSource(isMessageSource);
     }
 
     public EntityHeader[] findAllMonitoredEndpoints() throws RemoteException, FindException {
@@ -144,28 +112,17 @@ public class JmsAdminImpl extends ApplicationObjectSupport implements JmsAdmin, 
     }
 
     public long saveConnection(JmsConnection connection) throws RemoteException, SaveException, VersionException {
-        HibernatePersistenceContext context = null;
         try {
             RoleUtils.enforceAdminRole(getApplicationContext());
-            context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-            context.beginTransaction();
 
             long oid = connection.getOid();
             if (oid == JmsConnection.DEFAULT_OID)
                 oid = jmsConnectionManager.save(connection);
             else
                 jmsConnectionManager.update(connection);
-
-            context.commitTransaction();
             return oid;
-        } catch (SQLException e) {
-            throw new SaveException("Couldn't save JmsConnection", e);
-        } catch (TransactionException e) {
-            throw new SaveException("Couldn't save JmsConnection", e);
         } catch (UpdateException e) {
             throw new SaveException("Couldn't save JmsConnection", e);
-        } finally {
-            closeContext();
         }
     }
 
@@ -178,11 +135,7 @@ public class JmsAdminImpl extends ApplicationObjectSupport implements JmsAdmin, 
      * @throws FindException
      */
     public JmsEndpoint[] getEndpointsForConnection(long connectionOid) throws RemoteException, FindException {
-        try {
-            return jmsEndpointManager.findEndpointsForConnection(connectionOid);
-        } finally {
-            closeContext();
-        }
+        return jmsEndpointManager.findEndpointsForConnection(connectionOid);
     }
 
     /**
@@ -282,11 +235,8 @@ public class JmsAdminImpl extends ApplicationObjectSupport implements JmsAdmin, 
     }
 
     public long saveEndpoint(JmsEndpoint endpoint) throws RemoteException, SaveException, VersionException {
-        HibernatePersistenceContext context = null;
         try {
             RoleUtils.enforceAdminRole(getApplicationContext());
-            context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-            context.beginTransaction();
 
             long oid = endpoint.getOid();
             if (oid == JmsConnection.DEFAULT_OID)
@@ -295,54 +245,20 @@ public class JmsAdminImpl extends ApplicationObjectSupport implements JmsAdmin, 
                 jmsEndpointManager.update(endpoint);
             }
 
-            context.commitTransaction();
             return oid;
-        } catch (SQLException e) {
-            throw new SaveException("Couldn't save endpoint", e);
-        } catch (TransactionException e) {
-            throw new SaveException("Couldn't save endpoint", e);
         } catch (UpdateException e) {
             throw new SaveException("Couldn't save endpoint", e);
-        } finally {
-            closeContext();
         }
     }
 
     public void deleteEndpoint(long endpointOid) throws RemoteException, FindException, DeleteException {
-        HibernatePersistenceContext context = null;
-        try {
-            RoleUtils.enforceAdminRole(getApplicationContext());
-
-            context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-            context.beginTransaction();
-
-            jmsEndpointManager.delete(endpointOid);
-            context.commitTransaction();
-        } catch (SQLException e) {
-            throw new DeleteException(e.toString(), e);
-        } catch (TransactionException e) {
-            throw new DeleteException(e.toString(), e);
-        } finally {
-            closeContext();
-        }
+        RoleUtils.enforceAdminRole(getApplicationContext());
+        jmsEndpointManager.delete(endpointOid);
     }
 
     public void deleteConnection(long connectionOid) throws RemoteException, FindException, DeleteException {
-        HibernatePersistenceContext context = null;
-        try {
-            RoleUtils.enforceAdminRole(getApplicationContext());
-            context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-            context.beginTransaction();
-
-            jmsConnectionManager.delete(connectionOid);
-            context.commitTransaction();
-        } catch (SQLException e) {
-            throw new DeleteException(e.toString(), e);
-        } catch (TransactionException e) {
-            throw new DeleteException(e.toString(), e);
-        } finally {
-            closeContext();
-        }
+        RoleUtils.enforceAdminRole(getApplicationContext());
+        jmsConnectionManager.delete(connectionOid);
     }
 
     public void setJmsConnectionManager(JmsConnectionManager jmsConnectionManager) {
@@ -353,25 +269,27 @@ public class JmsAdminImpl extends ApplicationObjectSupport implements JmsAdmin, 
         this.jmsEndpointManager = jmsEndpointManager;
     }
 
-    private void closeContext() {
-        try {
-            PersistenceContext.getCurrent().close();
-        } catch (SQLException e) {
-            _logger.log(Level.WARNING, "error closing context", e);
-        }
+
+    /**
+     * Set the ApplicationContext that this object runs in.
+     */
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
     }
 
-    private final Logger _logger = Logger.getLogger(getClass().getName());
+    private ApplicationContext getApplicationContext() {
+        return applicationContext;
+    }
 
-    public void afterPropertiesSet() throws Exception {
+    protected void initDao() throws Exception {
         checkJmsConnectionManager();
         checkJmsEndpointManager();
     }
 
     private void checkJmsEndpointManager() {
         if (jmsEndpointManager == null) {
-             throw new IllegalArgumentException("jms endpoint manager is required");
-         }
+            throw new IllegalArgumentException("jms endpoint manager is required");
+        }
     }
 
     private void checkJmsConnectionManager() {
@@ -379,4 +297,6 @@ public class JmsAdminImpl extends ApplicationObjectSupport implements JmsAdmin, 
             throw new IllegalArgumentException("jms connection manager is required");
         }
     }
+
+    private final Logger _logger = Logger.getLogger(getClass().getName());
 }

@@ -2,17 +2,12 @@ package com.l7tech.logging;
 
 import com.l7tech.common.RequestId;
 import com.l7tech.common.util.Background;
-import com.l7tech.objectmodel.HibernatePersistenceContext;
-import com.l7tech.objectmodel.PersistenceContext;
-import com.l7tech.objectmodel.TransactionException;
+import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import net.sf.hibernate.HibernateException;
-import net.sf.hibernate.Session;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.TimerTask;
 import java.util.logging.*;
@@ -68,7 +63,7 @@ public class ServerLogHandler extends Handler implements PropertyChangeListener 
         try {
             String msg;
             Formatter formatter = getFormatter();
-            if (formatter !=null) {
+            if (formatter != null) {
                 msg = formatter.format(record);
                 newRecord.setMessage(msg);
             }
@@ -144,42 +139,16 @@ public class ServerLogHandler extends Handler implements PropertyChangeListener 
      * this method is responsible to manager its own persistence context.
      */
     private void cleanAndFlush() {
-        // get the persistence context
-        HibernatePersistenceContext context = null;
-        Session session = null;
-        try {
-            context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-            session = context.getSession();
-        } catch (SQLException e) {
-            reportException("cannot get persistence context", e);
-            if (context != null) context.close();
-            return;
-        } catch (HibernateException e) {
-            reportException("cannot get session", e);
-            if (context != null) context.close();
-            return;
+        SSGLogRecord[] data = null;
+        synchronized (cache) {
+            if (cache.isEmpty()) return;
+            data = (SSGLogRecord[])cache.toArray(new SSGLogRecord[]{});
+            cache.clear();
         }
-
         try {
-            context.beginTransaction();
-
-/*
-This commented out code used to delete previous records for this node before first dump
-we decided to make this the responsibility of an external cron job.
-if (fullClean) {
-    String deleteSQLStatement = "from " + TABLE_NAME + " in class " + SSGLogRecord.class.getName() +
-                                " where " + TABLE_NAME + "." + NODEID_COLNAME +
-                                " = \'" + nodeid + "\'";
-    session.iterate(deleteSQLStatement);
-    session.flush();
-}*/
-// flush new records
-            flushtodb(session);
-            context.commitTransaction();
-        } catch (TransactionException e) {
-            reportException("Exception with hibernate transaction", e);
-        } finally {
-            if (context != null) context.close();
+            serverLogManager.save(data);
+        } catch (SaveException e) {
+            reportException("error saving to database", e);
         }
     }
 
@@ -196,21 +165,6 @@ if (fullClean) {
         }
     }
 
-    private void flushtodb(Session session) {
-        Object[] data = null;
-        synchronized (cache) {
-            if (cache.isEmpty()) return;
-            data = cache.toArray();
-            cache.clear();
-        }
-// save extracted data in the database
-        try {
-            for (int i = 0; i < data.length; i++)
-                session.save(data[i]);
-        } catch (HibernateException e) {
-            reportException("error saving to database", e);
-        }
-    }
 
     // Package private method to get a Level property.
     // If the property is not defined or cannot be parsed

@@ -2,8 +2,8 @@ package com.l7tech.server.identity.internal;
 
 import com.l7tech.identity.Group;
 import com.l7tech.identity.GroupBean;
-import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.PersistentGroup;
+import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.internal.GroupMembership;
 import com.l7tech.identity.internal.InternalGroup;
 import com.l7tech.objectmodel.DeleteException;
@@ -22,9 +22,15 @@ import java.util.logging.Logger;
  * User: flascelles<br/>
  * Date: Jun 24, 2003
  */
-public class InternalGroupManagerServer extends PersistentGroupManager {
-    public InternalGroupManagerServer( IdentityProvider provider ) {
-        super(provider);
+public class InternalGroupManager extends PersistentGroupManager {
+    public InternalGroupManager(IdentityProvider identityProvider) {
+        super(identityProvider);
+    }
+
+    /**
+     * empty subclassing constructor (required for class proxying)
+     */
+    protected InternalGroupManager() {
     }
 
     protected GroupMembership newMembership( long userOid, long groupOid ) {

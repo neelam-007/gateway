@@ -17,6 +17,7 @@ import org.springframework.core.io.Resource;
 
 import java.util.Map;
 import java.util.Locale;
+import java.io.IOException;
 
 /**
  * Test application contexts
@@ -112,11 +113,22 @@ public class ApplicationContexts {
         public Resource getResource(String location) {
             return null;  //To change body of implemented methods use File | Settings | File Templates.
         }
+
+        /**
+         * Resolve the given location pattern into Resource objects.
+         *
+         * @param locationPattern the location pattern to resolve
+         * @return the corresponding Resource objects
+         * @throws java.io.IOException in case of I/O errors
+         */
+        public Resource[] getResources(String locationPattern) throws IOException {
+            return new Resource[0];
+        }
     };
 
     public static ApplicationContext getTestApplicationContext() {
-        ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(new String[]{DEFAULT_TEST_DEFINITIONs});
+        ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(new String[]{DEFAULT_TEST_BEAN_DEFINITIONS});
         return context;
     }
-    public static final String DEFAULT_TEST_DEFINITIONs = "com/l7tech/common/testApplicationContext.xml";
+    public static final String DEFAULT_TEST_BEAN_DEFINITIONS = "com/l7tech/common/testApplicationContext.xml";
 }

@@ -17,8 +17,11 @@ import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.ServerConfig;
 import net.sf.hibernate.HibernateException;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.context.support.ApplicationObjectSupport;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
 import java.io.IOException;
 import java.io.PipedInputStream;
@@ -38,7 +41,8 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class AuditAdminImpl extends ApplicationObjectSupport implements AuditAdmin, InitializingBean {
+public class AuditAdminImpl extends HibernateDaoSupport
+  implements AuditAdmin, InitializingBean, ApplicationContextAware {
     private static final Logger logger = Logger.getLogger(AuditAdminImpl.class.getName());
     private static final long CONTEXT_TIMEOUT = 1000L * 60 * 5; // expire after 5 min of inactivity
     private static final int DEFAULT_DOWNLOAD_CHUNK_LENGTH = 8192;
@@ -56,6 +60,7 @@ public class AuditAdminImpl extends ApplicationObjectSupport implements AuditAdm
             }
         }
     };
+    private ApplicationContext applicationContext;
 
     static {
         Background.schedule(downloadReaperTask, CONTEXT_TIMEOUT, CONTEXT_TIMEOUT);
@@ -67,44 +72,19 @@ public class AuditAdminImpl extends ApplicationObjectSupport implements AuditAdm
 
 
     public AuditRecord findByPrimaryKey( final long oid ) throws FindException, RemoteException {
-        try {
-            return (AuditRecord) doInTransactionAndClose(new PersistenceAction() {
-                public Object run() throws ObjectModelException {
-                    return auditRecordManager.findByPrimaryKey(oid);
-                }
-            });
-        } catch ( ObjectModelException e ) {
-            throw new FindException("Couldn't find AuditRecord", e);
-        }
+        return auditRecordManager.findByPrimaryKey(oid);
     }
 
     public Collection find(final AuditSearchCriteria criteria) throws FindException, RemoteException {
-        try {
-            return (Collection)doInTransactionAndClose(new PersistenceAction() {
-                public Object run() throws ObjectModelException {
-                    return auditRecordManager.find(criteria);
-                }
-            });
-        } catch ( ObjectModelException e ) {
-            throw new FindException("Couldn't find AuditRecords", e);
-        }
+        return auditRecordManager.find(criteria);
     }
 
-    public void deleteOldAuditRecords() throws RemoteException {
-        RoleUtils.enforceAdminRole(getApplicationContext());
-        try {
-            doInTransactionAndClose(new PersistenceAction() {
-                public Object run() throws ObjectModelException {
-                    auditRecordManager.deleteOldAuditRecords();
-                    return null;
-                }
-            });
-        } catch ( ObjectModelException e ) {
-            throw new RemoteException("Couldn't find AuditRecords", e);
-        }
+    public void deleteOldAuditRecords() throws RemoteException, DeleteException {
+        RoleUtils.enforceAdminRole(applicationContext);
+        auditRecordManager.deleteOldAuditRecords();
     }
 
-    public void afterPropertiesSet() throws Exception {
+    public void initDao() throws Exception {
         checkAuditRecordManager();
     }
 
@@ -112,6 +92,13 @@ public class AuditAdminImpl extends ApplicationObjectSupport implements AuditAdm
         if (auditRecordManager == null) {
             throw new IllegalArgumentException("audit record manager is required");
         }
+    }
+
+    /**
+     * Set the ApplicationContext that this object runs in.
+     */
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
     }
 
     private static class DownloadContext {
@@ -142,16 +129,17 @@ public class AuditAdminImpl extends ApplicationObjectSupport implements AuditAdm
             }
         });
 
-        private final AuditExporter auditExporter = new AuditExporter();
+        private final AuditExporter auditExporter;
         private final byte[] chunk;
         private Throwable producerException = null;
         private long lastUsed = System.currentTimeMillis();
 
-        private DownloadContext(int chunkLength) throws KeyStoreException, IOException, CertificateException {
+        private DownloadContext(int chunkLength, AuditExporter exporter) throws KeyStoreException, IOException, CertificateException {
             if (chunkLength < 1) chunkLength = DEFAULT_DOWNLOAD_CHUNK_LENGTH;
             chunk = new byte[chunkLength];
             sslCert = KeystoreUtils.getInstance().getSslCert();
             sslPrivateKey = KeystoreUtils.getInstance().getSSLPrivateKey();
+            this.auditExporter = exporter;
             producerThread.start();
             logger.info("Created audit download context " + this);
         }
@@ -219,10 +207,10 @@ public class AuditAdminImpl extends ApplicationObjectSupport implements AuditAdm
     }
 
     public OpaqueId downloadAllAudits(int chunkSizeInBytes) throws RemoteException {
-        RoleUtils.enforceAdminRole(getApplicationContext());
+        RoleUtils.enforceAdminRole(applicationContext);
         try {
             final DownloadContext downloadContext;
-            downloadContext = new DownloadContext(0);
+            downloadContext = new DownloadContext(0, (AuditExporter)applicationContext.getBean("auditExporter"));
             downloadContexts.put(downloadContext.getOpaqueId(), downloadContext);
             return downloadContext.getOpaqueId();
         } catch (KeyStoreException e) {
@@ -244,31 +232,12 @@ public class AuditAdminImpl extends ApplicationObjectSupport implements AuditAdm
         return chunk;
     }
 
-    public SSGLogRecord[] getSystemLog(final String nodeid, final long startMsgNumber, final long endMsgNumber, final int size) throws RemoteException {
-        try {
-            logger.finest("get audits interval ["+startMsgNumber+", "+endMsgNumber+"] for node '"+nodeid+"'");
-            Collection c = (Collection)doInTransactionAndClose(new PersistenceAction() {
-                public Object run() throws ObjectModelException {
-                    return auditRecordManager.find(new AuditSearchCriteria(nodeid, startMsgNumber, endMsgNumber, size));
-                }
-            });
-            return (SSGLogRecord[])c.toArray(new SSGLogRecord[0]);
-        } catch ( ObjectModelException e ) {
-            throw new RemoteException("Couldn't find AuditRecords", e);
-        }
+    public SSGLogRecord[] getSystemLog(final String nodeid, final long startMsgNumber, final long endMsgNumber, final int size)
+      throws RemoteException, FindException {
+        logger.finest("get audits interval ["+startMsgNumber+", "+endMsgNumber+"] for node '"+nodeid+"'");
+        return (SSGLogRecord[])auditRecordManager.find(new AuditSearchCriteria(nodeid, startMsgNumber, endMsgNumber, size)).toArray(new SSGLogRecord[] {});
     }
 
-    private Object doInTransactionAndClose(PersistenceAction r) throws ObjectModelException {
-        HibernatePersistenceContext context = null;
-        try {
-            context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-            return context.doInTransaction(r);
-        } catch (SQLException e) {
-            throw new ObjectModelException(e);
-        } finally {
-            if (context != null) context.close();
-        }
-    }
 
     public Level serverMessageAuditThreshold() throws RemoteException {
         return AuditContext.getSystemMessageThreshold();

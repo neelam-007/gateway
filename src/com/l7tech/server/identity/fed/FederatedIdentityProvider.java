@@ -19,7 +19,6 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.identity.PersistentIdentityProvider;
-import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -41,44 +40,12 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class FederatedIdentityProvider extends PersistentIdentityProvider {
-    private ApplicationContext applicationContext;
 
-    public FederatedIdentityProvider( IdentityProviderConfig config, ApplicationContext applicationContext ) {
-        if ( !(config instanceof FederatedIdentityProviderConfig) )
-            throw new IllegalArgumentException("Config must be an instance of FederatedIdentityProviderConfig");
-        this.providerConfig = (FederatedIdentityProviderConfig)config;
-        this.applicationContext = applicationContext;
-        if (applicationContext == null) {
-            throw new IllegalArgumentException("Application Context is required");
-        }
+    public FederatedIdentityProvider(FederatedIdentityProviderConfig config) {
+        this.providerConfig = config;
+    }
 
-        this.userManager = new FederatedUserManager(this, applicationContext);
-        this.groupManager = new FederatedGroupManager(this);
-        this.trustedCertManager = (TrustedCertManager)applicationContext.getBean("trustedCertManager");
-        this.clientCertManager = (ClientCertManager)applicationContext.getBean("clientCertManager");
-
-        long[] certOids = providerConfig.getTrustedCertOids();
-        for ( int i = 0; i < certOids.length; i++ ) {
-            String msg = "Federated Identity Provider '" + providerConfig.getName() + "' refers to Trusted Cert #" + certOids[i];
-            try {
-                TrustedCert trust = trustedCertManager.getCachedCertByOid(certOids[i], MAX_CACHE_AGE);
-                if (trust == null) {
-                    logger.log(Level.WARNING, msg + ", which no longer exists");
-                    continue;
-                }
-                Long oid = new Long(certOids[i]);
-                validTrustedCertOids.add(oid);
-            } catch ( FindException e ) {
-                logger.log( Level.SEVERE, msg + ", which could not be found", e );
-            } catch ( IOException e ) {
-                logger.log( Level.WARNING, msg + ", which could not be parsed", e );
-            } catch ( CertificateException e ) {
-                logger.log( Level.WARNING, msg + ", which is not valid", e );
-            }
-        }
-
-        this.x509Handler = new X509AuthorizationHandler(this, trustedCertManager, clientCertManager, validTrustedCertOids);
-        this.samlHandler = new SamlAuthorizationHandler(this, trustedCertManager, clientCertManager, validTrustedCertOids);
+    protected FederatedIdentityProvider() {
     }
 
     public IdentityProviderConfig getConfig() {
@@ -174,14 +141,61 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
         }
     }
 
-    private final X509AuthorizationHandler x509Handler;
-    private final SamlAuthorizationHandler samlHandler;
+    public void setTrustedCertManager(TrustedCertManager trustedCertManager) {
+        this.trustedCertManager = trustedCertManager;
+    }
 
-    private final FederatedIdentityProviderConfig providerConfig;
-    private final FederatedUserManager userManager;
-    private final FederatedGroupManager groupManager;
-    private final TrustedCertManager trustedCertManager;
-    private final ClientCertManager clientCertManager;
+    public void setUserManager(FederatedUserManager userManager) {
+        this.userManager = userManager;
+    }
+
+    public void setGroupManager(FederatedGroupManager groupManager) {
+        this.groupManager = groupManager;
+    }
+
+    /**
+     * Subclasses can override this for custom initialization behavior.
+     * Gets called after population of this instance's bean properties.
+     *
+     * @throws Exception if initialization fails
+     */
+    protected void initDao() throws Exception {
+        super.initDao();
+        if (trustedCertManager == null) {
+            throw new IllegalArgumentException("The Trusted Certificate Manager is required");
+        }
+
+        long[] certOids = providerConfig.getTrustedCertOids();
+        for ( int i = 0; i < certOids.length; i++ ) {
+            String msg = "Federated Identity Provider '" + providerConfig.getName() + "' refers to Trusted Cert #" + certOids[i];
+            try {
+                TrustedCert trust = trustedCertManager.getCachedCertByOid(certOids[i], MAX_CACHE_AGE);
+                if (trust == null) {
+                    logger.log(Level.WARNING, msg + ", which no longer exists");
+                    continue;
+                }
+                Long oid = new Long(certOids[i]);
+                validTrustedCertOids.add(oid);
+            } catch ( FindException e ) {
+                logger.log( Level.SEVERE, msg + ", which could not be found", e );
+            } catch ( IOException e ) {
+                logger.log( Level.WARNING, msg + ", which could not be parsed", e );
+            } catch ( CertificateException e ) {
+                logger.log( Level.WARNING, msg + ", which is not valid", e );
+            }
+        }
+
+        this.x509Handler = new X509AuthorizationHandler(this, trustedCertManager, clientCertManager, validTrustedCertOids);
+        this.samlHandler = new SamlAuthorizationHandler(this, trustedCertManager, clientCertManager, validTrustedCertOids);
+    }
+
+    private X509AuthorizationHandler x509Handler;
+    private SamlAuthorizationHandler samlHandler;
+
+    private FederatedIdentityProviderConfig providerConfig;
+    private FederatedUserManager userManager;
+    private FederatedGroupManager groupManager;
+    private TrustedCertManager trustedCertManager;
 
     private final Set validTrustedCertOids = new HashSet();
 

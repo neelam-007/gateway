@@ -49,10 +49,10 @@ public class TokenServiceTest extends TestCase {
                                                                     null);
         log.info("Decorated token request (reformatted): " + XmlUtil.nodeToFormattedString(requestMsg));
 
-        final TokenService service = new TokenService(TestDocuments.getDotNetServerPrivateKey(),
+        final TokenService service = new TokenServiceImpl(TestDocuments.getDotNetServerPrivateKey(),
                                                       TestDocuments.getDotNetServerCertificate());
 
-        final TokenService.CredentialsAuthenticator authenticator = new TokenService.CredentialsAuthenticator() {
+        final TokenServiceImpl.CredentialsAuthenticator authenticator = new TokenServiceImpl.CredentialsAuthenticator() {
 
             public User authenticate(LoginCredentials creds) {
                 UserBean user = new UserBean();
@@ -90,10 +90,10 @@ public class TokenServiceTest extends TestCase {
         requestMsg.getDocumentElement().setAttribute("xmlns:saml", SamlConstants.NS_SAML);
         log.info("Decorated token request (reformatted): " + XmlUtil.nodeToFormattedString(requestMsg));
 
-        final TokenService service = new TokenService(issuerPrivateKey,
+        final TokenService service = new TokenServiceImpl(issuerPrivateKey,
                                                       issuerCertificate);
 
-        final TokenService.CredentialsAuthenticator authenticator = new TokenService.CredentialsAuthenticator() {
+        final TokenServiceImpl.CredentialsAuthenticator authenticator = new TokenServiceImpl.CredentialsAuthenticator() {
 
             public User authenticate(LoginCredentials creds) {
                 UserBean user = new UserBean();

@@ -18,18 +18,16 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.SoapFaultDetail;
-import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.service.PublishedService;
+import org.springframework.web.context.WebApplicationContext;
+import org.springframework.web.context.support.WebApplicationContextUtils;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
-import org.springframework.web.context.support.WebApplicationContextUtils;
-import org.springframework.web.context.WebApplicationContext;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -202,17 +200,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         } finally {
             AuditContext auditContext = AuditContext.peek();
             if (auditContext != null && !auditContext.isClosed()) auditContext.close();
-            PersistenceContext pc = PersistenceContext.peek();
-            if (pc != null) {
-                try {
-                    pc.commitIfPresent();
-                } catch (ObjectModelException e) {
-                    logger.log(Level.SEVERE, "Unable to commit transaction", e);
-                }
-                pc.close();
-            }
-
-            if (context != null) context.close();
         }
     }
 

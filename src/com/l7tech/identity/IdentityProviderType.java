@@ -21,7 +21,7 @@ public class IdentityProviderType implements Serializable {
     private static int id = 1;
     public static final IdentityProviderType INTERNAL =
             new IdentityProviderType( id++, "internal",
-                                      "com.l7tech.server.identity.internal.InternalIdentityProviderServer");
+                                      "com.l7tech.server.identity.internal.InternalIdentityProvider");
 
     public static final IdentityProviderType LDAP =
             new IdentityProviderType( id++, "LDAP",

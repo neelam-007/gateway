@@ -7,15 +7,21 @@
 package com.l7tech.cluster;
 
 import com.l7tech.common.util.Background;
-import com.l7tech.objectmodel.HibernatePersistenceContext;
 import com.l7tech.server.util.MessageId;
 import com.l7tech.server.util.MessageIdManager;
+import net.sf.hibernate.HibernateException;
+import net.sf.hibernate.Session;
 import org.jboss.cache.PropertyConfigurator;
 import org.jboss.cache.TreeCache;
+import org.jboss.cache.lock.LockingException;
+import org.jboss.cache.lock.TimeoutException;
 import org.jboss.cache.transaction.DummyTransactionManager;
 import org.jboss.cache.transaction.DummyUserTransaction;
+import org.springframework.orm.hibernate.HibernateCallback;
+import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
 import javax.naming.Context;
+import javax.transaction.NotSupportedException;
 import javax.transaction.SystemException;
 import javax.transaction.UserTransaction;
 import java.sql.Connection;
@@ -36,18 +42,38 @@ import java.util.logging.Logger;
  * @author mike
  * @version $Revision$
  */
-public class DistributedMessageIdManager implements MessageIdManager {
+public class DistributedMessageIdManager extends HibernateDaoSupport implements MessageIdManager {
     /**
      * Initialize the service using the specified multicast IP address and port
      * @param address the IP address to use for multicast UDP communications
      * @param port the UDP port to use for multicast communications
      * @throws Exception
      */
-    static void initialize(String address, int port) throws Exception {
-        if (singleton != null) throw new IllegalStateException("Can only initialize once");
-        singleton = new DistributedMessageIdManager(address, port);
+    public void initialize(String address, int port) throws Exception {
+        if (initialized) {
+            throw new IllegalStateException("Already Initialized");
+        }
+        Properties prop = new Properties();
+        prop.put(Context.INITIAL_CONTEXT_FACTORY, "org.jboss.cache.transaction.DummyContextFactory");
+        tree = new TreeCache();
+        PropertyConfigurator config = new PropertyConfigurator();
+        config.configure(tree, "treecache-service.xml");
+        String props = tree.getClusterProperties();
+        props = props.replaceFirst("mcast_addr=[0-9\\.]+", "mcast_addr=" + address);
+        props = props.replaceFirst("mcast_port=[0-9]+", "mcast_port=" + port);
+        tree.setClusterProperties(props);
         // if we're the first, load old message ids from database
-        singleton.start();
+        getHibernateTemplate().execute(new HibernateCallback() {
+            public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                try {
+                    start(session);
+                    return null;
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        });
+        initialized = true;
     }
 
     /**
@@ -55,6 +81,14 @@ public class DistributedMessageIdManager implements MessageIdManager {
      */
     private class GarbageCollectionTask extends TimerTask {
         public void run() {
+          getHibernateTemplate().execute(new HibernateCallback() {
+              public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                  doRun(session);
+                  return null;
+              }
+          });
+        }
+        private void doRun(Session session) {
             final long now = System.currentTimeMillis();
             UserTransaction tx = null;
             try {
@@ -85,21 +119,17 @@ public class DistributedMessageIdManager implements MessageIdManager {
                     tx.rollback();
                 }
                 tx = null;
+                flush(session);
 
-                flush();
-
-                HibernatePersistenceContext context = null;
                 Connection conn = null;
                 PreparedStatement ps = null;
                 try {
                     // load old message ids from database
-                    context = (HibernatePersistenceContext)HibernatePersistenceContext.getCurrent();
-                    conn = context.getSession().connection();
+                    conn = session.connection();
                     ps = conn.prepareStatement("DELETE FROM message_id WHERE expires < ?");
                     ps.setLong(1, now);
                     int num = ps.executeUpdate();
                     if (num > 0) logger.fine("Deleted " + num + " stale message ID entries from database");
-                    conn.commit();
                     conn = null;
                 } finally {
                     try {
@@ -113,8 +143,6 @@ public class DistributedMessageIdManager implements MessageIdManager {
                     } catch (Exception e) {
                         logger.log(Level.WARNING, "Caught exception closing PreparedStatement", e);
                     }
-
-                    if (context != null) context.close();
                 }
             } catch ( Exception e ) {
                 logger.log( Level.WARNING, "Caught exception in Message ID Garbage Collection task", e );
@@ -126,7 +154,6 @@ public class DistributedMessageIdManager implements MessageIdManager {
                 }
             }
         }
-
     }
 
     /**
@@ -135,20 +162,18 @@ public class DistributedMessageIdManager implements MessageIdManager {
      *
      * @throws Exception
      */
-    private void start() throws Exception {
+    private void start(Session session) throws Exception {
         tree.startService(); // kick start tree cache
 
         // Perturb delay to avoid synchronization with other cluster nodes
         long when = GC_PERIOD * 2 + new Random().nextInt(1 + (int)GC_PERIOD/4);
         Background.schedule(new GarbageCollectionTask(), when, GC_PERIOD);
-        HibernatePersistenceContext context = null;
         PreparedStatement ps = null;
         ResultSet rs = null;
         Connection conn = null;
         try {
             // load old message ids from database
-            context = (HibernatePersistenceContext)HibernatePersistenceContext.getCurrent();
-            conn = context.getSession().connection();
+            conn = session.connection();
             ps = conn.prepareStatement("SELECT messageid, expires FROM message_id");
             rs = ps.executeQuery();
             final long now = System.currentTimeMillis();
@@ -160,15 +185,8 @@ public class DistributedMessageIdManager implements MessageIdManager {
                     tree.put(MESSAGEID_PARENT_NODE + "/" + id, EXPIRES_ATTR, new Long(expires > 0 ? -expires : expires));
                 }
             }
-            conn.commit();
             conn = null;
         } finally {
-            try {
-                if (conn != null) conn.rollback();
-            } catch (Exception e) {
-                logger.log(Level.WARNING, "Caught exception while trying to rollback garbage JDBC transaction", e);
-            }
-
             try {
                 if (rs != null) rs.close();
             } catch (Exception e) {
@@ -184,11 +202,20 @@ public class DistributedMessageIdManager implements MessageIdManager {
     }
 
     /**
-     * Closes the service (just calls {@link #flush()} at the moment
+     * Closes the service (just calls {@link #flush(Session)} at the moment
      * @throws Exception
      */
-    void close() throws Exception {
-        flush();
+    public void close() throws Exception {
+        getHibernateTemplate().execute(new HibernateCallback() {
+            public Object doInHibernate(Session session) throws HibernateException, SQLException {
+                try {
+                    flush(session);
+                    return null;
+                } catch (Exception e) {
+                    throw new RuntimeException(e); // can't happen
+                }
+            }
+        });
     }
 
     /**
@@ -198,17 +225,15 @@ public class DistributedMessageIdManager implements MessageIdManager {
      * so that the service can avoid writing the same record more than once.
      * @throws Exception
      */
-    private void flush() throws Exception {
+    private void flush(Session session) throws Exception, SQLException, TimeoutException, LockingException, SystemException, NotSupportedException {
         // if we're the last one out the door, turn out the lights
-        HibernatePersistenceContext context = null;
         Connection conn = null;
         PreparedStatement ps = null;
         ResultSet rs = null;
         UserTransaction tx = null;
         try {
             // save message ids to database
-            context = (HibernatePersistenceContext)HibernatePersistenceContext.getCurrent();
-            conn = context.getSession().connection();
+            conn = session.connection();
             ps = conn.prepareStatement("INSERT INTO message_id (messageid, expires) VALUES (?,?)");
             final Set ids = tree.getChildrenNames(MESSAGEID_PARENT_NODE);
             if (ids == null) return;
@@ -231,7 +256,6 @@ public class DistributedMessageIdManager implements MessageIdManager {
                     }
                 }
             }
-            conn.commit();
             conn = null;
 
             // Flip expiry sign to avoid saving the same record again
@@ -271,30 +295,7 @@ public class DistributedMessageIdManager implements MessageIdManager {
             } catch (Exception e) {
                 logger.log( Level.WARNING, "Caught exception while trying to close PreparedStatement", e );
             }
-
-            if (context != null) context.close();
         }
-    }
-
-    public static DistributedMessageIdManager getInstance() {
-        if ( singleton == null ) throw new IllegalStateException("Must be initialized");
-        return singleton;
-    }
-
-    /**
-     * Initializes the service using the given multicast address and UDP port
-     * @see {@link #initialize(String, int)}
-     */
-    private DistributedMessageIdManager( String address, int port ) throws Exception {
-        Properties prop = new Properties();
-        prop.put(Context.INITIAL_CONTEXT_FACTORY, "org.jboss.cache.transaction.DummyContextFactory");
-        tree = new TreeCache();
-        PropertyConfigurator config = new PropertyConfigurator();
-        config.configure(tree, "treecache-service.xml");
-        String props = tree.getClusterProperties();
-        props = props.replaceFirst("mcast_addr=[0-9\\.]+", "mcast_addr=" + address);
-        props = props.replaceFirst("mcast_port=[0-9]+", "mcast_port=" + port);
-        tree.setClusterProperties(props);
     }
 
     /**
@@ -333,9 +334,9 @@ public class DistributedMessageIdManager implements MessageIdManager {
     }
 
     private final Logger logger = Logger.getLogger(getClass().getName());
-    private static DistributedMessageIdManager singleton;
 
     private TreeCache tree;
+    boolean initialized = false;
 
     private static final int GC_PERIOD = 5 * 60 * 1000;
     private static final String MESSAGEID_PARENT_NODE = DistributedMessageIdManager.class.getName() + "/messageId";

@@ -14,12 +14,10 @@ import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.server.AuthenticatableHttpServlet;
-import com.l7tech.server.identity.IdProvConfManagerServer;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.server.policy.filter.FilteringException;
@@ -37,7 +35,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.rmi.RemoteException;
 import java.security.MessageDigest;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -73,8 +70,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
      * Soapy policy downloads
      */
     protected void doPost(HttpServletRequest servletRequest, HttpServletResponse servletResponse)
-            throws ServletException, IOException
-    {
+      throws ServletException, IOException {
         try {
             // check content type
             if (!servletRequest.getContentType().startsWith("text/xml")) {
@@ -89,15 +85,15 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
             Message request = new Message();
             request.initialize(new ByteArrayStashManager(),
-                               ContentTypeHeader.parseValue(servletRequest.getContentType()),
-                               servletRequest.getInputStream());
+              ContentTypeHeader.parseValue(servletRequest.getContentType()),
+              servletRequest.getInputStream());
             request.attachHttpRequestKnob(new HttpServletRequestKnob(servletRequest));
 
             Message response = new Message();
             response.attachHttpResponseKnob(new HttpServletResponseKnob(servletResponse));
 
             PolicyEnforcementContext context = new PolicyEnforcementContext(request, response,
-                                                                            servletRequest, servletResponse);
+              servletRequest, servletResponse);
 
             // pass over to the service
             PolicyService service = null;
@@ -131,16 +127,10 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         } catch (Exception e) { // this is to avoid letting the servlet engine returning ugly html error pages.
             logger.log(Level.SEVERE, "Unexpected exception:", e);
             generateFaultAndSendAsResponse(servletResponse, "Internal error", e.getMessage());
-        } finally {
-            try {
-                PersistenceContext.getCurrent().close();
-            } catch (SQLException e) {
-                logger.log(Level.WARNING, "Could not get current persistence context to close.", e);
-            }
         }
     }
 
-    protected PolicyService getPolicyService()  {
+    protected PolicyService getPolicyService() {
         return (PolicyService)getApplicationContext().getBean("policyService");
 //        X509Certificate cert = null;
 //        PrivateKey key = null;
@@ -160,6 +150,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                         public Assertion getPolicy() {
                             return policy;
                         }
+
                         public String getVersion() {
                             return Integer.toString(targetService.getVersion());
                         }
@@ -178,80 +169,72 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
      */
     protected void doGet(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
+        // GET THE PARAMETERS PASSED
+        String str_oid = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID);
+        String getCert = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_GETCERT);
+        String username = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_USERNAME);
+        String nonce = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_NONCE);
+
+        // See if it's actually a certificate download request
+        if (getCert != null) {
+            try {
+                doCertDownload(res, username, nonce);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Unable to fulfil certificate discovery request", e);
+                throw new ServletException("Unable to fulfil cert request", e);
+            }
+            return;
+        }
+
+        // get credentials and check that they are valid for this policy
+        List users;
         try {
-            // GET THE PARAMETERS PASSED
-            String str_oid = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID);
-            String getCert = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_GETCERT);
-            String username = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_USERNAME);
-            String nonce = req.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_NONCE);
+            users = authenticateRequestBasic(req);
+        } catch (AuthenticationException e) {
+            logger.log(Level.FINE, "Authentication exception", e);
+            users = Collections.EMPTY_LIST;
+        }
 
-            // See if it's actually a certificate download request
-            if (getCert != null) {
-                try {
-                    doCertDownload(res, username, nonce);
-                } catch (Exception e) {
-                    logger.log(Level.WARNING, "Unable to fulfil certificate discovery request", e);
-                    throw new ServletException("Unable to fulfil cert request", e);
-                }
-                return;
+        // pass over to the service
+        PolicyService service = null;
+        service = getPolicyService();
+        Document response = null;
+        try {
+            switch (users.size()) {
+                case 0:
+                    response = service.respondToPolicyDownloadRequest(str_oid, null, this.normalPolicyGetter());
+                    break;
+                case 1:
+                    response = service.respondToPolicyDownloadRequest(str_oid, (User)(users.get(0)), this.normalPolicyGetter());
+                    break;
+                default:
+                    // todo use the best response (?)
+                    throw new UnsupportedOperationException("not implemented");
             }
-
-            // get credentials and check that they are valid for this policy
-            List users;
-            try {
-                users = authenticateRequestBasic(req);
-            } catch (AuthenticationException e) {
-                logger.log(Level.FINE, "Authentication exception", e);
-                users = Collections.EMPTY_LIST;
-            }
-
-            // pass over to the service
-            PolicyService service = null;
-            service = getPolicyService();
-            Document response = null;
-            try {
-                switch (users.size()) {
-                    case 0:
-                        response = service.respondToPolicyDownloadRequest(str_oid, null, this.normalPolicyGetter());
-                        break;
-                    case 1:
-                        response = service.respondToPolicyDownloadRequest(str_oid, (User)(users.get(0)), this.normalPolicyGetter());
-                        break;
-                    default:
-                        // todo use the best response (?)
-                        throw new UnsupportedOperationException("not implemented");
-                }
-            } catch (FilteringException e) {
-                logger.log(Level.WARNING, "Error in PolicyService", e);
-                generateFaultAndSendAsResponse(res, "internal error", e.getMessage());
-                return;
-            } catch (SAXException e) {
-                logger.log(Level.WARNING, "Error in PolicyService", e);
-                generateFaultAndSendAsResponse(res, "internal error", e.getMessage());
-                return;
-            }
-            if (isDocFault(response)) {
-                response = null;
-            }
-            if (response == null && users.size() < 1) {
-                logger.finest("sending challenge");
-                sendAuthChallenge(req, res);
-                return;
-            } else if (response == null) {
-                logger.info("this policy download is refused.");
-                generateFaultAndSendAsResponse(res, "Policy not found or download unauthorized", "");
-                return;
-            } else {
-                logger.finest("returning policy");
-                outputPolicyDoc(res, response);
-                return;
-            }
-        } finally {
-            try {
-                PersistenceContext.getCurrent().close();
-            } catch (SQLException e) {
-                logger.log(Level.WARNING, "Could not get current persistence context to close.", e);
-            }
+        } catch (FilteringException e) {
+            logger.log(Level.WARNING, "Error in PolicyService", e);
+            generateFaultAndSendAsResponse(res, "internal error", e.getMessage());
+            return;
+        } catch (SAXException e) {
+            logger.log(Level.WARNING, "Error in PolicyService", e);
+            generateFaultAndSendAsResponse(res, "internal error", e.getMessage());
+            return;
+        }
+        if (isDocFault(response)) {
+            response = null;
+        }
+        if (response == null && users.size() < 1) {
+            logger.finest("sending challenge");
+            sendAuthChallenge(req, res);
+            return;
+        } else if (response == null) {
+            logger.info("this policy download is refused.");
+            generateFaultAndSendAsResponse(res, "Policy not found or download unauthorized", "");
+            return;
+        } else {
+            logger.finest("returning policy");
+            outputPolicyDoc(res, response);
+            return;
         }
     }
 
@@ -275,8 +258,9 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
      * If a username is given, we'll include a "Cert-Check-provId: " header containing
      * MD5(H(A1) . nonce . provId . cert . H(A1)), where H(A1) is the MD5 of "username:realm:password"
      * and provId is the ID of the identity provider that contained a matching username.
+     *
      * @param username username for automatic cert checking, or null to disable cert check
-     * @param nonce nonce for automatic cert checking, or null to disable cert check
+     * @param nonce    nonce for automatic cert checking, or null to disable cert check
      */
     private void doCertDownload(HttpServletResponse response, String username, String nonce)
       throws FindException, IOException {
@@ -328,9 +312,9 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                 exceptiondetails = SoapFaultUtils.makeFaultDetailsSubElement("more", details);
             }
             fault = SoapFaultUtils.generateSoapFaultDocument(SoapFaultUtils.FC_SERVER,
-                                                     msg,
-                                                     exceptiondetails,
-                                                     "");
+              msg,
+              exceptiondetails,
+              "");
         } catch (SAXException e) {
             throw new RuntimeException(e); // should not happen
         }
@@ -392,23 +376,19 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         IdentityProviderConfigManager configManager = getIdentityProviderConfigManager();
         ArrayList checkInfos = new ArrayList();
 
-        try {
-            Collection idps = configManager.findAllIdentityProviders();
-            for (Iterator i = idps.iterator(); i.hasNext();) {
-                IdentityProvider provider = (IdentityProvider)i.next();
-                try {
-                    User user = provider.getUserManager().findByLogin(username.trim());
-                    if (user != null) {
-                        checkInfos.add(new CheckInfo(provider.getConfig().getOid(),
-                          user.getPassword(), provider.getAuthRealm()));
-                    }
-                } catch (FindException e) {
-                    // Log it and continue
-                    logger.log(Level.WARNING, null, e);
+        Collection idps = configManager.findAllIdentityProviders();
+        for (Iterator i = idps.iterator(); i.hasNext();) {
+            IdentityProvider provider = (IdentityProvider)i.next();
+            try {
+                User user = provider.getUserManager().findByLogin(username.trim());
+                if (user != null) {
+                    checkInfos.add(new CheckInfo(provider.getConfig().getOid(),
+                      user.getPassword(), provider.getAuthRealm()));
                 }
+            } catch (FindException e) {
+                // Log it and continue
+                logger.log(Level.WARNING, null, e);
             }
-        } finally {
-            endTransaction();
         }
         // we smelt something (maybe netegrity?)
         CustomAssertionsRegistrar car = (CustomAssertionsRegistrar)getApplicationContext().getBean("customAssertionRegistrar");

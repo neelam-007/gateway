@@ -25,9 +25,9 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public abstract class PersistentGroupManager extends HibernateEntityManager implements GroupManager {
-    public PersistentGroupManager(IdentityProvider provider) {
-        this.provider = provider;
 
+    public PersistentGroupManager(IdentityProvider identityProvider) {
+        this.identityProvider = identityProvider;
         HQL_GETUSERS = "select usr from usr in class " + getUserManager().getImpClass().getName() + ", " +
           "membership in class " + getMembershipClass().getName() + " " +
           "where membership.userOid = usr.oid " +
@@ -43,9 +43,15 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
           "and membership.userOid = ?";
     }
 
+    /**
+     * empty subclassing constructor (required for class proxying)
+     */
+    protected PersistentGroupManager() {
+    }
+
     public Group findByName(String name) throws FindException {
         try {
-            Criteria findByName = getContext().getSession().createCriteria(getImpClass());
+            Criteria findByName = getSession().createCriteria(getImpClass());
             findByName.add(Expression.eq("name", name));
             addFindAllCriteria(findByName);
             List groups = findByName.list();
@@ -54,15 +60,15 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
                     return null;
                 case 1:
                     PersistentGroup g = (PersistentGroup)groups.get(0);
-                    if (g.getProviderId() != provider.getConfig().getOid()) {
+                    if (g.getProviderId() != identityProvider.getConfig().getOid()) {
                         // fla note: i did not introduce this setProviderId statement but i wrapped it in this if
                         // because it was buggy and because it used to hardcode the providerid value to -2 bugzilla 1056
                         // this is probably here due to some code being copied from the internal group manager when this
                         // was refactored. this whole thing is probably no longer needed but it wont hurt i and dont
                         // want to risk breaking something else.
                         logger.warning("Current group oid is : " + g.getProviderId() + " and provider id is " +
-                          provider.getConfig().getOid());
-                        g.setProviderId(provider.getConfig().getOid());
+                          identityProvider.getConfig().getOid());
+                        g.setProviderId(identityProvider.getConfig().getOid());
                     }
                     return g;
                 default:
@@ -70,9 +76,6 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
                     logger.log(Level.SEVERE, err);
                     throw new FindException(err);
             }
-        } catch (SQLException se) {
-            logger.log(Level.SEVERE, null, se);
-            throw new FindException(se.toString(), se);
         } catch (HibernateException e) {
             logger.log(Level.SEVERE, null, e);
             throw new FindException(e.toString(), e);
@@ -113,7 +116,7 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
         searchString = searchString.replace('*', '%');
         searchString = searchString.replace('?', '_');
         try {
-            Criteria searchCriteria = getContext().getSession().createCriteria(getImpClass());
+            Criteria searchCriteria = getSession().createCriteria(getImpClass());
             searchCriteria.add(Expression.ilike("name", searchString));
             addFindAllCriteria(searchCriteria);
             List results = searchCriteria.list();
@@ -126,10 +129,6 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
                   group.getDescription()));
             }
             return Collections.unmodifiableList(headers);
-        } catch (SQLException e) {
-            final String msg = "Error while searching for " + getInterfaceClass() + " instances.";
-            logger.log(Level.SEVERE, msg, e);
-            throw new FindException(msg, e);
         } catch (HibernateException e) {
             final String msg = "Error while searching for " + getInterfaceClass() + " instances.";
             logger.log(Level.SEVERE, msg, e);
@@ -138,29 +137,25 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
     }
 
     protected long getProviderOid() {
-        return provider.getConfig().getOid();
+        return identityProvider.getConfig().getOid();
     }
 
     /**
      * Must be called in a transaction!
      */
     public void delete(Group group) throws DeleteException, ObjectNotFoundException {
-        HibernatePersistenceContext context = null;
         try {
-            context = (HibernatePersistenceContext)getContext();
             // it is not allowed to delete the admin group
             PersistentGroup imp = cast(group);
             long oid = new Long(imp.getUniqueIdentifier()).longValue();
             preDelete(imp);
             Set userHeaders = getUserHeaders(imp);
-            Session s = context.getSession();
+            Session s = getSession();
             for (Iterator i = userHeaders.iterator(); i.hasNext();) {
                 EntityHeader userHeader = (EntityHeader)i.next();
                 s.delete(newMembership(userHeader.getOid(), oid));
             }
             s.delete(group);
-        } catch (SQLException se) {
-            throw new DeleteException(se.toString(), se);
         } catch (FindException e) {
             throw new DeleteException(e.toString(), e);
         } catch (HibernateException e) {
@@ -216,14 +211,12 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
 
         try {
             // delete all group members
-            getContext().getSession().delete(hqlgroupmember.toString(), new Long(ipoid), Hibernate.LONG);
+            final Session session = getSession();
+            session.delete(hqlgroupmember.toString(), new Long(ipoid), Hibernate.LONG);
 
             // delete all groups
-            getContext().getSession().delete(hqlgroup.toString(), new Long(ipoid), Hibernate.LONG);
+            session.delete(hqlgroup.toString(), new Long(ipoid), Hibernate.LONG);
 
-        } catch (SQLException e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
-            throw new DeleteException(e.getMessage(), e);
         } catch (HibernateException e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw new DeleteException(e.getMessage(), e);
@@ -247,10 +240,7 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
         hql.append(" WHERE provider_oid = ?");
 
         try {
-            getContext().getSession().delete(hql.toString(), new Long(ipoid), Hibernate.LONG);
-        } catch (SQLException e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
-            throw new DeleteException(e.getMessage(), e);
+            getSession().delete(hql.toString(), new Long(ipoid), Hibernate.LONG);
         } catch (HibernateException e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
             throw new DeleteException(e.getMessage(), e);
@@ -331,16 +321,12 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
 
     public boolean isMember(User user, Group group) throws FindException {
         if (!checkProvider(user)) return false;
-        HibernatePersistenceContext hpc = null;
         try {
-            hpc = context();
-            Session s = hpc.getSession();
+            Session s = getSession();
             Query query = s.createQuery(HQL_ISMEMBER);
             query.setString(0, user.getUniqueIdentifier());
             query.setString(1, group.getUniqueIdentifier());
             return (query.iterate().hasNext());
-        } catch (SQLException e) {
-            throw new FindException(e.getMessage(), e);
         } catch (HibernateException e) {
             throw new FindException(e.getMessage(), e);
         }
@@ -352,7 +338,7 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
         if (user.getProviderId() == PersistentUser.DEFAULT_OID) {
             msg = "User was authenticated by an unknown identity provider";
             level = Level.WARNING;
-        } else if (user.getProviderId() != provider.getConfig().getOid()) {
+        } else if (user.getProviderId() != identityProvider.getConfig().getOid()) {
             msg = "User was authenticated by a different identity provider";
             level = Level.FINE;
         }
@@ -368,17 +354,13 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
     public void addUsers(Group group, Set users) throws FindException, UpdateException {
         PersistentGroup imp = cast(group);
         GroupMembership membership = newMembership(-1, imp.getOid());
-        HibernatePersistenceContext hpc = null;
         try {
-            hpc = context();
-            Session s = hpc.getSession();
+            Session s = getSession();
             for (Iterator i = users.iterator(); i.hasNext();) {
                 PersistentUser user = (PersistentUser)i.next();
                 membership.setUserOid(user.getOid());
                 s.save(membership);
             }
-        } catch (SQLException e) {
-            throw new FindException(e.getMessage(), e);
         } catch (HibernateException e) {
             throw new FindException(e.getMessage(), e);
         }
@@ -387,17 +369,13 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
     public void removeUsers(Group group, Set users) throws FindException, UpdateException {
         PersistentGroup imp = cast(group);
         GroupMembership membership = newMembership(-1, imp.getOid());
-        HibernatePersistenceContext hpc = null;
         try {
-            hpc = context();
-            Session s = hpc.getSession();
+            Session s = getSession();
             for (Iterator i = users.iterator(); i.hasNext();) {
                 PersistentUser user = (PersistentUser)i.next();
                 membership.setUserOid(user.getOid());
                 s.delete(membership);
             }
-        } catch (SQLException e) {
-            throw new FindException(e.getMessage(), e);
         } catch (HibernateException e) {
             throw new FindException(e.getMessage(), e);
         }
@@ -406,40 +384,32 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
     public void addUser(User user, Set groups) throws FindException, UpdateException {
         PersistentUser imp = getUserManager().cast(user);
         GroupMembership membership = newMembership(imp.getOid(), -1);
-        HibernatePersistenceContext hpc = null;
         try {
-            hpc = context();
-            Session s = hpc.getSession();
+            Session s = getSession();
             for (Iterator i = groups.iterator(); i.hasNext();) {
                 PersistentGroup group = (PersistentGroup)i.next();
                 membership.setGroupOid(group.getOid());
                 s.save(membership);
             }
-        } catch (SQLException e) {
-            throw new FindException(e.getMessage(), e);
         } catch (HibernateException e) {
             throw new FindException(e.getMessage(), e);
         }
     }
 
     private PersistentUserManager getUserManager() {
-        return (PersistentUserManager)provider.getUserManager();
+        return (PersistentUserManager)identityProvider.getUserManager();
     }
 
     public void removeUser(User user, Set groups) throws FindException, UpdateException {
         PersistentUser imp = getUserManager().cast(user);
         GroupMembership membership = newMembership(imp.getOid(), -1);
-        HibernatePersistenceContext hpc = null;
         try {
-            hpc = context();
-            Session s = hpc.getSession();
+            Session s = getSession();
             for (Iterator i = groups.iterator(); i.hasNext();) {
                 PersistentGroup group = (PersistentGroup)i.next();
                 membership.setGroupOid(group.getOid());
                 s.delete(membership);
             }
-        } catch (SQLException e) {
-            throw new FindException(e.getMessage(), e);
         } catch (HibernateException e) {
             throw new FindException(e.getMessage(), e);
         }
@@ -448,14 +418,10 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
     public void addUser(User user, Group group) throws FindException, UpdateException {
         PersistentUser userImp = getUserManager().cast(user);
         PersistentGroup groupImp = cast(group);
-        HibernatePersistenceContext hpc = null;
         try {
-            hpc = context();
-            Session s = hpc.getSession();
+            Session s = getSession();
 
             s.save(newMembership(userImp.getOid(), groupImp.getOid()));
-        } catch (SQLException e) {
-            throw new FindException(e.getMessage(), e);
         } catch (HibernateException e) {
             throw new FindException(e.getMessage(), e);
         }
@@ -464,13 +430,9 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
     public void removeUser(User user, Group group) throws FindException, UpdateException {
         PersistentUser userImp = getUserManager().cast(user);
         PersistentGroup groupImp = cast(group);
-        HibernatePersistenceContext hpc = null;
         try {
-            hpc = context();
-            Session s = hpc.getSession();
+            Session s = getSession();
             s.delete(newMembership(userImp.getOid(), groupImp.getOid()));
-        } catch (SQLException e) {
-            throw new FindException(e.getMessage(), e);
         } catch (HibernateException e) {
             throw new FindException(e.getMessage(), e);
         }
@@ -481,12 +443,8 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
     }
 
     public Set getGroupHeaders(String userId) throws FindException {
-        HibernatePersistenceContext hpc = null;
         try {
-            hpc = context();
-            return doGetGroupHeaders(hpc, userId);
-        } catch (SQLException se) {
-            throw new FindException(se.toString(), se);
+            return doGetGroupHeaders(userId);
         } catch (HibernateException he) {
             throw new FindException(he.toString(), he);
         }
@@ -499,13 +457,11 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
 
     public void setGroupHeaders(String userId, Set groupHeaders) throws FindException, UpdateException {
         if (groupHeaders == null) return;
-        HibernatePersistenceContext hpc = null;
         try {
-            hpc = context();
-            Session s = hpc.getSession();
+            Session s = getSession();
 
             Set newGids = headersToIds(groupHeaders);
-            Set existingGids = headersToIds(doGetGroupHeaders(hpc, userId));
+            Set existingGids = headersToIds(doGetGroupHeaders(userId));
 
             GroupMembership gm;
             long uoid = new Long(userId).longValue();
@@ -536,16 +492,10 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
                     s.delete(gm);
                 }
             }
-        } catch (SQLException se) {
-            throw new UpdateException(se.toString(), se);
         } catch (HibernateException he) {
             throw new UpdateException(he.toString(), he);
         }
 
-    }
-
-    private HibernatePersistenceContext context() throws SQLException {
-        return (HibernatePersistenceContext)PersistenceContext.getCurrent();
     }
 
     public Set getUserHeaders(Group group) throws FindException {
@@ -553,33 +503,29 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
     }
 
     public Set getUserHeaders(String groupId) throws FindException {
-        HibernatePersistenceContext hpc = null;
         try {
-            hpc = context();
-            return doGetUserHeaders(hpc, groupId);
-        } catch (SQLException se) {
-            throw new FindException(se.toString(), se);
+            return doGetUserHeaders(groupId);
         } catch (HibernateException he) {
             throw new FindException(he.toString(), he);
         }
     }
 
-    private Set doGetUserHeaders(HibernatePersistenceContext hpc, String groupId) throws SQLException, HibernateException {
+    private Set doGetUserHeaders(String groupId) throws HibernateException {
         Set headers = new HashSet();
-        Session s = hpc.getSession();
+        Session s = getSession();
         String hql = HQL_GETUSERS;
         Query query = s.createQuery(hql);
         query.setString(0, groupId);
         for (Iterator i = query.iterate(); i.hasNext();) {
             PersistentUser user = (PersistentUser)i.next();
-            headers.add(provider.getUserManager().userToHeader(user));
+            headers.add(identityProvider.getUserManager().userToHeader(user));
         }
         return headers;
     }
 
-    private Set doGetGroupHeaders(HibernatePersistenceContext hpc, String userId) throws SQLException, HibernateException {
+    private Set doGetGroupHeaders(String userId) throws HibernateException {
         Set headers = new HashSet();
-        Session s = hpc.getSession();
+        Session s = getSession();
         String hql = HQL_GETGROUPS;
         Query query = s.createQuery(hql);
         query.setString(0, userId);
@@ -605,14 +551,11 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
 
     public void setUserHeaders(String groupId, Set userHeaders) throws FindException, UpdateException {
         if (userHeaders == null) return;
-        HibernatePersistenceContext hpc = null;
         try {
-            hpc = context();
-
-            Session s = hpc.getSession();
+            Session s = getSession();
 
             Set newUids = headersToIds(userHeaders);
-            Set existingUids = headersToIds(doGetUserHeaders(hpc, groupId));
+            Set existingUids = headersToIds(doGetUserHeaders(groupId));
 
             Group group = findByPrimaryKey(groupId);
             if (Group.ADMIN_GROUP_NAME.equals(group.getName()) &&
@@ -642,18 +585,16 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
                     s.delete(gm);
                 }
             }
-        } catch (SQLException se) {
-            throw new UpdateException(se.toString(), se);
         } catch (HibernateException he) {
             throw new UpdateException(he.toString(), he);
         }
 
     }
 
-    protected final IdentityProvider provider;
+    protected IdentityProvider identityProvider;
     private final Logger logger = Logger.getLogger(getClass().getName());
 
-    private final String HQL_GETGROUPS;
-    private final String HQL_GETUSERS;
-    private final String HQL_ISMEMBER;
+    private String HQL_GETGROUPS;
+    private String HQL_GETUSERS;
+    private String HQL_ISMEMBER;
 }

@@ -13,7 +13,6 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.identity.PersistentIdentityProvider;
-import org.springframework.context.ApplicationContext;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -36,18 +35,17 @@ import java.util.logging.Logger;
  * User: flascelles<br/>
  * Date: Jun 24, 2003
  */
-public class InternalIdentityProviderServer extends PersistentIdentityProvider {
+public class InternalIdentityProvider extends PersistentIdentityProvider {
     public static final String ENCODING = "UTF-8";
-    private ApplicationContext applicationContext;
 
-    public InternalIdentityProviderServer(IdentityProviderConfig config, ApplicationContext applicationContext) {
+    public InternalIdentityProvider(IdentityProviderConfig config) {
         this.config = config;
-        this.applicationContext = applicationContext;
-        if (config == null || applicationContext == null) {
-            throw new IllegalArgumentException();
-        }
-        this.userManager = new InternalUserManagerServer(this, applicationContext);
-        this.groupManager = new InternalGroupManagerServer(this);
+    }
+
+    /**
+     * constructor for subclassing
+     */
+    protected InternalIdentityProvider() {
     }
 
     public UserManager getUserManager() {
@@ -134,9 +132,8 @@ public class InternalIdentityProviderServer extends PersistentIdentityProvider {
                     logger.finest("Verification OK - client cert is valid.");
                     // End of Check
 
-                    ClientCertManager man = (ClientCertManager)applicationContext.getBean("clientCertManager");
                     try {
-                        dbCert = (X509Certificate)man.getUserCert(dbUser);
+                        dbCert = (X509Certificate)clientCertManager.getUserCert(dbUser);
                     } catch (FindException e) {
                         logger.log(Level.SEVERE, "FindException exception looking for user cert", e);
                         dbCert = null;
@@ -153,7 +150,7 @@ public class InternalIdentityProviderServer extends PersistentIdentityProvider {
                         logger.finest("Authenticated user " + login + " using a client certificate" );
                         // remember that this cert was used at least once successfully
                         try {
-                            man.forbidCertReset(dbUser);
+                            clientCertManager.forbidCertReset(dbUser);
                             return dbUser;
                         } catch (ObjectModelException e) {
                             logger.log(Level.WARNING, "transaction error around forbidCertReset", e);
@@ -225,6 +222,7 @@ public class InternalIdentityProviderServer extends PersistentIdentityProvider {
         }
     }
 
+
     private void throwUnsupportedCredentialFormat(CredentialFormat format) {
         IllegalArgumentException iae = new IllegalArgumentException( "Unsupported credential format: " + format.toString() );
         logger.log( Level.WARNING, iae.toString(), iae );
@@ -233,6 +231,7 @@ public class InternalIdentityProviderServer extends PersistentIdentityProvider {
 
     public IdentityProviderConfig getConfig() {
         return config;
+
     }
 
     // TODO: Make this customizable
@@ -251,9 +250,27 @@ public class InternalIdentityProviderServer extends PersistentIdentityProvider {
         // ClientCertManagerImp's default rules are OK
     }
 
-    private final IdentityProviderConfig config;
-    private final InternalUserManagerServer userManager;
-    private final InternalGroupManagerServer groupManager;
+    public void setUserManager(UserManager userManager) {
+        this.userManager = userManager;
+    }
+
+    public void setGroupManager(GroupManager groupManager) {
+        this.groupManager = groupManager;
+    }
+
+    /**
+     * Subclasses can override this for custom initialization behavior.
+     * Gets called after population of this instance's bean properties.
+     *
+     * @throws Exception if initialization fails
+     */
+    protected void initDao() throws Exception {
+        super.initDao();
+    }
+
+    private IdentityProviderConfig config;
+    private UserManager userManager;
+    private GroupManager groupManager;
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 }

@@ -8,6 +8,7 @@ package com.l7tech.console.action;
 
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.console.util.Registry;
+import com.l7tech.objectmodel.DeleteException;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -57,8 +58,10 @@ public class DeleteAuditEventsAction extends SecureAction {
                 return;
 
             auditAdmin.deleteOldAuditRecords();
-        } catch (RemoteException e1) {
-            throw new RuntimeException("Unable to delete old audit events.", e1);
+        } catch (RemoteException e) {
+            throw new RuntimeException("Unable to delete old audit events.", e);
+        } catch (DeleteException e) {
+            throw new RuntimeException("Unable to delete old audit events.", e);
         }
 
         if (chainAction != null)

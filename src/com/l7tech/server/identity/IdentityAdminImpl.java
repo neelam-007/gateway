@@ -10,8 +10,11 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.context.support.ApplicationObjectSupport;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
 import javax.security.auth.Subject;
 import java.rmi.RemoteException;
@@ -20,7 +23,6 @@ import java.security.AccessController;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
@@ -36,11 +38,12 @@ import java.util.logging.Logger;
  * User: flascelles<br/>
  * Date: May 26, 2003
  */
-public class IdentityAdminImpl extends ApplicationObjectSupport
-  implements IdentityAdmin, InitializingBean {
+public class IdentityAdminImpl extends HibernateDaoSupport
+  implements IdentityAdmin, InitializingBean, ApplicationContextAware {
     private ClientCertManager clientCertManager;
 
     public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/identityAdmin";
+    private ApplicationContext applicationContext;
 
     /**
      * Returns a version string. This can be compared to version on client-side.
@@ -57,12 +60,8 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
      * @throws RemoteException
      */
     public EntityHeader[] findAllIdentityProviderConfig() throws RemoteException, FindException {
-        try {
             Collection res = getIdProvCfgMan().findAllHeaders();
-            return (EntityHeader[])res.toArray(new EntityHeader[]{});
-        } finally {
-            closeContext();
-        }
+        return (EntityHeader[])res.toArray(new EntityHeader[] {});
     }
 
     /**
@@ -71,12 +70,8 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
      */
     public EntityHeader[] findAllIdentityProviderConfigByOffset(int offset, int windowSize)
       throws RemoteException, FindException {
-        try {
             Collection res = getIdProvCfgMan().findAllHeaders(offset, windowSize);
-            return (EntityHeader[])res.toArray(new EntityHeader[]{});
-        } finally {
-            closeContext();
-        }
+        return (EntityHeader[])res.toArray(new EntityHeader[] {});
     }
 
     /**
@@ -85,16 +80,11 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
      */
     public IdentityProviderConfig findIdentityProviderConfigByID(long oid)
       throws RemoteException, FindException {
-        try {
             return getIdProvCfgMan().findByPrimaryKey(oid);
-        } finally {
-            closeContext();
-        }
     }
 
     public long saveIdentityProviderConfig(IdentityProviderConfig identityProviderConfig)
       throws RemoteException, SaveException, UpdateException {
-        beginTransaction();
         try {
             RoleUtils.enforceAdminRole(getApplicationContext());
             if (identityProviderConfig.getOid() > 0) {
@@ -110,19 +100,6 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
             throw new UpdateException("This object cannot be found (it no longer exist?).", e);
-        } finally {
-            try {
-                endTransaction();
-            } catch (TransactionException e) {
-
-                try {
-                    rollbackTransaction();
-                } catch (TransactionException e1) {
-                    logger.log(Level.WARNING, "exception rolling back", e1);
-                }
-
-                throw new SaveException(e.getMessage());
-            }
         }
     }
 
@@ -185,7 +162,6 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
 
 
     public void deleteIdentityProviderConfig(long oid) throws RemoteException, DeleteException {
-        beginTransaction();
         try {
             RoleUtils.enforceAdminRole(getApplicationContext());
             IdentityProviderConfigManager manager = getIdProvCfgMan();
@@ -203,46 +179,24 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
             throw new DeleteException("This object cannot be found (it no longer exist?).", e);
-        } finally {
-            try {
-                endTransaction();
-            } catch (TransactionException e) {
-
-                try {
-                    rollbackTransaction();
-                } catch (TransactionException e1) {
-                    logger.log(Level.WARNING, "exception rolling back", e1);
-                }
-
-                throw new DeleteException(e.getMessage(), e);
-            }
         }
     }
 
     public EntityHeader[] findAllUsers(long identityProviderConfigId) throws RemoteException, FindException {
-        try {
             UserManager userManager = retrieveUserManager(identityProviderConfigId);
             Collection res = userManager.findAllHeaders();
             return (EntityHeader[])res.toArray(new EntityHeader[]{});
-        } finally {
-            closeContext();
-        }
     }
 
     public EntityHeader[] findAllUsersByOffset(long identityProviderConfigId, int offset, int windowSize)
       throws RemoteException, FindException {
-        try {
             UserManager userManager = retrieveUserManager(identityProviderConfigId);
             Collection res = userManager.findAllHeaders(offset, windowSize);
             return (EntityHeader[])res.toArray(new EntityHeader[]{});
-        } finally {
-            closeContext();
-        }
     }
 
     public EntityHeader[] searchIdentities(long identityProviderConfigId, EntityType[] types, String pattern)
       throws RemoteException, FindException {
-        try {
             IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
             if (types != null) {
@@ -254,40 +208,27 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
             Collection searchResults = provider.search(types, pattern);
             if (searchResults == null) return new EntityHeader[0];
             return (EntityHeader[])searchResults.toArray(new EntityHeader[]{});
-        } finally {
-            closeContext();
-        }
     }
 
     public User findUserByID(long identityProviderConfigId, String userId)
       throws RemoteException, FindException {
-        try {
             IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
             UserManager userManager = provider.getUserManager();
 
             return userManager.findByPrimaryKey(userId);
-            // Groups are separate now
-        } finally {
-            closeContext();
-        }
     }
 
     public User findUserByLogin(long idProvCfgId, String login) throws RemoteException, FindException {
-        try {
             IdentityProvider provider = identityProviderFactory.getProvider(idProvCfgId);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
             UserManager userManager = provider.getUserManager();
 
             return userManager.findByLogin(login);
-        } finally {
-            closeContext();
-        }
     }
 
     public void deleteUser(long cfgid, String userId)
       throws RemoteException, DeleteException, ObjectNotFoundException {
-        beginTransaction();
         try {
             RoleUtils.enforceAdminRole(getApplicationContext());
             UserManager userManager = retrieveUserManager(cfgid);
@@ -301,24 +242,11 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
             throw new DeleteException("This object cannot be found (it no longer exist?).", e);
-        } finally {
-            try {
-                endTransaction();
-            } catch (TransactionException e) {
-                try {
-                    rollbackTransaction();
-                } catch (TransactionException e1) {
-                    logger.log(Level.WARNING, "exception rolling back", e1);
-                }
-
-                throw new DeleteException(e.toString());
-            }
         }
     }
 
     public String saveUser(long identityProviderConfigId, User user, Set groupHeaders)
       throws RemoteException, SaveException, UpdateException, ObjectNotFoundException {
-        beginTransaction();
         try {
             RoleUtils.enforceAdminRole(getApplicationContext());
             IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
@@ -339,57 +267,31 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
             throw new RemoteException("Exception in saveUser", e);
-        } finally {
-            try {
-                endTransaction();
-            } catch (TransactionException e) {
-
-                try {
-                    rollbackTransaction();
-                } catch (TransactionException e1) {
-                    logger.log(Level.WARNING, "exception rolling back", e1);
-                }
-
-                throw new SaveException(e.toString());
-            }
         }
     }
 
 
     public EntityHeader[] findAllGroups(long cfgid) throws RemoteException, FindException {
-        try {
             Collection res = retrieveGroupManager(cfgid).findAllHeaders();
             return (EntityHeader[])res.toArray(new EntityHeader[]{});
-        } finally {
-            closeContext();
-        }
     }
 
     public EntityHeader[] findAllGroupsByOffset(long cfgid, int offset, int windowSize)
       throws RemoteException, FindException {
-        try {
             Collection res = retrieveGroupManager(cfgid).findAllHeaders(offset, windowSize);
             return (EntityHeader[])res.toArray(new EntityHeader[]{});
-        } finally {
-            closeContext();
-        }
     }
 
     public Group findGroupByID(long cfgid, String groupId) throws RemoteException, FindException {
-        try {
             IdentityProvider provider = identityProviderFactory.getProvider(cfgid);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
             GroupManager groupManager = provider.getGroupManager();
 
             return groupManager.findByPrimaryKey(groupId);
-        } finally {
-            closeContext();
-        }
     }
 
     public void deleteGroup(long cfgid, String groupId)
       throws RemoteException, DeleteException, ObjectNotFoundException {
-        beginTransaction();
         try {
             RoleUtils.enforceAdminRole(getApplicationContext());
             GroupManager groupManager = retrieveGroupManager(cfgid);
@@ -399,24 +301,11 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
             logger.info("Deleted Group: " + grp.getName());
         } catch (FindException e) {
             throw new DeleteException("This object cannot be found (it no longer exist?).", e);
-        } finally {
-            try {
-                endTransaction();
-            } catch (TransactionException e) {
-                try {
-                    rollbackTransaction();
-                } catch (TransactionException e1) {
-                    logger.log(Level.WARNING, "exception rolling back", e1);
-                }
-
-                throw new DeleteException(e.toString());
-            }
         }
     }
 
     public String saveGroup(long identityProviderConfigId, Group group, Set userHeaders)
       throws RemoteException, SaveException, UpdateException, ObjectNotFoundException {
-        beginTransaction();
         try {
             RoleUtils.enforceAdminRole(getApplicationContext());
             IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
@@ -437,36 +326,19 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
             throw new RemoteException("FindException in saveGroup", e);
-        } finally {
-            try {
-                endTransaction();
-            } catch (TransactionException e) {
-                try {
-                    rollbackTransaction();
-                } catch (TransactionException e1) {
-                    logger.log(Level.WARNING, "exception rolling back", e1);
-                }
-
-                throw new SaveException(e.toString());
-            }
         }
     }
 
     public String getUserCert(User user) throws RemoteException, FindException, CertificateEncodingException {
-        try {
             // get cert from internal CA
             Certificate cert = clientCertManager.getUserCert(user);
             if (cert == null) return null;
 
             String encodedcert = HexUtils.encodeBase64(cert.getEncoded());
             return encodedcert;
-        } finally {
-            closeContext();
-        }
     }
 
     public void revokeCert(User user) throws RemoteException, UpdateException, ObjectNotFoundException {
-        beginTransaction();
         try {
             RoleUtils.enforceAdminRole(getApplicationContext());
             // revoke the cert in internal CA
@@ -497,29 +369,13 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
             throw new UpdateException("error resetting user's password", e);
         } catch (InvalidPasswordException e) {
             throw new UpdateException("error resetting user's password", e);
-        } finally {
-            try {
-                endTransaction();
-            } catch (TransactionException e) {
-                throw new UpdateException(e.toString());
-            }
         }
-
     }
 
     public void recordNewUserCert(User user, Certificate cert) throws RemoteException, UpdateException {
-        beginTransaction();
-        try {
             RoleUtils.enforceAdminRole(getApplicationContext());
             // revoke the cert in internal CA
             clientCertManager.recordNewUserCert(user, cert);
-        } finally {
-            try {
-                endTransaction();
-            } catch (TransactionException e) {
-                throw new UpdateException(e.toString());
-            }
-        }
     }
 
     private static SecureRandom secureRandom = null;
@@ -538,8 +394,6 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
         } catch (Throwable t) {
             logger.log(Level.INFO, "Identity Provider test failed because an exception was thrown", t);
             throw new InvalidIdProviderCfgException(t);
-        } finally {
-            closeContext();
         }
     }
 
@@ -613,7 +467,7 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
         this.authorizer = authorizer;
     }
 
-    public void afterPropertiesSet() throws Exception {
+    public void initDao() throws Exception {
         checkidentityProviderFactory();
         checkidentityProviderConfigManager();
         checkClientCertManager();
@@ -621,10 +475,20 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
     }
 
 
+    /**
+     * Set the ApplicationContext that this object runs in.
+     */
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
+    }
 
     // ************************************************
     // PRIVATES
     // ************************************************
+
+    private ApplicationContext getApplicationContext() {
+        return applicationContext;
+    }
 
     private void checkidentityProviderFactory() {
         if (identityProviderFactory == null) {
@@ -654,55 +518,6 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
         return identityProviderConfigManager;
     }
 
-    private void beginTransaction() throws RemoteException {
-        try {
-            PersistenceContext.getCurrent().beginTransaction();
-        } catch (SQLException e) {
-            logger.log(Level.WARNING, "exception begining transaction", e);
-            throw new RemoteException("exception begining transaction", e);
-        } catch (ObjectModelException e) {
-            logger.log(Level.WARNING, "exception begining transaction", e);
-            throw new RemoteException("exception begining transaction", e);
-        }
-    }
-
-    private void closeContext() {
-        try {
-            PersistenceContext.getCurrent().close();
-        } catch (SQLException e) {
-            logger.log(Level.WARNING, "error closing context", e);
-        }
-    }
-
-    private void endTransaction() throws TransactionException {
-        try {
-            PersistenceContext context = PersistenceContext.getCurrent();
-            //context.flush();
-            context.commitTransaction();
-            context.close();
-        } catch (java.sql.SQLException e) {
-            logger.log(Level.SEVERE, "could not end transaction", e);
-            throw new TransactionException(e.getMessage());
-        } catch (ObjectModelException e) {
-            logger.log(Level.SEVERE, "could not end transaction", e);
-            throw new TransactionException(e.getMessage());
-        }
-    }
-
-    private void rollbackTransaction() throws TransactionException {
-        try {
-            PersistenceContext context = PersistenceContext.getCurrent();
-
-            context.rollbackTransaction();
-            context.close();
-        } catch (java.sql.SQLException e) {
-            logger.log(Level.SEVERE, "could not rollback transaction", e);
-            throw new TransactionException(e.getMessage());
-        } catch (ObjectModelException e) {
-            logger.log(Level.SEVERE, "could not rollback transaction", e);
-            throw new TransactionException(e.getMessage());
-        }
-    }
 
     private UserManager retrieveUserManager(long cfgid)
       throws RemoteException {
@@ -754,4 +569,5 @@ public class IdentityAdminImpl extends ApplicationObjectSupport
     private Authorizer authorizer = null;
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final LdapConfigTemplateManager ldapTemplateManager = new LdapConfigTemplateManager();
+
 }

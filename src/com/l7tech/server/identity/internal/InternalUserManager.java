@@ -9,8 +9,6 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import org.springframework.context.ApplicationContext;
-
 /**
  * SSG-side implementation of the UserManager for the internal identity provider.
  * <p/>
@@ -21,11 +19,16 @@ import org.springframework.context.ApplicationContext;
  *
  * @version $Revision$
  */
-public class InternalUserManagerServer extends PersistentUserManager {
+public class InternalUserManager extends PersistentUserManager {
 
-    public InternalUserManagerServer(IdentityProvider provider, ApplicationContext applicationContext) {
-        super(applicationContext);
-        this.provider = provider;
+    public InternalUserManager(IdentityProvider identityProvider) {
+        super(identityProvider);
+    }
+
+    /**
+     * empty subclassing constructor (required for class proxying)
+     */
+    protected InternalUserManager() {
     }
 
     public String getTableName() {
@@ -83,14 +86,14 @@ public class InternalUserManagerServer extends PersistentUserManager {
     protected void preDelete(PersistentUser user) throws DeleteException {
         try {
             InternalUser imp = (InternalUser)user;
-            GroupManager gman = provider.getGroupManager();
-            Iterator i = gman.getGroupHeaders(imp).iterator();
+            GroupManager groupManager = identityProvider.getGroupManager();
+            Iterator i = groupManager.getGroupHeaders(imp).iterator();
             while (i.hasNext()) {
                 EntityHeader grp = (EntityHeader)i.next();
                 // is he an administrator?
                 if (Group.ADMIN_GROUP_NAME.equals(grp.getName())) {
                     // is he the last one ?
-                    Set adminUserHeaders = gman.getUserHeaders(grp.getStrId());
+                    Set adminUserHeaders = groupManager.getUserHeaders(grp.getStrId());
                     if (adminUserHeaders.size() <= 1) {
                         String msg = "An attempt was made to nuke the last standing adminstrator";
                         logger.severe(msg);
@@ -116,6 +119,7 @@ public class InternalUserManagerServer extends PersistentUserManager {
         }
         return imp;
     }
+
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 }

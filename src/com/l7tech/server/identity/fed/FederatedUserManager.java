@@ -6,10 +6,10 @@
 
 package com.l7tech.server.identity.fed;
 
-import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.PersistentUser;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
+import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -22,8 +22,6 @@ import net.sf.hibernate.expression.Expression;
 import java.sql.SQLException;
 import java.util.List;
 
-import org.springframework.context.ApplicationContext;
-
 /**
  * The {@link com.l7tech.identity.UserManager} for {@link FederatedIdentityProvider}s.
  * 
@@ -31,9 +29,14 @@ import org.springframework.context.ApplicationContext;
  * @version $Revision$
  */
 public class FederatedUserManager extends PersistentUserManager {
-    public FederatedUserManager(IdentityProvider provider, ApplicationContext applicationContext) {
-        super(applicationContext);
-        this.provider = provider;
+    public FederatedUserManager(IdentityProvider identityProvider) {
+        super(identityProvider);
+    }
+
+    /**
+     * empty subclassing constructor (required for class proxying)
+     */
+    protected FederatedUserManager() {
     }
 
     public EntityHeader userToHeader( User user ) {

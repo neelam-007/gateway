@@ -12,23 +12,18 @@ import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.logging.ServerLogHandler;
 import com.l7tech.logging.ServerLogManager;
-import com.l7tech.objectmodel.HibernatePersistenceContext;
 import com.l7tech.objectmodel.HibernatePersistenceManager;
-import com.l7tech.objectmodel.PersistenceContext;
-import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.server.audit.SystemAuditListener;
 import com.l7tech.server.event.EventManager;
 import com.l7tech.server.event.system.*;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.ServiceManagerImp;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ApplicationObjectSupport;
 
 import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -42,13 +37,14 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
 
     static {
         JdkLoggerConfigurator.configure("com.l7tech.logging",
-                                        new File(DEFAULT_LOGPROPERTIES_PATH).exists() ?
-                                        DEFAULT_LOGPROPERTIES_PATH : "ssglog.properties", true);
+          new File(DEFAULT_LOGPROPERTIES_PATH).exists() ?
+          DEFAULT_LOGPROPERTIES_PATH : "ssglog.properties", true);
     }
 
     private final Logger logger = Logger.getLogger(getClass().getName());
     private List _components = new ArrayList();
     private ServerConfig serverConfig;
+    private EventManager eventManager;
 
     private void deleteOldAttachments(File attachmentDir) {
         File[] goners = attachmentDir.listFiles(new FileFilter() {
@@ -74,9 +70,9 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
             logger.log(Level.SEVERE, "Couldn't get local IP address. Will use 127.0.0.1 in audit records.", e);
             ipAddress = LOCALHOST_IP;
         }
+        eventManager = (EventManager)config.getSpringContext().getBean("eventManager");
 
         deleteOldAttachments(config.getAttachmentDirectory());
-        HibernatePersistenceContext context = null;
         try {
             // Initialize database stuff
             final ApplicationContext springContext = config.getSpringContext();
@@ -84,19 +80,14 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
 
             // This needs to happen here, early enough that it will notice early events but after the database init
             systemAuditListener = new SystemAuditListener(springContext);
-            EventManager.addListener(SystemEvent.class, systemAuditListener);
+            eventManager.addListener(SystemEvent.class, systemAuditListener);
 
             // add the server handler programatically after the hibernate is initialized.
             // the handlers specified in the configuraiton get loaded by the system classloader and hibernate
             // stuff lives in the web app classloader
             JdkLoggerConfigurator.addHandler(new ServerLogHandler((ServerLogManager)springContext.getBean("serverLogManager")));
 
-            context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-            try {
-                EventManager.fireInNewTransaction(new Initializing(this, Component.GW_SERVER, ipAddress));
-            } catch (TransactionException e) {
-                logger.log(Level.WARNING, "Couldn't commit event transaction", e);
-            }
+            eventManager.fireInNewTransaction(new Initializing(this, Component.GW_SERVER, ipAddress));
             logger.info("Initializing server");
 
             setSystemProperties(config);
@@ -126,92 +117,44 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
 
                 if (component != null) {
                     try {
-                        if (component instanceof TransactionalComponent) context.beginTransaction();
                         component.setServerConfig(config);
                         _components.add(component);
-                        if (component instanceof TransactionalComponent) context.commitTransaction();
                     } catch (LifecycleException e) {
                         logger.log(Level.SEVERE, "Component " + component + " failed to initialize", e);
-                    } catch (TransactionException e) {
-                        logger.log(Level.SEVERE, "Component " + component + " could not commit its initialization process", e);
                     }
                 }
             }
 
-            try {
-                EventManager.fireInNewTransaction(new Initialized(this, Component.GW_SERVER, ipAddress));
-            } catch (TransactionException e) {
-                logger.log(Level.WARNING, "Couldn't commit event transaction", e);
-            }
+            eventManager.fireInNewTransaction(new Initialized(this, Component.GW_SERVER, ipAddress));
 
             logger.info("Initialized server");
         } catch (IOException e) {
             throw new LifecycleException(e.toString(), e);
-        } catch (SQLException e) {
-            throw new LifecycleException(e.toString(), e);
-        } finally {
-            if (context != null) context.close();
         }
     }
 
     public void start() throws LifecycleException {
-        PersistenceContext context = null;
-        try {
-            context = PersistenceContext.getCurrent();
-            try {
-                EventManager.fireInNewTransaction(new Starting(this, Component.GW_SERVER, ipAddress));
-            } catch (TransactionException e) {
-                logger.log(Level.WARNING, "Couldn't commit event transaction", e);
-            }
-            logger.info("Starting server");
+        eventManager.fireInNewTransaction(new Starting(this, Component.GW_SERVER, ipAddress));
+        logger.info("Starting server");
 
-            // make sure the ServiceManager is available. this will also build the service cache
-            try {
-                context.beginTransaction();
-                try {
-                    serverConfig.getSpringContext().getBean("serviceManager");
-                } catch (NoSuchBeanDefinitionException e) {
-                    logger.log(Level.SEVERE, "Could not instantiate the ServiceManager", e);
-                }
-                context.rollbackTransaction();
-            } catch (TransactionException e) {
-                logger.log(Level.WARNING, "Couldn't set up Service Cache", e);
-            }
+        // make sure the ServiceManager is available. this will also build the service cache
+        serverConfig.getSpringContext().getBean("serviceManager");
 
 
-            logger.info("Starting server components...");
-            for (Iterator i = _components.iterator(); i.hasNext();) {
-                ServerComponentLifecycle component = (ServerComponentLifecycle)i.next();
-                logger.info("Starting component " + component);
-                try {
-                    if (component instanceof TransactionalComponent) context.beginTransaction();
-                    component.start();
-                    if (component instanceof TransactionalComponent) context.commitTransaction();
-                } catch (TransactionException e) {
-                    logger.log(Level.SEVERE, "Component " + component + " could not commit its startup process", e);
-                }
-            }
-
-            logger.info(BuildInfo.getLongBuildString());
-            try {
-                EventManager.fireInNewTransaction(new Started(this, Component.GW_SERVER, ipAddress));
-            } catch (TransactionException e) {
-                logger.log(Level.WARNING, "Couldn't commit event transaction", e);
-            }
-            logger.info("Boot process complete.");
-        } catch (SQLException se) {
-            throw new LifecycleException(se.toString(), se);
-        } finally {
-            if (context != null) context.close();
+        logger.info("Starting server components...");
+        for (Iterator i = _components.iterator(); i.hasNext();) {
+            ServerComponentLifecycle component = (ServerComponentLifecycle)i.next();
+            logger.info("Starting component " + component);
+                component.start();
         }
+
+        logger.info(BuildInfo.getLongBuildString());
+        eventManager.fireInNewTransaction(new Started(this, Component.GW_SERVER, ipAddress));
+        logger.info("Boot process complete.");
     }
 
     public void stop() throws LifecycleException {
-        try {
-            EventManager.fireInNewTransaction(new Stopping(this, Component.GW_SERVER, ipAddress));
-        } catch (TransactionException e) {
-            logger.log(Level.WARNING, "Couldn't commit event transaction", e);
-        }
+        eventManager.fireInNewTransaction(new Stopping(this, Component.GW_SERVER, ipAddress));
 
         logger.info("Stopping server components");
 
@@ -225,16 +168,12 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
             component.stop();
         }
 
-        EventManager.fire(new Stopped(this, Component.GW_SERVER, ipAddress));
+        eventManager.fire(new Stopped(this, Component.GW_SERVER, ipAddress));
         logger.info("Stopped.");
     }
 
     public void close() throws LifecycleException {
-        try {
-            EventManager.fireInNewTransaction(new Closing(this, Component.GW_SERVER, ipAddress));
-        } catch (TransactionException e) {
-            logger.log(Level.WARNING, "Couldn't commit event transaction", e);
-        }
+        eventManager.fireInNewTransaction(new Closing(this, Component.GW_SERVER, ipAddress));
 
         logger.info("Closing server components");
 
@@ -253,8 +192,8 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
         if (serviceManager != null && serviceManager instanceof ServiceManagerImp) {
             ((ServiceManagerImp)serviceManager).destroy();
         }
-        EventManager.fire(new Closed(this, Component.GW_SERVER, ipAddress));
-        EventManager.removeListener(systemAuditListener);
+        eventManager.fire(new Closed(this, Component.GW_SERVER, ipAddress));
+        eventManager.removeListener(systemAuditListener);
         logger.info("Closed.");
     }
 
@@ -266,7 +205,7 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
 
         // Set default properties
         props.setProperty("com.sun.jndi.ldap.connect.pool.timeout", new Integer(30 * 1000).toString());
-        
+
         InputStream is = null;
         try {
             if (propsFile.exists()) {

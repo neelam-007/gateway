@@ -8,10 +8,11 @@ import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.IssuedCertNotPresentedException;
 import com.l7tech.identity.User;
-import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.cert.RsaCertificateSigner;
-import com.l7tech.objectmodel.*;
+import com.l7tech.identity.internal.InternalUser;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.AuthenticatableHttpServlet;
 
 import javax.net.ssl.HostnameVerifier;
@@ -32,7 +33,6 @@ import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -42,12 +42,12 @@ import java.util.logging.Level;
 /**
  * Servlet which handles the CSR requests coming from the Client Proxy. Must come
  * through ssl and must contain valid credentials embedded in basic auth header.
- *
+ * <p/>
  * When the node handling the csr request does not have access to the master key, it tries
  * to forward the request to the master node. In order for this to work, the root cert of the
  * cluster must be previously inserted in the trust store of this node
  * ($JAVA_HOME/jre/lib/security/cacerts).
- *
+ * <p/>
  * <br/><br/>
  * Layer 7 Technologies, inc.<br/>
  * User: flascelles<br/>
@@ -55,7 +55,7 @@ import java.util.logging.Level;
  */
 public class CSRHandler extends AuthenticatableHttpServlet {
 
-    public void init( ServletConfig config ) throws ServletException {
+    public void init(ServletConfig config) throws ServletException {
         super.init(config);
 
         String tmp = getServletConfig().getInitParameter("RootKeyStore");
@@ -71,7 +71,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
     }
 
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
+      throws ServletException, IOException {
 
         // make sure we come in through ssl
         if (!request.isSecure()) {
@@ -85,119 +85,90 @@ public class CSRHandler extends AuthenticatableHttpServlet {
             return;
         }
 
+        // Authentication
+        List users = null;
         try {
-            // Authentication
-            List users = null;
-            try {
-                users = authenticateRequestBasic(request);
-            }  catch (BadCredentialsException e) {
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "must provide valid credentials");
-                logger.log(Level.SEVERE, "Failed authentication", e);
-                return;
-            } catch (IssuedCertNotPresentedException e) {
-                logger.log(Level.SEVERE, "Requestor is refused csr", e);
-                response.sendError(HttpServletResponse.SC_FORBIDDEN, "CSR Forbidden." +
-                                            " Contact your administrator for more info.");
-                return;
-            }
+            users = authenticateRequestBasic(request);
+        } catch (BadCredentialsException e) {
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "must provide valid credentials");
+            logger.log(Level.SEVERE, "Failed authentication", e);
+            return;
+        } catch (IssuedCertNotPresentedException e) {
+            logger.log(Level.SEVERE, "Requestor is refused csr", e);
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "CSR Forbidden." +
+              " Contact your administrator for more info.");
+            return;
+        }
 
-            if (users == null || users.size() < 1) {
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "must provide valid credentials");
-                logger.warning("CSR Handler called without credentials");
-                return;
-            } else if (users.size() > 1) {
-                String msg = "Ambiguous authentication - credentials valid in more than one identity provider.";
-                response.sendError(HttpServletResponse.SC_CONFLICT, msg);
-                logger.warning(msg);
-                return;
-            }
+        if (users == null || users.size() < 1) {
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "must provide valid credentials");
+            logger.warning("CSR Handler called without credentials");
+            return;
+        } else if (users.size() > 1) {
+            String msg = "Ambiguous authentication - credentials valid in more than one identity provider.";
+            response.sendError(HttpServletResponse.SC_CONFLICT, msg);
+            logger.warning(msg);
+            return;
+        }
 
-            User authenticatedUser = null;
-            authenticatedUser = (User)users.get(0);
+        User authenticatedUser = null;
+        authenticatedUser = (User)users.get(0);
 
-            ClientCertManager man = (ClientCertManager)getApplicationContext().getBean("clientCertManager");
-            if (!man.userCanGenCert(authenticatedUser)) {
-                logger.log(Level.SEVERE, "user is refused csr: " + authenticatedUser.getLogin());
-                response.sendError(HttpServletResponse.SC_FORBIDDEN, "CSR Forbidden." +
-                                            " Contact your administrator for more info.");
-                return;
-            }
+        ClientCertManager man = (ClientCertManager)getApplicationContext().getBean("clientCertManager");
+        if (!man.userCanGenCert(authenticatedUser)) {
+            logger.log(Level.SEVERE, "user is refused csr: " + authenticatedUser.getLogin());
+            response.sendError(HttpServletResponse.SC_FORBIDDEN, "CSR Forbidden." +
+              " Contact your administrator for more info.");
+            return;
+        }
 
-            byte[] csr = readCSRFromRequest(request);
-            Certificate cert = null;
+        byte[] csr = readCSRFromRequest(request);
+        Certificate cert = null;
 
-            // sign request
-            try {
-                // for internal users, if an account expiration is specified, make sure the cert created matches it
-                if (authenticatedUser instanceof InternalUser) {
-                    InternalUser iu = (InternalUser)authenticatedUser;
-                    if (iu.getExpiration() != -1) {
-                        cert = sign(csr, iu.getExpiration());
-                    } else {
-                        cert = sign(csr);
-                    }
+        // sign request
+        try {
+            // for internal users, if an account expiration is specified, make sure the cert created matches it
+            if (authenticatedUser instanceof InternalUser) {
+                InternalUser iu = (InternalUser)authenticatedUser;
+                if (iu.getExpiration() != -1) {
+                    cert = sign(csr, iu.getExpiration());
                 } else {
                     cert = sign(csr);
                 }
-            } catch (Exception e) {
-                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
-                logger.log(Level.SEVERE, e.getMessage(), e);
-                return;
+            } else {
+                cert = sign(csr);
             }
+        } catch (Exception e) {
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            return;
+        }
 
-            // record new cert
-            try {
-                PersistenceContext.getCurrent().beginTransaction();
-                man.recordNewUserCert(authenticatedUser, cert);
-                logger.info("Issued new cert for user " + authenticatedUser.toString() );
-            } catch (UpdateException e) {
-                String msg = "Could not record cert. " + e.getMessage();
-                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
-                logger.log(Level.SEVERE, msg, e);
-                return;
-            } catch (TransactionException e) {
-                String msg = "Could not record cert. " + e.getMessage();
-                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
-                logger.log(Level.SEVERE, msg, e);
-                return;
-            } catch ( SQLException e ) {
-                String msg = "Could not record cert. " + e.getMessage();
-                logger.log(Level.SEVERE, msg, e);
-                return;
-            } finally {
-                try {
-                    PersistenceContext.getCurrent().commitTransaction();
-                } catch (TransactionException te) {
-                    logger.log(Level.WARNING, "exception committing new cert update", te);
-                } catch (ObjectModelException e) {
-                    logger.log(Level.WARNING, "exception committing cert update", e);
-                } catch (SQLException e) {
-                    logger.log(Level.WARNING, "exception committing cert update", e);
-                }
-            }
+        // record new cert
+        try {
+            man.recordNewUserCert(authenticatedUser, cert);
+            logger.info("Issued new cert for user " + authenticatedUser.toString());
+        } catch (UpdateException e) {
+            String msg = "Could not record cert. " + e.getMessage();
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
+            logger.log(Level.SEVERE, msg, e);
+            return;
+        }
 
-            // send cert back
-            try {
-                byte[] certbytes = cert.getEncoded();
-                response.setStatus(HttpServletResponse.SC_OK);
-                response.setContentType("application/x-x509-ca-cert");
-                response.setContentLength(certbytes.length);
-                response.getOutputStream().write(certbytes);
-                response.flushBuffer();
-                logger.fine("sent new cert to user " + authenticatedUser.getLogin() +
-                            ". Subject DN=" + ((X509Certificate)(cert)).getSubjectDN().toString());
-            } catch (CertificateEncodingException e) {
-                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
-                logger.log(Level.SEVERE, e.getMessage(), e);
-                return;
-            }
-        } finally {
-            try {
-                PersistenceContext.getCurrent().close();
-            }
-            catch (SQLException e) {
-                logger.log(Level.WARNING, "exception closing context", e);
-            }
+        // send cert back
+        try {
+            byte[] certbytes = cert.getEncoded();
+            response.setStatus(HttpServletResponse.SC_OK);
+            response.setContentType("application/x-x509-ca-cert");
+            response.setContentLength(certbytes.length);
+            response.getOutputStream().write(certbytes);
+            response.flushBuffer();
+            logger.fine("sent new cert to user " + authenticatedUser.getLogin() +
+              ". Subject DN=" + ((X509Certificate)(cert)).getSubjectDN().toString());
+        } catch (CertificateEncodingException e) {
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            return;
         }
     }
 
@@ -310,12 +281,11 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         try {
             // loose hostname verifier
             if (connection instanceof HttpsURLConnection) {
-                ((HttpsURLConnection)connection).setHostnameVerifier(
-                  new HostnameVerifier() {
-                      public boolean verify(String s, SSLSession sslSession) {
-                          return true;
-                      }
-                  });
+                ((HttpsURLConnection)connection).setHostnameVerifier(new HostnameVerifier() {
+                    public boolean verify(String s, SSLSession sslSession) {
+                        return true;
+                    }
+                });
             } else {
                 // this should not happen
                 logger.severe("non https connection(?): " + connection.getClass().getName());
@@ -350,8 +320,8 @@ public class CSRHandler extends AuthenticatableHttpServlet {
             outputstream.close();
         } catch (SSLHandshakeException e) {
             logger.severe("forwarding this csr to the master failed because this node does not " +
-                          "have the root cert in its trusted store. import root.cer into " +
-                          "JAVA_HOME/jre/lib/security/cacerts " + e.getMessage());
+              "have the root cert in its trusted store. import root.cer into " +
+              "JAVA_HOME/jre/lib/security/cacerts " + e.getMessage());
             res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "cannot forward csr to master");
         }
 

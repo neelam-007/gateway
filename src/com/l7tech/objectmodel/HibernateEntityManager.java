@@ -17,24 +17,17 @@ import java.util.logging.Logger;
 import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.ReaderPreferenceReadWriteLock;
 import EDU.oswego.cs.dl.util.concurrent.Sync;
+import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
 /**
  * @author alex
  * @version $Revision$
  */
-public abstract class HibernateEntityManager implements EntityManager {
+public abstract class HibernateEntityManager extends HibernateDaoSupport implements EntityManager {
     public static final String EMPTY_STRING = "";
     public static final String F_OID = "oid";
     public static final String F_VERSION = "version";
 
-    /**
-     * Constructs a new <code>HibernateEntityManager</code>.
-     */
-    public HibernateEntityManager() {
-        PersistenceManager manager = PersistenceManager.getInstance();
-        if ( !(manager instanceof HibernatePersistenceManager ) ) throw new IllegalStateException( "Can't instantiate a " + getClass().getName() + "without first initializing a HibernatePersistenceManager!");
-        _manager = manager;
-    }
 
     /**
      * Returns the current version (in the database) of the entity with the specified OID.
@@ -135,8 +128,7 @@ public abstract class HibernateEntityManager implements EntityManager {
         String stmt = getFieldQuery( new Long( ent.getOid() ).toString(), F_VERSION );
 
         try {
-            HibernatePersistenceContext hpc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-            Session s = hpc.getSession();
+            Session s = getSession();
             List results = s.find( stmt );
             if ( results.size() == 0 ) {
                 String err = "Object to be updated does not exist!";
@@ -151,9 +143,6 @@ public abstract class HibernateEntityManager implements EntityManager {
                 logger.log( Level.WARNING, err );
                 throw new StaleUpdateException( err );
             }
-        } catch (SQLException e) {
-            logger.log( Level.SEVERE, e.getMessage(), e );
-            throw new UpdateException( e.getMessage(), e );
         } catch (HibernateException e) {
             logger.log( Level.SEVERE, e.getMessage(), e );
             throw new UpdateException( e.getMessage(), e );
@@ -191,13 +180,11 @@ public abstract class HibernateEntityManager implements EntityManager {
 
     public Collection findAll() throws FindException {
         try {
-            Session s = getContext().getSession();
+            Session s = getSession();
             Criteria allHeadersCriteria = s.createCriteria(getImpClass());
             addFindAllCriteria(allHeadersCriteria);
             List entities = allHeadersCriteria.list();
             return entities;
-        } catch ( SQLException se ) {
-            throw new FindException( se.toString(), se );
         } catch ( HibernateException e ) {
             throw new FindException( e.toString(), e );
         }
@@ -328,10 +315,9 @@ public abstract class HibernateEntityManager implements EntityManager {
     }
 
     protected HibernatePersistenceContext getContext() throws SQLException {
-        return (HibernatePersistenceContext)PersistenceContext.getCurrent();
+        return new HibernatePersistenceContext(getSession());
     }
 
-    protected PersistenceManager _manager;
     protected final Logger logger = Logger.getLogger(getClass().getName());
 
     private ReadWriteLock cacheLock = new ReaderPreferenceReadWriteLock();

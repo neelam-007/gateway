@@ -13,10 +13,9 @@ import com.l7tech.common.security.xml.DsigUtil;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.ISO8601Date;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.objectmodel.HibernatePersistenceContext;
-import com.l7tech.objectmodel.PersistenceContext;
 import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Session;
+import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -27,7 +26,6 @@ import java.io.PrintStream;
 import java.security.*;
 import java.security.cert.X509Certificate;
 import java.sql.*;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -35,9 +33,7 @@ import java.util.zip.ZipOutputStream;
 /**
  * Simple command line utility to export signed audit records.
  */
-public class AuditExporter {
-    private static final Logger logger = Logger.getLogger(AuditExporter.class.getName());
-
+public class AuditExporter extends HibernateDaoSupport {
     private static final String SQL = "select * from audit_main left ou" +
             "ter join audit_admin on audit_main.objectid=audit_admin.objectid left outer join audit_message on audit_main." +
             "objectid=audit_message.objectid left outer join audit_system on audit_main.objectid=audit_system.objecti" +
@@ -52,7 +48,6 @@ public class AuditExporter {
     private long approxNumToExport = 1;
 
     public AuditExporter() {
-
     }
 
     static String quoteMeta(String raw) {
@@ -100,7 +95,7 @@ public class AuditExporter {
             DigestOutputStream md5Out = new DigestOutputStream(sha1Out, md5);
             PrintStream out = new PrintStream(md5Out, false, "UTF-8");
 
-            Session session = ((HibernatePersistenceContext)PersistenceContext.getCurrent()).getAuditSession();
+            Session session = getSession();
             conn = session.connection();
             st = conn.createStatement(ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY, ResultSet.CLOSE_CURSORS_AT_COMMIT);
 
@@ -200,13 +195,10 @@ public class AuditExporter {
         } finally {
             try {
                 if (rs != null) rs.close();
-            } finally {
-                try {
-                    if (st != null) st.close();
-                } finally {
-                    if (conn != null) conn.close();
-                }
-            }
+            }catch(SQLException e) {}
+            try {
+                if (st !=null) st.close();
+            }catch(SQLException e) {}
         }
     }
 

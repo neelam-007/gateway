@@ -1,16 +1,16 @@
 package com.l7tech.cluster;
 
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.UpdateException;
 import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Session;
+import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.springframework.context.support.ApplicationObjectSupport;
 
 /**
  * Hibernate abstraction of the service_usage table.
@@ -24,7 +24,7 @@ import org.springframework.context.support.ApplicationObjectSupport;
  * $Id$<br/>
  *
  */
-public class ServiceUsageManager extends ApplicationObjectSupport {
+public class ServiceUsageManager extends HibernateDaoSupport {
 
     /**
      * retrieves all service usage recorded in database
@@ -33,13 +33,8 @@ public class ServiceUsageManager extends ApplicationObjectSupport {
     public Collection getAll() throws FindException {
         try {
             String queryall = "from " + TABLE_NAME + " in class " + ServiceUsage.class.getName();
-            HibernatePersistenceContext pc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-            Session session = pc.getSession();
+            Session session = getSession();
             return session.find(queryall);
-        } catch (SQLException e) {
-            String msg = "could not retreive service usage obj";
-            logger.log(Level.SEVERE, msg, e);
-            throw new FindException(msg, e);
         } catch (HibernateException e) {
             String msg = "could not retreive service usage obj";
             logger.log(Level.SEVERE, msg, e);
@@ -52,8 +47,7 @@ public class ServiceUsageManager extends ApplicationObjectSupport {
      */
     public void record(ServiceUsage data) throws UpdateException {
         try {
-            HibernatePersistenceContext pc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-            Session session = pc.getSession();
+            Session session = getSession();
             session.save(data);
             //session.saveOrUpdate(data);
             /*if (isAlreadyInDB(data)) {
@@ -61,10 +55,6 @@ public class ServiceUsageManager extends ApplicationObjectSupport {
             } else {
                 session.save(data);
             }*/
-        } catch (SQLException e) {
-            String msg = "could not record this service usage obj";
-            logger.log(Level.SEVERE, msg, e);
-            throw new UpdateException(msg, e);
         } catch (HibernateException e) {
             String msg = "could not record this service usage obj";
             logger.log(Level.SEVERE, msg, e);
@@ -77,15 +67,12 @@ public class ServiceUsageManager extends ApplicationObjectSupport {
      */
     public void clear(String nodeid) throws DeleteException {
         try {
-            HibernatePersistenceContext pc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-            Session session = pc.getSession();
+            Session session = getSession();
 
             String delQuery = "from " + TABLE_NAME + " in class " + ServiceUsage.class.getName() +
                               " where " + TABLE_NAME + "." + NODE_ID_COLUMN_NAME +
                               " = \'" + nodeid + "\'";
             session.delete(delQuery);
-        } catch (SQLException e) {
-            logger.log(Level.SEVERE, "error clearing table", e);
         } catch (HibernateException e) {
             logger.log(Level.SEVERE, "error clearing table", e);
         }
@@ -97,15 +84,10 @@ public class ServiceUsageManager extends ApplicationObjectSupport {
                           " = \'" + arg.getNodeid() + "\'" + " and " + TABLE_NAME + "." + SERVICE_ID_COLUMN_NAME +
                           " = \'" + arg.getServiceid() + "\'";
         try {
-            HibernatePersistenceContext pc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-            Session session = pc.getSession();
+            Session session = getSession();
             List res = session.find(query);
             if (res == null || res.isEmpty()) return false;
             return true;
-        } catch (SQLException e) {
-            String msg = "could not retreive service usage obj";
-            logger.log(Level.SEVERE, msg, e);
-            return false;
         } catch (HibernateException e) {
             String msg = "could not retreive service usage obj";
             logger.log(Level.SEVERE, msg, e);

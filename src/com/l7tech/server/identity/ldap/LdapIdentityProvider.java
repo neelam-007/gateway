@@ -18,7 +18,7 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.ServerConfig;
-import org.springframework.context.ApplicationContext;
+import org.springframework.beans.factory.InitializingBean;
 
 import javax.naming.CommunicationException;
 import javax.naming.Context;
@@ -48,7 +48,7 @@ import java.util.logging.Logger;
  * Date: Jan 21, 2004<br/>
  * $Id$<br/>
  */
-public class LdapIdentityProvider implements IdentityProvider {
+public class LdapIdentityProvider implements IdentityProvider, InitializingBean {
     /**
      * LDAP connection attempts will fail after 5 seconds' wait
      */
@@ -57,17 +57,17 @@ public class LdapIdentityProvider implements IdentityProvider {
      * An unused LDAP connection will be closed after 30 seconds of inactivity
      */
     public static final String LDAP_POOL_IDLE_TIMEOUT = new Integer(30 * 1000).toString();
-    private ApplicationContext applicationContext;
 
-    public LdapIdentityProvider(IdentityProviderConfig config, ApplicationContext applicationContext) {
+    public LdapIdentityProvider(IdentityProviderConfig config) {
         this.config = (LdapIdentityProviderConfig)config;
-        this.applicationContext = applicationContext;
         if (this.config.getLdapUrl() == null || this.config.getLdapUrl().length < 1) {
             throw new IllegalArgumentException("This config does not contain an ldap url"); // should not happen
         }
-        userManager = new LdapUserManager(this.config, this);
-        groupManager = new LdapGroupManager(this.config, this);
         initializeFallbackMechanism();
+    }
+
+    /** for subclassing such as class proxying */
+    protected LdapIdentityProvider() {
     }
 
     public void initializeFallbackMechanism() {
@@ -288,9 +288,9 @@ public class LdapIdentityProvider implements IdentityProvider {
                 logger.finest("Verification OK - client cert is valid.");
                 // End of Check
 
-                ClientCertManager man = (ClientCertManager)applicationContext.getBean("clientCertManager");
+
                 try {
-                    dbCert = (X509Certificate)man.getUserCert(realUser);
+                    dbCert = (X509Certificate)clientCertManager.getUserCert(realUser);
                 } catch (FindException e) {
                     logger.log(Level.SEVERE, "FindException exception looking for user cert", e);
                     dbCert = null;
@@ -306,7 +306,7 @@ public class LdapIdentityProvider implements IdentityProvider {
                     logger.finest("Authenticated user " + realUser.getDn() + " using a client certificate");
                     // remember that this cert was used at least once successfully
                     try {
-                        man.forbidCertReset(realUser);
+                        clientCertManager.forbidCertReset(realUser);
                     } catch (ObjectModelException e) {
                         logger.log(Level.WARNING, "transaction error around forbidCertReset", e);
                     }
@@ -647,6 +647,31 @@ public class LdapIdentityProvider implements IdentityProvider {
         // ClientCertManagerImp's default rules are OK
     }
 
+    public void setUserManager(LdapUserManager userManager) {
+        this.userManager = userManager;
+    }
+
+    public void setGroupManager(LdapGroupManager groupManager) {
+        this.groupManager = groupManager;
+    }
+
+    public void setClientCertManager(ClientCertManager clientCertManager) {
+        this.clientCertManager = clientCertManager;
+    }
+
+    /**
+     * Invoked by a BeanFactory after it has set all bean properties supplied
+     *
+     * @throws Exception in the event of misconfiguration (such
+     *                   as failure to set an essential property) or if initialization fails.
+     */
+    public void afterPropertiesSet() throws Exception {
+        if (clientCertManager == null) {
+            throw new IllegalArgumentException("The Client Certificate Manager is required");
+        }
+    }
+
+
     /**
      * In MSAD, there is an attribute named userAccountControl which contains information
      * regarding the validity of the account pointed to by the ldap entry. This method will return false
@@ -790,13 +815,16 @@ public class LdapIdentityProvider implements IdentityProvider {
 
     public static final String DESCRIPTION_ATTRIBUTE_NAME = "description";
 
-    private final LdapIdentityProviderConfig config;
-    private final LdapUserManager userManager;
-    private final LdapGroupManager groupManager;
+    private LdapIdentityProviderConfig config;
+    private ClientCertManager clientCertManager;
+    private LdapUserManager userManager;
+    private LdapGroupManager groupManager;
     private String lastSuccessfulLdapUrl;
     private long retryFailedConnectionTimeout;
     private final ReadWriteLock fallbackLock = new WriterPreferenceReadWriteLock();
     private String[] ldapUrls;
     private Long[] urlStatus;
     private final Logger logger = Logger.getLogger(getClass().getName());
+
+
 }

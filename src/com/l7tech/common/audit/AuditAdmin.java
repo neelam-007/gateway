@@ -9,6 +9,7 @@ package com.l7tech.common.audit;
 import com.l7tech.common.util.OpaqueId;
 import com.l7tech.logging.GenericLogAdmin;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.DeleteException;
 
 import java.io.Serializable;
 import java.rmi.RemoteException;
@@ -54,7 +55,7 @@ public interface AuditAdmin extends GenericLogAdmin {
      *
      * @throws RemoteException if there was a problem communicating with the Gateway
      */
-    void deleteOldAuditRecords() throws RemoteException;
+    void deleteOldAuditRecords() throws RemoteException, DeleteException;
 
     /**
      * Create a context for downloading audit records.  The context will expire after ten minutes of inactivity.

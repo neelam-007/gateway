@@ -14,14 +14,16 @@ import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpState;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.context.support.ApplicationObjectSupport;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.RemoteException;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -34,12 +36,13 @@ import java.util.logging.Logger;
  * User: flascelles<br/>
  * Date: Jun 6, 2003
  */
-public class ServiceAdminImpl extends ApplicationObjectSupport implements ServiceAdmin, InitializingBean {
+public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmin, InitializingBean, ApplicationContextAware {
 
     public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/serviceAdmin";
 
     private ServiceManager serviceManager;
     private PolicyValidator policyValidator;
+    private ApplicationContext applicationContext;
 
     public String resolveWsdlTarget(String url) throws IOException, MalformedURLException {
         try {
@@ -80,35 +83,23 @@ public class ServiceAdminImpl extends ApplicationObjectSupport implements Servic
     }
 
     public PublishedService findServiceByID(String serviceID) throws RemoteException, FindException {
-        try {
             long oid = toLong(serviceID);
             PublishedService service = serviceManager.findByPrimaryKey(oid);
             if (service != null) {
                 logger.finest("Returning service id " + oid + ", version " + service.getVersion());
             }
             return service;
-        } finally {
-            closeContext();
-        }
     }
 
     public EntityHeader[] findAllPublishedServices() throws RemoteException, FindException {
-        try {
             Collection res = serviceManager.findAllHeaders();
             return collectionToHeaderArray(res);
-        } finally {
-            closeContext();
-        }
     }
 
     public EntityHeader[] findAllPublishedServicesByOffset(int offset, int windowSize)
                     throws RemoteException, FindException {
-        try {
             Collection res = serviceManager.findAllHeaders(offset, windowSize);
             return collectionToHeaderArray(res);
-        } finally {
-            closeContext();
-        }
     }
 
     public PolicyValidatorResult validatePolicy(String policyXml, long serviceid) throws RemoteException {
@@ -122,8 +113,6 @@ public class ServiceAdminImpl extends ApplicationObjectSupport implements Servic
         } catch (IOException e) {
             logger.log(Level.WARNING, "cannot parse passed policy xml: " + policyXml, e);
             throw new RemoteException("cannot parse passed policy xml", e);
-        } finally {
-            closeContext();
         }
     }
 
@@ -137,19 +126,9 @@ public class ServiceAdminImpl extends ApplicationObjectSupport implements Servic
      */
     public long savePublishedService(PublishedService service) throws RemoteException,
                                     UpdateException, SaveException, VersionException, ResolutionParameterTooLongException {
-        PersistenceContext pc = null;
-        try {
-            pc = PersistenceContext.getCurrent();
-        } catch (SQLException e) {
-            String msg = "could not get persistence context";
-            logger.log(Level.WARNING, msg, e);
-            throw new UpdateException(msg, e);
-        }
 
-        try {
             RoleUtils.enforceAdminRole(getApplicationContext());
             long oid = PublishedService.DEFAULT_OID;
-            pc.beginTransaction();
 
             if (service.getOid() > 0) {
                 // UPDATING EXISTING SERVICE
@@ -161,20 +140,7 @@ public class ServiceAdminImpl extends ApplicationObjectSupport implements Servic
                 logger.fine("Saving new PublishedService");
                 oid = serviceManager.save(service);
             }
-            pc.commitTransaction();
             return oid;
-        } catch (TransactionException e) {
-            String msg = "Transaction exception (duplicate resolution parameters?). Rolling back.";
-            logger.log(Level.WARNING, msg, e);
-            try {
-                pc.rollbackTransaction();
-            } catch (TransactionException e1) {
-                logger.log(Level.WARNING, "exception rolling back", e);
-            }
-            throw new UpdateException(msg, e);
-        } finally {
-            pc.close();
-        }
     }
 
     public void deletePublishedService(String serviceID) throws RemoteException, DeleteException {
@@ -182,19 +148,11 @@ public class ServiceAdminImpl extends ApplicationObjectSupport implements Servic
         try {
             long oid = toLong(serviceID);
             RoleUtils.enforceAdminRole(getApplicationContext());
-            beginTransaction();
             service = serviceManager.findByPrimaryKey(oid);
             serviceManager.delete(service);
             logger.info("Deleted PublishedService: " + oid);
         } catch (FindException e) {
             throw new DeleteException("Could not find object to delete.", e);
-        } finally {
-            try {
-                endTransaction();
-            } catch ( TransactionException te ) {
-                logger.log( Level.WARNING, te.getMessage(), te );
-                throw new RemoteException( te.getMessage(), te );
-            }
         }
     }
 
@@ -208,36 +166,6 @@ public class ServiceAdminImpl extends ApplicationObjectSupport implements Servic
     // ************************************************
     // PRIVATES
     // ************************************************
-
-
-    private void beginTransaction() throws RemoteException {
-        try {
-            PersistenceContext.getCurrent().beginTransaction();
-        } catch (TransactionException e) {
-            String msg = "cannot begin transaction.";
-            throw new RemoteException(msg);
-        } catch (SQLException e) {
-            String msg = "cannot begin transaction.";
-            throw new RemoteException(msg);
-        }
-    }
-
-    private void closeContext() {
-        try {
-            PersistenceContext.getCurrent().close();
-        } catch (SQLException e) {
-            logger.log(Level.WARNING, "error closing context", e);
-        }
-    }
-
-    private void endTransaction() throws TransactionException {
-        try {
-            PersistenceContext.getCurrent().commitTransaction();
-            PersistenceContext.getCurrent().close();
-        } catch (SQLException e) {
-            logger.log(Level.WARNING, "Exception commiting", e);
-        }
-    }
 
     private EntityHeader[] collectionToHeaderArray(Collection input) throws RemoteException {
         if (input == null) return new EntityHeader[0];
@@ -274,12 +202,23 @@ public class ServiceAdminImpl extends ApplicationObjectSupport implements Servic
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 
-    public void afterPropertiesSet() throws Exception {
+    protected void initDao() throws Exception {
         if  (serviceManager == null) {
             throw new IllegalArgumentException("service manager is required");
         }
         if  (policyValidator == null) {
             throw new IllegalArgumentException("Policy Validator is required");
         }
+    }
+
+    /**
+     * Set the ApplicationContext that this object runs in.
+     */
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        this.applicationContext = applicationContext;
+    }
+
+    private ApplicationContext getApplicationContext() {
+        return applicationContext;
     }
 }

@@ -10,7 +10,8 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.TransactionalComponent;
+import com.l7tech.server.ServerComponentLifecycle;
+import org.springframework.context.ApplicationContext;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -21,7 +22,7 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class ClusterBootProcess implements TransactionalComponent {
+public class ClusterBootProcess implements ServerComponentLifecycle {
     private ServerConfig serverConfig;
 
     public static class AddressAlreadyInUseException extends Exception {
@@ -38,7 +39,9 @@ public class ClusterBootProcess implements TransactionalComponent {
 
     public void setServerConfig( ServerConfig config ) throws LifecycleException {
         this.serverConfig = config;
-        clusterInfoManager = (ClusterInfoManager)config.getSpringContext().getBean("clusterInfoManager");
+        final ApplicationContext springContext = config.getSpringContext();
+        clusterInfoManager = (ClusterInfoManager)springContext.getBean("clusterInfoManager");
+        distributedMessageIdManager = (DistributedMessageIdManager)springContext.getBean("distributedMessageIdManager");
         multicastAddress = config.getProperty(ServerConfig.PARAM_MULTICAST_ADDRESS);
         if (multicastAddress != null && multicastAddress.length() == 0) multicastAddress = null;
     }
@@ -71,10 +74,11 @@ public class ClusterBootProcess implements TransactionalComponent {
                 }
             }
 
-            StatusUpdater.initialize(serverConfig.getSpringContext());
+            final ApplicationContext springContext = serverConfig.getSpringContext();
+            StatusUpdater.initialize((StatusUpdateManager)springContext.getBean("statusUpdateManager"));
 
             logger.info("Initializing DistributedMessageIdManager");
-            DistributedMessageIdManager.initialize(multicastAddress, PORT);
+            distributedMessageIdManager.initialize(multicastAddress, PORT);
             logger.info("Initialized DistributedMessageIdManager");
         } catch (UpdateException e) {
             final String msg = "error updating boot time of node.";
@@ -91,7 +95,7 @@ public class ClusterBootProcess implements TransactionalComponent {
 
     public void stop() throws LifecycleException {
         try {
-            DistributedMessageIdManager.getInstance().close();
+            distributedMessageIdManager.close();
         } catch ( Exception e ) {
             throw new LifecycleException("DistributedMessageIdManager couldn't shut down properly");
         }
@@ -121,6 +125,7 @@ public class ClusterBootProcess implements TransactionalComponent {
     private final Logger logger = Logger.getLogger(getClass().getName());
 
     private ClusterInfoManager clusterInfoManager;
+    private DistributedMessageIdManager distributedMessageIdManager;
     private String multicastAddress;
     private static final int PORT = 8777;
 }

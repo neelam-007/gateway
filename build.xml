@@ -426,6 +426,7 @@
             <zipfileset dir="${src.root}/src/com/l7tech/common/resources" includes="wsil2xhtml.xml" prefix="ssg"/>
             <!-- Spring config -->
             <zipfileset dir="${src.root}/etc" includes="webApplicationContext.xml" prefix="WEB-INF"/>
+            <zipfileset dir="${src.root}/etc" includes="dataAccessContext.xml" prefix="WEB-INF"/>
         </war>
 
         <!--    * keep prebuilt version in src.root/lib

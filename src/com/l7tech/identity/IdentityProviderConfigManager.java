@@ -12,7 +12,6 @@ public interface IdentityProviderConfigManager extends EntityManager {
     // since this provider config is not persisted, we need a special id to identify it for certain operations
     long INTERNALPROVIDER_SPECIAL_OID = -2;
 
-    IdentityProvider getInternalIdentityProvider();
     IdentityProviderConfig findByPrimaryKey( long oid ) throws FindException;
     long save( IdentityProviderConfig identityProviderConfig ) throws SaveException;
     void update( IdentityProviderConfig identityProviderConfig ) throws UpdateException;

@@ -2,7 +2,6 @@ package com.l7tech.server;
 
 import com.l7tech.common.security.xml.processor.BadSecurityContextException;
 import com.l7tech.common.security.xml.processor.ProcessorException;
-import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
@@ -11,8 +10,6 @@ import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.PersistenceContext;
-import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import org.springframework.web.context.WebApplicationContext;
@@ -35,11 +32,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.security.GeneralSecurityException;
-import java.security.KeyStoreException;
-import java.security.PrivateKey;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.logging.Level;
@@ -57,6 +49,7 @@ import java.util.logging.Logger;
  */
 public class TokenServiceServlet extends HttpServlet {
     private WebApplicationContext applicationContext;
+    private TokenService tokenService;
 
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
@@ -67,7 +60,7 @@ public class TokenServiceServlet extends HttpServlet {
         if (applicationContext == null) {
             throw new ServletException("Configuration error; could not get application context");
         }
-
+        tokenService = (TokenService)applicationContext.getBean("tokenService");
     }
 
     public void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
@@ -89,43 +82,16 @@ public class TokenServiceServlet extends HttpServlet {
             sendBackNonSoapError(res, HttpServletResponse.SC_BAD_REQUEST, msg);
             return;
         }
-        TokenService tokenService;
-        try {
-            X509Certificate a = KeystoreUtils.getInstance().getSslCert();
-            PrivateKey i = KeystoreUtils.getInstance().getSSLPrivateKey();
-            tokenService = new TokenService(i, a);
-        } catch (CertificateException e) {
-            String msg = "Error getting server cert/private key: " + e.getMessage();
-            logger.log(Level.SEVERE, msg, e);
-            sendBackSoapFault(req, res, msg, e);
-            return;
-        } catch (KeyStoreException e) {
-            String msg = "Error getting server cert/private key: " + e.getMessage();
-            logger.log(Level.SEVERE, msg, e);
-            sendBackSoapFault(req, res, msg, e);
-            return;
-        } catch (IOException e){
-            String msg = "Error getting server cert/private key: " + e.getMessage();
-            logger.log(Level.SEVERE, msg, e);
-            sendBackSoapFault(req, res, msg, e);
-            return;
-        }
 
         Document response = null;
-        PersistenceContext pc = null;
         try {
-            pc = PersistenceContext.getCurrent();
-            pc.beginTransaction();
             response = tokenService.respondToRequestSecurityToken(payload, authenticator(), req.getRemoteAddr());
-            pc.commitIfPresent();
-            pc.close();
-            pc = null;
         } catch (InvalidDocumentFormatException e) {
             String msg = "Request is not formatted as expected. " + e.getMessage();
             logger.log(Level.INFO, msg, e);
             sendBackNonSoapError(res, HttpServletResponse.SC_BAD_REQUEST, msg);
             return;
-        } catch (TokenService.TokenServiceException e) {
+        } catch (TokenServiceImpl.TokenServiceException e) {
             String msg = "Could not respond to RequestSecurityToken. " + e.getMessage();
             logger.log(Level.SEVERE, msg, e);
             sendBackSoapFault(req, res, msg, e);
@@ -148,28 +114,6 @@ public class TokenServiceServlet extends HttpServlet {
         } catch (AuthenticationException e) {
             sendBackNonSoapError(res, HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
             return;
-        } catch (SQLException e) {
-            String msg = "Could not respond to RequestSecurityToken. " + e.getMessage();
-            logger.log(Level.WARNING, msg, e);
-            sendBackNonSoapError(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
-            return;
-        } catch (TransactionException e) {
-            String msg = "Could not respond to RequestSecurityToken. " + e.getMessage();
-            logger.log(Level.WARNING, msg, e);
-            sendBackNonSoapError(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
-            return;
-        } finally {
-            if (pc != null) {
-                try {
-                    pc.rollbackTransaction();
-                } catch (TransactionException e) {
-                    logger.log(Level.WARNING, "Exception rolling back transaction", e);
-                    sendBackNonSoapError(res, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
-                    return;
-                } finally {
-                    pc.close();
-                }
-            }
         }
         // dont let this ioexception fall through, this is a debugging nightmare!
         try {
@@ -183,8 +127,8 @@ public class TokenServiceServlet extends HttpServlet {
         }
     }
 
-    private final TokenService.CredentialsAuthenticator authenticator() {
-        return new TokenService.CredentialsAuthenticator() {
+    private final TokenServiceImpl.CredentialsAuthenticator authenticator() {
+        return new TokenServiceImpl.CredentialsAuthenticator() {
             public User authenticate(LoginCredentials creds) {
                 IdentityProviderConfigManager idpcm =
                   (IdentityProviderConfigManager)applicationContext.getBean("identityProviderConfigManager");
