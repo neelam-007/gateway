@@ -8,6 +8,7 @@ package com.l7tech.proxy.processor;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.CertificateDownloader;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.ConfigurationException;
@@ -24,7 +25,6 @@ import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.PolicyRetryableException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
-import com.l7tech.proxy.ssl.ClientProxySslException;
 import com.l7tech.proxy.util.CannedSoapFaults;
 import com.l7tech.proxy.util.ThreadLocalHttpClient;
 import com.l7tech.util.XmlUtil;
@@ -36,12 +36,12 @@ import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.log4j.Category;
 
 import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 /**
@@ -97,14 +97,12 @@ public class MessageProcessor {
                     undecorateResponse(req, res, appliedPolicy);
                     return res;
                 } catch (SSLException e) {
-
-                    if (e.getCause() instanceof ClientProxySslException &&
-                        e.getCause().getCause() instanceof UnrecoverableKeyException)
-                        // translate into something meaningful
+                    if (ExceptionUtils.causedBy(e, BadCredentialsException.class))
+                        throw e;
+                    if (ExceptionUtils.causedBy(e, UnrecoverableKeyException.class))
                         throw new BadCredentialsException(e);
 
-                    if (e instanceof SSLHandshakeException &&
-                        e.getCause() instanceof ServerCertificateUntrustedException)
+                    if (ExceptionUtils.causedBy(e, ServerCertificateUntrustedException.class))
                         installSsgServerCertificate(ssg); // might throw BadCredentialsException
                         // allow policy to reset and retry
                     else
@@ -117,9 +115,23 @@ public class MessageProcessor {
             } catch (PolicyRetryableException e) {
                 // allow policy to reset and retry
             } catch (BadCredentialsException e) {
+                // If we have a client cert, and the current password worked to decrypt it's private key, but something
+                // has rejected the password anyway, we need to reestablish the validity of this account with the SSG.
+                if (SsgKeyStoreManager.isClientCertAvailabile(ssg) && SsgKeyStoreManager.isPasswordWorkedForPrivateKey(ssg)) {
+                    if (securePasswordPing(ssg)) {
+                        // password works with our keystore, and with the SSG, so why did it fail just now?
+                        String message = "Recieved password failure, but it worked with our keystore and the SSG liked it when we double-checked it.  " +
+                                  "Could be an internal error, or an attack, or the SSG admin toggling your account on and off.";
+                        log.error(message);
+                        throw new ConfigurationException(message, e);
+                    } else {
+                        log.error("The SSG password that was used to obtain this client cert is no longer valid -- deleting the client cert");
+                        SsgKeyStoreManager.deleteClientCert(ssg);
+                        req.getClientProxy().initializeSsl(); // reset global SSL state
+                    }
+                }
+
                 Managers.getCredentialManager().notifyInvalidCredentials(ssg);
-                if (SsgKeyStoreManager.isClientCertAvailabile(ssg))
-                    SsgKeyStoreManager.deleteClientCert(ssg);
                 Managers.getCredentialManager().getCredentials(ssg);
                 // allow policy to reset and retry
             }
@@ -130,6 +142,28 @@ public class MessageProcessor {
         if (req.getLastErrorResponse() != null)
             return req.getLastErrorResponse();
         throw new ConfigurationException("Unable to conform to policy, and no useful fault from Ssg.");
+    }
+
+    /**
+     * Contact the SSG and determine whether this SSG password is still valid.
+     *
+     * @param ssg  the SSG to contact.  must be configured with the credentials you wish to validate
+     * @return  true if these credentials appear to be valid on this SSG; false otherwise
+     * @throws IOException if we were unable to validate this password either way
+     */
+    private boolean securePasswordPing(Ssg ssg) throws IOException {
+        // We'll just use the CertificateDownloader for this.
+        CertificateDownloader cd = new CertificateDownloader(ssg.getServerUrl(),
+                                                             ssg.getUsername(),
+                                                             ssg.password());
+        try {
+            boolean worked = cd.downloadCertificate();
+            ssg.passwordWorkedWithSsg(worked);
+            return worked;
+        } catch (CertificateException e) {
+            log.error("SSG sent us an invalid certificate during secure password ping", e);
+            throw new IOException("SSG sent us an invalid certificate during secure password ping");
+        }
     }
 
     /**
