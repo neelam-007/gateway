@@ -10,9 +10,6 @@ import java.security.cert.CertificateException;
 
 /**
  * Exception thrown by ClientProxyTrustManager when it doesn't recognize an Ssg certificate.
- * User: mike
- * Date: Aug 13, 2003
- * Time: 4:45:48 PM
  */
 public class ServerCertificateUntrustedException extends CertificateException {
 
