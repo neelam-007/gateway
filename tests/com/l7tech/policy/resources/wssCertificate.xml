@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <wsp:Policy xmlns:wsp="http://schemas.xmlsoap.org/ws/2002/12/policy"
     xmlns:wsse="http://schemas.xmlsoap.org/ws/2002/12/secext"
-    xmlns:l7="http://www.layer7tech.com"
+    xmlns:l7="http://www.layer7-tech.com"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="Policy.xsd">
     <!--

@@ -36,5 +36,5 @@ public class Client extends AdminWSClientStub {
     }
 
 
-    private static final String LOGGING_URN = "http://www.layer7tech.com/logging";
+    private static final String LOGGING_URN = "http://www.layer7-tech.com/logging";
 }

@@ -163,5 +163,5 @@ public class Client extends AdminWSClientStub {
         call.registerTypeMapping(com.l7tech.identity.Group.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.identity.Group.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.identity.Group.class, qn));
     }
 
-    public static final String IDENTITY_URN = "http://www.layer7tech.com/identity";
+    public static final String IDENTITY_URN = "http://www.layer7-tech.com/identity";
 }

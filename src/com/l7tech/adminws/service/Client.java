@@ -99,5 +99,5 @@ public class Client extends AdminWSClientStub {
         call.registerTypeMapping(com.l7tech.objectmodel.EntityType.class, qn, new org.apache.axis.encoding.ser.BeanSerializerFactory(com.l7tech.objectmodel.EntityType.class, qn), new org.apache.axis.encoding.ser.BeanDeserializerFactory(com.l7tech.objectmodel.EntityType.class, qn));
     }
 
-    private static final String SERVICE_URN = "http://www.layer7tech.com/service";
+    private static final String SERVICE_URN = "http://www.layer7-tech.com/service";
 }
