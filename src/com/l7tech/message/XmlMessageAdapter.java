@@ -70,10 +70,10 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
             multipart = true;
 
             if(!soapPartParsed) {
-                String multipartBoundary = (String)contentTypeHeader.getParam(XmlUtil.MULTIPART_BOUNDARY);
+                String multipartBoundary = MultipartUtil.unquote((String)contentTypeHeader.getParam(XmlUtil.MULTIPART_BOUNDARY));
                 if (multipartBoundary == null) throw new IOException("Multipart header '" + contentTypeHeader.getName() + "' did not contain a boundary");
 
-                String innerType = (String)contentTypeHeader.getParam(XmlUtil.MULTIPART_TYPE);
+                String innerType = MultipartUtil.unquote((String)contentTypeHeader.getParam(XmlUtil.MULTIPART_TYPE));
                 if (innerType.startsWith(XmlUtil.TEXT_XML)) {
                     multipartReader = new MultipartMessageReader(is, multipartBoundary);
 
