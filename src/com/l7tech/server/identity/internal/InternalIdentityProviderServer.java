@@ -70,6 +70,12 @@ public class InternalIdentityProviderServer extends PersistentIdentityProvider {
                 logger.info(err);
                 throw new AuthenticationException( err );
             } else {
+                if (dbUser.getExpiration() > -1 && dbUser.getExpiration() < System.currentTimeMillis()) {
+                    String err = "Credentials' login matches an internal user " + login + " but that " +
+                                 "account is now expired.";
+                    logger.info(err);
+                    throw new AuthenticationException( err );
+                }
                 CredentialFormat format = pc.getFormat();
                 X509Certificate dbCert = null;
                 if (format.isClientCert() || format == CredentialFormat.SAML) {
