@@ -26,7 +26,7 @@ public class InternalIdentityProvider implements IdentityProvider {
         return _groupManager;
     }
 
-    public boolean authenticate( User user ) {
+    public boolean authenticate(User user, Object credential) {
         return false;
     }
 

@@ -9,5 +9,5 @@ public interface IdentityProvider {
     void initialize( IdentityProviderConfig config );
     UserManager getUserManager();
     GroupManager getGroupManager();
-    boolean authenticate( User user );
+    boolean authenticate( User user, Object credential );
 }

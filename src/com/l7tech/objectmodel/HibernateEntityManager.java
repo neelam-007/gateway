@@ -31,5 +31,14 @@ public class HibernateEntityManager implements EntityManager {
         return null;
     }
 
+    public Collection findAllHeaders() {
+        return null;
+    }
+
+    public Collection findAllHeaders(int offset, int windowSize) {
+        return null;
+    }
+
+
     private HibernatePersistenceManager _persistenceManager;
 }

@@ -35,6 +35,16 @@ public class IdentityProviderConfigManagerClient implements com.l7tech.identity.
         return null;
     }
 
+    public Collection findAllHeaders(int offset, int windowSize) {
+        // todo (fla) implementation
+        return null;
+    }
+
+    public Collection findAllHeaders() {
+        // todo (fla) implementation
+        return null;
+    }
+
     public Collection findAll(int offset, int windowSize) {
         // todo (fla) implementation
         return null;

@@ -18,6 +18,14 @@ public class AddressManagerImp implements AddressManager {
         return null;
     }
 
+    public Collection findAllHeaders() {
+        return null;
+    }
+
+    public Collection findAllHeaders(int offset, int windowSize) {
+        return null;
+    }
+
     public Address findByPrimaryKey(long oid) {
         return null;
     }
