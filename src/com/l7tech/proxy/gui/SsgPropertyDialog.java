@@ -29,9 +29,13 @@ import java.util.Arrays;
 public class SsgPropertyDialog extends PropertyDialog {
     private static final Category log = Category.getInstance(SsgPropertyDialog.class);
 
-    private Ssg ssg; // The real Ssg instnace, to which changes may be committed.
+    // Model
+    private Ssg ssg; // The real Ssg instance, to which changes may be committed.
+
+    // View
     private int gridY = 0; // Used for layout
 
+    //   View for General pane
     private JComponent generalPane;
     private JTextField fieldName;
     private JLabel fieldLocalEndpoint;
@@ -44,6 +48,7 @@ public class SsgPropertyDialog extends PropertyDialog {
     private JLabel fieldPassword;
     private char[] editPassword;
 
+    //   View for Policy pane
     private JComponent policiesPane;
     private JTree policyTree;
     private JTable policyTable;
@@ -69,22 +74,6 @@ public class SsgPropertyDialog extends PropertyDialog {
      */
     public static PropertyDialog getPropertyDialogForObject(final Ssg ssg) {
         return new SsgPropertyDialog(ssg);
-    }
-
-    /** Make a GridBagConstraints for a control, and move to next row. */
-    private GridBagConstraints gbc() {
-        return new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
-                                      GridBagConstraints.WEST,
-                                      GridBagConstraints.HORIZONTAL,
-                                      new Insets(5, 5, 0, 5), 0, 0);
-    }
-
-    /** Make a GridBagConstraints for a label. */
-    private GridBagConstraints gbcLabel() {
-        return new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
-                                      GridBagConstraints.EAST,
-                                      GridBagConstraints.NONE,
-                                      new Insets(5, 5, 0, 0), 0, 0);
     }
 
     private class DisplayPolicyTableModel extends AbstractTableModel {
@@ -213,34 +202,57 @@ public class SsgPropertyDialog extends PropertyDialog {
             generalPane.setBorder(BorderFactory.createEmptyBorder());
 
             fieldName = new JTextField();
-            fieldName.setPreferredSize(new Dimension(200, 20));
-            pane.add(new JLabel("Name:"), gbcLabel());
-            pane.add(fieldName, gbc());
+            pane.add(new JLabel("Name:"), new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
+                                                              GridBagConstraints.EAST,
+                                                              GridBagConstraints.NONE,
+                                                              new Insets(15, 5, 0, 0), 0, 0));
+            pane.add(fieldName, new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
+                                                              GridBagConstraints.WEST,
+                                                              GridBagConstraints.HORIZONTAL,
+                                                              new Insets(15, 5, 0, 5), 0, 0));
 
             fieldServerUrl = new JTextField();
             fieldServerUrl.setPreferredSize(new Dimension(250, 20));
-            pane.add(new JLabel("SSG URL:"), gbcLabel());
-            pane.add(fieldServerUrl, gbc());
+            pane.add(new JLabel("SSG URL:"), new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
+                                                              GridBagConstraints.EAST,
+                                                              GridBagConstraints.NONE,
+                                                              new Insets(5, 5, 0, 0), 0, 0));
+            pane.add(fieldServerUrl, new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
+                                                              GridBagConstraints.WEST,
+                                                              GridBagConstraints.HORIZONTAL,
+                                                              new Insets(5, 5, 0, 5), 0, 0));
 
-            fieldLocalEndpoint = new JLabel("");
-            fieldLocalEndpoint.setPreferredSize(new Dimension(200, 20));
-            pane.add(new JLabel("Endpoint:"), gbcLabel());
-            pane.add(fieldLocalEndpoint, gbc());
+            // Authentication panel
 
-            cbDefault = new JCheckBox("Route unknown endpoints to this SSG");
-            cbDefault.setPreferredSize(new Dimension(200, 20));
-            pane.add(cbDefault, gbc());
+            JPanel authp = new JPanel(new GridBagLayout());
+            authp.setBorder(BorderFactory.createTitledBorder("Username and password"));
+            pane.add(authp, new GridBagConstraints(0, gridY++, 2, 1, 1000.0, 0.0,
+                                                              GridBagConstraints.WEST,
+                                                              GridBagConstraints.HORIZONTAL,
+                                                              new Insets(15, 5, 5, 5), 0, 0));
+
+            int oy = gridY;
+            gridY = 0;
 
             fieldUsername = new JTextField();
             fieldUsername.setPreferredSize(new Dimension(200, 20));
-            pane.add(new JLabel("Username:"), gbcLabel());
-            pane.add(fieldUsername, gbc());
+            authp.add(new JLabel("Username:"), new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
+                                                              GridBagConstraints.EAST,
+                                                              GridBagConstraints.NONE,
+                                                              new Insets(5, 5, 0, 0), 0, 0));
+            authp.add(fieldUsername, new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
+                                                              GridBagConstraints.WEST,
+                                                              GridBagConstraints.HORIZONTAL,
+                                                              new Insets(5, 5, 0, 5), 0, 0));
 
             JPanel passwordStuff = new JPanel();
             passwordStuff.setLayout(new GridBagLayout());
 
             fieldPassword = new JLabel();
-            pane.add(new JLabel("Password:"), gbcLabel());
+            authp.add(new JLabel("Password:"), new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
+                                                              GridBagConstraints.EAST,
+                                                              GridBagConstraints.NONE,
+                                                              new Insets(5, 5, 0, 0), 0, 0));
             passwordStuff.add(fieldPassword,
                               new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
                                                      GridBagConstraints.WEST,
@@ -277,11 +289,47 @@ public class SsgPropertyDialog extends PropertyDialog {
                                                        new Insets(0, 0, 0, 0), 0, 0));
 
             Utilities.equalizeButtonSizes(new AbstractButton[] { buttonClearPassword, buttonSetPassword });
-            pane.add(passwordStuff, gbc());
+            authp.add(passwordStuff, new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
+                                                              GridBagConstraints.WEST,
+                                                              GridBagConstraints.HORIZONTAL,
+                                                              new Insets(5, 5, 0, 5), 0, 0));
 
-            cbPromptForPassword = new JCheckBox("Prompt for username and password when needed");
-            cbPromptForPassword.setPreferredSize(new Dimension(200, 20));
-            pane.add(cbPromptForPassword, gbc());
+            cbPromptForPassword = new JCheckBox("Prompt for username and password as needed");
+            authp.add(cbPromptForPassword, new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
+                                                              GridBagConstraints.WEST,
+                                                              GridBagConstraints.HORIZONTAL,
+                                                              new Insets(5, 5, 0, 5), 0, 0));
+            gridY = oy;
+
+            // Endpoint panel
+
+            JPanel epp = new JPanel(new GridBagLayout());
+            epp.setBorder(BorderFactory.createTitledBorder("Local endpoint binding"));
+            pane.add(epp, new GridBagConstraints(0, gridY++, 2, 1, 1000.0, 0.0,
+                                                              GridBagConstraints.WEST,
+                                                              GridBagConstraints.HORIZONTAL,
+                                                              new Insets(14, 5, 5, 5), 0, 0));
+
+            oy = gridY;
+            gridY = 0;
+            fieldLocalEndpoint = new JLabel("");
+            fieldLocalEndpoint.setPreferredSize(new Dimension(120, 20));
+            epp.add(new JLabel("Endpoint:"), new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
+                                                              GridBagConstraints.EAST,
+                                                              GridBagConstraints.NONE,
+                                                              new Insets(5, 5, 0, 0), 0, 0));
+            epp.add(fieldLocalEndpoint, new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
+                                                              GridBagConstraints.WEST,
+                                                              GridBagConstraints.HORIZONTAL,
+                                                              new Insets(5, 5, 0, 5), 0, 0));
+
+            cbDefault = new JCheckBox("Route unknown endpoints to this SSG");
+            cbDefault.setPreferredSize(new Dimension(120, 20));
+            epp.add(cbDefault, new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
+                                                              GridBagConstraints.WEST,
+                                                              GridBagConstraints.HORIZONTAL,
+                                                              new Insets(5, 5, 0, 5), 0, 0));
+            gridY = oy;
 
             // Have a spacer eat any leftover space
             pane.add(new JPanel(),
