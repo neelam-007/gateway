@@ -333,6 +333,7 @@ public class Gui {
 
         final JMenuItem fileQuit = new JMenuItem( MENU_FILE_QUIT );
         fileQuit.setMnemonic( KeyEvent.VK_X );
+        fileQuit.setAccelerator(KeyStroke.getKeyStroke('X', ActionEvent.ALT_MASK));
         fileQuit.addActionListener( menuActionListener );
         fileMenu.add( fileQuit );
 
