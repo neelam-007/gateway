@@ -1,11 +1,11 @@
 package com.l7tech.console;
 
-import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.BuildInfo;
-import com.l7tech.console.util.Preferences;
-import com.l7tech.console.util.Registry;
 import com.incors.plaf.kunststoff.KunststoffLookAndFeel;
 import com.incors.plaf.kunststoff.themes.KunststoffDesktopTheme;
+import com.l7tech.common.BuildInfo;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.console.util.Preferences;
+import com.l7tech.console.util.Registry;
 import net.jini.security.policy.DynamicPolicyProvider;
 import net.jini.security.policy.PolicyInitializationException;
 
@@ -15,9 +15,9 @@ import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
+import java.security.AccessController;
 import java.security.Policy;
 import java.security.PrivilegedAction;
-import java.security.AccessController;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -47,7 +47,7 @@ public class Main {
             installEventQueue();
 
             Policy.setPolicy(new DynamicPolicyProvider());
-            final JFrame main;
+            final MainWindow main;
             initializeUIPreferences();
             /* invoke the splash screen */
             showSplashScreen();
@@ -75,6 +75,11 @@ public class Main {
                       if (mainSplashScreen != null) {
                           mainSplashScreen.dispose();
                       }
+                      SwingUtilities.invokeLater(new Runnable() {
+                          public void run() {
+                              main.activateLogonDialog();
+                          }
+                      });
                   }
 
                   public void windowClosed(WindowEvent e) {

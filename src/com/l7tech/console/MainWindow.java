@@ -1,6 +1,5 @@
 package com.l7tech.console;
 
-import com.l7tech.console.security.ClientCredentialManager;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.Locator;
@@ -12,6 +11,7 @@ import com.l7tech.console.panels.LogonDialog;
 import com.l7tech.console.panels.MonitorPanel;
 import com.l7tech.console.panels.PreferencesDialog;
 import com.l7tech.console.panels.WorkSpacePanel;
+import com.l7tech.console.security.ClientCredentialManager;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.PolicyToolBar;
 import com.l7tech.console.util.ComponentRegistry;
@@ -25,8 +25,8 @@ import javax.help.HelpSetException;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.event.EventListenerList;
-import javax.swing.event.TreeSelectionListener;
 import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
@@ -388,7 +388,7 @@ public class MainWindow extends JFrame {
                * @param event  the event that occured
                */
               public void actionPerformed(ActionEvent event) {
-                  connectHandler(event);
+                  activateLogonDialog();
               }
           };
         connectAction.putValue(Action.SHORT_DESCRIPTION, atext);
@@ -1242,15 +1242,6 @@ public class MainWindow extends JFrame {
     // --- Event listeners ---------------------------------------
 
     /**
-     * The connect handler.
-     * todo: rework with connect listeners
-     * @param event  ActionEvent
-     */
-    private void connectHandler(ActionEvent event) {
-        logon();
-    }
-
-    /**
      * The disconnect handler.
      *
      * @param event  ActionEvent
@@ -1390,23 +1381,11 @@ public class MainWindow extends JFrame {
 
         toggleConnectedMenus(false);
         /* Pack frame on the screen */
-        pack();
+        //pack();
+        validate();
         /* restore window position */
         initializeWindowPosition();
-        SwingUtilities.
-          invokeLater(new Runnable() {
-              public void run() {
-                  int key =
-                    connectMenuItem.getAccelerator().getKeyCode();
-                  int modifiers =
-                    connectMenuItem.getAccelerator().getModifiers();
-                  dispatchEvent(new KeyEvent(MainWindow.this,
-                    KeyEvent.KEY_PRESSED,
-                    0,
-                    modifiers,
-                    key));
-              }
-          });
+        setVisible(true);
     }
 
     /**
@@ -1620,13 +1599,9 @@ public class MainWindow extends JFrame {
 
     /**
      * invoke logon dialog
-     *
-     * @return true if the logon was succesfully validated, false
-     *         otherwise
      */
-    private boolean logon() {
+    void activateLogonDialog() {
         LogonDialog.logon(this, logonListenr);
-        return true;
     }
 
     /**
