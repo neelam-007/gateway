@@ -13,6 +13,7 @@ import com.l7tech.objectmodel.HibernatePersistenceManager;
 import com.l7tech.remote.jini.Services;
 import com.l7tech.remote.jini.export.RemoteService;
 import com.l7tech.service.ServiceManager;
+import com.l7tech.service.ServiceManagerImp;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -67,6 +68,11 @@ public class BootServlet extends HttpServlet {
     public void destroy() {
         logger.info("Stopping admin services.");
         RemoteService.unexportAll();
+        // stop cache integrity process if necessary
+        ServiceManager serviceManager = (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
+        if (serviceManager != null && serviceManager instanceof ServiceManagerImp) {
+            ((ServiceManagerImp)serviceManager).destroy();
+        }
     }
 
     protected void initializeAdminServices() {
