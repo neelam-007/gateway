@@ -1,6 +1,7 @@
 package com.l7tech.console.util;
 
 import com.l7tech.console.tree.*;
+import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.MainWindow;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;

@@ -2,9 +2,6 @@ package com.l7tech.console.tree;
 
 import com.l7tech.objectmodel.EntityHeader;
 
-import java.util.Collections;
-import java.util.Enumeration;
-
 
 /**
  * The class represents a node element in the TreeModel.

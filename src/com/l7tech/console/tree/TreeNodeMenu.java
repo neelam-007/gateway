@@ -1,7 +1,5 @@
 package com.l7tech.console.tree;
 
-import org.apache.log4j.Category;
-
 import javax.swing.*;
 import java.awt.event.ActionListener;
 

@@ -1,9 +1,6 @@
 package com.l7tech.console.tree;
 
 import javax.swing.tree.TreeNode;
-import javax.swing.tree.TreeModel;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.DefaultMutableTreeNode;
 
 /**
  * FilteredTreeModel extends DirTreeModel and provides basic

@@ -12,7 +12,6 @@ import javax.swing.*;
 import javax.swing.plaf.TreeUI;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 import javax.swing.plaf.metal.MetalTreeUI;
-import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreePath;
 import java.awt.*;
 

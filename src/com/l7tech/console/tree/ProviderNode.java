@@ -1,11 +1,11 @@
 package com.l7tech.console.tree;
 
+import com.l7tech.objectmodel.EntityHeader;
+
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
-
-import com.l7tech.objectmodel.EntityHeader;
 
 /**
  * The class represents an tree node gui node element that

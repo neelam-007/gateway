@@ -1,11 +1,7 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.Group;
-import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-
 
 import java.util.Enumeration;
 

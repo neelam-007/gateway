@@ -1,16 +1,16 @@
 package com.l7tech.console.tree;
 
+import com.l7tech.console.tree.wsdl.WsdlTreeNode;
+import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.Wsdl;
-import com.l7tech.console.util.Registry;
 
 import javax.swing.tree.TreeNode;
+import java.io.StringReader;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.Arrays;
-import java.io.StringReader;
 
 
 /**

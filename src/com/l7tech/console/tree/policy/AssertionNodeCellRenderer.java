@@ -1,18 +1,11 @@
 package com.l7tech.console.tree.policy;
 
-import java.awt.Component;
-
-import javax.swing.JTree;
-import javax.swing.Icon;
-import javax.swing.UIManager;
-import javax.swing.tree.DefaultTreeCellRenderer;
-import javax.swing.tree.DefaultMutableTreeNode;
-
 import com.l7tech.console.util.IconManager;
-import com.l7tech.console.tree.EntityTreeNode;
-import com.l7tech.console.tree.BasicTreeNode;
-import com.l7tech.console.tree.WsdlTreeNode;
 import com.l7tech.policy.assertion.Assertion;
+
+import javax.swing.*;
+import javax.swing.tree.DefaultTreeCellRenderer;
+import java.awt.*;
 
 /**
  * Console custom <CODE>AssertionNodeCellRenderer</CODE>.

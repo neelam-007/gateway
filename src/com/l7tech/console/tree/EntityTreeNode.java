@@ -3,16 +3,9 @@ package com.l7tech.console.tree;
 import org.apache.log4j.Category;
 
 import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.TreeNode;
 import javax.swing.tree.MutableTreeNode;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.List;
-
-import com.l7tech.objectmodel.EntityHeader;
+import javax.swing.tree.TreeNode;
+import java.util.*;
 
 
 /**

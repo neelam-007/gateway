@@ -1,6 +1,5 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.identity.UserManager;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.objectmodel.FindException;
 

@@ -1,7 +1,7 @@
 package com.l7tech.console.tree;
 
-import javax.swing.JTree;
-import javax.swing.tree.*;
+import javax.swing.*;
+import javax.swing.tree.TreePath;
 
 public class DirectoryBrowser extends JTree {
 

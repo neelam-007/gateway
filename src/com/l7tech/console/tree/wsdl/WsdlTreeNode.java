@@ -1,20 +1,22 @@
-package com.l7tech.console.tree;
+package com.l7tech.console.tree.wsdl;
 
 import com.l7tech.service.Wsdl;
-import org.apache.log4j.Category;
 
-import javax.swing.tree.TreeNode;
-import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.MutableTreeNode;
+import javax.swing.tree.TreeNode;
 import javax.wsdl.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 
 /**
  * the WSDL Tree Node represents the WSDL backed model.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
- * @see BasicTreeNode
+ * @see com.l7tech.console.tree.BasicTreeNode
  */
 public abstract class WsdlTreeNode extends DefaultMutableTreeNode {
 

@@ -2,7 +2,10 @@ package com.l7tech.console.tree;
 
 import com.l7tech.objectmodel.EntityHeader;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
 
 /**
  * The class represents an entry gui node element in the
