@@ -338,6 +338,7 @@
                 <include name="xml-apis.jar"/>
                 <include name="xpp3-1.1.3.3.jar"/>
                 <include name="xss4j.jar"/>
+                <include name="jaxm-api.jar"/>
 
                 <!-- Include OpenJMS on dev builds -->
                 <include name="openjms-client-0.7.6.jar" if="include.jms.openjms"/>
