@@ -44,7 +44,7 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
             return internalProvider.getConfig();
         else
             try {
-                return (IdentityProviderConfig)_manager.findByPrimaryKey(getContext(), getImpClass(), oid);
+                return (IdentityProviderConfig)PersistenceManager.findByPrimaryKey(getContext(), getImpClass(), oid);
             } catch (SQLException se) {
                 throw new FindException(se.toString(), se);
             }
@@ -56,9 +56,7 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
      * @throws FindException if there was an persistence error 
      */
     public IdentityProvider getIdentityProvider(long oid) throws FindException {
-        IdentityProviderConfig conf = findByPrimaryKey(oid);
-        if (conf == null) return null;
-        return IdentityProviderFactory.makeProvider(conf);
+        return IdentityProviderFactory.getProvider(oid);
     }
 
     public void test(IdentityProviderConfig identityProviderConfig)
@@ -66,18 +64,17 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
         IdentityProviderType type = identityProviderConfig.type();
         if ( type == IdentityProviderType.INTERNAL ) {
             if (identityProviderConfig.getOid() != INTERNALPROVIDER_SPECIAL_OID) {
-                logger.warning("Testing an internal id provider with no good oid. " +
-                        "Throwing InvalidIdProviderCfgException");
-                throw new InvalidIdProviderCfgException("This internal ID provider config" +
-                        "is not valid.");
+                logger.warning("Testing an internal id provider with no good oid. Throwing InvalidIdProviderCfgException");
+                throw new InvalidIdProviderCfgException("This internal ID provider config is not valid.");
             }
         } else if ( type.equals(IdentityProviderType.LDAP)) {
             LdapIdentityProvider tmpProvider = new LdapIdentityProvider();
             tmpProvider.initialize(identityProviderConfig);
             tmpProvider.test();
         } else {
-            logger.severe("testing unsupported type");
-            throw new InvalidIdProviderCfgException("Unsupported type");
+            String msg = "Unsupported IdentityProviderConfig type: " + type;
+            logger.severe(msg);
+            throw new InvalidIdProviderCfgException(msg );
         }
     }
 
@@ -136,7 +133,7 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
         }
         try {
             IdentityProviderFactory.dropProvider(identityProviderConfig);
-            _manager.update(getContext(), identityProviderConfig);
+            PersistenceManager.update(getContext(), identityProviderConfig);
         } catch (SQLException se) {
             throw new UpdateException(se.toString(), se);
         }
@@ -150,7 +147,7 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
         }
         try {
             IdentityProviderFactory.dropProvider(identityProviderConfig);
-            _manager.delete(getContext(), identityProviderConfig);
+            PersistenceManager.delete(getContext(), identityProviderConfig);
         } catch (SQLException se) {
             throw new DeleteException(se.toString(), se);
         }

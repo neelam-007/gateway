@@ -168,9 +168,8 @@ public class IdentityAdminImpl implements IdentityAdmin {
     public EntityHeader[] searchIdentities(long identityProviderConfigId, EntityType[] types, String pattern)
       throws RemoteException, FindException {
         try {
-            IdentityProviderConfig cfg = getIdProvCfgMan().
-              findByPrimaryKey(identityProviderConfigId);
-            IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
+            IdentityProvider provider = IdentityProviderFactory.getProvider(identityProviderConfigId);
+            if ( provider == null ) throw new FindException("IdentityProvider could not be found");
             if (types != null) {
                 for (int i = 0; i < types.length; i++) {
                     types[i] = EntityType.fromValue(types[i].getVal());
@@ -186,8 +185,8 @@ public class IdentityAdminImpl implements IdentityAdmin {
     public User findUserByPrimaryKey(long identityProviderConfigId, String userId)
       throws RemoteException, FindException {
         try {
-            IdentityProviderConfig cfg = getIdProvCfgMan().findByPrimaryKey(identityProviderConfigId);
-            IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
+            IdentityProvider provider = IdentityProviderFactory.getProvider(identityProviderConfigId);
+            if ( provider == null ) throw new FindException("IdentityProvider could not be found");
             UserManager userManager = provider.getUserManager();
 
             return userManager.findByPrimaryKey(userId);
@@ -231,8 +230,8 @@ public class IdentityAdminImpl implements IdentityAdmin {
       throws RemoteException, SaveException, UpdateException, ObjectNotFoundException {
         beginTransaction();
         try {
-            IdentityProviderConfig cfg = getIdProvCfgMan().findByPrimaryKey(identityProviderConfigId);
-            IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
+            IdentityProvider provider = IdentityProviderFactory.getProvider(identityProviderConfigId);
+            if ( provider == null ) throw new FindException("IdentityProvider could not be found");
             UserManager userManager = provider.getUserManager();
 
             String id = user.getUniqueIdentifier();
@@ -286,8 +285,8 @@ public class IdentityAdminImpl implements IdentityAdmin {
 
     public Group findGroupByPrimaryKey(long cfgid, String groupId) throws RemoteException, FindException {
         try {
-            IdentityProviderConfig cfg = getIdProvCfgMan().findByPrimaryKey(cfgid);
-            IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
+            IdentityProvider provider = IdentityProviderFactory.getProvider(cfgid);
+            if ( provider == null ) throw new FindException("IdentityProvider could not be found");
             GroupManager groupManager = provider.getGroupManager();
 
             return groupManager.findByPrimaryKey(groupId);
@@ -326,8 +325,8 @@ public class IdentityAdminImpl implements IdentityAdmin {
       throws RemoteException, SaveException, UpdateException, ObjectNotFoundException {
         beginTransaction();
         try {
-            IdentityProviderConfig cfg = getIdProvCfgMan().findByPrimaryKey(identityProviderConfigId);
-            IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
+            IdentityProvider provider = IdentityProviderFactory.getProvider(identityProviderConfigId);
+            if ( provider == null ) throw new FindException("IdentityProvider could not be found");
             GroupManager groupManager = provider.getGroupManager();
 
             String id = group.getUniqueIdentifier();
@@ -380,11 +379,12 @@ public class IdentityAdminImpl implements IdentityAdmin {
             manager.revokeUserCert(user);
             // internal users should have their password "revoked" along with their cert
 
-            IdentityProviderConfig cfg = getIdProvCfgMan().findByPrimaryKey(user.getProviderId());
-            if (cfg.type().equals(IdentityProviderType.INTERNAL)) {
+            IdentityProvider provider = IdentityProviderFactory.getProvider(user.getProviderId());
+            if ( provider == null ) throw new FindException("IdentityProvider could not be found");
+
+            if (IdentityProviderType.INTERNAL.equals(provider.getConfig().type())) {
                 logger.finest("Cert revoked - invalidating user's password.");
                 // must change the password now
-                IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
                 UserManager userManager = provider.getUserManager();
                 InternalUser dbuser = (InternalUser)userManager.findByLogin(user.getLogin());
                 // maybe a new password is already provided?
@@ -505,8 +505,8 @@ public class IdentityAdminImpl implements IdentityAdmin {
       throws RemoteException {
         UserManager ret = null;
         try {
-            IdentityProvider provider = IdentityProviderFactory.makeProvider(getIdProvCfgMan().
-              findByPrimaryKey(cfgid));
+            IdentityProvider provider = IdentityProviderFactory.getProvider(cfgid);
+            if ( provider == null ) throw new FindException("IdentityProvider could not be found");
             ret = provider.getUserManager();
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
@@ -519,8 +519,8 @@ public class IdentityAdminImpl implements IdentityAdmin {
       throws RemoteException {
         GroupManager ret = null;
         try {
-            IdentityProvider provider = IdentityProviderFactory.makeProvider(getIdProvCfgMan().
-              findByPrimaryKey(cfgid));
+            IdentityProvider provider = IdentityProviderFactory.getProvider(cfgid);
+            if ( provider == null ) throw new FindException("IdentityProvider could not be found");
             ret = provider.getGroupManager();
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
