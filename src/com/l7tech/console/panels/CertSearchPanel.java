@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.util.Locator;
 import com.l7tech.console.table.TrustedCertsTable;
 import com.l7tech.console.table.TrustedCertTableSorter;
@@ -55,6 +56,9 @@ public class CertSearchPanel extends JDialog {
     }
 
     private void initialize() {
+
+        final JDialog thisDialog = this;
+
         Container p = getContentPane();
         p.setLayout(new BorderLayout());
         p.add(mainPanel, BorderLayout.CENTER);
@@ -115,7 +119,14 @@ public class CertSearchPanel extends JDialog {
 
         viewButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                dispose();
+
+                CertPropertiesWindow cpw = null;
+                int row = trustedCertTable.getSelectedRow();
+                if (row >= 0) {
+                    cpw = new CertPropertiesWindow(thisDialog, (TrustedCert) trustedCertTable.getTableSorter().getData(row), false);
+                }
+
+                cpw.show();
             }
         });
 
@@ -209,7 +220,7 @@ public class CertSearchPanel extends JDialog {
         final JPanel _2;
         _2 = new JPanel();
         _2.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
-        _1.add(_2, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 3, null, null, null));
+        _1.add(_2, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 0, null, null, null));
         final JPanel _3;
         _3 = new JPanel();
         _3.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 2, new Insets(10, 0, 5, 5), -1, -1));
@@ -217,17 +228,17 @@ public class CertSearchPanel extends JDialog {
         final JPanel _4;
         _4 = new JPanel();
         _4.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
-        _3.add(_4, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 0, 3, 3, 3, null, null, null));
+        _3.add(_4, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 0, 3, 0, 0, null, null, null));
         final JButton _5;
         _5 = new JButton();
         searchButton = _5;
         _5.setText("Search");
-        _4.add(_5, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 1, 3, 0, null, null, null));
+        _4.add(_5, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 1, 0, 0, null, null, null));
         final JButton _6;
         _6 = new JButton();
         stopButton = _6;
         _6.setText("Stop");
-        _4.add(_6, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 0, 1, 3, 0, null, null, null));
+        _4.add(_6, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 0, 1, 0, 0, null, null, null));
         final com.intellij.uiDesigner.core.Spacer _7;
         _7 = new com.intellij.uiDesigner.core.Spacer();
         _4.add(_7, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 2, 1, 6, null, null, null));
