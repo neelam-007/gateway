@@ -43,6 +43,41 @@ public class WspReaderTest extends TestCase {
         assertTrue(eoa.getChildren().get(0) instanceof AllAssertion);
     }
 
+    private interface throwingRunnable {
+        void run() throws Throwable;
+    }
+
+    private void mustThrow(Class mustThrowThis, throwingRunnable tr) {
+        boolean caught = false;
+        try {
+            System.err.println(">>>>>> The following operation should throw the exception " + mustThrowThis);
+            tr.run();
+        } catch (Throwable t) {
+            caught = true;
+            if (!mustThrowThis.isAssignableFrom(t.getClass()))
+                t.printStackTrace();
+            assertTrue(mustThrowThis.isAssignableFrom(t.getClass()));
+        }
+        assertTrue(caught);
+        System.err.println(">>>>>> The correct exception was thrown.");
+    }
+
+    public void testParseNonXml() {
+        mustThrow(IOException.class, new throwingRunnable() {
+            public void run() throws IOException {
+                Assertion policy = WspReader.parse("asdfhaodh/asdfu2h$9ha98h");
+            }
+        });
+    }
+
+    public void testParseStrangeXml() {
+        mustThrow(IOException.class,  new throwingRunnable() {
+            public void run() throws IOException {
+                Assertion policy = WspReader.parse("<foo><bar blee=\"1\"/></foo>");
+            }
+        });
+    }
+
     public static void main(String[] args) {
         junit.textui.TestRunner.run(suite());
     }
