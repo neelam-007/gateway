@@ -19,7 +19,8 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
     public com.l7tech.adminws.identity.Header[] findAlllIdentityProviderConfig() throws java.rmi.RemoteException {
         //return returnTestHeaders();
         try {
-            //return TypeTranslator.collectionToServiceHeaders(getIdentityProviderConfigManagerAndBeginTransaction().findAllHeaders());
+            return TypeTranslator.collectionToServiceHeaders(getIdentityProviderConfigManagerAndBeginTransaction().findAllHeaders());
+            /*
             // while findallheaders is not yet implemented
             java.util.Collection colOfConfigs = getIdentityProviderConfigManagerAndBeginTransaction().findAll();
             java.util.Iterator iter = colOfConfigs.iterator();
@@ -33,12 +34,13 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
                 output[counter].setType("com.l7tech.identity.IdentityProviderConfig");
                 ++counter;
             }
-            return output;
+            return output;*/
         } catch (FindException e) {
             throw new RemoteException("FindException in findAlllIdentityProviderConfig", e);
         } finally {
             endTransaction();
         }
+
     }
 
     public com.l7tech.adminws.identity.Header[] findAllIdentityProviderConfigByOffset(int offset, int windowSize) throws java.rmi.RemoteException {
@@ -269,22 +271,19 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
         if (ret == null) */
         UserManager ret = null;
         try {
-            IdentityProvider provider = IdentityProviderFactory.makeProvider(identityProviderConfigManager.findByPrimaryKey(identityProviderConfigId));
+            IdentityProvider provider = IdentityProviderFactory.makeProvider(getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(identityProviderConfigId));
             ret = provider.getUserManager();
             //userManagersMap.put(new Long(identityProviderConfigId), ret);
         } catch (FindException e) {
             e.printStackTrace(System.err);
             throw new RemoteException("RemoteException in retrieveUserManager", e);
-        }
-        try {
-            PersistenceContext.getCurrent().beginTransaction();
-        } catch (java.sql.SQLException e) {
+        }/* catch (java.sql.SQLException e) {
             e.printStackTrace(System.err);
             throw new RemoteException("Exception commiting", e);
         } catch (TransactionException e) {
             e.printStackTrace(System.err);
             throw new RemoteException("Exception commiting", e);
-        }
+        }*/
         return ret;
     }
 
@@ -294,22 +293,19 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
         if (ret == null) */
         GroupManager ret = null;
         try {
-            IdentityProvider provider = IdentityProviderFactory.makeProvider(identityProviderConfigManager.findByPrimaryKey(identityProviderConfigId));
+            IdentityProvider provider = IdentityProviderFactory.makeProvider(getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(identityProviderConfigId));
             ret = provider.getGroupManager();
             //groupManagersMap.put(new Long(identityProviderConfigId), ret);
         } catch (FindException e) {
             e.printStackTrace(System.err);
             throw new RemoteException("RemoteException in retrieveGroupManager", e);
-        }
-        try {
-            PersistenceContext.getCurrent().beginTransaction();
-        } catch (java.sql.SQLException e) {
+        } /*catch (java.sql.SQLException e) {
             e.printStackTrace(System.err);
             throw new RemoteException("Exception commiting", e);
         } catch (TransactionException e) {
             e.printStackTrace(System.err);
             throw new RemoteException("Exception commiting", e);
-        }
+        }*/
         return ret;
     }
 
