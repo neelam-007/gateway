@@ -9,11 +9,18 @@ import org.w3c.dom.*;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateFactory;
+import java.security.cert.CertificateException;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
+import java.io.IOException;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+
+import sun.misc.BASE64Decoder;
 
 /**
  * Signs soap messages.
@@ -29,6 +36,9 @@ import java.util.logging.Logger;
 public final class SoapMsgSigner {
     private static final String DS_PREFIX = "ds";
     private static final String DEF_ENV_TAG = "envId";
+    private static final String SEC_TOK_REF_NAME = "SecurityTokenReference";
+    private static final String WSSE_REF_NAME = "Reference";
+    private static final String BINSECTOKEN_NAME = "BinarySecurityToken";
 
     private SoapMsgSigner() { }
 
@@ -178,27 +188,11 @@ public final class SoapMsgSigner {
             throw new InvalidSignatureException("Unable to extract KeyInfo from signature", e);
         }
 
-        // Assume a single X509 certificate
+        // THE CERT CAN BE DIRECTLY IN THE KEY INFO ELEMENT OR THE KEY INFO CAN CONTAIN
+        // A REFERENCE TO A wsse:BinarySecurityToken. WE MUST SUPPORT BOTH CASES
         KeyInfo.X509Data[] x509DataArray = keyInfo.getX509Data();
         // according to javadoc, this can be null
-        if (x509DataArray == null || x509DataArray.length < 1) {
-            logger.fine("No x509 data found in KeyInfo bodyElement, will look for reference instead.");
-            // this may contain instead a wsse:SecurityTokenReference pointing to
-            // a wsse:BinarySecurityToken. we should support getting the cert from
-            // that location too.
-
-            // 1. look for a wsse:SecurityTokenReference element
-            List references = XmlUtil.findChildElementsByName(keyInfoElement,
-                                                              new String[] {SoapUtil.SECURITY_NAMESPACE,
-                                                                            SoapUtil.SECURITY_NAMESPACE2,
-                                                                            SoapUtil.SECURITY_NAMESPACE3},
-                                                              "SecurityTokenReference");
-            if (references.size() > 0) {
-                logger.warning("reference found but not yet supported");
-                // todo, continue
-                throw new InvalidSignatureException("Not yet supported.");
-            }
-        } else {
+        if (x509DataArray != null && x509DataArray.length > 0) {
             KeyInfo.X509Data x509Data = x509DataArray[0];
             X509Certificate[] certs = x509Data.getCertificates();
             // according to javadoc, this can be null
@@ -206,6 +200,77 @@ public final class SoapMsgSigner {
                 throw new InvalidSignatureException("Could not get X509 cert");
             }
             return certs;
+        } else {
+            // Looking for reference to a wsse:BinarySecurityToken
+            // 1. look for a wsse:SecurityTokenReference element
+            List secTokReferences = XmlUtil.findChildElementsByName(keyInfoElement,
+                                                              new String[] {SoapUtil.SECURITY_NAMESPACE,
+                                                                            SoapUtil.SECURITY_NAMESPACE2,
+                                                                            SoapUtil.SECURITY_NAMESPACE3},
+                                                              SEC_TOK_REF_NAME);
+            if (secTokReferences.size() > 0) {
+                // 2. Resolve the child reference
+                Element securityTokenReference = (Element)secTokReferences.get(0);
+                List references = XmlUtil.findChildElementsByName(securityTokenReference,
+                                                                  new String[] {SoapUtil.SECURITY_NAMESPACE,
+                                                                                SoapUtil.SECURITY_NAMESPACE2,
+                                                                                SoapUtil.SECURITY_NAMESPACE3},
+                                                                  WSSE_REF_NAME);
+                if (references.size() > 0) {
+                    // get the URI
+                    Element reference = (Element)references.get(0);
+                    String uriAttr = reference.getAttribute("URI");
+                    if (uriAttr == null || uriAttr.length() < 1) {
+                        // not the food additive
+                        String msg = "The Key info contains a reference but the URI attribute cannot be obtained";
+                        logger.warning(msg);
+                        throw new InvalidSignatureException(msg);
+                    }
+                    if (uriAttr.charAt(0) == '#') {
+                        uriAttr = uriAttr.substring(1);
+                    }
+                    // resolve the element based on the URI
+                    Element referencedElement = SoapUtil.getElementById(keyInfoElement.getOwnerDocument(), uriAttr);
+                    if (referencedElement == null) {
+                        // not the food additive
+                        String msg = "The reference could not be resolved using the URI:" + uriAttr;
+                        logger.warning(msg);
+                        throw new InvalidSignatureException(msg);
+                    }
+                    // we got the referenced element. see if we support it
+                    if (referencedElement.getLocalName().equals(BINSECTOKEN_NAME)) {
+                        // assume that this is a b64ed binary x509 cert, get the value
+                        String value = XmlUtil.getTextValue(referencedElement);
+                        if (value == null || value.length() < 1) {
+                            String msg = "The " + BINSECTOKEN_NAME + " does not contain a value.";
+                            logger.warning(msg);
+                            throw new InvalidSignatureException(msg);
+                        }
+                        BASE64Decoder decoder = new BASE64Decoder();
+                        byte[] decodedValue = null;
+                        try {
+                            decodedValue = decoder.decodeBuffer(value);
+                        } catch (IOException e) {
+                            throw new InvalidSignatureException("could not decode value in the " + BINSECTOKEN_NAME +
+                                                                " element", e);
+                        }
+                        // create the x509 binary cert based on it
+                        X509Certificate referencedCert = null;
+                        try {
+                            CertificateFactory factory = CertificateFactory.getInstance("X.509");
+                            InputStream is = new ByteArrayInputStream(decodedValue);
+                            referencedCert = (X509Certificate)factory.generateCertificate(is);
+                        } catch (CertificateException e) {
+                            throw new InvalidSignatureException("could not produce a cert from value in " +
+                                                                BINSECTOKEN_NAME + " element", e);
+                        }
+                        return new X509Certificate[] {referencedCert};
+                    } else {
+                        logger.warning("A reference was resolved from the KeyInfo but the " +
+                                       "element type is not supported" + referencedElement.getNodeName());
+                    }
+                }
+            }
         }
         throw new InvalidSignatureException("No cert found in key info.");
     }
