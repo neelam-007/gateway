@@ -1,6 +1,7 @@
 package com.l7tech.console.table;
 
 import javax.swing.table.AbstractTableModel;
+import javax.wsdl.BindingOperation;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,11 +15,19 @@ public class SecuredMessagePartsTableModel extends AbstractTableModel {
     private List securedMessageParts = new ArrayList();
 
     public static class SecuredMessagePart {
-        public String getOperation() {
+
+        public String getOperationName() {
+            if (operation != null) {
+                return operation.getName();
+            }
+            return "*"; // all operations
+        }
+
+        public BindingOperation getOperation() {
             return operation;
         }
 
-        public void setOperation(String operation) {
+        public void setOperation(BindingOperation operation) {
             this.operation = operation;
         }
 
@@ -54,7 +63,7 @@ public class SecuredMessagePartsTableModel extends AbstractTableModel {
             this.keyLength = keyLength;
         }
 
-        private String operation;
+        private BindingOperation operation;
         private String xpathExpression;
         private boolean encrypt;
         private String algorithm;
@@ -70,7 +79,7 @@ public class SecuredMessagePartsTableModel extends AbstractTableModel {
         public boolean implies(SecuredMessagePart p) {
             if (equals(p)) return true;
             if (operation != null && p.operation != null) {
-                if (operation.equals(p.getOperation())) {
+                if (operation.equals(p.getOperationName())) {
                     return true;
                 }
             } else if (operation == null && p.operation == null) {
@@ -78,7 +87,6 @@ public class SecuredMessagePartsTableModel extends AbstractTableModel {
                     return xpathExpression.startsWith(p.xpathExpression);
                 }
             }
-
             return false;
         }
 
@@ -88,8 +96,11 @@ public class SecuredMessagePartsTableModel extends AbstractTableModel {
 
             final SecuredMessagePart securedMessagePart = (SecuredMessagePart)o;
 
-            if (xpathExpression != null ? !xpathExpression.equals(securedMessagePart.xpathExpression) : securedMessagePart.xpathExpression != null) return false;
+            if (encrypt != securedMessagePart.encrypt) return false;
+            if (keyLength != securedMessagePart.keyLength) return false;
+            if (algorithm != null ? !algorithm.equals(securedMessagePart.algorithm) : securedMessagePart.algorithm != null) return false;
             if (operation != null ? !operation.equals(securedMessagePart.operation) : securedMessagePart.operation != null) return false;
+            if (xpathExpression != null ? !xpathExpression.equals(securedMessagePart.xpathExpression) : securedMessagePart.xpathExpression != null) return false;
 
             return true;
         }
@@ -98,6 +109,9 @@ public class SecuredMessagePartsTableModel extends AbstractTableModel {
             int result;
             result = (operation != null ? operation.hashCode() : 0);
             result = 29 * result + (xpathExpression != null ? xpathExpression.hashCode() : 0);
+            result = 29 * result + (encrypt ? 1 : 0);
+            result = 29 * result + (algorithm != null ? algorithm.hashCode() : 0);
+            result = 29 * result + keyLength;
             return result;
         }
     }
@@ -202,7 +216,7 @@ public class SecuredMessagePartsTableModel extends AbstractTableModel {
     public Object getValueAt(int rowIndex, int columnIndex) {
         SecuredMessagePart sp = (SecuredMessagePart)securedMessageParts.get(rowIndex);
         if (columnIndex == 0) {
-            return sp.getOperation();
+            return sp.getOperationName();
         } else if (columnIndex == 1) {
             return sp.getXpathExpression();
         } else if (columnIndex == 2) {
@@ -273,10 +287,13 @@ public class SecuredMessagePartsTableModel extends AbstractTableModel {
         SecuredMessagePart sp = (SecuredMessagePart)securedMessageParts.get(rowIndex);
 
         if (columnIndex == 0) {
-            if (!(aValue instanceof String)) {
+            if (aValue == null) {
+                sp.setOperation(null);
+            }
+            if (!(aValue instanceof BindingOperation)) {
                 throw new IllegalArgumentException("Unsupported type " + aValue.getClass());
             }
-            sp.setOperation(aValue.toString());
+            sp.setOperation((BindingOperation)aValue);
         } else if (columnIndex == 1) {
             if (!(aValue instanceof String)) {
                 throw new IllegalArgumentException("Unsupported type " + aValue.getClass() + " expected " + String.class);

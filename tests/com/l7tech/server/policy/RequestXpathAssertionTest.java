@@ -2,8 +2,8 @@ package com.l7tech.server.policy;
 
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.Locator;
-import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.xml.SoapRequestGenerator;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.MockServletApi;
@@ -11,7 +11,6 @@ import com.l7tech.server.SoapMessageProcessingServlet;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceCache;
 import com.l7tech.service.ServiceManager;
-import com.l7tech.common.xml.SoapRequestGenerator;
 import com.mockobjects.dynamic.C;
 import com.mockobjects.dynamic.Mock;
 import junit.framework.Test;
@@ -57,16 +56,16 @@ public class RequestXpathAssertionTest extends TestCase {
         return suite;
     }
 
-    String newXpathPolicy( String pattern, Map namespaceMap ) throws IOException {
+    String newXpathPolicy(String pattern, Map namespaceMap) throws IOException {
         // Set up policy with only RequestXpathAssertion
         RequestXpathAssertion rxa = new RequestXpathAssertion();
-        rxa.setPattern( pattern );
-        rxa.setNamespaceMap( namespaceMap );
+        rxa.setPattern(pattern);
+        rxa.setNamespaceMap(namespaceMap);
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream(4096);
-        WspWriter.writePolicy( rxa, baos );
+        WspWriter.writePolicy(rxa, baos);
 
-        return baos.toString( "UTF-8" );
+        return baos.toString("UTF-8");
     }
 
     private class MyServletOutputStream extends ServletOutputStream {
@@ -74,7 +73,7 @@ public class RequestXpathAssertionTest extends TestCase {
             reset();
         }
 
-        public void write( int i ) throws IOException {
+        public void write(int i) throws IOException {
             _chain.write(i);
         }
 
@@ -82,7 +81,7 @@ public class RequestXpathAssertionTest extends TestCase {
             _chain = new ByteArrayOutputStream(4096);
         }
 
-        public String toString( String encoding ) throws UnsupportedEncodingException {
+        public String toString(String encoding) throws UnsupportedEncodingException {
             return _chain.toString(encoding);
         }
 
@@ -94,17 +93,17 @@ public class RequestXpathAssertionTest extends TestCase {
         final String XMETHODS_URN = "urn:xmethods-delayed-quotes";
         final String XMETHODS_SOAPACTION = XMETHODS_URN + "#getQuote";
 
-        URL xmethodsWsdlUrl = new URL( XMETHODS_WSDL_URL );
-        Wsdl xmethodsWsdl = Wsdl.newInstance( "", new InputSource( xmethodsWsdlUrl.openStream() ) );
-        HexUtils.Slurpage slurpedWsdl = HexUtils.slurpUrl( xmethodsWsdlUrl );
-        String xml = new String( slurpedWsdl.bytes, "UTF-8" );
-        _service.setWsdlXml( xml );
+        URL xmethodsWsdlUrl = new URL(XMETHODS_WSDL_URL);
+        Wsdl xmethodsWsdl = Wsdl.newInstance("", new InputSource(xmethodsWsdlUrl.openStream()));
+        HexUtils.Slurpage slurpedWsdl = HexUtils.slurpUrl(xmethodsWsdlUrl);
+        String xml = new String(slurpedWsdl.bytes, "UTF-8");
+        _service.setWsdlXml(xml);
         _serviceCache.cache(_service);
 
         SoapRequestGenerator.MessageInputGenerator mig = new SoapRequestGenerator.MessageInputGenerator() {
             public String generate(String messagePartName, String operationName, Definition definition) {
-                if ( operationName.equals( "getQuote" ) ) {
-                    if ( messagePartName.equals( "symbol" ) ) {
+                if (operationName.equals("getQuote")) {
+                    if (messagePartName.equals("symbol")) {
                         return "SUNW";
                     }
                 }
@@ -112,62 +111,62 @@ public class RequestXpathAssertionTest extends TestCase {
             }
         };
 
-        SoapRequestGenerator srg = new SoapRequestGenerator( mig );
+        SoapRequestGenerator srg = new SoapRequestGenerator(mig);
 
-        SoapRequestGenerator.SOAPRequest[] requests = srg.generate( xmethodsWsdl );
+        SoapRequestGenerator.Message[] requests = srg.generateRequests(xmethodsWsdl);
 
         String[] passingXpaths =
-                {
-                    "//", // sanity
-                    "/soapenv:Envelope/soapenv:Body/ns1:getQuote/symbol", // contains a value
-                    "/soapenv:Envelope/soapenv:Body/ns1:getQuote/symbol='SUNW'", // works with proper namespaces
-                    "/*[local-name(.)='Envelope']/*[local-name(.)='Body']/*[local-name(.)='getQuote']/symbol='SUNW'", // works with no-namespace hack
-                };
+          {
+              "//", // sanity
+              "/soapenv:Envelope/soapenv:Body/ns1:getQuote/symbol", // contains a value
+              "/soapenv:Envelope/soapenv:Body/ns1:getQuote/symbol='SUNW'", // works with proper namespaces
+              "/*[local-name(.)='Envelope']/*[local-name(.)='Body']/*[local-name(.)='getQuote']/symbol='SUNW'", // works with no-namespace hack
+          };
 
         // String[] passingXpaths = { "//", "/Envelope/Body/getQuote/c-gensym3=\"SUNW\"" };
         String[] failingXpaths =
-                {
-                    "[", // invalid expression
-                    "/Envelope/Body/getQuote/symbol='SUNW'", // fails without namespaces
-                    "foo:Envelope/bar:Body/baz:getQuote/symbol='SUNW'", // fails with bogus namespaces
-                    "/soapenv:Envelope/soapenv:Body/ns1:getQuote/symbol=\"IBM\"", // wrong value with correct namespaces
-                    "/Envelope/Body/getQuote/symbol='IBM'", // wrong value without namespaces
-                };
+          {
+              "[", // invalid expression
+              "/Envelope/Body/getQuote/symbol='SUNW'", // fails without namespaces
+              "foo:Envelope/bar:Body/baz:getQuote/symbol='SUNW'", // fails with bogus namespaces
+              "/soapenv:Envelope/soapenv:Body/ns1:getQuote/symbol=\"IBM\"", // wrong value with correct namespaces
+              "/Envelope/Body/getQuote/symbol='IBM'", // wrong value without namespaces
+          };
 
 
         Map namespaceMap = new HashMap();
-        namespaceMap.put( "ns1", XMETHODS_URN );
-        namespaceMap.put( "soapenv", SOAPConstants.URI_NS_SOAP_ENVELOPE );
+        namespaceMap.put("ns1", XMETHODS_URN);
+        namespaceMap.put("soapenv", SOAPConstants.URI_NS_SOAP_ENVELOPE);
 
         for (int i = 0; i < requests.length; i++) {
-            SoapRequestGenerator.SOAPRequest request = requests[i];
+            SoapRequestGenerator.Message request = requests[i];
 
             for (int j = 0; j < passingXpaths.length; j++) {
                 newServletApi();
                 String xpath = passingXpaths[j];
-                _service.setPolicyXml( newXpathPolicy( xpath, namespaceMap ) );
+                _service.setPolicyXml(newXpathPolicy(xpath, namespaceMap));
                 _serviceCache.cache(_service);
 
-                _servletApi.setSoapRequest( request.getSOAPMessage(), XMETHODS_SOAPACTION );
-                _servlet.doPost( _servletApi.getServletRequest(), _servletApi.getServletResponse() );
+                _servletApi.setSoapRequest(request.getSOAPMessage(), XMETHODS_SOAPACTION);
+                _servlet.doPost(_servletApi.getServletRequest(), _servletApi.getServletResponse());
 
-                String resp = _servletOutputStream.toString( "UTF-8" );
+                String resp = _servletOutputStream.toString("UTF-8");
 
-                assertTrue( "Response contained a fault!", resp.indexOf("Fault") == -1 );
+                assertTrue("Response contained a fault!", resp.indexOf("Fault") == -1);
                 System.err.println(resp);
             }
 
             for (int j = 0; j < failingXpaths.length; j++) {
                 newServletApi();
                 String xpath = failingXpaths[j];
-                _service.setPolicyXml( newXpathPolicy( xpath, namespaceMap ) );
+                _service.setPolicyXml(newXpathPolicy(xpath, namespaceMap));
                 _serviceCache.cache(_service);
 
-                _servletApi.setSoapRequest( request.getSOAPMessage(), XMETHODS_SOAPACTION );
-                _servlet.doPost( _servletApi.getServletRequest(), _servletApi.getServletResponse() );
-                String resp = _servletOutputStream.toString( "UTF-8" );
+                _servletApi.setSoapRequest(request.getSOAPMessage(), XMETHODS_SOAPACTION);
+                _servlet.doPost(_servletApi.getServletRequest(), _servletApi.getServletResponse());
+                String resp = _servletOutputStream.toString("UTF-8");
 
-                assertTrue( "Response did not contain an expected fault!", resp.indexOf("Fault") >= 0 );
+                assertTrue("Response did not contain an expected fault!", resp.indexOf("Fault") >= 0);
                 System.err.println(resp);
             }
 
@@ -176,14 +175,13 @@ public class RequestXpathAssertionTest extends TestCase {
     }
 
     public void setUp() throws Exception {
-        System.setProperty(
-          "com.l7tech.common.locator.properties", "/com/l7tech/common/locator/test.properties");
+        System.setProperty("com.l7tech.common.locator.properties", "/com/l7tech/common/locator/test.properties");
 
         ServiceManager sman = (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
         _service = (PublishedService)sman.findAll().iterator().next();
         //ServiceCache.initialize(); // need to do this, otherwise is a no go
         _serviceCache = ServiceCache.getInstance();
-        _servlet.init( _servletApi.getServletConfig() );
+        _servlet.init(_servletApi.getServletConfig());
 
     }
 
@@ -192,7 +190,7 @@ public class RequestXpathAssertionTest extends TestCase {
         _servletApi.setPublishedService(_service);
         _servletOutputStream = new MyServletOutputStream();
         Mock mock = _servletApi.getServletResponseMock();
-        mock.matchAndReturn( "getOutputStream", C.NO_ARGS, _servletOutputStream );
+        mock.matchAndReturn("getOutputStream", C.NO_ARGS, _servletOutputStream);
     }
 
     public void tearDown() throws Exception {
@@ -203,7 +201,7 @@ public class RequestXpathAssertionTest extends TestCase {
      * Test <code>RequestXpathAssertionTest</code> main.
      */
     public static void main(String[] args) throws
-            Throwable {
+      Throwable {
         junit.textui.TestRunner.run(suite());
     }
 }

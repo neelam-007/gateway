@@ -7,8 +7,8 @@ import com.l7tech.console.tree.XmlRequestSecurityNode;
 import com.l7tech.console.tree.policy.XmlSecurityTreeNode;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Registry;
-import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertion;
 import com.l7tech.policy.assertion.xmlsec.ElementSecurity;
+import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertion;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -57,7 +57,7 @@ public class XmlSecurityPropertiesAction extends NodeAction {
         final MainWindow mw = Registry.getDefault().getComponentRegistry().getMainWindow();
         XmlSecurityPropertiesDialog dialog = new XmlSecurityPropertiesDialog(mw, false, n);
         dialog.pack();
-        dialog.setSize(800, 650); //todo: consider some dynamic sizing - em
+        dialog.setSize(900, 650); //todo: consider some dynamic sizing - em
         Utilities.centerOnScreen(dialog);
         dialog.show();
     }
@@ -81,12 +81,12 @@ public class XmlSecurityPropertiesAction extends NodeAction {
         ElementSecurity es = ese[0];
         String s = (String)JOptionPane.showInputDialog(Registry.getDefault().
           getComponentRegistry().getMainWindow(),
-            "Please select the " + n.getBaseName() + " options:\n",
-            n.getBaseName() + " assertion properties",
-            JOptionPane.PLAIN_MESSAGE,
-            new ImageIcon(new XmlRequestSecurityNode().getIcon()),
-            new Object[]{signOnly, encrypt},
-            es.isEncryption() ? encrypt : signOnly);
+          "Please select the " + n.getBaseName() + " options:\n",
+          n.getBaseName() + " assertion properties",
+          JOptionPane.PLAIN_MESSAGE,
+          new ImageIcon(new XmlRequestSecurityNode().getIcon()),
+          new Object[]{signOnly, encrypt},
+          es.isEncryption() ? encrypt : signOnly);
 
         if ((s != null) && (s.length() > 0)) {
             es.setEncryption(!s.equalsIgnoreCase(signOnly));

@@ -38,6 +38,20 @@ import java.util.logging.Logger;
  */
 public class Wsdl {
     public static final String NS = "ns";
+    /**
+     * bitmask for soap bindings filtering
+     */
+    public static final int SOAP_BINDINGS = 0x1;
+    /**
+     * bitmask for http bindings filtering
+     */
+    public static final int HTTP_BINDINGS = 0x2;
+    /**
+     * bitmask that accepts all bindings
+     */
+    public static final int ALL_BINDINGS = SOAP_BINDINGS | HTTP_BINDINGS;
+
+    private int showBindings = ALL_BINDINGS;
 
     /**
      * The protected constructor accepting the <code>Definition</code>
@@ -61,13 +75,13 @@ public class Wsdl {
      *                        an XML document obeying the WSDL schema.
      *                        <p/>
      *                        <p>The example reads the WSDL definition from StringReader: <pre>
-     *                                                                      // Retrieve the WSDL definition from the string representing
-     *                                                                      // the wsdl and iterate over the services.
-     *                                                                      <p/>
-     *                                                                      Wsdl wsdl = Wsdl.newInstance(null, new StringReader(wsdlString));
-     *                                                                      Iterator services = wsdl.getServices().iterator();
-     *                                                                      ...
-     *                                                                      </pre>
+     *                                                                                             // Retrieve the WSDL definition from the string representing
+     *                                                                                             // the wsdl and iterate over the services.
+     *                                                                                             <p/>
+     *                                                                                             Wsdl wsdl = Wsdl.newInstance(null, new StringReader(wsdlString));
+     *                                                                                             Iterator services = wsdl.getServices().iterator();
+     *                                                                                             ...
+     *                                                                                             </pre>
      * @throws javax.wsdl.WSDLException throw on error parsing the WSDL definition
      */
     public static Wsdl newInstance(String documentBaseURI, Reader reader)
@@ -165,19 +179,54 @@ public class Wsdl {
         return null;
     }
 
-
     /**
      * @return the collection of WSDL <code>Binding</code>
      *         instances described in this definition.
      */
     public Collection getBindings() {
-        return definition.getBindings().values();
+        Collection allBindings = definition.getBindings().values();
+        if (showBindings == ALL_BINDINGS) {
+            return allBindings;
+        }
+        Collection filtered = new ArrayList();
+        for (Iterator iterator = allBindings.iterator(); iterator.hasNext();) {
+            Binding binding = (Binding)iterator.next();
+            ExtensibilityElement bp = getBindingProtocol(binding);
+            if (bp instanceof HTTPBinding &&
+              (showBindings & HTTP_BINDINGS) == HTTP_BINDINGS) {
+                filtered.add(binding);
+            } else if (bp instanceof SOAPBinding &&
+              (showBindings & SOAP_BINDINGS) == SOAP_BINDINGS) {
+                filtered.add(binding);
+            }
+        }
+        return filtered;
+    }
+
+    /**
+     * @return the binding filtering bitmask
+     */
+    public int getShowBindings() {
+        return showBindings;
+    }
+
+    /**
+     * Set the new value of what bindings are shown.
+     * <p/>
+     * Note that this does not affect the direct access using the
+     * definition. Only usages of {@link Wsdl#getBindings()} are
+     * affected.
+     *
+     * @param showBindings the new bindings bitmask filtering value
+     */
+    public void setShowBindings(int showBindings) {
+        this.showBindings = showBindings;
     }
 
     /**
      * @param bo the binding operation
      * @return the binding where the binding operation is defined or <b>null</b>
-     */ 
+     */
     public Binding getBinding(BindingOperation bo) {
         Iterator bindings = getBindings().iterator();
         while (bindings.hasNext()) {
@@ -240,17 +289,17 @@ public class Wsdl {
      *               and then writes it ti the StringWriter:
      *               <p/>
      *               <pre>
-     *                                           // Retrieve the WSDL definition from the string representing
-     *                                           // the wsdl and iterate over the services.
-     *                                           <p/>
-     *                                           Wsdl wsdl = Wsdl.newInstance(null, new StringReader(wsdlString));
-     *                                           Iterator services = wsdl.getServices().iterator();
-     *                                           ...
-     *                                           StringWriter sw = new StringWriter();
-     *                                           wsdl.toWriter(sw);
-     *                                           System.out.println(sw.toString()):
-     *                                           ...
-     *                                           </pre>
+     *                                                         // Retrieve the WSDL definition from the string representing
+     *                                                         // the wsdl and iterate over the services.
+     *                                                         <p/>
+     *                                                         Wsdl wsdl = Wsdl.newInstance(null, new StringReader(wsdlString));
+     *                                                         Iterator services = wsdl.getServices().iterator();
+     *                                                         ...
+     *                                                         StringWriter sw = new StringWriter();
+     *                                                         wsdl.toWriter(sw);
+     *                                                         System.out.println(sw.toString()):
+     *                                                         ...
+     *                                                         </pre>
      * @throws javax.wsdl.WSDLException throw on error parsing the WSDL definition
      */
     public void toWriter(Writer writer) throws WSDLException {
@@ -268,16 +317,16 @@ public class Wsdl {
      *           and then writes it ti the file:
      *           <p/>
      *           <pre>
-     *                               // Retrieve the WSDL definition from the string representing
-     *                               // the wsdl and iterate over the services.
-     *                               <p/>
-     *                               Wsdl wsdl = Wsdl.newInstance(null, new StringReader(wsdlString));
-     *                               Iterator services = wsdl.getServices().iterator();
-     *                               ...
-     *                               FileOutputStream fos = new FileOutputStream("./service.wsdl");
-     *                               wsdl.toOutputStream(fos);
-     *                               ...
-     *                               </pre>
+     *                                         // Retrieve the WSDL definition from the string representing
+     *                                         // the wsdl and iterate over the services.
+     *                                         <p/>
+     *                                         Wsdl wsdl = Wsdl.newInstance(null, new StringReader(wsdlString));
+     *                                         Iterator services = wsdl.getServices().iterator();
+     *                                         ...
+     *                                         FileOutputStream fos = new FileOutputStream("./service.wsdl");
+     *                                         wsdl.toOutputStream(fos);
+     *                                         ...
+     *                                         </pre>
      * @throws javax.wsdl.WSDLException throw on error parsing the WSDL definition
      */
     public void toOutputStream(OutputStream os) throws WSDLException {
@@ -325,7 +374,7 @@ public class Wsdl {
             if (binding.getBindingOperations().contains(bo)) {
                 ExtensibilityElement bindingProtocol = getBindingProtocol(binding);
                 if (bindingProtocol == null ||
-                    bindingProtocol instanceof HTTPBinding) {
+                  bindingProtocol instanceof HTTPBinding) {
                     return "document"; // GET/POST uses document?
                 } else if (bindingProtocol instanceof SOAPBinding) {
                     SOAPBinding sb = (SOAPBinding)bindingProtocol;

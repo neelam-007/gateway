@@ -1,12 +1,11 @@
 package com.l7tech.server;
 
 import com.l7tech.common.util.Locator;
+import com.l7tech.common.xml.SoapRequestGenerator;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceAdmin;
-import com.l7tech.service.ServiceCache;
-import com.l7tech.common.xml.SoapRequestGenerator;
 import com.mockobjects.servlet.MockHttpServletResponse;
 import junit.extensions.TestSetup;
 import junit.framework.Test;
@@ -21,7 +20,7 @@ import javax.servlet.http.HttpServletRequest;
 public class MockServletApiTest extends TestCase {
     private SoapMessageProcessingServlet messageProcessingServlet;
     private ServiceAdmin serviceAdmin;
-    private SoapRequestGenerator.SOAPRequest[] soapRequests;
+    private SoapRequestGenerator.Message[] soapRequests;
     private PublishedService publishedService;
 
     /**
@@ -44,8 +43,7 @@ public class MockServletApiTest extends TestCase {
              * @throws Exception on error deleting the stub data store
              */
             protected void setUp() throws Exception {
-                System.setProperty(
-                  "com.l7tech.common.locator.properties", "/com/l7tech/common/locator/test.properties");
+                System.setProperty("com.l7tech.common.locator.properties", "/com/l7tech/common/locator/test.properties");
 
                 //ServiceCache.initialize(); // need to do this, otherwise is a no go
             }
@@ -68,7 +66,7 @@ public class MockServletApiTest extends TestCase {
         Wsdl wsdl = publishedService.parsedWsdl();
 
         SoapRequestGenerator sg = new SoapRequestGenerator();
-        soapRequests = sg.generate(wsdl);
+        soapRequests = sg.generateRequests(wsdl);
         assertTrue("no operations could be located in the wsdlt", soapRequests.length > 0);
     }
 
@@ -79,7 +77,7 @@ public class MockServletApiTest extends TestCase {
     public void testInvokeMessageProcessingServlet() throws Exception {
         for (int i = 0; i < soapRequests.length; i++) {
             MockServletApi servletApi = MockServletApi.defaultMessageProcessingServletApi();
-            SoapRequestGenerator.SOAPRequest soapRequest = soapRequests[i];
+            SoapRequestGenerator.Message soapRequest = soapRequests[i];
             servletApi.setPublishedService(publishedService);
             servletApi.setSoapRequest(soapRequest.getSOAPMessage(), soapRequest.getSOAPAction());
             HttpServletRequest mhreq = servletApi.getServletRequest();

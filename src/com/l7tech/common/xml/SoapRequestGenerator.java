@@ -56,12 +56,14 @@ public class SoapRequestGenerator {
     }
 
     /**
+     * Generate the soap requests for the
+     *
      * @param wsdlResource the wsdl resource name
      * @return the array of <code>SoapRequest</code> instances
      * @throws WSDLException         on error parsing the wsdl
      * @throws FileNotFoundException if wsdl cannot be found
      */
-    public SOAPRequest[] generate(String wsdlResource)
+    public Message[] generateRequests(String wsdlResource)
       throws WSDLException, FileNotFoundException, SOAPException {
         if (wsdlResource == null) {
             throw new IllegalArgumentException();
@@ -74,7 +76,46 @@ public class SoapRequestGenerator {
         InputStreamReader reader = new InputStreamReader(in);
 
         Wsdl newWsdl = Wsdl.newInstance(null, reader);
-        return generate(newWsdl);
+        return generateRequests(newWsdl);
+    }
+
+    /**
+     * @param wsdlResource the wsdl resource name
+     * @return the array of <code>SoapRequest</code> instances
+     * @throws WSDLException         on error parsing the wsdl
+     * @throws FileNotFoundException if wsdl cannot be found
+     */
+    public Message[] generateResponses(String wsdlResource)
+      throws WSDLException, FileNotFoundException, SOAPException {
+        if (wsdlResource == null) {
+            throw new IllegalArgumentException();
+        }
+        ClassLoader cl = getClass().getClassLoader();
+        InputStream in = cl.getResourceAsStream(wsdlResource);
+        if (in == null) {
+            throw new FileNotFoundException(wsdlResource);
+        }
+        InputStreamReader reader = new InputStreamReader(in);
+
+        Wsdl newWsdl = Wsdl.newInstance(null, reader);
+        return generateResponses(newWsdl);
+    }
+
+
+    /**
+     * @param wsdl the parsed wsdl instance
+     * @return the array of <code>SoapRequest</code> instances
+     * @throws SOAPException on error generating SOAP messages
+     */
+    public Message[] generateRequests(Wsdl wsdl) throws SOAPException {
+        this.wsdl = wsdl;
+        List requests = new ArrayList();
+        Iterator it = wsdl.getBindings().iterator();
+        while (it.hasNext()) {
+            Binding binding = (Binding)it.next();
+            requests.addAll(generateMessages(binding, true));
+        }
+        return (Message[])requests.toArray(new Message[]{});
     }
 
     /**
@@ -82,27 +123,32 @@ public class SoapRequestGenerator {
      * @return the array of <code>SoapRequest</code> instances
      * @throws SOAPException on error generating SOAP messages
      */
-    public SOAPRequest[] generate(Wsdl wsdl) throws SOAPException {
+    public Message[] generateResponses(Wsdl wsdl) throws SOAPException {
         this.wsdl = wsdl;
         List requests = new ArrayList();
         Iterator it = wsdl.getBindings().iterator();
         while (it.hasNext()) {
             Binding binding = (Binding)it.next();
-            requests.addAll(generate(binding));
+            requests.addAll(generateMessages(binding, false));
         }
-        return (SOAPRequest[])requests.toArray(new SOAPRequest[]{});
+        return (Message[])requests.toArray(new Message[]{});
     }
 
 
-    private List generate(Binding binding)
+    private List generateMessages(Binding binding, boolean request)
       throws SOAPException {
         List bindingMessages = new ArrayList();
         List boperations = binding.getBindingOperations();
         for (Iterator iterator = boperations.iterator(); iterator.hasNext();) {
             BindingOperation bindingOperation = (BindingOperation)iterator.next();
             String soapAction = getSoapAction(bindingOperation);
-            SOAPMessage soapMessage = generate(bindingOperation);
-            bindingMessages.add(new SOAPRequest(soapMessage, soapAction, binding.getQName().getLocalPart(), bindingOperation.getName()));
+            SOAPMessage soapMessage = null;
+            if (request)
+                soapMessage = generateRequestMessage(bindingOperation);
+            else
+                soapMessage = generateResponseMessage(bindingOperation);
+
+            bindingMessages.add(new Message(soapMessage, soapAction, binding.getQName().getLocalPart(), bindingOperation.getName()));
         }
         return bindingMessages;
     }
@@ -124,13 +170,19 @@ public class SoapRequestGenerator {
         return null;
     }
 
-    private SOAPMessage generate(BindingOperation bindingOperation)
+    /**
+     * Generate the soap request envelope and the target namespace
+     *
+     * @param bindingOperation
+     * @return
+     * @throws SOAPException
+     */
+    private Object[] generateEnvelope(BindingOperation bindingOperation)
       throws SOAPException {
         MessageFactory messageFactory = MessageFactory.newInstance();
         SOAPMessage soapMessage = messageFactory.createMessage();
         SOAPPart soapPart = soapMessage.getSOAPPart();
         SOAPEnvelope envelope = soapPart.getEnvelope();
-
         String targetNameSpace = wsdl.getDefinition().getTargetNamespace();
 
         BindingInput bi = bindingOperation.getBindingInput();
@@ -150,6 +202,21 @@ public class SoapRequestGenerator {
                 }
             }
         }
+        return new Object[]{soapMessage, targetNameSpace};
+    }
+
+    private SOAPMessage generateRequestMessage(BindingOperation bindingOperation)
+      throws SOAPException {
+        Object[] soapEnvelope = generateEnvelope(bindingOperation);
+
+        SOAPMessage soapMessage = (SOAPMessage)soapEnvelope[0];
+        String targetNameSpace = wsdl.getDefinition().getTargetNamespace();
+        // was the different ns discovered?
+        if (soapEnvelope[1] != null) {
+            targetNameSpace = soapEnvelope[1].toString();
+        }
+        SOAPPart soapPart = soapMessage.getSOAPPart();
+        SOAPEnvelope envelope = soapPart.getEnvelope();
 
         String bindingStyle = wsdl.getBindingStyle(bindingOperation);
         SOAPBody body = envelope.getBody();
@@ -169,7 +236,7 @@ public class SoapRequestGenerator {
         if (input == null) { // nothing more to do here
             return soapMessage;
         }
-        Message message = input.getMessage();
+        javax.wsdl.Message message = input.getMessage();
         List parts = message.getOrderedParts(null);
 
         for (Iterator iterator = parts.iterator(); iterator.hasNext();) {
@@ -211,6 +278,86 @@ public class SoapRequestGenerator {
         return soapMessage;
     }
 
+
+    private SOAPMessage generateResponseMessage(BindingOperation bindingOperation)
+      throws SOAPException {
+        Object[] soapEnvelope = generateEnvelope(bindingOperation);
+
+        SOAPMessage soapMessage = (SOAPMessage)soapEnvelope[0];
+        String targetNameSpace = wsdl.getDefinition().getTargetNamespace();
+        // was the different ns discovered?
+        if (soapEnvelope[1] != null) {
+            targetNameSpace = soapEnvelope[1].toString();
+        }
+        SOAPPart soapPart = soapMessage.getSOAPPart();
+        SOAPEnvelope envelope = soapPart.getEnvelope();
+
+        String bindingStyle = wsdl.getBindingStyle(bindingOperation);
+        SOAPBody body = envelope.getBody();
+        SOAPBodyElement bodyElement = null;
+
+
+        // default rpc processing
+        Operation operation = bindingOperation.getOperation();
+        Output output = operation.getOutput();
+        if (output == null) { // nothing more to do here
+            return soapMessage;
+        }
+        javax.wsdl.Message message = output.getMessage();
+        if (message == null) { // nothing more to do here
+            return soapMessage;
+        }
+
+        if ("rpc".equals(bindingStyle)) {
+            Name responseName = envelope.createName(message.getQName().getLocalPart(), "ns1", targetNameSpace);
+            bodyElement = body.addBodyElement(responseName);
+        } else {
+            processDocumentStyle(bindingOperation, envelope);
+            return soapMessage;
+        }
+
+        List parts = message.getOrderedParts(null);
+
+        for (Iterator iterator = parts.iterator(); iterator.hasNext();) {
+            Part part = (Part)iterator.next();
+            String elementName = "";
+            String value = "value";
+            SOAPElement parameterElement = null;
+
+
+            elementName = part.getName();
+            Name partName = envelope.createName(elementName);
+            parameterElement = bodyElement.addChildElement(partName);
+            QName typeName = part.getTypeName();
+            if (typeName != null) {
+                String typeNameLocalPart = typeName.getLocalPart();
+                String uri = typeName.getNamespaceURI();
+                if (uri != null) {
+                    Iterator prefixes = envelope.getNamespacePrefixes();
+                    while (prefixes.hasNext()) {
+                        String prefix = (String)prefixes.next();
+                        String nsURI = envelope.getNamespaceURI(prefix);
+                        if (nsURI.equals(typeName.getNamespaceURI())) {
+                            typeNameLocalPart = prefix + ":" + typeNameLocalPart;
+                        }
+                    }
+                }
+                parameterElement.addAttribute(envelope.createName("xsi:type"), typeNameLocalPart);
+                value = typeName.getLocalPart();
+            }
+            if (messageInputGenerator != null) {
+                value = messageInputGenerator.generate(elementName,
+                  bindingOperation.getName(),
+                  wsdl.getDefinition());
+            }
+            if (value != null) {
+                parameterElement.addTextNode(value);
+            }
+        }
+        return soapMessage;
+    }
+
+
     /**
      * Process the document style binding operation
      *
@@ -224,7 +371,7 @@ public class SoapRequestGenerator {
         if (input == null) { // nothing more to do here
             return;
         }
-        Message message = input.getMessage();
+        javax.wsdl.Message message = input.getMessage();
         List parts = message.getOrderedParts(null);
         if (parts == null || parts.isEmpty()) return;
         Part part = (Part)parts.get(0);
@@ -378,13 +525,13 @@ public class SoapRequestGenerator {
     /**
      * Represents the soap message and the soap action
      */
-    public static class SOAPRequest {
+    public static class Message {
         private final SOAPMessage soapMessage;
         private final String soapAction;
         private String operation;
         private String binding;
 
-        public SOAPRequest(SOAPMessage sm, String sa, String bi, String op) {
+        public Message(SOAPMessage sm, String sa, String bi, String op) {
             if (sm == null) {
                 throw new IllegalArgumentException();
             }

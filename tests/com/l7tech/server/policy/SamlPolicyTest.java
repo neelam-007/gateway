@@ -31,14 +31,7 @@ import org.xml.sax.SAXException;
 import javax.servlet.http.HttpServletRequest;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.soap.Name;
-import javax.xml.soap.SOAPElement;
-import javax.xml.soap.SOAPEnvelope;
-import javax.xml.soap.SOAPException;
-import javax.xml.soap.SOAPFactory;
-import javax.xml.soap.SOAPHeader;
-import javax.xml.soap.SOAPHeaderElement;
-import javax.xml.soap.SOAPMessage;
+import javax.xml.soap.*;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -53,7 +46,7 @@ import java.io.InputStream;
 public class SamlPolicyTest extends TestCase {
     private SoapMessageProcessingServlet messageProcessingServlet;
     private ServiceAdmin serviceAdmin;
-    private SoapRequestGenerator.SOAPRequest[] soapRequests;
+    private SoapRequestGenerator.Message[] soapRequests;
     private PublishedService publishedService;
 
     /**
@@ -76,8 +69,7 @@ public class SamlPolicyTest extends TestCase {
              * @throws Exception on error deleting the stub data store
              */
             protected void setUp() throws Exception {
-                System.setProperty(
-                  "com.l7tech.common.locator.properties", "/com/l7tech/common/locator/test.properties");
+                System.setProperty("com.l7tech.common.locator.properties", "/com/l7tech/common/locator/test.properties");
             }
 
             protected void tearDown() throws Exception {
@@ -98,7 +90,7 @@ public class SamlPolicyTest extends TestCase {
         Wsdl wsdl = publishedService.parsedWsdl();
 
         SoapRequestGenerator sg = new SoapRequestGenerator();
-        soapRequests = sg.generate(wsdl);
+        soapRequests = sg.generateRequests(wsdl);
         assertTrue("no operations could be located in the wsdlt", soapRequests.length > 0);
 
 
@@ -111,7 +103,7 @@ public class SamlPolicyTest extends TestCase {
     public void testSecurityElementCheck() throws Exception {
         for (int i = 0; i < soapRequests.length; i++) {
             MockServletApi servletApi = MockServletApi.defaultMessageProcessingServletApi();
-            SoapRequestGenerator.SOAPRequest soapRequest = soapRequests[i];
+            SoapRequestGenerator.Message soapRequest = soapRequests[i];
             prepareServicePolicy(new SamlSecurity());
             servletApi.setPublishedService(publishedService);
             Document samlHeader = getDocument("com/l7tech/common/security/saml/saml1.xml");
@@ -130,7 +122,7 @@ public class SamlPolicyTest extends TestCase {
     public void testSenderVouches() throws Exception {
         for (int i = 0; i < soapRequests.length; i++) {
             MockServletApi servletApi = MockServletApi.defaultMessageProcessingServletApi();
-            SoapRequestGenerator.SOAPRequest soapRequest = soapRequests[i];
+            SoapRequestGenerator.Message soapRequest = soapRequests[i];
             HttpRoutingAssertion assertion = new HttpRoutingAssertion();
             assertion.setAttachSamlSenderVouches(true);
             assertion.setProtectedServiceUrl("http://localhost:8081");
@@ -153,7 +145,7 @@ public class SamlPolicyTest extends TestCase {
     public void testSamlSecurityDateRange() throws Exception {
         for (int i = 0; i < soapRequests.length; i++) {
             MockServletApi servletApi = MockServletApi.defaultMessageProcessingServletApi();
-            SoapRequestGenerator.SOAPRequest soapRequest = soapRequests[i];
+            SoapRequestGenerator.Message soapRequest = soapRequests[i];
             SamlSecurity assertion = new SamlSecurity();
             assertion.setValidateValidityPeriod(true);
             prepareServicePolicy(assertion);
