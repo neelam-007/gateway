@@ -20,7 +20,7 @@
         <children>
           <component id="3bed5" class="javax.swing.JLabel">
             <constraints>
-              <xy x="20" y="68" width="31" height="14"/>
+              <xy x="20" y="68" width="38" height="15"/>
               <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
@@ -29,7 +29,7 @@
           </component>
           <component id="adff9" class="javax.swing.JTextField" binding="portTypeNameField">
             <constraints>
-              <xy x="83" y="65" width="286" height="21"/>
+              <xy x="97" y="65" width="260" height="22"/>
               <grid row="3" column="2" row-span="1" col-span="2" vsize-policy="0" hsize-policy="6" anchor="8" fill="1"/>
             </constraints>
             <properties>
@@ -38,16 +38,16 @@
           </component>
           <component id="d04dc" class="javax.swing.JLabel" binding="panelHeader">
             <constraints>
-              <xy x="20" y="23" width="51" height="14"/>
+              <xy x="20" y="22" width="56" height="15"/>
               <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
-              <text value="Port Type:"/>
+              <text value="Port Type"/>
             </properties>
           </component>
           <scrollpane id="7afc3" binding="operationsTableScrollPane">
             <constraints>
-              <xy x="83" y="136" width="452" height="105"/>
+              <xy x="97" y="137" width="438" height="103"/>
               <grid row="6" column="2" row-span="1" col-span="3" vsize-policy="7" hsize-policy="7" anchor="0" fill="3"/>
             </constraints>
             <properties/>
@@ -62,7 +62,7 @@
           <grid id="ad2fa" row-count="1" column-count="3" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <xy x="379" y="266" width="156" height="24"/>
+              <xy x="367" y="265" width="168" height="25"/>
               <grid row="8" column="4" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
             </constraints>
             <properties/>
@@ -70,7 +70,7 @@
             <children>
               <component id="c0f3d" class="javax.swing.JButton" binding="removeOperatonButton">
                 <constraints>
-                  <xy x="83" y="0" width="73" height="24"/>
+                  <xy x="88" y="0" width="80" height="25"/>
                   <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0"/>
                 </constraints>
                 <properties>
@@ -79,7 +79,7 @@
               </component>
               <component id="1a808" class="javax.swing.JButton" binding="addOperationButton">
                 <constraints>
-                  <xy x="20" y="0" width="53" height="24"/>
+                  <xy x="20" y="0" width="58" height="25"/>
                   <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0"/>
                 </constraints>
                 <properties>
@@ -89,7 +89,7 @@
               </component>
               <hspacer id="a09e7">
                 <constraints>
-                  <xy x="0" y="6" width="20" height="11"/>
+                  <xy x="0" y="7" width="20" height="11"/>
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
                 </constraints>
               </hspacer>
@@ -97,7 +97,7 @@
           </grid>
           <vspacer id="ce96e">
             <constraints>
-              <xy x="210" y="50" width="11" height="10"/>
+              <xy x="211" y="50" width="11" height="10"/>
               <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
                 <minimum-size width="-1" height="10"/>
                 <preferred-size width="-1" height="10"/>
@@ -107,7 +107,7 @@
           </vspacer>
           <vspacer id="1bd27">
             <constraints>
-              <xy x="210" y="96" width="11" height="10"/>
+              <xy x="211" y="97" width="11" height="10"/>
               <grid row="4" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
                 <minimum-size width="-1" height="10"/>
                 <preferred-size width="-1" height="10"/>
@@ -117,11 +117,11 @@
           </vspacer>
           <component id="a527f" class="javax.swing.JLabel">
             <constraints>
-              <xy x="20" y="114" width="53" height="14"/>
+              <xy x="20" y="114" width="67" height="15"/>
               <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
-              <text value="Operations:"/>
+              <text value="Operation List:"/>
             </properties>
           </component>
         </children>

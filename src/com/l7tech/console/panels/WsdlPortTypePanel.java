@@ -65,12 +65,19 @@ public class WsdlPortTypePanel extends WizardStepPanel {
      * @return the wizard step description
      */
     public String getDescription() {
+
         return "<html>" +
+        "The \"port type\" element of a Web service contains a set of abstract operations, " +
+        "with each operation containing a set of abstract messages. In a RPC-type Web service, " +
+        "the port type can be considered an interface definition in which each method is " +
+        "defined as an operation." +
+        "</html>";
+        /*return "<html>" +
           "The <i>port type</i> element contains a set of abstract operations and the abstract " +
           "messages involved. " +
           "For RPC-style Web services a <i>portType</i> can be thought as an interface definition " +
           "in which each method can be defined as an operation." +
-          "</html>";
+          "</html>";*/
     }
 
     /**
