@@ -6,7 +6,7 @@
 
 package com.l7tech.message;
 
-import com.l7tech.credential.PrincipalCredentials;
+import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 
 import java.io.*;
 
@@ -34,6 +34,7 @@ public interface Request extends Message {
     public static final String PARAM_HTTP_ACCEPT_ENCODING   = PREFIX_HTTP_HEADER + ".accept-encoding";
     public static final String PARAM_HTTP_X509CERT          = "javax.servlet.request.X509Certificate";
 
+    public static final String PARAM_HTTP_METHOD            = PREFIX_HTTP + ".method";
     public static final String PARAM_HTTP_REQUEST_URI       = PREFIX_HTTP + ".request-uri";
     public static final String PARAM_HTTP_AUTH_TYPE         = PREFIX_HTTP + ".auth-type";
     public static final String PARAM_HTTP_REMOTE_ADDR       = PREFIX_HTTP + ".remote-addr";
