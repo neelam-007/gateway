@@ -335,6 +335,8 @@ public class Wsdl {
     }
 
     public URL getUrlFromPort(Port wsdlPort) throws MalformedURLException {
+        if (wsdlPort == null)
+            throw new IllegalArgumentException("No WSDL port was provided");
         List elements = wsdlPort.getExtensibilityElements();
         URL url = null;
         ExtensibilityElement eel;
@@ -360,6 +362,10 @@ public class Wsdl {
      * @param url
      */
     public void setPortUrl(Port wsdlPort, URL url) {
+        if (wsdlPort == null)
+            throw new IllegalArgumentException("No WSDL port was provided");
+        if (url == null)
+            throw new IllegalArgumentException("No new WSDL Port URL was provided");
         List elements = wsdlPort.getExtensibilityElements();
         ExtensibilityElement eel;
         int num = 0;
