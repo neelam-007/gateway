@@ -6,17 +6,10 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.InvalidIdProviderCfgException;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.common.util.Locator;
-import com.l7tech.console.logging.ErrorManager;
 
 import javax.swing.*;
-import javax.swing.event.DocumentListener;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.EventListenerList;
 import java.awt.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.util.Locale;
@@ -39,8 +32,6 @@ public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
         this.showProviderType = showProviderType;
         initResources();
         initComponents();
-        //providerSettingsPanel = getLdapPanel(null);
-       // add(providerSettingsPanel);
     }
 
     /**
@@ -71,31 +62,6 @@ public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
         providerNameTextField.setMinimumSize(new Dimension(217, 20));
         providerNameTextField.setToolTipText(resources.getString("providerNameTextField.tooltip"));
 
-        providerNameTextField.getDocument().
-          addDocumentListener(new DocumentListener() {
-              public void insertUpdate(DocumentEvent e) {
-                  //saveButton.setEnabled(enableSaveButton(e));
-              }
-
-              public void removeUpdate(DocumentEvent e) {
-                  //saveButton.setEnabled(enableSaveButton(e));
-              }
-
-              public void changedUpdate(DocumentEvent e) {
-                  //saveButton.setEnabled(enableSaveButton(e));
-              }
-
-              private boolean enableSaveButton(DocumentEvent e) {
-                  boolean enable =
-                    e.getDocument().getLength() > 0 &&
-                    providerTypesCombo.getSelectedIndex() != -1;
-                  /*enable = enable &&
-                    providerSettingsPanel != null;*/
-
-                  return enable;
-              }
-          });
-
         return providerNameTextField;
     }
 
@@ -106,7 +72,7 @@ public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
         ldapHostTextField.setPreferredSize(new Dimension(217, 20));
         ldapHostTextField.setMinimumSize(new Dimension(217, 20));
         ldapHostTextField.setToolTipText(resources.getString("ldapHostTextField.tooltip"));
-        //ldapHostTextField.setText( ldapcfg == null ? "" : ldapcfg.getLdapUrl());
+
         ldapHostTextField.setText("");
         return ldapHostTextField;
     }
@@ -118,7 +84,7 @@ public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
         ldapSearchBaseTextField.setPreferredSize(new Dimension(217, 20));
         ldapSearchBaseTextField.setMinimumSize(new Dimension(217, 20));
         ldapSearchBaseTextField.setToolTipText(resources.getString("ldapSearchBaseTextField.tooltip"));
-        //ldapSearchBaseTextField.setText(ldapcfg == null ? "" : ldapcfg.getSearchBase());
+
         ldapSearchBaseTextField.setText("");
         return ldapSearchBaseTextField;
     }
@@ -130,7 +96,7 @@ public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
         ldapBindDNTextField.setPreferredSize( new Dimension( 217, 20 ) );
         ldapBindDNTextField.setMinimumSize( new Dimension( 217, 20 ) );
         ldapBindDNTextField.setToolTipText( resources.getString( "ldapBindDNTextField.tooltip" ) );
-       // ldapBindDNTextField.setText(ldapcfg == null ? "" : ldapcfg.getBindDN());
+
         ldapBindDNTextField.setText("");
         return ldapBindDNTextField;
     }
@@ -142,7 +108,6 @@ public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
         ldapBindPassTextField.setPreferredSize( new Dimension( 217, 20 ) );
         ldapBindPassTextField.setMinimumSize( new Dimension( 217, 20 ) );
         ldapBindPassTextField.setToolTipText( resources.getString( "ldapBindPassTextField.tooltip" ) );
-        //ldapBindPassTextField.setText(ldapcfg == null ? "" : ldapcfg.getBindPasswd());
 
         ldapBindPassTextField.setText("");
         return ldapBindPassTextField;
@@ -161,17 +126,6 @@ public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
     }
 
     /**
-     * return the provider details
-     *
-     * @return the panel for the selected provide
-     */
-    private JPanel getProvidersPanel() {
-        if (providersPanel != null) return providersPanel;
-        providersPanel = new JPanel();
-        return providersPanel;
-    }
-
-    /**
      * This method is called from within the constructor to
      * initialize the dialog.
      */
@@ -179,13 +133,6 @@ public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
 
 
     private void initComponents() {
-
-        providersPanel = new JPanel();
-
-        final JTextField ldapHostTextField = new JTextField();
-        final JTextField ldapSearchBaseTextField = new JTextField();
-        final JTextField ldapBindDNTextField = new JTextField();
-        final JTextField ldapBindPassTextField = new JTextField();
 
         JPanel panel = new JPanel();
         panel.setLayout(new GridBagLayout());
@@ -534,20 +481,24 @@ public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
         }
     }
 
+    public void storeSettings(Object settings) {
+
+        if (settings instanceof LdapIdentityProviderConfig) {
+
+            ((LdapIdentityProviderConfig) settings).setLdapUrl(getLdapHostTextField().getText());
+            ((LdapIdentityProviderConfig) settings).setName(getProviderNameTextField().getText());
+            ((LdapIdentityProviderConfig) settings).setSearchBase(getLdapSearchBaseTextField().getText());
+            ((LdapIdentityProviderConfig) settings).setBindDN(getLdapBindDNTextField().getText());
+            ((LdapIdentityProviderConfig) settings).setBindPasswd(getLdapBindPassTextField().getText());
+
+        }
+    }
+
     /** Resource bundle with default locale */
     private ResourceBundle resources = null;
-
-    private String CMD_CANCEL = "cmd.cancel";
-
-    private String CMD_OK = "cmd.ok";
     private String CMD_TEST = "cmd.test";
-
-    private JButton saveButton = null;
-    private EntityHeader header = new EntityHeader();
     private LdapIdentityProviderConfig iProviderConfig;
-    private EventListenerList listenerList = new EventListenerList();
-    private JPanel providersPanel;
-    private Dimension origDimension;
+
 
     /** provider ID text field */
     private JTextField providerNameTextField = null;

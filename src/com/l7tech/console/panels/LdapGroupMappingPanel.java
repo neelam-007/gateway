@@ -2,7 +2,6 @@ package com.l7tech.console.panels;
 
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.GroupMappingConfig;
-import com.l7tech.identity.ldap.UserMappingConfig;
 import com.l7tech.identity.ldap.MemberStrategy;
 import com.l7tech.console.util.SortedListModel;
 
@@ -11,8 +10,8 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.Vector;
 import java.util.Comparator;
+import java.util.Iterator;
 
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
@@ -34,6 +33,19 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
         return "Group ObjectClass mappings";
     }
 
+    public void updateListModel(GroupMappingConfig groupMapping) {
+
+        if(groupMapping != null) {
+            groupMapping.setObjClass(objectClass.getText());
+            groupMapping.setNameAttrName(nameAttribute.getText());
+            groupMapping.setMemberAttrName(memberAttribute.getText());
+
+            MemberStrategy ms = new MemberStrategy();
+            ms.setVal(memberStrategy.getSelectedIndex());
+            groupMapping.setMemberStrategy(ms);
+        }
+    }
+
     public void readSettings(Object settings) throws IllegalArgumentException {
 
         if (settings instanceof LdapIdentityProviderConfig) {
@@ -42,7 +54,7 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
 
             if (iProviderConfig.getOid() != -1) {
 
-                groupMappings = iProviderConfig.getGroupMappings();
+                GroupMappingConfig[] groupMappings = iProviderConfig.getGroupMappings();
 
                 // clear the model
                 getGroupListModel().clear();
@@ -58,6 +70,28 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
                     getGroupList().setSelectedIndex(0);
                 }
             }
+        }
+    }
+
+    public void storeSettings(Object settings) {
+
+        Object groupMapping = null;
+
+        // store the current record if selected
+        if((groupMapping = getGroupList().getSelectedValue()) != null) {
+             updateListModel((GroupMappingConfig) groupMapping);
+        }
+
+        if (settings instanceof LdapIdentityProviderConfig) {
+
+            SortedListModel dataModel = getGroupListModel();
+
+            GroupMappingConfig[] groupMappings = new GroupMappingConfig[dataModel.getSize()];
+
+            for (int i = 0; i < dataModel.getSize(); i++) {
+                groupMappings[i] = (GroupMappingConfig) dataModel.getElementAt(i);
+            }
+            ((LdapIdentityProviderConfig) settings).setGroupMappings(groupMappings);
         }
     }
 
@@ -83,9 +117,8 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
         addButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
 
-                // todo:save the current entry
                 if (getGroupList().getSelectedValue() != null) {
-
+                    updateListModel(lastSelectedGroup);
                 }
 
                 // create a new group mapping
@@ -95,8 +128,6 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
                 getGroupListModel().add(newEntry);
 
                 getGroupList().setSelectedValue(newEntry, false);
-                // select the new entry
-                //groupList.setSelectedIndex(-1);
 
             }
         });
@@ -169,11 +200,17 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
                      * @param e the event that characterizes the change.
                      */
                     public void valueChanged(ListSelectionEvent e) {
-                        Object selectedUser = groupList.getSelectedValue();
+                        Object selectedGroup = groupList.getSelectedValue();
 
-                        if (selectedUser != null) {
-                            readSelectedGroupSettings(selectedUser);
+                        if (selectedGroup != null)
+                        {
+                             // save the changes in the data model
+                             updateListModel(lastSelectedGroup);
+
+                             readSelectedGroupSettings(selectedGroup);
                         }
+
+                        lastSelectedGroup = (GroupMappingConfig) selectedGroup;
                     }
                 });
 
@@ -407,10 +444,6 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
         add(groupPanel);
     }
 
-    private void objectClassActionPerformed(java.awt.event.ActionEvent evt) {
-        // Add your handling code here:
-    }
-
     private final ListCellRenderer renderer = new DefaultListCellRenderer() {
         public Component getListCellRendererComponent(JList list, Object value,
                                                       int index, boolean isSelected,
@@ -456,10 +489,9 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
     private javax.swing.JComboBox memberStrategy;
 
     private LdapIdentityProviderConfig iProviderConfig = null;
-    private GroupMappingConfig[] groupMappings = null;
-    private Vector users = new Vector();
     private SortedListModel groupListModel = null;
     private static int nameIndex = 0;
     private String originalObjectClass = "";
+    private GroupMappingConfig lastSelectedGroup = null;
 
 }

@@ -3,13 +3,9 @@ package com.l7tech.console.panels;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.UserMappingConfig;
 import com.l7tech.identity.ldap.PasswdStrategy;
-import com.l7tech.common.gui.util.ImageCache;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.console.util.SortedListModel;
 
 import javax.swing.*;
-import javax.swing.event.ListDataListener;
-import javax.swing.event.ListDataEvent;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
@@ -19,7 +15,6 @@ import java.awt.event.KeyListener;
 import java.awt.event.KeyEvent;
 import java.util.Vector;
 import java.util.Comparator;
-import java.util.Set;
 
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
@@ -42,6 +37,22 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         return "User ObjectClass mappings";
     }
 
+    public void updateListModel(UserMappingConfig userMapping) {
+
+        if(userMapping != null) {
+            userMapping.setObjClass(objectClass.getText());
+            userMapping.setNameAttrName(nameAttribute.getText());
+            userMapping.setEmailNameAttrName(emailAttribute.getText());
+            userMapping.setFirstNameAttrName(firstNameAttribute.getText());
+            userMapping.setLastNameAttrName(lastNameAttribute.getText());
+            userMapping.setLoginAttrName(loginNameAttribute.getText());
+            userMapping.setPasswdAttrName(passwordAttribute.getText());
+
+            PasswdStrategy ps = new PasswdStrategy();
+            ps.setVal(passwordStrategyAttribute.getSelectedIndex());
+            userMapping.setPasswdType(ps);
+        }
+    }
 
     public void readSettings(Object settings) throws IllegalArgumentException {
 
@@ -51,7 +62,7 @@ public class LdapUserMappingPanel extends WizardStepPanel {
 
             if (iProviderConfig.getOid() != -1) {
 
-                userMappings = iProviderConfig.getUserMappings();
+                UserMappingConfig[] userMappings = iProviderConfig.getUserMappings();
 
                 // clear the model
                 getUserListModel().clear();
@@ -70,13 +81,34 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         }
     }
 
+    public void storeSettings(Object settings) {
+
+        Object userMapping = null;
+
+        // store the current record if selected
+        if((userMapping = getUserList().getSelectedValue()) != null) {
+             updateListModel((UserMappingConfig) userMapping);
+        }
+
+        if (settings instanceof LdapIdentityProviderConfig) {
+
+            SortedListModel dataModel = getUserListModel();
+            UserMappingConfig[] userMappings = new UserMappingConfig[dataModel.getSize()];
+
+            for (int i = 0; i < dataModel.getSize(); i++) {
+                userMappings[i] = (UserMappingConfig) dataModel.getElementAt(i);
+            }
+            ((LdapIdentityProviderConfig) settings).setUserMappings(userMappings);
+        }
+    }
+
     private void readSelectedUserSettings(Object settings) {
 
         if (settings instanceof UserMappingConfig) {
 
             UserMappingConfig userMapping = (UserMappingConfig) settings;
             emailAttribute.setText(userMapping.getEmailNameAttrName());
-            firstNameAttribute.setText(userMapping.getNameAttrName());
+            firstNameAttribute.setText(userMapping.getFirstNameAttrName());
             lastNameAttribute.setText(userMapping.getLastNameAttrName());
             loginNameAttribute.setText(userMapping.getLoginAttrName());
             nameAttribute.setText(userMapping.getNameAttrName());
@@ -97,10 +129,9 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         addButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
 
-                // todo:save the current entry
-                if (getUserList().getSelectedValue() != null) {
-
-                }
+                 if (getUserList().getSelectedValue() != null) {
+                     updateListModel(lastSelectedUser);
+                 }
 
                 // create a new user mapping
                 UserMappingConfig newEntry = new UserMappingConfig();
@@ -109,9 +140,6 @@ public class LdapUserMappingPanel extends WizardStepPanel {
                 getUserListModel().add(newEntry);
 
                 getUserList().setSelectedValue(newEntry, false);
-                // select the new entry
-                //groupList.setSelectedIndex(-1);
-
             }
         });
 
@@ -185,8 +213,13 @@ public class LdapUserMappingPanel extends WizardStepPanel {
                         Object selectedUser = userList.getSelectedValue();
 
                         if (selectedUser != null) {
+                            // save the changes in the data model
+                             updateListModel(lastSelectedUser);
+
                             readSelectedUserSettings(selectedUser);
                         }
+
+                        lastSelectedUser = (UserMappingConfig) selectedUser;
                     }
                 });
 
@@ -365,11 +398,6 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         userAttributePanel.add(nameAttribute, gridBagConstraints);
 
         loginNameAttribute.setPreferredSize(new java.awt.Dimension(150, 20));
-        loginNameAttribute.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                loginNameAttributeActionPerformed(evt);
-            }
-        });
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
@@ -405,11 +433,6 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         userAttributePanel.add(firstNameAttributeLabel, gridBagConstraints);
 
         firstNameAttribute.setPreferredSize(new java.awt.Dimension(150, 20));
-        firstNameAttribute.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                firstNameAttributeActionPerformed(evt);
-            }
-        });
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
@@ -508,14 +531,6 @@ public class LdapUserMappingPanel extends WizardStepPanel {
 
     }
 
-    private void loginNameAttributeActionPerformed(java.awt.event.ActionEvent evt) {
-        // Add your handling code here:
-    }
-
-    private void firstNameAttributeActionPerformed(java.awt.event.ActionEvent evt) {
-        // Add your handling code here:
-    }
-
 
     private final ListCellRenderer renderer = new DefaultListCellRenderer() {
         public Component getListCellRendererComponent(JList list, Object value,
@@ -575,11 +590,12 @@ public class LdapUserMappingPanel extends WizardStepPanel {
 
 
     private LdapIdentityProviderConfig iProviderConfig = null;
-    private UserMappingConfig[] userMappings = null;
     private Vector users = new Vector();
     private SortedListModel userListModel = null;
     private static int nameIndex = 0;
     private String originalObjectClass = "";
+
+    private UserMappingConfig lastSelectedUser = null;
 }
 
 
