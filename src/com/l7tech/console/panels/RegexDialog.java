@@ -104,6 +104,7 @@ public class RegexDialog extends JDialog {
         testButton.setEnabled(false);
         testButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                testResultTextPane.setText("");
                 Matcher matcher = pattern.matcher(testInputTextArea.getText());
                 StyledDocument doc = (StyledDocument)testResultTextPane.getDocument();
                 SimpleAttributeSet sas = new SimpleAttributeSet();
