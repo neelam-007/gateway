@@ -552,8 +552,8 @@ public class MessageProcessor {
                 // post the request using input stream
                 postMethod.setRequestBody(pbis);
             } else {
-                postMethod.addRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
                 postMethod.setRequestBody(postBody);
+                postMethod.addRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
             }
 
             log.info("Posting request to Gateway " + ssg + ", url " + url);
