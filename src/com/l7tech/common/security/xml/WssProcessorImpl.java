@@ -8,6 +8,7 @@ import com.ibm.xml.enc.StructureException;
 import com.ibm.xml.enc.type.EncryptedData;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.security.saml.Constants;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -30,6 +31,8 @@ import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import x0Assertion.oasisNamesTcSAML1.AssertionType;
 
 /**
  * An implementation of the WssProcessor for use in both the SSG and the SSA.
@@ -175,6 +178,13 @@ public class WssProcessorImpl implements WssProcessor {
                     processReferenceList(securityChildToProcess, cntx);
                 } else {
                     logger.info("Encountered ReferenceList element but not of expected namespace (" +
+                                securityChildToProcess.getNamespaceURI() + ")");
+                }
+            }  else if (securityChildToProcess.getLocalName().equals(Constants.ELEMENT_ASSERTION)) {
+                if ( securityChildToProcess.getNamespaceURI().equals(Constants.NS_SAML) ) {
+                    processSamlSecurityToken(securityChildToProcess, cntx);
+                } else {
+                    logger.info("Encountered SAML Assertion element but not of expected namespace (" +
                                 securityChildToProcess.getNamespaceURI() + ")");
                 }
             } else {
@@ -806,6 +816,19 @@ public class WssProcessorImpl implements WssProcessor {
         cntx.x509TokensById.put(wsuId, rememberedSecToken);
     }
 
+    private void processSamlSecurityToken( Element securityTokenElement, ProcessingStatusHolder context )
+        throws ProcessorException, InvalidDocumentFormatException
+    {
+        logger.finest("Processing saml:Assertion XML SecurityToken");
+        try {
+            AssertionType assertion = AssertionType.Factory.parse( securityTokenElement );
+            SamlSecurityToken saml = new SamlSecurityTokenImpl(securityTokenElement, assertion);
+            context.securityTokens.add(saml);
+        } catch ( XmlException e ) {
+            throw new InvalidDocumentFormatException("Couldn't parse SAML Assertion", e);
+        }
+    }
+
     private X509SecurityTokenImpl resolveCertByRef(final Element parentElement, ProcessingStatusHolder cntx) {
 
         // Looking for reference to a wsse:BinarySecurityToken or to a derived key
@@ -1108,6 +1131,25 @@ public class WssProcessorImpl implements WssProcessor {
             possessionProved = true;
         }
     }
+
+    private static class SamlSecurityTokenImpl implements SamlSecurityToken {
+        public SamlSecurityTokenImpl(Element element, AssertionType assertion) {
+            this.element = element;
+            this.assertion = assertion;
+        }
+
+        public Object asObject() {
+            return assertion;
+        }
+
+        public Element asElement() {
+            return element;
+        }
+
+        private Element element;
+        private AssertionType assertion;
+    }
+
 
     private static class TimestampImpl implements WssProcessor.Timestamp {
         private final TimestampDate createdTimestampDate;
