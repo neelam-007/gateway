@@ -25,6 +25,7 @@ public class IntroductionWizardStepPanel extends WizardStepPanel {
      */
     public IntroductionWizardStepPanel(WizardStepPanel next) {
         super(next);
+        setShowDescriptionPanel(false);
         setLayout(new BorderLayout());
         /** Set content pane */
         add(mainPanel, BorderLayout.CENTER);

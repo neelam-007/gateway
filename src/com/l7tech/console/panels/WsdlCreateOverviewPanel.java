@@ -23,6 +23,7 @@ public class WsdlCreateOverviewPanel extends WizardStepPanel {
 
     public WsdlCreateOverviewPanel(WizardStepPanel next) {
         super(next);
+        setShowDescriptionPanel(false);
         setLayout(new BorderLayout());
         /** Set content pane */
         add(mainPanel, BorderLayout.CENTER);

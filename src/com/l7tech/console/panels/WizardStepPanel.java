@@ -16,11 +16,11 @@ import java.util.EventListener;
  * @version 1.0
  */
 public abstract class WizardStepPanel extends JPanel {
-
     protected JDialog owner;
     private EventListenerList listenerList = new WeakEventListenerList();
     private WizardStepPanel nextPanel;
     private Object[] skippedPanels;
+    private boolean showDescriptionPanel = true;
     private boolean skipped = false;
     private boolean skippedPanelsModified = false;
 
@@ -32,11 +32,11 @@ public abstract class WizardStepPanel extends JPanel {
         this.skipped = skipped;
     }
 
-    public JDialog getOwner() {
+    protected JDialog getOwner() {
         return owner;
     }
 
-    public void setOwner(JDialog owner) {
+    protected void setOwner(JDialog owner) {
         this.owner = owner;
     }
 
@@ -48,13 +48,17 @@ public abstract class WizardStepPanel extends JPanel {
         skippedPanelsModified = false;
     }
 
-    /** Creates new form WizardPanel */
+    /**
+     * Creates new form WizardPanel
+     */
     public WizardStepPanel(WizardStepPanel next) {
         this.nextPanel = next;
         skippedPanels = new String[0];
     }
 
-    public void setNextPanel(WizardStepPanel next){this.nextPanel = next;}
+    public void setNextPanel(WizardStepPanel next) {
+        this.nextPanel = next;
+    }
 
     public final boolean hasNextPanel() {
         return nextPanel != null;
@@ -65,7 +69,7 @@ public abstract class WizardStepPanel extends JPanel {
     }
 
     public Object[] getSkippedPanels() {
-       return skippedPanels;
+        return skippedPanels;
     }
 
     protected void setSkippedPanels(Object[] skippedPanels) {
@@ -74,17 +78,32 @@ public abstract class WizardStepPanel extends JPanel {
     }
 
     /**
+     * @return whether to show description panel
+     */
+    protected boolean isShowDescriptionPanel() {
+        return showDescriptionPanel;
+    }
+
+    /**
+     * The sublass step panels use this to set the step panel
+     * @param showDescriptionPanel true show the dscri[ption panel, false otherwise
+     */
+    protected void setShowDescriptionPanel(boolean showDescriptionPanel) {
+        this.showDescriptionPanel = showDescriptionPanel;
+    }
+
+    /**
      * Perform any panel-specific last-second checking at the time the user presses the "Next"
      * (or "Finish") button
      * while this panel is showing.  The panel may veto the action by returning false here.
      * Since this method is called in response to user input it may take possibly-lengthy actions
      * such as downloading a remote file.
-     *
+     * <p/>
      * This differs from canAdvance() in that it is called when the user actually hits the Next button,
      * whereas canAdvance() is used to determine if the Next button is even enabled.
      *
      * @return true if it is safe to advance to the next step; false if not (and the user may have
-     *            been pestered with an error dialog).
+     *         been pestered with an error dialog).
      */
     public boolean onNextButton() {
         return true;
@@ -97,7 +116,6 @@ public abstract class WizardStepPanel extends JPanel {
      *
      * @return true if the panel is valid, false otherwis
      */
-
     public boolean canAdvance() {
         return true;
     }
@@ -107,7 +125,6 @@ public abstract class WizardStepPanel extends JPanel {
      *
      * @return true if the panel is valid, false otherwis
      */
-
     public boolean canFinish() {
         return true;
     }
@@ -127,7 +144,7 @@ public abstract class WizardStepPanel extends JPanel {
 
     /**
      * Remove a listener to changes of the panel's validity.
-     *
+     * <p/>
      * The default is a simple implementation that supports a single
      * listener.
      *
@@ -155,16 +172,18 @@ public abstract class WizardStepPanel extends JPanel {
      * noop version that subclasses implement.
      *
      * @param settings the object representing wizard panel state
-     * @exception IllegalArgumentException if the the data provided
-     * by the wizard are not valid.
+     * @throws IllegalArgumentException if the the data provided
+     *                                  by the wizard are not valid.
      */
     public void readSettings(Object settings)
       throws IllegalArgumentException {
     }
 
+
     public String getDescription() {
         return "";
     }
+
 
     /**
      * Provides the wizard panel with the opportunity to update the
@@ -172,12 +191,12 @@ public abstract class WizardStepPanel extends JPanel {
      * Rather than updating its settings with every change in the GUI,
      * it should collect them, and then only save them when requested to
      * by this method.
-     *
+     * <p/>
      * This is a noop version that subclasses implement.
      *
-     * @exception IllegalArgumentException if the the data provided
-     * by the wizard are not valid.
      * @param settings the object representing wizard panel state
+     * @throws IllegalArgumentException if the the data provided
+     *                                  by the wizard are not valid.
      */
     public void storeSettings(Object settings)
       throws IllegalArgumentException {

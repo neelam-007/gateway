@@ -32,17 +32,19 @@ public class Wizard extends JDialog {
     private boolean wasCanceled = false;
 
     /**
-     * is show description enabled for the panel steps
-     * @return true if enabled, false otherwise
-     */
+         * is show description enabled for the panel steps
+         *
+         * @return true if enabled, false otherwise
+         */
     public boolean isShowDescription() {
         return showDescription;
     }
 
     /**
-     * set hte description enabled property
-     * @param b the show description property 
-     */
+         * set hte description enabled property
+         *
+         * @param b the show description property
+         */
     public void setShowDescription(boolean b) {
         this.showDescription = b;
     }
@@ -51,7 +53,9 @@ public class Wizard extends JDialog {
 
     protected EventListenerList listenerList = new EventListenerList();
 
-    /** Creates new wizard */
+    /**
+         * Creates new wizard
+         */
     public Wizard(Frame parent, WizardStepPanel panel) {
         super(parent, true);
         Actions.setEscKeyStrokeDisposes(this);
@@ -65,10 +69,11 @@ public class Wizard extends JDialog {
     }
 
     /**
-     * access the information that the wizard collected
-     * @return the wizard information object, typically user
-     * entered data
-     */
+         * access the information that the wizard collected
+         *
+         * @return the wizard information object, typically user
+         *         entered data
+         */
     public final Object getWizardInput() {
         return wizardInput;
     }
@@ -87,21 +92,21 @@ public class Wizard extends JDialog {
 
 
     /**
-     * Adds the specified wizard listener to receive events from
-     * this wizard.
-     *
-     * @param    l   the wizard listener
-     */
+         * Adds the specified wizard listener to receive events from
+         * this wizard.
+         *
+         * @param l the wizard listener
+         */
     public synchronized void addWizardListener(WizardListener l) {
         listenerList.add(WizardListener.class, l);
     }
 
     /**
-     * Removes the specified wizard listener so that it no longer
-     * receives events from this wizard.
-     *
-     * @param    l   the wizard listener
-     */
+         * Removes the specified wizard listener so that it no longer
+         * receives events from this wizard.
+         *
+         * @param l the wizard listener
+         */
     public synchronized void removeWizardListener(WizardListener l) {
         listenerList.remove(WizardListener.class, l);
     }
@@ -137,7 +142,7 @@ public class Wizard extends JDialog {
         JLabel titleLabel = new JLabel();
         titleLabel.setBorder(
           new CompoundBorder(new MatteBorder(new Insets(0, 0, 1, 0), Color.BLACK),
-            new EmptyBorder(new Insets(5, 5, 5, 5))));
+                             new EmptyBorder(new Insets(5, 5, 5, 5))));
 
         titleLabel.setHorizontalAlignment(SwingConstants.TRAILING);
         titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 14));
@@ -162,12 +167,12 @@ public class Wizard extends JDialog {
         stepsTitlePanel.setMaximumSize(new Dimension(150, 40));
 
         stepsTitlePanel.setBackground(stepsPanelColor);
-        
-/*        stepsTitlePanel.
-          setBorder(new CompoundBorder(
-            new EmptyBorder(new Insets(5, 5, 5, 5)),
-            new MatteBorder(new Insets(0, 0, 1, 0), Color.BLACK))
-          );*/
+
+        /*        stepsTitlePanel.
+                  setBorder(new CompoundBorder(
+                    new EmptyBorder(new Insets(5, 5, 5, 5)),
+                    new MatteBorder(new Insets(0, 0, 1, 0), Color.BLACK))
+                  );*/
 
         //steps label panel
         JLabel stepsLabel = new JLabel("Steps");
@@ -212,7 +217,7 @@ public class Wizard extends JDialog {
      */
     private void initialize() {
         // add stepStateListener to the startPanel
-       initializePanel(startPanel);
+        initializePanel(startPanel);
 
         // add stepStateListener to each subsequent panel
         for (Iterator it = new Wizard.Iterator(startPanel); it.hasNext();) {
@@ -221,10 +226,10 @@ public class Wizard extends JDialog {
         }
         SwingUtilities.invokeLater(
           new Runnable() {
-              public void run() {
-                  selectWizardPanel(null, wizardIterator.current());
-              }
-          });
+            public void run() {
+                selectWizardPanel(null, wizardIterator.current());
+            }
+        });
     }
 
     /**
@@ -339,10 +344,10 @@ public class Wizard extends JDialog {
      */
     private ChangeListener stepStateListener = new ChangeListener() {
         /**
-         * Invoked when the target of the listener has changed its state.
-         *
-         * @param e  a ChangeEvent object
-         */
+                 * Invoked when the target of the listener has changed its state.
+                 *
+                 * @param e a ChangeEvent object
+                 */
         public void stateChanged(ChangeEvent e) {
             Object source = e.getSource();
             if (source instanceof WizardStepPanel) {
@@ -352,10 +357,11 @@ public class Wizard extends JDialog {
     };
 
     /**
-     * select the wizard panel
-     * @param current the current panel
-     * @param next the next panel
-     */
+         * select the wizard panel
+         *
+         * @param current the current panel
+         * @param next    the next panel
+         */
     private void selectWizardPanel(WizardStepPanel current, WizardStepPanel next) {
         if (next == null) {
             throw new IllegalArgumentException("next == null");
@@ -370,12 +376,7 @@ public class Wizard extends JDialog {
             next.readSettings(wizardInput);
         }
         wizardStepPanel.add(next, BorderLayout.CENTER);
-        if(next instanceof WsdlCreateOverviewPanel){
-            descScrollPane.setVisible(false);
-        }
-        else{
-            descScrollPane.setVisible(true);
-        }
+        descScrollPane.setVisible(next.isShowDescriptionPanel());
         updateWizardControls(next);
         fireSelectionChanged(next);
     }
@@ -410,9 +411,10 @@ public class Wizard extends JDialog {
     }
 
     /**
-     * Set the panels to the skipped mode
-     * @param panels  The class names of panels to be skipped
-     */
+         * Set the panels to the skipped mode
+         *
+         * @param panels The class names of panels to be skipped
+         */
     private void setSkippedPanels(Object[] panels) {
         WizardStepPanel currentPanel = startPanel;
 
@@ -423,7 +425,7 @@ public class Wizard extends JDialog {
         } while (currentPanel.hasNextPanel());
 
         for (int i = 0; i < panels.length; i++) {
-            String panel = (String) panels[i];
+            String panel = (String)panels[i];
 
             currentPanel = startPanel;
 
@@ -514,7 +516,7 @@ public class Wizard extends JDialog {
             buttonNext.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent evt) {
                     if (wizardIterator.current().onNextButton()) {
-                        if(wizardIterator.current().skippedPanelsModified()) {
+                        if (wizardIterator.current().skippedPanelsModified()) {
                             setSkippedPanels(wizardIterator.current().getSkippedPanels());
                             // reset the flag
                             wizardIterator.current().resetSkippedPanelsModifiedFlag();
@@ -558,9 +560,10 @@ public class Wizard extends JDialog {
         private WizardStepPanel current = null;
 
         /**
-         * construct the iteratir with the starting panel
-         * @param panel the start paanel
-         */
+                 * construct the iteratir with the starting panel
+                 *
+                 * @param panel the start paanel
+                 */
         public Iterator(WizardStepPanel panel) {
             if (panel == null) {
                 throw new IllegalArgumentException();
@@ -570,35 +573,36 @@ public class Wizard extends JDialog {
         }
 
         /**
-         * Returns <tt>true</tt> if this iterator has more elements when
-         * traversing the list in the forward direction.
-         *
-         * @return <tt>true</tt> if the list iterator has more elements when
-         *		traversing the list in the forward direction.
-         */
+                 * Returns <tt>true</tt> if this iterator has more elements when
+                 * traversing the list in the forward direction.
+                 *
+                 * @return <tt>true</tt> if the list iterator has more elements when
+                 *         traversing the list in the forward direction.
+                 */
         public boolean hasNext() {
             return current.nextPanel() != null;
         }
 
         /**
-         * Returns <tt>true</tt> if this list iterator has more elements when
-         * traversing the list in the reverse direction.
-         *
-         * @return <tt>true</tt> if the list iterator has more elements when
-         *	       traversing the list in the reverse direction.
-         */
+                 * Returns <tt>true</tt> if this list iterator has more elements when
+                 * traversing the list in the reverse direction.
+                 *
+                 * @return <tt>true</tt> if the list iterator has more elements when
+                 *         traversing the list in the reverse direction.
+                 */
         public boolean hasPrevious() {
             return previous != null;
         }
 
         /**
-         * Returns the next element in the list.  This method may be called
-         * repeatedly to iterate through the list, or intermixed with calls to
-         * <tt>previous</tt> to go back and forth.
-         *
-         * @return the next element in the list.
-         * @exception java.util.NoSuchElementException if the iteration has no next element.
-         */
+                 * Returns the next element in the list.  This method may be called
+                 * repeatedly to iterate through the list, or intermixed with calls to
+                 * <tt>previous</tt> to go back and forth.
+                 *
+                 * @return the next element in the list.
+                 * @throws java.util.NoSuchElementException
+                 *          if the iteration has no next element.
+                 */
         public WizardStepPanel next() {
             if (hasNext()) {
                 previous = current;
@@ -616,15 +620,15 @@ public class Wizard extends JDialog {
         }
 
         /**
-         * Returns the previous element in the list.  This method may be called
-         * repeatedly to iterate through the list backwards, or intermixed with
-         * calls to <tt>next</tt> to go back and forth.
-         *
-         * @return the previous element in the list.
-         *
-         * @exception java.util.NoSuchElementException if the iteration has no previous
-         *            element.
-         */
+                 * Returns the previous element in the list.  This method may be called
+                 * repeatedly to iterate through the list backwards, or intermixed with
+                 * calls to <tt>next</tt> to go back and forth.
+                 *
+                 * @return the previous element in the list.
+                 * @throws java.util.NoSuchElementException
+                 *          if the iteration has no previous
+                 *          element.
+                 */
         public WizardStepPanel previous() {
             if (hasPrevious()) {
                 current = previous;
@@ -661,9 +665,8 @@ public class Wizard extends JDialog {
         }
 
         /**
-         *
-         * @param b the new selected propert
-         */
+                 * @param b the new selected propert
+                 */
         public void setSelected(boolean b) {
             selected = b;
             setFont(initialFont.deriveFont(selected ? Font.BOLD : Font.PLAIN, 12));
