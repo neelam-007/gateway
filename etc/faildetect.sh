@@ -1,22 +1,29 @@
 #/bin/sh
+
 # programs used
 IFCONFIG="/sbin/ifconfig"
 GARP="/usr/local/bin/garp"
 WGET="/usr/bin/wget"
-NC=/usr/bin/nc
+PING="/bin/ping" 
+ARP="/sbin/arp"
 # globals and configuration
 
 EMAIL="jthorne@layer7tech.com"
 
-HOST="10.0.0.25"
+THISNODE=192.168.1.105
+OTHERNODE=192.168.1.222
+
+HOST="192.168.1.231"
 # cluster IP addresss
 
 INTERFACE="eth0:0"
 # alias interface
 
+FILE="ssg/wsil"
 # file on server to get
+# WSIL proves app is alive.
 
-PORT=3306
+PORT=8080
 # and port number
 
 WAIT=1
@@ -25,7 +32,7 @@ WAIT=1
 TRIES=1
 # retries
 
-RETEST=1
+RETEST=2
 # time to wait for retry
 
 TRYAGAINFILE="/tmp/wget_failed_once"
@@ -37,6 +44,7 @@ SLEEPRETRY=10
 # Subroutines
 #
 success() {
+	echo -n "."
 	rm -f $TRYAGAINFILE
 	sleep $SLEEPRETRY
 	doget
@@ -52,8 +60,17 @@ failure() {
 		doget
 	else
 		echo "Failed Twice. Time for action"
-		echo
-		doiptakeover
+		echo "Cue soundtrack"
+		echo "Testing to see if $HOST is alive"
+		if $PING -w 3 -n -q -c 3 $HOST; then
+			# damn, webservice is down but the IP is up
+			# now what do we do.
+			shoottheothernodeinthehead
+			sleep 2
+			doiptakeover
+		else 
+			doiptakeover
+		fi
 		sleep $RETEST
 		rm $TRYAGAINFILE
 		doget	
@@ -61,21 +78,34 @@ failure() {
 	fi
 }
 
+shoottheothernodeinthehead() {
+	echo "echo 'SSG software Failed, host still alive' | mail -s 'SSG Failed' $EMAIL" 
+	echo "need to tell that other node to stfu"
+	echo 'ssh root@$OTHERNODE -c "$IFCONFIG $INTERFACE down"'
+}
+
 doiptakeover() {
-	# FIXME: currently Defanged
 	echo "Taking over IP $HOST";
+	echo "Bringing up interface $INTERFACE";
 	$IFCONFIG $INTERFACE $HOST
 	echo "Sending gratuitous arp"
-	$GARP -i eth0 -a $HOST
-	$GARP -i eth0 -a $HOST
+	$GARP -i $INTERFACE -a $HOST
 	echo "echo 'SSG Failover' | mail -s 'SSG Failover' $EMAIL" 
 }
 
 doget() {
+	# empty my arp cache, just in case the remote host just went down
+	# this would wait for the arp timeout otherwise.
+	arpentry=`$ARP -e | grep $HOST | grep -v incomplete`
+	if [ "$arpentry" != "" ] ; then
+		echo "Clearing arp cache"
+		$ARP -d $HOST
+	fi
+
 	# grab a file from the tomcat using wget
 	# quiet, few retries, short timeout, configurable location
-	#if $WGET  -q -t $TRIES -T $WAIT http://$HOST:$PORT/$FILE ;  then 
-	if echo " " | $NC -w $WAIT -o /tmp/foo $HOST $PORT > /tmp/bar;  then 
+
+	if $WGET  -q -t $TRIES -T $WAIT http://$HOST:$PORT/$FILE ;  then 
 		success
 	else 
 		RETVAL=$?
@@ -85,3 +115,4 @@ doget() {
 
 # after all those definitions now call the entry point.
 doget
+
