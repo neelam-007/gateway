@@ -119,7 +119,7 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
 
         // This can't happen, but just to cover all bases
         if (signingTokens.size() < 1)
-            return Result.error(new SecurityProcessorException("At least one element was signed, " +
+            return Result.error(new SecurityProcessorException("At least one element was supposed to be signed, " +
                                                                "but no BinarySecurityToken was found"));
 
         // TODO decide if we are willing to allow different parts to be signed by different certificates
