@@ -178,6 +178,67 @@ public abstract class AbstractLdapGroupManagerServer implements GroupManager {
         return false;
     }
 
+    private void collectOUGroupMembers( DirContext context, String dn, Set memberHeaders) throws NamingException, FindException {
+        AbstractLdapConstants constants = getConstants();
+        Object tmp;
+        // build group memberships
+        NamingEnumeration answer = null;
+
+        String filter = "(objectclass=" + constants.userObjectClass() + ")";
+        SearchControls sc = new SearchControls();
+        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+
+        // use dn of group as base
+        answer = context.search(dn, filter, sc);
+        while (answer.hasMore())
+        {
+            String login = null;
+            String userdn = null;
+            SearchResult sr = (SearchResult)answer.next();
+            userdn = sr.getName() + "," + dn;
+            Attributes atts = sr.getAttributes();
+            tmp = _ldapManager.extractOneAttributeValue(atts, constants.userLoginAttribute());
+            if (tmp != null) login = tmp.toString();
+            if (login != null && userdn != null) {
+                User u = getUserManager().findByPrimaryKey(userdn);
+                memberHeaders.add(getUserManager().userToHeader(u));
+            }
+        }
+
+        if (answer != null) answer.close();
+     }
+
+     private void collectSelfDescriptiveGroupMembers( DirContext context, Attributes groupAttributes, Set memberHeaders ) throws NamingException, FindException {
+        AbstractLdapConstants constants = getConstants();
+        Attribute memberAttribute = groupAttributes.get( constants.groupMemberAttribute() );
+        if (memberAttribute != null) {
+            for (int i = 0; i < memberAttribute.size(); i++) {
+                Object val = memberAttribute.get(i);
+                if (val != null) {
+                    String member = val.toString();
+                    User u = getUserFromGroupMember( member );
+                    if (u != null) {
+                        memberHeaders.add( getUserManager().userToHeader(u) );
+                    } else {
+                        Attributes memberAttributes = context.getAttributes( member );
+                        Attribute objectClassAttr = memberAttributes.get( constants.OBJCLASS_ATTR );
+
+                        for (int j = 0; j < objectClassAttr.size(); j++) {
+                            String oc = objectClassAttr.get(j).toString();
+                            if ( oc.equals( constants.groupObjectClass() ) ) {
+                                // It's a group!
+                                collectSelfDescriptiveGroupMembers( context, memberAttributes, memberHeaders );
+                            } else {
+                                // It's something else entirely!
+                                continue;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     public Set getUserHeaders( Group group ) throws FindException {
         NamingEnumeration answer = null;
         DirContext context = null;
@@ -188,44 +249,13 @@ public abstract class AbstractLdapGroupManagerServer implements GroupManager {
             LdapGroup groupImp = (LdapGroup)group;
             String dn = groupImp.getDn();
             context = _ldapManager.getBrowseContext();
-            AbstractLdapConstants constants = getConstants();
-            User user;
 
             if (dn.toLowerCase().indexOf(getConstants().groupNameAttribute().toLowerCase() + "=") < 0) {
                 // It's an OU
-
-                String filter = "(objectclass=" + constants.userObjectClass() + ")";
-                SearchControls sc = new SearchControls();
-                sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-
-                // use dn of group as base
-                answer = context.search(dn, filter, sc);
-                while (answer.hasMore()) {
-                    String login = null;
-                    String userdn = null;
-                    SearchResult sr = (SearchResult)answer.next();
-                    userdn = sr.getName() + "," + dn;
-                    Attributes atts = sr.getAttributes();
-                    Object tmp = _ldapManager.extractOneAttributeValue(atts, constants.userLoginAttribute());
-                    if (tmp != null) login = tmp.toString();
-                    if (login != null && userdn != null) {
-                        user = getUserManager().findByPrimaryKey(userdn);
-                        headers.add( new EntityHeader( user.getUniqueIdentifier(), EntityType.USER, user.getLogin(), null ) );
-                    }
-                }
+                collectOUGroupMembers( context, dn, headers );
             } else {
-                // Regular group
                 Attributes attributes = context.getAttributes(dn);
-                Attribute valuesWereLookingFor = attributes.get( constants.groupMemberAttribute() );
-                if (valuesWereLookingFor == null) return headers;
-                for (int i = 0; i < valuesWereLookingFor.size(); i++) {
-                    Object val = valuesWereLookingFor.get(i);
-                    if (val == null) continue;
-
-                    String member = val.toString();
-                    user = getUserFromGroupMember( member );
-                    if (user != null) headers.add( new EntityHeader( user.getUniqueIdentifier(), EntityType.USER, user.getName(), null ) );
-                }
+                collectSelfDescriptiveGroupMembers( context, attributes, headers );
             }
 
             return headers;
