@@ -64,6 +64,12 @@ public class AuthenticationAxisHandler extends InternalIDSecurityAxisHandler {
 
             // COMPARE TO THE VALUE IN INTERNAL DB
             com.l7tech.identity.User internalUser = findUserByLoginAndRealm(login, null);
+            if (internalUser == null) {
+                throw new AxisFault("User " + login + "not registered in internal id provider");
+            }
+            if (internalUser.getPassword() == null) {
+                throw new AxisFault("User " + login + "does not have a password");
+            }
             if (internalUser.getPassword().equals(md5edDecodedAuthValue)) {
                 // AUTHENTICATION SUCCESS
                 // you're cool, get in
@@ -82,10 +88,11 @@ public class AuthenticationAxisHandler extends InternalIDSecurityAxisHandler {
      * @param binaryData Array containing the digest
      * @return Encoded MD5, or null if encoding failed
      */
-    private String encodeDigest(byte[] binaryData) {
-        char[] hexadecimal ={'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+    private static String encodeDigest(byte[] binaryData) {
+        if (binaryData == null) return "";
 
-        if (binaryData.length != 16) return null;
+        char[] hexadecimal ={'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+        if (binaryData.length != 16) return "";
 
         char[] buffer = new char[32];
 
@@ -96,5 +103,17 @@ public class AuthenticationAxisHandler extends InternalIDSecurityAxisHandler {
             buffer[i*2 + 1] = hexadecimal[low];
         }
         return new String(buffer);
+    }
+
+    public static void main (String[] args) throws Exception {
+        // calculate the digest for a specific set of values
+        java.security.MessageDigest md5Helper = java.security.MessageDigest.getInstance("MD5");
+        String digestValue = "ssgadmin:ssgadminpasswd";
+        byte[] digest = md5Helper.digest(digestValue.getBytes());
+        System.out.println(encodeDigest(digest));
+
+        //result: 60189d5f68d564f9cb83e11bc2ae92e9 {for "ssgadmin::ssgadminpasswd"}
+        //result: 309b9c7ab4c3ee2144fce9b071acd440 {for "ssgadmin:ssgadminpasswd"}
+
     }
 }
