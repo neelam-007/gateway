@@ -43,27 +43,23 @@ public class ClientRequestWssX509Cert extends ClientAssertion {
         request.getCredentials();
         request.prepareClientCertificate();
 
+        final Ssg ssg = request.getSsg();
+        final PrivateKey userPrivateKey = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
+        final X509Certificate userCert = SsgKeyStoreManager.getClientCert(ssg);
+        final X509Certificate ssgCert = SsgKeyStoreManager.getServerCert(ssg);
+
         // add a pending decoration that will be applied only if the rest of this policy branch succeeds
         request.getPendingDecorations().put(this, new ClientDecorator() {
             public AssertionStatus decorateRequest(PendingRequest request)
-                    throws BadCredentialsException, OperationCanceledException, KeyStoreCorruptException
             {
-                try {
-                    // get the client cert and private key
-                    // We must have credentials to get the private key
-                    Ssg ssg = request.getSsg();
-                    PrivateKey userPrivateKey = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
-                    X509Certificate userCert = SsgKeyStoreManager.getClientCert(ssg);
-                    X509Certificate ssgCert = SsgKeyStoreManager.getServerCert(ssg);
-                    WssDecorator.DecorationRequirements wssReqs = request.getWssRequirements();
-                    wssReqs.setRecipientCertificate(ssgCert);
-                    wssReqs.setSenderCertificate(userCert);
-                    wssReqs.setSenderPrivateKey(userPrivateKey);
-                    wssReqs.setSignTimestamp(true);
-                    return AssertionStatus.NONE;
-                } catch (NoSuchAlgorithmException e) {
-                    throw new RuntimeException(e); // shouldn't happen
-                }
+                // get the client cert and private key
+                // We must have credentials to get the private key
+                WssDecorator.DecorationRequirements wssReqs = request.getWssRequirements();
+                wssReqs.setRecipientCertificate(ssgCert);
+                wssReqs.setSenderCertificate(userCert);
+                wssReqs.setSenderPrivateKey(userPrivateKey);
+                wssReqs.setSignTimestamp(true);
+                return AssertionStatus.NONE;
             }
         });
 
