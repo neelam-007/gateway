@@ -17,7 +17,7 @@ public class IdentityProviderConfigManagerStub implements IdentityProviderConfig
 
 
     public IdentityProviderConfig findByPrimaryKey(long oid) throws FindException {
-        return (IdentityProviderConfig) dataStore.getIdentityProviderConfigs().get(new Long(oid));
+        return (IdentityProviderConfig)dataStore.getIdentityProviderConfigs().get(new Long(oid));
     }
 
     public long save(IdentityProviderConfig identityProviderConfig) throws SaveException {
@@ -52,21 +52,22 @@ public class IdentityProviderConfigManagerStub implements IdentityProviderConfig
         Iterator i = findAll().iterator();
         IdentityProviderConfig config;
         while (i.hasNext()) {
-            config = (IdentityProviderConfig) i.next();
-            providers.add(makeProvider(config));
+            config = (IdentityProviderConfig)i.next();
+            if (!IdentityProviderType.INTERNAL.equals(config.type()))
+                providers.add(makeProvider(config));
         }
         return Collections.unmodifiableList(providers);
     }
 
-    private Object makeProvider(IdentityProviderConfig config) {
+    private IdentityProvider makeProvider(IdentityProviderConfig config) {
         IdentityProvider provider = new IdentityProviderStub();
         provider.initialize(config);
         return provider;
     }
 
     /**
-     * Returns an unmodifiable collection of <code>EntityHeader</code> o
-     * bjects for all instances of the entity class corresponding to this Manager.
+     * Returns an unmodifiable collection of <code>EntityHeader</code> objects
+     * for all instances of the entity class corresponding to this Manager.
      *
      * @return A <code>Collection</code> of EntityHeader objects.
      */
@@ -74,8 +75,10 @@ public class IdentityProviderConfigManagerStub implements IdentityProviderConfig
         Collection list = new ArrayList();
         for (Iterator i =
           dataStore.getIdentityProviderConfigs().keySet().iterator(); i.hasNext();) {
-            Long key = (Long) i.next();
-            list.add(fromIdentityProviderConfig((IdentityProviderConfig) dataStore.getIdentityProviderConfigs().get(key)));
+            Long key = (Long)i.next();
+            IdentityProviderConfig c = (IdentityProviderConfig)dataStore.getIdentityProviderConfigs().get(key);
+            if (!IdentityProviderType.INTERNAL.equals(c.type()))
+                list.add(fromIdentityProviderConfig(c));
         }
         return list;
     }
@@ -93,11 +96,13 @@ public class IdentityProviderConfigManagerStub implements IdentityProviderConfig
         int count = 0;
         for (Iterator i =
           dataStore.getIdentityProviderConfigs().keySet().iterator(); i.hasNext(); index++) {
-            Long key = (Long) i.next();
-
+            Long key = (Long)i.next();
             if (index >= offset && count <= windowSize) {
-                list.add(fromIdentityProviderConfig((IdentityProviderConfig) dataStore.getIdentityProviderConfigs().get(key)));
-                count++;
+                IdentityProviderConfig c = (IdentityProviderConfig)dataStore.getIdentityProviderConfigs().get(key);
+                if (!IdentityProviderType.INTERNAL.equals(c.type())) {
+                    list.add(fromIdentityProviderConfig(c));
+                    count++;
+                }
             }
         }
         return list;
@@ -114,8 +119,10 @@ public class IdentityProviderConfigManagerStub implements IdentityProviderConfig
         Collection list = new ArrayList();
         for (Iterator i =
           dataStore.getIdentityProviderConfigs().keySet().iterator(); i.hasNext();) {
-            Long key = (Long) i.next();
-            list.add(dataStore.getIdentityProviderConfigs().get(key));
+            Long key = (Long)i.next();
+            IdentityProviderConfig c = (IdentityProviderConfig)dataStore.getIdentityProviderConfigs().get(key);
+            if (!IdentityProviderType.INTERNAL.equals(c.type()))
+                list.add(c);
         }
         return list;
     }
@@ -133,11 +140,13 @@ public class IdentityProviderConfigManagerStub implements IdentityProviderConfig
         int count = 0;
         for (Iterator i =
           dataStore.getIdentityProviderConfigs().keySet().iterator(); i.hasNext(); index++) {
-            Long key = (Long) i.next();
-
+            Long key = (Long)i.next();
             if (index >= offset && count <= windowSize) {
-                list.add(dataStore.getIdentityProviderConfigs().get(key));
-                count++;
+                IdentityProviderConfig c = (IdentityProviderConfig)dataStore.getIdentityProviderConfigs().get(key);
+                if (!IdentityProviderType.INTERNAL.equals(c.type())) {
+                    list.add(c);
+                    count++;
+                }
             }
         }
         return list;
@@ -150,16 +159,13 @@ public class IdentityProviderConfigManagerStub implements IdentityProviderConfig
     }
 
     public IdentityProvider getInternalIdentityProvider() {
-        try {
-            for (Iterator it = findAllIdentityProviders().iterator(); it.hasNext();) {
-               IdentityProvider provider = (IdentityProvider)it.next();
-                if (IdentityProviderType.INTERNAL.equals(provider.getConfig().type())) {
-                    return provider;
-                }
-            }
-            throw new RuntimeException(); //bug, no internal provider
-        } catch (FindException e) {
-            throw new RuntimeException(e);
+        for (Iterator i =
+          dataStore.getIdentityProviderConfigs().keySet().iterator(); i.hasNext();) {
+            Long key = (Long)i.next();
+            IdentityProviderConfig c = (IdentityProviderConfig)dataStore.getIdentityProviderConfigs().get(key);
+            if (IdentityProviderType.INTERNAL.equals(c.type()))
+                return makeProvider(c);
         }
+        throw new RuntimeException(); //bug, no internal provider
     }
 }
