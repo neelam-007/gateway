@@ -9,10 +9,8 @@ package com.l7tech.skunkworks.xss4j;
 import com.ibm.xml.dsig.*;
 import com.ibm.xml.dsig.KeyInfo;
 import com.ibm.xml.dsig.util.AdHocIDResolver;
-import com.ibm.xml.enc.AlgorithmFactoryExtn;
-import com.ibm.xml.enc.EncryptionContext;
-import com.ibm.xml.enc.KeyInfoResolvingException;
-import com.ibm.xml.enc.StructureException;
+import com.ibm.xml.enc.*;
+import com.ibm.xml.enc.util.AdHocIdResolver;
 import com.ibm.xml.enc.type.*;
 
 import org.w3c.dom.Document;
@@ -25,6 +23,7 @@ import org.apache.xml.serialize.OutputFormat;
 
 import javax.crypto.SecretKey;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -32,6 +31,7 @@ import java.math.BigInteger;
 import java.security.Key;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
@@ -55,18 +55,19 @@ public class Xss4jWrapper {
     public Document munge() throws Exception, IOException, SAXException {
         Document doc = parse( CLEARTEXT );
 
-        // sign account id
-        signElement( doc, "accountid", false, 1, 0 );
-
         // encrypt & sign price
-        signElement( doc, "price", true, 2, 1 );
+        signElement( doc, "price", true, 1, 1 );
+
+        // sign account id
+        signElement( doc, "accountid", false, 2, 0 );
 
         return doc;
     }
 
     public Document unmunge( Document doc ) throws Exception {
         checkSignatureOnElement( doc, "accountid" ); // *** boom ***
-
+        checkSignatureOnElement( doc, "price" );
+        decryptXml( doc, getSecretKey() );
         // todo someday if needed for repro - decrypt the encrypted bits
         return doc;
     }
@@ -99,6 +100,30 @@ public class Xss4jWrapper {
         if (encrypt)
             encryptXml( priceElement, getSecretKey(), SESSION_ID, "encref" + encref );
         signXml( d, priceElement, "signref" + signref, getClientCertPrivateKey(), getClientCertificate() );
+    }
+
+    private void decryptXml(Document soapMsg, Key key) throws Exception {
+        // Locate EncryptedData element by its reference in the Security header
+        Element dataRefEl = (Element)soapMsg.getElementsByTagNameNS(XMLENC_NS, "DataReference").item(0);
+        if (dataRefEl == null)
+            throw new Exception("no DataReference tag in the message");
+        AdHocIdResolver idResolver = new AdHocIdResolver();
+        Element encryptedDataEl = idResolver.resolveID(soapMsg, dataRefEl.getAttribute("URI"));
+
+        // Strip out processed DataReferece element
+        Element RefListEl = (Element)dataRefEl.getParentNode();
+        RefListEl.removeChild(dataRefEl);
+
+        // Create decryption context and decrypt the EncryptedData subtree. Note that this effects the
+        // soapMsg document
+        DecryptionContext dc = new DecryptionContext();
+        AlgorithmFactoryExtn af = new AlgorithmFactoryExtn();
+        dc.setAlgorithmFactory(af);
+        dc.setEncryptedType(encryptedDataEl, EncryptedData.CONTENT, null, null);
+        dc.setKey(key);
+
+        dc.decrypt();
+        dc.replace();
     }
 
 
@@ -340,7 +365,7 @@ public class Xss4jWrapper {
         Document doc = me.munge();
         System.err.println( "Got munged:\n" + documentToString( doc ) );
         Document unmunged = me.unmunge( doc ); // *** boom ***
-        System.err.println( "Got unmunged:\n" + unmunged );
+        System.err.println( "Got unmunged:\n" + documentToString(unmunged) );
     }
 
     private static String documentToString( Document doc ) throws IOException {
