@@ -129,12 +129,9 @@ public class SamlAssertion extends MutableX509SigningSecurityToken implements Sa
                 throw new SamlException(msg);
             }
             ConditionsType conditions = assertion.getConditions();
-            if (conditions == null)
-                throw new SAXException("Assertion has no Conditions");
-            expires = conditions.getNotOnOrAfter();
-            if (expires == null)
-                throw new SAXException("Assertion has no NotOnOrAfter (expiry date)");
-
+            if (conditions != null) {
+                expires = conditions.getNotOnOrAfter();
+            }
             SubjectConfirmationType subjectConfirmation = subject.getSubjectConfirmation();
 
             if (subjectConfirmation != null) {
@@ -316,6 +313,9 @@ public class SamlAssertion extends MutableX509SigningSecurityToken implements Sa
 
     public boolean isExpiringSoon(int preexpireSec) {
         Calendar expires = getExpires();
+        if (expires == null) {
+            return false;
+        }
         Calendar nowUtc = Calendar.getInstance(UTC_TIME_ZONE);
         nowUtc.add(Calendar.SECOND, preexpireSec);
         return !expires.after(nowUtc);
