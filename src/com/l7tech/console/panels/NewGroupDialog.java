@@ -6,6 +6,7 @@ import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.action.Actions;
 import com.l7tech.identity.GroupBean;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -108,7 +109,8 @@ public class NewGroupDialog extends JDialog {
                 windowAction(CMD_CANCEL);
             }
         });
-
+        Actions.setEscKeyStrokeDisposes(this);
+        
 
         // user name label
         JLabel groupIdLabel = new JLabel();

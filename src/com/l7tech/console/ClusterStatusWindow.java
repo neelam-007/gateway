@@ -9,6 +9,7 @@ import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.console.util.ArrowIcon;
 import com.l7tech.console.event.ConnectionListener;
 import com.l7tech.console.event.ConnectionEvent;
+import com.l7tech.console.action.Actions;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.util.Locator;
 import com.l7tech.service.ServiceAdmin;
@@ -93,7 +94,7 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
         setJMenuBar(getClusterWindowMenuBar());
         getContentPane().setLayout(new BorderLayout());
         getContentPane().add(getJFrameContentPane(), BorderLayout.CENTER);
-
+        Actions.setEscKeyStrokeDisposes(this);
         initResources();
         initAdminConnection();
         initCaches();

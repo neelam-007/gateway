@@ -28,7 +28,7 @@ public class ServicesFolderNode extends AbstractTreeNode {
      * a given service manager with the name.
      */
     public ServicesFolderNode(ServiceAdmin sm, String name) {
-        super(null);
+        super(null, EntityHeaderNode.IGNORE_CASE_NAME_COMPARATOR);
         serviceManager = sm;
         title = name;
     }
@@ -67,17 +67,14 @@ public class ServicesFolderNode extends AbstractTreeNode {
      * load the service folder children
      */
     protected void loadChildren() {
-        Enumeration e =
-          TreeNodeFactory.
-          getTreeNodeEnumeration(
-            new EntitiesEnumeration(new ServiceEntitiesCollection(serviceManager)));
-        int index = 0;
+        EntitiesEnumeration en = new EntitiesEnumeration(new ServiceEntitiesCollection(serviceManager));
+        Enumeration e = TreeNodeFactory.getTreeNodeEnumeration(en);
         children = null;
         for (; e.hasMoreElements();) {
-            insert((MutableTreeNode)e.nextElement(), index++);
+            MutableTreeNode mn = (MutableTreeNode)e.nextElement();
+            insert(mn, getInsertPosition(mn));
         }
     }
-
 
     /**
      * @return true as this node children can be refreshed

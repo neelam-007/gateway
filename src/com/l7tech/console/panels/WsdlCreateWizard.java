@@ -51,7 +51,6 @@ public class WsdlCreateWizard extends Wizard {
                 Actions.invokeHelp(WsdlCreateWizard.this);
             }
         });
-
     }
 
     protected final JPanel createButtonPanel() {

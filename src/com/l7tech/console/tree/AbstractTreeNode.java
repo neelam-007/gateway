@@ -9,11 +9,13 @@ import com.l7tech.policy.assertion.Assertion;
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
+import javax.swing.tree.MutableTreeNode;
 import java.awt.*;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.Comparator;
 import java.util.logging.Logger;
 
 /**
@@ -23,19 +25,48 @@ import java.util.logging.Logger;
 public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     static protected Logger logger = Logger.getLogger(AbstractTreeNode.class.getName());
 
+    /**
+     * default comparator for the child objects
+     */
+    protected static final Comparator DEFAULT_COMPARATOR = new Comparator() {
+        public int compare(Object o1, Object o2) {
+            if (o1 instanceof Comparable && o2 instanceof Comparable) {
+                return ((Comparable)o1).compareTo(o2);
+            }
+            return 0; // no order - assume everything equal
+        }
+    };
+
     protected boolean hasLoadedChildren;
     protected WeakPropertyChangeSupport propChangeSupport = new WeakPropertyChangeSupport();
     private java.util.List cookies = new ArrayList();
     protected String tooltip = null;
+    ;
+    protected Comparator childrenComparator = EntityHeaderNode.DEFAULT_COMPARATOR;
 
     /**
-     * Instantiate the
+     * Instantiate the tree node with the user object
      *
-     * @param object
+     * @param object the user object
      */
     public AbstractTreeNode(Object object) {
-        super(object);
+        this(object, DEFAULT_COMPARATOR);
     }
+
+    /**
+     * Instantiate the tree node with the user object and the children
+     * sorted according to the <code>Comparator</code>
+     *
+     * @param object
+     * @param c the children omparator used for sorting
+     */
+    public AbstractTreeNode(Object object, Comparator c) {
+        super(object);
+        if (c !=null) {
+            childrenComparator = c;
+        }
+    }
+
 
     /**
      * add a cookie to the node
@@ -353,5 +384,45 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
      */
     public String toString() {
         return "[" + this.getClass() + ", " + getName() + "]";
+    }
+
+    /**
+     * Determine the insert position for the node according to
+     * the sort order of the children. The order is defined by
+     * the <code>Comparator</code> returned by the
+     * {@link #getChildrenComparator()} method.
+     * <p/>
+     * It is important that the children are stored in an
+     * unsorted collection (Vector is the default used). See
+     * {@link java.util.Comparator} for the discussion about the Comparator
+     * based ordering in sorted sets and {@link Object#equals(Object)}.
+     *
+     * @param node the node to deremine the position for
+     * @return the index value in the children list where the
+     *         child should go
+     */
+    protected int getInsertPosition(MutableTreeNode node) {
+        if (children == null) {
+            return 0;
+        }
+        int size = children.size();
+        Comparator c = getChildrenComparator();
+        int index = 0;
+
+        for (; index < size; index++) {
+            int res = c.compare(node, children.get(index));
+            if (res <= 0) return index;
+        }
+        return index;
+    }
+
+    /**
+     * Get this node children comparator that defines the children
+     * order.
+     *
+     * @return the comparator used to sort the children
+     */
+    protected Comparator getChildrenComparator() {
+        return childrenComparator;
     }
 }

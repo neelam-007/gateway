@@ -36,16 +36,12 @@ public class Actions {
      * @return true if deleted, false otherwise
      */
     static boolean deleteEntity(EntityHeaderNode bn, IdentityProvider provider) throws ObjectNotFoundException {
-        boolean rb = false;
         if (bn instanceof UserNode) {
             return deleteUser((UserNode)bn, provider);
         } else if (bn instanceof GroupNode) {
             return deleteGroup((GroupNode)bn, provider);
         } else if (bn instanceof ProviderNode) {
             return deleteProvider((ProviderNode)bn);
-        } else {
-            // Unknown node type .. do nothing
-            rb = false;
         }
         return false;
     }
@@ -261,6 +257,24 @@ public class Actions {
           new AbstractAction() {
               public void actionPerformed(ActionEvent evt) {
                   d.dispose();
+              }
+          });
+    }
+
+      /**
+     * Update the input map of the JFrame's <code>JLayeredPane</code> so
+     * the ESC keystroke nvoke dispose on the frame.
+     *
+     * @param f the frame
+     */
+    public static void setEscKeyStrokeDisposes(final JFrame f) {
+        JLayeredPane layeredPane = f.getLayeredPane();
+        final KeyStroke escKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
+        layeredPane.getInputMap(JComponent.WHEN_FOCUSED).put(escKeyStroke, "close-it");
+        layeredPane.getActionMap().put("close-it",
+          new AbstractAction() {
+              public void actionPerformed(ActionEvent evt) {
+                  f.dispose();
               }
           });
     }

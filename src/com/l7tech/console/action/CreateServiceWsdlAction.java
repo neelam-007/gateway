@@ -98,7 +98,9 @@ public class CreateServiceWsdlAction extends BaseAction implements ConnectionLis
                 WsdlCreateOverviewPanel p = new WsdlCreateOverviewPanel(defPanel);
                 JFrame f = TopComponents.getInstance().getMainWindow();
                 Wizard w = new WsdlCreateWizard(f, p);
+
                 w.addWizardListener(wizardListener);
+                Actions.setEscKeyStrokeDisposes(w);
                 w.pack();
                 w.setSize(850, 500);
                 Utilities.centerOnScreen(w);

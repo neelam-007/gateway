@@ -1651,13 +1651,13 @@ public class MainWindow extends JFrame {
         } catch (MissingResourceException e) {
             //Make sure the URL exists.
             if (url == null) {
-                JOptionPane.showMessageDialog(null,
+                JOptionPane.showMessageDialog(MainWindow.this,
                   "Help URL is missing",
                   "Bad HelpSet Path ",
                   JOptionPane.WARNING_MESSAGE);
             }
         } catch (HelpSetException hex) {
-            JOptionPane.showMessageDialog(null,
+            JOptionPane.showMessageDialog(MainWindow.this,
               helpsetName + " is not available",
               "Warning",
               JOptionPane.WARNING_MESSAGE);

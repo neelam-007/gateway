@@ -20,6 +20,9 @@ import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 import java.awt.*;
+import java.awt.event.FocusListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusAdapter;
 import java.util.logging.Logger;
 
 /**
@@ -39,7 +42,7 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
     private AbstractTreeNode lastPaletteNode;
     private AssertionTreeNode lastAssertionNode;
     private AssertionTreeNode rootAssertionNode;
-
+    private JTree assertionPalette;
 
     public PolicyToolBar() {
         initialize();
@@ -52,7 +55,13 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
      * @param tree the assertion tree
      */
     public void registerPaletteTree(JTree tree) {
+        if (assertionPalette !=null) {
+            assertionPalette.removeTreeSelectionListener(assertionPaletteListener);
+            assertionPalette.removeFocusListener(assertionPaletteFocusListener);
+        }
         tree.addTreeSelectionListener(assertionPaletteListener);
+        tree.addFocusListener(assertionPaletteFocusListener);
+        assertionPalette = tree;
     }
 
     /**
@@ -237,6 +246,22 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
               }
           }
       };
+
+    private FocusListener assertionPaletteFocusListener = new FocusAdapter() {
+        public void focusLost(FocusEvent e) {
+            lastPaletteNode = null;
+            updateActions();
+        }
+        public void focusGained(FocusEvent e) {
+            TreePath path = assertionPalette.getSelectionPath();
+            if (path == null) {
+                return;
+            }
+            lastPaletteNode = (AbstractTreeNode)path.getLastPathComponent();
+            updateActions();
+        }
+    };
+
 
     private TreeSelectionListener
       policyTreeListener = new TreeSelectionListener() {

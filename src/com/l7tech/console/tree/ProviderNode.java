@@ -61,9 +61,6 @@ public class ProviderNode extends EntityHeaderNode {
         newGroupAction.setEnabled(oid == IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
         list.add(newUserAction);
         list.add(newGroupAction);
-        RefreshAction ra = new RefreshTreeNodeAction(this);
-        list.add(ra);
-
 
         list.addAll(Arrays.asList(super.getActions()));
         for (Iterator iterator = list.iterator(); iterator.hasNext();) {

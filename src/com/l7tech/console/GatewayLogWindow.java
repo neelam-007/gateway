@@ -5,6 +5,7 @@ import com.l7tech.console.event.ConnectionEvent;
 import com.l7tech.console.event.ConnectionListener;
 import com.l7tech.console.panels.LogPanel;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.action.Actions;
 
 import javax.swing.*;
 import java.awt.*;
@@ -50,6 +51,8 @@ public class GatewayLogWindow extends JFrame implements ConnectionListener {
         setJMenuBar(getClusterWindowMenuBar());
         getContentPane().setLayout(new BorderLayout());
         getContentPane().add(getJFrameContentPane(), BorderLayout.CENTER);
+        
+        Actions.setEscKeyStrokeDisposes(this);
 
         // exitMenuItem listener
         getExitMenuItem().

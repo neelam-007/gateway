@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
+import java.util.Comparator;
 
 /**
  * The class represents an entity gui node element in the
@@ -17,6 +18,32 @@ import javax.swing.*;
  */
 public abstract class EntityHeaderNode extends AbstractTreeNode {
     private IdentityProvider provider;
+
+    /** The entity name comparator  */
+    protected static final Comparator NAME_COMPARATOR = new Comparator() {
+        public int compare(Object o1, Object o2) {
+            if (o1 instanceof EntityHeaderNode && o2 instanceof EntityHeaderNode) {
+                String name1 = ((EntityHeaderNode)o1).getEntityHeader().getName();
+                String name2 = ((EntityHeaderNode)o2).getEntityHeader().getName();
+                return name1.compareTo(name2);
+            }
+            throw new ClassCastException("Expected "+EntityHeaderNode.class +
+                                         " received "+o1.getClass() + " and "+o2.getClass());
+        }
+    };
+
+    /** The entity name comparator  */
+       protected static final Comparator IGNORE_CASE_NAME_COMPARATOR = new Comparator() {
+           public int compare(Object o1, Object o2) {
+               if (o1 instanceof EntityHeaderNode && o2 instanceof EntityHeaderNode) {
+                   String name1 = ((EntityHeaderNode)o1).getEntityHeader().getName();
+                   String name2 = ((EntityHeaderNode)o2).getEntityHeader().getName();
+                   return name1.compareToIgnoreCase(name2);
+               }
+               throw new ClassCastException("Expected "+EntityHeaderNode.class +
+                                            " received "+o1.getClass() + " and "+o2.getClass());
+           }
+       };
 
     /**
      * construct the <CODE>EntityHeaderNode</CODE> instance for a given
