@@ -1,4 +1,4 @@
 Manifest-Version: 1.0
-Class-Path: lib/axis.jar lib/kunststoff.jar lib/log4j-1.2.4.jar lib/org.mortbay.jetty.jar lib/saaj.jar lib/servlet.jar lib/jaxrpc.jar lib/commons-logging.jar lib/commons-discovery.jar lib/commons-collections.jar lib/xercesImpl.jar lib/xml-apis.jar lib/wsdl4j.jar lib/jh.jar lib/commons-httpclient.jar
+Class-Path: lib/ant.jar lib/commons-collections.jar lib/commons-dbcp.jar lib/commons-discovery.jar lib/commons-lang.jar lib/commons-logging.jar lib/commons-pool.jar lib/hibernate.jar lib/jaxrpc.jar lib/jh.jar lib/jnlp.jar lib/jsdk23.jar lib/junit.jar lib/kunststoff.jar lib/log4j-1.2.4.jar lib/odmg.jar lib/optional.jar lib/oswego-concurrent.jar lib/saaj.jar lib/wsdl4j.jar lib/xercesImpl.jar lib/xml-apis.jar lib/bcprov-jdk14-119.jar lib/catalina.jar lib/xss4j.jar lib/jini-core.jar lib/jini-ext.jar lib/reggie.jar lib/start.jar
 Main-Class: com.l7tech.console.Main
 
