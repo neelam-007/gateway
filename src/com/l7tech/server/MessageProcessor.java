@@ -19,6 +19,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.server.attachments.ServerMultipartMessageReader;
 import com.l7tech.server.event.EventManager;
 import com.l7tech.server.event.MessageProcessed;
 import com.l7tech.server.policy.PolicyVersionException;
@@ -26,7 +27,6 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
-import com.l7tech.server.attachments.ServerMultipartMessageReader;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
 import org.w3c.dom.Document;
@@ -77,9 +77,8 @@ public class MessageProcessor {
                                                       sslPrivateKey,
                                                       SecureConversationContextManager.getInstance());
                 // todo, refactor SoapRequest so that it keeps a hold on the original message
-                if (wssOutput.getUndecoratedMessage() != null) {
-                    req.setDocument(wssOutput.getUndecoratedMessage());
-                }
+                final Document message = wssOutput.getUndecoratedMessage();
+                if (message != null) req.setDocument(message);
             } catch (MessageNotSoapException e) {
                 logger.log(Level.FINE, "Message is not SOAP; will not have any WSS results.");
                 // this shouldn't be possible now

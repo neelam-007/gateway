@@ -1,13 +1,12 @@
 package com.l7tech.message;
 
+import com.l7tech.common.util.MultipartUtil;
+import com.l7tech.server.attachments.ServerMultipartMessageReader;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.Map;
-
-import com.l7tech.common.util.MultipartUtil;
-import com.l7tech.server.attachments.ServerMultipartMessageReader;
 
 /**
  * Encapsulates a Message (i.e. a Request or Response) that contains XML.
@@ -23,11 +22,16 @@ public interface XmlMessage extends Message {
      * <b>Note</b> that this calling method may result in any underlying InputStream
      * being consumed.
      *
-     * @return
-     * @throws SAXException
-     * @throws IOException
+     * @return The parsed Document of the SOAP part of this message. Never null.
+     * @throws SAXException if the SOAP part of this message was empty or was not well-formed XML
+     * @throws IOException if there was a problem reading from the message InputStream
      */
     Document getDocument() throws SAXException, IOException;
+
+    /**
+     * Replace the DOM document for this message.
+     * @param doc the new DOM tree.  Must not be null.
+     */
     void setDocument(Document doc);
     
     public Map getAttachments() throws IOException;

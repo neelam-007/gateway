@@ -6,11 +6,11 @@
 
 package com.l7tech.message;
 
-import com.l7tech.server.attachments.ServerMultipartMessageReader;
 import com.l7tech.common.util.MultipartUtil;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.server.MessageProcessor;
+import com.l7tech.server.attachments.ServerMultipartMessageReader;
 import com.l7tech.server.transport.jms.BytesMessageInputStream;
 import com.l7tech.server.transport.jms.JmsUtil;
 import org.w3c.dom.Document;
@@ -57,7 +57,7 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
      * @param is the underlying input stream for the message
      * @param id the String representation of the request id (or response Id - not supported yet) for forming part
      *           of the file name for storing the raw attachments if buffer limit exceeded.
-     * @return the XML as a String
+     * @return the XML as a String.  Never null.
      * @throws IOException if a multipart message has an invalid format, or the content cannot be read
      */
     protected String getMessageXml(InputStream is, String id) throws IOException {
@@ -78,7 +78,10 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
                     multipartReader.setFileCacheId(id);
 
                     MultipartUtil.Part part = multipartReader.getSoapPart();
-                    if (!part.getHeader(XmlUtil.CONTENT_TYPE).getValue().equals(innerType)) throw new IOException("Content-Type of first part doesn't match type of Multipart header");
+                    if (part == null)
+                        return ""; // Bug #1350 - avoid NPE with empty request
+                    final String soapPartContentType = part.getHeader(XmlUtil.CONTENT_TYPE).getValue();
+                    if (!soapPartContentType.equals(innerType)) throw new IOException("Content-Type of first part doesn't match type of Multipart header");
 
                     soapPartParsed = true;
                     return part.getContent();
@@ -114,7 +117,6 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
     }
 
     public Map getAttachments() throws IOException {
-
         if(multipartReader == null) throw new IllegalStateException("The attachment cannot be retrieved as the soap part has not been read.");
          return multipartReader.getMessageAttachments();
     }

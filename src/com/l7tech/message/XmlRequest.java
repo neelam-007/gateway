@@ -22,8 +22,8 @@ public interface XmlRequest extends Request, XmlMessage {
      *
      * Note that SocketInputStreams are not resettable!
      *
-     * @return a String containing the XML document of the Request.
-     * @throws java.io.IOException
+     * @return a String containing the XML document of the Request.  Might be empty, but never null.
+     * @throws java.io.IOException if there was a problem reading from the message stream
      */
     String getRequestXml() throws IOException;
 
@@ -33,7 +33,7 @@ public interface XmlRequest extends Request, XmlMessage {
      * Implementors <b>MUST</b> clear any cached data structures that are dependent on the
      * XML content of the request (e.g. DOM Documents) when this method is called.
      *
-     * @param xml
+     * @param xml the new XML String.  Must not be null.
      */
     void setRequestXml( String xml );
 }

@@ -19,8 +19,8 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.service.PublishedService;
-import org.xml.sax.SAXException;
 import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -162,8 +162,9 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 sendFault(sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_EXPECTATION_FAILED,
                           SoapFaultUtils.FC_CLIENT, msg);
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
+            if (e instanceof Error) throw (Error)e;
             try {
                 sendFault(sreq,
                           sresp,
@@ -189,8 +190,20 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             }
 
             try { if (respWriter != null) respWriter.close(); } catch (Throwable t) {}
-            try { if (sreq != null) sreq.close(); } catch (Throwable t) {}
-            try { if (sresp != null) sresp.close(); } catch (Throwable t) {}
+
+            try {
+                InputStream reqInput = htm.getRequest().getInputStream();
+                if (reqInput != null) reqInput.close();
+            } catch (IOException e) {
+//                logger.log(Level.INFO, "Caught IOException closing request input stream", e);
+            }
+
+            try {
+                OutputStream respOutput = htm.getResponse().getOutputStream();
+                if (respOutput != null) respOutput.close();
+            } catch (IOException e) {
+//                logger.log(Level.INFO, "Caught IOException closing response output stream", e);
+            }
         }
     }
 

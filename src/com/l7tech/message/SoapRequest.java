@@ -47,6 +47,7 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
      * the new valid xml payload for this request
      */
     public void setDocument(Document doc) {
+        if (doc == null) throw new IllegalArgumentException("Document cannot be null");
         _document = doc;
         _requestXml = null;
     }
@@ -66,10 +67,10 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
             String xml = getRequestXml();
             if ( xml == null ) {
                 throw new NoDocumentPresentException();
-            } else
-                parse( xml );
+            } else {
+                _document = XmlUtil.stringToDocument(xml);
+            }
         }
-
         return _document;
     }
 
@@ -89,6 +90,7 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
     }
 
     public void setRequestXml( String xml ) {
+        if (xml == null) throw new IllegalArgumentException("Can't set null XML");
         _requestXml = xml;
         _document = null;
     }
@@ -149,23 +151,6 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
 
     public void setAuditSaveRequest(boolean auditSaveRequest) {
         this.auditSaveRequest = auditSaveRequest;
-    }
-
-    /**
-     * Closes any resources associated with the request.  If you override this
-     * method, you MUST call super.close() in your overridden version!
-     */
-    public void close() {
-        MessageProcessor.setCurrentRequest(null);
-        try {
-            if ( _requestInputStream != null ) _requestInputStream.close();
-        } catch (IOException e) {
-        }
-    }
-
-    protected void finalize() throws Throwable {
-        close();
-        super.finalize();
     }
 
     protected InputStream getRequestInputStream() throws IOException {
