@@ -42,9 +42,9 @@ public interface LogAdmin extends Remote {
      * @param endMsgNumber   the message number to locate the end point.
      *                       Retrieve messages until the end of the message buffer is hit if it equals to -1.
      * @param size  the max. number of messages retrieved
-     * @return String[] the array of messages retrieved
+     * @return SSGLogRecord[] the array of messages retrieved
      */
-    String[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, int size) throws RemoteException;
+    SSGLogRecord[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, int size) throws RemoteException;
 
     UptimeMetrics getUptime() throws RemoteException;
 }

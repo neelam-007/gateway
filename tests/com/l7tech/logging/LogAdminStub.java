@@ -79,8 +79,8 @@ public class LogAdminStub implements LogAdmin {
         return result;
     }
 
-    public String[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, int size) throws RemoteException {
-        return getSystemLog(startMsgNumber, endMsgNumber, size);
+    public SSGLogRecord[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, int size) throws RemoteException {
+        throw new UnsupportedOperationException("todo");
     }
 
     public UptimeMetrics getUptime() throws RemoteException {

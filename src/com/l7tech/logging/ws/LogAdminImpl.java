@@ -2,8 +2,10 @@ package com.l7tech.logging.ws;
 
 import com.l7tech.logging.LogManager;
 import com.l7tech.logging.LogAdmin;
+import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.common.util.UptimeMetrics;
 import com.l7tech.server.util.UptimeMonitor;
+import com.l7tech.objectmodel.PersistenceContext;
 
 import java.rmi.RemoteException;
 import java.text.SimpleDateFormat;
@@ -12,6 +14,7 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.io.FileNotFoundException;
+import java.sql.SQLException;
 
 /**
  * AdminWS for consulting the server system log.
@@ -44,12 +47,29 @@ public class LogAdminImpl implements LogAdmin {
      * @throws RemoteException
      */
     public String[] getSystemLog(long startMsgNumber, long endMsgNumber, int size) throws RemoteException {
-        LogRecord[] records = LogManager.getInstance().getRecorded(startMsgNumber, endMsgNumber, size);
-        return logRecordsToStrings(records);
+        try {
+            LogRecord[] records = LogManager.getInstance().getRecorded(startMsgNumber, endMsgNumber, size);
+            return logRecordsToStrings(records);
+        } finally {
+            try {
+                PersistenceContext.getCurrent().close();
+            } catch (SQLException e) {
+                logger.fine("error closing context");
+            }
+        }
     }
 
-    public String[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, int size) throws RemoteException {
-        throw new UnsupportedOperationException();
+    public SSGLogRecord[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, int size) throws RemoteException {
+        try {
+            return LogManager.getInstance().getRecorded(nodeid, startMsgNumber, endMsgNumber, size);
+        } finally {
+            try {
+                PersistenceContext.getCurrent().close();
+            } catch (SQLException e) {
+                logger.fine("error closing context");
+            }
+        }
+
     }
 
     public UptimeMetrics getUptime() throws RemoteException {

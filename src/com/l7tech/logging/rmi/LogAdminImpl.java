@@ -3,6 +3,7 @@ package com.l7tech.logging.rmi;
 import com.l7tech.remote.jini.export.RemoteService;
 import com.l7tech.common.util.UptimeMetrics;
 import com.l7tech.logging.LogAdmin;
+import com.l7tech.logging.SSGLogRecord;
 import com.sun.jini.start.LifeCycle;
 import net.jini.config.ConfigurationException;
 
@@ -66,7 +67,7 @@ public class LogAdminImpl extends RemoteService implements LogAdmin {
      * @param size  the max. number of messages retrieved
      * @return String[] the array of messages retrieved
      */
-    public String[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, int size) throws RemoteException {
+    public SSGLogRecord[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, int size) throws RemoteException {
         return delegate.getSystemLog(nodeid, startMsgNumber, endMsgNumber, size);
     }
 
