@@ -18,6 +18,15 @@ GARP="/usr/local/bin/garp"
 WGET="/usr/bin/wget"
 NC="/usr/bin/nc"
 PING="/bin/ping"
+# Default netmask. Linux (helpfully) supplies a /8 route on
+# 10. networks
+NETMASK="255.255.255.0"
+
+BACK_END_ROUTE=""
+# If network has routes on secure side
+# Fill in back end router if there is one
+# We test that machine to see if we're the ones cut off from the world
+# Not the existant db host
 
 # globals and configuration
 PIDFILE=/var/run/dbfaildetect.pid
@@ -122,7 +131,7 @@ doiptakeover() {
     date
     echo
 	echo "Taking over IP $DBHOST";
-	$IFCONFIG $INTERFACE_ALIAS $DBHOST
+	$IFCONFIG $INTERFACE_ALIAS $DBHOST netmask $NETMASK
 	echo "Sending gratuitous arp"
 	$GARP -i $INTERFACE -a $DBHOST
 #	echo "echo 'SSG DB Failover' | mail -s 'SSG DB Failover' $EMAIL"
@@ -142,7 +151,12 @@ takedownalias() {
 
 pinggw() {
     # 5 packets, 1 second apart, waiting 7 seconds
-    $PING -I $INTERFACE -n -c 5 -i 0.4 -q -w 7 $DEFAULT_ROUTE >/dev/null 2>&1
+    # USE back end route if it exists
+    if [ -z "$BACK_END_ROUTE" ] ;  then
+        $PING -n -c 5 -i 0.4 -q -w 7 $DEFAULT_ROUTE >/dev/null 2>&1
+    else
+        $PING -I $INTERFACE -n -c 5 -i 0.4 -q -w 7 $BACK_END_ROUTE >/dev/null 2>&1
+    fi
     return $?
 }
 
