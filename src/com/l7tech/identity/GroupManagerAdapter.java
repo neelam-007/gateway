@@ -25,6 +25,7 @@ public class GroupManagerAdapter implements GroupManager {
     }
 
     public void delete(Group group) throws DeleteException {
+        throw new UnsupportedOperationException();
     }
 
     public long save(Group group) throws SaveException {
@@ -32,6 +33,7 @@ public class GroupManagerAdapter implements GroupManager {
     }
 
     public void update(Group group) throws UpdateException {
+        throw new UnsupportedOperationException();
     }
 
     public EntityHeader groupToHeader(Group group) {
@@ -42,22 +44,32 @@ public class GroupManagerAdapter implements GroupManager {
         throw new UnsupportedOperationException();
     }
 
+    public boolean isMember( User user, Group group ) throws FindException {
+        throw new UnsupportedOperationException();
+    }
+
     public void addUsers(Group group, Set users) throws FindException, UpdateException {
+        throw new UnsupportedOperationException();
     }
 
     public void removeUsers(Group group, Set users) throws FindException, UpdateException {
+        throw new UnsupportedOperationException();
     }
 
     public void addUser(User user, Set groups) throws FindException, UpdateException {
+        throw new UnsupportedOperationException();
     }
 
     public void removeUser(User user, Set groups) throws FindException, UpdateException {
+        throw new UnsupportedOperationException();
     }
 
     public void addUser(User user, Group group) throws FindException, UpdateException {
+        throw new UnsupportedOperationException();
     }
 
     public void removeUser(User user, Group group) throws FindException, UpdateException {
+        throw new UnsupportedOperationException();
     }
 
     public Set getGroups(User user) throws FindException {

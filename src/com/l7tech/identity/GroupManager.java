@@ -18,6 +18,15 @@ public interface GroupManager extends EntityManager {
     Group headerToGroup( EntityHeader header ) throws FindException;
 
     /**
+     * Test whether a given User is a member of the specified Group.
+     * @param user
+     * @param group
+     * @return
+     * @throws FindException
+     */
+    boolean isMember( User user, Group group ) throws FindException;
+
+    /**
      * Add a set of Users to a single Group.  If the set is null or empty, nothing is done.
      * @param group
      * @param users

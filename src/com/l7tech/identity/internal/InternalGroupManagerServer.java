@@ -149,6 +149,10 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
         return findByPrimaryKey(header.getStrId());
     }
 
+    public boolean isMember( User user, Group group ) throws FindException {
+        return false;
+    }
+
     public void addUsers(Group group, Set users) throws FindException, UpdateException {
     }
 
