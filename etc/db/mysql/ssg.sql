@@ -37,7 +37,7 @@ CREATE TABLE identity_provider (
   objectid bigint(20) NOT NULL default '0',
   version int(11) default NULL,
   name varchar(128) NOT NULL default '',
-  description mediumtext default '',
+  description text default '',
   type bigint(20) NOT NULL default '0',
   properties text,
   PRIMARY KEY  (objectid),
@@ -59,7 +59,7 @@ CREATE TABLE internal_group (
   objectid bigint(20) NOT NULL default '0',
   version int(11) NOT NULL default '0',
   name varchar(128) NOT NULL default '',
-  description mediumtext,
+  description text,
   PRIMARY KEY  (objectid),
   UNIQUE KEY g_idx (name)
 ) TYPE=InnoDB;
@@ -300,16 +300,13 @@ CREATE TABLE fed_user (
   objectid bigint(20) NOT NULL,
   version int(11) NOT NULL,
   name varchar(128) NOT NULL,
-
   provider_oid bigint(20) NOT NULL,
   subject_dn varchar(255),
   email varchar(128) default NULL,
   login varchar(32),
-
   first_name varchar(32) default NULL,
   last_name varchar(32) default NULL,
   title varchar(64) default NULL,
-
   PRIMARY KEY (objectid),
   INDEX i_provider_oid (provider_oid),
   INDEX i_email (email),
@@ -324,8 +321,7 @@ CREATE TABLE fed_group (
   version int(11) NOT NULL,
   provider_oid bigint(20) NOT NULL,
   name varchar(128) NOT NULL,
-  description mediumtext,
-
+  description text,
   PRIMARY KEY  (objectid),
   INDEX i_provider_oid (provider_oid),
   UNIQUE KEY i_name (provider_oid, name)
@@ -345,12 +341,10 @@ CREATE TABLE fed_group_virtual (
   version int(11) NOT NULL,
   provider_oid bigint(20) NOT NULL,
   name varchar(128) NOT NULL,
-  description mediumtext,
-
+  description text,
   x509_subject_dn_pattern varchar(255),
   saml_email_pattern varchar(128),
   properties text,
-
   PRIMARY KEY  (objectid),
   INDEX i_provider_oid (provider_oid),
   INDEX i_x509_subject_dn_pattern (x509_subject_dn_pattern),
