@@ -43,52 +43,55 @@ public class ResolutionManager {
      * @throws UpdateException something went wrong, should rollback at that point
      */
     public void recordResolutionParameters(PublishedService service) throws DuplicateObjectException, UpdateException {
-        Collection distinctItemsToSave = getDistinct(service);
-        Collection existingParameters = existingResolutionParameters(service.getOid());
+        if (service.isSoap()) {
+            // todo, handle url resolution thing
+            Collection distinctItemsToSave = getDistinct(service);
+            Collection existingParameters = existingResolutionParameters(service.getOid());
 
-        if (isSameParameters(distinctItemsToSave, existingParameters)) {
-            logger.finest("resolution parameters unchanged");
-            return;
-        }
-
-        // get the hibernate session
-        HibernatePersistenceContext pc = null;
-        Session session = null;
-        try {
-            pc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-            session = pc.getSession();
-        } catch (SQLException e) {
-            String msg = "cannot get hibernate session";
-            logger.log(Level.WARNING, msg, e);
-            throw new UpdateException(msg, e);
-        } catch (HibernateException e) {
-            String msg = "cannot get hibernate session";
-            logger.log(Level.WARNING, msg, e);
-            throw new UpdateException(msg, e);
-        }
-
-        try {
-            for (Iterator i = existingParameters.iterator(); i.hasNext();) {
-                ResolutionParameters todelete = (ResolutionParameters)i.next();
-                session.delete(todelete);
+            if (isSameParameters(distinctItemsToSave, existingParameters)) {
+                logger.finest("resolution parameters unchanged");
+                return;
             }
-        } catch (HibernateException e) {
-            String msg = "error deleting exsiting resolution parameters";
-            logger.log(Level.WARNING, msg, e);
-            throw new UpdateException(msg, e);
-        }
 
-        // insert these new ones
-        try {
-            for (Iterator i = distinctItemsToSave.iterator(); i.hasNext();) {
-                ResolutionParameters toadd = (ResolutionParameters)i.next();
-                session.save(toadd);
+            // get the hibernate session
+            HibernatePersistenceContext pc = null;
+            Session session = null;
+            try {
+                pc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
+                session = pc.getSession();
+            } catch (SQLException e) {
+                String msg = "cannot get hibernate session";
+                logger.log(Level.WARNING, msg, e);
+                throw new UpdateException(msg, e);
+            } catch (HibernateException e) {
+                String msg = "cannot get hibernate session";
+                logger.log(Level.WARNING, msg, e);
+                throw new UpdateException(msg, e);
             }
-            logger.fine("saved " + distinctItemsToSave.size() + " parameters for service " + service.getOid());
-        } catch (HibernateException e) {
-            String msg = "error adding resolution parameters. throwing duplicate exception";
-            logger.log(Level.WARNING, msg, e);
-            throw new DuplicateObjectException(msg, e);
+
+            try {
+                for (Iterator i = existingParameters.iterator(); i.hasNext();) {
+                    ResolutionParameters todelete = (ResolutionParameters)i.next();
+                    session.delete(todelete);
+                }
+            } catch (HibernateException e) {
+                String msg = "error deleting exsiting resolution parameters";
+                logger.log(Level.WARNING, msg, e);
+                throw new UpdateException(msg, e);
+            }
+
+            // insert these new ones
+            try {
+                for (Iterator i = distinctItemsToSave.iterator(); i.hasNext();) {
+                    ResolutionParameters toadd = (ResolutionParameters)i.next();
+                    session.save(toadd);
+                }
+                logger.fine("saved " + distinctItemsToSave.size() + " parameters for service " + service.getOid());
+            } catch (HibernateException e) {
+                String msg = "error adding resolution parameters. throwing duplicate exception";
+                logger.log(Level.WARNING, msg, e);
+                throw new DuplicateObjectException(msg, e);
+            }
         }
     }
 
