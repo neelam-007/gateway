@@ -21,6 +21,7 @@ import com.l7tech.logging.LogManager;
 public class HibernatePersistenceContext extends PersistenceContext {
     public static final int MAXRETRIES = 5;
     public static final int RETRYTIME = 250;
+    // TODO: This statement doesn't work on all databases!
     public static final String PINGSQL = "select 1";
 
     public HibernatePersistenceContext( Session session ) {
