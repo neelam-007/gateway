@@ -18,7 +18,6 @@ import com.l7tech.logging.LogManager;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.common.protocol.SecureSpanConstants;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
