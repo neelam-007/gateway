@@ -235,7 +235,8 @@ public class WssDecoratorImpl implements WssDecorator {
         dkt.setAttributeNS(SoapUtil.WSSC_NAMESPACE, wssc + "Algorithm", SoapUtil.ALGORITHM_PSHA);
         Element str = XmlUtil.createAndAppendElementNS(dkt, SoapUtil.SECURITYTOKENREFERENCE_EL_NAME, wsseNs, wsse);
         Element ref = XmlUtil.createAndAppendElementNS(str, "Reference", wsseNs, wsse);
-        ref.setAttribute("URI", "#" + getOrCreateWsuId(c, sct, null));
+        ref.setAttribute("URI", session.getId());
+        //ref.setAttribute("URI", "#" + getOrCreateWsuId(c, sct, null));
         ref.setAttribute("ValueType", SoapUtil.VALUETYPE_SECURECONV);
 
         // Gather derived key params

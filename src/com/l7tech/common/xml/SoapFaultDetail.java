@@ -1,4 +1,4 @@
-package com.l7tech.message;
+package com.l7tech.common.xml;
 
 /**
  * Some error or exception that can be translated into a SOAP fault.

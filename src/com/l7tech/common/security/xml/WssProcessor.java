@@ -8,7 +8,7 @@ package com.l7tech.common.security.xml;
 
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.message.SoapFaultDetail;
+import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.server.saml.SamlAssertion;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;

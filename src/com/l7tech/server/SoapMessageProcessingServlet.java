@@ -9,6 +9,7 @@ package com.l7tech.server;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.policy.assertion.AssertionStatus;

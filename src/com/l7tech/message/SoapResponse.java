@@ -5,6 +5,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.security.xml.WssDecorator;
+import com.l7tech.common.xml.SoapFaultDetail;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 

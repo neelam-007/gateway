@@ -9,6 +9,7 @@ package com.l7tech.message;
 import com.l7tech.policy.assertion.AssertionResult;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.xml.SoapFaultDetail;
 
 import java.io.InputStream;
 import java.io.IOException;

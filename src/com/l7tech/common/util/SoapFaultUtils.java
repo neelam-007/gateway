@@ -2,7 +2,7 @@ package com.l7tech.common.util;
 
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
-import com.l7tech.message.SoapFaultDetail;
+import com.l7tech.common.xml.SoapFaultDetail;
 
 import java.io.IOException;
 
