@@ -102,7 +102,7 @@ class SenderXmlSecurityProcessor extends SecurityProcessor {
                     }
                     Object o = nodes.get(0);
                     if ( o instanceof Element ) {
-                        element = (Element)nodes.get(0);
+                        element = (Element)o;
                     } else {
                         final String message = "The XPath result is not an element '" + xpath.getExpression() + "'";
                         logger.warning(message);
