@@ -273,11 +273,10 @@ public class SoapUtil {
 
                 switch (child.getNodeType()) {
                     case Node.PROCESSING_INSTRUCTION_NODE:
-                        break;
                     case Node.DOCUMENT_TYPE_NODE:
-                        break;
                     case Node.CDATA_SECTION_NODE:
                     case Node.COMMENT_NODE:
+                        break;
                     case Node.TEXT_NODE:
                         {
                             soapElement.addTextNode(child.getNodeValue());
