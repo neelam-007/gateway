@@ -272,7 +272,7 @@ public class MimePartsTableSorter  extends FilteredDefaultTableModel {
                     }
                 } else {
                      if (elementA instanceof Integer) {
-                        return ((Integer) elementB).intValue() > ((Long) elementA).intValue()?1:0;
+                        return ((Integer) elementB).intValue() > ((Integer) elementA).intValue()?1:0;
                     } else if(elementA instanceof String) {
                         return ((String)elementB).compareToIgnoreCase((String)elementA);
                     } else {
