@@ -69,13 +69,13 @@ public class LdapUserManager implements UserManager {
             logger.finest("user " + dn + " does not exist in" + cfg.getName() + "(" + e.getMessage() + ")");
             return null;
         } catch ( NamingException ne ) {
-            logger.log( Level.SEVERE, ne.getMessage(), ne );
+            logger.log( Level.WARNING, ne.getMessage(), ne );
             return null;
         } finally {
             try {
                 if ( context != null ) context.close();
             } catch (NamingException e) {
-                logger.log( Level.SEVERE, e.getMessage(), e );
+                logger.log( Level.WARNING, e.getMessage(), e );
                 return null;
             }
         }
@@ -86,23 +86,27 @@ public class LdapUserManager implements UserManager {
      * @return a LdapUser object, null if not found
      */
     public User findByLogin(String login) throws FindException {
+        DirContext context = null;
         try {
-            DirContext context = LdapIdentityProvider.getBrowseContext(cfg);
+            context = LdapIdentityProvider.getBrowseContext(cfg);
 
-            String filter = "(|";
+            StringBuffer filter = new StringBuffer("(|");
             UserMappingConfig[] userTypes = cfg.getUserMappings();
 
             for (int i = 0; i < userTypes.length; i ++) {
-                filter += "(" + userTypes[i].getLoginAttrName() + "=" + login + ")";
+                filter.append("(");
+                filter.append(userTypes[i].getLoginAttrName());
+                filter.append("=");
+                filter.append(login);
+                filter.append(")");
             }
-            filter += ")";
+            filter.append(")");
 
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
             NamingEnumeration answer = null;
-            answer = context.search(cfg.getSearchBase(), filter, sc);
-            // Close the anon context now that we're done with it
-            context.close();
+            answer = context.search(cfg.getSearchBase(), filter.toString(), sc);
+
             String dn = null;
             try {
                 if (answer.hasMore()) {
@@ -119,6 +123,12 @@ public class LdapUserManager implements UserManager {
             return findByPrimaryKey(dn);
         } catch (NamingException e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
+        } finally {
+            try {
+                if ( context != null ) context.close();
+            } catch ( NamingException e ) {
+                logger.log(Level.WARNING, "Caught NamingException while closing LDAP Context", e);
+            }
         }
         return null;
     }
@@ -214,6 +224,10 @@ public class LdapUserManager implements UserManager {
         env.put(Context.SECURITY_AUTHENTICATION, "simple");
         env.put(Context.SECURITY_PRINCIPAL, dn);
         env.put(Context.SECURITY_CREDENTIALS, passwd);
+        env.put("com.sun.jndi.ldap.connect.pool", "true");
+        env.put("com.sun.jndi.ldap.connect.timeout", LdapIdentityProvider.LDAP_CONNECT_TIMEOUT );
+        env.put("com.sun.jndi.ldap.connect.pool.timeout", LdapIdentityProvider.LDAP_POOL_IDLE_TIMEOUT );
+
         DirContext userCtx = null;
         try
         {
