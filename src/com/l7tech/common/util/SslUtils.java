@@ -17,12 +17,7 @@ import org.bouncycastle.jce.PKCS10CertificationRequest;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URL;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.SignatureException;
+import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -36,6 +31,10 @@ import java.security.cert.X509Certificate;
 public class SslUtils {
     private static final Category log = Category.getInstance(SslUtils.class);
     public static final String REQUEST_SIG_ALG = "SHA1withRSA";
+
+    static {
+        Security.addProvider( new org.bouncycastle.jce.provider.BouncyCastleProvider() );
+    }
 
     /**
      * Create a Certificate Signing Request.  The newly-created CSR will use the username
@@ -96,6 +95,7 @@ public class SslUtils {
         post.setRequestHeader("Content-Type", "application/pkcs10");
         post.setRequestHeader("Content-Length", String.valueOf(csr.getEncoded().length));
         int result = hc.executeMethod(post);
+        if ( result != 200 ) throw new CertificateException( "HTTP POST to certificate signer generated status " + result );
         X509Certificate cert = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(post.getResponseBodyAsStream());
 
         log.info("Got back a certificate with DN:" + cert.getSubjectDN());
