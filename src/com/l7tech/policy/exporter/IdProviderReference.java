@@ -141,6 +141,7 @@ public class IdProviderReference extends ExternalReference {
         if (configOnThisSystem != null && configOnThisSystem.getName().equals(getProviderName())) {
             // PERFECT MATCH!
             logger.fine("The id provider reference found the same provider locally.");
+            localizeType = LocaliseAction.REPLACE;
             locallyMatchingProviderId = getProviderId();
             return true;
         }
@@ -164,6 +165,7 @@ public class IdProviderReference extends ExternalReference {
                 }
                 if (localProps != null && localProps.equals(this.getIdProviderConfProps())) {
                     // WE GOT A MATCH!
+                    localizeType = LocaliseAction.REPLACE;
                     locallyMatchingProviderId = configOnThisSystem.getOid();
                     logger.fine("the provider was matched using the config's properties.");
                     return true;
@@ -176,12 +178,18 @@ public class IdProviderReference extends ExternalReference {
     }
 
     void localizeAssertion(Assertion assertionToLocalize) {
-        if (assertionToLocalize instanceof IdentityAssertion) {
-            IdentityAssertion idass = (IdentityAssertion)assertionToLocalize;
-            if (idass.getIdentityProviderOid() == providerId) {
-                idass.setIdentityProviderOid(locallyMatchingProviderId);
-                logger.fine("The provider id of the imported id assertion has been changed " +
-                            "from " + providerId + " to " + locallyMatchingProviderId);
+        if (localizeType != LocaliseAction.IGNORE) {
+            if (assertionToLocalize instanceof IdentityAssertion) {
+                IdentityAssertion idass = (IdentityAssertion)assertionToLocalize;
+                if (idass.getIdentityProviderOid() == providerId) {
+                    if (localizeType != LocaliseAction.REPLACE) {
+                        idass.setIdentityProviderOid(locallyMatchingProviderId);
+                        logger.fine("The provider id of the imported id assertion has been changed " +
+                                    "from " + providerId + " to " + locallyMatchingProviderId);
+                    } else if (localizeType != LocaliseAction.DELETE) {
+                        assertionToLocalize.getParent().getChildren().remove(assertionToLocalize);
+                    }
+                }
             }
         }
     }
@@ -234,6 +242,62 @@ public class IdProviderReference extends ExternalReference {
         this.idProviderTypeVal = idProviderTypeVal;
     }
 
+    /**
+     * Tell the reference that the localization should replace the
+     * id provider of concerned assertions with another id provider.
+     * @param alternateIdprovider the local provider value
+     */
+    public void setLocalizeReplace(long alternateIdprovider) {
+        localizeType = LocaliseAction.REPLACE;
+        locallyMatchingProviderId = alternateIdprovider;
+    }
+
+    /**
+     * Tell the reference that the localization should ignore the
+     * assertions that refer to the remote id provider (let the
+     * assertions as is).
+     */
+    public void setLocalizeIgnore() {
+        localizeType = LocaliseAction.REPLACE;
+    }
+
+    /**
+     * Tell the reference that the localization process should remove
+     * any assertions that refer to the remote id provider.
+     */
+    public void setLocalizeDelete() {
+        localizeType = LocaliseAction.DELETE;
+    }
+
+    /**
+     * Enum-type class for the type of localization to use.
+     */
+    public static class LocaliseAction {
+        public static final LocaliseAction IGNORE = new LocaliseAction(1);
+        public static final LocaliseAction DELETE = new LocaliseAction(2);
+        public static final LocaliseAction REPLACE = new LocaliseAction(3);
+        private LocaliseAction(int val) {
+            this.val = val;
+        }
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof LocaliseAction)) return false;
+
+            final LocaliseAction localiseAction = (LocaliseAction) o;
+
+            if (val != localiseAction.val) return false;
+
+            return true;
+        }
+
+        public int hashCode() {
+            return val;
+        }
+
+        private int val = 0;
+    }
+
+    private LocaliseAction localizeType = null;
     private long providerId;
     private long locallyMatchingProviderId;
     private int idProviderTypeVal;
