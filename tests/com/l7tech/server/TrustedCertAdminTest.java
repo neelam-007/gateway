@@ -8,9 +8,11 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+import javax.security.auth.Subject;
 import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.PrivilegedAction;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -34,8 +36,8 @@ public class TrustedCertAdminTest extends TestCase {
     /**
      * test <code>TrustedCertAdminTest</code> constructor
      */
-    public TrustedCertAdminTest( String name ) throws Exception {
-        super( name );
+    public TrustedCertAdminTest(String name) throws Exception {
+        super(name);
     }
 
     /**
@@ -43,9 +45,9 @@ public class TrustedCertAdminTest extends TestCase {
      */
     public static Test suite() {
         try {
-            ssgAdminSession = new SsgAdminSession(new String[] {"quark:2124"});
+            ssgAdminSession = new SsgAdminSession();
             adminContext = ssgAdminSession.getAdminContext();
-            return new TestSuite( TrustedCertAdminTest.class );
+            return new TestSuite(TrustedCertAdminTest.class);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -54,15 +56,15 @@ public class TrustedCertAdminTest extends TestCase {
     public void testRetrieveCertIgnoreHostname() throws Exception {
         X509Certificate[] chain = adminContext.getTrustedCertAdmin().retrieveCertFromUrl("https://mail.l7tech.com/", true);
         assertNotNull(chain);
-        for ( int i = 0; i < chain.length; i++ ) {
+        for (int i = 0; i < chain.length; i++) {
             X509Certificate cert = chain[i];
-            System.out.println("Found cert with dn " + cert.getSubjectDN().getName() );
+            System.out.println("Found cert with dn " + cert.getSubjectDN().getName());
         }
     }
 
     public void testRetrieveCertWrongHostname() throws Exception {
         try {
-           adminContext.getTrustedCertAdmin().retrieveCertFromUrl("https://mail.l7tech.com/", false);
+            adminContext.getTrustedCertAdmin().retrieveCertFromUrl("https://mail.l7tech.com/", false);
             fail("Should have thrown");
         } catch (Exception e) {
             // OK
@@ -71,7 +73,7 @@ public class TrustedCertAdminTest extends TestCase {
 
     public void testRetrieveCertHttpUrl() throws Exception {
         try {
-                    adminContext.getTrustedCertAdmin().retrieveCertFromUrl("http://mail.l7tech.com:8080/");
+            adminContext.getTrustedCertAdmin().retrieveCertFromUrl("http://mail.l7tech.com:8080/");
             fail("Should have thrown");
         } catch (Exception e) {
             // OK
@@ -80,7 +82,7 @@ public class TrustedCertAdminTest extends TestCase {
 
     public void testRetrieveCertWrongPort() throws Exception {
         try {
-                   adminContext.getTrustedCertAdmin().retrieveCertFromUrl("https://mail.l7tech.com:80/", true);
+            adminContext.getTrustedCertAdmin().retrieveCertFromUrl("https://mail.l7tech.com:80/", true);
             fail("Should have thrown");
         } catch (Exception e) {
             // OK
@@ -89,7 +91,7 @@ public class TrustedCertAdminTest extends TestCase {
 
     public void testRetrieveCertUnknownHost() throws Exception {
         try {
-                    adminContext.getTrustedCertAdmin().retrieveCertFromUrl("https://fiveearthmoneysperyear.l7tech.com:8443/");
+            adminContext.getTrustedCertAdmin().retrieveCertFromUrl("https://fiveearthmoneysperyear.l7tech.com:8443/");
             fail("Should have thrown");
         } catch (Exception e) {
             // OK
@@ -99,38 +101,38 @@ public class TrustedCertAdminTest extends TestCase {
     public void testUpdateCert() throws Exception {
         final TrustedCert tc = getTrustedCert();
         final Long oid =
-                new Long(adminContext.getTrustedCertAdmin().saveCert(tc));
-        System.out.println("Saved " + oid );
+          new Long(adminContext.getTrustedCertAdmin().saveCert(tc));
+        System.out.println("Saved " + oid);
 
         tc.setSubjectDn("The other one");
         tc.setTrustedForSsl(true);
         tc.setOid(oid.longValue());
 
         new Long(adminContext.getTrustedCertAdmin().saveCert(tc));
-        System.out.println("Updated " + oid );
+        System.out.println("Updated " + oid);
 
         TrustedCert tc2 = adminContext.getTrustedCertAdmin().findCertByPrimaryKey(oid.longValue());
 
-        assertEquals(tc,tc2);
+        assertEquals(tc, tc2);
 
-                adminContext.getTrustedCertAdmin().deleteCert(oid.longValue());
-        System.out.println("Deleted " + oid );
+        adminContext.getTrustedCertAdmin().deleteCert(oid.longValue());
+        System.out.println("Deleted " + oid);
     }
 
     public void testFindAllCerts() throws Exception {
         final TrustedCert tc = getTrustedCert();
 
-                Set oids = new HashSet();
-                oids.add(new Long(adminContext.getTrustedCertAdmin().saveCert(tc)));
-                oids.add(new Long(adminContext.getTrustedCertAdmin().saveCert(tc)));
+        Set oids = new HashSet();
+        oids.add(new Long(adminContext.getTrustedCertAdmin().saveCert(tc)));
+        oids.add(new Long(adminContext.getTrustedCertAdmin().saveCert(tc)));
 
         System.out.println("Saved " + oids);
 
         List all = adminContext.getTrustedCertAdmin().findAllCerts();
 
         Set foundOids = new HashSet();
-        for ( Iterator iterator = all.iterator(); iterator.hasNext(); ) {
-            TrustedCert tc2 = (TrustedCert) iterator.next();
+        for (Iterator iterator = all.iterator(); iterator.hasNext();) {
+            TrustedCert tc2 = (TrustedCert)iterator.next();
             foundOids.add(new Long(tc2.getOid()));
         }
 
@@ -139,11 +141,11 @@ public class TrustedCertAdminTest extends TestCase {
         assertTrue(foundOids.containsAll(oids));
 
         final Set deletedOids = new HashSet();
-                for ( Iterator i = oids.iterator(); i.hasNext(); ) {
-                    Long oid = (Long) i.next();
-                    adminContext.getTrustedCertAdmin().deleteCert(oid.longValue());
-                    deletedOids.add(oid);
-                }
+        for (Iterator i = oids.iterator(); i.hasNext();) {
+            Long oid = (Long)i.next();
+            adminContext.getTrustedCertAdmin().deleteCert(oid.longValue());
+            deletedOids.add(oid);
+        }
         System.out.println("Deleted " + deletedOids);
     }
 
@@ -163,7 +165,7 @@ public class TrustedCertAdminTest extends TestCase {
         tc.setTrustedForSigningServerCerts(true);
         tc.setTrustedForSsl(true);
         X509Certificate cert = tc.getCertificate();
-        System.out.println("Saving cert with dn '" + cert.getSubjectDN().getName() + "' and usage '" + tc.getUsageDescription() + "'" );
+        System.out.println("Saving cert with dn '" + cert.getSubjectDN().getName() + "' and usage '" + tc.getUsageDescription() + "'");
 
         final Long oid = new Long(adminContext.getTrustedCertAdmin().saveCert(tc));
         System.out.println("Saved cert " + oid);
@@ -172,7 +174,7 @@ public class TrustedCertAdminTest extends TestCase {
         TrustedCert tc2 = adminContext.getTrustedCertAdmin().findCertByPrimaryKey(oid.longValue());
         assertNotNull(tc2);
         System.out.println("Loaded TrustedCert " + tc2);
-        System.out.println("DN is " + tc2.getCertificate().getSubjectDN().getName() );
+        System.out.println("DN is " + tc2.getCertificate().getSubjectDN().getName());
 
         assertEquals(tc2.getSubjectDn(), tc.getSubjectDn());
         assertEquals(tc2.getCertificate(), tc.getCertificate());
@@ -192,23 +194,27 @@ public class TrustedCertAdminTest extends TestCase {
     /**
      * Test <code>TrustedCertAdminTest</code> main.
      */
-    public static void main( String[] args ) throws
-                                             Throwable {
-        junit.textui.TestRunner.run( suite() );
+    public static void main(String[] args) throws Throwable {
+        Subject.doAsPrivileged(new Subject(), new PrivilegedAction() {
+            public Object run() {
+                junit.textui.TestRunner.run(suite());
+                return null;
+            }
+        }, null);
     }
 
     private static final String CERT_BASE64 =
-            "MIICZjCCAc8CBD2+61QwDQYJKoZIhvcNAQEEBQAwejELMAkGA1UEBhMCVVMxEzARBgNV\n" +
-            "BAgTCkNhbGlmb3JuaWExEjAQBgNVBAcTCUN1cGVydGlubzEMMAoGA1UEChMDSUJNMR8w\n" +
-            "HQYDVQQLExZKYXZhIFRlY2hub2xvZ3kgQ2VudGVyMRMwEQYDVQQDEwpKb2huIFNtaXRo\n" +
-            "MB4XDTAyMTAyOTIwMTEwMFoXDTA3MTAwMzIwMTEwMFowejELMAkGA1UEBhMCVVMxEzAR\n" +
-            "BgNVBAgTCkNhbGlmb3JuaWExEjAQBgNVBAcTCUN1cGVydGlubzEMMAoGA1UEChMDSUJN\n" +
-            "MR8wHQYDVQQLExZKYXZhIFRlY2hub2xvZ3kgQ2VudGVyMRMwEQYDVQQDEwpKb2huIFNt\n" +
-            "aXRoMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCtitis5FONvv236Xw1CKOvKAOQ\n" +
-            "0NYlvRd/FKwuf+T1XCFadHMrtvHhq/+Z/Dlcn2YQYOCp9auS+WkBcL0AUrJJPUbwZIB2\n" +
-            "CyBZJjnS7+jdb37RKYQUsNRNlgdIcoZM8bvCZldBSfnat4xDPyQOJB7ExDrMmI9tP0NY\n" +
-            "9GN0npfnwwIDAQABMA0GCSqGSIb3DQEBBAUAA4GBAFLNrEP8Y0xwUVIl4XigEiDM6jAd\n" +
-            "DJFCI+m8EA07nAsYWmV/Ic8kkqDzXaWyLkIBJQ0gElRlWHYe+W/K/pT9CNEWRFViKbZG\n" +
-            "evivBKek7GQXhuEgo+pWalpEtg4nA741+46iKeKpEQILL6OYEj7aHcreIxaQ1WH2v1iM\n" +
-            "ig33Q0+S";
+      "MIICZjCCAc8CBD2+61QwDQYJKoZIhvcNAQEEBQAwejELMAkGA1UEBhMCVVMxEzARBgNV\n" +
+      "BAgTCkNhbGlmb3JuaWExEjAQBgNVBAcTCUN1cGVydGlubzEMMAoGA1UEChMDSUJNMR8w\n" +
+      "HQYDVQQLExZKYXZhIFRlY2hub2xvZ3kgQ2VudGVyMRMwEQYDVQQDEwpKb2huIFNtaXRo\n" +
+      "MB4XDTAyMTAyOTIwMTEwMFoXDTA3MTAwMzIwMTEwMFowejELMAkGA1UEBhMCVVMxEzAR\n" +
+      "BgNVBAgTCkNhbGlmb3JuaWExEjAQBgNVBAcTCUN1cGVydGlubzEMMAoGA1UEChMDSUJN\n" +
+      "MR8wHQYDVQQLExZKYXZhIFRlY2hub2xvZ3kgQ2VudGVyMRMwEQYDVQQDEwpKb2huIFNt\n" +
+      "aXRoMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCtitis5FONvv236Xw1CKOvKAOQ\n" +
+      "0NYlvRd/FKwuf+T1XCFadHMrtvHhq/+Z/Dlcn2YQYOCp9auS+WkBcL0AUrJJPUbwZIB2\n" +
+      "CyBZJjnS7+jdb37RKYQUsNRNlgdIcoZM8bvCZldBSfnat4xDPyQOJB7ExDrMmI9tP0NY\n" +
+      "9GN0npfnwwIDAQABMA0GCSqGSIb3DQEBBAUAA4GBAFLNrEP8Y0xwUVIl4XigEiDM6jAd\n" +
+      "DJFCI+m8EA07nAsYWmV/Ic8kkqDzXaWyLkIBJQ0gElRlWHYe+W/K/pT9CNEWRFViKbZG\n" +
+      "evivBKek7GQXhuEgo+pWalpEtg4nA741+46iKeKpEQILL6OYEj7aHcreIxaQ1WH2v1iM\n" +
+      "ig33Q0+S";
 }

@@ -2,6 +2,7 @@ package com.l7tech.identity.fed;
 
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.SsgAdminSession;
@@ -10,16 +11,18 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
+import javax.security.auth.Subject;
 import java.util.ArrayList;
 import java.util.List;
+import java.security.PrivilegedAction;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public class FederatedIdentityProviderTest extends TestCase {
-    private SsgAdminSession ssgAdminSession;
-    private AdminContext adminContext;
+    private static SsgAdminSession ssgAdminSession;
+    private static AdminContext adminContext;
     private FederatedIdentityProviderConfig config;
 
     /**
@@ -27,8 +30,6 @@ public class FederatedIdentityProviderTest extends TestCase {
      */
     public FederatedIdentityProviderTest(String name) throws Exception {
         super(name);
-        ssgAdminSession = new SsgAdminSession();
-        adminContext = ssgAdminSession.getAdminContext();
 
     }
 
@@ -36,8 +37,13 @@ public class FederatedIdentityProviderTest extends TestCase {
      * create the <code>TestSuite</code> for the FederatedIdentityProviderTest <code>TestCase</code>
      */
     public static Test suite() {
-        TestSuite suite = new TestSuite(FederatedIdentityProviderTest.class);
-        return suite;
+        try {
+            ssgAdminSession = new SsgAdminSession();
+            adminContext = ssgAdminSession.getAdminContext();
+            return new TestSuite(FederatedIdentityProviderTest.class);
+        } catch (Exception e) {
+            throw new RuntimeException(e); // can't happen
+        }
     }
 
     public void setUp() throws Exception {
@@ -84,12 +90,16 @@ public class FederatedIdentityProviderTest extends TestCase {
     public void testSaveVirtualGroup() throws Exception {
         IdentityProviderConfig config = null;
 
-        EntityHeader[] configs = adminContext.getIdentityAdmin().findAllIdentityProviderConfig();
+        final IdentityAdmin identityAdmin = adminContext.getIdentityAdmin();
+        EntityHeader[] configs = identityAdmin.findAllIdentityProviderConfig();
         for (int i = 0; i < configs.length; i++) {
             EntityHeader entityHeader = configs[i];
             if (entityHeader.getType() == EntityType.ID_PROVIDER_CONFIG) {
+                config = identityAdmin.findIdentityProviderConfigByID(entityHeader.getOid());
                 if (config.type() == IdentityProviderType.FEDERATED) {
-                    config = adminContext.getIdentityAdmin().findIdentityProviderConfigByID(entityHeader.getOid());
+                    break;
+                } else {
+                    config = null;
                 }
             }
         }
@@ -99,7 +109,7 @@ public class FederatedIdentityProviderTest extends TestCase {
         final VirtualGroup vg = new VirtualGroup();
         vg.setName("CN is anything");
         vg.setX509SubjectDnPattern("CN=*");
-        String soid = adminContext.getIdentityAdmin().saveGroup(config.getOid(), vg, null);
+        String soid = identityAdmin.saveGroup(config.getOid(), vg, null);
 
         assertNotNull("Couldn't save virtual group", soid);
     }
@@ -107,10 +117,12 @@ public class FederatedIdentityProviderTest extends TestCase {
     /**
      * Test <code>FederatedIdentityProviderTest</code> main.
      */
-    public static void main
-      (String[] args) throws
-      Throwable {
-        junit.textui.TestRunner.run(suite());
+    public static void main(String[] args) throws Throwable {
+        Subject.doAsPrivileged(new Subject(), new PrivilegedAction() {
+            public Object run() {
+                junit.textui.TestRunner.run(suite());
+                return null;
+            }
+        }, null);
     }
-
 }

@@ -13,17 +13,22 @@ import com.l7tech.console.util.History;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.spring.remoting.rmi.NamingURL;
 import com.l7tech.spring.remoting.rmi.ResettableRmiProxyFactoryBean;
+import com.l7tech.identity.UserBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import javax.security.auth.Subject;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.AccessController;
+import java.util.logging.Logger;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public class SsgAdminSession {
+    protected static final Logger logger = Logger.getLogger(SsgAdminSession.class.getName());
     private ApplicationContext applicationContext;
     private AdminContext adminContext;
 
@@ -40,7 +45,18 @@ public class SsgAdminSession {
                 adminpass = args[2];
             }
         }
-
+        Subject subject = Subject.getSubject(AccessController.getContext());
+        if (subject == null) {
+            logger.warning("The subject is null; the Admin Services will probably not be accessible");
+        } else {
+            subject.getPrincipals().clear();
+            final UserBean u = new UserBean();
+            u.setLogin(adminlogin);
+            u.setName(adminlogin);
+            subject.getPrincipals().add(u);
+            subject.getPrivateCredentials().clear();
+            subject.getPrivateCredentials().add(adminpass);
+        }
         JdkLoggerConfigurator.configure("com.l7tech.console", "com/l7tech/console/resources/logging.properties");
         // initialize preferences
         Preferences preferences = Preferences.getPreferences();

@@ -74,6 +74,9 @@
         <property name="clientCertManager">
             <ref local="clientCertManager"/>
         </property>
+        <property name="trustedCertManager">
+            <ref bean="trustedCertManager"/>
+        </property>
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
@@ -91,9 +94,6 @@
 
     <bean id="federatedGroupManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
         class="com.l7tech.server.identity.fed.FederatedGroupManager" singleton="false">
-        <property name="identityProvider">
-            <ref bean="federatedIdentityProvider"/>
-        </property>
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>

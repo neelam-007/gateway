@@ -13,6 +13,9 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.service.ServiceAdmin;
 
+import javax.security.auth.Subject;
+import java.security.PrivilegedAction;
+
 /**
  * @author alex
  * @version $Revision$
@@ -24,15 +27,20 @@ public class ListEverything extends SsgAdminSession {
         super( args );
     }
 
-    public static void main(String[] args) throws Exception {
-        try {
-            ListEverything me = new ListEverything(args);
-            me.doSomething();
-            System.exit(0);
-        } catch ( Exception e ) {
-            e.printStackTrace();
-            System.exit(1);
-        }
+    public static void main(final String[] args) throws Exception {
+        Subject.doAsPrivileged(new Subject(), new PrivilegedAction() {
+            public Object run() {
+                try {
+                    ListEverything me = new ListEverything(args);
+                    me.doSomething();
+                    System.exit(0);
+                } catch ( Exception e ) {
+                    e.printStackTrace();
+                    System.exit(1);
+                }
+                return null;
+            }
+        }, null);
     }
 
     protected Object doSomething() throws Exception {
