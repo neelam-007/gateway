@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.io.Serializable;
 
 /**
  * @author alex
@@ -20,7 +21,7 @@ public class SslAssertion extends ConfidentialityAssertion {
     public static final Option REQUIRED = new Option(1, "SSL Required", "Required");
     public static final Option FORBIDDEN = new Option(2, "SSL Forbidden", "Forbidden");
 
-    public static class Option {
+    public static class Option implements Serializable {
         protected int _numeric;
         protected String _name;
         protected String _keyName;
