@@ -136,6 +136,27 @@ public class RSASigner {
     }
 
     /**
+     * handles csr contained in a file. can be called from console when signing the ssl public key for ssg if the
+     * root kstore is present.
+     * Usage : java RSASigner rootkstorePath rootkstorepass rootkeyAlias rootprivateKeyPass csrfilepath outputcertpath
+     */
+    public static void main(String[] args) throws Exception {
+        if (args == null || args.length < 6) {
+            System.out.println("USAGE:");
+            System.out.println("java RSASigner rootkstorePath rootkstorepass rootkeyAlias rootprivateKeyPass csrfilepath outputcertpath");
+            return;
+        }
+        // read the csr from the file
+        byte[] csrfromfile = null;
+        // todo
+        // instantiate the signer
+        RSASigner me = new RSASigner(args[0], args[1], args[2], args[3]);
+        Certificate cert = me.createCertificate(csrfromfile);
+        // serialize the cert to path provided
+        // todo
+    }
+
+    /**
      *  Implements ISignSession::createCertificate
      *
      *@param  dn             Description of the Parameter
