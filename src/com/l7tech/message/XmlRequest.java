@@ -44,6 +44,8 @@ public interface XmlRequest extends Request, XmlMessage {
 
     public String getMultipartBoundary();
 
+    public MultipartMessageReader getMultipartReader();
+
     public Part getSoapPart() throws IOException;
 
     public boolean isMultipart();

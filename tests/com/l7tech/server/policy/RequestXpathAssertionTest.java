@@ -8,6 +8,7 @@ import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.identity.User;
 import com.l7tech.message.TransportMetadata;
 import com.l7tech.message.XmlRequest;
+import com.l7tech.message.MultipartMessageReader;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.policy.assertion.RoutingStatus;
@@ -114,6 +115,8 @@ public class RequestXpathAssertionTest extends TestCase {
 
             public boolean isMultipart() { return false; }
             public String getMultipartBoundary() { return null; }
+
+            public MultipartMessageReader getMultipartReader() {return null;}
 
             public TransportMetadata getTransportMetadata() {
                 return null;

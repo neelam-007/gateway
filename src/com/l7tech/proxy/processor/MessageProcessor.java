@@ -35,6 +35,7 @@ import org.xml.sax.SAXException;
 import javax.crypto.SecretKey;
 import javax.net.ssl.SSLException;
 import java.io.IOException;
+import java.io.PushbackInputStream;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
@@ -517,12 +518,13 @@ public class MessageProcessor {
                         req.getMultipartReader().getSoapPart(),
                         req.getMultipartReader().getMultipartBoundary());
 
-                // add all attachments
-                MultipartUtil.addMultiparts(sb,
-                        req.getMultipartReader().getMessageAttachments(),
-                        req.getMultipartReader().getMultipartBoundary());
+                PushbackInputStream pbis = req.getMultipartReader().getPushbackInputStream();
 
-                postMethod.setRequestBody(sb.toString());
+                // push the modified SOAP part back to the input stream
+                pbis.unread(sb.toString().getBytes());
+
+                // post the request using input stream
+                postMethod.setRequestBody(pbis);
             } else {
                 postMethod.addRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
                 postMethod.setRequestBody(postBody);

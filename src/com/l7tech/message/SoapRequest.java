@@ -19,6 +19,7 @@ import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.io.InputStream;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -118,7 +119,7 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
             _requestXml = XmlUtil.nodeToString(_document);
         } else if ( _requestXml == null ) {
             // multipart/related; type="text/xml"; boundary="----=Multipart-SOAP-boundary=----"
-            _requestXml = getMessageXml(getRequestReader());
+            _requestXml = getMessageXml(getRequestInputStream());
         }
         return _requestXml;
     }
@@ -142,6 +143,10 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
     public String getMultipartBoundary() {
         if(multipartReader == null) throw new IllegalStateException("The attachment cannot be retrieved as the soap part has not been read.");
         return multipartReader.multipartBoundary;
+    }
+
+     public MultipartMessageReader getMultipartReader() {
+        return multipartReader;
     }
 
     public void setRequestXml( String xml ) {
@@ -192,7 +197,7 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
     public void close() {
         MessageProcessor.setCurrentRequest(null);
         try {
-            if ( _requestReader != null ) _requestReader.close();
+            if ( _requestInputStream != null ) _requestInputStream.close();
         } catch (IOException e) {
         }
     }
@@ -202,20 +207,20 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
         super.finalize();
     }
 
-    protected Reader getRequestReader() throws IOException {
-        if ( _requestReader == null )
-            _requestReader = doGetRequestReader();
-        return _requestReader;
+    protected InputStream getRequestInputStream() throws IOException {
+        if ( _requestInputStream == null )
+            _requestInputStream = doGetRequestInputStream();
+        return _requestInputStream;
     }
 
 //    private static final MessageIdManager _messageIdManager = SingleNodeMessageIdManager.getInstance();
 
-    protected abstract Reader doGetRequestReader() throws IOException;
+    protected abstract InputStream doGetRequestInputStream() throws IOException;
 
     protected RequestId _id;
     protected boolean _authenticated;
     protected Boolean soap = null;
-    protected Reader _requestReader;
+    protected InputStream _requestInputStream;
     protected User _user;
     protected RoutingStatus _routingStatus = RoutingStatus.NONE;
 

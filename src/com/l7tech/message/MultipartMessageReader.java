@@ -17,21 +17,20 @@ public class MultipartMessageReader {
     protected Document _document;
     protected boolean multipart;
     protected String multipartBoundary;
-    protected BufferedReader breader = null;
+    protected PushbackInputStream pushbackInputStream = null;
     protected Map multipartParts = new HashMap();
 
-    public MultipartMessageReader(BufferedReader reader, String multipartBoundary) {
-        this.breader = reader;
-        this.multipartBoundary = multipartBoundary;
-    }
-
     public MultipartMessageReader(InputStream inputStream, String multipartBoundary) {
-        this.breader = new BufferedReader(new InputStreamReader(inputStream));
+        pushbackInputStream = new PushbackInputStream(inputStream, 10000);
         this.multipartBoundary = multipartBoundary;
     }
 
     public String getMultipartBoundary() {
         return multipartBoundary;
+    }
+
+    public PushbackInputStream getPushbackInputStream() {
+        return pushbackInputStream;
     }
 
     /**
@@ -50,7 +49,7 @@ public class MultipartMessageReader {
     public Map getMessageAttachments() throws IOException {
 
         // parse all multiple parts
-        parseAllMultiparts(breader);
+        parseAllMultiparts();
 
         Map attachments = new HashMap();
 
@@ -149,7 +148,8 @@ public class MultipartMessageReader {
 
         // If it is the first time to parse soap part
         if(lastPart == 0) {
-            String firstBoundary = breader.readLine();            
+
+            String firstBoundary = readLine();
             if (!firstBoundary.equals(XmlUtil.MULTIPART_BOUNDARY_PREFIX + multipartBoundary)) throw new IOException("Initial multipart boundary not found");
         }
 
@@ -158,7 +158,7 @@ public class MultipartMessageReader {
             part = new Message.Part();
             String line;
             boolean headers = true;
-            while ((line = breader.readLine()) != null) {
+            while ((line = readLine()) != null) {
                 if (headers) {
                     if (line.length() == 0) {
                         headers = false;
@@ -186,19 +186,49 @@ public class MultipartMessageReader {
         return part;
     }
 
+    private String readLine() throws IOException {
+        boolean newlineFound = false;
+        long byteCount = 0;
+        byte[] buf = new byte[256];
+
+
+        StringBuffer sb = new StringBuffer();
+        do {
+            int read = pushbackInputStream.read(buf, 0, buf.length);
+            if(read <= 0) {
+                if(byteCount > 0) {
+                    return sb.toString();
+                } else {
+                    return null;
+                }
+            }
+
+            for (int i = 0; i < read; i++) {
+                sb.append((char)buf[i]);
+                if(buf[i] == '\n') {
+                    newlineFound = true;
+                    // push the rest back to the stream
+                    pushbackInputStream.unread(buf, i+1, read-(i+1));
+                    break;
+                }
+            }
+        } while(!newlineFound);
+
+        return sb.toString().trim();
+    }
+
     /**
      * This parser only peels the the multipart message up to the part required.
      *
-     * @param breader  The data source
      * @throws IOException
      */
-    private void parseAllMultiparts(BufferedReader breader) throws IOException {
+    private void parseAllMultiparts() throws IOException {
 
         StringBuffer xml = new StringBuffer();
         Message.Part part = null;
 
         String line;
-        while ((line = breader.readLine()) != null) {
+        while ((line = readLine()) != null) {
             part = new Message.Part();
             boolean headers = true;
             do {
@@ -221,7 +251,7 @@ public class MultipartMessageReader {
                         xml.append("\n");
                     }
                 }
-            } while ((line = breader.readLine()) != null);
+            } while ((line = readLine()) != null);
 
             part.content = xml.toString();
             part.setPostion(multipartParts.size());

@@ -33,10 +33,7 @@ import javax.net.ssl.TrustManager;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.wsdl.WSDLException;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.*;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
@@ -243,12 +240,21 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                             request.getSoapPart(),
                             request.getMultipartBoundary());
 
-                    // add all Attachments
-                    MultipartUtil.addMultiparts(sb,
+                   /* MultipartUtil.addMultiparts(sb,
                             request.getRequestAttachments(),
-                            request.getMultipartBoundary());
+                            request.getMultipartBoundary());*/
 
-                    postMethod.setRequestBody(sb.toString());
+                    // add all Attachments
+                    //postMethod.setRequestBody(sb.toString());
+
+                    PushbackInputStream pbis = request.getMultipartReader().getPushbackInputStream();
+
+                    // push the modified SOAP part back to the input stream
+                    pbis.unread(sb.toString().getBytes());
+
+                    // post the request using input stream
+                    postMethod.setRequestBody(pbis);
+
                 } else {
                     postMethod.setRequestBody(requestXml);
                 }
