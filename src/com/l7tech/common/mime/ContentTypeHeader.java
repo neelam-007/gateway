@@ -22,9 +22,9 @@ import java.util.logging.Logger;
  */
 public class ContentTypeHeader extends MimeHeader {
     private static final Logger logger = Logger.getLogger(ContentTypeHeader.class.getName());
-    public static final ContentTypeHeader OCTET_STREAM_DEFAULT;
-    public static final ContentTypeHeader TEXT_DEFAULT;
-    public static final ContentTypeHeader XML_DEFAULT;
+    public static final ContentTypeHeader OCTET_STREAM_DEFAULT; // application/octet-stream
+    public static final ContentTypeHeader TEXT_DEFAULT; // text/plain; charset=UTF-8
+    public static final ContentTypeHeader XML_DEFAULT; // text/xml; charset=UTF-8
     public static final String CHARSET = "charset";
     public static final String DEFAULT_CHARSET_MIME = "utf-8";
 
@@ -157,6 +157,8 @@ public class ContentTypeHeader extends MimeHeader {
     }
 
     /**
+     * Convert MIME charset into Java encoding.
+     *
      * @return the name of the Java encoding corresponding to the charset of this content-type header,
      *         or UTF-8 if there isn't any.  Always returns some string, never null.  The returned encoding
      *         is not guaranteed to be meaningful on this system, however.
@@ -243,6 +245,7 @@ public class ContentTypeHeader extends MimeHeader {
             os.write(name.getBytes(ENCODING));
             os.write('=');
 
+            // Convert Java encoding into MIME charset for the payload
             String charsetValue = mimeCharset;
             if (charsetValue == null && javaEncoding != null)
                     charsetValue = MimeUtility.mimeCharset(javaEncoding);
