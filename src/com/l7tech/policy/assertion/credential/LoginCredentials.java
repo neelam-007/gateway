@@ -7,6 +7,7 @@
 package com.l7tech.policy.assertion.credential;
 
 import com.l7tech.common.util.CertUtils;
+import com.l7tech.server.saml.SamlHolderOfKeyAssertion;
 
 import java.security.cert.X509Certificate;
 import java.util.List;
@@ -117,7 +118,7 @@ public class LoginCredentials {
         return authInstant;
     }
 
-    public void authenticated() {
+    public void onAuthentication() {
         this.authInstant = System.currentTimeMillis();
     }
 
@@ -125,6 +126,16 @@ public class LoginCredentials {
         return getClass().getName() + "\n\t" +
                 "format: " + format.toString() + "\n\t" +
                 "login: " + login;
+    }
+
+    public X509Certificate getClientCert() {
+        if (format == CredentialFormat.CLIENTCERT) {
+            return (X509Certificate)payload;
+        } else if (format == CredentialFormat.SAML) {
+            SamlHolderOfKeyAssertion hok = (SamlHolderOfKeyAssertion)payload;
+            return hok.getSubjectCertificate();
+        }
+        return null;
     }
 
     private final String login;
