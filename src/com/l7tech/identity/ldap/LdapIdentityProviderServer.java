@@ -14,6 +14,7 @@ import java.security.Principal;
  */
 public class LdapIdentityProviderServer implements com.l7tech.identity.IdentityProvider {
     public void initialize(IdentityProviderConfig config) {
+        if (!(config instanceof LdapIdentityProviderConfig)) throw new IllegalArgumentException("Expecting LdapIdentityProviderConfig in LdapIdentityProviderServer.initialize");
         cfg = (LdapIdentityProviderConfig)config;
         groupManager = new LdapGroupManagerServer(cfg);
         userManager = new LdapUserManagerServer(cfg);
