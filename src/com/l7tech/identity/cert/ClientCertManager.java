@@ -53,5 +53,5 @@ public interface ClientCertManager {
      * @param user owner of the cert
      * @throws UpdateException
      */
-    void rememberCertWasUsedSuccessfully(User user) throws UpdateException;
+    void forbidCertReset(User user) throws UpdateException;
 }

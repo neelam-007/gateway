@@ -169,8 +169,8 @@ public class ClientCertManagerImp implements ClientCertManager {
         }
     }
 
-    public void rememberCertWasUsedSuccessfully(User user) throws UpdateException {
-        logger.finest("rememberCertWasUsedSuccessfully for " + user.getLogin());
+    public void forbidCertReset(User user) throws UpdateException {
+        logger.finest("forbidCertReset for " + user.getLogin());
         CertEntryRow currentdata = getFromTable(user);
         if (currentdata != null) {
             currentdata.setResetCounter(10);

@@ -157,7 +157,7 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                             logger.finest("Authenticated user " + login + " using a client certificate" );
                             pc.getUser().copyFrom( dbUser );
                             // remember that this cert was used at least once successfully
-                            man.rememberCertWasUsedSuccessfully(dbUser);
+                            man.forbidCertReset(dbUser);
                             return;
                         } else {
                             String err = "Failed to authenticate user " + login + " using an SSL client certificate (request certificate doesn't match database)";

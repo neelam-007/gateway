@@ -53,7 +53,7 @@ public class ClientCertManagerRemote implements ClientCertManager {
         }
     }
 
-    public void rememberCertWasUsedSuccessfully(User user) throws UpdateException {
+    public void forbidCertReset(User user) throws UpdateException {
         throw new RuntimeException("not implemented in stub - this should not be invoked on client side");
     }
 
