@@ -163,7 +163,8 @@ public class PolicyServlet extends HttpServlet {
             throws FindException, IOException, NoSuchAlgorithmException
     {
         // Find our certificate
-        byte[] cert = KeystoreUtils.getInstance().readSSLCert();
+        byte[] cert = KeystoreUtils.getInstance().readRootCert();
+        logger.info("Sending root cert");
 
         // Insert Cert-Check-NNN: headers if we can.
         if (username != null) {
@@ -187,7 +188,6 @@ public class PolicyServlet extends HttpServlet {
         response.setContentLength(cert.length);
         response.getOutputStream().write(cert);
         response.flushBuffer();
-        //logger.info("Sent ssl cert: " + gotpath);
     }
 
     private PublishedService resolveService(long oid) {
