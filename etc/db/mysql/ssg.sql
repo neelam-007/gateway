@@ -117,27 +117,6 @@ CREATE TABLE internal_user_group (
 INSERT INTO internal_user_group VALUES (3,2);
 
 --
--- Table structure for table 'object_identity'
---
-
-DROP TABLE IF EXISTS object_identity;
-CREATE TABLE object_identity (
-  class_name varchar(255) NOT NULL default '',
-  table_name varchar(255) default NULL,
-  class_seed smallint(6) NOT NULL auto_increment,
-  server_seed smallint(6) default '0',
-  key_seed bigint(20) NOT NULL default '0',
-  key_batch_size int(11) NOT NULL default '0',
-  PRIMARY KEY  (class_seed)
-) TYPE=InnoDB;
-
---
--- Dumping data for table 'object_identity'
---
-
-
-
---
 -- Table structure for table 'published_service'
 --
 
