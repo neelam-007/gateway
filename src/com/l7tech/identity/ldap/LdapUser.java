@@ -1,7 +1,9 @@
 package com.l7tech.identity.ldap;
 
-import com.l7tech.identity.*;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.identity.IdProvConfManagerServer;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.User;
+import com.l7tech.identity.UserBean;
 
 import java.io.Serializable;
 
@@ -79,12 +81,10 @@ public class LdapUser implements User, Serializable {
                     return;
                 }
             }
-
-            String login = _userBean.getLogin();
-            if ( login == null) throw new IllegalStateException("login must be set prior to encoding the password");
-            _userBean.setPassword( encodePasswd( login, password) );
         }
-        else _userBean.setPassword( password );
+        String login = _userBean.getLogin();
+        if ( login == null) throw new IllegalStateException("login must be set prior to encoding the password");
+        _userBean.setPassword( password );
     }
 
     public void setFirstName(String firstName) {
@@ -173,40 +173,6 @@ public class LdapUser implements User, Serializable {
 
     public String getName() {
         return _userBean.getName();
-    }
-
-    private static String encodePasswd( String a1 ) {
-        // MD5 IT
-        java.security.MessageDigest md5Helper = null;
-        try {
-            md5Helper = java.security.MessageDigest.getInstance("MD5");
-        } catch (java.security.NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
-        byte[] digest = md5Helper.digest( a1.getBytes() );
-        // ENCODE IT
-        if (digest == null) return "";
-        char[] hexadecimal = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-        if (digest.length != 16) return "";
-        char[] buffer = new char[32];
-
-        for (int i = 0; i < 16; i++) {
-            int low = (digest[i] & 0x0f);
-            int high = ((digest[i] & 0xf0) >> 4);
-            buffer[i*2] = hexadecimal[high];
-            buffer[i*2 + 1] = hexadecimal[low];
-        }
-        return new String(buffer);
-    }
-
-    public static String encodePasswd(String login, String passwd) {
-        String toEncode = login + ":" + HttpDigest.REALM + ":" + passwd;
-        return encodePasswd( toEncode );
-    }
-
-    public static String encodePasswd( String login, String passwd, String realm ) {
-        String toEncode = login + ":" + realm + ":" + passwd;
-        return encodePasswd( toEncode );
     }
 
     /**
