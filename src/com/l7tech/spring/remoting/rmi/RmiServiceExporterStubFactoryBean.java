@@ -5,11 +5,11 @@
  */
 package com.l7tech.spring.remoting.rmi;
 
-import org.springframework.remoting.support.RemoteInvocation;
-import org.springframework.remoting.support.RemoteInvocationFactory;
-import org.springframework.remoting.rmi.RmiServiceExporter;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.remoting.rmi.RmiServiceExporter;
+import org.springframework.remoting.support.RemoteInvocation;
+import org.springframework.remoting.support.RemoteInvocationFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.rmi.NotBoundException;
@@ -20,8 +20,6 @@ import java.rmi.registry.Registry;
 import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
 import java.rmi.server.UnicastRemoteObject;
-
-import com.l7tech.spring.remoting.rmi.RmiProxyStub;
 
 /**
  * The {@link RmiServiceExporterStubFactoryBean } subclass that allows specifying additional properties
@@ -213,7 +211,7 @@ public class RmiServiceExporterStubFactoryBean
             registry.list();
         } catch (RemoteException ex) {
             logger.debug("RMI registry access threw exception", ex);
-            logger.warn("Could not detect RMI registry - creating new one");
+            logger.debug("Could not detect RMI registry - creating new one");
 
             // assume no registry found -> create new one
             if ((this.registryClientSocketFactory != null && this.registryServerSocketFactory == null) ||
