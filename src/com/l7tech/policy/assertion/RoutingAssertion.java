@@ -8,14 +8,14 @@ package com.l7tech.policy.assertion;
 
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
-import com.l7tech.service.ProtectedService;
 
 /**
  * @author alex
  */
 public class RoutingAssertion extends Assertion {
-    public RoutingAssertion(String protectedServiceTarget) {
-        this.protectedServiceTarget = protectedServiceTarget;
+    public RoutingAssertion(String protectedServiceUrl) {
+        this();
+        this.protectedServiceUrl = protectedServiceUrl;
     }
 
     /** Default constructor, for Hibernate only, don't call! */
@@ -23,17 +23,25 @@ public class RoutingAssertion extends Assertion {
         super();
     }
 
-    public String getProtectedServiceTarget() {
-        return protectedServiceTarget;
+    public String getProtectedServiceUrl() {
+        return protectedServiceUrl;
     }
 
-    public void setProtectedServiceTarget(String protectedServiceTarget) {
-        this.protectedServiceTarget = protectedServiceTarget;
+    public void setProtectedServiceUrl( String protectedServiceUrl ) {
+        this.protectedServiceUrl = protectedServiceUrl;
     }
 
+    /**
+     * Forwards the request along to a ProtectedService at the configured URL.
+     * @param request The request to be forwarded.
+     * @param response The response that was received from the ProtectedService.
+     * @return an AssertionError indicating the success or failure of the request.
+     * @throws PolicyAssertionException if some error preventing the execution of the PolicyAssertion has occurred.
+     */
     public AssertionError checkRequest(Request request, Response response) throws PolicyAssertionException {
-        return AssertionError.NONE;
+        // TODO
+        return AssertionError.NOT_YET_IMPLEMENTED;
     }
 
-    protected String protectedServiceTarget;
+    protected String protectedServiceUrl;
 }
