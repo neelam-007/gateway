@@ -21,7 +21,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * TODO clear SSL Context when any TrustedCert changes
  * @author alex
  * @version $Revision$
  */
@@ -49,13 +48,13 @@ public class SslClientTrustManager implements X509TrustManager {
         TrustManager[] defaultTrustManagers = tmf.getTrustManagers();
         X509TrustManager delegate = null;
         for (int i = 0; i < defaultTrustManagers.length; i++) {
-            if ( defaultTrustManagers[i] instanceof X509TrustManager ) {
+            if (defaultTrustManagers[i] instanceof X509TrustManager) {
                 delegate = (X509TrustManager)defaultTrustManagers[i];
                 break;
             }
         }
 
-        if ( delegate == null ) throw new RuntimeException("Couldn't locate an X509TrustManager implementation");
+        if (delegate == null) throw new RuntimeException("Couldn't locate an X509TrustManager implementation");
 
         this.delegate = delegate;
     }
