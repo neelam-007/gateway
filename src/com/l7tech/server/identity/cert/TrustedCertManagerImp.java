@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -28,6 +29,22 @@ import EDU.oswego.cs.dl.util.concurrent.Sync;
  * @version $Revision$
  */
 public class TrustedCertManagerImp extends HibernateEntityManager implements TrustedCertManager {
+    public TrustedCertManagerImp() {
+        try {
+            for ( Iterator i = findAll().iterator(); i.hasNext(); ) {
+                TrustedCert cert = (TrustedCert)i.next();
+                checkAndCache(cert);
+                logger.info("Caching cert #" + cert.getOid() + " (" + cert.getSubjectDn() + ")");
+            }
+        } catch ( FindException e ) {
+            logger.log( Level.SEVERE, "Couldn't cache cert", e );
+        } catch ( IOException e ) {
+            logger.log( Level.SEVERE, "Couldn't cache cert", e );
+        } catch ( CertificateException e ) {
+            logger.log( Level.SEVERE, "Couldn't cache cert", e );
+        }
+    }
+
     public TrustedCert findByPrimaryKey(long oid) throws FindException {
         try {
             TrustedCert cert = (TrustedCert)PersistenceManager.findByPrimaryKey( getContext(), getImpClass(), oid );
