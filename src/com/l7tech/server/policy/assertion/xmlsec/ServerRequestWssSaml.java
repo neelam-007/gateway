@@ -94,13 +94,11 @@ public class ServerRequestWssSaml implements ServerAssertion {
                 SecurityToken tok = tokens[i];
                 if (tok instanceof SamlSecurityToken) {
                     SamlSecurityToken samlToken = (SamlSecurityToken)tok;
-                    if (samlToken.isPossessionProved() || samlToken.isBearerToken()) {
-                        if (samlAssertion != null) {
-                            auditor.logAndAudit(AssertionMessages.SAML_AUTHN_STMT_MULTIPLE_SAML_ASSERTIONS_UNSUPPORTED);
-                            return AssertionStatus.BAD_REQUEST;
-                        }
-                        samlAssertion = samlToken;
+                    if (samlAssertion != null) {
+                        auditor.logAndAudit(AssertionMessages.SAML_AUTHN_STMT_MULTIPLE_SAML_ASSERTIONS_UNSUPPORTED);
+                        return AssertionStatus.BAD_REQUEST;
                     }
+                    samlAssertion = samlToken;
                 }
             }
             if (samlAssertion == null) {
@@ -124,11 +122,11 @@ public class ServerRequestWssSaml implements ServerAssertion {
                 context.setFaultDetail(sfd);
             }
             context.setCredentials(new LoginCredentials(samlAssertion.getNameIdentifierValue(),
-                                                        null,
-                                                        CredentialFormat.SAML,
-                                                        SamlAuthenticationStatement.class,
-                                                        null,
-                                                        samlAssertion));
+                null,
+                CredentialFormat.SAML,
+                SamlAuthenticationStatement.class,
+                null,
+                samlAssertion));
             return AssertionStatus.NONE;
         } catch (SAXException e) {
             throw (IOException)new IOException().initCause(e);
