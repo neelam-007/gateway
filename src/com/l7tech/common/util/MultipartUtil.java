@@ -37,8 +37,7 @@ public class MultipartUtil {
             }
             sbuf.append("\r\n");
         }
-        sbuf.append("\r\n").append("<?xml version=\"" + XML_VERSION + "\" encoding=\"" + ENCODING.toLowerCase() + "\"?>" + "\n");
-        sbuf.append(modifiedSoapEnvelope);
+        sbuf.append("\r\n").append(modifiedSoapEnvelope);
         sbuf.append("\r\n" + XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + "\r\n");
     }
 
