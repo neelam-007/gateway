@@ -27,7 +27,7 @@ import java.util.List;
  * Time: 10:22:59 AM
  * To change this template use Options | File Templates.
  */
-public class ServiceManagerTest extends TestCase {
+public class ServiceAdminTest extends TestCase {
 
     static ServiceAdmin manager;
     PublishedService service;
@@ -35,7 +35,7 @@ public class ServiceManagerTest extends TestCase {
     /**
      * test <code>AbstractLocatorTest</code> constructor
      */
-    public ServiceManagerTest(String name) {
+    public ServiceAdminTest(String name) {
         super(name);
     }
 
@@ -44,7 +44,7 @@ public class ServiceManagerTest extends TestCase {
      * LogCLientTest <code>TestCase</code>
      */
     public static Test suite() {
-        final TestSuite suite = new TestSuite(ServiceManagerTest.class);
+        final TestSuite suite = new TestSuite(ServiceAdminTest.class);
         TestSetup wrapper = new TestSetup(suite) {
             /**
              * test setup that deletes the stub data store; will trigger
@@ -55,7 +55,7 @@ public class ServiceManagerTest extends TestCase {
             protected void setUp() throws Exception {
                 System.setProperty("com.l7tech.common.locator.properties",
                         "/com/l7tech/console/resources/services.properties");
-                ServiceManagerTest.manager =
+                ServiceAdminTest.manager =
                         (ServiceAdmin) Locator.getDefault().lookup(ServiceAdmin.class);
                 if (manager == null) {
                     throw new RuntimeException("Cannot obtain the identity service");
