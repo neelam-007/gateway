@@ -28,24 +28,27 @@ import java.util.Set;
  * @version $Revision$
  */
 public class TrustedCertAdminTest extends TestCase {
-    private SsgAdminSession ssgAdminSession;
-    private AdminContext adminContext;
+    private static SsgAdminSession ssgAdminSession;
+    private static AdminContext adminContext;
 
     /**
      * test <code>TrustedCertAdminTest</code> constructor
      */
     public TrustedCertAdminTest( String name ) throws Exception {
         super( name );
-        ssgAdminSession = new SsgAdminSession();
-        adminContext = ssgAdminSession.getAdminContext();
     }
 
     /**
      * create the <code>TestSuite</code> for the TrustedCertAdminTest <code>TestCase</code>
      */
     public static Test suite() {
-        TestSuite suite = new TestSuite( TrustedCertAdminTest.class );
-        return suite;
+        try {
+            ssgAdminSession = new SsgAdminSession(new String[] {"quark:2124"});
+            adminContext = ssgAdminSession.getAdminContext();
+            return new TestSuite( TrustedCertAdminTest.class );
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void testRetrieveCertIgnoreHostname() throws Exception {
