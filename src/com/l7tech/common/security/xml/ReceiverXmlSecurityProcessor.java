@@ -20,6 +20,7 @@ import org.w3c.dom.Node;
 import java.io.IOException;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.security.cert.X509Certificate;
 
 class ReceiverXmlSecurityProcessor extends SecurityProcessor {
@@ -35,7 +36,7 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
 
     public SecurityProcessor.Result processInPlace(Document document) throws IOException {
 
-        boolean atLeastOneElementSecurityApplied = false;
+        boolean atLeastOneElementWasMatched = false;
         Set signingTokens = new HashSet();
 
         for (int i = 0; i < elements.length; i++) {
@@ -56,24 +57,27 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
             XpathExpression elementXpath = elementSecurity.getElementXpath();
             List elementMatches = null;
             List cryptMatches = null;
-            if (elementXpath != null && !SoapUtil.SOAP_ENVELOPE_XPATH.equals(elementXpath)) {
+            if (elementXpath != null && !SoapUtil.SOAP_ENVELOPE_XPATH.equals(elementXpath.getExpression())) {
                 // We have an element xpath
                 XpathEvaluator elementEval = XpathEvaluator.newEvaluator(document, elementXpath.getNamespaces());
                 try {
                     elementMatches = elementEval.select(elementXpath.getExpression());
                     if (containsEnvelope(elementMatches)) {
+                        if (elementMatches.size() > 1)
+                            return Result.error(new SecurityProcessorException("Element xpath matches Envelope, but also matches other elements"));
                         elementMatches = null; // mark for special handling, "sign env crypt body"
                         /* FALLTHROUGH */
                     } else {
                         if (elementSecurity.isEncryption())
                             cryptMatches = elementMatches;
                         /* FALLTHROUGH */
+                        if ( elementMatches == null || elementMatches.size() == 0 ) {
+                            logger.log(Level.FINE, "Request contained no nodes matching element xpath - ignoring ");
+                            continue;
+                        }
                     }
                 } catch (JaxenException e) {
                     return Result.error(e);
-                }
-                if ( elementMatches == null || elementMatches.size() == 0 ) {
-                    return Result.error(new SecurityProcessorException("Precondition matched but element not found"));
                 }
             }
 
@@ -102,9 +106,7 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                     return Result.policyViolation(new SecurityProcessorException("Element " +
                                                                                  targetElement.getLocalName() +
                                                                                  " was not signed"));
-                // precondition satisfied
-                atLeastOneElementSecurityApplied = true;
-
+                atLeastOneElementWasMatched = true;
                 signingTokens.addAll(elementSigningTokens);
             }
 
@@ -118,14 +120,13 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                             return Result.policyViolation(new SecurityProcessorException("Element " +
                                                                                          targetElement.getLocalName() +
                                                                                          " was non-empty but was not encrypted"));
-                        // precondition satisfied
-                        atLeastOneElementSecurityApplied = true;
+                        atLeastOneElementWasMatched = true;
                     }
                 }
             }
         }
 
-        if (!atLeastOneElementSecurityApplied)
+        if (!atLeastOneElementWasMatched)
             return Result.notApplicable();
 
         // This can't happen, but just to cover all bases
