@@ -283,8 +283,7 @@ public class LdapIdentityProvider implements IdentityProvider {
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
             DirContext context = getBrowseContext(cfg);
             answer = context.search(cfg.getSearchBase(), filter, sc);
-            while (answer.hasMore())
-            {
+            while (answer.hasMore()) {
                 // get this item
                 SearchResult sr = (SearchResult)answer.next();
                 // set the dn (unique id)
