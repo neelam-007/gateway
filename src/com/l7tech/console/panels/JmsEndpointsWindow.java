@@ -17,7 +17,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import java.util.Iterator;
 
 /**
  * Simple modal dialog that allows management of the known JMS endpoints, and designation of which
@@ -26,6 +25,8 @@ import java.util.Iterator;
  * @author mike
  */
 public class JmsEndpointsWindow extends JDialog {
+    public static final int MESSAGE_SOURCE_COL = 2;
+
     private JPanel bottomButtonPanel;
     private JButton closeButton;
     private JTable endpointTable;
@@ -90,16 +91,38 @@ public class JmsEndpointsWindow extends JDialog {
             return getEndpointListItems().size();
         }
 
+        public Class getColumnClass(int columnIndex) {
+            return columnIndex == MESSAGE_SOURCE_COL ? Boolean.class : String.class;
+        }
+
+        public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
+            if (columnIndex == MESSAGE_SOURCE_COL && aValue instanceof Boolean) {
+                EndpointListItem i = (EndpointListItem) getEndpointListItems().get(rowIndex);
+                if (i.endpoint != null) {
+                    try {
+                        i.endpoint.setMessageSource(((Boolean)aValue).booleanValue());
+                        Registry.getDefault().getJmsManager().saveEndpoint(i.endpoint);
+                    } catch (Exception e) {
+                        throw new RuntimeException("Unable to save changes to endpoint " + i.endpoint, e);
+                    }
+                }
+            }
+        }
+
         public String getColumnName(int column) {
             switch (column) {
                 case 0:
                     return "Connection";
                 case 1:
                     return "Endpoint";
-                case 2:
+                case MESSAGE_SOURCE_COL:
                     return "Message Source";
             }
             return "?";
+        }
+
+        public boolean isCellEditable(int rowIndex, int columnIndex) {
+            return columnIndex == MESSAGE_SOURCE_COL;
         }
 
         public Object getValueAt(int rowIndex, int columnIndex) {
@@ -109,7 +132,7 @@ public class JmsEndpointsWindow extends JDialog {
                     return i.connection.getName();
                 case 1:
                     return i.endpoint == null ? "(no endpoints)" : i.endpoint.getName();
-                case 2:
+                case MESSAGE_SOURCE_COL:
                     return i.endpoint == null ? null : new Boolean(i.endpoint.isMessageSource());
             }
             return "?";
