@@ -2,7 +2,6 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.identity.User;
 import com.l7tech.logging.LogManager;
-import com.l7tech.message.HttpTransportMetadata;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.message.SoapRequest;
@@ -13,12 +12,7 @@ import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.xmlenc.*;
-import com.l7tech.xmlsig.InvalidSignatureException;
-import com.l7tech.xmlsig.SecureConversationTokenHandler;
-import com.l7tech.xmlsig.SignatureNotFoundException;
-import com.l7tech.xmlsig.SoapMsgSigner;
-import com.l7tech.xmlsig.XMLSecurityElementNotFoundException;
-import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.xmlsig.*;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 import sun.security.x509.X500Name;
@@ -68,8 +62,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             throw e;
         } catch (SessionInvalidException e) {
             // when the session is no longer valid we must inform the client proxy so that he generates another session
-            HttpTransportMetadata metadata = (HttpTransportMetadata)response.getTransportMetadata();
-            metadata.getResponse().addHeader(SecureSpanConstants.HttpHeaders.SESSION_STATUS_HTTP_HEADER, "invalid");
+            response.setParameter( Response.PARAM_HTTP_SESSION_STATUS, "invalid" );
             return AssertionStatus.FALSIFIED;
         }
 
@@ -79,8 +72,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             gotSeq = checkSeqNrValidity(soapmsg, xmlsecSession);
         } catch (InvalidSequenceNumberException e) {
             // when the session is no longer valid we must inform the client proxy so that he generates another session
-            HttpTransportMetadata metadata = (HttpTransportMetadata)response.getTransportMetadata();
-            metadata.getResponse().addHeader(SecureSpanConstants.HttpHeaders.SESSION_STATUS_HTTP_HEADER, "invalid");
+            response.setParameter( Response.PARAM_HTTP_SESSION_STATUS, "invalid" );
             // todo, control what the soap fault look like
             // in this case the policy is not violated
             // response.setPolicyViolated(true);
