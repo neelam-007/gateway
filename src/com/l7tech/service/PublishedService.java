@@ -77,7 +77,6 @@ public class PublishedService extends NamedEntityImp {
         } else {
             _wsdlUrl = null;
         }
-
     }
 
     /**
