@@ -78,13 +78,12 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      * Append the new logs to the cache.
      *
      * @param nodeList  A list of node objects accompanied with their new logs.
-     * @param msgFilterLevel  The filter level.
      */
-    private void appendData(Hashtable nodeList, int msgFilterLevel) {
+    private void appendLogs(Hashtable nodeList) {
         for (Iterator i = nodeList.keySet().iterator(); i.hasNext();) {
             String node = (String) i.next();
             Vector logs = (Vector) nodeList.get(node);
-            addData(node, logs, msgFilterLevel, false);
+            addLogs(node, logs, false);
         }
     }
 
@@ -92,23 +91,13 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      * Add the new logs to head of the cache.
      *
      * @param nodeList  A list of node objects accompanied with their new logs.
-     * @param msgFilterLevel  The filter level.
      */
-    private void addData(Hashtable nodeList, int msgFilterLevel) {
+    private void addLogs(Hashtable nodeList) {
         for (Iterator i = nodeList.keySet().iterator(); i.hasNext();) {
             String node = (String) i.next();
             Vector logs = (Vector) nodeList.get(node);
-            addData(node, logs, msgFilterLevel, true);
+            addLogs(node, logs, true);
         }
-
-        // filter the logs
-        filterData(msgFilterLevel);
-
-        // sort the logs
-        sortData(columnToSort, false);
-
-        // populate the change to the display
-        realModel.fireTableDataChanged();
     }
 
    /**
@@ -116,9 +105,8 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      *
      * @param nodeId  The Id of the node which is the source of the new logs.
      * @param newLogs  The new logs.
-     * @param msgFilterLevel  The filter level.
      */
-    private void addData(String nodeId, Vector newLogs, int msgFilterLevel, boolean front) {
+    private void addLogs(String nodeId, Vector newLogs, boolean front) {
 
         // add new logs to the cache
         if (newLogs.size() > 0) {
@@ -150,6 +138,18 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
             rawLogCache.put(nodeId, gatewayLogs);
 
         }
+    }
+
+    /**
+      * Remove the logs of the non-exist node from the cache.
+      *
+      * @param nodeId  The Id of the node whose logs will be removed from the cache.
+      */
+     private void removeLogs(String nodeId) {
+
+         if (rawLogCache.get(nodeId) != null) {
+                rawLogCache.remove(nodeId);
+         }
     }
 
     /**
@@ -376,6 +376,22 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     }
 
     /**
+     *  Remove the logs of Non-exist nodes from the cache
+     */
+    private void removeLogsOfNonExistNodes(Hashtable newNodeList) {
+        for (Iterator i = currentNodeList.keySet().iterator();  i.hasNext(); ) {
+
+            Object nodeId = i.next();
+
+            if(newNodeList.get(nodeId) == null) {
+                // the node has been removed from the cluster, delete the logs of this node from the cache
+
+                removeLogs((String) nodeId);
+            }
+        }
+    }
+
+    /**
      * Retreive logs from the cluster.
      *
      * @param msgFilterLevel  The filter level.
@@ -420,20 +436,27 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                     if (this.get() != null) {
 
                         if (newRefresh) {
+                            removeLogsOfNonExistNodes(getNewNodeList());
                             currentNodeList = getNewNodeList();
-                            addData(getNewLogs(), msgFilterLevel);
+                            addLogs(getNewLogs());
                         } else {
-                            appendData(getNewLogs(), msgFilterLevel);
+                            appendLogs(getNewLogs());
                         }
 
+                        // filter the logs
+                        filterData(msgFilterLevel);
+
+                        // sort the logs
+                        sortData(columnToSort, false);
+
+                        // populate the change to the display
+                        realModel.fireTableDataChanged();
                         logPane.updateTimeStamp();
-
-
                         logPane.updateMsgTotal();
+
                         logPane.setSelectedRow(msgNumSelected);
 
                         final Vector unfilledRequest = getUnfilledRequest();
-
 
                         // if there unfilled requests
                         if (unfilledRequest.size() > 0) {
