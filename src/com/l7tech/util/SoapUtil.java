@@ -6,16 +6,14 @@
 
 package com.l7tech.util;
 
-import com.l7tech.message.Request;
-import com.l7tech.message.Message;
-import com.l7tech.message.XmlMessage;
-import org.w3c.dom.*;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-import org.xml.sax.SAXException;
+import org.w3c.dom.NodeList;
+
 import javax.xml.soap.*;
-import java.util.List;
 import java.util.ArrayList;
-import java.io.IOException;
+import java.util.List;
 
 /**
  * @author alex
@@ -37,47 +35,21 @@ public class SoapUtil {
     public static final String SECURITY_NAMESPACE = "http://schemas.xmlsoap.org/ws/2002/12/secext";
     public static final String SECURITY_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2002/xx/secext";
 
-    public static Document getDocument(Message soapmsg) throws SAXException, IOException {
-        if ( soapmsg instanceof XmlMessage ) {
-            XmlMessage xmsg = (XmlMessage)soapmsg;
-            return xmsg.getDocument();
-        } else {
-            throw new IllegalArgumentException( "Can't find a URN in a non-XML request!" );
-        }
-    }
-
-    public static Element getEnvelope( Request request ) throws SAXException, IOException {
-        Document doc = getDocument( request );
-        Element env = doc.getDocumentElement();
-        return env;
-    }
-
     public static Element getEnvelope( Document request ) {
         Element env = request.getDocumentElement();
         return env;
-    }
-
-    public static Element getHeaderElement( Request request ) throws SAXException, IOException {
-        return getEnvelopePart( request, HEADER_EL_NAME );
     }
 
     public static Element getHeaderElement( Document request ) {
         return getEnvelopePart( request, HEADER_EL_NAME );
     }
 
-    public static Element getBodyElement( Request request ) throws SAXException, IOException {
-        return getEnvelopePart( request, BODY_EL_NAME );
-    }
 
     public static Element getBodyElement( Document request ) {
         return getEnvelopePart( request, BODY_EL_NAME );
     }
 
-    static Element getEnvelopePart( Request request, String elementName ) throws SAXException, IOException {
-        return getEnvelopePart( getDocument( request ), elementName );
-    }
-
-    static Element getEnvelopePart( Document request, String elementName ) {
+    protected static Element getEnvelopePart( Document request, String elementName ) {
         Element envelope = getEnvelope( request );
         String env;
         Node node;
