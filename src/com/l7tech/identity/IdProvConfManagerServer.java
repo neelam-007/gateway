@@ -87,6 +87,10 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
                 throw new InvalidIdProviderCfgException("This LDAP id provider config is not " +
                         "valid, the directory is not responding or the directory has no entries.");
             }
+            logger.info("Valid IPC tested.");
+        } else {
+            logger.severe("testing unsupported type");
+            throw new InvalidIdProviderCfgException("Unsupported type");
         }
     }
 
