@@ -186,7 +186,7 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         PKCS10CertificationRequest pkcs10 = new PKCS10CertificationRequest(pkcs10req);
         CertificationRequestInfo certReqInfo = pkcs10.getCertificationRequestInfo();
         String dn= certReqInfo.getSubject().toString();
-        logger.fine("Signing cert for subject DN = " + dn);
+        logger.info("Signing cert for subject DN = " + dn);
         if (pkcs10.verify() == false) {
             logger.severe("POPO verification failed for " + dn);
             throw new Exception("Verification of signature (popo) on PKCS10 request failed.");
