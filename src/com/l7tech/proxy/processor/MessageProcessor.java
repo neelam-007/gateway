@@ -261,11 +261,15 @@ public class MessageProcessor {
             log.info("POST to SSG completed with HTTP status code " + status);
 
             Header sessionStatus = postMethod.getResponseHeader(XmlRequestSecurity.SESSION_STATUS_HTTP_HEADER);
-            if (sessionStatus != null && sessionStatus.getValue().equalsIgnoreCase("invalid")) {
-                log.info("SSG response contained a sessionstatus:invalid header; will invalidate session and try again");
-                SsgSessionManager.invalidateSession(ssg);
-                throw new PolicyRetryableException();
-            }
+            if (sessionStatus != null) {
+                log.info("SSG response contained a session status header: " + sessionStatus.getName() + ": " + sessionStatus.getValue());
+                if (sessionStatus.getValue().equalsIgnoreCase("invalid")) {
+                    log.info("sessionstatus:invalid header; will invalidate session and try again");
+                    SsgSessionManager.invalidateSession(ssg);
+                    throw new PolicyRetryableException();
+                }
+            } else
+                log.info("SSG response contained no session status header");
 
             Header policyUrlHeader = postMethod.getResponseHeader("PolicyUrl");
             if (policyUrlHeader != null) {
