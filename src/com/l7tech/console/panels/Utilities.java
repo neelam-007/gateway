@@ -35,7 +35,6 @@ public class Utilities {
         // Get the largest width and height
         Dimension maxSize = new Dimension(0, 0);
         Rectangle2D textBounds = null;
-        Dimension textSize = null;
         FontMetrics metrics = labels[0].getFontMetrics(labels[0].getFont());
         Graphics g = labels[0].getGraphics();
 
@@ -76,14 +75,12 @@ public class Utilities {
         // Get the largest width and height
         Dimension maxSize = new Dimension(0, 0);
         Rectangle2D textBounds = null;
-        Dimension textSize = null;
         FontMetrics metrics =
           buttons[0].getFontMetrics(buttons[0].getFont());
         Graphics g = buttons[0].getGraphics();
 
         for (int i = 0; i < buttons.length; i++) {
             textBounds = metrics.getStringBounds(buttons[i].getText(), g);
-            Icon icon = buttons[i].getIcon();
             maxSize.width =
               Math.max(maxSize.width, (int)textBounds.getWidth());
             maxSize.height =
