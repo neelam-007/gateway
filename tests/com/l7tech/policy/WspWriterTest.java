@@ -70,7 +70,7 @@ public class WspWriterTest extends TestCase {
 
         // See what it should look like
         InputStream knownStream = cl.getResourceAsStream(SIMPLE_POLICY);
-        byte[] known = new byte[16384];
+        byte[] known = new byte[65536];
         int len = knownStream.read(known);
         String knownStr = new String(known, 0, len);
 
