@@ -12,9 +12,9 @@ import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
-import com.l7tech.proxy.util.ThreadLocalHttpClient;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpState;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.log4j.Category;
@@ -72,9 +72,10 @@ public class PolicyManagerImpl implements PolicyManager {
     public void updatePolicy(PendingRequest request, URL policyUrl)
             throws ConfigurationException, IOException, ServerCertificateUntrustedException, OperationCanceledException
     {
-        HttpClient client = ThreadLocalHttpClient.getHttpClient();
-        client.getState().setAuthenticationPreemptive(false);
-        client.getState().setCredentials(null, null, null);
+        HttpClient client = new HttpClient();
+        HttpState state = client.getState();
+        state.setAuthenticationPreemptive(false);
+        state.setCredentials(null, null, null);
         GetMethod getMethod = new GetMethod(policyUrl.toString());
         getMethod.setDoAuthentication(false);
         try {
@@ -104,13 +105,13 @@ public class PolicyManagerImpl implements PolicyManager {
                 if (!ssg.isCredentialsConfigured())
                     Managers.getCredentialManager().getCredentials(ssg);
 
-                client.getState().setAuthenticationPreemptive(true);
+                state.setAuthenticationPreemptive(true);
 
                 int attempts = 0;
                 for (;;) {
                     String username = ssg.getUsername();
                     char[] password = ssg.password();
-                    client.getState().setCredentials(null, null, new UsernamePasswordCredentials(username, new String(password)));
+                    state.setCredentials(null, null, new UsernamePasswordCredentials(username, new String(password)));
                     getMethod = new GetMethod(safeUrl.toString());
                     getMethod.setDoAuthentication(true);
                     try {
