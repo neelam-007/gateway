@@ -11,7 +11,6 @@ import com.l7tech.console.tree.policy.advice.Advice;
 import com.l7tech.console.tree.policy.advice.Advices;
 import com.l7tech.console.tree.policy.advice.PolicyValidatorAdvice;
 import com.l7tech.console.util.Registry;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
@@ -59,7 +58,7 @@ public class PolicyTreeModel extends DefaultTreeModel {
     public static PolicyTreeModel make(PublishedService service) {
         try {
             final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
-            Assertion policy = cr.resolvePolicy(EntityHeader.fromService(service));
+            Assertion policy = cr.resolvePolicy(service.getPolicyXml());
             validatePolicyTree(policy);
             PolicyTreeModel model = new PolicyTreeModel(policy);
             return model;
