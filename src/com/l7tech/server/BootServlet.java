@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.HibernatePersistenceManager;
 import com.l7tech.logging.LogManager;
 import com.l7tech.jini.Services;
 import com.l7tech.jini.export.RemoteService;
+import com.l7tech.common.BuildInfo;
 
 import javax.servlet.http.*;
 import javax.servlet.ServletException;
@@ -42,6 +43,7 @@ public class BootServlet extends HttpServlet {
             logger.log(Level.SEVERE, "ERROR IN BOOT SERVLET", e);
             throw new ServletException(e);
         }
+        logger.info( BuildInfo.getLongBuildString() );
         logger.info("Boot servlet complete.");
     }
 
