@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8" ?> 
+<definitions xmlns:http="http://schemas.xmlsoap.org/wsdl/http/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:s="http://www.w3.org/2001/XMLSchema" xmlns:s0="http://warehouse.acme.com/ws" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:tm="http://microsoft.com/wsdl/mime/textMatching/" xmlns:mime="http://schemas.xmlsoap.org/wsdl/mime/" targetNamespace="http://warehouse.acme.com/ws" xmlns="http://schemas.xmlsoap.org/wsdl/">
+	<types>
+		<s:schema elementFormDefault="qualified" targetNamespace="http://warehouse.acme.com/ws">
+			<s:element name="listProducts">
+				<s:complexType /> 
+			</s:element>
+			<s:element name="listProductsResponse">
+				<s:complexType>
+					<s:sequence>
+						<s:element minOccurs="0" maxOccurs="1" name="listProductsResult" type="s0:ArrayOfProductListHeader" /> 
+					</s:sequence>
+				</s:complexType>
+			</s:element>
+			<s:complexType name="ArrayOfProductListHeader">
+				<s:sequence>
+					<s:element minOccurs="0" maxOccurs="unbounded" name="ProductListHeader" nillable="true" type="s0:ProductListHeader" /> 
+				</s:sequence>
+			</s:complexType>
+			<s:complexType name="ProductListHeader">
+				<s:sequence>
+					<s:element minOccurs="0" maxOccurs="1" name="productName" type="s:string" /> 
+					<s:element minOccurs="1" maxOccurs="1" name="productId" type="s:long" /> 
+				</s:sequence>
+			</s:complexType>
+			<s:element name="getProductDetails">
+				<s:complexType>
+					<s:sequence>
+						<s:element minOccurs="1" maxOccurs="1" name="productid" type="s:long" /> 
+					</s:sequence>
+				</s:complexType>
+			</s:element>
+			<s:element name="getProductDetailsResponse">
+				<s:complexType>
+					<s:sequence>
+						<s:element minOccurs="0" maxOccurs="1" name="getProductDetailsResult" type="s0:ProductDetails" /> 
+					</s:sequence>
+				</s:complexType>
+			</s:element>
+			<s:complexType name="ProductDetails">
+				<s:complexContent mixed="false">
+					<s:extension base="s0:ProductListHeader">
+						<s:sequence>
+							<s:element minOccurs="0" maxOccurs="1" name="description" type="s:string" /> 
+							<s:element minOccurs="1" maxOccurs="1" name="price" type="s:float" /> 
+							<s:element minOccurs="1" maxOccurs="1" name="inStock" type="s:boolean" /> 
+						</s:sequence>
+					</s:extension>
+				</s:complexContent>
+			</s:complexType>
+			<s:element name="placeOrder">
+				<s:complexType>
+					<s:sequence>
+						<s:element minOccurs="1" maxOccurs="1" name="productid" type="s:long" /> 
+						<s:element minOccurs="1" maxOccurs="1" name="amount" type="s:long" /> 
+						<s:element minOccurs="1" maxOccurs="1" name="price" type="s:float" /> 
+						<s:element minOccurs="1" maxOccurs="1" name="accountid" type="s:long" /> 
+					</s:sequence>
+				</s:complexType>
+			</s:element>
+			<s:element name="placeOrderResponse">
+				<s:complexType>
+					<s:sequence>
+						<s:element minOccurs="1" maxOccurs="1" name="placeOrderResult" type="s:long" /> 
+					</s:sequence>
+				</s:complexType>
+			</s:element>
+			<s:element name="currentOrders">
+				<s:complexType>
+					<s:sequence>
+						<s:element minOccurs="1" maxOccurs="1" name="accountid" type="s:long" /> 
+					</s:sequence>
+				</s:complexType>
+			</s:element>
+			<s:element name="currentOrdersResponse">
+				<s:complexType>
+					<s:sequence>
+						<s:element minOccurs="0" maxOccurs="1" name="currentOrdersResult" type="s0:ArrayOfOrder" /> 
+					</s:sequence>
+				</s:complexType>
+			</s:element>
+			<s:complexType name="ArrayOfOrder">
+				<s:sequence>
+					<s:element minOccurs="0" maxOccurs="unbounded" name="Order" nillable="true" type="s0:Order" /> 
+				</s:sequence>
+			</s:complexType>
+			<s:complexType name="Order">
+				<s:sequence>
+					<s:element minOccurs="1" maxOccurs="1" name="date" type="s:dateTime" /> 
+					<s:element minOccurs="1" maxOccurs="1" name="accountId" type="s:long" /> 
+					<s:element minOccurs="1" maxOccurs="1" name="productId" type="s:long" /> 
+					<s:element minOccurs="1" maxOccurs="1" name="amount" type="s:long" /> 
+					<s:element minOccurs="1" maxOccurs="1" name="price" type="s:float" /> 
+					<s:element minOccurs="1" maxOccurs="1" name="confirmationId" type="s:long" /> 
+				</s:sequence>
+			</s:complexType>
+		</s:schema>
+	</types>
+	
+	<message name="listProductsSoapIn">
+		<part name="parameters" element="s0:listProducts" /> 
+	</message>
+	<message name="listProductsSoapOut">
+		<part name="parameters" element="s0:listProductsResponse" /> 
+	</message>
+	<message name="getProductDetailsSoapIn">
+		<part name="parameters" element="s0:getProductDetails" /> 
+	</message>
+	<message name="getProductDetailsSoapOut">
+		<part name="parameters" element="s0:getProductDetailsResponse" /> 
+	</message>
+	<message name="placeOrderSoapIn">
+		<part name="parameters" element="s0:placeOrder" /> 
+	</message>
+	<message name="placeOrderSoapOut">
+		<part name="parameters" element="s0:placeOrderResponse" /> 
+	</message>
+	<message name="currentOrdersSoapIn">
+		<part name="parameters" element="s0:currentOrders" /> 
+	</message>
+	<message name="currentOrdersSoapOut">
+		<part name="parameters" element="s0:currentOrdersResponse" /> 
+	</message>
+	
+	<portType name="WarehouseSoap">
+		<operation name="listProducts">
+			<input message="s0:listProductsSoapIn" /> 
+			<output message="s0:listProductsSoapOut" /> 
+		</operation>
+		<operation name="getProductDetails">
+			<input message="s0:getProductDetailsSoapIn" /> 
+			<output message="s0:getProductDetailsSoapOut" /> 
+		</operation>
+		<operation name="placeOrder">
+			<input message="s0:placeOrderSoapIn" /> 
+			<output message="s0:placeOrderSoapOut" /> 
+		</operation>
+		<operation name="currentOrders">
+			<input message="s0:currentOrdersSoapIn" /> 
+			<output message="s0:currentOrdersSoapOut" /> 
+		</operation>
+	</portType>
+	
+	<binding name="WarehouseSoap" type="s0:WarehouseSoap">
+		<soap:binding transport="http://schemas.xmlsoap.org/soap/http" style="document" />
+		
+		<operation name="listProducts">
+			<soap:operation soapAction="http://warehouse.acme.com/ws/listProducts" style="document" /> 
+			<input>
+				<soap:body use="literal" /> 
+			</input>
+			<output>
+				<soap:body use="literal" /> 
+			</output>
+		</operation>
+		
+		<operation name="getProductDetails">
+			<soap:operation soapAction="http://warehouse.acme.com/ws/getProductDetails" style="document" /> 
+			<input>
+				<soap:body use="literal" /> 
+			</input>
+			<output>
+				<soap:body use="literal" /> 
+			</output>
+		</operation>
+		
+		<operation name="placeOrder">
+			<soap:operation soapAction="http://warehouse.acme.com/ws/placeOrder" style="document" /> 
+			<input>
+				<soap:body use="literal" /> 
+			</input>
+			<output>
+				<soap:body use="literal" /> 
+			</output>
+		</operation>
+		
+		<operation name="currentOrders">
+			<soap:operation soapAction="http://warehouse.acme.com/ws/currentOrders" style="document" /> 
+			<input>
+				<soap:body use="literal" /> 
+			</input>
+			<output>
+				<soap:body use="literal" /> 
+			</output>
+		</operation>
+	</binding>
+	
+	<service name="Warehouse">
+		<port name="WarehouseSoap" binding="s0:WarehouseSoap">
+			<soap:address location="http://sisko/ACMEWarehouseWS/Service1.asmx" /> 
+		</port>
+	</service>
+	
+</definitions>
