@@ -137,6 +137,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
             return AssertionStatus.FAILED;
         } catch ( JMSException e ) {
             logger.log( Level.WARNING, "Caught JMSException in outbound JMS request processing", e );
+            closeBag();
             return AssertionStatus.FAILED;
         } catch ( FindException e ) {
             String msg = "Caught FindException";
@@ -154,9 +155,15 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                     ((TemporaryQueue)jmsInboundDest).delete();
                 }
             } catch ( JMSException e ) {
+                closeBag();
                 logger.log( Level.WARNING, "Caught JMSException while attempting to delete temporary queue", e );
             }
         }
+    }
+
+    private synchronized void closeBag() {
+        bag.close();
+        bag = null;
     }
 
     private Pattern quotePattern = Pattern.compile("'");
@@ -303,7 +310,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
         return routedRequestConnection;
     }
 
-    private JmsBag getJmsBag() throws FindException, JMSException, NamingException, JmsConfigException {
+    private synchronized JmsBag getJmsBag() throws FindException, JMSException, NamingException, JmsConfigException {
         if ( bag == null ) {
             bag = JmsUtil.connect( getRoutedRequestConnection(),
                                    getRoutedRequestEndpoint().getPasswordAuthentication() );
