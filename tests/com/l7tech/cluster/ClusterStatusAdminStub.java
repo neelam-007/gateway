@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.DeleteException;
 
 import java.rmi.RemoteException;
+import java.util.Calendar;
 
 /*
  * Test stub for ClusterStatusAdmin interface
@@ -90,5 +91,9 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin{
 
     public void removeStaleNode(String nodeid) throws RemoteException, DeleteException {
         throw new UnsupportedOperationException();
+    }
+
+    public java.util.Date getCurrentClusterSystemTime() throws RemoteException {
+        return Calendar.getInstance().getTime();
     }
 }
