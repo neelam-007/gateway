@@ -17,7 +17,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-import org.apache.xmlbeans.XmlException;
+//import org.apache.xmlbeans.XmlException;
 
 import javax.crypto.Cipher;
 import javax.xml.parsers.ParserConfigurationException;
@@ -820,7 +820,8 @@ public class WssProcessorImpl implements WssProcessor {
     private void processSamlSecurityToken( Element securityTokenElement, ProcessingStatusHolder context )
         throws ProcessorException, InvalidDocumentFormatException
     {
-        logger.finest("Processing saml:Assertion XML SecurityToken");
+        logger.finest("Processing saml:Assertion XML SecurityToken (IGNORING IT FOR NOW)");
+        /*
         try {
             AssertionType assertion = AssertionType.Factory.parse( securityTokenElement );
             SamlSecurityToken saml = new SamlSecurityTokenImpl(securityTokenElement, assertion);
@@ -828,6 +829,7 @@ public class WssProcessorImpl implements WssProcessor {
         } catch (XmlException e) {
             throw new InvalidDocumentFormatException("Couldn't parse SAML Assertion", e);
         }
+        */
     }
 
     private X509SecurityTokenImpl resolveCertByRef(final Element parentElement, ProcessingStatusHolder cntx) {
@@ -960,7 +962,7 @@ public class WssProcessorImpl implements WssProcessor {
         if (signingCert == null) { //try to resolve it as embedded
             signingCert = resolveEmbeddedCert(keyInfoElement);
         }
-        
+
         if (signingCert == null && dkt != null) {
             signingKey = dkt.getComputedDerivedKey();
         } else if (signingCert != null) {
