@@ -48,7 +48,7 @@ public class WsdlTest extends TestCase {
         // put tear down code here
     }
 
-    private static Reader getWsdlReader() {
+    public static Reader getWsdlReader() {
         ClassLoader cl = WsdlTest.class.getClassLoader();
         InputStream i = cl.getResourceAsStream(WSDL);
         InputStreamReader r = new InputStreamReader(i);

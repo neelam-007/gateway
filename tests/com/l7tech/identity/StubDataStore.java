@@ -2,24 +2,23 @@ package com.l7tech.identity;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.service.Wsdl;
-import com.l7tech.service.PublishedService;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
-import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.wsp.WspWriter;
+import com.l7tech.service.PublishedService;
+import com.l7tech.service.Wsdl;
+import com.l7tech.service.WsdlTest;
 
 import javax.wsdl.WSDLException;
 import java.beans.XMLDecoder;
 import java.beans.XMLEncoder;
 import java.io.*;
-import java.util.*;
 import java.net.MalformedURLException;
+import java.util.*;
 
 /**
  * The test in memory datastore with users, groups, providers etc. Used
@@ -171,15 +170,14 @@ public class StubDataStore {
 
     private void initialServices(XMLEncoder encoder, IdentityProviderConfig pc)
       throws IOException, WSDLException, MalformedURLException {
-        String path = "tests/com/l7tech/service/resources/StockQuoteService.wsdl";
-        File file = new File(path);
-        Wsdl wsdl = Wsdl.newInstance(null, new FileReader(file));
+        Wsdl wsdl = Wsdl.newInstance(null, WsdlTest.getWsdlReader());
+
         PublishedService service = new PublishedService();
         service.setName(wsdl.getDefinition().getTargetNamespace());
         StringWriter sw = new StringWriter();
         wsdl.toWriter(sw);
         service.setWsdlXml(sw.toString());
-        service.setWsdlUrl(file.toURI().toString());
+        service.setWsdlUrl("http://www.tempuri.org/service");
         service.setOid(nextObjectId());
         Assertion assertion = sampleAssertion(pc);
         ByteArrayOutputStream bo = new ByteArrayOutputStream();
