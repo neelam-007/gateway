@@ -295,7 +295,7 @@
                 <include name="jms-1.1.jar"/>
                 <include name="jnlp.jar"/>
                 <include name="jnlp-servlet.jar"/>
-                <include name="mysql-connector-java-3.0.8-stable-bin.jar"/> <!-- TODO GPL -->
+                <include name="mysql-connector-java-3.0.11-stable-bin.jar"/> <!-- TODO GPL -->
                 <include name="odmg.jar"/>
                 <include name="oswego-concurrent.jar"/>
                 <include name="postgresql.jar"/>
