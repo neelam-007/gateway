@@ -7,7 +7,9 @@
 package com.l7tech.objectmodel;
 
 import cirrus.hibernate.Session;
-import cirrus.hibernate.Transaction;
+
+import javax.transaction.UserTransaction;
+import javax.naming.InitialContext;
 
 /**
  * @author alex
@@ -17,18 +19,57 @@ public class HibernatePersistenceContext implements PersistenceContext {
         return _session;
     }
 
-    Transaction getTransaction() {
-        return _transaction;
-    }
-
     public HibernatePersistenceContext( Session session ) {
         _session = session;
     }
 
-    private Session _session;
-    private Transaction _transaction;
-
-    public void setTransaction( Transaction txn ) {
-        _transaction = txn;
+    public void commitTransaction() throws TransactionException {
+        try {
+            if ( _session != null )
+                _session.flush();
+            else
+                throw new IllegalStateException( "Can't commit when there's no session!" );
+            getUserTransaction().commit();
+        } catch ( Exception e ) {
+            throw new TransactionException( e.toString(), e );
+        } finally {
+            try {
+                if ( _session != null ) _session.close();
+            } catch ( Exception e ) {
+                throw new TransactionException( e.toString(), e );
+            }
+        }
     }
+
+    private UserTransaction getUserTransaction() throws TransactionException {
+        try {
+            return (UserTransaction)new InitialContext().lookup("java:comp/UserTransaction");
+        } catch ( Exception e ) {
+            throw new TransactionException( e.toString(), e );
+        }
+    }
+
+    public void beginTransaction() throws TransactionException {
+        try {
+            getUserTransaction().begin();
+        } catch ( Exception e ) {
+            throw new TransactionException( e.toString(), e );
+        }
+    }
+
+    public void rollbackTransaction() throws TransactionException {
+        try {
+            getUserTransaction().rollback();
+        } catch ( Exception e ) {
+            throw new TransactionException( e.toString(), e );
+        } finally {
+            try {
+                if ( _session != null ) _session.close();
+            } catch ( Exception e ) {
+                throw new TransactionException( e.toString(), e );
+            }
+        }
+    }
+
+    private Session _session;
 }
