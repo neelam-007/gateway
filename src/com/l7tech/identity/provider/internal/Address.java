@@ -1,8 +1,8 @@
 package com.l7tech.identity.provider.internal;
 
-import com.l7tech.objectmodel.StandardEntity;
+import com.l7tech.objectmodel.Entity;
 
-public interface Address extends StandardEntity {
+public interface Address extends Entity {
     String getAddress();
     String getAddress2();
     String getCity();

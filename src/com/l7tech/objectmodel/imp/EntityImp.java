@@ -3,7 +3,7 @@
  */
 package com.l7tech.objectmodel.imp;
 
-import com.l7tech.objectmodel.StandardEntity;
+import com.l7tech.objectmodel.Entity;
 import cirrus.hibernate.*;
 
 import java.io.Serializable;
@@ -11,12 +11,12 @@ import java.io.Serializable;
 /**
  * @author alex
  */
-public class StandardEntityImp implements StandardEntity, Lifecycle, Validatable {
+public class EntityImp implements Entity, Lifecycle, Validatable {
     public long getOid() { return _oid; }
 
 	public void setOid( long oid ) { _oid = oid; }
 
-    public StandardEntityImp() {
+    public EntityImp() {
     }
 
 	protected long _oid;

@@ -1,11 +1,11 @@
 package com.l7tech.identity.provider.internal;
 
 import com.l7tech.identity.provider.internal.Address;
-import com.l7tech.objectmodel.StandardEntity;
+import com.l7tech.objectmodel.Entity;
 
 import java.util.Collection;
 
-public interface User extends StandardEntity {
+public interface User extends Entity {
     String getLogin();
     String getPassword();
     String getFirstName();

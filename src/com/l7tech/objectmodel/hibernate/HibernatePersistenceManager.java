@@ -4,19 +4,23 @@ import cirrus.hibernate.*;
 
 import javax.sql.DataSource;
 import java.util.Properties;
+import java.util.List;
 import java.sql.Connection;
 import java.sql.SQLException;
+
+import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.PersistenceManager;
 
 /**
  * @author alex
  */
-public class HibernatePersistence extends PersistenceManager {
+public class HibernatePersistenceManager extends PersistenceManager {
     public static void initialize() throws SQLException {
-        HibernatePersistence me = new HibernatePersistence();
+        HibernatePersistenceManager me = new HibernatePersistenceManager();
         PersistenceManager.setInstance( me );
     }
 
-    private HibernatePersistence() throws SQLException {
+    private HibernatePersistenceManager() throws SQLException {
         Properties props = new Properties();
         // TODO: Load properties from file
 
@@ -29,14 +33,33 @@ public class HibernatePersistence extends PersistenceManager {
         }
     }
 
-    public Connection getConnection() throws SQLException {
-        Connection connection = _dataSource.getConnection();
-        _session = _sessions.openSession( connection );
-        return connection;
-    }
-
     private Session _session;
     private DataSource _dataSource;
     private Datastore _dataStore;
     private SessionFactory _sessions;
+
+    List doFind(String query, Object param, Class paramClass) {
+        return null;
+    }
+
+    List doFind(String query, Object[] params, Class[] paramClasses) {
+        return null;
+    }
+
+    Entity doLoad(Class clazz, long oid) {
+        return null;
+    }
+
+    Entity doLoadForUpdate(Class clazz, long oid) {
+        return null;
+    }
+
+    long doSave(Entity obj) {
+        return 0;
+    }
+
+    void doDelete(Entity obj) {
+    }
+
+
 }

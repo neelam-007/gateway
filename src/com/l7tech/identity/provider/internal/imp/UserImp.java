@@ -8,12 +8,12 @@ import java.util.Collection;
 import com.l7tech.identity.provider.internal.Address;
 import com.l7tech.identity.provider.internal.Organization;
 import com.l7tech.identity.provider.internal.User;
-import com.l7tech.objectmodel.imp.StandardEntityImp;
+import com.l7tech.objectmodel.imp.EntityImp;
 
 /**
  * @author alex
  */
-public class UserImp extends StandardEntityImp implements User {
+public class UserImp extends EntityImp implements User {
     public String getLogin() {
         return _login;
     }

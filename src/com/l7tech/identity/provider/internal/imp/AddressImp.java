@@ -6,12 +6,12 @@ package com.l7tech.identity.provider.internal.imp;
 import com.l7tech.identity.provider.internal.Address;
 import com.l7tech.identity.provider.internal.Country;
 import com.l7tech.identity.provider.internal.State;
-import com.l7tech.objectmodel.imp.StandardEntityImp;
+import com.l7tech.objectmodel.imp.EntityImp;
 
 /**
  * @author alex
  */
-public class AddressImp extends StandardEntityImp implements Address {
+public class AddressImp extends EntityImp implements Address {
 	public String getAddress() { return _address; }
     public String getAddress2() { return _address2; }
     public String getCity() { return _city; }
