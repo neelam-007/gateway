@@ -87,6 +87,7 @@ public class LdapConfigTemplateManager {
         for (int i = 0; i < output.length; i++) {
             LdapIdentityProviderConfig template = new LdapIdentityProviderConfig();
             template.setName(output[i].substring(0, output[i].length()-4));
+
             String fulltemplatefilename = rootPath + File.separatorChar + output[i];
             FileInputStream fis = null;
             try {
@@ -104,6 +105,7 @@ public class LdapConfigTemplateManager {
                     logger.log(Level.WARNING, "cannot slurp file " + fulltemplatefilename, e);
                 }
                 template.setSerializedProps(properties);
+                template.setTemplateName(template.getName());
                 templates.put(template.getName(), template);
                 logger.finest("added template " + template.getName());
             }
