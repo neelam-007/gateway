@@ -13,6 +13,8 @@ import javax.naming.AuthenticationException;
 import javax.naming.directory.*;
 import java.util.*;
 import java.util.logging.Level;
+import java.util.logging.Logger;
+
 
 /**
  * Layer 7 Technologies, inc.
@@ -30,6 +32,7 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
 
     public LdapUserManagerServer(IdentityProviderConfig config) {
         super(config);
+        logger = LogManager.getInstance().getSystemLogger();
     }
 
     /**
@@ -40,7 +43,7 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
      */
     public User findByPrimaryKey(String dn) throws FindException {
         if (!valid) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "invalid user manager");
+            logger.log(Level.SEVERE, "invalid user manager");
             throw new FindException("invalid manager");
         }
         try {
@@ -61,20 +64,23 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
             // tmp = extractOneAttributeValue(attributes, NAME_ATTR_NAME);
             // if (tmp != null) out.setName(tmp.toString());
             tmp = extractOneAttributeValue(attributes, PASSWD_ATTR_NAME);
-            if (tmp != null) out.setPassword(tmp.toString());
+            if (tmp != null) {
+                byte[] tmp2 = (byte[])tmp;
+                out.setPassword(new String(tmp2));
+            }
             Collection groupHeaders = findGroupMembershipsAsHeaders(out);
             out.setGroupHeaders(new HashSet(groupHeaders));
             context.close();
             return out;
         } catch (NamingException e) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
+            logger.log(Level.SEVERE, null, e);
             throw new FindException(e.getMessage(), e);
         }
     }
 
     public User findByLogin(String login) throws FindException {
         if (!valid) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "invalid user manager");
+            logger.log(Level.SEVERE, "invalid user manager");
             throw new FindException("invalid manager");
         }
         try {
@@ -94,7 +100,7 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
             } else return null;
             return findByPrimaryKey(dn);
         } catch (NamingException e) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
+            logger.log(Level.SEVERE, null, e);
             throw new FindException(e.getMessage(), e);
         }
     }
@@ -131,14 +137,14 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
         try {
             return findByPrimaryKey(header.getStrId());
         } catch (FindException e) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
+            logger.log(Level.SEVERE, null, e);
             throw new RuntimeException(e.getMessage(), e);
         }
     }
 
     public Collection findAllHeaders() throws FindException {
         if (!valid) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "invalid user manager");
+            logger.log(Level.SEVERE, "invalid user manager");
             throw new FindException("invalid manager");
         }
         Collection output = new ArrayList();
@@ -172,7 +178,7 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
         }
         catch (NamingException e)
         {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
+            logger.log(Level.SEVERE, null, e);
             throw new FindException(e.getMessage(), e);
         }
         return output;
@@ -180,7 +186,7 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
 
     public Collection findAllHeaders(int offset, int windowSize) throws FindException {
         if (!valid) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "invalid user manager");
+            logger.log(Level.SEVERE, "invalid user manager");
             throw new FindException("invalid manager");
         }
         Collection output = new ArrayList();
@@ -222,14 +228,14 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
             context.close();
         } catch (NamingException e) {
             // if nothing can be found, just trace this exception and return empty collection
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
+            logger.log(Level.SEVERE, null, e);
         }
         return output;
     }
 
     public Collection findAll() throws FindException {
         if (!valid) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "invalid user manager");
+            logger.log(Level.SEVERE, "invalid user manager");
             throw new FindException("invalid manager");
         }
         Collection headers = findAllHeaders();
@@ -244,7 +250,7 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
 
     public Collection findAll(int offset, int windowSize) throws FindException {
         if (!valid) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "invalid user manager");
+            logger.log(Level.SEVERE, "invalid user manager");
             throw new FindException("invalid manager");
         }
         Collection headers = findAllHeaders(offset, windowSize);
@@ -274,13 +280,13 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
             // Close the context when we're done
             userCtx.close();
         } catch (AuthenticationException e) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "User failed to authenticate: " + dn, e);
+            logger.log(Level.SEVERE, "User failed to authenticate: " + dn, e);
             return false;
         } catch (NamingException e) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "General naming failure for user: " + dn, e);
+            logger.log(Level.SEVERE, "General naming failure for user: " + dn, e);
             return false;
         }
-        LogManager.getInstance().getSystemLogger().info("User: "+ dn +" authenticated successfully.");
+        logger.info("User: "+ dn +" authenticated successfully.");
         return true;
     }
 
@@ -324,7 +330,7 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
             context.close();
         } catch (NamingException e) {
             // if nothing can be found, just trace this exception and return empty collection
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
+            logger.log(Level.SEVERE, null, e);
         }
         return out;
     }
@@ -336,4 +342,5 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
     private static final String LASTNAME_ATTR_NAME = "sn";
     private static final String PASSWD_ATTR_NAME = "userPassword";
     private volatile boolean valid = true;
+    private Logger logger = null;
 }
