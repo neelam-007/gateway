@@ -12,6 +12,8 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.KeyEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.FocusEvent;
 import java.awt.geom.Rectangle2D;
 
 /**
@@ -353,12 +355,29 @@ public class Utilities {
         };
     }
 
-    // Configure the specified component to run the specified action when the ESCAPE key is pressed.
-    // (as long as the component gets the keystroke, and not some other component)
+    /**
+     * Configure the specified component to run the specified action when the ESCAPE key is pressed.
+     * (as long as the component gets the keystroke, and not some other component)
+     */
     public static void runActionOnEscapeKey(JComponent comp, Action action) {
         String ACTION_MAP_KEY_ESCAPE = "ESCAPE";
         InputMap inputMap = comp.getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
         inputMap.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0, false), ACTION_MAP_KEY_ESCAPE);
         comp.getActionMap().put(ACTION_MAP_KEY_ESCAPE, action);
+    }
+
+    /**
+     * Configure the specified JTextComponent (text field or text area) to automatically do "Select All" whenever
+     * it gains keyboard focus.
+     */
+    public static void enableSelectAllOnFocus(final JTextComponent comp) {
+        comp.addFocusListener(new FocusListener() {
+            public void focusGained(FocusEvent e) {
+                comp.selectAll();
+            }
+
+            public void focusLost(FocusEvent e) {
+            }
+        });
     }
 }
