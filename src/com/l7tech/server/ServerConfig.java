@@ -42,11 +42,12 @@ public class ServerConfig {
             InitialContext ic = new InitialContext();
             _logLevel = (String)(ic.lookup( JNDI_LOG_LEVEL ));
             _serviceResolvers = (String)ic.lookup( JNDI_SERVICE_RESOLVERS );
-            _serverId = new Byte( (String)ic.lookup( JNDI_SERVER_ID ) ).byteValue();
+            String sid = (String)ic.lookup( JNDI_SERVER_ID );
+            if ( sid != null && sid.length() > 0 )
+                _serverId = new Byte( sid ).byteValue();
         } catch ( NamingException ne ) {
             LogManager.getInstance().getSystemLogger().log( Level.WARNING, ne.getMessage(), ne );
         } catch ( NumberFormatException nfe ) {
-            LogManager.getInstance().getSystemLogger().log( Level.WARNING, nfe.getMessage(), nfe );
         }
 
         if ( _serviceResolvers == null ) {
@@ -94,5 +95,5 @@ public class ServerConfig {
     protected String _serviceResolvers;
     protected String _logLevel;
 
-    protected static ServerConfig _instance;
+    private static ServerConfig _instance;
 }
