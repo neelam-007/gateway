@@ -116,10 +116,10 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
             X509Certificate caCert = SsgKeyStoreManager.getServerCert(request.getSsg());
             SecurityProcessor.Result result = verifier.processInPlace(doc);
 
-            final X509Certificate certificate = result.getCertificateChain()[0];
-            if (certificate !=null) {
-                certificate.verify(caCert.getPublicKey());
-            }
+            X509Certificate[] certificate = result.getCertificateChain();
+            if (certificate == null || certificate[0] == null) // TODO: verify that this fixes Bug 770
+                throw new ResponseValidationException("Response from gateway did not contain a certificate chain");
+            certificate[0].verify(caCert.getPublicKey());
         } catch (Exception e) {
             handleResponseThrowable(e);
         }
