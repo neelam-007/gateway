@@ -152,6 +152,9 @@ public class ServiceNode extends EntityHeaderNode {
      * @param open for nodes that can be opened, can have children
      */
     protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/services16.png";
+        if ( svc.isDisabled() )
+            return "com/l7tech/console/resources/services_disabled16.png";
+        else
+            return "com/l7tech/console/resources/services16.png";
     }
 }
