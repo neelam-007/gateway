@@ -5,6 +5,7 @@ import com.ibm.xml.dsig.XSignatureException;
 import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
+import com.l7tech.message.XmlResponse;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
@@ -52,6 +53,9 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
         this.data = data;
     }
 
+    /**
+     * despite the name of this method, i'm actually working on the response document here
+     */
     public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
         // GET THE DOCUMENT
         Document soapmsg = null;
@@ -156,6 +160,9 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
             return AssertionStatus.FALSIFIED;
         }
         logger.info("Response document signed successfully");
+
+        ((XmlResponse)response).setDocument(soapmsg);
+
         return AssertionStatus.NONE;
     }
 
