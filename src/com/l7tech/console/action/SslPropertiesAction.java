@@ -30,14 +30,14 @@ public class SslPropertiesAction extends NodeAction {
      * @return the action name
      */
     public String getName() {
-        return "SSL/TLS Properties";
+        return "SSL Properties";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "View/Edit SSL/TLS Properties";
+        return "View/Edit SSL Properties";
     }
 
     /**
@@ -66,8 +66,8 @@ public class SslPropertiesAction extends NodeAction {
 
         String s =
           (String)JOptionPane.showInputDialog(TopComponents.getInstance().getMainWindow(),
-            "Please select the SSL/TLS assertion options:\n",
-            "SSL/TLS Assertion properties",
+            "Please select an SSL assertion option:\n",
+            "SSL Assertion Properties",
             JOptionPane.PLAIN_MESSAGE,
             new ImageIcon(new SslTransportNode().getIcon()),
             options,
