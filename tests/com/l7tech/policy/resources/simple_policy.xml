@@ -4,6 +4,81 @@
   <void property="children"> 
    <object class="java.util.LinkedList"> 
     <void method="add"> 
+     <object id="AllAssertion0" class="com.l7tech.policy.assertion.composite.AllAssertion"> 
+      <void property="children"> 
+       <object class="java.util.LinkedList"> 
+        <void method="add"> 
+         <object class="com.l7tech.policy.assertion.TrueAssertion"> 
+          <void property="parent"> 
+           <object idref="AllAssertion0"/> 
+          </void> 
+         </object> 
+        </void> 
+        <void method="add"> 
+         <object id="OneOrMoreAssertion0" class="com.l7tech.policy.assertion.composite.OneOrMoreAssertion"> 
+          <void property="children"> 
+           <object class="java.util.LinkedList"> 
+            <void method="add"> 
+             <object class="com.l7tech.policy.assertion.FalseAssertion"> 
+              <void property="parent"> 
+               <object idref="OneOrMoreAssertion0"/> 
+              </void> 
+             </object> 
+            </void> 
+            <void method="add"> 
+             <object class="com.l7tech.policy.assertion.TrueAssertion"> 
+              <void property="parent"> 
+               <object idref="OneOrMoreAssertion0"/> 
+              </void> 
+             </object> 
+            </void> 
+            <void method="add"> 
+             <object class="com.l7tech.policy.assertion.FalseAssertion"> 
+              <void property="parent"> 
+               <object idref="OneOrMoreAssertion0"/> 
+              </void> 
+             </object> 
+            </void> 
+           </object> 
+          </void> 
+          <void property="parent"> 
+           <object idref="AllAssertion0"/> 
+          </void> 
+         </object> 
+        </void> 
+       </object> 
+      </void> 
+      <void property="parent"> 
+       <object idref="ExactlyOneAssertion0"/> 
+      </void> 
+     </object> 
+    </void> 
+    <void method="add"> 
+     <object id="ExactlyOneAssertion1" class="com.l7tech.policy.assertion.composite.ExactlyOneAssertion"> 
+      <void property="children"> 
+       <object class="java.util.LinkedList"> 
+        <void method="add"> 
+         <object class="com.l7tech.policy.assertion.TrueAssertion"> 
+          <void property="parent"> 
+           <object idref="ExactlyOneAssertion1"/> 
+          </void> 
+         </object> 
+        </void> 
+        <void method="add"> 
+         <object class="com.l7tech.policy.assertion.FalseAssertion"> 
+          <void property="parent"> 
+           <object idref="ExactlyOneAssertion1"/> 
+          </void> 
+         </object> 
+        </void> 
+       </object> 
+      </void> 
+      <void property="parent"> 
+       <object idref="ExactlyOneAssertion0"/> 
+      </void> 
+     </object> 
+    </void> 
+    <void method="add"> 
      <object class="com.l7tech.policy.assertion.TrueAssertion"> 
       <void property="parent"> 
        <object idref="ExactlyOneAssertion0"/> 

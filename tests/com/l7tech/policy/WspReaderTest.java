@@ -2,8 +2,7 @@ package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
-import com.l7tech.policy.assertion.FalseAssertion;
-import com.l7tech.policy.assertion.TrueAssertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -36,12 +35,12 @@ public class WspReaderTest extends TestCase {
     public void testParseWsp() throws IOException {
         InputStream wspStream = cl.getResourceAsStream(SIMPLE_POLICY);
         Assertion policy = WspReader.parse(wspStream);
+        log.info("Got back policy: " + policy);
         assertTrue(policy != null);
         assertTrue(policy instanceof ExactlyOneAssertion);
         ExactlyOneAssertion eoa = (ExactlyOneAssertion)policy;
-        assertTrue(eoa.getChildren().size() == 2);
-        assertTrue(eoa.getChildren().get(0) instanceof TrueAssertion);
-        assertTrue(eoa.getChildren().get(1) instanceof FalseAssertion);
+        assertTrue(eoa.getChildren().size() == 4);
+        assertTrue(eoa.getChildren().get(0) instanceof AllAssertion);
     }
 
     public static void main(String[] args) {
