@@ -92,27 +92,36 @@ public class SslUtils {
                                      new UsernamePasswordCredentials(username,
                                                                      new String(password)));
         PostMethod post = new PostMethod(url.toExternalForm());
-        byte[] csrBytes = csr.getEncoded();
-        ByteArrayInputStream bais = new ByteArrayInputStream(csrBytes);
-        post.setRequestBody(bais);
-        post.setRequestHeader("Content-Type", "application/pkcs10");
-        post.setRequestHeader("Content-Length", String.valueOf(csrBytes.length));
-        int result = hc.executeMethod(post);
-        log.info("Post of CSR completed with status " + result);
-        if ( result != 200 ) throw new CertificateException( "HTTP POST to certificate signer generated status " + result );
-        X509Certificate cert = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(post.getResponseBodyAsStream());
-        X500Principal certName = new X500Principal(cert.getSubjectDN().toString());
-        String certNameString = certName.getName(X500Principal.CANONICAL);
+        try {
+            byte[] csrBytes = csr.getEncoded();
+            ByteArrayInputStream bais = new ByteArrayInputStream(csrBytes);
+            post.setRequestBody(bais);
+            post.setRequestHeader("Content-Type", "application/pkcs10");
+            post.setRequestHeader("Content-Length", String.valueOf(csrBytes.length));
 
-        log.info("Got back a certificate with DN:" + certNameString);
+            int result = hc.executeMethod(post);
+            log.info("Post of CSR completed with status " + result);
+            if ( result != 200 ) throw new CertificateException( "HTTP POST to certificate signer generated status " + result );
+            X509Certificate cert = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(post.getResponseBodyAsStream());
+            post.releaseConnection();
+            post = null;
+            X500Principal certName = new X500Principal(cert.getSubjectDN().toString());
+            String certNameString = certName.getName(X500Principal.CANONICAL);
 
-        // TODO: Verify using the CA public key for this SSG.
-        if (!certNameString.equals(csrNameString))
-            throw new CertificateException("We got a certificate, but it's directory name didn't match what we asked for.");
-        if (!cert.getPublicKey().equals(csr.getPublicKey()))
-            throw new CertificateException("We got a certificate, but it certified the wrong public key.");
+            log.info("Got back a certificate with DN:" + certNameString);
 
-        log.info("Certificate appears to be OK");
-        return cert;
+            // TODO: Verify using the CA public key for this SSG.
+            log.info("FIXME: need to verify this cert using SSG's public key");
+            if (!certNameString.equals(csrNameString))
+                throw new CertificateException("We got a certificate, but it's directory name didn't match what we asked for.");
+            if (!cert.getPublicKey().equals(csr.getPublicKey()))
+                throw new CertificateException("We got a certificate, but it certified the wrong public key.");
+
+            log.info("Certificate appears to be OK");
+            return cert;
+        } finally {
+            if (post != null)
+                post.releaseConnection();
+        }
     }
 }
