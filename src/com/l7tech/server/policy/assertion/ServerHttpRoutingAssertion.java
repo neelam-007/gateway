@@ -7,25 +7,25 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.message.MimeKnob;
 import com.l7tech.common.message.TcpKnob;
-import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.mime.StashManager;
 import com.l7tech.common.security.saml.SamlAssertionGenerator;
 import com.l7tech.common.security.saml.SubjectStatement;
 import com.l7tech.common.security.xml.SignerInfo;
-import com.l7tech.common.security.xml.SecurityActor;
-import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.identity.User;
-import com.l7tech.policy.assertion.*;
-import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.HttpRoutingAssertion;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.transport.http.SslClientTrustManager;
@@ -36,7 +36,6 @@ import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.net.ssl.SSLContext;
@@ -292,7 +291,8 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 InputStream responseStream = postMethod.getResponseBodyAsStream();
                 String ctype = postMethod.getResponseHeader(MimeUtil.CONTENT_TYPE).getValue();
                 ContentTypeHeader outerContentType = ContentTypeHeader.parseValue(ctype);
-                context.getResponse().initialize(new ByteArrayStashManager(), outerContentType, responseStream); // TODO use a different StashManager?
+                final StashManager stashManager = StashManagerFactory.createStashManager();
+                context.getResponse().initialize(stashManager, outerContentType, responseStream);
             } catch (Exception e) {
                 auditor.logAndAudit(AssertionMessages.ERROR_READING_RESPONSE, null, e);
                 // here we dont return error because we already routed

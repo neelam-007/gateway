@@ -6,26 +6,26 @@
 
 package com.l7tech.server.policy.assertion;
 
+import com.l7tech.common.audit.AssertionMessages;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.message.JmsKnob;
-import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.mime.StashManager;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.transport.jms.JmsReplyType;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.server.StashManagerFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.transport.jms.*;
-import com.l7tech.common.audit.AssertionMessages;
 import org.springframework.context.ApplicationContext;
 
 import javax.jms.*;
@@ -144,7 +144,8 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                         context.getResponse().initialize(XmlUtil.stringToDocument( ((TextMessage)jmsResponse).getText() ));
                     } else if ( jmsResponse instanceof BytesMessage ) {
                         BytesMessage bmsg = (BytesMessage)jmsResponse;
-                        context.getResponse().initialize(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new BytesMessageInputStream(bmsg));
+                        final StashManager stashManager = StashManagerFactory.createStashManager();
+                        context.getResponse().initialize(stashManager, ContentTypeHeader.XML_DEFAULT, new BytesMessageInputStream(bmsg));
                     } else {
                         auditor.logAndAudit(AssertionMessages.JMS_ROUTING_UNSUPPORTED_RESPONSE_MSG_TYPE, new String[]{jmsResponse.getClass().getName()});
                         return AssertionStatus.FAILED;
