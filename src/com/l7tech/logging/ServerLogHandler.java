@@ -585,6 +585,8 @@ public class ServerLogHandler extends Handler {
     /**
      * this clears all recorded log records for a given node. it is called by
      * ClusterStatusAdmin.removeStaleNode
+     * @deprecated This method should not be used as RemoteException (OutOfMemory) is thrown in the
+     *             case when the table contains a huge numbers of records.
      */
     public static void cleanAllRecordsForNode(HibernatePersistenceContext context, String nodeid)
                                                 throws DeleteException {

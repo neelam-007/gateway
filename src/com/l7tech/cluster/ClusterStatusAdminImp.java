@@ -117,7 +117,13 @@ public class ClusterStatusAdminImp extends RemoteService implements ClusterStatu
                 context.beginTransaction();
                 ciman.deleteNode(nodeid);
                 suman.clear(nodeid);
-                ServerLogHandler.cleanAllRecordsForNode((HibernatePersistenceContext)context, nodeid);
+
+                // Bugzilla #842 - remote exception (outofmemory) is thrown by the server side in the
+                // case when SSG is trying to clean all log records of the stale node and the table contains
+                // a huge volumn of rows. For this reason, we don't clean up the log records here and rely on
+                // the housekeeping script to remove the old records periodically.
+                //ServerLogHandler.cleanAllRecordsForNode((HibernatePersistenceContext)context, nodeid);
+
                 context.commitTransaction();
             } catch (TransactionException e) {
                 logger.log(Level.WARNING, "transaction exception", e);
