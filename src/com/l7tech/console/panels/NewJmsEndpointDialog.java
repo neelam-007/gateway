@@ -213,6 +213,11 @@ public class NewJmsEndpointDialog extends JDialog {
         return nameTextField;
     }
 
+    /**
+     * Get the newly-created JMS endpoint, or null if one was not created.
+     * The new endpoint will have already been saved back to the database.
+     * @return  The new, already-saved JmsEndpoint, or null if one was not created after all.
+     */
     public JmsEndpoint getNewJmsEndpoint() {
         return newJmsEndpoint;
     }

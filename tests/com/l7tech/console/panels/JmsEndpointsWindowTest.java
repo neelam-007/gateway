@@ -9,9 +9,10 @@ package com.l7tech.console.panels;
 import javax.swing.*;
 
 /**
+ * Standalone GUI test harness for the JmsEndpointsWindow.  Runs in stub mode.
  * @author mike
  */
-public class MonitoredEndpointsWindowTest {
+public class JmsEndpointsWindowTest {
     public static void main(String[] args) {
         try {
             realMain();
@@ -26,7 +27,7 @@ public class MonitoredEndpointsWindowTest {
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         final JFrame owner = new JFrame("main");
         owner.show();
-        MonitoredEndpointsWindow w = new MonitoredEndpointsWindow(owner);
+        JmsEndpointsWindow w = new JmsEndpointsWindow(owner);
         w.show();
     }
 }

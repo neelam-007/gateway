@@ -11,7 +11,6 @@ import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.console.util.Registry;
-import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
 import java.awt.*;
@@ -78,7 +77,7 @@ public class JmsEndpointListPanel extends JPanel {
                         ListModel clm = createNewEndpointListModel();
                         getEndpointList().setModel(clm);
                         for (int i = 0; i < clm.getSize(); ++i) {
-                            EntityHeader endpoint = (EntityHeader)clm.getElementAt(i);
+                            JmsEndpoint endpoint = (JmsEndpoint)clm.getElementAt(i);
                             if (endpoint.getOid() == e.getOid()) {
                                 getEndpointList().setSelectedIndex(i);
                             }
@@ -93,6 +92,12 @@ public class JmsEndpointListPanel extends JPanel {
     private JList getEndpointList() {
         if (endpointList == null) {
             endpointList = new JList(getEndpointListModel());
+            endpointList.setCellRenderer(new DefaultListCellRenderer() {
+                public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                    String string = ((JmsEndpoint) value).getName();
+                    return super.getListCellRendererComponent(list, string, index, isSelected, cellHasFocus);
+                }
+            });
         }
         return endpointList;
     }
@@ -107,7 +112,7 @@ public class JmsEndpointListPanel extends JPanel {
     private ListModel createNewEndpointListModel() {
         JmsAdmin jmsAdmin = Registry.getDefault().getJmsManager();
         try {
-            final EntityHeader[] endpointHeaders = jmsAdmin.getEndpointHeaders( jmsConnection.getOid() );
+            final JmsEndpoint[] endpointHeaders = jmsAdmin.getEndpointsForConnection( jmsConnection.getOid() );
             endpointListModel = new AbstractListModel() {
                 public int getSize() { return endpointHeaders.length; }
                 public Object getElementAt(final int index) throws IndexOutOfBoundsException { return endpointHeaders[index]; }
@@ -118,7 +123,7 @@ public class JmsEndpointListPanel extends JPanel {
         }
     }
 
-    public EntityHeader getSelectedJmsEndpoint() {
-        return (EntityHeader)getEndpointList().getSelectedValue();
+    public JmsEndpoint getSelectedJmsEndpoint() {
+        return (JmsEndpoint)getEndpointList().getSelectedValue();
     }
 }

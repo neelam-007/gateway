@@ -22,7 +22,6 @@ import java.util.*;
 public class JmsAdminStub implements JmsAdmin {
     private Map connections;
     private Map endpoints;
-    private List monitoredEndpoints = new ArrayList();
 
     private static JmsProvider[] providers = new JmsProvider[] {
         new JmsProvider("IBM MQSeries 5.2.1", "com.ibm.jms.jndi.InitialContextFactory", "JmsQueueConnectionFactory"),
@@ -38,42 +37,17 @@ public class JmsAdminStub implements JmsAdmin {
         return providers;
     }
 
-    public synchronized EntityHeader[] findAllConnections() throws RemoteException, FindException {
+    public synchronized JmsConnection[] findAllConnections() throws RemoteException, FindException {
         Collection list = new ArrayList();
         for (Iterator i = connections.keySet().iterator(); i.hasNext();) {
             Long key = (Long) i.next();
-            list.add(((JmsConnection) connections.get(key)).toEntityHeader());
+            list.add((JmsConnection) connections.get(key));
         }
-        return (EntityHeader[]) list.toArray(new EntityHeader[] {});
+        return (JmsConnection[]) list.toArray(new JmsConnection[0]);
     }
 
     public synchronized JmsConnection findConnectionByPrimaryKey(long oid) throws RemoteException, FindException {
         return (JmsConnection) connections.get(new Long(oid));
-    }
-
-    public synchronized EntityHeader[] findAllMonitoredEndpoints() throws RemoteException, FindException {
-        Collection list = new ArrayList();
-        for (Iterator i = monitoredEndpoints.iterator(); i.hasNext();) {
-            JmsEndpoint endpoint = (JmsEndpoint) i.next();
-            list.add(endpoint.toEntityHeader());
-        }
-        return (EntityHeader[]) list.toArray(new EntityHeader[0]);
-    }
-
-    public synchronized void saveAllMonitoredEndpoints(long[] oids) throws RemoteException, FindException {
-        List foundEndpoints = new ArrayList();
-        for (int i = 0; i < oids.length; i++) {
-            long oid = oids[i];
-            JmsEndpoint endpoint = findEndpointByPrimaryKey(oid);
-            foundEndpoints.add(endpoint);
-        }
-
-        List monitoredHeaders = new ArrayList();
-        for (Iterator i = foundEndpoints.iterator(); i.hasNext();) {
-            JmsEndpoint endpoint = (JmsEndpoint) i.next();
-            monitoredHeaders.add(endpoint.toEntityHeader());
-        }
-        monitoredEndpoints = monitoredHeaders;
     }
 
     public synchronized long saveConnection(JmsConnection connection) throws RemoteException, UpdateException, SaveException, VersionException {
@@ -93,14 +67,15 @@ public class JmsAdminStub implements JmsAdmin {
         }
     }
 
-    public EntityHeader[] getEndpointHeaders( long connectionOid ) throws RemoteException, FindException {
-        List headers = new ArrayList();
+    public JmsEndpoint[] getEndpointsForConnection(long connectionOid) throws RemoteException, FindException {
+        List found = new ArrayList();
         Set keys = endpoints.keySet();
         for (Iterator i = keys.iterator(); i.hasNext();) {
             JmsEndpoint endpoint = (JmsEndpoint) endpoints.get(i.next());
-            headers.add(endpoint.toEntityHeader());
+            if (endpoint.getConnectionOid() == connectionOid)
+                found.add(endpoint);
         }
-        return (EntityHeader[]) headers.toArray(new EntityHeader[0]);
+        return (JmsEndpoint[]) found.toArray(new JmsEndpoint[0]);
     }
 
     public synchronized JmsEndpoint findEndpointByPrimaryKey(long oid) throws RemoteException, FindException {

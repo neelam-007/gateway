@@ -36,12 +36,17 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
         return (JmsProvider[])getJmsManager().findAllProviders().toArray(new JmsProvider[0]);
     }
 
-    public EntityHeader[] findAllConnections() throws RemoteException, FindException {
-        Collection headers = getJmsManager().findAllHeaders();
+    public JmsConnection[] findAllConnections() throws RemoteException, FindException {
+        Collection found = getJmsManager().findAll();
+        if ( found == null || found.size() < 1 ) return new JmsConnection[0];
 
-        if ( headers == null || headers.size() < 1 ) return new EntityHeader[0];
+        for (Iterator i = found.iterator(); i.hasNext();) {
+            EntityHeader entityHeader = (EntityHeader) i.next();
+            JmsConnection conn = getJmsManager().findConnectionByPrimaryKey( entityHeader.getOid() );
+            found.add( conn );
+        }
 
-        return (EntityHeader[])headers.toArray( new EntityHeader[0] );
+        return (JmsConnection[])found.toArray( new JmsConnection[0] );
     }
 
     public JmsConnection findConnectionByPrimaryKey( long oid ) throws RemoteException, FindException {
@@ -203,8 +208,8 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
         }
     }
 
-    public EntityHeader[] getEndpointHeaders( long connectionOid ) throws RemoteException, FindException {
-        return getJmsManager().findEndpointHeadersForConnection( connectionOid );
+    public JmsEndpoint[] getEndpointsForConnection(long connectionOid) throws RemoteException, FindException {
+        return getJmsManager().findEndpointsForConnection( connectionOid );
     }
 
     private JmsManager getJmsManager() {

@@ -66,7 +66,29 @@ public class JmsManager extends HibernateEntityManager {
         }
     }
 
-    public EntityHeader[] findEndpointHeadersForConnection( long connectionOid ) throws FindException {
+    public JmsEndpoint[] findEndpointsForConnection(long connectionOid) throws FindException {
+        StringBuffer sql = new StringBuffer( "select endpoint.oid, endpoint.name, endpoint.destinationName " );
+        sql.append( "from endpoint in class " );
+        sql.append( JmsEndpoint.class.getName() );
+        sql.append( " where endpoint.connectionOid = ?" );
+        ArrayList result = new ArrayList();
+        try {
+            List results = PersistenceManager.find( PersistenceContext.getCurrent(), sql.toString(), new Long( connectionOid ), Long.TYPE );
+            for ( Iterator i = results.iterator(); i.hasNext(); ) {
+                Object[] row = (Object[]) i.next();
+                if ( row[0] instanceof Long ) {
+                    long oid = ((Long)row[0]).longValue();
+                    result.add( findEndpointByPrimaryKey(oid) );
+                }
+            }
+
+        } catch ( SQLException e ) {
+            throw new FindException( e.toString(), e );
+        }
+        return (JmsEndpoint[])result.toArray( new JmsEndpoint[0] );
+    }
+
+    public EntityHeader[] findEndpointHeadersForConnection(long connectionOid) throws FindException {
         StringBuffer sql = new StringBuffer( "select endpoint.oid, endpoint.name, endpoint.destinationName " );
         sql.append( "from endpoint in class " );
         sql.append( JmsEndpoint.class.getName() );
@@ -88,7 +110,6 @@ public class JmsManager extends HibernateEntityManager {
         }
         return (EntityHeader[])result.toArray( new EntityHeader[0] );
     }
-
 
     private void addTransactionListener( final Object source, final boolean deleted ) throws SQLException, TransactionException {
         HibernatePersistenceContext.getCurrent().registerTransactionListener( new TransactionListener() {

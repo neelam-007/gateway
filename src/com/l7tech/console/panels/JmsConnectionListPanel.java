@@ -29,13 +29,13 @@ public class JmsConnectionListPanel extends JPanel {
     private Window owner;
 
     private static class ConnectionListItem {
-        private EntityHeader entityHeader;
+        private JmsConnection entityHeader;
 
-        ConnectionListItem(EntityHeader entityHeader) {
+        ConnectionListItem(JmsConnection entityHeader) {
             this.entityHeader = entityHeader;
         }
 
-        EntityHeader getEntityHeader() {
+        JmsConnection getEntityHeader() {
             return entityHeader;
         }
 
@@ -50,7 +50,7 @@ public class JmsConnectionListPanel extends JPanel {
     }
 
     /** @return the currently-selected JmsConnection, or null if there isn't one. */
-    public EntityHeader getSelectedJmsConnection() {
+    public JmsConnection getSelectedJmsConnection() {
         ConnectionListItem cli = (ConnectionListItem) getConnectionList().getSelectedValue();
         return cli == null ? null : cli.getEntityHeader();
     }
@@ -60,7 +60,7 @@ public class JmsConnectionListPanel extends JPanel {
          * Called when the selection changes.
          * @param selected the EntityHeader of the newly selected JmsConnection, or null if none is selected.
          */
-        void onSelected(EntityHeader selected);
+        void onSelected(JmsConnection selected);
     }
 
     /**
@@ -106,10 +106,10 @@ public class JmsConnectionListPanel extends JPanel {
     /** Create a new connection list model.  Will fetch the up-to-date list from the Gateway each time it is called. */
     private ListModel createNewConnectionListModel() {
         connectionListModel = new AbstractListModel() {
-            private EntityHeader[] connections = null;
+            private JmsConnection[] connections = null;
             private ConnectionListItem[] items = null;
 
-            private EntityHeader[] getConnections() {
+            private JmsConnection[] getConnections() {
                 if (connections == null)
                     try {
                         connections = Registry.getDefault().getJmsManager().findAllConnections();
@@ -162,7 +162,7 @@ public class JmsConnectionListPanel extends JPanel {
                     ListModel clm = createNewConnectionListModel();
                     getConnectionList().setModel(clm);
                     for (int i = 0; i < clm.getSize(); ++i) {
-                        EntityHeader entityHeader = ((ConnectionListItem) clm.getElementAt(i)).getEntityHeader();
+                        JmsConnection entityHeader = ((ConnectionListItem) clm.getElementAt(i)).getEntityHeader();
                         if (entityHeader.getOid() == c.getOid()) {
                             getConnectionList().setSelectedIndex(i);
                             break;

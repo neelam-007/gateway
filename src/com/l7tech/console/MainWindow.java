@@ -1061,7 +1061,9 @@ public class MainWindow extends JFrame {
             }
 
             public void performAction() {
-                new MonitoredEndpointsWindow(MainWindow.this).show();
+                JmsEndpointsWindow jew = new JmsEndpointsWindow(MainWindow.this);
+                Utilities.centerOnScreen(jew);
+                jew.show();
             }
         };
         manageJmsEndpointsAction.putValue(Action.NAME, atext);
