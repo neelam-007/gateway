@@ -38,7 +38,7 @@ sub fix_keystore($$) {
 	unlink "/tmp/working.p12";
 	unlink "/tmp/working.ks";
 	`cp $keystore /tmp/working.ks`;
-	`JAVA_HOME=/ssg/j2sdk1.4.2_05 $JAVA_HOME/bin/java -classpath /ssg/tomcat/webapps/ROOT/WEB-INF/classes com.l7tech.common.security.CopyKeystore /tmp/working.ks JKS /tmp/working.p12 BCPKCS12 $keypass`;
+	`JAVA_HOME=/ssg/j2sdk1.4.2_05 \$JAVA_HOME/bin/java -classpath /ssg/tomcat/webapps/ROOT/WEB-INF/classes com.l7tech.common.security.CopyKeystore /tmp/working.ks JKS /tmp/working.p12 BCPKCS12 $keypass`;
 
 	`mv $keystore $keystore.old_format`;
 	`cp /tmp/working.p12 $keystore`;
