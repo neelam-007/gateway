@@ -98,9 +98,12 @@ fi
 # -----------------------------------------------------------------------------
 # GET A HOSTNAME AND A PASSWORD
 # -----------------------------------------------------------------------------
-echo "Please provide host name"
+echo "Please provide host name [`hostname`]"
 read HOST_NAME
-# IF WE START FROM SCRATCH, GET A BRAN NEW PASSWD
+if [ -e $HOST_NAME ]; then
+    HOST_NAME=`hostname`
+fi
+# IF WE START FROM SCRATCH, GET A BRAND NEW PASSWD
 if [ $ANSWER_ROOTKEYS_CREATION = "y" ]
 then
     # GET A NEW KEYSTORE PASSWORD FROM CALLER
