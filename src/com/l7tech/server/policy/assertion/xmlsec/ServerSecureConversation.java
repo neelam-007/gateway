@@ -17,6 +17,7 @@ import com.l7tech.identity.User;
 import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * The SSG-side processing of the SecureConversation assertion.
@@ -47,6 +48,10 @@ public class ServerSecureConversation implements ServerAssertion {
             WssProcessor.SecurityToken token = tokens[i];
             if (token instanceof WssProcessor.SecurityContextToken) {
                 WssProcessor.SecurityContextToken secConTok = (WssProcessor.SecurityContextToken)token;
+                if (!secConTok.isPossessionProved()) {
+                    logger.log(Level.FINE, "Ignoring SecurityContextToken with no proof-of-possession");
+                    continue;
+                }
                 String contextId = secConTok.getContextIdentifier();
                 SecureConversationSession session = SecureConversationContextManager.getInstance().getSession(contextId);
                 if (session == null) {
