@@ -555,8 +555,10 @@ public class LogonDialog extends JDialog {
     private void importCertificate(URL surl)
             throws CertificateException, IOException, NoSuchAlgorithmException, KeyStoreException
     {
-        // TODO: Fix hardcoded SSG non-SSL port here
-        URL url = new URL("http", surl.getHost(), 8080, surl.getPath());
+        // dont assume 8080
+        int port = 80;
+        if (surl.getPort() == 8443 || surl.getPort() == 8080) port = 8080;
+        URL url = new URL("http", surl.getHost(), port, surl.getPath());
         CertificateDownloader cd = new CertificateDownloader(url,
                                                              userNameTextField.getText(),
                                                              passwordField.getPassword());
