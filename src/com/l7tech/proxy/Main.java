@@ -11,6 +11,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 
 import com.l7tech.proxy.gui.Gui;
+import com.l7tech.proxy.datamodel.Managers;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
@@ -23,43 +24,28 @@ import javax.net.ssl.TrustManager;
  * Time: 3:33:14 PM
  */
 public class Main {
+    private static ClientProxy clientProxy;
 
-    /** Hardcoded (for now) URL of SSG. */
-    private static String serverUrl = "http://localhost/cgi-bin/soapserv";
-
-    private static HttpServer httpServer;
-
-    /** Start a client proxy and run it until it's shut down. */
+    /** Start a GUI-equipped client proxy and run it until it's shut down. */
     public static void main(String[] argv) {
-        httpServer = new HttpServer();
-        SocketListener socketListener = new SocketListener();
-        socketListener.setMaxThreads(100);
-        socketListener.setMinThreads(6);
-        socketListener.setPort(5555);
-        HttpContext context = new HttpContext(httpServer, "/");
-        RequestHandler requestHandler = new RequestHandler(serverUrl);
-        context.addHandler(requestHandler);
-        httpServer.addContext(context);
+        clientProxy = new ClientProxy(Managers.getSsgManager());
 
         // Hook up the Message Viewer window
-        requestHandler.setRequestInterceptor(Gui.getInstance().getRequestInterceptor());
+        clientProxy.getRequestHandler().setRequestInterceptor(Gui.getInstance().getRequestInterceptor());
 
         try {
-            httpServer.addListener(socketListener);
-            httpServer.start();
+            clientProxy.start();
         } catch (MultiException e) {
+            Gui.errorMessage("Unable to start the Client Proxy: " + e);
             System.err.println("Unable to start httpServer");
-            e.printStackTrace();
+            e.printStackTrace(System.err);
             System.exit(2);
         }
 
         // Make sure the proxy stops when the GUI does.
         Gui.getInstance().setShutdownListener(new Gui.ShutdownListener() {
             public void guiShutdown() {
-                try {
-                    httpServer.stop();
-                } catch (InterruptedException e) {
-                }
+                clientProxy.stop();
                 System.exit(0);
             }
         });

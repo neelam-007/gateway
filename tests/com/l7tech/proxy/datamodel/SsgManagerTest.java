@@ -59,7 +59,7 @@ public class SsgManagerTest extends TestCase {
                     try {
                         Ssg ssg = smi.getSsgByName(TEST_SSGS[i].getName());
                         smi.remove(ssg);
-                    } catch (SsgManager.SsgNotFoundException e) {
+                    } catch (SsgNotFoundException e) {
                         found = false;
                     }
                 } while (found);
@@ -99,19 +99,19 @@ public class SsgManagerTest extends TestCase {
 
     /** Make sure none of our test records are present in the given SMI. */
     public void assertNoBunkysIn(final SsgManagerImpl smi) throws Exception {
-        mustThrow(SsgManager.SsgNotFoundException.class, new Testable() {
+        mustThrow(SsgNotFoundException.class, new Testable() {
             public void run() throws Exception {
                 smi.getSsgByName(SSG1.getName());
             }
         });
 
-        mustThrow(SsgManager.SsgNotFoundException.class, new Testable() {
+        mustThrow(SsgNotFoundException.class, new Testable() {
             public void run() throws Exception {
                 smi.getSsgByName(SSG2.getName());
             }
         });
 
-        mustThrow(SsgManager.SsgNotFoundException.class, new Testable() {
+        mustThrow(SsgNotFoundException.class, new Testable() {
             public void run() throws Exception {
                 smi.getSsgByName(SSG3.getName());
             }
@@ -149,12 +149,12 @@ public class SsgManagerTest extends TestCase {
         assertTrue(sm.getSsgByEndpoint(SSG2.getLocalEndpoint()) == SSG2);
 
         // Unable to find nonexistent SSGs
-        mustThrow(SsgManager.SsgNotFoundException.class, new Testable() {
+        mustThrow(SsgNotFoundException.class, new Testable() {
             public void run() throws Exception {
                 sm.getSsgByName("Bloof Blaz");
             }
         });
-        mustThrow(SsgManager.SsgNotFoundException.class, new Testable() {
+        mustThrow(SsgNotFoundException.class, new Testable() {
             public void run() throws Exception {
                 sm.getSsgByEndpoint("zasdfasdf");
             }

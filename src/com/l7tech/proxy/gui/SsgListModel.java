@@ -3,6 +3,7 @@ package com.l7tech.proxy.gui;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgManager;
+import com.l7tech.proxy.datamodel.SsgNotFoundException;
 
 import javax.swing.*;
 import java.io.IOException;
@@ -40,7 +41,7 @@ public class SsgListModel extends AbstractListModel {
             Managers.getSsgManager().remove(ssg);
             saveSsgList();
             fireContentsChanged(this, 0, getSize() + 1);
-        } catch (SsgManager.SsgNotFoundException e) {
+        } catch (SsgNotFoundException e) {
             // who cares
         }
     }

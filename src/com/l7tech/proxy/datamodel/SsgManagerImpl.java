@@ -8,13 +8,12 @@ import java.beans.XMLDecoder;
 import java.io.*;
 
 /**
- * Created by IntelliJ IDEA.
+ * Package private implementation of an SsgManager.
  * User: mike
  * Date: Jun 2, 2003
  * Time: 1:51:56 PM
- * To change this template use Options | File Templates.
  */
-public class SsgManagerImpl implements SsgManager {
+class SsgManagerImpl implements SsgManager {
     private static final Category log = Category.getInstance(SsgManagerImpl.class);
     private static final SsgManagerImpl INSTANCE = new SsgManagerImpl();
 
@@ -117,9 +116,9 @@ public class SsgManagerImpl implements SsgManager {
      *
      * @param name the name to look for (ie, "R&D Gateway")
      * @return The requested Ssg.  Never null.
-     * @throws SsgManager.SsgNotFoundException If the specified name was not found.
+     * @throws com.l7tech.proxy.datamodel.SsgNotFoundException If the specified name was not found.
      */
-    public synchronized Ssg getSsgByName(String name) throws SsgManager.SsgNotFoundException {
+    public synchronized Ssg getSsgByName(String name) throws SsgNotFoundException {
         if (!init)
             initialize();
         for (Iterator i = ssgs.iterator(); i.hasNext();) {
@@ -136,9 +135,9 @@ public class SsgManagerImpl implements SsgManager {
      *
      * @param endpoint The endpoint to look for (ie, "SSG0")
      * @return The requested Ssg.  Never null.
-     * @throws SsgManager.SsgNotFoundException If the specified endpoint was not found.
+     * @throws com.l7tech.proxy.datamodel.SsgNotFoundException If the specified endpoint was not found.
      */
-    public synchronized Ssg getSsgByEndpoint(String endpoint) throws SsgManager.SsgNotFoundException {
+    public synchronized Ssg getSsgByEndpoint(String endpoint) throws SsgNotFoundException {
         if (!init)
             initialize();
         for (Iterator i = ssgs.iterator(); i.hasNext();) {
@@ -165,9 +164,9 @@ public class SsgManagerImpl implements SsgManager {
      * Forget all about a registered Ssg.
      *
      * @param ssg The Ssg to forget about.
-     * @throws SsgManager.SsgNotFoundException If the specified Ssg was not found.
+     * @throws com.l7tech.proxy.datamodel.SsgNotFoundException If the specified Ssg was not found.
      */
-    public synchronized void remove(Ssg ssg) throws SsgManager.SsgNotFoundException {
+    public synchronized void remove(Ssg ssg) throws SsgNotFoundException {
         if (!init)
             initialize();
         if (!ssgs.remove(ssg))

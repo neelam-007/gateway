@@ -186,4 +186,12 @@ public class Gui {
 
         getFrame().show();
     }
+
+    /**
+     * Display an error message.
+     * @param msg the error message to display
+     */
+    public static void errorMessage(String msg) {
+        JOptionPane.showMessageDialog(getInstance().getFrame(), msg, "Unable to proceed", JOptionPane.ERROR_MESSAGE);;
+    }
 }

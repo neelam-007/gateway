@@ -20,6 +20,7 @@ public class SsgPropertyDialog extends PropertyDialog {
     private int gridY = 0; // Used for layout
     private JTextField fieldName;
     private JTextField fieldLocalEndpoint;
+    private JTextField fieldServerUrl;
     private JPanel generalPane;
 
     /** Create an SsgPropertyDialog ready to edit an Ssg instance. */
@@ -70,6 +71,11 @@ public class SsgPropertyDialog extends PropertyDialog {
             generalPane.add(new JLabel("Endpoint:"), gbcLabel());
             generalPane.add(fieldLocalEndpoint, gbc());
 
+            fieldServerUrl = new JTextField();
+            fieldServerUrl.setPreferredSize(new Dimension(250, 20));
+            generalPane.add(new JLabel("SSG URL:"), gbcLabel());
+            generalPane.add(fieldServerUrl, gbc());
+
             // Have a spacer eat any leftover space
             generalPane.add(new JPanel(),
                             new GridBagConstraints(0, gridY++, 1, 1, 1.0, 1.0,
@@ -87,6 +93,7 @@ public class SsgPropertyDialog extends PropertyDialog {
 
         fieldName.setText(ssg.getName());
         fieldLocalEndpoint.setText(ssg.getLocalEndpoint());
+        fieldServerUrl.setText(ssg.getServerUrl());
     }
 
     /**
@@ -97,6 +104,7 @@ public class SsgPropertyDialog extends PropertyDialog {
     protected void commitChanges() {
         ssg.setName(fieldName.getText());
         ssg.setLocalEndpoint(fieldLocalEndpoint.getText());
+        ssg.setServerUrl(fieldServerUrl.getText());
         setSsg(ssg);
     }
 }
