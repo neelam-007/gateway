@@ -173,6 +173,8 @@
             <!-- Needed for PKCS#12 keystore -->
             <fileset dir="${src.root}/lib/crypto/bc">
                 <include name="bcprov-*.jar"/>
+                <include name="jgroups-all.jar"/>
+                <include name="commons-logging.jar"/>
             </fileset>
         </copy>
 
@@ -298,14 +300,17 @@
         <war warfile="${build.dir}/${war}" webxml="${build.etc}/web.xml">
             <lib dir="${build.dir}/lib">
                 <include name="axis.jar"/>
-                <!-- This needs to go in the system classpath now because the SSL keystore is BCPKCS12 -->
-                <!-- <include name="bcprov-jdk14-124.jar"/> -->
+                <!-- These go in the system classpath now  -->
+                <!--
+                <include name="bcprov-jdk14-124.jar"/> - because the SSL keystore is BCPKCS12
+                <include name="jgroups-all.jar"/> - ClassCircularityError
+                <include name="commons-logging.jar"/> - needed by JGroups
+                -->
                 <include name="commons-collections.jar"/>
                 <include name="commons-dbcp-1.1.jar"/>
                 <include name="commons-discovery.jar"/>
                 <include name="commons-httpclient-2.0.jar"/>
                 <include name="commons-lang.jar"/>
-                <include name="commons-logging.jar"/>
                 <include name="commons-pool.jar"/>
                 <include name="dom4j.jar"/>
                 <include name="hibernate2.jar"/>
@@ -317,7 +322,6 @@
                 <include name="jta.jar"/>
                 <include name="jaxen-1.1-beta-2-l7.jar"/>
                 <include name="jaxrpc.jar"/>
-                <include name="jgroups-all.jar"/>
                 <include name="jini-core.jar"/>
                 <include name="jini-ext.jar"/>
                 <include name="jms-1.1.jar"/>
