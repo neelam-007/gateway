@@ -191,6 +191,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             policyTable.setAutoCreateColumnsFromModel(true);
             policyTable.getColumnModel().getColumn(0).setHeaderValue("Body Namespace");
             policyTable.getColumnModel().getColumn(1).setHeaderValue("SOAPAction");
+            policyTable.getTableHeader().setReorderingAllowed(false);
             JScrollPane policyTableSp = new JScrollPane(policyTable);
             policyTableSp.setPreferredSize(new Dimension(120, 120));
             pane.add(policyTableSp,

@@ -62,6 +62,7 @@ class CertificatePanel extends JPanel {
 
         certificateTable = new JTable();
         certificateTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        certificateTable.getTableHeader().setReorderingAllowed(false);
 
         tableScrollPane = new JScrollPane(certificateTable);
         certStatusLabel = new JLabel();
