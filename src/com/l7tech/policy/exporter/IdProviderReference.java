@@ -150,6 +150,7 @@ public class IdProviderReference extends ExternalReference {
             }
         }
         // 3. Otherwise => this reference if 'not verified' and will require manual resolution.
+        logger.fine("this reference cannot be established locally (" + getProviderName() + ").");
         return false;
     }
 
@@ -187,6 +188,10 @@ public class IdProviderReference extends ExternalReference {
 
     public void setProviderName(String providerName) {
         this.providerName = providerName;
+    }
+
+    public long getLocallyMatchingProviderId() {
+        return locallyMatchingProviderId;
     }
 
     private long providerId;
