@@ -13,6 +13,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 
 /**
+ * Utility methods to approximate Unix-style transactional file replacement in Java.
  *
  * User: mike
  * Date: Jul 30, 2003
