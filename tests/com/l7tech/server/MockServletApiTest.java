@@ -3,8 +3,6 @@ package com.l7tech.server;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.server.MockServletApi;
-import com.l7tech.server.SoapMessageProcessingServlet;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.service.ServiceCache;
