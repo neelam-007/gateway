@@ -33,12 +33,13 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
         try {
             DirContext context = getAnonymousContext();
             Attributes attributes = context.getAttributes(dn);
-            LdapGroup out = new LdapGroup();
-            out.setDN(dn);
+            Group out = new Group();
+            out.setName(dn);
             Object tmp = extractOneAttributeValue(attributes, DESCRIPTION_ATTR);
             if (tmp != null) out.setDescription(tmp.toString());
-            tmp = extractOneAttributeValue(attributes, NAME_ATTR_NAME);
-            if (tmp != null) out.setName(tmp.toString());
+            // this would override the dn
+            // tmp = extractOneAttributeValue(attributes, NAME_ATTR_NAME);
+            // if (tmp != null) out.setName(tmp.toString());
 
             // create a header for all "memberUid" attributes
             Attribute valuesWereLookingFor = attributes.get(GROUPOBJ_MEMBER_ATTR);
@@ -66,15 +67,15 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
     }
 
     public void delete(Group group) throws DeleteException {
-        throw new DeleteException("Not supported in LdapUserManagerServer");
+        throw new DeleteException("Not supported in LdapGroupManagerServer");
     }
 
     public long save(Group group) throws SaveException {
-        throw new SaveException("Not supported in LdapUserManagerServer");
+        throw new SaveException("Not supported in LdapGroupManagerServer");
     }
 
     public void update(Group group) throws UpdateException {
-        throw new UpdateException("Not supported in LdapUserManagerServer");
+        throw new UpdateException("Not supported in LdapGroupManagerServer");
     }
 
     public Collection findAllHeaders() throws FindException {
