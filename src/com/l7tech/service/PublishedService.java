@@ -34,7 +34,8 @@ import java.util.Map;
 public class PublishedService extends NamedEntityImp {
     public synchronized Assertion rootAssertion() throws IOException {
         String policyXml = getPolicyXml();
-        if ( policyXml == null ) {
+        if ( policyXml == null || policyXml.length() == 0 ) {
+            _log.warn( "Service " + _oid + " an invalid or empty policy_xml field.  Using null policy." );
             return FalseAssertion.getInstance();
         } else {
             if ( _rootAssertion == null ) _rootAssertion = WspReader.parse( policyXml );
@@ -222,6 +223,14 @@ public class PublishedService extends NamedEntityImp {
         setWsdlXml(objToCopy.getWsdlXml());
     }
 
+    public boolean isDisabled() {
+        return _disabled;
+    }
+
+    public void setDisabled(boolean disabled) {
+        _disabled = disabled;
+    }
+
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof PublishedService)) return false;
@@ -249,6 +258,7 @@ public class PublishedService extends NamedEntityImp {
     protected String _wsdlXml;
     protected String _soapAction;
     protected String _urn;
+    protected boolean _disabled;
 
     protected transient Category _log = Category.getInstance( getClass() );
     protected transient Wsdl _parsedWsdl;
