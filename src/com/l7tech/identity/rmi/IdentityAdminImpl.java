@@ -90,7 +90,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
         delegate.deleteUser(idProvCfgId, userId);
     }
 
-    public long saveUser(long idProvCfgId, User user) throws RemoteException, SaveException, UpdateException {
+    public String saveUser(long idProvCfgId, User user) throws RemoteException, SaveException, UpdateException {
         return delegate.saveUser(idProvCfgId, user);
     }
 
@@ -112,7 +112,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
         delegate.deleteGroup(idProvCfgId, groupId);
     }
 
-    public long saveGroup(long idProvCfgId, Group group) throws RemoteException, SaveException, UpdateException {
+    public String saveGroup(long idProvCfgId, Group group) throws RemoteException, SaveException, UpdateException {
         return delegate.saveGroup(idProvCfgId, group);
     }
 
