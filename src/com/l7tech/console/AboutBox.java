@@ -20,7 +20,7 @@ import java.util.TreeMap;
  * @version 1.2
  */
 public class AboutBox extends JDialog implements ActionListener {
-    private static final String LOGO_IMAGE = "help-panel.png";
+    private static final String LOGO_IMAGE = "splash-screen2.gif";
     /* this class classloader */
     private final ClassLoader cl = getClass().getClassLoader();
 
