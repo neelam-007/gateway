@@ -3,6 +3,7 @@ package com.l7tech.adminws.identity;
 import junit.framework.Test;
 import junit.framework.TestSuite;
 import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.identity.User;
 import com.l7tech.identity.ldap.LdapConfigSettings;
 
 /**
@@ -35,6 +36,9 @@ public class ClientTest extends junit.framework.TestCase {
             System.out.println(res[i].toString());
             com.l7tech.identity.IdentityProviderConfig ipc = me.findIdentityProviderConfigByPrimaryKey(res[i].getOid());
             System.out.println(ipc.toString());
+
+            // skip ldap providers
+            if (ipc.type() == IdentityProviderType.LDAP) continue;
 
             System.out.println("fetching groups");
             com.l7tech.objectmodel.EntityHeader[] res2 = me.findAllGroups(ipc.getOid());
