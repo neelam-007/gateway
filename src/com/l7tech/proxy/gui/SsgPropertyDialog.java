@@ -11,6 +11,8 @@ import org.apache.log4j.Category;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.DocumentEvent;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.tree.TreeModel;
 import java.awt.*;
@@ -18,6 +20,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 /**
  * Panel for editing properties of an SSG object.
@@ -28,6 +32,7 @@ import java.util.Arrays;
  */
 public class SsgPropertyDialog extends PropertyDialog {
     private static final Category log = Category.getInstance(SsgPropertyDialog.class);
+    private static final String SSG_URI = "/ssg/servlet/soap";
 
     // Model
     private Ssg ssg; // The real Ssg instance, to which changes may be committed.
@@ -47,6 +52,7 @@ public class SsgPropertyDialog extends PropertyDialog {
     private JCheckBox cbPromptForPassword;
     private JLabel fieldPassword;
     private char[] editPassword;
+    private DocumentListener serverUrlListener;
 
     //   View for Policy pane
     private JComponent policiesPane;
@@ -211,8 +217,7 @@ public class SsgPropertyDialog extends PropertyDialog {
                                                               GridBagConstraints.HORIZONTAL,
                                                               new Insets(15, 5, 0, 5), 0, 0));
 
-            fieldServerUrl = new JTextField();
-            fieldServerUrl.setPreferredSize(new Dimension(250, 20));
+            getFieldServerUrl();
             pane.add(new JLabel("SSG URL:"), new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
                                                               GridBagConstraints.EAST,
                                                               GridBagConstraints.NONE,
@@ -342,6 +347,68 @@ public class SsgPropertyDialog extends PropertyDialog {
         return generalPane;
     }
 
+    /** Get the Server URL text field. */
+    private JTextField getFieldServerUrl() {
+        if (fieldServerUrl == null) {
+            fieldServerUrl = new JTextField();
+            fieldServerUrl.setPreferredSize(new Dimension(250, 20));
+            fieldServerUrl.getDocument().addDocumentListener(getServerUrlListener());
+        }
+        return fieldServerUrl;
+    }
+
+    private DocumentListener getServerUrlListener() {
+        if (serverUrlListener == null) {
+            serverUrlListener = new DocumentListener() {
+                public void insertUpdate(DocumentEvent e) {
+                    validateData();
+                }
+
+                public void removeUpdate(DocumentEvent e) {
+                    validateData();
+                }
+
+                public void changedUpdate(DocumentEvent e) {
+                    validateData();
+                }
+            };
+        }
+        return serverUrlListener;
+    }
+
+    /** Check if the Server URL is a valid URL. */
+    private boolean checkServerUrlValid() {
+        String text = fieldServerUrl.getText().trim();
+
+        // Null URL is Ok
+        if (text.length() < 1)
+            return true;
+
+        try {
+            new URL(text);
+        } catch (MalformedURLException e) {
+            fieldServerUrl.setToolTipText(e.getMessage());
+            return false;
+        }
+        fieldServerUrl.setToolTipText(null);
+        return true;
+    }
+
+    /** Validate the data in the view, and enable the Ok button only if the data is valid. */
+    private void validateData() {
+        boolean valid = true;
+
+        if (!checkServerUrlValid())
+            valid = false;
+
+        if (valid) {
+            getFieldServerUrl().setForeground(Color.BLUE);
+            enableOk();
+        } else {
+            getFieldServerUrl().setForeground(Color.RED);
+            disableOk();
+        }
+    }
 
     /** Update the policy display panel with information from the Ssg bean. */
     private void updatePolicyPanel() {
@@ -358,7 +425,7 @@ public class SsgPropertyDialog extends PropertyDialog {
 
         fieldName.setText(ssg.getName());
         fieldLocalEndpoint.setText("http://localhost:5555/" + ssg.getLocalEndpoint());
-        fieldServerUrl.setText(ssg.getServerUrl());
+        fieldServerUrl.setText(ssg.getServerUrl() != null ? ssg.getServerUrl().toString() : "");
         fieldUsername.setText(ssg.getUsername());
         editPassword = ssg.getPassword();
         fieldPassword.setText(passwordToString(editPassword));
@@ -367,6 +434,18 @@ public class SsgPropertyDialog extends PropertyDialog {
         policyFlushRequested = false;
 
         updatePolicyPanel();
+    }
+
+    /** Get the URL from the view, fixing it up with our hardcoded URI. */
+    private String getViewServerUrl() {
+        String urlString = fieldServerUrl.getText().trim();
+        URL url = null;
+        try {
+            URL turl = new URL(urlString);
+            url = new URL(turl.getProtocol(), turl.getHost(), turl.getPort(), SSG_URI);
+        } catch (MalformedURLException e) {
+        }
+        return url == null ? "" : url.toString();
     }
 
     /**
@@ -378,7 +457,7 @@ public class SsgPropertyDialog extends PropertyDialog {
         synchronized (ssg) {
             ssg.setName(fieldName.getText());
             //ssg.setLocalEndpoint(fieldLocalEndpoint.getText());  // need to strip http://localhost:5555
-            ssg.setServerUrl(fieldServerUrl.getText());
+            ssg.setServerUrl(getViewServerUrl());
             ssg.setUsername(fieldUsername.getText());
             ssg.setPassword(editPassword);
             ssg.setPromptForUsernameAndPassword(cbPromptForPassword.isSelected());
