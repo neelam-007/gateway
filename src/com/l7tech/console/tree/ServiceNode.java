@@ -173,7 +173,19 @@ public class ServiceNode extends EntityHeaderNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return getServiceName();
+        String nodeName = getServiceName();
+        try {
+            PublishedService ps = getPublishedService();
+            if (ps != null && ps.getRoutingUri() != null) {
+                nodeName = nodeName + " [on '" + ps.getRoutingUri() + "']";
+            }
+        } catch (FindException e) {
+
+        } catch (RemoteException e) {
+
+        }
+
+        return nodeName;
     }
 
     private String getServiceName() {
