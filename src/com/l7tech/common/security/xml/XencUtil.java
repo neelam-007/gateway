@@ -258,15 +258,13 @@ public class XencUtil {
      * @throws GeneralSecurityException
      */
     public static String encryptKeyWithRsaAndPad(byte[] keyBytes, PublicKey publicKey, SecureRandom rand) throws GeneralSecurityException {
-        Cipher rsa = Cipher.getInstance("RSA", JceProvider.getAsymmetricJceProvider().getName());
+        Cipher rsa = JceProvider.getRSANoPaddingCipher();//Cipher.getInstance("RSA", JceProvider.getAsymmetricJceProvider().getName());
         rsa.init(Cipher.ENCRYPT_MODE, publicKey);
         if (!(publicKey instanceof RSAPublicKey))
             throw new KeyException("Unable to encrypt -- unsupported recipient public key type " +
                                    publicKey.getClass().getName());
 
-        // TODO find work-around for modulus_len - 11 block limit
         final int modulusLength = ((RSAPublicKey)publicKey).getModulus().toByteArray().length;
-
 
         byte[] paddedKeyBytes = XencUtil.padSymmetricKeyForRsaEncryption(keyBytes, modulusLength, rand);
         byte[] encrypted = rsa.doFinal(paddedKeyBytes);
