@@ -71,9 +71,6 @@ public class SamlHolderOfKeyAssertion extends SamlAssertion {
             expires = conditions.getNotOnOrAfter();
             if (expires == null)
                 throw new SAXException("Assertion has no NotOnOrAfter (expiry date)");
-            TimeZone expiresTz = expires.getTimeZone();
-            if (!TimeZone.getTimeZone("UTC").equals(expiresTz))
-                throw new SAXException("Assertion NotOnOrAfter date is not in UTC timezone");            
 
             SubjectConfirmationType subjectConfirmation = subject.getSubjectConfirmation();
 

@@ -6,11 +6,6 @@ import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.ssl.ClientProxyKeyManager;
 import com.l7tech.proxy.ssl.ClientProxyTrustManager;
-import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
-
-import java.util.logging.Logger;
-import java.util.logging.Level;
-
 import org.apache.commons.httpclient.Cookie;
 
 import javax.net.ssl.SSLContext;
@@ -24,17 +19,11 @@ import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
-import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
+import java.security.*;
 import java.security.cert.X509Certificate;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * In-core representation of an SSG.
@@ -99,6 +88,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private transient X509Certificate clientCert = null;
     private transient byte[] secureConversationSharedSecret = null;
     private transient String secureConversationId = null;
+    private transient Calendar secureConversationExpiryDate = null;
     private transient SamlHolderOfKeyAssertion samlHolderOfKeyAssertion = null;
 
     public int compareTo(final Object o) {
@@ -567,10 +557,26 @@ public class Ssg implements Serializable, Cloneable, Comparable {
 
     /**
      * Transient record of session unique ID URI for WS-SecureConversation session.
-     * Don't use directly; go through PendingRequest to avoid races. 
+     * Don't use directly; go through PendingRequest to avoid races.
      */
     public void secureConversationId(String secureConversationId) {
         this.secureConversationId = secureConversationId;
+    }
+
+    /**
+     * Transient record of session expiry date for WS-SecureConversation session.
+     * Don't use directly; go through PendingRequest to avoid races.
+     */
+    public Calendar secureConversationExpiryDate() {
+        return secureConversationExpiryDate;
+    }
+
+    /**
+     * Transient record of session expiry date for WS-SecureConversation session.
+     * Don't use directly; go through PendingRequest to avoid races.
+     */
+    public void secureConversationExpiryDate(Calendar secureConversationExpiryDate) {
+        this.secureConversationExpiryDate = secureConversationExpiryDate;
     }
 
     public boolean promptForUsernameAndPassword() {

@@ -20,10 +20,7 @@ import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
-import java.util.Calendar;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,6 +33,8 @@ import java.util.logging.Logger;
 public class PendingRequest {
     private static final Logger log = Logger.getLogger(PendingRequest.class.getName());
     private static final TimeZone UTC_TIME_ZONE = TimeZone.getTimeZone("UTC");
+    private static final int SAML_PREEXPIRE_SEC = 30;
+    private static final int WSSC_PREEXPIRE_SEC = 30;
 
     //private ClientProxy clientProxy;
     private final CredentialManager credentialManager = Managers.getCredentialManager();
@@ -55,6 +54,7 @@ public class PendingRequest {
     private String secureConversationId = null;
     private byte[] secureConversationSharedSecret = null;
     private SamlHolderOfKeyAssertion samlHolderOfKeyAssertion = null;
+    private Calendar secureConversationExpiryDate = null;
 
     // Policy settings, filled in by traversing policy tree
     private static class PolicySettings {
@@ -387,8 +387,35 @@ public class PendingRequest {
         secureConversationId = s.getSessionId();
         ssg.secureConversationSharedSecret(s.getSharedSecret());
         secureConversationSharedSecret = s.getSharedSecret();
+        if (s.getExpiryDate() == null) {
+            secureConversationExpiryDate = null;
+            ssg.secureConversationExpiryDate(null);
+        } else {
+            Calendar expiry = Calendar.getInstance(UTC_TIME_ZONE);
+            expiry.setTime(s.getExpiryDate());
+            secureConversationExpiryDate = expiry;
+            ssg.secureConversationExpiryDate(expiry);
+        }
         return secureConversationId;
-        // TODO support session expiry
+    }
+
+    private void checkExpiredSecureConversationSession() {
+        if (secureConversationExpiryDate != null) {
+            Calendar now = Calendar.getInstance(UTC_TIME_ZONE);
+            now.add(Calendar.SECOND, WSSC_PREEXPIRE_SEC);
+            if (!secureConversationExpiryDate.after(now)) {
+                log.log(Level.INFO, "Our WS-SecureConversation session has expired or will do so within the next " +
+                                    WSSC_PREEXPIRE_SEC + "seconds.  Will throw it away and get a new one.");
+                synchronized (ssg) {
+                    secureConversationId = null;
+                    ssg.secureConversationId(null);
+                    secureConversationSharedSecret = null;
+                    ssg.secureConversationSharedSecret(null);
+                    secureConversationExpiryDate = null;
+                    ssg.secureConversationExpiryDate(null);
+                }
+            }
+        }
     }
 
     /**
@@ -396,6 +423,7 @@ public class PendingRequest {
      * @return The secure conversation session ID for this session, or null if there isn't one.
      */
     public String getSecureConversationId() {
+        checkExpiredSecureConversationSession();
         if (secureConversationId != null)
             return secureConversationId;
         return secureConversationId = ssg.secureConversationId();
@@ -410,6 +438,7 @@ public class PendingRequest {
             throws OperationCanceledException, GeneralSecurityException, IOException, KeyStoreCorruptException,
                    ClientCertificateException, BadCredentialsException, PolicyRetryableException
     {
+        checkExpiredSecureConversationSession();
         if (secureConversationId != null)
             return secureConversationId;
         String ssgscid = ssg.secureConversationId();
@@ -432,8 +461,10 @@ public class PendingRequest {
         if (samlHolderOfKeyAssertion != null) {
             Calendar expires = samlHolderOfKeyAssertion.getExpires();
             Calendar nowUtc = Calendar.getInstance(UTC_TIME_ZONE);
+            nowUtc.add(Calendar.SECOND, SAML_PREEXPIRE_SEC);
             if (!expires.after(nowUtc)) {
-                log.log(Level.INFO, "Our SAML Holder-of-key assertion has expired.  Will throw it away and get a new one.");
+                log.log(Level.INFO, "Our SAML Holder-of-key assertion has expired or will do so within the next " +
+                                    SAML_PREEXPIRE_SEC + " seconds.  Will throw it away and get a new one.");
                 samlHolderOfKeyAssertion = null;
                 ssg.samlHolderOfKeyAssertion(null);
             }
