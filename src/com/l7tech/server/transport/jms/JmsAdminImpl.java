@@ -18,6 +18,12 @@ import com.sun.jini.start.LifeCycle;
 import net.jini.config.ConfigurationException;
 
 import javax.jms.JMSException;
+import javax.jms.ConnectionFactory;
+import javax.jms.Connection;
+import javax.jms.Session;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.sql.SQLException;
@@ -150,10 +156,69 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
         }
     }
 
-    public void testConnection(JmsConnection connection) throws RemoteException, JMSException {
-        throw new RuntimeException("Testing JMS connections is not yet implemented on this Gateway");
+    /**
+     * Test the specified JmsConnection, which may or may not exist in the database.  The Gateway will use the
+     * specified settings to open a JMS connection.  If this succeeds, the caller can assume that the settings
+     * are valid.
+     *
+     * @param connection  JmsConnection settings to test.  Might not yet have an OID.
+     * @throws RemoteException
+     * @throws JMSException if a test connection could not be established
+     * @throws NamingException if a JNDI failure occurs
+     */
+    public void testConnection(JmsConnection connection) throws RemoteException, JMSException, NamingException {
+        String icf = connection.getInitialContextFactoryClassname();
+        String url = connection.getJndiUrl();
+        String dcfUrl = connection.getDestinationFactoryUrl();
+        String qcfUrl = connection.getQueueFactoryUrl();
+        String tcfUrl = connection.getTopicFactoryUrl();
+
+        String username = connection.getUsername();
+        String password = connection.getPassword();
+
+        Properties props = new Properties();
+        props.put( Context.PROVIDER_URL, url );
+        props.put( Context.INITIAL_CONTEXT_FACTORY, icf );
+        Context ctx = new InitialContext( props );
+
+        ConnectionFactory connFactory = null;
+        Connection conn = null;
+        Session sess = null;
+
+        try {
+            String cfUrl = dcfUrl;
+            if ( cfUrl == null ) cfUrl = qcfUrl;
+            if ( cfUrl == null ) cfUrl = tcfUrl;
+
+            if ( cfUrl == null ) {
+                String msg = "The specified connection did not include at least one connection factory URL";
+                _logger.warning( msg );
+                throw new IllegalArgumentException( msg );
+            }
+
+            connFactory = (ConnectionFactory)ctx.lookup( cfUrl );
+            if ( username != null && password != null )
+                conn = connFactory.createConnection( username, password );
+            else
+                conn = connFactory.createConnection();
+
+            sess = conn.createSession( false, Session.AUTO_ACKNOWLEDGE );
+        } finally {
+            if ( sess != null ) sess.close();
+            if ( conn != null ) conn.close();
+            if ( ctx != null ) ctx.close();
+        }
     }
 
+    /**
+     * Test the specified JmsEndpoint, which may or may not exist in the database.  The JmsEndpoint's JmsConnection
+     * must already exist in the database, however.  The Gateway will use the specified settings to open a JMS
+     * connection and attempt to verify the existence of a Destination for this JmsEndpoint.
+     *
+     * @param endpoint JmsEndpoint settings to test.  Might not yet have an OID, but its connectionOid must be valid.
+     * @throws RemoteException
+     * @throws JMSException if a test connection could not be established
+     */
     public void testEndpoint(JmsEndpoint endpoint) throws RemoteException, JMSException {
         throw new RuntimeException("Testing JMS endpoints is not yet implemented on this Gateway");
     }
