@@ -2,12 +2,9 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SortedListModel;
-import com.l7tech.identity.GroupManager;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.identity.Group;
+import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
 import javax.swing.event.ListDataEvent;
@@ -194,13 +191,7 @@ class GroupUsersPanel extends JPanel {
             }
 
             private void updateGroupMembers() {
-                GroupManager gman = getGroupManager();
-                final Set memberHeaders;
-                try {
-                    memberHeaders = gman.getUserHeaders( groupPanel.getGroup().getUniqueIdentifier() );
-                } catch (FindException e) {
-                    throw new RuntimeException( "Couldn't retrieve members of group " + groupPanel.getGroup().getName(), e );
-                }
+                Set memberHeaders = groupPanel.getGroupMembers();
                 memberHeaders.clear();
                 for (int i = 0; i < listInModel.getSize(); i++) {
                     EntityHeader g = (EntityHeader) listInModel.getElementAt(i);
@@ -212,11 +203,6 @@ class GroupUsersPanel extends JPanel {
 
         return listInModel;
     }
-
-    private GroupManager getGroupManager() {
-        return Registry.getDefault().getInternalGroupManager();
-    }
-
 
     /**
      * THe panel that contains the Group Membership information
