@@ -45,6 +45,25 @@ public class X509Config implements Serializable {
         return sb.toString();
     }
 
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof X509Config)) return false;
+
+        final X509Config config = (X509Config)o;
+
+        if (sslClientCert != config.sslClientCert) return false;
+        if (wssBinarySecurityToken != config.wssBinarySecurityToken) return false;
+
+        return true;
+    }
+
+    public int hashCode() {
+        int result;
+        result = (sslClientCert ? 1 : 0);
+        result = 29 * result + (wssBinarySecurityToken ? 1 : 0);
+        return result;
+    }
+
     private boolean sslClientCert = false;
     private boolean wssBinarySecurityToken = true;
 }

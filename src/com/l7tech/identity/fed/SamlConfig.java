@@ -7,6 +7,7 @@
 package com.l7tech.identity.fed;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -152,8 +153,59 @@ public class SamlConfig implements Serializable {
             this.values = values;
         }
 
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof AttributeStatementConfig)) return false;
+
+            final AttributeStatementConfig config = (AttributeStatementConfig)o;
+
+            if (name != null ? !name.equals(config.name) : config.name != null) return false;
+            if (namespaceUri != null ? !namespaceUri.equals(config.namespaceUri) : config.namespaceUri != null) return false;
+            if (!Arrays.equals(values, config.values)) return false;
+
+            return true;
+        }
+
+        public int hashCode() {
+            int result;
+            result = (name != null ? name.hashCode() : 0);
+            result = 29 * result + (namespaceUri != null ? namespaceUri.hashCode() : 0);
+            return result;
+        }
+
         private String name;
         private String namespaceUri;
         private String[] values;
+    }
+
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof SamlConfig)) return false;
+
+        final SamlConfig config = (SamlConfig)o;
+
+        if (nameIdEmail != config.nameIdEmail) return false;
+        if (nameIdWindowsDomain != config.nameIdWindowsDomain) return false;
+        if (nameIdX509SubjectName != config.nameIdX509SubjectName) return false;
+        if (subjConfHolderOfKey != config.subjConfHolderOfKey) return false;
+        if (subjConfSenderVouches != config.subjConfSenderVouches) return false;
+        if (attributeStatementConfigs != null ? !attributeStatementConfigs.equals(config.attributeStatementConfigs) : config.attributeStatementConfigs != null) return false;
+        if (nameIdWindowsDomainName != null ? !nameIdWindowsDomainName.equals(config.nameIdWindowsDomainName) : config.nameIdWindowsDomainName != null) return false;
+        if (nameQualifier != null ? !nameQualifier.equals(config.nameQualifier) : config.nameQualifier != null) return false;
+
+        return true;
+    }
+
+    public int hashCode() {
+        int result;
+        result = (nameQualifier != null ? nameQualifier.hashCode() : 0);
+        result = 29 * result + (subjConfHolderOfKey ? 1 : 0);
+        result = 29 * result + (subjConfSenderVouches ? 1 : 0);
+        result = 29 * result + (nameIdX509SubjectName ? 1 : 0);
+        result = 29 * result + (nameIdEmail ? 1 : 0);
+        result = 29 * result + (nameIdWindowsDomain ? 1 : 0);
+        result = 29 * result + (nameIdWindowsDomainName != null ? nameIdWindowsDomainName.hashCode() : 0);
+        result = 29 * result + (attributeStatementConfigs != null ? attributeStatementConfigs.hashCode() : 0);
+        return result;
     }
 }
