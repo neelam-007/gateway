@@ -49,7 +49,7 @@ public class Services {
     public void start(String[] options) throws ConfigurationException {
         setEnvironment();
         if (options != null && options.length > 0) {
-            logger.info("initializing from " + options[0]);
+            logger.finest("initializing from " + options[0]);
         } else {
             throw new ConfigurationException("Empty or null options passed");
         }
