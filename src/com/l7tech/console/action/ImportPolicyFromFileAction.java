@@ -16,7 +16,7 @@ import java.util.logging.Logger;
  */
 public class ImportPolicyFromFileAction extends BaseAction {
     static final Logger log = Logger.getLogger(ImportPolicyFromFileAction.class.getName());
-    protected PublishedService service;
+    protected PublishedService pubService;
 
     public ImportPolicyFromFileAction() {
     }
@@ -25,7 +25,7 @@ public class ImportPolicyFromFileAction extends BaseAction {
         if (svc == null) {
             throw new IllegalArgumentException();
         }
-        this.service = svc;
+        this.pubService = svc;
     }
 
     /**
@@ -56,7 +56,7 @@ public class ImportPolicyFromFileAction extends BaseAction {
      * without explicitly asking for the AWT event thread!
      */
     public void performAction() {
-        if (service == null) {
+        if (pubService == null) {
             throw new IllegalStateException("no service specified");
         }
         // todo
