@@ -129,7 +129,7 @@ public class JDBCTestServlet extends HttpServlet {
                 PreparedStatement pstmt = conn.prepareStatement( "insert into identity_provider (oid,type,name) values (?,?,?)" );
                 pstmt.setLong( 1, oid );
                 pstmt.setLong( 2, type );
-                pstmt.setString( 3, "Identity Provider #" + oid );
+                pstmt.setString( 3, "IdentityAssertion Provider #" + oid );
 
                 int affected = pstmt.executeUpdate();
 
