@@ -188,6 +188,15 @@ public class InternalUser extends NamedEntityImp implements User {
         _userBean.setPassword( password );
     }
 
+    public int getVersion() {
+        return _userBean.getVersion();
+    }
+
+    public void setVersion(int version) {
+        _userBean.setVersion(version);
+        super.setVersion(version);
+    }
+
     /**
      * allows to set all properties from another object
      */

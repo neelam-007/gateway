@@ -85,6 +85,15 @@ public class InternalGroup extends NamedEntityImp implements Group {
         _groupBean.setProviderId( providerId );
     }
 
+    public int getVersion() {
+        return _groupBean.getVersion();
+    }
+
+    public void setVersion(int version) {
+        _groupBean.setVersion(version);
+        super.setVersion(version);
+    }
+
     public String toString() {
         return "com.l7tech.identity.Group." +
                 "\n\tName=" + _name +

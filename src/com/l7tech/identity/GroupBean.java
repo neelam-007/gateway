@@ -40,6 +40,14 @@ public class GroupBean implements Group, Serializable {
         _name = name;
     }
 
+    public int getVersion() {
+        return _version;
+    }
+
+    public void setVersion(int _version) {
+        this._version = _version;
+    }
+
     /**
      * this is not persisted, it is set at run time by the provider who creates the object
      */
@@ -58,4 +66,5 @@ public class GroupBean implements Group, Serializable {
     private String _name;
     private String _description;
     private long providerId = IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID;
+    private int _version;
 }

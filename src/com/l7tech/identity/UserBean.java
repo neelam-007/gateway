@@ -158,6 +158,14 @@ public class UserBean implements User, Serializable {
         _name = name;
     }
 
+    public int getVersion() {
+        return _version;
+    }
+
+    public void setVersion(int _version) {
+        this._version = _version;
+    }
+
     protected long _providerId;
     protected String _uniqueId;
     protected String _name;
@@ -168,4 +176,5 @@ public class UserBean implements User, Serializable {
     protected String _email;
     protected String _title;
     protected String _department;
+    protected int _version;
 }
