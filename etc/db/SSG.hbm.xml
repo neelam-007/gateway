@@ -202,7 +202,7 @@
         <property name="trustedForSsl" column="trusted_for_ssl" type="boolean"/>
         <property name="trustedForSigningClientCerts" column="trusted_for_client" type="boolean"/>
         <property name="trustedForSigningServerCerts" column="trusted_for_server" type="boolean"/>
-        <property name="trustedForSigningSamlTokens" column="trusted_for_saml" type="boolean"/>
+        <property name="trustedAsSamlIssuer" column="trusted_for_saml" type="boolean"/>
     </class>
     
     <subclass name="com.l7tech.identity.fed.FederatedIdentityProviderConfig"
