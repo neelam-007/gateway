@@ -45,6 +45,8 @@ public class EditXmlSecurityRecipientContextAction extends NodeAction {
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         dlg.show();
-        // todo, pass old value, get new value
+        if (dlg.hasAssertionChanged()) {
+            // todo, update the tree, make saveable
+        }
     }
 }

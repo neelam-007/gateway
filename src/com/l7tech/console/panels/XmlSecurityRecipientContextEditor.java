@@ -57,7 +57,7 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
     private HashMap xmlSecRecipientsFromOtherAssertions = new HashMap();
     private String locallyDefinedActor;
     private X509Certificate locallyDefinedRecipient;
-
+    private boolean assertionChanged = false;
 
     public XmlSecurityRecipientContextEditor(Frame owner, XmlSecurityAssertionBase assertion) {
         super(owner, true);
@@ -139,11 +139,13 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
                         String maybeNewActor = panel3.getCapturedValue();
                         X509Certificate maybeNewCert = panel2.getCert();
                         if (xmlSecRecipientsFromOtherAssertions.containsKey(maybeNewActor)) {
-                            JOptionPane.showMessageDialog(assignCertButton, "The actor you have chosen is " +
-                                                                            "already associated to a recipient cert.");
+                            JOptionPane.showMessageDialog(assignCertButton, "The actor value " + maybeNewActor +
+                                                                            " is already associated to a " +
+                                                                            "recipient cert.");
                         } else if (xmlSecRecipientsFromOtherAssertions.containsValue(maybeNewCert)) {
-                            JOptionPane.showMessageDialog(assignCertButton, "The cert you have chosen is " +
-                                                                            "already associated to an actor.");
+                            String dn = maybeNewCert.getSubjectDN().getName();
+                            JOptionPane.showMessageDialog(assignCertButton, "The cert " + dn +
+                                                                            " is already associated to an actor.");
                         } else {
                             locallyDefinedRecipient = maybeNewCert;
                             certSubject.setText(locallyDefinedRecipient.getSubjectDN().getName());
@@ -288,8 +290,16 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
         } else {
             assertion.setRecipientContext(XmlSecurityRecipientContext.getLocalRecipient());
         }
+        assertionChanged = true;
         // split!
         XmlSecurityRecipientContextEditor.this.dispose();
+    }
+
+    /**
+     * @return true if the assertion was changed by this dialog
+     */
+    public boolean hasAssertionChanged() {
+        return assertionChanged;
     }
 
     private void help() {
