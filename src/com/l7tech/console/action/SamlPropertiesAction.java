@@ -30,14 +30,14 @@ public class SamlPropertiesAction extends BaseAction {
      * @return the action name
      */
     public String getName() {
-        return "SAML properties";
+        return "SAML Properties";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "View/edit SAML properties";
+        return "View/Edit SAML Properties";
     }
 
     /**

@@ -32,14 +32,14 @@ public class CustomAssertionPropertiesAction extends NodeAction {
      * @return the action name
      */
     public String getName() {
-        return "Custome assertion properties";
+        return "Custome Assertion Properties";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "View/edit custom properties";
+        return "View/Edit Custom Properties";
     }
 
     /**

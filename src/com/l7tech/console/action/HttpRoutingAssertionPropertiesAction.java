@@ -41,7 +41,7 @@ public class HttpRoutingAssertionPropertiesAction extends NodeAction {
      * @return the aciton description
      */
     public String getDescription() {
-        return "View/edit routing properties";
+        return "View/Edit Routing Properties";
     }
 
     /**

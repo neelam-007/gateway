@@ -30,14 +30,14 @@ public class GroupPropertiesAction extends NodeAction {
      * @return the action name
      */
     public String getName() {
-        return "Group properties";
+        return "Group Properties";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "View/edit group properties";
+        return "View/Edit Group Properties";
     }
 
     /**

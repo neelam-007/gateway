@@ -30,14 +30,14 @@ public class UserPropertiesAction extends NodeAction {
      * @return the action name
      */
     public String getName() {
-        return "User properties";
+        return "User Properties";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "View/edit user properties";
+        return "View/Edit User Properties";
     }
 
     /**

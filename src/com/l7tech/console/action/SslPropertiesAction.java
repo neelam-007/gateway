@@ -30,14 +30,14 @@ public class SslPropertiesAction extends NodeAction {
      * @return the action name
      */
     public String getName() {
-        return "SSL/TLS properties";
+        return "SSL/TLS Properties";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "View/edit SSL/TLS properties";
+        return "View/Edit SSL/TLS Properties";
     }
 
     /**

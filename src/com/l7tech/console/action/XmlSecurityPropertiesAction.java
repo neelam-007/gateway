@@ -28,14 +28,14 @@ public class XmlSecurityPropertiesAction extends NodeAction {
      * @return the action name
      */
     public String getName() {
-        return "XML security properties";
+        return "XML Security Properties";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "View/edit XML security properties";
+        return "View/Edit XML Security Properties";
     }
 
     /**
