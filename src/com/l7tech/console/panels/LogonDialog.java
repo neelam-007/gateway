@@ -676,9 +676,7 @@ public class LogonDialog extends JDialog {
     }
 
     private void addSslHostNameVerifier(HttpURLConnection conn) {
-        // support host name verifier from both com.sun.net.ssl. and
-        // javax.net.ssl.
-        class SsgHostnameVerifier implements HostnameVerifier, com.sun.net.ssl.HostnameVerifier {
+        class SsgHostnameVerifier implements HostnameVerifier {
             public boolean verify(String host, SSLSession session) {
                 String peerHost = session.getPeerHost();
                 return verify(host, peerHost);
@@ -697,9 +695,8 @@ public class LogonDialog extends JDialog {
         final SsgHostnameVerifier hostnameVerifier = new SsgHostnameVerifier();
         if (conn instanceof HttpsURLConnection) {
             ((HttpsURLConnection)conn).setHostnameVerifier(hostnameVerifier);
-        } else if (conn instanceof com.sun.net.ssl.HttpsURLConnection) {
-            ((com.sun.net.ssl.HttpsURLConnection)conn).setHostnameVerifier(hostnameVerifier);
-        }
+        } else
+            throw new IllegalStateException("Unsupported HTTPS connection type: " + conn.getClass().getName());
     }
 
     /**
