@@ -67,7 +67,7 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
                 return;
             }
             // get the new password
-            String str_newpasswd = req.getParameter(SecureSpanConstants.HttpHeaders.HEADER_NEWPASSWD);
+            String str_newpasswd = req.getHeader(SecureSpanConstants.HttpHeaders.HEADER_NEWPASSWD);
             if (str_newpasswd == null || str_newpasswd.length() < 1) {
                 logger.warning("The request did not include a new password, returning 400.");
                 res.sendError(HttpServletResponse.SC_BAD_REQUEST, "Please provide new password in http header " +
