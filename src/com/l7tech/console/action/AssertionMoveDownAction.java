@@ -5,9 +5,6 @@ package com.l7tech.console.action;
 /**
  * The <code>AssertionMoveDownAction</code> is the action that moves
  * the assertion down in the policy assertion tree.
- * <p>
- * The developer need only subclass this abstract class and
- * define the <code>actionPerformed</code> method.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.0

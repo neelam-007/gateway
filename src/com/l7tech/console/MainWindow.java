@@ -64,7 +64,6 @@ public class MainWindow extends JFrame {
 //  private JMenuItem editMenuItem = null;
     private JMenuItem deleteMenuItem = null;
 
-    private JMenuItem aboutBoxMenuItem = null;
     private JMenuItem helpTopicsMenuItem = null;
 
     private Action refreshAction = null;
@@ -210,21 +209,6 @@ public class MainWindow extends JFrame {
         return deleteMenuItem;
     }
 
-    /**
-     * Return the aboutBoxMenuItem property value.
-     * @return JMenuItem
-     */
-    private JMenuItem getAboutBoxMenuItem() {
-        if (aboutBoxMenuItem == null) {
-            aboutBoxMenuItem = new JMenuItem();
-            aboutBoxMenuItem.setText(resapplication.getString("About_BoxMenuItem_text"));
-            int mnemonic = aboutBoxMenuItem.getText().toCharArray()[0];
-            aboutBoxMenuItem.setMnemonic(mnemonic);
-            aboutBoxMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
-        }
-        return aboutBoxMenuItem;
-    }
-
 
     /**
      * Return the helpTopicsMenuItem property value.
@@ -319,7 +303,8 @@ public class MainWindow extends JFrame {
         helpMenu = new JMenu();
         helpMenu.setText(resapplication.getString("Help"));
         helpMenu.add(getHelpTopicsMenuItem());
-        helpMenu.add(getAboutBoxMenuItem());
+        helpMenu.add(new ConsoleAction());
+        helpMenu.add(new AboutAction());
         int mnemonic = helpMenu.getText().toCharArray()[0];
         helpMenu.setMnemonic(mnemonic);
 
@@ -1024,15 +1009,6 @@ public class MainWindow extends JFrame {
     // --- Event listeners ---------------------------------------
 
     /**
-     * The about box handler.
-     *
-     * @param event  ActionEvent
-     */
-    private void aboutBoxHandler(ActionEvent event) {
-        this.showAboutBox();
-    }
-
-    /**
      * The connect handler.
      *
      * @param event  ActionEvent
@@ -1384,14 +1360,6 @@ public class MainWindow extends JFrame {
               }
           });
 
-
-        getAboutBoxMenuItem().
-          addActionListener(new ActionListener() {
-              public void actionPerformed(ActionEvent e) {
-                  aboutBoxHandler(e);
-              }
-          });
-
         // HelpTopics listener
         getHelpTopicsMenuItem().
           addActionListener(new ActionListener() {
@@ -1630,13 +1598,6 @@ public class MainWindow extends JFrame {
             Utilities.centerOnScreen(this);
     }
 
-
-    /**
-     * the "About Box"
-     */
-    public void showAboutBox() {
-        AboutBox.showDialog(this);
-    }
 
     /**
      * The "Help Topics".

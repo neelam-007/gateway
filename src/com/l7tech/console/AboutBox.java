@@ -17,7 +17,7 @@ import java.util.TreeMap;
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.2
  */
-class AboutBox extends JDialog implements ActionListener {
+public class AboutBox extends JDialog implements ActionListener {
     private static final String LOGO_IMAGE = "rooster.gif";
     /* this class classloader */
     private final ClassLoader cl = getClass().getClassLoader();
@@ -29,7 +29,7 @@ class AboutBox extends JDialog implements ActionListener {
     JLabel urlLabel = new JLabel("HomePage -- http://www.layer7-tech.com", JLabel.CENTER);
 
     JPanel infoPanel = new JPanel(new GridBagLayout());
-    String product = "SSG - Console";
+    String product = "SSG - Policy Editor";
     String version = "NA";
     ResourceThread rThread = new ResourceThread();
     JProgressBar resourceMeter = new JProgressBar();
