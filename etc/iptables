@@ -19,28 +19,39 @@ COMMIT
 :silent - [0:0]
 :portdrop - [0:0]
 [0:0] -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT 
-[0:0] -A INPUT -i ! eth1 -m state --state NEW -j ACCEPT 
-[0:0] -A INPUT -i lo -j ACCEPT 
-[0:0] -A INPUT -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG FIN,PSH,URG -j badflags 
+# allow all input on private and localhost
+[0:0] -A INPUT -i ! eth1 -m state --state NEW -j ACCEPT
+# Block ugly input tcp
+[0:0] -A INPUT -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG FIN,PSH,URG -j badflags
 [0:0] -A INPUT -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG FIN,SYN,RST,PSH,ACK,URG -j badflags 
 [0:0] -A INPUT -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG FIN,SYN,RST,ACK,URG -j badflags 
 [0:0] -A INPUT -p tcp -m tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG NONE -j badflags 
 [0:0] -A INPUT -p tcp -m tcp --tcp-flags SYN,RST SYN,RST -j badflags 
 [0:0] -A INPUT -p tcp -m tcp --tcp-flags FIN,SYN FIN,SYN -j badflags 
-[0:0] -A INPUT -p icmp -m icmp --icmp-type 0 -j ACCEPT 
+# allow good icmp
+[0:0] -A INPUT -p icmp -m icmp --icmp-type 0 -j ACCEPT
 [0:0] -A INPUT -p icmp -m icmp --icmp-type 3 -j ACCEPT 
 [0:0] -A INPUT -p icmp -m icmp --icmp-type 11 -j ACCEPT 
-[0:0] -A INPUT -p icmp -m icmp --icmp-type 8 -m limit --limit 2/sec -j ACCEPT 
-[0:0] -A INPUT -p icmp -j silent 
-[0:0] -A INPUT -i eth1 -p tcp -m tcp --dport 22 -j ACCEPT 
-[0:0] -A INPUT -i eth1 -p tcp -m tcp --dport 2124 -j ACCEPT 
+# rate limit ping
+[0:0] -A INPUT -p icmp -m icmp --icmp-type 8 -m limit --limit 2/sec -j ACCEPT
+# drop the rest
+[0:0] -A INPUT -p icmp -j silent
+[0:0] -A OUTPUT -p icmp -m state --state INVALID -j DROP
+# drop all the admin stuff on the public port by default
+[0:0] -A INPUT -i eth1 -p tcp -m tcp --dport 22 -j portdrop
+[0:0] -A INPUT -i eth1 -p tcp -m tcp --dport 2124 -j portdrop
 [0:0] -A INPUT -i eth1 -p tcp -m tcp --dport 4160 -j portdrop
 [0:0] -A INPUT -i eth1 -p tcp -m tcp --dport 3306 -j portdrop
 [0:0] -A INPUT -i eth1 -p tcp -m tcp --dport 7100 -j portdrop
+# allow in only the client software
 [0:0] -A INPUT -i eth1 -p tcp -m tcp --dport 8080 -j ACCEPT
 [0:0] -A INPUT -i eth1 -p tcp -m tcp --dport 8443 -j ACCEPT
-#[0:0] -A INPUT -i eth1 -p tcp -m tcp --dport 1:65535 -j REJECT
-[0:0] -A OUTPUT -p icmp -m state --state INVALID -j DROP 
+# optional drop all other TCP
+#[0:0] -A INPUT -i eth1 -p tcp -m tcp --dport 1:65535 -j portdrop
+# optional drop all UDP except for DNS and ntp
+#[0:0] -A INPUT -i eth1 -p udp -m udp --dport 53 -j ACCEPT
+#[0:0] -A INPUT -i eth1 -p udp -m udp --dport 123 -j ACCEPT
+#[0:0] -A INPUT -i eth1 -p tcp -m tcp --dport 1:65535 -j portdrop
 [0:0] -A portdrop -p tcp -m tcp -j REJECT --reject-with tcp-reset
 [0:0] -A silent -j DROP
 [0:0] -A badflags -m limit --limit 15/min -j LOG --log-prefix "Badflags:" 
