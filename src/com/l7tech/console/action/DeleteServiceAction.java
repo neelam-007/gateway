@@ -56,26 +56,36 @@ public class DeleteServiceAction extends BaseAction {
      * without explicitly asking for the AWT event thread!
      */
     public void performAction() {
-        boolean deleted = Actions.deleteService(node);
-        if (deleted) {
-            JTree tree =
-              (JTree)ComponentRegistry.getInstance().getComponent(ServicesTree.NAME);
-            DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-            model.removeNodeFromParent(node);
-            tree = (JTree)ComponentRegistry.
-              getInstance().getComponent(PolicyTree.NAME);
-            ServiceNode sn =  (ServiceNode)tree.getClientProperty("service.node");
-            if (sn == null) return;
+        final boolean deleted = Actions.deleteService(node);
 
-            try {
-                PublishedService svc = sn.getPublishedService();
-                // if currently edited service was deleted
-                if (node.getPublishedService().getOid() == svc.getOid()) {
-                    ComponentRegistry.getInstance().getCurrentWorkspace().clearWorkspace();
+        Runnable runnable = new Runnable() {
+            public void run() {
+                if (deleted) {
+                    JTree tree =
+                      (JTree)ComponentRegistry.getInstance().getComponent(ServicesTree.NAME);
+                    DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                    model.removeNodeFromParent(node);
+                    tree = (JTree)ComponentRegistry.
+                      getInstance().getComponent(PolicyTree.NAME);
+                    if (tree == null) return;
+
+                    ServiceNode sn =  (ServiceNode)tree.getClientProperty("service.node");
+                    if (sn == null) return;
+
+                    try {
+                        PublishedService svc = sn.getPublishedService();
+                        // if currently edited service was deleted
+                        if (node.getPublishedService().getOid() == svc.getOid()) {
+                            ComponentRegistry.getInstance().getCurrentWorkspace().clearWorkspace();
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        throw new RuntimeException(e);
+                    }
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
             }
-        }
+        };
+        SwingUtilities.invokeLater(runnable);
+
     }
 }
