@@ -7,8 +7,6 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.BuildInfo;
-import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.message.Message;
 import com.l7tech.common.message.MimeKnob;
 import com.l7tech.common.message.TcpKnob;
 import com.l7tech.common.mime.ByteArrayStashManager;
@@ -18,6 +16,7 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
@@ -103,7 +102,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         try {
             try {
                 PublishedService service = context.getService();
-                URL url = getProtectedServiceUrl(service, context.getRequest());
+                URL url = getProtectedServiceUrl(service);
 
                 HttpClient client = new HttpClient(connectionManager);
                 HostConfiguration hconf = null;
@@ -348,11 +347,11 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         return AssertionStatus.NONE;
     }
 
-    private URL getProtectedServiceUrl(PublishedService service, Message request) throws WSDLException, MalformedURLException {
+    private URL getProtectedServiceUrl(PublishedService service) throws WSDLException, MalformedURLException {
         URL url;
         String psurl = httpRoutingAssertion.getProtectedServiceUrl();
         if (psurl == null) {
-            URL wsdlUrl = service.serviceUrl(request);
+            URL wsdlUrl = service.serviceUrl();
             url = wsdlUrl;
         } else {
             url = new URL(psurl);

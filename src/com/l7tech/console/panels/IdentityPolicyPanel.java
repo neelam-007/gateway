@@ -141,7 +141,7 @@ public class IdentityPolicyPanel extends JPanel {
         defaultUrlButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 try {
-                    final URL url = service.serviceUrl(null);
+                    final URL url = service.serviceUrl();
                     if (url != null) {
                         routeToUrlField.setText(url.toString());
                     }

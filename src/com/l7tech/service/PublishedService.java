@@ -72,7 +72,7 @@ public class PublishedService extends NamedEntityImp {
     public void ping() throws IOException, WSDLException {
         InputStream is = null;
         try {
-            URL url = serviceUrl(null);
+            URL url = serviceUrl();
             is = url.openStream();
         } finally {
             if (is != null) is.close();
@@ -144,13 +144,10 @@ public class PublishedService extends NamedEntityImp {
     /**
      * Gets the SOAP {@link Port} most appropriate for the given {@link Message} from this service's WSDL.
      *
-     * @param request the {@link Message} to use to select an appropriate {@link Port}. May be null.
      * @return the {@link Port} most appropriate for the given {@link Message}. May be null.
      * @throws WSDLException if the WSDL cannot be parsed
      */
-    public synchronized Port wsdlPort(Message request) throws WSDLException {
-        // TODO: Get the right Port for this request, rather than just the first one!
-
+    public synchronized Port wsdlPort() throws WSDLException {
         if (_wsdlPort == null) {
             Port soapPort = parsedWsdl().getSoapPort();
             _wsdlPort = soapPort;
@@ -162,16 +159,14 @@ public class PublishedService extends NamedEntityImp {
     /**
      * Gets the URL of the protected service most appropriate for the given {@link com.l7tech.common.message.Message} from this service's WSDL.
      *
-     * @param request the {@link com.l7tech.common.message.Message} to use in selecting an appropriate {@link Port}. May be null.
      * @return the protected service URL. May be null.
      * @throws WSDLException         if the WSDL could not be parsed
      * @throws MalformedURLException if the protected service URL could not be parsed
      */
-    public synchronized URL serviceUrl(Message request) throws WSDLException, MalformedURLException {
-        // todo: What is the Request parameter doing here? It is also unused. em24102003
+    public synchronized URL serviceUrl() throws WSDLException, MalformedURLException {
         if (!isSoap()) return null;
         if (_serviceUrl == null) {
-            Port wsdlPort = wsdlPort(request);
+            Port wsdlPort = wsdlPort();
             if (wsdlPort == null) return null;
             URL url = parsedWsdl().getUrlFromPort(wsdlPort);
 
