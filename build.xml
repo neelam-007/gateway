@@ -40,18 +40,18 @@
         <pathelement location="src"/>
         <fileset dir="lib">
             <include name="*.jar"/>
-             <!--
-                * Issue with multiple parsers.
-                * JDK 1.4 ships it's own parses and contributes to the
-                * overall parser mess. java.beans.XmlEncoder and other
-                * classes  do not like xerces so excluded it from project
-                * classpath.
-                * It is not throughly tested to see if this breaks other things.
+            <!--
+               * Issue with multiple parsers.
+               * JDK 1.4 ships it's own parses and contributes to the
+               * overall parser mess. java.beans.XmlEncoder and other
+               * classes  do not like xerces so excluded it from project
+               * classpath.
+               * It is not throughly tested to see if this breaks other things.
 
-            fla note: xercesImpl.jar and xml-apis.jar are required by xss4j for xml-enc features.
-            <exclude name="*xerces*"/>
-            <exclude name="*xml-api*"/>
-            -->
+           fla note: xercesImpl.jar and xml-apis.jar are required by xss4j for xml-enc features.
+           <exclude name="*xerces*"/>
+           <exclude name="*xml-api*"/>
+           -->
         </fileset>
         <fileset dir="lib">
             <include name="*.zip"/>
@@ -275,14 +275,14 @@
              ** add policy tests into the com.l7tech.policy.AllTests class
             -->
             <test name="com.l7tech.policy.AllTests" haltonfailure="no"/>
-             <!--
-             ** TODO: make sure -security flag is added to the 'nightly' build/test
-             ** Tomcat config. When done enable the tests below.
-             **
-            <test name="com.l7tech.adminws.LogCLientTest" haltonfailure="no"/>
-            <test name="com.l7tech.adminws.identity.ClientTest" haltonfailure="no"/>
-            <test name="com.l7tech.adminws.service.ServiceManagerTest" haltonfailure="no"/>
-            -->
+            <!--
+            ** TODO: make sure -security flag is added to the 'nightly' build/test
+            ** Tomcat config. When done enable the tests below.
+            **
+           <test name="com.l7tech.adminws.LogCLientTest" haltonfailure="no"/>
+           <test name="com.l7tech.adminws.identity.ClientTest" haltonfailure="no"/>
+           <test name="com.l7tech.adminws.service.ServiceManagerTest" haltonfailure="no"/>
+           -->
             <!--
               ** add tests here **
               -->
@@ -327,7 +327,7 @@
         <!-- the ssg war -->
         <war warfile="${build.dir}/${war}" webxml="${build.etc}/web.xml">
             <lib dir="${build.dir}/lib"
-                 excludes="commons-logging.jar, jh.jar, kunststoff.jar, servlet.jar, catalina.jar">
+                excludes="commons-logging.jar, jh.jar, kunststoff.jar, servlet.jar, catalina.jar">
             </lib>
             <classes dir="${build.classes}"/>
 
@@ -345,13 +345,13 @@
         <!-- the client proxy jar -->
         <jar jarfile="${build.dir}/ClientProxy.jar" manifest="${src.root}/etc/ClientProxy.mf">
             <fileset dir="${build.dir}/classes">
-                <include name="com/l7tech/**" /> <!-- Well that was easy enough! -->
+                <include name="com/l7tech/**"/> <!-- Well that was easy enough! -->
             </fileset>
         </jar>
         <!-- the console jar -->
         <jar jarfile="${build.dir}/ManagementConsole.jar" manifest="${src.root}/etc/ManagementConsole.mf">
             <fileset dir="${build.dir}/classes">
-                <include name="com/l7tech/**" /> <!-- Well that was easy enough! -->
+                <include name="com/l7tech/**"/> <!-- Well that was easy enough! -->
             </fileset>
         </jar>
     </target>
@@ -401,6 +401,11 @@
                 <include name="com/l7tech/console/**/*.properties"/>
             </fileset>
 
+            <fileset dir="${src.root}/tests">
+                <include name="com/l7tech/**/*.properties"/>
+            </fileset>
+
+
             <fileset dir="${src.root}/src">
                 <include name="com/l7tech/proxy/resources/*"/>
             </fileset>
@@ -440,10 +445,10 @@
         </copy>
     </target>
 
-     <!--
-      ** token replacement target.
-      ** This should be done ONLY for non distribution builds.
-      -->
+    <!--
+     ** token replacement target.
+     ** This should be done ONLY for non distribution builds.
+     -->
     <target name="configure_properties" unless="dist.build">
 
         <!--
