@@ -6,32 +6,20 @@
 
 package com.l7tech.proxy.datamodel;
 
-import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
-import com.l7tech.common.util.CausedIOException;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.proxy.ConfigurationException;
-import com.l7tech.proxy.util.PolicyServiceClient;
-
-import java.util.logging.Logger;
-
 import com.l7tech.proxy.datamodel.exceptions.*;
-import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpState;
-import org.apache.commons.httpclient.UsernamePasswordCredentials;
-import org.apache.commons.httpclient.methods.GetMethod;
+import com.l7tech.proxy.util.PolicyServiceClient;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.net.PasswordAuthentication;
-import java.security.cert.X509Certificate;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
+import java.util.logging.Logger;
 
 /**
  * The ClientProxy's default PolicyManager.  Loads policies from the SSG on-demand
@@ -181,119 +169,5 @@ public class PolicyManagerImpl implements PolicyManager {
         }
 
         throw new ConfigurationException("Too many unsuccessful attempts; policy download therefore fails");
-    }
-
-
-    /**
-     * Notify the PolicyManager that a policy may be out-of-date.
-     * The PolicyManager should attempt to update the policy if it needs to do so.
-     * @param request The request that failed in a way suggestive that its policy may be out-of-date.
-     * @param policyUrl The URL to fetch the policy from
-     * @throws ConfigurationException if the PendingRequest did not contain enough information to construct a
-     *                                valid PolicyAttachmentKey
-     * @throws IOException if the policy could not be read from the SSG
-     * @throws com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException if an SSL handshake with the SSG could not be established due to
-     *                                             the SSG's SSL certificate being unrecognized
-     * @throws com.l7tech.proxy.datamodel.exceptions.OperationCanceledException if credentials were required, but the user canceled the logon dialog
-     * @deprecated replaced by new SOAPified policy download; see updatePolicy()
-     */
-    private void OLD_updatePolicy(PendingRequest request, URL policyUrl)
-            throws ConfigurationException, IOException, ServerCertificateUntrustedException,
-                   OperationCanceledException, HttpChallengeRequiredException
-    {
-        HttpClient client = new HttpClient();
-        HttpState state = client.getState();
-        state.setAuthenticationPreemptive(false);
-        state.setCredentials(null, null, null);
-        GetMethod getMethod = new GetMethod(policyUrl.toString());
-        getMethod.setDoAuthentication(false);
-        try {
-            log.info("Downloading new policy from " + policyUrl);
-            CurrentRequest.setPeerSsg(request.getSsg());
-            int status = client.executeMethod(getMethod);
-            CurrentRequest.setPeerSsg(null);
-
-            // fla, added - try again once after first 401
-            if (status == 401) {
-                if (request.getSsg().getTrustedGateway() != null) {
-                    throw new ConfigurationException("Only anonymous policy downloads are supported when using a Federated Gateway");
-                }
-
-                getMethod.releaseConnection();
-                // was a new url provided ?
-                Header newURLHeader = getMethod.getResponseHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER);
-                URL newUrl = policyUrl;
-                if (newURLHeader != null) {
-                    try {
-                        newUrl = new URL(newURLHeader.getValue());
-                    } catch (MalformedURLException e) {
-                        throw new ConfigurationException("Policy server sent us an invalid policy URL: " + newURLHeader.getValue());
-                    }
-                }
-                if (!newUrl.getProtocol().equalsIgnoreCase("https"))
-                    throw new ConfigurationException("Policy server sent us a 401 status with a non-https policy URL");
-
-                int newPort = newUrl.getPort();
-                if (newPort == -1)
-                    newPort = 443;
-                if ((newPort == 443 || newPort == 8443) &&
-                        (request.getSsg().getSslPort() != 443) &&
-                        (request.getSsg().getSslPort() != 8443)) {
-                    // Work-around for disco.modulator Bug #826.  If we are expecting a non-default SSL port,
-                    // but the Gateway sends us a URL using the default SSL port, replace it with our non-default.
-                    newPort = request.getSsg().getSslPort();
-                }
-                URL safeUrl = new URL("https", policyUrl.getHost(), newPort, newUrl.getFile());
-                log.info("Policy download unauthorized, trying again with credentials at " + safeUrl);
-
-                // Make sure we actually have the credentials
-                request.getCredentials();
-                state.setAuthenticationPreemptive(true);
-
-                int attempts = 0;
-                for (;;) {
-                    String username = request.getUsername();
-                    char[] password = request.getPassword();
-                    state.setCredentials(null, null, new UsernamePasswordCredentials(username, new String(password)));
-                    getMethod = new GetMethod(safeUrl.toString());
-                    getMethod.setDoAuthentication(true);
-                    try {
-                        CurrentRequest.setPeerSsg(request.getSsg());
-                        status = client.executeMethod(getMethod);
-                        CurrentRequest.setPeerSsg(null);
-                        if ((status == 401 || status == 404) && ++attempts < 10) {
-                            log.info("Got " + status + " status downloading policy; will get new credentials and try download again");
-                            request.getNewCredentials();
-                            continue;
-                        }
-                        if (status == 200)
-                            break;
-                        throw new IOException("Got back unexpected HTTP status " + status + " from the policy server");
-                    } catch (SSLHandshakeException e) {
-                        if (e.getCause() instanceof ServerCertificateUntrustedException)
-                            throw (ServerCertificateUntrustedException) e.getCause();
-                        throw e;
-                    }
-                }
-            }
-
-            Header versionHeader = getMethod.getResponseHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION);
-            if (versionHeader == null)
-                throw new ConfigurationException("The policy server failed to provide a " + SecureSpanConstants.HttpHeaders.POLICY_VERSION + " header");
-            log.info("Policy id and version: " + versionHeader.getValue());
-
-            log.info("Policy download completed with HTTP status " + status);
-            Assertion assertion = WspReader.parse(getMethod.getResponseBodyAsStream());
-            PolicyAttachmentKey pak = new PolicyAttachmentKey(request.getUri(), request.getSoapAction());
-            Policy policy = new Policy(assertion, versionHeader.getValue());
-            request.getSsg().attachPolicy(pak, policy);
-            request.getRequestInterceptor().onPolicyUpdated(request.getSsg(), pak, policy);
-            log.info("New policy saved successfully");
-        } catch (IllegalArgumentException e) {
-            throw new ConfigurationException(
-                    "Client request must have either a SOAPAction header or a valid SOAP body namespace URI");
-        } finally {
-            getMethod.releaseConnection();
-        }
     }
 }
