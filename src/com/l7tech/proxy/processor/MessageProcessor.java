@@ -188,7 +188,7 @@ public class MessageProcessor {
      */
     private String obtainResponse(PendingRequest req)
             throws ConfigurationException, IOException,
-                   PolicyRetryableException
+                   PolicyRetryableException, ServerCertificateUntrustedException
     {
         URL url = getUrl(req);
         Ssg ssg = req.getSsg();
