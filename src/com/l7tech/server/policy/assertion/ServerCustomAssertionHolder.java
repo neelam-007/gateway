@@ -91,6 +91,7 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
                     return null;
                 }
             });
+            request.setAuthenticated(true); // TODO only do this for authentication assertions
             return AssertionStatus.NONE;
         } catch (PrivilegedActionException e) {
             if (ExceptionUtils.causedBy(e.getException(), FailedLoginException.class)) {
