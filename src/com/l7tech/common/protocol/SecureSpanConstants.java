@@ -316,7 +316,7 @@ public class SecureSpanConstants {
         public static final String HEADER_KEYRES = "keyres";
 
         /**
-         * Sent by the client to the password service. This contains the value of the new password desired.
+         * Sent by the client to the password service. This contains the Base-64 encoded value of the new password.
          * Passwords can only be changed for internal accounts. A successful password change will result in
          * the service returning a 200 code. Otherwise, the calling agent should not assume the password
          * change was successful.
