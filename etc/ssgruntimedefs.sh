@@ -10,7 +10,7 @@
 
 default_java_opts="-Xmx768m -Xss1m"
 export SSG_HOME=/ssg
-JAVA_HOME=/ssg/j2sdk1.4.2_04
+JAVA_HOME=/ssg/j2sdk1.4.2_05
 TOMCAT_HOME=/ssg/tomcat/
 
 # Under cygwin?.
