@@ -79,6 +79,10 @@ public class ServiceManagerStub implements ServiceManager {
         return oid;
     }
 
+    public int getCurrentPolicyVersion(long policyId) throws FindException {
+        throw new FindException("not implemented");
+    }
+
     /**
      * updates a policy service. call this instead of save if the service
      * has an history. on the console side implementation, you can call save
