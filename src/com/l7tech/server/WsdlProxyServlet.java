@@ -1,12 +1,15 @@
 package com.l7tech.server;
 
 import com.l7tech.identity.*;
+import com.l7tech.service.PublishedService;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.ServletException;
 import javax.servlet.ServletConfig;
 import java.io.IOException;
+import java.util.Collection;
+import java.util.ArrayList;
 
 /**
  * LAYER 7 TECHNOLOGIES, INC
@@ -42,19 +45,40 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     }
 
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+        String serviceId = req.getParameter(PARAM_SERVICEOID);
+
+        // let's see if we can get credentials...
         User user = authenticateRequestBasic(req);
+
+        // NOTE: sending credentials over insecure channel is treated as an anonymous request
+        // (i dont care if you send me credentials in non secure manner, that is your problem
+        // however, i will not send sensitive information unless the channel is secure)
         if (user != null && req.isSecure()) {
-            doAuthenticated(req, res, user);
+            doAuthenticated(req, res, serviceId, user);
         } else {
-            doAnonymous(req, res);
+            doAnonymous(req, res, serviceId);
         }
     }
 
-    private void doAnonymous(HttpServletRequest req, HttpServletResponse res) {
+    private void doAnonymous(HttpServletRequest req, HttpServletResponse res, String svcId) {
         // todo
     }
 
-    private void doAuthenticated(HttpServletRequest req, HttpServletResponse res, User requestor) {
+    private void doAuthenticated(HttpServletRequest req, HttpServletResponse res, String svcId, User requestor) {
         // todo
     }
+
+    private Collection listAnonymouslyViewableServices() {
+        Collection output = new ArrayList();
+        // todo, make list for public services only
+        return output;
+    }
+
+    private Collection listAnonymouslyViewableAndProtectedServices(User requestor) {
+        Collection output = new ArrayList(listAnonymouslyViewableServices());
+        // todo, add "protected" services
+        return output;
+    }
+
+    private static final String PARAM_SERVICEOID = "serviceoid";
 }
