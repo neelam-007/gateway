@@ -19,6 +19,8 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 
 import javax.crypto.SecretKey;
 
+import x0Assertion.oasisNamesTcSAML1.AssertionType;
+
 /**
  * Consumes and removes the default Security header in a message, removes any associated decorations, and returns a
  * complete record of its activities.
@@ -33,7 +35,8 @@ public interface WssProcessor {
     public interface SecurityToken extends ParsedElement {
         /**
          * Get the object format for this Security Token if applicable. Possible types
-         * are LoginCredentials for UsernameToken or X509Certificate for BinarySecurityToken
+         * are LoginCredentials for UsernameToken, X509Certificate for BinarySecurityToken
+         * or AssertionType for SamlSecurityToken.
          */
         Object asObject();
     }
@@ -46,6 +49,12 @@ public interface WssProcessor {
         X509Certificate asX509Certificate();
         boolean isPossessionProved();
         Element[] getElementsSignedWithThisCert(); // TODO remove this expensive method if it remains unneeded
+    }
+
+    public interface XmlSecurityToken extends SecurityToken {
+    }
+
+    public interface SamlSecurityToken extends XmlSecurityToken {
     }
 
     public interface SecurityContextToken extends SecurityToken {
