@@ -69,7 +69,7 @@ public abstract class IdentityAssertion extends Assertion {
                     if ( getIdentityProvider().authenticate( pc ) ) {
                         // Authentication succeeded
                         request.setAuthenticated(true);
-                        LogManager.getInstance().getSystemLogger().log(Level.FINER, "Authenticated " + user.getLogin() );
+                        LogManager.getInstance().getSystemLogger().log(Level.FINEST, "Authenticated " + user.getLogin() );
                         // Make sure this guy matches our criteria
                         status = doCheckUser( user );
                     } else {
@@ -85,7 +85,7 @@ public abstract class IdentityAssertion extends Assertion {
 
             }
 
-            if ( status == AssertionStatus.AUTH_FAILED ) response.setAuthenticationMissing( true );
+            // if ( status == AssertionStatus.AUTH_FAILED ) response.setAuthenticationMissing( true );
 
             return status;
         }
