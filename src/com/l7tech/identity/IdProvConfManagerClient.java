@@ -22,7 +22,7 @@ import java.rmi.RemoteException;
 public class IdProvConfManagerClient implements GlobalIdProviderConfManager {
 
     public IdentityProvider getInternalIdentityProvider() {
-        InternalIdentityProviderImp internalProvider = new InternalIdentityProviderImp();
+        InternalIdentityProviderClient internalProvider = new InternalIdentityProviderClient();
         IdentityProviderConfig cfg = new IdentityProviderConfig(IdentityProviderType.INTERNAL);
         cfg.setOid(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID);
         internalProvider.initialize(cfg);
