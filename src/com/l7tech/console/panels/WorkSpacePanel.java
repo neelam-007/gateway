@@ -43,7 +43,7 @@ public class WorkSpacePanel extends JPanel {
     }
 
     /**
-     * Remove the active component that the work bench.
+     * Remove the active component that the workspace.
      * The {@link JComponent#getName() } sets the tab name.
      */
     public void clearWorskpace() {
@@ -68,19 +68,19 @@ public class WorkSpacePanel extends JPanel {
     private void initializePropertiesListener() {
         // look and feel listener
         PropertyChangeListener l =
-                new PropertyChangeListener() {
-                    /** This method gets called when a property is changed.*/
-                    public void propertyChange(final PropertyChangeEvent evt) {
-                        if ("lookAndFeel".equals(evt.getPropertyName())) {
-                            SwingUtilities.invokeLater(new Runnable() {
-                                public void run() {
-                                    SwingUtilities.updateComponentTreeUI(WorkSpacePanel.this);
+          new PropertyChangeListener() {
+              /** This method gets called when a property is changed.*/
+              public void propertyChange(final PropertyChangeEvent evt) {
+                  if ("lookAndFeel".equals(evt.getPropertyName())) {
+                      SwingUtilities.invokeLater(new Runnable() {
+                          public void run() {
+                              SwingUtilities.updateComponentTreeUI(WorkSpacePanel.this);
 
-                                }
-                            });
-                        }
-                    }
-                };
+                          }
+                      });
+                  }
+              }
+          };
 
         UIManager.addPropertyChangeListener(l);
         try {
@@ -94,7 +94,7 @@ public class WorkSpacePanel extends JPanel {
 
             // toolbars (icon, text etc)
             pref.
-                    addPropertyChangeListener(Preferences.STATUS_BAR_VISIBLE, l);
+              addPropertyChangeListener(Preferences.STATUS_BAR_VISIBLE, l);
 
         } catch (IOException e) {
             // java.util.Logging does not specify explicit 'level' methods with
@@ -106,15 +106,15 @@ public class WorkSpacePanel extends JPanel {
     // hierarchy listener
     private final
     HierarchyListener hierarchyListener =
-            new HierarchyListener() {
-                /** Called when the hierarchy has been changed.*/
-                public void hierarchyChanged(HierarchyEvent e) {
-                    long flags = e.getChangeFlags();
-                    if ((flags & HierarchyEvent.SHOWING_CHANGED) == HierarchyEvent.SHOWING_CHANGED) {
-                        if (WorkSpacePanel.this.isShowing()) {
-                        } else {
-                        }
-                    }
-                }
-            };
+      new HierarchyListener() {
+          /** Called when the hierarchy has been changed.*/
+          public void hierarchyChanged(HierarchyEvent e) {
+              long flags = e.getChangeFlags();
+              if ((flags & HierarchyEvent.SHOWING_CHANGED) == HierarchyEvent.SHOWING_CHANGED) {
+                  if (WorkSpacePanel.this.isShowing()) {
+                  } else {
+                  }
+              }
+          }
+      };
 }

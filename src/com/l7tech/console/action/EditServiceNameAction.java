@@ -1,13 +1,24 @@
 package com.l7tech.console.action;
 
+import com.l7tech.console.event.EntityEvent;
+import com.l7tech.console.event.EntityListener;
+import com.l7tech.console.event.EntityListenerAdapter;
+import com.l7tech.console.panels.EditServiceNameDialog;
 import com.l7tech.console.panels.PolicyEditorPanel;
-import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.tree.ServicesTree;
+import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.WindowManager;
 import com.l7tech.service.PublishedService;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreePath;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The <code>EditServiceNameAction</code> invokes the service name
@@ -17,6 +28,7 @@ import javax.swing.*;
  * @version 1.0
  */
 public class EditServiceNameAction extends NodeAction {
+    static final Logger log = Logger.getLogger(EditServiceNameAction.class.getName());
 
     public EditServiceNameAction(ServiceNode node) {
         super(node);
@@ -26,21 +38,21 @@ public class EditServiceNameAction extends NodeAction {
      * @return the action name
      */
     public String getName() {
-        return "Edit Service name";
+        return "Rename";
     }
 
     /**
      * @return the action description
      */
     public String getDescription() {
-        return "Edit service name";
+        return "Edit the service name";
     }
 
     /**
      * specify the resource name for this action
      */
     protected String iconResource() {
-        return "com/l7tech/console/resources/policy16.gif";
+        return "com/l7tech/console/resources/Edit16.gif";
     }
 
     /** Actually perform the action.
@@ -54,12 +66,12 @@ public class EditServiceNameAction extends NodeAction {
           new Runnable() {
               public void run() {
                   try {
-                      WindowManager windowManager =
+                      WindowManager wm =
                         Registry.getDefault().getWindowManager();
-                      WorkSpacePanel wpanel = windowManager.getCurrentWorkspace();
-
                       PublishedService svc = ((ServiceNode)node).getPublishedService();
-                      wpanel.setComponent(new PolicyEditorPanel(svc));
+                      EditServiceNameDialog d =
+                        new EditServiceNameDialog(wm.getMainWindow(), svc, nameChangeListener);
+                      d.show();
                   } catch (Exception e) {
                       //todo: ErroManager someday?
                       e.printStackTrace();
@@ -67,5 +79,57 @@ public class EditServiceNameAction extends NodeAction {
               }
           });
     }
+
+    /**
+     * check whethewr the current workspace service needs to be reloaded.
+     */
+    private void checkWorkspaceService() {
+        JTree tree = (JTree)WindowManager.
+          getInstance().getComponent(PolicyTree.NAME);
+        PublishedService svc = (PublishedService)tree.getClientProperty("service");
+        try {
+            // if currently edited service was deleted
+            ServiceNode sn = (ServiceNode)node;
+            if (svc != null && (sn.getPublishedService().getOid() == svc.getOid())) {
+
+                WindowManager.getInstance().
+                  getCurrentWorkspace().
+                  setComponent(new PolicyEditorPanel(sn.getPublishedService()));
+            }
+        } catch (FindException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    private EntityListener
+      nameChangeListener = new EntityListenerAdapter() {
+          /**
+           * Fired when an set of children is updated.
+           * @param ev event describing the action
+           */
+          public void entityUpdated(EntityEvent ev) {
+              SwingUtilities.invokeLater(new Runnable() {
+                  /** */
+                  public void run() {
+                      ServiceNode n = ((ServiceNode)node);
+                      n.clearServiceHolder();
+                      JTree tree =
+                        (JTree)WindowManager.getInstance().getComponent(ServicesTree.NAME);
+                      if (tree != null) {
+                          TreeNode[] nodes = node.getPath();
+                          TreePath nPath = new TreePath(nodes);
+                          if (tree.hasBeenExpanded(nPath)) {
+                              DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                              model.nodeChanged(node);
+                          }
+                          checkWorkspaceService();
+                      } else {
+                          log.log(Level.WARNING, "Unable to reach the service tree.");
+                      }
+                  }
+              });
+          }
+      };
 
 }

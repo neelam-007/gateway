@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.service.PublishedService;
@@ -72,7 +73,7 @@ public class EditServiceNameDialog extends JDialog {
      */
     private void initResources() {
         Locale locale = Locale.getDefault();
-        resources = ResourceBundle.getBundle("com.l7tech.console.resources.EditServiceNamedDialog", locale);
+        resources = ResourceBundle.getBundle("com.l7tech.console.resources.EditServiceNameDialog", locale);
     }
 
     /**
@@ -94,7 +95,7 @@ public class EditServiceNameDialog extends JDialog {
             }
         });
 
-        newServiceNameField = new JPasswordField(); // needed below
+        newServiceNameField = new JTextField(); // needed below
 
         // password label
         JLabel passwordLabel = new JLabel();
@@ -241,7 +242,8 @@ public class EditServiceNameDialog extends JDialog {
      */
     private void changeServiceName(String newName) {
         try {
-            // Registry.getDefault().getServiceManager().update(service);
+            service.setName(newName);
+            Registry.getDefault().getServiceManager().update(service);
             dispose();
             if (listener !=null) {
                 EntityHeader eh = new EntityHeader();

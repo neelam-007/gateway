@@ -2,6 +2,7 @@ package com.l7tech.console.tree;
 
 import com.l7tech.console.action.DeleteServiceAction;
 import com.l7tech.console.action.ServicePolicyPropertiesAction;
+import com.l7tech.console.action.EditServiceNameAction;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.logging.ErrorManager;
@@ -50,6 +51,13 @@ public class ServiceNode extends EntityHeaderNode {
     }
 
     /**
+     * Nullify service,  will cause service reload next time.
+     */
+    public void clearServiceHolder() {
+        svc = null;
+    }
+
+    /**
      * Get the set of actions associated with this node.
      * This may be used e.g. in constructing a context menu.
      *
@@ -58,6 +66,7 @@ public class ServiceNode extends EntityHeaderNode {
     public Action[] getActions() {
         return new Action[]{
             new ServicePolicyPropertiesAction(this),
+            new EditServiceNameAction(this),
             new DeleteServiceAction(this)};
     }
 
