@@ -57,62 +57,22 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
         xmlRequestSecurity = data;
     }
 
-    public AssertionStatus newCheckRequest(Request request, Response response) throws IOException, PolicyAssertionException {
-        if (!(request instanceof SoapRequest)) {
-            throw new PolicyAssertionException("This type of assertion is only supported with SOAP type of messages");
-        }
-        SoapRequest soapmsg = (SoapRequest)request;
-        WssProcessor.ProcessorResult wssResults = soapmsg.getWssProcessorOutput();
-        if (wssResults == null) {
-            throw new PolicyAssertionException("This request was not processed for WSS level security.");
-        }
-        // get the elements that are expected to be signed/encrypted
-        ElementSecurity[] elements = xmlRequestSecurity.getElements();
-        // todo try to match these against the elements that the wss processor says were signed, encrypted
-
-        // if this assertion is expected to provide credentials, do it
-        if (xmlRequestSecurity.hasAuthenticationElement()) {
-            if (request.isAuthenticated()) {
-                logger.fine("Request was already authenticated but this XmlRequestSecurity is usable as a credential source" );
-            } else {
-                logger.info("Using credentials used to sign request" );
-                boolean certwasfound = false;
-                WssProcessor.SecurityToken[] tokens = wssResults.getSecurityTokens();
-                for (int i = 0; i < tokens.length; i++) {
-                    if (tokens[i].asObject() instanceof X509Certificate) {
-                        X509Certificate cert = (X509Certificate)tokens[i].asObject();
-                        X500Name x500name = new X500Name(cert.getSubjectX500Principal().getName());
-                        String certCN = x500name.getCommonName();
-                        request.setPrincipalCredentials(new LoginCredentials(certCN,
-                                                                             null,
-                                                                             CredentialFormat.CLIENTCERT,
-                                                                             null,
-                                                                             cert));
-                        certwasfound = true;
-                    }
-                }
-                if (!certwasfound) {
-                    logger.info("There were no cert extracted at WSS processing time.");
-                    return AssertionStatus.AUTH_REQUIRED;
-                }
-            }
-        }
-        return AssertionStatus.NONE;
-    }
-
     public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
         // get the document
         Document soapmsg = extractDocumentFromRequest(request);
 
         if (!(request instanceof SoapRequest))
-            return AssertionStatus.NOT_APPLICABLE;      // TODO verify this return value
+            return AssertionStatus.NOT_APPLICABLE;      // TODO verify that this is the appropriate return value
         SoapRequest soapRequest = (SoapRequest)request;
         if (!soapRequest.isSoap())
-            return AssertionStatus.NOT_APPLICABLE;      // TODO verify this return value
+            return AssertionStatus.NOT_APPLICABLE;      // TODO verify that this is the appropriate return value
 
         ElementSecurity[] elements = xmlRequestSecurity.getElements();
+        final WssProcessor.ProcessorResult wssResults = soapRequest.getWssProcessorOutput();
+        if (wssResults == null)
+            throw new PolicyAssertionException("This request was not processed for WSS level security.");
         SecurityProcessor verifier =
-                SecurityProcessor.createRecipientSecurityProcessor(soapRequest.getWssProcessorOutput(),
+                SecurityProcessor.createRecipientSecurityProcessor(wssResults,
                                                                    elements);
 
         try {
@@ -139,7 +99,6 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
                 return AssertionStatus.FAILED;
             }
 
-            // TODO this needs to use the binarysecuritytoken instead
             final X509Certificate[] xmlCertChain = result.getCertificateChain();
             if (xmlCertChain != null) {
                 X500Name x500name = new X500Name(xmlCertChain[0].getSubjectX500Principal().getName());
@@ -191,7 +150,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
                     }
                 }
 
-                if ( xmlCertChain != null && !knownCert.equals( xmlCertChain[0] ) ) { //todo non-envelope certs?
+                if ( xmlCertChain != null && !knownCert.equals( xmlCertChain[0] ) ) {
                     logger.log( Level.WARNING,
                                 "XmlRequestSecurity signing certificate did not match previously issued certificate" );
                     response.setParameter(Response.PARAM_HTTP_CERT_STATUS, SecureSpanConstants.INVALID);
@@ -213,13 +172,6 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             logger.log(Level.SEVERE, e.getMessage(), e);
             return AssertionStatus.SERVER_ERROR;
         } catch (SignatureException e) {
-            if (ExceptionUtils.causedBy(e, SignatureNotFoundException.class)) { //todo probably can't happen anymore
-                // no digital signature
-                response.setAuthenticationMissing(true);
-                response.setPolicyViolated(true);
-                logger.log(Level.WARNING, e.getMessage(), e);
-                return AssertionStatus.FALSIFIED;
-            }
             // bad signature !
             logger.log(Level.SEVERE, e.getMessage(), e);
             return AssertionStatus.AUTH_FAILED;
@@ -227,8 +179,8 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             // bad signature !
             logger.log(Level.WARNING, e.getMessage(), e);
             return AssertionStatus.AUTH_FAILED;
-        } catch (GeneralSecurityException e) { // todo unlikely to happen now, maybe even impossible
-            // bad signature !
+        } catch (GeneralSecurityException e) {
+            // bad signature or certificate or key or something
             logger.log(Level.SEVERE, e.getMessage(), e);
             return AssertionStatus.SERVER_ERROR;
         } catch (IOException e) {
@@ -236,24 +188,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             return AssertionStatus.SERVER_ERROR;
         }
 
-        // so mark this sequence number as used up
-        // todo xmlsecSession.hitSequenceNumber(gotSeq);
-        // clean the session id from the security header
-        SecureConversationTokenHandler.consumeSessionInfoFromDocument(soapmsg);
-
-        // clean empty security element and header if necessary
-
-        /** todo replace with TROGDOR!  (WssProcessor)
-         SoapUtil.cleanEmptyRefList(soapmsg);
-        try {
-            SoapUtil.cleanEmptySecurityElement(soapmsg);
-        } catch (TooManyChildElementsException e) {
-            throw new IOException(e.getMessage()); // can't happen (multiple soap:Headers won't make it this far)
-        }
-         SoapUtil.cleanEmptyHeaderElement(soapmsg);
-         */
-
-        // note, the routing should no longer use the non parsed payload
+        // todo note, the routing should no longer use the non parsed payload
         ((XmlRequest)request).setDocument(soapmsg);
 
         return AssertionStatus.NONE;
@@ -265,56 +200,6 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             rootCertificate = (X509Certificate)certFactory.generateCertificate( new ByteArrayInputStream( KeystoreUtils.getInstance().readRootCert() ) );
         }
         return rootCertificate;
-    }
-
-
-    private static class InvalidSequenceNumberException extends Exception {
-        public InvalidSequenceNumberException(String message) {
-            super(message);
-        }
-    }
-
-    private long checkSeqNrValidity(Document soapmsg, Session session) throws InvalidSequenceNumberException {
-        Long seqNr;
-        seqNr = SecureConversationTokenHandler.readSeqNrFromDocument(soapmsg);
-        if (seqNr == null) {
-            logger.severe("request contains no sequence number");
-            throw new InvalidSequenceNumberException("request contains no sequence number");
-        }
-
-        long seq = seqNr.longValue();
-
-        if (seq < session.getHighestSeq()) {
-            logger.severe("sequence number too low (" + seqNr + "). someone is trying replay attack?");
-            throw new InvalidSequenceNumberException("request contains a sequence number which is too low");
-        }
-        return seq;
-    }
-
-    private Session getXmlSecSession(Document soapmsg) throws SessionInvalidException {
-        // get the session id from the security context
-        Long sessionID = SecureConversationTokenHandler.readSessIdFromDocument(soapmsg);
-        if ( sessionID == null ) {
-            String msg = "could not extract session id from msg.";
-            logger.log(Level.WARNING, msg);
-            return null;
-        }
-
-        // retrieve the session
-        Session xmlsession = null;
-        try {
-            xmlsession = SessionManager.getInstance().getSession(sessionID.longValue());
-        } catch (SessionNotFoundException e) {
-            String msg = "Exception finding session with id=" + sessionID + ". session could reside on other cluster member or is no longer valid.";
-            logger.log(Level.WARNING, msg, e);
-            throw new SessionInvalidException(msg, e);
-        } catch (NumberFormatException e) {
-            String msg = "Session id is not long value : " + sessionID;
-            logger.log(Level.SEVERE, msg, e);
-            throw new SessionInvalidException(msg, e);
-        }
-
-        return xmlsession;
     }
 
     private Document extractDocumentFromRequest(Request req) throws PolicyAssertionException {
@@ -334,8 +219,6 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
     }
 
     protected XmlRequestSecurity xmlRequestSecurity;
-    private final Logger logger = Logger.getLogger(getClass().getName());
     private X509Certificate rootCertificate;
-
-
+    private final Logger logger = Logger.getLogger(getClass().getName());
 }
