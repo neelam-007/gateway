@@ -24,24 +24,24 @@ public class SpecificUser extends IdentityAssertion {
         super();
     }
 
-    public SpecificUser( long providerId, String userOid ) {
+    public SpecificUser( long providerId, String userLogin ) {
         super( providerId );
-        _userOid = userOid;
+        _userLogin = userLogin ;
     }
 
-    public void setUserOid( String userOid ) {
-        if ( userOid != _userOid ) _user = null;
-        _userOid = userOid;
+    public void setUserOid( String userLogin ) {
+        if ( userLogin != _userLogin ) _user = null;
+        _userLogin = userLogin;
     }
 
-    public String getUserOid() {
-        return _userOid;
+    public String getUserLogin() {
+        return _userLogin;
     }
 
     protected User getUser() throws FindException {
         if ( _user == null ) {
             UserManager uman = getIdentityProvider().getUserManager();
-            _user = uman.findByPrimaryKey( _userOid );
+            _user = uman.findByLogin( _userLogin );
         }
         return _user;
     }
@@ -58,7 +58,7 @@ public class SpecificUser extends IdentityAssertion {
         }
     }
 
-    protected String _userOid;
+    protected String _userLogin;
     protected User _user;
 
     protected transient Category _log = Category.getInstance( getClass() );

@@ -1,12 +1,7 @@
 package com.l7tech.console.tree.policy;
 
 
-import com.l7tech.console.util.IconManager2;
-import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-
-import javax.swing.*;
-import java.awt.*;
 
 /**
  * Class SpecificUserAssertionTreeNode.
@@ -31,6 +26,6 @@ class SpecificUserAssertionTreeNode extends LeafAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Identity is "+ ((SpecificUser)getUserObject()).getUserOid();
+        return "Identity is "+ ((SpecificUser)getUserObject()).getUserLogin();
     }
 }
