@@ -112,7 +112,13 @@ public class PolicyService {
         request.setWssProcessorOutput(wssOutput);
 
         // Which policy is requested?
-        String policyId = getRequestedPolicyId(wssOutput.getUndecoratedMessage());
+        String policyId = null;
+        try {
+            policyId = getRequestedPolicyId(wssOutput.getUndecoratedMessage());
+        } catch (InvalidDocumentFormatException e) {
+            exceptionToFault(e, response);
+            return;
+        }
 
         // Run the policy-policy
         AllAssertion targetPolicy = policyGetter.getPolicy(policyId);
@@ -131,8 +137,8 @@ public class PolicyService {
         return;
     }
 
-    private String getRequestedPolicyId(Document requestDoc) {
-        // todo
+    private String getRequestedPolicyId(Document requestDoc) throws InvalidDocumentFormatException {
+        // todo, mike plug in your soap request format in here if you like
         return null;
     }
 
