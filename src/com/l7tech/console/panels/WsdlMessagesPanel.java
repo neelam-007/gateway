@@ -57,6 +57,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
         messagesTable.setShowGrid(false);
         JViewport viewport = messagesTableModelTableScrollPane.getViewport();
         viewport.setBackground(messagesTable.getBackground());
+        messagesTable.getTableHeader().setReorderingAllowed(false);
 
         addMessageButton.addActionListener(addMessageActionListener);
         removeMessageButton.addActionListener(removeMessageActionListener);
@@ -86,6 +87,42 @@ public class WsdlMessagesPanel extends WizardStepPanel {
 
         messagesTable.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
 
+        DefaultCellEditor cellEditor =
+          new DefaultCellEditor(new JTextField()) {
+              Message message;
+
+              /**
+               * Implements the <code>TableCellEditor</code> interface.
+               */
+              public Component
+                getTableCellEditorComponent(JTable table, Object value,
+                                            boolean isSelected,
+                                            int row, int column) {
+                  message = (Message)value;
+                  delegate.setValue(message.getQName().getLocalPart());
+                  return editorComponent;
+              }
+
+              /**
+               * Forwards the message from the <code>CellEditor</code> to
+               * the <code>delegate</code>.
+               *
+               * @see EditorDelegate#getCellEditorValue
+               */
+              public Object getCellEditorValue() {
+                  QName on = message.getQName();
+                  QName nn =
+                    new QName(on.getNamespaceURI(), (String)super.getCellEditorValue());
+                  Message nm = new WsdlMessagesTableModel.MutableMessage();
+                  nm.setUndefined(false);
+                  nm.setQName(nn);
+                  return nm;
+              }
+          };
+        cellEditor.addCellEditorListener(cellEditorListener);
+        messagesTable.setDefaultEditor(Object.class, cellEditor);
+
+        //parts table
         partsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         partsTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
@@ -125,11 +162,11 @@ public class WsdlMessagesPanel extends WizardStepPanel {
 
         cellEditorListener = new CellEditorListener() {
             public void editingCanceled(ChangeEvent e) {
-                log.info("edting cancelled " + e.getSource());
+                log.finer("edting cancelled " + e.getSource());
             }
 
             public void editingStopped(ChangeEvent e) {
-                log.info("edting stopped " + e.getSource());
+                log.finer("edting stopped " + e.getSource());
             }
         };
     }
@@ -198,43 +235,8 @@ public class WsdlMessagesPanel extends WizardStepPanel {
     private void updateMessageTable() {
         messagesTableModel = new WsdlMessagesTableModel(definition);
         messagesTable.setModel(messagesTableModel);
-        messagesTable.getTableHeader().setReorderingAllowed(false);
 
-        DefaultCellEditor cellEditor =
-          new DefaultCellEditor(new JTextField()) {
-              Message message;
 
-              /**
-               * Implements the <code>TableCellEditor</code> interface.
-               */
-              public Component
-                getTableCellEditorComponent(JTable table, Object value,
-                                            boolean isSelected,
-                                            int row, int column) {
-                  message = (Message)value;
-                  delegate.setValue(message.getQName().getLocalPart());
-                  return editorComponent;
-              }
-
-              /**
-               * Forwards the message from the <code>CellEditor</code> to
-               * the <code>delegate</code>.
-               * 
-               * @see EditorDelegate#getCellEditorValue
-               */
-              public Object getCellEditorValue() {
-                  QName on = message.getQName();
-                  QName nn =
-                    new QName(on.getNamespaceURI(), (String)super.getCellEditorValue());
-                  Message nm = new WsdlMessagesTableModel.MutableMessage();
-                  nm.setUndefined(false);
-                  nm.setQName(nn);
-                  return nm;
-              }
-          };
-        cellEditor.addCellEditorListener(cellEditorListener);
-        //cellEditor.setClickCountToStart(1);
-        messagesTable.setDefaultEditor(Object.class, cellEditor);
         if (messagesTableModel.getRowCount() == 0) {
             addMessageActionListener.actionPerformed(null);
         }
@@ -558,8 +560,8 @@ public class WsdlMessagesPanel extends WizardStepPanel {
         final JButton _15;
         _15 = new JButton();
         removeMessageButton = _15;
-        _15.setActionCommand("AddMessage");
         _15.setText("Remove");
+        _15.setActionCommand("AddMessage");
         _15.setLabel("Remove");
         _14.add(_15, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 4, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         final JButton _16;
