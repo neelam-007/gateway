@@ -481,6 +481,26 @@
     </target>
 
 
+    <target name="prepare.jms" if="dev.build">
+        <antcall target="prepare.jms.openjms"/>
+        <antcall target="prepare.jms.mqseries"/>
+    </target>
+    
+    <target name="prepare.jms.openjms" if="include.jms.openjms, dev.build">
+        <copy todir="${build.lib}">
+             <fileset dir="${src.root}/lib/gateway/jms/openjms">
+                 <include name="**/*.jar" if="dev.build, include.jms.openjms"/>
+             </fileset>
+        </copy>
+    </target>
+
+    <target name="prepare.jms.mqseries" if="include.jms.mqseries, dev.build">
+        <copy todir="${build.lib}">
+            <fileset dir="${src.root}/lib/gateway/jms/mqseries">
+                <include name="**/*.jar" if="dev.build, include.jms.mqseries"/>
+            </fileset>
+        </copy>
+    </target>
     <!--
       ** Create the directory structure, copy the resources, libs and
       ** update version tokens
@@ -503,12 +523,6 @@
                 <exclude name="**/optional.jar"/>
                 <exclude name="**/*junit.jar"/>
                 <exclude name="**/jsdk23.jar"/>
-            </fileset>
-            <fileset dir="${src.root}/lib/gateway/jms/openjms">
-                <include name="**/*.jar" if="dev.build, include.jms.openjms"/>
-            </fileset>
-            <fileset dir="${src.root}/lib/gateway/jms/mqseries">
-                <include name="**/*.jar" if="dev.build, include.jms.mqseries"/>
             </fileset>
         </copy>
 
@@ -553,6 +567,8 @@
                 <include name="com/l7tech/remote/jini/lookup/*.config"/>
             </fileset>
         </copy>
+        
+        <antcall target="prepare.jms"/>
 
         <!-- make sure that the tomcat path is properly referenced in the keystore properties -->
         <antcall target="keystore.properties"/>
