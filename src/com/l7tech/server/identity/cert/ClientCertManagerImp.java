@@ -44,7 +44,7 @@ public class ClientCertManagerImp implements ClientCertManager {
 
     public boolean userCanGenCert(User user) {
         if (user == null) throw new IllegalArgumentException("can't call this with null");
-        logger.finest("userCanGenCert for " + user.getLogin());
+        logger.finest("userCanGenCert for " + getName(user));
         CertEntryRow userData = getFromTable(user);
         // if this user has no data at all, then he is allowed to generate a cert
         if (userData == null) return true;
@@ -57,7 +57,7 @@ public class ClientCertManagerImp implements ClientCertManager {
 
     public void recordNewUserCert(User user, Certificate cert) throws UpdateException {
         if (user == null) throw new IllegalArgumentException("can't call this with null");
-        logger.finest("recordNewUserCert for " + user.getLogin());
+        logger.finest("recordNewUserCert for " + getName(user));
 
         // check that the cert's subject matches the user's login
         try {
@@ -80,7 +80,7 @@ public class ClientCertManagerImp implements ClientCertManager {
 
         // check if operation is permitted
         if (!userCanGenCert(user)) {
-            String msg = "this user is currently not allowed to generate a new cert: " + user.getLogin();
+            String msg = "this user is currently not allowed to generate a new cert: " + getName(user);
             logger.info(msg);
             throw new UpdateException(msg);
         }
@@ -132,12 +132,12 @@ public class ClientCertManagerImp implements ClientCertManager {
 
     public Certificate getUserCert(User user) throws FindException {
         if (user == null) throw new IllegalArgumentException("can't call this with null");
-        logger.finest("getUserCert for " + user.getLogin());
+        logger.finest("getUserCert for " + getName(user));
         CertEntryRow userData = getFromTable(user);
         if (userData != null) {
             String dbcert = userData.getCert();
             if (dbcert == null) {
-                logger.finest("no cert recorded for user " + user.getLogin());
+                logger.finest("no cert recorded for user " + getName(user));
                 return null;
             }
 
@@ -154,14 +154,21 @@ public class ClientCertManagerImp implements ClientCertManager {
                 throw new FindException(msg, e);
             }
         } else {
-            logger.finest("no entry for " + user.getLogin() + " in provider " + user.getProviderId());
+            logger.finest("no entry for " + getName(user) + " in provider " + user.getProviderId());
         }
         return null;
     }
 
+    private String getName(User user) {
+        String name = user.getLogin();
+        if (name == null || name.length() == 0) name = user.getName();
+        if (name == null || name.length() == 0) name = user.getUniqueIdentifier();
+        return name;
+    }
+
     public void revokeUserCert(User user) throws UpdateException {
         if (user == null) throw new IllegalArgumentException("can't call this with null");
-        logger.finest("revokeUserCert for " + user.getLogin());
+        logger.finest("revokeUserCert for " + getName(user));
         CertEntryRow currentdata = getFromTable(user);
         if (currentdata != null) {
             currentdata.setCert(null);
@@ -181,13 +188,13 @@ public class ClientCertManagerImp implements ClientCertManager {
                 throw new UpdateException(msg, e);
             }
         } else {
-            logger.fine("there was no existing cert for " + user.getLogin());
+            logger.fine("there was no existing cert for " + getName(user));
         }
     }
 
     public void forbidCertReset(User user) throws UpdateException {
         if (user == null) throw new IllegalArgumentException("can't call this with null");
-        logger.finest("forbidCertReset for " + user.getLogin());
+        logger.finest("forbidCertReset for " + getName(user));
         CertEntryRow currentdata = getFromTable(user);
         if (currentdata != null) {
             currentdata.setResetCounter(10);
@@ -207,7 +214,7 @@ public class ClientCertManagerImp implements ClientCertManager {
             }
         } else {
             // this should not happen
-            String msg = "there was no existing cert for " + user.getLogin();
+            String msg = "there was no existing cert for " + getName(user);
             logger.warning(msg);
             throw new UpdateException(msg);
         }
@@ -235,10 +242,10 @@ public class ClientCertManagerImp implements ClientCertManager {
             }
         } catch (SQLException e) {
             hibResults = Collections.EMPTY_LIST;
-            logger.log(Level.WARNING, "hibernate error finding cert entry for " + user.getLogin(), e);
+            logger.log(Level.WARNING, "hibernate error finding cert entry for " + getName(user), e);
         }  catch (HibernateException e) {
             hibResults = Collections.EMPTY_LIST;
-            logger.log(Level.WARNING, "hibernate error finding cert entry for " + user.getLogin(), e);
+            logger.log(Level.WARNING, "hibernate error finding cert entry for " + getName(user), e);
         } /*finally {
             context.close();
         }*/
@@ -250,7 +257,7 @@ public class ClientCertManagerImp implements ClientCertManager {
                 return (CertEntryRow)hibResults.get(0);
             default:
                 logger.warning("this should not happen. more than one entry found" +
-                                          "for login: " + user.getLogin());
+                                          "for user: " + getName(user));
                 return null;
         }
     }
