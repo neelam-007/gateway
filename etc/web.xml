@@ -14,25 +14,11 @@
     <servlet>
         <servlet-name>PolicyServlet</servlet-name>
         <servlet-class>com.l7tech.policy.server.PolicyServlet</servlet-class>
-        <init-param>
-            <param-name>CertPath</param-name>
-            <!-- value ssg.cer will replaced by ssl_rootcerted.cer by the signsslcsr.sh config script -->
-            <param-value>../../kstores/ssg.cer</param-value>
-        </init-param>
     </servlet>
 
     <servlet>
         <servlet-name>CSRServlet</servlet-name>
         <servlet-class>com.l7tech.identity.cert.CSRHandler</servlet-class>
-        <init-param>
-            <param-name>RootKeyStore</param-name>
-            <param-value>../../kstores/ssgroot</param-value>
-        </init-param>
-        <!-- THIS VALUE IS UPDATED BY THE ROOTCAGEN.SH SCRIPT -->
-        <!-- LEAVE THE param-name AND param-value ELEMENTS ON SAME LINES -->
-        <init-param>
-            <param-name>RootKeyStorePasswd</param-name><param-value>password</param-value>
-        </init-param>
     </servlet>
 
     <servlet>
@@ -164,13 +150,6 @@
             com.l7tech.service.resolution.UrnResolver
             com.l7tech.service.resolution.HttpUriResolver
         </env-entry-value>
-        <env-entry-type>java.lang.String</env-entry-type>
-    </env-entry>
-
-    <env-entry>
-        <description>Location of the root ca cert. Used to verify the validity of user certs.</description>
-        <!-- this value is changed by the rootcaGen.sh script -->
-        <env-entry-name>RootCertLocation</env-entry-name><env-entry-value>/usr/java/jakarta-tomcat-4.1.24/kstores/ssgroot.cer</env-entry-value>
         <env-entry-type>java.lang.String</env-entry-type>
     </env-entry>
 
