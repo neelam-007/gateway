@@ -90,13 +90,16 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             SOAPPart spart = msg.getSOAPPart();
             SOAPEnvelope senv = spart.getEnvelope();
             SOAPFault fault = SoapUtil.addFaultTo( msg, faultCode, faultString );
-            Detail detail = fault.addDetail();
-            DetailEntry entry = detail.addDetailEntry( senv.createName( "published-service-oid" ) );
 
             PublishedService pserv = (PublishedService)request.getParameter( Request.PARAM_SERVICE );
-            String soid = new Long( pserv.getOid() ).toString();
-            response.setHeader( "PublishedServiceOid", soid );
-            entry.addTextNode( soid );
+            if ( pserv != null ) {
+                String soid = new Long( pserv.getOid() ).toString();
+                response.setHeader( "PublishedServiceOid", soid );
+
+                Detail detail = fault.addDetail();
+                DetailEntry entry = detail.addDetailEntry( senv.createName( "published-service-oid" ) );
+                entry.addTextNode( soid );
+            }
 
             responseStream = response.getOutputStream();
             msg.writeTo( responseStream );
