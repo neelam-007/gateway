@@ -54,7 +54,7 @@ public class Wizard extends JDialog {
 
     /** Creates new wizard */
     public Wizard(Frame parent, WizardStepPanel panel) {
-        super(parent, false);
+        super(parent, true);
         if (panel == null) {
             throw new IllegalArgumentException("panel == null");
         }
