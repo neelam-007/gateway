@@ -6,18 +6,23 @@
 
 package com.l7tech.server;
 
-import com.l7tech.message.*;
-import com.l7tech.policy.assertion.*;
-import com.l7tech.util.SoapUtil;
-import com.l7tech.service.PublishedService;
-import com.l7tech.objectmodel.PersistenceManager;
+import com.l7tech.logging.LogManager;
+import com.l7tech.message.HttpTransportMetadata;
+import com.l7tech.message.Request;
+import com.l7tech.message.SoapRequest;
+import com.l7tech.message.SoapResponse;
 import com.l7tech.objectmodel.ObjectModelException;
 import com.l7tech.objectmodel.PersistenceContext;
-import com.l7tech.logging.LogManager;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.service.PublishedService;
+import com.l7tech.util.SoapUtil;
 
-import javax.servlet.http.*;
-import javax.servlet.ServletException;
 import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.xml.soap.*;
 import java.io.*;
 import java.sql.SQLException;
@@ -60,19 +65,21 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         OutputStream respStream = null;
         try {
             try {
-                AssertionStatus stat = MessageProcessor.getInstance().processMessage( sreq, sresp );
+                AssertionStatus status = MessageProcessor.getInstance().processMessage( sreq, sresp );
 
-                if ( stat == AssertionStatus.NONE ) {
+                if ( status == AssertionStatus.NONE ) {
                     hresponse.setContentType( CONTENT_TYPE );
 
                     String protRespXml = sresp.getResponseXml();
                     respWriter = new BufferedWriter( new OutputStreamWriter( hresponse.getOutputStream(), ENCODING ) );
 
                     respWriter.write( protRespXml );
-                } else if ( sresp.isAuthenticationMissing() ) {
+                } else if ( sresp.isAuthenticationMissing() ||
+                            status == AssertionStatus.AUTH_REQUIRED ||
+                            status == AssertionStatus.AUTH_FAILED ) {
                     sendChallenge( sreq, sresp, hrequest, hresponse );
                 } else {
-                    sendFault( sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, stat.getSoapFaultCode(), stat.getMessage() );
+                    sendFault( sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, status.getSoapFaultCode(), status.getMessage() );
                 }
             } catch ( PolicyAssertionException pae ) {
                 LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, pae);
