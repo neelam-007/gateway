@@ -49,7 +49,7 @@ if [ -e /ssg/etc/conf/JVM ]; then
 else
 	# default is 1.4.2
 	export JAVA_HOME="/ssg/j2sdk1.4.2_05"
-	if [ "$old_rel" = "1" ]; then 
+	if [ "$old_rel" = 1 ]; then 
 		export LD_ASSUME_KERNEL="2.2.5"
 	fi
 	if [ $cpucount = 1 ]; then
