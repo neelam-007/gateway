@@ -30,6 +30,10 @@ public class MultipartMessageReader {
         this.multipartBoundary = multipartBoundary;
     }
 
+    public String getMultipartBoundary() {
+        return multipartBoundary;
+    }
+
     /**
      * Gets the XML part of the message from the provided reader.
      * <p>
@@ -94,7 +98,7 @@ public class MultipartMessageReader {
         return part;
     }
 
-    private Message.HeaderValue parseHeader(String header) throws IOException {
+    static public Message.HeaderValue parseHeader(String header) throws IOException {
         StringTokenizer stok = new StringTokenizer(header, ":; ", false);
         Message.HeaderValue result = new Message.HeaderValue();
         while (stok.hasMoreTokens()) {
@@ -118,7 +122,7 @@ public class MultipartMessageReader {
         return result;
     }
 
-    private String unquote( String value ) throws IOException {
+    static private String unquote( String value ) throws IOException {
         if (value.startsWith("\"")) {
             if (value.endsWith("\"")) {
                 value = value.substring(1,value.length()-1);
