@@ -12,10 +12,7 @@ import com.l7tech.common.util.Locator;
 import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.server.ComponentConfig;
-import com.l7tech.server.LifecycleException;
-import com.l7tech.server.ServerComponentLifecycle;
-import com.l7tech.server.ServerConfig;
+import com.l7tech.server.*;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -255,9 +252,18 @@ public class JmsBootProcess implements ServerComponentLifecycle, JmsCrudListener
         return receiver;
     }
 
+    public long getFrequency() {
+        return FREQUENCY;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public void checkIntegrity() {
+        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     private Logger _logger = LogManager.getInstance().getSystemLogger();
     private JmsManager _manager;
     private boolean _booted = false;
     private Set _receivers = new HashSet();
     private boolean _valid = false;
+    public static final int FREQUENCY = 4 * 1000;
 }

@@ -1,26 +1,28 @@
 package com.l7tech.service;
 
-import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
-import EDU.oswego.cs.dl.util.concurrent.Sync;
-import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
-import com.l7tech.common.util.Locator;
 import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
+import com.l7tech.server.PeriodicExecutor;
+import com.l7tech.server.PeriodicTask;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.service.resolution.NameValueServiceResolver;
 import com.l7tech.service.resolution.ServiceResolutionException;
 import com.l7tech.service.resolution.SoapActionResolver;
 import com.l7tech.service.resolution.UrnResolver;
+import com.l7tech.common.util.Locator;
 
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
+import EDU.oswego.cs.dl.util.concurrent.Sync;
+import EDU.oswego.cs.dl.util.concurrent.WriterPreferenceReadWriteLock;
 
 /**
  * Contains cached services, with corresponding pre-parsed server-side policies and
@@ -37,7 +39,7 @@ import java.util.logging.Logger;
  * Date: Nov 26, 2003<br/>
  * $Id$
  */
-public class ServiceCache {
+public class ServiceCache implements PeriodicTask {
 
     public static final long INTEGRITY_CHECK_FREQUENCY = 4000; // 4 seconds
     //public static final long INTEGRITY_CHECK_FREQUENCY = 10;
@@ -104,6 +106,22 @@ public class ServiceCache {
             if (read != null) read.release();
         }
     }
+
+    private synchronized ServiceManagerImp getServiceManager() {
+        if ( serviceManager == null ) {
+            // get the service manager
+            ServiceManager mgr = (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
+            if (mgr != null && mgr instanceof ServiceManagerImp) {
+                serviceManager = (ServiceManagerImp)mgr;
+            } else {
+                String msg = "cannot resolve a service manager";
+                logger.severe(msg);
+                throw new RuntimeException(msg);
+            }
+        }
+        return serviceManager;
+    }
+
 
     /**
      * @param req the soap request to resolve the service from
@@ -365,11 +383,14 @@ public class ServiceCache {
         checker.die();
     }
 
+    public long getFrequency() {
+        return INTEGRITY_CHECK_FREQUENCY;
+    }
 
     /**
-     * this is called by the PeriodicIntegrityChecker thread
+     * this is called by the PeriodicExecutor thread
      */
-    private void checkIntegrity(ServiceManagerImp serviceManager) {
+    public void run() {
         Sync ciReadLock = rwlock.readLock();
         try {
             ciReadLock.acquire();
@@ -401,7 +422,7 @@ public class ServiceCache {
 
                 // get db versions
                 try {
-                    dbversions = serviceManager.getServiceVersions();
+                    dbversions = getServiceManager().getServiceVersions();
                 } catch (FindException e) {
                     logger.log(Level.SEVERE, "error getting versions. " +
                                              "this integrity check is stopping prematurely", e);
@@ -460,7 +481,7 @@ public class ServiceCache {
                             Long svcid = (Long)i.next();
                             PublishedService toUpdateOrAdd = null;
                             try {
-                                toUpdateOrAdd = serviceManager.findByPrimaryKey(svcid.longValue());
+                                toUpdateOrAdd = getServiceManager().findByPrimaryKey(svcid.longValue());
                             } catch (FindException e) {
                                 toUpdateOrAdd = null;
                                 logger.log(Level.WARNING, "service scheduled for update or addition" +
@@ -498,53 +519,6 @@ public class ServiceCache {
         }
     }
 
-    private class PeriodicIntegrityChecker extends Thread {
-        public void run() {
-            try {
-                sleep(INTEGRITY_CHECK_FREQUENCY*2);
-            } catch (InterruptedException e) {
-                logger.log(Level.SEVERE, "interruption", e);
-                return;
-            }
-            logger.finest("initiating cache integrity check process");
-            // get the service manager
-            ServiceManager locmanager = (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
-            if (locmanager != null && locmanager instanceof ServiceManagerImp) {
-                serviceManager = (ServiceManagerImp)locmanager;
-            } else {
-                logger.severe("cannot resolve a service manager");
-                return;
-            }
-            while (true) {
-                if (die) break;
-                try {
-                    sleep(INTEGRITY_CHECK_FREQUENCY);
-                } catch (InterruptedException e) {
-                    logger.log(Level.SEVERE, "interruption", e);
-                    break;
-                }
-                try {
-                    checkIntegrity(serviceManager);
-                } catch (Throwable e) {
-                    logger.log(Level.WARNING, "unhandled exception", e);
-                }
-                lastCheck = System.currentTimeMillis();
-            }
-            logger.finest("cache integrity check process stopping");
-        }
-
-        public long getLastCheck() {
-            return lastCheck;
-        }
-        public void die() {
-            die = true;
-        }
-
-        private long lastCheck = -1;
-        private boolean die = false;
-        private ServiceManagerImp serviceManager = null;
-    }
-
     private static class SingletonHolder {
         private static ServiceCache singleton = new ServiceCache();
     }
@@ -562,5 +536,6 @@ public class ServiceCache {
 
     private final Logger logger = LogManager.getInstance().getSystemLogger();
 
-    private final PeriodicIntegrityChecker checker = new PeriodicIntegrityChecker();
+    private final PeriodicExecutor checker = new PeriodicExecutor( this );
+    private ServiceManagerImp serviceManager;
 }
