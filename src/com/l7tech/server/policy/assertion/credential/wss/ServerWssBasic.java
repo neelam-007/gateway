@@ -43,7 +43,9 @@ public class ServerWssBasic implements ServerAssertion {
             throw new CausedIOException("Request declared as XML but is not well-formed", e);
         }
         if (wssResults == null) {
-            throw new PolicyAssertionException("This request was not processed for WSS level security.");
+            logger.info("Request did not include WSS Basic credentials.");
+            context.setPolicyViolated(true);
+            return AssertionStatus.AUTH_REQUIRED;
         }
         SecurityToken[] tokens = wssResults.getSecurityTokens();
         for (int i = 0; i < tokens.length; i++) {
