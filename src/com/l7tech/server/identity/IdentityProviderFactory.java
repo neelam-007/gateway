@@ -79,7 +79,9 @@ public class IdentityProviderFactory {
 
         if ( cachedProvider == null ) {
             IdentityProviderConfig config = configManager.findByPrimaryKey(oid.longValue());
-            if ( config == null ) throw new FindException("Couldn't find IdentityProviderConfig with oid=" + oid );
+            if ( config == null ) {
+                return null;
+            }
 
             try {
                 cachedProvider = makeProvider(config);
