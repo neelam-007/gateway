@@ -186,15 +186,19 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
 
     public void dragEnter(DragSourceDragEvent dsde) {
+        log.entering(this.getClass().getName(), "dragEnter");
     }
 
     public void dragOver(DragSourceDragEvent dsde) {
+        log.entering(this.getClass().getName(), "dragOver");
     }
 
     public void dropActionChanged(DragSourceDragEvent dsde) {
+        log.entering(this.getClass().getName(), "dropActionChanged");
     }
 
     public void dragDropEnd(DragSourceDropEvent dsde) {
+        log.entering(this.getClass().getName(), "dragDropEnd");
         if (dsde.getDropSuccess()) {
             int nAction = dsde.getDropAction();
             if (nAction == DnDConstants.ACTION_MOVE) {
@@ -203,13 +207,10 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 log.fine("REMOVING: " + pathSource.getLastPathComponent());
                 DefaultTreeModel model = (DefaultTreeModel)getModel();
                 model.removeNodeFromParent((MutableTreeNode)pathSource.getLastPathComponent());
-
-                // .
-                // .. ask your TreeModel to delete the node
-                // .
                 pathSource = null;
             }
         }
+        repaint();
     }
 
     public void dragExit(DragSourceEvent dse) {
@@ -593,8 +594,10 @@ public class PolicyTree extends JTree implements DragSourceListener,
                     path = new TreePath(getModel().getRoot());
                 }
 
-                if (path.equals(pathSource))
+                if (path.equals(pathSource)) {
+                    log.fine("REJECTING DRAG: "+pathSource.getLastPathComponent());
                     return false;
+                }
                 return true;
             } else if (e.isDataFlavorSupported(AssertionsTree.ASSERTION_DATAFLAVOR)) {
                 return true;
