@@ -9,7 +9,7 @@ import java.net.MalformedURLException;
 import java.io.IOException;
 
 /**
- * Provides a remote interface for publishing searching and updatinh published services
+ * Provides a remote interface for publishing searching and updating published services
  * and service policies.
  *
  * @see PublishedService
