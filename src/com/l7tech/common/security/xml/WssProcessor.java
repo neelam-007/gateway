@@ -93,7 +93,10 @@ public interface WssProcessor {
     }
 
     public interface SignedElement extends ParsedElement {
-        X509SecurityToken getSigningSecurityToken();
+        /**
+         * @return either a X509SecurityToken or a DerivedKeyToken
+         */
+        SecurityToken getSigningSecurityToken();
     }
 
     public interface ProcessorResult {
