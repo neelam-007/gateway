@@ -125,7 +125,7 @@ public class IdentityRule extends Filter {
                         if (grp.getName().equals(grpmemship.getGroupName())) return true;
                     }
 
-                    Group grp = gman.findByName(grpmemship.getGroupName());
+                    Group grp = gman.findByPrimaryKey(grpmemship.getGroupId());
                     Set members = gman.getUserHeaders( grp );
                     for (Iterator jj = members.iterator(); jj.hasNext();) {
                         EntityHeader memberx = (EntityHeader)jj.next();

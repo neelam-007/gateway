@@ -36,9 +36,14 @@ public class ServerMemberOfGroup extends ServerIdentityAssertion implements Serv
      */
     protected Group getGroup() throws FindException {
         GroupManager gman = getIdentityProvider().getGroupManager();
-        String groupName = _data.getGroupName();
-        if ( groupName != null) {
-            return gman.findByName(groupName);
+        if (_data.getGroupId() != null) {
+            return gman.findByPrimaryKey(_data.getGroupId());
+        }
+        else {
+            String groupName = _data.getGroupName();
+            if ( groupName != null) {
+                return gman.findByName(groupName);
+            }
         }
         return null;
     }
