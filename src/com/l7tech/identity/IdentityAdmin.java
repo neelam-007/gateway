@@ -77,10 +77,10 @@ public interface IdentityAdmin extends Remote {
     /**
      * Store the specified new or existing identity provider configuration.  If the specified
      * {@link IdentityProviderConfig} contains a unique object ID that already exists, this will replace
-     * the objects current configuration with the new configuration.  Otherwise, a new object will be created.
+     * the object'  s current configuration with the new configuration.  Otherwise, a new object will be created.
      *
      * @param cfg the identity provider configuration to create or update.  Must not be null.
-     * @return the unique object ID that was updated or created.
+     * @return the unique id of the object that was updated or created.
      * @throws SaveException   if the requested information could not be saved
      * @throws UpdateException if the requested information could not be updated
      * @throws RemoteException on remote communication error

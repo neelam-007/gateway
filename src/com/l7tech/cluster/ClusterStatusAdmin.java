@@ -12,7 +12,7 @@ import java.rmi.RemoteException;
  */
 public interface ClusterStatusAdmin extends Remote {
     /**
-     * Get status for all nodes recorded as part of the cluster.
+     * Get status for all nodes part of the cluster.
      * @return An array of ClusterNodeInfo (one for each node)
      * @throws FindException if there was a server-side problem accessing the requested information
      * @throws RemoteException on remote communication error
@@ -28,8 +28,8 @@ public interface ClusterStatusAdmin extends Remote {
     ServiceUsage[] getServiceUsage() throws RemoteException, FindException;
 
     /**
-     * Allows the administrator change the human readable name of a node part of the cluster. these
-     * names are originally automatically set by the server when they join the cluster.
+     * Allows the administrator to change the human readable name of a cluster node. The original
+     * names are automatically set by the server when they join the cluster.
      *
      * @param nodeid the mac of the node for which we want to change the name
      * @param newName the new name of the node (must not be null)
@@ -39,10 +39,10 @@ public interface ClusterStatusAdmin extends Remote {
     void changeNodeName(String nodeid, String newName) throws RemoteException, UpdateException;
 
     /**
-     * Allows the administrator remove a node that is no longer part of the cluster. When a
-     * node is removed from the cluster, the other nodes might think that the node is no longer
-     * responding. After this is called,
-     * the getClusterStatus calls will no longer refer to this node. this operation will not be permitted
+     * Allows the administrator to remove a node that is no longer part of the cluster. When a
+     * node is physically removed from the cluster, it will be considered as no longer
+     * responding until it is removed from the watch list through this call. After this is called,
+     * the getClusterStatus calls will no longer refer to this node. This operation will not be permitted
      * unless this node's status has not been updated for a while. Tables potentially affected by this
      * call are cluster_info, service_usage and ssg_logs
      *
@@ -53,7 +53,7 @@ public interface ClusterStatusAdmin extends Remote {
     void removeStaleNode(String nodeid) throws RemoteException, DeleteException;
 
     /**
-     * Return the current system time on the gateway.
+     * Get the current system time on the gateway.
      *
      * @return java.util.Date  The current system time
      * @throws RemoteException on remote communication error
@@ -61,7 +61,7 @@ public interface ClusterStatusAdmin extends Remote {
     java.util.Date getCurrentClusterSystemTime() throws RemoteException;
 
     /**
-     * Gets the name of node that handles the admin request.
+     * Get the name of node that handles the admin request.
      *
      * @return String  The node name
      * @throws RemoteException on remote communication error
