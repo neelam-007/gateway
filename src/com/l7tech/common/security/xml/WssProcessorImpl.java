@@ -139,9 +139,6 @@ public class WssProcessorImpl implements WssProcessor {
         // Backward compatibility - if we didn't see a timestamp in the security header, look up in the soap header
         if (cntx.timestamp == null) {
             Element header = (Element)cntx.releventSecurityHeader.getParentNode();
-                    /*XmlUtil.findOnlyOneChildElementByName(soapMsg.getDocumentElement(),
-                                                                   currentSoapNamespace,
-                                                                   SoapUtil.HEADER_EL_NAME);*/
             // (header can't be null or we wouldn't be here)
             Element timestamp = XmlUtil.findFirstChildElementByName(header,
                                                                     SoapUtil.WSU_URIS_ARRAY,
@@ -265,9 +262,6 @@ public class WssProcessorImpl implements WssProcessor {
         } catch (SAXException e) {
             logger.log(Level.WARNING, "Error decrypting", e);
             throw new ProcessorException(e);
-        } catch (XMLSecurityElementNotFoundException e) {
-            logger.log(Level.WARNING, "Error decrypting", e);
-            throw new ProcessorException(e);
         } catch (IOException e) {
             logger.log(Level.WARNING, "Error decrypting", e);
             throw new ProcessorException(e);
@@ -329,7 +323,7 @@ public class WssProcessorImpl implements WssProcessor {
      */
     public void decryptReferencedElements(Key key, Element refList, ProcessingStatusHolder cntx)
             throws GeneralSecurityException, ParserConfigurationException, IOException, SAXException,
-            XMLSecurityElementNotFoundException, ProcessorException
+            ProcessorException
     {
         List dataRefEls = XmlUtil.findChildElementsByName(refList, SoapUtil.XMLENC_NS, "DataReference");
         if ( dataRefEls == null || dataRefEls.isEmpty() ) {
@@ -508,7 +502,7 @@ public class WssProcessorImpl implements WssProcessor {
         cntx.securityTokens.add(rememberedSecToken);
     }
 
-    private X509Certificate resolveCertByRef(final Element parentElement, ProcessingStatusHolder cntx){
+    private X509Certificate resolveCertByRef(final Element parentElement, ProcessingStatusHolder cntx) {
 
         // Looking for reference to a wsse:BinarySecurityToken
         // 1. look for a wsse:SecurityTokenReference element
