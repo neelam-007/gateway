@@ -232,7 +232,15 @@ public class Service {
         try {
             GroupManager groupManager = retrieveGroupManagerAndBeginTransaction(identityProviderConfigId);
             if (group.getOid() > 0) {
-                groupManager.update(group);
+                // todo patch to fix bug 17
+                Group originalGroup = groupManager.findByPrimaryKey(Long.toString(group.getOid()));
+                originalGroup.setDescription(group.getDescription());
+                originalGroup.setMembers(group.getMembers());
+                originalGroup.setName(group.getName());
+                originalGroup.setProviderId(group.getProviderId());
+                groupManager.update(originalGroup);
+                // end of patch
+                //groupManager.update(group);
                 return group.getOid();
             }
             return groupManager.save(group);
@@ -241,7 +249,10 @@ public class Service {
             throw new RemoteException("SaveException in saveGroup", e);
         } catch (UpdateException e) {
             e.printStackTrace(System.err);
-            throw new java.rmi.RemoteException("UpdateException in TypeTranslator.serviceGroupToGenGroup", e);
+            throw new java.rmi.RemoteException("UpdateException in saveGroup", e);
+        } catch (FindException e) {
+            e.printStackTrace(System.err);
+            throw new RemoteException("FindException in saveGroup", e);
         } finally {
             endTransaction();
         }
