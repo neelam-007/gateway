@@ -50,7 +50,11 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
      * @return the result of the build
      */
     public PolicyPathResult generate(Assertion assertion) {
-        return new DefaultPolicyPathResult(generatePaths(assertion));
+        Set paths = generatePaths(assertion);
+        for (Iterator iterator = paths.iterator(); iterator.hasNext();) {
+                printPath((AssertionPath)iterator.next());
+            }
+        return new DefaultPolicyPathResult(paths);
     }
 
 
@@ -65,55 +69,44 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
         Iterator preorder = assertion.preorderIterator();
         assertionPaths.add(new AssertionPath(new Assertion[]{(Assertion)preorder.next()}));
         pathStack.push(lastPath(assertionPaths));
-        AssertionPath stackPath = (AssertionPath)pathStack.peek();
 
         for (; preorder.hasNext();) {
             Assertion anext = (Assertion)preorder.next();
+
             if (parentCreatesNewPaths(anext)) {
-                Set paths = generatePaths(anext);
                 AssertionPath cp = (AssertionPath)pathStack.peek();
-                 assertionPaths.remove(cp);
-                for (Iterator iterator = paths.iterator(); iterator.hasNext();) {
-                    AssertionPath assertionPath = (AssertionPath)iterator.next();
-                    for (int i = 0; i < assertionPath.getPath().length; i++) {
-                        Assertion a = assertionPath.getPath()[i];
-                        assertionPaths.add(cp.addAssertion(a));
-                    }
-                }
+                assertionPaths.remove(cp);
+                assertionPaths.add(cp.addAssertion(anext));
 
             } else {
-
-                AssertionPath ap = null;
-
-                if (assertionPaths.size() == 0) {
-                    ap = (AssertionPath)pathStack.peek();
-                }else {
-                    ap = lastPath(assertionPaths);
-                }
-
                 Set add = new HashSet();
                 Set remove = new HashSet();
+
                 for (Iterator iterator = assertionPaths.iterator(); iterator.hasNext();) {
                     AssertionPath assertionPath = (AssertionPath)iterator.next();
-                    if (stackPath.isDescendant(assertionPath)) {
+                    if (assertionPath.lastAssertion() == anext.getParent() ||
+                        assertionPath.lastAssertion().getParent() == anext.getParent()) {
                         AssertionPath a = assertionPath.addAssertion(anext);
                         add.add(a);
                         remove.add(assertionPath);
+
                     }
                 }
                 AssertionPath[] paths = (AssertionPath[])add.toArray(new AssertionPath[] {});
                 if (paths.length > 0) {
-                    pathStack.push(paths[paths.length - 1]);
+                    AssertionPath path = paths[paths.length - 1];
+                    if (path.lastAssertion() instanceof OneOrMoreAssertion)
+                        pathStack.push(path);
                 }
-                assertionPaths.addAll(add);
                 assertionPaths.removeAll(remove);
+                assertionPaths.addAll(add);
             }
         }
         pathStack.pop();
         return pruneEmptyComposites(assertionPaths);
     }
-
     private Stack pathStack = new Stack();
+
 
     private AssertionPath lastPath(Set set) {
         AssertionPath[] apaths =
@@ -185,4 +178,26 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
         if (a.getParent() == null) return true;
         return a.getParent() instanceof OneOrMoreAssertion;
     }
+
+
+    /**
+     * is this a split path assertion
+     *
+     * @param a the assertion to check
+     * @return true if split path, false otherwise
+     */
+    static boolean isSplitPath(Assertion a) {
+        return a instanceof OneOrMoreAssertion;
+    }
+
+    private static void printPath(AssertionPath ap) {
+        Assertion[] ass = ap.getPath();
+System.out.println("** Begin assertion path");
+        for (int i = 0; i < ass.length; i++) {
+System.out.println(ass[i].getClass());
+        }
+System.out.println("** End assertion path");
+
+    }
+
 }

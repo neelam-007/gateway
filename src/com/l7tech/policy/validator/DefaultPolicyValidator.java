@@ -60,12 +60,12 @@ public class DefaultPolicyValidator extends PolicyValidator {
     private void validatePath(AssertionPath ap, PolicyValidatorResult r) {
         Assertion[] ass = ap.getPath();
         PathValidator pv = new PathValidator(r);
-System.out.println("** Start Validating assertion path");
+//System.out.println("** Start Validating assertion path");
         for (int i = 0; i < ass.length; i++) {
             pv.validate(ass[i]);
-System.out.println(ass[i].getClass());
+//System.out.println(ass[i].getClass());
         }
-System.out.println("** End Validating assertion path");
+//System.out.println("** End Validating assertion path");
         if (!pv.seenRouting) { // no routing report that
             r.addWarning(
               new PolicyValidatorResult.

@@ -122,7 +122,7 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
         DefaultPolicyPathBuilder builder = new DefaultPolicyPathBuilder();
 
         int count = builder.generate(oom).getPathCount();
-        assertTrue("The value received is "+count,  count == 9);
+        assertTrue("The value received is "+count,  count == 7);
 
     }
 }
