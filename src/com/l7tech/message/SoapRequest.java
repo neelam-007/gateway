@@ -83,7 +83,6 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
     }
 
     public String getRequestXml() throws IOException {
-        // TODO: Attachments
         if (_requestXml == null && _document != null) {
             // serialize the document
             _requestXml = XmlUtil.nodeToString(_document);
