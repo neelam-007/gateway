@@ -105,14 +105,10 @@
  <transport name="http">
   <requestFlow>
    <handler type="URLMapper"/>
-   <handler type="java:org.apache.axis.handlers.http.HTTPAuthHandler"/>
-   <!--
-   uncomment these to enable authentication of admin requests against internal identity provider
-
+   <!-- comment the following two handlers to bypass admin ws authentication mechanism -->
    <handler type="java:com.l7tech.adminws.security.AuthenticationAxisHandler"/>
    <handler type="java:com.l7tech.adminws.security.AuthorizationAxisHandler"/>
-
-   -->
+      
   </requestFlow>
  </transport>
  <transport name="local">
