@@ -178,6 +178,11 @@
             <fileset dir="${build.dir}" includes="*.war"/>
         </copy>
         <mkdir dir="${tomcat.home}/common/classpath"/>
+        <delete includeEmptyDirs="true">
+            <fileset dir="${tomcat.home}/common/classpath">
+                <include name="*"/>
+            </fileset>
+        </delete>
 
         <copy todir="${tomcat.home}/common/classpath">
             <fileset dir="${src.root}/lib">
@@ -190,22 +195,8 @@
             </fileset>
 
             <fileset dir="${src.root}/lib">
-                <!--                <include name="jta.jar"/>-->
                 <include name="webapp-rmiannotation.jar"/>
-                <!--                <include name="commons-logging-1.0.4.jar"/>-->
-                <!--                <include name="oswego-concurrent.jar"/>-->
             </fileset>
-
-            <!--
-                        <fileset dir="${src.root}/lib/gateway/cluster">
-                            <include name="jgroups.jar"/>
-                            <include name="jta.jar"/>
-                            <include name="jboss-cache.jar"/>
-                            <include name="jboss-common.jar"/>
-                            <include name="jboss-system.jar"/>
-                            <include name="jboss-jmx.jar"/>
-                        </fileset>
-            -->
         </copy>
 
         <!--
