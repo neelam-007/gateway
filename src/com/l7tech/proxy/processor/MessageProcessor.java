@@ -521,8 +521,7 @@ public class MessageProcessor {
 
         try {
             postMethod = new PostMethod(url.toString());
-            postMethod.setDoAuthentication(false); // no auth unless policy says so (Bug #1385)
-            setAuthenticationState(req, state, postMethod);
+            setAuthenticationAndBufferingState(req, state, postMethod);
             postMethod.addRequestHeader("SOAPAction", req.getPolicyAttachmentKey().getSoapAction());
             postMethod.addRequestHeader(SecureSpanConstants.HttpHeaders.ORIGINAL_URL, req.getOriginalUrl().toString());
 
@@ -551,22 +550,6 @@ public class MessageProcessor {
             }
 
             postMethod.addRequestHeader(MimeUtil.CONTENT_TYPE, req.getOuterContentType().getFullValue());
-
-            // Fix for Bug #1376 - confine Commons HTTP client braindamage to multipart messages
-            if (req.isMultipart()) {
-                // For multipart messages, do the following:
-                // - set a content length, to prevent HTTP client from buffering
-                // - turn off automatic authentication challenge responses, since they won't work
-                //   - this will allow HTTP Basic to work normally (after policy faults in)
-                //   - but won't help HTTP Digest (since we have no code to handle the challenge ourselves)
-                postMethod.setDoAuthentication(false);
-
-                // Fix for Bug #1282 - Must set a content-length on PostMethod or it will try to buffer the whole thing
-                final long contentLength = req.getContentLength();
-                if (contentLength > Integer.MAX_VALUE)
-                    throw new IOException("Body content is too long to be processed -- maximum is " + Integer.MAX_VALUE + " bytes");
-                postMethod.setRequestContentLength((int)contentLength);
-            }
 
             final InputStream bodyInputStream = req.getEntireMessageBody();
             postMethod.setRequestBody(bodyInputStream);
@@ -767,32 +750,45 @@ public class MessageProcessor {
 
     /**
      * Configure HTTP Basic or Digest auth on the specified HttpState and PostMethod, if called for by
-     * the specified PendingRequest.
+     * the specified PendingRequest, and set the request to be unbuffered if possible (ie, if Digest
+     * is not required).
      *
      * @param req        the PendingRequest that might require HTTP level authentication
      * @param state      the HttpState to adjust
      * @param postMethod the PostMethod to adjust
      */
-    private void setAuthenticationState(PendingRequest req, HttpState state, PostMethod postMethod)
-      throws OperationCanceledException {
-        state.setAuthenticationPreemptive(false);
+    private void setAuthenticationAndBufferingState(PendingRequest req, HttpState state, PostMethod postMethod)
+            throws OperationCanceledException, IOException
+    {
+        // Turn off request buffering unless HTTP digest is required (Bug #1376)
+        if (!req.isDigestAuthRequired()) {
+            // Fix for Bug #1282 - Must set a content-length on PostMethod or it will try to buffer the whole thing
+            final long contentLength = req.getContentLength();
+            if (contentLength > Integer.MAX_VALUE)
+                throw new IOException("Body content is too long to be processed -- maximum is " + Integer.MAX_VALUE + " bytes");
+            postMethod.setRequestContentLength((int)contentLength);
+        }
 
+        // Turn on preemptive authentication only if HTTP basic is called for in the policy
+        state.setAuthenticationPreemptive(req.isBasicAuthRequired());
+
+        // Do we need HTTP client auth?
         if (!req.isBasicAuthRequired() && !req.isDigestAuthRequired()) {
+            // No -- tell the HTTP client to keep the password to itself (if it's caching one)
             log.info("No HTTP Basic or Digest authentication required by current policy");
+            postMethod.setDoAuthentication(false);
             return;
         }
 
         if (req.getSsg().getTrustedGateway() != null) // can't happen; password based assertions should have all failed
             throw new OperationCanceledException("Password based authentication is not supported for Federated Gateway");
 
+        // Set credentials and enable HTTP client auth
         String username = req.getUsername();
         char[] password = req.getPassword();
-        if (req.isBasicAuthRequired() || req.isDigestAuthRequired()) {
-            log.info("Enabling HTTP Basic or Digest auth with user name=" + username);
-            postMethod.setDoAuthentication(true);
-            state.setAuthenticationPreemptive(req.isBasicAuthRequired() && !req.isDigestAuthRequired());
-            state.setCredentials(null, null,
-              new UsernamePasswordCredentials(username, new String(password)));
-        }
+        log.info("Enabling HTTP Basic or Digest auth with user name=" + username);
+        postMethod.setDoAuthentication(true);
+        state.setCredentials(null, null,
+                             new UsernamePasswordCredentials(username, new String(password)));
     }
 }
