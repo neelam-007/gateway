@@ -83,10 +83,6 @@
     <resource-ref>
       <res-ref-name>jdbc/ssg</res-ref-name>
       <res-type>javax.sql.XADataSource</res-type>
-      <driver-name>com.mysql.jdbc.Driver</driver-name>
-      <url>jdbc:mysql://localhost/ssg</url>
-      <user>webuser</user>
-      <password>resubew</password>
     </resource-ref>
 
 
