@@ -8,7 +8,7 @@
 # Edit at deployment time to ensure values are accurate
 #
 
-default_java_opts="-Xmx768m -Xss1m"
+default_java_opts="-Xmx768m -Xss1m -server"
 export SSG_HOME=/ssg
 JAVA_HOME=/ssg/j2sdk1.4.2_05
 TOMCAT_HOME=/ssg/tomcat/
