@@ -26,7 +26,7 @@ public class ProviderNode extends EntityHeaderNode {
      * The parameter entity must represent a provider, otherwise the
      * runtime IllegalArgumentException exception is thrown.
      *
-     * @param e  the Entry instance, must be Realm
+     * @param e  the Entry instance, must be provider
      * @exception IllegalArgumentException
      *                   thrown if the entity instance is not a provider
      */
