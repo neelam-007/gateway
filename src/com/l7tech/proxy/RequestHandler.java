@@ -320,7 +320,7 @@ public class RequestHandler extends AbstractHttpHandler {
             log.fine("Returning challenge");
             throw e;
         } catch (Exception e) {
-            log.log(Level.SEVERE, e.getMessage(), e);
+            log.log(Level.SEVERE, e.getClass().getName() + ": " + e.getMessage(), e);
             interceptor.onReplyError(e);
             e.printStackTrace(System.err);
             SsgResponse reply = SsgResponse.makeFaultResponse("Server",
