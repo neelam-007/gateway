@@ -1,7 +1,5 @@
 package com.l7tech.logging;
 
-import com.l7tech.common.util.Locator;
-
 import java.util.logging.Logger;
 import java.util.logging.LogRecord;
 
@@ -17,19 +15,7 @@ public abstract class LogManager {
      * Provides access to the actual log manager
      */
     public static LogManager getInstance() {
-        if (singleton == null) {
-            try {
-                singleton = (LogManager)Locator.getDefault().lookup(LogManager.class);
-            } catch (Throwable e) {
-                // this cannot fail !
-                System.err.println("Critical error Locating LogManager");
-                e.printStackTrace(System.err);
-            } finally {
-                // we cannot leave without instantiating the logger
-                if (singleton == null) singleton = new BasicLogManager();
-            }
-        }
-        return singleton;
+        return SingletonHolder.singleton;
     }
     public abstract Logger getSystemLogger();
     public abstract LogRecord[] getRecorded(int offset, int size);
@@ -53,5 +39,20 @@ public abstract class LogManager {
     // ************************************************
     // PRIVATES
     // ************************************************
-    private static LogManager singleton = null;
+    private static class SingletonHolder {
+        private static LogManager singleton = null;
+        static {
+            try {
+                // dont call the locator because it itself logs shit!
+                singleton = new ServerLogManager();
+            } catch (Throwable e) {
+                // this cannot fail !
+                System.err.println("Critical error Locating LogManager");
+                e.printStackTrace(System.err);
+            } finally {
+                // we cannot leave without instantiating the logger
+                if (singleton == null) singleton = new BasicLogManager();
+            }
+        }
+    }
 }
