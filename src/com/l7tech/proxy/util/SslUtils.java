@@ -140,8 +140,10 @@ public class SslUtils {
                 throw new CertificateException("We got a certificate, but it's distinguished name didn't match what we asked for.");
             if (!cert.getPublicKey().equals(csr.getPublicKey()))
                 throw new CertificateException("We got a certificate, but it certified the wrong public key.");
-            // todo, mike fix this because the ssa now gets the server ssl cert
-            //cert.verify(caCert.getPublicKey());
+
+            // TODO this doesn't work now that caCert is actually the SSL cert.  Might not be a problem though:
+            // why do we even care what the server signed our client cert with, as long as the server is happy with it?
+            // cert.verify(caCert.getPublicKey());
 
             return cert;
         } finally {
