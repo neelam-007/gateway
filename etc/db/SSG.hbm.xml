@@ -225,6 +225,8 @@
 
         <version name="version" column="version" type="integer"/>
 
+        <property name="providerId" type="long" column="provider_oid"/>
+        
         <property name="name" type="string" column="name" />
         <property name="login" type="string" column="login" />
         <property name="email" type="string"/>
@@ -241,6 +243,8 @@
         </id>
 
         <version name="version" column="version" type="integer"/>
+
+        <property name="providerId" type="long" column="provider_oid"/>
 
         <property name="description" type="string"/>
         <property name="name" type="string"/>
