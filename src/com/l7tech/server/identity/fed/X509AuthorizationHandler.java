@@ -62,9 +62,10 @@ public class X509AuthorizationHandler extends FederatedAuthorizationHandler {
 
             try {
                 TrustedCert trustedCert = trustedCertManager.getCachedCertBySubjectDn( issuerDn, MAX_CACHE_AGE );
-                final String untrusted = "The trusted certificate with DN '" + trustedCert.getSubjectDn() + "' is not trusted";
 
                 if ( trustedCert == null ) throw new BadCredentialsException("Signer '" + issuerDn + "' is not trusted");
+
+                final String untrusted = "The trusted certificate with DN '" + trustedCert.getSubjectDn() + "' is not trusted";
 
                 if ( !certOidSet.contains(new Long(trustedCert.getOid())) )
                     throw new BadCredentialsException(untrusted + " by this identity provider");
