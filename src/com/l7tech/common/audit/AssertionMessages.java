@@ -222,4 +222,8 @@ public class AssertionMessages extends Messages {
     public static final M SAML_AUTHN_STMT_NO_ACCEPTABLE_SAML_ASSERTION         = m(6103, Level.INFO, "This assertion did not find an acceptable SAML assertion to use as credentials.");
     public static final M SAML_STMT_VALIDATE_FAILED                            = m(6104, Level.SEVERE, "Saml Statement validation failed");
 
+    // ServerWsTrustCredentialExchange
+    public static final M WSTRUST_NO_SUITABLE_CREDENTIALS = m(6200, Level.INFO, "The current request did not contain credentials of any supported type");
+    public static final M WSTRUST_RSTR_NOT_SAML           = m(6201, Level.INFO, "WS-Trust response did not contain SAML assertion");
+    public static final M WSTRUST_RSTR_STATUS_NON_200     = m(6202, Level.INFO, "WS-Trust response had non-200 status");
 }
