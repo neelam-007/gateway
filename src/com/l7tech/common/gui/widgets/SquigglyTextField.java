@@ -9,7 +9,9 @@ package com.l7tech.common.gui.widgets;
 import javax.swing.JTextField;
 import javax.swing.text.Document;
 import javax.swing.text.BadLocationException;
-import java.awt.*;
+import java.awt.Graphics;
+import java.awt.Color;
+import java.awt.Rectangle;
 
 /**
  * @author alex

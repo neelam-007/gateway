@@ -6,10 +6,7 @@
 
 package com.l7tech.common.gui.widgets;
 
-import com.l7tech.common.gui.widgets.SquigglyTextField;
-
 import javax.swing.JFrame;
-import javax.swing.JTextField;
 
 /**
  * @author alex
