@@ -22,7 +22,7 @@ public class Ssg implements Cloneable, Comparable {
     private String serverUrl = "";
     private int sslPort = 443;
     private String username = null;
-    private String password = null;
+    private char[] password = null;
     private String keyStorePath = null;
     private HashMap policiesByUri = new HashMap();
     private HashMap policiesBySoapAction = new HashMap();
@@ -195,12 +195,16 @@ public class Ssg implements Cloneable, Comparable {
         this.username = username;
     }
 
-    public String getPassword() {
+    public char[] getPassword() {
         return password;
     }
 
-    public void setPassword(final String password) {
+    public void setPassword(final char[] password) {
         this.password = password;
+    }
+
+    public void setPassword(final String password) {
+        this.password = password.toCharArray();
     }
 
     public String getKeyStorePath() {

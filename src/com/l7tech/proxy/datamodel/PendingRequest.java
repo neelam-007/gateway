@@ -27,10 +27,10 @@ public class PendingRequest {
         private boolean isSslRequired = false;
         private boolean isBasicAuthRequired = false;
         private String httpBasicUsername = "";
-        private String httpBasicPassword = "";
+        private char[] httpBasicPassword = "".toCharArray();
         private boolean isDigestAuthRequired = false;
         private String httpDigestUsername = "";
-        private String httpDigestPassword = "";
+        private char[] httpDigestPassword = "".toCharArray();
     }
     private PolicySettings policySettings = new PolicySettings();
 
@@ -98,11 +98,11 @@ public class PendingRequest {
         this.policySettings.httpBasicUsername = httpBasicUsername;
     }
 
-    public String getHttpBasicPassword() {
+    public char[] getHttpBasicPassword() {
         return policySettings.httpBasicPassword;
     }
 
-    public void setHttpBasicPassword(String httpBasicPassword) {
+    public void setHttpBasicPassword(char[] httpBasicPassword) {
         this.policySettings.httpBasicPassword = httpBasicPassword;
     }
 
@@ -122,11 +122,11 @@ public class PendingRequest {
         this.policySettings.httpDigestUsername = httpDigestUsername;
     }
 
-    public String getHttpDigestPassword() {
+    public char[] getHttpDigestPassword() {
         return policySettings.httpDigestPassword;
     }
 
-    public void setHttpDigestPassword(String httpDigestPassword) {
+    public void setHttpDigestPassword(char[] httpDigestPassword) {
         this.policySettings.httpDigestPassword = httpDigestPassword;
     }
 

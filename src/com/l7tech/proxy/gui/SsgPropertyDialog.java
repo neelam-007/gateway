@@ -15,6 +15,8 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.tree.TreeModel;
 import java.awt.*;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -29,7 +31,7 @@ import java.util.Map;
  * To change this template use Options | File Templates.
  */
 public class SsgPropertyDialog extends PropertyDialog {
-    private final Category log = Category.getInstance(SsgPropertyDialog.class);
+    private static final Category log = Category.getInstance(SsgPropertyDialog.class);
 
     private Ssg ssg; // The real Ssg instnace, to which changes may be committed.
     private int gridY = 0; // Used for layout
@@ -39,6 +41,11 @@ public class SsgPropertyDialog extends PropertyDialog {
     private JTextField fieldLocalEndpoint;
     private JTextField fieldServerUrl;
     private JTextField fieldKeyStorePath;
+    private JTextField fieldUsername;
+    private JButton buttonSetPassword;
+    private JCheckBox cbPromptForPassword;
+    private JLabel fieldPassword;
+    private char[] editPassword;
 
     private JComponent policiesPane;
     private JTree policyTree;
@@ -110,6 +117,18 @@ public class SsgPropertyDialog extends PropertyDialog {
             }
             log.error("SsgPropertyDialog: policyTable: invalid columnIndex: " + columnIndex);
             return null;
+        }
+    }
+
+    private String passwordToString(char[] password) {
+        if (password == null) {
+            return "<Not set>";
+        } else if ("".equals(new String(password))) {
+            return "<Empty password>";
+        } else {
+            char[] stars = new char[password.length];
+            Arrays.fill(stars, '*');
+            return new String(stars);
         }
     }
 
@@ -207,6 +226,33 @@ public class SsgPropertyDialog extends PropertyDialog {
             pane.add(new JLabel("Key store:"), gbcLabel());
             pane.add(fieldKeyStorePath, gbc());
 
+            fieldUsername = new JTextField();
+            fieldUsername.setPreferredSize(new Dimension(200, 20));
+            pane.add(new JLabel("Username:"), gbcLabel());
+            pane.add(fieldUsername, gbc());
+
+            fieldPassword = new JLabel();
+            fieldPassword.setPreferredSize(new Dimension(200, 20));
+            pane.add(new JLabel("Password:"), gbcLabel());
+            pane.add(fieldPassword, gbc());
+
+            buttonSetPassword = new JButton("Set Password");
+            buttonSetPassword.setPreferredSize(new Dimension(90, 20));
+            buttonSetPassword.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    char[] word = PasswordDialog.getPassword(Gui.getInstance().getFrame(), "Set Password");
+                    if (word != null) {
+                        editPassword = word;
+                        fieldPassword.setText(passwordToString(editPassword));
+                    }
+                }
+            });
+            pane.add(buttonSetPassword, gbc());
+
+            cbPromptForPassword = new JCheckBox("Prompt for username and password when needed");
+            cbPromptForPassword.setPreferredSize(new Dimension(200, 20));
+            pane.add(cbPromptForPassword, gbc());
+
             // Have a spacer eat any leftover space
             pane.add(new JPanel(),
                      new GridBagConstraints(0, gridY++, 1, 1, 1.0, 1.0,
@@ -226,6 +272,10 @@ public class SsgPropertyDialog extends PropertyDialog {
         fieldLocalEndpoint.setText(ssg.getLocalEndpoint());
         fieldServerUrl.setText(ssg.getServerUrl());
         fieldKeyStorePath.setText(ssg.getKeyStorePath());
+        fieldUsername.setText(ssg.getUsername());
+        editPassword = ssg.getPassword();
+        fieldPassword.setText(passwordToString(editPassword));
+        cbPromptForPassword.setSelected(ssg.isPromptForUsernameAndPassword());
 
         displayPolicies.clear();
         synchronized (ssg) {
@@ -263,11 +313,15 @@ public class SsgPropertyDialog extends PropertyDialog {
         ssg.setLocalEndpoint(fieldLocalEndpoint.getText());
         ssg.setServerUrl(fieldServerUrl.getText());
         ssg.setKeyStorePath(fieldKeyStorePath.getText());
+        ssg.setUsername(fieldUsername.getText());
+        ssg.setPassword(editPassword);
+        ssg.setPromptForUsernameAndPassword(cbPromptForPassword.isSelected());
         setSsg(ssg);
     }
 
     public static void main(String[] argv) {
         Ssg ssg = new Ssg(1, "Test SSG", "ssg", "http://blah.bloof.com");
+        log.info("SSG prompt bit: " + ssg.isPromptForUsernameAndPassword());
         ssg.attachPolicy("http://example.com/Quoter", null, new TrueAssertion());
         ssg.attachPolicy("http://example.com/Other", "http://example.com/soapaction/other",
                          new AllAssertion(Arrays.asList(new Assertion[] {

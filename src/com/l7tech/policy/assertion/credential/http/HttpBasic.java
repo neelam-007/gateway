@@ -41,7 +41,7 @@ public class HttpBasic extends HttpCredentialSourceAssertion {
      */
     public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
         String username = request.getSsg().getUsername();
-        String password = request.getSsg().getPassword();
+        char[] password = request.getSsg().getPassword();
         if (username == null || password == null || username.length() < 1)
             return AssertionStatus.NOT_FOUND;
         request.setBasicAuthRequired(true);

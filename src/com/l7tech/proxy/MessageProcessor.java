@@ -101,12 +101,14 @@ public class MessageProcessor {
         if (pendingRequest.isBasicAuthRequired()) {
             postMethod.setDoAuthentication(true);
             state.setAuthenticationPreemptive(true);
-            state.setCredentials(null, null, new UsernamePasswordCredentials(pendingRequest.getHttpBasicUsername(),
-                                                                             pendingRequest.getHttpBasicPassword()));
+            state.setCredentials(null, null,
+                                 new UsernamePasswordCredentials(pendingRequest.getHttpBasicUsername(),
+                                                                 new String(pendingRequest.getHttpBasicPassword())));
         } else if (pendingRequest.isDigestAuthRequired()) {
             postMethod.setDoAuthentication(true);
-            state.setCredentials(null, null, new UsernamePasswordCredentials(pendingRequest.getHttpBasicUsername(),
-                                                                             pendingRequest.getHttpBasicPassword()));
+            state.setCredentials(null, null,
+                                 new UsernamePasswordCredentials(pendingRequest.getHttpBasicUsername(),
+                                                                 new String(pendingRequest.getHttpBasicPassword())));
         }
 
         postMethod.setRequestBody(pendingRequest.getSoapEnvelope().toString());

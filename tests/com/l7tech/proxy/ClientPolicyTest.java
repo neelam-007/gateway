@@ -83,7 +83,7 @@ public class ClientPolicyTest extends TestCase {
         assertTrue(AssertionStatus.NONE.equals(result));
         assertTrue(req.isBasicAuthRequired());
         assertTrue(USER.equals(req.getHttpBasicUsername()));
-        assertTrue("".equals(req.getHttpBasicPassword()));
+        assertTrue("".equals(new String(req.getHttpBasicPassword())));
 
         final String PASS = "s3cr3t";
         ssg.setPassword(PASS);
@@ -91,7 +91,7 @@ public class ClientPolicyTest extends TestCase {
         assertTrue(AssertionStatus.NONE.equals(result));
         assertTrue(req.isBasicAuthRequired());
         assertTrue(USER.equals(req.getHttpBasicUsername()));
-        assertTrue(PASS.equals(req.getHttpBasicPassword()));
+        assertTrue(PASS.equals(new String(req.getHttpBasicPassword())));
     }
 
     /** Test decoration of a message with an SSL policy (specifying no certificates in particular). */
@@ -139,7 +139,7 @@ public class ClientPolicyTest extends TestCase {
             assertFalse(req.isDigestAuthRequired());
             assertTrue(req.isBasicAuthRequired());
             assertTrue(USER.equals(req.getHttpBasicUsername()));
-            assertTrue(PASS.equals(req.getHttpBasicPassword()));
+            assertTrue(PASS.equals(new String(req.getHttpBasicPassword())));
         }
 
         {
@@ -167,7 +167,7 @@ public class ClientPolicyTest extends TestCase {
             assertFalse(req.isBasicAuthRequired());
             assertTrue(req.isDigestAuthRequired());
             assertTrue(USER.equals(req.getHttpDigestUsername()));
-            assertTrue(PASS.equals(req.getHttpDigestPassword()));
+            assertTrue(PASS.equals(new String(req.getHttpDigestPassword())));
         }
     }
 }
