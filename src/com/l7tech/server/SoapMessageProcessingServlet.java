@@ -62,15 +62,13 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         HttpSoapRequest sreq = new HttpSoapRequest(htm);
         HttpSoapResponse sresp = new HttpSoapResponse(htm);
 
-        // TODO: SOAP-with-attachments!
-
         BufferedWriter respWriter = null;
         AssertionStatus status = AssertionStatus.UNDEFINED;
         try {
             try {
                 status = MessageProcessor.getInstance().processMessage(sreq, sresp);
 
-                sresp.setHeadersIn(hresponse, status);
+                sresp.setHeadersIn(hresponse, sresp, status);
                 String protRespXml = sresp.getResponseXml();
 
                 if (status == AssertionStatus.NONE) {

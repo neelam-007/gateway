@@ -7,6 +7,7 @@
 package com.l7tech.message;
 
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.common.util.XmlUtil;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.Iterator;
@@ -22,7 +23,8 @@ public class HttpSoapResponse extends SoapResponse {
         super( htm );
     }
 
-    public void setHeadersIn( HttpServletResponse hresponse, AssertionStatus status ) {
+    public void setHeadersIn( HttpServletResponse hresponse, HttpSoapResponse sresp, AssertionStatus status ) {
+
         Integer irouteStat = (Integer)getParameter( Response.PARAM_HTTP_STATUS );
         int routeStat;
         if ( irouteStat == null ) {
@@ -46,7 +48,13 @@ public class HttpSoapResponse extends SoapResponse {
                 if ( name == null || ovalue == null ) continue;
 
                 if ( PARAM_HTTP_CONTENT_TYPE.equals( name ) ) {
-                    hresponse.setContentType( (String)ovalue );
+                    if(sresp.isMultipart()) {
+                        hresponse.setContentType(XmlUtil.MULTIPART_CONTENT_TYPE +
+                            "; type=\"" + XmlUtil.TEXT_XML + "\"" +
+                            "; " + XmlUtil.MULTIPART_BOUNDARY + "=\"" + sresp.getMultipartBoundary()  + "\"");
+                    } else {
+                        hresponse.setContentType( (String)ovalue );
+                    }
                     continue;
                 }
 
