@@ -6,14 +6,15 @@
 
 package com.l7tech.objectmodel;
 
-import cirrus.hibernate.HibernateException;
-import cirrus.hibernate.Session;
 import com.l7tech.logging.LogManager;
 
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import net.sf.hibernate.Session;
+import net.sf.hibernate.HibernateException;
 
 /**
  * @author alex

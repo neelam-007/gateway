@@ -1,8 +1,5 @@
 package com.l7tech.service.resolution;
 
-import cirrus.hibernate.HibernateException;
-import cirrus.hibernate.Query;
-import cirrus.hibernate.Session;
 import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.*;
 import com.l7tech.service.PublishedService;
@@ -11,6 +8,10 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import net.sf.hibernate.Session;
+import net.sf.hibernate.HibernateException;
+import net.sf.hibernate.Query;
 
 /**
  * LAYER 7 TECHNOLOGIES, INC
@@ -73,10 +74,6 @@ public class ResolutionManager {
                 ResolutionParameters todelete = (ResolutionParameters)i.next();
                 session.delete(todelete);
             }
-        } catch (SQLException e) {
-            String msg = "error deleting exsiting resolution parameters";
-            logger.log(Level.WARNING, msg, e);
-            throw new UpdateException(msg, e);
         } catch (HibernateException e) {
             String msg = "error deleting exsiting resolution parameters";
             logger.log(Level.WARNING, msg, e);
@@ -90,10 +87,6 @@ public class ResolutionManager {
                 session.save(toadd);
             }
             logger.fine("saved " + distinctItemsToSave.size() + " parameters for service " + service.getOid());
-        } catch (SQLException e) {
-            String msg = "error adding resolution parameters. throwing duplicate exception";
-            logger.log(Level.WARNING, msg, e);
-            throw new DuplicateObjectException(msg, e);
         } catch (HibernateException e) {
             String msg = "error adding resolution parameters. throwing duplicate exception";
             logger.log(Level.WARNING, msg, e);

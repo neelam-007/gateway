@@ -6,7 +6,7 @@
 
 package com.l7tech.objectmodel;
 
-import cirrus.hibernate.Session;
+import net.sf.hibernate.Session;
 
 /**
  * @author alex

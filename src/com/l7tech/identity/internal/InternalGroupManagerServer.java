@@ -1,8 +1,5 @@
 package com.l7tech.identity.internal;
 
-import cirrus.hibernate.HibernateException;
-import cirrus.hibernate.Query;
-import cirrus.hibernate.Session;
 import com.l7tech.identity.*;
 import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.*;
@@ -11,6 +8,10 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import net.sf.hibernate.Session;
+import net.sf.hibernate.Query;
+import net.sf.hibernate.HibernateException;
 
 /**
  * Layer 7 Technologies, inc.

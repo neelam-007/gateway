@@ -16,10 +16,10 @@ import java.sql.SQLException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
-import cirrus.hibernate.Query;
-import cirrus.hibernate.HibernateException;
-import cirrus.hibernate.Session;
-import cirrus.hibernate.Transaction;
+import net.sf.hibernate.Session;
+import net.sf.hibernate.HibernateException;
+import net.sf.hibernate.Query;
+
 
 /**
  * LAYER 7 TECHNOLOGIES, INC

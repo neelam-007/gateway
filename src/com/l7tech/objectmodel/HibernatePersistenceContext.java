@@ -6,9 +6,6 @@
 
 package com.l7tech.objectmodel;
 
-import cirrus.hibernate.Session;
-import cirrus.hibernate.HibernateException;
-
 import javax.sql.DataSource;
 import java.sql.*;
 import java.util.logging.Level;
@@ -17,6 +14,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import com.l7tech.logging.LogManager;
+import net.sf.hibernate.Session;
+import net.sf.hibernate.HibernateException;
+import net.sf.hibernate.Transaction;
 import org.apache.commons.dbcp.PoolableConnection;
 
 /**
@@ -50,10 +50,6 @@ public class HibernatePersistenceContext extends PersistenceContext {
                 toto.postCommit();
             }
             txListenerList.clear();
-        } catch ( SQLException se ) {
-            logger.throwing( getClass().getName(), "commitTransaction", se );
-            close();
-            throw new TransactionException( se.toString(), se );
         } catch ( HibernateException he ) {
             logger.throwing( getClass().getName(), "commitTransaction", he );
             throw new TransactionException( he.toString(), he );
@@ -85,10 +81,6 @@ public class HibernatePersistenceContext extends PersistenceContext {
                 logger.warning( "Flush called with no session active!" );
             else
                 _session.flush();
-        } catch ( SQLException se ) {
-            logger.log( Level.SEVERE, "in flush()", se );
-            close();
-            throw new ObjectModelException( se.getMessage(), se );
         } catch ( HibernateException he ) {
             logger.log( Level.SEVERE, "in flush()", he );
             throw new ObjectModelException( he.getMessage(), he );
@@ -107,8 +99,6 @@ public class HibernatePersistenceContext extends PersistenceContext {
             super.releaseContext();
         } catch ( HibernateException he ) {
             logger.log(Level.SEVERE, null, he);
-        } catch ( SQLException se ) {
-            logger.log(Level.SEVERE, null, se);
         }
     }
 
@@ -118,7 +108,7 @@ public class HibernatePersistenceContext extends PersistenceContext {
      *
      * @return a valid Hibernate Session (hopefully!)
      * @throws SQLException if MAXRETRIES have been made, the SQLException resulting from the last connection attempt.
-     * @throws HibernateException if MAXRETRIES have been made, the HibernateException resulting from the last connection attempt.
+     * @throws net.sf.hibernate.HibernateException if MAXRETRIES have been made, the HibernateException resulting from the last connection attempt.
      */
     public synchronized Session getSession() throws SQLException, HibernateException {
         Exception lastException = null;
@@ -167,9 +157,6 @@ public class HibernatePersistenceContext extends PersistenceContext {
                 }
 
                 _session.close();
-            } catch ( SQLException se ) {
-                logger.log( Level.WARNING, "exception closing session", se );
-                lastException = se;
             } catch ( HibernateException he ) {
                 logger.log( Level.WARNING, "exception closing session", he );
                 lastException = he;
@@ -227,7 +214,7 @@ public class HibernatePersistenceContext extends PersistenceContext {
     protected Session _session;
     protected DataSource _dataSource;
     protected Connection _conn;
-    protected cirrus.hibernate.Transaction _htxn;
+    protected Transaction _htxn;
     protected ArrayList txListenerList = new ArrayList();
     private Logger logger = LogManager.getInstance().getSystemLogger();
 }

@@ -6,8 +6,6 @@
 
 package com.l7tech.service;
 
-import cirrus.hibernate.HibernateException;
-import cirrus.hibernate.Session;
 import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.*;
 import com.l7tech.service.resolution.ResolutionManager;
@@ -21,6 +19,9 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import net.sf.hibernate.Session;
+import net.sf.hibernate.HibernateException;
 
 /**
  * Manages PublishedService instances.

@@ -14,7 +14,7 @@
 <hibernate-mapping>
     <class name="com.l7tech.identity.IdentityProviderConfig" table="identity_provider">
         <id name="oid" column="oid" type="long" unsaved-value="-1">
-            <generator class="hilo.long"/>
+            <generator class="hilo"/>
         </id>
         <version name="version" column="version" type="integer"/>
 
@@ -28,7 +28,7 @@
 
     <class name="com.l7tech.identity.internal.InternalGroup" table="internal_group">
         <id name="oid" column="oid" type="long" unsaved-value="-1">
-            <generator class="hilo.long"/>
+            <generator class="hilo"/>
         </id>
 
         <version name="version" column="version" type="integer"/>
@@ -46,7 +46,7 @@
 
     <class name="com.l7tech.identity.internal.InternalUser" table="internal_user">
         <id name="oid" column="oid" type="long" unsaved-value="-1">
-            <generator class="hilo.long"/>
+            <generator class="hilo"/>
         </id>
 
         <version name="version" column="version" type="integer"/>
@@ -81,7 +81,7 @@
 
     <class name="com.l7tech.service.PublishedService" table="published_service">
         <id name="oid" column="oid" type="long" unsaved-value="-1">
-            <generator class="hilo.long"/>
+            <generator class="hilo"/>
         </id>
 
         <version name="version" column="version" type="integer"/>
@@ -95,7 +95,7 @@
 
     <class name="com.l7tech.identity.cert.CertEntryRow" table="client_cert">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
-            <generator class="hilo.long"/>
+            <generator class="hilo"/>
         </id>
         <property name="provider" column="provider" type="long"/>
         <property name="login" column="login" type="string"/>
@@ -106,7 +106,7 @@
     <!--
     <class name="com.l7tech.server.url.UrlCacheRow" table="urlcache">
         <id name="oid" column="oid" type="long" unsaved-value="-1">
-            <generator class="hilo.long"/>
+            <generator class="hilo"/>
         </id>
 
         <timestamp name="timestamp"/>

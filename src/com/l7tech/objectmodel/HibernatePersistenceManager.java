@@ -6,8 +6,6 @@
 
 package com.l7tech.objectmodel;
 
-import cirrus.hibernate.*;
-import cirrus.hibernate.type.Type;
 import com.l7tech.logging.LogManager;
 import com.l7tech.server.ServerConfig;
 
@@ -19,6 +17,10 @@ import java.util.logging.Level;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+
+import net.sf.hibernate.*;
+import net.sf.hibernate.cfg.Configuration;
+import net.sf.hibernate.type.Type;
 
 /**
  * @author alex
@@ -35,8 +37,8 @@ public class HibernatePersistenceManager extends PersistenceManager {
     private HibernatePersistenceManager() throws IOException, SQLException {
         FileInputStream fis = null;
         try {
-            Datastore ds = Hibernate.createDatastore();
-            ds.storeResource( DEFAULT_HIBERNATE_RESOURCEPATH, getClass().getClassLoader() );
+            Configuration cfg = new Configuration();
+            cfg.addResource( DEFAULT_HIBERNATE_RESOURCEPATH, getClass().getClassLoader() );
 
             String propsPath = ServerConfig.getInstance().getHibernatePropertiesPath();
 
@@ -45,11 +47,11 @@ public class HibernatePersistenceManager extends PersistenceManager {
                 Properties props = new Properties();
                 fis = new FileInputStream( propsPath );
                 props.load( fis );
-                _sessionFactory = ds.buildSessionFactory( props );
+                cfg.setProperties( props );
             } else {
                 logger.info( "Loading database configuration from system classpath" );
-                _sessionFactory = ds.buildSessionFactory();
             }
+            _sessionFactory = cfg.buildSessionFactory();
 
         } catch ( HibernateException he ) {
             logger.throwing( getClass().getName(), "<init>", he );
@@ -97,7 +99,7 @@ public class HibernatePersistenceManager extends PersistenceManager {
             ContextHolder h = getContextHolder( context );
             Session s = h._session;
             return s.find( query );
-        } catch ( cirrus.hibernate.ObjectNotFoundException onfe ) {
+        } catch ( net.sf.hibernate.ObjectNotFoundException onfe ) {
             return EMPTYLIST;
         } catch ( HibernateException he ) {
             logger.throwing( getClass().getName(), "doFind", he );
@@ -175,7 +177,7 @@ public class HibernatePersistenceManager extends PersistenceManager {
             logger.throwing( getClass().getName(), "doFindByPrimaryKey", se );
             close( context );
             throw new FindException( se.toString(), se );
-        } catch (cirrus.hibernate.ObjectNotFoundException e) {
+        } catch (net.sf.hibernate.ObjectNotFoundException e) {
             logger.log(Level.FINE, "object not found, returning null", e);
             return null;
         } catch ( HibernateException he ) {
