@@ -127,6 +127,10 @@ public class LdapGroupManager implements GroupManager {
         throw new UnsupportedOperationException();
     }
 
+    public Collection search( String searchString ) throws FindException {
+        return parent.search(new EntityType[] { EntityType.GROUP }, searchString );
+    }
+
     public Class getImpClass() {
         return LdapGroup.class;
     }

@@ -237,10 +237,6 @@ public class LdapIdentityProvider implements IdentityProvider {
         }
     }
 
-    public boolean isReadOnly() {
-        return true;
-    }
-
     /**
      * searches the ldap provider for identities
      *

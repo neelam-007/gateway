@@ -11,13 +11,14 @@ import com.l7tech.common.util.Locator;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
-import com.l7tech.objectmodel.EntityType;
+import com.l7tech.identity.fed.X509Config;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.server.identity.PersistentIdentityProvider;
 
 import java.io.IOException;
 import java.security.InvalidKeyException;
@@ -26,8 +27,6 @@ import java.security.NoSuchProviderException;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -37,7 +36,7 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class FederatedIdentityProvider implements IdentityProvider {
+public class FederatedIdentityProvider extends PersistentIdentityProvider {
     public FederatedIdentityProvider( IdentityProviderConfig config ) {
         if ( !(config instanceof FederatedIdentityProviderConfig) )
             throw new IllegalArgumentException("Config must be an instance of FederatedIdentityProviderConfig");
@@ -73,6 +72,7 @@ public class FederatedIdentityProvider implements IdentityProvider {
     public User authenticate(LoginCredentials pc) throws AuthenticationException, FindException, IOException {
         if ( pc.getFormat() == CredentialFormat.CLIENTCERT_X509_ASN1_DER ) {
             if ( !config.isX509Supported() ) throw new AuthenticationException("This identity provider is not configured to support X.509 credentials");
+            final X509Config x509Config = config.getX509Config();
 
             X509Certificate requestCert = (X509Certificate)pc.getPayload();
             String subjectDn = requestCert.getSubjectDN().getName();
@@ -80,6 +80,10 @@ public class FederatedIdentityProvider implements IdentityProvider {
 
             TrustedCert trustedCert = (TrustedCert)trustedCerts.get(issuerDn);
             if ( trustedCert == null ) throw new BadCredentialsException("Signer is not trusted");
+            if ( !trustedCert.isTrustedForSigningClientCerts() )
+                throw new BadCredentialsException("The trusted certificate with DN '" +
+                                                  trustedCert.getSubjectDn() +
+                                                  " is not trusted for signing client certificates");
 
             try {
                 // Check signatures
@@ -101,17 +105,19 @@ public class FederatedIdentityProvider implements IdentityProvider {
                 throw new BadCredentialsException(e.getMessage(), e);
             }
 
-            Class credentialSourceClass = pc.getCredentialSourceAssertion();
-            if ( credentialSourceClass == null )
-                throw new BadCredentialsException("Certificate was found by an unknown credential source");
-            else if ( credentialSourceClass == RequestWssX509Cert.class &&
-                      config.getX509Config().isWssBinarySecurityToken() )
-                return userManager.findBySubjectDN(subjectDn);
-            else if ( credentialSourceClass == HttpClientCert.class &&
-                      config.getX509Config().isSslClientCert() )
-                return userManager.findBySubjectDN(subjectDn);
+            User u = userManager.findBySubjectDN(subjectDn);
+            if (u == null) throw new BadCredentialsException("No Federated User with DN = '" +
+                                                             subjectDn + "' could be found");
 
-            throw new BadCredentialsException("");
+            final Class csa = pc.getCredentialSourceAssertion();
+
+            if ( ( x509Config.isWssBinarySecurityToken() && csa == RequestWssX509Cert.class ) ||
+                 ( x509Config.isSslClientCert() && csa == HttpClientCert.class ))
+                    return u;
+
+            throw new BadCredentialsException("Federated IDP " + config.getName() + "(" + config.getOid() +
+                                              ") is not configured to trust certificates found with " +
+                                              csa );
         } else if ( pc.getFormat() == CredentialFormat.SAML ) {
             // TODO
             if ( !config.isSamlSupported() ) throw new AuthenticationException("This identity provider is not configured to support SAML credentials");
@@ -119,15 +125,6 @@ public class FederatedIdentityProvider implements IdentityProvider {
             throw new BadCredentialsException("Can't authenticate without SAML or X.509 certificate credentials");
         }
         return null;
-    }
-
-    public boolean isReadOnly() {
-        return false;
-    }
-
-    public Collection search( EntityType[] types, String searchString ) throws FindException {
-        // TODO
-        return Collections.EMPTY_LIST;
     }
 
     /**

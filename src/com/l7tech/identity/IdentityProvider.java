@@ -21,11 +21,6 @@ public interface IdentityProvider {
     User authenticate( LoginCredentials pc ) throws AuthenticationException, FindException, IOException;
 
     /**
-     * If true, the save, update and delete methods wont be supported on the usermanager and groupmanager objects
-     */
-    boolean isReadOnly();
-
-    /**
      * searches for users and groups whose name match the pattern described in searchString
      * pattern may include wildcard such as * character
      */

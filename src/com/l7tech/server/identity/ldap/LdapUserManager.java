@@ -198,6 +198,10 @@ public class LdapUserManager implements UserManager {
         throw new UnsupportedOperationException();
     }
 
+    public Collection search(String searchString) throws FindException {
+        return parent.search(new EntityType[] { EntityType.USER }, "*" );
+    }
+
     /**
      * like findAllHeaders but returns LdapUser objects instead of EntityHeader objects
      */

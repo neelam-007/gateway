@@ -2,6 +2,7 @@ package com.l7tech.identity;
 
 import com.l7tech.objectmodel.*;
 
+import java.util.Collection;
 import java.util.Set;
 
 /**
@@ -16,5 +17,6 @@ public interface UserManager extends EntityManager {
     void update( User user ) throws UpdateException, ObjectNotFoundException;
     String save( User user, Set groupHeaders ) throws SaveException;
     void update( User user, Set groupHeaders ) throws UpdateException, ObjectNotFoundException;
+    Collection search(String searchString) throws FindException;
     Class getImpClass();
 }

@@ -48,6 +48,10 @@ public class GroupManagerAdapter implements GroupManager {
         throw new UnsupportedOperationException();
     }
 
+    public Collection search( String searchString ) throws FindException {
+        throw new UnsupportedOperationException();
+    }
+
     public Class getImpClass() {
         throw new UnsupportedOperationException();
     }

@@ -6,10 +6,14 @@ import com.l7tech.common.util.Locator;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalUser;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectModelException;
+import com.l7tech.objectmodel.PersistenceContext;
+import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.server.identity.PersistentIdentityProvider;
 
 import java.io.*;
 import java.security.GeneralSecurityException;
@@ -21,9 +25,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.sql.SQLException;
-import java.util.Collection;
 import java.util.Map;
-import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -35,7 +37,7 @@ import java.util.logging.Logger;
  * User: flascelles<br/>
  * Date: Jun 24, 2003
  */
-public class InternalIdentityProviderServer implements IdentityProvider {
+public class InternalIdentityProviderServer extends PersistentIdentityProvider {
     public static final String ENCODING = "UTF-8";
 
     public InternalIdentityProviderServer(IdentityProviderConfig config) {
@@ -239,30 +241,6 @@ public class InternalIdentityProviderServer implements IdentityProvider {
 
     public IdentityProviderConfig getConfig() {
         return config;
-    }
-
-    public boolean isReadOnly() { return false; }
-
-    /**
-     * searches for users and groups whose name (cn) match the pattern described in searchString
-     * pattern may include wildcard such as * character. result is sorted by name property
-     *
-     * todo: (once we dont use hibernate?) replace this by one union sql query and have the results sorted
-     * instead of sorting in collection.
-     */
-    public Collection search(EntityType[] types, String searchString) throws FindException {
-        if (types == null || types.length < 1) throw new IllegalArgumentException("must pass at least one type");
-        boolean wantUsers = false;
-        boolean wantGroups = false;
-        for (int i = 0; i < types.length; i++) {
-            if (types[i] == EntityType.USER) wantUsers = true;
-            else if (types[i] == EntityType.GROUP) wantGroups = true;
-        }
-        if (!wantUsers && !wantGroups) throw new IllegalArgumentException("types must contain users and or groups");
-        Collection searchResults = new TreeSet(new EntityHeaderComparator());
-        if (wantUsers) searchResults.addAll(userManager.search(searchString));
-        if (wantGroups) searchResults.addAll(groupManager.search(searchString));
-        return searchResults;
     }
 
     // TODO: Make this customizable
