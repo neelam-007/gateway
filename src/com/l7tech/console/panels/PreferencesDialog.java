@@ -375,12 +375,12 @@ public class PreferencesDialog extends JDialog {
             if (sUrl.equals(serviceUrl) && !connected) {
                 if ((JOptionPane.showConfirmDialog(null,
                   "You have changed the Server URL. Changing the URL can cause the console to not connect\n" +
-                  " to the SSGr. Do you want to continue and save this URL?",
-                  "Console - Preferences",
+                  " to the SSG. Do you want to continue and save this URL?",
+                  "Policy Editor - Preferences",
                   JOptionPane.YES_NO_OPTION)) == 1) {
                     return false;
                 }
-            } else if (sUrl.equals(serviceUrl) && connected) {
+            } else if (!sUrl.equals(serviceUrl) && connected) {
 
                 JOptionPane.showMessageDialog(null,
                   "You cannot change the server URL while connected to console. In order to change the Server URL, \n" +
