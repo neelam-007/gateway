@@ -18,7 +18,8 @@ import java.net.URL;
 
 /**
  * Class ServiceManagerStub.
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a> 
+ * 
+ * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
 public class ServiceManagerStub implements ServiceManager {
     private Map services;
@@ -26,7 +27,7 @@ public class ServiceManagerStub implements ServiceManager {
 
     public ServiceManagerStub() throws ObjectModelException {
         services = StubDataStore.defaultStore().getPublishedServices();
-            // build the cache if necessary
+        // build the cache if necessary
         try {
             if (ServiceCache.getInstance().size() > 0) {
                 logger.finest("cache already built (?)");
@@ -47,26 +48,27 @@ public class ServiceManagerStub implements ServiceManager {
             throw new ObjectModelException("exception building cache", e);
         }
     }
+
     /**
      * Retreive the actual PublishedService object from it's oid.
-     *
-     * @param oid
-     * @return
-     * @throws FindException
+     * 
+     * @param oid 
+     * @return 
+     * @throws FindException 
      */
     public PublishedService findByPrimaryKey(long oid) throws FindException {
         return (PublishedService)services.get(new Long(oid));
     }
 
     public Map serviceMap() {
-        return Collections.unmodifiableMap( services );
+        return Collections.unmodifiableMap(services);
     }
 
     /**
      * Used by the console to retreive the actual wsdl located at a target
      * as seen by the ssg.
-     *
-     * @param url
+     * 
+     * @param url 
      * @return a string containing the xml document
      */
     public String resolveWsdlTarget(String url) throws RemoteException {
@@ -85,9 +87,10 @@ public class ServiceManagerStub implements ServiceManager {
 
     /**
      * saves a published service along with it's policy assertions
-     * @param service
-     * @return
-     * @throws SaveException
+     * 
+     * @param service 
+     * @return 
+     * @throws SaveException 
      */
     public long save(PublishedService service) throws SaveException {
         long oid = StubDataStore.defaultStore().nextObjectId();
@@ -109,12 +112,12 @@ public class ServiceManagerStub implements ServiceManager {
      * has an history. on the console side implementation, you can call save
      * either way and the oid will dictate whether the object should be saved
      * or updated.
-     *
-     * @param service
-     * @throws UpdateException
+     * 
+     * @param service 
+     * @throws UpdateException 
      */
     public void update(PublishedService service) throws UpdateException {
-            Long key = new Long(service.getOid());
+        Long key = new Long(service.getOid());
         if (services.get(key) == null) {
             throw new UpdateException("Record missing, service oid= " + service.getOid());
         }
@@ -125,33 +128,42 @@ public class ServiceManagerStub implements ServiceManager {
 
     /**
      * deletes the service
-     * @param service
-     * @throws DeleteException
+     * 
+     * @param service 
+     * @throws DeleteException 
      */
     public void delete(PublishedService service) throws DeleteException {
-          if (services.remove(new Long(service.getOid())) == null) {
+        if (services.remove(new Long(service.getOid())) == null) {
             throw new DeleteException("Could not find service oid= " + service.getOid());
         }
-
     }
 
     public ServerAssertion getServerPolicy(long serviceOid) throws FindException {
-        throw new UnsupportedOperationException("todo");
+        try {
+            return ServiceCache.getInstance().getServerPolicy(serviceOid);
+        } catch (InterruptedException e) {
+            throw new FindException("error accessing policy from cache", e);
+        }
     }
 
     public PublishedService resolve(Request req) throws ServiceResolutionException {
-        throw new UnsupportedOperationException("todo");
+        return ServiceCache.getInstance().resolve(req);
     }
 
     public ServiceStatistics getServiceStatistics(long serviceOid) throws FindException {
-        throw new UnsupportedOperationException("todo");
+         try {
+            return ServiceCache.getInstance().getServiceStatistics(serviceOid);
+        } catch (InterruptedException e) {
+            throw new FindException("error accessing statistics from cache", e);
+        }
     }
 
     /**
      * called at run time to discover which service is being invoked based
      * on the request headers and/or document.
-     * @param request
-     * @return
+     * 
+     * @param request 
+     * @return 
      */
     public PublishedService resolveService(Request request) throws ServiceResolutionException {
         return null;
@@ -161,15 +173,15 @@ public class ServiceManagerStub implements ServiceManager {
      * Returns an unmodifiable collection of <code>EntityHeader</code>
      * objects for all instances of the entity class corresponding to
      * this Manager.
-     *
+     * 
      * @return A <code>Collection</code> of EntityHeader objects.
      */
     public Collection findAllHeaders() throws FindException {
-          Collection list = new ArrayList();
+        Collection list = new ArrayList();
         for (Iterator i =
-                services.keySet().iterator(); i.hasNext();) {
-            Long key = (Long) i.next();
-            list.add(fromService((PublishedService) services.get(key)));
+          services.keySet().iterator(); i.hasNext();) {
+            Long key = (Long)i.next();
+            list.add(fromService((PublishedService)services.get(key)));
         }
         return list;
     }
@@ -178,19 +190,19 @@ public class ServiceManagerStub implements ServiceManager {
      * Returns an unmodifiable collection of <code>EntityHeader</code>
      * objects for instances of this entity class from a list sorted
      * by <code>oid</code>, selecting only a specific subset of the list.
-     *
+     * 
      * @return A <code>Collection</code> of EntityHeader objects.
      */
     public Collection findAllHeaders(int offset, int windowSize) throws FindException {
-         Collection list = new ArrayList();
+        Collection list = new ArrayList();
         int index = 0;
         int count = 0;
         for (Iterator i =
-                services.keySet().iterator(); i.hasNext(); index++) {
-            Long key = (Long) i.next();
+          services.keySet().iterator(); i.hasNext(); index++) {
+            Long key = (Long)i.next();
 
             if (index >= offset && count <= windowSize) {
-                list.add(fromService((PublishedService) services.get(key)));
+                list.add(fromService((PublishedService)services.get(key)));
                 count++;
             }
         }
@@ -201,14 +213,14 @@ public class ServiceManagerStub implements ServiceManager {
      * Returns an unmodifiable collection of <code>Entity</code>
      * objects for all instances of the entity class corresponding
      * to this Manager.
-     *
+     * 
      * @return A <code>Collection</code> of Entity objects.
      */
     public Collection findAll() throws FindException {
         Collection list = new ArrayList();
         for (Iterator i =
-                services.keySet().iterator(); i.hasNext();) {
-            Long key = (Long) i.next();
+          services.keySet().iterator(); i.hasNext();) {
+            Long key = (Long)i.next();
             list.add(services.get(key));
         }
         return list;
@@ -219,7 +231,7 @@ public class ServiceManagerStub implements ServiceManager {
      * objects for instances of this entity class from a list
      * sorted by <code>oid</code>, selecting only a specific
      * subset of the list.
-     *
+     * 
      * @return A <code>Collection</code> of EntityHeader objects.
      */
     public Collection findAll(int offset, int windowSize) throws FindException {
@@ -227,8 +239,8 @@ public class ServiceManagerStub implements ServiceManager {
         int index = 0;
         int count = 0;
         for (Iterator i =
-                services.keySet().iterator(); i.hasNext(); index++) {
-            Long key = (Long) i.next();
+          services.keySet().iterator(); i.hasNext(); index++) {
+            Long key = (Long)i.next();
 
             if (index >= offset && count <= windowSize) {
                 list.add(services.get(key));
@@ -240,6 +252,6 @@ public class ServiceManagerStub implements ServiceManager {
 
     private EntityHeader fromService(PublishedService s) {
         return
-                new EntityHeader(s.getOid(), EntityType.SERVICE, s.getName(), null);
+          new EntityHeader(s.getOid(), EntityType.SERVICE, s.getName(), null);
     }
 }
