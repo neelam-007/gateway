@@ -9,8 +9,8 @@ package com.l7tech.proxy;
 import com.l7tech.common.security.xml.processor.BadSecurityContextException;
 import com.l7tech.common.security.xml.processor.ProcessorException;
 import com.l7tech.common.util.CausedIOException;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.datamodel.*;
@@ -33,27 +33,27 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Obtain a SecureSpanAgent implementation.
+ * Obtain a SecureSpanBridge implementation.
  *
  * @author mike
  * @version 1.0
  */
-public class SecureSpanAgentFactory {
-    private static class CausedSendException extends SecureSpanAgent.SendException {
+public class SecureSpanBridgeFactory {
+    private static class CausedSendException extends SecureSpanBridge.SendException {
         CausedSendException(Throwable cause) {
             super();
             initCause(cause);
         }
     }
 
-    private static class CausedBadCredentialsException extends SecureSpanAgent.BadCredentialsException {
+    private static class CausedBadCredentialsException extends SecureSpanBridge.BadCredentialsException {
         CausedBadCredentialsException(Throwable cause) {
             super();
             initCause(cause);
         }
     }
 
-    private static class CausedCertificateAlreadyIssuedException extends SecureSpanAgent.CertificateAlreadyIssuedException {
+    private static class CausedCertificateAlreadyIssuedException extends SecureSpanBridge.CertificateAlreadyIssuedException {
         CausedCertificateAlreadyIssuedException(Throwable cause) {
             super();
             initCause(cause);
@@ -74,13 +74,13 @@ public class SecureSpanAgentFactory {
     }
 
     /**
-     * Create a new SecureSpanAgent with the specified settings.  The Agent will be configured to forward messages
+     * Create a new SecureSpanBridge with the specified settings.  The Bridge will be configured to forward messages
      * to the specified Gateway, using the specified credentials.
      *
-     * @param options the configuration to use for the new SecureSpanAgent instance
-     * @return the newly-created SecureSpanAgent instance
+     * @param options the configuration to use for the new SecureSpanBridge instance
+     * @return the newly-created SecureSpanBridge instance
      */
-    public static SecureSpanAgent createSecureSpanAgent(SecureSpanAgentOptions options) {
+    public static SecureSpanBridge createSecureSpanBridge(SecureSpanBridgeOptions options) {
         final Ssg ssg = new Ssg(options.getId(), options.getGatewayHostname());
         final PasswordAuthentication pw = new PasswordAuthentication(options.getUsername(), (char[]) options.getPassword().clone());
         ssg.setUsername(pw.getUserName());
@@ -96,13 +96,13 @@ public class SecureSpanAgentFactory {
         if (options.getUseSslByDefault() != null)
             ssg.setUseSslByDefault(options.getUseSslByDefault().booleanValue());
         if (options.getTrustedGateway() != null) {
-            SecureSpanAgentImpl trustedAgent = (SecureSpanAgentImpl)options.getTrustedGateway();
-            ssg.setTrustedGateway(trustedAgent.getSsg());
+            SecureSpanBridgeImpl trustedBridge = (SecureSpanBridgeImpl)options.getTrustedGateway();
+            ssg.setTrustedGateway(trustedBridge.getSsg());
         }
         if (options.getGatewayCertificateTrustManager() != null) {
-            final SecureSpanAgentOptions.GatewayCertificateTrustManager tm = options.getGatewayCertificateTrustManager();
+            final SecureSpanBridgeOptions.GatewayCertificateTrustManager tm = options.getGatewayCertificateTrustManager();
             credentialManagerMap.put(ssg, new CredentialManagerImpl() {
-                final String msgNoTrust = "Agent API user's GatewayCertificateTrustManager rejected Gateway certificate";
+                final String msgNoTrust = "Bridge API user's GatewayCertificateTrustManager rejected Gateway certificate";
                 public void notifySsgCertificateUntrusted(Ssg ssg, X509Certificate certificate) throws OperationCanceledException {
                     try {
                         if (tm.isGatewayCertificateTrusted(new X509Certificate[] {certificate}))
@@ -118,16 +118,16 @@ public class SecureSpanAgentFactory {
         final PolicyManager policyManager = PolicyManagerImpl.getInstance();
         final MessageProcessor mp = new MessageProcessor(policyManager);
         final RequestInterceptor nri = NullRequestInterceptor.INSTANCE;
-        return new SecureSpanAgentImpl(ssg, nri, mp, pw);
+        return new SecureSpanBridgeImpl(ssg, nri, mp, pw);
     }
 
-    static class SecureSpanAgentImpl implements SecureSpanAgent {
+    static class SecureSpanBridgeImpl implements SecureSpanBridge {
         private final Ssg ssg;
         private final RequestInterceptor nri;
         private final MessageProcessor mp;
         private final PasswordAuthentication pw;
 
-        SecureSpanAgentImpl(Ssg ssg, RequestInterceptor nri, MessageProcessor mp, PasswordAuthentication pw) {
+        SecureSpanBridgeImpl(Ssg ssg, RequestInterceptor nri, MessageProcessor mp, PasswordAuthentication pw) {
             this.ssg = ssg;
             this.nri = nri;
             this.mp = mp;
@@ -146,8 +146,8 @@ public class SecureSpanAgentFactory {
             return mp;
         }
 
-        public SecureSpanAgent.Result send(String soapAction, Document message) throws SendException, IOException, CausedBadCredentialsException, CausedCertificateAlreadyIssuedException {
-            final URL origUrl = new URL("http://layer7tech.com/agentapi/NoOriginalUri");
+        public SecureSpanBridge.Result send(String soapAction, Document message) throws SendException, IOException, CausedBadCredentialsException, CausedCertificateAlreadyIssuedException {
+            final URL origUrl = new URL("http://layer7tech.com/bridge/api/NoOriginalUri");
             String namespaceUri = SoapUtil.getNamespaceUri(message);
             PolicyAttachmentKey pak = new PolicyAttachmentKey(namespaceUri, soapAction, origUrl.getFile());
             PendingRequest pr = new PendingRequest(message, ssg, nri, pak, origUrl, null);
@@ -193,7 +193,7 @@ public class SecureSpanAgentFactory {
             }
         }
 
-        public SecureSpanAgent.Result send(String soapAction, String message) throws SecureSpanAgent.SendException, IOException, SAXException, CausedBadCredentialsException, CausedCertificateAlreadyIssuedException {
+        public SecureSpanBridge.Result send(String soapAction, String message) throws SecureSpanBridge.SendException, IOException, SAXException, CausedBadCredentialsException, CausedCertificateAlreadyIssuedException {
             return send(soapAction, XmlUtil.stringToDocument(message));
         }
 

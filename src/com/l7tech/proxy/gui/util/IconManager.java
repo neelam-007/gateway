@@ -75,7 +75,7 @@ public class IconManager {
 
     public static ImageIcon getSplashImageIcon() {
         if (splashImage == null)
-            splashImage = loadImageIcon(Gui.RESOURCE_PATH + "/agent_splash.gif");
+            splashImage = loadImageIcon(Gui.RESOURCE_PATH + "/bridge_splash.gif");
         return splashImage;
     }
 

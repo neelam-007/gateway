@@ -68,8 +68,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     private JTextField fieldSsgPort;
     private JTextField fieldSslPort;
 
-    //   View for Agent Policy pane
-    private JComponent agentPolicyPane;
+    //   View for Bridge Policy pane
+    private JComponent bridgePolicyPane;
     private JCheckBox cbUseSslByDefault;
 
     //   View for Service Policies pane
@@ -89,7 +89,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         tabbedPane.add("General", getGeneralPane());
         tabbedPane.add("Identity", getIdentityPane(ssg));
         tabbedPane.add("Network", getNetworkPane());
-        tabbedPane.add("Agent Policy", getAgentPolicyPane());
+        tabbedPane.add("Bridge Policy", getBridgePolicyPane());
         tabbedPane.add("Service Policies", getPoliciesPane());
         ssg.addSsgListener(this);
         setSsg(ssg);
@@ -133,12 +133,12 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         }
     }
 
-    private JComponent getAgentPolicyPane() {
-        if (agentPolicyPane == null) {
+    private JComponent getBridgePolicyPane() {
+        if (bridgePolicyPane == null) {
             int y = 0;
             JPanel outerPane = new JPanel(new GridBagLayout());
-            agentPolicyPane = new JScrollPane(outerPane);
-            agentPolicyPane.setBorder(BorderFactory.createEmptyBorder());
+            bridgePolicyPane = new JScrollPane(outerPane);
+            bridgePolicyPane.setBorder(BorderFactory.createEmptyBorder());
             JPanel pane = new JPanel(new GridBagLayout());
             pane.setBorder(BorderFactory.createTitledBorder("  Client-Side Policy  "));
             outerPane.add(pane,
@@ -158,7 +158,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                             GridBagConstraints.HORIZONTAL,
                                             new Insets(5, 15, 5, 0), 0, 0));
         }
-        return agentPolicyPane;
+        return bridgePolicyPane;
     }
 
     private JComponent getPoliciesPane() {
@@ -168,7 +168,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             policiesPane = new JScrollPane(pane);
             policiesPane.setBorder(BorderFactory.createEmptyBorder());
 
-            pane.add(new JLabel("<HTML><h4>Service Policies Being Cached by this Agent</h4></HTML>"),
+            pane.add(new JLabel("<HTML><h4>Service Policies Being Cached by Bridge</h4></HTML>"),
                      new GridBagConstraints(0, y++, 1, 1, 0.0, 0.0,
                                             GridBagConstraints.NORTHWEST,
                                             GridBagConstraints.BOTH,
@@ -449,7 +449,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             // Endpoint panel
 
             JPanel epp = new JPanel(new GridBagLayout());
-            epp.setBorder(BorderFactory.createTitledBorder(" Incoming Requests to the Agent "));
+            epp.setBorder(BorderFactory.createTitledBorder(" Incoming Requests to the Bridge "));
             pane.add(epp, new GridBagConstraints(0, gridY++, 2, 1, 1000.0, 0.0,
                                                  GridBagConstraints.WEST,
                                                  GridBagConstraints.HORIZONTAL,
@@ -458,7 +458,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             int oy = gridY;
             gridY = 0;
 
-            WrappingLabel splain01 = new WrappingLabel("The SecureSpan Agent listens for incoming messages at the " +
+            WrappingLabel splain01 = new WrappingLabel("The SecureSpan Bridge listens for incoming messages at the " +
                                                        "following local proxy URL, then routes the messages to the " +
                                                        "SecureSpan Gateway.", 2);
             epp.add(splain01,
@@ -480,7 +480,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                            GridBagConstraints.HORIZONTAL,
                                            new Insets(5, 5, 5, 5), 0, 0));
 
-            WrappingLabel splain02 = new WrappingLabel("The SecureSpan Agent offers proxied WSDL lookups at the " +
+            WrappingLabel splain02 = new WrappingLabel("The SecureSpan Bridge offers proxied WSDL lookups at the " +
                                                        "following local WSDL URL:", 1);
             epp.add(splain02,
                     new GridBagConstraints(0, gridY++, 2, 1, 0.0, 0.0,

@@ -234,7 +234,7 @@ public class WssProcessorImpl implements WssProcessor {
         Element soapHeader = (Element) cntx.releventSecurityHeader.getParentNode();
         soapHeader.removeChild(cntx.releventSecurityHeader);
 
-        // if there were other security headers and one with a special actor set by the agent, we
+        // if there were other security headers and one with a special actor set by the Bridge, we
         // want to change the actor here to set it back to default value
         // in the case of multiple wrapped actors, the one with the higest value must be stripped
         Element secHeaderDeservingPromotion = null;

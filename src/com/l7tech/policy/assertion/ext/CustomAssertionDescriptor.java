@@ -28,11 +28,11 @@ public class CustomAssertionDescriptor {
 
     /**
      * Create the new extensibility holder instance with the assertion, server
-     * assertion, and the client (agent) asseriton class.
+     * assertion, and the client (Bridge) asseriton class.
      *
      * @param name the assertion name
      * @param a    the assertion class
-     * @param ca   the agent assertion class
+     * @param ca   the Bridge assertion class
      * @param sa   the server side assertion class
      */
     public CustomAssertionDescriptor(String name, Class a, Class ca, Class sa, Category cat, SecurityManager sm) {

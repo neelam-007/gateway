@@ -13,7 +13,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 
 /**
- * Datamodel for displaying the policy tree in the Agent.
+ * Datamodel for displaying the policy tree in the Bridge.
  * @author mike
  * @version 1.0
  */

@@ -17,7 +17,7 @@ my %pathmap = (
 
 # List of known NSI files
 my %nsis = (
-  Agent => "proxy/win32/Agent",
+  Bridge => "proxy/win32/Bridge",
   Manager => "console/win32/Manager"
 );
 my @FILES = keys %nsis;
@@ -71,7 +71,7 @@ sub get_include_filelist {
 }
 
 
-# Usage: nsi_file_replace("proxy/win32/Agent.nsi", \@jarfiles, \@includes);
+# Usage: nsi_file_replace("proxy/win32/Bridge.nsi", \@jarfiles, \@includes);
 sub nsi_file_replace {
 	my $file = shift;
 	my $nsi = shift;
@@ -184,7 +184,7 @@ sub make_tar_file {
 	}
 
 	my $extra;
-	if ($file eq "Agent") {
+	if ($file eq "Bridge") {
 	    $extra = "-server -Dcom.l7tech.proxy.listener.maxthreads=300 ";
     } else {
         $extra = "";

@@ -176,7 +176,7 @@ public class WssProcessorTest extends TestCase {
     }
 
     public void testFrancisAgentSignedRequest() throws Exception {
-        doTest(makeDotNetTestDocument("agent failing signed request", TestDocuments.AGENT_FAILING_SIGNED_REQUEST));
+        doTest(makeDotNetTestDocument("Bridge failing signed request", TestDocuments.BRIDGE_FAILING_SIGNED_REQUEST));
     }
 
     public void testSampleSignedSamlHolderOfKeyRequest() throws Exception {

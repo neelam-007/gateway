@@ -251,7 +251,7 @@ public class RequestHandler extends AbstractHttpHandler {
     }
 
     private void sendChallenge(HttpResponse response) throws IOException {
-        response.addField("WWW-Authenticate", "Basic realm=\"SecureSpan Agent\"");
+        response.addField("WWW-Authenticate", "Basic realm=\"SecureSpan Bridge\"");
         response.setReason("Unauthorized");
         response.addField(XmlUtil.CONTENT_TYPE, "text/html");
         response.setStatus(401);
@@ -328,20 +328,20 @@ public class RequestHandler extends AbstractHttpHandler {
     }
 
     /**
-     * Handle a GET request to this Agent's message processing port.  We'll try to return a useful
+     * Handle a GET request to this Bridge's message processing port.  We'll try to return a useful
      * HTML document including links to the WSIL proxies for each configured SSG.
      * @param request
      */
     private void handleGetRequest(HttpRequest request, HttpResponse response) throws IOException {
         response.addField(XmlUtil.CONTENT_TYPE, "text/html");
         PrintStream o = new PrintStream(response.getOutputStream());
-        o.println("<html><head><title>SecureSpan Agent</title></head>" +
-                  "<body><h2>SecureSpan Agent</h2>");
+        o.println("<html><head><title>SecureSpan Bridge</title></head>" +
+                  "<body><h2>SecureSpan Bridge</h2>");
         List ssgs = ssgFinder.getSsgList();
         if (ssgs.isEmpty()) {
-            o.println("<p>There are currently no Gateways registered with this Agent.");
+            o.println("<p>There are currently no Gateways registered with SecureSpan Bridge.");
         } else {
-            o.println("<p>This Agent is ready to proxy services provided by the following Gateways:</p><ul>");
+            o.println("<p>SecureSpan Bridge is ready to proxy services provided by the following Gateways:</p><ul>");
             int port = clientProxy.getBindPort();
             for (Iterator i = ssgs.iterator(); i.hasNext();) {
                 Ssg ssg = (Ssg) i.next();

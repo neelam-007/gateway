@@ -13,13 +13,13 @@ import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
 
 /**
- * Test the API version of the Agent.
+ * Test the API version of the Bridge.
  *
  * @author mike
  * @version 1.0
  */
-public class SecureSpanAgentTest {
-    private static final Logger log = Logger.getLogger(SecureSpanAgentTest.class.getName());
+public class SecureSpanBridgeTest {
+    private static final Logger log = Logger.getLogger(SecureSpanBridgeTest.class.getName());
     private static final String PLACEORDER_SOAPACTION = "\"http://warehouse.acme.com/ws/placeOrder\"";
     private static final String PLACEORDER_MESSAGE = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
       "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\"\n" +
@@ -37,7 +37,7 @@ public class SecureSpanAgentTest {
 
     public static void main(String[] args) throws Exception {
         if (args.length < 3) {
-            System.out.println("Usage: testagent gatewayhost username password");
+            System.out.println("Usage: testbridge gatewayhost username password");
             System.exit(1);
         }
         int i = 0;
@@ -45,24 +45,24 @@ public class SecureSpanAgentTest {
         String username = args[i++];
         char[] password = args[i++].toCharArray();
 
-        SecureSpanAgentOptions options = new SecureSpanAgentOptions(host, username, password);
-        SecureSpanAgent agent = SecureSpanAgentFactory.createSecureSpanAgent(options);
-        agent.ensureCertificatesAreAvailable();
+        SecureSpanBridgeOptions options = new SecureSpanBridgeOptions(host, username, password);
+        SecureSpanBridge bridge = SecureSpanBridgeFactory.createSecureSpanBridge(options);
+        bridge.ensureCertificatesAreAvailable();
 
-        X509Certificate cert = agent.getClientCert();
+        X509Certificate cert = bridge.getClientCert();
         log.info("Our client certificate: " + cert);
 
-        PrivateKey key = agent.getClientCertPrivateKey();
+        PrivateKey key = bridge.getClientCertPrivateKey();
         log.info("Our private key: " + key);
 
-        X509Certificate ssgCert = agent.getServerCert();
+        X509Certificate ssgCert = bridge.getServerCert();
         log.info("The Gateway's CA certificate: " + ssgCert);
 
         String soapaction = PLACEORDER_SOAPACTION;
         String message = PLACEORDER_MESSAGE;
-        //HexUtils.Slurpage slurpage = HexUtils.slurpUrl(SecureSpanAgentTest.class.getClassLoader().getResource(SAML4));
+        //HexUtils.Slurpage slurpage = HexUtils.slurpUrl(SecureSpanBridgeTest.class.getClassLoader().getResource(SAML4));
         //String message = new String(slurpage.bytes);
-        SecureSpanAgent.Result result = agent.send(soapaction, message);
+        SecureSpanBridge.Result result = bridge.send(soapaction, message);
         log.info("Got back http status " + result.getHttpStatus());
         log.info("Got back envelope:\n" + XmlUtil.nodeToString(result.getResponse()));
     }

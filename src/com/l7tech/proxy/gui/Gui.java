@@ -6,26 +6,18 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.SsgManager;
+import com.l7tech.proxy.gui.dialogs.AboutBox;
 import com.l7tech.proxy.gui.util.IconManager;
-import com.l7tech.proxy.gui.dialogs.AgentAboutBox;
 import com.l7tech.proxy.util.JavaVersionChecker;
-import java.util.logging.Logger;
-import snoozesoft.systray4j.SysTrayMenu;
-import snoozesoft.systray4j.SysTrayMenuIcon;
-import snoozesoft.systray4j.SysTrayMenuItem;
-import snoozesoft.systray4j.SysTrayMenuListener;
-import snoozesoft.systray4j.SysTrayMenuEvent;
+import snoozesoft.systray4j.*;
 
 import javax.swing.*;
 import javax.swing.plaf.metal.MetalTheme;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.awt.event.KeyEvent;
 import java.awt.*;
-import java.util.logging.Level;
+import java.awt.event.*;
 import java.net.URL;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Encapsulates the Client Proxy's user interface. User: mike Date: May 22, 2003 Time: 1:47:04 PM
@@ -34,7 +26,7 @@ public class Gui {
     private static final Logger log = Logger.getLogger( Gui.class.getName() );
     public static final String RESOURCE_PATH = "com/l7tech/proxy/resources";
     public static final String HELP_PATH = "com/l7tech/proxy/resources/helpset/proxy.hs";
-    public static final String APP_NAME = "SecureSpan Agent";
+    public static final String APP_NAME = "SecureSpan Bridge";
 
     private static final String KUNSTSTOFF_CLASSNAME = "com.incors.plaf.kunststoff.KunststoffLookAndFeel";
     private static final String KUNSTSTOFF_THEME_CLASSNAME = "com.incors.plaf.kunststoff.themes.KunststoffDesktopTheme";
@@ -46,7 +38,7 @@ public class Gui {
     private JFrame frame;
     private MessageViewer messageViewer;
 
-    private static final String SYSTRAY_TOOLTIP = "SecureSpan Agent";
+    private static final String SYSTRAY_TOOLTIP = "SecureSpan Bridge";
     private static final String WINDOW_TITLE = APP_NAME;
     private static final String MESSAGE_WINDOW_TITLE = "Message Window";
     private static final String MENU_FILE = "File";
@@ -200,7 +192,7 @@ public class Gui {
 
         SysTrayMenuItem smExit = new SysTrayMenuItem( "Exit", "exit" );
         smExit.addSysTrayMenuListener( systrayListener );
-        SysTrayMenuItem smShow = new SysTrayMenuItem( "Show Agent window", "show" );
+        SysTrayMenuItem smShow = new SysTrayMenuItem( "Show Bridge window", "show" );
         smShow.addSysTrayMenuListener( systrayListener );
 
         sysTrayMenu = new SysTrayMenu( systrayMenuIcon, SYSTRAY_TOOLTIP );
@@ -382,7 +374,7 @@ public class Gui {
                 getMessageViewer().hide();
             }
         } else if ( MENU_HELP_ABOUT.equals( e.getActionCommand() ) ) {
-            new AgentAboutBox().show();
+            new AboutBox().show();
         }
     }
 

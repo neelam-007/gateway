@@ -1,13 +1,13 @@
 package com.l7tech.proxy;
 
+import com.l7tech.common.BuildInfo;
+import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.SsgFinderImpl;
 import com.l7tech.proxy.processor.MessageProcessor;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 
-import com.l7tech.common.BuildInfo;
-import com.l7tech.common.util.JdkLoggerConfigurator;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Begin execution of daemon-mode (no UI at all) client proxy.
@@ -37,7 +37,7 @@ public class Main {
     /** Start a text-only client proxy and run it until it's shut down. */
     public static void main(final String[] argv) {
         JdkLoggerConfigurator.configure("com.l7tech.proxy", "com/l7tech/proxy/resources/logging.properties"); 
-        log.info("Starting daemon mode Agent; " + BuildInfo.getLongBuildString());
+        log.info("Starting daemon mode Bridge; " + BuildInfo.getLongBuildString());
 
         int port = getIntProperty("com.l7tech.proxy.listener.port", DEFAULT_PORT);
         int minThreads = getIntProperty("com.l7tech.proxy.listener.minthreads", MIN_THREADS);

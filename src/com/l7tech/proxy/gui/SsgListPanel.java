@@ -281,7 +281,7 @@ public class SsgListPanel extends JPanel {
                     }
                 }
             };
-            actionNewSsg.putValue(Action.SHORT_DESCRIPTION, "Register a new Gateway with this Agent");
+            actionNewSsg.putValue(Action.SHORT_DESCRIPTION, "Register a new Gateway with this Bridge");
             actionNewSsg.putValue(Action.MNEMONIC_KEY, new Integer(KeyEvent.VK_N));
         }
         return actionNewSsg;

@@ -15,11 +15,11 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 
 /**
- * Provides a programmatic interface to the Agent's message processor.
+ * Provides a programmatic interface to the Bridge's message processor.
  * @author mike
  * @version 1.0
  */
-public interface SecureSpanAgent {
+public interface SecureSpanBridge {
     /**
      * This is the result returned from a call to send().
      */
@@ -105,7 +105,7 @@ public interface SecureSpanAgent {
     PrivateKey getClientCertPrivateKey() throws BadCredentialsException, IOException;
 
     /**
-     * Ensure the Gateway SSL certificate and Agent's client ceritificate are available, downloading or applying
+     * Ensure the Gateway SSL certificate and Bridge's client ceritificate are available, downloading or applying
      * for them as needed.
      * @throws IOException if there was a network problem downloading the server cert
      * @throws IOException if there was a problem reading or writing the keystore file

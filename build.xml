@@ -290,7 +290,7 @@
         <delete includeEmptyDirs="true">
             <fileset dir="${src.root}/installer">
                 <include name="Manager-*"/>
-                <include name="Agent-*"/>
+                <include name="Bridge-*"/>
             </fileset>
         </delete>
         <delete includeEmptyDirs="true">
@@ -301,9 +301,9 @@
         <delete includeEmptyDirs="true">
             <fileset dir="${src.root}/installer">
                 <include name="Manager-*/*"/>
-                <include name="Agent-*/*"/>
+                <include name="Bridge-*/*"/>
                 <include name="Manager-*"/>
-                <include name="Agent-*"/>
+                <include name="Bridge-*"/>
             </fileset>
         </delete>
         <delete dir="${javadoc.home}"/>
@@ -336,7 +336,7 @@
       ** respective archives (war, jar).
       ** This target is invoked by other targets such as deploy and dist.
       -->
-    <target name="package" depends="init-dev, compile, package.gateway, package.agent, package.manager, package.installclients, package.api"/>
+    <target name="package" depends="init-dev, compile, package.gateway, package.bridge, package.manager, package.installclients, package.api"/>
 
 
     <target name="package.gateway">
@@ -439,9 +439,9 @@
 
     </target>
 
-    <target name="package.agent" unless="ssg.only">
+    <target name="package.bridge" unless="ssg.only">
         <!-- the client proxy jar -->
-        <jar jarfile="${build.dir}/Agent.jar" manifest="${src.root}/etc/Agent.mf">
+        <jar jarfile="${build.dir}/Bridge.jar" manifest="${src.root}/etc/Bridge.mf">
             <fileset dir="${build.dir}/classes">
                 <!-- Omit the third-party crypto drivers unless we need to ship with one or more of them.  Including it causes testpackage to fail -->
                 <exclude name="com/l7tech/common/security/prov/phaos/**/*"/>
@@ -557,7 +557,7 @@
 
 
     <!--
-      ** Ensure that all classes in the Agent and Manager jar files are loadable when the classpath
+      ** Ensure that all classes in the Bridge and Manager jar files are loadable when the classpath
       ** contains only the jars and their declared dependency jars.
       -->
     <target name="testpackage" depends="package">
@@ -572,8 +572,8 @@
         <exec executable="perl" failonerror="true">
             <env key="JAVA_HOME" value="${java.home}"/>
             <arg line="tools/checkjar.pl"/>
-            <arg line="build/Agent.jar"/>
-            <arg line="etc/Agent.mf"/>
+            <arg line="build/Bridge.jar"/>
+            <arg line="etc/Bridge.mf"/>
         </exec>
     </target>
 
@@ -1452,7 +1452,7 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         <echo>Setting version in Nullsoft Installer source files to ${build.version}</echo>
         <replaceregexp match='define MUI_VERSION ".*"' replace='define MUI_VERSION "${build.version}"'>
             <fileset dir="${src.root}">
-                <include name="installer/proxy/win32/Agent.nsi"/>
+                <include name="installer/proxy/win32/Bridge.nsi"/>
                 <include name="installer/console/win32/Manager.nsi"/>
             </fileset>
         </replaceregexp>

@@ -40,7 +40,7 @@ public class ClientPolicyFactoryTest extends TestCase {
         ClientPolicyFactory pfac = ClientPolicyFactory.getInstance();
 
         ClientAssertion foo;
-        Assertion[] everything = AllAssertions.AGENT_EVERYTHING;
+        Assertion[] everything = AllAssertions.BRIDGE_EVERYTHING;
         for (int i = 0; i < everything.length; i++) {
             foo = pfac.makeClientPolicy(everything[i]);
         }

@@ -7,7 +7,7 @@
 package com.l7tech.common.protocol;
 
 /**
- * Holds the constants needed for communication between Agent, Console and Gateway, and provides some
+ * Holds the constants needed for communication between Bridge, Console and Gateway, and provides some
  * documentation of the protocols used.
  *
  * User: mike
@@ -16,8 +16,8 @@ package com.l7tech.common.protocol;
  */
 public class SecureSpanConstants {
 
-    /** The HTTP user agent sent by the current version of the Agent. */
-    public static final String USER_AGENT = "L7 Agent; Protocol v2.0";
+    /** The HTTP user agent sent by the current version of the Bridge. */
+    public static final String USER_AGENT = "L7 Bridge; Protocol v2.0";
 
     /** The MIME type of the X.509 certificate sent by the certificate discovery server. */
     public static final String CERTIFICATE_MIME_TYPE = "application/x-x509-ca-cert";
@@ -38,7 +38,7 @@ public class SecureSpanConstants {
     /**
      * The  filename portion of the URL of the certificate discovery server on the Gateway.
      * <p>
-     * The certificate discovery servlet is the service that clients (Agent or Console) can use to download
+     * The certificate discovery servlet is the service that clients (Bridge or Console) can use to download
      * the Gateway's CA cert over unencrypted HTTP, while remaining confident that it arrived unmodified and was
      * transmitted by someone able to prove that they know the client's password.
      */
@@ -46,7 +46,7 @@ public class SecureSpanConstants {
 
     /**
      * The filename portion of the URL of the certificate signing service on the Gateway.
-     * This is the service that clients (currently just the Agent) can use to obtain a new client certificate.
+     * This is the service that clients (currently just the Bridge) can use to obtain a new client certificate.
      * The client must post an encoded PKCS10CertificationRequest to this url, over SSL, and providing
      * a valid username and password using HTTP Basic authentication.  After verifying that the credentials
      * are correct, that the user is permitted to obtain a certificate, and that the CSR is in the correct format
@@ -57,7 +57,7 @@ public class SecureSpanConstants {
 
     /**
      * The filename portion of the URL of the Gateway's WSDL proxy service.
-     * This is the service that clients (Agent or third-party) can connect to in order to get
+     * This is the service that clients (Bridge or third-party) can connect to in order to get
      * a WSIL document listing public services; or (if authenticated) a WSIL document listing
      * services available to that authenticated user; or, if a serviceoid parameter is provided,
      * to download the WSDL for that service.
@@ -71,14 +71,14 @@ public class SecureSpanConstants {
 
     /**
      * The filename portion of the URL for the Gateway's password changing service.
-     * The agent calls this servlet to change the password of an internal account.
+     * The Bridge calls this servlet to change the password of an internal account.
      */
     public static final String PASSWD_SERVICE_FILE = "/ssg/passwd";
 
     /**
      * The filename portion of the URL for the Gateway's WS-Trust RequestSecurityToken service.
      * Used for WS-SecureConversation sessions and for obtaining SAML tokens.
-     * The agent calls this servlet with a signed soap request for a new WS-SC SecurityContext,
+     * The Bridge calls this servlet with a signed soap request for a new WS-SC SecurityContext,
      * or for a new SAML token.
      */
     public static final String TOKEN_SERVICE_FILE = "/ssg/token";
@@ -96,29 +96,29 @@ public class SecureSpanConstants {
     public static final String FAULTCODE_BADCONTEXTTOKEN = "wsc:BadContextToken";
 
     /**
-     * Special HTTP query parameters used by the protocol used between the SecureSpanAgent and the SecureSpanGateway.
+     * Special HTTP query parameters used by the protocol used between the SecureSpanBridge and the SecureSpanGateway.
      */
     public static class HttpQueryParameters {
         /**
-         * Contains the OID of the published service whose policy the Agent is attempting to obey, possibly
+         * Contains the OID of the published service whose policy the Bridge is attempting to obey, possibly
          * in the form of a policy version string (which looks like "oid|version" where version is the generation
          * count, updated by the database whenever the policy changes).
          *
          * <h3>Usages:<ul>
-         * <li>Sent by the Agent to the policy servlet as part of the policy URL.  See POLICYURL_HEADER in {@link HttpHeaders}.
-         * <li>Sent by the Agent to the Gateway's WSDL proxy servlet when a specified WSDL is requested.
+         * <li>Sent by the Bridge to the policy servlet as part of the policy URL.  See POLICYURL_HEADER in {@link HttpHeaders}.
+         * <li>Sent by the Bridge to the Gateway's WSDL proxy servlet when a specified WSDL is requested.
          * </ul>
          */
         public static final String PARAM_SERVICEOID = "serviceoid";
 
         /**
-         * Contains a nonzero value if the Agent desires to perform certificate discovery.
+         * Contains a nonzero value if the Bridge desires to perform certificate discovery.
          * TODO: This is a total mess; cert discovery should be a different servlet, not piggyback on policy servlet
          *
          * <h3>Usages:<ul>
-         * <li>Sent by the Agent to the policy servlet to indicate that it actually wants to talk to the certificate discovery servlet.
+         * <li>Sent by the Bridge to the policy servlet to indicate that it actually wants to talk to the certificate discovery servlet.
          *     Note that this is not the same as the CSR (certificate signing) servlet: the certificate discovery servlet is used
-         *     by the Agent to discover the Gateway's server certificate, while the CSR servlet is used by the Agent to apply
+         *     by the Bridge to discover the Gateway's server certificate, while the CSR servlet is used by the Bridge to apply
          *     for a client certificate.
          * </ul>
          */
@@ -128,9 +128,9 @@ public class SecureSpanConstants {
          * Holds the username making a certificate discovery request.
          *
          * <h3>Usages:<ul>
-         * <li>Sent by the Agent to the certificate discovery servlet (inside the policy servlet).  The Gateway
+         * <li>Sent by the Bridge to the certificate discovery servlet (inside the policy servlet).  The Gateway
          *     then provides hashes of the returned certificate hashed with the passwords of each user with a
-         *     matching username from each known ID provider, and the Agent can thereby verify that the certificate
+         *     matching username from each known ID provider, and the Bridge can thereby verify that the certificate
          *     was provided unmodified and by a Gateway that knows his password.  See CERT_CHECK_PREFIX in {@link HttpHeaders}.
          * </ul>
          */
@@ -140,7 +140,7 @@ public class SecureSpanConstants {
          * Holds a random nonce value used to make it harder to cheat during certificate discovery.
          *
          * <h3>Usages:<ul>
-         * <li>Sent by the Agent to the certificate discovery servlet (inside the policy servlet).  The gateway includes
+         * <li>Sent by the Bridge to the certificate discovery servlet (inside the policy servlet).  The gateway includes
          *     this nonce in its protective hashes of the returned certificate with the users password(s).  This makes
          *     it infeasible for a hostile Gateway-impersonator to precompute hashes of its certificate with likely passwords.
          *     See CERT_CHECK_PREFIX in {@link HttpHeaders}.
@@ -150,7 +150,7 @@ public class SecureSpanConstants {
     }
 
     /**
-     * Special HTTP headers used by the protocol used between the SecureSpanAgent and the SecureSpanGateway.
+     * Special HTTP headers used by the protocol used between the SecureSpanBridge and the SecureSpanGateway.
      */
     public static class HttpHeaders {
         /**
@@ -160,13 +160,13 @@ public class SecureSpanConstants {
          * it doesn't identify which policy assertions are used or expected to be available or any
          * other protocol versioning.
          * <p>
-         * The Agent does not attempt to interpret this value -- it is treated as an opaque string.  The Gateway
+         * The Bridge does not attempt to interpret this value -- it is treated as an opaque string.  The Gateway
          * currently uses the form "oid|version" where OID is the published service object ID and version is the
          * generation count.
          *
          * <h3>Usages:<ul>
-         * <li>Returned by the policy servlet to the Agent along with every policy download.
-         * <li>Sent by the Agent to the Gateway along with every request that was processed by a policy.
+         * <li>Returned by the policy servlet to the Bridge along with every policy download.
+         * <li>Sent by the Bridge to the Gateway along with every request that was processed by a policy.
          * </ul>
          */
         public static final String POLICY_VERSION = "L7-policy-version";
@@ -176,7 +176,7 @@ public class SecureSpanConstants {
          * no longer valid.
          *
          * <h3>Usages:<ul>
-         * <li>Returned by the Gateway to the Agent in reply to any request whose body was signed by an invalid
+         * <li>Returned by the Gateway to the Bridge in reply to any request whose body was signed by an invalid
          * client certificate, or that was made over SSL and presented an invalid client certificate during
          * the SSL handshake.
          * </ul>
@@ -190,10 +190,10 @@ public class SecureSpanConstants {
          * HTTP client to retry a policy download using HTTPS + Basic auth.
          *
          * <h3>Usages:<ul>
-         * <li>Returned by the Gateway to the Agent in every reponse to a request that either included
+         * <li>Returned by the Gateway to the Bridge in every reponse to a request that either included
          * an incorrect policy version header, or whose behaviour failed to conform to the policy.
          *
-         * <li>Returned by the policy servlet to the Agent if it wants the Agent to retry a policy download
+         * <li>Returned by the policy servlet to the Bridge if it wants the Bridge to retry a policy download
          * using HTTP Basic auth over SSL.
          * </ul>
          */
@@ -205,7 +205,7 @@ public class SecureSpanConstants {
          * use the information for service routing.
          *
          * <h3>Usages:<ul>
-         * <li>Sent by the Agent to the Gateway along with every request.
+         * <li>Sent by the Bridge to the Gateway along with every request.
          * </ul>
          */
         public static final String ORIGINAL_URL = "L7-Original-URL";
@@ -213,7 +213,7 @@ public class SecureSpanConstants {
         /**
          * Contains a hash value used for checking certificate validity.  These headers are provided in the
          * response from the SSG's certificate discovery server (PolicyServlet) so that the client
-         * (ie, the Agent or Manager) can decide whether it trusts the certificate being downloaded.
+         * (ie, the Bridge or Manager) can decide whether it trusts the certificate being downloaded.
          *
          * <p>This is only the prefix of the full header name that will appear in the respone -- the full header
          * name for each cert check will be this prefix followed by the numeric ID of an authentication provider that
@@ -245,7 +245,7 @@ public class SecureSpanConstants {
          *
          * <h3>Usages:<ul>
          * <li>Zero or more headers with this prefix are returned by the certificate discovery servlet to the
-         * Agent along with every download of the Gateway cluster's CA certificate.
+         * Bridge along with every download of the Gateway cluster's CA certificate.
          * </ul>
          */
         public static final String CERT_CHECK_PREFIX = "L7-Cert-Check-";
@@ -253,10 +253,10 @@ public class SecureSpanConstants {
         /**
          * Sent by the client to the password service. This contains the Base-64 encoded value of the new password.
          * Passwords can only be changed for internal accounts. A successful password change will result in
-         * the service returning a 200 code. Otherwise, the calling agent should not assume the password
+         * the service returning a 200 code. Otherwise, the calling Bridge should not assume the password
          * change was successful.
          *
-         * When requesting a password change, the agent must connect through https and must present his client
+         * When requesting a password change, the Bridge must connect through https and must present his client
          * cert as part of the ssl handshake if he does happen to possess such a cert.
          *
          * As part of the password change, the existing client cert (if it exists) is revoked.

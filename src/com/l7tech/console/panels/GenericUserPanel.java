@@ -520,7 +520,7 @@ public class GenericUserPanel extends UserPanel {
                   public void actionPerformed(ActionEvent e) {
                       new PasswordDialog(mainWindow, userPanel,
                         user, passwordChangeListener).show();
-                      // Refresh the panel (since the agent's cert might have been revoked)
+                      // Refresh the panel (since the Bridge's cert might have been revoked)
                   }
               });
 

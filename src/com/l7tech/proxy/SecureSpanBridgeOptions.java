@@ -11,11 +11,11 @@ import java.security.cert.X509Certificate;
 
 
 /**
- * Encapsulates settings to tell SecureSpanAgentFactory what kind of SecureSpanAgent to create for you.
+ * Encapsulates settings to tell SecureSpanBridgeFactory what kind of SecureSpanBridge to create for you.
  * @author mike
  * @version 1.0
  */
-public class SecureSpanAgentOptions {
+public class SecureSpanBridgeOptions {
     private final String gatewayHostname;
     private final String username;
     private final char[] password;
@@ -25,18 +25,18 @@ public class SecureSpanAgentOptions {
     private String keyStorePath = null;
     private String trustStorePath = null;
     private Boolean useSslByDefault = null;
-    private SecureSpanAgentFactory.SecureSpanAgentImpl trustedGateway = null;
+    private SecureSpanBridgeFactory.SecureSpanBridgeImpl trustedGateway = null;
     private GatewayCertificateTrustManager gatewayCertificateTrustManager = null;
 
     /**
-     * Create an object to hold settings that can be used to customize the SecureSpanAgent delivered
-     * by the SecureSpanAgentFactory.
+     * Create an object to hold settings that can be used to customize the SecureSpanBridge delivered
+     * by the SecureSpanBridgeFactory.
      *
      * @param gatewayHostname
      * @param username
      * @param password
      */
-    public SecureSpanAgentOptions(String gatewayHostname,
+    public SecureSpanBridgeOptions(String gatewayHostname,
                                   String username,
                                   char[] password) {
         this.gatewayHostname = gatewayHostname;
@@ -45,7 +45,7 @@ public class SecureSpanAgentOptions {
     }
 
     /**
-     * Get the hostname of the Gateway the created Agent will be pointed at.
+     * Get the hostname of the Gateway the created Bridge will be pointed at.
      * @return the Gateway hostname, ie "gateway1.example.com"
      */
     public String getGatewayHostname() {
@@ -53,7 +53,7 @@ public class SecureSpanAgentOptions {
     }
 
     /**
-     * Get the username for the account the created Agent will use to talk to this Gateway.
+     * Get the username for the account the created Bridge will use to talk to this Gateway.
      * @return the username, ie "mlyons"
      */
     public String getUsername() {
@@ -102,18 +102,18 @@ public class SecureSpanAgentOptions {
     }
 
     /**
-     * Set the ID to use for the SecureSpanAgent instance.  The ID is used to generate the keystore filename,
+     * Set the ID to use for the SecureSpanBridge instance.  The ID is used to generate the keystore filename,
      * if one is not set explicitly.  If no ID is set, the hashCode of the username will be used as the ID.
-     * @param id The ID to use.  SecureSpanAgent instances created with different credentials must have different IDs.
+     * @param id The ID to use.  SecureSpanBridge instances created with different credentials must have different IDs.
      */
     public void setId(int id) {
         this.id = id;
     }
 
     /**
-     * Get the ID to use for the SecureSpanAgent instance.  The ID is used to generate the keystore filename,
+     * Get the ID to use for the SecureSpanBridge instance.  The ID is used to generate the keystore filename,
      * if one is not set explicitly.  If no ID has been set, the hashCode of the username is used as the ID.
-     * @return the ID that will be used by the newly-created SecureSpanAgent
+     * @return the ID that will be used by the newly-created SecureSpanBridge
      */
     public int getId() {
         if (id == 0)
@@ -122,9 +122,9 @@ public class SecureSpanAgentOptions {
     }
 
     /**
-     * Get the pathname of the custom KeyStore file that will be used for this Agent.
-     * If no custom KeyStore path is requested, the Agent will use the default KeyStore location ~/.l7tech/keyNNN.p12
-     * where ~ is the home directory of the user owning this process, and NNN is the ID of this SecureSpanAgent.
+     * Get the pathname of the custom KeyStore file that will be used for this Bridge.
+     * If no custom KeyStore path is requested, the Bridge will use the default KeyStore location ~/.l7tech/keyNNN.p12
+     * where ~ is the home directory of the user owning this process, and NNN is the ID of this SecureSpanBridge.
      * <p>
      * The KeyStore is in PKCS#12 format, and is only needed if you have a client certificate.  It holds the signed
      * client certificate along with its corresponding private key.  The KeyStore is encrypted on disk with Triple-DES,
@@ -136,9 +136,9 @@ public class SecureSpanAgentOptions {
     }
 
     /**
-     * Set the pathname of the custom KeyStore file that will be used for this Agent.
-     * If no custom KeyStore path is requested, the Agent will use the default KeyStore location ~/.l7tech/keyNNN.p12
-     * where ~ is the home directory of the user owning this process, and NNN is the ID of this SecureSpanAgent.
+     * Set the pathname of the custom KeyStore file that will be used for this Bridge.
+     * If no custom KeyStore path is requested, the Bridge will use the default KeyStore location ~/.l7tech/keyNNN.p12
+     * where ~ is the home directory of the user owning this process, and NNN is the ID of this SecureSpanBridge.
      * <p>
      * The KeyStore is in PKCS#12 format, and is only needed if you have a client certificate.  It holds the signed
      * client certificate along with its corresponding private key.  The KeyStore is encrypted on disk with Triple-DES,
@@ -150,10 +150,10 @@ public class SecureSpanAgentOptions {
     }
 
     /**
-     * Get the pathname of the custom CertStore file that will be used for this Agent.
-     * if no custom CertStore path is requested, the Agent will use the default CertStore
+     * Get the pathname of the custom CertStore file that will be used for this Bridge.
+     * if no custom CertStore path is requested, the Bridge will use the default CertStore
      * location ~/.l7tech/certsNNN.p12 where ~ is the home directory of the user owning this process, and NNN is the
-     * ID of this SecureSpanAgent.
+     * ID of this SecureSpanBridge.
      * <p>
      * The CertStore is in PKCS#12 format, and holds only public information including the Gateway's server
      * certificate and a publicly readable copy of the signed client certificate (if any).  It is obscured on disk
@@ -165,10 +165,10 @@ public class SecureSpanAgentOptions {
     }
 
     /**
-     * Set the pathname of the custom CertStore file that will be used for this Agent.
-     * if no custom CertStore path is requested, the Agent will use the default CertStore
+     * Set the pathname of the custom CertStore file that will be used for this Bridge.
+     * if no custom CertStore path is requested, the Bridge will use the default CertStore
      * location ~/.l7tech/certsNNN.p12 where ~ is the home directory of the user owning this process, and NNN is the
-     * ID of this SecureSpanAgent.
+     * ID of this SecureSpanBridge.
      * <p>
      * The CertStore is in PKCS#12 format, and holds only public information including the Gateway's server
      * certificate and a publicly readable copy of the signed client certificate (if any).  It is obscured on disk
@@ -180,50 +180,50 @@ public class SecureSpanAgentOptions {
     }
 
     /**
-     * Check whether the created Agent will use SSL when sending messages to the Gateway for which
+     * Check whether the created Bridge will use SSL when sending messages to the Gateway for which
      * no policy is (yet) known.
-     * @return useSslByDefault If True, Agent will use SSL whenever no policy is known for a request.
-     *                        If False, Agent will not use SSL whenever no policy is known for a request.
-     *                        If null, Agent will use it's default for this setting (currently True).
+     * @return useSslByDefault If True, Bridge will use SSL whenever no policy is known for a request.
+     *                        If False, Bridge will not use SSL whenever no policy is known for a request.
+     *                        If null, Bridge will use it's default for this setting (currently True).
      */
     public Boolean getUseSslByDefault() {
         return useSslByDefault;
     }
 
     /**
-     * Specify whether the created Agent should use SSL when sending messages to the Gateway for which
+     * Specify whether the created Bridge should use SSL when sending messages to the Gateway for which
      * no policy is (yet) known.
-     * @param useSslByDefault If True, Agent will use SSL whenever no policy is known for a request.
-     *                        If False, Agent will not use SSL whenever no policy is known for a request.
-     *                        If null, Agent will use it's default for this setting (currently True).
+     * @param useSslByDefault If True, Bridge will use SSL whenever no policy is known for a request.
+     *                        If False, Bridge will not use SSL whenever no policy is known for a request.
+     *                        If null, Bridge will use it's default for this setting (currently True).
      */
     public void setUseSslByDefault(Boolean useSslByDefault) {
         this.useSslByDefault = useSslByDefault;
     }
 
     /**
-     * Check whether the created Agent will be configured to use a Federated Gateway, and if so, which
+     * Check whether the created Bridge will be configured to use a Federated Gateway, and if so, which
      * Trusted Gateway will be providing the credentials.
-     * @return The SecureSpanAgent pointing at the Trusted Gateway if the new Agent will be configured to
-     *         work with a Federated Gateway; or null, if the new Agent will be working with a Trusted Gateway directly.
+     * @return The SecureSpanBridge pointing at the Trusted Gateway if the new Bridge will be configured to
+     *         work with a Federated Gateway; or null, if the new Bridge will be working with a Trusted Gateway directly.
      */
-    public SecureSpanAgent getTrustedGateway() {
+    public SecureSpanBridge getTrustedGateway() {
         return trustedGateway;
     }
 
     /**
-     * Specify whether the created Agent will be configured to use a Federated Gateway, and if so, which
+     * Specify whether the created Bridge will be configured to use a Federated Gateway, and if so, which
      * Trusted Gateway will be providing the credentials.
-     * @param trustedGateway A SecureSpanAgent pointing at the Trusted Gateway if the new Agent will be a
-     *                       Federated Gateway; or null, if the new Agent will be a Trusted Gateway.  The
-     *                       trustedGateway must be a SecureSpanAgent instance obtained from the
-     *                       SecureSpanAgentFactory.
+     * @param trustedGateway A SecureSpanBridge pointing at the Trusted Gateway if the new Bridge will be a
+     *                       Federated Gateway; or null, if the new Bridge will be a Trusted Gateway.  The
+     *                       trustedGateway must be a SecureSpanBridge instance obtained from the
+     *                       SecureSpanBridgeFactory.
      */
-    public void setTrustedGateway(SecureSpanAgent trustedGateway) {
-        if (!(trustedGateway instanceof SecureSpanAgentFactory.SecureSpanAgentImpl))
-            throw new IllegalArgumentException("trustedGateway must be a SecureSpanAgent instance " +
-                                               "obtained from the SecureSpanAgentFactory.");
-        this.trustedGateway = (SecureSpanAgentFactory.SecureSpanAgentImpl)trustedGateway;
+    public void setTrustedGateway(SecureSpanBridge trustedGateway) {
+        if (!(trustedGateway instanceof SecureSpanBridgeFactory.SecureSpanBridgeImpl))
+            throw new IllegalArgumentException("trustedGateway must be a SecureSpanBridge instance " +
+                                               "obtained from the SecureSpanBridgeFactory.");
+        this.trustedGateway = (SecureSpanBridgeFactory.SecureSpanBridgeImpl)trustedGateway;
     }
 
     /** Interface implemented by API users who wish to trust new Gateway certificates at runtime. */
@@ -251,8 +251,8 @@ public class SecureSpanAgentOptions {
 
     /**
      * Set a custom trust manager for dynamically determining whether an about-to-be-imported Gateway SSL certificate
-     * should be trusted.  This trust manager will only be consulted if the Agent is unable to safely determine
-     * certificate trust automatically (perhaps because the password is unavailable to the Agent or Gateway, or the
+     * should be trusted.  This trust manager will only be consulted if the Bridge is unable to safely determine
+     * certificate trust automatically (perhaps because the password is unavailable to the Bridge or Gateway, or the
      * peer is a Federated Gateway).
      * @param gatewayCertificateTrustManager a user callback that will determine certificate trust at runtime.
      */

@@ -5,7 +5,7 @@
 !define J2RE "j2re1.4.2"  ;Name of directory containing JRE
 !define J2RE_PATH "C:\${J2RE}"   ;Full path to directory containing JRE (at .nsi compile-time)
 !define COMPANY "Layer 7 Technologies"
-!define MUI_PRODUCT "SecureSpan Agent" ;Define your own software name here
+!define MUI_PRODUCT "SecureSpan Bridge" ;Define your own software name here
 
 ; Edit this to set the version number in the build (is auto-edited by build.xml's OFFICIAL-build target)
 !define MUI_VERSION "HEAD"
@@ -44,7 +44,7 @@
   ;Remember the Start Menu Folder
   !define MUI_STARTMENUPAGE_REGISTRY_ROOT "HKCU"
   !define MUI_STARTMENUPAGE_REGISTRY_KEY "Software\${COMPANY}\${MUI_PRODUCT} ${MUI_VERSION}"
-  !define MUI_STARTMENUPAGE_REGISTRY_VALUENAME "Layer 7 SecureSpan Agent"
+  !define MUI_STARTMENUPAGE_REGISTRY_VALUENAME "Layer 7 SecureSpan Bridge"
 
   !define TEMP $R0
 
@@ -58,7 +58,7 @@
 ;Language Strings
 
   ;Description
-  LangString DESC_SecCopyUI ${LANG_ENGLISH} "Copy the SecureSpan Agent files to the application folder."
+  LangString DESC_SecCopyUI ${LANG_ENGLISH} "Copy the SecureSpan Bridge files to the application folder."
 
 ;--------------------------------
 ;Data
@@ -70,7 +70,7 @@
 ;--------------------------------
 ;Installer Sections
 
-Section "SecureSpan Agent" SecCopyUI
+Section "SecureSpan Bridge" SecCopyUI
 
   ;ADD YOUR OWN STUFF HERE!
 
@@ -81,7 +81,7 @@ Section "SecureSpan Agent" SecCopyUI
   File "${MUI_PRODUCT}.bat"
   File "${MUI_PRODUCT} in Text Mode.bat"
   File "logging.properties"
-  File "${BUILD_DIR}\Agent.jar"
+  File "${BUILD_DIR}\Bridge.jar"
   File /r "${J2RE_PATH}"
 
   SetOutPath "$INSTDIR/lib"
@@ -98,7 +98,7 @@ Section "SecureSpan Agent" SecCopyUI
     CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Start ${MUI_PRODUCT}.lnk" "$INSTDIR\${MUI_PRODUCT}.exe" parameters "$INSTDIR\${MUI_PRODUCT}.exe" 0
     CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Start ${MUI_PRODUCT} in Troubleshooting Mode.lnk" "$INSTDIR\${MUI_PRODUCT}.bat" parameters "$INSTDIR\${MUI_PRODUCT}.exe" 1
     ;CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Start ${MUI_PRODUCT} in Text Mode.lnk" "$INSTDIR\${MUI_PRODUCT} in Text Mode.bat" parameters "$INSTDIR\${MUI_PRODUCT}.exe" 2
-    ;CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Uninstall SecureSpan Agent.lnk" "$INSTDIR\Uninstall.exe"
+    ;CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Uninstall SecureSpan Bridge.lnk" "$INSTDIR\Uninstall.exe"
 
   !insertmacro MUI_STARTMENU_WRITE_END
 
@@ -139,7 +139,7 @@ Section "Uninstall"
   Delete "$INSTDIR\${MUI_PRODUCT}.ini"
   Delete "$INSTDIR\${MUI_PRODUCT}.bat"
   Delete "$INSTDIR\${MUI_PRODUCT} in Text Mode.bat"
-  Delete "$INSTDIR\Agent.jar"
+  Delete "$INSTDIR\Bridge.jar"
   Delete "$INSTDIR\logging.properties"
   Delete "$INSTDIR\systray4j.dll"
   ; DO NOT DELETE OR EDIT THIS LINE -- %%%JARFILE_DELETE_LINES%%%

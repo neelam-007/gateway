@@ -111,8 +111,8 @@ public class BenchmarkRunner {
     }
 
     /**
-     * prepare the agents authenticaiton test. Load the agents, and
-     * distribute the agents auth request to threads.
+     * prepare the agents authenticaiton test. Load every Bridge, and
+     * distribute the Bridge auth request to threads.
      * 
      * @throws InterruptedException
      */
@@ -153,13 +153,13 @@ public class BenchmarkRunner {
      * Start with MAX_THREAD_COUNT threads and decrease the number of threads
      * until there are less then REQUESTS_PER_THREAD clients per thread.
      *
-     * @param requests the number of agents to process
+     * @param requests the number of Bridge instances to process
      * @return the estimated number of threads that will process the
      *         auth request.
      */
     private int estimateThreads(int requests) {
         if (requests <= 0) {
-            throw new IllegalArgumentException("number of agents " + requests);
+            throw new IllegalArgumentException("number of Bridges " + requests);
         }
         int nThreads = MAX_THREAD_COUNT;
         while ((requests / nThreads) < REQUESTS_PER_THREAD &&

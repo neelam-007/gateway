@@ -69,7 +69,7 @@ public class WsdlProxy {
     /**
      * Download the WSDL for the given published service from the given Ssg.  The downloaded Wsdl
      * will be returned exactly as the Ssg returned it -- specifically, the port URL will be whatever
-     * the Ssg gave us (probably pointing at itself), and will need to be rewritten to point at the Agent instead.
+     * the Ssg gave us (probably pointing at itself), and will need to be rewritten to point at the Bridge instead.
      *
      * @param ssg           the Ssg to contact
      * @param serviceoid    the OID of the service whose WSDL to obtain
@@ -98,7 +98,7 @@ public class WsdlProxy {
     /**
      * Download the WSIL for the service list from the given Ssg.  The downloaded WSIL
      * will be returned exactly as the Ssg returned it -- specifically, the WSDL URLs will be whatever
-     * the Ssg gave us (probably pointing at itself), and will need to be rewritten to point at the Agent instead.
+     * the Ssg gave us (probably pointing at itself), and will need to be rewritten to point at the Bridge instead.
      *
      * @param ssg           the Ssg to contact
      * @return the Wsdl document obtained from the Ssg.

@@ -31,7 +31,7 @@ public class AllAssertions {
     /**
      * the assertions that the agent (ssa) uses
      */
-    public static Assertion[] AGENT_EVERYTHING = new Assertion[]{
+    public static Assertion[] BRIDGE_EVERYTHING = new Assertion[]{
         new HttpBasic(),
         new HttpClientCert(),
         new HttpDigest(),

@@ -6,12 +6,12 @@
 
 package com.l7tech.server.interfaces;
 
-import java.rmi.RemoteException;
 import java.rmi.Remote;
+import java.rmi.RemoteException;
 
 /**
- * This is the remote interface the Gateway provides, and the Agent consumes, for downloading
- * policies from the Gateway to the Agent.
+ * This is the remote interface the Gateway provides, and the Bridge consumes, for downloading
+ * policies from the Gateway to the Bridge.
  * @author mike
  */
 public interface PolicyDiscoveryServer extends Remote {

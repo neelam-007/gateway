@@ -17,13 +17,10 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 
 /**
- *
- * User: mike
- * Date: Sep 15, 2003
- * Time: 3:14:26 PM
+ * About Box for the client.
  */
-public class AgentAboutBox extends JDialog {
-    public AgentAboutBox() {
+public class AboutBox extends JDialog {
+    public AboutBox() {
         super(Gui.getInstance().getFrame(), "About " + Gui.APP_NAME);
         setModal(true);
         Container pane = getContentPane();
@@ -48,7 +45,7 @@ public class AgentAboutBox extends JDialog {
 
         final Action closeAction = new AbstractAction() {
                     public void actionPerformed(ActionEvent e) {
-                        AgentAboutBox.this.dispose();
+                        AboutBox.this.dispose();
                     }
                 };
         okButton.addActionListener(closeAction);
@@ -65,7 +62,7 @@ public class AgentAboutBox extends JDialog {
     /*
     public static void main(String[] args) {
         Gui.setInstance(Gui.createGui(null, new SsgManagerStub()));
-        new AgentAboutBox().show();
+        new AboutBox().show();
         System.exit(1);
     }
     */

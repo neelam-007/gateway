@@ -24,7 +24,7 @@ public class Component {
     public static final Component GW_CLUSTER           = new Component( 300, "C", "Cluster", GATEWAY);
     public static final Component GW_DATABASE          = new Component( 400, "D", "Database", GATEWAY);
 
-    public static final Component AGENT = new Component(2000, "A", "SecureSpan Agent", null);
+    public static final Component BRIDGE = new Component(2000, "B", "SecureSpan Bridge", null);
     public static final Component MANAGER = new Component(3000, "M", "SecureSpan Manager", null);
 
     private Component(int localNum, String localCode, String name, Component parent) {

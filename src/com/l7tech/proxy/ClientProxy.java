@@ -3,9 +3,6 @@ package com.l7tech.proxy;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.proxy.datamodel.SsgFinder;
 import com.l7tech.proxy.processor.MessageProcessor;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-
 import org.mortbay.http.HttpContext;
 import org.mortbay.http.HttpServer;
 import org.mortbay.http.SocketListener;
@@ -19,6 +16,8 @@ import java.net.UnknownHostException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Encapsulates an HTTP proxy that processes SOAP messages.
@@ -37,7 +36,7 @@ public class ClientProxy {
 
     /**
      * This is the suffix appended to the local endpoint to form local WSDL discovery URLs.
-     * For example, an Agent listening on http://localhost:7700/ssg3 will treat anything addressed
+     * For example, a Bridge listening on http://localhost:7700/ssg3 will treat anything addressed
      * to http://localhost:7700/ssg3/wsdl as a WSDL discovery request to the corresponding SSG.
      */
     public static final String WSDL_SUFFIX = "/wsdl";

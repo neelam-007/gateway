@@ -167,7 +167,7 @@ public class KeystoreUtils {
      * Load the <code>KeyStore</code> from a given keystore file that is protected with a specified
      * password.
      *
-     * <b>Note:</b> Assumes that the keystore is of the default type!  Do not use in Agent or Gateway!
+     * <b>Note:</b> Assumes that the keystore is of the default type!  Do not use in Bridge or Gateway!
      *
      * @param path     the keystore file path
      * @param password the keystore password

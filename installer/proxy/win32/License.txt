@@ -1,10 +1,10 @@
-SECURESPAN AGENT SOFTWARE LICENSE AGREEMENT OF LAYER 7 TECHNOLOGIES.
+SECURESPAN BRIDGE SOFTWARE LICENSE AGREEMENT OF LAYER 7 TECHNOLOGIES.
 
 THE SOFTWARE TO WHICH YOU ARE REQUESTING TO ACCESS IS THE PROPERTY OF LAYER 7 TECHNOLOGIES.  THE USE OF THIS SOFTWARE IS GOVERNED BY THE TERMS AND CONDITIONS OF THE AGREEMENT SET FORTH BELOW.  BY CLICKING "I AGREE" ON THIS SCREEN, YOU INDICATE THAT YOU AGREE TO BE BOUND BY THE TERMS AND CONDITIONS OF THAT AGREEMENT.   THEREFORE, PLEASE READ THE TERMS AND CONDITIONS CAREFULLY BEFORE CLICKING ON "I AGREE".  IF YOU DO NOT AGREE TO THE TERMS AND CONDITIONS OF THE AGREEMENT, CLICK "CANCEL" ON THIS SCREEN, IN WHICH CASE YOU WILL BE DENIED ACCESS TO THE SOFTWARE.
 
 Ownership of the Software
 
-1.  The software contained in the Layer 7 Technologies SecureSpan Agent ("the Software"), to which you are requesting access, is owned or licensed by Layer 7 Technologies and is protected by United States and Canada copyright laws, laws of other nations, and/or international treaties.
+1.  The software contained in the Layer 7 Technologies SecureSpan Bridge ("the Software"), to which you are requesting access, is owned or licensed by Layer 7 Technologies and is protected by United States and Canada copyright laws, laws of other nations, and/or international treaties.
 
 Grant of License
 

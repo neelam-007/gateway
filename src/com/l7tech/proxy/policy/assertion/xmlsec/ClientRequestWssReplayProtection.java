@@ -15,7 +15,7 @@ import java.security.GeneralSecurityException;
 import java.util.logging.Logger;
 
 /**
- * Client side support for RequestWssReplayProtection.  When the Agent sees this assertion, it makes sure that
+ * Client side support for RequestWssReplayProtection.  When the Bridge sees this assertion, it makes sure that
  * the request includes a signed timestamp.
  *
  * $Id$

@@ -1,17 +1,17 @@
 package com.l7tech.proxy.gui;
 
+import com.l7tech.common.BuildInfo;
+import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.proxy.ClientProxy;
-import java.util.logging.Logger;
-import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.datamodel.SsgManagerImpl;
-import com.l7tech.common.BuildInfo;
-import com.l7tech.common.util.JdkLoggerConfigurator;
-import com.l7tech.common.security.JceProvider;
+import com.l7tech.proxy.processor.MessageProcessor;
 import org.mortbay.util.MultiException;
 
 import java.net.BindException;
+import java.util.logging.Logger;
 
 /**
  * Begin execution of client proxy along with an attached GUI.
@@ -39,7 +39,7 @@ public class Main {
     /** Start a GUI-equipped client proxy and run it until it's shut down. */
     public static void main(final String[] argv) {
         JdkLoggerConfigurator.configure("com.l7tech.proxy", "com/l7tech/proxy/resources/logging.properties");
-        log.info("Starting Agent; " + BuildInfo.getLongBuildString());
+        log.info("Starting SecureSpan Bridge; " + BuildInfo.getLongBuildString());
         JceProvider.init();
 
         SsgManager ssgManager = SsgManagerImpl.getSsgManagerImpl();
@@ -65,12 +65,12 @@ public class Main {
         try {
             clientProxy.start();
         } catch (Exception e) {
-            String message = "Unable to start the Agent: " + e;
+            String message = "Unable to start the Bridge: " + e;
             if (e instanceof BindException ||
                     (e instanceof MultiException && ((MultiException)e).getException(0) instanceof BindException))
             {
-                message = "The SecureSpan Agent is already running.  \nPlease shut down the existing " +
-                        "Agent and try again.";
+                message = "The SecureSpan Bridge is already running.  \nPlease shut down the existing " +
+                        "Bridge and try again.";
             }
 
             Gui.errorMessage(message);

@@ -254,7 +254,7 @@ class CertificatePanel extends JPanel {
     private JButton revokeCertButton;
 
     /**
-     * The agent whose certificate we are inspecting.
+     * The Bridge whose certificate we are inspecting.
      */
     private UserBean user;
 

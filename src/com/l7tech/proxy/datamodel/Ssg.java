@@ -889,14 +889,14 @@ public class Ssg implements Serializable, Cloneable, Comparable {
 
     /**
      * Get the time offset for this SSG.  If set, this is the approximate number of milliseconds
-     * that must be added to the Agent's local UTC time to match the UTC time set on this SSG.  This
-     * value might be negative if the Agent's clock is ahead of the SSG's.
+     * that must be added to the Bridge's local UTC time to match the UTC time set on this SSG.  This
+     * value might be negative if the Bridge's clock is ahead of the SSG's.
      * <p>
-     * This is used for clock-skew workaround to enable the Agent to interoperate with multiple SSGs
-     * from different organizations, each of which might have different clocks.  As long as the Agent
+     * This is used for clock-skew workaround to enable the Bridge to interoperate with multiple SSGs
+     * from different organizations, each of which might have different clocks.  As long as the Bridge
      * does not need to pass timestamps between two different SSGs with differing opinions about the
      * current time (as when getting a SAML token from one and presenting it to the other, for example)
-     * this mechanism enables the Agent to work around the problem.
+     * this mechanism enables the Bridge to work around the problem.
      *
      * @return the time offset, if set; otherwise 0.
      */
@@ -928,8 +928,8 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     /**
      * Translate a date and time from the SSG's clock into our local clock.  Leaves the
      * date unchanged if a TimeOffset is not set for this SSG.  This is used to work around
-     * clock-skew between the Agent and this SSG; see timeOffset() for details.
-     * @return a DateTranslator that will translate according to the Agent's local clock setting
+     * clock-skew between the Bridge and this SSG; see timeOffset() for details.
+     * @return a DateTranslator that will translate according to the Bridge's local clock setting
      */
     public DateTranslator dateTranslatorFromSsg() {
         return fromSsgDateTranslator;
@@ -949,9 +949,9 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     };
 
     /**
-     * Translate a date and time from the Agent's local clock into the SSG's clock.  Leaves
+     * Translate a date and time from the Bridge's local clock into the SSG's clock.  Leaves
      * the date unchanged if a TimeOffset is not set for this SSG.  This is used to work around
-     * clock-skew between the Agent and this SSG; see getTimeOFfset() for details.
+     * clock-skew between the Bridge and this SSG; see getTimeOFfset() for details.
      * @return a DateTranslator that will translate according to the SSG's clock setting
      */
     public DateTranslator dateTranslatorToSsg() {

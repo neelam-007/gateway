@@ -10,7 +10,7 @@ import java.rmi.Remote;
 import java.rmi.RemoteException;
 
 /**
- * This is the interface provided by the Gateway that clients (including the Agent and Console) can use to obtain
+ * This is the interface provided by the Gateway that clients (including the Bridge and Console) can use to obtain
  * the Gateway's server certificate.  If the client provides a valid username and the Gateway has access
  * to that user's password, a hash of the password with the server certificate will be returned along with the
  * certificate; assuming the client knows the same password, it can recompute the hash and thereby verify the
