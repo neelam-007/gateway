@@ -22,7 +22,7 @@ public class MessageViewer extends JFrame {
     private static final Category log = Category.getInstance(MessageViewer.class);
 
     MessageViewerModel messageViewerModel = new MessageViewerModel();
-    private JTextArea messageView;
+    private JPanel messageView;
     private JList messageList;
 
     private class MessageViewListener implements ListDataListener {
@@ -52,11 +52,16 @@ public class MessageViewer extends JFrame {
     private void setSelectedIndex(final int idx) {
         if (messageList.getSelectedIndex() != idx)
             messageList.setSelectedIndex(idx);
+        messageView.removeAll();
         if (idx >= 0 && idx <= messageViewerModel.getSize()) {
-            messageView.setText(messageViewerModel.getMessageTextAt(idx));
-        } else {
-            messageView.setText("");
+            messageView.add(messageViewerModel.getComponentAt(idx),
+                            new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
+                                                   GridBagConstraints.CENTER,
+                                                   GridBagConstraints.BOTH,
+                                                   new Insets(0, 0, 0, 0), 0, 0));
         }
+        messageView.invalidate();
+        messageView.validate();
     }
 
     /**
@@ -77,8 +82,8 @@ public class MessageViewer extends JFrame {
         final JScrollPane messageListPane = new JScrollPane(messageList);
         messageListPane.setPreferredSize(new Dimension(210, 350));
 
-        messageView = new JTextArea(15, 30);
-        messageView.setWrapStyleWord(true);
+        messageView = new JPanel(new GridBagLayout());
+        //messageView.setPreferredSize(new Dimension(500, 400));
         final JScrollPane messageViewPane = new JScrollPane(messageView);
         messageViewPane.setPreferredSize(new Dimension(610, 350));
 
@@ -86,6 +91,9 @@ public class MessageViewer extends JFrame {
         clearButton.addActionListener(new ActionListener() {
             public void actionPerformed(final ActionEvent e) {
                 messageViewerModel.clear();
+                messageView.removeAll();
+                messageView.invalidate();
+                messageView.validate();
             }
         });
         final JButton hideButton = new JButton("Hide");

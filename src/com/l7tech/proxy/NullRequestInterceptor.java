@@ -1,6 +1,9 @@
 package com.l7tech.proxy;
 
 import org.apache.axis.message.SOAPEnvelope;
+import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
+import com.l7tech.policy.assertion.Assertion;
 
 /**
  * A RequestInterceptor that ignores all events.
@@ -42,5 +45,13 @@ public class NullRequestInterceptor implements RequestInterceptor {
      * @param t The error that occurred during the request.
      */
     public void onReplyError(final Throwable t) {
+    }
+
+    /**
+     * Fired when a policy is updated.
+     * @param binding
+     * @param policy
+     */
+    public void onPolicyUpdated(Ssg ssg, PolicyAttachmentKey binding, Assertion policy) {
     }
 }

@@ -57,7 +57,7 @@ public class RequestHandler extends AbstractHttpHandler {
                                          Ssg ssg)
             throws SOAPException
     {
-        PendingRequest pr = new PendingRequest(requestEnvelope, ssg);
+        PendingRequest pr = new PendingRequest(requestEnvelope, ssg, interceptor);
         String sa = request.getField("SOAPAction");
         if (sa != null)
             pr.setSoapAction(sa);

@@ -7,6 +7,8 @@
 package com.l7tech.proxy.datamodel;
 
 import org.apache.axis.message.SOAPEnvelope;
+import com.l7tech.proxy.RequestInterceptor;
+import com.l7tech.proxy.NullRequestInterceptor;
 
 /**
  * Holds request state while the client proxy is processing it.
@@ -17,6 +19,7 @@ import org.apache.axis.message.SOAPEnvelope;
 public class PendingRequest {
     private SOAPEnvelope soapEnvelope;
     private Ssg ssg;
+    private RequestInterceptor requestInterceptor = NullRequestInterceptor.INSTANCE;
     private String soapAction = "";
     private String uri = "";
     private boolean isPolicyUpdated = false;
@@ -38,9 +41,10 @@ public class PendingRequest {
     private PolicySettings policySettings = new PolicySettings();
 
     /** Construct a PendingRequest around the given SOAPEnvelope going to the given SSG. */
-    public PendingRequest(SOAPEnvelope soapEnvelope, Ssg ssg) {
+    public PendingRequest(SOAPEnvelope soapEnvelope, Ssg ssg, RequestInterceptor requestInterceptor) {
         this.soapEnvelope = soapEnvelope;
         this.ssg = ssg;
+        setRequestInterceptor(requestInterceptor);
     }
 
     /**
@@ -75,6 +79,16 @@ public class PendingRequest {
 
     public void setUri(String uri) {
         this.uri = uri;
+    }
+
+    public RequestInterceptor getRequestInterceptor() {
+        return requestInterceptor;
+    }
+
+    public void setRequestInterceptor(RequestInterceptor requestInterceptor) {
+        if (requestInterceptor == null)
+            throw new IllegalArgumentException("requestInterceptor mustn't be null; use NullRequestInterceptor");
+        this.requestInterceptor = requestInterceptor;
     }
 
     public boolean isSslRequired() {

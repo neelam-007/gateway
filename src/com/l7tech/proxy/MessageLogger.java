@@ -8,6 +8,9 @@ package com.l7tech.proxy;
 
 import org.apache.axis.message.SOAPEnvelope;
 import org.apache.log4j.Category;
+import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
+import com.l7tech.policy.assertion.Assertion;
 
 /**
  * RequestInterceptor that logs all messages in and out.
@@ -51,5 +54,14 @@ public class MessageLogger implements RequestInterceptor {
      */
     public void onReplyError(Throwable t) {
         log.info("Error while processing response from server: " + t);
+    }
+
+    /**
+     * Fired when a policy is updated.
+     * @param binding
+     * @param policy
+     */
+    public void onPolicyUpdated(Ssg ssg, PolicyAttachmentKey binding, Assertion policy) {
+        log.info("Policy updated for SSG: " + ssg);
     }
 }
