@@ -26,9 +26,9 @@ CREATE TABLE identity_provider (
   name varchar(128) NOT NULL ,
   description varchar2(1024),
   type int NOT NULL ,
-  properties clob,
-  UNIQUE (name)
+  properties clob
 );
+CREATE UNIQUE INDEX i_idp_name ON identity_provider (name);
 
 --
 -- Dumping data for table 'identity_provider'
@@ -115,7 +115,7 @@ CREATE TABLE published_service (
   wsdl_xml clob NOT NULL ,
   disabled char(1) NOT NULL ,
   soap char(1) NOT NULL ,
-  routing_uri varchar(128),
+  routing_uri varchar(128)
 );
 
 --
@@ -215,8 +215,8 @@ CREATE TABLE ssg_logs (
   strrequestid varchar(40),
   PRIMARY KEY(objectid)
 );
-CREATE INDEX idx_nodeid ON ssg_logs (nodeid);
-CREATE INDEX idx_millis ON ssg_logs (millis);
+CREATE INDEX i_log_nodeid ON ssg_logs (nodeid);
+CREATE INDEX i_log_millis ON ssg_logs (millis);
 
 --
 -- Dumping data for table 'ssg_logs'
@@ -285,38 +285,34 @@ CREATE TABLE fed_user (
   objectid number(38,0) NOT NULL,
   version integer NOT NULL,
   name varchar(128) NOT NULL,
-
   provider_oid number(38,0) NOT NULL,
   subject_dn varchar(255),
   email varchar(128),
   login varchar(32),
-
   first_name varchar(32) default NULL,
   last_name varchar(32) default NULL,
   title varchar(64) default NULL,
-
-  PRIMARY KEY (objectid),
-  INDEX i_provider_oid (provider_oid),
-  INDEX i_email (email),
-  INDEX i_login (login),
-  INDEX i_subject_dn (subject_dn),
-  UNIQUE KEY i_name (provider_oid, name)
+  PRIMARY KEY (objectid)
 );
+CREATE UNIQUE INDEX i_fu_name ON fed_user (provider_oid, name);
+CREATE INDEX i_fu_provider_oid ON fed_user (provider_oid);
+CREATE INDEX i_fu_email ON fed_user (email);
+CREATE INDEX i_fu_login ON fed_user (login);
+CREATE INDEX i_fu_subject_dn ON fed_user (subject_dn);
 
-DROP TABLE IF EXISTS fed_group;
+DROP TABLE fed_group;
 CREATE TABLE fed_group (
   objectid number(38,0) NOT NULL,
   version integer NOT NULL,
   provider_oid number(38,0) NOT NULL,
   name varchar(128) NOT NULL,
   description varchar2(1024),
-
-  PRIMARY KEY  (objectid),
-  INDEX i_provider_oid (provider_oid),
-  UNIQUE KEY i_name (provider_oid, name)
+  PRIMARY KEY  (objectid)
 );
+CREATE UNIQUE INDEX i_fg_name ON fed_group (provider_oid, name);
+CREATE INDEX i_fg_provider_oid ON fed_group (provider_oid);
 
-DROP TABLE IF EXISTS fed_user_group;
+DROP TABLE fed_user_group;
 CREATE TABLE fed_user_group (
   provider_oid number(38,0) NOT NULL,
   fed_user_oid number(38,0) NOT NULL,
@@ -324,23 +320,23 @@ CREATE TABLE fed_user_group (
   PRIMARY KEY (provider_oid,fed_user_oid,fed_group_oid)
 );
 
-DROP TABLE IF EXISTS fed_group_virtual;
+DROP TABLE fed_group_virtual;
 CREATE TABLE fed_group_virtual (
   objectid number(38,0)  NOT NULL,
   version integer NOT NULL,
   provider_oid number(38,0)  NOT NULL,
   name varchar(128) NOT NULL,
   description varchar2(1024),
-
   x509_subject_dn_pattern varchar(255),
   saml_email_pattern varchar(128),
   properties clob,
-
-  PRIMARY KEY  (objectid),
-  INDEX i_provider_oid (provider_oid),
-  INDEX i_x509_subject_dn_pattern (x509_subject_dn_pattern),
-  INDEX i_saml_email_pattern (saml_email_pattern),
-  UNIQUE KEY i_name (provider_oid, name)
+  PRIMARY KEY  (objectid)
 );
+CREATE UNIQUE INDEX i_fgv_name ON fed_group_virtual (provider_oid, name);
+CREATE INDEX i_fgv_provider_oid ON fed_group_virtual (provider_oid);
+CREATE INDEX i_fgv_x509_subject_dn_pattern ON fed_group_virtual (x509_subject_dn_pattern);
+CREATE INDEX i_fgv_saml_email_pattern ON fed_group_virtual (saml_email_pattern);
+
+
 
 
