@@ -222,35 +222,35 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
     }
 
     private long checkSeqNrValidity(Document soapmsg, Session session) throws InvalidSequenceNumberException {
-        long seqNr;
-        try {
-            seqNr = SecureConversationTokenHandler.readSeqNrFromDocument(soapmsg);
-        } catch (XMLSecurityElementNotFoundException e) {
+        Long seqNr;
+        seqNr = SecureConversationTokenHandler.readSeqNrFromDocument(soapmsg);
+        if (seqNr == null) {
             logger.severe("request contains no sequence number");
             throw new InvalidSequenceNumberException("request contains no sequence number");
         }
-        if (seqNr < session.getHighestSeq()) {
+
+        long seq = seqNr.longValue();
+
+        if (seq < session.getHighestSeq()) {
             logger.severe("sequence number too low (" + seqNr + "). someone is trying replay attack?");
             throw new InvalidSequenceNumberException("request contains a sequence number which is too low");
         }
-        return seqNr;
+        return seq;
     }
 
     private Session getXmlSecSession(Document soapmsg) throws SessionInvalidException {
         // get the session id from the security context
-        long sessionID = 0;
-        try {
-            sessionID = SecureConversationTokenHandler.readSessIdFromDocument(soapmsg);
-        } catch (XMLSecurityElementNotFoundException e) {
+        Long sessionID = SecureConversationTokenHandler.readSessIdFromDocument(soapmsg);
+        if ( sessionID == null ) {
             String msg = "could not extract session id from msg.";
-            logger.log(Level.WARNING, msg, e);
+            logger.log(Level.WARNING, msg);
             return null;
         }
 
         // retrieve the session
         Session xmlsession = null;
         try {
-            xmlsession = SessionManager.getInstance().getSession(sessionID);
+            xmlsession = SessionManager.getInstance().getSession(sessionID.longValue());
         } catch (SessionNotFoundException e) {
             String msg = "Exception finding session with id=" + sessionID + ". session could reside on other cluster member or is no longer valid.";
             logger.log(Level.WARNING, msg, e);

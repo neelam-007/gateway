@@ -40,7 +40,6 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
     ReceiverXmlSecurityProcessor(Session session, Key key, ElementSecurity[] elements) {
         super(elements);
         this.decryptionKey = key;
-
     }
 
     /**

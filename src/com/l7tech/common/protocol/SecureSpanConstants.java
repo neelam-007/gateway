@@ -182,7 +182,7 @@ public class SecureSpanConstants {
          * session, if any.
          *
          * <h3>Usages:<ul>
-         * <li>Sent by the Agent to the Gateway along with every request that is either encrypted or that
+         * <li>Sent by the Agent to the Gateway along with every request that is encrypted or that
          * is expecting a signed response.
          * <li>Returned by the session servlet to the Agent in response to every successful session establishment request.
          * </ul>

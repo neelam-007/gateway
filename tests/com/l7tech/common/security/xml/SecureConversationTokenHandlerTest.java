@@ -1,20 +1,16 @@
 package com.l7tech.common.security.xml;
 
-import org.w3c.dom.Document;
-import org.xml.sax.InputSource;
-import org.apache.xml.serialize.XMLSerializer;
-import org.apache.xml.serialize.OutputFormat;
-
-import javax.xml.parsers.DocumentBuilder;
-
 import com.ibm.xml.dsig.util.DOMParserNS;
 import com.ibm.xml.sax.StandardErrorHandler;
-import com.l7tech.common.security.xml.SecureConversationTokenHandler;
+import junit.framework.TestCase;
+import org.apache.xml.serialize.OutputFormat;
+import org.apache.xml.serialize.XMLSerializer;
+import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
 
+import javax.xml.parsers.DocumentBuilder;
 import java.io.StringReader;
 import java.io.StringWriter;
-
-import junit.framework.TestCase;
 
 /**
  * LAYER 7 TECHNOLOGIES, INC
@@ -39,8 +35,8 @@ public class SecureConversationTokenHandlerTest extends TestCase {
         testSubject.appendNonceToDocument(doc, nonce);
         System.out.println("Doc with nonce");
         System.out.println(serializeDocWithXMLSerializer(doc));
-        long nonce2 = testSubject.readNonceFromDocument(doc);
-        assertTrue("Read nonce same as append one", nonce == nonce2);
+        Long nonce2 = testSubject.readNonceFromDocument(doc);
+        assertTrue("Read nonce same as append one", nonce == nonce2.longValue());
     }
 
     public void testAppendAndReadSessIdAndSeqNrToDocument() throws Exception {
@@ -52,10 +48,10 @@ public class SecureConversationTokenHandlerTest extends TestCase {
         testSubject.appendSessIdAndSeqNrToDocument(doc, sessId, seqNr);
         System.out.println("Doc with nonce");
         System.out.println(serializeDocWithXMLSerializer(doc));
-        long sessId2 = testSubject.readSessIdFromDocument(doc);
-        long seqNr2 = testSubject.readSeqNrFromDocument(doc);
-        assertTrue("Read sessId same as append one", sessId == sessId2);
-        assertTrue("Read seqNr same as append one", seqNr == seqNr2);
+        Long sessId2 = testSubject.readSessIdFromDocument(doc);
+        Long seqNr2 = testSubject.readSeqNrFromDocument(doc);
+        assertTrue("Read sessId same as append one", sessId == sessId2.longValue());
+        assertTrue("Read seqNr same as append one", seqNr == seqNr2.longValue());
     }
 
     private Document readDocFromString(String docStr)  throws Exception {

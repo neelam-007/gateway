@@ -96,28 +96,28 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
       throws ServerCertificateUntrustedException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException {
         Document doc = response.getResponseAsDocument();
 
-        // LOOK FOR NONCE IN WSSC TOKEN
-        try {
-            long responsenonce = SecureConversationTokenHandler.readNonceFromDocument(doc);
-            if (responsenonce != request.getNonce())
-                throw new ResponseValidationException("Response from Gateway contained the wrong nonce value");
-        } catch (XMLSecurityElementNotFoundException e) {
-            // if the nonce is not there, we should note that this is subject to repeat attack
-            throw new ResponseValidationException("Response from Gateway did not contain a nonce", e);
-        }
         Session session = request.getSession();
         Key decryptionKey = null;
-        if (session != null) {
+        if (session != null)
             decryptionKey = new AesKey(session.getKeyRes(), 128);
-        }
         ElementSecurity[] elements = xmlResponseSecurity.getElements();
         SecurityProcessor verifier = SecurityProcessor.getVerifier(request.getSession(), decryptionKey, elements);
         try {
             X509Certificate caCert = SsgKeyStoreManager.getServerCert(request.getSsg());
             SecurityProcessor.Result result = verifier.processInPlace(doc);
 
+            // If this assertion doesn't apply to this reply, we are done
+            if (!result.isPreconditionMatched())
+                return AssertionStatus.NONE;
+
+            Long responsenonce = SecureConversationTokenHandler.readNonceFromDocument(doc);
+            if (responsenonce == null)
+                throw new ResponseValidationException("Response from Gateway did not contain a nonce");
+            if (responsenonce.longValue() != request.getNonce())
+                throw new ResponseValidationException("Response from Gateway contained the wrong nonce value");
+
             X509Certificate[] certificate = result.getCertificateChain();
-            if (certificate == null || certificate[0] == null) // TODO: verify that this fixes Bug 770
+            if (certificate == null || certificate[0] == null)
                 throw new ResponseValidationException("Response from gateway did not contain a certificate chain");
             certificate[0].verify(caCert.getPublicKey());
         } catch (Exception e) {
@@ -163,14 +163,12 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
         Document doc = response.getResponseAsDocument();
 
         // LOOK FOR NONCE IN WSSC TOKEN
-        try {
-            long responsenonce = SecureConversationTokenHandler.readNonceFromDocument(doc);
-            if (responsenonce != request.getNonce())
-                throw new ResponseValidationException("Response from Gateway contained the wrong nonce value");
-        } catch (XMLSecurityElementNotFoundException e) {
-            // if the nonce is not there, we should note that this is subject to repeat attack
-            throw new ResponseValidationException("Response from Gateway did not contain a nonce", e);
-        }
+        Long responsenonce = SecureConversationTokenHandler.readNonceFromDocument(doc);
+        if (responsenonce == null)
+            throw new ResponseValidationException("Response from Gateway did not contain a nonce");
+
+        if (responsenonce.longValue() != request.getNonce())
+            throw new ResponseValidationException("Response from Gateway contained the wrong nonce value");
 
         ElementSecurity[] elements = xmlResponseSecurity.getElements();
         for (int i = 0; i < elements.length; i++) {
