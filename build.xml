@@ -89,6 +89,10 @@
         <condition property="db.postgres">
             <equals arg1="${database.type}" arg2="postgres"/>
         </condition>
+
+        <condition property="db.oracle">
+            <equals arg1="${database.type}" arg2="oracle"/>
+        </condition>
     </target>
 
     <target name="cleandev" depends="clean, dev"/>
@@ -295,10 +299,8 @@
                 <include name="jms-1.1.jar"/>
                 <include name="jnlp.jar"/>
                 <include name="jnlp-servlet.jar"/>
-                <include name="mysql-connector-java-3.0.11-stable-bin.jar"/> <!-- TODO GPL!!!! -->
                 <include name="odmg.jar"/>
                 <include name="oswego-concurrent.jar"/>
-                <include name="postgresql.jar"/>
                 <include name="qname.jar"/>
                 <include name="reggie-dl.jar"/>
                 <include name="reggie.jar"/>
@@ -324,6 +326,9 @@
                 <include name="com.ibm.mqjms.jar" if="include.jms.mqseries"/>
                 <include name="connector.jar" if="include.jms.mqseries"/>
 
+                <include name="ojdbc14.jar" if="db.oracle"/>
+                <include name="mysql-connector-java-3.0.11-stable-bin.jar" if="db.mysql"/>
+                <include name="postgresql.jar" if="db.postgres"/>
             </lib>
 
             <classes dir="${build.classes}">
@@ -504,7 +509,11 @@
         <antcall target="prepare.jms.openjms"/>
         <antcall target="prepare.jms.mqseries"/>
     </target>
-    
+
+    <target name="prepare.db" if="dev.build">
+        <antcall target="prepare.db.oracle"/>
+    </target>
+
     <target name="prepare.jms.openjms" if="include.jms.openjms">
         <echo>Copying OpenJMS jars from ${src.root}/lib/gateway/jms/openjms to ${build.lib}...</echo>
         <copy todir="${build.lib}">
@@ -519,6 +528,34 @@
         <copy todir="${build.lib}">
             <fileset dir="${src.root}/lib/gateway/jms/mqseries">
                 <include name="*.jar"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="prepare.db.mysql" if="db.mysql">
+        <echo>Copying MySQL jars...</echo>
+        <copy todir="${build.lib}">
+            <fileset dir="${src.root}/lib/gateway/jdbc/mysql">
+                <include name="*.jar"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="prepare.db.postgres" if="db.postgres">
+        <echo>Copying PostgreSQL jars...</echo>
+        <copy todir="${build.lib}">
+            <fileset dir="${src.root}/lib/gateway/jdbc/postgres">
+                <include name="*.jar"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="prepare.db.oracle" if="db.oracle">
+        <echo>Copying Oracle jars...</echo>
+        <copy todir="${build.lib}">
+            <fileset dir="${src.root}/lib/gateway/jdbc/oracle">
+                <include name="*.jar"/>
+                <include name="*.zip"/>
             </fileset>
         </copy>
     </target>
@@ -599,6 +636,7 @@
         </copy>
         
         <antcall target="prepare.jms"/>
+        <antcall target="prepare.db"/>
 
         <!-- make sure that the tomcat path is properly referenced in the keystore properties -->
         <antcall target="keystore.properties"/>
@@ -642,9 +680,13 @@
                 <include name="serverconfig.properties"/>
             </fileset>
         </copy>
+        <replaceregexp file="${build.classes}/serverconfig.properties">
+            <regexp pattern="pingStatement.default\s+=\s+.*"/>
+            <substitution expression="pingStatement.default = ${database.pingstmt}"/>
+        </replaceregexp>
     </target>
 
-    <target name="db.properties" depends="db.properties.mysql, db.properties.postgres"/>
+    <target name="db.properties" depends="db.properties.mysql, db.properties.postgres, db.properties.oracle"/>
 
     <target name="db.properties.mysql" if="db.mysql">
         <echo>Setting database properties for MySQL...</echo>
@@ -652,6 +694,7 @@
         <property name="database.url" value="${my.database.url}"/>
         <property name="database.user" value="${my.database.user}"/>
         <property name="database.password" value="${my.database.password}"/>
+        <property name="database.pingstmt" value="${my.database.pingstmt}"/>
     </target>
 
     <target name="db.properties.postgres" if="db.postgres">
@@ -660,6 +703,16 @@
         <property name="database.url" value="${pg.database.url}"/>
         <property name="database.user" value="${pg.database.user}"/>
         <property name="database.password" value="${pg.database.password}"/>
+        <property name="database.pingstmt" value="${pg.database.pingstmt}"/>
+    </target>
+
+    <target name="db.properties.oracle" if="db.oracle">
+        <echo>Setting database properties for Oracle...</echo>
+        <property name="database.driver" value="${oracle.database.driver}"/>
+        <property name="database.url" value="${oracle.database.url}"/>
+        <property name="database.user" value="${oracle.database.user}"/>
+        <property name="database.password" value="${oracle.database.password}"/>
+        <property name="database.pingstmt" value="${oracle.database.pingstmt}"/>
     </target>
 
     <!--
@@ -668,11 +721,10 @@
      -->
     <target name="configure_properties" if="dev.build" depends="db.properties">
 
-        <!--
-        <echo message="The database url is '${database.url}'"/>
-        <echo message="The database url is '${database.user}'"/>
-        <echo message="The database url is '${database.password}'"/>
-        -->
+        <echo message="database.driver   = '${database.driver}'"/>
+        <echo message="database.url      = '${database.url}'"/>
+        <echo message="database.user     = '${database.user}'"/>
+        <echo message="database.pingstmt = '${database.pingstmt}'"/>
 
         <replace file="${build.classes}/hibernate.properties"
             token="DB_DRIVER" value="${database.driver}"/>
@@ -682,6 +734,8 @@
             token="DB_USER" value="${database.user}"/>
         <replace file="${build.classes}/hibernate.properties"
             token="DB_PASSWORD" value="${database.password}"/>
+        <replace file="${build.classes}/hibernate.properties"
+            token="DB_PINGSTMT" value="${database.pingstmt}"/>
         <replace file="${build.etc}/web.xml"
             token="TOMCAT_HOME" value="${tomcat.home}"/>
     </target>
