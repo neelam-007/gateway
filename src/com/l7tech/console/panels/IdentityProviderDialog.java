@@ -7,10 +7,11 @@ import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.InvalidIdProviderCfgException;
-import com.l7tech.identity.ldap.LdapConfigSettings;
+import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.gui.util.Utilities;
@@ -27,6 +28,7 @@ import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.text.MessageFormat;
+import java.io.IOException;
 
 /**
  * This class is the Identity Provider dialog.
@@ -259,22 +261,29 @@ public class IdentityProviderDialog extends JDialog {
      */
     private JComboBox getProviderTypes() {
         if (providerTypesCombo == null) {
-            Object[] items =
-              new Object[]{
-                  "Select the provider type",
-                  IdentityProviderType.LDAP,
-                  IdentityProviderType.MSAD
-              };
-
+            try {
+                templates = getProviderConfigManager().getLdapTemplates();
+            } catch (FindException e) {
+                log.log(Level.WARNING, "cannot retrieve templates", e);
+                templates = new LdapIdentityProviderConfig[0];
+            } catch (RuntimeException e) {
+                log.log(Level.WARNING, "cannot retrieve templates", e);
+                templates = new LdapIdentityProviderConfig[0];
+            }
+            Object[] items = new Object[1+templates.length];
+            items[0] = "Select the provider type";
+            for (int i = 0; i < templates.length; i++) {
+                items[i+1] = templates[i];
+            }
             providerTypesCombo = new JComboBox(items);
             providerTypesCombo.setRenderer(providerTypeRenderer);
             providerTypesCombo.setToolTipText(resources.getString("providerTypeTextField.tooltip"));
             providerTypesCombo.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     Object o = providerTypesCombo.getSelectedItem();
-                    IdentityProviderType ipt = null;
-                    if (o instanceof IdentityProviderType) {
-                        ipt = (IdentityProviderType)o;
+                    LdapIdentityProviderConfig ipt = null;
+                    if (o instanceof LdapIdentityProviderConfig) {
+                        ipt = (LdapIdentityProviderConfig)o;
                     }
                     selectProvidersPanel(ipt);
                 }
@@ -298,12 +307,12 @@ public class IdentityProviderDialog extends JDialog {
      * select the provider panel for the provider type, if null
      * reset the form
      */
-    private void selectProvidersPanel(IdentityProviderType ip) {
+    private void selectProvidersPanel(LdapIdentityProviderConfig ip) {
         providersPanel.removeAll();
         providersPanel.setLayout(new BorderLayout());
         boolean found = false;
         providerSettingsPanel = null;
-        if (ip == IdentityProviderType.LDAP || ip == IdentityProviderType.MSAD ) {
+        if (ip != null) {
             providerSettingsPanel = getLdapPanel(iProvider);
             providersPanel.add(providerSettingsPanel);
             found = true;
@@ -396,13 +405,27 @@ public class IdentityProviderDialog extends JDialog {
             providerNameTextField.setText(iProvider.getName());
             // kludge, we add the internal provider, as itmay show only in
             // edit dsabled mode
-            providerTypesCombo.addItem(IdentityProviderType.INTERNAL);
-            for (int i = providerTypesCombo.getModel().getSize() - 1; i >= 0; i--) {
-                IdentityProviderType type =
-                  (IdentityProviderType)providerTypesCombo.getModel().getElementAt(i);
-                if (iProvider.getTypeVal() == type.toVal()) {
-                    providerTypesCombo.setSelectedIndex(i);
-                    break;
+            providerTypesCombo.addItem("Internal Provider");
+            if (iProvider instanceof LdapIdentityProviderConfig) {
+                LdapIdentityProviderConfig thisProvider = (LdapIdentityProviderConfig)iProvider;
+                for (int i = providerTypesCombo.getModel().getSize() - 1; i >= 0; i--) {
+                    Object toto = providerTypesCombo.getModel().getElementAt(i);
+                    if (toto instanceof LdapIdentityProviderConfig) {
+                        if (((LdapIdentityProviderConfig)toto).getName().equals(thisProvider.getTemplateName())) {
+                            providerTypesCombo.setSelectedIndex(i);
+                            break;
+                        }
+                    }
+                }
+            } else {
+                for (int i = providerTypesCombo.getModel().getSize() - 1; i >= 0; i--) {
+                    Object toto = providerTypesCombo.getModel().getElementAt(i);
+                    if (toto instanceof String) {
+                        if (toto.equals("Internal Provider")) {
+                            providerTypesCombo.setSelectedIndex(i);
+                            break;
+                        }
+                    }
                 }
             }
             providerTypesCombo.setEnabled(false);
@@ -410,11 +433,21 @@ public class IdentityProviderDialog extends JDialog {
     }
 
     private void testSettings() {
-        IdentityProviderConfig tmp = new IdentityProviderConfig();
-        IdentityProviderType type = (IdentityProviderType)providerTypesCombo.getSelectedItem();
+        Object type = providerTypesCombo.getSelectedItem();
+        IdentityProviderConfig tmp = null;
+        if (type instanceof LdapIdentityProviderConfig) {
+            try {
+                tmp = new LdapIdentityProviderConfig((LdapIdentityProviderConfig)type);
+            } catch (IOException e) {
+                log.log(Level.SEVERE, "cannot instantiate new provider config based on template", e);
+                return;
+            }
+        } else {
+            log.severe("unhandled provider type");
+            return;
+        }
 
         tmp.setName(providerNameTextField.getText());
-        tmp.setTypeVal( type.toVal() );
         providerSettingsPanel.readSettings(tmp);
         String errorMsg = null;
         try {
@@ -438,9 +471,18 @@ public class IdentityProviderDialog extends JDialog {
 
     /** add or pudfate the provider */
     private void addOrUpdateProvider() {
-        if ( iProvider == null ) {
-            IdentityProviderType type = (IdentityProviderType)providerTypesCombo.getSelectedItem();
-            iProvider = new IdentityProviderConfig( type );
+        if (iProvider == null) {
+            Object type = providerTypesCombo.getSelectedItem();
+            if (type instanceof LdapIdentityProviderConfig) {
+                try {
+                    iProvider = new LdapIdentityProviderConfig((LdapIdentityProviderConfig)type);
+                } catch (IOException e) {
+                    // todo
+                }
+            } else {
+                log.severe("unhandled provider type " + type.getClass().getName());
+                return;
+            }
         }
         iProvider.setName(providerNameTextField.getText());
         providerSettingsPanel.readSettings(iProvider);
@@ -478,14 +520,23 @@ public class IdentityProviderDialog extends JDialog {
         final JTextField ldapBindDNTextField = new JTextField();
         final JTextField ldapBindPassTextField = new JTextField();
 
+        LdapIdentityProviderConfig ldapcfg = null;
+        if (config instanceof LdapIdentityProviderConfig) {
+            ldapcfg = (LdapIdentityProviderConfig)config;
+        }
+
         ProviderSettingsPanel panel = new ProviderSettingsPanel() {
             void readSettings(IdentityProviderConfig config) {
+                if (config == null || !(config instanceof LdapIdentityProviderConfig)) {
+                    throw new RuntimeException("unhandled provider config type");
+                }
                 IdentityProviderType type = config.type();
                 config.setTypeVal( type.toVal() );
-                config.putProperty(LdapConfigSettings.LDAP_HOST_URL, ldapHostTextField.getText());
-                config.putProperty(LdapConfigSettings.LDAP_SEARCH_BASE, ldapSearchBaseTextField.getText());
-                config.putProperty(LdapConfigSettings.LDAP_BIND_DN, ldapBindDNTextField.getText());
-                config.putProperty(LdapConfigSettings.LDAP_BIND_PASS, ldapBindPassTextField.getText());
+                LdapIdentityProviderConfig convertedcfg = (LdapIdentityProviderConfig)config;
+                convertedcfg.setBindDN(ldapBindDNTextField.getText());
+                convertedcfg.setBindPasswd(ldapBindPassTextField.getText());
+                convertedcfg.setLdapUrl(ldapHostTextField.getText());
+                convertedcfg.setSearchBase(ldapSearchBaseTextField.getText());
             }
         };
 
@@ -510,7 +561,7 @@ public class IdentityProviderDialog extends JDialog {
         ldapHostTextField.setPreferredSize(new Dimension(217, 20));
         ldapHostTextField.setMinimumSize(new Dimension(217, 20));
         ldapHostTextField.setToolTipText(resources.getString("ldapHostTextField.tooltip"));
-        ldapHostTextField.setText( config == null ? "" : config.getProperty(LdapConfigSettings.LDAP_HOST_URL));
+        ldapHostTextField.setText( ldapcfg == null ? "" : ldapcfg.getLdapUrl());
 
         constraints = new GridBagConstraints();
         constraints.gridx = 1;
@@ -540,7 +591,7 @@ public class IdentityProviderDialog extends JDialog {
         ldapSearchBaseTextField.setPreferredSize(new Dimension(217, 20));
         ldapSearchBaseTextField.setMinimumSize(new Dimension(217, 20));
         ldapSearchBaseTextField.setToolTipText(resources.getString("ldapSearchBaseTextField.tooltip"));
-        ldapSearchBaseTextField.setText( config == null ? "" : config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE));
+        ldapSearchBaseTextField.setText(ldapcfg == null ? "" : ldapcfg.getSearchBase());
         constraints = new GridBagConstraints();
         constraints.gridx = 1;
         constraints.gridy = 1;
@@ -569,7 +620,7 @@ public class IdentityProviderDialog extends JDialog {
         ldapBindDNTextField.setPreferredSize( new Dimension( 217, 20 ) );
         ldapBindDNTextField.setMinimumSize( new Dimension( 217, 20 ) );
         ldapBindDNTextField.setToolTipText( resources.getString( "ldapBindDNTextField.tooltip" ) );
-        ldapBindDNTextField.setText( config == null ? "" : config.getProperty( LdapConfigSettings.LDAP_BIND_DN ) );
+        ldapBindDNTextField.setText(ldapcfg == null ? "" : ldapcfg.getBindDN());
         constraints = new GridBagConstraints();
         constraints.gridx = 1;
         constraints.gridy = 2;
@@ -598,7 +649,7 @@ public class IdentityProviderDialog extends JDialog {
         ldapBindPassTextField.setPreferredSize( new Dimension( 217, 20 ) );
         ldapBindPassTextField.setMinimumSize( new Dimension( 217, 20 ) );
         ldapBindPassTextField.setToolTipText( resources.getString( "ldapBindPassTextField.tooltip" ) );
-        ldapBindPassTextField.setText( config == null ? "" : config.getProperty( LdapConfigSettings.LDAP_BIND_PASS ) );
+        ldapBindPassTextField.setText(ldapcfg == null ? "" : ldapcfg.getBindPasswd());
         constraints = new GridBagConstraints();
         constraints.gridx = 1;
         constraints.gridy = 3;
@@ -718,11 +769,11 @@ public class IdentityProviderDialog extends JDialog {
                                                         int index,
                                                         boolean isSelected, boolean cellHasFocus) {
               super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-              if (!(value instanceof IdentityProviderType)) {
+              if (!(value instanceof LdapIdentityProviderConfig)) {
                   setText(value.toString());
               } else {
-                  IdentityProviderType type = (IdentityProviderType)value;
-                  setText(type.description());
+                  LdapIdentityProviderConfig type = (LdapIdentityProviderConfig)value;
+                  setText(type.getName());
               }
 
               return this;
@@ -767,5 +818,6 @@ public class IdentityProviderDialog extends JDialog {
     /** provider ID text field */
     private JTextField providerNameTextField = null;
     private JComboBox providerTypesCombo = null;
+    private LdapIdentityProviderConfig[] templates = null;
 }
 

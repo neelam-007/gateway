@@ -2,7 +2,6 @@ package com.l7tech.identity;
 
 import com.l7tech.identity.internal.InternalIdentityProviderServer;
 import com.l7tech.identity.ldap.*;
-import com.l7tech.identity.msad.MsadIdentityProviderServer;
 import com.l7tech.objectmodel.*;
 
 import java.sql.SQLException;
@@ -60,7 +59,7 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
     }
 
     public void test(IdentityProviderConfig identityProviderConfig)
-            throws InvalidIdProviderCfgException {
+                                throws InvalidIdProviderCfgException {
         IdentityProviderType type = identityProviderConfig.type();
         if ( type == IdentityProviderType.INTERNAL ) {
             if (identityProviderConfig.getOid() != INTERNALPROVIDER_SPECIAL_OID) {
@@ -69,18 +68,11 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
                 throw new InvalidIdProviderCfgException("This internal ID provider config" +
                         "is not valid.");
             }
-        } else if ( type.isLdapLike() ) {
+        } else if ( type.equals(IdentityProviderType.LDAP)) {
             Collection res = null;
             try {
                 // construct temp provider
-                AbstractLdapIdentityProviderServer tmpProvider = null;
-                if ( type == IdentityProviderType.LDAP )
-                    tmpProvider = new LdapIdentityProviderServer();
-                else if ( type == IdentityProviderType.MSAD )
-                    tmpProvider = new MsadIdentityProviderServer();
-                else
-                    throw new InvalidIdProviderCfgException( "Invalid Identity Provider type: " + type.description() );
-
+                LdapIdentityProvider tmpProvider = new LdapIdentityProvider();
                 tmpProvider.initialize(identityProviderConfig);
                 res = tmpProvider.getUserManager().findAllHeaders();
             } catch (Exception e) {
@@ -106,9 +98,16 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
             logger.warning("Attempt to save internal id provider");
             throw new SaveException("this type of config cannot be saved");
         }
-        if (!LdapConfigSettings.isValidConfigObject(identityProviderConfig)) {
+        /*if (!LdapConfigSettings.isValidConfigObject(identityProviderConfig)) {
             // not the food additive
             String msg = "This IdentityProviderConfig object does not meet the requirements for the IdentityProviderType.LDAP type.";
+            logger.warning("Attempt to save invalid ldap id provider config. " + msg);
+            throw new SaveException(msg);
+        }*/
+        if (!identityProviderConfig.type().equals(IdentityProviderType.LDAP) ||
+                !(identityProviderConfig instanceof LdapIdentityProviderConfig)) {
+            // not the food additive
+            String msg = "This IdentityProviderConfig object is not supported";
             logger.warning("Attempt to save invalid ldap id provider config. " + msg);
             throw new SaveException(msg);
         }
@@ -185,7 +184,7 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
     }
 
     public Class getImpClass() {
-        return IdentityProviderConfig.class;
+        return LdapIdentityProviderConfig.class;
     }
 
     public Class getInterfaceClass() {

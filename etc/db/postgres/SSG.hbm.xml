@@ -14,7 +14,7 @@
 <hibernate-mapping>
     <!-- "oid" is a built-in column in PostgreSQL, so all column="oid" have been changed to column="objectid" -->
 
-    <class name="com.l7tech.identity.IdentityProviderConfig" table="identity_provider">
+    <class name="com.l7tech.identity.ldap.LdapIdentityProviderConfig" table="identity_provider">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>

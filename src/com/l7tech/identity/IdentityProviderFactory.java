@@ -8,6 +8,7 @@ package com.l7tech.identity;
 
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.identity.ldap.LdapIdentityProviderServer;
+import com.l7tech.identity.ldap.LdapIdentityProvider;
 import com.l7tech.identity.internal.InternalIdentityProviderServer;
 import com.l7tech.identity.msad.MsadIdentityProviderServer;
 
@@ -49,11 +50,11 @@ public class IdentityProviderFactory {
             IdentityProvider existingProvider = (IdentityProvider)providers.get(new Long(config.getOid()));
             if (existingProvider == null) {
                 if (config.type() == IdentityProviderType.LDAP)
-                    existingProvider = new LdapIdentityProviderServer();
+                    existingProvider = new LdapIdentityProvider();
                 else if (config.type() == IdentityProviderType.INTERNAL)
                     existingProvider = new InternalIdentityProviderServer();
-                else if ( config.type() == IdentityProviderType.MSAD)
-                    existingProvider = new MsadIdentityProviderServer();
+                /*else if ( config.type() == IdentityProviderType.MSAD)
+                    existingProvider = new MsadIdentityProviderServer();*/
                 else throw new RuntimeException("no provider type specified.");
                 existingProvider.initialize(config);
                 providers.put(new Long(config.getOid()), existingProvider);
