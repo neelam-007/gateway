@@ -42,8 +42,8 @@ public class RSASigner {
     String crldisturi;
     private SecureRandom random;
 
-    public static String DEFAULT_KEYSTORE_NAME = "ssgroot";
-    public static String DEFAULT_PRIVATE_KEY_ALIAS = "ssgroot";
+    public static final String DEFAULT_KEYSTORE_NAME = "ssgroot";
+    public static final String DEFAULT_PRIVATE_KEY_ALIAS = "ssgroot";
 
     Properties defaultProperties;
 
