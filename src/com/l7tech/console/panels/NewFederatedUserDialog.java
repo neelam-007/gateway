@@ -92,7 +92,6 @@ public class NewFederatedUserDialog extends JDialog {
         createButton.setText(resources.getString("createButton.label"));
         createButton.setToolTipText(resources.getString("createButton.tooltip"));
         createButton.setActionCommand(CMD_OK);
-        createButton.setEnabled(false);
         createButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
                 windowAction(event.getActionCommand());
@@ -116,14 +115,6 @@ public class NewFederatedUserDialog extends JDialog {
                             x509SubjectDNTextField.getDocument().removeDocumentListener(documentListener);
                             loginTextField.getDocument().removeDocumentListener(documentListener);
                             emailTextField.getDocument().removeDocumentListener(documentListener);
-                        }
-                        if (userNameTextField.getText().length() >= 3) {
-
-                            // enable the Create button
-                            createButton.setEnabled(true);
-                        } else {
-                            // disbale the button
-                            createButton.setEnabled(false);
                         }
                     }
                 });
@@ -227,10 +218,23 @@ public class NewFederatedUserDialog extends JDialog {
         } else if (actionCommand.equals(CMD_CANCEL)) {
             this.dispose();
         } else if (actionCommand.equals(CMD_OK)) {
-            //todo: validate input if necessary
 
-            insertUser();
+            if(validateInput()) {
+                insertUser();
+            }
         }
+    }
+
+    private boolean validateInput() {
+
+        if(userNameTextField.getText().length() < 3) {
+            JOptionPane.showMessageDialog(this, resources.getString("idTextField.error.empty"),
+                            resources.getString("idTextField.error.title"),
+                            JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+
+        return true;
     }
 
     /**
