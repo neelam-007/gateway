@@ -17,7 +17,7 @@ public class WsTokenDigestAuthNode extends AbstractTreeNode {
     /**
      * construct the <CODE>HttpBasicAuthNode</CODE> instance.
      */
-    public WsTokenDigestAuthNode(){
+    public WsTokenDigestAuthNode() {
         super(null);
     }
 
@@ -50,7 +50,19 @@ public class WsTokenDigestAuthNode extends AbstractTreeNode {
     /**
      * subclasses override this method
      */
-    protected void loadChildren() {}
+    protected void loadChildren() {
+    }
+
+    /**
+     * Test if the node can be deleted. Default is <code>true</code>
+     * for WSS token auth nodes.
+     *
+     * @return true if the node can be deleted, false otherwise
+     */
+    public boolean canDelete() {
+        return true;
+    }
+
 
     /**
      * @return the node name that is displayed
