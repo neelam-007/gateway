@@ -79,14 +79,11 @@ if [ "$PASSWORD_LENGTH" -lt 6 ]; then
 	exit -1
 fi
 
-# GENERATE THE KEYSTORE FILE
-echo "GENERATING THE ROOT KEYSTORE FILE"
-echo "Important: During the key generation, you must enter the COMMON NAME value (CN) properly."
-echo "This value must be equal to the host name that the client uses to reach the ssg (e.g. ssg.acme.com)."
-echo
-echo "PRESS ANY KEY TO CONTINUE"
-read
-$KEYTOOL -genkey -alias ssgroot -keystore "$KEYSTORE_FILE_OSPATH" -keyalg RSA -keypass $KEYSTORE_PASSWORD -storepass "$KEYSTORE_PASSWORD"
+# ASK FOR THE HOST NAME
+echo "Please type in the host name"
+read HOSTNAME
+DN="CN="$HOSTNAME
+$KEYTOOL -genkey -alias ssgroot -dname $DN -v -keystore "$KEYSTORE_FILE_OSPATH" -keyalg RSA -keypass $KEYSTORE_PASSWORD -storepass "$KEYSTORE_PASSWORD"
 
 # CHECK THAT THIS KEYSTORE WAS SET SUCCESSFULLY
 if [ -e "$KEYSTORE_FILE" ]
