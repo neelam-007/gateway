@@ -39,18 +39,13 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
 
     public AuditRecord findByPrimaryKey(long oid) throws FindException {
         Entity obj = findEntity(oid);
+        if (obj == null) return null;
         if (obj instanceof AuditRecord) return (AuditRecord)obj;
         throw new FindException("Expected to find '" + obj.getClass().getName() + "' but found '" + obj.getClass().getName() + "'");
     }
 
-    /**
-     * Finds {@link AuditRecord}s based on the specified criteria.
-     * @param criteria the {@link AuditSearchCriteria}
-     * @return a Collection of AuditRecords
-     * @throws FindException
-     */
-    public Collection find(AuditSearchCriteria criteria) throws FindException
-    {
+    public Collection find(AuditSearchCriteria criteria) throws FindException {
+        if (criteria == null) throw new IllegalArgumentException("Criteria must not be null");
         try {
             Class findClass = criteria.recordClass;
             if (findClass == null) findClass = getInterfaceClass();
