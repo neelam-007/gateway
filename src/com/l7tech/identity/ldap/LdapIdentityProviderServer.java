@@ -204,8 +204,7 @@ public class LdapIdentityProviderServer implements IdentityProvider {
         }
         catch (NamingException e)
         {
-            logger.log(Level.SEVERE, null, e);
-            throw new FindException(e.getMessage(), e);
+            logger.log(Level.SEVERE, e.getMessage(), e);
         }
         return output;
     }
