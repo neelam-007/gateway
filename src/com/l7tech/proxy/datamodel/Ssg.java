@@ -18,7 +18,7 @@ public class Ssg implements Cloneable, Comparable {
     private String name = "";
     private String localEndpoint = "";
     private String serverUrl = "";
-    private int sslPort = 443;
+    private int sslPort = 8443;
     private String username = null;
     private char[] password = null;
     private String keyStorePath = null;
