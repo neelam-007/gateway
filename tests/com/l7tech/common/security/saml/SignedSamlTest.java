@@ -112,6 +112,7 @@ public class SignedSamlTest extends TestCase {
         SamlAssertionGenerator ag = new SamlAssertionGenerator();
         SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
         samlOptions.setExpiryMinutes(5);
+        samlOptions.setSignEnvelope(false);
         ag.attachSenderVouches(request,
                                new SignerInfo(caPrivateKey, caCertChain),
                                LoginCredentials.makeCertificateCredentials(clientCertChain[0], getClass()),
@@ -138,6 +139,7 @@ public class SignedSamlTest extends TestCase {
         SamlAssertionGenerator ag = new SamlAssertionGenerator();
         SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
         samlOptions.setExpiryMinutes(5);
+        samlOptions.setSignEnvelope(false);
         ag.attachSenderVouches(request,
                                new SignerInfo(caPrivateKey, caCertChain),
                                LoginCredentials.makeCertificateCredentials(clientCertChain[0], getClass()),
