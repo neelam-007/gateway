@@ -106,7 +106,7 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
             List siblings = anext.getParent().getChildren();
             // if last sibling and the parent path was pushed on stack, pop the parent
             if (siblings.indexOf(anext) + 1 == siblings.size()) {
-                if (parentCreatesNewPaths(anext)) {
+                if (parentCreatesNewPaths(anext) && !isSplitPath(anext)) {
                     pathStack.pop();
                 }
             }
