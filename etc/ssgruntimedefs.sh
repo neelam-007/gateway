@@ -78,3 +78,11 @@ export TOMCAT_HOME
 # aliases to start and stop ssg
 alias startssg='$TOMCAT_HOME/bin/catalina.sh start -security'
 alias stopssg='$TOMCAT_HOME/bin/shutdown.sh'
+
+if [-e /opt/oracle] ; then
+	export ORACLE_HOME=/opt/oracle/product/9.2
+	export PATH=$PATH:$ORACLE_HOME/bin
+	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ORACLE_HOME/lib
+	export NLS_LANG=AMERICAN_AMERICA.US7ASCII
+fi
+
