@@ -298,6 +298,25 @@ public class ServiceCache {
     }*/
 
     /**
+     * get all current service stats
+     */ 
+    public Collection getAllServiceStatistics() throws InterruptedException {
+        Sync read = null;
+        try {
+            read = rwlock.readLock();
+            read.acquire();
+            Collection output = new ArrayList();
+            output.addAll(serviceStatistics.values());
+            return output;
+        } finally {
+            if (read != null) {
+                read.release();
+                read = null;
+            }
+        }
+    }
+
+    /**
      * get statistics for cached service.
      * those stats are lazyly created
      */

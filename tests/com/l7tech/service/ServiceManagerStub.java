@@ -158,6 +158,14 @@ public class ServiceManagerStub implements ServiceManager {
         }
     }
 
+    public Collection getAllServiceStatistics() throws FindException {
+         try {
+            return ServiceCache.getInstance().getAllServiceStatistics();
+        } catch (InterruptedException e) {
+            throw new FindException("error accessing statistics from cache", e);
+        }
+    }
+
     /**
      * called at run time to discover which service is being invoked based
      * on the request headers and/or document.

@@ -282,6 +282,14 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         }
     }
 
+    public Collection getAllServiceStatistics() throws FindException {
+        try {
+            return ServiceCache.getInstance().getAllServiceStatistics();
+        } catch (InterruptedException e) {
+            throw new FindException("error accessing statistics from cache", e);
+        }
+    }
+
     /**
      * get the service versions as currently recorded in database
      * @return a map whose keys is a Long with service id and values is an Integer with the service version

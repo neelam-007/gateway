@@ -5,6 +5,8 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.message.Request;
 import com.l7tech.service.resolution.ServiceResolutionException;
 
+import java.util.Collection;
+
 /**
  * Layer 7 Technologies, inc.
  * User: flascelles
@@ -71,6 +73,11 @@ public interface ServiceManager extends EntityManager {
      * returns a ServiceStatistics object for the specified serviceid
      */
     ServiceStatistics getServiceStatistics(long serviceOid) throws FindException;
+
+    /**
+     * returns all current ServiceStatistics
+     */
+    Collection getAllServiceStatistics() throws FindException;
 
     int getCurrentPolicyVersion(long policyId) throws FindException;
  }
