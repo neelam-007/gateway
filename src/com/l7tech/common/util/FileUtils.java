@@ -20,7 +20,7 @@ import java.io.FileNotFoundException;
  */
 public class FileUtils {
 
-    /* Interface implemented by those who wish to call saveFileSafely(). */
+    /** Interface implemented by those who wish to call saveFileSafely(). */
     public interface Saver {
         void doSave(FileOutputStream fos) throws IOException;
     }
