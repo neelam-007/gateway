@@ -44,6 +44,14 @@ public class ClientCredentialManager {
         return passwd;
     }
 
+    public static void setCachedUsername(String arg) {
+        username = arg;
+    }
+
+    public static void setCachedPasswd(String arg) {
+        passwd = arg;
+    }
+
     private static String getServiceURL() throws IOException {
         String prefUrl = com.l7tech.console.util.Preferences.getPreferences().getServiceUrl();
         if (prefUrl == null || prefUrl.length() < 1 || prefUrl.equals("null/ssg")) {
