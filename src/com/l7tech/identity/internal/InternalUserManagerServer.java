@@ -190,6 +190,7 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
                 return null;
             }
             String dbcert = rs.getString(colname);
+            if (dbcert == null) return null;
             sun.misc.BASE64Decoder base64decoder = new sun.misc.BASE64Decoder();
             byte[] certbytes = base64decoder.decodeBuffer(dbcert);
             Certificate dledcert = CertificateFactory.getInstance("X.509").generateCertificate(new ByteArrayInputStream(certbytes));
