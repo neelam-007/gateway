@@ -54,6 +54,8 @@
                      tyrex-1.0.jar,
                      ots-jts_1.0.jar,
                      jta-spec1_0_1.jar,
+                     log4j-1.2.4.jar,
+                     castor-0.9.4.3-xml.jar,
                      mysql-connector-java-3.0.7-stable-bin.jar"/>
 
     <!--
@@ -123,16 +125,14 @@
         <antcall target="package">
         </antcall>
 
-        <!-- configure the server.xml file to include the datasource -->
+        <!-- 
         <move file="${tomcat.home}/conf/server.xml" tofile="${tomcat.home}/conf/server.xml_old"/>
         <xmltask source="${tomcat.home}/conf/server.xml_old" dest="${tomcat.home}/conf/server.xml">
-            <!-- remove the section if it already existed -->
             <remove path="//Context[@path='/${app.name}']"/>
             <remove path="//Context[@path='/${app.name}.war']"/>
-            <!-- add the section -->
             <insert path="Server/Service[@name='Tomcat-Standalone']/Engine/Host" file="${src.root}/etc/tomcat-serverxml-fragment-mysql.xml"/>
         </xmltask>
-
+            configure the server.xml file to include the datasource --> 
 
         <!--
         <delete dir="${tomcat.home}/webapps/${app.name}"/>
@@ -250,9 +250,12 @@
             <fileset dir="${src.root}/etc">
                 <include name="hibernate.cfg.xml"/>
                 <include name="SSG.hbm.xml"/>
+                <include name="tyrex-domain.xml"/>
                 <include name="com/l7tech/objectmodel/hibernatepersistence.properties"/>
             </fileset>
         </copy>
+        <!-- replace with tomcat.home tokens  -->
+        <replace file="${build.classes}/tyrex-domain.xml" token="@TOMCAT_HOME@" value="${tomcat.home}"/>
 
         <!-- html and other static web files -->
         <copy todir="${doc.root}">
