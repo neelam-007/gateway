@@ -74,7 +74,8 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
         getMainPanel().add(getCredentialsAndTransportPanel());
 
         add(getMainPanel(), BorderLayout.CENTER);
-        doDefaultUrl();
+        getServiceUrlTextField().setEditable(false);
+        getButtonChangeUrl().setText("change");
     }
 
     private ButtonGroup getAnonymousButtonGroup() {
