@@ -11,4 +11,5 @@ public interface UserManager extends EntityManager {
     public User findByPrimaryKey( long oid );
     public void delete( User user );
     public long save( User user );
+    public void setIdentityProviderOid( long oid );
 }

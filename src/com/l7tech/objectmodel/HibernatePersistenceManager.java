@@ -1,18 +1,21 @@
+/*
+ * Copyright (C) 2003 Layer 7 Technologies Inc.
+ *
+ * $Id$
+ */
+
 package com.l7tech.objectmodel;
 
 import cirrus.hibernate.*;
 
 import javax.sql.DataSource;
-import java.util.Properties;
-import java.util.List;
-import java.sql.Connection;
 import java.sql.SQLException;
-
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.PersistenceManager;
+import java.util.List;
+import java.util.Properties;
 
 /**
  * @author alex
+ * @version $Revision$
  */
 public class HibernatePersistenceManager extends PersistenceManager {
     public static void initialize() throws SQLException {

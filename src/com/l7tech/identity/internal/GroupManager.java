@@ -9,4 +9,6 @@ public interface GroupManager extends EntityManager {
     public Group findByPrimaryKey( long oid );
     public void delete( Group group );
     public long save( Group group );
+
+    public void setIdentityProviderOid( long oid );
 }

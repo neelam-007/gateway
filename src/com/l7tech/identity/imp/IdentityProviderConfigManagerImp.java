@@ -10,7 +10,7 @@ import java.util.Collection;
 /**
  * @author alex
  */
-public class IdentityProviderConfigManagerImp implements IdentityProviderConfigManager {
+public class IdentityProviderConfigManagerImp extends com.l7tech.objectmodel.HibernateEntityManager implements IdentityProviderConfigManager {
     public IdentityProviderConfigManagerImp() {
         _manager = PersistenceManager.getInstance();
     }

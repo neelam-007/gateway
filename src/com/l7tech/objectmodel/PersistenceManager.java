@@ -5,24 +5,21 @@
 package com.l7tech.objectmodel;
 
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.misc.Locator;
 
-import java.util.List;
+import java.util.*;
 
 /**
- * Created by IntelliJ IDEA.
- * User: alex
- * Date: 7-May-2003
- * Time: 12:06:26 PM
- * To change this template use Options | File Templates.
+ * @author alex
  * @version $Revision$
  */
 public abstract class PersistenceManager {
     public static PersistenceManager getInstance() {
-        if ( _instance == null ) throw new IllegalStateException( "A concrete PersistenceManager has not yet been initialized!");
+        checkInstance();
         return _instance;
     }
 
-    public static void setInstance( PersistenceManager instance ) {
+    static void setInstance( PersistenceManager instance ) {
         if ( _instance == null )
             _instance = instance;
         else
@@ -59,8 +56,14 @@ public abstract class PersistenceManager {
         _instance.delete( obj );
     }
 
+    public static EntityManager getEntityManager(Class clazz) {
+        checkInstance();
+        EntityManager manager = (EntityManager)Locator.getInstance().locate( clazz );
+        return manager;
+    }
+
     static void checkInstance() {
-        if ( _instance == null ) throw new IllegalStateException( "PersistenceManager has not been initialized!" );
+        if ( _instance == null ) throw new IllegalStateException( "A concrete PersistenceManager has not yet been initialized!");
     }
 
     abstract List doFind( String query, Object param, Class paramClass );
