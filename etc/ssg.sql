@@ -46,21 +46,6 @@ CREATE TABLE identity_provider (
 ) TYPE=InnoDB;
 
 --
--- Table structure for table 'ldap_identity_provider'
---
-
-CREATE TABLE ldap_identity_provider (
-  oid bigint(20) NOT NULL default '0',
-  version int(11) default NULL,
-  name varchar(128) NOT NULL default '',
-  description mediumtext NOT NULL,
-  type bigint(20) NOT NULL default '0',
-  ldap_host_url varchar(128) NOT NULL default '',
-  search_base varchar(128) NOT NULL default '',
-  PRIMARY KEY  (oid)
-) TYPE=InnoDB;
-
---
 -- Table structure for table 'internal_group'
 --
 
@@ -80,7 +65,8 @@ CREATE TABLE internal_user (
   oid bigint(20) NOT NULL default '0',
   version int(11) NOT NULL default '0',
   provider bigint(20) NOT NULL default '0',
-  login varchar(32) NOT NULL default '',
+  name varchar(128) NOT NULL default '',
+  login varchar(64) NOT NULL default '',
   password varchar(32) NOT NULL default '',
   first_name varchar(32) default NULL,
   last_name varchar(32) default NULL,
