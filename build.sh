@@ -71,4 +71,4 @@ if $cygwin; then
   TOMCAT_HOME=`cygpath --path --windows "$TOMCAT_HOME"`
 fi
 export CLASSPATH
-java $JAVA_OPTS org.apache.tools.ant.Main "-Dtomcat.home=$TOMCAT_HOME" "-Dsrc.root=$SRC_ROOT" $@
+$JAVA_HOME/bin/java $JAVA_OPTS org.apache.tools.ant.Main "-Dtomcat.home=$TOMCAT_HOME" "-Dsrc.root=$SRC_ROOT" $@
