@@ -6,9 +6,6 @@
 
 package com.l7tech.policy;
 
-import com.l7tech.identity.IdentityProvider;
-import com.l7tech.identity.User;
-import com.l7tech.identity.Group;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
@@ -16,8 +13,8 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
-import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
+import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.wsp.WspWriter;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -34,10 +31,10 @@ import java.util.logging.Logger;
  */
 public class SamplePolicyTest extends TestCase {
     private static Logger log = Logger.getLogger(SamplePolicyTest.class.getName());
-    IdentityProvider identityProvider = null;
-    User userAlice = null;
-    User userBob = null;
-    Group groupStaff = null;
+    long identityProvider = 111;
+    String userAlice = "alice";
+    String userBob = "bob";
+    String groupStaff = "staff";
 
     public SamplePolicyTest(String name) {
         super(name);
@@ -63,7 +60,7 @@ public class SamplePolicyTest extends TestCase {
             new HttpBasic(),
 
             // Authorize:
-            new SpecificUser( identityProvider.getConfig().getOid(), userAlice.getLogin() ),
+            new SpecificUser( identityProvider, userAlice ),
 
             // Route:
             new RoutingAssertion()
@@ -77,7 +74,7 @@ public class SamplePolicyTest extends TestCase {
             new HttpDigest(),
 
             // Authorize:
-            new SpecificUser( identityProvider.getConfig().getOid(), userAlice.getLogin() ),
+            new SpecificUser( identityProvider, userAlice ),
 
             // Route:
             new RoutingAssertion()
@@ -95,8 +92,8 @@ public class SamplePolicyTest extends TestCase {
 
             // Authorize:
             new ExactlyOneAssertion(Arrays.asList(new Assertion[] {
-                new SpecificUser( identityProvider.getConfig().getOid(), userAlice.getLogin() ),
-                new SpecificUser( identityProvider.getConfig().getOid(), userBob.getLogin() )
+                new SpecificUser( identityProvider, userAlice ),
+                new SpecificUser( identityProvider, userBob )
             })),
 
             // Route:
@@ -111,7 +108,7 @@ public class SamplePolicyTest extends TestCase {
             new HttpDigest(),
 
             // Authorize:
-            new MemberOfGroup( identityProvider.getConfig().getOid(), groupStaff.getName() ),
+            new MemberOfGroup( identityProvider, groupStaff ),
 
             // Route:
             new RoutingAssertion()
@@ -127,11 +124,11 @@ public class SamplePolicyTest extends TestCase {
             // Route:
             new ExactlyOneAssertion(Arrays.asList(new Assertion[] {
                 new AllAssertion(Arrays.asList(new Assertion[] {
-                    new SpecificUser( identityProvider.getConfig().getOid(), userAlice.getLogin() ),
+                    new SpecificUser( identityProvider, userAlice ),
                     new RoutingAssertion("http://backend.example.com/service1/soap")
                 })),
                 new AllAssertion(Arrays.asList(new Assertion[] {
-                    new SpecificUser( identityProvider.getConfig().getOid(), userBob.getLogin() ),
+                    new SpecificUser( identityProvider, userBob ),
                     new RoutingAssertion("http://backend.example.com/service2/soap")
                 })),
             })),
