@@ -142,6 +142,7 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
             // get values to populate with
             int index = subject.isAllowRange() ? 0 : 1;
             includeExcludeCombo.setSelectedIndex(index);
+            includeExcludeCombo.setPreferredSize(new Dimension(100, 25));
             int[] address = decomposeAddress(subject.getStartIp());
             add1.setText("" + address[0]);
             add2.setText("" + address[1]);
