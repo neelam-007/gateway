@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.console.panels.CertPropertiesWindow">
-  <grid id="8cd72" binding="mainPanel" row-count="2" column-count="1" hgap="-1" vgap="-1">
+  <grid id="8cd72" binding="mainPanel" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="10" left="10" bottom="10" right="10"/>
     <constraints>
-      <xy x="90" y="63" width="551" height="330"/>
+      <xy x="90" y="63" width="551" height="442"/>
       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
     </constraints>
     <properties/>
     <border type="none"/>
     <children>
-      <grid id="153db" row-count="1" column-count="3" hgap="-1" vgap="-1">
+      <grid id="153db" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <xy x="10" y="296" width="531" height="24"/>
+          <xy x="10" y="406" width="531" height="26"/>
           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3"/>
         </constraints>
         <properties/>
@@ -20,7 +20,7 @@
         <children>
           <component id="28b46" class="javax.swing.JButton" binding="saveButton">
             <constraints>
-              <xy x="397" y="0" width="58" height="24"/>
+              <xy x="383" y="0" width="62" height="26"/>
               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
             </constraints>
             <properties>
@@ -29,7 +29,7 @@
           </component>
           <component id="af3d" class="javax.swing.JButton" binding="cancelButton">
             <constraints>
-              <xy x="465" y="0" width="66" height="24"/>
+              <xy x="455" y="0" width="76" height="26"/>
               <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
             </constraints>
             <properties>
@@ -38,7 +38,7 @@
           </component>
           <hspacer id="fc048">
             <constraints>
-              <xy x="0" y="6" width="397" height="11"/>
+              <xy x="0" y="7" width="383" height="11"/>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
             </constraints>
           </hspacer>
@@ -46,7 +46,7 @@
       </grid>
       <tabbedpane id="5f53c">
         <constraints>
-          <xy x="10" y="10" width="531" height="281"/>
+          <xy x="10" y="10" width="531" height="391"/>
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3">
             <preferred-size width="200" height="200"/>
           </grid>
@@ -54,7 +54,7 @@
         <properties/>
         <border type="none"/>
         <children>
-          <grid id="445ea" row-count="5" column-count="2" hgap="-1" vgap="-1">
+          <grid id="445ea" row-count="5" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="20" left="10" bottom="10" right="10"/>
             <constraints>
               <tabbedpane title="General"/>
@@ -64,7 +64,7 @@
             <children>
               <component id="7c325" class="javax.swing.JLabel">
                 <constraints>
-                  <xy x="10" y="23" width="80" height="14"/>
+                  <xy x="10" y="23" width="105" height="16"/>
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
                 </constraints>
                 <properties>
@@ -73,7 +73,7 @@
               </component>
               <component id="9d683" class="javax.swing.JTextField" binding="certNameTextField">
                 <constraints>
-                  <xy x="100" y="20" width="416" height="21"/>
+                  <xy x="125" y="20" width="391" height="23"/>
                   <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
                     <preferred-size width="150" height="-1"/>
                   </grid>
@@ -82,7 +82,7 @@
               </component>
               <component id="b7c6a" class="javax.swing.JLabel">
                 <constraints>
-                  <xy x="10" y="101" width="51" height="14"/>
+                  <xy x="10" y="107" width="67" height="16"/>
                   <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
                 </constraints>
                 <properties>
@@ -91,7 +91,7 @@
               </component>
               <component id="dfa6d" class="javax.swing.JLabel">
                 <constraints>
-                  <xy x="10" y="75" width="47" height="14"/>
+                  <xy x="10" y="79" width="60" height="16"/>
                   <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
                 </constraints>
                 <properties>
@@ -100,7 +100,7 @@
               </component>
               <component id="89e2" class="javax.swing.JLabel">
                 <constraints>
-                  <xy x="10" y="49" width="45" height="14"/>
+                  <xy x="10" y="51" width="58" height="16"/>
                   <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
                 </constraints>
                 <properties>
@@ -109,13 +109,13 @@
               </component>
               <vspacer id="88aec">
                 <constraints>
-                  <xy x="302" y="119" width="11" height="125"/>
+                  <xy x="315" y="127" width="11" height="225"/>
                   <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
                 </constraints>
               </vspacer>
               <component id="4f32c" class="javax.swing.JTextField" binding="certIssuedToTextField">
                 <constraints>
-                  <xy x="100" y="46" width="416" height="21"/>
+                  <xy x="125" y="48" width="391" height="23"/>
                   <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
                     <preferred-size width="150" height="-1"/>
                   </grid>
@@ -126,7 +126,7 @@
               </component>
               <component id="3fe6a" class="javax.swing.JTextField" binding="certIssuedByTextField">
                 <constraints>
-                  <xy x="100" y="72" width="416" height="21"/>
+                  <xy x="125" y="76" width="391" height="23"/>
                   <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
                     <preferred-size width="150" height="-1"/>
                   </grid>
@@ -137,7 +137,7 @@
               </component>
               <component id="42b49" class="javax.swing.JTextField" binding="certExpiredOnTextField">
                 <constraints>
-                  <xy x="100" y="98" width="416" height="21"/>
+                  <xy x="125" y="104" width="391" height="23"/>
                   <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
                     <preferred-size width="150" height="-1"/>
                   </grid>
@@ -156,16 +156,16 @@
             <properties/>
             <border type="none"/>
             <children>
-              <grid id="6c73d" binding="certMainPanel" row-count="1" column-count="2" hgap="-1" vgap="-1">
+              <grid id="6c73d" binding="certMainPanel" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                 <margin top="5" left="5" bottom="5" right="5"/>
                 <constraints/>
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <grid id="eb7bc" binding="certPanel" row-count="1" column-count="1" hgap="-1" vgap="-1">
+                  <grid id="eb7bc" binding="certPanel" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                     <margin top="0" left="0" bottom="0" right="0"/>
                     <constraints>
-                      <xy x="5" y="5" width="20" height="244"/>
+                      <xy x="5" y="5" width="20" height="352"/>
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
                     </constraints>
                     <properties/>
@@ -174,7 +174,7 @@
                   </grid>
                   <hspacer id="edf16">
                     <constraints>
-                      <xy x="25" y="121" width="496" height="11"/>
+                      <xy x="25" y="175" width="496" height="11"/>
                       <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
                     </constraints>
                   </hspacer>
@@ -182,18 +182,18 @@
               </grid>
             </children>
           </scrollpane>
-          <grid id="b0e3f" row-count="2" column-count="1" hgap="-1" vgap="-1">
-            <margin top="0" left="0" bottom="0" right="0"/>
+          <grid id="b0e3f" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="10" bottom="10" right="10"/>
             <constraints>
-              <tabbedpane title="Usage"/>
+              <tabbedpane title="Options"/>
             </constraints>
             <properties/>
             <border type="none"/>
             <children>
-              <grid id="e195d" row-count="5" column-count="1" hgap="-1" vgap="-1">
+              <grid id="e195d" row-count="5" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                 <margin top="10" left="10" bottom="10" right="10"/>
                 <constraints>
-                  <xy x="0" y="0" width="526" height="168"/>
+                  <xy x="10" y="0" width="506" height="176"/>
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
                 </constraints>
                 <properties/>
@@ -201,44 +201,17 @@
                 <children>
                   <component id="50386" class="javax.swing.JCheckBox" binding="outboundSSLConnCheckBox">
                     <constraints>
-                      <xy x="10" y="55" width="158" height="22"/>
+                      <xy x="10" y="55" width="200" height="24"/>
                       <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
                     </constraints>
                     <properties>
                       <text value="Outbound SSL Connections "/>
                     </properties>
                   </component>
-                  <component id="b026c" class="javax.swing.JCheckBox" binding="signingClientCertCheckBox">
-                    <constraints>
-                      <xy x="10" y="82" width="147" height="22"/>
-                      <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
-                    </constraints>
-                    <properties>
-                      <text value="Signing Client Certificates"/>
-                    </properties>
-                  </component>
-                  <component id="38108" class="javax.swing.JCheckBox" binding="signingSAMLTokenCheckBox">
-                    <constraints>
-                      <xy x="10" y="109" width="125" height="22"/>
-                      <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
-                    </constraints>
-                    <properties>
-                      <text value="Signing SAML Tokens"/>
-                    </properties>
-                  </component>
-                  <component id="76f7b" class="javax.swing.JCheckBox" binding="signingServerCertCheckBox">
-                    <constraints>
-                      <xy x="10" y="136" width="267" height="22"/>
-                      <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
-                    </constraints>
-                    <properties>
-                      <text value="Signing Certificates for Outbound SSL Connections"/>
-                    </properties>
-                  </component>
-                  <grid id="3813a" row-count="1" column-count="1" hgap="-1" vgap="-1">
+                  <grid id="3813a" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                     <margin top="10" left="0" bottom="10" right="0"/>
                     <constraints>
-                      <xy x="10" y="10" width="506" height="40"/>
+                      <xy x="10" y="10" width="486" height="40"/>
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="3"/>
                     </constraints>
                     <properties/>
@@ -246,23 +219,65 @@
                     <children>
                       <component id="167df" class="javax.swing.JLabel">
                         <constraints>
-                          <xy x="0" y="13" width="143" height="14"/>
+                          <xy x="0" y="12" width="190" height="16"/>
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
                         </constraints>
                         <properties>
-                          <text value="The certificate is intented for:"/>
+                          <text value="The certificate is intended for:"/>
                         </properties>
                       </component>
                     </children>
                   </grid>
+                  <component id="76f7b" class="javax.swing.JCheckBox" binding="signingServerCertCheckBox">
+                    <constraints>
+                      <xy x="10" y="84" width="345" height="24"/>
+                      <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+                    </constraints>
+                    <properties>
+                      <text value="Signing Certificates for Outbound SSL Connections"/>
+                    </properties>
+                  </component>
+                  <component id="38108" class="javax.swing.JCheckBox" binding="signingSAMLTokenCheckBox">
+                    <constraints>
+                      <xy x="10" y="142" width="160" height="24"/>
+                      <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+                    </constraints>
+                    <properties>
+                      <text value="Signing SAML Tokens"/>
+                    </properties>
+                  </component>
+                  <component id="ac7a5" class="javax.swing.JCheckBox" binding="signingClientCertCheckBox">
+                    <constraints>
+                      <xy x="10" y="113" width="189" height="24"/>
+                      <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+                    </constraints>
+                    <properties>
+                      <text value="Signing Client Certificates"/>
+                    </properties>
+                  </component>
                 </children>
               </grid>
-              <vspacer id="8abf4">
+              <scrollpane id="1628" binding="descriptionPane">
                 <constraints>
-                  <xy x="257" y="168" width="11" height="86"/>
-                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
+                  <xy x="10" y="181" width="506" height="171"/>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3"/>
                 </constraints>
-              </vspacer>
+                <properties>
+                  <autoscrolls value="false"/>
+                  <horizontalScrollBarPolicy value="31"/>
+                </properties>
+                <border type="none"/>
+                <children>
+                  <component id="cd2fa" class="javax.swing.JTextPane" binding="descriptionText">
+                    <constraints/>
+                    <properties>
+                      <contentType value="text/html"/>
+                      <editable value="false"/>
+                      <opaque value="false"/>
+                    </properties>
+                  </component>
+                </children>
+              </scrollpane>
             </children>
           </grid>
         </children>

@@ -391,6 +391,7 @@ public class Wizard extends JDialog {
         buttonFinish.setEnabled(wp.canFinish());
         buttonNext.setEnabled(wp.canAdvance() && wizardIterator.hasNext());
         buttonBack.setEnabled(wizardIterator.hasPrevious());
+        stepDescriptionTextPane.setText(getSelectedWizardPanel().getDescription());
         wizardStepPanel.updateUI();
     }
 
