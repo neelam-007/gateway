@@ -77,6 +77,7 @@ public abstract class AbstractLdapIdentityProviderServer implements IdentityProv
                 // success
                 return;
             }
+            logger.info("credentials did not authenticate for " + pc.getUser().getLogin());
             throw new BadCredentialsException("credentials did not authenticate");
         } else if (pc.getFormat() == CredentialFormat.DIGEST) {
             String dbPassHash = realUser.getPassword();
