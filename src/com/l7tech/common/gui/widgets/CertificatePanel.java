@@ -36,7 +36,9 @@ public class CertificatePanel extends JPanel {
      */
     public CertificatePanel() {
         setLayout(new GridBagLayout());
+        setBackground(Color.white);
         cp = new JPanel(new GridBagLayout());
+        cp.setBackground(Color.white);
         GridBagConstraints c = new GridBagConstraints();
         c.anchor = GridBagConstraints.NORTHWEST;
         c.fill = GridBagConstraints.BOTH;
