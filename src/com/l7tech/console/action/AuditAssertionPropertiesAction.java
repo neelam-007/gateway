@@ -10,6 +10,7 @@ import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.AuditAssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.policy.assertion.AuditAssertion;
 
 import javax.swing.*;
 import java.awt.*;
@@ -39,25 +40,13 @@ public class AuditAssertionPropertiesAction extends SecureAction {
     protected void performAction() {
         Frame f = TopComponents.getInstance().getMainWindow();
 
-        String[] options = new String[] {
-            Level.ALL.getName(),
-            Level.CONFIG.getName(),
-            Level.FINEST.getName(),
-            Level.FINER.getName(),
-            Level.FINE.getName(),
-            Level.INFO.getName(),
-            Level.WARNING.getName(),
-            Level.SEVERE.getName(),
-            Level.OFF.getName(),
-        };
-
         String s =
           (String)JOptionPane.showInputDialog(TopComponents.getInstance().getMainWindow(),
             "Audit level shall be no lower than:\n",
             "Audit Properties",
             JOptionPane.PLAIN_MESSAGE,
             new ImageIcon(subject.getIcon()),
-            options,
+            AuditAssertion.ALLOWED_LEVELS,
             subject.getAssertion().getLevel());
 
         if (s != null) {
@@ -75,4 +64,5 @@ public class AuditAssertionPropertiesAction extends SecureAction {
             log.log(Level.WARNING, "Unable to reach the palette tree.");
         }
     }
+
 }

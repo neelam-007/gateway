@@ -49,6 +49,20 @@ public class AuditAssertion extends Assertion {
     public void setLevel(String level) throws IllegalArgumentException {
         if (level == null)
             throw new IllegalArgumentException("Level may not be null");
-        this.level = Level.parse(level);
+        for ( int i = 0; i < ALLOWED_LEVELS.length; i++ ) {
+            if (level.equals(ALLOWED_LEVELS[i])) {
+                this.level = Level.parse(level);
+                return;
+            }
+        }
+        throw new IllegalArgumentException("Unsupported level: " + level);
     }
+
+    public static final String[] ALLOWED_LEVELS = new String[] {
+        Level.FINEST.getName(),
+        Level.FINER.getName(),
+        Level.FINE.getName(),
+        Level.INFO.getName(),
+        Level.WARNING.getName(),
+    };
 }
