@@ -40,6 +40,7 @@ public class SoapUtil {
     // Namespace constants
     public static final String SECURITY_NAMESPACE = "http://schemas.xmlsoap.org/ws/2002/xx/secext";
     public static final String SECURITY_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2002/12/secext";
+    public static final String SECURITY_NAMESPACE3 = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd";
     public static final String XMLENC_NS = "http://www.w3.org/2001/04/xmlenc#";
     public static final String DIGSIG_URI = "http://www.w3.org/2000/09/xmldsig#";
 
@@ -190,6 +191,9 @@ public class SoapUtil {
             listSecurityElements = soapMsg.getElementsByTagNameNS(SECURITY_NAMESPACE2, SECURITY_EL_NAME);
         }
         if (listSecurityElements.getLength() < 1) {
+            listSecurityElements = soapMsg.getElementsByTagNameNS(SECURITY_NAMESPACE3, SECURITY_EL_NAME);
+        }
+        if (listSecurityElements.getLength() < 1) {
             // element does not exist
             Element header = SoapUtil.getOrMakeHeader(soapMsg);
             Element securityEl = soapMsg.createElementNS(SECURITY_NAMESPACE, SECURITY_EL_NAME);
@@ -210,6 +214,9 @@ public class SoapUtil {
         NodeList listSecurityElements = soapMsg.getElementsByTagNameNS(SECURITY_NAMESPACE, SECURITY_EL_NAME);
         if (listSecurityElements.getLength() < 1) {
             listSecurityElements = soapMsg.getElementsByTagNameNS(SECURITY_NAMESPACE2, SECURITY_EL_NAME);
+        }
+        if (listSecurityElements.getLength() < 1) {
+            listSecurityElements = soapMsg.getElementsByTagNameNS(SECURITY_NAMESPACE3, SECURITY_EL_NAME);
         }
         // is it there ?
         if (listSecurityElements.getLength() < 1) return null;
