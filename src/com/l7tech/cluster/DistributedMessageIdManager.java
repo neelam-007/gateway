@@ -102,16 +102,16 @@ public class DistributedMessageIdManager implements MessageIdManager {
                     conn.commit();
                     conn = null;
                 } finally {
-                    if (conn != null) try {
-                        conn.rollback();
+                    try {
+                        if (conn != null) conn.rollback();
                     } catch (Exception e) {
-                        logger.log(Level.INFO, "Caught exception rolling back JDBC transaction", e);
+                        logger.log(Level.WARNING, "Caught exception rolling back JDBC transaction", e);
                     }
 
-                    if (ps != null) try {
-                        ps.close();
+                    try {
+                        if (ps != null) ps.close();
                     } catch (Exception e) {
-                        logger.log(Level.INFO, "Caught exception closing PreparedStatement", e);
+                        logger.log(Level.WARNING, "Caught exception closing PreparedStatement", e);
                     }
 
                     if (context != null) context.close();
@@ -163,14 +163,22 @@ public class DistributedMessageIdManager implements MessageIdManager {
             conn.commit();
             conn = null;
         } finally {
-            if (conn != null) try {
-                conn.rollback();
-            } finally {
-                if (rs != null) try {
-                    rs.close();
-                } finally {
-                    if (ps != null) ps.close();
-                }
+            try {
+                if (conn != null) conn.rollback();
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Caught exception while trying to rollback garbage JDBC transaction", e);
+            }
+
+            try {
+                if (rs != null) rs.close();
+            } catch (Exception e) {
+                logger.log( Level.WARNING, "Caught exception while trying to close ResultSet", e );
+            }
+
+            try {
+                if (ps != null) ps.close();
+            } catch (Exception e) {
+                logger.log( Level.WARNING, "Caught exception while trying to close PreparedStatement", e );
             }
         }
     }
@@ -240,19 +248,31 @@ public class DistributedMessageIdManager implements MessageIdManager {
             tx.commit();
             tx = null;
         } finally {
-            if (tx != null) try {
-                tx.rollback();
-            } finally {
-                if (conn != null) try {
-                    conn.rollback();
-                } finally {
-                    if (rs != null) try {
-                        rs.close();
-                    } finally {
-                        if (ps != null) ps.close();
-                    }
-                }
+            try {
+                if (tx != null) tx.rollback();
+            } catch (Exception e) {
+                logger.log( Level.WARNING, "Caught exception while trying to roll back JGroups transaction", e );
             }
+
+            try {
+                if (conn != null) conn.rollback();
+            } catch (Exception e) {
+                logger.log( Level.WARNING, "Caught exception while trying to roll back JDBC transaction", e );
+            }
+
+            try {
+                if (rs != null) rs.close();
+            } catch (Exception e) {
+                logger.log( Level.WARNING, "Caught exception while trying to roll back ResultSet", e );
+            }
+
+            try {
+                if (ps != null) ps.close();
+            } catch (Exception e) {
+                logger.log( Level.WARNING, "Caught exception while trying to close PreparedStatement", e );
+            }
+
+            if (context != null) context.close();
         }
     }
 
