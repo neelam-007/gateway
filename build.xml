@@ -230,42 +230,19 @@
 
             <formatter type="plain"/>
             <sysproperty key="src.root" value="${src.root}"/>
-            <test name="com.l7tech.common.util.ThreadPoolTest" haltonfailure="no"/>
-            <test name="com.l7tech.proxy.datamodel.SsgManagerTest" haltonfailure="no"/>
-            <test name="com.l7tech.proxy.datamodel.SsgTest" haltonfailure="no"/>
-            <test name="com.l7tech.proxy.FunctionalTest" haltonfailure="no"/>
-            <test name="com.l7tech.proxy.ClientPolicyTest" haltonfailure="no"/>
-            <test name="com.l7tech.service.WsdlTest" haltonfailure="no"/>
             <test name="com.l7tech.proxy.policy.ClientPolicyFactoryTest" haltonfailure="no"/>
             <test name="com.l7tech.proxy.policy.ClientXpathAssertionsTest" haltonfailure="no"/>
             <test name="com.l7tech.server.policy.ServerPolicyFactoryTest" haltonfailure="no"/>
             <test name="com.l7tech.server.policy.filter.FilterTest" haltonfailure="no"/>
-            <test name="com.l7tech.common.util.ExceptionUtilsTest" haltonfailure="no"/>
-            <test name="com.l7tech.identity.StubDataStoreTest" haltonfailure="no"/>
-            <test name="com.l7tech.server.policy.RequestXpathAssertionTest" fork="yes" haltonfailure="no"/>
-            <test name="com.l7tech.common.util.XmlUtilTest" haltonfailure="no"/>
-            <test name="com.l7tech.common.security.xml.WssDecoratorTest" haltonfailure="no"/>
-            <test name="com.l7tech.common.security.xml.WssProcessorTest" haltonfailure="no"/>
             <test name="com.l7tech.common.security.xml.WssRoundTripTest" haltonfailure="no"/>
-            <test name="com.l7tech.common.mime.MimeUtilTest" haltonfailure="no"/>
-            <test name="com.l7tech.common.mime.MimeHeaderTest" haltonfailure="no"/>
-            <test name="com.l7tech.common.mime.MimeHeadersTest" haltonfailure="no"/>
-            <test name="com.l7tech.common.mime.MimeBoundaryTerminatedInputStreamTest" haltonfailure="no"/>
-            <test name="com.l7tech.common.mime.MimeBodyTest" haltonfailure="no"/>
-            <test name="com.l7tech.common.mime.StashManagerTest" haltonfailure="no" fork="yes"/>
-            <test name="com.l7tech.server.TokenServiceTest" haltonfailure="no"/>
             <test name="com.l7tech.server.policy.PolicyServiceTest" haltonfailure="no"/>
             <test name="com.l7tech.common.message.KnobblyMessageTest" haltonfailure="no"/>
+            <test name="com.l7tech.proxy.FunctionalTest" haltonfailure="no"/>
 
             <!--
              ** add policy tests into the com.l7tech.policy.AllPolicyTests class
             -->
             <test name="com.l7tech.policy.AllPolicyTests" haltonfailure="no"/>
-            <test name="com.l7tech.common.security.KeysTest" haltonfailure="no"/>
-            <test name="com.l7tech.server.MockServletApiTest" haltonfailure="no"/>
-            <test name="com.l7tech.common.xml.XpathEvaluatorTest" haltonfailure="no"/>
-            <test name="com.l7tech.common.xml.SoapMessageGeneratorTest" haltonfailure="no" fork="yes"/>
-            <test name="com.l7tech.server.saml.SamlProcessingTest" haltonfailure="no" fork="yes"/>
             <!--
             ** TODO: make sure -security flag is added to the 'nightly' build/test
             ** Tomcat config. When done enable the tests below.
@@ -275,7 +252,46 @@
            <test name="com.l7tech.service.ServiceAdminTest" haltonfailure="no"/>
            -->
             <!--
-              ** add tests here **
+              ** add fast precheckin tests here **
+              -->
+        </junit>
+    </target>
+
+    <target name="test.intensive" depends="test">
+        <junit printsummary="yes" haltonfailure="yes" fork="off">
+            <classpath>
+                <pathelement path="${test.class.path}"/>
+                <pathelement path="${build.dir}/classes"/>
+            </classpath>
+
+            <formatter type="plain"/>
+            <sysproperty key="src.root" value="${src.root}"/>
+
+            <test name="com.l7tech.common.util.ThreadPoolTest" haltonfailure="no"/>
+            <test name="com.l7tech.proxy.ClientPolicyTest" haltonfailure="no"/>
+            <test name="com.l7tech.server.policy.RequestXpathAssertionTest" fork="yes" haltonfailure="no"/>
+            <test name="com.l7tech.common.mime.StashManagerTest" haltonfailure="no" fork="yes"/>
+            <test name="com.l7tech.common.mime.MimeBoundaryTerminatedInputStreamTest" haltonfailure="no"/>
+            <test name="com.l7tech.common.util.ExceptionUtilsTest" haltonfailure="no"/>
+            <test name="com.l7tech.identity.StubDataStoreTest" haltonfailure="no"/>
+            <test name="com.l7tech.common.util.XmlUtilTest" haltonfailure="no"/>
+            <test name="com.l7tech.server.MockServletApiTest" haltonfailure="no"/>
+            <test name="com.l7tech.server.saml.SamlProcessingTest" haltonfailure="no" fork="yes"/>
+            <test name="com.l7tech.server.TokenServiceTest" haltonfailure="no"/>
+            <test name="com.l7tech.proxy.datamodel.SsgManagerTest" haltonfailure="no"/>
+            <test name="com.l7tech.proxy.datamodel.SsgTest" haltonfailure="no"/>
+            <test name="com.l7tech.common.security.xml.WssDecoratorTest" haltonfailure="no"/>
+            <test name="com.l7tech.common.security.xml.WssProcessorTest" haltonfailure="no"/>
+            <test name="com.l7tech.common.security.KeysTest" haltonfailure="no"/>
+            <test name="com.l7tech.common.xml.XpathEvaluatorTest" haltonfailure="no"/>
+            <test name="com.l7tech.common.xml.SoapMessageGeneratorTest" haltonfailure="no" fork="yes"/>
+            <test name="com.l7tech.common.mime.MimeHeaderTest" haltonfailure="no"/>
+            <test name="com.l7tech.common.mime.MimeHeadersTest" haltonfailure="no"/>
+            <test name="com.l7tech.common.mime.MimeBodyTest" haltonfailure="no"/>
+            <test name="com.l7tech.service.WsdlTest" haltonfailure="no"/>
+
+            <!--
+              ** add possibly-slow intensive nightly tests here **
               -->
         </junit>
     </target>
