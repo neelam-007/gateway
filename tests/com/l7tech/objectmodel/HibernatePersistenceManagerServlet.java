@@ -44,13 +44,23 @@ public class HibernatePersistenceManagerServlet extends HttpServlet {
         } else if ( op.equals( "get") ) {
             String soid = request.getParameter("oid");
             long oid = Long.parseLong( soid );
-            IdentityProviderConfig config = ipcm.findByPrimaryKey( oid );
+            IdentityProviderConfig config = null;
+            try {
+                config = ipcm.findByPrimaryKey( oid );
+            } catch (FindException e) {
+                throw new ServletException(e);
+            }
             out.println( config );
         } else if ( op.equals( "create") ) {
             IdentityProviderConfig config = new IdentityProviderConfigImp();
             config.setName("Identity Provider #1");
             config.setDescription("This object is bogus.");
-            long oid = ipcm.save( config );
+            long oid = 0;
+            try {
+                oid = ipcm.save( config );
+            } catch (SaveException e) {
+                throw new ServletException(e);
+            }
             out.println( "Saved " + oid );
         }
         out.close();
