@@ -5,6 +5,7 @@ import java.util.Iterator;
 import junit.framework.TestCase;
 import junit.framework.Test;
 import junit.framework.TestSuite;
+import com.l7tech.identity.IdentityProviderConfig;
 
 /**
  * Layer 7 Technologies, inc.
@@ -20,12 +21,12 @@ public class LdapGroupManagerServerTest extends TestCase {
     }
 
     public void testFindAll() throws Exception {
-        LdapIdentityProviderConfig config = new LdapIdentityProviderConfig();
+        IdentityProviderConfig config = new IdentityProviderConfig();
         // use this url when ssh forwarding locally
-        config.setLdapHostURL("ldap://localhost:3899");
+        config.putProperty(LdapConfigSettings.LDAP_HOST_URL, "ldap://localhost:3899");
         // use this url when in the office
         //config.setLdapHostURL("ldap://spock:389");
-        config.setSearchBase("dc=layer7-tech,dc=com");
+        config.putProperty(LdapConfigSettings.LDAP_SEARCH_BASE, "dc=layer7-tech,dc=com");
         LdapGroupManagerServer me = new LdapGroupManagerServer(config);
         Collection res = me.findAll();
         Iterator i = res.iterator();

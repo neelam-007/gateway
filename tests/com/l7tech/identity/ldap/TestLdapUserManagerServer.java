@@ -8,6 +8,8 @@ import java.util.Iterator;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.identity.User;
+import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.identity.IdentityProviderConfig;
 
 /**
  * Layer 7 Technologies, inc.
@@ -22,12 +24,12 @@ public class TestLdapUserManagerServer extends junit.framework.TestCase {
     }
 
     public void testFindByPrimaryKey() throws Exception {
-        LdapIdentityProviderConfig config = new LdapIdentityProviderConfig();
+        IdentityProviderConfig config = new IdentityProviderConfig(IdentityProviderType.LDAP);
         // use this url when ssh forwarding locally
-        config.setLdapHostURL("ldap://localhost:3899");
+        config.putProperty(LdapConfigSettings.LDAP_HOST_URL, "ldap://localhost:3899");
         // use this url when in the office
         //config.setLdapHostURL("ldap://spock:389");
-        config.setSearchBase("dc=layer7-tech,dc=com");
+        config.putProperty(LdapConfigSettings.LDAP_SEARCH_BASE, "dc=layer7-tech,dc=com");
         LdapUserManagerServer me = new LdapUserManagerServer(config);
 
         Collection headers = me.findAllHeaders();

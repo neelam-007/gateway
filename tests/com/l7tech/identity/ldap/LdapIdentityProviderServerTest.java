@@ -7,9 +7,7 @@ import java.util.Collection;
 import java.util.Iterator;
 
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.identity.User;
-import com.l7tech.identity.UserManager;
-import com.l7tech.identity.GroupManager;
+import com.l7tech.identity.*;
 
 /**
  * Layer 7 Technologies, inc.
@@ -27,12 +25,12 @@ public class LdapIdentityProviderServerTest extends junit.framework.TestCase {
     }
 
     public void testFindAllUsers() throws Exception {
-        LdapIdentityProviderConfig config = new LdapIdentityProviderConfig();
+        IdentityProviderConfig config = new IdentityProviderConfig(IdentityProviderType.LDAP);
         // use this url when ssh forwarding locally
         // config.setLdapHostURL("ldap://localhost:3899");
         // use this url when in the office
-        config.setLdapHostURL("ldap://spock:389");
-        config.setSearchBase("dc=layer7-tech,dc=com");
+        config.putProperty(LdapConfigSettings.LDAP_HOST_URL, "ldap://spock:389");
+        config.putProperty(LdapConfigSettings.LDAP_SEARCH_BASE, "dc=layer7-tech,dc=com");
 
         // create the provider
         LdapIdentityProviderServer provider = new LdapIdentityProviderServer();
@@ -57,12 +55,12 @@ public class LdapIdentityProviderServerTest extends junit.framework.TestCase {
     }
 
     public void testFindAllGroups() throws Exception {
-        LdapIdentityProviderConfig config = new LdapIdentityProviderConfig();
+        IdentityProviderConfig config = new IdentityProviderConfig(IdentityProviderType.LDAP);
         // use this url when ssh forwarding locally
         // config.setLdapHostURL("ldap://localhost:3899");
         // use this url when in the office
-        config.setLdapHostURL("ldap://spock:389");
-        config.setSearchBase("dc=layer7-tech,dc=com");
+        config.putProperty(LdapConfigSettings.LDAP_HOST_URL, "ldap://spock:389");
+        config.putProperty(LdapConfigSettings.LDAP_SEARCH_BASE, "dc=layer7-tech,dc=com");
 
         // create the provider
         LdapIdentityProviderServer provider = new LdapIdentityProviderServer();
