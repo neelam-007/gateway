@@ -75,6 +75,8 @@ public class LogPanel extends JPanel {
     private Icon upArrowIcon = new ArrowIcon(0);
     private Icon downArrowIcon = new ArrowIcon(1);
     private final Locator logAdminLocator;
+    private JScrollPane detailsScrollPane;
+    private LogMessage displayedLogMessage = null;
 
     /**
      * Constructor
@@ -95,87 +97,100 @@ public class LogPanel extends JPanel {
 
         getMsgTable().getSelectionModel().
                 addListSelectionListener(new ListSelectionListener() {
-                    /**
-                     * Called whenever the value of the selection changes.
-                     * @param e the event that characterizes the change.
-                     */
                     public void valueChanged(ListSelectionEvent e) {
-                        int row = getMsgTable().getSelectedRow();
-                        String msg;
-
-                        if (row == -1) return;
-
-                        msg = "";
-                        //if (getMsgTable().getModel().getValueAt(row, LOG_MSG_NUMBER_COLUMN_INDEX) != null)
-                        //    msg = msg + "Message #: " + getMsgTable().getModel().getValueAt(row, LOG_MSG_NUMBER_COLUMN_INDEX).toString() + "\n";
-                        final TableModel model = getMsgTable().getModel();
-                        if (model.getValueAt(row, LOG_NODE_NAME_COLUMN_INDEX) != null)
-                            msg = msg + "Node       : " + model.getValueAt(row, LOG_NODE_NAME_COLUMN_INDEX).toString() + "\n";
-                        if (model.getValueAt(row, LOG_TIMESTAMP_COLUMN_INDEX) != null)
-                            msg = msg + "Time       : " + model.getValueAt(row, LOG_TIMESTAMP_COLUMN_INDEX).toString() + "\n";
-                        if (model.getValueAt(row, LOG_SEVERITY_COLUMN_INDEX) != null)
-                            msg = msg + "Severity   : " + model.getValueAt(row, LOG_SEVERITY_COLUMN_INDEX).toString() + "\n";
-                        if ((model.getValueAt(row, LOG_REQUEST_ID_COLUMN_INDEX) != null) &&
-                             (model.getValueAt(row, LOG_REQUEST_ID_COLUMN_INDEX)).toString().length() > 0)
-                            msg = msg + "Request Id : " + model.getValueAt(row, LOG_REQUEST_ID_COLUMN_INDEX).toString() + "\n";
-                        if (model.getValueAt(row, LOG_MSG_DETAILS_COLUMN_INDEX) != null)
-                            msg = msg + "Message    : " + model.getValueAt(row, LOG_MSG_DETAILS_COLUMN_INDEX).toString() + "\n";
-                        if (model.getValueAt(row, LOG_JAVA_CLASS_COLUMN_INDEX) != null)
-                            msg = msg + "Class      : " + model.getValueAt(row, LOG_JAVA_CLASS_COLUMN_INDEX).toString() + "\n";
-                        if (model.getValueAt(row, LOG_JAVA_METHOD_COLUMN_INDEX) != null)
-                            msg = msg + "Method     : " + model.getValueAt(row, LOG_JAVA_METHOD_COLUMN_INDEX).toString() + "\n";
-
-                        if (model instanceof FilteredLogTableSorter) {
-                            LogMessage lm = ((FilteredLogTableSorter)model).getLogMessageAtRow(row);
-                            SSGLogRecord rec = lm.getSSGLogRecord();
-
-                            // Add any SSGLogRecord-specific fields here
-
-                            if (rec instanceof AuditRecord) {
-                                AuditRecord arec = (AuditRecord)rec;
-                                msg += "\n";
-
-                                if (arec instanceof AdminAuditRecord) {
-                                    AdminAuditRecord aarec = (AdminAuditRecord)arec;
-                                    msg += "Event Type : Administrator Action" + "\n";
-                                    msg += "Admin user : " + aarec.getAdminLogin() + "\n";
-                                    msg += "Admin IP   : " + arec.getIpAddress() + "\n";
-                                    msg += "Action     : " + fixAction(aarec.getAction()) + "\n";
-                                    msg += "Entity name: " + arec.getName() + "\n";
-                                    msg += "Entity id  : " + aarec.getEntityOid() + "\n";
-                                    msg += "Entity type: " + fixType(aarec.getEntityClassname()) + "\n";
-                                } else if (arec instanceof MessageSummaryAuditRecord) {
-                                    MessageSummaryAuditRecord sum = (MessageSummaryAuditRecord)arec;
-                                    msg += "Event Type : Message Summary" + "\n";
-                                    msg += "Client IP  : " + arec.getIpAddress() + "\n";
-                                    msg += "Service    : " + sum.getName() + "\n";
-                                    msg += "Rqst Length: " + fixNegative(sum.getRequestContentLength(), "<Not Read>") + "\n";
-                                    msg += "Resp Length: " + fixNegative(sum.getResponseContentLength(), "<Not Routed>") + "\n";
-                                    msg += "User ID    : " + sum.getUserId() + "\n";
-                                    msg += "User Name  : " + sum.getUserName() + "\n";
-                                    msg += "Entity name: " + arec.getName() + "\n";
-                                } else if (arec instanceof SystemAuditRecord) {
-                                    SystemAuditRecord sys = (SystemAuditRecord)arec;
-                                    msg += "Event Type : System Message" + "\n";
-                                    msg += "Node IP    : " + arec.getIpAddress() + "\n";
-                                    msg += "Action     : " + sys.getAction() + "\n";
-                                    msg += "Component  : " + fixComponent(sys.getComponent()) + "\n";
-                                    msg += "Entity name: " + arec.getName() + "\n";
-                                } else {
-                                    msg += "Event Type : Unknown" + "\n";
-                                    msg += "Entity name: " + arec.getName() + "\n";
-                                    msg += "IP Address : " + arec.getIpAddress() + "\n";
-                                }
-                            }
-                        }
-
-                        // update the msg details field only if the content has changed.
-                        if(!msg.equals(getMsgDetails().getText())){
-                            getMsgDetails().setText(msg);
-                        }
-
+                        updateMsgDetails();
                     }
                 });
+    }
+
+    private void updateMsgDetails() {
+        int row = getMsgTable().getSelectedRow();
+
+        if (row == -1) return;
+
+        final TableModel model = getMsgTable().getModel();
+        String msg = "";
+        //if (getMsgTable().getModel().getValueAt(row, LOG_MSG_NUMBER_COLUMN_INDEX) != null)
+        //    msg = msg + "Message #: " + getMsgTable().getModel().getValueAt(row, LOG_MSG_NUMBER_COLUMN_INDEX).toString() + "\n";
+        if (model instanceof FilteredLogTableSorter) {
+            LogMessage lm = ((FilteredLogTableSorter)model).getLogMessageAtRow(row);
+            if (lm == displayedLogMessage) return;
+            displayedLogMessage = lm;
+            SSGLogRecord rec = lm.getSSGLogRecord();
+
+            //Oct 26, 2004 11:57:45 AM com.l7tech.server.identity.ldap.LdapConfigTemplateManager populateTemplatesFromFile
+            //WARNING: templates not available!
+            String stripex = ".*?\\d\\d\\d\\d\\d?\\s+\\d\\d?\\:\\d\\d?\\:\\d\\d?\\s+[AP]M\\s+";
+            String severity = "";
+            if (lm.getNodeName() != null)
+                msg = msg + "Node       : " + lm.getNodeName() + "\n";
+            if (lm.getTime() != null)
+                msg = msg + "Time       : " + lm.getTime() + "\n";
+            if (lm.getSeverity() != null) {
+                msg = msg + "Severity   : " + lm.getSeverity() + "\n";
+                severity = lm.getSeverity() + ":\\s+";
+            }
+            if (lm.getReqId() != null && lm.getReqId().length() > 0)
+                msg = msg + "Request Id : " + lm.getReqId() + "\n";
+            if (lm.getMsgClass() != null) {
+                msg = msg + "Class      : " + lm.getMsgClass() + "\n";
+                stripex += lm.getMsgClass() + "\\s+";
+            }
+            if (lm.getMsgMethod() != null) {
+                msg = msg + "Method     : " + lm.getMsgMethod() + "\n";
+                stripex += lm.getMsgMethod() + "\\s+" + severity;
+            }
+            if (lm.getMsgDetails() != null) {
+                String details = lm.getMsgDetails();
+                details = details.replaceAll(stripex, "");
+                msg = msg + "Message    : " + details + "\n";
+            }
+
+            if (rec instanceof AuditRecord) {
+                AuditRecord arec = (AuditRecord)rec;
+                msg += "\n";
+
+                if (arec instanceof AdminAuditRecord) {
+                    AdminAuditRecord aarec = (AdminAuditRecord)arec;
+                    msg += "Event Type : Administrator Action" + "\n";
+                    msg += "Admin user : " + aarec.getAdminLogin() + "\n";
+                    msg += "Admin IP   : " + arec.getIpAddress() + "\n";
+                    msg += "Action     : " + fixAction(aarec.getAction()) + "\n";
+                    msg += "Entity name: " + arec.getName() + "\n";
+                    msg += "Entity id  : " + aarec.getEntityOid() + "\n";
+                    msg += "Entity type: " + fixType(aarec.getEntityClassname()) + "\n";
+                } else if (arec instanceof MessageSummaryAuditRecord) {
+                    MessageSummaryAuditRecord sum = (MessageSummaryAuditRecord)arec;
+                    msg += "Event Type : Message Summary" + "\n";
+                    msg += "Client IP  : " + arec.getIpAddress() + "\n";
+                    msg += "Service    : " + sum.getName() + "\n";
+                    msg += "Rqst Length: " + fixNegative(sum.getRequestContentLength(), "<Not Read>") + "\n";
+                    msg += "Resp Length: " + fixNegative(sum.getResponseContentLength(), "<Not Routed>") + "\n";
+                    msg += "User ID    : " + sum.getUserId() + "\n";
+                    msg += "User Name  : " + sum.getUserName() + "\n";
+                    msg += "Entity name: " + arec.getName() + "\n";
+                } else if (arec instanceof SystemAuditRecord) {
+                    SystemAuditRecord sys = (SystemAuditRecord)arec;
+                    msg += "Event Type : System Message" + "\n";
+                    msg += "Node IP    : " + arec.getIpAddress() + "\n";
+                    msg += "Action     : " + sys.getAction() + "\n";
+                    msg += "Component  : " + fixComponent(sys.getComponent()) + "\n";
+                    msg += "Entity name: " + arec.getName() + "\n";
+                } else {
+                    msg += "Event Type : Unknown" + "\n";
+                    msg += "Entity name: " + arec.getName() + "\n";
+                    msg += "IP Address : " + arec.getIpAddress() + "\n";
+                }
+            }
+        }
+
+        // update the msg details field only if the content has changed.
+        if(!msg.equals(getMsgDetails().getText())){
+            getMsgDetails().setText(msg);
+            if (msg.length() > 0)
+                // Scroll to top
+                getMsgDetails().getCaret().setDot(1);
+        }
     }
 
     private String fixNegative(int num, String s) {
@@ -441,11 +456,17 @@ public class LogPanel extends JPanel {
         msgDetailsPane.setMinimumSize(new java.awt.Dimension(1000, 100));
         msgDetailsPane.setPreferredSize(new java.awt.Dimension(1000, 150));
 
-        JScrollPane msgDetailsScrollPane = new JScrollPane();
-        msgDetailsScrollPane.setViewportView(getMsgDetails());
+        JScrollPane msgDetailsScrollPane = getDetailsScrollPane();
         msgDetailsPane.addTab("Details", msgDetailsScrollPane);
 
         return msgDetailsPane;
+    }
+
+    private JScrollPane getDetailsScrollPane() {
+        if (detailsScrollPane != null) return detailsScrollPane;
+        detailsScrollPane = new JScrollPane();
+        detailsScrollPane.setViewportView(getMsgDetails());
+        return detailsScrollPane;
     }
 
     /**
@@ -637,6 +658,7 @@ public class LogPanel extends JPanel {
             if (!rowFound) {
                 // clear the details text area
                 getMsgDetails().setText("");
+                displayedLogMessage = null;
             }
         }
     }
@@ -676,6 +698,7 @@ public class LogPanel extends JPanel {
     public void clearMsgTable(){
         getMsgDetails().setText("Loading data...");
         msgTotal.setText(MSG_TOTAL_PREFIX + "0");
+        displayedLogMessage = null;
     }
 
     /**
