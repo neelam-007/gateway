@@ -191,7 +191,8 @@ public class MainWindow extends JFrame {
     private JMenuItem getConnectMenuItem() {
         if (connectMenuItem == null) {
             connectMenuItem = new JMenuItem(getConnectAction());
-            connectMenuItem.setIcon(null);
+            Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/connect2.gif"));
+            connectMenuItem.setIcon(icon);
             int mnemonic = connectMenuItem.getText().toCharArray()[0];
             connectMenuItem.setMnemonic(mnemonic);
             connectMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
@@ -209,7 +210,8 @@ public class MainWindow extends JFrame {
             return disconnectMenuItem;
 
         disconnectMenuItem = new JMenuItem(getDisconnectAction());
-        disconnectMenuItem.setIcon(null);
+        Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/disconnect.gif"));
+        disconnectMenuItem.setIcon(icon);
 
         int mnemonic = disconnectMenuItem.getText().toCharArray()[0];
         disconnectMenuItem.setMnemonic(mnemonic);
@@ -227,8 +229,8 @@ public class MainWindow extends JFrame {
     private JMenuItem getMenuItemPreferences() {
         if (menuItemPref == null) {
             menuItemPref = new JMenuItem(getPreferencesAction());
-            menuItemPref.setIcon(null);
-
+            Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/preferences.gif"));
+            menuItemPref.setIcon(icon);
             int mnemonic = menuItemPref.getText().toCharArray()[0];
             menuItemPref.setMnemonic(mnemonic);
             menuItemPref.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
