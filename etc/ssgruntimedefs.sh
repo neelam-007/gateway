@@ -45,7 +45,7 @@ if $cygwin; then
     TOMCAT_HOME=`cygpath --path --windows "$TOMCAT_HOME"`
 fi
 export JAVA_HOME
-export TOCMAT_HOME
+export TOMCAT_HOME
 
 # aliases to start and stop ssg
 alias startssg='$TOMCAT_HOME/bin/catalina.sh start -security'
