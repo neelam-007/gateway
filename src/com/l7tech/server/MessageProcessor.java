@@ -70,8 +70,8 @@ public class MessageProcessor {
                 }
 
                 // run the policy
-                service.attemptedRequest();
                 ServerAssertion ass = service.rootAssertion();
+                service.attemptedRequest();
                 status = ass.checkRequest( request, response );
 
                 if ( status == AssertionStatus.NONE ) {
