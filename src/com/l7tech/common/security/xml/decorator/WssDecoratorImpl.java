@@ -299,7 +299,7 @@ public class WssDecoratorImpl implements WssDecorator {
     private Element addSignature(final Context c, Key senderSigningKey,
                                  Element[] elementsToSign, Element securityHeader,
                                  Element keyInfoReferenceTarget,
-                                 String keyInfoValueTypeURI) throws DecoratorException {
+                                 String keyInfoValueTypeURI) throws DecoratorException, InvalidDocumentFormatException {
 
         if (elementsToSign == null || elementsToSign.length < 1) return null;
 
@@ -393,6 +393,10 @@ public class WssDecoratorImpl implements WssDecorator {
         try {
             sigContext.sign(emptySignatureElement, senderSigningKey);
         } catch (XSignatureException e) {
+            String msg = e.getMessage();
+            if (msg != null && msg.indexOf("Found a relative URI") >= 0)       // Bug #1209
+                throw new InvalidDocumentFormatException("Unable to sign this message due to a relative namespace URI. " +
+                                                         "(Layer 7 Knowledge Base: KBUnableToSignRelativeNamespaceURI)", e);
             throw new DecoratorException(e);
         }
 
