@@ -92,8 +92,8 @@ public class StatisticsTableSorter extends FilteredDefaultTableModel {
 
         public int compare(Object a, Object b) {
 
-            String elementA = new String("");
-            String elementB = new String("");
+            Object elementA = null;
+            Object elementB = null;
 
             switch (column) {
                 case 0:
@@ -101,20 +101,20 @@ public class StatisticsTableSorter extends FilteredDefaultTableModel {
                     elementB = ((StatisticsRecord) b).getServiceName();
                     break;
                 case 1:
-                    elementA = Long.toString(((StatisticsRecord) a).getAttemptedCount());
-                    elementB = Long.toString(((StatisticsRecord) b).getAttemptedCount());
+                    elementA = new Long(((StatisticsRecord) a).getAttemptedCount());
+                    elementB = new Long(((StatisticsRecord) b).getAttemptedCount());
                     break;
                 case 2:
-                    elementA = Long.toString(((StatisticsRecord) a).getAuthorizedCount());
-                    elementB = Long.toString(((StatisticsRecord) b).getAuthorizedCount());
+                    elementA = new Long(((StatisticsRecord) a).getAuthorizedCount());
+                    elementB = new Long(((StatisticsRecord) b).getAuthorizedCount());
                     break;
                 case 3:
-                    elementA = Long.toString(((StatisticsRecord) a).getCompletedCount());
-                    elementB = Long.toString(((StatisticsRecord) b).getCompletedCount());
+                    elementA = new Long(((StatisticsRecord) a).getCompletedCount());
+                    elementB = new Long(((StatisticsRecord) b).getCompletedCount());
                     break;
                 case 4:
-                    elementA = Long.toString(((StatisticsRecord) a).getCompletedCountLastMinute());
-                    elementB = Long.toString(((StatisticsRecord) b).getCompletedCountLastMinute());
+                    elementA = new Long(((StatisticsRecord) a).getCompletedCountLastMinute());
+                    elementB = new Long(((StatisticsRecord) b).getCompletedCountLastMinute());
                     break;
                 default:
                     logger.warning("Bad Statistics Table Column: " + column);
@@ -122,10 +122,10 @@ public class StatisticsTableSorter extends FilteredDefaultTableModel {
             }
 
             // Treat empty strains like nulls
-            if (elementA instanceof String && (elementA).length() == 0) {
+            if (elementA instanceof String && ((String)elementA).length() == 0) {
                 elementA = null;
             }
-            if (elementB instanceof String && (elementB).length() == 0) {
+            if (elementB instanceof String && ((String)elementB).length() == 0) {
                 elementB = null;
             }
 
@@ -139,9 +139,34 @@ public class StatisticsTableSorter extends FilteredDefaultTableModel {
                 return -1;
             } else {
                 if (ascending) {
-                    return (elementA).compareToIgnoreCase(elementB);
+                    if (elementA instanceof String) {
+                        return ((String) elementA).compareToIgnoreCase((String) elementB);
+                    } else if (elementA instanceof Long) {
+                        if (((Long) elementA).longValue() == ((Long) elementB).longValue()) {
+                            return 0;
+                        } else if (((Long) elementA).longValue() > ((Long) elementB).longValue()) {
+                            return 1;
+                        } else {
+                            return -1;
+                        }
+                    } else {
+                        return 0;
+                    }
                 } else {
-                    return (elementB).compareToIgnoreCase(elementA);
+                    if (elementA instanceof String) {
+                        return ((String) elementB).compareToIgnoreCase((String) elementA);
+                    } else if (elementA instanceof Long) {
+                        if (((Long) elementA).longValue() == ((Long) elementB).longValue()) {
+                            return 0;
+                        } else if (((Long) elementA).longValue() > ((Long) elementB).longValue()) {
+                            return -1;
+                        } else {
+                            return 1;
+                        }
+                    } else {
+                        return 0;
+                    }
+
                 }
             }
         }
