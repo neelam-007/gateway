@@ -11,7 +11,6 @@ import com.l7tech.identity.ldap.AbstractLdapConstants;
 import com.l7tech.identity.ldap.AbstractLdapGroupManagerServer;
 import com.l7tech.objectmodel.FindException;
 
-import java.util.StringTokenizer;
 
 /**
  * @author alex
