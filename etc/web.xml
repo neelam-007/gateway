@@ -67,6 +67,11 @@
     </servlet-mapping>
 
     <servlet-mapping>
+        <servlet-name>SoapMessageProcessingServlet</servlet-name>
+        <url-pattern>/soap</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
         <servlet-name>AxisServlet</servlet-name>
         <url-pattern>/servlet/AxisServlet</url-pattern>
     </servlet-mapping>
