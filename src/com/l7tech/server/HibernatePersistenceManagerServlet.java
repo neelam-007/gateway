@@ -7,7 +7,6 @@
 package com.l7tech.server;
 
 import com.l7tech.identity.*;
-import com.l7tech.identity.imp.*;
 import com.l7tech.objectmodel.PersistenceContext;
 
 import javax.servlet.ServletConfig;
@@ -72,16 +71,9 @@ public class HibernatePersistenceManagerServlet extends HttpServlet {
                     out.println( oid + " deleted." );
                 }
             } else if ( "create".equals(op) ) {
-                /*IdentityProviderType type = new IdentityProviderTypeImp();
-                type.setClassName( "com.l7tech.identity.internal.InternalIdentityProvider" );
-                type.setName( "Internal IdentityAssertion Provider" );
-                iptm.save(type);
-                */
-
-                IdentityProviderConfig config = new IdentityProviderConfigImp();
+                IdentityProviderConfig config = new IdentityProviderConfig(IdentityProviderType.INTERNAL);
                 config.setName( new Integer( new Random().nextInt() ).toString() );
                 config.setDescription("This object is bogus.");
-                //config.setType( type );
 
                 long oid = ipcm.save( config );
                 config.setName( "IdentityAssertion Provider #" + oid );
