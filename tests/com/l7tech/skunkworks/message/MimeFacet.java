@@ -7,6 +7,7 @@
 package com.l7tech.skunkworks.message;
 
 import com.l7tech.common.mime.*;
+import com.l7tech.common.util.CausedIOException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -56,8 +57,28 @@ class MimeFacet extends MessageFacet {
             return getMimeBody().getOuterContentType();
         }
 
+        public long getContentLength() throws IOException {
+            try {
+                return getMimeBody().getEntireMessageBodyLength();
+            } catch (NoSuchPartException e) {
+                throw new CausedIOException(e);
+            }
+        }
+
+        public InputStream getEntireMessageBodyAsInputStream() throws IOException, NoSuchPartException {
+            return getMimeBody().getEntireMessageBodyAsInputStream(false);
+        }
+
         public PartInfo getFirstPart() {
             return mimeBody.getFirstPart();
+        }
+    }
+
+    public void close() {
+        try {
+            mimeBody.close();
+        } finally {
+            super.close();
         }
     }
 }

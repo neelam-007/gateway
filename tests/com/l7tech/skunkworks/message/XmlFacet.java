@@ -15,6 +15,7 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Represents a MimeFacet whose first part is text/xml.
@@ -78,6 +79,14 @@ class XmlFacet extends MessageFacet {
 
         public ContentTypeHeader getOuterContentType() throws IOException {
             return mk.getOuterContentType();
+        }
+
+        public long getContentLength() throws IOException {
+            return mk.getContentLength();
+        }
+
+        public InputStream getEntireMessageBodyAsInputStream() throws IOException, NoSuchPartException {
+            return mk.getEntireMessageBodyAsInputStream();
         }
 
         /**

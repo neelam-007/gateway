@@ -8,15 +8,15 @@ package com.l7tech.skunkworks.message;
 
 import org.apache.commons.httpclient.Cookie;
 
-import java.text.ParseException;
 import java.io.IOException;
+import java.text.ParseException;
 
 /**
  * Information about a request that arrived over HTTP.
  *
  * Note that in keeping with the Java Servlet API, requests allow headers to be read but not set.
  */
-public interface HttpRequestKnob extends HttpKnob {
+public interface HttpRequestKnob extends Knob {
     /**
      * @return the array of {@link Cookie}s that were found in this request. Never null, but may be empty.
      */

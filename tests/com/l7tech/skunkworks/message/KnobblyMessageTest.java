@@ -7,12 +7,14 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.TestDocuments;
+import com.l7tech.server.MockServletApi;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.ByteArrayInputStream;
 import java.util.Arrays;
 import java.util.logging.Logger;
@@ -174,6 +176,18 @@ public class KnobblyMessageTest extends TestCase {
         assertNotNull(msg.getMimeKnob());
     }
 
+    public void testHttpServletRequestKnob() throws Exception {
+        MockServletApi mockApi = MockServletApi.defaultMessageProcessingServletApi();
+        HttpServletRequest request = mockApi.getServletRequest();
+        HttpServletRequestKnob knob = new HttpServletRequestKnob(request);
+        logger.info("Request URI = " + knob.getRequestUri());
+        logger.info("Request URL = " + knob.getRequestUrl());
+    }
+
+    public void testHttpServletResponseKnob() throws Exception {
+        MockServletApi mockApi = MockServletApi.defaultMessageProcessingServletApi();
+        // TODO it works.  we have the FAITH
+    }
 
     /**
      * Test <code>KnobblyMessageTest</code> main.

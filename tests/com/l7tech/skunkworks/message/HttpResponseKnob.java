@@ -11,7 +11,7 @@ import org.apache.commons.httpclient.Cookie;
 /**
  * Information about a response to be sent via HTTP.
  */
-public interface HttpResponseKnob {
+public interface HttpResponseKnob extends Knob {
     /**
      * Adds the specified {@link Cookie} to the response
      * @param cookie the {@link Cookie} to be added. Must not be null.

@@ -32,4 +32,9 @@ abstract class MessageFacet {
             return delegate.getKnob(c);
         return null; // END OF LINE
     }
+
+    public void close() {
+        if (delegate != null)
+            delegate.close();
+    }
 }
