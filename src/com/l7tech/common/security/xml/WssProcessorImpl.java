@@ -143,7 +143,7 @@ public class WssProcessorImpl implements WssProcessor {
                 if (elementHasNamespace(securityChildToProcess, SoapUtil.SECURITY_URIS_ARRAY)) {
                     processUsernameToken(securityChildToProcess, cntx);
                 } else {
-                    logger.info("Encountered UsernameToken element but not of right namespace (" +
+                    logger.info("Encountered UsernameToken element but not of expected namespace (" +
                                 securityChildToProcess.getNamespaceURI() + ")");
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.SECURITY_CONTEXT_TOK_EL_NAME)) {
@@ -168,7 +168,15 @@ public class WssProcessorImpl implements WssProcessor {
                         cntx.securityTokens.add(secConTok);
                     }
                 } else {
-                    logger.info("Encountered SecurityContextToken element but not of right namespace (" +
+                    logger.info("Encountered SecurityContextToken element but not of expected namespace (" +
+                                securityChildToProcess.getNamespaceURI() + ")");
+                }
+            } else if (securityChildToProcess.getLocalName().equals(SoapUtil.WSSC_DK_EL_NAME)) {
+                if (securityChildToProcess.getNamespaceURI().equals(SoapUtil.WSSC_NAMESPACE)) {
+                    // todo, remember this symmetric key so it can later be used to process the signature
+                    // or the encryption
+                } else {
+                    logger.info("Encountered DerivedKey element but not of expected namespace (" +
                                 securityChildToProcess.getNamespaceURI() + ")");
                 }
             } else {
