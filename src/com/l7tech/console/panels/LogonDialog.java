@@ -484,12 +484,14 @@ public class LogonDialog extends JDialog {
                 ClientCredentialManager credentialManager = getCredentialManager();
                 getCredentialManager().onDisconnect(new ConnectionEvent(dialog, ConnectionEvent.DISCONNECTED));
 
-                // if the service is not avail, format the message and show to te client
-                if (!dialog.isServiceAvailable(serviceURL) && !dialog.sslHostNameMismatchUserNotified) {
-                    String msg = MessageFormat.format(dialog.resources.getString("logon.connect.error"),
-                      new Object[]{getHostPart(serviceURL)});
-                    JOptionPane.showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
-                    break;
+                // if the service is not avail, format the message and show to te client (if not already notified)
+                if (!dialog.isServiceAvailable(serviceURL)) {
+                    if (!dialog.sslHostNameMismatchUserNotified) {
+                        String msg = MessageFormat.format(dialog.resources.getString("logon.connect.error"),
+                          new Object[]{getHostPart(serviceURL)});
+                        JOptionPane.showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
+                    }
+                    continue;
                 }
 
                 dialog.serverUrlHistory.add(serverURL);
