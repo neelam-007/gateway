@@ -9,6 +9,8 @@ import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.panels.PublishServiceWizard.ServiceAndAssertion;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.MainWindow;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.service.PublishedService;
 
@@ -22,6 +24,7 @@ import javax.wsdl.Port;
 import javax.wsdl.WSDLException;
 import java.awt.*;
 import java.io.StringReader;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.RemoteException;
@@ -166,6 +169,10 @@ public class ServicePanel extends WizardStepPanel {
                         return Registry.getDefault().getServiceManager().resolveWsdlTarget(wsdlUrl);
                     } catch (RemoteException e) {
                         return e;
+                    } catch (MalformedURLException e) {
+                        return e;
+                    } catch (IOException e) {
+                        return e;
                     }
                 }
 
@@ -185,7 +192,8 @@ public class ServicePanel extends WizardStepPanel {
                 if (result instanceof Throwable) {
                     logger.log(Level.WARNING, msg, (Throwable)result);
                 }
-                JOptionPane.showMessageDialog(null,
+                final MainWindow mainWindow = TopComponents.getInstance().getMainWindow();
+                JOptionPane.showMessageDialog(mainWindow,
                                               msg,
                                               "Error",
                                               JOptionPane.ERROR_MESSAGE);

@@ -51,7 +51,7 @@ public class ServiceNode extends EntityHeaderNode {
     public PublishedService getPublishedService() throws FindException, RemoteException {
         if (svc == null) {
             EntityHeader eh = getEntityHeader();
-            svc = Registry.getDefault().getServiceManager().findServiceByPrimaryKey(eh.getOid());
+            svc = Registry.getDefault().getServiceManager().findServiceByID(eh.getOid());
             // throw something if null, the service may have been deleted
             if (svc == null) {
                 TopComponents creg = TopComponents.getInstance();

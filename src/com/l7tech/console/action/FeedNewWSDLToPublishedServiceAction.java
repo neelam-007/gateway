@@ -17,6 +17,7 @@ import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import javax.wsdl.WSDLException;
 import java.io.StringReader;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.RemoteException;
@@ -88,6 +89,14 @@ public class FeedNewWSDLToPublishedServiceAction extends NodeAction {
         } catch (RemoteException e) {
             logger.log(Level.WARNING, "cannot resolve wsdl", e);
             throw new RuntimeException("Error resolving WSDL. Consult log for more information.", e);
+        } catch (MalformedURLException e) {
+            logger.log(Level.WARNING, "Malformed URL, cannot resolve wsdl", e);
+            JOptionPane.showMessageDialog(mw, response + " is not a valid url.");
+            return;
+        } catch (IOException e) {
+            logger.log(Level.WARNING, "cannot access wsdl", e);
+            JOptionPane.showMessageDialog(mw, "Error accessing WSDL at "+response);
+            return;
         }
         try {
             svc.setWsdlUrl(response);

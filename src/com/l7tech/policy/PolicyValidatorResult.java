@@ -112,8 +112,7 @@ public class PolicyValidatorResult implements Serializable {
         return Collections.EMPTY_LIST;
     }
     /**
-     * The class represents the policy validation error
-     * todo: add warning and info levels
+     * The class represents the policy validation result
      */
     public static class Message implements Serializable {
         private int assertionOrdinal;

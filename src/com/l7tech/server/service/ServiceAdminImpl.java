@@ -43,7 +43,7 @@ public class ServiceAdminImpl extends RemoteService implements ServiceAdmin {
 
     public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/serviceAdmin";
 
-    public String resolveWsdlTarget(String url) throws RemoteException {
+    public String resolveWsdlTarget(String url) throws IOException, MalformedURLException {
         try {
             URL urltarget = new URL(url);
             HttpClient client = new HttpClient();
@@ -71,19 +71,17 @@ public class ServiceAdminImpl extends RemoteService implements ServiceAdmin {
         } catch (MalformedURLException e) {
             String msg = "Bad url: " + url;
             logger.log(Level.WARNING, msg, e);
-            throw new RemoteException(msg, e);
+            throw e;
         } catch (HttpException e) {
             String msg = "Http error getting " + url;
             logger.log(Level.WARNING, msg, e);
-            throw new RemoteException(msg, e);
-        } catch (IOException e) {
-            String msg = "Error getting " + url;
-            logger.log(Level.WARNING, msg, e);
-            throw new RemoteException(msg, e);
+            IOException ioe =new  IOException(msg);
+            ioe.initCause(e);
+            throw ioe;
         }
     }
 
-    public PublishedService findServiceByPrimaryKey(long oid) throws RemoteException, FindException {
+    public PublishedService findServiceByID(long oid) throws RemoteException, FindException {
         try {
             PublishedService service = getServiceManager().findByPrimaryKey(oid);
             if (service != null) {

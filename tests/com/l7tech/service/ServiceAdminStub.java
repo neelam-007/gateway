@@ -34,7 +34,7 @@ public class ServiceAdminStub implements ServiceAdmin {
      * @return
      * @throws RemoteException
      */
-    public PublishedService findServiceByPrimaryKey(long oid) throws RemoteException {
+    public PublishedService findServiceByID(long oid) throws RemoteException {
         return
           (PublishedService)services.get(new Long(oid));
     }
