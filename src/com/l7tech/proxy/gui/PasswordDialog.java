@@ -193,6 +193,7 @@ public class PasswordDialog extends JDialog {
     public static void main(String[] argv) {
         char[] word = PasswordDialog.getPassword(null, "Get Password");
         System.out.println("Got password: \"" + (word == null ? "<none>" : new String(word)) + "\"");
+        System.exit(0);
     }
 
     private class CapslockKeyListener implements KeyListener {
