@@ -13,6 +13,7 @@ import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.HexUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
@@ -20,10 +21,12 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
+import javax.crypto.BadPaddingException;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.Cipher;
 import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.Key;
-import java.security.PrivateKey;
+import java.security.*;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ArrayList;
@@ -320,6 +323,24 @@ public class XmlMangler {
         NodeList encryptedKeyElements = soapMsg.getElementsByTagNameNS(SoapUtil.XMLENC_NS, "EncryptedKey");
         for (int i = 0; i < encryptedKeyElements.getLength(); i++) {
             Element encryptedKey = (Element)encryptedKeyElements.item(i);
+            /*EncryptedKey ekey = new EncryptedKey(encryptedKeyEl);
+            DecryptionContext dc = new DecryptionContext();
+            AlgorithmFactoryExtn af = new AlgorithmFactoryExtn();
+            af.setProvider(JceProvider.getAsymmetricJceProvider().getName());
+            dc.setAlgorithmFactory(af);
+
+            Element method = XmlUtil.findFirstChildElementByName(encryptedKeyEl, SoapUtil.XMLENC_NS, "EncryptionMethod");
+            Element keyInfo = XmlUtil.findFirstChildElementByName(encryptedKeyEl, "http://www.w3.org/2000/09/xmldsig#", "KeyInfo");
+            dc.setEncryptedType(encryptedKeyEl, EncryptedData.CONTENT, method, keyInfo);
+            dc.setEncryptionMethod(method);
+            dc.setKey(recipientPrivateKey);
+
+            try {
+                dc.decrypt();
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "decryption error", e);
+            }
+            dc.getData();*/
             // check that this is for us by checking the SecurityTokenReference or something
             // todo
             // check that the algo is rsa
@@ -339,14 +360,29 @@ public class XmlMangler {
             } else {
                 // we got the value, decrypt it
                 String value = XmlUtil.getTextValue(cipherValue);
-                BASE64Decoder decoder = new BASE64Decoder(); // todo, mike told me about another decoder somewhere. can't find it
                 byte[] encryptedKeyBytes = null;
                 try {
-                    encryptedKeyBytes = decoder.decodeBuffer(value);
+                    encryptedKeyBytes = HexUtils.decodeBase64(value);
                 } catch (IOException e) {
                     logger.log(Level.WARNING, "cannot b64 decode CipherValue contents: " + value, e);
                 }
-                // todo, the actual RSA decryption
+                Cipher rsa = null;
+                try {
+                    //rsa = Cipher.getInstance("RSA/CBC/PKCS5Padding");
+                    rsa = Cipher.getInstance("RSA");
+                    rsa.init(Cipher.DECRYPT_MODE, recipientPrivateKey);
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "init error", e);
+                }
+
+                byte[] decrypted = new byte[0];
+                try {
+                    decrypted = rsa.doFinal(encryptedKeyBytes);
+                } catch (Exception e) {
+                    logger.log(Level.WARNING, "decryption error", e);
+                }
+                output.add(new AesKey(decrypted, decrypted.length*8));
+                //todo, fix problem with AES key length not supported (?)
             }
         }
         if (output.isEmpty()) {
