@@ -209,20 +209,20 @@ public class LogPanel extends JPanel {
         slider.setMajorTickSpacing(40);
 
         Dictionary table = new Hashtable();
-        JLabel aLabel = new JLabel("all");
+        JLabel aLabel = new JLabel("All");
 
         aLabel.setFont(new java.awt.Font("Dialog", 0, 11));
         table.put(new Integer(0), aLabel);
 
-        aLabel = new JLabel("info");
+        aLabel = new JLabel("Info");
         aLabel.setFont(new java.awt.Font("Dialog", 0, 11));
         table.put(new Integer(40), aLabel);
 
-        aLabel = new JLabel("warning");
+        aLabel = new JLabel("Warning");
         aLabel.setFont(new java.awt.Font("Dialog", 0, 11));
         table.put(new Integer(80), aLabel);
 
-        aLabel = new JLabel("severe");
+        aLabel = new JLabel("Severe");
         aLabel.setFont(new java.awt.Font("Dialog", 0, 11));
         table.put(new Integer(120), aLabel);
 
@@ -271,7 +271,7 @@ public class LogPanel extends JPanel {
             autoRefresh = new JCheckBox();
         }
         autoRefresh.setFont(new java.awt.Font("Dialog", 0, 12));
-        autoRefresh.setText("Auto-refresh");
+        autoRefresh.setText("Auto-Refresh");
         autoRefresh.setSelected(true);
         autoRefresh.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -615,7 +615,7 @@ public class LogPanel extends JPanel {
         SimpleDateFormat sdf = new SimpleDateFormat("MMM d yyyy hh:mm:ss aaa");
         Calendar cal = Calendar.getInstance();
         cal.setTime(time);
-        getLastUpdateTimeLabel().setText("Last updated: " + sdf.format(cal.getTime()) + "   ");
+        getLastUpdateTimeLabel().setText("Last Updated: " + sdf.format(cal.getTime()) + "   ");
     }
 
     // This customized renderer can render objects of the type TextandIcon

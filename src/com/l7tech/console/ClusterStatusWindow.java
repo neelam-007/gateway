@@ -696,7 +696,7 @@ public class ClusterStatusWindow extends JFrame implements ConnectionListener {
                         SimpleDateFormat sdf = new SimpleDateFormat("MMM d yyyy hh:mm:ss aaa");
                         Calendar cal = Calendar.getInstance();
                         cal.setTime(getCurrentClusterSystemTime());
-                        getLastUpdateLabel().setText("Last updated: " + sdf.format(cal.getTime()) + "   ");
+                        getLastUpdateLabel().setText("Last Updated: " + sdf.format(cal.getTime()) + "   ");
                         getStatusRefreshTimer().start();
                     } else {
                         if (isRemoteExceptionCaught()) {
