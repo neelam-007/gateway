@@ -28,7 +28,7 @@ public class RemoteIpRange extends Assertion {
      * @param allowRange true if addresses is this range are authorised, false if they are unauthorized
      */
     public RemoteIpRange(String startIp, int networkMask, boolean allowRange) {
-        if (!isValidIPAddress(startIp)) {
+        if (!checkIPAddressFormat(startIp)) {
             throw new IllegalArgumentException("invalid ip address " + startIp);
         }
         if (networkMask < 0 || networkMask > 32) {
@@ -50,7 +50,7 @@ public class RemoteIpRange extends Assertion {
      * the start ip address of the range specified by this assertion
      */
     public void setStartIp(String startIp) {
-        if (!isValidIPAddress(startIp)) {
+        if (!checkIPAddressFormat(startIp)) {
             throw new IllegalArgumentException("invalid ip address " + startIp);
         }
         this.startIp = startIp;
@@ -74,7 +74,10 @@ public class RemoteIpRange extends Assertion {
         this.networkMask = networkMask;
     }
 
-    public static boolean isValidIPAddress(String ipAdd) {
+    /**
+     * checks that the ip address passed is expressed in expected format (###.###.###.###)
+     */
+    public static boolean checkIPAddressFormat(String ipAdd) {
         if (ipAdd == null) return false;
         StringTokenizer st = new StringTokenizer(ipAdd, ".");
         if (st.countTokens() == 4) {
