@@ -25,10 +25,10 @@
                             <ConfirmationMethod>
                                 urn:oasis:names:tc:SAML:1.0:cm:holder-of-key
                             </ConfirmationMethod>
-                            <ds:KeyInfo>
+                            <!-- <ds:KeyInfo>
                                 <ds:KeyName>MyTourOperatorKey</ds:KeyName>
                                 <ds:KeyValue> ... </ds:KeyValue>
-                            </ds:KeyInfo>
+                            </ds:KeyInfo> -->
                         </SubjectConfirmation>
                     </Subject>
                     <Attribute
