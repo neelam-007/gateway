@@ -12,13 +12,12 @@ import com.l7tech.common.util.Locator;
 import com.l7tech.service.ServiceAdmin;
 
 import javax.swing.*;
+import javax.swing.Timer;
 import javax.swing.table.*;
-import java.util.ResourceBundle;
-import java.util.Hashtable;
-import java.util.Vector;
-import java.util.Iterator;
+import java.util.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.text.SimpleDateFormat;
 
 
 /*
@@ -34,10 +33,7 @@ public class ClusterStatusWindow extends JFrame {
     private static final int MAX = 100;
     private static final int MIN = 0;
     public static final String RESOURCE_PATH = "com/l7tech/console/resources";
-    private static
-            ResourceBundle resapplication =
-            java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
-
+    private static ResourceBundle resapplication = java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
     private Icon upArrowIcon = new ArrowIcon(0);
     private Icon downArrowIcon = new ArrowIcon(1);
 
@@ -134,23 +130,83 @@ public class ClusterStatusWindow extends JFrame {
         if (mainPane != null) return mainPane;
 
         mainPane = new javax.swing.JPanel();
-
-        mainPane = new javax.swing.JPanel();
         mainPane.setLayout(new BorderLayout());
         mainSplitPane = new javax.swing.JSplitPane();
 
-        gatewayStatusPanel = new javax.swing.JPanel();
         clusterStatusScrollPane = new javax.swing.JScrollPane();
-        clusterStatusTable = new javax.swing.JTable();
-        gatewayStatusTitle = new javax.swing.JLabel();
-        serviceStatPanel = new javax.swing.JPanel();
+        clusterStatusPane = new javax.swing.JPanel();
+        clusterStatusTitle = new javax.swing.JLabel();
+
+        serviceStatPane = new javax.swing.JPanel();
         serviceStatTitle = new javax.swing.JLabel();
 
         mainSplitPane.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
         mainSplitPane.setResizeWeight(0.5);
-        gatewayStatusPanel.setLayout(new java.awt.BorderLayout());
+        clusterStatusPane.setLayout(new java.awt.BorderLayout());
 
         clusterStatusScrollPane.setMinimumSize(new java.awt.Dimension(400, 220));
+        clusterStatusScrollPane.setViewportView(getClusterStatusTable());
+
+        clusterStatusPane.add(clusterStatusScrollPane, java.awt.BorderLayout.CENTER);
+
+        clusterStatusTitle.setFont(new java.awt.Font("Dialog", 1, 18));
+        clusterStatusTitle.setText("Gateway Status");
+        clusterStatusTitle.setMaximumSize(new java.awt.Dimension(136, 40));
+        clusterStatusTitle.setMinimumSize(new java.awt.Dimension(136, 40));
+        clusterStatusTitle.setPreferredSize(new java.awt.Dimension(136, 40));
+        clusterStatusPane.add(clusterStatusTitle, java.awt.BorderLayout.NORTH);
+
+        mainSplitPane.setTopComponent(clusterStatusPane);
+
+        serviceStatPane.setLayout(new java.awt.BorderLayout());
+
+        serviceStatTitle.setFont(new java.awt.Font("Dialog", 1, 18));
+        serviceStatTitle.setText(" Service Statistics");
+        serviceStatTitle.setMaximumSize(new java.awt.Dimension(136, 40));
+        serviceStatTitle.setMinimumSize(new java.awt.Dimension(136, 40));
+        serviceStatTitle.setPreferredSize(new java.awt.Dimension(136, 40));
+        serviceStatPane.add(serviceStatTitle, java.awt.BorderLayout.NORTH);
+
+        serviceStatPane.add(getStatisticsPane(), java.awt.BorderLayout.CENTER);
+
+        mainSplitPane.setBottomComponent(serviceStatPane);
+
+        mainPane.add(mainSplitPane, java.awt.BorderLayout.CENTER);
+        mainPane.add(getMessagePane(), java.awt.BorderLayout.SOUTH);
+
+        return mainPane;
+    }
+
+    private JPanel getMessagePane(){
+
+        if(messagePane != null) return messagePane;
+
+        messagePane = new JPanel();
+
+
+        messagePane.setLayout(new BorderLayout());
+        messagePane.setPreferredSize(new java.awt.Dimension(136, 40));
+        messagePane.setMinimumSize(new java.awt.Dimension(136, 40));
+        messagePane.setMaximumSize(new java.awt.Dimension(136, 40));
+        messagePane.add(getLastUpdateLabel(), java.awt.BorderLayout.EAST);
+
+        return messagePane;
+    }
+
+    private JLabel getLastUpdateLabel(){
+        if(updateTimeStamp != null) return updateTimeStamp;
+
+        updateTimeStamp = new JLabel();
+        updateTimeStamp.setText("");
+
+        return updateTimeStamp;
+    }
+
+    private JTable getClusterStatusTable(){
+
+        if(clusterStatusTable != null) return clusterStatusTable;
+
+        clusterStatusTable = new javax.swing.JTable();
         clusterStatusTable.setModel(getClusterStatusTableModel());
 
         BarIndicator loadShareRenderer = new BarIndicator(MIN, MAX, Color.blue);
@@ -218,42 +274,14 @@ public class ClusterStatusWindow extends JFrame {
                     }
                 });
 
-        for (int i = 0; i <= 6; i++) {
+        for (int i = 0; i < clusterStatusTable.getColumnModel().getColumnCount();  i++) {
             clusterStatusTable.getColumnModel().getColumn(i).setHeaderRenderer(iconHeaderRenderer);
         }
 
         addMouseListenerToHeaderInTable(clusterStatusTable);
         clusterStatusTable.getTableHeader().setReorderingAllowed(false);
 
-        clusterStatusScrollPane.setViewportView(clusterStatusTable);
-
-        gatewayStatusPanel.add(clusterStatusScrollPane, java.awt.BorderLayout.CENTER);
-
-        gatewayStatusTitle.setFont(new java.awt.Font("Dialog", 1, 18));
-        gatewayStatusTitle.setText("Gateway Status");
-        gatewayStatusTitle.setMaximumSize(new java.awt.Dimension(136, 40));
-        gatewayStatusTitle.setMinimumSize(new java.awt.Dimension(136, 40));
-        gatewayStatusTitle.setPreferredSize(new java.awt.Dimension(136, 40));
-        gatewayStatusPanel.add(gatewayStatusTitle, java.awt.BorderLayout.NORTH);
-
-        mainSplitPane.setLeftComponent(gatewayStatusPanel);
-
-        serviceStatPanel.setLayout(new java.awt.BorderLayout());
-
-        serviceStatTitle.setFont(new java.awt.Font("Dialog", 1, 18));
-        serviceStatTitle.setText(" Service Statistics");
-        serviceStatTitle.setMaximumSize(new java.awt.Dimension(136, 40));
-        serviceStatTitle.setMinimumSize(new java.awt.Dimension(136, 40));
-        serviceStatTitle.setPreferredSize(new java.awt.Dimension(136, 40));
-        serviceStatPanel.add(serviceStatTitle, java.awt.BorderLayout.NORTH);
-
-        serviceStatPanel.add(getStatisticsPane(), java.awt.BorderLayout.CENTER);
-
-        mainSplitPane.setRightComponent(serviceStatPanel);
-
-        mainPane.add(mainSplitPane, java.awt.BorderLayout.CENTER);
-
-        return mainPane;
+        return clusterStatusTable;
     }
 
 
@@ -293,10 +321,7 @@ public class ClusterStatusWindow extends JFrame {
             "Status", "Gateway", "Load Sharing %", "Request Routed %", "Load Avg", "Uptime", "IP Address"
         };
 
-        LogTableModel tableModel = new LogTableModel(rows, cols);
-
-        clusterStatusTableSorter = new ClusterStatusTableSorter(tableModel) {
-        };
+        clusterStatusTableSorter = new ClusterStatusTableSorter(new LogTableModel(rows, cols)) {};
 
         return clusterStatusTableSorter;
 
@@ -310,40 +335,6 @@ public class ClusterStatusWindow extends JFrame {
         if (clusterStatusAdmin == null) throw new RuntimeException("Cannot obtain ClusterStatusAdmin remote reference");
 
     }
-
-    // This customized renderer can render objects of the type TextandIcon
-    TableCellRenderer iconHeaderRenderer = new DefaultTableCellRenderer() {
-        public Component getTableCellRendererComponent(JTable table, Object value,
-                                                       boolean isSelected, boolean hasFocus, int row, int column) {
-            // Inherit the colors and font from the header component
-            if (table != null) {
-                JTableHeader header = table.getTableHeader();
-                if (header != null) {
-                    setForeground(header.getForeground());
-                    setBackground(header.getBackground());
-                    setFont(header.getFont());
-                    setHorizontalTextPosition(SwingConstants.LEFT);
-                }
-            }
-
-            setText((String) value);
-
-            if (getClusterStatusTableModel().getSortedColumn() == column) {
-
-                if (getClusterStatusTableModel().isAscending()) {
-                    setIcon(upArrowIcon);
-                } else {
-                    setIcon(downArrowIcon);
-                }
-            } else {
-                setIcon(null);
-            }
-
-            setBorder(UIManager.getBorder("TableHeader.cellBorder"));
-            setHorizontalAlignment(JLabel.CENTER);
-            return this;
-        }
-    };
 
     // Add a mouse listener to the Table to trigger a table sort
     // when a column heading is clicked in the JTable.
@@ -495,6 +486,9 @@ public class ClusterStatusWindow extends JFrame {
                 getClusterStatusTableModel().setData(cs);
                 getClusterStatusTableModel().getRealModel().setRowCount(cs.size());
                 getClusterStatusTableModel().fireTableDataChanged();
+
+                SimpleDateFormat sdf = new SimpleDateFormat( "MMM d yyyy HH:mm:ss aaa" );;
+                getLastUpdateLabel().setText("Last updated: " + sdf.format( Calendar.getInstance().getTime() ) + "      ");
                 getStatusRefreshTimer().start();
             }
         };
@@ -525,29 +519,65 @@ public class ClusterStatusWindow extends JFrame {
         clusterRequestCounterCache = new Vector();
     }
 
+    // This customized renderer can render objects of the type TextandIcon
+    TableCellRenderer iconHeaderRenderer = new DefaultTableCellRenderer() {
+        public Component getTableCellRendererComponent(JTable table, Object value,
+                                                       boolean isSelected, boolean hasFocus, int row, int column) {
+            // Inherit the colors and font from the header component
+            if (table != null) {
+                JTableHeader header = table.getTableHeader();
+                if (header != null) {
+                    setForeground(header.getForeground());
+                    setBackground(header.getBackground());
+                    setFont(header.getFont());
+                    setHorizontalTextPosition(SwingConstants.LEFT);
+                }
+            }
+
+            setText((String) value);
+
+            if (getClusterStatusTableModel().getSortedColumn() == column) {
+
+                if (getClusterStatusTableModel().isAscending()) {
+                    setIcon(upArrowIcon);
+                } else {
+                    setIcon(downArrowIcon);
+                }
+            } else {
+                setIcon(null);
+            }
+
+            setBorder(UIManager.getBorder("TableHeader.cellBorder"));
+            setHorizontalAlignment(JLabel.CENTER);
+            return this;
+        }
+    };
+
     private javax.swing.JLabel serviceStatTitle;
-    private javax.swing.JLabel gatewayStatusTitle;
-
+    private javax.swing.JLabel clusterStatusTitle;
+    private javax.swing.JLabel updateTimeStamp;
+    private javax.swing.JPanel messagePane;
+    private javax.swing.JPanel frameContentPane;
     private javax.swing.JPanel mainPane;
-    private javax.swing.JPanel serviceStatPanel;
-    private javax.swing.JPanel gatewayStatusPanel;
-    private javax.swing.JScrollPane clusterStatusScrollPane;
+    private javax.swing.JPanel serviceStatPane;
+    private javax.swing.JPanel clusterStatusPane;
     private javax.swing.JSplitPane mainSplitPane;
+    private javax.swing.JScrollPane clusterStatusScrollPane;
     private javax.swing.JTable clusterStatusTable;
-
     private javax.swing.JMenuBar clusterWindowMenuBar;
     private javax.swing.JMenu fileMenu;
     private javax.swing.JMenu helpMenu;
     private javax.swing.JMenuItem exitMenuItem;
     private javax.swing.JMenuItem helpTopicsMenuItem;
+
     private ClusterStatusTableSorter clusterStatusTableSorter = null;
     private StatisticsPanel statisticsPane;
     private Vector clusterRequestCounterCache = new Vector();
-    private JPanel frameContentPane;
     private javax.swing.Timer statusRefreshTimer;
     private ClusterStatusAdmin clusterStatusAdmin;
     private ServiceAdmin serviceManager;
     private Hashtable currentNodeList;
+
 
 }
 
