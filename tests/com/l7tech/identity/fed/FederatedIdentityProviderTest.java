@@ -5,6 +5,7 @@ import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.SsgAdminSession;
+import com.l7tech.admin.AdminContext;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -17,18 +18,25 @@ import java.util.List;
  * @version $Revision$
  */
 public class FederatedIdentityProviderTest extends TestCase {
+    private SsgAdminSession ssgAdminSession;
+    private AdminContext adminContext;
+    private FederatedIdentityProviderConfig config;
+
     /**
      * test <code>FederatedIdentityProviderTest</code> constructor
      */
-    public FederatedIdentityProviderTest( String name ) {
-        super( name );
+    public FederatedIdentityProviderTest(String name) throws Exception {
+        super(name);
+        ssgAdminSession = new SsgAdminSession();
+        adminContext = ssgAdminSession.getAdminContext();
+
     }
 
     /**
      * create the <code>TestSuite</code> for the FederatedIdentityProviderTest <code>TestCase</code>
      */
     public static Test suite() {
-        TestSuite suite = new TestSuite( FederatedIdentityProviderTest.class );
+        TestSuite suite = new TestSuite(FederatedIdentityProviderTest.class);
         return suite;
     }
 
@@ -43,7 +51,7 @@ public class FederatedIdentityProviderTest extends TestCase {
         SamlConfig.AttributeStatementConfig att = saml.new AttributeStatementConfig();
         att.setName("foo");
         att.setNamespaceUri("urn:example.com:foo");
-        att.setValues(new String[] { "bar", "baz" });
+        att.setValues(new String[]{"bar", "baz"});
         configs.add(att);
         saml.setAttributeStatementConfigs(configs);
     }
@@ -63,67 +71,46 @@ public class FederatedIdentityProviderTest extends TestCase {
     }
 
     public void testSaveConfig() throws Exception {
-        final long oid = ((Long)new SsgAdminSession() {
-            protected Object doSomething() throws Exception {
-                return new Long(getIdentityAdmin().saveIdentityProviderConfig(config));
-            }
-        }.doIt()).longValue();;
-
+        final long oid = adminContext.getIdentityAdmin().saveIdentityProviderConfig(config);
         System.err.println("Saved Federated IDPC #" + oid);
 
-        FederatedIdentityProviderConfig conf = (FederatedIdentityProviderConfig)new SsgAdminSession() {
-            protected Object doSomething() throws Exception {
-                return getIdentityAdmin().findIdentityProviderConfigByID(oid);
-            }
-        }.doIt();
+        FederatedIdentityProviderConfig conf = (FederatedIdentityProviderConfig)adminContext.getIdentityAdmin().findIdentityProviderConfigByID(oid);
 
         assertNotNull(conf);
         System.err.println("Loaded FIPC " + conf);
-
-        new SsgAdminSession() {
-            protected Object doSomething() throws Exception {
-                getIdentityAdmin().deleteIdentityProviderConfig(oid);
-                return null;
-            }
-        }.doIt();
+        adminContext.getIdentityAdmin().deleteIdentityProviderConfig(oid);
     }
 
     public void testSaveVirtualGroup() throws Exception {
-        final IdentityProviderConfig config = (IdentityProviderConfig) new SsgAdminSession() {
-            protected Object doSomething() throws Exception {
-                EntityHeader[] configs = getIdentityAdmin().findAllIdentityProviderConfig();
-                for ( int i = 0; i < configs.length; i++ ) {
-                    EntityHeader entityHeader = configs[i];
-                    if ( entityHeader.getType() == EntityType.ID_PROVIDER_CONFIG ) {
-                        IdentityProviderConfig config = getIdentityAdmin().findIdentityProviderConfigByID(entityHeader.getOid());
-                        if ( config.type() == IdentityProviderType.FEDERATED ) return config;
-                    }
+        IdentityProviderConfig config = null;
+
+        EntityHeader[] configs = adminContext.getIdentityAdmin().findAllIdentityProviderConfig();
+        for (int i = 0; i < configs.length; i++) {
+            EntityHeader entityHeader = configs[i];
+            if (entityHeader.getType() == EntityType.ID_PROVIDER_CONFIG) {
+                if (config.type() == IdentityProviderType.FEDERATED) {
+                    config = adminContext.getIdentityAdmin().findIdentityProviderConfigByID(entityHeader.getOid());
                 }
-                return null;
             }
-        }.doIt();
+        }
 
         assertNotNull("There must already be a Federated Identity Provider", config);
 
         final VirtualGroup vg = new VirtualGroup();
         vg.setName("CN is anything");
         vg.setX509SubjectDnPattern("CN=*");
-        String soid = (String)new SsgAdminSession() {
-            protected Object doSomething() throws Exception {
-                return getIdentityAdmin().saveGroup(config.getOid(), vg, null);
-            }
-        }.doIt();
+        String soid = adminContext.getIdentityAdmin().saveGroup(config.getOid(), vg, null);
 
-        assertNotNull("Couldn't save virtual group",soid);
+        assertNotNull("Couldn't save virtual group", soid);
     }
 
     /**
      * Test <code>FederatedIdentityProviderTest</code> main.
      */
-    public static void main( String[] args ) throws
-                                             Throwable {
-        junit.textui.TestRunner.run( suite() );
+    public static void main
+      (String[] args) throws
+      Throwable {
+        junit.textui.TestRunner.run(suite());
     }
 
-    private FederatedIdentityProviderConfig config;
 }

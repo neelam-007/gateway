@@ -6,121 +6,66 @@
 
 package com.l7tech.server;
 
-import com.l7tech.common.security.TrustedCertAdmin;
-import com.l7tech.common.util.Locator;
+import com.l7tech.admin.AdminContext;
+import com.l7tech.admin.AdminLogin;
 import com.l7tech.common.util.JdkLoggerConfigurator;
-import com.l7tech.common.locator.SpringLocator;
-import com.l7tech.console.security.SecurityProvider;
+import com.l7tech.console.util.History;
 import com.l7tech.console.util.Preferences;
-import com.l7tech.identity.IdentityAdmin;
-import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.service.ServiceAdmin;
-
-import javax.security.auth.Subject;
-import java.net.PasswordAuthentication;
-import java.security.PrivilegedExceptionAction;
-
+import com.l7tech.remote.rmi.EditableRmiProxyFactoryBean;
+import com.l7tech.remote.rmi.NamingURL;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
+
+import java.net.MalformedURLException;
+import java.net.URL;
 
 /**
  * @author alex
  * @version $Revision$
  */
-public abstract class SsgAdminSession {
-    protected SsgAdminSession() throws Exception {
+public class SsgAdminSession {
+    private ApplicationContext applicationContext;
+    private AdminContext adminContext;
+
+    public SsgAdminSession() throws Exception {
         this(new String[]{});
     }
 
-    protected SsgAdminSession(String[] args) throws Exception {
+    public SsgAdminSession(String[] args) throws Exception {
         if (args.length >= 1) {
-            System.setProperty(Preferences.SERVICE_URL, args[0]);
+            hostPort = args[0];
 
             if (args.length >= 3) {
-                _adminlogin = args[1];
-                _adminpass = args[2];
+                adminlogin = args[1];
+                adminpass = args[2];
             }
         }
+
         JdkLoggerConfigurator.configure("com.l7tech.console", "com/l7tech/console/resources/logging.properties");
-
-        Preferences prefs = Preferences.getPreferences();
-        prefs.updateFromProperties(System.getProperties(), false);
-        /* so it is visible in help/about */
-        prefs.updateSystemProperties();
-        ApplicationContext ctx = createApplicationContext();
-        Locator.setDefault(new SpringLocator(ctx));
-
+        // initialize preferences
+        Preferences preferences = Preferences.getPreferences();
+        preferences.updateFromProperties(System.getProperties(), false);
+        preferences.updateSystemProperties();
+        // application context
+        applicationContext = createApplicationContext();
+        System.out.println("Connecting to " + hostPort);
+        NamingURL adminServiceNamingURL = NamingURL.parse(NamingURL.DEFAULT_SCHEME + "://" + hostPort + "/AdminLogin");
+        EditableRmiProxyFactoryBean bean = (EditableRmiProxyFactoryBean)applicationContext.getBean("&adminLogin");
+        bean.setServiceUrl(adminServiceNamingURL.toString());
+        bean.resetStub();
+        AdminLogin adminLogin = (AdminLogin)applicationContext.getBean("adminLogin");
+        adminContext = adminLogin.login(adminlogin, adminpass);
     }
 
-    public Object doIt() throws Exception {
-        final Subject current = new Subject();
-
-        PrivilegedExceptionAction action = new PrivilegedExceptionAction() {
-            public Object run() throws Exception {
-                SecurityProvider ccm = getCredentialManager();
-                ccm.getAuthenticationProvider().login(new PasswordAuthentication(_adminlogin, _adminpass.toCharArray()), null);
-                return doSomething();
-            }
-        };
-
-        return Subject.doAs(current, action);
+    public AdminContext getAdminContext() {
+        return adminContext;
     }
 
-    protected abstract Object doSomething() throws Exception;
-
-    private static SecurityProvider getCredentialManager() {
-        SecurityProvider credentialManager =
-          (SecurityProvider)Locator.getDefault().lookup(SecurityProvider.class);
-        if (credentialManager == null) { // bug
-            throw new IllegalStateException("No credential manager configured in services");
-        }
-        return credentialManager;
+    public ApplicationContext getApplicationContext() {
+        return applicationContext;
     }
 
-    protected ServiceAdmin getServiceAdmin() {
-        if (_serviceAdmin == null) {
-            _serviceAdmin =
-              (ServiceAdmin)Locator.getDefault().lookup(ServiceAdmin.class);
-            if (_serviceAdmin == null) { // bug
-                throw new IllegalStateException("No ServiceAdmin configured in services");
-            }
-        }
-        return _serviceAdmin;
-    }
-
-    protected IdentityAdmin getIdentityAdmin() {
-        if (_identityAdmin == null) {
-            _identityAdmin =
-              (IdentityAdmin)Locator.getDefault().lookup(IdentityAdmin.class);
-            if (_identityAdmin == null) { // bug
-                throw new IllegalStateException("No ServiceAdmin configured in services");
-            }
-        }
-        return _identityAdmin;
-    }
-
-    protected TrustedCertAdmin getTrustedCertAdmin() {
-        if (_trustedCertAdmin == null) {
-            _trustedCertAdmin = (TrustedCertAdmin)Locator.getDefault().lookup(TrustedCertAdmin.class);
-            if (_trustedCertAdmin == null) throw new IllegalStateException("No TrustedCertAdmin configured in services");
-        }
-        return _trustedCertAdmin;
-    }
-
-    /**
-     * @deprecated No more part of the admin interface, find a different way possibly using the {@link IdentityAdmin}
-     */
-    protected IdentityProviderConfigManager getIdentityProviderConfigManager() {
-        if (_identityProviderConfigManager == null) {
-            _identityProviderConfigManager = (IdentityProviderConfigManager)Locator.getDefault().lookup(IdentityProviderConfigManager.class);
-            if (_identityProviderConfigManager == null) {
-                throw new IllegalStateException("No IdentityProviderConfigManager configured in services");
-            }
-        }
-        return _identityProviderConfigManager;
-    }
-
-    private static ApplicationContext createApplicationContext() {
+    private ApplicationContext createApplicationContext() {
         String ctxName = System.getProperty("ssm.application.context");
         if (ctxName == null) {
             ctxName = "com/l7tech/console/resources/beans-context.xml";
@@ -129,11 +74,24 @@ public abstract class SsgAdminSession {
         return context;
     }
 
-    private String _adminlogin = "admin";
-    private String _adminpass = "password";
+    private String adminlogin = "admin";
+    private String adminpass = "password";
+    private String hostPort = defaultHostPort();
 
-    private ServiceAdmin _serviceAdmin;
-    private IdentityAdmin _identityAdmin;
-    private IdentityProviderConfigManager _identityProviderConfigManager;
-    private TrustedCertAdmin _trustedCertAdmin;
+    private String defaultHostPort() {
+        Preferences preferences = Preferences.getPreferences();
+
+        History serverUrlHistory = preferences.getHistory(Preferences.SERVICE_URL);
+        Object[] urls = serverUrlHistory.getEntries();
+        for (int i = 0; i < urls.length; i++) {
+            String surl = urls[i].toString();
+            try {
+                URL url = new URL(surl);
+                return url.getHost() + ":" + url.getPort();
+            } catch (MalformedURLException e) {
+            }
+            return surl;
+        }
+        return "localhost:2124";
+    }
 }

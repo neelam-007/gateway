@@ -3,6 +3,7 @@ package com.l7tech.server;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.admin.AdminContext;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -27,11 +28,16 @@ import java.util.Set;
  * @version $Revision$
  */
 public class TrustedCertAdminTest extends TestCase {
+    private SsgAdminSession ssgAdminSession;
+    private AdminContext adminContext;
+
     /**
      * test <code>TrustedCertAdminTest</code> constructor
      */
-    public TrustedCertAdminTest( String name ) {
+    public TrustedCertAdminTest( String name ) throws Exception {
         super( name );
+        ssgAdminSession = new SsgAdminSession();
+        adminContext = ssgAdminSession.getAdminContext();
     }
 
     /**
@@ -43,11 +49,7 @@ public class TrustedCertAdminTest extends TestCase {
     }
 
     public void testRetrieveCertIgnoreHostname() throws Exception {
-        X509Certificate[] chain = (X509Certificate[]) new SsgAdminSession() {
-            protected Object doSomething() throws Exception {
-                return getTrustedCertAdmin().retrieveCertFromUrl("https://mail.l7tech.com/", true);
-            }
-        }.doIt();
+        X509Certificate[] chain = adminContext.getTrustedCertAdmin().retrieveCertFromUrl("https://mail.l7tech.com/", true);
         assertNotNull(chain);
         for ( int i = 0; i < chain.length; i++ ) {
             X509Certificate cert = chain[i];
@@ -57,12 +59,7 @@ public class TrustedCertAdminTest extends TestCase {
 
     public void testRetrieveCertWrongHostname() throws Exception {
         try {
-            new SsgAdminSession() {
-                public Object doSomething() throws Exception {
-                    getTrustedCertAdmin().retrieveCertFromUrl("https://mail.l7tech.com/", false);
-                    return null;
-                }
-            }.doIt();
+           adminContext.getTrustedCertAdmin().retrieveCertFromUrl("https://mail.l7tech.com/", false);
             fail("Should have thrown");
         } catch (Exception e) {
             // OK
@@ -71,12 +68,7 @@ public class TrustedCertAdminTest extends TestCase {
 
     public void testRetrieveCertHttpUrl() throws Exception {
         try {
-            new SsgAdminSession() {
-                public Object doSomething() throws Exception {
-                    getTrustedCertAdmin().retrieveCertFromUrl("http://mail.l7tech.com:8080/");
-                    return null;
-                }
-            }.doIt();
+                    adminContext.getTrustedCertAdmin().retrieveCertFromUrl("http://mail.l7tech.com:8080/");
             fail("Should have thrown");
         } catch (Exception e) {
             // OK
@@ -85,12 +77,7 @@ public class TrustedCertAdminTest extends TestCase {
 
     public void testRetrieveCertWrongPort() throws Exception {
         try {
-            new SsgAdminSession() {
-                public Object doSomething() throws Exception {
-                    getTrustedCertAdmin().retrieveCertFromUrl("https://mail.l7tech.com:80/", true);
-                    return null;
-                }
-            }.doIt();
+                   adminContext.getTrustedCertAdmin().retrieveCertFromUrl("https://mail.l7tech.com:80/", true);
             fail("Should have thrown");
         } catch (Exception e) {
             // OK
@@ -99,12 +86,7 @@ public class TrustedCertAdminTest extends TestCase {
 
     public void testRetrieveCertUnknownHost() throws Exception {
         try {
-            new SsgAdminSession() {
-                public Object doSomething() throws Exception {
-                    getTrustedCertAdmin().retrieveCertFromUrl("https://fiveearthmoneysperyear.l7tech.com:8443/");
-                    return null;
-                }
-            }.doIt();
+                    adminContext.getTrustedCertAdmin().retrieveCertFromUrl("https://fiveearthmoneysperyear.l7tech.com:8443/");
             fail("Should have thrown");
         } catch (Exception e) {
             // OK
@@ -113,61 +95,35 @@ public class TrustedCertAdminTest extends TestCase {
 
     public void testUpdateCert() throws Exception {
         final TrustedCert tc = getTrustedCert();
-        final Long oid = (Long)new SsgAdminSession() {
-            protected Object doSomething() throws Exception {
-                return new Long(getTrustedCertAdmin().saveCert(tc));
-            }
-        }.doIt();
+        final Long oid =
+                new Long(adminContext.getTrustedCertAdmin().saveCert(tc));
         System.out.println("Saved " + oid );
 
         tc.setSubjectDn("The other one");
         tc.setTrustedForSsl(true);
         tc.setOid(oid.longValue());
 
-        new SsgAdminSession() {
-            protected Object doSomething() throws Exception {
-                return new Long(getTrustedCertAdmin().saveCert(tc));
-            }
-        }.doIt();
+        new Long(adminContext.getTrustedCertAdmin().saveCert(tc));
         System.out.println("Updated " + oid );
 
-        TrustedCert tc2 = (TrustedCert) new SsgAdminSession() {
-            protected Object doSomething() throws Exception {
-                return getTrustedCertAdmin().findCertByPrimaryKey(oid.longValue());
-            }
-        }.doIt();
+        TrustedCert tc2 = adminContext.getTrustedCertAdmin().findCertByPrimaryKey(oid.longValue());
 
         assertEquals(tc,tc2);
 
-        new SsgAdminSession() {
-            protected Object doSomething() throws Exception {
-                getTrustedCertAdmin().deleteCert(oid.longValue());
-                return null;
-            }
-        }.doIt();
-
+                adminContext.getTrustedCertAdmin().deleteCert(oid.longValue());
         System.out.println("Deleted " + oid );
     }
 
     public void testFindAllCerts() throws Exception {
         final TrustedCert tc = getTrustedCert();
 
-        final Set newOids = (Set)new SsgAdminSession() {
-            protected Object doSomething() throws Exception {
                 Set oids = new HashSet();
-                oids.add(new Long(getTrustedCertAdmin().saveCert(tc)));
-                oids.add(new Long(getTrustedCertAdmin().saveCert(tc)));
-                return oids;
-            }
-        }.doIt();
+                oids.add(new Long(adminContext.getTrustedCertAdmin().saveCert(tc)));
+                oids.add(new Long(adminContext.getTrustedCertAdmin().saveCert(tc)));
 
-        System.out.println("Saved " + newOids);
+        System.out.println("Saved " + oids);
 
-        List all = (List)new SsgAdminSession() {
-            protected Object doSomething() throws Exception {
-                return getTrustedCertAdmin().findAllCerts();
-            }
-        }.doIt();
+        List all = adminContext.getTrustedCertAdmin().findAllCerts();
 
         Set foundOids = new HashSet();
         for ( Iterator iterator = all.iterator(); iterator.hasNext(); ) {
@@ -177,19 +133,14 @@ public class TrustedCertAdminTest extends TestCase {
 
         System.out.println("Found " + foundOids);
 
-        assertTrue(foundOids.containsAll(newOids));
+        assertTrue(foundOids.containsAll(oids));
 
         final Set deletedOids = new HashSet();
-        new SsgAdminSession() {
-            protected Object doSomething() throws Exception {
-                for ( Iterator i = newOids.iterator(); i.hasNext(); ) {
+                for ( Iterator i = oids.iterator(); i.hasNext(); ) {
                     Long oid = (Long) i.next();
-                    getTrustedCertAdmin().deleteCert(oid.longValue());
+                    adminContext.getTrustedCertAdmin().deleteCert(oid.longValue());
                     deletedOids.add(oid);
                 }
-                return null;
-            }
-        }.doIt();
         System.out.println("Deleted " + deletedOids);
     }
 
@@ -211,21 +162,11 @@ public class TrustedCertAdminTest extends TestCase {
         X509Certificate cert = tc.getCertificate();
         System.out.println("Saving cert with dn '" + cert.getSubjectDN().getName() + "' and usage '" + tc.getUsageDescription() + "'" );
 
-        SsgAdminSession save = new SsgAdminSession() {
-            protected Object doSomething() throws Exception {
-                return new Long(getTrustedCertAdmin().saveCert(tc));
-            }
-        };
-        final Long oid = (Long)save.doIt();
+        final Long oid = new Long(adminContext.getTrustedCertAdmin().saveCert(tc));
         System.out.println("Saved cert " + oid);
 
-        SsgAdminSession find = new SsgAdminSession() {
-            protected Object doSomething() throws Exception {
-                return getTrustedCertAdmin().findCertByPrimaryKey(oid.longValue());
-            }
-        };
 
-        TrustedCert tc2 = (TrustedCert)find.doIt();
+        TrustedCert tc2 = adminContext.getTrustedCertAdmin().findCertByPrimaryKey(oid.longValue());
         assertNotNull(tc2);
         System.out.println("Loaded TrustedCert " + tc2);
         System.out.println("DN is " + tc2.getCertificate().getSubjectDN().getName() );
@@ -233,17 +174,10 @@ public class TrustedCertAdminTest extends TestCase {
         assertEquals(tc2.getSubjectDn(), tc.getSubjectDn());
         assertEquals(tc2.getCertificate(), tc.getCertificate());
 
-        SsgAdminSession delete = new SsgAdminSession() {
-            protected Object doSomething() throws Exception {
-                getTrustedCertAdmin().deleteCert(oid.longValue());
-                return null;
-            }
-        };
-
-        delete.doIt();
+        adminContext.getTrustedCertAdmin().deleteCert(oid.longValue());
         System.out.println("Deleted TrustedCert " + oid);
 
-        Object gone = find.doIt();
+        Object gone = adminContext.getTrustedCertAdmin().findCertByPrimaryKey(oid.longValue());
         assertNull(gone);
     }
 
