@@ -259,7 +259,7 @@ public class JmsReceiver implements ServerComponentLifecycle {
             try {
                 while ( !_stop ) {
                     try {
-                        _logger.finest( "Polling for a message on " + _inboundRequestEndpoint.getDestinationName() );
+//                        _logger.finest( "Polling for a message on " + _inboundRequestEndpoint.getDestinationName() );
                         Message jmsMessage = getConsumer().receive( RECEIVE_TIMEOUT );
                         if ( jmsMessage != null ) {
                             _logger.fine( "Received a message on " + _inboundRequestEndpoint.getDestinationName() );
