@@ -35,28 +35,9 @@ public class MemberOfGroup extends IdentityAssertion {
         _groupName = groupName;
     }
 
-    public MemberOfGroup( long providerOid, String groupOid ) {
-        super( providerOid );
-        _groupOid = groupOid;
-    }
-
-    /**
-     * Sets the Assertion's <code>groupOid</code> property.
-     * @deprecated Please use <code>groupName</code> instead!
-     * @param oid
-     */
-    public void setGroupOid( String oid ) {
-        if (oid != _groupOid) _group = null;
-        _groupOid = oid;
-    }
-
-    /**
-     * Gets the value of the <code>groupOid</code> property.
-     * @deprecated Please use <code>groupName</code> instead!
-     * @return
-     */
-    public String getGroupOid() {
-        return _groupOid;
+    public MemberOfGroup(long providerOid, String groupName) {
+        super(providerOid);
+        _groupName = groupName;
     }
 
     /**
@@ -65,12 +46,10 @@ public class MemberOfGroup extends IdentityAssertion {
      * @throws FindException
      */
     protected Group getGroup() throws FindException {
-        if ( _group == null ) {
+        if (_group == null) {
             GroupManager gman = getIdentityProvider().getGroupManager();
-            if ( _groupOid != null ) {
-                _group = gman.findByPrimaryKey( _groupOid );
-            } else if ( _groupName != null ) {
-                _group = gman.findByName( _groupName );
+            if (_groupName != null) {
+                _group = gman.findByName(_groupName);
             }
         }
         return _group;
@@ -81,23 +60,21 @@ public class MemberOfGroup extends IdentityAssertion {
      * @param user
      * @return
      */
-    public AssertionStatus doCheckUser( User user ) {
+    public AssertionStatus doCheckUser(User user) {
         Set userGroups = user.getGroups();
         try {
             Group targetGroup = getGroup();
-            if ( targetGroup != null && userGroups.contains( targetGroup ) )
+            if (targetGroup != null && userGroups.contains(targetGroup))
                 return AssertionStatus.NONE;
             else {
                 return AssertionStatus.AUTH_FAILED;
             }
-        } catch ( FindException fe ) {
+        } catch (FindException fe) {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, fe);
             return AssertionStatus.FAILED;
         }
     }
 
-    protected String _groupOid;
     protected String _groupName;
-
     protected transient Group _group;
 }
