@@ -95,9 +95,11 @@ public class DefaultPolicyValidator extends PolicyValidator {
 
         public void validate(Assertion a) {
             ValidatorFactory.getValidator(a).validate(assertionPath, result);
-            if (isPreconditionAssertion(a)) {
+            // has precondition
+            if (hasPreconditionAssertion(a)) {
                 processPrecondition(a);
-            } else if (isComposite(a)) {
+            }
+            if (isComposite(a)) {
                 processComposite((CompositeAssertion)a);
             } else if (isCrendentialSource(a)) {
                 processCredentialSource(a);
@@ -291,7 +293,6 @@ public class DefaultPolicyValidator extends PolicyValidator {
                     }
                 };
                 deferredValidators.add(dv);
-                // processCredentialSource(a);
             } else if (a instanceof XslTransformation) {
                 // check that the assertion is on the right side of the routing
                 XslTransformation ass = (XslTransformation)a;
@@ -400,7 +401,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
             return a instanceof CompositeAssertion;
         }
 
-        private boolean isPreconditionAssertion(Assertion a) {
+        private boolean hasPreconditionAssertion(Assertion a) {
             // check preconditions for both SslAssertion and  XmlResponseSecurity assertions - see processPrecondition()
             if (a instanceof SslAssertion || a instanceof XmlResponseSecurity || a instanceof HttpClientCert ||
               a instanceof XslTransformation)
