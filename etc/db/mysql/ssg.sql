@@ -69,8 +69,8 @@ CREATE TABLE internal_group (
 --
 
 
-INSERT INTO internal_group VALUES (2,0,'Gateway Administrators','Admin console users having full administration rights to the gateway');
-INSERT INTO internal_group VALUES (4,0,'Gateway Operators','Admin console users having read only administration rights to the gateway');
+INSERT INTO internal_group VALUES (2,0,'Gateway Administrators','SecureSpan Manager users with full administrative rights in the SecureSpan Gateway.');
+INSERT INTO internal_group VALUES (4,0,'Gateway Operators','SecureSpan Manager users with partial read-only rights in the SecureSpan Gateway.');
 
 --
 -- Table structure for table 'internal_user'
