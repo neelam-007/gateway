@@ -91,8 +91,9 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
                 query.add(Expression.in(PROP_LEVEL, levels));
             }
 
-            if (criteria.startMessageNumber > 0) query.add(Expression.ge(PROP_OID, new Long(criteria.startMessageNumber)));
-            if (criteria.endMessageNumber > 0) query.add(Expression.le(PROP_OID, new Long(criteria.endMessageNumber)));
+            // The semantics of these start & end parameters seem to be kinda backwards
+            if (criteria.startMessageNumber > 0) query.add(Expression.le(PROP_OID, new Long(criteria.startMessageNumber)));
+            if (criteria.endMessageNumber > 0) query.add(Expression.gt(PROP_OID, new Long(criteria.endMessageNumber)));
 
             if (criteria.nodeId != null) query.add(Expression.eq(PROP_NODEID, criteria.nodeId));
 
