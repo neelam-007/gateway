@@ -1,7 +1,5 @@
 package com.l7tech.common.audit;
 
-import com.l7tech.common.audit.Messages;
-
 import java.util.logging.Level;
 
 /**
