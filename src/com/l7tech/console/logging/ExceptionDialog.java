@@ -86,7 +86,7 @@ public class ExceptionDialog extends JDialog implements ActionListener {
                 getRootPane().setWindowDecorationStyle(getDecorationStyle(level));
             }
         }
-        setResizable(false);
+        setResizable(true);
         messageLabel = new JLabel(createMessage(message), SwingConstants.CENTER);
         iconLabel = levelIcon(level);
         iconLabel.setBorder(BorderFactory.createEmptyBorder(0, 30, 0, 0));
