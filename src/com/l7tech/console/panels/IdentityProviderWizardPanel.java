@@ -9,6 +9,8 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
@@ -39,7 +41,6 @@ import java.util.Iterator;
  */
 public class IdentityProviderWizardPanel extends WizardStepPanel {
     private DefaultComboBoxModel providersComboBoxModel;
-    private JCheckBox anonymousAccessCheckBox;
 
     /** Creates new form IdentityProviderWizardPanel */
     public IdentityProviderWizardPanel() {
@@ -69,12 +70,30 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
 
         credentialsLocationComboBox =
           Components.getCredentialsLocationComboBox();
+        credentialsLocationComboBox.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                boolean enable = !isAnonymous();
+                buttonAdd.setEnabled(enable);
+                buttonAddAll.setEnabled(enable);
+                buttonRemove.setEnabled(enable);
+                buttonRemoveAll.setEnabled(enable);
+                identitiesInTable.setEnabled(enable);
+                identitiesInTable.tableChanged(null);
+                identitiesOutTable.setEnabled(enable);
+                identitiesOutTable.tableChanged(null);
+                providersComboBox.setEnabled(enable);
+            }
+        });
+        SwingUtilities.invokeLater(new Runnable() {
+             public void run() {
+                 credentialsLocationComboBox.setSelectedIndex(0);
+             }
+         });
 
         credentialsAndTransportPanel = new JPanel();
         credentialsLocationjPanel = new JPanel();
         sslCheckBox = new JCheckBox();
         sslPanel = new JPanel();
-        anonymousAccessCheckBox = new JCheckBox();
 
         setLayout(new BorderLayout());
 
@@ -129,27 +148,6 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         });
 
         providerSelectorPanel.add(providersComboBox, BorderLayout.WEST);
-        anonymousAccessCheckBox.setText("Anonymous access");
-        anonymousAccessCheckBox.setHorizontalTextPosition(SwingConstants.TRAILING);
-        anonymousAccessCheckBox.
-          addActionListener(new ActionListener() {
-              /** Invoked when an action occurs. */
-              public void actionPerformed(ActionEvent e) {
-                  JCheckBox cb = (JCheckBox)e.getSource();
-                  boolean enable = !cb.isSelected();
-                  buttonAdd.setEnabled(enable);
-                  buttonAddAll.setEnabled(enable);
-                  buttonRemove.setEnabled(enable);
-                  buttonRemoveAll.setEnabled(enable);
-                  identitiesInTable.setEnabled(enable);
-                  identitiesInTable.tableChanged(null);
-                  identitiesOutTable.setEnabled(enable);
-                  identitiesOutTable.tableChanged(null);
-                  credentialsLocationComboBox.setEnabled(enable);
-                  providersComboBox.setEnabled(enable);
-              }
-          });
-        providerSelectorPanel.add(anonymousAccessCheckBox, BorderLayout.EAST);
 
         add(providerSelectorPanel, BorderLayout.NORTH);
 
@@ -391,7 +389,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             allAssertions.add(new SslAssertion());
         }
 
-        if (!anonymousAccessCheckBox.isSelected()) {
+        if (!isAnonymous()) {
             Iterator it = getIdentitiesInTableModel().getDataVector().iterator();
             while (it.hasNext()) {
                 java.util.List row = (java.util.List)it.next();
@@ -400,7 +398,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
                     User u = new User();
                     u.setName(eh.getName());
                     u.setLogin(eh.getName());
-                    identityAssertions.add(new SpecificUser(ip.getConfig().getOid(), u.getLogin() ));
+                    identityAssertions.add(new SpecificUser(ip.getConfig().getOid(), u.getLogin()));
                 } else if (EntityType.GROUP.equals(eh.getType())) {
                     Group g = new Group();
                     g.setName(eh.getName());
@@ -412,9 +410,8 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             // crenedtials location, safe
             Object o = credentialsLocationComboBox.getSelectedItem();
             if (o != null) {
-                CredentialSourceAssertion ca =
-                  (CredentialSourceAssertion)Components.getCredentialsLocationMap().get(o);
-                if (ca != null)
+                Assertion ca = (Assertion)Components.getCredentialsLocationMap().get(o);
+                if (ca != null && !(ca instanceof TrueAssertion)) // trueassertion is anonymous
                     allAssertions.add(ca);
             }
         }
@@ -430,6 +427,12 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
     /** @return the wizard step label    */
     public String getStepLabel() {
         return "Access control";
+    }
+
+
+    private boolean isAnonymous() {
+        String name = (String)credentialsLocationComboBox.getSelectedItem();
+        return "Anonymous".equals(name);
     }
 
     private void equalizeButtons() {

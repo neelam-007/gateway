@@ -6,6 +6,7 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.wss.WssClientCert;
 import com.l7tech.policy.assertion.credential.wss.WssDigest;
+import com.l7tech.policy.assertion.TrueAssertion;
 
 import javax.swing.*;
 import java.util.Collections;
@@ -58,6 +59,8 @@ public class Components {
 
     // credential locations
     static {
+        credentialsLocationMap.put("Anonymous", new TrueAssertion());
+
         credentialsLocationMap.put("HTTP basic", new HttpBasic());
         credentialsLocationMap.put("HTTP digest", new HttpDigest());
         credentialsLocationMap.put("HTTP client cert", new HttpClientCert());

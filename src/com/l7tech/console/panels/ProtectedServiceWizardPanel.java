@@ -1,14 +1,6 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.credential.CredentialFormat;
 import com.l7tech.policy.assertion.RoutingAssertion;
-import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.credential.http.HttpClientCert;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
-import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.policy.assertion.credential.wss.WssClientCert;
-import com.l7tech.policy.assertion.credential.wss.WssDigest;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.Wsdl;
 
@@ -31,7 +23,6 @@ import java.net.MalformedURLException;
 public class ProtectedServiceWizardPanel extends WizardStepPanel {
     private PublishedService service = new PublishedService();
     private boolean isValid = true;
-    private JCheckBox anonymousAccessCheckBox;
 
 
     /** Creates new form ServicePanel */
@@ -110,8 +101,8 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
     public void readSettings(Object settings) throws IllegalArgumentException {
         PublishServiceWizard.ServiceAndAssertion
           collect = (PublishServiceWizard.ServiceAndAssertion)settings;
-        if (!anonymousAccessCheckBox.isSelected()) {
-            collect.setRoutingAssertion(new RoutingAssertion());
+        if (isAnonymous()) {
+            collect.setRoutingAssertion(new RoutingAssertion(serviceUrlTextField.getText()));
             return;
         }
 
@@ -135,39 +126,11 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
     }
 
     /**
-     * map the credential location UI selection to the
-     * corresponding <code>CredentialFormat</code>
-     * @return
-     */
-    private CredentialFormat getCredentialFormat() {
-        Object o = getAuthenticationMethodComboBox().getSelectedItem();
-        if (o != null) {
-            CredentialSourceAssertion ca =
-              (CredentialSourceAssertion)Components.getCredentialsLocationMap().get(o);
-            // map to the credentialformat
-            // todo: extract this into the utility routine and find the place for it
-            if (ca instanceof HttpBasic ||
-              ca instanceof WssBasic)
-                return CredentialFormat.BASIC;
-            else if (ca instanceof HttpDigest ||
-              ca instanceof WssDigest)
-                return CredentialFormat.DIGEST;
-            else if (ca instanceof HttpClientCert ||
-              ca instanceof WssClientCert)
-                return CredentialFormat.DIGEST;
-        }
-        // default
-        return CredentialFormat.BASIC;
-    }
-
-    /**
      * Provides the wizard panel with the opportunity to update the
      * settings with its current customized state.
      * Rather than updating its settings with every change in the GUI,
      * it should collect them, and then only save them when requested to
      * by this method.
-     *
-     * This is a noop version that subclasses implement.
      *
      * @exception IllegalArgumentException if the the data provided
      * by the wizard are not valid.
@@ -222,7 +185,7 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
                     if (wsdl !=null)
                         serviceUrlTextField.setText(wsdl.getServiceURI());
                 } catch (WSDLException e1) {
-                    //todo: errormanger where are you?
+                    //todo: errormanger?
                 }
 
             }
@@ -256,53 +219,29 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
         authMethodPanel.add(credentialsLabel);
         authMethodPanel.add(Box.createRigidArea(new Dimension(20, 10)));
 
-        authMethodPanel.add(getAuthenticationMethodComboBox());
-
-        authMethodPanel.add(Box.createRigidArea(new Dimension(20, 10)));
-
-        anonymousAccessCheckBox = new JCheckBox();
-        anonymousAccessCheckBox.setText("Anonymous access");
-        anonymousAccessCheckBox.setHorizontalTextPosition(SwingConstants.TRAILING);
-        anonymousAccessCheckBox.
-          addActionListener(new ActionListener() {
-              /** Invoked when an action occurs. */
-              public void actionPerformed(ActionEvent e) {
-                  JCheckBox cb = (JCheckBox)e.getSource();
-                  boolean enable = !cb.isSelected();
-                  getAuthenticationMethodComboBox().setEnabled(enable);
-                  identityTextField.setEnabled(enable);
-                  identityPasswordField.setEnabled(enable);
-                  realmTextField.setEnabled(enable);
-              }
-          });
-        // default disable
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                anonymousAccessCheckBox.setSelected(false);
+        final JComboBox acBox = getAuthenticationMethodComboBox();
+        authMethodPanel.add(acBox);
+        acBox.addActionListener(new ActionListener() {
+            /** Invoked when an action occurs. */
+            public void actionPerformed(ActionEvent e) {
+                String name = (String)acBox.getSelectedItem();
+                boolean enable = !isAnonymous();
+                identityTextField.setEnabled(enable);
+                identityPasswordField.setEnabled(enable);
+                realmTextField.setEnabled(enable);
             }
         });
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                acBox.setSelectedIndex(0);
+            }
+        });
+        authMethodPanel.add(Box.createRigidArea(new Dimension(20, 10)));
 
-        authMethodPanel.add(anonymousAccessCheckBox);
+        authMethodPanel.add(Box.createGlue());
         credentialsPanel.add(authMethodPanel);
 
         credentialsPanel.add(Box.createRigidArea(new Dimension(20, 10)));
-
-        JPanel realmPanel = new JPanel();
-        realmPanel.setLayout(new BoxLayout(realmPanel, BoxLayout.X_AXIS));
-        JLabel realmLabel = new JLabel();
-        realmLabel.setText("Realm");
-        realmPanel.add(realmLabel);
-
-        realmPanel.add(Box.createRigidArea(new Dimension(20, 10)));
-
-        realmTextField = new JTextField();
-        realmTextField.setPreferredSize(new Dimension(50, 20));
-        realmPanel.add(realmTextField);
-
-        realmPanel.add(Box.createGlue());
-        credentialsPanel.add(realmPanel);
-        credentialsPanel.add(Box.createRigidArea(new Dimension(20, 10)));
-
 
         JPanel identityPanel = new JPanel();
         identityPanel.setLayout(new BoxLayout(identityPanel, BoxLayout.X_AXIS));
@@ -337,6 +276,25 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
         passwordPanel.add(Box.createGlue());
         credentialsPanel.add(passwordPanel);
 
+        credentialsPanel.add(Box.createRigidArea(new Dimension(20, 10)));
+
+        JPanel realmPanel = new JPanel();
+        realmPanel.setLayout(new BoxLayout(realmPanel, BoxLayout.X_AXIS));
+        JLabel realmLabel = new JLabel();
+        realmLabel.setText("Realm");
+        realmPanel.add(realmLabel);
+
+        realmPanel.add(Box.createRigidArea(new Dimension(20, 10)));
+
+        realmTextField = new JTextField();
+        realmTextField.setPreferredSize(new Dimension(50, 20));
+        realmPanel.add(realmTextField);
+
+        realmPanel.add(Box.createGlue());
+        credentialsPanel.add(realmPanel);
+
+
+
         Utilities.equalizeComponentSizes(
           new JComponent[]{credentialsLabel,
                            realmLabel,
@@ -351,6 +309,11 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
                            getAuthenticationMethodComboBox()});
 
         return credentialsPanel;
+    }
+
+    private boolean isAnonymous() {
+        String name = (String)getAuthenticationMethodComboBox().getSelectedItem();
+        return "Anonymous".equals(name);
     }
 
     private JComboBox authenticationMethodComboBox;

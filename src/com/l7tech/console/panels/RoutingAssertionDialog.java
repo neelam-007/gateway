@@ -72,16 +72,16 @@ public class RoutingAssertionDialog extends JDialog {
     private void fireEventAssertionChanged(final Assertion a) {
         SwingUtilities.invokeLater(
           new Runnable() {
-            public void run() {
-                int[] indices = new int[a.getParent().getChildren().indexOf(a)];
-                PolicyEvent event = new
-                  PolicyEvent(this, new AssertionPath(a.getPath()), indices, new Assertion[] {a});
-                EventListener[] listeners = listenerList.getListeners(PolicyListener.class);
-                for (int i = 0; i < listeners.length; i++) {
-                    ((PolicyListener)listeners[i]).assertionsChanged(event);
-                }
-            }
-        });
+              public void run() {
+                  int[] indices = new int[a.getParent().getChildren().indexOf(a)];
+                  PolicyEvent event = new
+                    PolicyEvent(this, new AssertionPath(a.getPath()), indices, new Assertion[]{a});
+                  EventListener[] listeners = listenerList.getListeners(PolicyListener.class);
+                  for (int i = 0; i < listeners.length; i++) {
+                      ((PolicyListener)listeners[i]).assertionsChanged(event);
+                  }
+              }
+          });
     }
 
 
@@ -139,34 +139,8 @@ public class RoutingAssertionDialog extends JDialog {
         return String.valueOf(cpass).getBytes();
     }
 
-    /**
-     * map the credential location UI selection to the
-     * corresponding <code>CredentialFormat</code>
-     * @return
-     */
-    private CredentialFormat getCredentialFormat() {
-        Object o = getAuthenticationMethodComboBox().getSelectedItem();
-        if (o != null) {
-            CredentialSourceAssertion ca =
-              (CredentialSourceAssertion)Components.getCredentialsLocationMap().get(o);
-            // map to the credentialformat
-            // todo: extract this into the utility routine and find the place for it
-            if (ca instanceof HttpBasic ||
-              ca instanceof WssBasic)
-                return CredentialFormat.BASIC;
-            else if (ca instanceof HttpDigest ||
-              ca instanceof WssDigest)
-                return CredentialFormat.DIGEST;
-            else if (ca instanceof HttpClientCert ||
-              ca instanceof WssClientCert)
-                return CredentialFormat.DIGEST;
-        }
-        // default
-        return CredentialFormat.BASIC;
-    }
-
     private JPanel getServiceUrlPanel() {
-        if (serviceUrlPanel !=null)
+        if (serviceUrlPanel != null)
             return serviceUrlPanel;
 
         serviceUrlPanel = new JPanel();
@@ -179,11 +153,11 @@ public class RoutingAssertionDialog extends JDialog {
 
         serviceUrlTextField = new JTextField();
         serviceUrlTextField.setText(assertion.getProtectedServiceUrl());
-        serviceUrlTextField.setPreferredSize(new Dimension(100, 20));
+        serviceUrlTextField.setPreferredSize(new Dimension(200, 20));
         serviceUrlPanel.add(serviceUrlTextField);
 
         JButton buttonDefaultUrl = new JButton();
-        buttonDefaultUrl.addActionListener( new ActionListener() {
+        buttonDefaultUrl.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
             }
         });
@@ -216,54 +190,29 @@ public class RoutingAssertionDialog extends JDialog {
         authMethodPanel.add(credentialsLabel);
         authMethodPanel.add(Box.createRigidArea(new Dimension(20, 10)));
 
-        authMethodPanel.add(getAuthenticationMethodComboBox());
-
-        authMethodPanel.add(Box.createRigidArea(new Dimension(20, 10)));
-
-        anonymousAccessCheckBox = new JCheckBox();
-        anonymousAccessCheckBox.setText("Anonymous access");
-        anonymousAccessCheckBox.setHorizontalTextPosition(SwingConstants.TRAILING);
-        anonymousAccessCheckBox.
-          addActionListener(new ActionListener() {
-              /** Invoked when an action occurs. */
-              public void actionPerformed(ActionEvent e) {
-                  JCheckBox cb = (JCheckBox)e.getSource();
-                  boolean enable = !cb.isSelected();
-                  getAuthenticationMethodComboBox().setEnabled(enable);
-                  identityTextField.setEnabled(enable);
-                  identityPasswordField.setEnabled(enable);
-                  realmTextField.setEnabled(enable);
-              }
-          });
+//        final JComboBox acBox = getAuthenticationMethodComboBox();
+//        acBox.addActionListener( new ActionListener() {
+//            public void actionPerformed(ActionEvent e) {
+//                boolean enable = !isAnonymous();
+//                identityTextField.setEnabled(enable);
+//                identityPasswordField.setEnabled(enable);
+//                realmTextField.setEnabled(enable);
+//            }
+//        });
+     //   authMethodPanel.add(Box.createGlue());
         // default disable
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                anonymousAccessCheckBox.setSelected(false);
-            }
-        });
+//             SwingUtilities.invokeLater(new Runnable() {
+//                 public void run() {
+//                     acBox.setSelectedIndex(0);
+//                 }
+//             });
 
-        authMethodPanel.add(anonymousAccessCheckBox);
+   //     authMethodPanel.add(Box.createRigidArea(new Dimension(20, 10)));
+
+   //     authMethodPanel.add(Box.createGlue());
         credentialsPanel.add(authMethodPanel);
 
         credentialsPanel.add(Box.createRigidArea(new Dimension(20, 10)));
-
-        JPanel realmPanel = new JPanel();
-        realmPanel.setLayout(new BoxLayout(realmPanel, BoxLayout.X_AXIS));
-        JLabel realmLabel = new JLabel();
-        realmLabel.setText("Realm");
-        realmPanel.add(realmLabel);
-
-        realmPanel.add(Box.createRigidArea(new Dimension(20, 10)));
-
-        realmTextField = new JTextField();
-        realmTextField.setText(assertion.getRealm());
-        realmTextField.setPreferredSize(new Dimension(50, 20));
-        realmPanel.add(realmTextField);
-
-        realmPanel.add(Box.createGlue());
-        credentialsPanel.add(realmPanel);
-        credentialsPanel.add(Box.createRigidArea(new Dimension(20, 10)));
-
 
         JPanel identityPanel = new JPanel();
         identityPanel.setLayout(new BoxLayout(identityPanel, BoxLayout.X_AXIS));
@@ -299,6 +248,25 @@ public class RoutingAssertionDialog extends JDialog {
         passwordPanel.add(Box.createGlue());
         credentialsPanel.add(passwordPanel);
 
+        credentialsPanel.add(Box.createRigidArea(new Dimension(20, 10)));
+
+        JPanel realmPanel = new JPanel();
+        realmPanel.setLayout(new BoxLayout(realmPanel, BoxLayout.X_AXIS));
+        JLabel realmLabel = new JLabel();
+        realmLabel.setText("Realm");
+        realmPanel.add(realmLabel);
+
+        realmPanel.add(Box.createRigidArea(new Dimension(20, 10)));
+
+        realmTextField = new JTextField();
+        realmTextField.setText(assertion.getRealm());
+        realmTextField.setPreferredSize(new Dimension(50, 20));
+        realmPanel.add(realmTextField);
+
+        realmPanel.add(Box.createGlue());
+        credentialsPanel.add(realmPanel);
+
+
         Utilities.equalizeComponentSizes(
           new JComponent[]{credentialsLabel,
                            realmLabel,
@@ -326,22 +294,22 @@ public class RoutingAssertionDialog extends JDialog {
 
             // add components
             buttonPanel.add(hStrut,
-                    new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
-                            GridBagConstraints.CENTER,
-                            GridBagConstraints.BOTH,
-                            new Insets(0, 0, 0, 0), 0, 0));
+              new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
+                GridBagConstraints.CENTER,
+                GridBagConstraints.BOTH,
+                new Insets(0, 0, 0, 0), 0, 0));
 
             buttonPanel.add(getOKButton(),
-                    new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
-                            GridBagConstraints.CENTER,
-                            GridBagConstraints.NONE,
-                            new Insets(5, 5, 5, 5), 0, 0));
+              new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
+                GridBagConstraints.CENTER,
+                GridBagConstraints.NONE,
+                new Insets(5, 5, 5, 5), 0, 0));
 
             buttonPanel.add(getCancelButton(),
-                    new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
-                            GridBagConstraints.CENTER,
-                            GridBagConstraints.NONE,
-                            new Insets(5, 5, 5, 5), 0, 0));
+              new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
+                GridBagConstraints.CENTER,
+                GridBagConstraints.NONE,
+                new Insets(5, 5, 5, 5), 0, 0));
 
             JButton buttons[] = new JButton[]
             {
@@ -370,7 +338,6 @@ public class RoutingAssertionDialog extends JDialog {
                     assertion.setRealm(realmTextField.getText());
                     fireEventAssertionChanged(assertion);
                     RoutingAssertionDialog.this.dispose();
-
                 }
             });
         }
@@ -396,6 +363,14 @@ public class RoutingAssertionDialog extends JDialog {
         }
         // Return button
         return cancelButton;
+    }
+
+    /**
+     * @return whether the selection is anonymou
+     */
+    private boolean isAnonymous() {
+        String name = (String)authenticationMethodComboBox.getSelectedItem();
+        return "Anonymous".equals(name);
     }
 
 
