@@ -19,18 +19,9 @@ public class GlobalIdentityConfigManager implements IdentityProviderConfigManage
 
     public static final long INTERNAL_ID_PROVIDER_CONFIG_OID = -354684;
 
-    public GlobalIdentityConfigManager() {
-
-        // construct the ldapidentity provider
-        ldapConfigManager = new LdapIdentityProviderConfigManager();
-
-        // construct the internal id provider
-        internalProvider = new InternalIdentityProviderImp();
-        IdentityProviderConfigImp iternalConfig = new IdentityProviderConfigImp();
-        iternalConfig.setName("Internal Identity Provider");
-        iternalConfig.setDescription("Internal Identity Provider");
-        iternalConfig.setOid(INTERNAL_ID_PROVIDER_CONFIG_OID);
-        internalProvider.initialize(iternalConfig);
+    public static GlobalIdentityConfigManager getInstance() {
+        if (singleton == null) singleton = new GlobalIdentityConfigManager();
+        return singleton;
     }
 
     public IdentityProvider getInternalIdentityProvider() {
@@ -105,6 +96,21 @@ public class GlobalIdentityConfigManager implements IdentityProviderConfigManage
     // PRIVATES
     // ************************************************
 
+    protected GlobalIdentityConfigManager() {
+
+        // construct the ldapidentity provider
+        ldapConfigManager = new LdapIdentityProviderConfigManager();
+
+        // construct the internal id provider
+        internalProvider = new InternalIdentityProviderImp();
+        IdentityProviderConfigImp iternalConfig = new IdentityProviderConfigImp();
+        iternalConfig.setName("Internal Identity Provider");
+        iternalConfig.setDescription("Internal Identity Provider");
+        iternalConfig.setOid(INTERNAL_ID_PROVIDER_CONFIG_OID);
+        internalProvider.initialize(iternalConfig);
+    }
+
+
     protected EntityHeader headerFromConfig(IdentityProviderConfig cfg) {
         EntityHeader out = new EntityHeader();
         out.setDescription(cfg.getDescription());
@@ -113,6 +119,7 @@ public class GlobalIdentityConfigManager implements IdentityProviderConfigManage
         out.setType(EntityType.ID_PROVIDER_CONFIG);
         return out;
     }
-    LdapIdentityProviderConfigManager ldapConfigManager;
-    InternalIdentityProviderImp internalProvider;
+    protected LdapIdentityProviderConfigManager ldapConfigManager;
+    protected InternalIdentityProviderImp internalProvider;
+    private static GlobalIdentityConfigManager singleton = null;
 }
