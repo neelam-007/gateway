@@ -31,6 +31,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * Notices when any persistent {@link Entity} is saved, updated or deleted, and creates and fires
+ * corresponding {@link Updated}, {@link Deleted} and {@link Created} events if and when the
+ * current transaction commits.
+ *
+ * @see HibernatePersistenceContext#registerTransactionListener(com.l7tech.objectmodel.TransactionListener)
  * @author alex
  * @version $Revision$
  */
@@ -44,10 +49,14 @@ public class PersistenceEventInterceptor implements Interceptor {
 
     private final Set ignoredClassNames;
 
+    /** Ignored */
     public boolean onLoad( Object entity, Serializable id, Object[] state, String[] propertyNames, Type[] types ) throws CallbackException {
         return false;
     }
 
+    /**
+     * Detects updates and fires an {@link Updated} event if the entity isn't {@link #ignored} and the update is committed
+     */
     public boolean onFlushDirty( final Object entity, final Serializable id, final Object[] currentState, final Object[] previousState, final String[] propertyNames, Type[] types ) throws CallbackException {
         if (!ignored( entity )) {
             try {
@@ -75,6 +84,9 @@ public class PersistenceEventInterceptor implements Interceptor {
         return ignoredClassNames.contains(entity.getClass().getName());
     }
 
+    /**
+     * Detects saves and fires a {@link Created} event if the entity isn't {@link #ignored} and the save is committed
+     */
     public boolean onSave( final Object entity, final Serializable id, Object[] state, String[] propertyNames, Type[] types ) throws CallbackException {
         if (!ignored( entity )) {
             try {
@@ -96,6 +108,9 @@ public class PersistenceEventInterceptor implements Interceptor {
         return false;
     }
 
+    /**
+     * Detects deletes and fires a {@link Deleted} event if the entity isn't {@link #ignored} and the deletion is committed
+     */
     public void onDelete( final Object entity, final Serializable id, Object[] state, String[] propertyNames, Type[] types ) throws CallbackException {
         if (!ignored( entity )) {
             try {
@@ -116,23 +131,29 @@ public class PersistenceEventInterceptor implements Interceptor {
         }
     }
 
+    /** Ignored */
     public void preFlush( Iterator entities ) throws CallbackException {
     }
 
+    /** Ignored */
     public void postFlush( Iterator entities ) throws CallbackException {
     }
 
+    /** Ignored */
     public Boolean isUnsaved( Object entity ) {
         return null;
     }
 
+    /** Ignored */
     public int[] findDirty( Object entity, Serializable id, Object[] currentState, Object[] previousState, String[] propertyNames, Type[] types ) {
         return null;
     }
 
+    /** Ignored */
     public Object instantiate( Class clazz, Serializable id ) throws CallbackException {
         return null;
     }
 
+    /** Ignored */
     private static Logger logger = Logger.getLogger(PersistenceEventInterceptor.class.getName());
 }

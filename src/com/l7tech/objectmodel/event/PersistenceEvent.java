@@ -9,6 +9,7 @@ package com.l7tech.objectmodel.event;
 import com.l7tech.objectmodel.Entity;
 
 /**
+ * Implementations are events in the lifecycle of a persistent {@link Entity}.
  * @author alex
  * @version $Revision$
  */

@@ -13,6 +13,10 @@ import com.l7tech.server.event.EventPromoter;
 import com.l7tech.service.PublishedService;
 
 /**
+ * Promotes any {@link Updated} events pertaining to any {@link PublishedService} to
+ * {@link com.l7tech.server.service.ServiceEvent.Disabled} or
+ * {@link com.l7tech.server.service.ServiceEvent.Enabled} if its "disabled" property has changed.
+ *   
  * @author alex
  * @version $Revision$
  */

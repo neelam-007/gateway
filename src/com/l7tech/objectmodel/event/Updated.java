@@ -11,6 +11,11 @@ import com.l7tech.objectmodel.Entity;
 import java.util.EventListener;
 
 /**
+ * Fired when a persistent {@link Entity} has been updated.
+ * <p>
+ * The {@link #source} is the updated object, and the included {@link EntityChangeSet} gives access
+ * to the old and new values on a per-property basis.
+ *  
  * @author alex
  * @version $Revision$
  */
@@ -22,10 +27,6 @@ public class Updated extends PersistenceEvent {
 
     public Updated(Entity original, EntityChangeSet changes) {
         this(original, changes, null);
-    }
-
-    public Entity getOriginal() {
-        return (Entity)source;
     }
 
     public Class getListenerClass() {
