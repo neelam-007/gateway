@@ -86,6 +86,14 @@ public class XencUtil {
     public static void checkKeyInfo(Element encryptedType, X509Certificate recipientCert)
             throws UnexpectedKeyInfoException, InvalidDocumentFormatException, GeneralSecurityException
     {
+        // bugzilla #1582
+        if (recipientCert == null) {
+            // if we dont have a recipient cert, then obviously, this is not meant for us. this would happen for example
+            // when the agent is processing a response from the ssg that has an encryptedkey in it but the client account
+            // does not have a client cert. (this is possible if the encryption is meant for upstream client)
+            throw new UnexpectedKeyInfoException("No recipient cert to compare with. This is obvioulsy not meant for us.");
+        }
+
         Element kinfo = XmlUtil.findOnlyOneChildElementByName(encryptedType, SoapUtil.DIGSIG_URI, SoapUtil.KINFO_EL_NAME);
         if (kinfo == null) throw new InvalidDocumentFormatException(encryptedType.getLocalName() + " includes no KeyInfo element");
         Element str = XmlUtil.findOnlyOneChildElementByName(kinfo,
