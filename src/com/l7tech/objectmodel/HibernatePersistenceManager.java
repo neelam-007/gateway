@@ -7,13 +7,11 @@
 package com.l7tech.objectmodel;
 
 import cirrus.hibernate.*;
-import cirrus.hibernate.Transaction;
 import cirrus.hibernate.type.Type;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import java.sql.SQLException;
-import java.sql.Connection;
 import java.util.List;
 import java.util.Properties;
 import java.io.*;
