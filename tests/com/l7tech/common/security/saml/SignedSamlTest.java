@@ -151,6 +151,7 @@ public class SignedSamlTest extends TestCase {
         final XmlOptions xmlOptions = new XmlOptions();
         xmlOptions.setSaveSyntheticDocumentElement(new QName(Constants.NS_SAML, Constants.ELEMENT_ASSERTION));
         xmlOptions.setSavePrettyPrint();
+        xmlOptions.setSaveAggresiveNamespaces();
         xmlOptions.setSaveSuggestedPrefixes(prefixMap);
 
         StringWriter stringWriter = new StringWriter();
