@@ -10,6 +10,7 @@ import com.l7tech.logging.LogManager;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Layer 7 Technologies, inc.
@@ -20,6 +21,7 @@ import java.util.logging.Level;
 public class InternalGroupManagerServer extends HibernateEntityManager implements GroupManager {
     public InternalGroupManagerServer() {
         super();
+        logger = LogManager.getInstance().getSystemLogger();
     }
 
     public Group findByName( String name ) throws FindException {
@@ -34,11 +36,11 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
                 return g;
             default:
                 String err = "Found more than one group with the name " + name;
-                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, err);
+                logger.log(Level.SEVERE, err);
                 throw new FindException( err );
             }
         } catch ( SQLException se ) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, se);
+            logger.log(Level.SEVERE, null, se);
             throw new FindException( se.toString(), se );
         }
 
@@ -53,13 +55,13 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
         try {
             List groups = _manager.find( getContext(), "from " + getTableName() + " in class " + getImpClass().getName() + " where " + getTableName() + ".name like ?", searchString, String.class );
             Collection output = new ArrayList();
-            LogManager.getInstance().getSystemLogger().log(Level.INFO, "search for " + searchString + " returns " + groups.size() + " groups.");
+            logger.log(Level.INFO, "search for " + searchString + " returns " + groups.size() + " groups.");
             for (Iterator i = groups.iterator(); i.hasNext();) {
                 output.add(groupToHeader((Group)i.next()));
             }
             return output;
         } catch (SQLException e) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "exception searching groups with pattern " + searchString, e);
+            logger.log(Level.SEVERE, "exception searching groups with pattern " + searchString, e);
             throw new FindException(e.toString(), e);
         }
     }
@@ -78,6 +80,11 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
 
     public void delete(Group group) throws DeleteException {
         try {
+            // it is not allowed to delete the admin group
+            if (Group.ADMIN_GROUP_NAME.equals(group.getName())) {
+                logger.severe("an attempt to delete the admin group was made.");
+                throw new DeleteException("Cannot delete administrator group.");
+            }
             _manager.delete( getContext(), group );
         } catch ( SQLException se ) {
             throw new DeleteException( se.toString(), se );
@@ -133,7 +140,7 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
                 result.add( group );
             } else {
                 IllegalArgumentException iae = new IllegalArgumentException( "EntityHeader " + header + " doesn't represent a Group!" );
-                LogManager.getInstance().getSystemLogger().throwing( getClass().getName(), "headersToGroups", iae );
+                logger.throwing( getClass().getName(), "headersToGroups", iae );
                 throw iae;
             }
         }
@@ -152,4 +159,6 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
     public Class getInterfaceClass() {
         return Group.class;
     }
+
+    private Logger logger = null;
 }
