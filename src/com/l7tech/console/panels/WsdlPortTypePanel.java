@@ -221,9 +221,14 @@ public class WsdlPortTypePanel extends WizardStepPanel {
                   Output out = (Output)value;
                   renderMessage(table, out.getMessage(), isSelected);
               } else {
-                  super.getTableCellRendererComponent(
-                    table, value,
-                    isSelected, hasFocus, row, column);
+                  if (isSelected) {
+                      setBackground(table.getSelectionBackground());
+                      setForeground(table.getSelectionForeground());
+                  } else {
+                      setBackground(table.getBackground());
+                      setForeground(table.getForeground());
+                  }
+                  setText(value.toString());
               }
               return this;
           }

@@ -80,6 +80,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
         messagesTable.
           getSelectionModel().addListSelectionListener(messagesTableSelectionListener);
 
+        partsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         partsTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             public void valueChanged(ListSelectionEvent e) {
                 removeMessagePartButton.setEnabled(partsTableModel.getRowCount() > 0);
@@ -271,43 +272,44 @@ public class WsdlMessagesPanel extends WizardStepPanel {
     private
     DefaultTableCellRenderer partsTableCellRenderer
       = new DefaultTableCellRenderer() {
-        /**
-         *
-         * Returns the default table cell renderer.
-         *
-         * @param table  the <code>JTable</code>
-         * @param value  the value to assign to the cell at
-         *			<code>[row, column]</code>
-         * @param isSelected true if cell is selected
-         * @param hasFocus true if cell has focus
-         * @param row  the row of the cell to render
-         * @param column the column of the cell to render
-         * @return the default table cell renderer
-         */
-        public Component
-          getTableCellRendererComponent(JTable table,
-                                        Object value,
-                                        boolean isSelected,
-                                        boolean hasFocus,
-                                        int row, int column) {
-            if (value instanceof QName) {
-                QName qName = (QName)value;
-                if (isSelected) {
-                    setBackground(table.getSelectionBackground());
-                    setForeground(table.getSelectionForeground());
-                } else {
-                    setBackground(table.getBackground());
-                    setForeground(table.getForeground());
-                }
-                setText(WsdlCreateWizard.prefixedName(qName, definition));
-            } else {
-                super.getTableCellRendererComponent(
-                  table, value,
-                  isSelected, hasFocus, row, column);
-            }
-            return this;
-        }
-    };
+          /**
+           *
+           * Returns the default table cell renderer.
+           *
+           * @param table  the <code>JTable</code>
+           * @param value  the value to assign to the cell at
+           *			<code>[row, column]</code>
+           * @param isSelected true if cell is selected
+           * @param hasFocus true if cell has focus
+           * @param row  the row of the cell to render
+           * @param column the column of the cell to render
+           * @return the default table cell renderer
+           */
+          public Component
+            getTableCellRendererComponent(JTable table,
+                                          Object value,
+                                          boolean isSelected,
+                                          boolean hasFocus,
+                                          int row, int column) {
+              String text = null;
+              if (value instanceof QName) {
+                  QName qName = (QName)value;
+                  text = WsdlCreateWizard.prefixedName(qName, definition);
+              } else {
+                  text = value.toString();
+              }
+              if (isSelected) {
+                  setBackground(table.getSelectionBackground());
+                  setForeground(table.getSelectionForeground());
+              } else {
+                  setBackground(table.getBackground());
+                  setForeground(table.getForeground());
+              }
+              setText(text);
+
+              return this;
+          }
+      };
 
     private ListSelectionListener
       messagesTableSelectionListener = new ListSelectionListener() {
@@ -320,7 +322,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
               if (selectedRow == -1) {
                   partsTable.setModel(
                     new DefaultTableModel(
-                      new String[] {"Name", "Type"}, 0));
+                      new String[]{"Name", "Type"}, 0));
                   return;
               }
               Message m =
