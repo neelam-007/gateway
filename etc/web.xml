@@ -64,10 +64,12 @@
         <load-on-startup>100</load-on-startup>
     </servlet>
 
+    <!--
     <servlet>
            <servlet-name>StatusPing</servlet-name>
            <servlet-class>com.l7tech.server.StatusPingServlet</servlet-class>
     </servlet>
+    -->
 
     <servlet-mapping>
         <servlet-name>SoapMessageProcessingServlet</servlet-name>
@@ -140,10 +142,12 @@
        <url-pattern>/ssg/servlet/AdminServlet</url-pattern>
      </servlet-mapping>
 
+    <!--
     <servlet-mapping>
        <servlet-name>StatusPing</servlet-name>
        <url-pattern>/status</url-pattern>
     </servlet-mapping>
+    -->
 
     <!--
     Map all requests that would otherwise be 404s to the SOAP servlet, for
