@@ -7,6 +7,7 @@ import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.EntityHeaderComparator;
 
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
@@ -15,6 +16,7 @@ import javax.naming.directory.*;
 import java.util.logging.Level;
 import java.util.Collection;
 import java.util.ArrayList;
+import java.util.TreeSet;
 
 /**
  * Layer 7 Technologies, inc.
@@ -94,7 +96,8 @@ public class LdapIdentityProviderServer implements IdentityProvider {
             else if (types[i] == EntityType.GROUP) wantGroups = true;
         }
         if (!wantUsers && !wantGroups) throw new IllegalArgumentException("types must contain users and or groups");
-        Collection output = new ArrayList();
+        // todo: get a sorted result from ldap server instead of sorting in collection
+        Collection output = new TreeSet(new EntityHeaderComparator());
         try
         {
             NamingEnumeration answer = null;
