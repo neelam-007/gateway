@@ -3,16 +3,32 @@ package com.l7tech.proxy.gui;
 
 import com.l7tech.console.panels.Utilities;
 import com.l7tech.proxy.RequestInterceptor;
+import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.gui.util.IconManager;
 import com.l7tech.proxy.util.JavaVersionChecker;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
 import javax.swing.plaf.metal.MetalTheme;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.FileOutputStream;
+import java.security.cert.CertificateFactory;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.GeneralSecurityException;
+import java.util.Collection;
+import java.util.Iterator;
 
 /**
  * Encapsulates the Client Proxy's user interface.
@@ -36,10 +52,12 @@ public class Gui {
 
     private static final String MENU_FILE = "File";
     private static final String MENU_FILE_QUIT = "Quit";
-    private static final String MENU_SHOW = "Show";
-    private static final String MENU_SHOW_MESSAGES = "Show Messages";
+    private static final String MENU_OPTIONS = "Options";
+    private static final String MENU_WINDOW = "Window";
+    private static final String MENU_MESSAGES = "Message Window";
     private JCheckBoxMenuItem showMessages;
     private SsgListPanel ssgListPanel;
+    private JFileChooser jFileChooser = null;
 
     /** Get the singleton Gui. */
     public static Gui getInstance() {
@@ -200,21 +218,123 @@ public class Gui {
         fileMenu.add(fileQuit);
 
         menus.add(fileMenu);
-        final JMenu showMenu = new JMenu(MENU_SHOW);
 
-        showMessages = new JCheckBoxMenuItem(MENU_SHOW_MESSAGES, false);
+        final JMenu optionsMenu = new JMenu(MENU_OPTIONS);
+        final JMenuItem importCert = new JMenuItem("Import SSG Certificate");
+        importCert.addActionListener(getImportCertActionListener());
+        optionsMenu.add(importCert);
+
+        menus.add(optionsMenu);
+
+        final JMenu windowMenu = new JMenu(MENU_WINDOW);
+
+        showMessages = new JCheckBoxMenuItem(MENU_MESSAGES, false);
         showMessages.addActionListener(menuActionListener);
-        showMenu.add(showMessages);
+        windowMenu.add(showMessages);
 
-        menus.add(showMenu);
+        menus.add(windowMenu);
         return menus;
+    }
+
+    /** Import Certificate */
+    private Action getImportCertActionListener() {
+        return new AbstractAction() {
+            public void actionPerformed(ActionEvent evt) {
+
+                JFileChooser fc = getFileChooser();
+                FileFilter filter = new FileFilter() {
+                    public boolean accept(File f) {
+                        if (f.isDirectory())
+                            return true;
+                        String name = f.getName();
+                        int dot = name.lastIndexOf('.');
+                        if (dot < 0)
+                            return false;
+                        String ext = name.substring(dot);
+                        return ext.equalsIgnoreCase(".cer");
+                    }
+
+                    public String getDescription() {
+                        return "Certificate files (*.cer)";
+                    }
+                };
+                fc.setFileFilter(filter);
+
+                if (JFileChooser.APPROVE_OPTION == fc.showOpenDialog(getFrame())) {
+                    try {
+                        importSsgCertificate(fc.getSelectedFile());
+                    } catch (IOException e) {
+                        log.error(e);
+                        JOptionPane.showMessageDialog(getFrame(),
+                                                      "The system was unable to read the specified file.",
+                                                      "Unable to read file",
+                                                      JOptionPane.ERROR_MESSAGE);
+                    } catch (GeneralSecurityException e) {
+                        log.error(e);
+                        JOptionPane.showMessageDialog(getFrame(),
+                                                      "The system was unable to import the specified certificate: \n" +
+                                                      e.getMessage(),
+                                                      "Unable to import certificate",
+                                                      JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            }
+        };
+    }
+
+    private JFileChooser getFileChooser() {
+        if (jFileChooser == null)
+            jFileChooser = new JFileChooser();
+        return jFileChooser;
+    }
+
+    /**
+     * Import an SSG certificate into our trust store.
+     * @param selectedFile the SSG certificate file.  Must be in *.cer binary format, whatever that is.
+     *                     Probably PKCS#7.
+     */
+    private void importSsgCertificate(File selectedFile)
+            throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException
+    {
+        KeyStore ks = KeyStore.getInstance("JKS");
+        try {
+            FileInputStream ksfis = new FileInputStream(ClientProxy.TRUST_STORE_FILE);
+            ks.load(ksfis, ClientProxy.TRUST_STORE_PASSWORD.toCharArray());
+            ksfis.close();
+        } catch (FileNotFoundException e) {
+            // Create a new one.
+            ks.load(null, ClientProxy.TRUST_STORE_PASSWORD.toCharArray());
+        }
+
+        FileInputStream certfis = new FileInputStream(selectedFile);
+        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        Collection c = cf.generateCertificates(certfis);
+        Iterator i = c.iterator();
+        while (i.hasNext()) {
+            Certificate cert = (Certificate)i.next();
+            log.info("Adding certificate: " + cert);
+            ks.setCertificateEntry("tomcat", cert);
+        }
+
+        FileOutputStream ksfos = null;
+        try {
+            ksfos = new FileOutputStream(ClientProxy.TRUST_STORE_FILE);
+            ks.store(ksfos, ClientProxy.TRUST_STORE_PASSWORD.toCharArray());
+        } finally {
+            if (ksfos != null)
+                ksfos.close();
+        }
+
+        JOptionPane.showMessageDialog(getFrame(), "Certificate import was successful. \n" +
+                                                  "You'll need to restart the Client Proxy for it to take effect.",
+                                      "Certificate import successful", JOptionPane.INFORMATION_MESSAGE);
     }
 
     /** Respond to a menu command. */
     private void action(final ActionEvent e) {
         if (MENU_FILE_QUIT.equals(e.getActionCommand())) {
             closeFrame();
-        } else if (MENU_SHOW_MESSAGES.equals(e.getActionCommand())) {
+        } else if (MENU_MESSAGES.equals(e.getActionCommand())) {
             if (showMessages.isSelected()) {
                 getMessageViewer().show();
             } else {
