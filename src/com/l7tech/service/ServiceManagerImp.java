@@ -101,12 +101,14 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
 
         // Check for duplicate services
         Map matchingServices = null;
+        Map tempMatches = null;
 
         for (Iterator i = _resolvers.iterator(); i.hasNext(); ) {
             resolver = (ServiceResolver)i.next();
-            matchingServices = resolver.matchingServices( candidateService, services );
-            if ( matchingServices != null && matchingServices.size() > 0 ) {
+            tempMatches = resolver.matchingServices( candidateService, services );
+            if ( tempMatches != null && tempMatches.size() > 0 ) {
                 // One or more matched... Let's see if anyone else matches.
+                matchingServices = tempMatches;
                 services = matchingServices;
             }
         }
