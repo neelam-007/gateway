@@ -145,9 +145,9 @@ public class StatisticsTableSorter extends FilteredDefaultTableModel {
                 return -1;
             } else {
                 if (ascending) {
-                    return (elementA).compareTo(elementB);
+                    return (elementA).compareToIgnoreCase(elementB);
                 } else {
-                    return (elementB).compareTo(elementA);
+                    return (elementB).compareToIgnoreCase(elementA);
                 }
             }
         }
