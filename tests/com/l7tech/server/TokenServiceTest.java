@@ -7,6 +7,7 @@
 package com.l7tech.server;
 
 import com.l7tech.common.ApplicationContexts;
+import com.l7tech.common.message.HttpServletRequestKnob;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.token.SecurityTokenType;
@@ -147,8 +148,9 @@ public class TokenServiceTest extends TestCase {
         final Message response = new Message();
         final Message request = new Message();
         request.initialize(requestMsg);
+        request.attachHttpRequestKnob(new HttpServletRequestKnob(getFakeServletRequest()));
 
-        final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response, getFakeServletRequest(), null);
+        final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
         context.setAuditContext(new AuditContextStub());
         AssertionStatus status = service.respondToSecurityTokenRequest(context, authenticator);
         assertEquals(status, AssertionStatus.NONE);

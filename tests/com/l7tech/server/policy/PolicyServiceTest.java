@@ -7,10 +7,9 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.common.ApplicationContexts;
-import com.l7tech.common.message.Message;
 import com.l7tech.common.message.HttpServletRequestKnob;
-import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.common.message.HttpServletResponseKnob;
+import com.l7tech.common.message.Message;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.TestDocuments;
@@ -104,7 +103,7 @@ public class PolicyServiceTest extends TestCase {
         response.attachHttpRequestKnob(httpRequestKnob);
         response.attachHttpResponseKnob(httpResponseKnob);
 
-        PolicyEnforcementContext context = new PolicyEnforcementContext(request, response, hrequest, hresponse);
+        PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
         context.setCredentials(loginCredentials);
         if (loginCredentials != null) {
             requestDoc = PolicyServiceClient.createGetPolicyRequest("123");

@@ -68,4 +68,9 @@ public class HttpServletResponseKnob extends AbstractHttpResponseKnob {
             response.addHeader("WWW-Authenticate", challenge);
         }
     }
+
+    /** @return the raw HttpServletResponse */
+    public HttpServletResponse getHttpServletResponse() {
+        return response;
+    }
 }

@@ -18,11 +18,11 @@ import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.server.audit.AuditContextStub;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.composite.ServerAllAssertion;
 import com.l7tech.server.policy.assertion.composite.ServerExactlyOneAssertion;
 import com.l7tech.server.policy.assertion.composite.ServerOneOrMoreAssertion;
-import com.l7tech.server.audit.AuditContextStub;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -57,7 +57,7 @@ public class CompositeAssertionTest extends TestCase {
     public void testSimpleLogic() throws Exception {
         PolicyEnforcementContext context = new
           PolicyEnforcementContext(new Message(new ByteArrayStashManager(),
-                                   ContentTypeHeader.XML_DEFAULT, new EmptyInputStream()), new Message(), null, null);
+                                   ContentTypeHeader.XML_DEFAULT, new EmptyInputStream()), new Message());
         context.setAuditContext(new AuditContextStub());
 
         {
@@ -112,7 +112,7 @@ public class CompositeAssertionTest extends TestCase {
         PolicyEnforcementContext context =
           new PolicyEnforcementContext(new Message(new ByteArrayStashManager(),
                                        ContentTypeHeader.XML_DEFAULT, new EmptyInputStream()),
-                                       new Message(), null, null);
+                                       new Message());
         context.setAuditContext(new AuditContextStub());
 
         final List kidsTrueFalseTrue = Arrays.asList(new Assertion[] {

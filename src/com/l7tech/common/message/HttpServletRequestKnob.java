@@ -124,4 +124,9 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
     public int getLocalPort() {
         return request.getServerPort();
     }
+
+    /** @return the raw HttpServletRequest instance. */
+    public HttpServletRequest getHttpServletRequest() {
+        return request;
+    }
 }

@@ -27,6 +27,8 @@ public class HttpResponseFacet extends MessageFacet {
     public MessageKnob getKnob(Class c) {
         if (c == HttpResponseKnob.class)
             return httpResponseKnob;
+        if (c == HttpServletResponseKnob.class && httpResponseKnob instanceof HttpServletResponseKnob)
+            return httpResponseKnob;
         return super.getKnob(c);
     }
 }

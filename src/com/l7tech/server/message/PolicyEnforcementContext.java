@@ -7,6 +7,8 @@
 package com.l7tech.server.message;
 
 import com.l7tech.common.RequestId;
+import com.l7tech.common.message.HttpServletRequestKnob;
+import com.l7tech.common.message.HttpServletResponseKnob;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.ProcessingContext;
 import com.l7tech.common.xml.SoapFaultDetail;
@@ -31,8 +33,6 @@ import java.util.logging.Logger;
 public class PolicyEnforcementContext extends ProcessingContext {
     private static final Logger logger = Logger.getLogger(PolicyEnforcementContext.class.getName());
 
-    private final HttpServletRequest hrequest;
-    private final HttpServletResponse hresponse;
     private final RequestId requestId;
     private final Map deferredAssertions = new LinkedHashMap();
     private boolean replyExpected;
@@ -51,14 +51,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private AuditContext auditContext = null;
 
     public PolicyEnforcementContext(Message request, Message response) {
-        this(request, response, null, null);
-    }
-
-    public PolicyEnforcementContext(Message request, Message response,
-                                    HttpServletRequest hrequest, HttpServletResponse hresponse) {
         super(request, response);
-        this.hrequest = hrequest;
-        this.hresponse = hresponse;
         this.requestId = RequestIdGenerator.next();
     }
 
@@ -218,7 +211,9 @@ public class PolicyEnforcementContext extends ProcessingContext {
      * @return the HttpServletRequest that led to this policy enforcement context, or null if it was not a servlet.
      */
     public HttpServletRequest getHttpServletRequest() {
-        return hrequest;
+        HttpServletRequestKnob hsrk = (HttpServletRequestKnob)getRequest().getKnob(HttpServletRequestKnob.class);
+        if (hsrk == null) return null;
+        return hsrk.getHttpServletRequest();
     }
 
     /**
@@ -228,7 +223,9 @@ public class PolicyEnforcementContext extends ProcessingContext {
      * @return the HttpServletResponse waiting for the response to this request, or null if it didn't come in via a servlet.
      */
     public HttpServletResponse getHttpServletResponse() {
-        return hresponse;
+        HttpServletResponseKnob hsrk = (HttpServletResponseKnob)getResponse().getKnob(HttpServletResponseKnob.class);
+        if (hsrk == null) return null;
+        return hsrk.getHttpServletResponse();
     }
 
     public Vector getUpdatedCookies() {

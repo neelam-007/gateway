@@ -120,10 +120,8 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         final HttpServletResponseKnob respKnob = new HttpServletResponseKnob(hresponse);
         response.attachHttpResponseKnob(respKnob);
 
-        final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response,
-                                                                              hrequest, hresponse);
+        final PolicyEnforcementContext context = new PolicyEnforcementContext(request, response);
 
-        // TODO refactor the stash manager creation code into a home of its own
         final StashManager stashManager = StashManagerFactory.createStashManager();
 
         try {
