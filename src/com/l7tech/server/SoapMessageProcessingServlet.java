@@ -75,8 +75,10 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                         logger.fine("Sending empty response");
                     } else {
                         String ctype = (String)sresp.getParameter(Response.PARAM_HTTP_CONTENT_TYPE);
-                        if (ctype == null || ctype.length() == 0) ctype = DEFAULT_CONTENT_TYPE;
-                        hresponse.setContentType(ctype);
+                        if (ctype == null || ctype.length() == 0) {
+                            ctype = DEFAULT_CONTENT_TYPE;
+                            hresponse.setContentType(ctype);
+                        }
 
                         respWriter = new BufferedWriter(new OutputStreamWriter(hresponse.getOutputStream(), ENCODING));
                         respWriter.write(protRespXml);
@@ -109,10 +111,8 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             }
         } finally {
             PersistenceContext pc = PersistenceContext.peek();
-            if (pc == null) {
-                return;
-            }
-            pc.close();
+            if (pc != null) pc.close();
+
             // RequestAuditRecord rec = new RequestAuditRecord( "HTTP(s) SOAP Request", status );
             try { if (respWriter != null) respWriter.close(); } catch (Throwable t) {}
             try { if (respStream != null) respStream.close(); } catch (Throwable t) {}
