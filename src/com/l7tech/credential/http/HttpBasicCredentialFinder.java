@@ -7,28 +7,26 @@
 package com.l7tech.credential.http;
 
 import com.l7tech.credential.CredentialFinderException;
-import com.l7tech.credential.PrincipalCredentials;
 import com.l7tech.credential.CredentialFormat;
-import com.l7tech.message.Request;
+import com.l7tech.credential.PrincipalCredentials;
 import com.l7tech.identity.User;
 import com.l7tech.logging.LogManager;
+import com.l7tech.message.Request;
 import org.apache.axis.encoding.Base64;
+
 import java.io.IOException;
 import java.util.logging.Level;
 
 /**
+ * Retrieves HTTP Basic credentials from a request if possible.
+ *
  * @author alex
  */
 public class HttpBasicCredentialFinder extends HttpCredentialFinder {
     public static final String ENCODING = "UTF-8";
     public static final String SCHEME = "Basic";
 
-    private void throwError( String err ) throws CredentialFinderException {
-        LogManager.getInstance().getSystemLogger().log(Level.SEVERE, err);
-        throw new CredentialFinderException( err );
-    }
-
-    public PrincipalCredentials findCredentials(Request request) throws IOException, CredentialFinderException {
+    public PrincipalCredentials findCredentials( Request request ) throws IOException, CredentialFinderException {
         String wwwAuthorize = (String)request.getParameter( Request.PARAM_HTTP_AUTHORIZATION );
 
         if ( wwwAuthorize == null || wwwAuthorize.length() == 0 ) return null;
@@ -65,4 +63,5 @@ public class HttpBasicCredentialFinder extends HttpCredentialFinder {
             throw new CredentialFinderException( err );
         }
     }
+
 }
