@@ -217,8 +217,8 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
         return resultSet;
     }
 
-    private Map _valueToServiceMapMap;
-    private Map _serviceOidToValuesArrayMap;
+    private Map _valueToServiceMapMap = new HashMap();
+    private Map _serviceOidToValuesArrayMap = new HashMap();
     private ReadWriteLock _rwlock = new ReentrantWriterPreferenceReadWriteLock();
     private Logger logger = LogManager.getInstance().getSystemLogger();
 }
