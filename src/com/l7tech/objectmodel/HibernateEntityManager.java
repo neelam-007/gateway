@@ -95,7 +95,7 @@ public abstract class HibernateEntityManager implements EntityManager {
     public Collection findAllHeaders() throws FindException {
         try {
             List headers = new ArrayList();
-            List results = _manager.find( getContext(), allHeadersQuery);
+            List results = _manager.find( getContext(), getAllHeadersQuery());
             for (Iterator i = results.iterator(); i.hasNext();) {
                 Object[] row = (Object[])i.next();
                 final long id = ((Long)row[0]).longValue();
@@ -105,6 +105,10 @@ public abstract class HibernateEntityManager implements EntityManager {
         } catch ( SQLException se ) {
             throw new FindException( se.toString(), se );
         }
+    }
+
+    protected String getAllHeadersQuery() {
+        return allHeadersQuery;
     }
 
     public Collection findAllHeaders( int offset, int windowSize ) throws FindException {
@@ -138,7 +142,7 @@ public abstract class HibernateEntityManager implements EntityManager {
     /**
      * all headers query,
      */
-    protected final String allHeadersQuery = "select " + alias + ".oid, " +
+    private final String allHeadersQuery = "select " + alias + ".oid, " +
                                              alias + ".name from " + alias + " in class "+
                                              getImpClass().getName();
     protected PersistenceManager _manager;
