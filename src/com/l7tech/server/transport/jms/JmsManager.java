@@ -6,14 +6,12 @@
 
 package com.l7tech.server.transport.jms;
 
-import com.l7tech.objectmodel.*;
-import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.transport.jms.JmsConnection;
+import com.l7tech.common.transport.jms.JmsEndpoint;
+import com.l7tech.objectmodel.*;
 
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Collections;
+import java.util.*;
 
 /**
  * Hibernate manager for JMS connections and endpoints.  Endpoints cannot be found
@@ -23,50 +21,92 @@ import java.util.Collections;
  * @version $Revision$
  */
 public class JmsManager extends HibernateEntityManager {
-    public long save( JmsConnection conn ) throws SaveException {
+    public Collection findMessageSourceEndpoints() throws FindException {
+        StringBuffer query = new StringBuffer( "from endpoints in class " );
+        query.append( JmsEndpoint.class.getName() );
+        query.append( " where is_message_source = ?" );
         try {
+            Collection endpoints = PersistenceManager.find( getContext(), query.toString(), Boolean.TRUE, Boolean.TYPE );
+            return endpoints;
+        } catch ( SQLException e ) {
+            throw new FindException( e.toString(), e );
+        }
+    }
+
+    private void addTransactionListener( final Object source, final boolean deleted ) throws SQLException, TransactionException {
+        HibernatePersistenceContext.getCurrent().registerTransactionListener( new TransactionListener() {
+            public void postCommit() {
+                fireChanged( source, deleted );
+            }
+
+            public void postRollback() { }
+        });
+    }
+
+    public long save( final JmsConnection conn ) throws SaveException {
+        try {
+            addTransactionListener( conn, false );
             return PersistenceManager.save( getContext(), conn );
-        } catch (SQLException e) {
+        } catch ( SQLException e ) {
             throw new SaveException(e.toString(), e);
+        } catch ( TransactionException e ) {
+            throw new SaveException( e.toString(), e );
         }
     }
 
-    public long save( JmsEndpoint endpoint ) throws SaveException {
+    public long save( final JmsEndpoint endpoint ) throws SaveException {
         try {
+            addTransactionListener( endpoint, false );
             return PersistenceManager.save( getContext(), endpoint );
-        } catch (SQLException e) {
+        } catch ( SQLException e ) {
             throw new SaveException(e.toString(), e);
+        } catch ( TransactionException e ) {
+            throw new SaveException( e.toString(), e );
         }
     }
 
-    public void update( JmsConnection conn ) throws UpdateException {
+    public void update( final JmsConnection conn ) throws UpdateException {
         try {
+            addTransactionListener( conn, false );
             PersistenceManager.update( getContext(), conn );
         } catch (SQLException e) {
             throw new UpdateException(e.toString(), e);
+        } catch ( TransactionException e ) {
+            throw new UpdateException( e.toString(), e );
         }
     }
 
-    public void update( JmsEndpoint endpoint ) throws UpdateException {
+    public void update( final JmsEndpoint endpoint ) throws UpdateException {
         try {
+            addTransactionListener( endpoint, false );
             PersistenceManager.update( getContext(), endpoint );
         } catch (SQLException e) {
             throw new UpdateException(e.toString(), e);
+        } catch ( TransactionException e ) {
+            throw new UpdateException( e.toString(), e );
         }
     }
 
-    public void delete( JmsConnection connection ) throws DeleteException {
+
+    public void delete( final JmsEndpoint endpoint ) throws DeleteException {
         try {
-            PersistenceManager.delete( getContext(), connection );
+            addTransactionListener( endpoint, true );
+            PersistenceManager.delete( getContext(), endpoint );
         } catch ( SQLException e ) {
+            throw new DeleteException( e.toString(), e );
+        } catch ( TransactionException e ) {
             throw new DeleteException( e.toString(), e );
         }
     }
 
-    public void delete( JmsEndpoint endpoint ) throws DeleteException {
+
+    public void delete( final JmsConnection connection ) throws DeleteException {
         try {
-            PersistenceManager.delete( getContext(), endpoint );
+            addTransactionListener( connection, true );
+            PersistenceManager.delete( getContext(), connection );
         } catch ( SQLException e ) {
+            throw new DeleteException( e.toString(), e );
+        } catch ( TransactionException e ) {
             throw new DeleteException( e.toString(), e );
         }
     }
@@ -89,6 +129,22 @@ public class JmsManager extends HibernateEntityManager {
 
     public void removeCrudListener( JmsCrudListener listener ) {
         _crudListeners.remove( listener );
+    }
+
+    private void fireChanged( Object source, boolean deleted ) {
+        for ( Iterator i = _crudListeners.iterator(); i.hasNext(); ) {
+            JmsCrudListener listener = (JmsCrudListener) i.next();
+            if ( source instanceof JmsEndpoint )
+                if ( deleted )
+                    listener.endpointDeleted( (JmsEndpoint)source );
+                else
+                    listener.endpointUpdated( (JmsEndpoint)source );
+            else if ( source instanceof JmsConnection )
+                if ( deleted )
+                    listener.connectionDeleted( (JmsConnection)source );
+                else
+                    listener.connectionUpdated( (JmsConnection)source );
+        }
     }
 
     private List _crudListeners = Collections.synchronizedList( new ArrayList() );
