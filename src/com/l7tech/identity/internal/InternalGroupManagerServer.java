@@ -1,10 +1,11 @@
 package com.l7tech.identity.internal;
 
-import cirrus.hibernate.*;
+import cirrus.hibernate.HibernateException;
+import cirrus.hibernate.Query;
+import cirrus.hibernate.Session;
 import com.l7tech.identity.*;
 import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.*;
-import com.l7tech.objectmodel.TransactionException;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -202,7 +203,6 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
                 membership.setUserOid( user.getOid() );
                 s.save( membership );
             }
-            s.flush();
         } catch (SQLException e) {
             throw new FindException( e.getMessage(), e );
         } catch (HibernateException e) {
@@ -222,7 +222,6 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
                 membership.setUserOid( user.getOid() );
                 s.delete( membership );
             }
-            s.flush();
         } catch (SQLException e) {
             throw new FindException( e.getMessage(), e );
         } catch (HibernateException e) {
@@ -242,7 +241,6 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
                 membership.setGroupOid( group.getOid() );
                 s.save( membership );
             }
-            s.flush();
         } catch (SQLException e) {
             throw new FindException( e.getMessage(), e );
         } catch (HibernateException e) {
@@ -262,7 +260,6 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
                 membership.setGroupOid( group.getOid() );
                 s.delete( membership );
             }
-            s.flush();
         } catch (SQLException e) {
             throw new FindException( e.getMessage(), e );
         } catch (HibernateException e) {
@@ -279,8 +276,6 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
             Session s = hpc.getSession();
 
             s.save( new GroupMembership( userImp.getOid(), groupImp.getOid() ) );
-
-            s.flush();
         } catch (SQLException e) {
             throw new FindException( e.getMessage(), e );
         } catch (HibernateException e) {
@@ -296,7 +291,6 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
             hpc = context();
             Session s = hpc.getSession();
             s.delete( new GroupMembership( userImp.getOid(), groupImp.getOid() ) );
-            s.flush();
         } catch (SQLException e) {
             throw new FindException( e.getMessage(), e );
         } catch (HibernateException e) {
@@ -329,7 +323,6 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
         HibernatePersistenceContext hpc = null;
         try {
             hpc = context();
-            hpc.beginTransaction();
             Session s = hpc.getSession();
 
             Set newGids = headersToIds( groupHeaders );
@@ -355,12 +348,8 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
                     s.delete( gm );
                 }
             }
-
-            hpc.commitTransaction();
         } catch (SQLException se ) {
             throw new UpdateException( se.toString(), se );
-        } catch ( TransactionException te ) {
-            throw new UpdateException( te.toString(), te );
         } catch ( HibernateException he ) {
             throw new UpdateException( he.toString(), he );
         }
@@ -430,7 +419,6 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
         HibernatePersistenceContext hpc = null;
         try {
             hpc = context();
-            hpc.beginTransaction();
 
             Session s = hpc.getSession();
 
@@ -457,12 +445,8 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
                     s.delete( gm );
                 }
             }
-
-            hpc.commitTransaction();
         } catch (SQLException se ) {
             throw new UpdateException( se.toString(), se );
-        } catch ( TransactionException te ) {
-            throw new UpdateException( te.toString(), te );
         } catch ( HibernateException he ) {
             throw new UpdateException( he.toString(), he );
         }
