@@ -383,10 +383,34 @@ public class LdapIdentityProvider implements IdentityProvider {
             logger.log(Level.INFO, "ldap config test failure " + msg, e);
             throw new InvalidIdProviderCfgException(msg);
         }
+
         NamingEnumeration answer = null;
         String filter = null;
         SearchControls sc = new SearchControls();
         sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+
+        // make sure the base DN is valid and contains at least one entry
+        try {
+            answer = context.search(cfg.getSearchBase(), "(objectClass=*)", sc);
+        } catch (NamingException e) {
+            String msg = "Cannot search using base: " + cfg.getSearchBase();
+            logger.log(Level.INFO, "ldap config test failure " + msg, e);
+
+            // cleanup and leave test with exception
+            try {
+                if (answer != null) answer.close();
+            } catch (NamingException e2) {
+                logger.finest("count not close answer " + e2.getMessage());
+            }
+            try {
+                context.close();
+            } catch (NamingException e2) {
+                logger.finest("count not close context " + e2.getMessage());
+            }
+
+            throw new InvalidIdProviderCfgException(msg);
+        }
+
         // check user mappings. make sure they work
         boolean atLeastOneUser = false;
         UserMappingConfig[] userTypes = cfg.getUserMappings();
