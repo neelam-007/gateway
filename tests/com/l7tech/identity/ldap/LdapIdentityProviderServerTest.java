@@ -24,9 +24,9 @@ public class LdapIdentityProviderServerTest extends junit.framework.TestCase {
     public LdapIdentityProviderServerTest() {
         IdentityProviderConfig config = new IdentityProviderConfig(IdentityProviderType.LDAP);
         // use this url when ssh forwarding locally
-        config.putProperty(LdapConfigSettings.LDAP_HOST_URL, "ldap://localhost:3899");
+        // config.putProperty(LdapConfigSettings.LDAP_HOST_URL, "ldap://localhost:3899");
         // use this url when in the office
-        // config.putProperty(LdapConfigSettings.LDAP_HOST_URL, "ldap://spock:389");
+        config.putProperty(LdapConfigSettings.LDAP_HOST_URL, "ldap://spock:389");
         config.putProperty(LdapConfigSettings.LDAP_SEARCH_BASE, "dc=layer7-tech,dc=com");
 
         // create the provider
