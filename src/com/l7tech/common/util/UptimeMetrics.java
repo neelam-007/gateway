@@ -18,10 +18,15 @@ import java.io.Serializable;
  */
 public class UptimeMetrics implements Serializable {
     private static Pattern findDaysHoursMinutes = Pattern.compile("^.*? up (\\d+) days?\\, (\\d+)\\:(\\d+)\\,.*$", Pattern.DOTALL);
-    private static Pattern findDays = Pattern.compile("^.*? (\\d+) day.*$", Pattern.DOTALL);
-    private static Pattern findHours = Pattern.compile("^.*? (\\d+) hr.*$", Pattern.DOTALL);
-    private static Pattern findMinutes = Pattern.compile("^.*? (\\d+) min.*$", Pattern.DOTALL);
-    private static Pattern findLoads = Pattern.compile("^.*?\\s+load averages?: ([0-9.]+), ([0-9.]+), ([0-9.]+).*$", Pattern.DOTALL);
+    // note fla: the following 4 reg ex dont work for me. those new ones work on my linux box
+    //private static Pattern findDays = Pattern.compile("^.*? (\\d+) day.*$", Pattern.DOTALL);
+    //private static Pattern findHours = Pattern.compile("^.*? (\\d+) hr.*$", Pattern.DOTALL);
+    //private static Pattern findMinutes = Pattern.compile("^.*? (\\d+) min.*$", Pattern.DOTALL);
+    //private static Pattern findLoads = Pattern.compile("^.*?\\s+load averages?: ([0-9.]+), ([0-9.]+), ([0-9.]+).*$", Pattern.DOTALL);
+    private static Pattern findDays = Pattern.compile(".*\\s+(\\d+)\\s+day.*", Pattern.DOTALL);
+    private static Pattern findHours = Pattern.compile(".*\\s+(\\d+):\\d+,\\s+\\d+\\s+user.*", Pattern.DOTALL);
+    private static Pattern findMinutes = Pattern.compile(".*\\s+\\d+:(\\d+),\\s+\\d+\\s+user.*", Pattern.DOTALL);
+    private static Pattern findLoads = Pattern.compile(".*average:\\s+(\\d+.\\d+),\\s+(\\d+.\\d+),\\s+(\\d+.\\d+).*", Pattern.DOTALL);
 
     private final String rawUptimeOutput;
     private final long timestamp;
