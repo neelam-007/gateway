@@ -25,6 +25,7 @@ public class AddressManagerImp implements AddressManager {
     public void delete(Address address) {
     }
 
-    public void save(Address address) {
+    public long save(Address address) {
+        return Entity.DEFAULT_OID;
     }
 }

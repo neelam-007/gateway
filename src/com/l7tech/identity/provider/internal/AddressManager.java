@@ -10,5 +10,5 @@ import java.util.Collection;
 public interface AddressManager extends EntityManager {
     public Address findByPrimaryKey( long oid );
     public void delete( Address address );
-    public void save( Address address );
+    public long save( Address address );
 }

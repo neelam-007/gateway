@@ -7,6 +7,6 @@ import com.l7tech.objectmodel.EntityManager;
  */
 public interface CountryManager extends EntityManager {
     public Country findByPrimaryKey( long oid );
-    public void save( Country country );
+    public long save( Country country );
     public void delete( Country country );
 }

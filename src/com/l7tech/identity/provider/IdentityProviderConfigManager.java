@@ -7,6 +7,6 @@ import com.l7tech.objectmodel.EntityManager;
  */
 public interface IdentityProviderConfigManager extends EntityManager {
     public IdentityProviderConfig findByPrimaryKey( long oid );
-    public void save( IdentityProviderConfig identityProviderConfig );
+    public long save( IdentityProviderConfig identityProviderConfig );
     public void delete( IdentityProviderConfig identityProviderConfig );
 }

@@ -8,5 +8,5 @@ import com.l7tech.objectmodel.EntityManager;
 public interface OrganizationManager extends EntityManager {
     public Organization findByPrimaryKey( long oid );
     public void delete( Organization organization );
-    public void save( Organization organization );
+    public long save( Organization organization );
 }

@@ -8,5 +8,5 @@ import com.l7tech.objectmodel.EntityManager;
 public interface IdentityProviderTypeManager extends EntityManager {
     public IdentityProviderType findByPrimaryKey( long oid );
     public void delete( IdentityProviderType identityProviderType );
-    public void save( IdentityProviderType identityProviderType );
+    public long save( IdentityProviderType identityProviderType );
 }

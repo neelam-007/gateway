@@ -10,5 +10,5 @@ import java.util.Collection;
 public interface UserManager extends EntityManager {
     public User findByPrimaryKey( long oid );
     public void delete( User user );
-    public void save( User user );
+    public long save( User user );
 }

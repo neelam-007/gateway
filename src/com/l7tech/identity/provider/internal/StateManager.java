@@ -8,5 +8,5 @@ import com.l7tech.objectmodel.EntityManager;
 public interface StateManager extends EntityManager {
     public State findByPrimaryKey( long oid );
     public void delete( State state );
-    public void save( State state );
+    public long save( State state );
 }
