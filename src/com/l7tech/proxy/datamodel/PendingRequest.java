@@ -6,15 +6,14 @@
 
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.NullRequestInterceptor;
 import com.l7tech.proxy.RequestInterceptor;
-import com.l7tech.proxy.ClientProxy;
 import com.l7tech.xmlenc.Session;
 import org.w3c.dom.Document;
 
 import java.net.URL;
 import java.security.SecureRandom;
-import java.security.NoSuchAlgorithmException;
 
 /**
  * Holds request state while the client proxy is processing it.
@@ -38,6 +37,7 @@ public class PendingRequest {
     // Policy settings, filled in by traversing policy tree
     private static class PolicySettings {
         private boolean isSslRequired = false;
+        private boolean sslForbidden = false;  // ssl is forbidden for this request
         private boolean isBasicAuthRequired = false;
         private boolean isDigestAuthRequired = false;
         private boolean isNonceRequired = false;
@@ -218,5 +218,13 @@ public class PendingRequest {
 
     public void setOriginalUrl(URL originalUrl) {
         this.originalUrl = originalUrl;
+    }
+
+    public void setSslForbidden(boolean sslForbidden) {
+        this.policySettings.sslForbidden = sslForbidden;
+    }
+
+    public boolean isSslForbidden() {
+        return this.policySettings.sslForbidden;
     }
 }
