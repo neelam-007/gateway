@@ -8,9 +8,9 @@ package com.l7tech.identity;
  */
 public class IdentityProviderType {
 
-    public static final IdentityProviderType INTERNAL = new IdentityProviderType(1);
-    public static final IdentityProviderType LDAP = new IdentityProviderType(2);
-    public static final IdentityProviderType UNDEFINED = new IdentityProviderType(-1);
+    public static final IdentityProviderType INTERNAL = new IdentityProviderType(1, "internal");
+    public static final IdentityProviderType LDAP = new IdentityProviderType(2, "LDAP");
+    public static final IdentityProviderType UNDEFINED = new IdentityProviderType(-1, "undefined");
 
     public static IdentityProviderType fromVal(int val) {
         switch (val) {
@@ -27,9 +27,16 @@ public class IdentityProviderType {
         return type;
     }
 
-    protected IdentityProviderType(int type) {
+    public String description() {
+        return description;
+    }
+
+
+    protected IdentityProviderType(int type, String desc) {
         this.type = type;
+        this.description = desc;
     }
 
     private int type;
+    private String description;
 }
