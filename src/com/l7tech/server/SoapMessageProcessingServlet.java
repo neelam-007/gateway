@@ -216,7 +216,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             res.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 
             PublishedService pserv = context.getService();
-            if (pserv != null && context.isRequestPolicyViolated()) {
+            if (pserv != null && shouldSendBackPolicyUrl(context)) {
                 String purl = makePolicyUrl(req, pserv.getOid());
                 res.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
             }
@@ -259,7 +259,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
             PublishedService pserv = context.getService();
             String purl = "";
-            if (pserv != null && context.isRequestPolicyViolated()) {
+            if (pserv != null && shouldSendBackPolicyUrl(context)) {
                 purl = makePolicyUrl(hreq, pserv.getOid());
                 hresp.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
             }
@@ -271,6 +271,19 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         }
     }
 
+    private boolean shouldSendBackPolicyUrl(PolicyEnforcementContext context) throws IOException {
+        if (context.isRequestPolicyViolated()) {
+            return true;
+        }
+        String requestorVersion = context.getRequest().
+                                        getHttpRequestKnob().
+                                            getHeaderSingleValue(SecureSpanConstants.HttpHeaders.POLICY_VERSION);
+        if (requestorVersion == null || requestorVersion.length() < 1) {
+            return true;
+        }
+        return false;
+    }
+
     private void sendChallenge(PolicyEnforcementContext context,
                                HttpServletRequest hreq, HttpServletResponse hresp) throws IOException {
         ServletOutputStream sos = null;
@@ -279,7 +292,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             hresp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             PublishedService pserv = context.getService();
             String purl = "";
-            if (pserv != null && context.isRequestPolicyViolated()) {
+            if (pserv != null && shouldSendBackPolicyUrl(context)) {
                 purl = makePolicyUrl(hreq, pserv.getOid());
                 hresp.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
             }
