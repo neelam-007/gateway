@@ -1,11 +1,9 @@
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.policy.assertion.Assertion;
 import org.apache.log4j.Category;
 
 import java.util.HashMap;
-import java.util.Map;
-
-import com.l7tech.policy.assertion.Assertion;
 
 /**
  * In-core representation of an SSG.
