@@ -5,6 +5,7 @@ import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceManager;
 import com.l7tech.service.Wsdl;
 import com.l7tech.common.util.Locator;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.objectmodel.FindException;
@@ -58,7 +59,7 @@ import java.net.URL;
  */
 public class WsdlProxyServlet extends AuthenticatableHttpServlet {
 
-    public static final String SOAP_PROCESSING_SERVLET_URI = "/ssg/soap";
+    public static final String SOAP_PROCESSING_SERVLET_URI = SecureSpanConstants.SSG_FILE;
 
     public void init( ServletConfig config ) throws ServletException {
         super.init( config );
