@@ -128,7 +128,7 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
                 return AssertionStatus.FALSIFIED;
             }
 
-            logger.info("Response document was encrypted.");
+            logger.fine("Response document was encrypted.");
         }
 
         // GET THE SIGNING CERT
@@ -166,7 +166,7 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
             logger.log(Level.SEVERE, msg, e);
             return AssertionStatus.FALSIFIED;
         }
-        logger.info("Response document signed successfully");
+        logger.fine("Response document signed successfully");
 
         ((XmlResponse)response).setDocument(soapmsg);
 

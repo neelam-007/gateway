@@ -93,7 +93,7 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
                 throw new InvalidIdProviderCfgException("This Identity Provider configuration is not " +
                         "valid, the directory is not responding or the directory has no entries.");
             }
-            logger.info("Valid IPC tested.");
+            logger.fine("Valid IPC tested.");
         } else {
             logger.severe("testing unsupported type");
             throw new InvalidIdProviderCfgException("Unsupported type");

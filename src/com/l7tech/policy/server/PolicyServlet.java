@@ -169,7 +169,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     {
         // Find our certificate
         byte[] cert = KeystoreUtils.getInstance().readRootCert();
-        logger.info("Sending root cert");
+        logger.fine("Sending root cert");
 
         // Insert Cert-Check-NNN: headers if we can.
         if (username != null) {

@@ -80,7 +80,7 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
         try {
             List users = _manager.find(getContext(), "from " + getTableName() + " in class " + getImpClass().getName() + " where " + getTableName() + ".login like ?", searchString, String.class);
             Collection output = new ArrayList();
-            logger.info("search for " + searchString + " returns " + users.size() + " users.");
+            logger.finest("search for " + searchString + " returns " + users.size() + " users.");
             for (Iterator i = users.iterator(); i.hasNext();) {
                 output.add(userToHeader((User)i.next()));
             }
@@ -105,7 +105,7 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
             Integer i = (Integer)results.get(0);
             int res = i.intValue();
 
-            logger.info("cert_reset_counter value for user " + oid + " = " + res);
+            logger.finest("cert_reset_counter value for user " + oid + " = " + res);
             if (res < CERTRESETCOUNTER_MAX) return true;
             else {
                 logger.log(Level.SEVERE, "user " + oid + " not authorized to regen cert.");

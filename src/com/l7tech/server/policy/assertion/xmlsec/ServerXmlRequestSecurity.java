@@ -115,7 +115,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             logger.log(Level.SEVERE, e.getMessage(), e);
             return AssertionStatus.FALSIFIED;
         }
-        logger.info("cert extracted from digital signature for user " + certCN);
+        logger.finest("cert extracted from digital signature for user " + certCN);
         User u = new User();
         u.setLogin(certCN);
         request.setPrincipalCredentials(new PrincipalCredentials(u, null, CredentialFormat.CLIENTCERT, null, cert));
@@ -150,7 +150,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
                 logger.log(Level.SEVERE, msg, e);
                 throw new PolicyAssertionException(msg, e);
             }
-            logger.info("Decrypted request successfully.");
+            logger.fine("Decrypted request successfully.");
         }
 
         // clean empty security element and header if necessary

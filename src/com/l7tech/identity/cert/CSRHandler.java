@@ -150,7 +150,7 @@ public class CSRHandler extends HttpServlet {
             response.setContentLength(certbytes.length);
             response.getOutputStream().write(certbytes);
             response.flushBuffer();
-            logger.info("sent new cert to user " + authenticatedUser.getLogin() +
+            logger.fine("sent new cert to user " + authenticatedUser.getLogin() +
                         ". Subject DN=" + ((X509Certificate)(cert)).getSubjectDN().toString());
         } catch (CertificateEncodingException e) {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());

@@ -54,7 +54,7 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
         try {
             List groups = _manager.find( getContext(), "from " + getTableName() + " in class " + getImpClass().getName() + " where " + getTableName() + ".name like ?", searchString, String.class );
             Collection output = new ArrayList();
-            logger.info("search for " + searchString + " returns " + groups.size() + " groups.");
+            logger.finer("search for " + searchString + " returns " + groups.size() + " groups.");
             for (Iterator i = groups.iterator(); i.hasNext();) {
                 output.add(groupToHeader((Group)i.next()));
             }

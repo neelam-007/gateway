@@ -94,7 +94,7 @@ public class InternalIdentityProviderServer implements IdentityProvider {
 
                     // Check whether the client cert is valid (according to our root cert)
                     // (get the root cert)
-                    logger.info("Verifying client cert against current root cert...");
+                    logger.finest("Verifying client cert against current root cert...");
                     Certificate rootcacert = null;
                     try {
                         String rootCertLoc = KeystoreUtils.getInstance().getRootCertPath();
@@ -124,7 +124,7 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                         logger.log(Level.SEVERE, err, e);
                         throw new BadCredentialsException( err, e );
                     }
-                    logger.info("Verification OK - client cert is valid.");
+                    logger.finest("Verification OK - client cert is valid.");
                     // End of Check
 
                     try {
@@ -151,7 +151,7 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                         X509Certificate pcCert = (X509Certificate)maybeCert;
                         logger.fine("Request cert serial# is " + pcCert.getSerialNumber().toString());
                         if ( pcCert.equals( dbCertX509 ) ) {
-                            logger.info("Authenticated user " + login + " using a client certificate" );
+                            logger.finest("Authenticated user " + login + " using a client certificate" );
                             pc.getUser().copyFrom( dbUser );
                             // remember that this cert was used at least once successfully
                             userManager.setCertWasUsed(Long.toString(dbUser.getOid()));

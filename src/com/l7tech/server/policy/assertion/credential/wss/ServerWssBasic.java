@@ -112,7 +112,7 @@ public class ServerWssBasic implements ServerAssertion {
             // this is good, we got what we needed
             User u = new User();
             u.setLogin(handler.getParsedUsername());
-            logger.info("Found credentials for user " + handler.getParsedUsername());
+            logger.fine("Found credentials for user " + handler.getParsedUsername());
             return new PrincipalCredentials(u, passwd.getBytes(), CredentialFormat.CLEARTEXT);
         } catch (IOException e) {
             logger.log(Level.SEVERE, "Exception parsing xml request " + e.getMessage(), e);

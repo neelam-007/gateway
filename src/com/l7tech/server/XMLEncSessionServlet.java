@@ -119,7 +119,7 @@ public class XMLEncSessionServlet extends HttpServlet {
                 try {
                     provider.authenticate(creds);
                 } catch (AuthenticationException e) {
-                    logger.info("Authentication successful for user " + creds.getUser().getLogin() + " on identity provider: " + provider.getConfig().getName());
+                    logger.fine("Authentication successful for user " + creds.getUser().getLogin() + " on identity provider: " + provider.getConfig().getName());
                     continue;
                 }
                 return creds.getUser();
