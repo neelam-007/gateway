@@ -46,12 +46,7 @@ public class ClientResponseWssConfidentiality extends ClientAssertion {
             OperationCanceledException, BadCredentialsException,
             IOException, KeyStoreCorruptException, ClientCertificateException, PolicyRetryableException
     {
-        Ssg ssg = request.getSsg();
-
-        // We'll need to know the server cert in order to check the signature
-        if (SsgKeyStoreManager.getServerCert(ssg) == null)
-            throw new ServerCertificateUntrustedException("Server cert is needed to check signatures, but has not yet been discovered");
-
+        // No action required
         return AssertionStatus.NONE;
     }
 

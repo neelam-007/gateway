@@ -50,13 +50,6 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
             OperationCanceledException, BadCredentialsException,
             IOException, KeyStoreCorruptException, ClientCertificateException, PolicyRetryableException
     {
-        Ssg ssg = request.getSsg();
-
-        // We'll need to know the server cert in order to check the signature
-        if (SsgKeyStoreManager.getServerCert(ssg) == null)
-            throw new ServerCertificateUntrustedException("Server cert is needed to check signatures, " +
-                                                          "but has not yet been discovered");
-
         request.getPendingDecorations().put(this, new ClientDecorator() {
             public AssertionStatus decorateRequest(PendingRequest request) throws InvalidDocumentFormatException {
                 log.log(Level.FINER, "Expecting a signed reply; will be sure to include L7a:MessageID");
