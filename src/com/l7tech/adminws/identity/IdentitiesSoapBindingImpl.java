@@ -5,7 +5,10 @@ import com.l7tech.identity.*;
 import com.l7tech.util.Locator;
 import com.l7tech.objectmodel.*;
 
+import javax.naming.NamingException;
 import java.rmi.RemoteException;
+import java.io.IOException;
+import java.sql.SQLException;
 
 /**
  * Layer 7 Technologies, inc.
@@ -187,13 +190,30 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
     // PRIVATES
     // ************************************************
 
-    private IdentityProviderConfigManager getIdentityProviderConfigManager() throws java.rmi.RemoteException {
+    private com.l7tech.identity.IdentityProviderConfigManager getIdentityProviderConfigManager() throws java.rmi.RemoteException {
+        // todo fla, temporary fix using direcly the HibernatePersistenceManager
         if (identityProviderConfigManager == null){
-            // instantiate the server-side manager
-            identityProviderConfigManager = (IdentityProviderConfigManager)Locator.getDefault().lookup(com.l7tech.identity.IdentityProviderConfigManager.class);
+            try {
+                HibernatePersistenceManager.initialize();
+                identityProviderConfigManager = new com.l7tech.identity.imp.IdentityProviderConfigManagerImp(com.l7tech.objectmodel.HibernatePersistenceManager.getContext());
+            } catch (IOException e) {
+                throw new RemoteException("IOException in IdentitiesSoapBindingImpl.getIdentityProviderConfigManager", e);
+            } catch (SQLException e) {
+                throw new RemoteException("SQLException in IdentitiesSoapBindingImpl.getIdentityProviderConfigManager", e);
+            } catch (NamingException e) {
+                throw new RemoteException("NamingException in IdentitiesSoapBindingImpl.getIdentityProviderConfigManager", e);
+            }
             if (identityProviderConfigManager == null) throw new java.rmi.RemoteException("Cannot instantiate the IdentityProviderConfigManager");
         }
         return identityProviderConfigManager;
+        /*
+        if (identityProviderConfigManager == null){
+            // instantiate the server-side manager
+            identityProviderConfigManager = (com.l7tech.identity.IdentityProviderConfigManager)Locator.getDefault().lookup(com.l7tech.identity.IdentityProviderConfigManager.class);
+            if (identityProviderConfigManager == null) throw new java.rmi.RemoteException("Cannot instantiate the IdentityProviderConfigManager");
+        }
+        return identityProviderConfigManager;
+        */
     }
 
     private UserManager retrieveUserManager(long identityProviderConfigId) throws java.rmi.RemoteException {
@@ -223,7 +243,7 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
             throw new RemoteException("RemoteException in retrieveGroupManager", e);
         }
     }
-    
+
     IdentityProviderConfigManager identityProviderConfigManager = null;
     java.util.HashMap userManagersMap = null;
     java.util.HashMap groupManagersMap = null;
