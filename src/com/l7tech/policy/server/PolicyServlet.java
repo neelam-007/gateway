@@ -261,7 +261,10 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                 generateFaultAndSendAsResponse(res, "internal error", e.getMessage());
                 return;
             }
-            if (response == null) {
+            if (response == null && users.size() < 1) {
+                sendAuthChallenge(req, res);
+                return;
+            } else if (response == null) {
                 logger.info("this policy download is refused.");
                 generateFaultAndSendAsResponse(res, "Policy not found or download unauthorized", "");
                 return;
@@ -601,6 +604,22 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         DocumentBuilder builder = dbf.newDocumentBuilder();
         builder.setEntityResolver(XmlUtil.getSafeEntityResolver());
         return builder;
+    }
+
+    private void sendAuthChallenge(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws IOException {
+        // send error back with a hint that credentials should be provided
+        String newUrl = "https://" + httpServletRequest.getServerName();
+        if (httpServletRequest.getServerPort() == 8080 || httpServletRequest.getServerPort() == 8443) {
+            newUrl += ":8443";
+        }
+        newUrl += httpServletRequest.getRequestURI() + "?" + httpServletRequest.getQueryString();
+        httpServletResponse.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, newUrl);
+        httpServletResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        logger.fine("sending back authentication challenge");
+        // in this case, send an authentication challenge
+        httpServletResponse.setHeader("WWW-Authenticate", "Basic realm=\"" + ServerHttpBasic.REALM + "\"");
+        httpServletResponse.getOutputStream().close();
+        return;
     }
 
     private DocumentBuilderFactory dbf;
