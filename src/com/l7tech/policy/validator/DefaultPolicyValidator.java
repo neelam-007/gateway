@@ -149,7 +149,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
             // involved is from the internal id provider
             if (seenCredAssertionThatRequiresClientCert || seenDigestAssertion) {
                 // check that this identity is member of internal id provider
-                IdentityAssertion idass = (IdentityAssertion)a;
+                /*IdentityAssertion idass = (IdentityAssertion)a;
                 try {
                     if (getProviderConfigManager().findByPrimaryKey(idass.getIdentityProviderOid()).type()
                       != IdentityProviderType.INTERNAL) {
@@ -168,7 +168,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
                 } catch (FindException e) {
                     result.addError(new PolicyValidatorResult.Error(a, "This identity might no longer be valid.", e));
                     log.log(Level.INFO, "could not retrieve IdentityProvider", e);
-                }
+                }*/
             }
             seenAccessControl = true;
             if (isSpecificUser(a)) {
@@ -239,6 +239,13 @@ public class DefaultPolicyValidator extends PolicyValidator {
                         "Xml Response Security must occur after routing.", null)
                     );
                 }
+                if (seenXmlResponseSecurityAssertion) {
+                    result.addError(
+                      new PolicyValidatorResult.Error(a,
+                        "Xml Response Security cannot appear twice in path.", null)
+                    );
+                }
+                seenXmlResponseSecurityAssertion = true;
             } else if (a instanceof HttpClientCert) {
                 if (!seenSsl) {
                     result.addError(
@@ -321,6 +328,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
         boolean sslForbidden = false;
         boolean seenCredAssertionThatRequiresClientCert = false;
         boolean seenDigestAssertion = false;
+        boolean seenXmlResponseSecurityAssertion = false;
         private boolean seenSpecificUserAssertion;
     }
 
