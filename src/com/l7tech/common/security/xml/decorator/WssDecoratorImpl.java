@@ -82,7 +82,7 @@ public class WssDecoratorImpl implements WssDecorator {
         Set signList = decorationRequirements.getElementsToSign();
 
         // If we aren't signing the entire message, find extra elements to sign
-        if (decorationRequirements.isSignTimestamp() || !signList.isEmpty()) {
+        if (decorationRequirements.isSignTimestamp()/* || !signList.isEmpty() */) {  // use only timestamp flag - em
             int timeoutMillis = decorationRequirements.getTimestampTimeoutMillis();
             if (timeoutMillis < 1)
                 timeoutMillis = TIMESTAMP_TIMOUT_MILLIS;
