@@ -51,8 +51,9 @@ public class Client {
     public com.l7tech.identity.IdentityProviderConfig findIdentityProviderConfigByPrimaryKey(long oid) throws java.rmi.RemoteException {
         Call call = createStubCall();
         call.setOperationName(new QName(IDENTITY_URN, "findIdentityProviderConfigByPrimaryKey"));
-		call.setReturnClass(com.l7tech.identity.imp.IdentityProviderConfigImp.class);
-        call.addParameter(new javax.xml.namespace.QName("", "oid"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "long"), long.class, javax.xml.rpc.ParameterMode.IN);
+		// call.setReturnClass(com.l7tech.identity.imp.IdentityProviderConfigImp.class);
+        // call.setReturnClass(com.l7tech.identity.IdentityProviderConfig.class);
+        // call.addParameter(new javax.xml.namespace.QName("", "oid"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "long"), long.class, javax.xml.rpc.ParameterMode.IN);
         return (com.l7tech.identity.imp.IdentityProviderConfigImp)call.invoke(new Object[]{new java.lang.Long(oid)});
     }
     public long saveIdentityProviderConfig(com.l7tech.identity.IdentityProviderConfig identityProviderConfig) throws java.rmi.RemoteException {
@@ -95,9 +96,10 @@ public class Client {
     public com.l7tech.identity.User findUserByPrimaryKey(long identityProviderConfigId, String userId) throws java.rmi.RemoteException {
         Call call = createStubCall();
         call.setOperationName(new QName(IDENTITY_URN, "findUserByPrimaryKey"));
-        call.addParameter(new javax.xml.namespace.QName("", "identityProviderConfigId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "long"), long.class, javax.xml.rpc.ParameterMode.IN);
-        call.addParameter(new javax.xml.namespace.QName("", "userId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"), String.class, javax.xml.rpc.ParameterMode.IN);
-        call.setReturnClass(com.l7tech.identity.internal.imp.UserImp.class);
+        //call.addParameter(new javax.xml.namespace.QName("", "identityProviderConfigId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "long"), long.class, javax.xml.rpc.ParameterMode.IN);
+        //call.addParameter(new javax.xml.namespace.QName("", "userId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"), String.class, javax.xml.rpc.ParameterMode.IN);
+        //call.setReturnClass(com.l7tech.identity.internal.imp.UserImp.class);
+        //call.setReturnClass(com.l7tech.identity.User.class);
         return (com.l7tech.identity.internal.imp.UserImp)call.invoke(new Object[]{new java.lang.Long(identityProviderConfigId), userId});
     }
     public void deleteUser(long identityProviderConfigId, String userId) throws java.rmi.RemoteException {
@@ -140,9 +142,9 @@ public class Client {
     public com.l7tech.identity.Group findGroupByPrimaryKey(long identityProviderConfigId, String groupId) throws java.rmi.RemoteException {
         Call call = createStubCall();
         call.setOperationName(new QName(IDENTITY_URN, "findGroupByPrimaryKey"));
-        call.addParameter(new javax.xml.namespace.QName("", "identityProviderConfigId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "long"), long.class, javax.xml.rpc.ParameterMode.IN);
-        call.addParameter(new javax.xml.namespace.QName("", "groupId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"), String.class, javax.xml.rpc.ParameterMode.IN);
-        call.setReturnClass(com.l7tech.identity.internal.imp.GroupImp.class);
+        // call.addParameter(new javax.xml.namespace.QName("", "identityProviderConfigId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "long"), long.class, javax.xml.rpc.ParameterMode.IN);
+        // call.addParameter(new javax.xml.namespace.QName("", "groupId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"), String.class, javax.xml.rpc.ParameterMode.IN);
+        // call.setReturnClass(com.l7tech.identity.internal.imp.GroupImp.class);
         return (com.l7tech.identity.internal.imp.GroupImp)call.invoke(new Object[]{new java.lang.Long(identityProviderConfigId), groupId});
     }
     public void deleteGroup(long identityProviderConfigId, String groupId) throws java.rmi.RemoteException {
