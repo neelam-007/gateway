@@ -22,8 +22,8 @@ import java.net.BindException;
 public class Main {
     private static final Logger log = Logger.getLogger(Main.class.getName());
     private static final int DEFAULT_PORT = 7700;
-    private static final int MIN_THREADS = 4;
-    private static final int MAX_THREADS = 20;
+    private static final int MIN_THREADS = 5;
+    private static final int MAX_THREADS = 300;
 
     private static int getIntProperty(String name, int def) {
         try {
