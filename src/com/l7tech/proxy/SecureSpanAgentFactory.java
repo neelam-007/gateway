@@ -66,17 +66,26 @@ public class SecureSpanAgentFactory {
         }
     }
 
-    public static SecureSpanAgent createSecureSpanAgent(String gatewayHostname,
-                                                        int gatewayPort,
-                                                        final String username,
-                                                        final char[] password) {
-        final Ssg ssg = new Ssg(1, gatewayHostname);
-        ssg.setSsgPort(gatewayPort);
-        ssg.setUsername(username);
-        ssg.cmPassword(password);
+    /**
+     * Create a new SecureSpanAgent with the specified settings.  The Agent will be configured to forward messages
+     * to the specified Gateway, using the specified credentials.
+     *
+     * @param options the configuration to use for the new SecureSpanAgent instance
+     * @return the newly-created SecureSpanAgent instance
+     */
+    public static SecureSpanAgent createSecureSpanAgent(SecureSpanAgentOptions options) {
+        final Ssg ssg = new Ssg(options.getId(), options.getGatewayHostname());
+        final PasswordAuthentication pw = new PasswordAuthentication(options.getUsername(), (char[]) options.getPassword().clone());
+        ssg.setUsername(pw.getUserName());
+        ssg.cmPassword(pw.getPassword());
+        if (options.getGatewayPort() != 0)
+            ssg.setSsgPort(options.getGatewayPort());
+        if (options.getGatewaySslPort() != 0)
+            ssg.setSslPort(options.getGatewaySslPort());
+        if (options.getKeyStorePath() != null)
+            ssg.setKeyStorePath(options.getKeyStorePath());
         CurrentRequest.setCurrentSsg(ssg);
-        //ssg.setKeyStoreFile(keystorePathname);
-        PolicyManager policyManager = PolicyManagerImpl.getInstance();
+        final PolicyManager policyManager = PolicyManagerImpl.getInstance();
         final MessageProcessor mp = new MessageProcessor(policyManager);
         final RequestInterceptor nri = NullRequestInterceptor.INSTANCE;
         return new SecureSpanAgent() {
@@ -151,7 +160,6 @@ public class SecureSpanAgentFactory {
                     IOException, CausedBadCredentialsException, GeneralSecurityException,
                     CausedCertificateAlreadyIssuedException
             {
-                PasswordAuthentication pw = new PasswordAuthentication(username, password);
                 try {
                     if (SsgKeyStoreManager.getServerCert(ssg) == null)
                         SsgKeyStoreManager.installSsgServerCertificate(ssg, pw);
