@@ -83,6 +83,8 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
         // (this is optional)
         if (nonceValue != null && nonceValue.length() > 0) {
             SecureConversationTokenHandler.appendNonceToDocument(soapmsg, Long.parseLong(nonceValue));
+        } else {
+            logger.finest("request did not include a nonce value to use for response's signature");
         }
 
         // ENCRYPTION (optional)
