@@ -167,12 +167,18 @@ public abstract class AbstractLdapIdentityProviderServer implements IdentityProv
                 filter = "(&(|(objectclass=" + constants.groupObjectClass() + ")" +
                          "(objectclass=" + constants.userObjectClass() + "))" +
                          "(" + constants.userNameAttribute() + "=" + searchString + "))";
+                        // todo, add ou
             } else if (wantUsers) {
                 filter = "(&(objectclass=" + constants.userObjectClass() + ")" +
                          "(" + constants.userNameAttribute() + "=" + searchString + "))";
             } else if (wantGroups) {
-                filter = "(&(objectclass=" + constants.groupObjectClass() + ")" +
-                         "(" + constants.groupNameAttribute() + "=" + searchString + "))";
+                /*filter = "(&(objectclass=" + constants.groupObjectClass() + ")" +
+                         "(" + constants.groupNameAttribute() + "=" + searchString + ")" +
+                         ")";*/
+                filter = "(|(&(objectclass=" + constants.groupObjectClass() + ")" +
+                         "(" + constants.groupNameAttribute() + "=" + searchString + "))" +
+                         "(&(objectClass=" + AbstractLdapConstants.oUObjClassName() + ")" +
+                         "(" + AbstractLdapConstants.oUObjAttrName() + "=" + searchString + ")))";
             }
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
@@ -196,6 +202,11 @@ public abstract class AbstractLdapIdentityProviderServer implements IdentityProv
                     if (tmp != null) {
                         header = new EntityHeader(dn, EntityType.USER, tmp.toString(), null);
                     }
+                } else if (objectclasses.contains(AbstractLdapConstants.oUObjClassName()) ||
+                           objectclasses.contains(AbstractLdapConstants.oUObjClassName().toLowerCase())) {
+                    header = new EntityHeader(dn, EntityType.GROUP, dn, null);
+                } else {
+                    logger.warning("objectclass not supported for dn=" + dn);
                 }
                 // if we successfully constructed a header, add it to result list
                 if (header != null) output.add(header);
