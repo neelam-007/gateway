@@ -131,7 +131,7 @@ public class ClientAcceleratedXpathAssertion extends ClientXpathAssertion {
 
             int index = tarariContext.getIndex(expr, tmc.getCompilerGeneration());
             if (index < 1) {
-                logger.log(Level.INFO, "Hardware acceleration not supported for this xpath expression; falling back to software xpath processing.");
+                logger.log(Level.INFO, "Hardware acceleration not available for this xpath expression; falling back to software xpath processing.");
                 return null;
             }
 
