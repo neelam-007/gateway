@@ -277,7 +277,6 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                 securedMessagePartsTableModel.addPart(toSecureMessagePart(elementSecurity));
             }
             getContentPane().setLayout(new BorderLayout());
-            mainPanel.setSize(800, 600);
             getContentPane().add(mainPanel);
         } catch (WSDLException e) {
             throw new RuntimeException(e);
@@ -509,8 +508,8 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         _1.add(_7, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, 0, 3, 7, 7, null, null, null));
         final JSplitPane _8;
         _8 = new JSplitPane();
-        _8.setDividerSize(4);
         _8.setDividerLocation(350);
+        _8.setDividerSize(4);
         _7.add(_8, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 0, 3, 7, 7, null, null, null));
         final JPanel _9;
         _9 = new JPanel();
