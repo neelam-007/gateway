@@ -1,13 +1,11 @@
 package com.l7tech.logging;
 
-import com.l7tech.server.ServerConfig;
-
-import java.util.logging.*;
-import java.util.Properties;
 import java.io.File;
-import java.io.InputStream;
-import java.io.IOException;
 import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+import java.util.logging.*;
 
 /**
  * Layer 7 technologies, inc.
@@ -123,15 +121,14 @@ public class ServerLogManager extends LogManager {
             try {
                 InputStream inputStream = null;
 
-                String path = ServerConfig.getInstance().getLogPropertiesPath();
-                if ( path != null && path.length() > 0 ) {
-                    File f = new File( path );
-                    if ( f.exists() ) {
-                        try {
-                            inputStream = new FileInputStream( f );
-                        } catch ( IOException ioe ) {
-                            // inputStream stays null
-                        }
+                String path = System.getProperty( PROP_LOGPROPERTIES );
+                if ( path == null || path.length() == 0 ) path = DEFAULT_LOGPROPERTIES_PATH;
+                File f = new File( path );
+                if ( f.exists() ) {
+                    try {
+                        inputStream = new FileInputStream( f );
+                    } catch ( IOException ioe ) {
+                        // inputStream stays null
                     }
                 }
 
@@ -154,6 +151,9 @@ public class ServerLogManager extends LogManager {
     public static final String FILEPATH_PROP_NAME = "com.l7tech.server.log.FileHandler.path";
     public static final String SIZELIMIT_PROP_NAME = "com.l7tech.server.log.FileHandler.limit";
     public static final String NRFILES_PROP_NAME = "com.l7tech.server.log.FileHandler.count";
+    public static final String PROP_LOGPROPERTIES = "com.l7tech.server.logPropertiesPath";
+    public static final String DEFAULT_LOGPROPERTIES_PATH  = "/ssg/etc/conf/ssglog.properties";
+
     private Logger systemLogger = null;
     private static final String SYSTEM_LOGGER_NAME = "com.l7tech.server.log";
     private MemHandler systemLogMemHandler = null;
