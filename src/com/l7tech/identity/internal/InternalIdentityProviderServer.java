@@ -63,7 +63,7 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                         _log.log( Level.SEVERE, "Request was supposed to contain a certificate, but does not" );
                         return false;
                     } else {
-                        dbCert = userManager.retrieveUserCert( login );
+                        dbCert = userManager.retrieveUserCert( new Long(dbUser.getOid()).toString() );
                         if ( dbCert == null ) {
                             _log.log( Level.WARNING, "No certificate found for user " + login );
                             return false;
