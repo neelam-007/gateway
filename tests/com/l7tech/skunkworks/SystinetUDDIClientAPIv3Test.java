@@ -59,6 +59,18 @@ public class SystinetUDDIClientAPIv3Test {
         return find_service;
     }
 
+    public static Find_service createFindServiceByServiceNameAndCategory(String serviceName, KeyedReference category) throws InvalidParameterException {
+       Find_service find_service = new Find_service();
+        NameArrayList businessKey = new NameArrayList(new Name(serviceName));
+        find_service.setNameArrayList(businessKey);
+        StringArrayList qualifierList = new StringArrayList();
+        qualifierList.add("approximateMatch");
+        find_service.setFindQualifierArrayList(qualifierList);
+        find_service.setCategoryBag(new CategoryBag(new KeyedReferenceArrayList(category)));
+        find_service.setMaxRows(new Integer(MAX_ROWS));
+        return find_service;
+    }
+
     /**
      * Creates and fills the Find_binding structure.
      *
@@ -67,7 +79,7 @@ public class SystinetUDDIClientAPIv3Test {
      * @throws InvalidParameterException If the value is invalid.
      */
     public static Find_binding createFindBindingByServiceKey(String servicesKey) throws InvalidParameterException {
-        System.out.println("serviceKey = " + servicesKey);
+//        System.out.println("serviceKey = " + servicesKey);
         Find_binding find_binding = new Find_binding();
         find_binding.setServiceKey(servicesKey);
         find_binding.setMaxRows(new Integer(MAX_ROWS));
@@ -82,7 +94,7 @@ public class SystinetUDDIClientAPIv3Test {
      * @throws InvalidParameterException If the value is invalid.
      */
     public static Get_tModelDetail createGetTModelDetail(String tModelKey) throws InvalidParameterException {
-        System.out.println("tModelKey = " + tModelKey);
+//        System.out.println("tModelKey = " + tModelKey);
         Get_tModelDetail get = new Get_tModelDetail();
         get.setTModelKeyArrayList(new StringArrayList(tModelKey));
         return get;
@@ -99,9 +111,9 @@ public class SystinetUDDIClientAPIv3Test {
      */
     public static ServiceList findService(Find_service find_service) throws UDDIException, SOAPException {
         UDDI_Inquiry_PortType inquiry = getInquiryStub();
-        System.out.print("Search in progress ..");
+//        System.out.print("Search in progress ..");
         ServiceList serviceList = inquiry.find_service(find_service);
-        System.out.println(" done");
+//        System.out.println(" done");
         return serviceList;
     }
 
@@ -115,9 +127,9 @@ public class SystinetUDDIClientAPIv3Test {
      */
     public static BindingDetail findBinding(Find_binding find_binding) throws UDDIException, SOAPException {
         UDDI_Inquiry_PortType inquiry = getInquiryStub();
-        System.out.print("Search in progress ..");
+//        System.out.print("Search in progress ..");
         BindingDetail bindingDetail = inquiry.find_binding(find_binding);
-        System.out.println(" done");
+//        System.out.println(" done");
         return bindingDetail;
     }
 
@@ -131,9 +143,9 @@ public class SystinetUDDIClientAPIv3Test {
      */
     public static TModelDetail getTModels(Get_tModelDetail get) throws UDDIException, SOAPException {
         UDDI_Inquiry_PortType inquiry = getInquiryStub();
-        System.out.print("Search in progress ..");
+//        System.out.print("Search in progress ..");
         TModelDetail tModelDetail = inquiry.get_tModelDetail(get);
-        System.out.println(" done");
+//        System.out.println(" done");
         return tModelDetail;
     }
 
@@ -146,9 +158,9 @@ public class SystinetUDDIClientAPIv3Test {
      */
     public static UDDI_Inquiry_PortType getInquiryStub() throws SOAPException {
         // you can specify your own URL in property - uddi.demos.url.inquiry
-        System.out.print("Using Inquiry at url " + URL_INQUIRY + " ..");
+//        System.out.print("Using Inquiry at url " + URL_INQUIRY + " ..");
         UDDI_Inquiry_PortType inquiry = UDDIInquiryStub.getInstance(URL_INQUIRY);
-        System.out.println(" done");
+//        System.out.println(" done");
         return inquiry;
     }
 
@@ -266,6 +278,16 @@ public class SystinetUDDIClientAPIv3Test {
         return services;
     }
 
+    public static ServiceList retrieveServiceByServiceNameAndCategory(String serviceName, KeyedReference category) throws Exception {
+        System.out.println("Searching for service by service name and category\n" +
+                            "Serivce Name: " + serviceName + "\n" +
+                            "Category: " + category.getTModelKey() + ", " + category.getKeyName() + ", " + category.getKeyValue());
+        Find_service find_service = createFindServiceByServiceNameAndCategory(serviceName, category);
+        ServiceList services = findService(find_service);
+        printServiceList(services);
+        return services;
+    }
+
     public static Set retrieveWsdlUrl(ServiceList services) throws Exception {
         HashSet wsdlList = new HashSet();
 
@@ -332,7 +354,7 @@ public class SystinetUDDIClientAPIv3Test {
         Set wsdlList = retrieveWsdlUrl(services);
 
         if (wsdlList.size() > 0) {
-            System.out.println("The WSDL URL found:");
+            System.out.println("The WSDL URLs found:");
             printWSDLs(wsdlList);
         }
     }
@@ -341,14 +363,28 @@ public class SystinetUDDIClientAPIv3Test {
         String businessKey = "uddi:systinet.com:uddinodebusinessKey";
         String tModelKey = "uddi:uddi.org:wsdl:types";
         String keyValue = "service";
-       // String keyName = "uddi.org:wsdl:types";
-        String keyName = "service";
+        String keyName = "uddi.org:wsdl:types";
 
         KeyedReference category = new KeyedReference(tModelKey, keyValue, keyName);
         ServiceList services = retrieveServiceByCategory(businessKey, category);
         Set wsdlList = retrieveWsdlUrl(services);
         if (wsdlList.size() > 0) {
-            System.out.println("The WSDL URL found:");
+            System.out.println("The WSDL URLs found:");
+            printWSDLs(wsdlList);
+        }
+    }
+
+    private static void testGetWsdlUrlBySerivceNameAndCategory() throws Exception {
+        String tModelKey = "uddi:uddi.org:wsdl:types";
+        String keyValue = "service";
+        String keyName = "uddi.org:wsdl:types";
+        String serviceName = "%UDDI%";
+
+        KeyedReference category = new KeyedReference(tModelKey, keyValue, keyName);
+        ServiceList services = retrieveServiceByServiceNameAndCategory(serviceName, category);
+        Set wsdlList = retrieveWsdlUrl(services);
+        if (wsdlList.size() > 0) {
+            System.out.println("The WSDL URLs found:");
             printWSDLs(wsdlList);
         }
     }
@@ -357,11 +393,14 @@ public class SystinetUDDIClientAPIv3Test {
 
         //  Systinet UDDI Client API Ver 3 test cases
 
-        System.out.println("**************** Test 1 ***********************************");
+        System.out.println("**************** Test 1 : Get WSDL URLs by Service Name ********************");
         testGetWsdlByServiceName();
 
-        System.out.println("\n\n**************** Test 2 ***********************************");
+        System.out.println("\n\n**************** Test 2: Get WSDL URLs by Category ****************");
         testGetWsdlUrlByCategory();
+
+        System.out.println("\n\n**************** Test 3: Get WSDL URLs by Service Name & Category ***************");
+        testGetWsdlUrlBySerivceNameAndCategory();
     }
 
 }
