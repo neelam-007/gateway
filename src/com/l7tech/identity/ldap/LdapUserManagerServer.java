@@ -8,11 +8,10 @@ import com.l7tech.logging.LogManager;
 
 import javax.naming.NamingException;
 import javax.naming.NamingEnumeration;
+import javax.naming.Context;
+import javax.naming.AuthenticationException;
 import javax.naming.directory.*;
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.HashSet;
+import java.util.*;
 import java.util.logging.Level;
 
 /**
@@ -219,6 +218,33 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
             output.add(findByPrimaryKey(header.getStrId()));
         }
         return output;
+    }
+
+    public boolean authenticateBasic(String dn, String passwd) {
+        // DirContext anonymousCtx = getAnonymousContext();
+
+        Hashtable env = new Hashtable();
+        env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+        env.put(Context.PROVIDER_URL, config.getProperty(LdapConfigSettings.LDAP_HOST_URL));
+        env.put(Context.SECURITY_AUTHENTICATION, "simple");
+        env.put(Context.SECURITY_PRINCIPAL, dn);
+        env.put(Context.SECURITY_CREDENTIALS, passwd);
+
+        DirContext userCtx = null;
+        try
+        {
+            userCtx = new InitialDirContext(env);
+            // Close the context when we're done
+            userCtx.close();
+        } catch (AuthenticationException e) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "User failed to authenticate: " + dn, e);
+            return false;
+        } catch (NamingException e) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "General naming failure for user: " + dn, e);
+            return false;
+        }
+        LogManager.getInstance().getSystemLogger().info("User: "+ dn +" authenticated successfully.");
+        return true;
     }
 
     // ************************************************

@@ -29,7 +29,8 @@ public class LdapIdentityProviderServer implements com.l7tech.identity.IdentityP
     }
 
     public boolean authenticate( User user, byte[] credentials) {
-        return false;
+        // basic authentication
+        return userManager.authenticateBasic(user.getName(), new String(credentials));
     }
 
     public boolean isReadOnly() { return true; }
