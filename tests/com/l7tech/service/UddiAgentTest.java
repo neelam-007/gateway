@@ -3,10 +3,7 @@ package com.l7tech.service;
 import com.l7tech.common.uddi.WsdlInfo;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
-import org.systinet.uddi.client.UDDIException;
-import org.systinet.uddi.InvalidParameterException;
 
-import javax.xml.soap.SOAPException;
 import java.rmi.RemoteException;
 import java.util.logging.Logger;
 
@@ -29,7 +26,7 @@ public class UddiAgentTest {
         if (seriveAdmin == null) throw new RuntimeException("Service Admin reference not found");
 
         try {
-            WsdlInfo[] urls = seriveAdmin.findWsdlUrlsFromUDDIRegistry(searchString, false);
+            WsdlInfo[] urls = seriveAdmin.findWsdlUrlsFromUDDIRegistry("http://whale.l7tech.com:8085", searchString, false);
             if (urls != null) {
                 logger.info("Number of URLs on the list is: " + urls.length);
                 for (int i = 0; i < urls.length; i++) {

@@ -25,8 +25,8 @@ import com.l7tech.objectmodel.FindException;
  */
 public class UddiAgentV3 {
 
-    private final String INQUIRY_URL_PROP_NAME = "uddi.url.inquiry";
-    private final String RESULT_ROWS_MAX = "uddi.result.max_rows";
+    public static final String INQUIRY_URL_PROP_NAME = "uddi.url.inquiry";
+    private static final String RESULT_ROWS_MAX = "uddi.result.max_rows";
     private final Logger logger = Logger.getLogger(getClass().getName());
     private String inquiryURL;
     private int resultRowsMax;
@@ -36,10 +36,10 @@ public class UddiAgentV3 {
      * @throws FindException   if there was a problem accessing the requested information.
      * @param props The properties of the UDDI Agent.
      */
-    public UddiAgentV3(Properties props) throws FindException {
-        inquiryURL = props.getProperty(INQUIRY_URL_PROP_NAME);
-        if (inquiryURL == null) throw new FindException("UDDI inquiry URL is not specified.\n Please ensure the property INQUIRY_URL_PROP_NAME is specified in the uddi.properties.");
-
+    public UddiAgentV3(String uddiURL, Properties props) throws FindException {
+   //     inquiryURL = props.getProperty(INQUIRY_URL_PROP_NAME);
+   //     if (inquiryURL == null) throw new FindException("UDDI inquiry URL is not specified.\n Please ensure the property INQUIRY_URL_PROP_NAME is specified in the uddi.properties.");
+        inquiryURL = uddiURL;
         String rowsMax = props.getProperty(RESULT_ROWS_MAX, "100");     // default 100 rows max
         resultRowsMax = Integer.parseInt(rowsMax);
     }

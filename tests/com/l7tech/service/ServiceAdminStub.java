@@ -119,12 +119,13 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     /**
      * Find all URLs of the WSDLs from UDDI Registry given the service name pattern.
      *
+     * @param uddiURL  The URL of the UDDI Registry
      * @param namePattern  The string of the service name (wildcard % is supported)
      * @param caseSensitive  True if case sensitive, false otherwise.
      * @return A list of URLs of the WSDLs of the services whose name matches the namePattern.
      * @throws RemoteException  on remote communication error
      */
-    public WsdlInfo[] findWsdlUrlsFromUDDIRegistry(String namePattern, boolean caseSensitive) throws RemoteException, FindException {
+    public WsdlInfo[] findWsdlUrlsFromUDDIRegistry(String uddiURL, String namePattern, boolean caseSensitive) throws RemoteException, FindException {
         WsdlInfo[] siList = new WsdlInfo[3];
 
         siList[0]= new WsdlInfo("Google Service", "http://api.google.com/GoogleSearch.wsdl");
@@ -132,6 +133,15 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
         siList[2]= new WsdlInfo("Stock Quote Service", "http://paris/wsdl/StockQuote_WSDL.wsdl");
 
         return siList;
+    }
+
+    public String[] findUDDIRegistryURLs() throws RemoteException, FindException {
+        String[] urlList = new String[3];
+        urlList[0] = "http://whale.l7tech.com:8080/uddi/inquiry";
+        urlList[1] = "http://bones.l7tech.com:8080/uddi/inquiry";
+        urlList[2] = "http://hugh.l7tech.com:8080/uddi/inquiry";
+
+        return urlList;
     }
 
     private EntityHeader fromService(PublishedService s) {

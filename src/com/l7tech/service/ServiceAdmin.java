@@ -103,12 +103,14 @@ public interface ServiceAdmin {
     /**
      * Find all URLs of the WSDLs from UDDI Registry given the service name pattern.
      *
+     * @param uddiURL  The URL of the UDDI Registry
      * @param namePattern The string of the service name (wildcard % is supported)
      * @param caseSensitive  True if case sensitive, false otherwise.
      * @return A list of URLs of the WSDLs of the services whose name matches the namePattern.
      * @throws RemoteException           on remote communication error
      * @throws FindException   if there was a problem accessing the requested information.
      */
-    WsdlInfo[] findWsdlUrlsFromUDDIRegistry(String namePattern, boolean caseSensitive) throws RemoteException, FindException ;
+    WsdlInfo[] findWsdlUrlsFromUDDIRegistry(String uddiURL, String namePattern, boolean caseSensitive) throws RemoteException, FindException ;
 
+    String[] findUDDIRegistryURLs() throws RemoteException, FindException;
 }

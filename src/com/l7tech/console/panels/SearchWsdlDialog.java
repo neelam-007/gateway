@@ -23,7 +23,9 @@ import java.util.ResourceBundle;
 import java.util.Locale;
 import java.util.Vector;
 import java.util.EventListener;
+import java.util.logging.Logger;
 import java.rmi.RemoteException;
+import java.io.IOException;
 
 
 /**
@@ -47,6 +49,8 @@ public class SearchWsdlDialog extends JDialog {
     private EventListenerList listenerList = new EventListenerList();
     private JCheckBox caseSensitiveCheckBox;
     private JLabel retrievedRows;
+    private JComboBox uddiURLcomboBox;
+    private final Logger logger = Logger.getLogger(getClass().getName());
 
     public SearchWsdlDialog(JDialog parent) {
         super(parent, resources.getString("window.title"), true);
@@ -61,6 +65,19 @@ public class SearchWsdlDialog extends JDialog {
         p.add(mainPanel, BorderLayout.CENTER);
         serviceNameFilterOptionComboBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { CONTAINS, EQUALS }));
 
+        ServiceAdmin seriveAdmin = Registry.getDefault().getServiceManager();
+        if (seriveAdmin == null) throw new RuntimeException("Service Admin reference not found");
+        String[] uddiRegistryURLs = null;
+
+        try {
+            uddiRegistryURLs = seriveAdmin.findUDDIRegistryURLs();
+        } catch(RemoteException re) {
+            logger.warning("Remote Exception caught. Unable to get the URLs of UDDI Registries");
+        } catch(FindException fe) {
+            logger.warning("Exception caught. Unable to get the URLs of UDDI Registries");
+        }
+
+        uddiURLcomboBox.setModel(new javax.swing.DefaultComboBoxModel(uddiRegistryURLs));
         if (wsdlTable == null) {
             wsdlTable = new WsdlTable();
         }
@@ -115,10 +132,11 @@ public class SearchWsdlDialog extends JDialog {
 
                     public Object construct() {
                         try {
+
                             ServiceAdmin seriveAdmin = Registry.getDefault().getServiceManager();
                             if (seriveAdmin == null) throw new RuntimeException("Service Admin reference not found");
 
-                            WsdlInfo[] urls = seriveAdmin.findWsdlUrlsFromUDDIRegistry(searchString, caseSensitiveCheckBox.isSelected());
+                            WsdlInfo[] urls = seriveAdmin.findWsdlUrlsFromUDDIRegistry((String) uddiURLcomboBox.getSelectedItem(), searchString, caseSensitiveCheckBox.isSelected());
                             return urls;
                         } catch (RemoteException e) {
                             JOptionPane.showMessageDialog(SearchWsdlDialog.this, "Remote Exception, " + e.getMessage(), "Search UDDI Registry", JOptionPane.ERROR_MESSAGE);
@@ -215,7 +233,7 @@ public class SearchWsdlDialog extends JDialog {
         panel1.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         mainPanel.add(panel1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null));
         final JPanel panel2 = new JPanel();
-        panel2.setLayout(new GridLayoutManager(3, 4, new Insets(0, 5, 0, 0), -1, -1));
+        panel2.setLayout(new GridLayoutManager(4, 4, new Insets(0, 5, 0, 0), -1, -1));
         panel1.add(panel2, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null));
         panel2.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), null));
         final JLabel label1 = new JLabel();
@@ -223,20 +241,25 @@ public class SearchWsdlDialog extends JDialog {
         panel2.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
         searchButton = new JButton();
         searchButton.setText("Search");
-        panel2.add(searchButton, new GridConstraints(1, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
+        panel2.add(searchButton, new GridConstraints(2, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
         serviceNameSearchPattern = new JTextField();
-        panel2.add(serviceNameSearchPattern, new GridConstraints(1, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null));
+        panel2.add(serviceNameSearchPattern, new GridConstraints(2, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null));
         final JLabel label2 = new JLabel();
         label2.setText("Service Name:");
-        panel2.add(label2, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
+        panel2.add(label2, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
         serviceNameFilterOptionComboBox = new JComboBox();
-        panel2.add(serviceNameFilterOptionComboBox, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
+        panel2.add(serviceNameFilterOptionComboBox, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
         caseSensitiveCheckBox = new JCheckBox();
         caseSensitiveCheckBox.setText("Case Sensitive");
-        panel2.add(caseSensitiveCheckBox, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
+        panel2.add(caseSensitiveCheckBox, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
         final JLabel label3 = new JLabel();
-        label3.setText("Search WSDLs in UDDI Registry:");
-        panel1.add(label3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
+        label3.setText("UDDI Registry URL:");
+        panel2.add(label3, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
+        uddiURLcomboBox = new JComboBox();
+        panel2.add(uddiURLcomboBox, new GridConstraints(1, 1, 1, 2, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
+        final JLabel label4 = new JLabel();
+        label4.setText("Search WSDLs in UDDI Registry:");
+        panel1.add(label4, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
         final JPanel panel3 = new JPanel();
         panel3.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
         mainPanel.add(panel3, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null));

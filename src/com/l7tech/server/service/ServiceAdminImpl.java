@@ -22,11 +22,13 @@ import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 import java.io.IOException;
 import java.io.FileInputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.RemoteException;
 import java.util.Collection;
 import java.util.Properties;
+import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -192,26 +194,60 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
         return output;
     }
 
+    public String[] findUDDIRegistryURLs() throws RemoteException, FindException {
+        try {
+            if(uddiProps == null) uddiProps = readUDDIConfig();
+        } catch (IOException ioe) {
+            throw new FindException(ioe.getMessage());
+        }
+
+        // get all UDDI Registry URLs
+        int uddiNumber = 1;
+        String url;
+        Vector urlList = new Vector();
+        do {
+
+            url = uddiProps.getProperty(UddiAgentV3.INQUIRY_URL_PROP_NAME + "." + uddiNumber++);
+            if(url != null) {
+                urlList.add(url);
+            }
+
+        } while (url != null);
+
+        String[] urls = new String[urlList.size()];
+        if(urlList.size() > 0) {
+            for (int i = 0; i < urlList.size(); i++) {
+                String s = (String) urlList.elementAt(i);
+                urls[i] = s;
+            }
+        }
+        return urls;
+    }
+
     /**
      * Find all URLs of the WSDLs from UDDI Registry given the service name pattern.
      *
+     * @param uddiURL  The URL of the UDDI Registry
      * @param namePattern  The string of the service name (wildcard % is supported)
      * @param caseSensitive  True if case sensitive, false otherwise.
      * @return A list of URLs of the WSDLs of the services whose name matches the namePattern.
      * @throws RemoteException  on remote communication error
      * @throws FindException   if there was a problem accessing the requested information.
      */
-    public WsdlInfo[] findWsdlUrlsFromUDDIRegistry(String namePattern, boolean caseSensitive) throws RemoteException, FindException {
+    public WsdlInfo[] findWsdlUrlsFromUDDIRegistry(String uddiURL, String namePattern, boolean caseSensitive) throws RemoteException, FindException {
 
         // note: we only support V3 agent
-        if(uddiProps == null) uddiProps = readUDDIConfig();
+        try {
+            if(uddiProps == null) uddiProps = readUDDIConfig();
+        } catch (IOException ioe) {
 
-        UddiAgentV3 uddiAgent = new UddiAgentV3(uddiProps);
+        }
+        UddiAgentV3 uddiAgent = new UddiAgentV3(uddiURL, uddiProps);
 
         return uddiAgent.getWsdlByServiceName(namePattern, caseSensitive);
     }
 
-    private Properties readUDDIConfig() {
+    private Properties readUDDIConfig() throws IOException {
         String ssgConfigPath = ServerConfig.getInstance().getProperty("ssg.conf");
         String uddiConfigFileName = ssgConfigPath + "/" + UDDI_CONFIG_FILENAME;
         Properties props = new Properties();
@@ -232,12 +268,12 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
                 return props;
             } else {
                 logger.severe(uddiConfigFileName + " not found");
-                throw new RuntimeException("Couldn't load " + uddiConfigFileName + ", File not found!");
+                throw new FileNotFoundException("Couldn't load " + uddiConfigFileName + ", File not found!");
             }
 
         } catch (IOException ioe) {
             logger.severe("Couldn't load " + uddiConfigFileName);
-            throw new RuntimeException("Couldn't load " + uddiConfigFileName);
+            throw new IOException("Couldn't load " + uddiConfigFileName);
         } finally {
             if (propStream != null) {
                 try {
