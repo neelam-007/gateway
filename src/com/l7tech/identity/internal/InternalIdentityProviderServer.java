@@ -10,9 +10,11 @@ import com.l7tech.credential.CredentialFormat;
 
 import java.io.UnsupportedEncodingException;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.Collection;
 import java.util.TreeSet;
 import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 
 /**
  * Layer 7 Technologies, inc.
@@ -51,34 +53,66 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                 LogManager.getInstance().getSystemLogger().log(Level.INFO, "Couldn't find user with login " + login);
                 return false;
             } else {
-                String dbPassHash = dbUser.getPassword();
-                String authPassHash;
+                CredentialFormat format = pc.getFormat();
 
-                if (pc.getFormat() == CredentialFormat.CLIENTCERT ||  pc.getFormat() == CredentialFormat.CLIENTCERT_X509_ASN1_DER) {
-                    Certificate localcert = userManager.retrieveUserCert(Long.toString(dbUser.getOid()));
-                    // todo, get the cert from principal compare cert
-                    return true;
+                if ( format == CredentialFormat.CLIENTCERT ) {
+                    Certificate dbCert = null;
+                    Object maybeCert = pc.getPayload();
+
+                    if ( maybeCert == null ) {
+                        _log.log( Level.WARNING, "Request does not contain a certificate" );
+                    } else {
+                        dbCert = userManager.retrieveUserCert( login );
+                        if ( dbCert == null ) {
+                            _log.log( Level.WARNING, "No certificate found for user " + login );
+                            return false;
+                        }
+                    }
+
+                    if ( maybeCert instanceof X509Certificate ) {
+                        X509Certificate pcCert = (X509Certificate)maybeCert;
+                        _log.log( Level.INFO, "Authenticated user " + login + " using an SSL client certificate" );
+
+                        return ( pcCert.equals( dbCert ) );
+                    } else {
+                        _log.log( Level.WARNING, "Certificate for " + login + " is not an X509Certificate" );
+                        return false;
+                    }
+                } else {
+                    String dbPassHash = dbUser.getPassword();
+                    String authPassHash = null;
+
+                    if ( format == CredentialFormat.CLEARTEXT ) {
+                        authPassHash = User.encodePasswd( login, new String( credentials, ENCODING ) );
+                    } else if ( format == CredentialFormat.DIGEST ) {
+                        authPassHash = new String( credentials, ENCODING );
+                    } else {
+                        throwUnsupportedCredentialFormat(format);
+                    }
+
+                    if ( dbPassHash.equals( authPassHash ) ) {
+                        authUser.copyFrom( dbUser );
+                        return true;
+                    }
+
+                    LogManager.getInstance().getSystemLogger().log(Level.INFO, "Incorrect password for login " + login);
+
+                    return false;
                 }
-                else if ( pc.getFormat() == CredentialFormat.CLEARTEXT )
-                    authPassHash = User.encodePasswd( login, new String( credentials, ENCODING ) );
-                else
-                    authPassHash = new String( credentials, ENCODING );
-
-                if ( dbPassHash.equals( authPassHash ) ) {
-                    authUser.copyFrom( dbUser );
-                    return true;
-                }
-
-                LogManager.getInstance().getSystemLogger().log(Level.INFO, "Incorrect password for login " + login);
-                return false;
             }
         } catch ( FindException fe ) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, fe);
+            _log.log(Level.SEVERE, null, fe);
             return false;
         } catch ( UnsupportedEncodingException uee ) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, uee);
+            _log.log(Level.SEVERE, null, uee);
             throw new RuntimeException( uee );
         }
+    }
+
+    private void throwUnsupportedCredentialFormat(CredentialFormat format) {
+        IllegalArgumentException iae = new IllegalArgumentException( "Unsupported credential format: " + format.toString() );
+        _log.log( Level.WARNING, iae.toString(), iae );
+        throw iae;
     }
 
     public IdentityProviderConfig getConfig() {
@@ -112,4 +146,6 @@ public class InternalIdentityProviderServer implements IdentityProvider {
     private IdentityProviderConfig cfg;
     private InternalUserManagerServer userManager;
     private InternalGroupManagerServer groupManager;
+
+    private Logger _log = LogManager.getInstance().getSystemLogger();
 }
