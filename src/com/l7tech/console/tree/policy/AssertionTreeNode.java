@@ -44,7 +44,7 @@ abstract class AssertionTreeNode extends DefaultMutableTreeNode {
      * @return the <code>ImageIcon</code> or null if not found
      */
     public Icon getIcon() {
-        Image image = IconManager2.getInstance().getIcon(iconResource());
+        Image image = IconManager2.getInstance().getIcon(iconResource(false));
         if (image !=null) {
             return new ImageIcon(image);
         }
@@ -52,9 +52,11 @@ abstract class AssertionTreeNode extends DefaultMutableTreeNode {
     }
 
     /**
-     * subclasses override this method specifying
+     * subclasses override this method specifying the resource name
+     *
+     * @param open for nodes that can be opened, can have children
      */
-    protected abstract String iconResource();
+    protected abstract String iconResource(boolean open);
 }
 
 
@@ -73,7 +75,7 @@ class LeafAssertionTreeNode extends AssertionTreeNode {
     /**
      * specify this node image resource
      */
-    protected String iconResource() {
+    protected String iconResource(boolean open) {
         return "com/l7tech/console/resources/user16.png";
     }
 }
@@ -98,7 +100,7 @@ class CompositeAssertionTreeNode extends AssertionTreeNode {
     /**
      * specify this node image resource
      */
-    protected String iconResource() {
+    protected String iconResource(boolean open) {
         return "com/l7tech/console/resources/folder.gif";
     }
 

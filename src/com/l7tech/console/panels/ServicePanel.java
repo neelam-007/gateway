@@ -189,28 +189,19 @@ public class ServicePanel extends WizardStepPanel {
             if (value instanceof WsdlTreeNode) {
                 WsdlTreeNode node = (WsdlTreeNode)value;
                 setText(node.toString());
-                Icon icon = IconManager.getInstance().getIcon(node);
-
-                if (icon == null) {
-                    if (node.isFolder()) {
-                        if (expanded)
-                            setIcon(UIManager.getIcon("Tree.openIcon"));
-                        else
-                            setIcon(UIManager.getIcon("Tree.closedIcon"));
-                    } else {
-                        icon = UIManager.getIcon("Tree.leafIcon");
-                    }
-                } else {
-                    setIcon(icon);
+                Image image = expanded ? node.getOpenedIcon() : node.getIcon();
+                Icon icon = null;
+                if (image !=null) {
+                    icon = new ImageIcon(image);
                 }
+                setIcon(icon);
+
             } else {
                 this.setIcon(null);
                 this.setText(null);
             }
-
             return this;
         }
-
     };
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

@@ -1,7 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.text.MaxLengthDocument;
-import com.l7tech.console.util.IconManager;
+import com.l7tech.console.util.IconManager2;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.User;
 import com.l7tech.identity.internal.imp.UserImp;
@@ -26,6 +26,8 @@ import java.awt.event.HierarchyListener;
  */
 public class UserPanel extends EntityEditorPanel {
     private static final Category log = Category.getInstance(UserPanel.class.getName());
+    final static String USER_ICON_RESOURCE = "com/l7tech/console/resources/user16.png";
+
     private JLabel nameLabel;
 
     private JLabel firstNameLabel;
@@ -213,7 +215,7 @@ public class UserPanel extends EntityEditorPanel {
             detailsPanel = new JPanel();
             detailsPanel.setLayout(new GridBagLayout());
 
-            detailsPanel.add(new JLabel(IconManager.getInstance().getIcon(EntityType.USER)),
+            detailsPanel.add(new JLabel(new ImageIcon(IconManager2.getInstance().getIcon(USER_ICON_RESOURCE))),
                     new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
                             GridBagConstraints.WEST,
                             GridBagConstraints.NONE,

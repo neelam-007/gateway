@@ -302,7 +302,7 @@ public class NewGroupForUserDialog extends JDialog {
             this.setFont(new Font("Dialog", Font.PLAIN, 12));
 
             // Based on value type, determine cell contents
-            setIcon(IconManager.getInstance().getIcon(EntityType.GROUP));
+            setIcon(new ImageIcon(Utilities.loadImage(GroupPanel.GROUP_ICON_RESOURCE)));
             EntityHeader eh = (EntityHeader)value;
             setText(eh.getName());
 

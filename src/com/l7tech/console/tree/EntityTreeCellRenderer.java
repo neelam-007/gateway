@@ -44,7 +44,7 @@ public class EntityTreeCellRenderer
         } else if (value instanceof WsdlTreeNode) {
             WsdlTreeNode node = (WsdlTreeNode)value;
             setText(node.toString());
-            icon = IconManager.getInstance().getIcon(node);
+            icon = new ImageIcon(node.getIcon());
         }
         if (icon !=null) {
             setIcon(icon);

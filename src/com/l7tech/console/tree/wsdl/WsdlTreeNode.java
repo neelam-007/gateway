@@ -1,15 +1,18 @@
 package com.l7tech.console.tree.wsdl;
 
 import com.l7tech.service.Wsdl;
+import com.l7tech.console.util.IconManager2;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
+import javax.swing.*;
 import javax.wsdl.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.awt.*;
 
 
 /**
@@ -50,35 +53,35 @@ public abstract class WsdlTreeNode extends DefaultMutableTreeNode {
         return super.getChildCount();
     }
 
-
-    public boolean isFolder() {
-        return this instanceof FolderTreeNode;
+    /**
+     * Find an icon for this node.
+     *
+     * @return icon to use to represent the node
+     */
+    public Image getIcon() {
+        return IconManager2.getInstance().getIcon(iconResource(false));
     }
 
-    public boolean isMessage() {
-        return this instanceof MessageTreeNode;
+    /**
+     * Finds an icon for this node when opened. This icon should
+     * represent the node only when it is opened (when it can have
+     * children).
+     * @return icon to use to represent the bean when opened
+     */
+    public Image getOpenedIcon() {
+        return IconManager2.getInstance().getIcon(iconResource(false));
     }
 
-    public boolean isService() {
-        return this instanceof ServiceTreeNode;
-    }
+    /**
+     * subclasses override this method specifying the resource name
+     *
+     * @param open for nodes that can be opened, can have children
+     */
+    protected abstract String iconResource(boolean open);
 
-    public boolean isOperation() {
-        return this instanceof OperationTreeNode;
-    }
-
-    public boolean isBinding() {
-        return this instanceof BindingTreeNode;
-    }
-
-    public boolean isBindingOperation() {
-        return this instanceof BindingOperationTreeNode;
-    }
-
-    public boolean isPortType() {
-        return this instanceof PortTypeTreeNode;
-    }
-
+    /**
+     * subclasses override this method to load it's own children
+     */
     protected abstract void loadChildren();
 
     /**
@@ -106,83 +109,95 @@ class DefinitionsTreeNode extends WsdlTreeNode {
         this.definition = def;
     }
 
+    /**
+     * subclasses override this method specifying the resource name
+     *
+     * @param open for nodes that can be opened, can have children
+     */
+    protected String iconResource(boolean open) {
+        if (open)
+            return "com/l7tech/console/resources/folderOpen.gif";
+
+        return "com/l7tech/console/resources/folder.gif";
+    }
+
     protected void loadChildren() {
         int index = 0;
         FolderTreeNode ms = new FolderTreeNode(
           new FolderLister() {
-                    /** @return  a string representation of the object.  */
-                    public String toString() {
-                        return "Messages";
-                    }
+              /** @return  a string representation of the object.  */
+              public String toString() {
+                  return "Messages";
+              }
 
-                    public List list() {
-                        List list = new ArrayList();
-                        Map messages = definition.getMessages();
-                        for (Iterator i = messages.values().iterator(); i.hasNext();) {
-                            list.add(new MessageTreeNode((Message)i.next()));
-                        }
-                        return list;
-                    }
-                });
+              public List list() {
+                  List list = new ArrayList();
+                  Map messages = definition.getMessages();
+                  for (Iterator i = messages.values().iterator(); i.hasNext();) {
+                      list.add(new MessageTreeNode((Message)i.next()));
+                  }
+                  return list;
+              }
+          });
 
         insert(ms, index++);
 
         FolderTreeNode pt = new FolderTreeNode(
           new FolderLister() {
-                    /** @return  a string representation of the object.  */
-                    public String toString() {
-                        return "Port Types";
-                    }
+              /** @return  a string representation of the object.  */
+              public String toString() {
+                  return "Port Types";
+              }
 
-                    public List list() {
-                        List list = new ArrayList();
-                        Map portTypes = definition.getPortTypes();
-                        for (Iterator i = portTypes.values().iterator(); i.hasNext();) {
-                            list.add(new PortTypeTreeNode((PortType)i.next()));
-                        }
+              public List list() {
+                  List list = new ArrayList();
+                  Map portTypes = definition.getPortTypes();
+                  for (Iterator i = portTypes.values().iterator(); i.hasNext();) {
+                      list.add(new PortTypeTreeNode((PortType)i.next()));
+                  }
 
-                        return list;
-                    }
-                });
+                  return list;
+              }
+          });
 
         insert(pt, index++);
 
         FolderTreeNode bn = new FolderTreeNode(
           new FolderLister() {
-                    /** @return  a string representation of the object.  */
-                    public String toString() {
-                        return "Bindings";
-                    }
+              /** @return  a string representation of the object.  */
+              public String toString() {
+                  return "Bindings";
+              }
 
-                    public List list() {
-                        List list = new ArrayList();
-                        Map bindings = definition.getBindings();
-                        for (Iterator i = bindings.values().iterator(); i.hasNext();) {
-                            list.add(new BindingTreeNode(null, (Binding)i.next()));
-                        }
-                        return list;
-                    }
-                });
+              public List list() {
+                  List list = new ArrayList();
+                  Map bindings = definition.getBindings();
+                  for (Iterator i = bindings.values().iterator(); i.hasNext();) {
+                      list.add(new BindingTreeNode(null, (Binding)i.next()));
+                  }
+                  return list;
+              }
+          });
 
         insert(bn, index++);
         FolderTreeNode svc = new FolderTreeNode(
           new FolderLister() {
-                    /** @return  a string representation of the object.  */
-                    public String toString() {
-                        return "Services";
-                    }
+              /** @return  a string representation of the object.  */
+              public String toString() {
+                  return "Services";
+              }
 
-                    public List list() {
-                        List list = new ArrayList();
+              public List list() {
+                  List list = new ArrayList();
 
 
-                        Map services = definition.getServices();
-                        for (Iterator i = services.values().iterator(); i.hasNext();) {
-                            list.add(new ServiceTreeNode(null, (Service)i.next()));
-                        }
-                        return list;
-                    }
-                });
+                  Map services = definition.getServices();
+                  for (Iterator i = services.values().iterator(); i.hasNext();) {
+                      list.add(new ServiceTreeNode(null, (Service)i.next()));
+                  }
+                  return list;
+              }
+          });
 
         insert(svc, index++);
         hasLoadedChildren = true;
@@ -223,6 +238,18 @@ class FolderTreeNode extends WsdlTreeNode {
     }
 
     /**
+     * subclasses override this method specifying the resource name
+     *
+     * @param open for nodes that can be opened, can have children
+     */
+    protected String iconResource(boolean open) {
+        if (open)
+            return "com/l7tech/console/resources/folderOpen.gif";
+
+        return "com/l7tech/console/resources/folder.gif";
+    }
+
+    /**
      * @return  a string representation of the object.
      */
     public String toString() {
@@ -247,6 +274,16 @@ class MessageTreeNode extends WsdlTreeNode {
     public boolean isLeaf() {
         return true;
     }
+
+    /**
+     * subclasses override this method specifying the resource name
+     *
+     * @param open for nodes that can be opened, can have children
+     */
+    protected String iconResource(boolean open) {
+        return "com/l7tech/console/resources/sendMail16.gif";
+    }
+
 
     /**
      * @return  a string representation of the object.
@@ -277,6 +314,16 @@ class PortTypeTreeNode extends WsdlTreeNode {
         return false;
     }
 
+    /**
+     * subclasses override this method specifying the resource name
+     *
+     * @param open for nodes that can be opened, can have children
+     */
+    protected String iconResource(boolean open) {
+        return "com/l7tech/console/resources/interface.gif";
+    }
+
+
     /** @return  a string representation of the object.  */
     public String toString() {
         return portType.getQName().getLocalPart();
@@ -304,6 +351,16 @@ class BindingTreeNode extends WsdlTreeNode {
         return false;
     }
 
+    /**
+     * subclasses override this method specifying the resource name
+     *
+     * @param open for nodes that can be opened, can have children
+     */
+    protected String iconResource(boolean open) {
+        return "com/l7tech/console/resources/Forward16.gif";
+    }
+
+
     /** @return  a string representation of the object.  */
     public String toString() {
         return binding.getQName().getLocalPart();
@@ -327,6 +384,16 @@ class OperationTreeNode extends WsdlTreeNode {
     public boolean isLeaf() {
         return true;
     }
+
+    /**
+     * subclasses override this method specifying the resource name
+     *
+     * @param open for nodes that can be opened, can have children
+     */
+    protected String iconResource(boolean open) {
+        return "com/l7tech/console/resources/Forward16.gif";
+    }
+
 
     /** @return  a string representation of the object.  */
     public String toString() {
@@ -352,6 +419,15 @@ class BindingOperationTreeNode extends WsdlTreeNode {
         return true;
     }
 
+    /**
+     * subclasses override this method specifying the resource name
+     *
+     * @param open for nodes that can be opened, can have children
+     */
+    protected String iconResource(boolean open) {
+        return "com/l7tech/console/resources/Forward16.gif";
+    }
+
     /** @return  a string representation of the object.  */
     public String toString() {
         return operation.getName();
@@ -374,6 +450,15 @@ class ServiceTreeNode extends WsdlTreeNode {
     /** Returns true if the receiver is a leaf */
     public boolean isLeaf() {
         return true;
+    }
+
+    /**
+     * subclasses override this method specifying the resource name
+     *
+     * @param open for nodes that can be opened, can have children
+     */
+    protected String iconResource(boolean open) {
+        return "com/l7tech/console/resources/Bean16.gif";
     }
 
     /** @return  a string representation of the object.  */

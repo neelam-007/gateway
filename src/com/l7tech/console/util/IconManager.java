@@ -1,16 +1,7 @@
 package com.l7tech.console.util;
 
-import com.l7tech.console.tree.*;
-import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.MainWindow;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.identity.Group;
-import com.l7tech.identity.User;
-import com.l7tech.util.WeakSet;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.identity.MemberOfGroup;
-import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.console.tree.*;
 
 import javax.swing.*;
 
@@ -71,81 +62,6 @@ public class IconManager {
 
 
     /**
-     * Get the Icon for the EntityHeader passed.
-     *
-     * @param node   the EntityHeader instance
-     * @return ImageIcon for the given node
-     */
-    public ImageIcon getIcon(EntityHeader node) {
-        if (node == null) {
-            throw new NullPointerException("node");
-        }
-        ClassLoader cl = node.getClass().getClassLoader();
-        return getIcon(node.getType());
-
-    }
-
-    /**
-     * Get the Icon for the Class passed.
-     *
-     * @param type   the entity type enum
-     * @return ImageIcon for the given node
-     */
-    public ImageIcon getIcon(EntityType type) {
-        if (type == null) {
-            throw new NullPointerException("type");
-        }
-        ClassLoader cl = type.getClass().getClassLoader();
-        if (type.equals(EntityType.GROUP)) {
-            return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/group16.png"));
-        } else if (type.equals(EntityType.USER)) {
-            return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/user16.png"));
-        }
-        return null;
-    }
-
-    /**
-     * Get the Icon for the EntityHeader passed.
-     *
-     * @param node   the EntityHeader instance
-     * @return ImageIcon for the given node
-     */
-    public ImageIcon getIcon(WsdlTreeNode node) {
-        if (node == null) {
-            throw new IllegalArgumentException();
-        }
-        ClassLoader cl = node.getClass().getClassLoader();
-        if (node.isMessage()) {
-            return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/SendMail16.gif"));
-        } else if (node.isService()) {
-            return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/Bean16.gif"));
-        } else if (node.isPortType()) {
-            return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/interface.gif"));
-        } else if (node.isOperation()) {
-            return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/Forward16.gif"));
-        } else if (node.isBindingOperation()) {
-            return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/Forward16.gif"));
-        }
-        return null;
-    }
-
-    /**
-     * Returns an up button
-     * enabled.
-     */
-    public ImageIcon getUpButton() {
-        return upButton;
-    }
-
-    /**
-     * Returns a down button
-     * enabled.
-     */
-    public ImageIcon getDownButton() {
-        return downButton;
-    }
-
-    /**
      * load icon images using this instance ClassLoader.
      *
      * @see java.lang.ClassLoader
@@ -174,13 +90,7 @@ public class IconManager {
 
         openFolder
           = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/FolderOpen16.gif"));
-
-        upButton
-          = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/up-button.gif"));
-
-        downButton
-          = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/down-button.gif"));
-    }
+ }
 
 
     public ImageIcon getIconAdd() {
@@ -228,8 +138,6 @@ public class IconManager {
     private ImageIcon iconAddAll;
     private ImageIcon iconRemove;
     private ImageIcon iconRemoveAll;
-    private ImageIcon upButton;
-    private ImageIcon downButton;
 
     /** the default Edit icon */
     private ImageIcon defaultEdit;

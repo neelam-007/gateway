@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.util.IconManager;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.IconManager2;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
 import com.l7tech.identity.Group;
@@ -12,7 +13,9 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.PublishedService;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.wsp.WspWriter;
@@ -29,6 +32,7 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Arrays;
 import java.io.ByteArrayOutputStream;
 
 
@@ -85,13 +89,13 @@ public class IdentityProviderPanel extends WizardStepPanel {
 
 
         providersjComboBox.setModel(getProvidersComboBoxModel());
-        providersjComboBox.setRenderer(new ListCellRenderer () {
+        providersjComboBox.setRenderer(new ListCellRenderer() {
             public Component getListCellRendererComponent(
-                    JList list,
-                    Object value,
-                    int index,
-                    boolean isSelected,
-                    boolean cellHasFocus) {
+              JList list,
+              Object value,
+              int index,
+              boolean isSelected,
+              boolean cellHasFocus) {
                 IdentityProvider ip = (IdentityProvider)value;
                 return new JLabel(ip.getConfig().getDescription());
             }
@@ -106,12 +110,12 @@ public class IdentityProviderPanel extends WizardStepPanel {
                     modelOut.getDataVector().clear();
 
                     Iterator i = ip.getUserManager().findAllHeaders().iterator();
-                    while(i.hasNext()) {
-                        modelOut.addRow(new Object[] {i.next()});
+                    while (i.hasNext()) {
+                        modelOut.addRow(new Object[]{i.next()});
                     }
                     i = ip.getGroupManager().findAllHeaders().iterator();
-                    while(i.hasNext()) {
-                        modelOut.addRow(new Object[] {i.next()});
+                    while (i.hasNext()) {
+                        modelOut.addRow(new Object[]{i.next()});
                     }
                     DefaultTableModel modelIn = getIdentitiesInTableModel();
                     modelIn.getDataVector().clear();
@@ -158,7 +162,7 @@ public class IdentityProviderPanel extends WizardStepPanel {
                 Collection toAdd = new ArrayList();
                 java.util.List listOut = getIdentitiesOutTableModel().getDataVector();
 
-                for(int i=0; i < rows.length; i++) {
+                for (int i = 0; i < rows.length; i++) {
                     toAdd.add(listOut.get(rows[i]));
                 }
                 getIdentitiesOutTableModel().getDataVector().removeAll(toAdd);
@@ -195,21 +199,21 @@ public class IdentityProviderPanel extends WizardStepPanel {
         jButtonRemove.setIcon(IconManager.getInstance().getIconRemove());
 
         jButtonRemove.addActionListener(new ActionListener() {
-                 /** Invoked when an action occurs. */
-                 public void actionPerformed(ActionEvent e) {
-                     int[] rows = identitiesInjTable.getSelectedRows();
-                     Collection toRemove = new ArrayList();
-                     java.util.List listIn = getIdentitiesInTableModel().getDataVector();
+            /** Invoked when an action occurs. */
+            public void actionPerformed(ActionEvent e) {
+                int[] rows = identitiesInjTable.getSelectedRows();
+                Collection toRemove = new ArrayList();
+                java.util.List listIn = getIdentitiesInTableModel().getDataVector();
 
-                     for(int i=0; i < rows.length; i++) {
-                         toRemove.add(listIn.get(rows[i]));
-                     }
-                     getIdentitiesInTableModel().getDataVector().removeAll(toRemove);
-                     getIdentitiesInTableModel().fireTableDataChanged();
-                     getIdentitiesOutTableModel().getDataVector().addAll(toRemove);
-                     getIdentitiesOutTableModel().fireTableDataChanged();
-                 }
-             });
+                for (int i = 0; i < rows.length; i++) {
+                    toRemove.add(listIn.get(rows[i]));
+                }
+                getIdentitiesInTableModel().getDataVector().removeAll(toRemove);
+                getIdentitiesInTableModel().fireTableDataChanged();
+                getIdentitiesOutTableModel().getDataVector().addAll(toRemove);
+                getIdentitiesOutTableModel().fireTableDataChanged();
+            }
+        });
 
         usersLabeljPanel.add(jButtonRemove);
 
@@ -219,16 +223,16 @@ public class IdentityProviderPanel extends WizardStepPanel {
         jButtonRemoveAll.setIcon(IconManager.getInstance().getIconRemoveAll());
 
         jButtonRemoveAll.addActionListener(new ActionListener() {
-                 /** Invoked when an action occurs. */
-                 public void actionPerformed(ActionEvent e) {
-                     java.util.List listIn = getIdentitiesInTableModel().getDataVector();
-                     getIdentitiesOutTableModel().getDataVector().addAll(listIn);
-                     getIdentitiesInTableModel().getDataVector().clear();
-                     getIdentitiesOutTableModel().fireTableDataChanged();
-                     getIdentitiesInTableModel().fireTableDataChanged();
+            /** Invoked when an action occurs. */
+            public void actionPerformed(ActionEvent e) {
+                java.util.List listIn = getIdentitiesInTableModel().getDataVector();
+                getIdentitiesOutTableModel().getDataVector().addAll(listIn);
+                getIdentitiesInTableModel().getDataVector().clear();
+                getIdentitiesOutTableModel().fireTableDataChanged();
+                getIdentitiesInTableModel().fireTableDataChanged();
 
-                 }
-             });
+            }
+        });
 
         usersLabeljPanel.add(jButtonRemoveAll);
 
@@ -284,12 +288,12 @@ public class IdentityProviderPanel extends WizardStepPanel {
         providersComboBoxModel = new DefaultComboBoxModel();
         try {
             Iterator providers =
-                    Registry.getDefault().getProviderConfigManager().findAllIdentityProviders().iterator();
+              Registry.getDefault().getProviderConfigManager().findAllIdentityProviders().iterator();
             while (providers.hasNext()) {
                 providersComboBoxModel.addElement(providers.next());
             }
         } catch (FindException e) {
-             e.printStackTrace();  //todo: fix this with better, general exception management
+            e.printStackTrace();  //todo: fix this with better, general exception management
         }
         return providersComboBoxModel;
     }
@@ -321,7 +325,7 @@ public class IdentityProviderPanel extends WizardStepPanel {
 
     public String getDescription() {
         return "Select the identities (users, groups) that are allowed to access the published service" +
-                " Specify where the credentials are located and transport layewr security";
+          " Specify where the credentials are located and transport layewr security";
     }
 
     /**
@@ -346,13 +350,13 @@ public class IdentityProviderPanel extends WizardStepPanel {
         PublishedService publishedService = (PublishedService)settings;
 
 
-       IdentityProvider ip = (IdentityProvider)providersComboBoxModel.getSelectedItem();
-       if (ip == null) {
-          publishedService.setPolicyXml(null);
-       }
-       java.util.List assertions = new ArrayList();
+        IdentityProvider ip = (IdentityProvider)providersComboBoxModel.getSelectedItem();
+        if (ip == null) {
+            publishedService.setPolicyXml(null);
+        }
+        java.util.List assertions = new ArrayList();
         Iterator it = getIdentitiesInTableModel().getDataVector().iterator();
-        while(it.hasNext()) {
+        while (it.hasNext()) {
             java.util.List row = (java.util.List)it.next();
             EntityHeader eh = (EntityHeader)row.get(0);
             if (EntityType.USER.equals(eh.getType())) {
@@ -366,6 +370,10 @@ public class IdentityProviderPanel extends WizardStepPanel {
             }
         }
         Assertion assertion = new OneOrMoreAssertion(assertions);
+        if (ssljCheckBox.isSelected()) {
+            Assertion sslAssertion = new SslAssertion();
+            assertion = new AllAssertion(Arrays.asList(new Assertion[]{sslAssertion, assertion}));
+        }
         ByteArrayOutputStream bo = new ByteArrayOutputStream();
         WspWriter.writePolicy(assertion, bo);
         publishedService.setPolicyXml(bo.toString());
@@ -388,35 +396,52 @@ public class IdentityProviderPanel extends WizardStepPanel {
 
 
     private final TableCellRenderer
-            tableRenderer = new DefaultTableCellRenderer() {
-                /* This is the only method defined by ListCellRenderer.  We just
-                 * reconfigure the Jlabel each time we're called.
-                 */
-                public Component
-                        getTableCellRendererComponent(JTable table,
-                                                      Object value,
-                                                      boolean iss,
-                                                      boolean hasFocus,
-                                                      int row, int column) {
-                    if (iss) {
-                        this.setBackground(table.getSelectionBackground());
-                        this.setForeground(table.getSelectionForeground());
-                    } else {
-                        this.setBackground(table.getBackground());
-                        this.setForeground(table.getForeground());
-                    }
-                    this.setFont(new Font("Dialog", Font.PLAIN, 12));
-                        EntityHeader h = (EntityHeader) value;
-                        EntityType type = h.getType();
-                        ImageIcon icon = IconManager.getInstance().getIcon(type);
-                        if (icon != null) setIcon(icon);
-                        setText(h.getName());
+      tableRenderer = new DefaultTableCellRenderer() {
+          /* This is the only method defined by ListCellRenderer.  We just
+           * reconfigure the Jlabel each time we're called.
+           */
+          public Component
+            getTableCellRendererComponent(JTable table,
+                                          Object value,
+                                          boolean iss,
+                                          boolean hasFocus,
+                                          int row, int column) {
+              if (iss) {
+                  this.setBackground(table.getSelectionBackground());
+                  this.setForeground(table.getSelectionForeground());
+              } else {
+                  this.setBackground(table.getBackground());
+                  this.setForeground(table.getForeground());
+              }
+              this.setFont(new Font("Dialog", Font.PLAIN, 12));
+              EntityHeader h = (EntityHeader)value;
+              EntityType type = h.getType();
+              ImageIcon icon = IdentityProviderPanel.this.getIcon(type);
+              if (icon != null) setIcon(icon);
+              setText(h.getName());
+              return this;
+          }
+      };
 
+    /**
+     * Get the Icon for the Class passed.
+     *
+     * @param type   the entity type enum
+     * @return ImageIcon for the given node
+     */
+    private ImageIcon getIcon(EntityType type) {
+        if (type == null) {
+            throw new NullPointerException("type");
+        }
+        ClassLoader cl = type.getClass().getClassLoader();
+        if (type.equals(EntityType.GROUP)) {
+            return new ImageIcon(IconManager2.getInstance().getIcon(GroupPanel.GROUP_ICON_RESOURCE));
+        } else if (type.equals(EntityType.USER)) {
+            return new ImageIcon(IconManager2.getInstance().getIcon(UserPanel.USER_ICON_RESOURCE));
+        }
+        return null;
+    }
 
-                    return this;
-                }
-
-            };
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private JTable identitiesInjTable;
@@ -444,5 +469,4 @@ public class IdentityProviderPanel extends WizardStepPanel {
     private JPanel usersLabeljPanel;
 
     private JCheckBox ssljCheckBox;
-
 }

@@ -1,11 +1,9 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.FilterListModel;
-import com.l7tech.console.util.IconManager;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SortedListModel;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
@@ -302,7 +300,7 @@ public class NewGroupMemberDialog extends JDialog {
             this.setFont(new Font("Dialog", Font.PLAIN, 12));
 
             // Based on value type, determine cell contents
-            setIcon(IconManager.getInstance().getIcon(EntityType.USER));
+            setIcon(new ImageIcon(Utilities.loadImage(UserPanel.USER_ICON_RESOURCE)));
             EntityHeader eh = (EntityHeader)value;
             setText(eh.getName());
 

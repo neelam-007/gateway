@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.util.IconManager;
 import com.l7tech.console.util.SortedListModel;
+import com.l7tech.console.util.IconManager2;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -415,7 +416,7 @@ class GroupUsersPanel extends JPanel {
             this.setFont(new Font("Dialog", Font.PLAIN, 12));
 
             // Based on value type, determine cell contents
-            setIcon(IconManager.getInstance().getIcon(EntityType.USER));
+            setIcon(new ImageIcon(IconManager2.getInstance().getIcon(UserPanel.USER_ICON_RESOURCE)));
             EntityHeader eh = (EntityHeader)value;
             setText(eh.getName());
 

@@ -1,7 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.text.MaxLengthDocument;
-import com.l7tech.console.util.IconManager;
+import com.l7tech.console.util.IconManager2;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.internal.imp.GroupImp;
@@ -17,13 +17,15 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
-import java.rmi.RemoteException;
 
 /**
  * GroupPanel is the main entry point panel for the <CODE>Group</CODE>.
  */
 public class GroupPanel extends EntityEditorPanel {
     private static final Category log = Category.getInstance(GroupPanel.class.getName());
+
+    final static String GROUP_ICON_RESOURCE = "com/l7tech/console/resources/group16.png";
+
     private JLabel nameLabel;
     private JLabel descriptionLabel;
     private JTextField descriptionTextField;
@@ -201,7 +203,7 @@ public class GroupPanel extends EntityEditorPanel {
             detailsPanel = new JPanel();
             detailsPanel.setLayout(new GridBagLayout());
 
-            detailsPanel.add(new JLabel(IconManager.getInstance().getIcon(EntityType.GROUP)),
+            detailsPanel.add(new JLabel(new ImageIcon(Utilities.loadImage(GROUP_ICON_RESOURCE))),
                     new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
                             GridBagConstraints.WEST,
                             GridBagConstraints.NONE,
