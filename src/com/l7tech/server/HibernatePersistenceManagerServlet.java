@@ -77,7 +77,7 @@ public class HibernatePersistenceManagerServlet extends HttpServlet {
             } else if ( "create".equals(op) ) {
                 IdentityProviderType type = new IdentityProviderTypeImp();
                 type.setClassName( "com.l7tech.identity.internal.InternalIdentityProvider" );
-                type.setName( "Internal Identity Provider" );
+                type.setName( "Internal IdentityAssertion Provider" );
                 iptm.save(type);
 
                 IdentityProviderConfig config = new IdentityProviderConfigImp();
@@ -86,7 +86,7 @@ public class HibernatePersistenceManagerServlet extends HttpServlet {
                 config.setType( type );
 
                 long oid = ipcm.save( config );
-                config.setName( "Identity Provider #" + oid );
+                config.setName( "IdentityAssertion Provider #" + oid );
                 ipcm.update( config );
 
                 out.println( "Saved " + oid );

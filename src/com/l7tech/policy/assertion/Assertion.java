@@ -13,7 +13,10 @@ import java.util.Map;
 import java.util.Collections;
 
 /**
+ * Immutable.
+ *
  * @author alex
+ * @version $Revision$
  */
 public abstract class Assertion {
     public abstract int checkRequest( Request request, Response response ) throws PolicyAssertionExcepion;

@@ -6,14 +6,51 @@
 
 package com.l7tech.service;
 
-import org.apache.commons.httpclient.HttpMethod;
-
 import java.net.URL;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author alex
  */
 public abstract class WebService extends Service {
+    public static final Method METHOD_POST = new Method("POST");
+    public static final Method METHOD_GET = new Method("GET");
+
+    public static class Method {
+        private Method( String method ) {
+            _method = method;
+        }
+        String _method;
+    }
+
+    public WebService( Set operations, Method method, String hostname, int port, String uri ) {
+        super( operations );
+        _method = method;
+        _hostname = hostname;
+        _uri = uri;
+        _port = port;
+    }
+
+    public WebService( Set operations, Method method, URL url ) {
+        super( operations );
+        String protocol = url.getProtocol();
+        if ( "http".equalsIgnoreCase( protocol ) || "https".equalsIgnoreCase( protocol ) ) {
+            _method = method;
+            _hostname = url.getHost();
+            _port = url.getPort();
+            _uri = url.getPath();
+        } else throw new IllegalArgumentException( "Only http-style URLs are supported!" );
+    }
+
+    public Method getMethod() {
+        return _method;
+    }
+
+    public void setMethod( Method method) {
+        _method = method;
+    }
+
     public String getHostname() {
         return _hostname;
     }
@@ -30,13 +67,6 @@ public abstract class WebService extends Service {
         _uri = uri;
     }
 
-    public String getMethod() {
-        return _method;
-    }
-
-    public void setMethod(String method) {
-        _method = method;
-    }
 
     public int getPort() {
         return _port;
@@ -46,8 +76,8 @@ public abstract class WebService extends Service {
         _port = port;
     }
 
+    protected Method _method;
     protected String _hostname;
-    protected String _uri;
-    protected String _method;
     protected int _port = 80;
+    protected String _uri;
 }
