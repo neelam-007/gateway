@@ -1,6 +1,8 @@
 package com.l7tech.console.table;
 
 import com.l7tech.cluster.GatewayStatus;
+import com.l7tech.console.ClusterStatusWindow;
+
 import javax.swing.table.DefaultTableModel;
 import java.util.logging.Logger;
 import java.util.Vector;
@@ -107,17 +109,17 @@ public class ClusterStatusTableSorter extends FilteredDefaultTableModel {
      */
     public Object getValueAt(int row, int col) {
         switch (col) {
-            case 0:
+            case ClusterStatusWindow.STATUS_TABLE_NODE_STATUS_COLUMN_INDEX:
                 return new Integer(((GatewayStatus) sortedData[row]).getStatus());
-            case 1:
+            case ClusterStatusWindow.STATUS_TABLE_NODE_NAME_COLUMN_INDEX:
                 return ((GatewayStatus) sortedData[row]).getName();
-            case 2:
+            case ClusterStatusWindow.STATUS_TABLE_LOAD_SHARING_COLUMN_INDEX:
                 return new Integer(((GatewayStatus) sortedData[row]).getLoadSharing());
-            case 3:
+            case ClusterStatusWindow.STATUS_TABLE_REQUEST_ROUTED_COLUMN_INDEX:
                 return new Integer(((GatewayStatus) sortedData[row]).getRequestRouted());
-            case 4:
+            case ClusterStatusWindow.STATUS_TABLE_LOAD_AVERAGE_COLUMN_INDEX:
                 return new Double(((GatewayStatus) sortedData[row]).getAvgLoad());
-            case 5:
+            case ClusterStatusWindow.STATUS_TABLE_SERVER_UPTIME_COLUMN_INDEX:
                 // if the node is down, the uptime retrived from the node is outdated and it should be set to zero
                 if(((GatewayStatus) sortedData[row]).getStatus() == 0 ) {
                     return new Long(0);
@@ -125,7 +127,7 @@ public class ClusterStatusTableSorter extends FilteredDefaultTableModel {
                 else{
                     return new Long(((GatewayStatus) sortedData[row]).getUptime());
                 }
-            case 6:
+            case ClusterStatusWindow.STATUS_TABLE_IP_ADDDRESS_COLUMN_INDEX:
                 return ((GatewayStatus) sortedData[row]).getAddress();
             default:
                 throw new IllegalArgumentException("Bad Column");
@@ -165,31 +167,31 @@ public class ClusterStatusTableSorter extends FilteredDefaultTableModel {
             Object elementB = new Object();
 
             switch (column) {
-                case 0:
+                case ClusterStatusWindow.STATUS_TABLE_NODE_STATUS_COLUMN_INDEX:
                     elementA = new Integer(((GatewayStatus) a).getStatus());
                     elementB = new Integer(((GatewayStatus) b).getStatus());
                     break;
-                case 1:
+                case ClusterStatusWindow.STATUS_TABLE_NODE_NAME_COLUMN_INDEX:
                     elementA = ((GatewayStatus) a).getName();
                     elementB = ((GatewayStatus) b).getName();
                     break;
-                case 2:
+                case ClusterStatusWindow.STATUS_TABLE_LOAD_SHARING_COLUMN_INDEX:
                     elementA = new Long(((GatewayStatus) a).getLoadSharing());
                     elementB = new Long(((GatewayStatus) b).getLoadSharing());
                     break;
-                case 3:
+                case ClusterStatusWindow.STATUS_TABLE_REQUEST_ROUTED_COLUMN_INDEX:
                     elementA = new Long(((GatewayStatus) a).getRequestRouted());
                     elementB = new Long(((GatewayStatus) b).getRequestRouted());
                     break;
-                case 4:
+                case ClusterStatusWindow.STATUS_TABLE_LOAD_AVERAGE_COLUMN_INDEX:
                     elementA = new Double(((GatewayStatus) a).getAvgLoad());
                     elementB = new Double(((GatewayStatus) b).getAvgLoad());
                     break;
-                case 5:
+                case ClusterStatusWindow.STATUS_TABLE_SERVER_UPTIME_COLUMN_INDEX:
                     elementA = new Long(((GatewayStatus) a).getUptime());
                     elementB = new Long(((GatewayStatus) b).getUptime());
                     break;
-                 case 6:
+                 case ClusterStatusWindow.STATUS_TABLE_IP_ADDDRESS_COLUMN_INDEX:
                     elementA = ((GatewayStatus) a).getAddress();
                     elementB = ((GatewayStatus) b).getAddress();
                     break;

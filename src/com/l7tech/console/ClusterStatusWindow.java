@@ -30,6 +30,13 @@ import java.text.SimpleDateFormat;
 
 public class ClusterStatusWindow extends JFrame {
 
+    public static final int STATUS_TABLE_NODE_STATUS_COLUMN_INDEX = 0;
+    public static final int STATUS_TABLE_NODE_NAME_COLUMN_INDEX = 1;
+    public static final int STATUS_TABLE_LOAD_SHARING_COLUMN_INDEX = 2;
+    public static final int STATUS_TABLE_REQUEST_ROUTED_COLUMN_INDEX = 3;
+    public static final int STATUS_TABLE_LOAD_AVERAGE_COLUMN_INDEX = 4;
+    public static final int STATUS_TABLE_SERVER_UPTIME_COLUMN_INDEX = 5;
+    public static final int STATUS_TABLE_IP_ADDDRESS_COLUMN_INDEX = 6;
     private javax.swing.JLabel serviceStatTitle = null;
     private javax.swing.JLabel clusterStatusTitle = null;
     private javax.swing.JLabel updateTimeStamp = null;
@@ -295,14 +302,14 @@ public class ClusterStatusWindow extends JFrame {
         requestRoutedRenderer.setStringPainted(true);
         requestRoutedRenderer.setBackground(clusterStatusTable.getBackground());
 
-        clusterStatusTable.getColumnModel().getColumn(2).setCellRenderer(loadShareRenderer);
-        clusterStatusTable.getColumnModel().getColumn(3).setCellRenderer(requestRoutedRenderer);
+        clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_LOAD_SHARING_COLUMN_INDEX).setCellRenderer(loadShareRenderer);
+        clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_REQUEST_ROUTED_COLUMN_INDEX).setCellRenderer(requestRoutedRenderer);
 
-        clusterStatusTable.getColumnModel().getColumn(0).setMinWidth(0);
-        clusterStatusTable.getColumnModel().getColumn(0).setMaxWidth(0);
-        clusterStatusTable.getColumnModel().getColumn(0).setPreferredWidth(0);
+        clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_NODE_STATUS_COLUMN_INDEX).setMinWidth(0);
+        clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_NODE_STATUS_COLUMN_INDEX).setMaxWidth(0);
+        clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_NODE_STATUS_COLUMN_INDEX).setPreferredWidth(0);
 
-        clusterStatusTable.getColumnModel().getColumn(1).setCellRenderer(
+        clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_NODE_NAME_COLUMN_INDEX).setCellRenderer(
                 new DefaultTableCellRenderer() {
                     private Icon connectIcon =
                             new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/connect2.gif"));
@@ -331,7 +338,7 @@ public class ClusterStatusWindow extends JFrame {
                     }
                 });
 
-        clusterStatusTable.getColumnModel().getColumn(5).setCellRenderer(
+        clusterStatusTable.getColumnModel().getColumn(STATUS_TABLE_SERVER_UPTIME_COLUMN_INDEX).setCellRenderer(
                 new DefaultTableCellRenderer() {
 
                     public Component getTableCellRendererComponent(JTable table,
@@ -591,6 +598,18 @@ public class ClusterStatusWindow extends JFrame {
 
         getStatusRefreshTimer().stop();
 
+        // get the selected row index
+        int selectedRowIndexOld = getClusterStatusTable().getSelectedRow();
+        final String nodeIdSelected;
+
+        // save the number of selected message
+        if (selectedRowIndexOld >= 0) {
+            nodeIdSelected = (String) getClusterStatusTable().getValueAt(selectedRowIndexOld, STATUS_TABLE_NODE_NAME_COLUMN_INDEX);
+        }
+        else{
+            nodeIdSelected = null;
+        }
+
         // create a worker thread to retrieve the Service statistics
         final ClusterStatusWorker statsWorker = new ClusterStatusWorker(serviceManager, clusterStatusAdmin, currentNodeList) {
             public void finished() {
@@ -612,6 +631,8 @@ public class ClusterStatusWindow extends JFrame {
                         getClusterStatusTableModel().setData(cs);
                         getClusterStatusTableModel().getRealModel().setRowCount(cs.size());
                         getClusterStatusTableModel().fireTableDataChanged();
+
+                        setSelectedRow(nodeIdSelected);
 
                         SimpleDateFormat sdf = new SimpleDateFormat("MMM d yyyy HH:mm:ss aaa");
 
@@ -692,6 +713,27 @@ public class ClusterStatusWindow extends JFrame {
         getClusterStatusTableModel().setData(cs);
         getClusterStatusTableModel().getRealModel().setRowCount(cs.size());
         getClusterStatusTableModel().fireTableDataChanged();
+    }
+
+    /**
+     * Set the row of the node status table which is currenlty selected by the user. This function
+     * is called after an update on the table is done.
+     *
+     * @param nodeId  The node Id of the row being selected.
+     */
+    public void setSelectedRow(String nodeId) {
+        if (nodeId != null) {
+            // keep the current row selection
+            int rowCount = getClusterStatusTable().getRowCount();
+
+            for (int i = 0; i < rowCount; i++) {
+                if (getClusterStatusTable().getValueAt(i, STATUS_TABLE_NODE_NAME_COLUMN_INDEX).equals(nodeId)) {
+                    getClusterStatusTable().setRowSelectionInterval(i, i);
+
+                    break;
+                }
+            }
+        }
     }
 
     /**
