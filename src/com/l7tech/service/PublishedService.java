@@ -226,7 +226,6 @@ public class PublishedService extends NamedEntityImp {
      * URI portion of the requests that determine whether or not requests are meant for this service.
      */
     public String getRoutingUri() {
-        if (routingUri == null) return "";
         return routingUri;
     }
 
