@@ -1,18 +1,17 @@
 package com.l7tech.remote.jini;
 
-import com.sun.jini.start.ServiceStarter;
 import com.l7tech.logging.LogManager;
+import com.sun.jini.start.ServiceStarter;
+import net.jini.config.ConfigurationException;
 
 import java.net.URL;
 import java.util.logging.Logger;
-
-import net.jini.config.ConfigurationException;
 
 /**
  * The class <code>Services</code> is the wrapper utility that invoks
  * configured <i>Jini</i> services.
  *
- * @author  <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
 public class Services {
@@ -46,15 +45,20 @@ public class Services {
         start(new String[]{cfg});
     }
 
-     /**
+    /**
      * start reggie
      */
     public void start(String[] options) throws ConfigurationException {
-         if (options != null && options.length > 0) {
-             logger.info("initializing from "+options[0]);
-         } else {
-             throw new ConfigurationException("Empty or null options passed");
-         }
+        setEnvironment();
+        if (options != null && options.length > 0) {
+            logger.info("initializing from " + options[0]);
+        } else {
+            throw new ConfigurationException("Empty or null options passed");
+        }
         ServiceStarter.main(options);
+    }
+
+    private void setEnvironment() {
+        System.setProperty("java.protocol.handler.pkgs", "com.l7tech.remote.jini");
     }
 }

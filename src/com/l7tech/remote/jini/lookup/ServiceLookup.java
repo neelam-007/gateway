@@ -20,15 +20,14 @@ import java.util.logging.Logger;
  * <code>ServiceLookup</code> is the utility class that
  * performs the jini service lookup.
  *
- * @author  <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
 public class ServiceLookup {
     protected static final Logger logger = Logger.getLogger(ServiceLookup.class.getName());
     protected int timeout = 5000;
     private final Configuration config;
-    private static final String CLIENT_CONFIG = "etc/jini/client.config";
-    String[] configOptions = {CLIENT_CONFIG};
+    private static final String CLIENT_CONFIG = "client.config";
     protected ServiceRegistrar registrar;
 
 
@@ -46,6 +45,7 @@ public class ServiceLookup {
     public ServiceLookup() throws ConfigurationException {
         Configuration cf;
         try {
+            String[] configOptions = {CLIENT_CONFIG};
             cf = ConfigurationProvider.getInstance(configOptions);
         } catch (ConfigurationNotFoundException e) {
             cf = ConfigurationProvider.getInstance(null);
@@ -56,11 +56,11 @@ public class ServiceLookup {
     /**
      * create the service proxy instance of the class cl with
      * optional context <code>Collection</code>.
-     * <p>
+     * <p/>
      * Returns <b>null</b> if cannot locate the service or there
      * was an error in instantiating the service proxy.
      *
-     * @param cl the class that
+     * @param cl      the class that
      * @param context optional context collection
      * @return the object instance of the class type
      */
@@ -68,8 +68,7 @@ public class ServiceLookup {
         /* Look up the remote server */
         try {
             ServiceMatches matches =
-              getRegistrar().lookup(
-                new ServiceTemplate(null, new Class[]{cl}, null), timeout);
+              getRegistrar().lookup(new ServiceTemplate(null, new Class[]{cl}, null), timeout);
 
             if (matches == null || matches.totalMatches == 0) {
                 return null;
@@ -118,8 +117,7 @@ public class ServiceLookup {
         String entry = ServiceLookup.class.getName();
         try {
             LookupLocator locator =
-              (LookupLocator)config.getEntry(
-                entry,
+              (LookupLocator)config.getEntry(entry,
                 "lookupLocator", LookupLocator.class);
             return locator;
         } catch (NoSuchEntryException e) {
