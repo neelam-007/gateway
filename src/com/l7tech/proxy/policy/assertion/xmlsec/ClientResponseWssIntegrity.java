@@ -1,6 +1,7 @@
 package com.l7tech.proxy.policy.assertion.xmlsec;
 
-import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.security.xml.WssProcessor;
+import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 import com.l7tech.proxy.datamodel.PendingRequest;
@@ -11,20 +12,17 @@ import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpClientCert;
 import com.l7tech.proxy.util.ClientLogger;
+import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.security.*;
-import java.security.cert.CertificateException;
+import java.security.GeneralSecurityException;
+import java.util.Iterator;
+import java.util.List;
 
 /**
- * XML Digital signature on the soap response sent from the ssg server to the requestor (probably proxy). May also enforce
- * xml encryption for the body element of the response.
- * <p/>
- * On the server side, this decorates a response with an xml d-sig and maybe xml-enc the response's body
- * On the proxy side, this verifies that the Soap Response contains a valid xml d-sig for the entire envelope and decrypts
- * the response's body if necessary.
+ * Verifies that a specific element of the soap response was signed by the ssg.
  * <p/>
  * <br/><br/>
  * User: flascell<br/>
@@ -41,17 +39,6 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
         }
     }
 
-    /**
-     * If this assertion includes xml-enc, the proxy will add a header to the request that tells the server
-     * which xml-enc session to use.
-     *
-     * @param request might receive a header containing the xml-enc session
-     * @return AssertionStatus.NONE if we are prepared to handle the eventual response
-     * @throws ServerCertificateUntrustedException
-     *                                    if an updated SSG cert is needed
-     * @throws OperationCanceledException if the user cancels the logon dialog
-     * @throws BadCredentialsException    if the SSG rejects the SSG username/password when establishing the session
-     */
     public AssertionStatus decorateRequest(PendingRequest request)
             throws GeneralSecurityException,
             OperationCanceledException, BadCredentialsException,
@@ -61,9 +48,9 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
 
         // We'll need to know the server cert in order to check the signature
         if (SsgKeyStoreManager.getServerCert(ssg) == null)
-            throw new ServerCertificateUntrustedException("Server cert is needed to check signatures, but has not yet been discovered");
-
-        return AssertionStatus.NOT_YET_IMPLEMENTED;
+            throw new ServerCertificateUntrustedException("Server cert is needed to check signatures, " +
+                                                          "but has not yet been discovered");
+        return AssertionStatus.NONE;
     }
 
     /**
@@ -75,26 +62,46 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
      */
     public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response)
       throws ServerCertificateUntrustedException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException {
-        Document doc = response.getResponseAsDocument();
+        Document soapmsg = response.getResponseAsDocument();
 
-
-        return AssertionStatus.NOT_YET_IMPLEMENTED;
-    }
-
-    private void handleResponseThrowable(Throwable e) throws ResponseValidationException {
-        Throwable cause = ExceptionUtils.unnestToRoot(e);
-        if (cause instanceof SignatureException) {
-            throw new ResponseValidationException("Response from Gateway was signed, but not by the Gateway CA key we expected", e);
-        } else if (cause instanceof CertificateException) {
-            throw new ResponseValidationException("Signature on response from Gateway contained an invalid certificate", e);
-        } else if (cause instanceof NoSuchAlgorithmException) {
-            throw new ResponseValidationException("Signature on response from Gateway required an unsupported algorithm", e);
-        } else if (cause instanceof InvalidKeyException) {
-            throw new ResponseValidationException("Our copy of the Gateway public key is corrupt", e);
-        } else if (cause instanceof NoSuchProviderException) {
-            throw new RuntimeException("VM is misconfigured", e);
+        WssProcessor.ProcessorResult wssResults = response.getProcessorResult();
+        if (wssResults == null) {
+            throw new IOException("This response was not processed for WSS level security.");
         }
-        throw new ResponseValidationException(e);
+
+        XpathEvaluator evaluator = XpathEvaluator.newEvaluator(soapmsg, xmlResponseSecurity.getXpathExpression().getNamespaces());
+        List selectedNodes = null;
+        try {
+            selectedNodes = evaluator.select(xmlResponseSecurity.getXpathExpression().getExpression());
+        } catch (JaxenException e) {
+            // this is thrown when there is an error in the expression
+            // this is therefore a bad policy
+            throw new ResponseValidationException(e);
+        }
+
+        // the element is not there so there is nothing to check
+        if (selectedNodes.isEmpty()) {
+            log.info("The element " + xmlResponseSecurity.getXpathExpression().getExpression() + " is not present in this response. " +
+                     "the assertion therefore succeeds.");
+            return AssertionStatus.NONE;
+        }
+
+        // to assert this, i must make sure that at least one of these nodes is part of the nodes
+        // that were signed as per attesting the wss processor
+        for (Iterator i = selectedNodes.iterator(); i.hasNext();) {
+            Object node = i.next();
+            WssProcessor.SignedElement[] toto = wssResults.getElementsThatWereSigned();
+            for (int j = 0; j < toto.length; j++) {
+                if (toto[j].asElement() == node) {
+                    // we got the bugger!
+                    log.info("The element " + xmlResponseSecurity.getXpathExpression().getExpression() + " was found in this " +
+                            "response. and is part of the elements that were signed as per the wss processor.");
+                    return AssertionStatus.NONE;
+                }
+            }
+        }
+        log.info("The element was found in the response but does not appear to be signed. Returning FALSIFIED");
+        return AssertionStatus.FALSIFIED;
     }
 
     public String getName() {
