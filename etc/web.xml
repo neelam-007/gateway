@@ -31,6 +31,11 @@
         </init-param>
     </servlet>
 
+    <servlet>
+        <servlet-name>XMLEncSessionRequestHandler</servlet-name>
+        <servlet-class>com.l7tech.server.XMLEncSessionServlet</servlet-class>
+    </servlet>
+
     <!-- Axis servlet properties -->
     <servlet>
         <servlet-name>AxisServlet</servlet-name>
@@ -91,7 +96,10 @@
         <url-pattern>/ssg/csr/*</url-pattern>
     </servlet-mapping>
 
-
+    <servlet-mapping>
+       <servlet-name>XMLEncSessionRequestHandler</servlet-name>
+       <url-pattern>/ssg/xmlencsession</url-pattern>
+    </servlet-mapping>
 
     <servlet-mapping>
         <servlet-name>AxisServlet</servlet-name>
