@@ -89,6 +89,7 @@ public class SoapUtil {
     public static final String SIGNATURE_EL_NAME = "Signature";
     public static final String SIGNED_INFO_EL_NAME = "SignedInfo";
     public static final String REFERENCE_EL_NAME = "Reference";
+    public static final String SECURITY_CONTEXT_TOK_EL_NAME = "SecurityContextToken";
     public static final String SECURITYTOKENREFERENCE_EL_NAME = "SecurityTokenReference";
     public static final String BINARYSECURITYTOKEN_EL_NAME = "BinarySecurityToken";
     public static final String KEYIDENTIFIER_EL_NAME = "KeyIdentifier";
