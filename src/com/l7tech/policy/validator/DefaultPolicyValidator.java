@@ -406,7 +406,13 @@ public class DefaultPolicyValidator extends PolicyValidator {
         }
 
         private boolean isCrendentialSource(Assertion a) {
-            return a instanceof CredentialSourceAssertion;
+            // an xmlrequestsecurity may or may not be considered a credential source
+            if (a instanceof XmlRequestSecurity) {
+                XmlRequestSecurity maybeCredSource = (XmlRequestSecurity)a;
+                if (maybeCredSource.hasAuthenticationElement()) {
+                    return true;
+                } else return false;
+            } else return a instanceof CredentialSourceAssertion;
         }
 
         private boolean isComposite(Assertion a) {
