@@ -2,8 +2,8 @@ package com.l7tech.console.tree.policy;
 
 
 import com.l7tech.console.action.HttpRoutingAssertionPropertiesAction;
-import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
+import com.l7tech.policy.assertion.RoutingAssertion;
 
 import javax.swing.*;
 import java.util.ArrayList;

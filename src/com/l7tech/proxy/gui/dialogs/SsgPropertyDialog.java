@@ -504,7 +504,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             cbUseSslByDefault.setSelected(ssg.isUseSslByDefault());
             getNetworkPane().updateCustomPortsEnableState();
         }
-        getPoliciesPane().setPolicyCache(ssg.getRuntime().rootPolicyManager());
+        getPoliciesPane().setPolicyCache(ssg.getRuntime().getPolicyManager());
 
         checkOk();
     }

@@ -20,12 +20,11 @@ import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.NullRequestInterceptor;
-import com.l7tech.proxy.datamodel.CredentialManagerImpl;
-import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
-import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
+import com.l7tech.proxy.datamodel.*;
+import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.processor.MessageProcessor;
@@ -49,6 +48,9 @@ import java.net.*;
 import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
+import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -93,6 +95,24 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
             return;
             //throw (IllegalArgumentException)new IllegalArgumentException("Bad protected service URL").initCause(e);
         }
+
+        String policyXml = bridgeRoutingAssertion.getPolicyXml();
+        final Policy hardcodedPolicy;
+        if (policyXml != null) {
+            try {
+                Assertion a = WspReader.parse(policyXml);
+                hardcodedPolicy = new Policy(a, null);
+            } catch (IOException e) {
+                logger.log(Level.WARNING,
+                           "BridgeRoutingAssertion: hardcoded policy is invalid; assertion is therefore nonfunctional.",
+                           e);
+                ssg = null;
+                messageProcessor = null;
+                return;
+            }
+        } else
+            hardcodedPolicy = null;
+
         gatewayHostname = url.getHost();
 
         String username = assertion.getLogin();
@@ -168,6 +188,30 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
                                                                                  ssg,
                                                                                  ClientProxySecureProtocolSocketFactory.getInstance()));
         ssg.getRuntime().setHttpClient(httpClient);
+
+        if (hardcodedPolicy != null) {
+            ssg.getRuntime().setPolicyManager(new PolicyManager() {
+                public void flushPolicy(PolicyAttachmentKey policyAttachmentKey) {
+                    // No action needed
+                }
+
+                public Policy getPolicy(PolicyAttachmentKey policyAttachmentKey) {
+                    return hardcodedPolicy;
+                }
+
+                public void setPolicy(PolicyAttachmentKey key, Policy policy) {
+                    throw new IllegalStateException("Unable to store new policy: this Bridge Routing Assertion has a hardcoded policy.");
+                }
+
+                public Set getPolicyAttachmentKeys() {
+                    return Collections.EMPTY_SET;
+                }
+
+                public void clearPolicies() {
+                    // No action needed
+                }
+            });
+        }
 
         // TODO use this trust manager somehow
 

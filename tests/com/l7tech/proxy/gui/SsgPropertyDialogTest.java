@@ -42,11 +42,11 @@ public class SsgPropertyDialogTest {
 
     public void testSomeStuff() throws Exception {
         Ssg ssg = new Ssg(1, "blah.bloof.com");
-        ssg.getRuntime().rootPolicyManager().setPolicy(new PolicyAttachmentKey("http://blah",  "http://gwerg.asd.gfa", null), new Policy(new AllAssertion(Arrays.asList(new Assertion[] {
+        ssg.getRuntime().getPolicyManager().setPolicy(new PolicyAttachmentKey("http://blah",  "http://gwerg.asd.gfa", null), new Policy(new AllAssertion(Arrays.asList(new Assertion[] {
             new HttpBasic(),
             new SpecificUser(444, "blahuser", null, null),
         })), "testpolicy"));
-        ssg.getRuntime().rootPolicyManager().setPolicy(new PolicyAttachmentKey("http://HugeTree.com/Other",
+        ssg.getRuntime().getPolicyManager().setPolicy(new PolicyAttachmentKey("http://HugeTree.com/Other",
                          "http://example.com/soapaction/other", null), new Policy(
                          new AllAssertion(Arrays.asList(new Assertion[] {
                              new OneOrMoreAssertion(Arrays.asList(new Assertion[] {
@@ -120,20 +120,20 @@ public class SsgPropertyDialogTest {
                              }))
                          })), "testpoliciy"));
         Policy tp = new Policy(new TrueAssertion(), "foo");
-        ssg.getRuntime().rootPolicyManager().setPolicy(new PolicyAttachmentKey("http://example.com/Qpuotoer", "http://gwerg.asd.gfa", "/blah/bloo"), tp);
-        ssg.getRuntime().rootPolicyManager().setPolicy(new PolicyAttachmentKey("http://exwoamdple.coom/Quodoter", "http://gwearg.asdf.gfa", "/bloo/bloo"), tp);
-        ssg.getRuntime().rootPolicyManager().setPolicy(new PolicyAttachmentKey("http://exasmple.com/Quotesr", "http://gwerg.asd.gfa", null), tp);
-        ssg.getRuntime().rootPolicyManager().setPolicy(new PolicyAttachmentKey("http://edxamopdle.com/Qusoter", "http://gwderg.assd.gfa", null), tp);
-        ssg.getRuntime().rootPolicyManager().setPolicy(new PolicyAttachmentKey("http://dexdample.com/Qsuoter", "http://gwdrg.asd.fgfa", null), tp);
-        ssg.getRuntime().rootPolicyManager().setPolicy(new PolicyAttachmentKey("http://exdample.com/Quoater", "http://gwderg.asd.gfa", null), tp);
-        ssg.getRuntime().rootPolicyManager().setPolicy(new PolicyAttachmentKey("http://example.com/Quooter", "http://gwerg.asd.gfa", null), tp);
-        ssg.getRuntime().rootPolicyManager().setPolicy(new PolicyAttachmentKey("http://sexample.com/Quoadter", "http:/d/gwerg.asd.gfa", null), tp);
-        ssg.getRuntime().rootPolicyManager().setPolicy(new PolicyAttachmentKey("http://exawmple.com/Qduoter", "http://gwerg.asd.gfa", null), tp);
-        ssg.getRuntime().rootPolicyManager().setPolicy(new PolicyAttachmentKey("http://eoxaample.coms/Qfuoter", "http://gwerg.asd.gfaf", null), tp);
-        ssg.getRuntime().rootPolicyManager().setPolicy(new PolicyAttachmentKey("http://exoampdle.com/Quotzer", "http://gwerg.asd.gfa", null), tp);
-        ssg.getRuntime().rootPolicyManager().setPolicy(new PolicyAttachmentKey("http://exampale.cosm/Quzopter", "http://gwergs.asd.gfa", null), tp);
-        ssg.getRuntime().rootPolicyManager().setPolicy(new PolicyAttachmentKey("http://exampdles.com/Quzoter", "http://gwerfg.asdf.gfa", null), tp);
-        ssg.getRuntime().rootPolicyManager().setPolicy(new PolicyAttachmentKey("http://exsample.com/Quoater", "http://gwserg.asd.gfs", null), tp);
+        ssg.getRuntime().getPolicyManager().setPolicy(new PolicyAttachmentKey("http://example.com/Qpuotoer", "http://gwerg.asd.gfa", "/blah/bloo"), tp);
+        ssg.getRuntime().getPolicyManager().setPolicy(new PolicyAttachmentKey("http://exwoamdple.coom/Quodoter", "http://gwearg.asdf.gfa", "/bloo/bloo"), tp);
+        ssg.getRuntime().getPolicyManager().setPolicy(new PolicyAttachmentKey("http://exasmple.com/Quotesr", "http://gwerg.asd.gfa", null), tp);
+        ssg.getRuntime().getPolicyManager().setPolicy(new PolicyAttachmentKey("http://edxamopdle.com/Qusoter", "http://gwderg.assd.gfa", null), tp);
+        ssg.getRuntime().getPolicyManager().setPolicy(new PolicyAttachmentKey("http://dexdample.com/Qsuoter", "http://gwdrg.asd.fgfa", null), tp);
+        ssg.getRuntime().getPolicyManager().setPolicy(new PolicyAttachmentKey("http://exdample.com/Quoater", "http://gwderg.asd.gfa", null), tp);
+        ssg.getRuntime().getPolicyManager().setPolicy(new PolicyAttachmentKey("http://example.com/Quooter", "http://gwerg.asd.gfa", null), tp);
+        ssg.getRuntime().getPolicyManager().setPolicy(new PolicyAttachmentKey("http://sexample.com/Quoadter", "http:/d/gwerg.asd.gfa", null), tp);
+        ssg.getRuntime().getPolicyManager().setPolicy(new PolicyAttachmentKey("http://exawmple.com/Qduoter", "http://gwerg.asd.gfa", null), tp);
+        ssg.getRuntime().getPolicyManager().setPolicy(new PolicyAttachmentKey("http://eoxaample.coms/Qfuoter", "http://gwerg.asd.gfaf", null), tp);
+        ssg.getRuntime().getPolicyManager().setPolicy(new PolicyAttachmentKey("http://exoampdle.com/Quotzer", "http://gwerg.asd.gfa", null), tp);
+        ssg.getRuntime().getPolicyManager().setPolicy(new PolicyAttachmentKey("http://exampale.cosm/Quzopter", "http://gwergs.asd.gfa", null), tp);
+        ssg.getRuntime().getPolicyManager().setPolicy(new PolicyAttachmentKey("http://exampdles.com/Quzoter", "http://gwerfg.asdf.gfa", null), tp);
+        ssg.getRuntime().getPolicyManager().setPolicy(new PolicyAttachmentKey("http://exsample.com/Quoater", "http://gwserg.asd.gfs", null), tp);
 
         log.info("Firing up an example SsgPropertyDialog");
         ClientProxy clientProxy = new ClientProxyStub(9797);

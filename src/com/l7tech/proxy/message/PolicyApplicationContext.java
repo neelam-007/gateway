@@ -417,7 +417,7 @@ public class PolicyApplicationContext extends ProcessingContext {
         } catch (CertificateAlreadyIssuedException e) {
             // Bug #380 - if we haven't updated policy yet, try that first - mlyons
             if (!isPolicyUpdated()) {
-                getSsg().getRuntime().rootPolicyManager().flushPolicy(getPolicyAttachmentKey());
+                getSsg().getRuntime().getPolicyManager().flushPolicy(getPolicyAttachmentKey());
                 throw new PolicyRetryableException();
             } else {
                 ssg.getRuntime().getCredentialManager().notifyCertificateAlreadyIssued(ssg);
@@ -610,7 +610,7 @@ public class PolicyApplicationContext extends ProcessingContext {
         final Ssg ssg = getSsg();
         final PolicyAttachmentKey pak = getPolicyAttachmentKey();
         Policy policy = new PolicyDownloader(this).downloadPolicy(pak, serviceid);
-        ssg.getRuntime().rootPolicyManager().setPolicy(pak, policy);
+        ssg.getRuntime().getPolicyManager().setPolicy(pak, policy);
         if (requestInterceptor != null)
             requestInterceptor.onPolicyUpdated(ssg, pak, policy);
         policyUpdated = true;

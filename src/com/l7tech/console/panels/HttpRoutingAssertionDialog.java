@@ -103,10 +103,10 @@ public class HttpRoutingAssertionDialog extends JDialog {
 
     /**
      * notfy the listeners
-     * 
+     *
      * @param a the assertion
      */
-    private void fireEventAssertionChanged(final Assertion a) {
+    void fireEventAssertionChanged(final Assertion a) {
         SwingUtilities.invokeLater(
           new Runnable() {
               public void run() {

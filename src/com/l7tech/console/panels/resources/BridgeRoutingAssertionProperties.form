@@ -3,7 +3,7 @@
   <grid id="a9e4" binding="rootPanel" row-count="16" column-count="9" same-size-horizontally="false" same-size-vertically="false" hgap="0" vgap="0">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
-      <xy x="88" y="15" width="550" height="393"/>
+      <xy x="82" y="16" width="550" height="393"/>
       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
     </constraints>
     <properties/>
@@ -41,17 +41,17 @@
         </constraints>
         <properties>
           <selected value="true"/>
-          <text value="Discover automatically"/>
+          <text value="Discover Automatically"/>
         </properties>
       </component>
       <component id="915fe" class="javax.swing.JRadioButton" binding="rbServerCertManual">
         <constraints>
-          <xy x="40" y="63" width="108" height="22"/>
+          <xy x="40" y="63" width="109" height="22"/>
           <grid row="3" column="2" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
         </constraints>
         <properties>
           <enabled value="false"/>
-          <text value="Manually specify:"/>
+          <text value="Manually Specify:"/>
         </properties>
       </component>
       <component id="932a5" class="javax.swing.JLabel" binding="labelServerCertManual">
@@ -94,12 +94,12 @@
       </component>
       <component id="bd37e" class="javax.swing.JRadioButton" binding="rbClientCertManual">
         <constraints>
-          <xy x="40" y="149" width="108" height="22"/>
+          <xy x="40" y="149" width="109" height="22"/>
           <grid row="7" column="2" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
         </constraints>
         <properties>
           <enabled value="false"/>
-          <text value="Manually specify:"/>
+          <text value="Manually Specify:"/>
         </properties>
       </component>
       <component id="ae3ac" class="javax.swing.JButton" binding="buttonClientCertImport">
@@ -132,21 +132,21 @@
       </component>
       <component id="7977c" class="javax.swing.JRadioButton" binding="rbPolicyAutoDisco">
         <constraints>
-          <xy x="40" y="212" width="132" height="22"/>
+          <xy x="40" y="212" width="133" height="22"/>
           <grid row="10" column="2" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
         </constraints>
         <properties>
           <selected value="true"/>
-          <text value="Discover automatically"/>
+          <text value="Discover Automatically"/>
         </properties>
       </component>
       <component id="191d9" class="javax.swing.JRadioButton" binding="rbPolicyManual">
         <constraints>
-          <xy x="40" y="234" width="108" height="22"/>
+          <xy x="40" y="234" width="161" height="22"/>
           <grid row="11" column="2" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
         </constraints>
         <properties>
-          <text value="Manually specify:"/>
+          <text value="Manually Specify Policy XML:"/>
         </properties>
       </component>
       <hspacer id="435dd">

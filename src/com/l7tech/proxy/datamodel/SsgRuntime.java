@@ -116,7 +116,7 @@ public class SsgRuntime {
     /**
      * @return the root PolicyManager for this SSG.  Never null.
      */
-    public PolicyManager rootPolicyManager() {
+    public PolicyManager getPolicyManager() {
         if (rootPolicyManager == null) {
             synchronized (ssg) {
                 if (rootPolicyManager == null) {
@@ -127,8 +127,12 @@ public class SsgRuntime {
         return rootPolicyManager;
     }
 
-    /** Replace the root policy manager.  This should never be called by a production class; it is here only for test purposes. */
-    public void rootPolicyManager(PolicyManager p) {
+    /**
+     * Replace the root policy manager.
+     * This is not called in the stand-alone SSB, but is used by 
+     * the {@link com.l7tech.policy.assertion.BridgeRoutingAssertion} when a hardcoded policy is selected.
+     */
+    public void setPolicyManager(PolicyManager p) {
         rootPolicyManager = p;
     }
 

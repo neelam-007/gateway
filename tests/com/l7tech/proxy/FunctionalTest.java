@@ -106,7 +106,7 @@ public class FunctionalTest extends TestCase {
         // Make a do-nothing PolicyManager
         policyManager = new PolicyManagerStub();
         policyManager.setPolicy(new Policy(new TrueAssertion(), "testpolicy"));
-        ssgFake.getRuntime().rootPolicyManager(policyManager);
+        ssgFake.getRuntime().setPolicyManager(policyManager);
         MessageProcessor messageProcessor = new MessageProcessor();
 
         // Start the client proxy
@@ -160,7 +160,7 @@ public class FunctionalTest extends TestCase {
 
         policyManager.setPolicy(new Policy(new TrueAssertion(), "testpolicy"));
         ssgFake.setSsgFile("/soap/ssg");
-        ssgFake.getRuntime().rootPolicyManager(policyManager);
+        ssgFake.getRuntime().setPolicyManager(policyManager);
 
         Call call = new Call(proxyUrl + ssg0ProxyEndpoint);
         SOAPEnvelope responseEnvelope = call.invoke(reqEnvelope);
@@ -178,7 +178,7 @@ public class FunctionalTest extends TestCase {
 
         policyManager.setPolicy(new Policy(new HttpBasic(), "testpolicy"));
         URL url = new URL(ssgUrl);
-        ssgFake.getRuntime().rootPolicyManager(policyManager);
+        ssgFake.getRuntime().setPolicyManager(policyManager);
         ssgFake.setSsgAddress(url.getHost());
         ssgFake.setSsgPort(url.getPort());
         ssgFake.setSsgFile("/soap/ssg/basicauth");
@@ -201,7 +201,7 @@ public class FunctionalTest extends TestCase {
 
         policyManager.setPolicy(null);
         URL url = new URL(ssgUrl);
-        ssgFake.getRuntime().rootPolicyManager(policyManager);
+        ssgFake.getRuntime().setPolicyManager(policyManager);
         ssgFake.setSsgAddress(url.getHost());
         ssgFake.setSsgPort(url.getPort());
         ssgFake.setSsgFile("/soap/ssg/throwfault");

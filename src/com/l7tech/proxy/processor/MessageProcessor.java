@@ -418,7 +418,7 @@ public class MessageProcessor {
     }
 
     private Policy lookupPolicy(PolicyApplicationContext context) {
-        Policy policy = context.getSsg().getRuntime().rootPolicyManager().getPolicy(context.getPolicyAttachmentKey());
+        Policy policy = context.getSsg().getRuntime().getPolicyManager().getPolicy(context.getPolicyAttachmentKey());
         if (policy != null) {
             if (LogFlags.logPolicies)
                 log.info("Found a policy for this request: " + policy.getAssertion());
@@ -640,7 +640,7 @@ public class MessageProcessor {
                 } catch (CertificateAlreadyIssuedException e) {
                     // Bug #380 - if we haven't updated policy yet, try that first - mlyons
                     if (!context.isPolicyUpdated()) {
-                        ssg.getRuntime().rootPolicyManager().flushPolicy(context.getPolicyAttachmentKey());
+                        ssg.getRuntime().getPolicyManager().flushPolicy(context.getPolicyAttachmentKey());
                         throw new PolicyRetryableException();
                     } else {
                         ssg.getRuntime().getCredentialManager().notifyCertificateAlreadyIssued(ssg);
