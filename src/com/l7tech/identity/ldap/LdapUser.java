@@ -14,6 +14,12 @@ import java.io.Serializable;
  * Date: Jun 24, 2003
  */
 public class LdapUser implements User, Serializable {
+    public static final String[] HASH_PREFIXES = {
+        "{md5}", "{md4}", "{smd5}",
+        "{sha}", "{sha1}", "{ssha}",
+        "{crypt}",
+    };
+
     public LdapUser( UserBean bean ) {
         _userBean = bean;
     }
@@ -64,6 +70,16 @@ public class LdapUser implements User, Serializable {
      */
     public void setPassword(String password) throws  IllegalStateException {
         if ( password != null && !isAlreadyEncoded(password)) {
+            // Check for LDAP hashed passwords
+            String lcpass = password.toLowerCase();
+            for (int i = 0; i < HASH_PREFIXES.length; i++) {
+                String prefix = HASH_PREFIXES[i];
+                if ( lcpass.startsWith( prefix ) ) {
+                    _userBean.setPassword(null);
+                    return;
+                }
+            }
+
             String login = _userBean.getLogin();
             if ( login == null) throw new IllegalStateException("login must be set prior to encoding the password");
             _userBean.setPassword( encodePasswd( login, password) );
