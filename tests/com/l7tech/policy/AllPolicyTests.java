@@ -8,16 +8,16 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 /**
- * Class <code>AllTests</code> defines all tests to be run for the policy
+ * Class <code>AllPolicyTests</code> defines all tests to be run for the policy
  * package.
  * <p>
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class AllTests extends TestCase {
+public class AllPolicyTests extends TestCase {
     /**
-     * test <code>AllTests</code> constructor
+     * test <code>AllPolicyTests</code> constructor
      */
-    public AllTests(String name) {
+    public AllPolicyTests(String name) {
         super(name);
     }
 
@@ -52,7 +52,7 @@ public class AllTests extends TestCase {
     }
 
     /**
-     * Test <code>AllTests</code> main.
+     * Test <code>AllPolicyTests</code> main.
      */
     public static void main(String[] args) throws
       Throwable {

@@ -257,9 +257,9 @@
             <test name="com.l7tech.server.policy.PolicyServiceTest" haltonfailure="no"/>
 
             <!--
-             ** add policy tests into the com.l7tech.policy.AllTests class
+             ** add policy tests into the com.l7tech.policy.AllPolicyTests class
             -->
-            <test name="com.l7tech.policy.AllTests" haltonfailure="no"/>
+            <test name="com.l7tech.policy.AllPolicyTests" haltonfailure="no"/>
             <test name="com.l7tech.common.security.KeysTest" haltonfailure="no"/>
             <test name="com.l7tech.server.MockServletApiTest" haltonfailure="no"/>
             <test name="com.l7tech.common.xml.XpathEvaluatorTest" haltonfailure="no"/>
