@@ -141,7 +141,7 @@ public class ServiceNode extends EntityHeaderNode {
         try {
             return getPublishedService().getName();
         } catch (Exception e) {
-            ErrorManager.getDefault().notify(Level.WARNING, e, "Unable to find the service "+getEntityHeader().getOid());
+            ErrorManager.getDefault().notify(Level.SEVERE, e, "Unable to find the service "+getEntityHeader().getOid());
         }
         return "Error Retrieving the service";
     }
