@@ -20,7 +20,6 @@ import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 
 import java.io.IOException;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -53,7 +52,7 @@ public class ServerWssBasic implements ServerAssertion {
                 }
             }
         }
-        logger.log(Level.SEVERE, "cannot find credentials");
+        logger.info("cannot find credentials");
         return AssertionStatus.AUTH_REQUIRED;
     }
 
