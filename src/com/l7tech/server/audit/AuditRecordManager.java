@@ -28,5 +28,4 @@ public interface AuditRecordManager extends EntityManager {
     Collection find(Date fromTime, Date toTime, Level fromLevel, Level toLevel, Class[] recordClasses, int maxRecords) throws FindException;
 
     long save(AuditRecord rec) throws SaveException;
-
 }
