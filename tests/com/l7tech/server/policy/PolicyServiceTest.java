@@ -8,6 +8,7 @@ package com.l7tech.server.policy;
 
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
+import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.identity.TestIdentityProvider;
 import com.l7tech.identity.UserBean;
 import com.l7tech.message.SoapRequest;
@@ -17,6 +18,7 @@ import com.l7tech.message.TestSoapResponse;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
+import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
@@ -127,6 +129,32 @@ public class PolicyServiceTest extends TestCase {
         root.getChildren().add(or);
         or.getChildren().add(TESTUSER_IDASSERTION);
         or.getChildren().add(new SpecificUser(TestIdentityProvider.PROVIDER_ID, "mike", "111", "mike"));
+        root.getChildren().add(new HttpRoutingAssertion("http://soap.spacecrocodile.com"));
+        root.setChildren(root.getChildren());
+        or.setChildren(or.getChildren());
+        log.info(root.toString());
+
+        testwithValidIdentity(root);
+    }
+
+    public void testWithTwoBranchForTwoIdentities() throws Exception {
+        AllAssertion root = new AllAssertion();
+        root.getChildren().add(new HttpBasic());
+        OneOrMoreAssertion or = new OneOrMoreAssertion();
+        root.getChildren().add(or);
+
+        AllAssertion branch1 = new AllAssertion();
+        branch1.getChildren().add(TESTUSER_IDASSERTION);
+        branch1.getChildren().add(new RequestWssIntegrity(new XpathExpression("/pathForFranco")));
+        branch1.setChildren(branch1.getChildren());
+
+        AllAssertion branch2 = new AllAssertion();
+        branch2.getChildren().add(new SpecificUser(TestIdentityProvider.PROVIDER_ID, "mike", "111", "mike"));
+        branch2.getChildren().add(new RequestWssIntegrity(new XpathExpression("/pathForMike")));
+        branch2.setChildren(branch2.getChildren());
+
+        or.getChildren().add(branch1);
+        or.getChildren().add(branch2);
         root.getChildren().add(new HttpRoutingAssertion("http://soap.spacecrocodile.com"));
         root.setChildren(root.getChildren());
         or.setChildren(or.getChildren());
