@@ -13,7 +13,7 @@ import org.w3c.dom.Document;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -96,8 +96,8 @@ public interface WssDecorator {
         private X509Certificate senderCertificate = null;
         private PrivateKey senderPrivateKey = null;
         private boolean signTimestamp;
-        private Set elementsToEncrypt = new HashSet();
-        private Set elementsToSign = new HashSet();
+        private Set elementsToEncrypt = new LinkedHashSet();
+        private Set elementsToSign = new LinkedHashSet();
         private LoginCredentials usernameTokenCredentials = null;
     }
 
