@@ -27,9 +27,15 @@ import com.l7tech.server.saml.SamlAssertionGenerator;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.service.PublishedService;
 import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.auth.AuthScope;
+import org.apache.commons.httpclient.methods.InputStreamRequestEntity;
 import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.params.HttpClientParams;
+import org.apache.commons.httpclient.params.HttpConnectionManagerParams;
+import org.apache.commons.httpclient.params.HttpConnectionParams;
+import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.httpclient.protocol.Protocol;
-import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
+import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 import org.springframework.context.ApplicationContext;
@@ -64,8 +70,10 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         int max = httpRoutingAssertion.getMaxConnections();
 
         connectionManager = new MultiThreadedHttpConnectionManager();
-        connectionManager.setMaxConnectionsPerHost(max);
-        connectionManager.setMaxTotalConnections(max * 10);
+        HttpConnectionManagerParams params = new HttpConnectionManagerParams();
+        params.setMaxConnectionsPerHost(HostConfiguration.ANY_HOST_CONFIGURATION, max);
+        params.setMaxTotalConnections(max * 10);
+        connectionManager.setParams(params);
         //connectionManager.setConnectionStaleCheckingEnabled( false );
 
         try {
@@ -111,13 +119,13 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                     hconf = new HostConfiguration();
                     synchronized (this) {
                         if (protocol == null) {
-                            protocol = new Protocol(url.getProtocol(), new SecureProtocolSocketFactory() {
-                                public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException, UnknownHostException {
-                                    return sslContext.getSocketFactory().createSocket(socket, host, port, autoClose);
-                                }
-
+                            protocol = new Protocol(url.getProtocol(), new ProtocolSocketFactory() {
                                 public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort) throws IOException, UnknownHostException {
                                     return sslContext.getSocketFactory().createSocket(host, port, clientAddress, clientPort);
+                                }
+
+                                public Socket createSocket(String host, int port, InetAddress localAddress, int localPort, HttpConnectionParams params) throws IOException, UnknownHostException, ConnectTimeoutException {
+                                    return sslContext.getSocketFactory().createSocket(host, port, localAddress, localPort);
                                 }
 
                                 public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
@@ -131,10 +139,11 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 }
 
                 postMethod = new PostMethod(url.toString());
-
+                HttpMethodParams methodParams = new HttpMethodParams();
+                HttpClientParams clientParams = new HttpClientParams();
                 // Set the HTTP version 1.0 for not accepting the chunked Transfer Encoding
                 // todo: check if we need to support HTTP 1.1.
-                postMethod.setHttp11(false);
+                methodParams.setVersion(HttpVersion.HTTP_1_0);
 
                 final MimeKnob reqMime = context.getRequest().getMimeKnob();
                 postMethod.addRequestHeader(MimeUtil.CONTENT_TYPE, reqMime.getOuterContentType().getFullValue());
@@ -143,9 +152,9 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 final long contentLength = reqMime.getContentLength();
                 if (contentLength > Integer.MAX_VALUE)
                     throw new IOException("Body content is too long to be processed -- maximum is " + Integer.MAX_VALUE + " bytes");
-                postMethod.setRequestContentLength((int)contentLength);
+                postMethod.setContentChunked(false);
                 final InputStream bodyInputStream = reqMime.getEntireMessageBodyAsInputStream();
-                postMethod.setRequestBody(bodyInputStream);
+                postMethod.setRequestEntity(new InputStreamRequestEntity(bodyInputStream, reqMime.getFirstPart().getContentType().getFullValue()));
 
                 String userAgent = httpRoutingAssertion.getUserAgent();
                 if (userAgent == null || userAgent.length() == 0) userAgent = DEFAULT_USER_AGENT;
@@ -209,8 +218,8 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                     logger.fine("Using login '" + login + "'");
                     HttpState state = client.getState();
                     postMethod.setDoAuthentication(true);
-                    state.setAuthenticationPreemptive(true);
-                    state.setCredentials(null, null, new UsernamePasswordCredentials(login, new String(password)));
+                    clientParams.setAuthenticationPreemptive(true);
+                    state.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(login, new String(password)));
                 }
 
                 if (httpRoutingAssertion.isAttachSamlSenderVouches()) {
@@ -230,6 +239,9 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                     ag.attachSenderVouches(document, si, context.getCredentials(), samlOptions);
                 }
                 attachCookies(client, context, url);
+
+                postMethod.setParams(methodParams);
+                client.setParams(clientParams);
 
                 if (hconf == null) {
                     client.executeMethod(postMethod);

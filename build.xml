@@ -360,7 +360,8 @@
                 <include name="commons-collections-2.1.1.jar"/>
                 <include name="commons-dbcp-1.2.1.jar"/>
                 <include name="commons-discovery.jar"/>
-                <include name="commons-httpclient-2.0.2.jar"/>
+                <include name="commons-codec-1.3.jar"/>
+                <include name="commons-httpclient-3.0b1.jar"/>
                 <include name="commons-lang-1.0.1.jar"/>
                 <include name="commons-pool-1.2.jar"/>
                 <include name="dom4j.jar"/>
@@ -375,15 +376,19 @@
                 <include name="cglib-full-2.0.2.jar"/>
                 <include name="ehcache-0.9.jar"/>
                 <include name="jaxen-1.1-beta-2-l7.jar"/>
-                <include name="jaxrpc.jar"/>
                 <include name="jms-1.1.jar"/>
                 <include name="jnlp.jar"/>
                 <include name="jnlp-servlet.jar"/>
                 <include name="jta.jar"/>
+                <include name="log4j-1.2.4.jar"/>
                 <include name="odmg.jar"/>
                 <include name="oswego-concurrent.jar"/>
                 <include name="qname.jar"/>
-                <include name="saaj.jar"/>
+
+                <include name="systinet-*.jar" if="include.systinet"/>
+                <include name="jaxrpc.jar" unless="include.systinet"/>
+                <include name="saaj.jar" unless="include.systinet"/>
+
                 <include name="saxpath.jar"/>
                 <include name="wsdl4j.jar"/>
                 <include name="xbean.jar"/>
@@ -695,6 +700,15 @@
     </target>
 
 
+    <target name="prepare.systinet" if="include.systinet">
+        <echo>Copying Systinet jars...</echo>
+        <copy todir="${build.lib}">
+            <fileset dir="${src.root}/lib/gateway/uddi/systinet">
+                <include name="*.jar"/>
+            </fileset>
+        </copy>
+    </target>
+
     <!--
       ** Create the directory structure, copy the resources, libs and
       ** update version tokens
@@ -780,6 +794,7 @@
 
         <antcall target="prepare.jms"/>
         <antcall target="prepare.db"/>
+        <antcall target="prepare.systinet"/>
 
         <!-- make sure that the tomcat path is properly referenced in the keystore properties -->
         <antcall target="keystore.properties"/>

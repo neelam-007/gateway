@@ -85,11 +85,19 @@ public class HttpNamespaceFilter implements Filter {
     }
 
     private boolean matches( String prefix, String candidate ) {
-        return candidate.equals(prefix) ||
-               candidate.equals("/" + prefix) ||
-               candidate.startsWith(prefix + "/") ||
-               candidate.startsWith(prefix + "?") ||
-               candidate.startsWith(prefix + ";");
+        if (candidate.equals(prefix)) return true;
+        if (candidate.charAt(0) == '/' && candidate.substring(1).equals(prefix)) return true;
+        if (!candidate.startsWith(prefix)) return false;
+        final int plen = prefix.length();
+        if (plen == 1) return false;
+        switch (candidate.charAt(plen)) {
+            case '/':
+            case '?':
+            case ':':
+                return true;
+            default:
+                return false;
+        }
     }
 
     public void destroy() {
