@@ -10,6 +10,7 @@ import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.message.SoapRequest;
+import com.l7tech.message.HttpTransportMetadata;
 import com.l7tech.xmlsig.*;
 import com.l7tech.identity.User;
 import com.l7tech.xmlenc.*;
@@ -59,6 +60,11 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
 
         // check validity of the session
         if (!checkSeqNrValidity(soapmsg, xmlsecSession)) {
+            // when the session is no longer valid we must inform the client proxy so that he generates another session
+            HttpTransportMetadata metadata = (HttpTransportMetadata)response.getTransportMetadata();
+            metadata.getResponse().addHeader(XmlRequestSecurity.SESSION_STATUS_HTTP_HEADER, "invalid");
+            // todo, control what the soap fault look like
+            response.setPolicyViolated(true);
             return AssertionStatus.FALSIFIED;
         }
 
@@ -71,6 +77,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             cert = validateSignature(soapmsg);
         } catch (PolicyAssertionException e) {
             response.setAuthenticationMissing(true);
+            response.setPolicyViolated(true);
             throw e;
         }
 
@@ -96,18 +103,22 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             } catch (GeneralSecurityException e) {
                 String msg = "Error decrypting request";
                 logger.log(Level.SEVERE, msg, e);
+                response.setPolicyViolated(true);
                 throw new PolicyAssertionException(msg, e);
             } catch (ParserConfigurationException e) {
                 String msg = "Error decrypting request";
                 logger.log(Level.SEVERE, msg, e);
+                response.setPolicyViolated(true);
                 throw new PolicyAssertionException(msg, e);
             } catch (IOException e) {
                 String msg = "Error decrypting request";
                 logger.log(Level.SEVERE, msg, e);
+                response.setPolicyViolated(true);
                 throw new PolicyAssertionException(msg, e);
             } catch (SAXException e) {
                 String msg = "Error decrypting request";
                 logger.log(Level.SEVERE, msg, e);
+                response.setPolicyViolated(true);
                 throw new PolicyAssertionException(msg, e);
             }
             logger.info("Decrypted request successfully.");
