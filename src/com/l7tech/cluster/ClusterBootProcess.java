@@ -180,16 +180,16 @@ public class ClusterBootProcess implements TransactionalComponent {
     public static final String CHANNEL_NAME = "com.l7tech.cluster.jgroupsChannel";
     public static final String PROPERTIES_PREFIX = "UDP(mcast_addr=";
     public static final String PROPERTIES_SUFFIX =
-            ";mcast_port=8777;ip_ttl=2):" +
-            "PING(timeout=500;num_initial_members=2):" +
-            "FD(timeout=500):" +
-            "VERIFY_SUSPECT(timeout=500):" +
-            "pbcast.NAKACK(gc_lag=10;retransmit_timeout=1000):" +
+            ";mcast_port=8777;ip_ttl=32):" +
+            "PING(timeout=1000;num_initial_members=2):" +
+            "FD(timeout=5000):" +
+            "VERIFY_SUSPECT(timeout=5000):" +
+            "pbcast.NAKACK(gc_lag=10;retransmit_timeout=2000):" +
             "FC:" +
             "UNICAST(timeout=600,1200,2400,4800):" +
             "pbcast.STABLE(desired_avg_gossip=10000):" +
             "FRAG(frag_size=8096;down_thread=false;up_thread=false):" +
-            "pbcast.GMS(join_timeout=500;join_retry_timeout=250;" +
+            "pbcast.GMS(join_timeout=2500;join_retry_timeout=1250;" +
             "shun=false;print_local_addr=true)";
 
     private final Logger logger = Logger.getLogger(getClass().getName());
