@@ -100,8 +100,8 @@ public class AuditContext {
 
     protected void finalize() throws Throwable {
         try {
-            if (!closed) {
-                logger.warning("AuditContext finalized before being closed");
+            if (!flushed) {
+                logger.warning("AuditContext finalized before being flushed");
                 close();
             }
         } finally {
