@@ -896,15 +896,15 @@ public class Ssg implements Serializable, Cloneable, Comparable {
      *
      * @return the time offset, if set; otherwise 0.
      */
-    public long getTimeOffset() {
+    public long timeOffset() {
         return timeOffset;
     }
 
     /**
-     * Set a time offset for this SSG.  See getTimeOffset() for details.
+     * Set a time offset for this SSG.  See timeOffset() for details.
      * @param timeOffset the new offset to use, or 0 to disable clock translation.
      */
-    public void setTimeOffset(long timeOffset) {
+    public void timeOffset(long timeOffset) {
         this.timeOffset = timeOffset;
     }
 
@@ -912,7 +912,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         public Date translate(Date source) {
             if (source == null)
                 return null;
-            final long timeOffset = getTimeOffset();
+            final long timeOffset = timeOffset();
             if (timeOffset == 0)
                 return source;
             final Date result = new Date(source.getTime() - timeOffset);
@@ -924,7 +924,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     /**
      * Translate a date and time from the SSG's clock into our local clock.  Leaves the
      * date unchanged if a TimeOffset is not set for this SSG.  This is used to work around
-     * clock-skew between the Agent and this SSG; see getTimeOffset() for details.
+     * clock-skew between the Agent and this SSG; see timeOffset() for details.
      * @return a DateTranslator that will translate according to the Agent's local clock setting
      */
     public DateTranslator dateTranslatorFromSsg() {
@@ -935,7 +935,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         public Date translate(Date source) {
             if (source == null)
                 return null;
-            final long timeOffset = getTimeOffset();
+            final long timeOffset = timeOffset();
             if (timeOffset == 0)
                 return source;
             final Date result = new Date(source.getTime() + timeOffset);

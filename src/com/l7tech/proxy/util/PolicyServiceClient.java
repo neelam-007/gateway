@@ -404,11 +404,11 @@ public class PolicyServiceClient {
         }
 
         if (ssgTime != null && Math.abs(ssgTime.getTime() - millisAfter) > 10000 + roundTripMillis) {
-            final long ssgDiff = ssgTime.getTime() - ((millisAfter + millisBefore / 2));
+            final long ssgDiff = ssgTime.getTime() - ((millisAfter + millisBefore) / 2);
             final long posDiff = Math.abs(ssgDiff);
             final String aheadBehind = ssgDiff > 0 ? "ahead of" : "behind";
             log.log(Level.INFO, "Noting that Gateway " + ssg + " clock is at about " + posDiff + "ms " + aheadBehind + " local clock.");
-            ssg.setTimeOffset(ssgDiff);
+            ssg.timeOffset(ssgDiff);
         }
 
         return result;
