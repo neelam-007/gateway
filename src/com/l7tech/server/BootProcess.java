@@ -92,10 +92,6 @@ public class BootProcess implements ServerComponentLifecycle {
             PersistenceContext.getCurrent().beginTransaction();
             // initialize the log dumper
             serverLogManager.suscribeDBHandler();
-            /*LogManager logManager = LogManager.getInstance();
-            if (logManager instanceof ServerLogManager) {
-                ((ServerLogManager)logManager).suscribeDBHandler();
-            }*/
             // initialize the process that updates the cluster status info
             initializeClusterStatusUpdate();
             PersistenceContext.getCurrent().commitTransaction();
