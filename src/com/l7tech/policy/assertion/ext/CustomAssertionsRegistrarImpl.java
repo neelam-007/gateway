@@ -95,7 +95,7 @@ public class CustomAssertionsRegistrarImpl extends RemoteService implements Cust
             if (in == null) {
                 in = new FileInputStream(fileName);
             }
-            loadExtensibilityAssertions(in);
+            loadCustomAssertions(in);
         } catch (FileNotFoundException e) {
             logger.warning("Custom assertions config file '" + fileName + "'not found");
         } catch (IOException e) {
@@ -111,7 +111,7 @@ public class CustomAssertionsRegistrarImpl extends RemoteService implements Cust
         }
     }
 
-    private void loadExtensibilityAssertions(InputStream in) throws IOException {
+    private void loadCustomAssertions(InputStream in) throws IOException {
         Properties props = new Properties();
         props.load(in);
         props.keys();
@@ -119,12 +119,12 @@ public class CustomAssertionsRegistrarImpl extends RemoteService implements Cust
             Object o = (Object)iterator.next();
             String key = o.toString();
             if (key.endsWith(".class")) {
-                loadSingleExtensibilityAssertion(key.substring(0, key.indexOf(".class")), props);
+                loadSingleCustomAssertion(key.substring(0, key.indexOf(".class")), props);
             }
         }
     }
 
-    private void loadSingleExtensibilityAssertion(String baseKey, Properties properties) {
+    private void loadSingleCustomAssertion(String baseKey, Properties properties) {
         String clientClass = null;
         String serverClass = null;
         String assertionClass = null;
@@ -160,7 +160,7 @@ public class CustomAssertionsRegistrarImpl extends RemoteService implements Cust
             return;
         }
         try {
-            Class a = Class.forName(assertionClass, true, this.getClass().getClassLoader());
+            Class a = Class.forName(assertionClass);
             Class ca = null;
             if (clientClass != null && !"".equals(clientClass)) {
                 ca = Class.forName(clientClass);
