@@ -134,6 +134,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
             try {
                 PersistenceContext.getCurrent().beginTransaction();
                 man.recordNewUserCert(authenticatedUser, cert);
+                logger.info("Issued new cert for user " + authenticatedUser.toString() );
             } catch (UpdateException e) {
                 String msg = "Could not record cert. " + e.getMessage();
                 response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
