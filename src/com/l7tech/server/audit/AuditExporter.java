@@ -382,7 +382,6 @@ public class AuditExporter {
                                                          signingCert,
                                                          signingKey);
             auditMetadata.appendChild(signature);
-            auditMetadata.appendChild(XmlUtil.createTextNode(auditMetadata, "\n"));
 
             zipOut.putNextEntry(new ZipEntry("sig.xml"));
             XmlUtil.nodeToOutputStream(d, zipOut);
