@@ -24,6 +24,7 @@ public class HibernatePersistenceManager extends PersistenceManager {
     public static String DATASOURCE_URL_PROPERTY = "com.l7tech.objectmodel.hibernatepersistence.datasourceurl";
     public static String DEFAULT_PROPERTIES_RESOURCEPATH = "com/l7tech/objectmodel/hibernatepersistence.properties";
     public static String PROPERTIES_RESOURCEPATH_PROPERTY = "com.l7tech.objectmodel.hibernatepersistence.properties.resourcepath";
+    public static String DEFAULT_HIBERNATE_RESOURCEPATH = "com/l7tech/objectmodel/hibernate.cfg.xml";
 
     public static void initialize() throws IOException, SQLException, NamingException {
         HibernatePersistenceManager me = new HibernatePersistenceManager();
@@ -46,9 +47,11 @@ public class HibernatePersistenceManager extends PersistenceManager {
         _dataSource = (DataSource)new InitialContext().lookup(dsUrl);
 
         try {
-            _dataStore = Hibernate.createDatastore().storeFile("hibernate.hbm.xml");
-            _sessionFactory = _dataStore.buildSessionFactory(props);
+            Hibernate.configure();
+            //_dataStore = Hibernate.createDatastore().storeResource( DEFAULT_HIBERNATE_RESOURCEPATH, getClass().getClassLoader() );
+            //_sessionFactory = _dataStore.buildSessionFactory();
         } catch ( HibernateException he ) {
+            he.printStackTrace();
             throw new SQLException( he.toString() );
         }
     }
@@ -56,9 +59,8 @@ public class HibernatePersistenceManager extends PersistenceManager {
     public Session getSession() throws SQLException {
         if ( _session == null ) {
             if ( _sessionFactory == null ) throw new IllegalStateException("HibernatePersistenceManager must be initialized before calling getSession()!");
+            _session = _sessionFactory.openSession( _dataSource.getConnection() );
         }
-
-        _session = _sessionFactory.openSession( _dataSource.getConnection() );
 
         return _session;
     }
@@ -84,8 +86,17 @@ public class HibernatePersistenceManager extends PersistenceManager {
         return null;
     }
 
-    long doSave(Entity obj) {
-        return 0;
+    long doSave(Entity obj) throws SQLException {
+        try {
+            Object key = getSession().save( obj );
+            if ( key.getClass().isAssignableFrom(Long.TYPE) ) {
+                return ((Long)key).longValue();
+            } else {
+                throw new RuntimeException( "Primary key is not a long!");
+            }
+        } catch ( HibernateException he ) {
+            throw new SQLException( he.toString() );
+        }
     }
 
     void doDelete(Entity obj) {

@@ -1,11 +1,12 @@
 package com.l7tech.identity.imp;
 
-import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.*;
+import com.l7tech.identity.internal.InternalIdentityProvider;
 import com.l7tech.objectmodel.PersistenceManager;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.misc.Locator;
 
-import java.util.Collection;
+import java.util.*;
 
 /**
  * @author alex
@@ -16,6 +17,7 @@ public class IdentityProviderConfigManagerImp extends com.l7tech.objectmodel.Hib
     }
 
     public void delete(IdentityProviderConfig identityProviderConfig) {
+        _manager.delete( identityProviderConfig );
     }
 
     public IdentityProviderConfig findByPrimaryKey( long oid ) {
@@ -23,11 +25,11 @@ public class IdentityProviderConfigManagerImp extends com.l7tech.objectmodel.Hib
     }
 
     public long save( IdentityProviderConfig identityProviderConfig ) {
-        return Entity.DEFAULT_OID;
+        return _manager.save( identityProviderConfig );
     }
 
     public Collection findAll() {
-        return null;
+        return _manager.find( "select * from identity-provider", "hello", String.class );
     }
 
     public Collection findAll(int offset, int windowSize) {

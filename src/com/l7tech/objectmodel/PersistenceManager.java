@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.Entity;
 import com.l7tech.misc.Locator;
 
 import java.util.*;
+import java.sql.SQLException;
 
 /**
  * @author alex
@@ -28,32 +29,32 @@ public abstract class PersistenceManager {
 
     public static List find( String query, Object param, Class paramClass ) {
         checkInstance();
-        return _instance.find( query, param, paramClass );
+        return _instance.doFind( query, param, paramClass );
     }
 
     public static List find( String query, Object[] params, Class[] paramClasses ) {
         checkInstance();
-        return _instance.find( query, params, paramClasses );
+        return _instance.doFind( query, params, paramClasses );
     }
 
     public static Entity load( Class clazz, long oid ) {
         checkInstance();
-        return _instance.load( clazz, oid );
+        return _instance.doLoad( clazz, oid );
     }
 
     public static Entity loadForUpdate( Class clazz, long oid ) {
         checkInstance();
-        return _instance.loadForUpdate( clazz, oid );
+        return _instance.doLoadForUpdate( clazz, oid );
     }
 
-    public static long save( Entity obj ) {
+    public static long save( Entity obj ) throws SQLException {
         checkInstance();
-        return _instance.save( obj );
+        return _instance.doSave( obj );
     }
 
     public static void delete( Entity obj ) {
         checkInstance();
-        _instance.delete( obj );
+        _instance.doDelete( obj );
     }
 
     public static EntityManager getEntityManager(Class clazz) {
@@ -70,7 +71,7 @@ public abstract class PersistenceManager {
     abstract List doFind( String query, Object[] params, Class[] paramClasses );
     abstract Entity doLoad( Class clazz, long oid );
     abstract Entity doLoadForUpdate( Class clazz, long oid );
-    abstract long doSave( Entity obj );
+    abstract long doSave( Entity obj ) throws SQLException;
     abstract void doDelete( Entity obj );
 
     static PersistenceManager _instance;

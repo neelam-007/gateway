@@ -3,6 +3,8 @@ package com.l7tech.identity;
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.identity.IdentityProviderConfig;
 
+import java.util.Collection;
+
 /**
  * @author alex
  */

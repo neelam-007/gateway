@@ -9,6 +9,10 @@ import com.l7tech.objectmodel.ObjectIdentity;
  * @author alex
  */
 public class ObjectIdentityImp implements ObjectIdentity {
+    public long getOid() {
+        return _oid;
+    }
+
     public String getClassName() {
         return _className;
     }
@@ -31,6 +35,10 @@ public class ObjectIdentityImp implements ObjectIdentity {
 
     public int getKeyBatchSize() {
         return _keyBatchSize;
+    }
+
+    public void setOid(long oid) {
+        _oid = oid;
     }
 
     public void setClassName(String className) {
@@ -57,6 +65,7 @@ public class ObjectIdentityImp implements ObjectIdentity {
         _keyBatchSize = keyBatchSize;
     }
 
+    private long _oid;
     private String _className;
     private String _tableName;
     private int _classSeed;

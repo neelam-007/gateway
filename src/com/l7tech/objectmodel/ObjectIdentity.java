@@ -1,6 +1,7 @@
 package com.l7tech.objectmodel;
 
 public interface ObjectIdentity {
+    long getOid();
     String getClassName();
     String getTableName();
     int getClassSeed();
@@ -8,6 +9,7 @@ public interface ObjectIdentity {
     long getKeySeed();
     int getKeyBatchSize();
 
+    void setOid( long oid );
     void setClassName( String className );
     void setTableName( String tableName );
     void setClassSeed( int classSeed );
