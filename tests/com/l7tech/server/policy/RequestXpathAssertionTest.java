@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.logging.Level;
 
 /**
  * Tests the ServerRequestXpathAssertion class.
@@ -76,6 +77,14 @@ public class RequestXpathAssertionTest extends TestCase {
             protected Reader doGetRequestReader() throws IOException {
                 return null;
             }
+
+            public Level getAuditLevel() {
+                return Level.INFO;
+            }
+
+            public void setAuditLevel( Level auditLevel ) {
+            }
+
             public LoginCredentials getPrincipalCredentials() {
                 return null;
             }

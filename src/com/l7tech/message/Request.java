@@ -6,11 +6,13 @@
 
 package com.l7tech.message;
 
-import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.RequestId;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+
+import java.util.logging.Level;
 
 /**
  * @author alex
@@ -126,4 +128,13 @@ public interface Request extends Message {
 
     RequestId getId();
 
+    /** Gets the Audit Level for this request. */
+    Level getAuditLevel();
+
+    /**
+     * Sets the Audit Level for this request.
+     * <p>
+     * Note that the audit level cannot be reduced; if the current level is INFO and you call setAuditLevel({@link Level#FINEST}) it will have no effect.
+     */
+    void setAuditLevel( Level auditLevel );
 }

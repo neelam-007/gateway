@@ -17,6 +17,7 @@ import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.logging.Level;
 
 /**
  * Encapsulates a SOAP request. Not thread-safe. Don't forget to call close() when you're done!
@@ -124,6 +125,16 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
         return _routingStatus;
     }
 
+    public Level getAuditLevel() {
+        return auditLevel;
+    }
+
+    public void setAuditLevel( Level auditLevel ) {
+        if (auditLevel == null || this.auditLevel == null) return;
+        if (auditLevel.intValue() <= this.auditLevel.intValue()) return;
+        this.auditLevel = auditLevel;
+    }
+
     /**
      * Closes any resources associated with the request.  If you override this
      * method, you MUST call super.close() in your overridden version!
@@ -156,6 +167,7 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
     protected InputStream _requestInputStream;
     protected User _user;
     protected RoutingStatus _routingStatus = RoutingStatus.NONE;
+    protected Level auditLevel;
 
     /** The cached XML document. */
     protected String _requestXml;

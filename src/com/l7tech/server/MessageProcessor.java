@@ -56,6 +56,7 @@ public class MessageProcessor {
     public AssertionStatus processMessage( Request request, Response response )
             throws IOException, PolicyAssertionException, PolicyVersionException {
 
+        request.setAuditLevel(getDefaultAuditLevel());
         ProcessorResult wssOutput = null;
         // WSS-Processing Step
         if (request instanceof SoapRequest && ((SoapRequest)request).isSoap()) {
@@ -266,6 +267,14 @@ public class MessageProcessor {
         }
     }
 
+    public Level getDefaultAuditLevel() {
+        return defaultAuditLevel;
+    }
+
+    public void setDefaultAuditLevel( Level defaultAuditLevel ) {
+        this.defaultAuditLevel = defaultAuditLevel;
+    }
+
     private AssertionStatus doDeferredAssertions(Message messageWithDeferredAssertions,
                                                  Request request, Response response)
             throws PolicyAssertionException, IOException
@@ -305,6 +314,16 @@ public class MessageProcessor {
     }
 
     private MessageProcessor() {
+        defaultAuditLevel = DEFAULT_AUDIT_LEVEL;
+        String level = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_DEFAULT_AUDIT_LEVEL);
+        if (level != null) {
+            try {
+                this.defaultAuditLevel = Level.parse(level);
+            } catch (IllegalArgumentException e) {
+                logger.info("Invalid default audit level '" + level + "'. Will use INFO.");
+            }
+        }
+
         _dbf = DocumentBuilderFactory.newInstance();
         _dbf.setNamespaceAware(true);
         _dbf.setValidating(false);
@@ -355,4 +374,6 @@ public class MessageProcessor {
     private static WssDecorator _wssDecorator = null;
 
     private PrivateKey privateServerKey = null;
+    private static final Level DEFAULT_AUDIT_LEVEL = Level.INFO;
+    private Level defaultAuditLevel;
 }
