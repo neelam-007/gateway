@@ -9,7 +9,7 @@ ALTER TABLE internal_user DROP COLUMN title;
 
 ALTER TABLE published_service ADD COLUMN soap TINYINT(1) NOT NULL DEFAULT 1;
 ALTER TABLE published_service ADD COLUMN routing_uri varchar(128) default NULL;
-UPDATE published_services SET soap=1;
+UPDATE published_service SET soap=1;
 
 ALTER TABLE client_cert ADD COLUMN user_id varchar(255) NOT NULL;
 
