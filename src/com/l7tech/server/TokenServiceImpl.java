@@ -101,15 +101,11 @@ public class TokenServiceImpl implements TokenService {
             final XmlKnob reqXml = context.getRequest().getXmlKnob();
             X509Certificate serverSSLcert = getServerCert();
             PrivateKey sslPrivateKey = getServerKey();
-            ProcessorResult wssOutput = trogdor.undecorateMessage(reqXml.getDocumentReadOnly(),
+            ProcessorResult wssOutput = trogdor.undecorateMessage(reqXml.getDocumentWritable(),
                                                                   serverSSLcert,
                                                                   sslPrivateKey,
                                                                   SecureConversationContextManager.getInstance());
             reqXml.setProcessorResult(wssOutput);
-            final Document undecorated = wssOutput.getUndecoratedMessage();
-            if (undecorated != null) {
-                reqXml.setDocument(undecorated);
-            }
         } catch (IOException e) {
             throw new ProcessorException(e);
         } catch (SAXException e) {

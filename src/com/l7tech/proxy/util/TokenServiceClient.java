@@ -18,23 +18,23 @@ import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
-import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
 import com.l7tech.common.xml.saml.SamlAssertion;
+import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
 import com.l7tech.proxy.datamodel.CurrentRequest;
-import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.Managers;
+import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import javax.xml.soap.SOAPConstants;
 import javax.net.ssl.HttpsURLConnection;
+import javax.xml.soap.SOAPConstants;
 import java.io.IOException;
+import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.net.URLConnection;
-import java.net.PasswordAuthentication;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
@@ -318,7 +318,6 @@ public class TokenServiceClient {
         } catch (BadSecurityContextException e) {
             throw new InvalidDocumentFormatException("Response attempted to use a WS-SecureConversation SecurityContextToken, which we don't support when talking to the token server itself", e);
         }
-        response = result.getUndecoratedMessage();
         Element env = response.getDocumentElement();
         if (env == null) throw new InvalidDocumentFormatException("Response had no document element"); // can't happen
         Element body = XmlUtil.findOnlyOneChildElementByName(env, env.getNamespaceURI(), "Body");

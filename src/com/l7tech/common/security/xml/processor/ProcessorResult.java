@@ -6,13 +6,12 @@
 
 package com.l7tech.common.security.xml.processor;
 
-import org.w3c.dom.Document;
+
 
 /**
- * @author mike
+ * Holds the result of calling WssProcessor.
  */
 public interface ProcessorResult {
-    Document getUndecoratedMessage();
     SignedElement[] getElementsThatWereSigned();
     ParsedElement[] getElementsThatWereEncrypted();
     SecurityToken[] getSecurityTokens();

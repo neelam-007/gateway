@@ -6,7 +6,7 @@
 
 package com.l7tech.common.security.xml.processor;
 
-import org.w3c.dom.Document;
+
 
 /**
  * @author mike
@@ -16,10 +16,6 @@ public class ProcessorResultWrapper implements ProcessorResult {
 
     public ProcessorResultWrapper(ProcessorResult delegate) {
         this.delegate = delegate;
-    }
-
-    public Document getUndecoratedMessage() {
-        return delegate.getUndecoratedMessage();
     }
 
     public SignedElement[] getElementsThatWereSigned() {

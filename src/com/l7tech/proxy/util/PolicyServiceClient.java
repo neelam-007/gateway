@@ -220,9 +220,9 @@ public class PolicyServiceClient {
         if (signedElements == null || signedElements.length < 1 || signingCert == null) {
             if (signedResponseRequired)
                 throw new InvalidDocumentFormatException("Policy server response was not signed, but our request required a signed response.");
-            return parseGetPolicyResponse(originalRequest, result.getUndecoratedMessage(), null);
+            return parseGetPolicyResponse(originalRequest, response, null);
         }
-        return parseGetPolicyResponse(originalRequest, result.getUndecoratedMessage(), result.getElementsThatWereSigned());
+        return parseGetPolicyResponse(originalRequest, response, result.getElementsThatWereSigned());
     }
 
     /**

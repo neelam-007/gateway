@@ -232,8 +232,7 @@ public class WssRoundTripTest extends TestCase {
                                                                    td.recipientKey,
                                                                    makeSecurityContextFinder(td.secureConversationKey));
 
-        Document undecorated = r.getUndecoratedMessage();
-        log.info("After undecoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(undecorated));
+        log.info("After undecoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(incomingMessage));
 
         ParsedElement[] encrypted = r.getElementsThatWereEncrypted();
         assertNotNull(encrypted);

@@ -6,8 +6,8 @@
 
 package com.l7tech.common.security.xml;
 
-import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.security.saml.SignedSamlTest;
+import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.TestDocuments;
@@ -104,9 +104,7 @@ public class WssProcessorTest extends TestCase {
         } else
             log.info("No timestamp was found.");
 
-        Document undecorated = result.getUndecoratedMessage();
-        assertTrue(undecorated != null);
-        log.info("Undecorated document:\n" + XmlUtil.nodeToFormattedString(undecorated));
+        log.info("Undecorated document:\n" + XmlUtil.nodeToFormattedString(request));
         log.info("Security namespace observed:\n" + result.getSecurityNS());
         log.info("WSU namespace observed:\n" + result.getWSUNS());
     }

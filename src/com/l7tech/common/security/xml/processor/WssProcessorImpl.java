@@ -61,9 +61,12 @@ public class WssProcessorImpl implements WssProcessor {
     }
 
     /**
-     * This processes a soap message. That is, the contents of the Header/Security are processed as per the WSS rules.
+     * This processes a soap message in-place.
+     * That is, the contents of the Header/Security are processed as per the WSS rules.
      *
-     * @param soapMsg the xml document containing the soap message. this document may be modified on exit
+     * @param soapMsg the xml document containing the soap message. this document may be modified on exit.
+     *                It is the caller's responsiblity to defensively clone the document first if an unmodified
+     *                copy will be needed.
      * @param recipientCert the recipient's cert to which encrypted keys may be encoded for
      * @param recipientKey the private key corresponding to the recipientCertificate used to decypher the encrypted keys
      * @return a ProcessorResult object reffering to all the WSS related processing that happened.
@@ -73,15 +76,14 @@ public class WssProcessorImpl implements WssProcessor {
      * @throws BadSecurityContextException if the message contains a WS-SecureConversation SecurityContextToken, but the securityContextFinder has no record of that session.
      */
     public ProcessorResult undecorateMessage(Document soapMsg,
-                                                          X509Certificate recipientCert,
-                                                          PrivateKey recipientKey,
-                                                          SecurityContextFinder securityContextFinder)
+                                             X509Certificate recipientCert,
+                                             PrivateKey recipientKey,
+                                             SecurityContextFinder securityContextFinder)
             throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, BadSecurityContextException
     {
         // Reset all potential outputs
         ProcessingStatusHolder cntx = new ProcessingStatusHolder();
-        cntx.processedDocument = (Document)soapMsg.cloneNode(true);
-        cntx.originalDocument = soapMsg;
+        cntx.processedDocument = soapMsg;
         cntx.elementsThatWereSigned.clear();
         cntx.elementsThatWereEncrypted.clear();
         cntx.securityTokens.clear();
@@ -91,7 +93,6 @@ public class WssProcessorImpl implements WssProcessor {
         String currentSoapNamespace = soapMsg.getDocumentElement().getNamespaceURI();
 
         // Resolve the relevent Security header
-        cntx.originalDocumentSecurityHeader = SoapUtil.getSecurityElement(cntx.originalDocument);
         cntx.releventSecurityHeader = SoapUtil.getSecurityElement(cntx.processedDocument);
 
         // maybe there are no security headers at all in which case, there is nothing to process
@@ -934,10 +935,6 @@ public class WssProcessorImpl implements WssProcessor {
 
     private ProcessorResult produceResult(final ProcessingStatusHolder cntx) {
         return new ProcessorResult() {
-            public Document getUndecoratedMessage() {
-                return cntx.processedDocument;
-            }
-
             public SignedElement[] getElementsThatWereSigned() {
                 return (SignedElement[]) cntx.elementsThatWereSigned.toArray(PROTOTYPE_SIGNEDELEMENT_ARRAY);
             }
@@ -989,7 +986,6 @@ public class WssProcessorImpl implements WssProcessor {
 
     private class ProcessingStatusHolder {
         Document processedDocument = null;
-        Document originalDocument = null;
         final Collection elementsThatWereSigned = new ArrayList();
         final Collection elementsThatWereEncrypted = new ArrayList();
         final Collection securityTokens = new ArrayList();
@@ -997,7 +993,6 @@ public class WssProcessorImpl implements WssProcessor {
         TimestampImpl timestamp = null;
         Element releventSecurityHeader = null;
         Map x509TokensById = new HashMap();
-        Element originalDocumentSecurityHeader = null;
     }
 
     private static class X509SecurityTokenImpl extends SigningSecurityTokenImpl implements X509SecurityToken {

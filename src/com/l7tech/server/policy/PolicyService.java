@@ -143,15 +143,12 @@ public class PolicyService extends ApplicationObjectSupport {
 
         // We need a Document
         Document requestDoc = null;
-        requestDoc = reqXml.getDocumentReadOnly();
+        requestDoc = reqXml.getDocumentWritable();
 
         // Process request for message level security stuff
         ProcessorResult wssOutput = null;
         try {
             wssOutput = processMessageLevelSecurity(requestDoc);
-            Document undecorated = wssOutput.getUndecoratedMessage();
-            if (undecorated == null) throw new NullPointerException("No undecorated message"); // can't happen
-            reqXml.setDocument(wssOutput.getUndecoratedMessage());
             reqXml.setProcessorResult(wssOutput);
         } catch (Exception e) {
             response.initialize(exceptionToFault(e));
@@ -162,8 +159,8 @@ public class PolicyService extends ApplicationObjectSupport {
         String policyId = null;
         String relatesTo = null;
         try {
-            policyId = getRequestedPolicyId(wssOutput.getUndecoratedMessage());
-            relatesTo = SoapUtil.getL7aMessageId(wssOutput.getUndecoratedMessage());
+            policyId = getRequestedPolicyId(requestDoc);
+            relatesTo = SoapUtil.getL7aMessageId(requestDoc);
         } catch (InvalidDocumentFormatException e) {
             response.initialize(exceptionToFault(e));
             return;

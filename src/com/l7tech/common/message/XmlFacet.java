@@ -161,7 +161,7 @@ class XmlFacet extends MessageFacet {
             Document working = getDocumentReadOnly();
             firstPartValid = false;
             if (originalDocument == null)
-                originalDocument = (Document)working.cloneNode(true);
+                originalDocument = (Document)working.cloneNode(true); // todo find a way to skip this if it wont be needed
             return working;
         }
 

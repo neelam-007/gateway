@@ -134,14 +134,10 @@ public class MessageProcessor extends ApplicationObjectSupport {
             WssProcessor trogdor = new WssProcessorImpl(); // no need for locator
             try {
                 final XmlKnob reqXml = request.getXmlKnob();
-                wssOutput = trogdor.undecorateMessage(reqXml.getDocumentReadOnly(),
+                wssOutput = trogdor.undecorateMessage(reqXml.getDocumentWritable(),
                                                       serverCertificate,
                                                       serverPrivateKey,
                                                       SecureConversationContextManager.getInstance());
-                // todo, refactor SoapRequest so that it keeps a hold on the original message
-                final Document message = wssOutput.getUndecoratedMessage();
-                if (message != null)
-                    reqXml.setDocument(message);
                 reqXml.setProcessorResult(wssOutput);
             } catch (MessageNotSoapException e) {
                 logger.log(Level.FINE, "Message is not SOAP; will not have any WSS results.");
@@ -272,7 +268,6 @@ public class MessageProcessor extends ApplicationObjectSupport {
                         }
 
                         wssDecorator.decorateMessage(doc, responseDecoReq);
-                        respXml.setDocument(doc);
                     } catch (Exception e) {
                         throw new PolicyAssertionException("Failed to apply WSS decoration to response", e);
                     }

@@ -660,8 +660,7 @@ public class MessageProcessor {
             });
 
             // Assert that response is XML
-            Document responseDocument = response.getXmlKnob().getDocumentReadOnly();
-            boolean responseDocChanged = false;
+            Document responseDocument = response.getXmlKnob().getDocumentWritable();
 
             if (LogFlags.logResponse) {
                 final MimeKnob respMime = response.getMimeKnob();
@@ -716,8 +715,6 @@ public class MessageProcessor {
                     }
                 };
 
-                responseDocument = processorResult.getUndecoratedMessage();
-                responseDocChanged = true;
             } catch (MessageNotSoapException e) {
                 // Response is not SOAP.
                 log.info("Response from Gateway is not SOAP.");
@@ -725,8 +722,6 @@ public class MessageProcessor {
             }
 
             response.attachKnob(HttpHeadersKnob.class, new HttpHeadersKnob(headers));
-            if (responseDocChanged)
-                response.getXmlKnob().setDocument(responseDocument);
             response.getXmlKnob().setProcessorResult(processorResult);
             response.attachHttpResponseKnob(new AbstractHttpResponseKnob() {
                 public void addCookie(Cookie cookie) {
