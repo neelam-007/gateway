@@ -43,6 +43,24 @@ public class IdentityProviderType implements Serializable {
         throw new IllegalArgumentException("Unknown type id " + val);
     }
 
+    /**
+     * Determine if the given provider is of a ype
+     * @param prov the provider
+     * @param type the provider type
+     * @return true if provider is of given type, false otherwise
+     */
+    public static boolean is(IdentityProvider prov, IdentityProviderType type) {
+        if (prov == null || type == null) {
+            throw new IllegalArgumentException();
+        }
+
+        final IdentityProviderConfig config = prov.getConfig();
+        if (config == null) {
+            throw new IllegalArgumentException("IdentityProviderConfig cannot be null");
+        }
+        return type.equals(config.type());
+    }
+
     public int toVal() {
         return type;
     }
