@@ -10,6 +10,7 @@ import javax.swing.table.DefaultTableModel;
  * To change this template use Options | File Templates.
  */
 public class LogTableModel extends DefaultTableModel {
+
     public LogTableModel(String[][] data, String[] columnNames){
         super(data, columnNames);
     }

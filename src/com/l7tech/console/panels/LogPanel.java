@@ -1,23 +1,14 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.adminws.logging.Log;
-import com.l7tech.common.util.Locator;
-import com.l7tech.logging.LogMessage;
 import com.l7tech.console.table.LogTableModel;
-import com.ibm.xml.policy.xacl.builtIn.provisional_action.log;
+import com.l7tech.console.table.FilteredLogTableModel;
 
 import javax.swing.*;
 import javax.swing.table.*;
 import javax.swing.event.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.util.Dictionary;
 import java.util.Hashtable;
-import java.util.ArrayList;
-import java.util.Vector;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateEncodingException;
-import java.rmi.RemoteException;
 
 
 /**
@@ -31,8 +22,13 @@ public class LogPanel extends JPanel {
 
      // Titles/Labels
 //    private static final String LOG_LABEL = "Log";
+    public static final int MSG_FILTER_LEVEL_ALL = 4;
+    public static final int MSG_FILTER_LEVEL_INFO = 3;
+    public static final int MSG_FILTER_LEVEL_WARNING = 2;
+    public static final int MSG_FILTER_LEVEL_SEVERE = 1;
+    public static final int MSG_FILTER_LEVEL_NONE = 0;
 
-    private static final int MAX_MESSAGE_BLOCK_SIZE = 100;
+    private int msgFilterLevel = MSG_FILTER_LEVEL_WARNING;
     private JPanel selectPane = null;
     private JPanel msgPane = null;
     private JPanel filterPane = null;
@@ -46,8 +42,8 @@ public class LogPanel extends JPanel {
  //   private JTabbedPane tabbedLogPane = null;
     private JSlider slider = null;
     private JCheckBox details = null;
-    private AbstractTableModel logTableModel = null;
-
+    private DefaultTableModel logTableModel = null;
+    private FilteredLogTableModel logTableModelFilter = null;
 
     public LogPanel() {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
@@ -90,6 +86,14 @@ public class LogPanel extends JPanel {
 
                     }
                 });
+    }
+
+    public int getMsgFilterLevel(){
+        return msgFilterLevel;
+    }
+
+    public void showData(){
+        ((FilteredLogTableModel)getMsgTable().getModel()).getLogs(msgFilterLevel);
     }
 
     private JPanel getSelectPane(){
@@ -154,24 +158,19 @@ public class LogPanel extends JPanel {
                     int value = source.getValue();
                     switch (value) {
                         case 0:
-                            //adjustHandlerLevel(Level.ALL);
-                            simpleTest("all");
+                            updateMsgFilterLevel(MSG_FILTER_LEVEL_ALL);
                             break;
                         case 40:
-                            //adjustHandlerLevel(Level.INFO);
-                            simpleTest("Info");
+                            updateMsgFilterLevel(MSG_FILTER_LEVEL_INFO);
                             break;
                         case 80:
-                            //adjustHandlerLevel(Level.WARNING);
-                            simpleTest("Warning");
+                            updateMsgFilterLevel(MSG_FILTER_LEVEL_WARNING);
                             break;
                         case 120:
-                            //adjustHandlerLevel(Level.SEVERE);
-                            simpleTest("Severe");
+                            updateMsgFilterLevel(MSG_FILTER_LEVEL_SEVERE);
                             break;
                         case 160:
-                            //adjustHandlerLevel(Level.OFF);
-                            simpleTest("Off");
+                            updateMsgFilterLevel(MSG_FILTER_LEVEL_NONE);
                             break;
                         default:
                             System.err.println("Unhandled value " + value);
@@ -218,7 +217,7 @@ public class LogPanel extends JPanel {
 
     private JTable getMsgTable(){
         if(msgTable == null){
-            msgTable = new JTable(getLogTableModel(), getLogColumnModel());
+            msgTable = new JTable(getLogTableModelFilter(), getLogColumnModel());
         }
 
         msgTable.setShowHorizontalLines(false);
@@ -302,13 +301,22 @@ public class LogPanel extends JPanel {
         return columnModel;
     }
 
+
+    private FilteredLogTableModel getLogTableModelFilter(){
+        if(logTableModelFilter == null){
+            logTableModelFilter = new FilteredLogTableModel();
+            logTableModelFilter.setRealModel(getLogTableModel());
+        }
+
+        return logTableModelFilter;
+    }
     /**
      * create the table model with log fields
      *
      * @return the <code>AbstractTableModel</code> for the
      * log pane
      */
-    private AbstractTableModel getLogTableModel() {
+    private DefaultTableModel getLogTableModel() {
         if (logTableModel != null) {
             return logTableModel;
         }
@@ -321,53 +329,9 @@ public class LogPanel extends JPanel {
         return logTableModel;
     }
 
-    public void getLogs() {
-
-        Log log = (Log) Locator.getDefault().lookup(Log.class);
-        if (log == null) throw new IllegalStateException("cannot obtain log remote reference");
-
-        String[] rawLogs = new String[]{};
-        int numOfMsgReceived = 0;
-        boolean cleanUp = true;
-        do {
-            try {
-                rawLogs = log.getSystemLog(numOfMsgReceived, MAX_MESSAGE_BLOCK_SIZE);
-
-                numOfMsgReceived += rawLogs.length;
-
-                if (cleanUp) {
-                    while (getMsgTable().getRowCount() > 0) {
-                        //System.out.println("Number of row left is: " + msgTable.getRowCount() + "\n");
-                        ((DefaultTableModel) (getMsgTable().getModel())).removeRow(0);
-                    }
-                    cleanUp = false;
-                }
-                //           ((DefaultTableModel)msgTable.getModel()).rowsRemoved(new TableModelEvent(msgTable.getModel()));
-                for (int i = 0; i < rawLogs.length; i++) {
-                    //msgTable.setValueAt(rawLogs[i], i, 0);
-                    Vector newRow = new Vector();
-
-                    LogMessage logMsg = new LogMessage(rawLogs[i]);
-                    newRow.add(logMsg.getTime());
-                    newRow.add(logMsg.getSeverity());
-                    newRow.add(logMsg.getMessageDetail());
-                    newRow.add(logMsg.getMessageClass());
-                    newRow.add(logMsg.getMessageMethod());
-                    ((DefaultTableModel) getMsgTable().getModel()).addRow(newRow);
-                    //System.out.println("adding a new row (" + i + ") .....\n");
-                    //System.out.println(rawLogs[i]);
-                }
-
-                ((AbstractTableModel) (getMsgTable().getModel())).fireTableDataChanged();
-
-            } catch (RemoteException e) {
-                System.err.println("Unable to retrieve logs from server");
-            }
-        } while (rawLogs.length == MAX_MESSAGE_BLOCK_SIZE);    // may be more messages for retrieval
-    }
 
     private void RefreshActionPerformed(java.awt.event.ActionEvent evt) {
-        getLogs();
+        ((FilteredLogTableModel) getMsgTable().getModel()).getLogs(getMsgFilterLevel());
     }
 
     private void detailsActionPerformed(java.awt.event.ActionEvent evt) {
@@ -401,9 +365,14 @@ public class LogPanel extends JPanel {
         getMsgDetails().setVisible(false);
     }
 
-    private void simpleTest(String severity) {
+    private void updateMsgFilterLevel(int newFilterLevel) {
 
-        System.out.println("Severity is: " + severity);
+        if(msgFilterLevel != newFilterLevel){
+             msgFilterLevel = newFilterLevel;
+             ((FilteredLogTableModel)getMsgTable().getModel()).applyNewMsgFilter(msgFilterLevel);
+
+        }
+
     }
 
 /*

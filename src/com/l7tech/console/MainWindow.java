@@ -572,7 +572,7 @@ public class MainWindow extends JFrame {
 
                         getLogPane().setVisible(item.isSelected());
                         if (item.isSelected()) {
-                            getLogPane().getLogs();
+                            getLogPane().showData();
                             getMainJSplitPane().setDividerLocation(700);
                             getMainJSplitPane().setDividerSize(10);
                             validate();
