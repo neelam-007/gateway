@@ -1,19 +1,19 @@
 package com.l7tech.policy.exporter;
 
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.console.MainWindow;
+import com.l7tech.console.panels.ResolveExternalPolicyReferencesWizard;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.console.panels.ResolveExternalPolicyReferencesWizard;
-import com.l7tech.console.MainWindow;
-import com.l7tech.console.util.TopComponents;
-import com.l7tech.common.gui.util.Utilities;
 import org.w3c.dom.Element;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Collection;
-import java.util.ArrayList;
 
 /**
  * This class takes a set of remote references that were exported with a policy
@@ -64,6 +64,11 @@ public class RemoteReferenceResolver {
 
     public Assertion localizePolicy(Element policyXML) throws InvalidPolicyStreamException {
         // Go through each assertion and fix the changed references.
+
+        // todo fla, need to plug this in?
+        // final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
+        // Assertion root = cr.resolvePolicy(policyXML);
+
         Assertion root = WspReader.parse(policyXML);
         traverseAssertionTreeForLocalization(root);
         return root;
