@@ -32,7 +32,6 @@ public class SelectStatementWizardStepPanel extends WizardStepPanel {
      */
     public SelectStatementWizardStepPanel(WizardStepPanel next) {
         super(next);
-        setShowDescriptionPanel(false);
         setLayout(new BorderLayout());
         /** Set content pane */
         add(mainPanel, BorderLayout.CENTER);
@@ -100,6 +99,10 @@ public class SelectStatementWizardStepPanel extends WizardStepPanel {
      * @return the wizard step label
      */
     public String getStepLabel() {
-        return "Select the SAML Statement";
+        return "SAML Statement Type";
+    }
+
+    public String getDescription() {
+        return "Select the SAML Statement Type you wish to configure.";
     }
 }
