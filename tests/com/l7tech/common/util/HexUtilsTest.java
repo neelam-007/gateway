@@ -48,6 +48,11 @@ public class HexUtilsTest extends TestCase {
         assertTrue(result.equals("de615f787075c54bd19ba64da4128553"));
     }
 
+    public void testHexDump() {
+        assertTrue(HexUtils.hexDump(new byte[] { (byte)0xAB, (byte)0xCD }).equals("abcd"));
+        assertTrue(HexUtils.hexDump(new byte[] { (byte)0xDE, (byte)0xAD, (byte)0xBE, (byte)0xEF }).equals("deadbeef"));
+    }
+
     public void testSlurpStream() throws Exception {
         String teststring = "alsdkfhasdfhasdflskdfalksdflakflaksflasdlaksdflaksflaskdslkqpweofihqpwoef";
 

@@ -21,6 +21,8 @@ import java.util.Map;
 public class HexUtils {
     private HexUtils() {}
 
+    private static final char[] hexadecimal ={'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+
     /**
      * Encodes the 128 bit (16 bytes) MD5 into a 32 character String.
      *
@@ -29,13 +31,19 @@ public class HexUtils {
      */
     public static String encodeMd5Digest(byte[] binaryData) {
         if (binaryData == null) return "";
-
-        char[] hexadecimal ={'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
         if (binaryData.length != 16) return "";
+        return hexDump(binaryData);
+    }
 
-        char[] buffer = new char[32];
-
-        for (int i = 0; i < 16; i++) {
+    /**
+     * Convert the specified binary data into a string containing hexadecimal digits.
+     * Example:  hexDump(new byte[] { (byte)0xAB, (byte)0xCD }).equals("abcd")
+     * @param binaryData
+     * @return
+     */
+    public static String hexDump(byte[] binaryData) {
+        char[] buffer = new char[binaryData.length * 2];
+        for (int i = 0; i < binaryData.length; i++) {
             int low = (binaryData[i] & 0x0f);
             int high = ((binaryData[i] & 0xf0) >> 4);
             buffer[i*2] = hexadecimal[high];
