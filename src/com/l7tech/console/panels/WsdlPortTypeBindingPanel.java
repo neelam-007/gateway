@@ -164,13 +164,22 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
             definition.addBinding(binding);
             for (Iterator it = portType.getOperations().iterator(); it.hasNext();) {
                 Operation op = (Operation)it.next();
-                BindingOperation bo = definition.createBindingOperation();
-                bo.setName(op.getName());
-                bo.setOperation(op);
-                binding.addBindingOperation(bo);
+                BindingOperation bop = definition.createBindingOperation();
+                bop.setName(op.getName());
+                bop.setOperation(op);
+
+                BindingInput bi = definition.createBindingInput();
+                bi.setName(op.getInput().getName());
+                bop.setBindingInput(bi);
+
+                BindingOutput bout = definition.createBindingOutput();
+                bout.setName(op.getOutput().getName());
+                bop.setBindingOutput(bout);
+
+                binding.addBindingOperation(bop);
                 // soap action
                 String action =
-                  portType.getQName().getLocalPart() + "#" + bo.getName();
+                  portType.getQName().getLocalPart() + "#" + bop.getName();
                 ExtensibilityElement ee = null;
                 ExtensionRegistry extensionRegistry = definition.getExtensionRegistry();
                 ee = extensionRegistry.createExtension(BindingOperation.class,
@@ -181,7 +190,7 @@ public class WsdlPortTypeBindingPanel extends WizardStepPanel {
                 } else {
                     throw new RuntimeException("expected SOAPOperation, received " + ee.getClass());
                 }
-                bo.addExtensibilityElement(ee);
+                bop.addExtensibilityElement(ee);
             }
         } else {
             binding = (Binding)bindings.values().iterator().next();
