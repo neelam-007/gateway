@@ -1,8 +1,8 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.panels.NewInternalUserDialog;
 import com.l7tech.console.panels.NewFederatedUserDialog;
 
 import javax.swing.*;
@@ -52,7 +52,7 @@ public class NewFederatedUserAction extends NodeAction {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 JFrame f = TopComponents.getInstance().getMainWindow();
-                NewFederatedUserDialog dialog = new NewFederatedUserDialog(f);
+                NewFederatedUserDialog dialog = new NewFederatedUserDialog(f, getIdentityProviderConfig((EntityHeaderNode) node));
                 dialog.setResizable(false);
                 dialog.show();
             }
