@@ -14,12 +14,10 @@ public class Group extends NamedEntityImp implements Principal {
     }
 
     public Set getMembers() {
-        if ( _members == null ) _members = new HashSet();
         return _members;
     }
 
     public Set getMemberHeaders() {
-        if ( _memberHeaders == null ) _memberHeaders = new HashSet();
         return _memberHeaders;
     }
 
@@ -84,7 +82,7 @@ public class Group extends NamedEntityImp implements Principal {
     }
 
     private String _description;
-    private Set _members;
-    private Set _memberHeaders;
+    private Set _members = new HashSet();
+    private Set _memberHeaders = new HashSet();
     private long providerId = IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID;
 }

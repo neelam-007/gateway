@@ -47,12 +47,10 @@ public class User extends NamedEntityImp implements Principal {
     }
 
     public Set getGroups() {
-        if ( _groups == null ) _groups = new HashSet();
         return _groups;
     }
 
     public Set getGroupHeaders() {
-        if ( _groupHeaders == null ) _groupHeaders = new HashSet();
         return _groupHeaders;
     }
 
@@ -237,7 +235,7 @@ public class User extends NamedEntityImp implements Principal {
     private int _certResetCounter;
     private String _cert;
 
-    private Set _groups;
-    private Set _groupHeaders;
+    private Set _groups = new HashSet();
+    private Set _groupHeaders = new HashSet();
     private long providerId = IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID;
 }
