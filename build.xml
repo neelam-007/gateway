@@ -238,7 +238,7 @@
         <copy todir="${build.lib}">
             <fileset dir="${src.root}/lib"
                 excludes="**/CVS/*,**/**ant*,**/optional.jar,**/*xml-apis.jar,
-                          **/*junit.jar, **/*xercesImpl.jar"/>
+                          **/*junit.jar, **/*xercesImpl.jar, **/jsdk23.jar"/>
         </copy>
 
         <!-- the web.xml -->
@@ -253,6 +253,10 @@
                 <include name="hibernate.properties"/>
                 <include name="SSG.hbm.xml"/>
                 <include name="com/l7tech/objectmodel/hibernatepersistence.properties"/>
+            </fileset>
+
+            <fileset dir="${src.root}/src">
+                <include name="com/l7tech/console/resources/*"/>
             </fileset>
         </copy>
 
