@@ -8,9 +8,9 @@ package com.l7tech.service.resolution;
 
 import com.l7tech.message.Request;
 import com.l7tech.service.ServiceListener;
+import com.l7tech.service.PublishedService;
 
-import java.util.Collections;
-import java.util.Set;
+import java.util.*;
 
 /**
  * @author alex
@@ -32,8 +32,37 @@ public abstract class ServiceResolver implements Comparable, ServiceListener {
         return doResolve( request, set );
     }
 
+    /**
+     * Returns a Map<Long,PublishedService> of any services this ServiceResolver knows about that match the specified PublishedService.
+     * @param candidateService the service to compare against the services this ServiceResolver's already knows about.
+     * @param subset the Map<Long,PublishedService> to search for matches.
+     * @return a Map<Long,PublishedService> of matching services, which could be empty but not null.
+     */
+    public Map matchingServices( PublishedService candidateService, Map subset ) {
+        if ( subset == null || subset.isEmpty() ) return Collections.EMPTY_MAP;
+
+        Map result = null;
+
+        PublishedService matchService;
+        Long oid;
+        for (Iterator i = subset.keySet().iterator(); i.hasNext();) {
+            oid = (Long)i.next();
+            matchService = (PublishedService)subset.get(oid);
+            if ( matchService != null && ( matchService.getOid() != candidateService.getOid() ) && matches( matchService ) ) {
+                // This candidateService matches one of "mine"
+                if ( result == null ) result = new HashMap();
+                result.put( oid, matchService );
+            }
+        }
+
+        if ( result == null ) result = Collections.EMPTY_MAP;
+
+        return result;
+    }
+
     protected abstract Set doResolve( Request request, Set set ) throws ServiceResolutionException;
     public abstract int getSpeed();
+    abstract boolean matches( PublishedService service );
 
     /**
      * Could throw a ClassCastException.
