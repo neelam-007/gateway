@@ -3,7 +3,6 @@ package com.l7tech.server.policy;
 import com.l7tech.common.security.Keys;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.SoapMessageGenerator;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.message.Request;
@@ -17,7 +16,6 @@ import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.MockServletApi;
 import com.l7tech.server.SoapMessageProcessingServlet;
-import com.l7tech.server.saml.Constants;
 import com.l7tech.server.service.ServiceCache;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceAdmin;
@@ -30,17 +28,15 @@ import junit.framework.TestSuite;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
-import org.apache.xmlbeans.XmlOptions;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.soap.*;
-import java.io.*;
-
-import x0Protocol.oasisNamesTcSAML1.RequestDocument;
-import x0Protocol.oasisNamesTcSAML1.RequestType;
-import x0Protocol.oasisNamesTcSAML1.AuthenticationQueryType;
+import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 
 
 /**
@@ -218,16 +214,6 @@ public class SamlPolicyTest extends TestCase {
         SoapUtil.domToSOAPElement(assertionElement, domNode);
     }
 
-    public void testShowRequestDocument() throws Exception {
-        RequestDocument rdoc = RequestDocument.Factory.newInstance();
-        RequestType rtype = rdoc.addNewRequest();
-        AuthenticationQueryType aq = rtype.addNewAuthenticationQuery();
-        aq.setAuthenticationMethod(Constants.PASSWORD_AUTHENTICATION);
-        XmlOptions options = new XmlOptions();
-        options.setSavePrettyPrint();
-        options.setSavePrettyPrintIndent(2);
-        rdoc.save(System.out, options);
-    }
 
     /**
      * Test <code>ServerPolicyFactoryTest</code> main.
