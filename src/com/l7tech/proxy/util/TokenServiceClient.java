@@ -70,17 +70,9 @@ public class TokenServiceClient {
             throws CertificateException
     {
         try {
-            Document msg = XmlUtil.stringToDocument("<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\">" +
-                                                    "<soap:Body>" +
-                                                    "<wst:RequestSecurityToken xmlns:wst=\"" + SoapUtil.WST_NAMESPACE + "\">" +
-                                                    "<wst:RequestType>http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue</wst:RequestType>" +
-                                                    "</wst:RequestSecurityToken>" +
-                                                    "</soap:Body></soap:Envelope>");
+            Document msg = requestSecurityTokenMessageTemplate(desiredTokenType);
             Element env = msg.getDocumentElement();
             Element body = XmlUtil.findFirstChildElement(env);
-            Element rst = XmlUtil.findFirstChildElement(body);
-            Element tokenType = XmlUtil.createAndPrependElementNS(rst, "TokenType", SoapUtil.WST_NAMESPACE, "wst");
-            tokenType.appendChild(XmlUtil.createTextNode(msg, desiredTokenType));
 
             // Sign it
             WssDecorator wssDecorator = new WssDecoratorImpl();
@@ -108,21 +100,25 @@ public class TokenServiceClient {
         }
     }
 
-    public static Document createRequestSecurityTokenMessage(String desiredTokenType) {
-        try {
-            Document msg = XmlUtil.stringToDocument("<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\">" +
+    private static Document requestSecurityTokenMessageTemplate(String desiredTokenType) throws IOException, SAXException {
+        Document msg = XmlUtil.stringToDocument("<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\">" +
                                                     "<soap:Body>" +
                                                     "<wst:RequestSecurityToken xmlns:wst=\"" + SoapUtil.WST_NAMESPACE + "\">" +
                                                     "<wst:RequestType>http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue</wst:RequestType>" +
                                                     "</wst:RequestSecurityToken>" +
                                                     "</soap:Body></soap:Envelope>");
-            Element env = msg.getDocumentElement();
-            Element body = XmlUtil.findFirstChildElement(env);
-            Element rst = XmlUtil.findFirstChildElement(body);
-            Element tokenType = XmlUtil.createAndPrependElementNS(rst, "TokenType", SoapUtil.WST_NAMESPACE, "wst");
-            tokenType.appendChild(XmlUtil.createTextNode(msg, desiredTokenType));
+        Element env = msg.getDocumentElement();
+        Element body = XmlUtil.findFirstChildElement(env);
+        Element rst = XmlUtil.findFirstChildElement(body);
+        Element tokenType = XmlUtil.createAndPrependElementNS(rst, "TokenType", SoapUtil.WST_NAMESPACE, "wst");
+        tokenType.appendChild(XmlUtil.createTextNode(msg, desiredTokenType));
 
-            return msg;
+        return msg;
+    }
+
+    public static Document createRequestSecurityTokenMessage(String desiredTokenType) {
+        try {
+            return requestSecurityTokenMessageTemplate(desiredTokenType);
         } catch (IOException e) {
             throw new RuntimeException(e); // can't happen
         } catch (SAXException e) {
