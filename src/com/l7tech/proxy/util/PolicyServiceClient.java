@@ -88,13 +88,14 @@ public class PolicyServiceClient {
         Document msg = createGetPolicyRequest(serviceId);
         WssDecorator decorator = new WssDecoratorImpl();
         DecorationRequirements req = new DecorationRequirements();
-        if (samlAss != null)
-            req.setSenderSamlToken(samlAss.asElement());
         if (clientCert != null && clientKey != null) {
             req.setSenderCertificate(clientCert);
             req.setSenderPrivateKey(clientKey);
             req.setSignTimestamp(true);
-        }
+            if (samlAss != null)
+                req.setSenderSamlToken(samlAss.asElement(), true);
+        } else if (samlAss != null)
+            req.setSenderSamlToken(samlAss.asElement(), false);
         try {
             Element header = SoapUtil.getHeaderElement(msg);
             if (header == null) throw new IllegalStateException("missing header"); // can't happen
