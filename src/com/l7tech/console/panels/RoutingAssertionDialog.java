@@ -1,11 +1,12 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
+import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
-import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -24,18 +25,19 @@ import java.util.EventListener;
  * @version 1.0
  */
 public class RoutingAssertionDialog extends JDialog {
-    private JCheckBox anonymousAccessCheckBox;
     private RoutingAssertion assertion;
     private JButton cancelButton;
     private JPanel buttonPanel;
     private JButton okButton;
     private EventListenerList listenerList = new EventListenerList();
+    private ServiceNode service;
 
     /** Creates new form ServicePanel */
-    public RoutingAssertionDialog(Frame owner, RoutingAssertion a) {
+    public RoutingAssertionDialog(Frame owner, RoutingAssertion a, ServiceNode sn) {
         super(owner, true);
         setTitle("Edit Routing Assertion");
         assertion = a;
+        this.service = sn;
         initComponents();
     }
 

@@ -1,17 +1,21 @@
 package com.l7tech.console.action;
 
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.event.PolicyListenerAdapter;
 import com.l7tech.console.panels.RoutingAssertionDialog;
-import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.RoutingAssertionTreeNode;
 import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.Cookie;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.RoutingAssertion;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
+import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -62,7 +66,7 @@ public class RoutingAssertionPropertiesAction extends NodeAction {
               public void run() {
                   JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
                   RoutingAssertionDialog d =
-                    new RoutingAssertionDialog(f, (RoutingAssertion)node.asAssertion());
+                    new RoutingAssertionDialog(f, (RoutingAssertion)node.asAssertion(), getServiceNodeCookie());
                   d.addPolicyListener(listener);
                   d.pack();
                   Utilities.centerOnScreen(d);
@@ -84,4 +88,16 @@ public class RoutingAssertionPropertiesAction extends NodeAction {
         }
 
     };
+
+
+    /**
+     * @return the published service cookie or null if not founds
+     */
+    private ServiceNode getServiceNodeCookie() {
+        for (Iterator i = ((AbstractTreeNode)node.getRoot()).cookies(); i.hasNext(); ) {
+            Object value = ((Cookie)i.next()).getValue();
+            if (value instanceof ServiceNode) return (ServiceNode)value;
+        }
+        return null;
+    }
 }
