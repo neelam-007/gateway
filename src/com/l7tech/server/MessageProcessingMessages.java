@@ -17,7 +17,7 @@ public class MessageProcessingMessages extends Messages {
     public static final M ERROR_RETRIEVE_XML          = m(3004, Level.SEVERE, "Error getting xml document from request");
     public static final M SERVICE_NOT_FOUND           = m(3005, Level.WARNING, "Service not found");
     public static final M SERVICE_DISABLED            = m(3006, Level.WARNING, "Service disabled");
-    public static final M RESOLVED_SERVICE            = m(3007, Level.INFO, "Resolved service {0} #{1}");
+    public static final M RESOLVED_SERVICE            = m(3007, Level.FINE, "Resolved service {0} #{1}");
     public static final M POLICY_VERSION_INVALID      = m(3008, Level.FINEST, "policy version passed is invalid {0} instead of {1}|{2}");
     public static final M POLICY_VERSION_WRONG_FORMAT = m(3009, Level.FINE, "wrong format for policy version");
     public static final M POLICY_ID_NOT_PROVIDED      = m(3010, Level.FINE, "Requestor did not provide policy id.");
