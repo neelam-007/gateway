@@ -1,5 +1,8 @@
 package com.l7tech.console.action;
 
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.console.MainWindow;
+import com.l7tech.console.panels.XmlSecurityPropertiesDialog;
 import com.l7tech.console.tree.XmlRequestSecurityNode;
 import com.l7tech.console.tree.policy.XmlSecurityTreeNode;
 import com.l7tech.console.util.ComponentRegistry;
@@ -48,22 +51,39 @@ public class XmlSecurityPropertiesAction extends NodeAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
+    public void performActionNew() {
+        XmlSecurityTreeNode n = (XmlSecurityTreeNode)node;
+        XmlSecurityAssertion ass = (XmlSecurityAssertion)node.asAssertion();
+        final MainWindow mw = Registry.getDefault().getComponentRegistry().getMainWindow();
+        XmlSecurityPropertiesDialog dialog = new XmlSecurityPropertiesDialog(mw, true, n);
+        dialog.pack();
+        Utilities.centerOnScreen(dialog);
+        dialog.show();
+
+    }
+
+
+    /**
+     * Actually perform the action.
+     * This is the method which should be called programmatically.
+     * note on threading usage: do not access GUI components
+     * without explicitly asking for the AWT event thread!
+     */
     public void performAction() {
-        XmlSecurityTreeNode n = (XmlSecurityTreeNode) node;
-        XmlSecurityAssertion ass = (XmlSecurityAssertion) node.asAssertion();
+        XmlSecurityTreeNode n = (XmlSecurityTreeNode)node;
+        XmlSecurityAssertion ass = (XmlSecurityAssertion)node.asAssertion();
 
         String signOnly = "Sign only";
         String encrypt = "Sign and encrypt";
 
         String s =
-          (String)JOptionPane.showInputDialog(
-            Registry.getDefault().
+          (String)JOptionPane.showInputDialog(Registry.getDefault().
           getComponentRegistry().getMainWindow(),
             "Please select the " + n.getBaseName() + " options:\n",
             n.getBaseName() + " assertion properties",
             JOptionPane.PLAIN_MESSAGE,
             new ImageIcon(new XmlRequestSecurityNode().getIcon()),
-            new Object[] { signOnly, encrypt },
+            new Object[]{signOnly, encrypt},
             ass.isEncryption() ? encrypt : signOnly);
         if ((s != null) && (s.length() > 0)) {
             ass.setEncryption(!s.equalsIgnoreCase(signOnly));

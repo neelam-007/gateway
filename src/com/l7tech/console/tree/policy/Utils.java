@@ -3,11 +3,13 @@ package com.l7tech.console.tree.policy;
 import java.lang.reflect.Constructor;
 
 /**
- * Supporting class with assertion package private utilities.
- * <p>
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a> 
+ * Supporting class with assertion package private utilities (package
+ * private).
+ * <p/>
+ * 
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class Utils {
+class Utils {
 
     /**
      * this class cannot be instantiated
@@ -18,8 +20,9 @@ public class Utils {
     /**
      * Find the matching public constructor in the class cls for the class
      * array that descripbes the parameters.
-     * <p>
-     * @param cls the class that is searched for the constructor
+     * <p/>
+     * 
+     * @param cls    the class that is searched for the constructor
      * @param params the constructor parameters
      * @return the matching <code>Constructor</code> or <b>null</b> if no
      *         constructor can be found that matches parameters
@@ -37,11 +40,11 @@ public class Utils {
     /**
      * Determine whether the assignTo array accepts assignFrom classes in
      * the given order.
-     *
+     * <p/>
      * {@link Class#isAssignableFrom(Class) is used to determine if the
      * assignTo accepts the parameter from the assignFrom.
-     *
-     * @param assignTo the array receiving
+     * 
+     * @param assignTo   the array receiving
      * @param assignFrom the class array to check
      * @return true if assignable, false otherwise
      */
