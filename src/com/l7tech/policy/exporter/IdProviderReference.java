@@ -53,7 +53,7 @@ public class IdProviderReference extends ExternalReference {
 
     public static IdProviderReference parseFromElement(Element el) throws InvalidDocumentFormatException {
         // make sure passed element has correct name
-        if (!el.getLocalName().equals(REF_EL_NAME)) {
+        if (!el.getNodeName().equals(REF_EL_NAME)) {
             throw new InvalidDocumentFormatException("Expecting element of name " + REF_EL_NAME);
         }
         IdProviderReference output = new IdProviderReference();

@@ -52,7 +52,7 @@ public class JMSEndpointReference extends ExternalReference {
 
     public static JMSEndpointReference parseFromElement(Element el) throws InvalidDocumentFormatException {
         // make sure passed element has correct name
-        if (!el.getLocalName().equals(REF_EL_NAME)) {
+        if (!el.getNodeName().equals(REF_EL_NAME)) {
             throw new InvalidDocumentFormatException("Expecting element of name " + REF_EL_NAME);
         }
         JMSEndpointReference output = new JMSEndpointReference();
