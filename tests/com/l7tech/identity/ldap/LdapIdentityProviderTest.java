@@ -25,8 +25,8 @@ public class LdapIdentityProviderTest extends TestCase {
     private LdapIdentityProviderConfig getConfigForSpock() throws IOException {
         LdapConfigTemplateManager templateManager = new LdapConfigTemplateManager();
         LdapIdentityProviderConfig spockTemplate = templateManager.getTemplate("Standard LDAP Template");
-        // todo make a close of the template
-        spockTemplate.setLdapUrl("ldap://localhost:3899");
+        //spockTemplate.setLdapUrl("ldap://localhost:3899");
+        spockTemplate.setLdapUrl("ldap://spock:389");
         spockTemplate.setSearchBase("dc=layer7-tech,dc=com");
         return spockTemplate;
     }
