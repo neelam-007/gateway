@@ -1,7 +1,7 @@
 package com.l7tech.cluster;
 
-import com.l7tech.remote.jini.export.RemoteService;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.remote.jini.export.RemoteService;
 import com.sun.jini.start.LifeCycle;
 import net.jini.config.ConfigurationException;
 
@@ -45,6 +45,7 @@ public class ClusterStatusAdminImp extends RemoteService implements ClusterStatu
         return output;
     }
 
-    private ClusterInfoManager ciman = new ClusterInfoManager();
-    private ServiceUsageManager suman = new ServiceUsageManager();
+    private final ClusterInfoManager ciman = new ClusterInfoManager();
+    private final ServiceUsageManager suman = new ServiceUsageManager();
+    //private final Logger logger = LogManager.getInstance().getSystemLogger();
 }
