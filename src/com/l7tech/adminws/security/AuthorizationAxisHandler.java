@@ -2,6 +2,7 @@ package com.l7tech.adminws.security;
 
 import org.apache.axis.MessageContext;
 import org.apache.axis.AxisFault;
+import com.l7tech.identity.Group;
 
 /**
  * Layer 7 Technologies, inc.
@@ -26,8 +27,6 @@ import org.apache.axis.AxisFault;
  */
 public class AuthorizationAxisHandler extends InternalIDSecurityAxisHandler {
 
-    public static final String ADMIN_GROUP_NAME = "SSGAdmin";
-
     /**
      * Invoked by the axis engine. Looks for a property in the Message Context
      * whose key is AuthenticationAxisHandler.AUTHENTICATED_USER and whose
@@ -38,7 +37,7 @@ public class AuthorizationAxisHandler extends InternalIDSecurityAxisHandler {
     public void invoke(MessageContext messageContext) throws AxisFault {
         Long authedUserId = (Long)messageContext.getProperty(AUTHENTICATED_USER);
         // get the internal provider
-        if (authedUserId != null && userIsMemberOfGroup(authedUserId.longValue(), ADMIN_GROUP_NAME)) {
+        if (authedUserId != null && userIsMemberOfGroup(authedUserId.longValue(), Group.ADMIN_GROUP_NAME)) {
             // user is authorized
             return;
         }
