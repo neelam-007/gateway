@@ -319,7 +319,7 @@ public class RoutingAssertionDialog extends JDialog {
         // If button not already created
         if (null == okButton) {
             // Create button
-            okButton = new JButton("Save");
+            okButton = new JButton("Ok");
 
             // Register listener
             okButton.addActionListener(new ActionListener() {
@@ -344,7 +344,7 @@ public class RoutingAssertionDialog extends JDialog {
         if (null == cancelButton) {
 
             // Create button
-            cancelButton = new JButton("cancel");
+            cancelButton = new JButton("Cancel");
 
             // Register listener
             cancelButton.addActionListener(new ActionListener() {
