@@ -162,13 +162,12 @@ public class Wizard extends JDialog {
         stepsTitlePanel.setMaximumSize(new Dimension(150, 40));
 
         stepsTitlePanel.setBackground(stepsPanelColor);
-
-        stepsTitlePanel.
+        
+/*        stepsTitlePanel.
           setBorder(new CompoundBorder(
             new EmptyBorder(new Insets(5, 5, 5, 5)),
             new MatteBorder(new Insets(0, 0, 1, 0), Color.BLACK))
-          );
-
+          );*/
 
         //steps label panel
         JLabel stepsLabel = new JLabel("Steps");

@@ -305,7 +305,7 @@ public class PublishServiceWizard extends JDialog {
         stepsTitlePanel.setBackground(stepsjPanel.getBackground());
 
         stepsLabel.setFont(new Font("Dialog", 1, 14));
-        stepsLabel.setText("<HTML><u>Steps");
+        stepsLabel.setText("Steps");
         stepsTitlePanel.add(stepsLabel);
 
         stepsjPanel.add(stepsTitlePanel);
