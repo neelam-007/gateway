@@ -30,6 +30,10 @@ public class InternalIdentityProviderImp implements InternalIdentityProvider {
         return _groupManager;
     }
 
+    public IdentityProviderConfig getConfig() {
+        return _identityProviderConfig;
+    }
+
     public boolean authenticate(User user, Object credential) {
         return false;
     }
