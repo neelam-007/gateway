@@ -11,6 +11,8 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.apache.xml.serialize.XMLSerializer;
+import org.apache.xml.serialize.OutputFormat;
 
 import javax.swing.*;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -20,12 +22,17 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.StringWriter;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.net.URL;
+import java.net.MalformedURLException;
 
 
 /**
  * A dialog to view / configure the properties of a schema validation assertion
+ *
+ * todo: put strings in resource file
  *
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
@@ -86,7 +93,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         // validate the contents of the xml control
         String contents = wsdlTextArea.getText();
         if (!docIsSchema(contents)) {
-            displayError("No xml document specified or invalid schema.");
+            displayError("No xml document specified or invalid schema.", null);
             return;
         }
         // save new schema
@@ -99,6 +106,10 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         if (str != null || str.length() < 1) return false;
         Document doc = stringToDoc(str);
         if (doc == null) return false;
+        return docIsSchema(doc);
+    }
+
+    private boolean docIsSchema(Document doc) {
         Element rootEl = doc.getDocumentElement();
         if (!SchemaValidation.TOP_SCHEMA_ELNAME.equals(rootEl.getNodeName())) {
             log.log(Level.WARNING, "document is not schema (top element is not " +
@@ -139,20 +150,20 @@ public class SchemaValidationPropertiesDialog extends JDialog {
 
     private void readFromWsdl() {
         if (service == null) {
-            displayError("No access to wsdl.");
+            displayError("No access to wsdl.", null);
             return;
         }
         String wsdl = null;
         try {
             wsdl = service.getWsdlXml();
         } catch (IOException e) {
-            displayError("No access to wsdl.");
+            displayError("No access to wsdl.", null);
             return;
         }
 
         Document wsdlDoc = stringToDoc(wsdl);
         if (wsdlDoc == null) {
-            displayError("WSDL not set.");
+            displayError("WSDL not set.", null);
             return;
         }
 
@@ -160,10 +171,10 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         try {
             tmp.assignSchemaFromWsdl(wsdlDoc);
         } catch (IllegalArgumentException e) {
-            displayError("WSDL not set.");
+            displayError("WSDL not set.", null);
             return;
         } catch (IOException e) {
-            displayError("WSDL not set.");
+            displayError("WSDL not set.", null);
             return;
         }
         wsdlTextArea.setText(tmp.getSchema());
@@ -171,12 +182,80 @@ public class SchemaValidationPropertiesDialog extends JDialog {
     }
 
     private void readFromUrl() {
-        // todo
+        // get url
+        String urlstr = urlTxtFld.getText();
+        if (urlstr == null || urlstr.length() < 1) {
+            displayError("please provide url", null);
+            return;
+        }
+        // compose input source
+        URL url = null;
+        try {
+            url = new URL(urlstr);
+        } catch (MalformedURLException e) {
+            displayError(urlstr + "this is not a well formed url", null);
+            log.log(Level.FINE, "malformed url", e);
+            return;
+        }
+        // try to get document
+        InputSource is = null;
+        try {
+            is = new InputSource(url.openStream());
+        } catch (IOException e) {
+            displayError("cannot retrieve source at " + urlstr, null);
+            return;
+        }
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+        Document doc = null;
+        try {
+            doc = dbf.newDocumentBuilder().parse(is);
+        } catch (SAXException e) {
+            displayError("cannot parse xml document from " + urlstr, null);
+            log.log(Level.FINE, "cannot parse " + urlstr, e);
+            return;
+        } catch (IOException e) {
+            displayError("cannot parse xml document from " + urlstr, null);
+            log.log(Level.FINE, "cannot parse " + urlstr, e);
+            return;
+        } catch (ParserConfigurationException e) {
+            displayError("cannot parse xml document from " + urlstr, null);
+            log.log(Level.FINE, "cannot parse " + urlstr, e);
+            return;
+        }
+        // check if it's a schema
+        if (docIsSchema(doc)) {
+            // set the new schema
+            String printedSchema = null;
+            try {
+                printedSchema = doc2String(doc);
+            } catch (IOException e) {
+                String msg = "error serializing document";
+                displayError(msg, null);
+                log.log(Level.FINE, msg, e);
+                return;
+            }
+            wsdlTextArea.setText(printedSchema);
+            okButton.setEnabled(true);
+        } else {
+            displayError("the document from " + urlstr + " is not a schema.", null);
+        }
     }
 
-    private void displayError(String msg) {
-        // todo, an error dbox
-        System.err.println(msg);
+    private String doc2String(Document doc) throws IOException {
+        final StringWriter sw = new StringWriter(512);
+        XMLSerializer xmlSerializer = new XMLSerializer();
+        xmlSerializer.setOutputCharStream(sw);
+        OutputFormat of = new OutputFormat();
+        of.setIndent(4);
+        xmlSerializer.setOutputFormat(of);
+        xmlSerializer.serialize(doc);
+        return sw.toString();
+    }
+
+    private void displayError(String msg, String title) {
+        if (title == null) title = "Schema Validation properties";
+        JOptionPane.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE);
     }
 
     /**
@@ -184,7 +263,6 @@ public class SchemaValidationPropertiesDialog extends JDialog {
      * and the schema xml display
      */
     private JPanel constructCentralPanel() {
-
         // panel that contains the read from wsdl and the read from url
         JPanel toppanel = new JPanel();
         toppanel.setLayout(new BoxLayout(toppanel, BoxLayout.Y_AXIS));
