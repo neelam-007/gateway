@@ -152,14 +152,16 @@ public class SsgManagerTest extends TestCase {
         }));
 
         final String SSG1P1_URI = "http://foodd.bar.baz/asdf/fdsa";
+        final String SSG1P1_SA = "http://sdgsdfg.asdf.rq/asdf/fdsa";
         final String SSG1P2_URI = "http://fasdlfh.grq.asdasdf/asdf";
         final String SSG1P2_SA = "http://jkherkjhreg.asdfasdf.qqwer";
+        final String SSG2P2_URI = "http://gfsadfj.asfdgha.as/afdsasdf/fdsa";
         final String SSG2P2_SA = "http://foaaao.bar.baz/afdsasdf/fdsa";
         final String SSG2P1_URI = "http://asdf.fasd.awgq/";
         final String SSG2P1_SA = "http://agarg.geqw.qrgq";
-        SSG1.attachPolicy(SSG1P1_URI, null, policy1);
+        SSG1.attachPolicy(SSG1P1_URI, SSG1P1_SA, policy1);
         SSG1.attachPolicy(SSG1P2_URI, SSG1P2_SA, policy2);
-        SSG2.attachPolicy(null, SSG2P2_SA, policy2);
+        SSG2.attachPolicy(SSG2P2_URI, SSG2P2_SA, policy2);
         SSG2.attachPolicy(SSG2P1_URI, SSG2P1_SA, policy1);
 
         sm.add(SSG1);
@@ -199,19 +201,16 @@ public class SsgManagerTest extends TestCase {
         assertTrue(loaded1 != null);
         assertTrue(loaded1.getName() != null);
         assertTrue(loaded1.getLocalEndpoint().equals(SSG1.getLocalEndpoint()));
-        assertTrue(loaded1.getPolicyByUri(SSG1P1_URI) instanceof AllAssertion);
-        assertTrue(loaded1.getPolicyByUri(SSG1P2_URI) instanceof ExactlyOneAssertion);
-        assertTrue(loaded1.getPolicyBySoapAction(SSG1P2_SA) instanceof ExactlyOneAssertion);
-        assertTrue(loaded1.getPolicyByUri("argaerg") == null);
-        assertTrue(loaded1.getPolicyBySoapAction("argaerg") == null);
+        assertTrue(loaded1.lookupPolicy(SSG1P1_URI, SSG1P1_SA) instanceof AllAssertion);
+        assertTrue(loaded1.lookupPolicy(SSG1P2_URI, SSG1P2_SA) instanceof ExactlyOneAssertion);
+        assertTrue(loaded1.lookupPolicy("asdfasdf", "argaerg") == null);
 
         Ssg loaded2 = sm.getSsgByEndpoint(SSG2.getLocalEndpoint());
         assertTrue(loaded2 != null);
         assertTrue(loaded2.getName() != null);
         assertTrue(loaded2.getName().equals(SSG2.getName()));
-        assertTrue(loaded2.getPolicyByUri(SSG2P1_URI) instanceof AllAssertion);
-        assertTrue(loaded2.getPolicyBySoapAction(SSG2P2_SA) instanceof ExactlyOneAssertion);
-        assertTrue(loaded2.getPolicyBySoapAction(SSG2P1_SA) instanceof AllAssertion);
+        assertTrue(loaded2.lookupPolicy(SSG2P1_URI, SSG2P1_SA) instanceof AllAssertion);
+        assertTrue(loaded2.lookupPolicy(SSG2P2_URI, SSG2P2_SA) instanceof ExactlyOneAssertion);
 
         // May not add two Ssgs with the same Id
         // (Actually you shouldn't even be instantiating two Ssgs with the same Id)
