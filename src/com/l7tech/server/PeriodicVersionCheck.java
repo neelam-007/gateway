@@ -20,8 +20,17 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public abstract class PeriodicVersionCheck extends TimerTask {
-    public PeriodicVersionCheck( HibernateEntityManager manager ) {
+
+    /**
+     * Loads an initial version map automatically.
+     *
+     * Don't rely on this class to "discover" pre-existing entities anymore!
+     * @param manager
+     * @throws FindException
+     */
+    public PeriodicVersionCheck( HibernateEntityManager manager ) throws FindException {
         _manager = manager;
+        _cachedVersionMap = manager.findVersionMap();
     }
 
     public synchronized void run() {
@@ -147,6 +156,6 @@ public abstract class PeriodicVersionCheck extends TimerTask {
 
     private final Logger logger = LogManager.getInstance().getSystemLogger();
     private final HibernateEntityManager _manager;
-    private final Map _cachedVersionMap = new HashMap();
+    private final Map _cachedVersionMap;
     private static final long DEFAULT_FREQUENCY = 4 * 1000;
 }

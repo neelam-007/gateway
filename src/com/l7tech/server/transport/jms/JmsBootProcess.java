@@ -51,7 +51,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
      * Periodically checks for new, updated or deleted JMS endpoints
      */
     private class EndpointVersionChecker extends PeriodicVersionCheck {
-        EndpointVersionChecker( JmsEndpointManager mgr ) {
+        EndpointVersionChecker( JmsEndpointManager mgr ) throws FindException {
             super( mgr );
         }
 
@@ -70,7 +70,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
      * Periodically checks for new, updated or deleted JMS connections
      */
     private class ConnectionVersionChecker extends PeriodicVersionCheck {
-        ConnectionVersionChecker( JmsConnectionManager mgr ) {
+        ConnectionVersionChecker( JmsConnectionManager mgr ) throws FindException {
             super(mgr);
         }
 
@@ -87,28 +87,66 @@ public class JmsBootProcess implements ServerComponentLifecycle {
 
 
     /**
-     * Starts the {@link EndpointVersionChecker} and {@link ConnectionVersionChecker} to periodically
+     * Starts {@link JmsReceiver}s for the initial configuration.  Also starts the {@link EndpointVersionChecker} and {@link ConnectionVersionChecker} to periodically
      * check whether endpoints or connections have been created, updated or deleted.
      * <p/>
      * Any exception that is thrown in a JmsReceiver's start() method will be logged but not propagated.
      */
-    public synchronized void start() {
+    public synchronized void start() throws LifecycleException {
         if ( !_valid ) return;
 
-        connectionChecker = new ConnectionVersionChecker( _connectionManager );
-        endpointChecker = new EndpointVersionChecker( _endpointManager );
+        try {
+            // Start up receivers for initial configuration
+            Collection connections = _connectionManager.findAll();
+            List staleEndpoints = new ArrayList();
+            for ( Iterator i = connections.iterator(); i.hasNext(); ) {
+                JmsConnection connection = (JmsConnection) i.next();
+                JmsEndpoint[] endpoints = _endpointManager.findEndpointsForConnection( connection.getOid() );
 
+                for ( int j = 0; j < endpoints.length; j++ ) {
+                    JmsEndpoint endpoint = endpoints[j];
+                    if ( !endpoint.isMessageSource() ) continue;
+                    JmsReceiver receiver = makeReceiver( connection, endpoint );
+
+                    try {
+                        receiver.init( ServerConfig.getInstance() );
+                        receiver.start();
+                        _activeReceivers.add( receiver );
+                    } catch ( LifecycleException e ) {
+                        _logger.log( Level.WARNING, "Couldn't start receiver for endpoint " + endpoint
+                                                    + ".  Will retry periodically", e );
+                        staleEndpoints.add( new Long( endpoint.getOid() ) );
+                    }
+                }
+            }
+
+            connectionChecker = new ConnectionVersionChecker( _connectionManager );
+            endpointChecker = new EndpointVersionChecker( _endpointManager );
+
+            for ( Iterator i = staleEndpoints.iterator(); i.hasNext(); ) {
+                Long oid = (Long) i.next();
+                endpointChecker.markObjectAsStale( oid );
+            }
+        } catch ( FindException e ) {
+            String msg = "Couldn't start JMS subsystem!  JMS functionality will be disabled.";
+            _valid = false;
+            _logger.log( Level.SEVERE, msg, e );
+            throw new LifecycleException( msg, e );
+        }
+
+        // Stop old timer if this isn't the first start
         if (_versionTimer != null) {
             _versionTimer.cancel();
             _versionTimer = null;
         }
 
+        // Start periodic check timer
         _versionTimer = new Timer();
         _versionTimer.schedule( connectionChecker, connectionChecker.getFrequency() * 2,
-                                          connectionChecker.getFrequency() );
+                                connectionChecker.getFrequency() );
 
         _versionTimer.schedule( endpointChecker, endpointChecker.getFrequency() * 2,
-                                        endpointChecker.getFrequency() );
+                                endpointChecker.getFrequency() );
     }
 
     /**
@@ -117,7 +155,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
      */
     // todo make this idempotent?
     public synchronized void stop() {
-        for (Iterator i = _receivers.iterator(); i.hasNext();) {
+        for (Iterator i = _activeReceivers.iterator(); i.hasNext();) {
             JmsReceiver receiver = (JmsReceiver)i.next();
             _logger.info("Stopping JMS receiver '" + receiver.toString() + "'");
             stop(receiver);
@@ -139,7 +177,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
         connectionChecker = null;
         endpointChecker = null;
 
-        for (Iterator i = _receivers.iterator(); i.hasNext();) {
+        for (Iterator i = _activeReceivers.iterator(); i.hasNext();) {
             JmsReceiver receiver = (JmsReceiver)i.next();
             _logger.info("Closing JMS receiver '" + receiver.toString() + "'");
             close(receiver);
@@ -172,7 +210,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
      * Handles the event fired by the deletion of a JmsConnection.
      */
     private synchronized void connectionDeleted( long deletedConnectionOid ) {
-        for (Iterator i = _receivers.iterator(); i.hasNext();) {
+        for (Iterator i = _activeReceivers.iterator(); i.hasNext();) {
             JmsReceiver receiver = (JmsReceiver)i.next();
             if (receiver.getConnection().getOid() == deletedConnectionOid ) {
                 stop(receiver);
@@ -219,7 +257,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
      * @param deletedEndpointOid the OID of the endpoint that has been deleted.
      */
     private synchronized void endpointDeleted( long deletedEndpointOid ) {
-        for (Iterator i = _receivers.iterator(); i.hasNext();) {
+        for (Iterator i = _activeReceivers.iterator(); i.hasNext();) {
             JmsReceiver receiver = (JmsReceiver)i.next();
             JmsEndpoint existingEndpoint = receiver.getInboundRequestEndpoint();
             if (existingEndpoint.getOid() == deletedEndpointOid ) {
@@ -249,7 +287,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
                 receiver = makeReceiver( connection, updatedEndpoint);
                 receiver.init(ServerConfig.getInstance());
                 receiver.start();
-                _receivers.add(receiver);
+                _activeReceivers.add(receiver);
             } catch (LifecycleException e) {
                 _logger.warning("Exception while initializing receiver " + receiver +
                                 "; will try again later: " + e.toString());
@@ -278,7 +316,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
 
     private JmsConnectionManager _connectionManager;
     private JmsEndpointManager _endpointManager;
-    private Set _receivers = new HashSet();
+    private Set _activeReceivers = new HashSet();
 
     private Timer _versionTimer = null;
 
