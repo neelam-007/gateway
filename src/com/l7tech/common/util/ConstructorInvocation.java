@@ -22,7 +22,7 @@ import java.util.Arrays;
  */
 public final class ConstructorInvocation {
     private Class targetClass;
-    private Class[] arguments = new Class[]{};
+    private Object[] arguments = new Object[]{};
 
     /**
      * Creates a constructor invocation to be executed on target class with no arguments.
@@ -40,7 +40,7 @@ public final class ConstructorInvocation {
      * @param targetClass the target class that will be instantiated
      * @param arguments   the constructor arguments. If <b>null</b> assumes no arguments
      */
-    public ConstructorInvocation(Class targetClass, Class[] arguments) {
+    public ConstructorInvocation(Class targetClass, Object[] arguments) {
         if (targetClass == null) {
             throw new IllegalArgumentException();
         }
