@@ -1,6 +1,7 @@
 package com.l7tech.server;
 
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.message.Message;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
@@ -60,7 +61,6 @@ public class MockServletApi {
                 servletConfigMock.matchAndReturn("getServletContext", servletContextMock.proxy());
                 servletConfigMock.matchAndReturn("getInitParameter", C.IS_NOT_NULL, null);
                 servletContextMock.expect("log", C.IS_ANYTHING);
-
                 servletRequestMock.matchAndReturn("getContentType", "text/xml");
                 servletRequestMock.matchAndReturn("getAttribute", Response.PARAM_HTTP_STATUS, new Integer(200));
 
@@ -77,6 +77,7 @@ public class MockServletApi {
                 servletRequestMock.matchAndReturn("getServerPort", 8080);
                 servletRequestMock.matchAndReturn("getRemoteAddr", InetAddress.getLocalHost().getHostAddress());
                 servletRequestMock.matchAndReturn("getRequestURL", new StringBuffer("/ssg/soap"));
+                servletRequestMock.matchAndReturn("getRequestURI", "/ssg/soap");
 
                 servletRequestMock.matchAndReturn("getContextPath", "/ssg");
 
@@ -100,6 +101,9 @@ public class MockServletApi {
     public void setPublishedService(PublishedService service) {
         servletRequestMock.matchAndReturn("getAttribute", Request.PARAM_SERVICE, service);
         servletRequestMock.matchAndReturn("getAttribute", Request.PARAM_HTTP_POLICY_VERSION, "");
+        servletRequestMock.matchAndReturn("getAttribute", Request.PARAM_HTTP_ORIGINAL_URL, service.getRoutingUri());
+        servletRequestMock.matchAndReturn("getAttribute", Request.PARAM_HTTP_REQUEST_URI, null);
+        servletRequestMock.matchAndReturn("getHeader", SecureSpanConstants.HttpHeaders.ORIGINAL_URL, service.getRoutingUri());
         servletRequestMock.matchAndReturn("getHeader", Request.PARAM_HTTP_POLICY_VERSION, "");
         /*
         String version = "" + service.getOid() + "|" + service.getVersion();
