@@ -6,7 +6,7 @@
 
 package com.l7tech.credential;
 
-import java.security.Principal;
+import com.l7tech.identity.User;
 
 /**
  * Stores a reference to a Principal and its associated Credential (i.e. password).
@@ -15,15 +15,15 @@ import java.security.Principal;
  * @author alex
  */
 public class PrincipalCredentials {
-    public PrincipalCredentials( Principal principal, byte[] credentials, String realm, CredentialFinder finder ) {
-        _principal = principal;
+    public PrincipalCredentials( User user, byte[] credentials, String realm, CredentialFinder finder ) {
+        _user = user;
         _credentials = credentials;
         _realm = realm;
         _finder = finder;
     }
 
-    public Principal getPrincipal() {
-        return _principal;
+    public User getUser() {
+        return _user;
     }
 
     public byte[] getCredentials() {
@@ -42,7 +42,7 @@ public class PrincipalCredentials {
         _finder = finder;
     }
 
-    private final Principal _principal;
+    private final User _user;
     private final byte[] _credentials;
     private final String _realm;
     private CredentialFinder _finder;
