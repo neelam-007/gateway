@@ -245,13 +245,22 @@ public class XmlUtil {
      * @param namespaces an array containing all possible namespaces
      */
     public static List findChildElementsByName(Element parent, String[] namespaces, String name) {
+        if ( namespaces == null || namespaces.length < 1 || name == null )
+            throw new IllegalArgumentException( "nsuri and name must be non-null!" );
         List found = new ArrayList();
-        for (int i = 0; i < namespaces.length; i++) {
-            List partial = findChildElementsByName(parent, namespaces[i], name);
-            if (partial != null && !partial.isEmpty()) {
-                found.addAll(partial);
+
+        NodeList children = parent.getChildNodes();
+        for ( int i = 0; i < children.getLength(); i++ ) {
+            Node n = children.item(i);
+            if ( n.getNodeType() == Node.ELEMENT_NODE && name.equals( n.getLocalName()) ) {
+                for (int j = 0; j < namespaces.length; j++) {
+                    String namespace = namespaces[j];
+                    if (namespace.equals(n.getNamespaceURI()))
+                        found.add( n );
+                }
             }
         }
+
         return found;
     }
 
