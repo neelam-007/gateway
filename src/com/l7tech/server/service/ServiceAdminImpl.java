@@ -49,6 +49,7 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
     private PolicyValidator policyValidator;
     private Properties uddiProps = null;
     private final AccessManager accessManager;
+    private ServerConfig serverConfig;
 
     public ServiceAdminImpl(AccessManager accessManager) {
         this.accessManager = accessManager;
@@ -173,6 +174,11 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
     public void setPolicyValidator(PolicyValidator policyValidator) {
         this.policyValidator = policyValidator;
     }
+
+    public void setServerConfig(ServerConfig serverConfig) {
+        this.serverConfig = serverConfig;
+    }
+
     // ************************************************
     // PRIVATES
     // ************************************************
@@ -249,7 +255,7 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
     }
 
     private Properties readUDDIConfig() throws IOException {
-        String ssgConfigPath = ServerConfig.getInstance().getProperty("ssg.conf");
+        String ssgConfigPath = serverConfig.getProperty("ssg.conf");
         String uddiConfigFileName = ssgConfigPath + "/" + UDDI_CONFIG_FILENAME;
         Properties props = new Properties();
 

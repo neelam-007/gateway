@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE beans PUBLIC  "-//SPRING//DTD BEAN//EN" "http://www.springframework.org/dtd/spring-beans.dtd">
-<!--
+    <!--
     The Application Context contains the definitions that describe the SSG server side components.
     Things such as identitiy managers, trust components, policy services token services etc. are defined
     here.
@@ -19,7 +19,7 @@
             <ref local="serverConfig"/>
         </property>
     </bean>
-    <!--
+<!--
     * singleton using the factory method. This is transitional, as it is referencef from
     * too many places.
     -->
@@ -35,7 +35,7 @@
             <ref bean="sessionFactory"/>
         </property>
     </bean>
-    <!--
+<!--
         Internal Identity Provider
 
         The factory method with support with construction arguments. The bean must be instantiated
@@ -43,7 +43,7 @@
         See IdentityProviderFactory implementation.
     -->
     <bean id="internalIdentityProvider" factory-bean="identityProviderFactory" factory-method="createProviderInstance"
-        class="com.l7tech.server.identity.internal.InternalIdentityProvider" singleton="false">
+          class="com.l7tech.server.identity.internal.InternalIdentityProvider" singleton="false">
         <property name="clientCertManager">
             <ref bean="clientCertManager"/>
         </property>
@@ -57,7 +57,7 @@
     </bean>
     <!-- Internal UserManager -->
     <bean id="internalUserManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
-        class="com.l7tech.server.identity.internal.InternalUserManager" singleton="false">
+          class="com.l7tech.server.identity.internal.InternalUserManager" singleton="false">
         <property name="clientCertManager">
             <ref local="clientCertManager"/>
         </property>
@@ -67,14 +67,14 @@
     </bean>
     <!-- Internal GroupManager -->
     <bean id="internalGroupManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
-        class="com.l7tech.server.identity.internal.InternalGroupManager" singleton="false">
+          class="com.l7tech.server.identity.internal.InternalGroupManager" singleton="false">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
     </bean>
     <!-- Federated Identity Provider -->
     <bean id="federatedIdentityProvider" factory-bean="identityProviderFactory" factory-method="createProviderInstance"
-        class="com.l7tech.server.identity.fed.FederatedIdentityProvider" singleton="false">
+          class="com.l7tech.server.identity.fed.FederatedIdentityProvider" singleton="false">
         <property name="clientCertManager">
             <ref local="clientCertManager"/>
         </property>
@@ -90,7 +90,7 @@
     </bean>
 
     <bean id="federatedUserManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
-        class="com.l7tech.server.identity.fed.FederatedUserManager" singleton="false">
+          class="com.l7tech.server.identity.fed.FederatedUserManager" singleton="false">
         <property name="clientCertManager">
             <ref bean="clientCertManager"/>
         </property>
@@ -100,14 +100,14 @@
     </bean>
 
     <bean id="federatedGroupManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
-        class="com.l7tech.server.identity.fed.FederatedGroupManager" singleton="false">
+          class="com.l7tech.server.identity.fed.FederatedGroupManager" singleton="false">
         <property name="sessionFactory">
             <ref bean="sessionFactory"/>
         </property>
     </bean>
     <!-- LDAP Identity Provider -->
     <bean id="ldapIdentityProvider" factory-bean="identityProviderFactory" factory-method="createProviderInstance"
-        class="com.l7tech.server.identity.ldap.LdapIdentityProvider" singleton="false">
+          class="com.l7tech.server.identity.ldap.LdapIdentityProvider" singleton="false">
         <property name="clientCertManager">
             <ref local="clientCertManager"/>
         </property>
@@ -121,10 +121,10 @@
 
     <!-- LDAP UserManager -->
     <bean id="ldapUserManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
-        class="com.l7tech.server.identity.ldap.LdapUserManager" singleton="false"></bean>
+          class="com.l7tech.server.identity.ldap.LdapUserManager" singleton="false"></bean>
     <!-- LDAP GroupManager -->
     <bean id="ldapGroupManager" factory-bean="identityProviderFactory" factory-method="createManagerInstance"
-        class="com.l7tech.server.identity.ldap.LdapGroupManager" singleton="false"></bean>
+          class="com.l7tech.server.identity.ldap.LdapGroupManager" singleton="false"></bean>
     <!-- server side log manager -->
     <bean id="serverLogManager" class="com.l7tech.logging.ServerLogManager">
         <property name="sessionFactory">
@@ -252,6 +252,9 @@
         <property name="eventManager">
             <ref bean="eventManager"/>
         </property>
+        <property name="serverConfig">
+            <ref bean="serverConfig"/>
+        </property>
     </bean>
     <!-- server side audit exporter -->
     <bean id="auditExporter" class="com.l7tech.server.audit.AuditExporter" singleton="false">
@@ -317,13 +320,13 @@
     </bean>
 
     <bean id="rootCertificate" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-          <property name="targetObject">
-              <ref local='keystore'/>
-          </property>
-          <property name="targetMethod">
-              <value>getRootCert</value>
-          </property>
-      </bean>
+        <property name="targetObject">
+            <ref local='keystore'/>
+        </property>
+        <property name="targetMethod">
+            <value>getRootCert</value>
+        </property>
+    </bean>
 
     <!-- server Wss Decorator -->
     <bean id="wssDecorator" class="com.l7tech.common.security.xml.decorator.WssDecoratorImpl"></bean>

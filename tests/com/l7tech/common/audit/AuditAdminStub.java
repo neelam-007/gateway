@@ -9,7 +9,6 @@ package com.l7tech.common.audit;
 import com.l7tech.common.util.OpaqueId;
 import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.server.ServerConfig;
 
 import java.rmi.RemoteException;
 import java.util.Collection;
@@ -52,14 +51,9 @@ public class AuditAdminStub implements AuditAdmin {
     }
 
     public int serverMinimumPurgeAge() throws RemoteException {
-        String sAge = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_AUDIT_PURGE_MINIMUM_AGE);
-        int age = 168;
-        try {
-            return Integer.valueOf(sAge).intValue();
-        } catch (NumberFormatException nfe) {
-            throw new RemoteException("Configured minimum age value '" + sAge +
-                                      "' is not a valid number. Using " + age + " (one week) by default" );
-        }
+        return 168;
     }
+
+
 
 }

@@ -36,6 +36,7 @@ import java.util.logging.Level;
  */
 public class AuditRecordManagerImpl extends HibernateEntityManager implements AuditRecordManager {
     private EventManager eventManager;
+    private ServerConfig serverConfig;
 
     public AuditRecord findByPrimaryKey(long oid) throws FindException {
         Object obj = findByPrimaryKey(AuditRecord.class, oid);
@@ -109,7 +110,7 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
     public void deleteOldAuditRecords() throws DeleteException {
         eventManager.fire(new AuditPurgeInitiated(this));
         try {
-            String sMinAgeHours = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_AUDIT_PURGE_MINIMUM_AGE);
+            String sMinAgeHours = serverConfig.getProperty(ServerConfig.PARAM_AUDIT_PURGE_MINIMUM_AGE);
             if (sMinAgeHours == null || sMinAgeHours.length() == 0) sMinAgeHours = "168";
             int minAgeHours = 168;
             try {
@@ -148,5 +149,9 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
 
     public void setEventManager(EventManager eventManager) {
         this.eventManager = eventManager;
+    }
+
+    public void setServerConfig(ServerConfig serverConfig) {
+        this.serverConfig = serverConfig;
     }
 }

@@ -111,7 +111,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
                     JmsReceiver receiver = makeReceiver( connection, endpoint );
 
                     try {
-                        receiver.setServerConfig( ServerConfig.getInstance() );
+                        receiver.setServerConfig(serverConfig);
                         receiver.start();
                         _activeReceivers.add( receiver );
                     } catch ( LifecycleException e ) {
@@ -280,7 +280,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
             try {
                 JmsConnection connection = _connectionManager.findConnectionByPrimaryKey( updatedEndpoint.getConnectionOid() );
                 receiver = makeReceiver( connection, updatedEndpoint);
-                receiver.setServerConfig(ServerConfig.getInstance());
+                receiver.setServerConfig(serverConfig);
                 receiver.start();
                 _activeReceivers.add(receiver);
             } catch (LifecycleException e) {

@@ -65,6 +65,7 @@ public class AuditAdminImpl extends HibernateDaoSupport implements AuditAdmin, A
     };
     private ApplicationContext applicationContext;
     private KeystoreUtils keystore;
+    private ServerConfig serverConfig;
 
     static {
         Background.schedule(downloadReaperTask, CONTEXT_TIMEOUT, CONTEXT_TIMEOUT);
@@ -80,6 +81,10 @@ public class AuditAdminImpl extends HibernateDaoSupport implements AuditAdmin, A
 
     public void setKeystore(KeystoreUtils keystore) {
         this.keystore = keystore;
+    }
+
+    public void setServerConfig(ServerConfig serverConfig) {
+        this.serverConfig = serverConfig;
     }
 
     public AuditRecord findByPrimaryKey( final long oid ) throws FindException, RemoteException {
@@ -255,7 +260,7 @@ public class AuditAdminImpl extends HibernateDaoSupport implements AuditAdmin, A
     }
 
     public int serverMinimumPurgeAge() throws RemoteException {
-        String sAge = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_AUDIT_PURGE_MINIMUM_AGE);
+        String sAge = serverConfig.getProperty(ServerConfig.PARAM_AUDIT_PURGE_MINIMUM_AGE);
         int age = 168;
         try {
             return Integer.valueOf(sAge).intValue();
