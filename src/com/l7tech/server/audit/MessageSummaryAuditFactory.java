@@ -26,10 +26,8 @@ import com.l7tech.service.PublishedService;
  * @version $Revision$
  */
 public class MessageSummaryAuditFactory {
-    private final ClusterInfoManager clusterInfoManager;
     private final String nodeId;
     public MessageSummaryAuditFactory(ClusterInfoManager clusterInfoManager) {
-        this.clusterInfoManager = clusterInfoManager;
         if (clusterInfoManager == null) {
             throw new IllegalArgumentException("Cluster Info Manager is required");
         }
@@ -77,34 +75,38 @@ public class MessageSummaryAuditFactory {
         Message request = context.getRequest();
         String requestId = null;
         requestId = context.getRequestId().toString();
-        try {
-            byte[] req = HexUtils.slurpStream(request.getMimeKnob().getFirstPart().getInputStream(true));
-            String encoding = request.getMimeKnob().getFirstPart().getContentType().getEncoding();
-            requestXml = new String(req, encoding);
-            requestContentLength = requestXml.length();
-        } catch (Throwable t) {
-            requestXml = null;
-        }
+        if (context.isAuditSaveRequest()) {
+            try {
+                byte[] req = HexUtils.slurpStream(request.getMimeKnob().getFirstPart().getInputStream(true));
+                String encoding = request.getMimeKnob().getFirstPart().getContentType().getEncoding();
+                requestXml = new String(req, encoding);
+                requestContentLength = requestXml.length();
+            } catch (Throwable t) {
+                requestXml = null;
+            }
 
-        if ( requestContentLength == -1 && requestXml != null ) requestContentLength = requestXml.length();
+            if ( requestContentLength == -1 && requestXml != null ) requestContentLength = requestXml.length();
+        }
 
         TcpKnob reqTcp = (TcpKnob)request.getKnob(TcpKnob.class);
         if (reqTcp != null)
             clientAddr = reqTcp.getRemoteAddress();
 
         // Response info
-        Message response = context.getResponse();
-        if (response.getKnob(MimeKnob.class) != null) {
-            try {
-                byte[] resp = HexUtils.slurpStream(response.getMimeKnob().getFirstPart().getInputStream(false));
-                String encoding = response.getMimeKnob().getFirstPart().getContentType().getEncoding();
-                responseXml = new String(resp, encoding);
-            } catch (Throwable t) {
-                responseXml = null;
+        if (context.isAuditSaveResponse()) {
+            Message response = context.getResponse();
+            if (response.getKnob(MimeKnob.class) != null) {
+                try {
+                    byte[] resp = HexUtils.slurpStream(response.getMimeKnob().getFirstPart().getInputStream(false));
+                    String encoding = response.getMimeKnob().getFirstPart().getContentType().getEncoding();
+                    responseXml = new String(resp, encoding);
+                } catch (Throwable t) {
+                    responseXml = null;
+                }
             }
-        }
 
-        if (responseXml != null) responseContentLength = responseXml.length();
+            if (responseXml != null) responseContentLength = responseXml.length();
+        }
 
         return new MessageSummaryAuditRecord(context.getAuditLevel(), nodeId, requestId, status, clientAddr,
                                              context.isAuditSaveRequest() ? requestXml : null,
