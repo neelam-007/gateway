@@ -8,15 +8,18 @@ package com.l7tech.server;
 
 import com.l7tech.common.security.xml.Session;
 import com.l7tech.common.security.xml.SessionNotFoundException;
+import com.l7tech.common.util.Locator;
 import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.service.PublishedService;
-import com.l7tech.service.ServiceCache;
+import com.l7tech.service.ServiceManager;
+import com.l7tech.service.ServiceStatistics;
 import com.l7tech.service.resolution.ServiceResolutionException;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -36,7 +39,8 @@ import java.util.logging.Logger;
 public class MessageProcessor {
     public AssertionStatus processMessage( Request request, Response response ) throws IOException, PolicyAssertionException {
         try {
-            PublishedService service = ServiceCache.getInstance().resolve(request);
+            ServiceManager manager = (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
+            PublishedService service = manager.resolve(request);
 
             AssertionStatus status;
             if ( service == null ) {
@@ -92,22 +96,34 @@ public class MessageProcessor {
                 }
 
                 // Get the server policy
-                ServerAssertion serverPolicy = ServiceCache.getInstance().getServerPolicy(service.getOid());
+                ServerAssertion serverPolicy = null;
+                try {
+                    serverPolicy = manager.getServerPolicy(service.getOid());
+                } catch (FindException e) {
+                    logger.log(Level.WARNING, "cannot get policy", e);
+                    serverPolicy = null;
+                }
                 if (serverPolicy == null) {
                     throw new ServiceResolutionException("service is resolved but no corresponding policy available.");
                 }
 
                 // Run the policy
                 logger.finest("Run the server policy");
-                ServiceCache.getInstance().getServiceStatistics(service.getOid()).attemptedRequest();
+                ServiceStatistics stats = null;
+                try {
+                    stats = manager.getServiceStatistics(service.getOid());
+                } catch (FindException e) {
+                    logger.log(Level.WARNING, "cannot get a stats object", e);
+                }
+                if (stats != null) stats.attemptedRequest();
                 status = serverPolicy.checkRequest( request, response );
 
                 if ( status == AssertionStatus.NONE ) {
-                    ServiceCache.getInstance().getServiceStatistics(service.getOid()).authorizedRequest();
+                    if (stats != null) stats.authorizedRequest();
                     RoutingStatus rstat = request.getRoutingStatus();
                     if ( rstat == RoutingStatus.ROUTED ) {
                         logger.fine( "Request was routed with status " + " " + status.getNumeric() + " (" + status.getMessage() + ")" );
-                        ServiceCache.getInstance().getServiceStatistics(service.getOid()).completedRequest();
+                        if (stats != null) stats.completedRequest();
                     } else if ( rstat == RoutingStatus.ATTEMPTED ) {
                         logger.severe( "Request routing failed with status " + status.getNumeric() + " (" + status.getMessage() + ")" );
                         status = AssertionStatus.FALSIFIED;
@@ -120,9 +136,6 @@ public class MessageProcessor {
             return status;
         } catch ( ServiceResolutionException sre ) {
             logger.log(Level.SEVERE, sre.getMessage(), sre);
-            return AssertionStatus.SERVER_ERROR;
-        } catch (InterruptedException e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
             return AssertionStatus.SERVER_ERROR;
         }
     }

@@ -78,8 +78,8 @@ public class ServiceAdminImpl implements ServiceAdmin {
 
     public ServiceStatistics getStatistics( long serviceOid ) throws RemoteException {
         try {
-            return ServiceCache.getInstance().getServiceStatistics(serviceOid);
-        } catch (InterruptedException e) {
+            return getServiceManager().getServiceStatistics(serviceOid);
+        } catch (FindException e) {
             throw new RemoteException("cache exception", e);
         }
     }
@@ -94,7 +94,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
      */
     public long savePublishedService(PublishedService service) throws RemoteException,
                                     UpdateException, SaveException, VersionException {
-        ServiceManagerImp manager = getServiceManager();
+        ServiceManager manager = getServiceManager();
         PersistenceContext pc = null;
         try {
             pc = PersistenceContext.getCurrent();
@@ -135,7 +135,7 @@ public class ServiceAdminImpl implements ServiceAdmin {
     }
 
     public void deletePublishedService(long oid) throws RemoteException, DeleteException {
-        com.l7tech.service.ServiceManagerImp manager = null;
+        ServiceManager manager = null;
         PublishedService service = null;
 
         try {
@@ -160,11 +160,8 @@ public class ServiceAdminImpl implements ServiceAdmin {
     // PRIVATES
     // ************************************************
 
-    private ServiceManagerImp getServiceManager() throws RemoteException {
-        if (serviceManagerInstance == null) {
-            initialiseServiceManager();
-        }
-        return serviceManagerInstance;
+    private ServiceManager getServiceManager() {
+        return (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
     }
 
     private void beginTransaction() throws RemoteException {
@@ -212,15 +209,5 @@ public class ServiceAdminImpl implements ServiceAdmin {
         }
         return output;
     }
-
-    private synchronized void initialiseServiceManager() throws RemoteException {
-        serviceManagerInstance = (ServiceManagerImp)Locator.getDefault().
-                                    lookup(com.l7tech.service.ServiceManager.class);
-        if (serviceManagerInstance == null) {
-            throw new RemoteException("Cannot instantiate the ServiceManager");
-        }
-    }
-
-    private ServiceManagerImp serviceManagerInstance = null;
     private Logger logger = null;
 }
