@@ -227,10 +227,13 @@ class MimeBoundaryTerminatedInputStream extends FilterInputStream {
                 case '\r':
                     seencr = true;
                     if (seenlf) break CHARLOOP;
+                    sawonedash = false;
                     break;
                 case '\n':
                     seenlf = true;
                     if (seencr) break CHARLOOP;
+                    sawonedash = false;
+                    break;
                 case '-':
                     if (sawonedash)
                         lastPartProcessed = true;
