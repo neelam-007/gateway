@@ -82,7 +82,7 @@ public abstract class Assertion implements Cloneable, Serializable {
      * Returns the path from the root, to get to this node. The last element
      * in the path is this node.
      *
-     * @return an assertion path instance containing the <code>AssertionPath</code>
+     * @return an assertion path instance containing the <code>Assertion</code>
      * objects giving the path, where the first element in the path is the root and
      * the last element is this node.
      */
