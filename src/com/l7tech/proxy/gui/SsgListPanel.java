@@ -166,6 +166,14 @@ class SsgListPanel extends JPanel {
                             ssgTableModel.editedSsg(ssg);
                             selectSsg(ssg);
                         }
+                        // Regardless of whether this dialog was OK'ed or canceled, turn off all anti-popup-spamming
+                        // flags on all registered SSGs (Bug #1325)
+                        int rows = ssgTableModel.getRowCount();
+                        for (int i = 0; i < rows; ++i) {
+                            Ssg s = ssgTableModel.getSsgAtRow(i);
+                            if (s != null)
+                                s.promptForUsernameAndPassword(true);
+                        }
                     }
                 }
             };
