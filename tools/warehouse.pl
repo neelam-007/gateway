@@ -99,11 +99,12 @@ foreach my $env (keys %ENV) {
 #  print "$env=$ENV{$env}<br>\n";
 }
 
-if ($input =~ /<echo>(.*?)<\/echo>/) {
+if ($input =~ /<echo>(.*?)<\/echo>/s) {
   print "<echoResponse>$1</echoResponse>\n";
   exit(0);
-} elsif ($input =~ /<getquote>(.*?)<\/getquote>/) {
+} elsif ($input =~ /<getquote>(.*?)<\/getquote>/s) {
   my $symbol = $1;
+  $symbol =~ s/^\s+|\s+$//g;
   my $quote = $QUOTES{$symbol};
   if ($quote) {
     print "<getquoteResponse>\n  <symbol>$symbol</symbol>\n  <quote>$quote</quote>\n</getquoteResponse>\n";
