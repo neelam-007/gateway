@@ -16,6 +16,7 @@ public class LogMessage {
     private final String time;
     private final String msgClass;
     private final String msgMethod;
+    private final String msgDetails;
     private String nodeName = "";  // gets filled in afterward
 
     public LogMessage(SSGLogRecord log) {
@@ -28,6 +29,13 @@ public class LogMessage {
 
         msgClass = log.getSourceClassName() != null ? log.getSourceClassName().toString() : null;
         msgMethod = log.getSourceMethodName() != null ? log.getSourceMethodName().toString() : null;
+
+        // Strip redundant info from detail message (Bug #1281)
+        String stripex = "^.*?\\s+\\d\\d\\d\\d\\d?\\s+\\d\\d?\\:\\d\\d?\\:\\d\\d?\\s+[AP]M\\s+";
+        String severity = log.getLevel().toString() + ":\\s+";
+        stripex += msgClass + "\\s+";
+        stripex += msgMethod + "\\s+" + severity;
+        msgDetails = log.getMessage().replaceFirst(stripex, "");
     }
 
     public long getMsgNumber() {
@@ -51,7 +59,7 @@ public class LogMessage {
     }
 
     public String getMsgDetails(){
-        return log.getMessage();
+        return msgDetails;
     }
 
     public String getReqId() {

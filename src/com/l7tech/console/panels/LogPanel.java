@@ -118,33 +118,13 @@ public class LogPanel extends JPanel {
             displayedLogMessage = lm;
             SSGLogRecord rec = lm.getSSGLogRecord();
 
-            //Oct 26, 2004 11:57:45 AM com.l7tech.server.identity.ldap.LdapConfigTemplateManager populateTemplatesFromFile
-            //WARNING: templates not available!
-            String stripex = ".*?\\d\\d\\d\\d\\d?\\s+\\d\\d?\\:\\d\\d?\\:\\d\\d?\\s+[AP]M\\s+";
-            String severity = "";
-            if (lm.getNodeName() != null)
-                msg = msg + "Node       : " + lm.getNodeName() + "\n";
-            if (lm.getTime() != null)
-                msg = msg + "Time       : " + lm.getTime() + "\n";
-            if (lm.getSeverity() != null) {
-                msg = msg + "Severity   : " + lm.getSeverity() + "\n";
-                severity = lm.getSeverity() + ":\\s+";
-            }
-            if (lm.getReqId() != null && lm.getReqId().length() > 0)
-                msg = msg + "Request Id : " + lm.getReqId() + "\n";
-            if (lm.getMsgClass() != null) {
-                msg = msg + "Class      : " + lm.getMsgClass() + "\n";
-                stripex += lm.getMsgClass() + "\\s+";
-            }
-            if (lm.getMsgMethod() != null) {
-                msg = msg + "Method     : " + lm.getMsgMethod() + "\n";
-                stripex += lm.getMsgMethod() + "\\s+" + severity;
-            }
-            if (lm.getMsgDetails() != null) {
-                String details = lm.getMsgDetails();
-                details = details.replaceAll(stripex, "");
-                msg = msg + "Message    : " + details + "\n";
-            }
+            msg += nonull("Node       : ", lm.getNodeName());
+            msg += nonull("Time       : ", lm.getTime());
+            msg += nonull("Severity   : ", lm.getSeverity());
+            msg += nonule("Request Id : ", lm.getReqId());
+            msg += nonull("Class      : ", lm.getMsgClass());
+            msg += nonull("Method     : ", lm.getMsgMethod());
+            msg += nonull("Message    : ", lm.getMsgDetails());
 
             if (rec instanceof AuditRecord) {
                 AuditRecord arec = (AuditRecord)rec;
@@ -191,6 +171,14 @@ public class LogPanel extends JPanel {
                 // Scroll to top
                 getMsgDetails().getCaret().setDot(1);
         }
+    }
+
+    private String nonull(String s, String n) {
+        return n == null ? "" : (s + n + "\n");
+    }
+
+    private String nonule(String s, String n) {
+        return n == null || n.length() < 1 ? "" : (s + n + "\n");
     }
 
     private String fixNegative(int num, String s) {
