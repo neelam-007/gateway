@@ -6,7 +6,7 @@
 
 package com.l7tech.server;
 
-import com.l7tech.logging.LogManager;
+import com.l7tech.common.util.Locator;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -15,7 +15,6 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceManager;
 import com.l7tech.service.resolution.ServiceResolutionException;
-import com.l7tech.common.util.Locator;
 
 import java.io.IOException;
 import java.util.logging.Level;
@@ -78,7 +77,7 @@ public class MessageProcessor {
 
             return status;
         } catch ( ServiceResolutionException sre ) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, sre.getMessage(), sre);
+            _log.log(Level.SEVERE, sre.getMessage(), sre);
             return AssertionStatus.SERVER_ERROR;
         }
     }
@@ -108,5 +107,6 @@ public class MessageProcessor {
     private static ThreadLocal _currentRequest = new ThreadLocal();
 
     private ServiceManager _serviceManager;
-    private Logger _log = LogManager.getInstance().getSystemLogger();
+    //private Logger _log = LogManager.getInstance().getSystemLogger();
+    private transient Logger _log = Logger.getLogger( this.getClass().getName() );
 }
