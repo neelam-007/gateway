@@ -22,6 +22,8 @@ import java.util.logging.Logger;
  *
  */
 public class InternalUserManagerServer extends HibernateEntityManager implements UserManager {
+    public static final String IMPCLASSNAME = InternalUser.class.getName();
+
     public InternalUserManagerServer() {
         super();
         logger = LogManager.getInstance().getSystemLogger();
@@ -230,7 +232,7 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
                 }
             }
             // update user
-            originalUser.copyFrom(user);
+            originalUser.copyFrom(imp);
             // update from existing user
             _manager.update( getContext(), originalUser );
         } catch ( SQLException se ) {
