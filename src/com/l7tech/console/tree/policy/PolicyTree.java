@@ -3,6 +3,7 @@ package com.l7tech.console.tree.policy;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.EntityTreeCellRenderer;
 import com.l7tech.console.util.PopUpMouseListener;
+import com.l7tech.console.action.DeleteAssertionAction;
 
 import javax.swing.*;
 import javax.swing.tree.TreeNode;
@@ -54,11 +55,16 @@ public class PolicyTree extends JTree {
             JTree tree = (JTree)e.getSource();
             TreePath path = tree.getSelectionPath();
             if (path == null) return;
+            AbstractTreeNode node =
+              (AbstractTreeNode)path.getLastPathComponent();
+            if (node == null) return;
             int keyCode = e.getKeyCode();
             if (keyCode == KeyEvent.VK_DELETE) {
-                TreeNode node =
-                  (TreeNode)path.getLastPathComponent();
-                if (node == null) return;
+                if (!node.canDelete()) return;
+                if (node instanceof AssertionTreeNode)
+                    new DeleteAssertionAction((AssertionTreeNode)node).performAction();
+            } else if (keyCode == KeyEvent.VK_ENTER) {
+                // default properties
             }
         }
     }
