@@ -20,8 +20,6 @@ import org.xml.sax.SAXException;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
 import java.util.Iterator;
 import java.util.Map;
@@ -40,13 +38,8 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
     }
 
     synchronized void parse( String xml ) throws SAXException, IOException {
-        try {
-            // TODO: Ensure this is a lazy parser
-            DocumentBuilder parser = MessageProcessor.getInstance().getDomParser();
-            _document = parser.parse( new InputSource( new StringReader( xml ) ) );
-        } catch ( ParserConfigurationException pce ) {
-            throw new SAXException( pce );
-        }
+        // TODO: Ensure this is a lazy parser
+        _document = XmlUtil.getDocumentBuilder().parse( new InputSource( new StringReader( xml ) ) );
     }
 
     public synchronized XmlPullParser pullParser( String xml ) throws XmlPullParserException {

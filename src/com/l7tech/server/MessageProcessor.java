@@ -12,7 +12,6 @@ import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.message.*;
@@ -35,9 +34,6 @@ import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 import org.xmlpull.v1.XmlPullParserFactory;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStoreException;
@@ -56,7 +52,7 @@ public class MessageProcessor {
     public AssertionStatus processMessage( Request request, Response response )
             throws IOException, PolicyAssertionException, PolicyVersionException {
 
-        request.setAuditLevel(getDefaultAuditLevel());
+        request.setAuditLevel(DEFAULT_MESSAGE_AUDIT_LEVEL);
         ProcessorResult wssOutput = null;
         // WSS-Processing Step
         if (request instanceof SoapRequest && ((SoapRequest)request).isSoap()) {
@@ -267,14 +263,6 @@ public class MessageProcessor {
         }
     }
 
-    public Level getDefaultAuditLevel() {
-        return defaultAuditLevel;
-    }
-
-    public void setDefaultAuditLevel( Level defaultAuditLevel ) {
-        this.defaultAuditLevel = defaultAuditLevel;
-    }
-
     private AssertionStatus doDeferredAssertions(Message messageWithDeferredAssertions,
                                                  Request request, Response response)
             throws PolicyAssertionException, IOException
@@ -303,31 +291,11 @@ public class MessageProcessor {
         return SingletonHolder.singleton;
     }
 
-    public DocumentBuilder getDomParser() throws ParserConfigurationException {
-        DocumentBuilder builder = _dbf.newDocumentBuilder();
-        builder.setEntityResolver(XmlUtil.getSafeEntityResolver());
-        return builder;
-    }
-
     public XmlPullParser getPullParser() throws XmlPullParserException {
         return _xppf.newPullParser();
     }
 
     private MessageProcessor() {
-        defaultAuditLevel = DEFAULT_AUDIT_LEVEL;
-        String level = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_DEFAULT_AUDIT_LEVEL);
-        if (level != null) {
-            try {
-                this.defaultAuditLevel = Level.parse(level);
-            } catch (IllegalArgumentException e) {
-                logger.info("Invalid default audit level '" + level + "'. Will use INFO.");
-            }
-        }
-
-        _dbf = DocumentBuilderFactory.newInstance();
-        _dbf.setNamespaceAware(true);
-        _dbf.setValidating(false);
-
         try {
             _xppf = XmlPullParserFactory.newInstance();
         } catch (XmlPullParserException e) {
@@ -363,17 +331,14 @@ public class MessageProcessor {
         return _wssDecorator = new WssDecoratorImpl();
     }
 
-    //private static MessageProcessor _instance = null;
     private static ThreadLocal _currentRequest = new ThreadLocal();
     private static ThreadLocal _currentResponse = new ThreadLocal();
 
     private final Logger logger = Logger.getLogger(getClass().getName());
 
-    private DocumentBuilderFactory _dbf;
     private XmlPullParserFactory _xppf;
     private static WssDecorator _wssDecorator = null;
 
     private PrivateKey privateServerKey = null;
-    private static final Level DEFAULT_AUDIT_LEVEL = Level.INFO;
-    private Level defaultAuditLevel;
+    private static final Level DEFAULT_MESSAGE_AUDIT_LEVEL = Level.INFO;
 }
