@@ -254,6 +254,15 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 // populate the SSG list if not done yet
                 if(identityPane.getTrustedSSGComboBox().getItemCount() <= 0 ) {
                     populateSSGList();
+                } else {
+                    // remove itself from the list
+                    for (int i = 0; i < identityPane.getTrustedSSGComboBox().getItemCount(); i++) {
+                        Ssg item = (Ssg) identityPane.getTrustedSSGComboBox().getItemAt(i);
+                        if(item.getLocalEndpoint().equals(ssg.getLocalEndpoint())) {
+                            remove(i);
+                            break;
+                        }
+                    }
                 }
             }
         });
