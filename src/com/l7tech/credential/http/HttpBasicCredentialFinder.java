@@ -8,8 +8,8 @@ package com.l7tech.credential.http;
 
 import com.l7tech.credential.CredentialFinderException;
 import com.l7tech.credential.PrincipalCredentials;
-import com.l7tech.identity.User;
 import com.l7tech.message.Request;
+import com.l7tech.identity.User;
 import org.apache.axis.encoding.Base64;
 import org.apache.log4j.Category;
 
