@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
+import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
@@ -29,6 +30,7 @@ import com.l7tech.proxy.policy.assertion.ClientFalseAssertion;
 import com.l7tech.proxy.policy.assertion.ClientRoutingAssertion;
 import com.l7tech.proxy.policy.assertion.ClientSslAssertion;
 import com.l7tech.proxy.policy.assertion.ClientTrueAssertion;
+import com.l7tech.proxy.policy.assertion.ClientRequestXpathAssertion;
 import com.l7tech.proxy.policy.assertion.composite.ClientAllAssertion;
 import com.l7tech.proxy.policy.assertion.composite.ClientExactlyOneAssertion;
 import com.l7tech.proxy.policy.assertion.composite.ClientOneOrMoreAssertion;
@@ -85,6 +87,7 @@ public class ClientPolicyFactory extends PolicyFactory {
         new ClientSpecificUser(new SpecificUser()),
         new ClientXmlResponseSecurity(new XmlResponseSecurity()),
         new ClientXmlRequestSecurity(new XmlRequestSecurity()),
+        new ClientRequestXpathAssertion(new RequestXpathAssertion())
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),
         // TODO new DayOfWeekAssertion(),
