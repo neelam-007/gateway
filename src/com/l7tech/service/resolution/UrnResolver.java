@@ -24,15 +24,22 @@ public class UrnResolver extends NameValueServiceResolver {
         return Request.PARAM_URN;
     }
 
-    protected Object getTargetValue( PublishedService service ) {
-        return service.getUrn();
+    protected Object[] getTargetValues( PublishedService service ) {
+        // TODO: Multiple URNs?
+        return new Object[] { service.getUrn() };
     }
 
     protected Object getRequestValue( Request request ) throws ServiceResolutionException {
         try {
             Element body = SoapUtil.getBodyElement( request );
-            String urn = body.getNamespaceURI();
-            return urn;
+            Node n = body.getFirstChild();
+            while ( n != null ) {
+                if ( n.getNodeType() == Node.ELEMENT_NODE )
+                    return n.getNamespaceURI();
+
+                n = n.getNextSibling();
+            }
+            return null;
         } catch ( SAXException se ) {
             throw new ServiceResolutionException( se.getMessage(), se );
         } catch ( IOException ioe ) {
