@@ -2,7 +2,6 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.table.LogTableModel;
 import com.l7tech.console.table.FilteredLogTableModel;
-import com.l7tech.console.util.Preferences;
 
 import javax.swing.*;
 import javax.swing.table.*;
@@ -14,7 +13,6 @@ import java.awt.event.ActionEvent;
 import java.util.Dictionary;
 import java.util.Hashtable;
 import java.util.ResourceBundle;
-import java.io.IOException;
 
 
 /**
@@ -41,11 +39,9 @@ public class LogPanel extends JPanel {
 
     private int msgFilterLevel = MSG_FILTER_LEVEL_WARNING;
     private JPanel selectPane = null;
-    private JPanel msgPane = null;
     private JPanel filterPane = null;
 
     private JPanel controlPane = null;
-    private JSplitPane logPaneTop = null;
     private JScrollPane msgTablePane = null;
     private JTable msgTable = null;
     private JTabbedPane msgDetailsPane = null;
@@ -63,8 +59,17 @@ public class LogPanel extends JPanel {
     public LogPanel() {
         setLayout(new BorderLayout());
 
-        add(getMsgPane(), BorderLayout.NORTH);
-        add(getMsgDetailsPane(), BorderLayout.CENTER);
+        JSplitPane logSplitPane = new JSplitPane();
+
+        logSplitPane.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
+        logSplitPane.setTopComponent(getMsgTablePane());
+        logSplitPane.setBottomComponent(getMsgDetailsPane());
+        logSplitPane.setDividerLocation(0.5);
+
+        add(logSplitPane, BorderLayout.CENTER);
+
+        //add(getMsgPane(), BorderLayout.NORTH);
+        //add(getMsgDetailsPane(), BorderLayout.CENTER);
         add(getSelectPane(), BorderLayout.SOUTH);
 
         getMsgTable().getSelectionModel().
@@ -281,7 +286,8 @@ public class LogPanel extends JPanel {
         msgTablePane = new JScrollPane();
         msgTablePane.setViewportView(getMsgTable());
         msgTablePane.getViewport().setBackground(getMsgTable().getBackground());
-
+        msgTablePane.setMinimumSize(new Dimension(1000, 200));
+        msgTablePane.setPreferredSize(new Dimension(1000, 300));
         return msgTablePane;
     }
 
@@ -308,8 +314,8 @@ public class LogPanel extends JPanel {
 
         msgDetailsPane = new JTabbedPane();
         msgDetailsPane.setMaximumSize(new java.awt.Dimension(1000, 150));
-        msgDetailsPane.setMinimumSize(new java.awt.Dimension(400, 150));
-        msgDetailsPane.setPreferredSize(new java.awt.Dimension(400, 150));
+        msgDetailsPane.setMinimumSize(new java.awt.Dimension(1000, 100));
+        msgDetailsPane.setPreferredSize(new java.awt.Dimension(1000, 150));
 
         JScrollPane msgDetailsScrollPane = new JScrollPane();
       //  msgDetailsScrollPane.add(getMsgDetails());
@@ -338,7 +344,7 @@ public class LogPanel extends JPanel {
      * Return MsgPane property value
      * @return JPanel
      */
-    private JPanel getMsgPane(){
+ /*   private JPanel getMsgPane(){
         if(msgPane != null) return msgPane;
 
         msgPane = new JPanel();
@@ -348,7 +354,7 @@ public class LogPanel extends JPanel {
 
         return msgPane;
     }
-
+*/
 
     /**
      * Return LogColumnModel property value
