@@ -7,6 +7,9 @@ import com.l7tech.logging.LogManager;
 
 import java.rmi.RemoteException;
 import java.util.logging.Level;
+import java.util.Set;
+import java.util.Iterator;
+import java.util.HashSet;
 
 /**
  * Layer 7 Technologies, inc.
@@ -146,7 +149,23 @@ public class Service {
         UserManager userManager = retrieveUserManagerAndBeginTransaction(identityProviderConfigId);
         if (userManager == null) throw new java.rmi.RemoteException("Cannot retrieve the UserManager");
         try {
-            return userManager.findByPrimaryKey(userId);
+            User u = userManager.findByPrimaryKey(userId);
+            Set groups = u.getGroups();
+
+            if ( !groups.isEmpty() ) {
+                Set groupHeaders = null;
+                Group g;
+                EntityHeader gh;
+                for (Iterator i = groups.iterator(); i.hasNext();) {
+                    g = (Group)i.next();
+                    gh = new EntityHeader( g.getOid(), EntityType.GROUP, g.getName(), g.getDescription() );
+                    if ( groupHeaders == null ) groupHeaders = new HashSet();
+                    groupHeaders.add( gh );
+                }
+                u.setGroupHeaders( groupHeaders );
+            }
+
+            return u;
         } catch (FindException e) {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new java.rmi.RemoteException("FindException in findUserByPrimaryKey", e);
@@ -172,13 +191,39 @@ public class Service {
         }
     }
     public long saveUser(long identityProviderConfigId, com.l7tech.identity.User user) throws java.rmi.RemoteException {
-        UserManager userManager = retrieveUserManagerAndBeginTransaction(identityProviderConfigId);
+        // Let's try not to create nested transactions, since we're updating two classes of object
+        IdentityProvider provider = null;
+        try {
+            provider = IdentityProviderFactory.makeProvider(getIdentityProviderConfigManagerAndBeginTransaction().findByPrimaryKey(identityProviderConfigId));
+        } catch ( FindException fe ) {
+            throw new java.rmi.RemoteException( "Couldn't get IdentityProvider!" );
+        }
+
+        UserManager userManager = provider.getUserManager();
         if (userManager == null) throw new java.rmi.RemoteException("Cannot retrieve the UserManager");
         try {
+            Set groupHeaders = user.getGroupHeaders();
+
+            if ( !groupHeaders.isEmpty() ) {
+                Set groups = new HashSet();
+                // Let's reify the groupHeaders and copy 'em to groups
+                GroupManager groupManager = provider.getGroupManager();
+                if ( groupManager == null ) throw new java.rmi.RemoteException( "Cannot retrieve the GroupManager" );
+
+                for (Iterator i = groupHeaders.iterator(); i.hasNext();) {
+                    EntityHeader header = (EntityHeader)i.next();
+                    Group group = groupManager.findByPrimaryKey( header.getStrId() );
+                    groups.add( group );
+                }
+
+                user.setGroups( groups );
+            }
+
             if (user.getOid() > 0) {
                 User originalUser = userManager.findByPrimaryKey(Long.toString(user.getOid()));
                 originalUser.copyFrom(user);
                 userManager.update(originalUser);
+
                 LogManager.getInstance().getSystemLogger().log(Level.INFO, "Updated User: " + user.getOid());
                 return user.getOid();
             }
@@ -191,6 +236,8 @@ public class Service {
             endTransaction();
         }
     }
+
+
     public com.l7tech.objectmodel.EntityHeader[] findAllGroups(long identityProviderConfigId) throws java.rmi.RemoteException {
         try {
             java.util.Collection res = retrieveGroupManagerAndBeginTransaction(identityProviderConfigId).findAllHeaders();
@@ -288,11 +335,13 @@ public class Service {
 
     private void endTransaction() throws java.rmi.RemoteException {
         try {
-            PersistenceContext.getCurrent().commitTransaction();
+            PersistenceContext context = PersistenceContext.getCurrent();
+            context.commitTransaction();
+            context.close();
         } catch (java.sql.SQLException e) {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new RemoteException("Exception commiting", e);
-        } catch (TransactionException e) {
+        } catch ( ObjectModelException e) {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new RemoteException("Exception commiting", e);
         }
