@@ -35,6 +35,8 @@ public class ServerOneOrMoreAssertion extends ServerCompositeAssertion implement
             result = child.checkRequest(request, response);
             if (result == AssertionStatus.NONE) return result;
         }
+        if (result != AssertionStatus.NONE)
+            rollbackDeferredAssertions(request, response);
         return result;
     }
 

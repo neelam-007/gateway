@@ -38,7 +38,10 @@ public class ServerExactlyOneAssertion extends ServerCompositeAssertion implemen
                 ++numSucceeded;
         }
 
-        return numSucceeded == 1 ? AssertionStatus.NONE : AssertionStatus.FALSIFIED;
+        result =  numSucceeded == 1 ? AssertionStatus.NONE : AssertionStatus.FALSIFIED;
+        if (result != AssertionStatus.NONE)
+            rollbackDeferredAssertions(request, response);
+        return result;
     }
 
     protected ExactlyOneAssertion data;

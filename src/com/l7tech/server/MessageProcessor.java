@@ -15,6 +15,7 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.message.SoapRequest;
+import com.l7tech.message.Message;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -43,6 +44,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Iterator;
 
 /**
  * @author alex
@@ -162,6 +164,12 @@ public class MessageProcessor {
                 if (stats != null) stats.attemptedRequest();
                 status = serverPolicy.checkRequest( request, response );
 
+                // Execute deferred actions for request, then response
+                if (status == AssertionStatus.NONE)
+                    status = doDeferredAssertions(request, request, response);
+                if (status == AssertionStatus.NONE)
+                    status = doDeferredAssertions(response, request, response);
+
                 RoutingStatus rstat = request.getRoutingStatus();
 
                 boolean authorized = false;
@@ -205,6 +213,20 @@ public class MessageProcessor {
             logger.log(Level.SEVERE, sre.getMessage(), sre);
             return AssertionStatus.SERVER_ERROR;
         }
+    }
+
+    private AssertionStatus doDeferredAssertions(Message messageWithDeferredAssertions,
+                                                 Request request, Response response)
+            throws PolicyAssertionException, IOException
+    {
+        AssertionStatus status = AssertionStatus.NONE;
+        for (Iterator di = messageWithDeferredAssertions.getDeferredAssertions().iterator(); di.hasNext();) {
+            ServerAssertion assertion = (ServerAssertion)di.next();
+            status = assertion.checkRequest(request, response);
+            if (status != AssertionStatus.NONE)
+                return status;
+        }
+        return status;
     }
 
     private synchronized PrivateKey getServerKey() throws KeyStoreException {
