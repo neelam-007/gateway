@@ -35,6 +35,8 @@ import java.util.logging.Logger;
 
 /**
  * Class that encrypts and decrypts XML documents.
+ * @deprecated all that stuff should now be handled by the WssProcessor WssDecorator stuff.
+ *
  * User: mike
  * Date: Aug 26, 2003
  * Time: 11:07:41 AM
