@@ -141,6 +141,39 @@ public class NewFederatedUserDialog extends JDialog {
         userNameTextField.getDocument().putProperty("name", "userId");
         userNameTextField.getDocument().addDocumentListener(documentListener);
 
+        x509SubjectDNTextField.setToolTipText(resources.getString("x509SubjectDNTextField.tooltip"));
+        x509SubjectDNTextField.setDocument(new FilterDocument(24,
+                        new FilterDocument.Filter() {
+                            public boolean accept(String str) {
+                                if (str == null) return false;
+                                return true;
+                            }
+                        }));
+        x509SubjectDNTextField.getDocument().putProperty("name", "x509DN");
+        x509SubjectDNTextField.getDocument().addDocumentListener(documentListener);
+
+        emailTextField.setToolTipText(resources.getString("emailTextField.tooltip"));
+        emailTextField.setDocument(new FilterDocument(24,
+                        new FilterDocument.Filter() {
+                            public boolean accept(String str) {
+                                if (str == null) return false;
+                                return true;
+                            }
+                        }));
+        emailTextField.getDocument().putProperty("name", "email");
+        emailTextField.getDocument().addDocumentListener(documentListener);
+
+        loginTextField.setToolTipText(resources.getString("loginTextField.tooltip"));
+        loginTextField.setDocument(new FilterDocument(24,
+                        new FilterDocument.Filter() {
+                            public boolean accept(String str) {
+                                if (str == null) return false;
+                                return true;
+                            }
+                        }));
+        loginTextField.getDocument().putProperty("name", "login");
+        loginTextField.getDocument().addDocumentListener(documentListener);
+
         additionalPropertiesCheckBox.addItemListener(new ItemListener() {
             /**
              * Invoked when an item has been selected or deselected.
@@ -153,27 +186,6 @@ public class NewFederatedUserDialog extends JDialog {
                 }
             }
         });
-    }
-
-
-    private void updateUserNameLinkedTextField() {
-        if (userNameTextField.getText().trim().length() > 0) {
-            if (subjectDNRadioButton.isSelected()) {
-                x509SubjectDNTextField.setText("CN=" + userNameTextField.getText().trim());
-                emailTextField.setText("");
-                loginTextField.setText("");
-            }
-            if (emailRadioButton.isSelected()) {
-                emailTextField.setText(userNameTextField.getText() + "@");
-                x509SubjectDNTextField.setText("");
-                loginTextField.setText("");
-            }
-            if (loginRadioButton.isSelected()) {
-                loginTextField.setText(userNameTextField.getText());
-                emailTextField.setText("");
-                x509SubjectDNTextField.setText("");
-            }
-        }
     }
 
     /**
@@ -309,25 +321,57 @@ public class NewFederatedUserDialog extends JDialog {
     };
 
     public void updateCreateButtonState(DocumentEvent e) {
-        Document field = e.getDocument();
+        final Document field = e.getDocument();
         if (field.getProperty("name").equals("userId")) {
-            if (field.getLength() >= 3) {
-                UserIdFieldFilled = true;
-            } else {
-                UserIdFieldFilled = false;
-            }
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    updateFromUserIdField(field);
+                }
+            });
+        }
 
-            if(subjectDNRadioButton.isSelected()) {
-                x509SubjectDNTextField.setText("CN=" + userNameTextField.getText().trim());
-            }
-            if(emailRadioButton.isSelected()) {
-                emailTextField.setText(userNameTextField.getText() + "@");
-            }
-            if(loginRadioButton.isSelected()) {
-               loginTextField.setText(userNameTextField.getText());
-            }
+       if(field.getProperty("name").equals("x509DN")) {
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    updateFromX509SubjectDNField();
+                }
+            });
+        }
+
+        if(field.getProperty("name").equals("email")) {
+             SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    updateFromEmailField();
+                }
+            });
+        }
+
+        if(field.getProperty("name").equals("login")) {
+             SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    updateFromLoginField();
+                }
+            });
+        }
+    }
+
+
+    private void updateFromUserIdField(Document doc) {
+
+        if (doc.getLength() >= 3) {
+            UserIdFieldFilled = true;
         } else {
-            // do nothing
+            UserIdFieldFilled = false;
+        }
+
+        if (subjectDNRadioButton.isSelected()) {
+            x509SubjectDNTextField.setText("CN=" + userNameTextField.getText().trim());
+        }
+        if (emailRadioButton.isSelected()) {
+            emailTextField.setText(userNameTextField.getText() + "@");
+        }
+        if (loginRadioButton.isSelected()) {
+            loginTextField.setText(userNameTextField.getText());
         }
 
         if (UserIdFieldFilled) {
@@ -337,6 +381,90 @@ public class NewFederatedUserDialog extends JDialog {
             // disbale the button
             createButton.setEnabled(false);
         }
+    }
+
+    private void updateFromLoginField() {
+        if (loginRadioButton.isSelected()) {
+            if(!userNameTextField.getText().equals(loginTextField.getText())) {
+                userNameTextField.setText(loginTextField.getText());
+            }
+        }
+    }
+
+    private void updateFromEmailField() {
+        if (emailRadioButton.isSelected()) {
+            String name = extractNameFromEmail(emailTextField.getText());
+            if(!userNameTextField.getText().equals(name)) {
+                userNameTextField.setText(name);
+            }
+        }
+    }
+
+    private void updateFromX509SubjectDNField() {
+        if (subjectDNRadioButton.isSelected()) {
+            String cn = extractCommonName(x509SubjectDNTextField.getText());
+            if(!userNameTextField.getText().equals(cn)) {
+                userNameTextField.setText(cn);
+            }
+        }
+    }
+
+    private void updateUserNameLinkedTextField() {
+        if (userNameTextField.isCursorSet() && userNameTextField.getText().trim().length() > 0) {
+            if (subjectDNRadioButton.isSelected()) {
+                x509SubjectDNTextField.setText("CN=" + userNameTextField.getText().trim());
+            }
+            if (emailRadioButton.isSelected()) {
+                emailTextField.setText(userNameTextField.getText() + "@");
+            }
+            if (loginRadioButton.isSelected()) {
+                loginTextField.setText(userNameTextField.getText());
+            }
+        }
+    }
+
+    private String extractNameFromEmail(String email) {
+        if (email == null)
+            throw new IllegalArgumentException("Email is NULL");
+
+        int index = -1;
+        if ((index = email.indexOf('@')) > 0) {
+            return email.substring(0, index);
+        } else {
+            return email;
+        }
+
+    }
+
+    private String extractCommonName(String dn) {
+
+        if (dn == null)
+            throw new IllegalArgumentException("DN is NULL");
+
+        String cn = "";
+        int index1 = dn.indexOf("cn=");
+        int index2 = dn.indexOf("CN=");
+        int startIndex = -1;
+        int endIndex = -1;
+
+        if (index1 >= 0) {
+            startIndex = index1 + 3;
+        } else if (index2 >= 0) {
+            startIndex = index2 + 3;
+        } else {
+            throw new IllegalArgumentException("Cert subject DN is not in the format CN=username");
+        }
+
+        if (startIndex >= 0) {
+            endIndex = dn.indexOf(",", startIndex);
+            if (endIndex > 0) {
+                cn = dn.substring(startIndex, endIndex);
+            } else {
+                cn = dn.substring(startIndex, dn.length());
+            }
+        }
+
+        return cn;
     }
 
     {
