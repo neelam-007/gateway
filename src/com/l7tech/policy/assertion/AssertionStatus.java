@@ -18,6 +18,7 @@ public class AssertionStatus {
     public static final AssertionStatus AUTH_FAILED   = make( CLIENT |  2, "Authentication Failed" );
     public static final AssertionStatus FORBIDDEN     = make( CLIENT |  3, "Forbidden" );
     public static final AssertionStatus NOT_FOUND     = make( CLIENT |  4, "Service Not Found" );
+    public static final AssertionStatus UNAUTHORIZED  = make( CLIENT |  2, "Unauthorized" );
     public static final AssertionStatus BALEETED      = make( CLIENT | 99, "BALEETED!" );
 
     public static final AssertionStatus NOT_YET_IMPLEMENTED = make( MISC | 0, "Not yet implemented!" );
