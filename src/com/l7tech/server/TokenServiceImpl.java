@@ -104,6 +104,10 @@ public class TokenServiceImpl implements TokenService {
                                                                   sslPrivateKey,
                                                                   SecureConversationContextManager.getInstance());
             reqXml.setProcessorResult(wssOutput);
+            final Document undecorated = wssOutput.getUndecoratedMessage();
+            if (undecorated != null) {
+                reqXml.setDocument(undecorated);
+            }
         } catch (IOException e) {
             throw new ProcessorException(e);
         } catch (SAXException e) {
@@ -142,19 +146,17 @@ public class TokenServiceImpl implements TokenService {
         }
 
 
-        /*Document response = null;
-        if (isValidRequestForSecureConversationContext(wssOutput.getUndecoratedMessage(), wssOutput)) {
-            response = handleSecureConversationContextRequest(authenticatedUser, clientCert);
-        } else if (isValidRequestForSAMLToken(wssOutput.getUndecoratedMessage(), wssOutput)) {
-            response = handleSamlRequest(creds, clientAddress);
+        if (isRequestForSecureConversationContext(context)) {
+            //response = handleSecureConversationContextRequest(authenticatedUser, clientCert);
+        } else if (isRequestForSAMLToken(context)) {
+            //response = handleSamlRequest(creds, clientAddress);
         } else {
             throw new InvalidDocumentFormatException("This request cannot be recognized as a valid " +
                                                      "RequestSecurityToken");
-        }*/
+        }
 
 
         // todo
-        // change handling methods to use a context instead of straight document
         // handle request
 
         throw new UnsupportedOperationException("TODO!");
@@ -196,12 +198,12 @@ public class TokenServiceImpl implements TokenService {
 
             AllAssertion sslBranch = new AllAssertion();
             sslBranch.addChild(new SslAssertion());
-            OneOrMoreAssertion validCredSrcOverSSL = new OneOrMoreAssertion();
-            validCredSrcOverSSL.addChild(new HttpBasic());
-            validCredSrcOverSSL.addChild(new WssBasic());
-            validCredSrcOverSSL.addChild(new HttpDigest());
-            validCredSrcOverSSL.addChild(new HttpClientCert());
-            sslBranch.addChild(validCredSrcOverSSL);
+            OneOrMoreAssertion validCredsOverSSL = new OneOrMoreAssertion();
+            validCredsOverSSL.addChild(new HttpBasic());
+            validCredsOverSSL.addChild(new WssBasic());
+            validCredsOverSSL.addChild(new HttpDigest());
+            validCredsOverSSL.addChild(new HttpClientCert());
+            sslBranch.addChild(validCredsOverSSL);
 
             root.addChild(msgLvlBranch);
             root.addChild(sslBranch);
@@ -414,6 +416,63 @@ public class TokenServiceImpl implements TokenService {
         return encryptedKeyXml.toString();
     }
 
+    /**
+     * checks if this request is for a sec conv context
+     * does not check things like whether the body is signed since this is the
+     * responsibility of the policy
+     */
+    private boolean isRequestForSecureConversationContext(PolicyEnforcementContext context)
+                                                                        throws InvalidDocumentFormatException {
+        Document doc = null;
+        try {
+            XmlKnob reqXml = context.getRequest().getXmlKnob();
+            doc = reqXml.getDocument();
+        } catch (SAXException e) {
+            // if we can't get the doc, then the request must be bad
+            logger.log(Level.WARNING, "Cannot get request's document", e);
+            return false;
+        } catch (IOException e) {
+            // if we can't get the doc, then the request must be bad
+            logger.log(Level.WARNING, "Cannot get request's document", e);
+            return false;
+        }
+
+        Element body = SoapUtil.getBodyElement(doc);
+        // body must include wst:RequestSecurityToken element
+        Element maybeRSTEl = XmlUtil.findFirstChildElement(body);
+        if (!maybeRSTEl.getLocalName().equals(RST_ELNAME)) {
+            logger.fine("Body's child does not seem to be a RST (" + maybeRSTEl.getLocalName() + ")");
+            return false;
+        }
+        if (!maybeRSTEl.getNamespaceURI().equals(SoapUtil.WST_NAMESPACE)) {
+            logger.fine("Trust namespace not recognized (" + maybeRSTEl.getNamespaceURI() + ")");
+            return false;
+        }
+        // validate <wst:TokenType>http://schemas.xmlsoap.org/ws/2004/04/sct</wst:TokenType>
+        Element tokenTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE, TOKTYPE_ELNAME);
+        if (tokenTypeEl == null) {
+            logger.warning("Token type not specified. This is not supported.");
+            return false;
+        }
+        String value = XmlUtil.getTextValue(tokenTypeEl);
+        if (!value.equals("http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct")) {
+            return false;
+        }
+        // validate <wst:RequestType>http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue</wst:RequestType>
+        Element reqTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE, REQTYPE_ELNAME);
+        if (reqTypeEl == null) {
+            logger.warning("Request type not specified. This is not supported.");
+            return false;
+        }
+        value = XmlUtil.getTextValue(reqTypeEl);
+        if (!value.equals("http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue")) {
+            logger.warning("RequestType not supported." + value);
+            return false;
+        }
+        return true;
+    }
+
+    // todo, delete this when redesign is complete
     private boolean isValidRequestForSecureConversationContext(Document request,
                                                                ProcessorResult wssOutput)
                                                                         throws InvalidDocumentFormatException {
@@ -461,6 +520,74 @@ public class TokenServiceImpl implements TokenService {
         return false;
     }
 
+    /**
+     * checks if this request is for a saml assertion
+     * does not check things like whether the body is signed since this is the
+     * responsibility of the policy
+     */
+    private boolean isRequestForSAMLToken(PolicyEnforcementContext context) throws InvalidDocumentFormatException {
+        Document doc = null;
+        try {
+            XmlKnob reqXml = context.getRequest().getXmlKnob();
+            doc = reqXml.getDocument();
+        } catch (SAXException e) {
+            // if we can't get the doc, then the request must be bad
+            logger.log(Level.WARNING, "Cannot get request's document", e);
+            return false;
+        } catch (IOException e) {
+            // if we can't get the doc, then the request must be bad
+            logger.log(Level.WARNING, "Cannot get request's document", e);
+            return false;
+        }
+
+        Element body = SoapUtil.getBodyElement(doc);
+        Element maybeRSTEl = XmlUtil.findFirstChildElement(body);
+
+        // body must include wst:RequestSecurityToken element
+        if (!maybeRSTEl.getLocalName().equals(RST_ELNAME)) {
+            logger.fine("Body's child does not seem to be a RST (" + maybeRSTEl.getLocalName() + ")");
+            return false;
+        }
+        if (!maybeRSTEl.getNamespaceURI().equals(SoapUtil.WST_NAMESPACE)) {
+            logger.fine("Trust namespace not recognized (" + maybeRSTEl.getNamespaceURI() + ")");
+            return false;
+        }
+        Element tokenTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE, TOKTYPE_ELNAME);
+        if (tokenTypeEl == null) {
+            logger.warning("Token type not specified. This is not supported.");
+            return false;
+        }
+
+        // validate <wst:RequestType>http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue</wst:RequestType>
+        Element reqTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE, REQTYPE_ELNAME);
+        if (reqTypeEl == null) {
+            logger.warning("Request type not specified. This is not supported.");
+            return false;
+        }
+        String value = XmlUtil.getTextValue(reqTypeEl);
+        if (!value.equals("http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue")) {
+            logger.warning("RequestType '" + value + "' not supported.");
+            return false;
+        }
+
+        // validate <wst:TokenType>saml:Assertion</wst:TokenType>
+        String qname = XmlUtil.getTextValue(tokenTypeEl);
+        Map namespaces = XmlUtil.getAncestorNamespaces(tokenTypeEl);
+        String samlPrefix = (String)namespaces.get(SamlConstants.NS_SAML);
+        int cpos = qname.indexOf(":");
+        if (cpos > 0) {
+            String qprefix = qname.substring(0,cpos);
+            String qlpart = qname.substring(cpos+1);
+            if (qprefix.equals(samlPrefix) && SamlConstants.ELEMENT_ASSERTION.equals(qlpart)) {
+                return true;
+            }
+        }
+
+        logger.warning("TokenType '" + qname + "' is not a valid saml:Assertion QName");
+        return false;
+    }
+
+    // todo, delete this when redesign is complete
     private boolean isValidRequestForSAMLToken(Document request, ProcessorResult wssOutput) throws InvalidDocumentFormatException {
         Element body = SoapUtil.getBodyElement(request);
         Element maybeRSTEl = XmlUtil.findFirstChildElement(body);
