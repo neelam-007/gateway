@@ -65,16 +65,6 @@ public class IdentityAdminImpl extends HibernateDaoSupport
     }
 
     /**
-     * @return Array of entity headers for all existing id provider config
-     * @throws RemoteException
-     */
-    public EntityHeader[] findAllIdentityProviderConfigByOffset(int offset, int windowSize)
-      throws RemoteException, FindException {
-            Collection res = getIdProvCfgMan().findAllHeaders(offset, windowSize);
-        return (EntityHeader[])res.toArray(new EntityHeader[] {});
-    }
-
-    /**
      * @return An identity provider config object
      * @throws RemoteException
      */
@@ -188,13 +178,6 @@ public class IdentityAdminImpl extends HibernateDaoSupport
             return (EntityHeader[])res.toArray(new EntityHeader[]{});
     }
 
-    public EntityHeader[] findAllUsersByOffset(long identityProviderConfigId, int offset, int windowSize)
-      throws RemoteException, FindException {
-            UserManager userManager = retrieveUserManager(identityProviderConfigId);
-            Collection res = userManager.findAllHeaders(offset, windowSize);
-            return (EntityHeader[])res.toArray(new EntityHeader[]{});
-    }
-
     public EntityHeader[] searchIdentities(long identityProviderConfigId, EntityType[] types, String pattern)
       throws RemoteException, FindException {
             IdentityProvider provider = identityProviderFactory.getProvider(identityProviderConfigId);
@@ -273,12 +256,6 @@ public class IdentityAdminImpl extends HibernateDaoSupport
 
     public EntityHeader[] findAllGroups(long cfgid) throws RemoteException, FindException {
             Collection res = retrieveGroupManager(cfgid).findAllHeaders();
-            return (EntityHeader[])res.toArray(new EntityHeader[]{});
-    }
-
-    public EntityHeader[] findAllGroupsByOffset(long cfgid, int offset, int windowSize)
-      throws RemoteException, FindException {
-            Collection res = retrieveGroupManager(cfgid).findAllHeaders(offset, windowSize);
             return (EntityHeader[])res.toArray(new EntityHeader[]{});
     }
 

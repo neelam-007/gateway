@@ -38,19 +38,6 @@ public interface IdentityAdmin {
     EntityHeader[] findAllIdentityProviderConfig() throws RemoteException, FindException;
 
     /**
-     * Retrieve a chunk of the available identity provider configurations.  This is a version of
-     * {@link #findAllIdentityProviderConfig} that allows fetching the result in chunks, perhaps to reduce
-     * latency.
-     *
-     * @return array of entity headers for requested subset of existing ID provider config.  May be empty but never null.
-     * @throws FindException   if there was a problem accessing the requested information.
-     * @throws RemoteException on remote communication error
-     * @see {@link #findAllIdentityProviderConfig()}
-     */
-    EntityHeader[] findAllIdentityProviderConfigByOffset(int offset, int windowSize)
-      throws RemoteException, FindException;
-
-    /**
      * Retrieve a specified identity provider configuration given its object ID.
      * Every {@link IdentityProvider} has one and only one
      * {@link IdentityProviderConfig}, and each identity provider configuration belongs to one and only one
@@ -108,20 +95,6 @@ public interface IdentityAdmin {
      * @throws RemoteException on remote communication error
      */
     EntityHeader[] findAllUsers(long idProvCfgId) throws RemoteException, FindException;
-
-    /**
-     * Retrieve a chunk of the available {@link User}s for a given {@link IdentityProviderConfig}.  This is a version of
-     * {@link #findAllUsers} that allows fetching the result in chunks, perhaps to reduce
-     * latency.
-     *
-     * @return array of {@link EntityHeader}s for requested subset of {@link User}s within the specified
-     *         {@link IdentityProviderConfig}.  May be empty but never null.
-     * @throws FindException   if there was a problem accessing the requested information.
-     * @throws RemoteException on remote communication error
-     * @see {@link #findAllUsers}
-     */
-    EntityHeader[] findAllUsersByOffset(long idProvCfgId, int offset, int windowSize)
-      throws RemoteException, FindException;
 
     /**
      * Search for {@link Entity}s matching a pattern within the specified {@link IdentityProviderConfig}.
@@ -218,20 +191,6 @@ public interface IdentityAdmin {
      * @throws RemoteException on remote communication error
      */
     EntityHeader[] findAllGroups(long idProvCfgId) throws RemoteException, FindException;
-
-    /**
-     * Retrieve a chunk of the available {@link Group}s for a given {@link IdentityProviderConfig}.  This is a version of
-     * {@link #findAllGroups} that allows fetching the result in chunks, perhaps to reduce
-     * latency.
-     *
-     * @return array of {@link EntityHeader}s for requested subset of {@link Group}s within the specified
-     *         {@link IdentityProviderConfig}.  May be empty but never null.
-     * @throws FindException   if there was a problem accessing the requested information.
-     * @throws RemoteException on remote communication error
-     * @see {@link #findAllGroups}
-     */
-    EntityHeader[] findAllGroupsByOffset(long idProvCfgId, int offset, int windowSize)
-      throws RemoteException, FindException;
 
     /**
      * Search for a {@link Group} by its user ID within an {@link IdentityProviderConfig}.

@@ -42,10 +42,6 @@ public class IdentityAdminStub implements IdentityAdmin {
         return (EntityHeader[])headers.toArray(new EntityHeader[0]);
     }
 
-    public EntityHeader[] findAllIdentityProviderConfigByOffset(int offset, int windowSize) throws RemoteException, FindException {
-        return findAllIdentityProviderConfig();
-    }
-
     public IdentityProviderConfig findIdentityProviderConfigByID(long oid) throws RemoteException, FindException {
         return (IdentityProviderConfig)StubDataStore.defaultStore().getIdentityProviderConfigs().get(new Long(oid));
     }
@@ -78,10 +74,6 @@ public class IdentityAdminStub implements IdentityAdmin {
             results.add(fromUser(u));
         }
         return (EntityHeader[])results.toArray(new EntityHeader[0]);
-    }
-
-    public EntityHeader[] findAllUsersByOffset(long idProvCfgId, int offset, int windowSize) throws RemoteException, FindException {
-        return findAllUsers(idProvCfgId);
     }
 
     public EntityHeader[] searchIdentities(long idProvCfgId, EntityType[] types, String pattern) throws RemoteException, FindException {
@@ -149,10 +141,6 @@ public class IdentityAdminStub implements IdentityAdmin {
             results.add(fromGroup(g));
         }
         return (EntityHeader[])results.toArray(new EntityHeader[0]);
-    }
-
-    public EntityHeader[] findAllGroupsByOffset(long idProvCfgId, int offset, int windowSize) throws RemoteException, FindException {
-        return findAllGroups(idProvCfgId);
     }
 
     public Group findGroupByID(long idProvCfgId, String groupId) throws RemoteException, FindException {
