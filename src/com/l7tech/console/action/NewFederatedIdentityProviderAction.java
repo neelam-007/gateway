@@ -25,11 +25,11 @@ import java.util.logging.Level;
  * $Id$
  */
 
-public class NewPKIProviderAction extends NodeAction {
-    static final Logger log = Logger.getLogger(NewPKIProviderAction.class.getName());
+public class NewFederatedIdentityProviderAction extends NodeAction {
+    static final Logger log = Logger.getLogger(NewFederatedIdentityProviderAction.class.getName());
     private EventListenerList listenerList = new EventListenerList();
 
-    public NewPKIProviderAction(AbstractTreeNode node) {
+    public NewFederatedIdentityProviderAction(AbstractTreeNode node) {
         super(node);
     }
 
@@ -37,14 +37,14 @@ public class NewPKIProviderAction extends NodeAction {
      * @return the action name
      */
     public String getName() {
-        return "Create PKI Identity Provider";
+        return "Create Federated Identity Provider";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "Create a new PKI Identity Provider";
+        return "Create a new Federated Identity Provider";
     }
 
     /**
@@ -67,7 +67,7 @@ public class NewPKIProviderAction extends NodeAction {
             public void run() {
 
                 JFrame f = TopComponents.getInstance().getMainWindow();
-                PKIIdentityProviderWindow w = new PKIIdentityProviderWindow(f);
+                FederatedIdentityProviderWindow w = new FederatedIdentityProviderWindow(f);
 
                 // register itself to listen to the addEvent
                 w.addEntityListener(listener);

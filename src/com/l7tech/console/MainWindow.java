@@ -550,7 +550,7 @@ public class MainWindow extends JFrame {
 
     private Action getNewPKIProviderAction() {
          if (newPKIProviderAction != null) return newPKIProviderAction;
-         newPKIProviderAction = new NewPKIProviderAction(null) {
+         newPKIProviderAction = new NewFederatedIdentityProviderAction(null) {
              /**
               * specify the resource name for this action
               */

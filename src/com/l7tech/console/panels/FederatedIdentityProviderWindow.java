@@ -31,7 +31,7 @@ import java.awt.event.*;
  * <p> @author fpang </p>
  * $Id$
  */
-public class PKIIdentityProviderWindow extends JDialog {
+public class FederatedIdentityProviderWindow extends JDialog {
 
     private JPanel mainPanel;
     private JScrollPane certScrollPane;
@@ -45,8 +45,8 @@ public class PKIIdentityProviderWindow extends JDialog {
     private IdentityProviderConfig providerConfig;
     private EventListenerList listenerList = new EventListenerList();
 
-    private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.PKIIdentityProviderDialog", Locale.getDefault());
-    private static Logger logger = Logger.getLogger(PKIIdentityProviderWindow.class.getName());
+    private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.FederatedIdentityProviderDialog", Locale.getDefault());
+    private static Logger logger = Logger.getLogger(FederatedIdentityProviderWindow.class.getName());
 
 
     /**
@@ -54,7 +54,7 @@ public class PKIIdentityProviderWindow extends JDialog {
      *
      * @param owner The parent component.
      */
-    public PKIIdentityProviderWindow(JFrame owner) {
+    public FederatedIdentityProviderWindow(JFrame owner) {
         super(owner, resources.getString("new.provider.dialog.title"), true);
         this.providerConfig = new IdentityProviderConfig();
         initialize();
@@ -68,7 +68,7 @@ public class PKIIdentityProviderWindow extends JDialog {
      * @param owner The parent component.
      * @param providerConfig   The given identity config object.
      */
-    public PKIIdentityProviderWindow(JFrame owner, IdentityProviderConfig providerConfig) {
+    public FederatedIdentityProviderWindow(JFrame owner, IdentityProviderConfig providerConfig) {
         super(owner, resources.getString("edit.provider.dialog.title"), true);
         this.providerConfig = providerConfig;
         initialize();
@@ -311,7 +311,7 @@ public class PKIIdentityProviderWindow extends JDialog {
         _1.add(_2, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 3, null, null, null));
         final JLabel _3;
         _3 = new JLabel();
-        _3.setText("PKI Provider Name:");
+        _3.setText("Provider Name:");
         _2.add(_3, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
         final JTextField _4;
         _4 = new JTextField();
