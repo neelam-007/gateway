@@ -44,9 +44,9 @@ public class SslAssertionTreeNode extends LeafAssertionTreeNode {
      */
     public Action[] getActions() {
         java.util.List list = new ArrayList();
-        list.addAll(Arrays.asList(super.getActions()));
         Action a = new SslPropertiesAction(this);
         list.add(a);
+        list.addAll(Arrays.asList(super.getActions()));
         return (Action[]) list.toArray(new Action[]{});
     }
 
