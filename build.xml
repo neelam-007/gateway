@@ -1357,6 +1357,7 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
                 <include name="iptables-singlenet"/>
                 <include name="ssg-initd"/>
                 <include name="tcp_tune.sh"/>
+                <include name="back_route"/>
             </fileset>
             <fileset dir="${src.root}/etc/db/mysql">
                 <include name="my.cnf"/>
