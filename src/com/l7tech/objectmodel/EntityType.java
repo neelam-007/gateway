@@ -1,8 +1,13 @@
 package com.l7tech.objectmodel;
 
-import java.util.Hashtable;
-import java.io.Serializable;
+import com.l7tech.identity.Group;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.User;
+import com.l7tech.jms.JmsProvider;
+import com.l7tech.service.PublishedService;
+
 import java.io.ObjectStreamException;
+import java.io.Serializable;
 
 /**
  * Type of entity represented by an EntityHeader.
@@ -18,6 +23,7 @@ public class EntityType implements Serializable {
     public static final EntityType USER = new EntityType(2);
     public static final EntityType GROUP = new EntityType(3);
     public static final EntityType SERVICE = new EntityType(4);
+    public static final EntityType JMS_PROVIDER = new EntityType(5);
     public static final EntityType UNDEFINED = new EntityType(-1);
 
     /**
@@ -84,16 +90,19 @@ public class EntityType implements Serializable {
                 return "GROUP";
             case 4:
                 return "SERVICE";
+            case 5:
+                return "JMS_PROVIDER";
             default:
                 return "?";
         }
     }
 
     public static EntityType fromInterface(Class interfaceType) throws IllegalArgumentException {
-        if (interfaceType.equals(com.l7tech.identity.IdentityProviderConfig.class)) return ID_PROVIDER_CONFIG;
-        else if (interfaceType.equals(com.l7tech.identity.User.class)) return USER;
-        else if (interfaceType.equals(com.l7tech.identity.Group.class)) return GROUP;
-        else if (interfaceType.equals(com.l7tech.service.PublishedService.class)) return SERVICE;
+        if (interfaceType.equals(IdentityProviderConfig.class)) return ID_PROVIDER_CONFIG;
+        else if (interfaceType.equals(User.class)) return USER;
+        else if (interfaceType.equals(Group.class)) return GROUP;
+        else if (interfaceType.equals(PublishedService.class)) return SERVICE;
+        else if (interfaceType.equals(JmsProvider.class)) return JMS_PROVIDER;
         throw new IllegalArgumentException("no EntityType for interface " + interfaceType.getName());
     }
 
@@ -114,6 +123,8 @@ public class EntityType implements Serializable {
                 return GROUP;
             case 4:
                 return SERVICE;
+            case 5:
+                return JMS_PROVIDER;
             default:
                 return UNDEFINED;
         }
