@@ -32,7 +32,7 @@ sub get_jarlist_from_manifest {
 	open(MANIFEST, "<$file") or die "unable to read $file: $!";
 	my @jars;
 	while (<MANIFEST>) {
-		next unless /^Class-Path: (.*)/;
+		next unless /^Class-Path: (.*)/i;
 	    my $jarstr = $1;
 		$jarstr =~ s|lib/||g;
 		@jars = split " ", $jarstr;
@@ -139,6 +139,7 @@ sub make_tar_file {
 	create_file("./$dir/$file.sh", <<"EOM", 0755);
 #!/bin/sh
 
+cd `dirname \$0`
 java -jar $file.jar
 EOM
 
