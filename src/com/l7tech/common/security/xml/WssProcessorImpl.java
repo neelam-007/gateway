@@ -783,7 +783,7 @@ public class WssProcessorImpl implements WssProcessor {
 
     private X509SecurityTokenImpl resolveCertByRef(final Element parentElement, ProcessingStatusHolder cntx) {
 
-        // Looking for reference to a wsse:BinarySecurityToken
+        // Looking for reference to a wsse:BinarySecurityToken or to a derived key
         // 1. look for a wsse:SecurityTokenReference element
         List secTokReferences = XmlUtil.findChildElementsByName(parentElement,
                                                           SoapUtil.SECURITY_URIS_ARRAY,
@@ -807,11 +807,55 @@ public class WssProcessorImpl implements WssProcessor {
                 if (uriAttr.charAt(0) == '#') {
                     uriAttr = uriAttr.substring(1);
                 }
-
+                // try to see if this reference matches a previously parsed X509SecurityToken
                 final X509SecurityTokenImpl token = (X509SecurityTokenImpl) cntx.x509TokensById.get(uriAttr);
-                if (token == null)
-                    logger.warning("Found SecurityTokenReference to as-yet-undeclared BinarySecurityToken id=" + uriAttr);
-                return token;
+                if (token != null) {
+                    logger.finest("The keyInfo reffered to a previously parsed BinarySecurityToken  " + uriAttr);
+                    return token;
+                } else {
+                    logger.fine("The reference " + uriAttr + " did not point to a X509Cert.");
+                }
+            } else {
+                logger.warning("SecurityTokenReference does not contain any References");
+            }
+        }
+        return null;
+    }
+
+    private DerivedKeyToken resolveDerivedKeyByRef(final Element parentElement, ProcessingStatusHolder cntx) {
+
+        // Looking for reference to a a derived key token
+        // 1. look for a wsse:SecurityTokenReference element
+        List secTokReferences = XmlUtil.findChildElementsByName(parentElement,
+                                                          SoapUtil.SECURITY_URIS_ARRAY,
+                                                          "SecurityTokenReference");
+        if (secTokReferences.size() > 0) {
+            // 2. Resolve the child reference
+            Element securityTokenReference = (Element)secTokReferences.get(0);
+            List references = XmlUtil.findChildElementsByName(securityTokenReference,
+                                                              SoapUtil.SECURITY_URIS_ARRAY,
+                                                              "Reference");
+            if (references.size() > 0) {
+                // get the URI
+                Element reference = (Element)references.get(0);
+                String uriAttr = reference.getAttribute("URI");
+                if (uriAttr == null || uriAttr.length() < 1) {
+                    // not the food additive
+                    String msg = "The Key info contains a reference but the URI attribute cannot be obtained";
+                    logger.warning(msg);
+
+                }
+                if (uriAttr.charAt(0) == '#') {
+                    uriAttr = uriAttr.substring(1);
+                }
+                for (Iterator i = cntx.securityTokens.iterator(); i.hasNext();) {
+                    Object maybeDerivedKey = i.next();
+                    if (maybeDerivedKey instanceof DerivedKeyToken) {
+                        if (((DerivedKeyToken)maybeDerivedKey).getId().equals(uriAttr)) {
+                            return (DerivedKeyToken)maybeDerivedKey;
+                        }
+                    }
+                }
             } else {
                 logger.warning("SecurityTokenReference does not contain any References");
             }
@@ -854,42 +898,52 @@ public class WssProcessorImpl implements WssProcessor {
             throw new ProcessorException("KeyInfo element not found in Signature Element");
         }
 
+        X509Certificate signingCert = null;
+        Key signingKey = null;
+        // Try to find ref to derived key
+        final DerivedKeyToken dkt = resolveDerivedKeyByRef(keyInfoElement, cntx);
         // Try to resolve cert by reference
         final X509SecurityTokenImpl signingCertToken = resolveCertByRef(keyInfoElement, cntx);
-        if (signingCertToken == null)
-            throw new ProcessorException("Signature KeyInfo does not reference a declared BinarySecurityToken");
 
-        X509Certificate signingCert = signingCertToken.asX509Certificate();
-        try {
-            CertUtils.checkValidity(signingCert);
-        } catch ( CertificateExpiredException e ) {
-            logger.log( Level.WARNING, "Signing certificate expired " + signingCert.getNotAfter(), e );
-            throw new ProcessorException(e);
-        } catch ( CertificateNotYetValidException e ) {
-            logger.log( Level.WARNING, "Signing certificate is not valid until " + signingCert.getNotBefore(), e );
-            throw new ProcessorException(e);
+        if (signingCertToken != null) {
+            signingCert = signingCertToken.asX509Certificate();
         }
-
-        // Try to resolve embedded cert
-        // can this ever happen?  If so under what circumstances?  --mike
-        // this is supporting the case where the KeyInfo will contain it's
-        // own cert directly instead of refering to a BinarySecurityToken
-        // --fla
-        if (signingCert == null) {
+        if (signingCert == null) { //try to resolve it as embedded
             signingCert = resolveEmbeddedCert(keyInfoElement);
         }
+        
+        if (signingCert == null && dkt != null) {
+            signingKey = dkt.getComputedDerivedKey();
+        } else if (signingCert != null) {
+            signingKey = signingCert.getPublicKey();
+        }
 
-        if (signingCert == null) throw new ProcessorException("no cert to verify signature against.");
+        if (signingKey == null) {
+            String msg = "Was not able to get cert or derived key from signature's keyinfo";
+            logger.warning(msg);
+            throw new InvalidDocumentFormatException(msg);
+        }
+
+        if (signingCert != null) {
+            try {
+                CertUtils.checkValidity(signingCert);
+            } catch ( CertificateExpiredException e ) {
+                logger.log( Level.WARNING, "Signing certificate expired " + signingCert.getNotAfter(), e );
+                throw new ProcessorException(e);
+            } catch ( CertificateNotYetValidException e ) {
+                logger.log( Level.WARNING, "Signing certificate is not valid until " + signingCert.getNotBefore(), e );
+                throw new ProcessorException(e);
+            }
+        }
 
         // Validate signature
-        PublicKey pubKey = signingCert.getPublicKey();
         SignatureContext sigContext = new SignatureContext();
         sigContext.setIDResolver(new IDResolver() {
                                    public Element resolveID(Document doc, String s) {
                                        return SoapUtil.getElementByWsuId(doc, s);
                                    }
                                });
-        Validity validity = sigContext.verify(sigElement, pubKey);
+        Validity validity = sigContext.verify(sigElement, signingKey);
 
         if (!validity.getCoreValidity()) {
             StringBuffer msg = new StringBuffer("Validity not achieved. " + validity.getSignedInfoMessage());
@@ -902,7 +956,9 @@ public class WssProcessorImpl implements WssProcessor {
 
         // This certificate successfully validated a signature.  Consider proof-of-possession of private key
         // to have been successful.
-        signingCertToken.onPossessionProved();
+        if (signingCertToken != null) {
+            signingCertToken.onPossessionProved();
+        }
 
         // Remember which elements were covered
         for (int i = 0; i < validity.getNumberOfReferences(); i++) {
@@ -919,18 +975,27 @@ public class WssProcessorImpl implements WssProcessor {
 
             // make reference to this element
             final Element finalElementCovered = elementCovered;
-            cntx.elementsThatWereSigned.add(new SignedElement() {
-                public WssProcessor.X509SecurityToken getSigningSecurityToken() {
-                    return signingCertToken;
-                }
-
-                public Element asElement() {
-                    return finalElementCovered;
-                }
-            });
-
-            // TODO remove this expensive feature if it remains unneeded
-            signingCertToken.elementsSignedWithCert.add(elementCovered);
+            if (signingCertToken != null) {
+                cntx.elementsThatWereSigned.add(new SignedElement() {
+                    public SecurityToken getSigningSecurityToken() {
+                        return signingCertToken;
+                    }
+                    public Element asElement() {
+                        return finalElementCovered;
+                    }
+                });
+                // TODO remove this expensive feature if it remains unneeded
+                signingCertToken.elementsSignedWithCert.add(elementCovered);
+            } else if (dkt != null) {
+                cntx.elementsThatWereSigned.add(new SignedElement() {
+                    public SecurityToken getSigningSecurityToken() {
+                        return dkt;
+                    }
+                    public Element asElement() {
+                        return finalElementCovered;
+                    }
+                });
+            }
 
             // if this is a timestamp in the security header, note that it was signed
             if (SoapUtil.WSU_URIS.contains(elementCovered.getNamespaceURI()) &&
