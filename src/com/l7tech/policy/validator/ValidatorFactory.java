@@ -20,7 +20,7 @@ import java.util.Map;
 class ValidatorFactory {
     private static Map assertionMap = new HashMap();
 
-    // maping assertions to assertion tree nodes
+    // maping assertions to validators
     static {
         assertionMap.put(RequestXpathAssertion.class, RequestXpathAssertionValidator.class);
         // add mapping
