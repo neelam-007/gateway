@@ -53,7 +53,7 @@ public class SoapRequestGenerator {
      * @throws WSDLException on error parsing the wsdl
      * @throws FileNotFoundException if wsdl cannot be found
      */
-    public SOAPRequest[] parse(String wsdlResource)
+    public SOAPRequest[] generate(String wsdlResource)
       throws WSDLException, FileNotFoundException, SOAPException {
         if (wsdlResource == null) {
             throw new IllegalArgumentException();

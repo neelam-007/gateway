@@ -58,7 +58,7 @@ public class SoapRequestGeneratorTest extends TestCase {
     public void testGenerateAndPrintSoapMessages() throws Exception {
         SoapRequestGenerator sg = new SoapRequestGenerator();
 
-        SoapRequestGenerator.SOAPRequest[] requests = sg.parse(WSDL);
+        SoapRequestGenerator.SOAPRequest[] requests = sg.generate(WSDL);
 
         for (int i = 0; i < requests.length; i++) {
             SoapRequestGenerator.SOAPRequest request = requests[i];
@@ -82,7 +82,7 @@ public class SoapRequestGeneratorTest extends TestCase {
                 return "NA";
             }
         });
-        SoapRequestGenerator.SOAPRequest[] requests = sg.parse(WSDL);
+        SoapRequestGenerator.SOAPRequest[] requests = sg.generate(WSDL);
         assertTrue("Expected message input invoke. ", messageGeneratorInvoked);
 
         for (int i = 0; i < requests.length; i++) {
@@ -100,7 +100,7 @@ public class SoapRequestGeneratorTest extends TestCase {
     public void testGenerateSoapMessagesValidateWithWsdl() throws Exception {
         Wsdl wsdl = Wsdl.newInstance(null, new WsdlTest("blah").getWsdlReader(WSDL));
         SoapRequestGenerator sg = new SoapRequestGenerator();
-        SoapRequestGenerator.SOAPRequest[] requests = sg.parse(WSDL);
+        SoapRequestGenerator.SOAPRequest[] requests = sg.generate(WSDL);
         for (int i = 0; i < requests.length; i++) {
             SoapRequestGenerator.SOAPRequest request = requests[i];
             request.getSOAPMessage().writeTo(System.out);
