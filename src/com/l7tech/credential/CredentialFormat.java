@@ -19,6 +19,11 @@ public class CredentialFormat {
     public static final CredentialFormat CLEARTEXT  = new CredentialFormat( "Cleartext" );
 
     /**
+     * The credentials are a bas64 encoded (basic auth)
+     */
+    public static final CredentialFormat BASIC     = new CredentialFormat( "Basic" );
+
+    /**
      * The credentials are a hexadecimal-encoded H(A1) (i.e. MD5(user:pass[:realm])
      */
     public static final CredentialFormat DIGEST     = new CredentialFormat( "Digest" );
