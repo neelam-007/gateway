@@ -8,17 +8,22 @@ package com.l7tech.adminservice;
  * Convenient type to return in the admin Web Service for list queries
  */
 public class ListResultEntry {
+    static final String EMPTY = "";
 
     public ListResultEntry() {
         this.uid = 0;
-        this.name = "";
-        this.type = "";
+        this.name = EMPTY;
+        this.type = EMPTY;
     }
 
     public ListResultEntry(long uid, String name, String type) {
         this.uid = uid;
         this.name = name;
         this.type = type;
+    }
+
+    public ListResultEntry( long uid, String name ) {
+        this( uid, name, EMPTY );
     }
 
     public long getUid() {
