@@ -147,6 +147,9 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                 outputPolicyDoc(res, response);
                 return;
             }
+        } catch (Exception e) { // this is to avoid letting the servlet engine returning ugly html error pages.
+            logger.log(Level.SEVERE, "Unhandled exception:", e);
+            generateFaultAndSendAsResponse(res, "Internal error", e.getMessage());
         } finally {
             try {
                 PersistenceContext.getCurrent().close();
