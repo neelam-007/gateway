@@ -6,6 +6,9 @@
 
 package com.l7tech.server;
 
+import EDU.oswego.cs.dl.util.concurrent.ReadWriteLock;
+import EDU.oswego.cs.dl.util.concurrent.ReentrantWriterPreferenceReadWriteLock;
+import EDU.oswego.cs.dl.util.concurrent.Sync;
 import com.l7tech.common.security.xml.Session;
 import com.l7tech.common.security.xml.SessionNotFoundException;
 import com.l7tech.common.util.Locator;
@@ -16,27 +19,25 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.ServerPolicyFactory;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.service.PublishedService;
-import com.l7tech.service.ServiceManager;
 import com.l7tech.service.ServiceListener;
+import com.l7tech.service.ServiceManager;
 import com.l7tech.service.ServiceStatistics;
 import com.l7tech.service.resolution.ServiceResolutionException;
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
+import org.xmlpull.v1.XmlPullParserFactory;
 
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.xmlpull.v1.XmlPullParserFactory;
-import org.xmlpull.v1.XmlPullParserException;
-import org.xmlpull.v1.XmlPullParser;
-
 
 /**
  * @author alex
@@ -105,12 +106,26 @@ public class MessageProcessor implements ServiceListener {
                 Assertion genericPolicy = service.rootAssertion();
                 Long oid = new Long( service.getOid() );
                 ServerAssertion serverPolicy;
-                synchronized( _serverPolicyCache ) {
+                Sync read = _policyCacheLock.readLock();
+                Sync write = _policyCacheLock.writeLock();
+                try {
+                    read.acquire();
                     serverPolicy = (ServerAssertion)_serverPolicyCache.get( oid );
                     if ( serverPolicy == null ) {
+                        // Upgrade to a write lock
+                        read.release();
+                        write.acquire();
+
                         serverPolicy = ServerPolicyFactory.getInstance().makeServerPolicy( genericPolicy );
                         _serverPolicyCache.put( oid, serverPolicy );
+
+                        write.release();
                     }
+                } catch ( InterruptedException ie ) {
+                    String msg = "Interrupted while acquiring policy cache lock!";
+                    logger.fine( msg );
+                    Thread.currentThread().interrupt();
+                    throw new PolicyAssertionException( msg, ie );
                 }
 
                 // Run the policy
@@ -142,14 +157,27 @@ public class MessageProcessor implements ServiceListener {
     public ServiceStatistics getServiceStatistics( long serviceOid ) {
         Long oid = new Long( serviceOid );
         ServiceStatistics stats;
-        synchronized( _serviceStatistics ) {
+        Sync read = _statsLock.readLock();
+        Sync write = _statsLock.writeLock();
+        try {
+            read.acquire();
             stats = (ServiceStatistics)_serviceStatistics.get(oid);
             if ( stats == null ) {
+                // Upgrade read lock to write lock
+                read.release();
                 stats = new ServiceStatistics( serviceOid );
+                write.acquire();
                 _serviceStatistics.put( oid, stats );
+                write.release();
+            } else {
+                read.release();
             }
+            return stats;
+        } catch ( InterruptedException ie ) {
+            logger.fine( "Interrupted while acquiring statistics lock!" );
+            Thread.currentThread().interrupt();
+            return null;
         }
-        return stats;
     }
 
     public static MessageProcessor getInstance() {
@@ -255,6 +283,9 @@ public class MessageProcessor implements ServiceListener {
     private ServiceManager _serviceManager;
     private Logger logger = LogManager.getInstance().getSystemLogger();
     private Map _serviceStatistics = new HashMap();
+
+    private ReadWriteLock _policyCacheLock = new ReentrantWriterPreferenceReadWriteLock();
+    private ReadWriteLock _statsLock = new ReentrantWriterPreferenceReadWriteLock();
 
     private DocumentBuilderFactory _dbf;
     private XmlPullParserFactory _xppf;
