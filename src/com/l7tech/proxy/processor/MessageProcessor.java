@@ -477,6 +477,7 @@ public class MessageProcessor {
         try {
             postMethod = new PostMethod(url.toString());
             setAuthenticationState(req, state, postMethod);
+            postMethod.addRequestHeader("Content-Type", "text/xml");
             postMethod.addRequestHeader("SOAPAction", req.getSoapAction());
             postMethod.addRequestHeader(SecureSpanConstants.HttpHeaders.ORIGINAL_URL, req.getOriginalUrl().toString());
 
