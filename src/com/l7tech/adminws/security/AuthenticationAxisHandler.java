@@ -67,7 +67,7 @@ public class AuthenticationAxisHandler extends InternalIDSecurityAxisHandler {
             // COMPARE TO THE VALUE IN INTERNAL DB
             com.l7tech.identity.User internalUser = findUserByLoginAndRealm(login, null);
             if (internalUser == null) {
-                throw new AxisFault("User " + login + "not registered in internal id provider");
+                throw new AxisFault("User " + login + " not registered in internal id provider");
             }
             if (internalUser.getPassword() == null) {
                 throw new AxisFault("User " + login + "does not have a password");
