@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<form xmlns="http://www.intellij.com/uidesigner/form/" version="1">
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.console.panels.IdentityPolicyPanel">
   <grid id="2238c" row-count="4" column-count="1" hgap="-1" vgap="-1">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
@@ -131,7 +131,7 @@
               </grid>
             </children>
           </grid>
-          <grid id="72a8f" row-count="3" column-count="3" hgap="-1" vgap="-1">
+          <grid id="72a8f" row-count="3" column-count="4" hgap="-1" vgap="-1">
             <margin top="10" left="10" bottom="0" right="0"/>
             <constraints>
               <tabbedpane title="Routing"/>
@@ -142,7 +142,7 @@
               <component id="d43df" class="javax.swing.JLabel">
                 <constraints>
                   <xy x="10" y="40" width="197" height="17"/>
-                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+                  <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
                 </constraints>
                 <properties>
                   <text value="Protected service authentication"/>
@@ -159,27 +159,88 @@
               </component>
               <component id="81bc3" class="javax.swing.JTextField">
                 <constraints>
-                  <xy x="217" y="10" width="243" height="24"/>
-                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
+                  <xy x="217" y="10" width="337" height="24"/>
+                  <grid row="0" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
                     <preferred-size width="150" height="-1"/>
                   </grid>
                 </constraints>
                 <properties/>
               </component>
-              <grid id="dbffe" row-count="1" column-count="1" hgap="-1" vgap="-1">
+              <grid id="dbffe" row-count="3" column-count="2" hgap="-1" vgap="-1">
                 <margin top="0" left="0" bottom="0" right="0"/>
                 <constraints>
-                  <xy x="10" y="64" width="450" height="105"/>
+                  <xy x="10" y="64" width="395" height="105"/>
                   <grid row="2" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
                 </constraints>
                 <properties/>
                 <border type="none"/>
-                <children/>
+                <children>
+                  <component id="ac2fe" class="javax.swing.JLabel">
+                    <constraints>
+                      <xy x="11" y="7" width="47" height="17"/>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0"/>
+                    </constraints>
+                    <properties>
+                      <text value="Identity"/>
+                    </properties>
+                  </component>
+                  <component id="cd19f" class="javax.swing.JLabel">
+                    <constraints>
+                      <xy x="0" y="43" width="58" height="17"/>
+                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0"/>
+                    </constraints>
+                    <properties>
+                      <text value="Password"/>
+                    </properties>
+                  </component>
+                  <component id="66739" class="javax.swing.JLabel">
+                    <constraints>
+                      <xy x="21" y="80" width="37" height="17"/>
+                      <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0"/>
+                    </constraints>
+                    <properties>
+                      <text value="Realm"/>
+                    </properties>
+                  </component>
+                  <component id="8ca79" class="javax.swing.JTextField">
+                    <constraints>
+                      <xy x="68" y="3" width="327" height="24"/>
+                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
+                        <preferred-size width="150" height="-1"/>
+                      </grid>
+                    </constraints>
+                    <properties/>
+                  </component>
+                  <component id="939b4" class="javax.swing.JTextField">
+                    <constraints>
+                      <xy x="68" y="39" width="327" height="24"/>
+                      <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
+                        <preferred-size width="150" height="-1"/>
+                      </grid>
+                    </constraints>
+                    <properties/>
+                  </component>
+                  <component id="49142" class="javax.swing.JTextField">
+                    <constraints>
+                      <xy x="68" y="76" width="327" height="24"/>
+                      <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
+                        <preferred-size width="150" height="-1"/>
+                      </grid>
+                    </constraints>
+                    <properties/>
+                  </component>
+                </children>
               </grid>
               <hspacer id="7ee04">
                 <constraints>
-                  <xy x="460" y="16" width="244" height="11"/>
-                  <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
+                  <xy x="554" y="16" width="150" height="11"/>
+                  <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
+                </constraints>
+              </hspacer>
+              <hspacer id="9f5dc">
+                <constraints>
+                  <xy x="405" y="111" width="149" height="11"/>
+                  <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
                 </constraints>
               </hspacer>
             </children>

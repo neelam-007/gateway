@@ -670,7 +670,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
         setSelectionPath(getChildPath(pathParent, nChildIndex));
 
         AssertionTreeNode parent =
-          (AssertionTreeNode)e.getTreePath().getLastPathComponent();
+          (AssertionTreeNode)pathParent.getLastPathComponent();
         CompositeAssertion ca = (CompositeAssertion)parent.asAssertion();
 
         java.util.List newChildren = new ArrayList();
@@ -680,6 +680,8 @@ public class PolicyTree extends JTree implements DragSourceListener,
         }
         log.fine("set children "+newChildren);
         ca.setChildren(newChildren);
+        log.fine("children assertions = "+ca.getChildren().size());
+        log.fine("nodes          tree = "+parent.getChildCount());
     }
 
     public void treeNodesRemoved(TreeModelEvent e) {
@@ -702,6 +704,8 @@ public class PolicyTree extends JTree implements DragSourceListener,
         }
         log.fine("removing "+remove);
         children.removeAll(remove);
+        log.fine("children assertions = "+ca.getChildren().size());
+        log.fine("nodes          tree = "+parent.getChildCount());
     }
 
     public void treeStructureChanged(TreeModelEvent e) {
