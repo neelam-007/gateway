@@ -906,6 +906,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             }
             if (policyFlushRequested)
                 ssg.clearPolicies();
+            ssg.resetSslContext();
         }
         setSsg(ssg);
     }
