@@ -12,6 +12,8 @@ import java.io.IOException;
 import java.util.Random;
 
 /**
+ * Spews streams of random bytes that look like Soap-with-Attachments (except without all the SOAP)
+ *
  * @author alex
  * @version $Revision$
  */
@@ -22,6 +24,11 @@ public class SwaTestcaseFactory {
         this.boundary = randomBoundary();
     }
 
+    /**
+     * Generates a random boundary consisting of between 1 and 40 legal characters,
+     * plus a prefix of 0-5 hyphens and the magic quoted-printable-proof "=_"
+     * @return
+     */
     private byte[] randomBoundary() {
         StringBuffer bb = new StringBuffer();
 
@@ -40,6 +47,9 @@ public class SwaTestcaseFactory {
         return bb.toString().getBytes();
     }
 
+    /**
+     * Returns an array of max bytes in a small number of bytes have been replaced with a fragment of the {@link #boundary}.
+     */
     private byte[] randomBinary(int max) {
         byte[] bytes = new byte[max];
         int oopsPos = random.nextInt(max);
@@ -51,7 +61,8 @@ public class SwaTestcaseFactory {
         return bytes;
     }
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
+        if (args.length < 2) throw new Exception("Usage: " + SwaTestcaseFactory.class.getName() + " numParts partSize");
         int numParts = Integer.parseInt(args[0]);
         int maxSize = Integer.parseInt(args[1]);
         SwaTestcaseFactory me = new SwaTestcaseFactory(numParts, maxSize);
