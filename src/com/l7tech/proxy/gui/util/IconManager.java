@@ -22,8 +22,10 @@ public class IconManager {
     private static ImageIcon iconDefault;
     private static ImageIcon iconCert;
     private static ImageIcon splashImage;
-    private static ImageIcon smallSplashImage;
     private static Image iconAppIcon;
+    private static ImageIcon trustedSsgDiagram;
+    private static ImageIcon federatedSsgDiagram;
+    private static ImageIcon federatedSsgWithTokenServiceDiagram;
 
     private static ImageIcon loadImageIcon(String path) {
         URL url = cl.getResource(path);
@@ -34,6 +36,24 @@ public class IconManager {
         URL url = cl.getResource(path);
         return url == null ? (new ImageIcon()).getImage()
                            : Toolkit.getDefaultToolkit().createImage(url);
+    }
+
+    public static ImageIcon getTrustedSsgDiagram() {
+        if (trustedSsgDiagram == null)
+            trustedSsgDiagram = loadImageIcon(Gui.RESOURCE_PATH + "/dia_trusted_ssg.png");
+        return trustedSsgDiagram;
+    }
+
+    public static ImageIcon getFederatedSsgDiagram() {
+        if (federatedSsgDiagram == null)
+            federatedSsgDiagram = loadImageIcon(Gui.RESOURCE_PATH + "/dia_federated_ssg.png");
+        return federatedSsgDiagram;
+    }
+
+    public static ImageIcon getFederatedSsgWithTokenServiceDiagram() {
+        if (federatedSsgWithTokenServiceDiagram == null)
+            federatedSsgWithTokenServiceDiagram = loadImageIcon(Gui.RESOURCE_PATH + "/dia_federated_ssg_with_tokenservice.png");
+        return federatedSsgWithTokenServiceDiagram;
     }
 
     public static ImageIcon getAdd() {

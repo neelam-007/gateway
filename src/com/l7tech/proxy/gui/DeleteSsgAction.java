@@ -16,6 +16,7 @@ import com.l7tech.proxy.gui.util.IconManager;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -34,6 +35,8 @@ class DeleteSsgAction extends AbstractAction {
         super("Remove", IconManager.getRemove());
         this.ssgListPanel = ssgListPanel;
         this.clientProxy = clientProxy;
+        putValue(Action.SHORT_DESCRIPTION, "Remove this Gateway registration");
+        putValue(Action.MNEMONIC_KEY, new Integer(KeyEvent.VK_R));
     }
 
     public void actionPerformed(final ActionEvent e) {

@@ -32,10 +32,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * In-core representation of an SSG.
- * User: mike
- * Date: May 26, 2003
- * Time: 11:09:04 AM
+ * Ssg settings that get loaded from and saved to ssgs.xml.  Does not contain any behaviour; for that,
+ * see {@link SsgRuntime}.
  */
 public class Ssg implements Serializable, Cloneable, Comparable {
     private static final Logger log = Logger.getLogger(Ssg.class.getName());

@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.proxy.gui.dialogs.TrustedSsgIdentityPanel">
+  <grid id="b8357" binding="mainPanel" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+    <margin top="10" left="10" bottom="10" right="10"/>
+    <constraints>
+      <xy x="40" y="26" width="598" height="405"/>
+      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+    </constraints>
+    <properties/>
+    <border type="none"/>
+    <children>
+      <grid id="685e7" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <xy x="10" y="10" width="578" height="385"/>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <vspacer id="97e89">
+            <constraints>
+              <xy x="283" y="142" width="11" height="243"/>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2">
+                <minimum-size width="-1" height="8"/>
+              </grid>
+            </constraints>
+          </vspacer>
+          <grid id="4b3b3" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="20" bottom="0" right="0"/>
+            <constraints>
+              <xy x="0" y="0" width="578" height="142"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <grid id="62089" row-count="4" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                <margin top="5" left="5" bottom="5" right="5"/>
+                <constraints>
+                  <xy x="20" y="0" width="558" height="142"/>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="58904" class="javax.swing.JLabel">
+                    <constraints>
+                      <xy x="5" y="8" width="56" height="14"/>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+                    </constraints>
+                    <properties>
+                      <text value="User Name:"/>
+                    </properties>
+                  </component>
+                  <component id="3f9aa" class="javax.swing.JLabel">
+                    <constraints>
+                      <xy x="5" y="35" width="50" height="14"/>
+                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+                    </constraints>
+                    <properties>
+                      <text value="Password:"/>
+                    </properties>
+                  </component>
+                  <component id="b508d" class="javax.swing.JTextField" binding="usernameTextField">
+                    <constraints>
+                      <xy x="74" y="5" width="479" height="21"/>
+                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
+                        <preferred-size width="150" height="-1"/>
+                      </grid>
+                    </constraints>
+                    <properties/>
+                  </component>
+                  <grid id="e3ff8" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                    <margin top="0" left="0" bottom="0" right="0"/>
+                    <constraints>
+                      <xy x="74" y="59" width="479" height="49"/>
+                      <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="3"/>
+                    </constraints>
+                    <properties/>
+                    <border type="none"/>
+                    <children>
+                      <component id="3bc6" class="javax.swing.JCheckBox" binding="savePasswordCheckBox">
+                        <constraints>
+                          <xy x="0" y="0" width="98" height="22"/>
+                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+                        </constraints>
+                        <properties>
+                          <text value="Save Password"/>
+                        </properties>
+                      </component>
+                      <component id="63ad4" class="javax.swing.JCheckBox" binding="useClientCredentialCheckBox">
+                        <constraints>
+                          <xy x="0" y="27" width="291" height="22"/>
+                          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+                        </constraints>
+                        <properties>
+                          <text value="Use Credentials from Client (HTTP Basic Authentication)"/>
+                        </properties>
+                      </component>
+                    </children>
+                  </grid>
+                  <component id="5c5ca" class="javax.swing.JLabel">
+                    <constraints>
+                      <xy x="5" y="118" width="59" height="14"/>
+                      <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+                    </constraints>
+                    <properties>
+                      <text value="Certificates:"/>
+                    </properties>
+                  </component>
+                  <component id="c8138" class="javax.swing.JPasswordField" binding="userPasswordField">
+                    <constraints>
+                      <xy x="74" y="31" width="479" height="23"/>
+                      <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
+                        <preferred-size width="150" height="-1"/>
+                      </grid>
+                    </constraints>
+                    <properties/>
+                  </component>
+                  <grid id="4dea" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                    <margin top="0" left="0" bottom="0" right="0"/>
+                    <constraints>
+                      <xy x="74" y="113" width="479" height="24"/>
+                      <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+                    </constraints>
+                    <properties/>
+                    <border type="none"/>
+                    <children>
+                      <component id="289c3" class="javax.swing.JButton" binding="clientCertButton">
+                        <constraints>
+                          <xy x="172" y="0" width="139" height="24"/>
+                          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
+                        </constraints>
+                        <properties>
+                          <text value="View Client Certificate"/>
+                        </properties>
+                      </component>
+                      <component id="6fbee" class="javax.swing.JButton" binding="ssgCertButton">
+                        <constraints>
+                          <xy x="0" y="0" width="162" height="24"/>
+                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
+                        </constraints>
+                        <properties>
+                          <text value="View Gateway's Certificate"/>
+                        </properties>
+                      </component>
+                      <hspacer id="3c9c5">
+                        <constraints>
+                          <xy x="311" y="6" width="168" height="11"/>
+                          <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
+                        </constraints>
+                      </hspacer>
+                    </children>
+                  </grid>
+                </children>
+              </grid>
+            </children>
+          </grid>
+        </children>
+      </grid>
+    </children>
+  </grid>
+</form>

@@ -3,7 +3,6 @@ package com.l7tech.proxy.gui;
 import com.l7tech.common.gui.util.FontUtil;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.gui.dialogs.SsgPropertyDialog;
 import com.l7tech.proxy.gui.util.IconManager;
@@ -136,18 +135,15 @@ class SsgListPanel extends JPanel {
      * Otherwise the selection will be left alone.
      * @param ssg
      */
-    private void selectSsg(Ssg ssg) {
+    void selectSsg(Ssg ssg) {
         int row = ssgTableModel.getRow(ssg);
         if (row >= 0)
             ssgTable.getSelectionModel().setSelectionInterval(row, row);
     }
 
     Action getActionDeleteSsg() {
-        if (actionDeleteSsg == null) {
+        if (actionDeleteSsg == null)
             actionDeleteSsg = new DeleteSsgAction(this, clientProxy);
-            actionDeleteSsg.putValue(Action.SHORT_DESCRIPTION, "Remove this Gateway registration");
-            actionDeleteSsg.putValue(Action.MNEMONIC_KEY, new Integer(KeyEvent.VK_R));
-        }
         return actionDeleteSsg;
     }
 
@@ -158,7 +154,7 @@ class SsgListPanel extends JPanel {
                     final Ssg ssg = getSelectedSsg();
                     log.info("Editing ssg " + ssg);
                     if (ssg != null) {
-                        final SsgPropertyDialog ssgPropertyDialog = SsgPropertyDialog.makeSsgPropertyDialog(clientProxy, ssg, false);
+                        final SsgPropertyDialog ssgPropertyDialog = SsgPropertyDialog.makeSsgPropertyDialog(clientProxy, ssg);
                         final boolean result = ssgPropertyDialog.runDialog();
                         if (result) {
                             if (ssg.isDefaultSsg())
@@ -184,25 +180,8 @@ class SsgListPanel extends JPanel {
     }
 
     Action getActionNewSsg() {
-        if (actionNewSsg == null) {
-            actionNewSsg = new AbstractAction("New", IconManager.getAdd()) {
-                public void actionPerformed(final ActionEvent e) {
-                    final Ssg newSsg = ssgTableModel.createSsg();
-                    log.info("Creating new Gateway registration " + newSsg);
-                    SsgKeyStoreManager.deleteStores(newSsg);
-                    if (ssgTableModel.getRowCount() < 1)
-                        newSsg.setDefaultSsg(true);
-                    final SsgPropertyDialog ssgPropertyDialog = SsgPropertyDialog.makeSsgPropertyDialog(clientProxy, newSsg, true);
-                    final boolean result = ssgPropertyDialog.runDialog();
-                    if (result) {
-                        ssgTableModel.addSsg(newSsg);
-                        selectSsg(newSsg);
-                    }
-                }
-            };
-            actionNewSsg.putValue(Action.SHORT_DESCRIPTION, "Register a new Gateway with this Bridge");
-            actionNewSsg.putValue(Action.MNEMONIC_KEY, new Integer(KeyEvent.VK_N));
-        }
+        if (actionNewSsg == null)
+            actionNewSsg = new NewSsgAction(this, ssgTableModel, clientProxy);
         return actionNewSsg;
     }
 
@@ -290,4 +269,5 @@ class SsgListPanel extends JPanel {
     void removeSsg(Ssg ssg) {
         ssgTableModel.removeSsg(ssg);
     }
+
 }
