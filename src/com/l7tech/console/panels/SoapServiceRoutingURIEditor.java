@@ -27,7 +27,7 @@ public class SoapServiceRoutingURIEditor extends JDialog {
     private JTextField uriField;
     private JRadioButton customURIRadio;
     private JRadioButton noURIRadio;
-    private JLabel routingLbl;
+    private JLabel routingURL;
     private JButton okbutton;
     private JButton cancelbutton;
     private JButton helpbutton;
@@ -53,6 +53,7 @@ public class SoapServiceRoutingURIEditor extends JDialog {
     private void initialize() {
         setContentPane(mainPanel);
         setTitle("Web Service Routing URI");
+
         subjectAffected = false;
         ButtonGroup bg = new ButtonGroup();
         bg.add(customURIRadio);
@@ -90,12 +91,14 @@ public class SoapServiceRoutingURIEditor extends JDialog {
         if (customURIRadio.isSelected()) {
             currentValue = uriField.getText();
         }
-
+        String urlvalue;
         if (currentValue == null || currentValue.length() < 1) {
-            routingLbl.setText(ssgURL + "/ssg/soap");
+            urlvalue = ssgURL + "/ssg/soap";
         } else {
-            routingLbl.setText(ssgURL + PublishedService.ROUTINGURI_PREFIX + currentValue);
+            urlvalue = ssgURL + PublishedService.ROUTINGURI_PREFIX + currentValue;
         }
+
+        routingURL.setText("<html><a href=\"" + urlvalue + "\">" + urlvalue + "</a></html>");
     }
 
     private void setActionListeners() {

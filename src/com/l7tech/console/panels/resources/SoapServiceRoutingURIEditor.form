@@ -53,15 +53,6 @@
           </hspacer>
         </children>
       </grid>
-      <component id="50db6" class="javax.swing.JLabel" binding="routingLbl">
-        <constraints>
-          <xy x="10" y="243" width="485" height="15"/>
-          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="0"/>
-        </constraints>
-        <properties>
-          <text value="http://verylonghostname.longdomainname.org:8888/xml/_________longuri_________"/>
-        </properties>
-      </component>
       <component id="61519" class="javax.swing.JLabel">
         <constraints>
           <xy x="10" y="218" width="394" height="15"/>
@@ -138,6 +129,15 @@
           </grid>
         </children>
       </grid>
+      <component id="e895b" class="javax.swing.JLabel" binding="routingURL">
+        <constraints>
+          <xy x="10" y="243" width="485" height="15"/>
+          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+        </constraints>
+        <properties>
+          <text value="http://verylonghostname.longdomainname.org:8888/xml/_________longuri_________"/>
+        </properties>
+      </component>
     </children>
   </grid>
 </form>
