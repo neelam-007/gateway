@@ -28,6 +28,7 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
 
     /** Creates new form ServicePanel */
     public ProtectedServiceWizardPanel() {
+        super(null); //todo: temporary, upgrade old wizard panels
         initComponents();
     }
 

@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.console.panels.WsdlMessagesPanel">
+  <grid id="b62bd" row-count="2" column-count="1" hgap="-1" vgap="-1">
+    <margin top="0" left="0" bottom="0" right="0"/>
+    <constraints>
+      <xy x="130" y="109" width="642" height="391"/>
+      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+    </constraints>
+    <properties/>
+    <border type="none"/>
+    <children>
+      <grid id="ad107" binding="mainPanel" row-count="9" column-count="5" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <xy x="0" y="0" width="642" height="371"/>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <component id="d04dc" class="javax.swing.JLabel">
+            <constraints>
+              <xy x="20" y="21" width="57" height="17"/>
+              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text value="Messages"/>
+            </properties>
+          </component>
+          <component id="a527f" class="javax.swing.JLabel">
+            <constraints>
+              <xy x="87" y="160" width="31" height="17"/>
+              <grid row="5" column="2" row-span="1" col-span="2" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text value="Parts"/>
+            </properties>
+          </component>
+          <vspacer id="3c8f">
+            <constraints>
+              <xy x="349" y="45" width="11" height="10"/>
+              <grid row="2" column="2" row-span="1" col-span="2" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+                <minimum-size width="-1" height="10"/>
+                <preferred-size width="-1" height="10"/>
+                <maximum-size width="-1" height="10"/>
+              </grid>
+            </constraints>
+          </vspacer>
+          <vspacer id="55b4b">
+            <constraints>
+              <xy x="349" y="144" width="11" height="10"/>
+              <grid row="4" column="2" row-span="1" col-span="2" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+                <minimum-size width="-1" height="10"/>
+                <preferred-size width="-1" height="10"/>
+                <maximum-size width="-1" height="10"/>
+              </grid>
+            </constraints>
+          </vspacer>
+          <scrollpane id="3c5ce" binding="partsTableScrollPane">
+            <constraints>
+              <xy x="87" y="184" width="535" height="140"/>
+              <grid row="6" column="2" row-span="1" col-span="2" vsize-policy="7" hsize-policy="7" anchor="0" fill="3"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="858cf" class="javax.swing.JTable" binding="partsTable">
+                <constraints/>
+                <properties/>
+              </component>
+            </children>
+          </scrollpane>
+          <grid id="e0f0c" row-count="1" column-count="3" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints>
+              <xy x="87" y="344" width="535" height="27"/>
+              <grid row="8" column="2" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="f9f" class="javax.swing.JButton" binding="removeMessagePartButton">
+                <constraints>
+                  <xy x="450" y="0" width="85" height="27"/>
+                  <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0"/>
+                </constraints>
+                <properties>
+                  <label value="Remove"/>
+                  <text value="Remove"/>
+                </properties>
+              </component>
+              <component id="890a5" class="javax.swing.JButton" binding="addMessagePartButton">
+                <constraints>
+                  <xy x="382" y="0" width="58" height="27"/>
+                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0"/>
+                </constraints>
+                <properties>
+                  <label value="Add"/>
+                  <text value="Add"/>
+                </properties>
+              </component>
+              <hspacer id="fb8e">
+                <constraints>
+                  <xy x="0" y="8" width="382" height="11"/>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
+                </constraints>
+              </hspacer>
+            </children>
+          </grid>
+          <vspacer id="e4702">
+            <constraints>
+              <xy x="349" y="329" width="11" height="10"/>
+              <grid row="7" column="2" row-span="1" col-span="2" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+                <minimum-size width="-1" height="10"/>
+                <preferred-size width="-1" height="10"/>
+                <maximum-size width="-1" height="10"/>
+              </grid>
+            </constraints>
+          </vspacer>
+          <grid id="f7a20" row-count="3" column-count="1" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints>
+              <xy x="433" y="60" width="189" height="79"/>
+              <grid row="3" column="3" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="84aec" class="javax.swing.JButton" binding="removeMessageButton">
+                <constraints>
+                  <xy x="104" y="32" width="85" height="27"/>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0"/>
+                </constraints>
+                <properties>
+                  <actionCommand value="AddMessage"/>
+                  <label value="Remove"/>
+                  <text value="Remove"/>
+                </properties>
+              </component>
+              <component id="c2027" class="javax.swing.JButton" binding="addMessageButton">
+                <constraints>
+                  <xy x="131" y="0" width="58" height="27"/>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0"/>
+                </constraints>
+                <properties>
+                  <label value="Add"/>
+                  <text value="Add"/>
+                </properties>
+              </component>
+              <vspacer id="990ff">
+                <constraints>
+                  <xy x="89" y="59" width="11" height="20"/>
+                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
+                </constraints>
+              </vspacer>
+            </children>
+          </grid>
+          <component id="3e918" class="javax.swing.JTable" binding="messagesTable">
+            <constraints>
+              <xy x="87" y="60" width="336" height="79"/>
+              <grid row="3" column="2" row-span="1" col-span="1" vsize-policy="6" hsize-policy="6" anchor="0" fill="3">
+                <preferred-size width="150" height="50"/>
+              </grid>
+            </constraints>
+            <properties/>
+          </component>
+        </children>
+      </grid>
+    </children>
+  </grid>
+</form>

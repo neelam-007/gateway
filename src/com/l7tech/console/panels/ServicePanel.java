@@ -30,6 +30,7 @@ public class ServicePanel extends WizardStepPanel {
 
     /** Creates new form ServicePanel */
     public ServicePanel() {
+        super(null);
         initComponents();
     }
 

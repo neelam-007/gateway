@@ -45,6 +45,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
 
     /** Creates new form IdentityProviderWizardPanel */
     public IdentityProviderWizardPanel() {
+        super(null);
         initComponents();
         equalizeButtons();
     }

@@ -13,19 +13,21 @@ import java.awt.*;
  * @version 1.0
  */
 public abstract class WizardStepPanel extends JPanel {
+    private WizardStepPanel nextPanel;
 
     /** Creates new form WizardPanel */
-    public WizardStepPanel() {
-        initComponents();
+    public WizardStepPanel(WizardStepPanel next) {
+        this.nextPanel = next;
     }
 
-    /**
-     * This method is called from within the constructor to
-     * initialize the form.
-     */
-    private void initComponents() {
-        setLayout(new BorderLayout());
+    public final boolean hasNextPanel() {
+        return nextPanel !=null;
     }
+
+    public final WizardStepPanel nextPanel() {
+        return nextPanel;
+    }
+
 
     /**
      * @return the wizard step description
