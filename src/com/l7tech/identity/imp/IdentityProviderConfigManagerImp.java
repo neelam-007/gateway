@@ -1,12 +1,10 @@
 package com.l7tech.identity.imp;
 
 import com.l7tech.identity.*;
-import com.l7tech.identity.internal.InternalIdentityProvider;
-import com.l7tech.objectmodel.PersistenceManager;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.misc.Locator;
+import com.l7tech.objectmodel.*;
 
 import java.util.*;
+import java.sql.SQLException;
 
 /**
  * @author alex
@@ -24,8 +22,12 @@ public class IdentityProviderConfigManagerImp extends com.l7tech.objectmodel.Hib
         return null;
     }
 
-    public long save( IdentityProviderConfig identityProviderConfig ) {
-        return _manager.save( identityProviderConfig );
+    public long save( IdentityProviderConfig identityProviderConfig ) throws SaveException {
+        try {
+            return _manager.save( identityProviderConfig );
+        } catch ( SQLException se ) {
+            throw new SaveException( se.toString(), se );
+        }
     }
 
     public Collection findAll() {
