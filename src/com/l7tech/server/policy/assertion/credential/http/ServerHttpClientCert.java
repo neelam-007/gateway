@@ -48,16 +48,20 @@ public class ServerHttpClientCert extends ServerCredentialSourceAssertion implem
             throw new CredentialFinderException( err, AssertionStatus.AUTH_REQUIRED );
         } else {
             Object cert = null;
+
             Object[] maybeCerts;
-            try {
+            if ( param instanceof Object[] ) {
                 maybeCerts = (Object[])param;
                 for (int i = 0; i < maybeCerts.length; i++) {
                     cert = maybeCerts[i];
                     if ( cert instanceof X509Certificate ) clientCert = (X509Certificate)cert;
                 }
-            } catch ( ClassCastException cce ) {
-                logger.log( Level.WARNING, cce.toString(), cce );
-                throw new CredentialFinderException( "Client Certificate " + cert + " was of the wrong type (" + cert.getClass().getName() + ")", AssertionStatus.AUTH_FAILED );
+            } else if ( param instanceof X509Certificate ) {
+                clientCert = (X509Certificate)param;
+            } else {
+                String msg = "Client Certificate " + param + " was of the wrong type (" + param.getClass().getName() + ")";
+                logger.warning( msg );
+                throw new CredentialFinderException( msg, AssertionStatus.AUTH_FAILED );
             }
         }
 
