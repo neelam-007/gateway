@@ -9,8 +9,7 @@ import java.util.Enumeration;
 
 
 /**
- * TreeNodeAction - set of actions on DirectoryTreeNodes;
- * Currently only delete actions are implemented.
+ * TreeNodeAction - bag of utility methods for TreeNodes.
  */
 public class TreeNodeAction {
     private static final Category log =
@@ -91,31 +90,6 @@ public class TreeNodeAction {
      */
     public static boolean canRefresh(EntityTreeNode node) {
         return false;
-    }
-
-    /**
-     * @param node   EntityTreeNode  the node to determine if it
-     *               has properties
-     * @return true if the node has properties, false otherwise
-     */
-    public static boolean hasProperties(EntityTreeNode node) {
-        Object o = node.getUserObject();
-        if (o instanceof AbstractTreeNode) {
-            return hasProperties((AbstractTreeNode) o);
-        }
-        return false;
-    }
-
-    /**
-     * @param bn   AbstractTreeNode  the object to determine if it
-     *               has properties
-     * @return true if the node has properties, false otherwise
-     */
-    public static boolean hasProperties(AbstractTreeNode bn) {
-        return
-          bn instanceof ProviderNode ||
-          bn instanceof GroupNode ||
-          bn instanceof UserNode;
     }
 
     // Deletes the given Realm

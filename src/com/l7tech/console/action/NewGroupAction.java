@@ -8,6 +8,8 @@ import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreePath;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -75,8 +77,12 @@ public class NewGroupAction extends NodeAction {
                       EntityHeader eh = (EntityHeader)ev.getEntity();
                     JTree tree = (JTree)WindowManager.getInstance().getComponent(MainWindow.ASSERTION_PALETTE);
                     if (tree != null) {
-                        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                        model.insertNodeInto(TreeNodeFactory.asTreeNode(eh), node, node.getChildCount());
+                        TreeNode[] nodes = node.getPath();
+                        TreePath nPath = new TreePath(nodes);
+                        if (tree.hasBeenExpanded(nPath)) {
+                            DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                            model.insertNodeInto(TreeNodeFactory.asTreeNode(eh), node, node.getChildCount());
+                        }
                     } else {
                         log.log(Level.WARNING, "Unable to reach the palette tree.");
                     }

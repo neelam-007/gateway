@@ -68,7 +68,6 @@ public class ServicePolicyPropertiesAction extends NodeAction {
                       //todo: ErroManager someday?
                       e.printStackTrace();
                   }
-
               }
           });
     }

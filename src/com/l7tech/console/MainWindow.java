@@ -1152,26 +1152,6 @@ public class MainWindow extends JFrame {
             getFindAction().setEnabled(false);
             return;
         }
-
-        Container cont = getTreeNodeJPopupMenu(node);
-
-        if (cont != null) {
-            Component[] components = cont.getComponents();
-            Utilities.equalizeComponentSizes(components);
-            for (int i = 0; components != null && i < components.length; i++) {
-                if (components[i] instanceof JMenu &&
-                  ((JMenu)components[i]).getText().equals(TreeNodeMenu.NEW)) {
-                    JMenu menu = (JMenu)components[i];
-                    Component[] nItems = menu.getMenuComponents();
-                    Utilities.equalizeComponentSizes(nItems);
-                    for (int j = 0; nItems != null && j < nItems.length; j++) {
-                        nMenu.add(nItems[j]);
-                    }
-                    nMenu.setEnabled(true);
-                    break;
-                }
-            }
-        }
         getRemoveNodeAction().setEnabled(node.canDelete());
         getFindAction().setEnabled(false);
         getRefreshAction().setEnabled(false);

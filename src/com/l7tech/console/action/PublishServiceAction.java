@@ -8,6 +8,8 @@ import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreePath;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -72,11 +74,15 @@ public class PublishServiceAction extends NodeAction {
         public void entityAdded(final EntityEvent ev) {
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
-                    EntityHeader eh = (EntityHeader)ev.getEntity();
-                    JTree tree = (JTree)WindowManager.getInstance().getComponent(MainWindow.SERVICES_TREE);
+                    EntityHeader eh = (EntityHeader) ev.getEntity();
+                    JTree tree = (JTree) WindowManager.getInstance().getComponent(MainWindow.SERVICES_TREE);
                     if (tree != null) {
-                        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                        model.insertNodeInto(TreeNodeFactory.asTreeNode(eh), node, node.getChildCount());
+                        TreeNode[] nodes = node.getPath();
+                        TreePath nPath = new TreePath(nodes);
+                        if (tree.hasBeenExpanded(nPath)) {
+                            DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
+                            model.insertNodeInto(TreeNodeFactory.asTreeNode(eh), node, node.getChildCount());
+                        }
                     } else {
                         log.log(Level.WARNING, "Service tree unreachable.");
                     }
