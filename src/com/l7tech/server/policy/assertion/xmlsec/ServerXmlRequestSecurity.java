@@ -2,6 +2,7 @@ package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.xml.*;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.identity.User;
 import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
@@ -149,6 +150,10 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             }
             logger.info("Decrypted request successfully.");
         }
+
+        // clean empty security element and header if necessary
+        SoapUtil.cleanEmptySecurityElement(soapmsg);
+        SoapUtil.cleanEmptyHeaderElement(soapmsg);
 
         // note, the routing should no longer use the non parsed payload
         ((XmlRequest)request).setDocument(soapmsg);
