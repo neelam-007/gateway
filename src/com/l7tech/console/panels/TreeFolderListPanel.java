@@ -226,7 +226,7 @@ public class TreeFolderListPanel extends EntityEditorPanel {
             tableModel =
                     new DynamicTableModel(parentBasicTreeNode.children(),
                             2,
-                            new String[]{parentBasicTreeNode.getLabel(), getColHeader(parentBasicTreeNode)},
+                            new String[]{parentBasicTreeNode.getName(), getColHeader(parentBasicTreeNode)},
                             new DynamicTableModel.ObjectRowAdapter() {
                                 public Object getValue(Object o, int col) {
                                     String text = "";
@@ -517,7 +517,7 @@ public class TreeFolderListPanel extends EntityEditorPanel {
             if (index != -1) {
                 suffix = " / " + bn.getName().substring(index + 1);
             }
-            return bn.getLabel() + suffix;
+            return bn.getName() + suffix;
         } else if (bn instanceof EntityHeaderNode) {
             return bn.getName();
         } else {

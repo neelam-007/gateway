@@ -61,13 +61,6 @@ public class ServicesFolderNode implements BasicTreeNode {
      * @return the FQ name as a String
      */
     public String getName() {
-        return getLabel();
-    }
-
-    /**
-     * Returns the label
-     */
-    public String getLabel() {
         return "Services";
     }
 

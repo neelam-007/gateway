@@ -54,19 +54,10 @@ public class UserFolderNode implements BasicTreeNode {
 
     /**
      * Returns the node name.
-     * Gui nodes have name to facilitate handling in
-     * hierarchical gui components such as JTree.
      *
-     * @return the FQ name as a String
+     * @return the name as a String
      */
     public String getName() {
-        return getLabel();
-    }
-
-    /**
-     * Returns the label; constant "Users" is returned
-     */
-    public String getLabel() {
         return "Users";
     }
 

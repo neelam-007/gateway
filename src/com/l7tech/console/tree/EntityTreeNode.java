@@ -234,7 +234,7 @@ public class EntityTreeNode extends DefaultMutableTreeNode {
                     n1 = ((EntityTreeNode)o1).getBasicTreeNode();
                     n2 = ((EntityTreeNode)o2).getBasicTreeNode();
                     // need to add logic for folders
-                    return n1.getLabel().compareToIgnoreCase(n2.getLabel());
+                    return n1.getName().compareToIgnoreCase(n2.getName());
                 }
             };
 

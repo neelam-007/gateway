@@ -48,20 +48,11 @@ public class PoliciesFolderNode implements BasicTreeNode {
     }
 
     /**
-     * Returns the node FQ name.
-     * Gui nodes have FQ name to facilitate handling in
-     * hierarchical gui components such as JTree.
+     * Returns the node name.
      *
-     * @return the FQ name as a String
+     * @return the name as a String
      */
     public String getName() {
-        return getLabel();
-    }
-
-    /**
-     * Returns the label
-     */
-    public String getLabel() {
         return "Policies";
     }
 

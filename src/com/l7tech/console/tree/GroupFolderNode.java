@@ -59,19 +59,11 @@ public class GroupFolderNode implements BasicTreeNode {
 
     /**
      * Returns the node name.
-     * Gui nodes have name to facilitate handling in
-     * hierarchical gui components such as JTree.
      *
      * @return the name as a String
      */
     public String getName() {
-        return getLabel();
-    }
-
-    /**
-     * Returns the label
-     */
-    public String getLabel() {
         return "Groups";
     }
+
 }

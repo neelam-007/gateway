@@ -62,11 +62,4 @@ public class ProvidersFolderNode implements BasicTreeNode {
         return "Identity providers";
     }
 
-    /**
-     * Returns the label; constant "Identity providers" is returned
-     */
-    public String getLabel() {
-        return "Identity providers";
-    }
-
 }

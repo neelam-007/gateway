@@ -41,7 +41,7 @@ public class EntityTreeCellRenderer
         this.setBackgroundNonSelectionColor(tree.getBackground());
         if (object instanceof BasicTreeNode) {
             BasicTreeNode node = (BasicTreeNode)object;
-            setText(node.getLabel());
+            setText(node.getName());
             Icon icon = IconManager.getInstance().getIcon(node);
 
             if (icon == null) {

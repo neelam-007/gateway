@@ -39,11 +39,6 @@ public interface BasicTreeNode {
     boolean getAllowsChildren();
 
     /**
-     * Returns the node label (shown in GUI elements such as tree, table etc).
-     */
-    String getLabel();
-
-    /**
      * Returns the node name
      */
     String getName();

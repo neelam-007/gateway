@@ -63,14 +63,11 @@ public class RootNode implements BasicTreeNode {
     }
 
     /**
-     * Returns the label; constant "System" is returned
+     *
+     * @return the root name
      */
-    public String getLabel() {
-        return label;
-    }
-
     public String getName() {
-        return getLabel();
+        return label;
     }
     private String label;
 }

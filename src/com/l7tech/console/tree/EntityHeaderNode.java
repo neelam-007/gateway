@@ -57,15 +57,8 @@ public class EntityHeaderNode implements BasicTreeNode {
     }
 
 
-    /**
-     * Returns the Entry label, delegated to short name
-     */
-    public String getLabel() {
-        return entity.getName();
-    }
-
     public String getName() {
-        return getLabel();
+        return entity.getName();
     }
 
     /**

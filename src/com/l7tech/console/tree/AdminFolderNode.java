@@ -57,20 +57,10 @@ public class AdminFolderNode implements BasicTreeNode {
     }
 
     /**
-     * Returns the node FQ name.
-     * Gui nodes have FQ name to facilitate handling in
-     * hierarchical gui components such as JTree.
-     *
-     * @return the FQ name as a String
+     * Returns the node name.
+     * @return the name as a String
      */
     public String getName() {
-        return "Administrators";
-    }
-
-    /**
-     * Returns the label; constant "Administrators" is returned
-     */
-    public String getLabel() {
         return "Administrators";
     }
 
