@@ -7,6 +7,7 @@ import com.l7tech.message.Response;
 import com.l7tech.service.PublishedService;
 import com.mockobjects.dynamic.C;
 import com.mockobjects.dynamic.Mock;
+import com.mockobjects.servlet.MockServletInputStream;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
@@ -23,7 +24,7 @@ import java.net.InetAddress;
 /**
  * Class <code>MockServletApi</code> creates the mock servlet API
  * for testing.
- * 
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class MockServletApi {
@@ -79,9 +80,9 @@ public class MockServletApi {
 
                 servletRequestMock.matchAndReturn("getContextPath", "/ssg");
 
-                servletResponseMock.matchAndReturn( "setContentType", "text/xml; charset=utf-8", null );
-                servletResponseMock.matchAndReturn( "setStatus", C.IS_ANYTHING, null );
-                servletResponseMock.matchAndReturn( "setHeader", C.ANY_ARGS, null );
+                servletResponseMock.matchAndReturn("setContentType", "text/xml; charset=utf-8", null);
+                servletResponseMock.matchAndReturn("setStatus", C.IS_ANYTHING, null);
+                servletResponseMock.matchAndReturn("setHeader", C.ANY_ARGS, null);
 
                 servletConfigMock.matchAndReturn("getInitParameter", C.IS_NOT_NULL, null);
             } catch (Exception e) {
@@ -93,13 +94,13 @@ public class MockServletApi {
     /**
      * set the puiblished service associated with this request and neccessary
      * parameters version etc.
-     * 
+     *
      * @param service the published service to set
      */
     public void setPublishedService(PublishedService service) {
         servletRequestMock.matchAndReturn("getAttribute", Request.PARAM_SERVICE, service);
-        servletRequestMock.matchAndReturn("getAttribute", Request.PARAM_HTTP_POLICY_VERSION, "" );
-        servletRequestMock.matchAndReturn("getHeader", Request.PARAM_HTTP_POLICY_VERSION, "" );
+        servletRequestMock.matchAndReturn("getAttribute", Request.PARAM_HTTP_POLICY_VERSION, "");
+        servletRequestMock.matchAndReturn("getHeader", Request.PARAM_HTTP_POLICY_VERSION, "");
         /*
         String version = "" + service.getOid() + "|" + service.getVersion();
         servletRequestMock.matchAndReturn("getAttribute", Request.PARAM_HTTP_POLICY_VERSION, version);
@@ -120,11 +121,14 @@ public class MockServletApi {
         StringReader sr = new StringReader(bo.toString());
         servletRequestMock.matchAndReturn("getReader", new BufferedReader(sr));
         servletRequestMock.expectAndReturn("getAttribute", Request.PARAM_HTTP_SOAPACTION, soapAction);
+        final MockServletInputStream mockServletInputStream = new MockServletInputStream();
+        mockServletInputStream.setupRead(bo.toByteArray());
+        servletRequestMock.matchAndReturn("getInputStream", mockServletInputStream);
     }
 
     /**
      * get the servlet response mock
-     * 
+     *
      * @return the servlet response mock
      */
     public Mock getServletResponseMock() {
@@ -133,7 +137,7 @@ public class MockServletApi {
 
     /**
      * get the servlet context mock
-     * 
+     *
      * @return the servlet context mock
      */
     public Mock getServletContextMock() {
@@ -142,7 +146,7 @@ public class MockServletApi {
 
     /**
      * return the servlet request mock
-     * 
+     *
      * @return the servlet request mock
      */
     public Mock getServletRequestMock() {
@@ -151,7 +155,7 @@ public class MockServletApi {
 
     /**
      * return the servlet config mock
-     * 
+     *
      * @return the servlet config mock
      */
     public Mock getServletConfigMock() {
@@ -160,7 +164,7 @@ public class MockServletApi {
 
     /**
      * get the servlet request
-     * 
+     *
      * @return the servlet request
      */
     public HttpServletRequest getServletRequest() {
@@ -169,7 +173,7 @@ public class MockServletApi {
 
     /**
      * get the servlet response
-     * 
+     *
      * @return the servlet response
      */
     public HttpServletResponse getServletResponse() {
@@ -178,7 +182,7 @@ public class MockServletApi {
 
     /**
      * get the servlet config
-     * 
+     *
      * @return the servlet config
      */
     public ServletConfig getServletConfig() {
