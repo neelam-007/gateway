@@ -14,6 +14,7 @@ import com.l7tech.service.ServiceAdmin;
 import javax.swing.*;
 import javax.swing.table.*;
 import java.util.*;
+import java.util.logging.Logger;
 import java.awt.*;
 import java.awt.event.*;
 import java.text.SimpleDateFormat;
@@ -32,7 +33,6 @@ public class ClusterStatusWindow extends JFrame {
     private javax.swing.JLabel serviceStatTitle = null;
     private javax.swing.JLabel clusterStatusTitle = null;
     private javax.swing.JLabel updateTimeStamp = null;
-    private javax.swing.JLabel clusterConnectionStatus = null;
     private javax.swing.JPanel messagePane = null;
     private javax.swing.JPanel frameContentPane = null;
     private javax.swing.JPanel mainPane = null;
@@ -58,8 +58,10 @@ public class ClusterStatusWindow extends JFrame {
     private static final int MIN = 0;
     public static final String RESOURCE_PATH = "com/l7tech/console/resources";
     private static ResourceBundle resapplication = java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
+    static Logger logger = Logger.getLogger(ClusterStatusWindow.class.getName());
     private Icon upArrowIcon = new ArrowIcon(0);
     private Icon downArrowIcon = new ArrowIcon(1);
+    private boolean canceled;
 
     /**
      * Constructor
@@ -250,23 +252,8 @@ public class ClusterStatusWindow extends JFrame {
         messagePane.setMinimumSize(new java.awt.Dimension(136, 40));
         messagePane.setMaximumSize(new java.awt.Dimension(136, 40));
         messagePane.add(getLastUpdateLabel(), java.awt.BorderLayout.EAST);
-        messagePane.add(getClusterConnectionStatusLabel(), java.awt.BorderLayout.WEST);
 
         return messagePane;
-    }
-
-    /**
-     * Return clusterConnectionStatus property value
-     *
-     * @return  JLabel
-     */
-    private JLabel getClusterConnectionStatusLabel(){
-        if(clusterConnectionStatus != null) return clusterConnectionStatus;
-
-        clusterConnectionStatus = new JLabel();
-        clusterConnectionStatus.setText("");
-
-        return clusterConnectionStatus;
     }
 
     /**
@@ -608,29 +595,33 @@ public class ClusterStatusWindow extends JFrame {
         final ClusterStatusWorker statsWorker = new ClusterStatusWorker(serviceManager, clusterStatusAdmin, currentNodeList) {
             public void finished() {
 
-                // Note: the get() operation is a blocking operation.
-                if (this.get() != null) {
-                    //updateServerMetricsFields(getMetrics());
-                    statisticsPane.updateStatisticsTable(this.getStatisticsList());
+                if (isCanceled()) {
+                    logger.info("Cluster status retrieval is canceled.");
+                    getStatusRefreshTimer().stop();
+                } else {
+                    // Note: the get() operation is a blocking operation.
+                    if (this.get() != null) {
+                        //updateServerMetricsFields(getMetrics());
+                        statisticsPane.updateStatisticsTable(this.getStatisticsList());
 
-                    currentNodeList = getNewNodeList();
-                    updateClusterRequestCounterCache(this.getClusterRequestCount());
+                        currentNodeList = getNewNodeList();
+                        updateClusterRequestCounterCache(this.getClusterRequestCount());
 
-                    Vector cs = prepareClusterStatusData();
+                        Vector cs = prepareClusterStatusData();
 
-                    getClusterStatusTableModel().setData(cs);
-                    getClusterStatusTableModel().getRealModel().setRowCount(cs.size());
-                    getClusterStatusTableModel().fireTableDataChanged();
+                        getClusterStatusTableModel().setData(cs);
+                        getClusterStatusTableModel().getRealModel().setRowCount(cs.size());
+                        getClusterStatusTableModel().fireTableDataChanged();
 
-                    SimpleDateFormat sdf = new SimpleDateFormat("MMM d yyyy HH:mm:ss aaa");
+                        SimpleDateFormat sdf = new SimpleDateFormat("MMM d yyyy HH:mm:ss aaa");
 
-                    getLastUpdateLabel().setText("Last updated: " + sdf.format(Calendar.getInstance().getTime()) + "      ");
-                    getStatusRefreshTimer().start();
-                }
-                else{
-                    if(isRemoteExceptionCaught()){
-                        // the connection to the cluster is down
-                        onDisconnect();
+                        getLastUpdateLabel().setText("Last updated: " + sdf.format(Calendar.getInstance().getTime()) + "      ");
+                        getStatusRefreshTimer().start();
+                    } else {
+                        if (isRemoteExceptionCaught()) {
+                            // the connection to the cluster is down
+                            onDisconnect();
+                        }
                     }
                 }
             }
@@ -653,21 +644,29 @@ public class ClusterStatusWindow extends JFrame {
     public void onConnect() {
         initAdminConnection();
         initCaches();
-        getClusterConnectionStatusLabel().setText("");
         getStatusRefreshTimer().start();
+        canceled = false;
     }
 
     /**
      * Clean up the resources when the connection to the cluster went down.
      */
     public void onDisconnect() {
-        getClusterConnectionStatusLabel().setText("      Error: Connection to the gateway cluster is down.");
-        getClusterConnectionStatusLabel().setForeground(Color.red);
         getStatusRefreshTimer().stop();
 
         setNodeStatusUnknown();
         serviceManager = null;
         clusterStatusAdmin = null;
+        canceled = true;
+    }
+
+    /**
+     * Return the flag indicating whether the job has been cancelled or not.
+     *
+     * @return  true if the job is cancelled, false otherwise.
+     */
+    public boolean isCanceled() {
+        return canceled;
     }
 
     /**
