@@ -112,7 +112,11 @@ public class LogPanel extends JPanel {
                             msg = msg + "Class    : " + getMsgTable().getModel().getValueAt(row, LOG_JAVA_CLASS_COLUMN_INDEX).toString() + "\n";
                         if (getMsgTable().getModel().getValueAt(row, LOG_JAVA_METHOD_COLUMN_INDEX) != null)
                             msg = msg + "Method   : " + getMsgTable().getModel().getValueAt(row, LOG_JAVA_METHOD_COLUMN_INDEX).toString() + "\n";
-                        getMsgDetails().setText(msg);
+
+                        // update the msg details field only if the content has changed.
+                        if(!msg.equals(getMsgDetails().getText())){
+                            getMsgDetails().setText(msg);
+                        }
 
                     }
                 });
