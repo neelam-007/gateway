@@ -21,6 +21,7 @@ import com.l7tech.server.service.ServiceManagerImp;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
@@ -188,15 +189,23 @@ public class BootProcess implements ServerComponentLifecycle {
         // Set default properties
         props.setProperty("com.sun.jndi.ldap.connect.pool.timeout", new Integer(30 * 1000).toString());
 
-        if (propsFile.exists()) {
-            FileInputStream fis = new FileInputStream(propsFile);
-            props.load(fis);
-        }
+        InputStream is = null;
+        try {
+            if (propsFile.exists()) {
+                is = new FileInputStream(propsFile);
+            } else {
+                is = getClass().getClassLoader().getResourceAsStream("system.properties");
+            }
 
-        for (Iterator i = props.keySet().iterator(); i.hasNext();) {
-            String name = (String)i.next();
-            String value = (String)props.get(name);
-            System.setProperty(name, value);
+            if (is != null) props.load(is);
+
+            for (Iterator i = props.keySet().iterator(); i.hasNext();) {
+                String name = (String)i.next();
+                String value = (String)props.get(name);
+                System.setProperty(name, value);
+            }
+        } finally {
+            if (is != null) is.close();
         }
     }
 }
