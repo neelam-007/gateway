@@ -295,8 +295,8 @@ public class Wsdl {
             Iterator portKeys = ports.keySet().iterator();
             String portKey;
             while ( portKeys.hasNext() ) {
+                portKey = (String)portKeys.next();
                 if ( soapPort == null ) {
-                    portKey = (String)portKeys.next();
                     pork = (Port)ports.get(portKey);
 
                     List elements = pork.getExtensibilityElements();
@@ -309,7 +309,6 @@ public class Wsdl {
                             numPorts++;
                         }
                     }
-
                 }
             }
             if ( numPorts > 1 ) logger.warning( "WSDL " + getDefinition().getTargetNamespace() + " has more than one port, used the first." );
