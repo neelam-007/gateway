@@ -20,37 +20,37 @@
         <children>
           <component id="80750" class="javax.swing.JRadioButton" binding="urlConnRadioButton">
             <constraints>
-              <xy x="0" y="0" width="126" height="22"/>
+              <xy x="0" y="0" width="160" height="22"/>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
             </constraints>
             <properties>
               <selected value="false"/>
-              <text value="From SSL Connection"/>
+              <text value="Retrieve via SSL Connection"/>
             </properties>
           </component>
           <component id="d000d" class="javax.swing.JRadioButton" binding="fileRadioButton">
             <constraints>
-              <xy x="0" y="28" width="122" height="22"/>
+              <xy x="0" y="28" width="110" height="22"/>
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
             </constraints>
             <properties>
               <enabled value="true"/>
               <selected value="false"/>
-              <text value="Imported from a File"/>
+              <text value="Import from a File"/>
             </properties>
           </component>
           <component id="6c384" class="javax.swing.JRadioButton" binding="copyAndPasteRadioButton">
             <constraints>
-              <xy x="0" y="56" width="176" height="22"/>
+              <xy x="0" y="56" width="167" height="22"/>
               <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
             </constraints>
             <properties>
-              <text value="Copied and pasted Base64 PEM"/>
+              <text value="Copy and Paste (Base64 PEM)"/>
             </properties>
           </component>
           <component id="a273d" class="javax.swing.JTextField" binding="urlConnTextField">
             <constraints>
-              <xy x="186" y="0" width="326" height="21"/>
+              <xy x="177" y="0" width="335" height="21"/>
               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
                 <preferred-size width="150" height="-1"/>
               </grid>
@@ -59,7 +59,7 @@
           </component>
           <component id="c5113" class="javax.swing.JTextField" binding="certFileName">
             <constraints>
-              <xy x="186" y="28" width="326" height="21"/>
+              <xy x="177" y="28" width="335" height="21"/>
               <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
                 <preferred-size width="150" height="-1"/>
               </grid>
@@ -77,7 +77,7 @@
           </component>
           <scrollpane id="a900b">
             <constraints>
-              <xy x="186" y="56" width="326" height="102"/>
+              <xy x="177" y="56" width="335" height="102"/>
               <grid row="2" column="1" row-span="5" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3"/>
             </constraints>
             <properties/>
@@ -93,7 +93,7 @@
           </scrollpane>
           <vspacer id="f58f3">
             <constraints>
-              <xy x="82" y="78" width="11" height="20"/>
+              <xy x="78" y="78" width="11" height="20"/>
               <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
             </constraints>
           </vspacer>
