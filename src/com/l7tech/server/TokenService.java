@@ -9,7 +9,6 @@ import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.User;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.server.secureconversation.DuplicateSessionException;
@@ -18,7 +17,6 @@ import com.l7tech.server.secureconversation.SecureConversationSession;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
-import sun.security.x509.X500Name;
 
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
