@@ -5,10 +5,6 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
 /**
  * @author alex
  * @version $Revision$
