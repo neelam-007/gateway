@@ -5,8 +5,6 @@ import com.l7tech.proxy.datamodel.SsgEvent;
 import com.l7tech.proxy.datamodel.SsgListener;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
@@ -14,6 +12,8 @@ import java.io.IOException;
 import java.util.Comparator;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Provide a ListModel view of the current SSG list.
@@ -226,6 +226,7 @@ public class SsgTableModel extends AbstractTableModel implements SsgListener {
         ssgManager.onSsgUpdated(ssg);
     }
 
+    /** Remove the specified Ssg from the SsgManager (and hence from ssgs.xml) and also from the table model. */
     public void removeSsg(final Ssg ssg) {
         try {
             ssgManager.remove(ssg);
