@@ -243,7 +243,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 updatedCookie = findCookieByName(updatedCookies, incomingCookie.getName());
                 if (updatedCookie != null) {
                     cookieOut.setValue(updatedCookie.getValue());
-                    System.out.println("Replacing the old cookie. \nName = " + updatedCookie.getName() + "\nold value: " + incomingCookie.getValue() + "\nnew value = " + updatedCookie.getValue());
+                    logger.fine("Updating cookie: name = " + updatedCookie.getName());
                 } else {
                     cookieOut.setValue(incomingCookie.getValue());
                 }
