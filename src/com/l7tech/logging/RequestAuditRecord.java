@@ -33,38 +33,54 @@ public class RequestAuditRecord extends AuditRecord {
 
     public RequestAuditRecord( String text, AssertionStatus status ) {
         super( Level.INFO, text );
-        _status = status;
+        this.status = status;
 
         Request currentRequest = MessageProcessor.getCurrentRequest();
         if ( currentRequest != null ) {
             if ( currentRequest instanceof XmlRequest ) {
                 XmlRequest xreq = (XmlRequest)currentRequest;
                 try {
-                    _requestXml = xreq.getRequestXml();
+                    requestXml = xreq.getRequestXml();
                 } catch (IOException e) {
-                    _requestXml = null;
+                    requestXml = null;
                 }
             }
 
             try {
-                _requestContentLength = new Integer( (String)currentRequest.getParameter( Request.PARAM_HTTP_CONTENT_LENGTH ) ).intValue();
+                requestContentLength = new Integer( (String)currentRequest.getParameter( Request.PARAM_HTTP_CONTENT_LENGTH ) ).intValue();
             } catch ( NumberFormatException nfe ) {
             }
-            if ( _requestContentLength == -1 && _requestXml != null ) _requestContentLength = _requestXml.length();
+            if ( requestContentLength == -1 && requestXml != null ) requestContentLength = requestXml.length();
 
             User u = currentRequest.getUser();
             if ( u != null ) {
-                _providerOid = u.getProviderId();
-                _userLogin = u.getLogin();
+                identityProviderOid = u.getProviderId();
+                userName = u.getLogin();
+                if (userName == null) userName = u.getName();
+                if (userName == null) userName = u.getUniqueIdentifier();
             }
 
-            _remoteAddr = (String)currentRequest.getParameter( Request.PARAM_REMOTE_ADDR );
+            clientAddr = (String)currentRequest.getParameter(Request.PARAM_REMOTE_ADDR);
 
             PublishedService service = (PublishedService)currentRequest.getParameter( Request.PARAM_SERVICE );
             if ( service != null ) {
-                _serviceOid = service.getOid();
-                _serviceName = service.getName();
+                serviceOid = service.getOid();
+                serviceName = service.getName();
             }
+        }
+        authenticated = currentRequest.isAuthenticated();
+        if ( authenticated ) {
+            User u = currentRequest.getUser();
+            identityProviderOid = u.getProviderId();
+            userId = u.getUniqueIdentifier();
+            userName = u.getName();
+            if (userName == null) userName = u.getLogin();
+        }
+
+        PublishedService service = (PublishedService)currentRequest.getParameter(Request.PARAM_SERVICE);
+        if (service != null) {
+            serviceOid = service.getOid();
+            serviceName = service.getName();
         }
 
         Response currentResponse = MessageProcessor.getCurrentResponse();
@@ -72,50 +88,101 @@ public class RequestAuditRecord extends AuditRecord {
             if ( currentResponse instanceof XmlResponse ) {
                 XmlResponse xresp = (XmlResponse)currentResponse;
                 try {
-                    _responseXml = xresp.getResponseXml();
+                    responseXml = xresp.getResponseXml();
                 } catch (IOException e) {
-                    _responseXml = null;
+                    responseXml = null;
                 }
             }
 
             try {
-                _responseContentLength = new Integer( (String)currentResponse.getParameter( Response.PARAM_HTTP_CONTENT_LENGTH ) ).intValue();
+                responseContentLength = new Integer( (String)currentResponse.getParameter( Response.PARAM_HTTP_CONTENT_LENGTH ) ).intValue();
             } catch ( NumberFormatException nfe ) {
             }
-            if ( _responseContentLength == -1 && _responseXml != null ) _responseContentLength = _responseXml.length();
+            if ( responseContentLength == -1 && responseXml != null ) responseContentLength = responseXml.length();
         }
     }
 
+    public AssertionStatus getStatus() {
+        return status;
+    }
+
+    public long getServiceOid() {
+        return serviceOid;
+    }
+
+    public String getServiceName() {
+        return serviceName;
+    }
+
+    public long getIdentityProviderOid() {
+        return identityProviderOid;
+    }
+
+    public String getUserName() {
+        return userName;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public String getClientAddr() {
+        return clientAddr;
+    }
+
+    public String getRequestXml() {
+        return requestXml;
+    }
+
+    public String getResponseXml() {
+        return responseXml;
+    }
+
+    public boolean isAuthenticated() {
+        return authenticated;
+    }
+
+    public int getRequestContentLength() {
+        return requestContentLength;
+    }
+
+    public int getResponseContentLength() {
+        return responseContentLength;
+    }
+
     /** Status of the request so far, or AssertionStatus.UNDEFINED if it's not yet known. */
-    protected AssertionStatus _status;
+    private AssertionStatus status;
 
     /** String containing XML from request, or null if the current request has no XML */
-    protected String _requestXml;
+    private String requestXml;
 
     /** String containing XML from response, or null if the current response has no XML */
-    protected String _responseXml;
+    private String responseXml;
 
     /** OID of the PublishedService that this request was resolved to, or -1 if it has not yet been successfully resolved. */
-    protected long _serviceOid = PublishedService.DEFAULT_OID;
+    private long serviceOid = PublishedService.DEFAULT_OID;
 
     /** Name of the PublishedService that this request was resolved to, or null if it has not yet been successfully resolved. */
-    protected String _serviceName;
+    private String serviceName;
 
     /** OID of the IdentityProvider that the requesting user, if any, belongs to.  -1 indicates unknown. */
-    protected long _providerOid = IdentityProviderConfig.DEFAULT_OID;
+    private long identityProviderOid = IdentityProviderConfig.DEFAULT_OID;
 
-    /** Login of the user that is making the request if known, or null otherwise. */
-    protected String _userLogin;
+    /** Login or name of the user that is making the request if known, or null otherwise. */
+    private String userName;
+
+    /** Unique ID of the user that is making the request (if known), or null otherwise. */
+    private String userId;
 
     /** <code>true</code> indicates that the request was successfully authenticated, or <code>false</code> otherwise. */
-    protected boolean _authenticated;
+    private boolean authenticated;
 
     /** IP address or hostname of the client responsible for this request if known, or null otherwise. */
-    protected String _remoteAddr;
+    private String clientAddr;
 
     /** Length of the request */
-    protected int _requestContentLength = -1;
+    private int requestContentLength = -1;
 
     /** Length of the response */
-    protected int _responseContentLength = -1;
+    private int responseContentLength = -1;
 }
