@@ -2,6 +2,8 @@
 # $Id$
 # Script to prompt for configuration values
 # save a text file 
+# and then apply
+
 use strict;
 my @list=(
 	cluster   => "Node is in a cluster       ",
@@ -32,6 +34,9 @@ if ( -e $SAVE_FILE ) {
 	} elsif ($ARGV[0] eq '-apply' ) {
 		readconfig();
 		change_os_config();
+	} elsif ($ARGV[0] eq '-usage' ) {
+		print usage();
+		exit;
 	} else {
 		die "Already Installed";
 	}
@@ -52,24 +57,25 @@ if ($ans eq 'y') {
 	goto LOOP;
 }
 
+
 sub change_os_config {
 	# lets start small
 	# 1. the front network config
 	print "Starting Network config: ";
-	my $front_conf = "/etc/sysconfig/network-scripts/ifcfg-eth1"	
+	my $front_conf = "/etc/sysconfig/network-scripts/ifcfg-eth1";
 	
 	if ($Conf{"front_ip"} ) {
 		if ( -e $front_conf ) {
-			`mv $front_conf $back_conf.save`;
+			`mv $front_conf $front_conf.save`;
 		}
-		open (OUT ">$front_conf");
+		open (OUT, ">$front_conf");
 		print OUT <<EOF;
 DEVICE=eth1
 ONBOOT=yes
 BOOTPROTO=static
 IPADDR=$Conf{"front_ip"}
 NETMASK=$Conf{"front_mask"}
-GATEWAY=$CONF{"def_rt"}
+GATEWAY=$Conf{"def_rt"}
 EOF
 		close OUT;
 		print "Front: Eth1 ";	
@@ -79,13 +85,13 @@ EOF
 	
 	# 2. the back network config
 
-	my $back_conf = "/etc/sysconfig/network-scripts/ifcfg-eth0"	
+	my $back_conf = "/etc/sysconfig/network-scripts/ifcfg-eth0";
 	
 	if ($Conf{"back_ip"} ) {
 		if ( -e $back_conf ) {
 			`mv $back_conf $back_conf.save`;
 		}
-		open (OUT ">$back_conf");
+		open (OUT, ">$back_conf");
 		print OUT <<EOF;
 DEVICE=eth0
 ONBOOT=yes
@@ -98,7 +104,7 @@ EOF
 	} else {
 		print "WARNING: No back end network defined ";
 	}
-	print " ... Done\n"
+	print " ... Done\n";
 
 	# cluster stuff
 	# 3 . hostname
@@ -108,7 +114,7 @@ EOF
 		print OUT "$Conf{clusternm}\n";
 		close OUT;
 		print "$Conf{clusternm}\n";
-	else {
+	} else {
 		print "WARNING: Cluster hostname not set\n";
 	}
 	
@@ -117,7 +123,7 @@ EOF
 	# Only works with a distro hib properties, it has placeholders
 	#
 	print "DB Connection Parameters: ";
-	if ($Conf{db_user) ) {
+	if ($Conf{db_user} ) {
 		my $dbconfig="/ssg/etc/conf/hibernate.properties";
 		rename ($dbconfig,"$dbconfig.orig");
 		open (IN, "<$dbconfig.orig");
@@ -129,13 +135,13 @@ EOF
 		}
 		close IN;
 		close OUT;
-		my $sql = "grant all on ssg.* to $Conf{db_user}@'%' identified by '$Conf{db_pass}';\n";
-		$sql .="grant all on ssg.* to $Conf{db_user}@'localhost' identified by '$Conf{db_pass}';\n";
+		my $sql = "grant all on ssg.* to $Conf{db_user}\@'%' identified by '$Conf{db_pass}';\n\n";
+		$sql .="grant all on ssg.* to $Conf{db_user}\@'localhost' identified by '$Conf{db_pass}';\n\n";
 		open (TMP, ">/tmp/sql.grants");
 		print TMP $sql;
 		close TMP;
 		my $success=`mysql -u root </tmp/sql.grants`;
-		unlink "/tmp/sql.grants";
+		# unlink "/tmp/sql.grants";
 		print "Set \n";
 	} else {
 		print "WARNING: Db connection not set\n";
@@ -151,7 +157,7 @@ EOF
 		my $cnf="/etc/my.cnf";
 				
 		rename ($cnf,"$cnf.orig");
-		open (IN,"$CNF.orig");
+		open (IN,"$cnf.orig");
 		open(CNF, ">$cnf");
 		while(<IN>) {
 			s/^#server-id=1$/server-id=$s_id/;
@@ -171,16 +177,16 @@ EOF
 		if ( $Conf{firstnode} ) {
 			# gen the keys, otherwise copy them
 			`su - gateway -c /ssg/bin/setkeys.sh`;
-		else {
+		} else {
 			print "supply gateway user password of first node\n";
-			`scp gateway@$Conf{master_n}/ssg/etc/keys/* /ssg/etc/keys`;
+			`scp gateway\@$Conf{master_n}/ssg/etc/keys/* /ssg/etc/keys`;
 			`chmod -R gateway.gateway /ssg/etc`;
 		}
 	}
 	# 
 	# 
 		
-};
+}
 	
 
 sub readconfig {
@@ -236,4 +242,15 @@ sub writefile {
 		print SV "$f=$Conf{$f}\n";
 	}
 	close SV;
+}
+
+sub usage {
+	return <<EOF;
+$0: [-reinstall] [-apply] [-usage]
+-reinstall Ask for configuration again to change any values, then re-run OS configuration
+-apply     Don't ask for config, run OS config using $SAVE_FILE
+-usage     This message.
+
+EOF
+
 }
