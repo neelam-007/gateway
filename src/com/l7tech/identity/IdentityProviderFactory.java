@@ -15,31 +15,28 @@ import java.util.*;
  * @author alex
  */
 public class IdentityProviderFactory {
-    public static Collection findAllIdentityProviders( IdentityProviderConfigManager manager ) throws FindException {
+    public static Collection findAllIdentityProviders(IdentityProviderConfigManager manager) throws FindException {
         List providers = new ArrayList();
         Iterator i = manager.findAll().iterator();
         IdentityProviderConfig config;
-        while ( i.hasNext() ) {
+        while (i.hasNext()) {
             config = (IdentityProviderConfig)i.next();
-            providers.add( makeProvider( config ) );
+            providers.add(makeProvider(config));
         }
-        return Collections.unmodifiableList( providers );
+        return Collections.unmodifiableList(providers);
     }
 
-    public static IdentityProvider makeProvider( IdentityProviderConfig config ) {
+    public static IdentityProvider makeProvider(IdentityProviderConfig config) {
         IdentityProviderType type = config.getType();
-        String interfaceClassName = type.getClassName();
+        String className = type.getClassName();
         IdentityProvider provider;
 
         try {
-            Class interfaceClass = Class.forName( interfaceClassName );
-            provider = (IdentityProvider)Locator.getDefault().lookup(interfaceClass);
-            if ( provider == null )
-                throw new IllegalArgumentException( "Couldn't locate an implementation of " + interfaceClassName + " for IdentityProviderConfig " + config.getName() + " (#" + config.getOid() + "): null" );
-            provider.initialize( config );
+            provider = (IdentityProvider)Class.forName(className).newInstance();
+            provider.initialize(config);
             return provider;
-        } catch ( Exception e ) {
-            throw new IllegalArgumentException( "Couldn't locate an implementation of " + interfaceClassName + " for IdentityProviderConfig " + config.getName() + " (#" + config.getOid() + "): " + e.toString() );
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Couldn't locate an implementation of " + className + " for IdentityProviderConfig " + config.getName() + " (#" + config.getOid() + "): " + e.toString());
         }
     }
 }
