@@ -19,6 +19,15 @@ import java.security.cert.X509Certificate;
  */
 public class TestIdentityProvider implements IdentityProvider {
     private Map usernameMap = Collections.synchronizedMap(new HashMap());
+    private IdentityProviderConfig config = new IdentityProviderConfig();
+    {
+        config.setOid(9898);
+        config.setName("TestIdentityProvider");
+        config.setDescription("ID provider for testing");
+        config.setVersion(1);
+    }
+    private TestUserManager userman = new TestUserManager();
+    private TestGroupManager groupman = new TestGroupManager();
 
     private static class TestEntityManager implements EntityManager {
         public Collection findAllHeaders() throws FindException {
@@ -74,15 +83,15 @@ public class TestIdentityProvider implements IdentityProvider {
     }
 
     public IdentityProviderConfig getConfig() {
-        return null;
+        return config;
     }
 
     public UserManager getUserManager() {
-        return new TestUserManager();
+        return userman;
     }
 
     public GroupManager getGroupManager() {
-        return new TestGroupManager();
+        return groupman;
     }
 
     public Collection search(EntityType[] types, String searchString) throws FindException {
