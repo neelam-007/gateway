@@ -1,6 +1,9 @@
 package com.l7tech.console.tree.wsdl;
 
 import javax.wsdl.Message;
+import javax.wsdl.Part;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Class MessageTreeNode.
@@ -11,25 +14,56 @@ public class MessageTreeNode extends WsdlTreeNode {
     private Message message;
 
     MessageTreeNode(Message m) {
-        super(null);
+        this(m, new Options());
+    }
+
+    /**
+     * full constructor
+     * 
+     * @param m       the message
+     * @param options the wsdl rendering options
+     */
+    MessageTreeNode(Message m, Options options) {
+        super(null, options);
         this.message = m;
     }
 
+    /**
+     * load the message parts if specifid in the options
+     */
     protected void loadChildren() {
+        if (wsdlOptions.isShowMessageParts()) {
+            int index = 0;
+            children = null;
+            Map parts = message.getParts();
+            for (Iterator i = parts.keySet().iterator(); i.hasNext();) {
+                Object key = i.next();
+                insert(new MessagePartTreeNode((Part)parts.get(key), wsdlOptions), index++);
+            }
+        }
+    }
+
+    /**
+     * get the message this node represents
+     *
+     * @return the corresponding message
+     */
+    public Message getMessage() {
+        return message;
     }
 
     /**
      * Returns true if the receiver is a leaf
      */
     public boolean isLeaf() {
-        return true;
+        return !wsdlOptions.isShowMessageParts();
     }
 
     /**
      * Returns true if the receiver allows children.
      */
     public boolean getAllowsChildren() {
-        return false;
+        return wsdlOptions.isShowMessageParts();
     }
 
 

@@ -12,8 +12,8 @@ import javax.wsdl.Input;
 public class BindingOperationTreeNode extends WsdlTreeNode {
     private BindingOperation operation;
 
-    public BindingOperationTreeNode(BindingOperation bo) {
-        super(null);
+    public BindingOperationTreeNode(BindingOperation bo, Options options) {
+        super(null, options);
         this.operation = bo;
     }
 
@@ -22,8 +22,16 @@ public class BindingOperationTreeNode extends WsdlTreeNode {
         if (input !=null) {
             final Message m = input.getMessage();
             children = null;
-            insert(new MessageTreeNode(m), 0);
+            insert(new MessageTreeNode(m, wsdlOptions), 0);
         }
+    }
+    /**
+     * get the binding operation this node represents
+     *
+     * @return the corresponding binding operation
+     */
+    public BindingOperation getOperation() {
+        return operation;
     }
 
     /**

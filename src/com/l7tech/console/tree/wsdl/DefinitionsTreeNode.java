@@ -14,8 +14,8 @@ import java.util.Map;
 public class DefinitionsTreeNode extends WsdlTreeNode {
     private final Definition definition;
 
-    DefinitionsTreeNode(Definition def) {
-        super(null);
+    DefinitionsTreeNode(Definition def, Options options) {
+        super(null, options);
         this.definition = def;
     }
 
@@ -50,7 +50,7 @@ public class DefinitionsTreeNode extends WsdlTreeNode {
                 }
                 return list;
             }
-        });
+        }, wsdlOptions);
 
         insert(ms, index++);
 
@@ -66,12 +66,12 @@ public class DefinitionsTreeNode extends WsdlTreeNode {
                 List list = new ArrayList();
                 Map portTypes = definition.getPortTypes();
                 for (Iterator i = portTypes.values().iterator(); i.hasNext();) {
-                    list.add(new PortTypeTreeNode((PortType)i.next()));
+                    list.add(new PortTypeTreeNode((PortType)i.next(), wsdlOptions));
                 }
 
                 return list;
             }
-        });
+        }, wsdlOptions);
 
         insert(pt, index++);
 
@@ -87,11 +87,11 @@ public class DefinitionsTreeNode extends WsdlTreeNode {
                 List list = new ArrayList();
                 Map bindings = definition.getBindings();
                 for (Iterator i = bindings.values().iterator(); i.hasNext();) {
-                    list.add(new BindingTreeNode((Binding)i.next()));
+                    list.add(new BindingTreeNode((Binding)i.next(), wsdlOptions));
                 }
                 return list;
             }
-        });
+        }, wsdlOptions);
 
         insert(bn, index++);
 
@@ -107,11 +107,11 @@ public class DefinitionsTreeNode extends WsdlTreeNode {
                 List list = new ArrayList();
                 Map services = definition.getServices();
                 for (Iterator i = services.values().iterator(); i.hasNext();) {
-                    list.add(new ServiceTreeNode((Service)i.next()));
+                    list.add(new ServiceTreeNode((Service)i.next(), wsdlOptions));
                 }
                 return list;
             }
-        });
+        }, wsdlOptions);
 
         insert(svc, index++);
     }

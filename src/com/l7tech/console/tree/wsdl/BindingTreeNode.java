@@ -12,8 +12,8 @@ import java.util.Iterator;
 public class BindingTreeNode extends WsdlTreeNode {
     private Binding binding;
 
-    BindingTreeNode(Binding b) {
-        super(null);
+    BindingTreeNode(Binding b, Options options) {
+        super(null, options);
         this.binding = b;
     }
 
@@ -21,7 +21,7 @@ public class BindingTreeNode extends WsdlTreeNode {
         int index = 0;
         children = null;
         for (Iterator i = binding.getBindingOperations().iterator(); i.hasNext();) {
-            insert(new BindingOperationTreeNode((BindingOperation)i.next()), index++);
+            insert(new BindingOperationTreeNode((BindingOperation)i.next(), wsdlOptions), index++);
         }
     }
 

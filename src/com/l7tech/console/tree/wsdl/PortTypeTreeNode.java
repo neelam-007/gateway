@@ -12,8 +12,8 @@ import java.util.Iterator;
 public class PortTypeTreeNode extends WsdlTreeNode {
     private PortType portType;
 
-    PortTypeTreeNode(PortType p) {
-        super(null);
+    PortTypeTreeNode(PortType p, Options options) {
+        super(null, options);
         this.portType = p;
     }
 
@@ -21,7 +21,7 @@ public class PortTypeTreeNode extends WsdlTreeNode {
         int index = 0;
         children = null;
         for (Iterator i = portType.getOperations().iterator(); i.hasNext();) {
-            insert(new OperationTreeNode((Operation)i.next()), index++);
+            insert(new OperationTreeNode((Operation)i.next(), wsdlOptions), index++);
         }
     }
 

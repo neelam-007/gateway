@@ -51,7 +51,7 @@ public class XmlSecurityPropertiesAction extends NodeAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
-    public void performActionNew() {
+    public void performAction() {
         XmlSecurityTreeNode n = (XmlSecurityTreeNode)node;
         XmlSecurityAssertion ass = (XmlSecurityAssertion)node.asAssertion();
         final MainWindow mw = Registry.getDefault().getComponentRegistry().getMainWindow();
@@ -69,7 +69,7 @@ public class XmlSecurityPropertiesAction extends NodeAction {
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
-    public void performAction() {
+    public void performActionOld() {
         XmlSecurityTreeNode n = (XmlSecurityTreeNode)node;
         XmlSecurityAssertion ass = (XmlSecurityAssertion)node.asAssertion();
 

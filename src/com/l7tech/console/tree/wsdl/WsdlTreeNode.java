@@ -15,9 +15,11 @@ import java.util.List;
  * @see com.l7tech.console.tree.AbstractTreeNode
  */
 public abstract class WsdlTreeNode extends AbstractTreeNode {
+    protected Options wsdlOptions;
 
-    protected WsdlTreeNode(Object userObject) {
+    protected WsdlTreeNode(Object userObject, Options options) {
         super(userObject);
+        wsdlOptions = options;
     }
 
     /**
@@ -30,7 +32,20 @@ public abstract class WsdlTreeNode extends AbstractTreeNode {
         if (wsdl == null) {
             throw new IllegalArgumentException();
         }
-        return new DefinitionsTreeNode(wsdl.getDefinition());
+        return newInstance(wsdl, new Options());
+    }
+
+    /**
+     * creates a <CODE>TreeNode</CODE> with the given Wsdl
+     * as a user object, with rendering options.
+     *
+     * @param wsdl the tree node this node points to
+     */
+    public static WsdlTreeNode newInstance(Wsdl wsdl, Options options) {
+        if (wsdl == null || options == null) {
+            throw new IllegalArgumentException();
+        }
+        return new DefinitionsTreeNode(wsdl.getDefinition(), options);
     }
 
     /**
@@ -56,6 +71,40 @@ public abstract class WsdlTreeNode extends AbstractTreeNode {
         return this.toString();
     }
 
+    /**
+     * the <code>Options</code> class customizes the WSDL rendering
+     */
+    public static class Options {
+        public boolean isShowMessageParts() {
+            return showMessageParts;
+        }
+
+        public void setShowMessageParts() {
+            this.showMessageParts = true;
+        }
+
+        public boolean isShowInputMessages() {
+            return showInputMessages;
+        }
+
+        public void setShowInputMessages() {
+            this.showInputMessages = true;
+        }
+
+        public boolean isShowOutputMessages() {
+            return showOutputMessages;
+        }
+
+        public void setShowOutputMessages() {
+            this.showOutputMessages = true;
+        }
+
+        private boolean showInputMessages = false;
+        private boolean showOutputMessages = false;
+        private boolean showMessageParts = false;
+    }
+
+
     public interface FolderLister {
         List list();
     }
@@ -64,8 +113,8 @@ public abstract class WsdlTreeNode extends AbstractTreeNode {
 class FolderTreeNode extends WsdlTreeNode {
     private FolderLister lister;
 
-    FolderTreeNode(FolderLister l) {
-        super(null);
+    FolderTreeNode(FolderLister l, Options options) {
+        super(null, options);
         this.lister = l;
     }
 
@@ -95,4 +144,5 @@ class FolderTreeNode extends WsdlTreeNode {
     public String toString() {
         return lister.toString();
     }
+
 }

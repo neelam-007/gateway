@@ -10,8 +10,8 @@ import javax.wsdl.Operation;
 public class OperationTreeNode extends WsdlTreeNode {
     private Operation operation;
 
-    OperationTreeNode(Operation o) {
-        super(null);
+    OperationTreeNode(Operation o, Options options) {
+        super(null, options);
         this.operation = o;
     }
 
