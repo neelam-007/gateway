@@ -29,7 +29,7 @@ public class Main {
         }
     }
 
-    /** Start a GUI-equipped client proxy and run it until it's shut down. */
+    /** Start a text-only client proxy and run it until it's shut down. */
     public static void main(final String[] argv) {
         log.info("Starting Layer7 Client Proxy in daemon mode");
 
