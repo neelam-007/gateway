@@ -110,7 +110,7 @@ public class CustomAssertionsBootProcess implements ServerComponentLifecycle {
             }
         }
 
-        if (clientClass == null || serverClass == null || assertionClass == null) {
+        if (serverClass == null || assertionClass == null) {
             StringBuffer sb = new StringBuffer("Incomplete extensibility assertion, skipping\n");
             sb.append("[ assertion class=" + assertionClass);
             sb.append(",client class=" + clientClass);
