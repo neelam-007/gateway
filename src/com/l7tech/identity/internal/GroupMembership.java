@@ -6,7 +6,11 @@
 
 package com.l7tech.identity.internal;
 
+
+
 /**
+ * A row in the internal_user_group table.
+ *
  * @author alex
  * @version $Revision$
  */
@@ -33,6 +37,25 @@ public class GroupMembership {
 
     public void setGroupOid(long groupOid) {
         _groupOid = groupOid;
+    }
+
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof GroupMembership)) return false;
+
+        final GroupMembership groupMembership = (GroupMembership) o;
+
+        if (_groupOid != groupMembership._groupOid) return false;
+        if (_userOid != groupMembership._userOid) return false;
+
+        return true;
+    }
+
+    public int hashCode() {
+        int result;
+        result = (int) (_userOid ^ (_userOid >>> 32));
+        result = 29 * result + (int) (_groupOid ^ (_groupOid >>> 32));
+        return result;
     }
 
     private long _userOid;
