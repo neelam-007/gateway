@@ -724,20 +724,25 @@ public class PolicyTree extends JTree implements DragSourceListener,
         }
         SwingUtilities.invokeLater(doSelect);
 
-        log.fine("set children " + newChildren);
+        log.finer("set children " + newChildren);
         ca.setChildren(newChildren);
-        log.fine("children assertions = " + ca.getChildren().size());
-        log.fine("nodes          tree = " + parent.getChildCount());
+        log.finer("children assertions = " + ca.getChildren().size());
+        log.finer("nodes          tree = " + parent.getChildCount());
     }
 
     public void treeNodesRemoved(TreeModelEvent e) {
         java.util.List removed = new ArrayList();
         Object[] objects = e.getChildren();
+        int index = 0;
+        int[] indices = e.getChildIndices();
         for (int i = 0; i < objects.length; i++) {
             AssertionTreeNode an = (AssertionTreeNode)objects[i];
             removed.add(an.asAssertion());
+            index = indices[i];
         }
-        AssertionTreeNode parent =
+        final int lastIndex = index;
+
+        final AssertionTreeNode parent =
           (AssertionTreeNode)e.getTreePath().getLastPathComponent();
         CompositeAssertion ca = (CompositeAssertion)parent.asAssertion();
         java.util.List children = ca.getChildren();
@@ -748,10 +753,28 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 remove.add(a);
             }
         }
-        log.fine("removing " + remove);
+        log.finer("removing " + remove);
         children.removeAll(remove);
-        log.fine("children assertions = " + ca.getChildren().size());
-        log.fine("nodes          tree = " + parent.getChildCount());
+        log.finer("children assertions = " + ca.getChildren().size());
+        log.finer("nodes          tree = " + parent.getChildCount());
+
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                DefaultMutableTreeNode n = null;
+                int currentIndex = 0;
+                Enumeration e = parent.children();
+                for (;e.hasMoreElements() && lastIndex >= currentIndex;) {
+                    n = (DefaultMutableTreeNode)e.nextElement();
+                }
+                if (n !=null) {
+                    setSelectionPath(new TreePath(n.getPath()));
+                } else {
+                    if (parent != parent.getRoot()) {
+                        setSelectionPath(new TreePath(parent.getPath()));
+                    }
+                }
+            }
+        });
     }
 
     public void treeStructureChanged(TreeModelEvent e) {
