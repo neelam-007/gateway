@@ -46,7 +46,8 @@ public class WspReader {
                 throw new InvalidPolicyStreamException("More than one Policy tag was found");
             Node policy = policyTags.item(0);
             if (policy == null)
-                throw new InvalidPolicyStreamException("No enclosing Policy tag was found");
+                throw new InvalidPolicyStreamException("No enclosing Policy tag was found (using namespace " +
+                                                       WspConstants.POLICY_NS + ")");
             List childElements = getChildElements(policy);
             if (childElements.size() != 1)
                 throw new InvalidPolicyStreamException("Policy does not have exactly one immediate child");
