@@ -1,25 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<saml:Assertion AssertionID="mySamlAssertion"
-    IssueInstant="2004-08-05T21:47:32.077Z"
-    Issuer="root.locutus.l7tech.com" MajorVersion="1" MinorVersion="1"
-    xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:saml="urn:oasis:names:tc:SAML:1.0:assertion">
-    <saml:Conditions NotBefore="2004-08-05T21:47:32.077Z" NotOnOrAfter="2004-08-05T21:49:32.077Z"/>
+<saml:Assertion AssertionID="fe5a342781"
+    IssueInstant="2004-08-13T22:10:59.812Z" Issuer="Service Provider"
+    MajorVersion="1" MinorVersion="1" xmlns:saml="urn:oasis:names:tc:SAML:1.0:assertion">
+    <saml:Conditions NotBefore="2004-08-13T22:11:00.000Z" NotOnOrAfter="2004-08-13T22:16:00.000Z"/>
     <saml:AuthenticationStatement
-        AuthenticationInstant="2004-08-05T21:47:32.077Z" AuthenticationMethod="urn:ietf:rfc:3075">
+        AuthenticationInstant="2004-08-13T22:11:00.656Z" AuthenticationMethod="urn:ietf:rfc:3075">
         <saml:Subject>
             <saml:NameIdentifier
-                Format="urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName" NameQualifier="root.locutus.l7tech.com">CN=joe</saml:NameIdentifier>
+                Format="urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName">CN=John
+                Smith, OU=Java Technology Center, O=IBM, L=Cupertino,
+                ST=California, C=US</saml:NameIdentifier>
             <saml:SubjectConfirmation>
                 <saml:ConfirmationMethod>urn:oasis:names:tc:SAML:1.0:cm:holder-of-key</saml:ConfirmationMethod>
-                <ds:KeyInfo>
-                    <ds:X509Data>
-                        <ds:X509SubjectName>CN=joe</ds:X509SubjectName>
-                        <ds:X509Certificate>MIICDTCCAXagAwIBAgIIIXW9r5+nC4kwDQYJKoZIhvcNAQEFBQAwIjEgMB4GA1UEAxMXcm9vdC5sb2N1dHVzLmw3dGVjaC5jb20wHhcNMDQwNzMwMjMyNDAzWhcNMDYwNzMwMjMyNDAzWjAOMQwwCgYDVQQDEwNqb2UwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBALQpfTYesuITkdVKBfXLmnvnreDz85JmK4zosugBH82ZG02aJkB8yrHFoZEkijN3jWaDxISMw424u09RwjLzkEWGF6t/QEKwY2oBXDuoc5OIr7Hb1Yu5iubr4jWk+NPUJlRUNNGlh8oGru3U1JtG7aFGfB1FJcgtRniCwJ6h09J/AgMBAAGjYDBeMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgWgMB0GA1UdDgQWBBTVLF5dyonEqa+cWFuKhiRzOFHUajAfBgNVHSMEGDAWgBTVhkrHue7zyZsNSTwz9oZuotKO4jANBgkqhkiG9w0BAQUFAAOBgQAJ3QUciAZuTjXE+90l8iwVdy2y2lXOpO8bAUY7DyenCqWFsAUBs39wiuobIxUV7fkHag2kORVCxAwjpPW9EqDbfT1iqmmUwTwzTZqXF73yKW/cykKjzJrdUm1mr2hSR+PpIEAoHoeyFiGqDUUSkQozyvu8aciLIvKoO9D8dALOXw==</ds:X509Certificate>
-                    </ds:X509Data>
-                </ds:KeyInfo>
+                <xd:KeyInfo xmlns:xd="http://www.w3.org/2000/09/xmldsig#">
+                    <xd:X509Data>
+                        <xd:X509SubjectName>CN=John Smith, OU=Java
+                            Technology Center, O=IBM, L=Cupertino,
+                            ST=California, C=US</xd:X509SubjectName>
+                        <xd:X509Certificate>MIICZjCCAc8CBD2+61QwDQYJKoZIhvcNAQEEBQAwejELMAkGA1UEBhMCVVMxEzARBgNVBAgTCkNhbGlmb3JuaWExEjAQBgNVBAcTCUN1cGVydGlubzEMMAoGA1UEChMDSUJNMR8wHQYDVQQLExZKYXZhIFRlY2hub2xvZ3kgQ2VudGVyMRMwEQYDVQQDEwpKb2huIFNtaXRoMB4XDTAyMTAyOTIwMTEwMFoXDTA3MTAwMzIwMTEwMFowejELMAkGA1UEBhMCVVMxEzARBgNVBAgTCkNhbGlmb3JuaWExEjAQBgNVBAcTCUN1cGVydGlubzEMMAoGA1UEChMDSUJNMR8wHQYDVQQLExZKYXZhIFRlY2hub2xvZ3kgQ2VudGVyMRMwEQYDVQQDEwpKb2huIFNtaXRoMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCtitis5FONvv236Xw1CKOvKAOQ0NYlvRd/FKwuf+T1XCFadHMrtvHhq/+Z/Dlcn2YQYOCp9auS+WkBcL0AUrJJPUbwZIB2CyBZJjnS7+jdb37RKYQUsNRNlgdIcoZM8bvCZldBSfnat4xDPyQOJB7ExDrMmI9tP0NY9GN0npfnwwIDAQABMA0GCSqGSIb3DQEBBAUAA4GBAFLNrEP8Y0xwUVIl4XigEiDM6jAdDJFCI+m8EA07nAsYWmV/Ic8kkqDzXaWyLkIBJQ0gElRlWHYe+W/K/pT9CNEWRFViKbZGevivBKek7GQXhuEgo+pWalpEtg4nA741+46iKeKpEQILL6OYEj7aHcreIxaQ1WH2v1iMig33Q0+S</xd:X509Certificate>
+                    </xd:X509Data>
+                </xd:KeyInfo>
             </saml:SubjectConfirmation>
         </saml:Subject>
-        <saml:SubjectLocality DNSAddress="locutus.l7tech.com" IPAddress="192.168.1.220"/>
+        <saml:SubjectLocality DNSAddress="Data.l7tech.com" IPAddress="192.168.1.221"/>
     </saml:AuthenticationStatement>
     <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
         <ds:SignedInfo>
@@ -31,27 +34,25 @@
                     <ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
                 </ds:Transforms>
                 <ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
-                <ds:DigestValue>m+zA48mp0tyMeUqd8fzgiDIkG8Y=</ds:DigestValue>
+                <ds:DigestValue>XXiSghmvJbE2h7tpslF8stu+MN0=</ds:DigestValue>
             </ds:Reference>
         </ds:SignedInfo>
         <ds:SignatureValue>
-            JOhyiGpJQnUOhgpE7G2u6xq0Vb1SXPUrPGSM2bqCbkCMzX9fSKEfTWvSmx0mOEBMHaCyIig4
-            IARcu620eG0v3cee61K7tMcLql/6RNOcnpr7B+Mb+wFPOllAjsNx5+t/pULVG8AmhkXLqd2k
-            kMSh6ene/9aBM+Y+FFdtcBwYCiI=   </ds:SignatureValue>
+            bmXbw9C9em+f1smjBZJmAY8Z3Vj9C3K1MmEL2DRQ9aXDaI5gZDgOQ+ri0YC4CuJfN+G1YXdq
+            GNUNHekMAiGU+BHlWtxmboMnghHbcrsOKzYsI+D9lsmSpripYakueC3w/CVlXfUJokFoDL4F
+            EOBjh8/Hi2M9pn0x+dDxUq6zBuc=   </ds:SignatureValue>
         <KeyInfo>
             <X509Data>
-                <X509SubjectName>CN=root.locutus.l7tech.com</X509SubjectName>
+                <X509SubjectName>CN=Service Provider,C=US</X509SubjectName>
                 <X509Certificate>
-                    MIICBjCCAW+gAwIBAgIIXhgZ64swGKYwDQYJKoZIhvcNAQEFBQAwIjEgMB4GA1UEAxMXcm9vdC5s
-                    b2N1dHVzLmw3dGVjaC5jb20wHhcNMDQwNzE2MTgwNTE0WhcNMDkwNzE1MTgwNTE0WjAiMSAwHgYD
-                    VQQDExdyb290LmxvY3V0dXMubDd0ZWNoLmNvbTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA
-                    wWBeJQPxmonKzzFFQbT3vssdRW/IIAHHewPMNvPPpVxdgfWQ7as4QYpKAaXgjlRwuTQxANdWBxGF
-                    YNxTqsqHV99lAlpKDp5PdOyzwGtzl9ZNVBt1UkTnqj4DEtgVNGpCzJNGy5Dh0ZLT4MyQP1G7fpBc
-                    ZvVquKeDq+9TUk9r1usCAwEAAaNFMEMwEgYDVR0TAQH/BAgwBgEB/wIBAjAOBgNVHQ8BAf8EBAMC
-                    AgQwHQYDVR0OBBYEFNWGSse57vPJmw1JPDP2hm6i0o7iMA0GCSqGSIb3DQEBBQUAA4GBAAgkp+kS
-                    zqdeGPM5KH9d60EOehE1fNqVbdnX7STcBpU+KzJC6zT9SGOdKvgDkjl/u/JTPtHdsk5tqDVWO5et
-                    sHZXEFLB4PkgNmxJV0eZZe6dykgZzsZj/r9sZFyeYa54bQJdbMBgqoeCLrHu+QZxaB5yoYBbyInM
-                    pASqOLj8jCGw       </X509Certificate>
+                    MIIBwjCCASsCBD2+61wwDQYJKoZIhvcNAQEEBQAwKDELMAkGA1UEBhMCVVMxGTAXBgNVBAMTEFNl
+                    cnZpY2UgUHJvdmlkZXIwHhcNMDIxMDI5MjAxMTA4WhcNMDcxMDAzMjAxMTA4WjAoMQswCQYDVQQG
+                    EwJVUzEZMBcGA1UEAxMQU2VydmljZSBQcm92aWRlcjCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkC
+                    gYEAo0XigmhYEI5e3zBQRH/268+QytTtZaelah0y1ZTQMJFxKo3ZUSlfC4RXwfzDX+6r8qMp0Dz3
+                    VMpzLESayCYYhO/HZiqvnj6XmPmMbMqSFfayBvRmLbaSXNgi2BaTcD5S54EiLWBpXCUkhJUTuEqz
+                    DmZPP4djjip4i0PDkd1ido8CAwEAATANBgkqhkiG9w0BAQQFAAOBgQCgjZ5WzQUo0nuilpRUUbqN
+                    654ZEvq3bdUCdGn9UEa6IfczMhQNfOWW1182ksx0tcUKAw3yAzaNJeUjhONQc+NiF3QDohf1yECy
+                    RcDG0Z8mBoZM5VGO3ezgRj6gNKNr6CtJM23WSxtLYM1xzONDaKwiaU965fh8t0bA7EoUAaxETA==       </X509Certificate>
             </X509Data>
         </KeyInfo>
     </ds:Signature>
