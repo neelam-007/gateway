@@ -67,13 +67,6 @@ public class TrustedCert extends NamedEntityImp implements Serializable, Cloneab
         }
     }
 
-    public void check() throws IOException, CertificateException, CertificateWillExpireException {
-        final X509Certificate cacert = getCertificate();
-        cacert.checkValidity();
-        int days = (int)(.5f + ((System.currentTimeMillis() - cacert.getNotAfter().getTime()) * 1000 * 86400));
-        if ( days <= CertificateWillExpireException.FINE_DAYS ) throw new CertificateWillExpireException(days);
-    }
-
     /**
      * Clone a trusted certificate
      * @return  Object  - The instance of the cloned object

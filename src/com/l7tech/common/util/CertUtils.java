@@ -6,21 +6,20 @@
 
 package com.l7tech.common.util;
 
+import com.l7tech.common.security.CertificateExpiry;
+
 import javax.security.auth.x500.X500Principal;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.Principal;
+import java.security.PublicKey;
+import java.security.cert.*;
+import java.security.interfaces.DSAParams;
+import java.security.interfaces.DSAPublicKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateExpiredException;
-import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
-import java.security.MessageDigest;
-import java.security.Principal;
-import java.security.interfaces.RSAPublicKey;
-import java.security.interfaces.DSAPublicKey;
-import java.security.interfaces.DSAParams;
 
 /**
  *
@@ -28,6 +27,20 @@ import java.security.interfaces.DSAParams;
  * @version 1.0
  */
 public class CertUtils {
+    /**
+     * Checks the validity period of the specified certificate.
+     * @return a {@link CertificateExpiry} indicating how many days remain before the certificate will expire
+     * @throws CertificateNotYetValidException if the certificate's "not-before" is after the current time
+     * @throws CertificateExpiredException if the certificate's "not-after" was before the current time
+     */
+    public static CertificateExpiry checkValidity( X509Certificate certificate )
+            throws CertificateNotYetValidException, CertificateExpiredException
+    {
+        certificate.checkValidity();
+        int days = (int)(.5f + ((System.currentTimeMillis() - certificate.getNotAfter().getTime()) * 1000 * 86400));
+        return new CertificateExpiry(days);
+    }
+
     public static final String X509_OID_SUBJECTKEYID = "2.5.29.14";
 
     /**

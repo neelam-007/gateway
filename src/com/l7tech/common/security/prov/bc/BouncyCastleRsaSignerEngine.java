@@ -41,7 +41,7 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         JceProvider.init();
     }
 
-    private PrivateKey privateKey;
+    private PrivateKey caPrivateKey;
     private X509Certificate caCert;
     X509Name caSubjectName;
     private static final SecureRandom random = new SecureRandom();
@@ -156,8 +156,9 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         return cert;
     }
 
-    public static X509Certificate makeSignedCertificate( String subjectDn, int validity, PublicKey subjectPublicKey,
-                                                   X509Certificate caCert, PrivateKey caKey)
+    public static X509Certificate makeSignedCertificate(String subjectDn, int validity,
+                                                        PublicKey subjectPublicKey,
+                                                        X509Certificate caCert, PrivateKey caKey)
             throws IOException, SignatureException, InvalidKeyException
     {
         X509Name subject = new X509Name(subjectDn);
@@ -190,7 +191,8 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
             throw new Exception("Verification of signature (popo) on PKCS10 request failed.");
         }
 
-        X509Certificate cert = makeSignedCertificate(dn, CERT_DAYS_VALID, pkcs10.getPublicKey(), caCert, privateKey);
+        X509Certificate cert = makeSignedCertificate(dn, CERT_DAYS_VALID, pkcs10.getPublicKey(),
+                                                     caCert, caPrivateKey);
         // Verify before returning
         cert.verify(caCert.getPublicKey());
         return cert;
@@ -212,8 +214,8 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
             throw new IllegalArgumentException("A CA private key passphrase must be provided");
         char[] privateKeyPass = privateKeyPassString.toCharArray();
 
-        privateKey = (PrivateKey) keyStore.getKey(privateKeyAlias, privateKeyPass);
-        if (privateKey == null) {
+        caPrivateKey = (PrivateKey) keyStore.getKey(privateKeyAlias, privateKeyPass);
+        if (caPrivateKey == null) {
             logger.severe("Cannot load key with alias '" + privateKeyAlias + "' from keystore '" + keyStorePath + "'");
             throw new Exception("Cannot load key with alias '" + privateKeyAlias + "' from keystore '" + keyStorePath + "'");
         }

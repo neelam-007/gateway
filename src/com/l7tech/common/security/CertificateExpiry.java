@@ -12,8 +12,8 @@ import java.util.logging.Level;
  * @author alex
  * @version $Revision$
  */
-public class CertificateWillExpireException extends RuntimeException {
-    public CertificateWillExpireException(int days) {
+public class CertificateExpiry {
+    public CertificateExpiry(int days) {
         this.days = days;
     }
 

@@ -6,13 +6,15 @@
 
 package com.l7tech.server.identity.fed;
 
-import com.l7tech.common.security.CertificateWillExpireException;
+import com.l7tech.common.security.CertificateExpiry;
 import com.l7tech.common.security.TrustedCert;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.Locator;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
+import com.l7tech.identity.fed.FederatedUser;
 import com.l7tech.identity.fed.X509Config;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
@@ -59,12 +61,11 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
             TrustedCert cert = null;
             try {
                 cert = trustedCertManager.findByPrimaryKey(oid);
-                cert.check();
+                CertificateExpiry exp = CertUtils.checkValidity(cert.getCertificate());
+                if (exp.getDays() <= CertificateExpiry.FINE_DAYS) logWillExpire( cert, exp );
                 trustedCerts.put(cert.getSubjectDn(), cert);
             } catch ( FindException e ) {
                 throw new RuntimeException("Couldn't retrieve a cert from the TrustedCertManager - cannot proceed", e);
-            } catch ( CertificateWillExpireException e ) {
-                logWillExpire( cert, e );
             } catch ( Exception e ) {
                 logExpired( cert, e );
             }
@@ -78,7 +79,7 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
         logger.log( Level.SEVERE, msg, e );
     }
 
-    private void logWillExpire( TrustedCert cert, CertificateWillExpireException e ) {
+    private void logWillExpire( TrustedCert cert, CertificateExpiry e ) {
         final String msg = "Trusted cert for " + cert.getSubjectDn() +
                            " will expire in approximately " + e.getDays() + " days.";
         logger.log( e.getSeverity(), msg );
@@ -101,12 +102,21 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
         if ( pc.getFormat() == CredentialFormat.CLIENTCERT ) {
             if ( !config.isX509Supported() )
                 throw new BadCredentialsException("This identity provider is not configured to support X.509 credentials");
-            
+
             final X509Config x509Config = config.getX509Config();
 
             X509Certificate requestCert = (X509Certificate)pc.getPayload();
             String subjectDn = requestCert.getSubjectDN().getName();
             String issuerDn = requestCert.getIssuerDN().getName();
+
+//            try {
+//                requestCert.checkValidity();
+//            } catch ( CertificateExpiredException e ) {
+//                logger.log( Level.WARNING, e.getMessage(), e );
+//                throw new BadCredentialsException
+//            } catch ( CertificateNotYetValidException e ) {
+//                logger.log( Level.INFO, e.getMessage(), e );
+//            }
 
             if ( !trustedCerts.isEmpty() ) {
                 // There could be no trusted certs--this means that specific client certs
@@ -119,10 +129,9 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
                                                       " is not trusted for signing client certificates");
 
                 try {
-                    trustedCert.check();
-                } catch ( CertificateWillExpireException e ) {
-                    logWillExpire(trustedCert, e);
-                    // FALLTHROUGH
+                    CertificateExpiry exp = CertUtils.checkValidity(trustedCert.getCertificate());
+                    if (exp.getDays() <= CertificateExpiry.FINE_DAYS)
+                        logWillExpire(trustedCert, exp);
                 } catch ( CertificateException e ) {
                     logExpired(trustedCert, e);
                     throw new AuthenticationException(e.getMessage(), e);
@@ -149,9 +158,11 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
                 }
             }
 
-            User u = userManager.findBySubjectDN(subjectDn);
-            if (u == null) throw new BadCredentialsException("No Federated User with DN = '" +
-                                                             subjectDn + "' could be found");
+            FederatedUser u = userManager.findBySubjectDN(subjectDn);
+            if (u == null && trustedCerts.isEmpty())
+                throw new BadCredentialsException("No Federated User with DN = '" +
+                                                  subjectDn + "' could be found and virtual groups" +
+                                                  " are not permitted without trusted certs");
 
             if ( trustedCerts.isEmpty() ) {
                 // No trusted certs means the request cert must match a previously stored client cert
@@ -169,8 +180,14 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
             final Class csa = pc.getCredentialSourceAssertion();
 
             if ( ( x509Config.isWssBinarySecurityToken() && csa == RequestWssX509Cert.class ) ||
-                 ( x509Config.isSslClientCert() && csa == HttpClientCert.class ))
-                    return u;
+                 ( x509Config.isSslClientCert() && csa == HttpClientCert.class )) {
+                if ( u == null ) {
+                    // Make a fake user so that a VirtualGroup can still resolve it
+                    u = new FederatedUser();
+                    u.setSubjectDn(subjectDn);
+                }
+                return u;
+            }
 
             throw new BadCredentialsException("Federated IDP " + config.getName() + "(" + config.getOid() +
                                               ") is not configured to trust certificates found with " +

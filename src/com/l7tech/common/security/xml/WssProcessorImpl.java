@@ -25,10 +25,10 @@ import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.X509Certificate;
 import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Level;
@@ -763,7 +763,7 @@ public class WssProcessorImpl implements WssProcessor {
 
         X509Certificate signingCert = signingCertToken.asX509Certificate();
         try {
-            signingCert.checkValidity();
+            CertUtils.checkValidity(signingCert);
         } catch ( CertificateExpiredException e ) {
             logger.log( Level.WARNING, "Signing certificate expired " + signingCert.getNotAfter(), e );
             throw new ProcessorException(e);
