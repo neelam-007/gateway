@@ -1,13 +1,7 @@
 package com.l7tech.policy.validator;
 
-import com.l7tech.common.util.Locator;
-import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.policy.*;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.HttpRoutingAssertion;
-import com.l7tech.policy.assertion.RoutingAssertion;
-import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.policy.assertion.xml.XslTransformation;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
@@ -15,6 +9,7 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
 import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
 
@@ -116,9 +111,9 @@ public class DefaultPolicyValidator extends PolicyValidator {
             } else if (isAccessControl(a)) {
                 processAccessControl((IdentityAssertion)a);
             } else if (isRouting(a)) {
-                processRouting((HttpRoutingAssertion)a);
+                processRouting((RoutingAssertion)a);
             } else {
-                processUnknown(a);
+                processUnknown();
             }
         }
 
@@ -258,26 +253,48 @@ public class DefaultPolicyValidator extends PolicyValidator {
             seenPreconditions = true;
         }
 
-        private void processRouting(HttpRoutingAssertion a) {
+        private void processRouting(RoutingAssertion a) {
             seenRouting = true;
+            if (a instanceof HttpRoutingAssertion) {
+                processHttpRouting((HttpRoutingAssertion)a);
+            } else if (a instanceof JmsRoutingAssertion) {
+                processJmsRouting((JmsRoutingAssertion)a);
+            } else {
+                result.addError(new PolicyValidatorResult.Error(a,
+                                                                "This message routing protocol is not supported.",
+                                                                null));
+            }
+        }
+
+        private void processJmsRouting(JmsRoutingAssertion a) {
+            Long oid = a.getEndpointOid();
+            if (oid == null) {
+                result.addWarning(new PolicyValidatorResult.Warning(a,
+                                    "The assertion might not work as configured." +
+                                    "\nThere is no protected service JMS endpoint defined.", null));
+            } else {
+                // TODO: for now we just assume that any non-null oid is a valid JmsEndpoint
+            }
+        }
+
+        private void processHttpRouting(HttpRoutingAssertion a) {
             String url = a.getProtectedServiceUrl();
             if (url == null) {
                 result.addWarning(new PolicyValidatorResult.Warning(a,
-                  "The assertion might not work as configured." +
-                  "\nThe protected service url is empty.", null));
+                                    "The assertion might not work as configured." +
+                                    "\nThe protected service url is empty.", null));
             } else {
                 try {
                     new URL(url);
                 } catch (MalformedURLException e) {
                     result.addWarning(new PolicyValidatorResult.Warning(a,
-                      "The assertion might not work as configured." +
-                      "\nThe protected service url is malformed.", null));
+                                        "The assertion might not work as configured." +
+                                        "\nThe protected service url is malformed.", null));
                 }
             }
         }
 
-
-        private void processUnknown(Assertion a) {
+        private void processUnknown() {
         }
 
         private boolean isRouting(Assertion a) {
@@ -303,15 +320,6 @@ public class DefaultPolicyValidator extends PolicyValidator {
                 a instanceof XslTransformation)
                 return true;
             return false;
-        }
-
-        private IdentityProviderConfigManager getProviderConfigManager() throws RuntimeException {
-            IdentityProviderConfigManager ipc = (IdentityProviderConfigManager)Locator.
-              getDefault().lookup(IdentityProviderConfigManager.class);
-            if (ipc == null) {
-                throw new RuntimeException("Could not find registered " + IdentityProviderConfigManager.class);
-            }
-            return ipc;
         }
 
         boolean seenPreconditions = false;

@@ -4,11 +4,11 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.event.PolicyListenerAdapter;
-import com.l7tech.console.panels.HttpRoutingAssertionDialog;
-import com.l7tech.console.tree.policy.HttpRoutingAssertionTreeNode;
+import com.l7tech.console.tree.policy.JmsRoutingAssertionTreeNode;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Registry;
-import com.l7tech.policy.assertion.HttpRoutingAssertion;
+import com.l7tech.console.panels.JmsRoutingAssertionDialog;
+import com.l7tech.policy.assertion.JmsRoutingAssertion;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -16,16 +16,16 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * The <code>HttpRoutingAssertionPropertiesAction</code> edits the
- * protected service properties.
+ * The <code>JmsRoutingAssertionPropertiesAction</code> edits the
+ * protected service properties when JMS is used as the outbound transport.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
+ * @author <a href="mailto:mlyons@layer7-tech.com">Mike Lyons</a>
  * @version 1.0
  */
-public class HttpRoutingAssertionPropertiesAction extends NodeAction {
-    static final Logger log = Logger.getLogger(HttpRoutingAssertionPropertiesAction.class.getName());
+public class JmsRoutingAssertionPropertiesAction extends NodeAction {
+    static final Logger log = Logger.getLogger(JmsRoutingAssertionPropertiesAction.class.getName());
 
-    public HttpRoutingAssertionPropertiesAction(HttpRoutingAssertionTreeNode node) {
+    public JmsRoutingAssertionPropertiesAction(JmsRoutingAssertionTreeNode node) {
         super(node);
     }
 
@@ -61,12 +61,11 @@ public class HttpRoutingAssertionPropertiesAction extends NodeAction {
           new Runnable() {
               public void run() {
                   JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
-                  HttpRoutingAssertionDialog d =
-                    new HttpRoutingAssertionDialog(f, (HttpRoutingAssertion)node.asAssertion(), getServiceNodeCookie());
-                  d.setModal(true);
+                  JmsRoutingAssertionDialog d =
+                    new JmsRoutingAssertionDialog(f, (JmsRoutingAssertion)node.asAssertion());
+                  d.addPolicyListener(listener);
                   d.pack();
                   Utilities.centerOnScreen(d);
-                  d.addPolicyListener(listener);
                   d.show();
               }
           });

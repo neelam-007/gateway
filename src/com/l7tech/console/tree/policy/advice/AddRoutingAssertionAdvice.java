@@ -34,14 +34,17 @@ public class AddRoutingAssertionAdvice implements Advice {
           !(assertions[0] instanceof RoutingAssertion)) {
             throw new IllegalArgumentException();
         }
-        HttpRoutingAssertion ra = (HttpRoutingAssertion) assertions[0];
-        String url = "Unable to determine the service url. Please edit";
-        try {
-            url = pc.getService().parsedWsdl().getServiceURI();
-        } catch (WSDLException e) {
-            log.log(Level.WARNING, "Wsdl error", e);
+
+        if (assertions[0] instanceof HttpRoutingAssertion) {
+            HttpRoutingAssertion ra = (HttpRoutingAssertion) assertions[0];
+            String url = "Unable to determine the service url. Please edit";
+            try {
+                url = pc.getService().parsedWsdl().getServiceURI();
+            } catch (WSDLException e) {
+                log.log(Level.WARNING, "Wsdl error", e);
+            }
+            ra.setProtectedServiceUrl(url);
         }
-        ra.setProtectedServiceUrl(url);
         pc.proceed();
     }
 }

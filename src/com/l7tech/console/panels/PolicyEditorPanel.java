@@ -64,6 +64,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private boolean initialValidate = false;
     private boolean messageAreaVisible = false;
     private JTabbedPane messagesTab;
+    private boolean validating = false;
 
     /**
      * Instantiate the policy editor, optionally validating the policy.
@@ -453,7 +454,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             AssertionTreeNode an = (AssertionTreeNode)en.nextElement();
             an.setValidatorMessages(r.messages(an.asAssertion()));
         }
-        ((DefaultTreeModel)policyTree.getModel()).nodeChanged(rootAssertion.getRoot());
+        if (!validating)
+            ((DefaultTreeModel)policyTree.getModel()).nodeChanged(rootAssertion.getRoot());
         overWriteMessageArea("");
         for (Iterator iterator = r.getErrors().iterator();
              iterator.hasNext();) {
@@ -534,7 +536,18 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 enableButtonSave();
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
-                        // validatePolicy();
+                        try {
+                            if (!validating) {
+                                try {
+                                    validating = true;
+                                    validatePolicy();
+                                } finally {
+                                    validating = false;
+                                }
+                            }
+                        } catch (Throwable t) {
+                            log.severe(t.getMessage());
+                        }
                     }
                 });
             }

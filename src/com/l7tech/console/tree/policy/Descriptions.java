@@ -1,9 +1,6 @@
 package com.l7tech.console.tree.policy;
 
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.RoutingAssertion;
-import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.policy.assertion.HttpRoutingAssertion;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
@@ -122,9 +119,25 @@ public class Descriptions {
            * @return the <CODE>Object[]</CODE> array of assertion parameters
            */
           protected Object[] parameters() {
-              return new Object[]{
-                  ((HttpRoutingAssertion)assertion).getProtectedServiceUrl()
-              };
+              if (assertion instanceof HttpRoutingAssertion) {
+                                return new Object[]{
+                                    ((HttpRoutingAssertion)assertion).getProtectedServiceUrl()
+                                };
+              } else if (assertion instanceof JmsRoutingAssertion) {
+                  JmsRoutingAssertion ass = (JmsRoutingAssertion) assertion;
+                  String s;
+                  if (ass.getEndpointOid() == null) {
+                      s = "Route to as-yet-undefined JMS Endpoint";
+                  } else {
+                      String name = ass.getEndpointName();
+                      if (name == null)
+                        name = "(unnamed)";
+                      s = "Route to JMS Endpoint " + name;
+                  }
+                  return new Object[] { s };
+              } else {
+                  return new Object[] { "Route using unknown protocol" };
+              }
           }
       }
 

@@ -13,6 +13,8 @@ import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.console.util.Registry;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.ListSelectionEvent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -126,4 +128,25 @@ public class JmsEndpointListPanel extends JPanel {
     public JmsEndpoint getSelectedJmsEndpoint() {
         return (JmsEndpoint)getEndpointList().getSelectedValue();
     }
+
+    public interface JmsEndpointListSelectionListener {
+        /**
+         * Called when the selection changes.
+         * @param selected the newly selected JmsEndpoint, or null if none is selected.
+         */
+        void onSelected(JmsEndpoint selected);
+    }
+
+    /**
+     * Subscribe to be notified whenever the selected JMS endpoint changes.  The provided listener's
+     * onSelected() method will be called each time.  Note that "no selection" is a possibility.
+     * @param listener listener which will be called back when the selection changes
+     */
+    public void addJmsEndpointListSelectionListener(final JmsEndpointListSelectionListener listener) {
+        getEndpointList().getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                listener.onSelected(getSelectedJmsEndpoint());
+            }
+        });
+    }   
 }

@@ -38,6 +38,8 @@
                 <JmsRoutingAssertion>
                     <GroupMembershipStatement booleanValue="false"/>
                     <AttachSamlSenderVouches booleanValue="false"/>
+                    <EndpointName stringValueNull="null"/>
+                    <EndpointOid boxedLongValueNull="null"/>
                     <SamlAssertionExpiry intValue="5"/>
                 </JmsRoutingAssertion>
                 <TrueAssertion/>
