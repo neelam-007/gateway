@@ -9,14 +9,13 @@ package com.l7tech.server;
 import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceManager;
 import com.l7tech.service.resolution.ServiceResolutionException;
 import com.l7tech.util.Locator;
-import com.l7tech.server.policy.assertion.ServerAssertion;
 
 import java.io.IOException;
 import java.util.logging.Level;
