@@ -1,4 +1,4 @@
-package com.l7tech.console.util;
+package com.l7tech.common.util;
 
 import java.io.InputStream;
 import java.io.File;
@@ -10,11 +10,11 @@ import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 /**
- * The class is a SSM specific JDK logging configurator utility.
+ * The class is a JDK logging configurator utility.
  * Initialize logging, trying different strategies. First look for the system
  * property <code>java.util.logging.config.file</code>, then look for
  * <code>logging.properties</code>. If that fails fall back to the
- * <code>com/l7tech/console/resources/logging.properties</code>.
+ * application-specified config file (ie, <code>com/l7tech/console/resources/logging.properties</code>).
  * Set the configuration properties, such as <i>org.apache.commons.logging.Log</i>
  * to the vlaues to trigger JDK logger.
  *
@@ -31,8 +31,12 @@ public class JdkLoggerConfigurator {
      * property <code>java.util.logging.config.file</code>, then look for
      * <code>logging.properties</code>. If that fails fall back to the
      * <code>com/l7tech/console/resources/logging.properties</code>.
+     *
+     * @param classname the classname to use for logging info about which logging.properties was found
+     * @param shippedLoggingProperties the logging.properties to use if no locally-customized file is found,
+     *                                 for example "com/l7tech/console/resources/logging.properties"
      */
-    public static synchronized void configure() {
+    public static synchronized void configure(String classname, String shippedLoggingProperties) {
         InputStream in = null;
         try {
             System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
@@ -42,7 +46,7 @@ public class JdkLoggerConfigurator {
                 configCandidates.add(cf);
             }
             configCandidates.add("logging.properties");
-            configCandidates.add("com/l7tech/console/resources/logging.properties");
+            configCandidates.add(shippedLoggingProperties);
 
             boolean configFound = false;
             String configCandidate = null;
@@ -67,7 +71,7 @@ public class JdkLoggerConfigurator {
                 }
             }
             if (configFound) {
-                Logger.getLogger("com.l7tech.console").info("Policy editor logging initialized from '" + configCandidate + "'");
+                Logger.getLogger(classname).info("Policy editor logging initialized from '" + configCandidate + "'");
             }
         } catch (IOException e) {
             e.printStackTrace(System.err);

@@ -11,7 +11,7 @@ import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.JdkLoggerConfigurator;
+import com.l7tech.common.util.JdkLoggerConfigurator;
 import net.jini.security.policy.DynamicPolicyProvider;
 import net.jini.security.policy.PolicyInitializationException;
 
@@ -54,7 +54,7 @@ public class Main {
     public void run(String[] args) {
         try {
             setInitialEnvironment();
-            JdkLoggerConfigurator.configure();
+            JdkLoggerConfigurator.configure("com.l7tech.console", "com/l7tech/console/resources/logging.properties");
             Logger log = Logger.getLogger(getClass().getName());
 
             ensureSecurityManager();
