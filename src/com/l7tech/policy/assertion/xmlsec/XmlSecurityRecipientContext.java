@@ -16,7 +16,7 @@ import java.io.Serializable;
 public class XmlSecurityRecipientContext implements Serializable {
     private String actor;
     private String base64edX509Certificate;
-    private static final String LOCALRECIPIENT_ACTOR_VALUE = "";
+    public static final String LOCALRECIPIENT_ACTOR_VALUE = "";
 
     public XmlSecurityRecipientContext() {}
 

@@ -4,6 +4,7 @@ import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
 import com.l7tech.service.PublishedService;
 
 import java.util.Iterator;
@@ -53,12 +54,12 @@ public class DefaultPolicyValidator extends PolicyValidator {
             r.addWarning(new PolicyValidatorResult.
               Warning(lastAssertion, ap, "No route assertion.", null));
         }
-        if (!pv.seenCredentials && pv.seenRouting) {
+        if (!pv.seenCredentials(XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE) && pv.seenRouting) {
             r.addWarning(new PolicyValidatorResult.Warning(lastAssertion, ap,
               "No credential assertion is present in the policy. The" +
               " service may be exposed to public access", null));
         }
-        if (pv.seenCredentials && !pv.seenAccessControl && pv.seenRouting) {
+        if (pv.seenCredentials(XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE) && !pv.seenAccessControl && pv.seenRouting) {
             r.addWarning(new PolicyValidatorResult.Warning(lastAssertion, ap, "Credentials are collected but not authenticated." +
               " This service may be exposed to public access.", null));
         }

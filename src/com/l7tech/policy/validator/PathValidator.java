@@ -21,10 +21,7 @@ import javax.wsdl.BindingOperation;
 import javax.wsdl.WSDLException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 
 /**
  * validate single path, and collect the validation results in the
@@ -89,7 +86,7 @@ class PathValidator {
     private void processCustom(Assertion a) {
         CustomAssertionHolder csh = (CustomAssertionHolder)a;
         if (Category.ACCESS_CONTROL.equals(csh.getCategory())) {
-            if (!seenCredentials) {
+            if (!seenCredentials(a)) {
                 result.addError(new PolicyValidatorResult.Error(a, assertionPath, "Access control specified without " +
                   "authentication scheme.", null));
             } else {
@@ -121,7 +118,7 @@ class PathValidator {
 
 
     private void processAccessControl(IdentityAssertion a) {
-        if (!seenCredentials) {
+        if (!seenCredentials(a)) {
             result.addError(new PolicyValidatorResult.Error(a, assertionPath, "Access control specified without authentication scheme.", null));
         }
 
@@ -154,7 +151,7 @@ class PathValidator {
               Error(a, assertionPath, "Access control already set, this assertion might get ignored.", null));
         }
 
-        if (seenCredentials) {
+        if (seenCredentials(a)) {
             result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath, "You already have a credential assertion.", null));
         }
 
@@ -185,10 +182,10 @@ class PathValidator {
         }
 
         if (a instanceof RequestWssX509Cert) {
-            if (seenWssSignature) {
+            if (seenWssSignature(a)) {
                 result.addError(new PolicyValidatorResult.Error(a, assertionPath, "WSS Signature already set.", null));
             }
-            seenWssSignature = true;
+            setSeenWssSignature(a, true);
         }
 
         if (a instanceof SecureConversation) {
@@ -202,7 +199,7 @@ class PathValidator {
         }
 
         if (a instanceof SamlSecurity)
-            seenSamlSecurity = true;
+            setSeenSamlSecurity(a, true);
 
         // Custom Assertion can only be used with HTTP Basic
         if (seenCustomAssertion && !seenHTTPBasic) {
@@ -211,7 +208,7 @@ class PathValidator {
               "authentication scheme when the policy involes a Custom Assertion.", null));
         }
 
-        seenCredentials = true;
+        setSeenCredentials(a, true);
     }
 
     private void processPrecondition(final Assertion a) {
@@ -259,9 +256,10 @@ class PathValidator {
             // REASON FOR THIS RULE:
             // it makes no sense to validate that an element is signed if we dont validate
             // that the authorized user is the one who signed it.
-            if (!seenWssSignature && !seenSecureConversation && !seenSamlSecurity) {
+            if (!seenWssSignature(a) && !seenSecureConversation && !seenSamlSecurity(a)) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
-                  "This assertion should be preceeded by an WSS Signature assertion, a Secure Conversation assertion, or a SAML Security assertion.", null));
+                  "This assertion should be preceeded by an WSS Signature assertion, " +
+                  "a Secure Conversation assertion, or a SAML Security assertion.", null));
             }
             // REASON FOR THIS RULE:
             // it makes no sense to check something about the request after it's routed
@@ -281,7 +279,7 @@ class PathValidator {
             // the server needs to encrypt a symmetric key for the recipient
             // the server needs the client cert for this purpose. this ensures that
             // the client certis available from the request.
-            if (!seenWssSignature && !seenSecureConversation && !seenSamlSecurity) {
+            if (!seenWssSignature(a) && !seenSecureConversation && !seenSamlSecurity(a)) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                   "This assertion should be preceeded by an WSS Signature assertion, a Secure Conversation assertion, or a SAML Security assertion.", null));
             }
@@ -292,7 +290,7 @@ class PathValidator {
                   "after the routing assertion.", null));
             }
         } else if (a instanceof RequestWssReplayProtection) {
-            if (!seenWssSignature && !seenSecureConversation && !seenSamlSecurity) {
+            if (!seenWssSignature(a) && !seenSecureConversation && !seenSamlSecurity(a)) {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                   "This assertion should be preceeded by an WSS Signature assertion, " +
                   "a Secure Conversation assertion, or a SAML Security assertion.", null));
@@ -469,13 +467,71 @@ class PathValidator {
         return false;
     }
 
+    private boolean seenCredentials(Assertion context) {
+        String actor = XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE;
+        if (context instanceof SecurityHeaderAddressable) {
+            actor = ((SecurityHeaderAddressable)context).getRecipientContext().getActor();
+        }
+        return seenCredentials(actor);
+    }
+
+    public boolean seenCredentials(String actor) {
+        Boolean currentvalue = (Boolean)seenCredentials.get(actor);
+        if (currentvalue == null) return false;
+        else return currentvalue.booleanValue();
+    }
+
+    private void setSeenCredentials(Assertion context, boolean value) {
+        String actor = XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE;
+        if (context instanceof SecurityHeaderAddressable) {
+            actor = ((SecurityHeaderAddressable)context).getRecipientContext().getActor();
+        }
+        seenCredentials.put(actor, new Boolean(value));
+    }
+
+    private boolean seenWssSignature(Assertion context) {
+        String actor = XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE;
+        if (context instanceof SecurityHeaderAddressable) {
+            actor = ((SecurityHeaderAddressable)context).getRecipientContext().getActor();
+        }
+        Boolean currentvalue = (Boolean)seenWssSignature.get(actor);
+        if (currentvalue == null) return false;
+        else return currentvalue.booleanValue();
+    }
+
+    private void setSeenWssSignature(Assertion context, boolean value) {
+        String actor = XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE;
+        if (context instanceof SecurityHeaderAddressable) {
+            actor = ((SecurityHeaderAddressable)context).getRecipientContext().getActor();
+        }
+        seenWssSignature.put(actor, new Boolean(value));
+    }
+
+    private boolean seenSamlSecurity(Assertion context) {
+        String actor = XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE;
+        if (context instanceof SecurityHeaderAddressable) {
+            actor = ((SecurityHeaderAddressable)context).getRecipientContext().getActor();
+        }
+        Boolean currentvalue = (Boolean)seenSamlSecurity.get(actor);
+        if (currentvalue == null) return false;
+        else return currentvalue.booleanValue();
+    }
+
+    private void setSeenSamlSecurity(Assertion context, boolean value) {
+        String actor = XmlSecurityRecipientContext.LOCALRECIPIENT_ACTOR_VALUE;
+        if (context instanceof SecurityHeaderAddressable) {
+            actor = ((SecurityHeaderAddressable)context).getRecipientContext().getActor();
+        }
+        seenSamlSecurity.put(actor, new Boolean(value));
+    }
+
     boolean seenPreconditions = false;
-    boolean seenCredentials = false;
+    private Map seenCredentials = new HashMap();
     boolean seenAccessControl = false;
     boolean seenRouting = false;
-    boolean seenWssSignature = false;
+    private Map seenWssSignature = new HashMap();
     boolean seenSecureConversation = false;
-    boolean seenSamlSecurity = false;
+    private Map seenSamlSecurity = new HashMap();
     boolean seenSsl = false;
     boolean sslForbidden = false;
     boolean seenCredAssertionThatRequiresClientCert = false;
