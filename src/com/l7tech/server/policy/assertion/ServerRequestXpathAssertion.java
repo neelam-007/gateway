@@ -7,10 +7,12 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.message.XmlKnob;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.AssertionMessages;
 import org.jaxen.JaxenException;
 import org.jaxen.dom.DOMXPath;
 import org.w3c.dom.Document;
@@ -21,7 +23,6 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -62,8 +63,9 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException
     {
+        Auditor auditor = new Auditor(context.getAuditContext(), _logger);
         if (context.getRequest().getKnob(XmlKnob.class) == null) {
-            _logger.warning( "RequestXPathAssertion only works on XML requests; assertion therefore fails." );
+            auditor.logAndAudit(AssertionMessages.REQUEST_XPATH_ONLY);
             return AssertionStatus.BAD_REQUEST;
         }
 
@@ -71,7 +73,7 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
                 String pattern = _data.pattern();
 
                 if ( pattern == null || pattern.length() == 0 ) {
-                    _logger.warning( "XPath pattern is null or empty; assertion therefore fails." );
+                    auditor.logAndAudit(AssertionMessages.REQUEST_XPATH_PATTERN_INVALID);
                     return AssertionStatus.FALSIFIED;
                 }
 
@@ -83,21 +85,21 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
                 try {
                     result = xp.selectNodes(doc);
                 } catch ( RuntimeException rte ) {
-                    _logger.log( Level.WARNING, "XPath processor threw Runtime Exception", rte );
+                    auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[]{"XPath processor threw Runtime Exception"}, rte );
                     return AssertionStatus.FALSIFIED;
                 }
 
                 if ( result == null || result.size() == 0 ) {
-                    _logger.info( "XPath pattern " + pattern  + " didn't match request; assertion therefore fails." );
+                    auditor.logAndAudit(AssertionMessages.REQUEST_XPATH_PATTERN_NOT_MATCHED);
                     return AssertionStatus.FALSIFIED;
                 } else {
                     Object o = result.get(0);
                     if ( o instanceof Boolean ) {
                         if ( ((Boolean)o).booleanValue() ) {
-                            _logger.fine( "XPath pattern " + pattern + " returned true" );
+                            auditor.logAndAudit(AssertionMessages.REQUEST_XPATH_RESULT_TRUE);
                             return AssertionStatus.NONE;
                         } else {
-                            _logger.info( "XPath pattern " + pattern + " returned false" );
+                            auditor.logAndAudit(AssertionMessages.REQUEST_XPATH_RESULT_FALSE);
                             return AssertionStatus.FALSIFIED;
                         }
                     } else if ( o instanceof Node ) {
@@ -105,28 +107,28 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
                         int type = n.getNodeType();
                         switch( type ) {
                             case Node.TEXT_NODE:
-                                _logger.fine( "XPath pattern " + pattern + " found a text node '" + n.getNodeValue() + "'" );
+                                auditor.logAndAudit(AssertionMessages.REQUEST_XPATH_TEXT_NODE_FOUND, new String[] {pattern, n.getNodeValue()});
                                 return AssertionStatus.NONE;
                             case Node.ELEMENT_NODE:
-                                _logger.fine( "XPath pattern " + pattern + " found an element '" + n.getNodeName() + "'" );
+                                auditor.logAndAudit(AssertionMessages.REQUEST_XPATH_ELEMENT_FOUND, new String[] {pattern, n.getNodeName()});
                                 return AssertionStatus.NONE;
                             default:
-                                _logger.fine( "XPath pattern " + pattern + " found some other node '" + n.toString() + "'" );
+                                auditor.logAndAudit(AssertionMessages.REQUEST_XPATH_OTHER_NODE_FOUND, new String[] {pattern, n.toString()});
                                 return AssertionStatus.NONE;
                         }
                     } else {
-                        _logger.fine( "XPath pattern " + pattern + " matched request; assertion therefore succeeds." );
+                        auditor.logAndAudit(AssertionMessages.REQUEST_XPATH_SUCCEED, new String[] {pattern});
                         return AssertionStatus.NONE;
                     }
                 }
             } catch (SAXException e) {
-                _logger.log( Level.WARNING, "Caught SAXException during XPath query", e );
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Error in XPath query"}, e );
                 return AssertionStatus.SERVER_ERROR;
             } catch (IOException e) {
-                _logger.log( Level.WARNING, "Caught IOException during XPath query", e );
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Error in XPath query"}, e );
                 return AssertionStatus.SERVER_ERROR;
             } catch (JaxenException e) {
-                _logger.log( Level.WARNING, "Caught JaxenException during XPath query", e );
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Error in XPath query"}, e );
                 return AssertionStatus.SERVER_ERROR;
             }
     }
