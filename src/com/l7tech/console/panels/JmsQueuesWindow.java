@@ -41,11 +41,11 @@ public class JmsQueuesWindow extends JDialog {
     private JButton removeButton;
 
     private JmsQueuesWindow(Frame owner) {
-        super(owner, "JMS Queues", true);
+        super(owner, "Manage JMS Queues", true);
     }
 
     private JmsQueuesWindow(Dialog owner) {
-        super(owner, "JMS Queues", true);
+        super(owner, "Manage JMS Queues", true);
     }
 
     public static JmsQueuesWindow createInstance(Window owner) {
@@ -60,7 +60,7 @@ public class JmsQueuesWindow extends JDialog {
         Container p = that.getContentPane();
         p.setLayout(new GridBagLayout());
 
-        p.add(new JLabel("Known JMS queues:"),
+        p.add(new JLabel("Known JMS Queues:"),
               new GridBagConstraints(0, 0, 2, 1, 0.0, 0.0,
                       GridBagConstraints.CENTER,
                       GridBagConstraints.NONE,
@@ -144,7 +144,7 @@ public class JmsQueuesWindow extends JDialog {
                                 new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
                                                        GridBagConstraints.CENTER,
                                                        GridBagConstraints.HORIZONTAL,
-                                                       new Insets(0, 0, 0, 0), 0, 0));
+                                                       new Insets(6, 0, 0, 0), 0, 0));
             sideButtonPanel.add(getPropertiesButton(),
                                 new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
                                                        GridBagConstraints.CENTER,
@@ -248,7 +248,7 @@ public class JmsQueuesWindow extends JDialog {
 
     private JButton getPropertiesButton() {
         if (propertiesButton == null) {
-            propertiesButton = new JButton("Properties...");
+            propertiesButton = new JButton("Properties");
             propertiesButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     int row = getJmsQueueTable().getSelectedRow();
