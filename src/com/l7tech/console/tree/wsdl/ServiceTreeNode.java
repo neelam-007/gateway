@@ -7,7 +7,7 @@ import javax.wsdl.Service;
  * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-class ServiceTreeNode extends WsdlTreeNode {
+public class ServiceTreeNode extends WsdlTreeNode {
     private Service service;
 
     ServiceTreeNode(Service s) {

@@ -9,7 +9,7 @@ import java.util.Iterator;
  * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-class PortTypeTreeNode extends WsdlTreeNode {
+public class PortTypeTreeNode extends WsdlTreeNode {
     private PortType portType;
 
     PortTypeTreeNode(PortType p) {

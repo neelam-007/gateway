@@ -9,7 +9,7 @@ import java.util.Iterator;
  * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-class BindingTreeNode extends WsdlTreeNode {
+public class BindingTreeNode extends WsdlTreeNode {
     private Binding binding;
 
     BindingTreeNode(Binding b) {
