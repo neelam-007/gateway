@@ -4,28 +4,15 @@ import com.l7tech.identity.*;
 import com.l7tech.objectmodel.*;
 
 import java.util.*;
-import java.sql.SQLException;
 
 /**
  * @author alex
  */
 public class IdentityProviderConfigManagerImp extends HibernateEntityManager implements IdentityProviderConfigManager {
-    /**
-     * Constructs a new <code>IdentityProviderConfigManagerImp</code> with a default PersistenceContext.  You get your own context and call the other constructor if you want to execute multiple operations in a transaction.
-     * @throws SQLException
-     */
-    public IdentityProviderConfigManagerImp() throws SQLException {
-        _manager = PersistenceManager.getInstance();
-        _context = _manager.getContext();
-    }
+    static final Class IMPCLASS = IdentityProviderConfigImp.class;
 
-    /**
-     * Constructs a new <code>IdentityProviderConfigManagerImp</code> with a specific context.
-     * @param context
-     */
     public IdentityProviderConfigManagerImp( PersistenceContext context ) {
-        _manager = PersistenceManager.getInstance();
-        _context = context;
+        super(context);
     }
 
     public void delete(IdentityProviderConfig identityProviderConfig) throws DeleteException {
@@ -33,7 +20,7 @@ public class IdentityProviderConfigManagerImp extends HibernateEntityManager imp
     }
 
     public IdentityProviderConfig findByPrimaryKey( long oid ) throws FindException {
-        return null;
+        return (IdentityProviderConfig)_manager.findByPrimaryKey( _context, IMPCLASS, oid );
     }
 
     public long save( IdentityProviderConfig identityProviderConfig ) throws SaveException {
@@ -41,13 +28,10 @@ public class IdentityProviderConfigManagerImp extends HibernateEntityManager imp
     }
 
     public Collection findAll() throws FindException {
-        return _manager.find( _context, "select * from identity-provider", "hello", String.class );
+        return _manager.find( _context, "from identity_provider in class com.l7tech.identity.imp.IdentityProviderConfigImp" );
     }
 
     public Collection findAll(int offset, int windowSize) throws FindException {
         return null;
     }
-
-    PersistenceManager _manager;
-    PersistenceContext _context;
 }
