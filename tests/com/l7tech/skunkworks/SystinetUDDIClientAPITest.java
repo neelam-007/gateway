@@ -34,9 +34,11 @@ public class SystinetUDDIClientAPITest {
         //       System.out.println("category = " + FormatingTool.keyReferenceToString(category));
         Find_service find_service = new Find_service();
 
-
         NameArrayList businessKey = new NameArrayList(new Name(serviceName));
         find_service.setNameArrayList(businessKey);
+
+        StringArrayList qualifierList = new StringArrayList();
+        find_service.setFindQualifierArrayList(qualifierList);
         find_service.setMaxRows(new Integer(MAX_ROWS));
         return find_service;
     }
@@ -236,6 +238,8 @@ public class SystinetUDDIClientAPITest {
         printServiceList(services);
 
         ServiceInfoArrayList serviceInfoList = services.getServiceInfoArrayList();
+        if (serviceInfoList == null) return wsdlList;
+
         for (int i = 0; i < serviceInfoList.size(); i++) {
 
             ServiceInfo si = serviceInfoList.get(i);
@@ -288,11 +292,13 @@ public class SystinetUDDIClientAPITest {
     }
 
     public static void main(String args[]) throws Exception {
-        String serviceName = "UDDIPublishService";
+        String serviceName = "UDDIPublish%";
         Set wsdlList = retrieveWsdlUrl(serviceName);
 
-        System.out.println("The WSDL URL found:" );
-        printWSDLs(wsdlList);
+        if(wsdlList.size() > 0) {
+            System.out.println("The WSDL URL found:" );
+            printWSDLs(wsdlList);
+        }
     }
 
 }
