@@ -27,10 +27,12 @@ import java.util.logging.Logger;
  * Date: Aug 19, 2003<br/>
  * $Id$
  */
-public class SoapMsgSigner {
+public final class SoapMsgSigner {
     private static final String DS_PREFIX = "ds";
     private static final String DEF_ENV_TAG = "envId";
     public static final String ID_ATTRIBUTE_NAME = "Id";
+
+    private SoapMsgSigner() { }
 
     /**
      * Appends a soap message with a digital signature of it's entire envelope.
@@ -49,7 +51,7 @@ public class SoapMsgSigner {
      * @throws com.ibm.xml.dsig.XSignatureException
      *          
      */
-    public void signEnvelope(Document soapMsg, PrivateKey privateKey, X509Certificate cert)
+    public static void signEnvelope(Document soapMsg, PrivateKey privateKey, X509Certificate cert)
       throws SignatureStructureException, XSignatureException {
         // is the envelope already ided?
         String id = soapMsg.getDocumentElement().getAttribute(ID_ATTRIBUTE_NAME);
@@ -77,7 +79,7 @@ public class SoapMsgSigner {
      *                                  
      * @throws IllegalArgumentException if any of the parameters i <b>null</b>
      */
-    public void signElement(Document document, Element elem, String referenceId, PrivateKey privateKey, X509Certificate cert)
+    public static void signElement(Document document, Element elem, String referenceId, PrivateKey privateKey, X509Certificate cert)
       throws SignatureStructureException, XSignatureException {
 
         if (document == null || elem == null | referenceId == null ||
@@ -137,7 +139,7 @@ public class SoapMsgSigner {
        * @throws com.l7tech.common.security.xml.InvalidSignatureException
        *          if the signature is invalid, not in an expected format or is missing information
        */
-      public X509Certificate validateSignature(Document soapMsg)
+      public static X509Certificate validateSignature(Document soapMsg)
         throws SignatureNotFoundException, InvalidSignatureException {
         return validateSignature(soapMsg, soapMsg.getDocumentElement());
     }
@@ -154,7 +156,7 @@ public class SoapMsgSigner {
      * @throws com.l7tech.common.security.xml.InvalidSignatureException
      *          if the signature is invalid, not in an expected format or is missing information
      */
-    public X509Certificate validateSignature(Document soapMsg, Element bodyElement)
+    public static X509Certificate validateSignature(Document soapMsg, Element bodyElement)
       throws SignatureNotFoundException, InvalidSignatureException {
         normalizeDoc(soapMsg);
 
@@ -224,7 +226,7 @@ public class SoapMsgSigner {
         throw new InvalidSignatureException("No reference to envelope was verified.");
     }
 
-    private Element getSignatureHeaderElement(Document doc, Element bodyElement) {
+    private static Element getSignatureHeaderElement(Document doc, Element bodyElement) {
         Element header = XmlUtil.findFirstChildElement( doc.getDocumentElement() );
         if ( header == null ) {
             logger.info( "SOAP header not found" );
@@ -278,7 +280,7 @@ public class SoapMsgSigner {
         }
     }
 
-    private String getSignatureMethod(PrivateKey privateKey) {
+    private static String getSignatureMethod(PrivateKey privateKey) {
         String signaturemethod;
         if (privateKey instanceof RSAPrivateKey)
             signaturemethod = SignatureMethod.RSA;
@@ -296,7 +298,7 @@ public class SoapMsgSigner {
      * ssg and the CP causes \n characters to be inserted in certain text nodes that contain space char
      * as well as empty text nodes being created all over the place.
      */
-    private void normalizeDoc(Document doc) {
+    private static void normalizeDoc(Document doc) {
         // fla note, IBM's Normalizer.normalize is useless
         filterOutEmptyTextNodesAndNormalizeStrings(doc.getDocumentElement());
     }
@@ -304,7 +306,7 @@ public class SoapMsgSigner {
     /**
      * See normalizeDoc
      */
-    private void filterOutEmptyTextNodesAndNormalizeStrings(Element el) {
+    private static void filterOutEmptyTextNodesAndNormalizeStrings(Element el) {
         NodeList children = el.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
             Node node = children.item(i);
@@ -334,7 +336,7 @@ public class SoapMsgSigner {
     /**
      * See normalizeDoc
      */
-    private void normalizeTextNodeValue(Text node) {
+    private static void normalizeTextNodeValue(Text node) {
         String originalVal = node.getNodeValue();
         for (int i = 0; i < originalVal.length(); i++) {
             char c = originalVal.charAt(i);
@@ -373,7 +375,7 @@ public class SoapMsgSigner {
         node.setNodeValue(originalVal);
     }
 
-    private boolean isCharSpace(char c) {
+    private static boolean isCharSpace(char c) {
         if (c == ' ' || c == '\n' || c == '\t' || c == '\r') return true;
         return false;
     }

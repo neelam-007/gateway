@@ -77,8 +77,7 @@ class SenderVouchesHelper {
 
         try {
             doc.getDocumentElement().setAttribute("Id", "SamlTicket");
-            SoapMsgSigner signer = new SoapMsgSigner();
-            signer.signEnvelope(doc, signerInfo.getPrivate(), signerInfo.getCertificate());
+            SoapMsgSigner.signEnvelope(doc, signerInfo.getPrivate(), signerInfo.getCertificate());
             Element secElement = SoapUtil.getOrMakeSecurityElement(soapMessage);
             SoapUtil.importNode(soapMessage, doc, secElement);
             NodeList list = secElement.getElementsByTagNameNS(NS_SAML, "Assertion");
@@ -100,8 +99,7 @@ class SenderVouchesHelper {
     void signEnvleope()
       throws IOException, SAXException, SignatureException {
         try {
-            SoapMsgSigner signer = new SoapMsgSigner();
-            signer.signEnvelope(soapMessage, signerInfo.getPrivate(), signerInfo.getCertificate());
+            SoapMsgSigner.signEnvelope(soapMessage, signerInfo.getPrivate(), signerInfo.getCertificate());
         } catch (Exception e) {
             SignatureException ex = new SignatureException("error signing the saml ticket");
             ex.initCause(e);

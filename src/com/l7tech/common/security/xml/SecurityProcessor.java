@@ -8,15 +8,11 @@ package com.l7tech.common.security.xml;
 
 import org.w3c.dom.Document;
 
-import java.security.NoSuchAlgorithmException;
+import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.Key;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
-import java.io.IOException;
-
-import com.l7tech.common.security.xml.SignerInfo;
-import com.l7tech.common.security.xml.Session;
-import com.l7tech.common.security.xml.ElementSecurity;
 
 /**
  * The class security processor handles element processsing for

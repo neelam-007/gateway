@@ -117,12 +117,12 @@ public class JceProviderTest {
 
             log.info("pretest: signing XML message");
             signedDocument = XmlUtil.stringToDocument(testXml);
-            new SoapMsgSigner().signEnvelope(signedDocument, kp.getPrivate(), signedClientCert);
+            SoapMsgSigner.signEnvelope(signedDocument, kp.getPrivate(), signedClientCert);
             signedXml = XmlUtil.documentToString(signedDocument);
             log.info("Signed XML message: " + signedXml);
 
             log.info("pretest: checking XML message signature");
-            new SoapMsgSigner().validateSignature(XmlUtil.stringToDocument(signedXml));
+            SoapMsgSigner.validateSignature(XmlUtil.stringToDocument(signedXml));
         }
 
         reportTime("Empty loop (baseline)", 10000 * scale, new Testable() {
@@ -172,13 +172,13 @@ public class JceProviderTest {
         final PrivateKey privateKey = kp.getPrivate();
         reportTime("Sign XML message", 20 * scale, new Testable() {
             public void run() throws Throwable {
-                new SoapMsgSigner().signEnvelope(XmlUtil.stringToDocument(fsigned), privateKey, fsignedClientCert);
+                SoapMsgSigner.signEnvelope(XmlUtil.stringToDocument(fsigned), privateKey, fsignedClientCert);
             }
         });
 
         reportTime("Validate signedClientCert XML message", 80 * scale, new Testable() {
             public void run() throws Throwable {
-                new SoapMsgSigner().validateSignature(XmlUtil.stringToDocument(fsigned));
+                SoapMsgSigner.validateSignature(XmlUtil.stringToDocument(fsigned));
             }
         });
     }

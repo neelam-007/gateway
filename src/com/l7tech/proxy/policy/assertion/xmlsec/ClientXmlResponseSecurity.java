@@ -187,7 +187,6 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
                 }
                 Element element = (Element)o;
                 // verifiy element signature
-                SoapMsgSigner dsigHelper = new SoapMsgSigner();
                 X509Certificate serverCert = null;
                 X509Certificate caCert = SsgKeyStoreManager.getServerCert(request.getSsg());
 
@@ -196,7 +195,7 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
 
                 try {
                     // verify that this cert is signed with the root cert of this ssg
-                    serverCert = dsigHelper.validateSignature(doc, element);
+                    serverCert = SoapMsgSigner.validateSignature(doc, element);
                     serverCert.verify(caCert.getPublicKey());
                 } catch (SignatureNotFoundException e) {
                     throw new ResponseValidationException("Response from Gateway did not contain a signature as required by policy", e);

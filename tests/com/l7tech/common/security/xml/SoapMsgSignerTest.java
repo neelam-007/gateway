@@ -36,9 +36,8 @@ public class SoapMsgSignerTest extends TestCase {
     }
 
     public void testSign1Element() throws Exception {
-        SoapMsgSigner signer = new SoapMsgSigner();
         Document d = getCleartextDocument();
-        signAccountId( d, signer );
+        signAccountId( d );
         Element sigValue = (Element)d.getElementsByTagNameNS( SoapUtil.DIGSIG_URI, "SignatureValue" ).item(0);
         String sigValueText = XmlUtil.findFirstChildTextNode( sigValue );
         assertTrue( sigValueText.startsWith( "fA0VI2vxQj39" ) );
@@ -46,22 +45,18 @@ public class SoapMsgSignerTest extends TestCase {
     }
 
     public void testSign2Elements() throws Exception {
-        SoapMsgSigner signer = new SoapMsgSigner();
-
         Document testDoc = getCleartextDocument();
-        signAccountId( testDoc, signer );
-        signAndEncryptPrice( testDoc, signer );
+        signAccountId( testDoc );
+        signAndEncryptPrice( testDoc );
 
         assertTrue( encryptedElementsEqual( testDoc, "price", getKeyReq() ));
    }
 
     public void testSign3Elements() throws Exception {
-        SoapMsgSigner signer = new SoapMsgSigner();
-
         Document testDoc = getCleartextDocument();
-        signAccountId( testDoc, signer );
-        signAndEncryptPrice( testDoc, signer );
-        signAndEncryptAmount( testDoc, signer );
+        signAccountId( testDoc );
+        signAndEncryptPrice( testDoc );
+        signAndEncryptAmount( testDoc );
 
         assertTrue( encryptedElementsEqual( testDoc, "price", getKeyReq() ));
         assertTrue(encryptedElementsEqual( testDoc, "amount", getKeyReq() ));
@@ -79,10 +74,8 @@ public class SoapMsgSignerTest extends TestCase {
     }
 
     public void testValidateSignatureElement() throws Exception {
-        SoapMsgSigner signer = new SoapMsgSigner();
-
         Document testDoc = getCleartextDocument();
-        signAccountId( testDoc, signer );
+        signAccountId( testDoc );
 //        Verifier foo = new Verifier();
     }
 
@@ -117,21 +110,21 @@ public class SoapMsgSignerTest extends TestCase {
         return new String(knownPlain, "UTF-8");
     }
 
-    private void signAccountId( Document d, SoapMsgSigner signer ) throws Exception {
+    private void signAccountId( Document d ) throws Exception {
         Element accountIdElement = (Element) d.getElementsByTagName( "accountid" ).item(0);
-        signer.signElement( d, accountIdElement, "signref1", getClientCertPrivateKey(), getClientCertificate() );
+        SoapMsgSigner.signElement( d, accountIdElement, "signref1", getClientCertPrivateKey(), getClientCertificate() );
     }
 
-    private void signAndEncryptPrice( Document d, SoapMsgSigner signer ) throws Exception {
+    private void signAndEncryptPrice( Document d ) throws Exception {
         Element priceElement = (Element)d.getElementsByTagName( "price" ).item(0);
         XmlMangler.encryptXml( priceElement, getKeyReq().getEncoded(), getSessionId(), "encref1" );
-        signer.signElement( d, priceElement, "signref2", getClientCertPrivateKey(), getClientCertificate() );
+        SoapMsgSigner.signElement( d, priceElement, "signref2", getClientCertPrivateKey(), getClientCertificate() );
     }
 
-    private void signAndEncryptAmount( Document d, SoapMsgSigner signer ) throws Exception {
+    private void signAndEncryptAmount( Document d ) throws Exception {
         Element amountElement = (Element)d.getElementsByTagName( "amount" ).item(0);
         XmlMangler.encryptXml( amountElement, getKeyReq().getEncoded(), getSessionId(), "encref2" );
-        signer.signElement( d, amountElement, "signref3", getClientCertPrivateKey(), getClientCertificate() );
+        SoapMsgSigner.signElement( d, amountElement, "signref3", getClientCertPrivateKey(), getClientCertificate() );
     }
 
     private Document getCleartextDocument() throws Exception {

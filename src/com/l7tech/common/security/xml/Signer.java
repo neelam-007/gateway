@@ -2,7 +2,6 @@ package com.l7tech.common.security.xml;
 
 import com.ibm.xml.dsig.SignatureStructureException;
 import com.ibm.xml.dsig.XSignatureException;
-import com.l7tech.common.security.xml.*;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.XpathEvaluator;
@@ -77,7 +76,6 @@ class Signer extends SecurityProcessor {
             int encReferenceIdSuffix = 1;
             int signReferenceIdSuffix = 1;
             boolean envelopeProcessed = false;
-            SoapMsgSigner dsigHelper = new SoapMsgSigner();
 
             for (int i = 0; i < elements.length && !envelopeProcessed; i++) {
                 ElementSecurity elementSecurity = elements[i];
@@ -132,7 +130,7 @@ class Signer extends SecurityProcessor {
                 }
                 // dsig
                 final String referenceId = SIGN_REFERENCE + signReferenceIdSuffix;
-                dsigHelper.signElement(document, element, referenceId, signerInfo.getPrivate(), signerInfo.getCertificate());
+                SoapMsgSigner.signElement(document, element, referenceId, signerInfo.getPrivate(), signerInfo.getCertificate());
                 ++signReferenceIdSuffix;
                 logger.fine("signed element for XPath " + xpath.getExpression());
             }

@@ -6,7 +6,6 @@
  */
 package com.l7tech.common.security.xml;
 
-import com.l7tech.common.security.xml.*;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
@@ -95,10 +94,9 @@ class Verifier extends SecurityProcessor {
                     envelopeProcessed = true; //signal to ignore everything else. Should scream if more elements exist?
                 }
                 // verifiy element signature
-                SoapMsgSigner dsigHelper = new SoapMsgSigner();
 
                 // verify that this cert is signed with the root cert of this ssg
-                documentCertificate = dsigHelper.validateSignature(document, element);
+                documentCertificate = SoapMsgSigner.validateSignature(document, element);
                 logger.fine("signature of response message verified");
 
                 if (elementSecurity.isEncryption()) { //element security is required
