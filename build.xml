@@ -698,6 +698,14 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
             <format property="build.time" pattern="HHmmss"/>
         </tstamp>
 
+        <echo>Setting version in Nullsoft Installer source files to ${build.version}</echo>
+        <replaceregexp match='define MUI_VERSION ".*"' replace='define MUI_VERSION "${build.version}"'>
+            <fileset dir="${src.root}">
+                <include name="installer/proxy/win32/ClientProxy.nsi"/>
+                <include name="installer/console/win32/ManagementConsole.nsi"/>
+            </fileset>
+        </replaceregexp>
+
         <antcall target="INTERNAL-buildinfo-replace">
             <param name="param_name" value="BUILD_NUMBER"/>
             <param name="param_value" value="${build.number}"/>
