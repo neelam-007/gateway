@@ -40,6 +40,7 @@ public class BootProcess implements ServerComponentLifecycle {
     public void init( ServerConfig config ) throws LifecycleException {
         try {
             setSystemProperties( config );
+            HibernatePersistenceManager.initialize();
 
             String classnameString = config.getProperty( ServerConfig.PARAM_SERVERCOMPONENTS );
             String[] componentClassnames = classnameString.split("\\s.*?");
@@ -66,13 +67,14 @@ public class BootProcess implements ServerComponentLifecycle {
             }
         } catch ( IOException e ) {
             throw new LifecycleException( e.toString(), e );
+        } catch ( SQLException e ) {
+            throw new LifecycleException( e.toString(), e );
         }
     }
 
     public void start() throws LifecycleException {
         try {
             initializeAdminServices();
-            HibernatePersistenceManager.initialize();
             // make sure the ServiceManager is available. this will also build the service cache
             if (Locator.getDefault().lookup(ServiceManager.class) == null) {
                 logger.severe("Could not instantiate the ServiceManager");
@@ -99,8 +101,6 @@ public class BootProcess implements ServerComponentLifecycle {
             logger.info( BuildInfo.getLongBuildString() );
 
             logger.info("Boot process complete.");
-        } catch ( IOException ioe ) {
-            throw new LifecycleException( ioe.toString(), ioe );
         } catch ( SQLException se ) {
             throw new LifecycleException( se.toString(), se );
         } catch ( TransactionException te ) {
