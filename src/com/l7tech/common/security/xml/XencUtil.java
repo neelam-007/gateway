@@ -45,11 +45,19 @@ public class XencUtil {
      * @return the unpadded decrypted key
      */
     public static byte[] unPadRSADecryptedSymmetricKey(byte[] paddedKey) throws IllegalArgumentException {
-        // the first byte should be 02
-        if (paddedKey[0] != 2) throw new IllegalArgumentException("paddedKey has wrong format");
-        // traverse the next series of byte until we get to the first 00
         int pos = 0;
-        for (pos = 0; pos < paddedKey.length; pos++) {
+        // the first byte should be 02
+        if (paddedKey[0] != 2) {
+            // note, certain providers insist in appending a 0 byte in front.
+            // we will honor this but might not be portable
+            if (paddedKey[1] == 2) {
+                pos = 1;
+            } else {
+                throw new IllegalArgumentException("paddedKey has wrong format");
+            }
+        }
+        // traverse the next series of byte until we get to the first 00
+        for (; pos < paddedKey.length; pos++) {
             if (paddedKey[pos] == 0) {
                 break;
             }
