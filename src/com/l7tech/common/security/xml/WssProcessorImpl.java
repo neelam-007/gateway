@@ -401,30 +401,19 @@ public class WssProcessorImpl implements WssProcessor {
             public Document getUndecoratedMessage() {
                 return cntx.processedDocument;
             }
+
             public Element[] getElementsThatWereSigned() {
-                Element[] output = new Element[cntx.elementsThatWereSigned.size()];
-                Iterator iter = cntx.elementsThatWereSigned.iterator();
-                for (int i = 0; i < output.length; i++) {
-                    output[i] = (Element)iter.next();
-                }
-                return output;
+                return (Element[])cntx.elementsThatWereSigned.toArray(new Element[0]);
             }
+
             public Element[] getElementsThatWereEncrypted() {
-                Element[] output = new Element[cntx.elementsThatWereEncrypted.size()];
-                Iterator iter = cntx.elementsThatWereEncrypted.iterator();
-                for (int i = 0; i < output.length; i++) {
-                    output[i] = (Element)iter.next();
-                }
-                return output;
+                return (Element[])cntx.elementsThatWereEncrypted.toArray(new Element[0]);
             }
+
             public WssProcessor.SecurityToken[] getSecurityTokens() {
-                WssProcessor.SecurityToken[] output = new WssProcessor.SecurityToken[cntx.securityTokens.size()];
-                Iterator iter = cntx.securityTokens.iterator();
-                for (int i = 0; i < output.length; i++) {
-                    output[i] = (WssProcessor.SecurityToken)iter.next();
-                }
-                return output;
+                return (WssProcessor.SecurityToken[])cntx.securityTokens.toArray(new WssProcessor.SecurityToken[0]);
             }
+
             public WssProcessor.Timestamp getTimestamp() {
                 return cntx.timestamp;
             }
