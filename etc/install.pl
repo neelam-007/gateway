@@ -23,13 +23,13 @@ my @list=(
 	dbhostname    => "--Non cluster DB Env, DB hostname or IP (must be reach-able by this node) if DB is not on localhost          ",
 	dbuser        => "SSG Database - Username                                                                                      ",
 	dbpass        => "SSG Database - Password for the above user                                                                   ",
-	net_def_rt    => "Network Config - IP of Load Balancer between bridge/client and gateway (eg. 192.168.1.1)                     ",
-	net_front_ip  => "Network Config - Node Public IP (eg. 192.168.1.8)                                                            ",
-	net_front_mask=> "Network Config - Public Network Mask (eg. 255.255.255.0)                                                     ",
-	net_back_ip   => "Network Config (Cluster Gateway Env)-Node Private IP; back_route, ifcfg-eth0 IPADDR (eg. 10.0.0.8)           ",
-	net_back_mask => "Network Config (Cluster Gateway Env)-Private Network Mask; back_route, ifcfg-eth0 NETMASK (eg. 255.255.255.0)",
-	net_back_rt   => "Network Config (Cluster Gateway Env)-Private Gateway; back_route,ifcfg-eth0 GATWAY (eg. 10.0.0.1)            ",
-        net_back_net  => "Network Config - Node private Network for back_route (eg. 224.0.0.0)                                         "
+	net_front_ip  => "Network Config - Node Public IP; ifcfg-eth1 IPADDR (eg. 192.168.1.8)                                         ",
+	net_front_mask=> "Network Config - Public Network Mask; ifcfg-eht1 NETMASK (eg. 255.255.255.0)                                 ",
+        net_front_rt    => "Network Config - Public Gateway (Load Balancer IP) SSB/client<->gateway; ifcfg-eth1 GATEWAY (eg. 192.168.1.1)",
+	net_back_ip   => "Network Config - Node Private IP; back_route, ifcfg-eth0 IPADDR (eg. 10.0.0.8)                               ",
+	net_back_mask => "Network Config - Private Network Mask; back_route netmask, ifcfg-eth0 NETMASK (eg. 255.255.255.0)            ",
+	net_back_rt   => "Network Config - Private Gateway; back_route gw, ifcfg-eth0 GATWAY (eg. 10.0.0.1)                            ",
+        net_back_net  => "Network Config - Node private Network; back_route -net                                                       "
 );
 
 my %Conf=();
@@ -99,7 +99,7 @@ sub change_os_config {
 	# 1. the front network config - file affected: $front_conf
 	print "INFO: Starting Front End Network Configuration... \n";
 	
-	if ($Conf{net_front_ip} && $Conf{net_front_mask} && $Conf{net_def_rt}) {
+	if ($Conf{net_front_ip} && $Conf{net_front_mask} && $Conf{net_front_rt}) {
 		if ( -e $front_conf ) {
 			print "INFO: $front_conf existed, now renaming $front_conf to $front_conf.bckup_$pid\n";
 			rename( $front_conf, "$front_conf.bckup_$pid");
@@ -111,11 +111,11 @@ ONBOOT=yes
 BOOTPROTO=static
 IPADDR=$Conf{"net_front_ip"}
 NETMASK=$Conf{"net_front_mask"}
-GATEWAY=$Conf{"net_def_rt"}
+GATEWAY=$Conf{"net_front_rt"}
 
 EOF
 		close OUT;
-		print "INFO: Front end network configured $front_conf - IPADDR of $Conf{net_front_ip}; NETMASK of $Conf{net_front_mask}; GATEWAY of $Conf{net_def_rt}";	
+		print "INFO: Front end network configured $front_conf - IPADDR of $Conf{net_front_ip}; NETMASK of $Conf{net_front_mask}; GATEWAY of $Conf{net_front_rt}";	
 	} else {
 		print "WARNING: No front end network defined, front end network remains $front_conf\n";
 	}
