@@ -14,6 +14,7 @@ import com.l7tech.objectmodel.imp.EntityHeaderImp;
  */
 public class TypeTranslator {
     public static com.l7tech.identity.IdentityProviderConfig transferStubIdentityProviderConfigToGenericOne(com.l7tech.adminws.clientstub.IdentityProviderConfig stub) {
+        if (stub == null) return null;
         IdentityProviderConfigImp ret = new IdentityProviderConfigImp();
         ret.setDescription(stub.getDescription());
         ret.setName(stub.getName());
@@ -28,6 +29,7 @@ public class TypeTranslator {
     }
 
     public static com.l7tech.adminws.clientstub.IdentityProviderConfig transferGenericIdentityProviderConfigToStubOne(com.l7tech.identity.IdentityProviderConfig gen) {
+        if (gen == null) return null;
         com.l7tech.adminws.clientstub.IdentityProviderConfig ret = new com.l7tech.adminws.clientstub.IdentityProviderConfig();
         ret.setDescription(gen.getDescription());
         ret.setName(gen.getName());
@@ -41,6 +43,7 @@ public class TypeTranslator {
     }
 
     public static com.l7tech.objectmodel.EntityHeader transferStubHeaderToGenHeader(com.l7tech.adminws.clientstub.Header stubHeader) {
+        if (stubHeader == null) return null;
         EntityHeaderImp ret = new EntityHeaderImp();
         ret.setName(stubHeader.getName());
         ret.setOid(stubHeader.getOid());
