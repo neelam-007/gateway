@@ -20,6 +20,8 @@ import com.l7tech.console.xmlviewer.properties.ConfigurationProperties;
 import com.l7tech.console.xmlviewer.util.DocumentUtilities;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.XpathBasedAssertion;
+import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.w3c.dom.Element;
@@ -76,6 +78,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private ViewerToolBar messageViewerToolBar;
     private ExchangerDocument exchangerDocument;
     private ActionListener okActionListener;
+    private boolean isEncryption;
 
     /**
      * @param owner this panel owner
@@ -103,6 +106,10 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         okActionListener = okListener;
 
         xmlSecAssertion = (XpathBasedAssertion)node.asAssertion();
+        if (xmlSecAssertion instanceof RequestWssConfidentiality ||
+            xmlSecAssertion instanceof ResponseWssConfidentiality) {
+            isEncryption = true;
+        } else isEncryption = false;
         serviceNode = AssertionTreeNode.getServiceNode(node);
         if (serviceNode == null) {
             throw new IllegalStateException("Unable to determine the service node for " + xmlSecAssertion);
@@ -148,8 +155,14 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                 // get xpath from control and the namespace map
                 // then save it in assertion
                 String xpath = (String)messageViewerToolBar.getXpathComboBox().getEditor().getItem();
-                xmlSecAssertion.setXpathExpression(new XpathExpression(xpath, namespaces));
-                XpathBasedAssertionPropertiesDialog.this.dispose();
+                if (isEncryption && xpath.equals("/soapenv:Envelope")) {
+                    // dont allow encryption of entire envelope
+                    JOptionPane.showMessageDialog(okButton, "The path " + xpath + " is not valid for XML encryption",
+                                                  "XPath Error", JOptionPane.ERROR_MESSAGE);
+                } else {
+                    xmlSecAssertion.setXpathExpression(new XpathExpression(xpath, namespaces));
+                    XpathBasedAssertionPropertiesDialog.this.dispose();
+                }
             }
         });
         if (okActionListener != null) {
