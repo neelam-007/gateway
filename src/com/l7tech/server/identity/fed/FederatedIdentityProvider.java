@@ -41,8 +41,12 @@ import java.util.logging.Logger;
  */
 public class FederatedIdentityProvider extends PersistentIdentityProvider {
 
-    public FederatedIdentityProvider(FederatedIdentityProviderConfig config) {
-        this.providerConfig = config;
+    public FederatedIdentityProvider(IdentityProviderConfig config) {
+        if (config instanceof FederatedIdentityProviderConfig) {
+            this.providerConfig = (FederatedIdentityProviderConfig)config;
+        } else {
+            throw new IllegalArgumentException("Federated Provider Config required");
+        }
     }
 
     protected FederatedIdentityProvider() {
