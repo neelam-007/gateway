@@ -20,7 +20,6 @@ import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -62,7 +61,6 @@ public class FilterTest extends TestCase {
                 new SpecificUser(providerid, "bob", null, null),
                 new MemberOfGroup(providerid, "sales", "666")
             })),
-            new SamlSecurity(),
             new HttpRoutingAssertion()
         }));
 
