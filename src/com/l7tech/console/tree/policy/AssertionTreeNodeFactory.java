@@ -6,6 +6,7 @@ import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -31,6 +32,7 @@ class AssertionTreeNodeFactory {
         assertionMap.put(SpecificUser.class, SpecificUserAssertionTreeNode.class);
         assertionMap.put(MemberOfGroup.class, MemberOfGroupAssertionTreeNode.class);
         assertionMap.put(OneOrMoreAssertion.class, OneOrMoreAssertionTreeNode.class);
+        assertionMap.put(AllAssertion.class, AllAssertionTreeNode.class);
     }
 
     /**

@@ -14,9 +14,9 @@ import java.awt.*;
  * Class SpecificUserAssertionTreeNode.
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a> 
  */
-abstract class SslAssertionTreeNode extends LeafAssertionTreeNode {
+class SslAssertionTreeNode extends LeafAssertionTreeNode {
 
-    SslAssertionTreeNode(Assertion assertion) {
+    public SslAssertionTreeNode(Assertion assertion) {
         super(assertion);
     }
 
