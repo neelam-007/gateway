@@ -552,6 +552,7 @@
         <property name="install.target.base" value="/ssg"/>
         <property name="install.target.keys" value="${install.target.base}/${install.rel.keys}"/>
         <property name="install.target.tomcat" value="${install.target.base}/${install.rel.tomcat}"/>
+        <property name="install.target.jdk" value="${install.target.base}/${install.rel.jdk}"/>
         <property name="install.target.ssl.keystore" value="${install.target.keys}/${install.rel.ssl.keystore}"/>
         <property name="install.target.logs" value="${install.target.base}/${install.rel.logs}"/>
 
@@ -758,6 +759,17 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
                 <include name="ssgruntimedefs.sh"/>
             </fileset>
         </copy>
+
+        <!-- Hack ssgruntimedefs.sh -->
+        <echo>Patching ${install.src.bin}/ssgruntimedefs.sh...</echo>
+        <replaceregexp file="${install.src.bin}/ssgruntimedefs.sh">
+            <regexp pattern="TOMCAT_HOME\s*=\s*[a-zA-Z0-9 \/\-\.\\]*"/>
+            <substitution expression="TOMCAT_HOME=${install.target.tomcat}"/>
+        </replaceregexp>
+        <replaceregexp file="${install.src.bin}/ssgruntimedefs.sh">
+            <regexp pattern="JAVA_HOME\s*=\s*[a-zA-Z0-9 \/\-\.\\]*"/>
+            <substitution expression="JAVA_HOME=${install.target.jdk}"/>
+        </replaceregexp>
 
         <!-- Make scripts executable -->
         <echo>Setting execute permissions on scripts...</echo>
