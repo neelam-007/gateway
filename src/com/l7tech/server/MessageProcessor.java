@@ -63,7 +63,8 @@ public class MessageProcessor /*implements ServiceListener*/ {
                             long reqPolicyId = Long.parseLong(requestorVersion.substring(0, indexofbar));
                             long reqPolicyVer = Long.parseLong(requestorVersion.substring(indexofbar+1));
                             if (reqPolicyVer != service.getVersion() || reqPolicyId != service.getOid()) {
-                                logger.finest("policy version passed is invalid");
+                                logger.finest("policy version passed is invalid " + requestorVersion + " instead of "
+                                                + service.getOid() + "|" + service.getVersion());
                                 wrongPolicyVersion = true;
                             }
                         } catch (NumberFormatException e) {
