@@ -266,7 +266,7 @@ public class Preferences extends PropertyChangeSupport {
         // In JWS additional registration (setURLStreamHandlerFactory) is
         // required for not known reasons.
         try {
-            new URL("https://localhost:8080");
+            new URL("https://localhost:8443");
         } catch (MalformedURLException e) {
             URL
                     .setURLStreamHandlerFactory(
