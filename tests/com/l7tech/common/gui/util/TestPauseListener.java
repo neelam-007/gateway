@@ -68,6 +68,7 @@ public class TestPauseListener extends JFrame implements PauseListener {
 
     public void textEntryResumed(JTextComponent component) {
         _label.setText( "resumed" );
+        _textField.setNone();
     }
 
     private String oldvalue = null;
