@@ -49,14 +49,7 @@
     -->
     <property name="common.lib.jars"
               value="saaj.jar,
-                     jaxrpc.jar,
-                     xerces-J_1.4.0.jar,
-                     tyrex-1.0.jar,
-                     ots-jts_1.0.jar,
-                     jta-spec1_0_1.jar,
-                     log4j-1.2.4.jar,
-                     castor-0.9.4.3-xml.jar,
-                     mysql-connector-java-3.0.7-stable-bin.jar"/>
+                     jaxrpc.jar"/>
 
     <!--
       ** init dev target The "dev" target depends on this target.
