@@ -7,6 +7,7 @@
 package com.l7tech.identity.fed;
 
 import com.l7tech.identity.GroupBean;
+import com.l7tech.identity.Group;
 
 /**
  * A "virtual" federated group.
@@ -42,6 +43,17 @@ public class VirtualGroup extends FederatedGroup {
 
     public void setX509SubjectDnPattern( String x509SubjectDnPattern ) {
         bean.getProperties().put(PROP_X509_DN_PATTERN, x509SubjectDnPattern);
+    }
+
+    /**
+     * allows to set all properties from another object
+     */
+    public void copyFrom(Group objToCopy) {
+        super.copyFrom(objToCopy);
+
+        FederatedGroup imp = (FederatedGroup)objToCopy;
+        setSamlEmailPattern((String)imp.getGroupBean().getProperties().get(PROP_SAML_EMAIL_PATTERN));
+        setX509SubjectDnPattern((String)imp.getGroupBean().getProperties().get(PROP_X509_DN_PATTERN));
     }
 
     private static final String PROP_SAML_EMAIL_PATTERN = "samlEmailPattern";
