@@ -75,8 +75,6 @@ public class StatisticsTableSorter extends FilteredDefaultTableModel {
             case 3:
                 return new Long(((StatisticsRecord) sortedData[row]).getCompletedCount());
             case 4:
-                return new Long(((StatisticsRecord) sortedData[row]).getCompletedCountPerMinute());
-            case 5:
                 return new Long(((StatisticsRecord) sortedData[row]).getCompletedCountLastMinute());
             default:
                 throw new IllegalArgumentException("Bad Column");
@@ -115,10 +113,6 @@ public class StatisticsTableSorter extends FilteredDefaultTableModel {
                     elementB = Long.toString(((StatisticsRecord) b).getCompletedCount());
                     break;
                 case 4:
-                    elementA = Long.toString(((StatisticsRecord) a).getCompletedCountPerMinute());
-                    elementB = Long.toString(((StatisticsRecord) b).getCompletedCountPerMinute());
-                    break;
-                case 5:
                     elementA = Long.toString(((StatisticsRecord) a).getCompletedCountLastMinute());
                     elementB = Long.toString(((StatisticsRecord) b).getCompletedCountLastMinute());
                     break;

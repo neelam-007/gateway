@@ -14,15 +14,15 @@ public class StatisticsRecord {
     private final long attemptedCount;
     private final long authorizedCount;
     private final long completedCount;
-    private final long completedCountPerMinute;
+//    private final long completedCountPerMinute;
     private final long completedCountLastMinute;
 
-    public StatisticsRecord(String serviceName, long attemptedCount, long authorizedCount, long completedCount, long completedCountPerMinute, long completedCountLastMinute){
+    public StatisticsRecord(String serviceName, long attemptedCount, long authorizedCount, long completedCount, long completedCountLastMinute){
         this.serviceName = serviceName;
         this.attemptedCount = attemptedCount;
         this.authorizedCount = authorizedCount;
         this.completedCount = completedCount;
-        this.completedCountPerMinute = completedCountPerMinute;
+//        this.completedCountPerMinute = completedCountPerMinute;
         this.completedCountLastMinute = completedCountLastMinute;
     };
 
@@ -42,9 +42,9 @@ public class StatisticsRecord {
         return completedCount;
     }
 
-     public long getCompletedCountPerMinute(){
+/*     public long getCompletedCountPerMinute(){
         return completedCountPerMinute;
-    }
+    }*/
 
      public long getCompletedCountLastMinute(){
         return completedCountLastMinute;

@@ -80,7 +80,13 @@ public class ClusterStatusTableSorter extends FilteredDefaultTableModel {
             case 4:
                 return new Double(((GatewayStatus) sortedData[row]).getAvgLoad());
             case 5:
-                return new Long(((GatewayStatus) sortedData[row]).getUptime());
+                // if the node is down, the uptime retrived from the node is outdated and it should be set to zero
+                if(((GatewayStatus) sortedData[row]).getStatus() == 0 ) {
+                    return new Long(0);
+                }
+                else{
+                    return new Long(((GatewayStatus) sortedData[row]).getUptime());
+                }
             case 6:
                 return ((GatewayStatus) sortedData[row]).getAddress();
             default:

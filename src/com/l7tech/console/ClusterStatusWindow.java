@@ -1,28 +1,26 @@
 package com.l7tech.console;
 
-import com.l7tech.console.util.BarIndicator;
-import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.*;
 import com.l7tech.console.panels.StatisticsPanel;
 import com.l7tech.console.table.ClusterStatusTableSorter;
 import com.l7tech.console.table.LogTableModel;
 import com.l7tech.cluster.GatewayStatus;
-import com.l7tech.cluster.ClusterNodeInfo;
 import com.l7tech.cluster.ClusterStatusAdmin;
-import com.l7tech.cluster.ServiceUsage;
 import com.l7tech.console.icons.ArrowIcon;
+import com.l7tech.console.event.ConnectionListener;
+import com.l7tech.console.event.ConnectionEvent;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.util.Locator;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.service.ServiceAdmin;
 
 import javax.swing.*;
 import javax.swing.table.*;
 import java.util.ResourceBundle;
 import java.util.Hashtable;
 import java.util.Vector;
+import java.util.Iterator;
 import java.awt.*;
 import java.awt.event.*;
-
-import java.rmi.RemoteException;
 
 
 /*
@@ -68,18 +66,46 @@ public class ClusterStatusWindow extends JFrame {
                     }
                 });
 
+        ConnectionListener listener = new ConnectionListener() {
+            public void onConnect(ConnectionEvent e) {
+
+               initAdminConnection();
+
+                // todo:intantiate the cache
+                //lastMinuteCompletedCountsCache = new HashMap();
+                //statsList = new Vector();
+            }
+
+            public void onDisconnect(ConnectionEvent e) {
+
+                serviceManager = null;
+                //todo:
+                //lastMinuteCompletedCountsCache = null;
+
+                getStatusRefreshTimer().stop();
+                //clearStatiistics();
+            }
+        };
+
+        Registry.getDefault().getComponentRegistry().getMainWindow().addConnectionListener(listener);
+
+        initAdminConnection();
+
+        // refresh the status
+        refreshStatus();
 
         //todo: remove this test data
-        Vector dummyData = getClusterStatusDummyData();
+/*        Vector dummyData = getClusterStatusDummyData(false);
+        dummyData = getClusterStatusDummyData(true);
         getClusterStatusTableModel().setData(dummyData);
         getClusterStatusTableModel().getRealModel().setRowCount(dummyData.size());
-        getClusterStatusTableModel().fireTableDataChanged();
+        getClusterStatusTableModel().fireTableDataChanged();*/
 
         pack();
 
         //todo: need to reorganize this
-        getStatisticsPane().onConnect();
-        getStatisticsPane().refreshStatistics();
+/*        getStatisticsPane().onConnect();
+        getStatisticsPane().refreshStatistics();*/
 
     }
 
@@ -98,7 +124,7 @@ public class ClusterStatusWindow extends JFrame {
             frameContentPane = new JPanel();
             frameContentPane.setPreferredSize(new Dimension(800, 600));
             frameContentPane.setLayout(new BorderLayout());
-     //       getJFrameContentPane().add(getToolBarPane(), "North");
+            //       getJFrameContentPane().add(getToolBarPane(), "North");
             getJFrameContentPane().add(getMainPane(), "Center");
         }
         return frameContentPane;
@@ -108,7 +134,7 @@ public class ClusterStatusWindow extends JFrame {
         if (clusterWindowMenuBar == null) {
             clusterWindowMenuBar = new JMenuBar();
             clusterWindowMenuBar.add(getFileMenu());
-           // clusterWindowMenuBar.add(getViewMenu());
+            // clusterWindowMenuBar.add(getViewMenu());
             clusterWindowMenuBar.add(getHelpMenu());
         }
         return clusterWindowMenuBar;
@@ -174,84 +200,84 @@ public class ClusterStatusWindow extends JFrame {
         jScrollPane2.setMinimumSize(new java.awt.Dimension(400, 220));
         jTable2.setModel(getClusterStatusTableModel());
 
-        BarIndicator loadShareRenderer = new BarIndicator(MIN,MAX, Color.green);
-         loadShareRenderer.setStringPainted(true);
-         loadShareRenderer.setBackground(jTable2.getBackground());
+        BarIndicator loadShareRenderer = new BarIndicator(MIN, MAX, Color.green);
+        loadShareRenderer.setStringPainted(true);
+        loadShareRenderer.setBackground(jTable2.getBackground());
 
-         // set limit value and fill color
-         Hashtable limitColors1 = new Hashtable();
-         limitColors1.put(new Integer( 0), Color.green);
+        // set limit value and fill color
+        Hashtable limitColors1 = new Hashtable();
+        limitColors1.put(new Integer(0), Color.green);
         // limitColors.put(new Integer(60), Color.yellow);
         // limitColors.put(new Integer(80), Color.red);
 
-         //loadShareRenderer.setLimits(limitColors1);
+        //loadShareRenderer.setLimits(limitColors1);
 
-         BarIndicator requestFailureRenderer = new BarIndicator(MIN,MAX, Color.red);
-         requestFailureRenderer.setStringPainted(true);
-         requestFailureRenderer.setBackground(jTable2.getBackground());
+        BarIndicator requestFailureRenderer = new BarIndicator(MIN, MAX, Color.red);
+        requestFailureRenderer.setStringPainted(true);
+        requestFailureRenderer.setBackground(jTable2.getBackground());
 
-         Hashtable limitColors2 = new Hashtable();
-         limitColors2.put(new Integer( 0), Color.red);
+        Hashtable limitColors2 = new Hashtable();
+        limitColors2.put(new Integer(0), Color.red);
         //requestFailureRenderer.setLimits(limitColors2);
 
-         jTable2.getColumnModel().getColumn(2).setCellRenderer(loadShareRenderer);
-         jTable2.getColumnModel().getColumn(3).setCellRenderer(requestFailureRenderer);
+        jTable2.getColumnModel().getColumn(2).setCellRenderer(loadShareRenderer);
+        jTable2.getColumnModel().getColumn(3).setCellRenderer(requestFailureRenderer);
 
-         jTable2.getColumnModel().getColumn(0).setMinWidth(0);
-         jTable2.getColumnModel().getColumn(0).setMaxWidth(0);
-         jTable2.getColumnModel().getColumn(0).setPreferredWidth(0);
+        jTable2.getColumnModel().getColumn(0).setMinWidth(0);
+        jTable2.getColumnModel().getColumn(0).setMaxWidth(0);
+        jTable2.getColumnModel().getColumn(0).setPreferredWidth(0);
 
-         jTable2.getColumnModel().getColumn(1).setCellRenderer(
-          new DefaultTableCellRenderer() {
-              private Icon connectIcon =
-                new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/connect2.gif"));
-              private Icon disconnectIcon =
-                new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/disconnect.gif"));
+        jTable2.getColumnModel().getColumn(1).setCellRenderer(
+                new DefaultTableCellRenderer() {
+                    private Icon connectIcon =
+                            new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/connect2.gif"));
+                    private Icon disconnectIcon =
+                            new ImageIcon(ImageCache.getInstance().getIcon(MainWindow.RESOURCE_PATH + "/disconnect.gif"));
 
-              public Component getTableCellRendererComponent(JTable table,
-                                                             Object value,
-                                                             boolean isSelected,
-                                                             boolean hasFocus,
-                                                             int row, int column) {
-                  super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                  setIcon(null);
+                    public Component getTableCellRendererComponent(JTable table,
+                                                                   Object value,
+                                                                   boolean isSelected,
+                                                                   boolean hasFocus,
+                                                                   int row, int column) {
+                        super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                        setIcon(null);
 
-                  Object s = jTable2.getValueAt(row, 0);
+                        Object s = jTable2.getValueAt(row, 0);
 
-                  //String status = "";
-                 // if(s instanceof String) status = (String) s;
-                     // this.setText("");
-                      if (s.toString().equals("1")) {
-                          this.setIcon(connectIcon);
-                      } else if (s.toString().equals("0")) {
-                          this.setIcon(disconnectIcon);
-                      } else {
+                        //String status = "";
+                        // if(s instanceof String) status = (String) s;
+                        // this.setText("");
+                        if (s.toString().equals("1")) {
+                            this.setIcon(connectIcon);
+                        } else if (s.toString().equals("0")) {
+                            this.setIcon(disconnectIcon);
+                        } else {
 
-                      }
-                  return this;
-              }
-          });
+                        }
+                        return this;
+                    }
+                });
 
         jTable2.getColumnModel().getColumn(5).setCellRenderer(
-          new DefaultTableCellRenderer() {
+                new DefaultTableCellRenderer() {
 
-              public Component getTableCellRendererComponent(JTable table,
-                                                             Object value,
-                                                             boolean isSelected,
-                                                             boolean hasFocus,
-                                                             int row, int column) {
-                  super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                  this.setHorizontalAlignment(SwingConstants.TRAILING);
-                  if(value instanceof Long) {
-                      this.setText(convertUptimeToString(((Long) value).longValue()));
-                  }
+                    public Component getTableCellRendererComponent(JTable table,
+                                                                   Object value,
+                                                                   boolean isSelected,
+                                                                   boolean hasFocus,
+                                                                   int row, int column) {
+                        super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                        this.setHorizontalAlignment(SwingConstants.TRAILING);
+                        if (value instanceof Long) {
+                            this.setText(convertUptimeToString(((Long) value).longValue()));
+                        }
 
-                  return this;
-              }
-          });
+                        return this;
+                    }
+                });
 
-        for(int i = 0; i <= 6; i++){
-             jTable2.getColumnModel().getColumn(i).setHeaderRenderer(iconHeaderRenderer);
+        for (int i = 0; i <= 6; i++) {
+            jTable2.getColumnModel().getColumn(i).setHeaderRenderer(iconHeaderRenderer);
         }
 
         addMouseListenerToHeaderInTable(jTable2);
@@ -311,13 +337,13 @@ public class ClusterStatusWindow extends JFrame {
         return statisticsPane;
     }
 
-    private ClusterStatusTableSorter getClusterStatusTableModel(){
+    private ClusterStatusTableSorter getClusterStatusTableModel() {
 
         if (clusterStatusTableSorter != null) {
             return clusterStatusTableSorter;
         }
 
-         Object[][] rows = new Object [][]{};
+        Object[][] rows = new Object[][]{};
 
         String[] cols = new String[]{
             "Status", "Gateway", "Load Sharing %", "Request Failure%", "Load Avg", "Uptime", "IP Address"
@@ -338,6 +364,17 @@ public class ClusterStatusWindow extends JFrame {
 
         return clusterStatusTableSorter;
 
+    }
+
+    private void initAdminConnection(){
+        serviceManager = (ServiceAdmin) Locator.getDefault().lookup(ServiceAdmin.class);
+         if (serviceManager == null) throw new IllegalStateException("Cannot obtain ServiceManager remote reference");
+
+         clusterStatusAdmin = (ClusterStatusAdmin) Locator.getDefault().lookup(ClusterStatusAdmin.class);
+         if (clusterStatusAdmin == null) throw new RuntimeException("Cannot obtain ClusterStatusAdmin remote reference");
+
+         // create an empty node list
+         currentNodeList = new Hashtable();
     }
 
     // This customized renderer can render objects of the type TextandIcon
@@ -364,8 +401,7 @@ public class ClusterStatusWindow extends JFrame {
                 } else {
                     setIcon(downArrowIcon);
                 }
-            }
-            else{
+            } else {
                 setIcon(null);
             }
 
@@ -388,8 +424,8 @@ public class ClusterStatusWindow extends JFrame {
                 int column = tableView.convertColumnIndexToModel(viewColumn);
                 if (e.getClickCount() == 1 && column != -1) {
 
-                    ((ClusterStatusTableSorter)tableView.getModel()).sortData(column, true);
-                    ((ClusterStatusTableSorter)tableView.getModel()).fireTableDataChanged();
+                    ((ClusterStatusTableSorter) tableView.getModel()).sortData(column, true);
+                    ((ClusterStatusTableSorter) tableView.getModel()).fireTableDataChanged();
                     tableView.getTableHeader().resizeAndRepaint();
                 }
             }
@@ -398,16 +434,17 @@ public class ClusterStatusWindow extends JFrame {
         th.addMouseListener(listMouseListener);
     }
 
-    String convertUptimeToString(long uptime){
+    private String convertUptimeToString(long uptime) {
 
-        System.out.println("Current time is : " + System.currentTimeMillis());
-        long uptime_ms = System.currentTimeMillis()/1000 - uptime;
+        if(uptime == 0) return new String("0 mins");
 
-        long serverUpTimeMinutues = uptime_ms/60;
-        long minutes_remain = serverUpTimeMinutues%60;
-        long hrs_total = serverUpTimeMinutues/60;
-        long hrs_remain = hrs_total%24;
-        long days = hrs_total/24;
+        long uptime_ms = (System.currentTimeMillis() - uptime) / 1000;
+
+        long serverUpTimeMinutues = uptime_ms / 60;
+        long minutes_remain = serverUpTimeMinutues % 60;
+        long hrs_total = serverUpTimeMinutues / 60;
+        long hrs_remain = hrs_total % 24;
+        long days = hrs_total / 24;
         String uptimeString = "";
 
 
@@ -426,48 +463,28 @@ public class ClusterStatusWindow extends JFrame {
         return uptimeString;
     }
 
-    Vector getClusterStatusDummyData() {
-        ClusterStatusAdmin clusterStatusService = (ClusterStatusAdmin) Locator.getDefault().lookup(ClusterStatusAdmin.class);
-        if (clusterStatusService == null) throw new IllegalStateException("cannot obtain ClusterStatusAdmin remote reference");
+    private Vector prepareClusterStatusData() {
 
-        ClusterNodeInfo[] cluster = new ClusterNodeInfo[0];
-        try {
-            cluster = clusterStatusService.getClusterStatus();
-        } catch (FindException e) {
-            System.err.println("ERROR " + e.getMessage());
-        } catch (RemoteException e) {
-            System.err.println("ERROR " + e.getMessage());
+        Vector cs = new Vector();
+
+        if (currentNodeList == null) return cs;
+
+        for (Iterator i = currentNodeList.keySet().iterator(); i.hasNext();) {
+            GatewayStatus su = (GatewayStatus) currentNodeList.get(i.next());
+
+            // the second last update time stamp is -1 the very first time when the node status is retrieved
+            if(su.getSecondLastUpdateTimeStamp() == -1 ||
+                su.getLastUpdateTimeStamp() != su.getSecondLastUpdateTimeStamp()){
+                su.setStatus(1);
+            }
+            else{
+                su.setStatus(0);
+            }
+
+            cs.add(su);
         }
-        if (cluster != null) {
-            System.out.println("Number of node is: " + cluster.length);
-        }
 
-        Vector dummyData = new Vector();
-        for (int i = 0; i < cluster.length; i++) {
-            GatewayStatus node = new GatewayStatus(cluster[i]);
-            dummyData.add(node);
-        }
-
-        /*GatewayStatus node1 = new GatewayStatus(cluster[0]);
-        GatewayStatus node2 = new GatewayStatus(cluster[1]);
-        GatewayStatus node3 = new GatewayStatus(cluster[2]);
-        GatewayStatus node4 = new GatewayStatus(cluster[3]);
-        GatewayStatus node5 = new GatewayStatus(cluster[4]);
-        GatewayStatus node6 = new GatewayStatus(cluster[5]);
-        GatewayStatus node7 = new GatewayStatus(cluster[6]);
-        GatewayStatus node8 = new GatewayStatus(cluster[7]);
-
-        Vector dummyData = new Vector();
-        dummyData.add(node1);
-        dummyData.add(node2);
-        dummyData.add(node3);
-        dummyData.add(node4);
-        dummyData.add(node5);
-        dummyData.add(node6);
-        dummyData.add(node7);
-        dummyData.add(node8);*/
-
-        ServiceUsage[] serviceStat = new ServiceUsage[0];
+/*        ServiceUsage[] serviceStat = new ServiceUsage[0];
         try {
             serviceStat = clusterStatusService.getServiceUsage();
         } catch (FindException e) {
@@ -476,14 +493,19 @@ public class ClusterStatusWindow extends JFrame {
             System.err.println("ERROR " + e.getMessage());
         }
         if (serviceStat != null) {
-             System.out.println("Number of service statistics is: " + serviceStat.length);
+            System.out.println("Number of service statistics is: " + serviceStat.length);
         }
 
         long totalClusterRequest = 0;
         for (int i = 0; i < serviceStat.length; i++) {
-            totalClusterRequest += serviceStat[i].getRequests();
-        }
+            if (addExtraCount) {
+                totalClusterRequest += (serviceStat[i].getRequests() + 300);
+            } else {
+                totalClusterRequest += serviceStat[i].getRequests();
+            }
 
+        }
+        updateClusterRequestCounterCache(totalClusterRequest);
 
 
         long totalRequest;
@@ -495,27 +517,92 @@ public class ClusterStatusWindow extends JFrame {
             totalRequest = 0;
             totalCompleted = 0;
             for (int j = 0; j < serviceStat.length; j++) {
-                if(gatewayStatus.getName().equals(serviceStat[j].getNodeid())){
-                  totalRequest += serviceStat[j].getRequests();
-                  totalCompleted += serviceStat[j].getCompleted();
+                if (gatewayStatus.getName().equals(serviceStat[j].getNodeid())) {
+                    if (addExtraCount) {
+                        totalRequest += (serviceStat[j].getRequests() + 300);
+                        totalCompleted += (serviceStat[j].getCompleted() + 300);
+                    } else {
+                        totalRequest += serviceStat[j].getRequests();
+                        totalCompleted += serviceStat[j].getCompleted();
+                    }
+
                 }
             }
 
-            if(totalRequest > 0)
-            {
-                gatewayStatus.setLoadSharing((new Long(totalRequest*100/totalClusterRequest)).intValue());
-                gatewayStatus.setRequestFailure((new Long((totalRequest - totalCompleted)*100/ totalRequest)).intValue());
-            }
-            else
-            {
+            gatewayStatus.updateRequestCounterCache(totalRequest);
+            gatewayStatus.updateCompletedCounterCache(totalCompleted);
+            if (getClusterRequestCount() > 0) {
+                gatewayStatus.setLoadSharing((new Long(gatewayStatus.getRequestCount() * 100 / getClusterRequestCount())).intValue());
+            } else {
                 gatewayStatus.setLoadSharing(0);
-                gatewayStatus.setRequestFailure(0);
             }
             gatewayStatus.setStatus(1);
 
+        }*/
+
+        return cs;
+    }
+
+    private void updateClusterRequestCounterCache(long newCount) {
+
+        if (clusterRequestCounterCache.size() <= GatewayStatus.NUMBER_OF_SAMPLE_PER_MINUTE) {
+            clusterRequestCounterCache.add(new Long(newCount));
+        } else {
+            clusterRequestCounterCache.remove(0);
+            clusterRequestCounterCache.add(new Long(newCount));
+        }
+    }
+
+    private long getClusterRequestCount() {
+
+        long totalCount = 0;
+
+        int index = clusterRequestCounterCache.size() - 1;
+
+        for (int i = 0; i < clusterRequestCounterCache.size() - 1; i++, index--) {
+
+            totalCount += ((Long) clusterRequestCounterCache.get(index)).longValue() - ((Long) clusterRequestCounterCache.get(index - 1)).longValue();
         }
 
-        return dummyData;
+        return totalCount;
+    }
+
+    private javax.swing.Timer getStatusRefreshTimer() {
+
+        if (statusRefreshTimer != null) return statusRefreshTimer;
+
+        // Create a refresh timer.
+        statusRefreshTimer = new javax.swing.Timer(GatewayStatus.STATUS_REFRESH_TIMER, new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                refreshStatus();
+            }
+        });
+
+        return statusRefreshTimer;
+    }
+
+    public void refreshStatus() {
+
+        getStatusRefreshTimer().stop();
+
+        // create a worker thread to retrieve the Service statistics
+        final ClusterStatusWorker statsWorker = new ClusterStatusWorker(serviceManager, clusterStatusAdmin, currentNodeList) {
+            public void finished() {
+                //updateServerMetricsFields(getMetrics());
+                statisticsPane.updateStatisticsTable(getStatisticsList());
+
+                currentNodeList = getNewNodeList();
+
+                Vector cs = prepareClusterStatusData();
+
+                getClusterStatusTableModel().setData(cs);
+                getClusterStatusTableModel().getRealModel().setRowCount(cs.size());
+                getClusterStatusTableModel().fireTableDataChanged();
+                getStatusRefreshTimer().start();
+            }
+        };
+
+        statsWorker.start();
     }
 
     private javax.swing.JLabel jLabel1;
@@ -537,8 +624,12 @@ public class ClusterStatusWindow extends JFrame {
     private javax.swing.JMenuItem helpTopicsMenuItem;
     private ClusterStatusTableSorter clusterStatusTableSorter = null;
     private StatisticsPanel statisticsPane;
-
+    private Vector clusterRequestCounterCache = new Vector();
     private JPanel frameContentPane;
+    private javax.swing.Timer statusRefreshTimer;
+    private ClusterStatusAdmin clusterStatusAdmin;
+    private ServiceAdmin serviceManager;
+    private Hashtable currentNodeList;
 
 }
 

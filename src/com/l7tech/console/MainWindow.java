@@ -44,7 +44,7 @@ import java.util.logging.Logger;
 
 /**
  * The console main window <CODE>MainWindow</CODE> class.
- * 
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class MainWindow extends JFrame {
@@ -133,7 +133,7 @@ public class MainWindow extends JFrame {
 
     /**
      * add the ConnectionListener
-     * 
+     *
      * @param listener the ConnectionListener
      */
     public void addConnectionListener(ConnectionListener listener) {
@@ -142,7 +142,7 @@ public class MainWindow extends JFrame {
 
     /**
      * remove the the ConnectionListener
-     * 
+     *
      * @param listener the ConnectionListener
      */
     public void removeConnectionListener(ConnectionListener listener) {
@@ -175,7 +175,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the ConnectMenuItem property value.
-     * 
+     *
      * @return JMenuItem
      */
     private JMenuItem getConnectMenuItem() {
@@ -191,7 +191,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the DisconnectMenuItem property value.
-     * 
+     *
      * @return JMenuItem
      */
     private JMenuItem getDisconnectMenuItem() {
@@ -211,7 +211,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the menuItemPref property value.
-     * 
+     *
      * @return JMenuItem
      */
     private JMenuItem getMenuItemPreferences() {
@@ -229,7 +229,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the ExitMenuItem property value.
-     * 
+     *
      * @return JMenuItem
      */
     private JMenuItem getExitMenuItem() {
@@ -246,7 +246,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the helpTopicsMenuItem property value.
-     * 
+     *
      * @return JMenuItem
      */
     private JMenuItem getHelpTopicsMenuItem() {
@@ -263,7 +263,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the fileMenu property value.
-     * 
+     *
      * @return JMenu
      */
     private JMenu getFileMenu() {
@@ -283,7 +283,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the editMenu property value.
-     * 
+     *
      * @return JMenu
      */
     private JMenu getEditMenu() {
@@ -305,7 +305,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the viewMenu property value.
-     * 
+     *
      * @return JMenu
      */
     private JMenu getViewMenu() {
@@ -343,7 +343,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the newMenu property value.
-     * 
+     *
      * @return JMenuItem
      */
     private JMenu getGotoSubmenu() {
@@ -362,7 +362,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the helpMenu property value.
-     * 
+     *
      * @return JMenu
      */
     private JMenu getHelpMenu() {
@@ -382,7 +382,7 @@ public class MainWindow extends JFrame {
 
     /**
      * create the Action (the component that is used by several controls)
-     * 
+     *
      * @return the connect <CODE>Action</CODE> implementation
      */
     private Action getConnectAction() {
@@ -393,7 +393,7 @@ public class MainWindow extends JFrame {
           new AbstractAction(atext, icon) {
               /**
                * Invoked when an action occurs.
-               * 
+               *
                * @param event the event that occured
                */
               public void actionPerformed(ActionEvent event) {
@@ -406,7 +406,7 @@ public class MainWindow extends JFrame {
 
     /**
      * create the Action (the component that is used by several controls)
-     * 
+     *
      * @return the disconnect <CODE>Action</CODE> implementation
      */
     private Action getDisconnectAction() {
@@ -417,7 +417,7 @@ public class MainWindow extends JFrame {
           new AbstractAction(atext, icon) {
               /**
                * Invoked when an action occurs.
-               * 
+               *
                * @param event the event that occured
                */
               public void actionPerformed(ActionEvent event) {
@@ -574,7 +574,7 @@ public class MainWindow extends JFrame {
 
     /**
      * create the Action (the component that is used by several controls)
-     * 
+     *
      * @return the <CODE>Action</CODE> implementation that refreshes the tree
      */
     private Action getRefreshAction() {
@@ -630,7 +630,7 @@ public class MainWindow extends JFrame {
 
               /**
                * Invoked when an action occurs.
-               * 
+               *
                * @param event the event that occured
                * @see Action#removePropertyChangeListener
                */
@@ -672,7 +672,7 @@ public class MainWindow extends JFrame {
 
     /**
      * create the Action (the component that is used by several controls)
-     * 
+     *
      * @return the <CODE>Action</CODE> implementation that toggles the shortcut bar
      */
     private Action getToggleStatusBarToggleAction() {
@@ -684,7 +684,7 @@ public class MainWindow extends JFrame {
           new AbstractAction(atext) {
               /**
                * Invoked when an action occurs.
-               * 
+               *
                * @param event the event that occured
                * @see Action#removePropertyChangeListener
                */
@@ -708,7 +708,7 @@ public class MainWindow extends JFrame {
     /**
      * create the Action (the component that is used by several
      * controls) that returns the 'find' action.
-     * 
+     *
      * @return the find <CODE>Action</CODE>
      */
     private Action getFindAction() {
@@ -719,7 +719,7 @@ public class MainWindow extends JFrame {
 
     /**
      * create the Action (the component that is used by several controls)
-     * 
+     *
      * @return the <CODE>Action</CODE> implementation that invokes the
      *         preferences dialog
      */
@@ -746,7 +746,7 @@ public class MainWindow extends JFrame {
 
     /**
      * create the Action (the component that is used by several controls)
-     * 
+     *
      * @return the <CODE>Action</CODE> implementation that invokes the
      *         remove node action
      */
@@ -770,7 +770,7 @@ public class MainWindow extends JFrame {
     /**
      * enable or disable menus and buttons, depending on the
      * connection status
-     * 
+     *
      * @param connected true if connected, false otherwise
      */
     private void toggleConnectedMenus(boolean connected) {
@@ -784,7 +784,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the JFrameContentPane property value.
-     * 
+     *
      * @return JPanel
      */
     private JPanel getFrameContentPane() {
@@ -802,7 +802,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the jJPanelEditor property value.
-     * 
+     *
      * @return JPanel
      */
     private JPanel getMainSplitPaneRight() {
@@ -821,7 +821,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the palette tree view property value.
-     * 
+     *
      * @return JTree
      */
     private JTree getAssertionPaletteTree() {
@@ -837,7 +837,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the JTreeView property value.
-     * 
+     *
      * @return JTree
      */
     private JTree getServicesTree() {
@@ -933,7 +933,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the MainJMenuBar property value.
-     * 
+     *
      * @return JMenuBar
      */
     private JMenuBar getMainJMenuBar() {
@@ -996,7 +996,7 @@ public class MainWindow extends JFrame {
           new AbstractAction(atext) {
               /**
                * Invoked when an action occurs.
-               * 
+               *
                * @param event the event that occured
                * @see Action#removePropertyChangeListener
                */
@@ -1008,9 +1008,24 @@ public class MainWindow extends JFrame {
                       getGatewayLogWindow().hide();
                   }
               }
+
+              ConnectionListener listener = new ConnectionListener() {
+                  public void onConnect(ConnectionEvent e) {
+                      setEnabled(true);
+                  }
+
+                  public void onDisconnect(ConnectionEvent e) {
+                      setEnabled(false);
+                  }
+              };
+
+              {
+                  MainWindow.this.addConnectionListener(listener);
+              }
+
           };
         toggleGatewayLogWindowAction.putValue(Action.SHORT_DESCRIPTION, atext);
-
+        toggleGatewayLogWindowAction.setEnabled(false);
         return toggleGatewayLogWindowAction;
     }
 
@@ -1023,7 +1038,7 @@ public class MainWindow extends JFrame {
           new AbstractAction(atext) {
               /**
                * Invoked when an action occurs.
-               * 
+               *
                * @param event the event that occured
                * @see Action#removePropertyChangeListener
                */
@@ -1035,15 +1050,30 @@ public class MainWindow extends JFrame {
                       getClusterStatusWindow().hide();
                   }
               }
+
+              ConnectionListener listener = new ConnectionListener() {
+                  public void onConnect(ConnectionEvent e) {
+                      setEnabled(true);
+                  }
+
+                  public void onDisconnect(ConnectionEvent e) {
+                      setEnabled(false);
+                  }
+              };
+
+              {
+                  MainWindow.this.addConnectionListener(listener);
+              }
+
           };
         toggleClusterStatusWindowAction.putValue(Action.SHORT_DESCRIPTION, atext);
-
+        toggleClusterStatusWindowAction.setEnabled(false);
         return toggleClusterStatusWindowAction;
     }
 
     /**
      * Return the mainJSplitPaneTop property value.
-     * 
+     *
      * @return JSplitPane
      */
     private JSplitPane getMainSplitPane() {
@@ -1091,7 +1121,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the MainPane property value.
-     * 
+     *
      * @return JPanel
      */
     private JPanel getMainPane() {
@@ -1106,7 +1136,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the StatusBarPane property value.
-     * 
+     *
      * @return JPanel
      */
     private JPanel getStatusBarPane() {
@@ -1148,7 +1178,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the StatusMsgLeft property value.
-     * 
+     *
      * @return JLabel
      */
     private JLabel getStatusMsgLeft() {
@@ -1161,7 +1191,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the StatusMsgRight property value.
-     * 
+     *
      * @return JLabel
      */
     private JLabel getStatusMsgRight() {
@@ -1173,7 +1203,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the ToolBarPane property value.
-     * 
+     *
      * @return JToolBar
      */
     private JToolBar getToolBarPane() {
@@ -1228,7 +1258,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the ToolBarPane property value.
-     * 
+     *
      * @return JToolBar
      */
     public PolicyToolBar getPolicyToolBar() {
@@ -1242,7 +1272,7 @@ public class MainWindow extends JFrame {
 
     /**
      * Return the TreeJPanel property value.
-     * 
+     *
      * @return JPanel
      */
     private JPanel getMainLeftPanel() {
@@ -1330,7 +1360,7 @@ public class MainWindow extends JFrame {
 
     /**
      * The disconnect handler.
-     * 
+     *
      * @param event ActionEvent
      */
     private void disconnectHandler(ActionEvent event) throws ActionVetoException {
@@ -1361,7 +1391,7 @@ public class MainWindow extends JFrame {
 
     /**
      * update the actions, menus, buttons for the selected node.
-     * 
+     *
      * @param node currently selected node
      */
     private void updateActions(AbstractTreeNode node) {
@@ -1402,7 +1432,7 @@ public class MainWindow extends JFrame {
         prefs.addPropertyChangeListener(new PropertyChangeListener() {
             /**
              * This method gets called when a property is changed.
-             * 
+             *
              * @param evt A PropertyChangeEvent object describing the
              *            event source and the property that has changed.
              */
@@ -1621,7 +1651,7 @@ public class MainWindow extends JFrame {
 
     /**
      * set the inactivity timeout value
-     * 
+     *
      * @param newTimeout new inactivity timeout
      */
     private void setInactivitiyTimeout(int newTimeout) {
@@ -1651,7 +1681,7 @@ public class MainWindow extends JFrame {
 
     /**
      * set the look and feel
-     * 
+     *
      * @param lookAndFeel a string specifying the name of the class that implements
      *                    the look and feel
      */
@@ -1696,7 +1726,7 @@ public class MainWindow extends JFrame {
 
     /**
      * is this console connected?
-     * 
+     *
      * @return true if connected,false otherwise
      */
     private boolean isConnected() {
@@ -1708,6 +1738,7 @@ public class MainWindow extends JFrame {
     public JCheckBoxMenuItem getLogMenuItem() {
         if (logMenuItem != null) return logMenuItem;
         logMenuItem = new JCheckBoxMenuItem(getGatewayLogWindowAction());
+
         return logMenuItem;
     }
 
@@ -1715,6 +1746,7 @@ public class MainWindow extends JFrame {
 
         if (statMenuItem != null) return statMenuItem;
         statMenuItem = new JCheckBoxMenuItem(getClusterStatusWindowAction());
+
         return statMenuItem;
     }
 
