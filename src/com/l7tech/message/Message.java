@@ -12,6 +12,7 @@ import java.util.Iterator;
  * @author alex
  */
 public interface Message {
+    TransportMetadata getTransportMetadata();
     Iterator getParameterNames();
     void setParameter( Object name, Object value );
     Object getParameter( Object name );

@@ -13,6 +13,10 @@ import java.util.*;
  * @version $Revision$
  */
 public abstract class MessageAdapter implements Message {
+    public MessageAdapter( TransportMetadata tm ) {
+        _transportMetadata = tm;
+    }
+
     public void setParameter( Object name, Object value ) {
         _params = new HashMap();
         _params.put( name, value );
@@ -26,5 +30,10 @@ public abstract class MessageAdapter implements Message {
         return _params.keySet().iterator();
     }
 
+    public TransportMetadata getTransportMetadata() {
+        return _transportMetadata;
+    }
+
+    protected TransportMetadata _transportMetadata;
     protected Map _params = Collections.EMPTY_MAP;
 }
