@@ -293,7 +293,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         final HTMLEditorKit htmlEditorKit = new HTMLEditorKit();
         StyleSheet ss = htmlEditorKit.getStyleSheet();
         Style style = ss.getStyle("body");
-        System.out.println(style);
         if (style !=null){
             style.removeAttribute(StyleConstants.FontFamily);
             System.out.println(style);
