@@ -50,7 +50,7 @@ public class EditPolicyTemplateNameDialog extends JDialog {
     private ActionListener listener;
 
     /**
-     * Create a new PasswordDialog
+     * Create a new EditPolicyTemplateName Dialog
      *
      * @param parent the parent Frame. May be <B>null</B>
      */
@@ -92,11 +92,11 @@ public class EditPolicyTemplateNameDialog extends JDialog {
 
         newNameField = new JTextField(); // needed below
 
-        // password label
-        JLabel passwordLabel = new JLabel();
-        passwordLabel.setToolTipText(resources.getString("newPolicyTemplateNameField.tooltip"));
-        passwordLabel.setText(resources.getString("newPolicyTemplateNameField.label"));
-        passwordLabel.setLabelFor(newNameField);
+        // policy template name label
+        JLabel policyTemplateNameLabel = new JLabel();
+        policyTemplateNameLabel.setToolTipText(resources.getString("newPolicyTemplateNameField.tooltip"));
+        policyTemplateNameLabel.setText(resources.getString("newPolicyTemplateNameField.label"));
+        policyTemplateNameLabel.setLabelFor(newNameField);
         constraints = new GridBagConstraints();
         constraints.gridx = 0;
         constraints.gridy = 0;
@@ -104,7 +104,7 @@ public class EditPolicyTemplateNameDialog extends JDialog {
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.insets = new Insets(11, 12, 0, 0);
 
-        contents.add(passwordLabel, constraints);
+        contents.add(policyTemplateNameLabel, constraints);
 
         // new name field
         newNameField.setToolTipText(resources.getString("newPolicyTemplateNameField.tooltip"));
