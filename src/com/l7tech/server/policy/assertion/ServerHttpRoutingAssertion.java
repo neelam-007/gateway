@@ -309,7 +309,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                      is =null;
                 }
 
-                if (multipartReader != null) {
+                if (multipartReader != null && multipartReader.getFileCache() != null) {
                     multipartReader.deleteCacheFile();
                 }
             } catch (WSDLException we) {

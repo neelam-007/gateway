@@ -67,6 +67,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
         XmlRequest xreq = (XmlRequest) request;
         boolean assertionStatusOK = true;
         boolean operationElementFound = false;
+        ServerMultipartMessageReader multipartReader = null;
 
         if (request instanceof SoapRequest && ((SoapRequest) request).isSoap()) {
 
@@ -189,10 +190,10 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                                     return AssertionStatus.FALSIFIED;
                                 }
 
-                                ServerMultipartMessageReader mreader = xreq.getMultipartReader();
+                                multipartReader = xreq.getMultipartReader();
 
-                                if(mreader == null) throw new IllegalStateException("ServerMultipartMessageReader must be created first before use");
-                                MultipartUtil.Part mimepartRequest = mreader.getMessagePart(mimePartCID);
+                                if(multipartReader == null) throw new IllegalStateException("ServerMultipartMessageReader must be created first before use");
+                                MultipartUtil.Part mimepartRequest = multipartReader.getMessagePart(mimePartCID);
 
                                 if(mimepartRequest != null) {
                                     // validate the content type
@@ -210,7 +211,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                                     // check the max. length allowed
                                     if(totalLen > part.getMaxLength() * 1000) {
                                         if(hrefs.size() > 1) {
-                                            logger.info("The parameter " + part.getName() + " has " + hrefs.size() + " attachments. The total length exceeds the limit: " + part.getMaxLength() + "K bytes");
+                                            logger.info("The parameter [" + part.getName() + "] has " + hrefs.size() + " attachments. The total length exceeds the limit: " + part.getMaxLength() + "K bytes");
                                         } else {
                                             logger.info("The length of the attachment " + mimePartCID + " exceeds the limit: " + part.getMaxLength() + "K bytes");
                                         }
@@ -259,15 +260,31 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
             } catch (JaxenException e) {
                 logger.log(Level.WARNING, "Caught JaxenException when retrieving xml document from request", e);
                 return AssertionStatus.SERVER_ERROR;
+            } finally {
+                cleanUp(multipartReader);
             }
         } else {
             logger.finest("The operation specified in the request is invalid.");
+            cleanUp(multipartReader);            
             return AssertionStatus.FAILED;
         }
         
         if(!operationElementFound) {
             logger.info("The operation specified in the request is invalid.");
         }
+        cleanUp(multipartReader);
         return AssertionStatus.FALSIFIED;
+    }
+
+    /**
+     * Clean up the cache
+     * @param multipartReader
+     */
+    private void cleanUp(ServerMultipartMessageReader multipartReader) throws IOException {
+
+        if(multipartReader != null && multipartReader.getFileCache() != null) {
+             multipartReader.closeFileCache();
+             multipartReader.deleteCacheFile();
+        }
     }
 }

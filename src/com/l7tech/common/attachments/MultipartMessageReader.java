@@ -392,7 +392,7 @@ abstract public class MultipartMessageReader {
 
             try {
                 if(getFileCachePath() != null) {
-                    fileCacheName = getFileCachePath() + "/req-att-" + fileCacheId;
+                    fileCacheName = getFileCachePath() + "/tmp-file-req-att-" + fileCacheId;
                     fileCache = new FileOutputStream(fileCacheName, true);
                 } else {
                     throw new RuntimeException("The File Cache path is NULL");                    
@@ -630,16 +630,27 @@ abstract public class MultipartMessageReader {
      */
     public void deleteCacheFile() {
 
-        final File deleteFile = new File(getFileCacheName());
+        if(fileCache == null) return;  // nothing to delete
 
-        if(fileCache != null) {
-            try {
-                fileCache.close();
-            } catch (IOException e) {
-                // do nothing
-                // the fileCache input stream already been close
-            }
-            fileCache = null;
+        try {
+            fileCache.close();
+        } catch (IOException e) {
+            // do nothing
+            // the fileCache input stream already been close
+        }
+
+        String fileName = getFileCacheName();
+
+        if(fileName == null) {
+            logger.warning("Internal error: trying to delete a temp file but the file name is not set");
+            return;
+        }
+
+        final File deleteFile = new File(fileName);
+
+        if(deleteFile == null) {
+            logger.warning("File not found: " +  getFileCacheName());
+            return;
         }
 
         // remove the cache file (attachments) after request is sent
@@ -652,5 +663,7 @@ abstract public class MultipartMessageReader {
         });
 
         t.start();
+
+        fileCache = null;
     }
 }
