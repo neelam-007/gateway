@@ -11,7 +11,8 @@ import com.ibm.xml.dsig.KeyInfo;
 import com.ibm.xml.dsig.util.AdHocIDResolver;
 import com.ibm.xml.enc.*;
 import com.ibm.xml.enc.type.*;
-import com.ibm.xml.enc.util.AdHocIdResolver;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
 import org.w3c.dom.Document;
@@ -69,8 +70,12 @@ public class Xss4jWrapper {
         checkSignatureOnElement( doc, "price" );
         checkSignatureOnElement( doc, "amount" );
 
-        decryptXml( doc, "price", getSecretKey() );
-        decryptXml( doc, "amount", getSecretKey() );
+        decryptElement( doc, "price", getSecretKey() );
+        decryptElement( doc, "amount", getSecretKey() );
+
+        cleanEmptyRefList( doc );
+        SoapUtil.cleanEmptySecurityElement( doc );
+        SoapUtil.cleanEmptyHeaderElement( doc );
 
         return doc;
     }
@@ -105,41 +110,85 @@ public class Xss4jWrapper {
         signXml( d, priceElement, "signref" + signref, getClientCertPrivateKey(), getClientCertificate() );
     }
 
-    private boolean decryptXml(Document soapMsg, String elementName, Key key) throws Exception {
+    private boolean decryptElement(Document soapMsg, String elementName, Key key) throws Exception {
         // Find message part
         Element messagePartElement = (Element)soapMsg.getElementsByTagName(elementName).item(0);
-        Element encryptedDataElement = (Element)messagePartElement.getElementsByTagNameNS( XMLENC_NS, "EncryptedData" ).item(0);
-        if ( encryptedDataElement == null ) return false;
+
+        Element encryptedDataElement = XmlUtil.findFirstChildElementByName(messagePartElement,
+                                                                           SoapUtil.XMLENC_NS,
+                                                                           "EncryptedData");
+        if (encryptedDataElement == null)
+            return false;
+
         String messagePartId = encryptedDataElement.getAttribute( "Id" );
+        Element envelope = soapMsg.getDocumentElement();
+        if (!"Envelope".equals(envelope.getLocalName())) // todo: move this validation to somewhere more sensible
+
+            throw new IllegalArgumentException("Invalid SOAP envelope: document element is not named 'Envelope'");
+        String envelopeNs = envelope.getNamespaceURI();
+        if (!SoapUtil.ENVELOPE_URIS.contains(envelopeNs)) // todo: move this validation to somewhere more sensible
+            throw new IllegalArgumentException("Invalid SOAP message: unrecognized envelope namespace \"" + envelopeNs + "\"");
 
         // Locate EncryptedData element by its reference in the Security header
-        NodeList dataRefEls = soapMsg.getElementsByTagNameNS(XMLENC_NS, "DataReference");
-        if ( dataRefEls == null || dataRefEls.getLength() == 0 )
-            throw new Exception("no DataReference tag in the message");
+        Element header = XmlUtil.findFirstChildElementByName(envelope, envelopeNs, "Header");
+        if (header == null)
+            throw new IllegalArgumentException("Encrypted data is present, but there is no SOAP header");
 
-        for ( int i = 0; i < dataRefEls.getLength(); i++ ) {
-            Element dataRefEl = (Element)dataRefEls.item(i);
-            String dataRefUri = dataRefEl.getAttribute("URI");
-            if ( dataRefUri != null && dataRefUri.equals(messagePartId ) ) {
-                // Create decryption context and decrypt the EncryptedData subtree. Note that this effects the
-                // soapMsg document
-                DecryptionContext dc = new DecryptionContext();
-                AlgorithmFactoryExtn af = new AlgorithmFactoryExtn();
-                dc.setAlgorithmFactory(af);
-                dc.setEncryptedType(encryptedDataElement, EncryptedData.CONTENT, null, null);
-                dc.setKey(key);
+        Element security = XmlUtil.findFirstChildElementByName(header, SoapUtil.SECURITY_NAMESPACE2, "Security");
+        if (security == null)
+            security = XmlUtil.findFirstChildElementByName(header, SoapUtil.SECURITY_NAMESPACE, "Security");
+        if (security == null)
+            throw new IllegalArgumentException("Encrypted data is present, but there is no security element");
 
-                dc.decrypt();
-                dc.replace();
-                return true;
+        List referenceListList = XmlUtil.findChildElementsByName(security, SoapUtil.XMLENC_NS, "ReferenceList");
+        if (referenceListList == null)
+            throw new IllegalArgumentException("Encrypted data is present, but there is no ReferenceList");
+        for (Iterator i = referenceListList.iterator(); i.hasNext();) {
+            Element referenceList = (Element)i.next();
+
+            List dataRefEls = XmlUtil.findChildElementsByName(referenceList, SoapUtil.XMLENC_NS, "DataReference");
+            if ( dataRefEls == null || dataRefEls.isEmpty() )
+                throw new Exception("Encrypted data is present, but there are no DataReference tags in the message");
+
+            for (Iterator j = dataRefEls.iterator(); j.hasNext();) {
+                Element dataRefEl = (Element)j.next();
+                String dataRefUri = dataRefEl.getAttribute("URI");
+                if ( dataRefUri != null && dataRefUri.equals(messagePartId ) ) {
+                    // Create decryption context and decrypt the EncryptedData subtree. Note that this effects the
+                    // soapMsg document
+                    DecryptionContext dc = new DecryptionContext();
+                    AlgorithmFactoryExtn af = new AlgorithmFactoryExtn();
+                    dc.setAlgorithmFactory(af);
+                    dc.setEncryptedType(encryptedDataElement, EncryptedData.CONTENT, null, null);
+                    dc.setKey(key);
+
+                    dc.decrypt();
+                    dc.replace();
+
+                    referenceList.removeChild(dataRefEl);
+                    return true;
+                }
             }
         }
         return false;
     }
 
-    private void cleanup( Document document ) {
-//        Element refListEl = (Element)dataRefEl.getParentNode();
-//        refListEl.removeChild(dataRefEl);
+    private static void cleanEmptyRefList(Document soapMsg) {
+        List refs = new ArrayList();
+        {
+            NodeList listRefElements = soapMsg.getElementsByTagNameNS(SoapUtil.XMLENC_NS, "ReferenceList");
+            if (listRefElements.getLength() < 1)
+                return;
+            for (int i = 0; i < listRefElements.getLength(); ++i)
+                refs.add(listRefElements.item(i));
+            listRefElements = null;
+        }
+
+        for (Iterator iterator = refs.iterator(); iterator.hasNext();) {
+            Element refListEl = (Element)iterator.next();
+            if (!SoapUtil.elHasChildrenElements(refListEl))
+                refListEl.getParentNode().removeChild(refListEl);
+        }
     }
 
     private void signXml( Document document, Element messagePart, String referenceId, PrivateKey privateKey, X509Certificate cert ) throws Exception {

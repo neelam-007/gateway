@@ -88,7 +88,7 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                     }
                 }
 
-                Element element = null;
+                Element messagePartElement = null;
                 xpath = elementSecurity.getElementXpath();
                 if (xpath != null) {
                     List nodes = XpathEvaluator.newEvaluator(document, xpath.getNamespaces()).select(xpath.getExpression());
@@ -98,21 +98,21 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                         logger.warning(logmessage);
                         throw new SecurityProcessorException(message);
                     }
-                    element = (Element)nodes.get(0);
+                    messagePartElement = (Element)nodes.get(0);
                 } else {
-                    element = document.getDocumentElement();
+                    messagePartElement = document.getDocumentElement();
                     envelopeProcessed = true; //signal to ignore everything else. Should scream if more elements exist?
                 }
                 // verifiy element signature
 
                 // verify that this cert is signed with the root cert of this ssg
-                documentCertificates = SoapMsgSigner.validateSignature(document, element);
+                documentCertificates = SoapMsgSigner.validateSignature(document, messagePartElement);
                 logger.fine("signature of response message verified");
 
                 if (elementSecurity.isEncryption()) { //element security is required
-                    if (element.hasChildNodes()) {
+                    if (messagePartElement.hasChildNodes()) {
                         check(elementSecurity);
-                        XmlMangler.decryptXml(document, decryptionKey);
+                        XmlMangler.decryptElement(messagePartElement, decryptionKey);
                     } else {
                         logger.warning("Encrypt requested XPath '" + xpath.getExpression() + "'" + " but no child nodes exist, skipping encryption");
                     }
@@ -140,7 +140,7 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                     }
                 }
 
-                Element element = null;
+                Element messagePartElement = null;
                 xpath = elementSecurity.getElementXpath();
                 if (xpath != null) {
                     List nodes = XpathEvaluator.newEvaluator(document, xpath.getNamespaces()).select(xpath.getExpression());
@@ -150,21 +150,21 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                         logger.warning(logmessage);
                         throw new SecurityProcessorException(message);
                     }
-                    element = (Element)nodes.get(0);
+                    messagePartElement = (Element)nodes.get(0);
                 } else {
-                    element = document.getDocumentElement();
+                    messagePartElement = document.getDocumentElement();
                     envelopeProcessed = true; //signal to ignore everything else. Should scream if more elements exist?
                 }
                 // verifiy element signature
 
                 // verify that this cert is signed with the root cert of this ssg
-                documentCertificates = SoapMsgSigner.validateSignature(document, element);
+                documentCertificates = SoapMsgSigner.validateSignature(document, messagePartElement);
                 logger.fine("signature of response message verified");
 
                 if (elementSecurity.isEncryption()) { //element security is required
-                    if (element.hasChildNodes()) {
+                    if (messagePartElement.hasChildNodes()) {
                         check(elementSecurity);
-                        XmlMangler.decryptXml(document, decryptionKey);
+                        XmlMangler.decryptElement(messagePartElement, decryptionKey);
                     } else {
                         logger.warning("Encrypt requested XPath '" + xpath.getExpression() + "'" + " but no child nodes exist, skipping encryption");
                     }

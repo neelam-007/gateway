@@ -39,7 +39,7 @@ public class JceProviderTest {
     private static String DFLT_PK_PASS = "tralala";
     private static String ALIAS = "ssgroot";
     private static String DFLT_STORE_PASS = "tralala";
-    public static final String USAGE = "Usage: JceProviderTest [phaos|bc|rsa|ncipher] scale dir keypass storepass";
+    public static final String USAGE = "Usage: JceProviderTest [phaos|bc|rsa|ncipher|entrust] scale dir keypass storepass";
 
     public static interface Testable {
         void run() throws Throwable;
@@ -75,6 +75,8 @@ public class JceProviderTest {
             driver = "com.l7tech.common.security.prov.bc.BouncyCastleJceProviderEngine";
         } else if ("ncipher".equalsIgnoreCase(prov)) {
             driver = "com.l7tech.common.security.prov.ncipher.NcipherJceProviderEngine";
+        } else if ("entrust".equalsIgnoreCase(prov)) {
+            driver = JceProvider.ENTRUST_ENGINE;
         } else
             throw new IllegalArgumentException(USAGE);
         System.setProperty(JceProvider.ENGINE_PROPERTY, driver);
@@ -119,7 +121,6 @@ public class JceProviderTest {
             signedDocument = XmlUtil.stringToDocument(testXml);
             SoapMsgSigner.signEnvelope(signedDocument, kp.getPrivate(), new X509Certificate[] { signedClientCert });
             signedXml = XmlUtil.documentToString(signedDocument);
-            log.info("Signed XML message: " + signedXml);
 
             log.info("pretest: checking XML message signature");
             SoapMsgSigner.validateSignature(XmlUtil.stringToDocument(signedXml));
@@ -150,8 +151,10 @@ public class JceProviderTest {
         });
 
         final Document encryptedDoc = XmlUtil.stringToDocument(testXml);
+        log.info("Before encryption: " + testXml);
         XmlMangler.encryptXml(encryptedDoc, keyBytes, "MyKeyName");
         final String encryptedXml = XmlUtil.documentToString(encryptedDoc);
+        log.info("Encrypted XML message: " + encryptedXml);
 
         reportTime("Encrypt document", 1000 * scale, new Testable() {
             public void run() throws Throwable {
@@ -163,7 +166,7 @@ public class JceProviderTest {
         reportTime("Decrypt document", 200 * scale, new Testable() {
             public void run() throws Throwable {
                 Document blah = XmlUtil.stringToDocument(encryptedXml);
-                XmlMangler.decryptXml(blah, key);
+                XmlMangler.decryptDocument(blah, key);
             }
         });
 

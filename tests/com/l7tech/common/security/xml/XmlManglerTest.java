@@ -179,7 +179,7 @@ public class XmlManglerTest extends TestCase {
         assertTrue(cipherData != null);
 
         Document decrypted = stringToDocument(documentToString(crypted));
-        XmlMangler.decryptXml(decrypted, encryptionKey);
+        XmlMangler.decryptDocument(decrypted, encryptionKey);
         //log.info("Document after decryption: \n" + documentToString(decrypted));
     }
 
@@ -213,7 +213,7 @@ public class XmlManglerTest extends TestCase {
         final int length = nl.getLength();
         for (int i = 0; i < length; i++) {
             element = (Element)nl.item(i);
-            XmlMangler.decryptXml(soapDocument, encryptionKey);
+            XmlMangler.decryptDocument(soapDocument, encryptionKey);
             // log.info("Document after decryption "+i+" :\n" + documentToString(soapDocument));
         }
         nl = soapDocument.getElementsByTagNameNS(xmlencNS, "CipherValue");
@@ -245,7 +245,7 @@ public class XmlManglerTest extends TestCase {
         final int length = nl.getLength();
         for (int i = 0; i < length; i++) {
             Element element = (Element)nl.item(i);
-            XmlMangler.decryptXml(doc, encryptionKey);
+            XmlMangler.decryptDocument(doc, encryptionKey);
             //log.info("Document after decryption "+i+" :\n" + documentToString(doc));
         }
         nl = doc.getElementsByTagNameNS(xmlencNS, "CipherValue");
@@ -257,7 +257,7 @@ public class XmlManglerTest extends TestCase {
         Document orig = makeTestMessage();
         Key key = new RawKey(16);
         try {
-            XmlMangler.decryptXml(orig, key);
+            XmlMangler.decryptDocument(orig, key);
             fail("Should have thrown XMLSecurityElementNotFound");
         } catch (XMLSecurityElementNotFoundException e) {
             // ok

@@ -7,21 +7,13 @@
 package com.l7tech.common.security.xml;
 
 import com.ibm.xml.dsig.XSignatureException;
-import com.ibm.xml.enc.AlgorithmFactoryExtn;
-import com.ibm.xml.enc.DecryptionContext;
-import com.ibm.xml.enc.EncryptionContext;
-import com.ibm.xml.enc.KeyInfoResolvingException;
-import com.ibm.xml.enc.StructureException;
-import com.ibm.xml.enc.type.CipherData;
-import com.ibm.xml.enc.type.CipherValue;
-import com.ibm.xml.enc.type.EncryptedData;
-import com.ibm.xml.enc.type.EncryptionMethod;
-import com.ibm.xml.enc.type.KeyInfo;
-import com.ibm.xml.enc.type.KeyName;
+import com.ibm.xml.enc.*;
+import com.ibm.xml.enc.type.*;
 import com.ibm.xml.enc.util.AdHocIdResolver;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -32,6 +24,9 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.Key;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * Class that encrypts and decrypts XML documents.
@@ -192,12 +187,104 @@ public class XmlMangler {
     }
 
     /**
+     * In-place decrypt of the specified encrypted element.  Caller is responsible for ensuring that the
+     * correct key is used for the document, of the proper format for the encryption scheme it used.  Caller can use
+     * getKeyName() to help decide which Key to use to decrypt the document.  Caller is responsible for
+     * cleaning out any empty reference lists, security headers, or soap headers after all encrypted
+     * elements have been processed.
+     * <p/>
+     * If this method returns normally the specified element will have been successfully decrypted.
+     *
+     * @param messagePartElement The Element to decrypt.
+     * @param key     The key to use to decrypt it. If the document was encrypted with
+     *                a call to encryptXml(), the Key will be a 16 byte AES128 symmetric key.
+     * @throws GeneralSecurityException     if there was a problem with a key or crypto provider
+     * @throws ParserConfigurationException if there was a problem with the XML parser
+     * @throws IOException                  if there was an IO error while reading the document or a key
+     * @throws SAXException                 if there was a problem parsing the document
+     */
+    public static void decryptElement(Element messagePartElement, Key key)
+            throws GeneralSecurityException, ParserConfigurationException, IOException, SAXException,
+            XMLSecurityElementNotFoundException
+    {
+        Document soapMsg = messagePartElement.getOwnerDocument();
+        Element encryptedDataElement = XmlUtil.findFirstChildElementByName(messagePartElement,
+                                                                           SoapUtil.XMLENC_NS,
+                                                                           "EncryptedData");
+        if (encryptedDataElement == null)
+            throw new XMLSecurityElementNotFoundException("No EncryptedData found inside the 'encrypted' message part");
+
+        String messagePartId = encryptedDataElement.getAttribute( "Id" );
+        Element envelope = soapMsg.getDocumentElement();
+        if (!"Envelope".equals(envelope.getLocalName())) // todo: move this validation to somewhere more sensible
+
+            throw new IllegalArgumentException("Invalid SOAP envelope: document element is not named 'Envelope'");
+        String envelopeNs = envelope.getNamespaceURI();
+        if (!SoapUtil.ENVELOPE_URIS.contains(envelopeNs)) // todo: move this validation to somewhere more sensible
+            throw new IllegalArgumentException("Invalid SOAP message: unrecognized envelope namespace \"" + envelopeNs + "\"");
+
+        // Locate EncryptedData element by its reference in the Security header
+        Element header = XmlUtil.findFirstChildElementByName(envelope, envelopeNs, "Header");
+        if (header == null)
+            throw new XMLSecurityElementNotFoundException("EncryptedData is present, but there is no SOAP header");
+
+        Element security = XmlUtil.findFirstChildElementByName(header, SoapUtil.SECURITY_NAMESPACE2, "Security");
+        if (security == null)
+            security = XmlUtil.findFirstChildElementByName(header, SoapUtil.SECURITY_NAMESPACE, "Security");
+        if (security == null)
+            throw new XMLSecurityElementNotFoundException("EncryptedData is present, but there is no security element");
+
+        List referenceListList = XmlUtil.findChildElementsByName(security, SoapUtil.XMLENC_NS, "ReferenceList");
+        if (referenceListList == null)
+            throw new XMLSecurityElementNotFoundException("EncryptedData is present, but there is no ReferenceList");
+        for (Iterator i = referenceListList.iterator(); i.hasNext();) {
+            Element referenceList = (Element)i.next();
+
+            List dataRefEls = XmlUtil.findChildElementsByName(referenceList, SoapUtil.XMLENC_NS, "DataReference");
+            if ( dataRefEls == null || dataRefEls.isEmpty() )
+                throw new XMLSecurityElementNotFoundException("EncryptedData is present, but there are no DataReference tags in the message");
+
+            for (Iterator j = dataRefEls.iterator(); j.hasNext();) {
+                Element dataRefEl = (Element)j.next();
+                String dataRefUri = dataRefEl.getAttribute("URI");
+                if ( dataRefUri != null && dataRefUri.equals(messagePartId ) ) {
+                    // Create decryption context and decrypt the EncryptedData subtree. Note that this effects the
+                    // soapMsg document
+                    DecryptionContext dc = new DecryptionContext();
+                    AlgorithmFactoryExtn af = new AlgorithmFactoryExtn();
+                    af.setProvider(JceProvider.getProvider().getName());
+                    dc.setAlgorithmFactory(af);
+                    dc.setEncryptedType(encryptedDataElement, EncryptedData.CONTENT, null, null);
+                    dc.setKey(key);
+
+                    try {
+                        dc.decrypt();
+                        dc.replace();
+                    } catch (XSignatureException e) {
+                        throw new XmlManglerException(e);
+                    } catch (StructureException e) {
+                        throw new XmlManglerException(e);
+                    } catch (KeyInfoResolvingException e) {
+                        throw new XmlManglerException(e);
+                    }
+
+                    referenceList.removeChild(dataRefEl);
+                    return;
+                }
+            }
+        }
+        throw new XMLSecurityElementNotFoundException("EncryptedData is present, but there are no matching DataReference tags");
+    }
+
+    /**
      * In-place decrypt of the specified encrypted SOAP document.  Caller is responsible for ensuring that the
      * correct key is used for the document, of the proper format for the encryption scheme it used.  Callers can use
      * getKeyName() to help decide which Key to use to decrypt the document.
      * <p/>
      * If this method returns normally the document will have been successfully decrypted.
-     * 
+     *
+     * @deprecated Do not use this method, ever.  It's contract is badly broken as designed
+     *
      * @param soapMsg The SOAP document to decrypt.
      * @param key     The key to use to decrypt it. If the document was encrypted with
      *                a call to encryptXml(), the Key will be a 16 byte AES128 symmetric key.
@@ -206,7 +293,7 @@ public class XmlMangler {
      * @throws IOException                  if there was an IO error while reading the document or a key
      * @throws SAXException                 if there was a problem parsing the document
      */
-    public static void decryptXml(Document soapMsg, Key key)
+    private static void decryptXml_OLD(Document soapMsg, Key key)
       throws GeneralSecurityException, ParserConfigurationException, IOException,
       SAXException, XMLSecurityElementNotFoundException {
         // Locate EncryptedData element by its reference in the Security header
@@ -244,12 +331,45 @@ public class XmlMangler {
         cleanEmptyRefList(soapMsg);
     }
 
-    public static void cleanEmptyRefList(Document soapMsg) {
-        NodeList listRefElements = soapMsg.getElementsByTagNameNS(SoapUtil.XMLENC_NS, "ReferenceList");
-        if (listRefElements.getLength() < 1) return;
-        Element refEl = (Element)listRefElements.item(0);
-        if (!SoapUtil.elHasChildrenElements(refEl)) {
-            refEl.getParentNode().removeChild(refEl);
+   private static void cleanEmptyRefList(Document soapMsg) {
+        List refs = new ArrayList();
+        {
+            NodeList listRefElements = soapMsg.getElementsByTagNameNS(SoapUtil.XMLENC_NS, "ReferenceList");
+            if (listRefElements.getLength() < 1)
+                return;
+            for (int i = 0; i < listRefElements.getLength(); ++i)
+                refs.add(listRefElements.item(i));
+            listRefElements = null;
         }
+
+        for (Iterator iterator = refs.iterator(); iterator.hasNext();) {
+            Element refListEl = (Element)iterator.next();
+            if (!SoapUtil.elHasChildrenElements(refListEl))
+                refListEl.getParentNode().removeChild(refListEl);
+        }
+    }
+
+    /**
+     * In-place decrypt of the specified document's document element.  Caller is responsible for ensuring that the
+     * correct key is used for the document, of the proper format for the encryption scheme it used.  Caller can use
+     * getKeyName() to help decide which Key to use to decrypt the document.  Caller is responsible for
+     * cleaning out any empty reference lists, security headers, or soap headers after all encrypted
+     * elements have been processed.
+     * <p/>
+     * If this method returns normally the specified element will have been successfully decrypted.
+     *
+     * @param soapMsg The SOAP document to decrypt.
+     * @param key     The key to use to decrypt it. If the document was encrypted with
+     *                a call to encryptXml(), the Key will be a 16 byte AES128 symmetric key.
+     * @throws GeneralSecurityException     if there was a problem with a key or crypto provider
+     * @throws ParserConfigurationException if there was a problem with the XML parser
+     * @throws IOException                  if there was an IO error while reading the document or a key
+     * @throws SAXException                 if there was a problem parsing the document
+     */
+    public static void decryptDocument(Document soapMsg, Key key)
+            throws GeneralSecurityException, XMLSecurityElementNotFoundException, IOException,
+            ParserConfigurationException, SAXException
+    {
+        decryptElement(soapMsg.getDocumentElement(), key);
     }
 }

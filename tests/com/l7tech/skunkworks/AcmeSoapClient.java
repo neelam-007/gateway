@@ -61,7 +61,7 @@ public class AcmeSoapClient extends TestCase {
                         "</soap:Envelope>\n";
 
     public void testSimpleRequest() throws Exception {
-        HttpClient client = new HttpClient();
+        HttpClient client = new HttpClient();      
         PostMethod pm = new PostMethod(TEST_URL);
         Document req = XmlUtil.stringToDocument(SIMPLE_REQ);
         pm.setRequestBody(XmlUtil.documentToString(req));
@@ -80,7 +80,7 @@ public class AcmeSoapClient extends TestCase {
         Key key = generateKey();
         XmlMangler.encryptXml(req, key.getEncoded(), "mine");
         Document creq = XmlUtil.stringToDocument(XmlUtil.documentToString(req));
-        XmlMangler.decryptXml(creq, key);
+        XmlMangler.decryptDocument(creq, key);
 
         pm.setRequestBody(XmlUtil.documentToString(creq));
         log.info("Sending request: " + pm.getRequestBodyAsString());
