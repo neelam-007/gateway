@@ -7,14 +7,20 @@ import com.l7tech.objectmodel.EntityHeaderComparator;
 import com.l7tech.logging.LogManager;
 import com.l7tech.credential.PrincipalCredentials;
 import com.l7tech.credential.CredentialFormat;
+import com.l7tech.common.util.HexUtils;
 
-import java.io.UnsupportedEncodingException;
+import javax.naming.NamingException;
+import java.io.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Collection;
 import java.util.TreeSet;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateFactory;
+import java.security.cert.CertificateException;
+import java.security.SignatureException;
+import java.security.GeneralSecurityException;
 
 /**
  * Layer 7 Technologies, inc.
@@ -58,24 +64,61 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                 if ( format == CredentialFormat.CLIENTCERT ) {
                     Certificate dbCert = null;
                     X509Certificate dbCertX509 = null;
-                    Object maybeCert = pc.getPayload();
 
+                    // get the cert from the credentials
+                    Certificate maybeCert = (Certificate)pc.getPayload();
                     if ( maybeCert == null ) {
                         _log.log( Level.SEVERE, "Request was supposed to contain a certificate, but does not" );
                         return false;
-                    } else {
-                        dbCert = userManager.retrieveUserCert( new Long(dbUser.getOid()).toString() );
-                        if ( dbCert == null ) {
-                            _log.log( Level.WARNING, "No certificate found for user " + login );
-                            return false;
-                        } else if ( dbCert instanceof X509Certificate ) {
-                            dbCertX509 = (X509Certificate)dbCert;
-                            _log.log( Level.FINE, "Stored cert serial# is " + dbCertX509.getSerialNumber().toString() );
-                        } else {
-                            _log.log( Level.SEVERE, "Stored cert is not an X509Certificate!" );
-                            return false;
-                        }
                     }
+
+                    // Check whether the client cert is valid (according to our root cert)
+                    // (get the root cert)
+                    _log.log(Level.INFO, "Verifying client cert against current root cert...");
+                    Certificate rootcacert = null;
+                    try {
+                        javax.naming.Context cntx = new javax.naming.InitialContext();
+                        String rootCertLoc = (String)(cntx.lookup("java:comp/env/RootCertLocation"));
+                        InputStream certStream = new FileInputStream(rootCertLoc);
+                        byte[] rootcacertbytes = HexUtils.slurpStream(certStream, 16384);
+                        certStream.close();
+                        ByteArrayInputStream bais = new ByteArrayInputStream(rootcacertbytes);
+                        rootcacert = CertificateFactory.getInstance("X.509").generateCertificate(bais);
+                    } catch (NamingException e) {
+                        LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Exception retrieving root cert " + e.getMessage(), e);
+                        return false;
+                    } catch (IOException e) {
+                        LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Exception retrieving root cert " + e.getMessage(), e);
+                        return false;
+                    } catch (CertificateException e) {
+                        LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Exception retrieving root cert " + e.getMessage(), e);
+                        return false;
+                    }
+                    // (we have the root cert, verify client cert with it)
+                    try {
+                        maybeCert.verify(rootcacert.getPublicKey());
+                    } catch (SignatureException e) {
+                        LogManager.getInstance().getSystemLogger().log(Level.WARNING, "client cert does not verify against current root ca cert. maybe our root cert changed since this cert was created.", e);
+                        return false;
+                    } catch (GeneralSecurityException e) {
+                        LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Exception verifying client cert " + e.getMessage(), e);
+                        return false;
+                    }
+                    _log.log(Level.INFO, "Verification OK - client cert is valid.");
+                    // End of Check
+
+                    dbCert = userManager.retrieveUserCert( new Long(dbUser.getOid()).toString() );
+                    if ( dbCert == null ) {
+                        _log.log( Level.WARNING, "No certificate found for user " + login );
+                        return false;
+                    } else if ( dbCert instanceof X509Certificate ) {
+                        dbCertX509 = (X509Certificate)dbCert;
+                        _log.log( Level.FINE, "Stored cert serial# is " + dbCertX509.getSerialNumber().toString() );
+                    } else {
+                        _log.log( Level.SEVERE, "Stored cert is not an X509Certificate!" );
+                        return false;
+                    }
+
 
                     if ( maybeCert instanceof X509Certificate ) {
                         X509Certificate pcCert = (X509Certificate)maybeCert;
