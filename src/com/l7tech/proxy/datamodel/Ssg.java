@@ -271,7 +271,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
 
     public String getLocalEndpoint() {
         if (localEndpoint == null)
-            localEndpoint = "ssg" + getId();
+            localEndpoint = "gateway" + getId();
         return localEndpoint;
     }
 
