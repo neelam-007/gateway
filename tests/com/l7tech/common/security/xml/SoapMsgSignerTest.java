@@ -7,6 +7,7 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
+import com.l7tech.common.xml.XpathExpression;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -16,12 +17,15 @@ import sun.misc.BASE64Decoder;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
+import javax.xml.soap.SOAPConstants;
 import java.math.BigInteger;
 import java.security.Key;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.Properties;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author alex
@@ -76,9 +80,43 @@ public class SoapMsgSignerTest extends TestCase {
     public void testValidateSignatureElement() throws Exception {
         Document testDoc = getCleartextDocument();
         signAccountId( testDoc );
-//        ReceiverXmlSecurityProcessor foo = new ReceiverXmlSecurityProcessor();
+        signAndEncryptPrice( testDoc );
+        signAndEncryptAmount( testDoc );
+        Session s = new Session( Long.valueOf( getSessionId() ).longValue(),
+                                 System.currentTimeMillis(),
+                                 getKeyReq().getEncoded(),
+                                 getKeyRes().getEncoded(), 17 );
+
+        ElementSecurity[] esecs = getElementSecurity();
+
+        ReceiverXmlSecurityProcessor foo = new ReceiverXmlSecurityProcessor(s, getKeyReq(), esecs );
+        SecurityProcessor.Result bar = foo.processInPlace( testDoc ); // todo OMGWTFBBQ
+        XmlUtil.documentToOutputStream( testDoc, System.out );
+        System.out.println( bar.getCertificate() );
     }
 
+    private ElementSecurity[] getElementSecurity() {
+        Map nm = new HashMap();
+        nm.put( "soapenv", SOAPConstants.URI_NS_SOAP_ENVELOPE );
+        nm.put( "impl", "http://warehouse.acme.com/ws" );
+
+        return new ElementSecurity[] {
+            new ElementSecurity( new XpathExpression("/soapenv:Envelope/soapenv:Body/impl:placeOrder/accountid", nm ),
+                                 new XpathExpression( "/soapenv:Envelope/soapenv:Body/impl:placeOrder", nm ),
+                                 false,
+                                 "AES", 128 ),
+
+            new ElementSecurity( new XpathExpression("/soapenv:Envelope/soapenv:Body/impl:placeOrder/price", nm ),
+                                 new XpathExpression( "/soapenv:Envelope/soapenv:Body/impl:placeOrder/placeOrder", nm  ),
+                                 true,
+                                 "AES", 128 ),
+
+            new ElementSecurity( new XpathExpression("/soapenv:Envelope/soapenv:Body/impl:placeOrder/amount", nm ),
+                                 new XpathExpression( "/soapenv:Envelope/soapenv:Body/impl:placeOrder/placeOrder", nm  ),
+                                 true,
+                                 "AES", 128 ),
+        };
+    }
 
 
     /** @return true iff. the elementName in testDocument has the same cleartext as elementName in getSignedDocument(). */
