@@ -6,7 +6,7 @@
 
 package com.l7tech.console.panels;
 
-import com.l7tech.adminws.service.ServiceManagerStub;
+import com.l7tech.adminws.service.ServiceAdminStub;
 import com.l7tech.common.util.Locator;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.GroupManager;
@@ -51,7 +51,7 @@ public class PublishServiceWizardTest extends Locator {
         public static final GroupManagerStub GROUP_MANAGER_STUB = new GroupManagerStub(STUB_DATA_STORE);
         public static final IdentityProviderConfigManagerStub IDENTITY_PROVIDER_CONFIG_MANAGER_STUB = new IdentityProviderConfigManagerStub();
         public static final IdentityProviderStub IDENTITY_PROVIDER_STUB = new IdentityProviderStub();
-        public static final ServiceManagerStub SERVICE_MANAGER_STUB = new ServiceManagerStub();
+        public static final ServiceAdminStub SERVICE_MANAGER_STUB = new ServiceAdminStub();
 
         public IdentityProviderConfigManager getProviderConfigManager() {
             return IDENTITY_PROVIDER_CONFIG_MANAGER_STUB;

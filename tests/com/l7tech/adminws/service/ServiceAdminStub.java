@@ -16,13 +16,13 @@ import java.rmi.RemoteException;
 import java.util.*;
 
 /**
- * Class ServiceManagerStub.
+ * Class ServiceAdminStub.
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a> 
  */
-public class ServiceManagerStub implements ServiceAdmin {
+public class ServiceAdminStub implements ServiceAdmin {
     private Map services;
 
-    public ServiceManagerStub() {
+    public ServiceAdminStub() {
         services = StubDataStore.defaultStore().getPublishedServices();
     }
     /**
