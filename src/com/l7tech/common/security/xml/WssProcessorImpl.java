@@ -1,34 +1,31 @@
 package com.l7tech.common.security.xml;
 
+import com.ibm.xml.dsig.XSignatureException;
+import com.ibm.xml.enc.AlgorithmFactoryExtn;
+import com.ibm.xml.enc.DecryptionContext;
+import com.ibm.xml.enc.KeyInfoResolvingException;
+import com.ibm.xml.enc.StructureException;
+import com.ibm.xml.enc.type.EncryptedData;
+import com.l7tech.common.security.AesKey;
+import com.l7tech.common.security.JceProvider;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
-import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
-
-import java.security.cert.X509Certificate;
-import java.security.PrivateKey;
-import java.security.Key;
-import java.security.GeneralSecurityException;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.*;
-import java.io.IOException;
-
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.security.AesKey;
-import com.l7tech.common.security.JceProvider;
-import com.ibm.xml.enc.DecryptionContext;
-import com.ibm.xml.enc.AlgorithmFactoryExtn;
-import com.ibm.xml.enc.StructureException;
-import com.ibm.xml.enc.KeyInfoResolvingException;
-import com.ibm.xml.enc.type.EncryptedData;
-import com.ibm.xml.dsig.XSignatureException;
 
 import javax.crypto.Cipher;
 import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.security.Key;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * An implementation of the WssProcessor for use in both the SSG and the SSA.
@@ -52,11 +49,6 @@ public class WssProcessorImpl implements WssProcessor {
             initCause(cause);
         }
 
-        public ProcessorException(String message, Throwable cause) {
-            super();
-            initCause(cause);
-        }
-
         public ProcessorException(String message) {
             super();
             initCause(new IllegalArgumentException(message));
@@ -74,7 +66,21 @@ public class WssProcessorImpl implements WssProcessor {
      */
     public WssProcessor.ProcessorResult undecorateMessage(Document soapMsg,
                                                           X509Certificate recipientCert,
-                                                          PrivateKey recipientKey) throws WssProcessor.ProcessorException {
+                                                          PrivateKey recipientKey)
+            throws WssProcessor.ProcessorException
+    {
+        try {
+            return doUndecorateMessage(soapMsg, recipientCert, recipientKey);
+        } catch (XmlUtil.MultipleChildElementsException e) {
+            throw new ProcessorException(e);
+        }
+    }
+    
+    private WssProcessor.ProcessorResult doUndecorateMessage(Document soapMsg,
+                                                          X509Certificate recipientCert,
+                                                          PrivateKey recipientKey)
+            throws WssProcessor.ProcessorException, XmlUtil.MultipleChildElementsException
+    {
         // Reset all potential outputs
         ProcessingStatusHolder cntx = new ProcessingStatusHolder();
         cntx.processedDocument = (Document)soapMsg.cloneNode(true);
@@ -85,17 +91,11 @@ public class WssProcessorImpl implements WssProcessor {
         cntx.timestamp = null;
         cntx.releventSecurityHeader = null;
 
-        // Resolve the relevent Security header
-        Element[] securityHeaders = SoapUtil.getSecurityElements(cntx.processedDocument);
-        // find the relevent security header. that is the one with no actor
         String currentSoapNamespace = soapMsg.getDocumentElement().getNamespaceURI();
-        for (int i = 0; i < securityHeaders.length; i++) {
-            String thisActor = securityHeaders[i].getAttributeNS(currentSoapNamespace, "actor");
-            if (thisActor == null || thisActor.length() < 1) {
-                cntx.releventSecurityHeader = securityHeaders[i];
-                break;
-            }
-        }
+
+        // Resolve the relevent Security header
+        cntx.releventSecurityHeader = SoapUtil.getSecurityElement(soapMsg);
+
         // maybe there are no security headers at all in which case, there is nothing to process
         if (cntx.releventSecurityHeader == null) {
             logger.finer("No relevent security header found.");
@@ -117,17 +117,11 @@ public class WssProcessorImpl implements WssProcessor {
             } else if (securityChildToProcess.getLocalName().equals("Signature")) {
                 processSignature(securityChildToProcess);
             } else {
-                NodeList nl = securityChildToProcess.getElementsByTagNameNS(currentSoapNamespace, "mustUnderstand");
-                if (nl.getLength() > 0) {
-                    if (nl.getLength() > 1)
-                        throw new ProcessorException("Too many mustUnderstand attributes");
-                    Node muNode = nl.item(0);
-                    String mu = muNode.getNodeValue();
-                    if (Integer.parseInt(mu) == 1)
-                        throw new ProcessorException("Unrecognized element in security header: " +
+                String mu = securityChildToProcess.getAttributeNS(currentSoapNamespace, SoapUtil.MUSTUNDERSTAND_EL_NAME).trim();
+                if ("1".equals(mu) || "true".equalsIgnoreCase(mu))
+                        throw new ProcessorException("Unrecognized element in default Security header: " +
                                                      securityChildToProcess.getNodeName() +
-                                                     " with mustUnderstand=\"1\"");
-                }
+                                                     " with mustUnderstand=\"true\"; rejecting message");
                 logger.finer("Unknown element in security header: " + securityChildToProcess.getNodeName());
             }
         }
@@ -437,7 +431,7 @@ public class WssProcessorImpl implements WssProcessor {
         };
     }
 
-    private final Logger logger = Logger.getLogger(WssProcessorImpl.class.getName());
+    private static final Logger logger = Logger.getLogger(WssProcessorImpl.class.getName());
 
     private class ProcessingStatusHolder {
         Document processedDocument = null;
