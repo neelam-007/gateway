@@ -68,6 +68,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
         List result = null;
         XmlRequest xreq = (XmlRequest) request;
         boolean assertionStatusOK = true;
+        boolean operationElementFound = false;
 
         if (request instanceof SoapRequest && ((SoapRequest) request).isSoap()) {
 
@@ -92,10 +93,11 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                         result = operationXPath.selectNodes(doc);
 
                         if(result == null || result.size() == 0) {
-                            logger.info("Element not found in the request. Xpath expression is: " + bo.getXpath());
-                            return AssertionStatus.FALSIFIED;
+                            logger.finest("Element not found in the request. Xpath expression is: " + bo.getXpath());
+                            continue;
                         }
 
+                        operationElementFound = true;
                         if(result.size() > 1) {
                             logger.info("Element appears more than once in the request. Xpath expression is: " + bo.getXpath());
                             return AssertionStatus.FALSIFIED;
@@ -211,6 +213,10 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                             return AssertionStatus.NONE;
                         }
                     }  // while next operation of the binding found in assertion
+                    if(!operationElementFound) {
+                        logger.info("The operation specified in the request is invalid.");
+                        return AssertionStatus.FALSIFIED;
+                    }
                 }   // while next binding found in assertion
             } catch (SAXException e) {
                 logger.log(Level.WARNING, "Caught SAXException when retrieving xml document from request", e);
