@@ -1,6 +1,5 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.EditorDialog;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;

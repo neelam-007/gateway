@@ -21,7 +21,7 @@ import java.rmi.RemoteException;
 /**
  * GroupPanel is the main entry point panel for the <CODE>Group</CODE>.
  */
-public class GroupPanel extends EditorPanel {
+public class GroupPanel extends EntityEditorPanel {
     private static final Category log = Category.getInstance(GroupPanel.class.getName());
     private JLabel nameLabel;
     private JLabel descriptionLabel;
@@ -383,9 +383,8 @@ public class GroupPanel extends EditorPanel {
      * Retrieves the Group and constructs the Panel
      *
      * @param object
-     * @param readWrite
      */
-    public void edit(Object object, boolean readWrite) {
+    public void edit(Object object) {
         try {
             // Here is where we would use the node context to retrieve Panel content
             if (!(object instanceof EntityHeader)) {
@@ -502,7 +501,7 @@ public class GroupPanel extends EditorPanel {
         EntityHeader eh = new EntityHeaderImp();
         eh.setName("Test group");
         eh.setType(Group.class);
-        panel.edit(eh, false);
+        panel.edit(eh);
 
         panel.setPreferredSize(new java.awt.Dimension(600, 300));
         JFrame frame = new JFrame("Group panel Test");
@@ -543,8 +542,8 @@ public class GroupPanel extends EditorPanel {
                     if (eID == HierarchyEvent.HIERARCHY_CHANGED &&
                             ((flags & HierarchyEvent.DISPLAYABILITY_CHANGED) == HierarchyEvent.DISPLAYABILITY_CHANGED)) {
                         if (GroupPanel.this.isDisplayable()) {
-                            JFrame d = (JFrame)SwingUtilities.windowForComponent(GroupPanel.this);
-                            if (d != null && d instanceof JFrame) {
+                            JDialog d = (JDialog)SwingUtilities.windowForComponent(GroupPanel.this);
+                            if (d != null) {
                                 d.setTitle(groupHeader.getName() + " Properties");
                             }
                         }

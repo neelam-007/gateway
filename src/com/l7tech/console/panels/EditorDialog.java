@@ -1,4 +1,4 @@
-package com.l7tech.console;
+package com.l7tech.console.panels;
 
 import javax.swing.JPanel;
 import javax.swing.JFrame;
@@ -13,7 +13,7 @@ import java.awt.event.*;
 import com.l7tech.console.panels.Utilities;
 
 /**
- * abstract class for implementing panels that allow editing of bean data
+ * The class for implementing panels that allow editing of bean data
  *
  * @author <a href="mailto:emarceta@l7tech.com">Emil Marceta</a>
  */

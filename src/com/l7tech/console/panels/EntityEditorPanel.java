@@ -8,12 +8,12 @@ import com.l7tech.console.panels.PanelListener;
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public abstract class EditorPanel extends JPanel {
+public abstract class EntityEditorPanel extends JPanel {
 
-  protected EditorPanel() {
+  protected EntityEditorPanel() {
   }
 
-  public abstract void edit(Object dirObject, boolean readWrite);
+  public abstract void edit(Object entity);
 
   public void setPanelListener(PanelListener listener) {
     this.panelListener = listener;

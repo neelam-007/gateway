@@ -1,15 +1,13 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.EditorDialog;
-import com.l7tech.console.util.IconManager;
 import com.l7tech.console.PanelFactory;
 import com.l7tech.console.table.ContextListTableModel;
 import com.l7tech.console.table.TableRowAction;
 import com.l7tech.console.table.TableRowMenu;
 import com.l7tech.console.tree.*;
+import com.l7tech.console.util.IconManager;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.Entity;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
@@ -22,14 +20,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.HierarchyEvent;
-import java.awt.event.HierarchyListener;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
@@ -39,7 +30,7 @@ import java.io.IOException;
  * the container/context. It does support basic object
  * navigaiton and object management.
  */
-public class ContainerListPanel extends EditorPanel {
+public class ContainerListPanel extends EntityEditorPanel {
     private static final Category log = Category.getInstance(ContainerListPanel.class.getName());
 
     private final JPanel listPane = new JPanel();
@@ -71,7 +62,7 @@ public class ContainerListPanel extends EditorPanel {
     /**
      * unimplemented for this panel
      */
-    public void edit(Object dirObject, boolean readWrite) {
+    public void edit(Object dirObject) {
     }
 
     /**
@@ -388,10 +379,12 @@ public class ContainerListPanel extends EditorPanel {
     /**
      * instantiate the dialog for given BasicTreeNode
      *
-     * @param dobj   the <CODE>BasicTreeNode</CODE> instance
+     * @param bn   the <CODE>BasicTreeNode</CODE> instance
      */
-    private void showEntryDialog(BasicTreeNode dobj) {
-        JPanel panel = PanelFactory.getPanel(dobj, true, panelListener);
+    private void showEntryDialog(BasicTreeNode bn) {
+        if (!(bn instanceof EntityTreeNode)) return;
+
+        JPanel panel = PanelFactory.getPanel((EntityTreeNode)bn, panelListener);
 
         if (panel == null) return;
         JFrame f = (JFrame)SwingUtilities.windowForComponent(ContainerListPanel.this);

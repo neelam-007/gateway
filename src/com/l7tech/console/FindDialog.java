@@ -1,9 +1,6 @@
 package com.l7tech.console;
 
-import com.l7tech.console.panels.PanelListener;
-import com.l7tech.console.panels.PanelListenerAdapter;
-import com.l7tech.console.panels.PanelListenerBroker;
-import com.l7tech.console.panels.Utilities;
+import com.l7tech.console.panels.*;
 import com.l7tech.console.table.ContextListTableModel;
 import com.l7tech.console.tree.EntityTreeNode;
 import com.l7tech.console.tree.EntityHeaderNode;
@@ -611,10 +608,10 @@ public class FindDialog extends JDialog {
   /**
    * instantiate the dialog for given BasicTreeNode
    *
-   * @param dobj   the <CODE>BasicTreeNode</CODE> instance
+   * @param o   the <CODE>BasicTreeNode</CODE> instance
    */
-  private void showEntryDialog(Object dobj) {
-    JPanel panel = PanelFactory.getPanel(dobj, true, pListener);
+  private void showEntryDialog(Object o) {
+    JPanel panel = null; // PanelFactory.getPanel(o, pListener);
     if (panel == null) return;
 
     JFrame f = (JFrame)SwingUtilities.windowForComponent(this);

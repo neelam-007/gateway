@@ -1027,7 +1027,7 @@ public class MainWindow extends JFrame {
                     dialog.setPanelListener(listenerBroker);
                     dialog.show();
                 } else if (TreeNodeMenu.PROPERTIES.equals(e.getActionCommand())) {
-                    panel = PanelFactory.getPanel(dNode, true, listenerBroker);
+                    panel = PanelFactory.getPanel(dNode, listenerBroker);
                 } else if (TreeNodeMenu.BROWSE.equals(e.getActionCommand())) {
                     getJTreeView().expandPath(getJTreeView().getSelectionPath());
                 } else {
@@ -1202,8 +1202,8 @@ public class MainWindow extends JFrame {
 
         // only if something is returned
         if (panel != null) {
-            if (panel instanceof EditorPanel) {
-                ((EditorPanel) panel).setPanelListener(listenerBroker);
+            if (panel instanceof EntityEditorPanel) {
+                ((EntityEditorPanel) panel).setPanelListener(listenerBroker);
             }
             getObjectBrowserPane().removeAll();
             GridBagConstraints constraints

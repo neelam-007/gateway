@@ -1,6 +1,6 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.EditorDialog;
+import com.l7tech.console.PanelFactory;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
@@ -45,6 +45,7 @@ public class NewGroupDialog extends JDialog {
     private PanelListener panelListener;
 
     Group group = new GroupImp();
+
     /**
      * Create a new NewUserDialog fdialog for a given Company
      *
@@ -329,8 +330,8 @@ public class NewGroupDialog extends JDialog {
                             //getInternalGroupManager().save(group);
                             panelListener.onInsert(header);
                             insertSuccess = true;
-                        /*} catch (SaveException e) {
-                            e.printStackTrace();*/
+                            /*} catch (SaveException e) {
+                                e.printStackTrace();*/
                         } catch (RuntimeException e) {
                             e.printStackTrace();
                         }
@@ -356,8 +357,13 @@ public class NewGroupDialog extends JDialog {
                 SwingUtilities.invokeLater(
                         new Runnable() {
                             public void run() {
-                                JPanel panel = null;
+                                EntityEditorPanel panel = PanelFactory.getPanel(Group.class, panelListener);
                                 if (panel == null) return;
+                                EntityHeader header = new EntityHeaderImp();
+                                header.setType(Group.class);
+                                header.setName(group.getName());
+                                header.setOid(group.getOid());
+                                panel.edit(header);
                                 EditorDialog dialog = new EditorDialog(parent, panel);
                                 dialog.pack();
                                 Utilities.centerOnScreen(dialog);
