@@ -72,6 +72,7 @@ public class CertSearchPanel extends JDialog {
 
         // Hide the cert usage data column
         trustedCertTable.hideColumn(TrustedCertTableSorter.CERT_TABLE_CERT_USAGE_COLUMN_INDEX);
+        trustedCertTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
         trustedCertTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             /**
@@ -114,11 +115,14 @@ public class CertSearchPanel extends JDialog {
 
         selectButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                int row = trustedCertTable.getSelectedRow();
+                int row[] = trustedCertTable.getSelectedRows();
                 TrustedCert tc;
-                if (row >= 0) {
-                    tc = (TrustedCert) trustedCertTable.getTableSorter().getData(row);
-                    fireEventCertSelected(tc);
+                if (row.length > 0) {
+                    TrustedCert[] certs = new TrustedCert[row.length];
+                    for (int i = 0; i < row.length; i++) {
+                        certs[i]  = (TrustedCert) trustedCertTable.getTableSorter().getData(row[i]);
+                    }
+                    fireEventCertSelected(certs);
                 }
 
                 dispose();
@@ -154,9 +158,11 @@ public class CertSearchPanel extends JDialog {
     private void enableOrDisableButtons() {
         boolean viewEnabled = false;
         boolean selectEnabled = false;
-        int row = trustedCertTable.getSelectedRow();
-        if (row >= 0) {
+
+        if (trustedCertTable.getSelectedRowCount() == 1) {
             viewEnabled = true;
+            selectEnabled = true;
+        } else if (trustedCertTable.getSelectedRowCount() > 1) {
             selectEnabled = true;
         }
         viewButton.setEnabled(viewEnabled);
@@ -184,25 +190,23 @@ public class CertSearchPanel extends JDialog {
     /**
      * notfy the listeners
      *
-     * @param cert the trusted cert
+     * @param certs the trusted certs
      */
-    private void fireEventCertSelected(final TrustedCert cert) {
-        SwingUtilities.invokeLater(
-          new Runnable() {
-              public void run() {
-                  TrustedCert tc = null;
-                  try {
-                      tc = (TrustedCert) cert.clone();
-                  } catch (CloneNotSupportedException e) {
-                      //todo:
-                  }
-                  CertEvent event = new CertEvent(this, tc);
-                  EventListener[] listeners = listenerList.getListeners(CertListener.class);
-                  for (int i = 0; i < listeners.length; i++) {
-                      ((CertListener)listeners[i]).certSelected(event);
-                  }
-              }
-          });
+    private void fireEventCertSelected(final TrustedCert[] certs) {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+
+                for (int i = 0; i < certs.length; i++) {
+                    TrustedCert tc = certs[i];
+
+                    CertEvent event = new CertEvent(this, tc);
+                    EventListener[] listeners = listenerList.getListeners(CertListener.class);
+                    for (int j = 0; j < listeners.length; j++) {
+                        ((CertListener) listeners[j]).certSelected(event);
+                    }
+                }
+            }
+        });
     }
 
     /**
