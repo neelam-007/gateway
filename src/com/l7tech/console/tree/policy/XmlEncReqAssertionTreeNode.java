@@ -2,11 +2,7 @@ package com.l7tech.console.tree.policy;
 
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.console.action.XmlEncPropertiesAction;
-
 import javax.swing.*;
-import java.util.ArrayList;
-import java.util.Arrays;
 
 /**
  * Class <code>XmlEncReqAssertionTreeNode</code> specifies the policy
