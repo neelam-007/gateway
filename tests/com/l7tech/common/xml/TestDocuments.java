@@ -34,6 +34,11 @@ public final class TestDocuments {
     public static final String DOTNET_SIGNED_USING_DERIVED_KEY_TOKEN = DIR + "dotNetSignedUsingDerivedKeyToken.xml";
     public static final String DOTNET_ENCRYPTED_USING_DERIVED_KEY_TOKEN = DIR + "dotNetSignedAndEncryptedUsingDKFromSCT.xml";
     public static final String DOTNET_SCT_REQUEST = DIR + "dotNetSCTRequest.xml";
+    public static final String ETTK_SIGNED_REQUEST = DIR + "ibmEttkSignedRequest.xml";
+    public static final String ETTK_ENCRYPTED_REQUEST = DIR + "ibmEttkEncryptedRequest.xml";
+    public static final String ETTK_SIGNED_ENCRYPTED_REQUEST = DIR + "ibmEttkSignedEncryptedRequest.xml";
+    public static final String ETTK_KS = DIR + "ibmEttkKeystore.db";
+    public static final String ETTK_KS_PROPERTIES = DIR + "ibmEttkKeystore.properties";
     public static final String SSL_KS = DIR + "rikerssl.ks";
     public static final String SSL_CER = DIR + "rikerssl.cer";
 
