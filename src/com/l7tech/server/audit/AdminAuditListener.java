@@ -10,6 +10,7 @@ import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.common.audit.AdminAuditRecord;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.NamedEntity;
 import com.l7tech.server.event.Event;
 import com.l7tech.server.event.admin.*;
 import com.l7tech.server.service.ServiceEvent;
@@ -86,24 +87,65 @@ public class AdminAuditListener implements CreateListener, UpdateListener, Delet
         return level;
     }
 
-    public void entityCreated( Created created ) {
+
+    private AdminAuditRecord makeAuditRecord(AdminEvent event) {
+        final Entity entity = event.getEntity();
+
+        String name = null;
+        char action;
+        long entityOid = entity.getOid();
+        String entityClassname = entity.getClass().getName();
+        if (entity instanceof NamedEntity) name = ((NamedEntity)entity).getName();
+
+        int ppos = entityClassname.lastIndexOf(".");
+        String localClassname = ppos >= 0 ? entityClassname.substring(ppos+1) : entityClassname;
+        StringBuffer msg = new StringBuffer(localClassname);
+        msg.append(" #").append(entityOid);
+        if (entity instanceof NamedEntity) {
+            msg.append(" (");
+            msg.append(((NamedEntity)entity).getName());
+            msg.append(")");
+        } else {
+            msg.append(entityOid);
+        }
+
+        if (event instanceof Created) {
+            action = AdminAuditRecord.ACTION_CREATED;
+            msg.append(" created");
+        } else if (event instanceof Deleted) {
+            action = AdminAuditRecord.ACTION_DELETED;
+            msg.append(" deleted");
+        } else if (event instanceof Updated) {
+            action = AdminAuditRecord.ACTION_UPDATED;
+            msg.append(" updated");
+        } else {
+            action = 'X';
+        }
+
+        String note = event.getNote();
+        if (note != null && note.length() > 0) {
+            msg.append(" (").append(note).append(")");
+        }
+
         AdminInfo info = getAdminInfo();
-        if (info == null) return;
-        AuditContext.getCurrent().add(new AdminAuditRecord(level(created), nodeId, created, info.login, info.ip));
+        if (info == null) return null;
+
+        return new AdminAuditRecord(level(event), nodeId, entityOid, entityClassname, name, action, msg.toString(), info.login, info.ip);
+    }
+
+
+    public void entityCreated( Created created ) {
+        AuditContext.getCurrent().add(makeAuditRecord(created));
         AuditContext.getCurrent().flush();
     }
 
     public void entityUpdated( Updated updated ) {
-        AdminInfo info = getAdminInfo();
-        if (info == null) return;
-        AuditContext.getCurrent().add(new AdminAuditRecord(level(updated), nodeId, updated, info.login, info.ip));
+        AuditContext.getCurrent().add(makeAuditRecord(updated));
         AuditContext.getCurrent().flush();
     }
 
     public void entityDeleted( Deleted deleted ) {
-        AdminInfo info = getAdminInfo();
-        if (info == null) return;
-        AuditContext.getCurrent().add(new AdminAuditRecord(level(deleted), nodeId, deleted, info.login, info.ip));
+        AuditContext.getCurrent().add(makeAuditRecord(deleted));
         AuditContext.getCurrent().flush();
     }
 

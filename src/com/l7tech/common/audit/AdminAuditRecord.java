@@ -6,13 +6,6 @@
 
 package com.l7tech.common.audit;
 
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.NamedEntity;
-import com.l7tech.server.event.admin.AdminEvent;
-import com.l7tech.server.event.admin.Created;
-import com.l7tech.server.event.admin.Deleted;
-import com.l7tech.server.event.admin.Updated;
-
 import java.util.logging.Level;
 
 /**
@@ -29,44 +22,15 @@ public class AdminAuditRecord extends AuditRecord {
     public static final char ACTION_UPDATED = 'U';
     public static final char ACTION_DELETED = 'D';
 
-    public AdminAuditRecord(Level level, String nodeId, AdminEvent event, String adminLogin, String ip) {
-        super(level, nodeId, ip, null, null);
+    public AdminAuditRecord(Level level, String nodeId, long entityOid, String entityClassname, String name, char action, String msg, String adminLogin, String ip) {
+        super(level, nodeId, ip, name, msg);
         if (adminLogin == null) throw new IllegalStateException("Couldn't determine current administrator login");
         this.adminLogin = adminLogin;
-
-        final Entity entity = event.getEntity();
-        if (entity instanceof NamedEntity) this.name = ((NamedEntity)entity).getName();
-        
-        this.entityClassname = entity.getClass().getName();
-        this.entityOid = entity.getOid();
-        int ppos = entityClassname.lastIndexOf(".");
-        String localClassname = ppos >= 0 ? entityClassname.substring(ppos+1) : entityClassname;
-        StringBuffer msg = new StringBuffer(localClassname);
-        msg.append(" #").append(entityOid);
-        if (entity instanceof NamedEntity) {
-            msg.append(" (");
-            msg.append(((NamedEntity)entity).getName());
-            msg.append(")");
-        } else {
-            msg.append(entityOid);
-        }
-        if (event instanceof Created) {
-            action = ACTION_CREATED;
-            msg.append(" created");
-        } else if (event instanceof Deleted) {
-            action = ACTION_DELETED;
-            msg.append(" deleted");
-        } else if (event instanceof Updated) {
-            action = ACTION_UPDATED;
-            msg.append(" updated");
-        }
-
-        String note = event.getNote();
-        if (note != null && note.length() > 0) {
-            msg.append(" (").append(note).append(")");
-        }
-        this.setMessage(msg.toString());
+        this.entityOid = entityOid;
+        this.entityClassname = entityClassname;
+        this.action = action;
     }
+
 
     /** @deprecated to be called only for serialization and persistence purposes! */
     public AdminAuditRecord() {

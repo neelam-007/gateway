@@ -62,6 +62,7 @@ public class AuditContext {
     }
 
     public void add(AuditRecord record) {
+        if (record == null) return;
         if (closed) throw new IllegalStateException("Can't add new AuditRecords to a closed AuditContext");
         if (record.getLevel().intValue() > highestLevelYetSeen.intValue()) highestLevelYetSeen = record.getLevel();
         records.add(record);
