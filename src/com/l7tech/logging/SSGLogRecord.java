@@ -68,7 +68,8 @@ public class SSGLogRecord extends LogRecord {
      * the id of the request being processed when this log record was generated
      */
     public void setReqId(RequestId arg) {
-        requestId = arg.toString();
+        if (arg == null) requestId = null;
+        else requestId = arg.toString();
     }
 
     /**
