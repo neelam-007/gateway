@@ -25,6 +25,8 @@ public class UserManagerImp extends ProviderSpecificEntityManager implements Use
             return (User)_manager.findByPrimaryKey( getContext(), getImpClass(), Long.parseLong(oid));
         } catch ( SQLException se ) {
             throw new FindException( se.toString(), se );
+        } catch ( NumberFormatException nfe ) {
+            throw new FindException( nfe.toString(), nfe );
         }
     }
 
