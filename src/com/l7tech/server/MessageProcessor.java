@@ -47,6 +47,7 @@ public class MessageProcessor {
                 status = ass.checkRequest( request, response );
 
                 if ( status == AssertionStatus.NONE ) {
+                    service.incrementRequestCount();
                     if ( request.isRouted() ) {
                         LogManager.getInstance().getSystemLogger().log(Level.INFO, "Request was routed with status " + " " + status.getMessage() + "(" + status.getNumeric() + ")" );
                     } else {
