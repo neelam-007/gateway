@@ -75,8 +75,8 @@ export JAVA_HOME
 export TOMCAT_HOME
 
 # aliases to start and stop ssg
-alias startssg='$TOMCAT_HOME/bin/catalina.sh start -security'
-alias stopssg='$TOMCAT_HOME/bin/shutdown.sh'
+alias startssg='/etc/rc.d/init.d/ssg start'
+alias stopssg='/etc/rc.d/init.d/ssg stop'
 
 if [ -e "/opt/oracle" ] ; then
 	export ORACLE_HOME=/opt/oracle/product/9.2

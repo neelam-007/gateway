@@ -18,7 +18,7 @@ fi
 
 ssg="$TOMCAT_HOME/bin/catalina.sh"
 
-ssguser="gateway"
+ssguser="jay"
 prog="SSG"
 tries=3
 count=0
@@ -26,6 +26,10 @@ count=0
 # things -- attempting to start while running is a failure, and shutdown
 # when not running is also a failure.  So we just do it the way init scripts
 # are expected to behave here.
+# handle 3 different cases:
+# Run as root, run as a regular user, run as same user as ssguser. 
+# 
+
 start() {
 	find_tomcat
 	if [ -n "$pid" ] ; then
@@ -34,10 +38,18 @@ start() {
 	fi
 
         echo -n $"Starting $prog: "
-        su - $ssguser -c "$ssg start -security" > /dev/null 2>&1
-        RETVAL=$?
+	if [ $USER == "root" ]; then
+        	su - $ssguser -c "$ssg start -security" > /dev/null 2>&1
+        	RETVAL=$?
+	elif [ $USER == "$ssguser" ]; then
+		$ssg start -security > /dev/null 2>&1
+		RETVAL=$?
+	else
+		echo "Need to be root or $ssguser to run this script";
+		exit
+	fi	
         echo
-        [ $RETVAL = 0 ] && touch /var/lock/subsys/ssg
+        # [ $RETVAL = 0 ] && touch /var/lock/subsys/ssg
         return $RETVAL
 }
 stop() {
@@ -47,10 +59,18 @@ stop() {
 		exit
 	fi
 	echo -n $"Stopping $prog: "
-	su - $ssguser -c "$ssg stop " > /dev/null 2>&1
-	RETVAL=$?
+	if [ $USER == "root" ]; then
+        	su - $ssguser -c "$ssg stop" > /dev/null 2>&1
+        	RETVAL=$?
+	elif [ $USER == "$ssguser" ]; then
+		$ssg stop > /dev/null 2>&1
+		RETVAL=$?
+	else
+		echo "Need to be root or $ssguser to run this script";
+		exit
+	fi	
 	if [ $RETVAL = 0 ]; then 
-		rm -f /var/lock/subsys/ssg /var/run/ssg.pid
+	#	rm -f /var/lock/subsys/ssg /var/run/ssg.pid
 		echo "Success"
 	else
 		sleep 2;
