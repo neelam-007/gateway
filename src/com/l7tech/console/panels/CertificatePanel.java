@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.table.TableUtil;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserManager;
 import com.l7tech.objectmodel.FindException;
@@ -185,16 +186,27 @@ class CertificatePanel extends JPanel {
             revokeCertButton.setText("Revoke");
             revokeCertButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent event) {
-                    // revoke the user cert
-                    try {
-                        ((com.l7tech.adminws.identity.UserManagerClient)Registry.getDefault().getInternalUserManager()).revokeCert(Long.toString(user.getOid()));
-                    } catch (UpdateException e) {
-                        log.log(Level.WARNING, "ERROR Revoking certificate", e);
+                    int answer = (JOptionPane.showConfirmDialog(
+                      ComponentRegistry.getInstance().getMainWindow(),
+                      "<html><center><b>Please confirm certificate revoke " +
+                      "for user '" + user.getName() + "'</b></center></html>",
+                      "Revoke User Certificate",
+                      JOptionPane.YES_NO_OPTION));
+                    if (answer == JOptionPane.YES_OPTION) {
+
+                        // revoke the user cert
+                        try {
+                            final UserManagerClient userManagerClient =
+                              ((UserManagerClient)Registry.getDefault().getInternalUserManager());
+                            userManagerClient.revokeCert(Long.toString(user.getOid()));
+                        } catch (UpdateException e) {
+                            log.log(Level.WARNING, "ERROR Revoking certificate", e);
+                        }
+                        // reset values and redisplay
+                        cert = null;
+                        certificateTableModel = null;
+                        loadCertificateInfo();
                     }
-                    // reset values and redisplay
-                    cert = null;
-                    certificateTableModel = null;
-                    loadCertificateInfo();
                 }
             });
         }
@@ -316,11 +328,11 @@ class CertificatePanel extends JPanel {
             String uidStr = Long.toString(user.getOid());
             Registry reg = Registry.getDefault();
             UserManager um = reg.getInternalUserManager();
-            UserManagerClient umc = (UserManagerClient) um;
+            UserManagerClient umc = (UserManagerClient)um;
             Certificate clientCert = umc.retrieveUserCert(uidStr);
 
             if (clientCert != null) {
-              cert = (X509Certificate)clientCert;
+                cert = (X509Certificate)clientCert;
             }
         } catch (FindException e) {
             log.log(Level.WARNING, "There was an error loading the certifuc", e);
