@@ -39,7 +39,7 @@ public class JmsSoapRequest extends SoapRequest {
                 throw new IOException( e.toString() );
             }
         } else {
-            _logger.warning( "Can't get a reader for a non-text message!" );
+            _logger.warning( "Can't get a reader for a non-text message! Returning a reader on an empty String!" );
             return new StringReader("");
         }
     }
