@@ -366,8 +366,9 @@
                 <exclude name="com/l7tech/identity/IdentityProviderFactory.class"/>
                 <include name="com/l7tech/identity/internal/InternalUser.class"/>
                 <include name="com/l7tech/identity/internal/InternalGroup.class"/>
-                <include name="com/l7tech/identity/ldap/LdapUser.class"/>
-                <include name="com/l7tech/identity/ldap/LdapGroup.class"/>
+                <include name="com/l7tech/identity/ldap/*.class"/>
+                <exclude name="com/l7tech/identity/ldap/LdapGroupManager.class"/>
+                <exclude name="com/l7tech/identity/ldap/LdapIdentityProvider.class"/>
                 <include name="com/l7tech/common/**/*"/>
                 <include name="com/l7tech/cluster/**/*"/>
                 <include name="com/l7tech/console/**/*"/>
