@@ -173,6 +173,7 @@ public class AssertionsTree extends JTree {
             if (path != null) {
                 AbstractTreeNode node = (AbstractTreeNode)path.getLastPathComponent();
                 if (!node.isLeaf()) return null;
+                if (node instanceof ProviderNode) return null;
                 return new AssertionTransferable(node);
             }
 
