@@ -1,17 +1,12 @@
 package com.l7tech.proxy.gui;
 
 import com.l7tech.common.BuildInfo;
-import com.l7tech.common.security.JceProvider;
-import com.l7tech.common.util.JdkLoggerConfigurator;
-import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.datamodel.Managers;
-import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.datamodel.SsgManagerImpl;
-import com.l7tech.proxy.processor.MessageProcessor;
 import org.mortbay.util.MultiException;
 
-import java.io.File;
 import java.net.BindException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -20,61 +15,35 @@ import java.util.logging.Logger;
  * Date: May 15, 2003
  * Time: 3:33:14 PM
  */
-public class Main {
+public final class Main extends com.l7tech.proxy.Main {
     private static final Logger log = Logger.getLogger(Main.class.getName());
-    private static final int DEFAULT_PORT = 7700;
-    private static final int MIN_THREADS = 5;
-    private static final int MAX_THREADS = 300;
-
-    private static int getIntProperty(String name, int def) {
-        try {
-            String p = System.getProperty(name);
-            if (p == null || p.length() < 1)
-                return def;
-            return Integer.parseInt(p);
-        } catch (NumberFormatException e) {
-            return def;
-        }
-    }
 
     /**
-     * Start a GUI-equipped client proxy and run it until it's shut down.
+     * Start a GUI-equipped client proxy and then return immediately.
+     * This method will either start the client proxy and then return immediately (while background threads
+     * hang around to do the work), or will log an error and exit the process with System.exit(2) if the
+     * proxy could not be started.
      */
     public static void main(final String[] argv) {
-        // apache logging layer to use the jdk logger
-        System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
+        initLogging();
+        log.info("Starting SecureSpan Bridge in GUI mode; " + BuildInfo.getLongBuildString());
 
-        // Prepare .l7tech directory before initializing logging (Bug #1288)
-        new File(ClientProxy.PROXY_CONFIG).mkdirs(); // expected to fail on all but the very first execution
-
-        JdkLoggerConfigurator.configure("com.l7tech.proxy", "com/l7tech/proxy/resources/logging.properties");
-        log.info("Starting SecureSpan Bridge; " + BuildInfo.getLongBuildString());
-        JceProvider.init();
-
-        SsgManager ssgManager = SsgManagerImpl.getSsgManagerImpl();
-
-        int port = getIntProperty("com.l7tech.proxy.listener.port", DEFAULT_PORT);
-        int minThreads = getIntProperty("com.l7tech.proxy.listener.minthreads", MIN_THREADS);
-        int maxThreads = getIntProperty("com.l7tech.proxy.listener.maxthreads", MAX_THREADS);
-
-        final ClientProxy clientProxy = new ClientProxy(ssgManager,
-          new MessageProcessor(Managers.getPolicyManager()),
-          port,
-          minThreads,
-          maxThreads);
+        final SsgManagerImpl ssgManager = SsgManagerImpl.getSsgManagerImpl();
+        createClientProxy(ssgManager);
 
         // Set up the GUI
-        Gui.setInstance(Gui.createGui(clientProxy, ssgManager));
+        Gui.setInstance(Gui.createGui(getClientProxy(), ssgManager));
 
         // Hook up the Message Viewer window
-        clientProxy.getRequestHandler().setRequestInterceptor(Gui.getInstance().getRequestInterceptor());
+        getClientProxy().getRequestHandler().setRequestInterceptor(Gui.getInstance().getRequestInterceptor());
 
         Managers.setCredentialManager(GuiCredentialManager.createGuiCredentialManager(ssgManager));
 
         try {
-            clientProxy.start();
+            getClientProxy().start();
         } catch (Exception e) {
             String message = "Unable to start the Bridge: " + e;
+            // Friendlier error message for starting multiple instances
             if (e instanceof BindException ||
               (e instanceof MultiException && ((MultiException)e).getException(0) instanceof BindException)) {
                 message = "The SecureSpan Bridge is already running.  \nPlease shut down the existing " +
@@ -82,15 +51,14 @@ public class Main {
             }
 
             Gui.errorMessage(message);
-            System.err.println("Unable to start httpServer");
-            e.printStackTrace(System.err);
+            log.log(Level.SEVERE, "Fatal: Unable to start HTTP listener", e);
             System.exit(2);
         }
 
         // Make sure the proxy stops when the GUI does.
         Gui.getInstance().setShutdownListener(new Gui.ShutdownListener() {
             public void guiShutdown() {
-                clientProxy.stop();
+                getClientProxy().stop(); // orderly shutdown
                 System.exit(0);
             }
         });
