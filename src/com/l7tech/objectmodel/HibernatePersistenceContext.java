@@ -46,7 +46,7 @@ public class HibernatePersistenceContext extends PersistenceContext {
             }
             for (Iterator i = txListenerList.iterator(); i.hasNext();) {
                 ListenerData toto = (ListenerData)i.next();
-                toto.listener.postRollback(toto.data);
+                toto.listener.postCommit(toto.data);
             }
             txListenerList.clear();
         } catch ( SQLException se ) {
