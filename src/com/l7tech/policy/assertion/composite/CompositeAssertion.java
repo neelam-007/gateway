@@ -143,7 +143,7 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
     public String toIndentedString(int indentLevel) {
         StringBuffer b = new StringBuffer();
         for (int i = 0; i < indentLevel; ++i)
-            b.append("\t");
+            b.append("  ");
         b.append(super.toString());
         b.append(":\n");
         for (Iterator i = children.iterator(); i.hasNext();) {

@@ -152,7 +152,7 @@ public abstract class Assertion implements Cloneable, Serializable {
     public String toIndentedString(int indentLevel) {
         StringBuffer b = new StringBuffer();
         for (int i = 0; i < indentLevel; ++i)
-            b.append("\t");
+            b.append("  ");
         b.append(this.toString());
         b.append("\n");
         return b.toString();
