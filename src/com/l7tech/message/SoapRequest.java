@@ -1,12 +1,14 @@
 package com.l7tech.message;
 
 import com.l7tech.common.RequestId;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.server.RequestIdGenerator;
 import com.l7tech.identity.User;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
@@ -14,6 +16,7 @@ import org.xmlpull.v1.XmlPullParserException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.Reader;
+import java.util.Iterator;
 
 /**
  * Encapsulates a SOAP request. Not thread-safe. Don't forget to call close() when you're done!
@@ -25,6 +28,35 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
         super( metadata );
         _id = RequestIdGenerator.next();
         MessageProcessor.setCurrentRequest(this);
+    }
+
+    public boolean isSoap() {
+        if ( soap == null ) {
+            Element docEl = null;
+
+            boolean ok;
+            try {
+                docEl = getDocument().getDocumentElement();
+                ok = true;
+            } catch ( Exception e ) {
+                ok = false;
+            }
+
+            ok = ok && docEl.getNodeName().equals(SoapUtil.BODY_EL_NAME);
+            if ( ok ) {
+                String docUri = docEl.getNamespaceURI();
+
+                // Check that envelope is one of the recognized namespaces
+                for ( Iterator i = SoapUtil.ENVELOPE_URIS.iterator(); i.hasNext(); ) {
+                    String envUri = (String)i.next();
+                    if (envUri.equals(docUri)) ok = true;
+                }
+            }
+
+            soap = ok ? Boolean.TRUE : Boolean.FALSE;
+        }
+
+        return soap.booleanValue();
     }
 
     /**
@@ -142,6 +174,7 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
 
     protected RequestId _id;
     protected boolean _authenticated;
+    protected Boolean soap = null;
     protected Reader _requestReader;
     protected User _user;
     protected RoutingStatus _routingStatus = RoutingStatus.NONE;
