@@ -455,6 +455,15 @@ public class StatisticsPanel extends JPanel {
             getStatTableModel().removeRow(0);
         }
         getStatTableModel().fireTableDataChanged();
+
+        // clear the totals
+        getStatTotalTable().setValueAt(null, 0, 1);
+        getStatTotalTable().setValueAt(null, 0, 2);
+        getStatTotalTable().setValueAt(null, 0, 3);
+        getStatTotalTable().setValueAt(null, 0, 4);
+        getStatTotalTable().setValueAt(null, 0, 5);
+        getStatTotalTableModel().fireTableDataChanged();
+
         serverUpTime.setText(END_SPACE + SERVER_UP_TIME_PREFIX + STATISTICS_UNAVAILABLE + MIDDLE_SPACE);
         lastMinuteServerLoad.setText(LAST_MINUTE_SERVER_LOAD_PREFIX + STATISTICS_UNAVAILABLE + END_SPACE);
     }
