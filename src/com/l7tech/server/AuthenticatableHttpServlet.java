@@ -174,7 +174,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         if (users.isEmpty() && userAuthenticatedButDidNotPresentHisCert) {
             String msg = "Basic credentials are valid but the client did not present " +
                          "his client cert as part of the ssl handshake";
-            logger.warning("POTENTIAL DICTIONNARY ATTACK. " + msg);
+            logger.warning(msg);
             throw new IssuedCertNotPresentedException(msg);
         }
         return users;
