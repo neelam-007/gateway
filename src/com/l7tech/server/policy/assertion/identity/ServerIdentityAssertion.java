@@ -91,6 +91,7 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
                     // Authentication failure
                     response.addResult( new AssertionResult( _data, AssertionStatus.AUTH_FAILED, bce.getMessage(), bce ));
                     logger.info("Authentication failed for " + pc.getLogin() );
+                    logger.info(bce.getMessage());
                     return AssertionStatus.AUTH_FAILED;
                 } catch ( InvalidClientCertificateException icce ) {
                     response.addResult( new AssertionResult( _data, AssertionStatus.AUTH_FAILED, icce.getMessage(), icce ));

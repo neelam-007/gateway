@@ -66,11 +66,12 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
         BufferedReader breader = new BufferedReader(reader);
         if (XmlUtil.MULTIPART_CONTENT_TYPE.equals(contentTypeHeader.value)) {
             multipart = true;
-            String boundary = (String)contentTypeHeader.params.get(XmlUtil.MULTIPART_BOUNDARY);
-            if (boundary == null) throw new IOException("Multipart header did not contain a boundary");
-            multipartBoundary = "--" + boundary;
+            multipartBoundary = (String)contentTypeHeader.params.get(XmlUtil.MULTIPART_BOUNDARY);
+            if (multipartBoundary == null) throw new IOException("Multipart header did not contain a boundary");
             String innerType = (String)contentTypeHeader.params.get(XmlUtil.MULTIPART_TYPE);
             if (innerType.startsWith(XmlUtil.TEXT_XML)) {
+                String firstBoundary = breader.readLine();
+                if (!firstBoundary.equals("--" + multipartBoundary)) throw new IOException("Initial multipart boundary not found");
                 Part part = parseMultipart(breader);
                 if (!part.getHeader(XmlUtil.CONTENT_TYPE).value.equals(innerType)) throw new IOException("Content-Type of first part doesn't match type of Multipart header");
                 return part.content;
@@ -124,11 +125,9 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
 
     private Part parseMultipart(BufferedReader breader) throws IOException {
         StringBuffer xml = new StringBuffer();
-        String line = breader.readLine();
-        if (!line.equals(multipartBoundary))
-            throw new IOException("Expected MIME multipart boundary at beginning of message part");
 
         Part part = new Part();
+        String line;
         boolean headers = true;
         while ((line = breader.readLine()) != null) {
             if (headers) {
@@ -139,14 +138,15 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
                 HeaderValue header = parseHeader(line);
                 part.headers.put(header.name, header);
             } else {
-                int bpos = line.indexOf(multipartBoundary);
-                if (bpos == -1) {
+                if (line.startsWith("--" + multipartBoundary)) {
+                    // The boundary is on a line by itself so the previous content doesn't actually contain the last \n
+                    // The next part is left in the reader for later
+                    if (xml.length() > 0 && xml.charAt(xml.length()-1) == '\n')
+                        xml.deleteCharAt(xml.length()-1);
+                    break;
+                } else {
                     xml.append(line);
                     xml.append("\n");
-                } else {
-                    // TODO This line contains the end of the XML - presumably the boundary is on a line by itself
-                    // leave the rest of the junk in the reader
-                    break;
                 }
             }
         }

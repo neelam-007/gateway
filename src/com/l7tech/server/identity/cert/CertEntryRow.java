@@ -51,8 +51,17 @@ public class CertEntryRow {
         this.oid = oid;
     }
 
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId( String userId ) {
+        this.userId = userId;
+    }
+
     private long provider;
     private String login;
+    private String userId;
     private String cert;
     private int resetCounter;
     private long oid = -1;

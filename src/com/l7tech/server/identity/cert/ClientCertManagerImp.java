@@ -59,7 +59,10 @@ public class ClientCertManagerImp implements ClientCertManager {
         // check that the cert's subject matches the user's login
         try {
             X500Name x500name = new X500Name(((X509Certificate)(cert)).getSubjectX500Principal().getName());
-            if (!x500name.getCommonName().equals(user.getLogin())) {
+            String login = user.getLogin();
+            if (login == null || login.length() == 0) {
+                logger.log(Level.INFO, "User " + user.getName() + " has no login. Will save cert anyway.");
+            } else if (!x500name.getCommonName().equals(login)) {
                 logger.log(Level.SEVERE, "User " + user.getLogin() +
                                          " tried to csr for subject other than self (" +
                                          x500name.getCommonName() + ")");
@@ -86,6 +89,7 @@ public class ClientCertManagerImp implements ClientCertManager {
         if (userData == null) {
             userData = new CertEntryRow();
             userData.setProvider(user.getProviderId());
+            userData.setUserId(user.getUniqueIdentifier());
             userData.setLogin(user.getLogin());
             userData.setResetCounter(0);
             newentry = true;
@@ -215,14 +219,14 @@ public class ClientCertManagerImp implements ClientCertManager {
     private CertEntryRow getFromTable(User user) {
         String query = "from " + TABLE_NAME + " in class " + CertEntryRow.class.getName() +
                        " where " + TABLE_NAME + "." + PROVIDER_COLUMN + " = ?" +
-                       " and " + TABLE_NAME + "." + PROVIDER_LOGIN + " = ?";
+                       " and " + TABLE_NAME + "." + USER_ID + " = ?";
         List hibResults = null;
         HibernatePersistenceContext context = null;
         try {
             context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
             Query q = context.getSession().createQuery(query);
             q.setLong(0, user.getProviderId());
-            q.setString(1, user.getLogin());
+            q.setString(1, user.getUniqueIdentifier());
             hibResults = q.list();
         } catch (SQLException e) {
             hibResults = Collections.EMPTY_LIST;
@@ -251,5 +255,5 @@ public class ClientCertManagerImp implements ClientCertManager {
 
     private static final String TABLE_NAME = "client_cert";
     private static final String PROVIDER_COLUMN = "provider";
-    private static final String PROVIDER_LOGIN = "login";
+    private static final String USER_ID = "userId";
 }

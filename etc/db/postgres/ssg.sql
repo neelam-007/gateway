@@ -135,6 +135,7 @@ DROP TABLE client_cert;
 CREATE TABLE client_cert (
   objectid bigint NOT NULL primary key default '0',
   provider bigint NOT NULL default '0',
+  user_id varchar(255),
   login varchar(255) NOT NULL default '',
   cert text DEFAULT NULL,
   reset_counter int NOT NULL default '0'

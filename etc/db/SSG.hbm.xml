@@ -106,6 +106,7 @@
             <generator class="hilo"/>
         </id>
         <property name="provider" column="provider" type="long"/>
+        <property name="userId" column="user_id" type="string"/>
         <property name="login" column="login" type="string"/>
         <property name="cert" column="cert" type="string"/>
         <property name="resetCounter" column="reset_counter" type="int"/>
