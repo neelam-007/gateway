@@ -7,6 +7,7 @@
 package com.l7tech.policy.wsp;
 
 import com.l7tech.common.wsdl.BindingInfo;
+import com.l7tech.common.wsdl.MimePartInfo;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -28,6 +29,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import javax.wsdl.BindingOperation;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -730,6 +732,8 @@ public class WspConstants {
         // Special types
         new BeanTypeMapping(XpathExpression.class, "xpathExpressionValue"),
         new BeanTypeMapping(BindingInfo.class, "wsdlBindingInfo"),
+        new BeanTypeMapping(BindingOperation.class, "wsdlBindingOperationInfo"),
+        new BeanTypeMapping(MimePartInfo.class, "wsdlMimePartInfo"),
 
     };
 
