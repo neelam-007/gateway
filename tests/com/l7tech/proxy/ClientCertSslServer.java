@@ -7,13 +7,12 @@
 package com.l7tech.proxy;
 
 import org.apache.log4j.Category;
-import org.mortbay.http.HttpServer;
-import org.mortbay.http.SunJsseListener;
 import org.mortbay.http.HttpContext;
-import org.mortbay.http.HttpHandler;
+import org.mortbay.http.HttpException;
 import org.mortbay.http.HttpRequest;
 import org.mortbay.http.HttpResponse;
-import org.mortbay.http.HttpException;
+import org.mortbay.http.HttpServer;
+import org.mortbay.http.SunJsseListener;
 import org.mortbay.http.handler.AbstractHttpHandler;
 import org.mortbay.util.InetAddrPort;
 import org.mortbay.util.MultiException;
@@ -37,10 +36,9 @@ import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.Properties;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Iterator;
-import java.util.Collection;
 
 /**
  *
@@ -118,7 +116,7 @@ public class ClientCertSslServer {
 
     public static void main(String[] args) {
         try {
-            mainw(args);
+            mainw();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -178,7 +176,7 @@ public class ClientCertSslServer {
     }
 
     // Entry point for using Jetty.
-    private static void mainw(String[] args) throws IOException, MultiException {
+    private static void mainw() throws MultiException {
         HttpServer httpServer = new HttpServer();
         SunJsseListener jl = new SunJsseListener(getInetAddrPort());
         jl.setKeystore(KEYSTORE);
@@ -213,8 +211,8 @@ public class ClientCertSslServer {
     }
 
     // Entry point for playing with SslSocket server.
-    public static void mainSslSocket(String[] args) throws NoSuchAlgorithmException, IOException, KeyManagementException {
-        Properties props = System.getProperties();
+    public static void mainSslSocket() throws NoSuchAlgorithmException, IOException, KeyManagementException {
+        //Properties props = System.getProperties();
         //props.put("java.protocol.handler.pkgs", "com.sun.net.ssl.internal.www.protocol");
         //props.put("javax.net.ssl.keyStore", KEYSTORE);
         //props.put("javax.net.ssl.keyStorePassword", KEYPASS);
