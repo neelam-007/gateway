@@ -64,7 +64,7 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
                 _log.log(Level.SEVERE, cfe.getMessage(), cfe);
                 throw new PolicyAssertionException( cfe.getMessage(), cfe );
             } else {
-                response.addResult( new AssertionResult( _data, request, status, cfe.getMessage() ) );
+                response.addResult( new AssertionResult( _data, status, cfe.getMessage() ) );
                 challenge( request, response );
                 // Suppress exception trace by omitting exception argument
                 _log.info( cfe.getMessage() );
