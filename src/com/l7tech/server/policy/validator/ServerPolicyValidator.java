@@ -72,21 +72,23 @@ public class ServerPolicyValidator extends PolicyValidator {
             }
         } else if (a instanceof JmsRoutingAssertion) {
             JmsRoutingAssertion jmsass = (JmsRoutingAssertion)a;
-            long endpointid = jmsass.getEndpointOid().longValue();
-            JmsEndpointManager mgr = (JmsEndpointManager)Locator.getDefault().lookup(JmsEndpointManager.class);
-            boolean jmsEndpointDefinedOk = false;
-            try {
-                JmsEndpoint routedRequestEndpoint = mgr.findByPrimaryKey(endpointid);
-                if (routedRequestEndpoint != null) jmsEndpointDefinedOk = true;
-            } catch (FindException e) {
-                logger.log(Level.FINE, "Error fetching endpoint " + endpointid, e);
-            }
-            if (!jmsEndpointDefinedOk) {
-                r.addError(new PolicyValidatorResult.Error(a,
-                                                           ap,
-                                                           "This routing assertion refers to a JMS " +
-                                                           "endpoint that cannot be found on this system.",
-                                                           null));
+            if (jmsass.getEndpointOid() != null) {
+                long endpointid = jmsass.getEndpointOid().longValue();
+                JmsEndpointManager mgr = (JmsEndpointManager)Locator.getDefault().lookup(JmsEndpointManager.class);
+                boolean jmsEndpointDefinedOk = false;
+                try {
+                    JmsEndpoint routedRequestEndpoint = mgr.findByPrimaryKey(endpointid);
+                    if (routedRequestEndpoint != null) jmsEndpointDefinedOk = true;
+                } catch (FindException e) {
+                    logger.log(Level.FINE, "Error fetching endpoint " + endpointid, e);
+                }
+                if (!jmsEndpointDefinedOk) {
+                    r.addError(new PolicyValidatorResult.Error(a,
+                                                               ap,
+                                                               "This routing assertion refers to a JMS " +
+                                                               "endpoint that cannot be found on this system.",
+                                                               null));
+                }
             }
         }
     }
