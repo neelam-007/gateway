@@ -1,6 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.widgets.WrappingLabel;
 import com.l7tech.console.event.ConnectionEvent;
 import com.l7tech.console.event.ConnectionListener;
 import com.l7tech.console.tree.ServiceNode;
@@ -69,7 +70,7 @@ public class ViewServiceWsdlAction extends BaseAction implements ConnectionListe
             public void run() {
                 try {
                     final PublishedService ps = serviceNode.getPublishedService();
-                    new WsdlViewDialog(ps.getWsdlXml(), ps.getName());
+                    new WsdlViewDialog(ps);
                 } catch (FindException e) {
                     log.log(Level.WARNING, "error retrieving service wsdl", e);
                 } catch (IOException e) {
@@ -82,15 +83,22 @@ public class ViewServiceWsdlAction extends BaseAction implements ConnectionListe
     private class WsdlViewDialog extends JDialog {
         private JEditTextArea wsdlTextArea;
 
-        private WsdlViewDialog(String wsdlString, String title) {
-            super(ComponentRegistry.getInstance().getMainWindow(), title);
+        private WsdlViewDialog(PublishedService ps) throws IOException {
+            super(ComponentRegistry.getInstance().getMainWindow(), ps.getName());
 
             wsdlTextArea = new JEditTextArea();
             wsdlTextArea.setEditable(false);
             wsdlTextArea.setTokenMarker(new XMLTokenMarker());
-            wsdlTextArea.setText(wsdlString);
+            wsdlTextArea.setText(ps.getWsdlXml());
             wsdlTextArea.setCaretPosition(0);
             JPanel panel = new JPanel(new BorderLayout());
+            JPanel wsdlPanel = new JPanel();
+            wsdlPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+            panel.add(wsdlPanel, BorderLayout.NORTH);
+            final JLabel l = new JLabel("Wsdl Url: "+ps.getWsdlUrl());
+            l.setFont(l.getFont().deriveFont(Font.BOLD));
+            wsdlPanel.add(l);
+            wsdlPanel.setBorder(BorderFactory.createEtchedBorder());
             panel.add(wsdlTextArea, BorderLayout.CENTER);
 
             getContentPane().add(panel, BorderLayout.CENTER);
@@ -101,7 +109,8 @@ public class ViewServiceWsdlAction extends BaseAction implements ConnectionListe
                 }
             });
             pack();
-            setSize(600, 600);
+            final int labelWidth = (int)(l.getSize().getWidth()+20);
+            setSize(Math.max(600, labelWidth), 600);
             Utilities.centerOnScreen(this);
             setVisible(true);
         }

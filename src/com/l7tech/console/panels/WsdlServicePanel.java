@@ -213,68 +213,70 @@ public class WsdlServicePanel extends WizardStepPanel {
         $$$setupUI$$$();
     }
 
-    /** generated code, do not edit or call this method manually !!! */
+    /**
+     * generated code, do not edit or call this method manually !!!
+     */
     private void $$$setupUI$$$() {
-        JPanel _1;
+        final JPanel _1;
         _1 = new JPanel();
         mainPanel = _1;
         _1.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        JPanel _2;
+        final JPanel _2;
         _2 = new JPanel();
         namePanel = _2;
         _2.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(12, 4, new Insets(0, 0, 0, 0), -1, -1));
         _1.add(_2, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 3, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
-        JTextField _3;
+        final JTextField _3;
         _3 = new JTextField();
         nameField = _3;
         _2.add(_3, new com.intellij.uiDesigner.core.GridConstraints(3, 2, 1, 1, 8, 1, 6, 0, new Dimension(-1, -1), new Dimension(150, -1), new Dimension(-1, -1)));
-        JLabel _4;
+        final JLabel _4;
         _4 = new JLabel();
         _4.setText("Name");
         _2.add(_4, new com.intellij.uiDesigner.core.GridConstraints(3, 1, 1, 1, 8, 1, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
-        JLabel _5;
+        final JLabel _5;
         _5 = new JLabel();
         _5.setText("Port");
         _2.add(_5, new com.intellij.uiDesigner.core.GridConstraints(5, 1, 1, 1, 8, 1, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
-        JTextField _6;
+        final JTextField _6;
         _6 = new JTextField();
         portNameField = _6;
         _6.setText("");
         _2.add(_6, new com.intellij.uiDesigner.core.GridConstraints(5, 2, 1, 1, 8, 1, 6, 0, new Dimension(-1, -1), new Dimension(150, -1), new Dimension(-1, -1)));
-        JLabel _7;
+        final JLabel _7;
         _7 = new JLabel();
         _7.setText("Service");
         _2.add(_7, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 8, 0, 0, 0, new Dimension(100, -1), new Dimension(100, -1), new Dimension(-1, -1)));
-        JLabel _8;
+        final JLabel _8;
         _8 = new JLabel();
         _8.setText("Address");
         _2.add(_8, new com.intellij.uiDesigner.core.GridConstraints(9, 1, 1, 1, 8, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
-        JTextField _9;
+        final JTextField _9;
         _9 = new JTextField();
         portAddressField = _9;
         _2.add(_9, new com.intellij.uiDesigner.core.GridConstraints(9, 2, 1, 1, 8, 1, 6, 0, new Dimension(-1, -1), new Dimension(150, -1), new Dimension(-1, -1)));
-        com.intellij.uiDesigner.core.Spacer _10;
+        final com.intellij.uiDesigner.core.Spacer _10;
         _10 = new com.intellij.uiDesigner.core.Spacer();
         _2.add(_10, new com.intellij.uiDesigner.core.GridConstraints(10, 2, 1, 1, 0, 2, 1, 6, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
-        JLabel _11;
+        final JLabel _11;
         _11 = new JLabel();
         _11.setText("Binding");
         _2.add(_11, new com.intellij.uiDesigner.core.GridConstraints(7, 1, 1, 1, 8, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
-        JLabel _12;
+        final JLabel _12;
         _12 = new JLabel();
         bindingLabel = _12;
         _12.setText("");
         _2.add(_12, new com.intellij.uiDesigner.core.GridConstraints(7, 2, 1, 1, 8, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
-        com.intellij.uiDesigner.core.Spacer _13;
+        final com.intellij.uiDesigner.core.Spacer _13;
         _13 = new com.intellij.uiDesigner.core.Spacer();
         _2.add(_13, new com.intellij.uiDesigner.core.GridConstraints(8, 2, 1, 1, 0, 2, 1, 0, new Dimension(-1, 10), new Dimension(-1, 10), new Dimension(-1, 10)));
-        com.intellij.uiDesigner.core.Spacer _14;
+        final com.intellij.uiDesigner.core.Spacer _14;
         _14 = new com.intellij.uiDesigner.core.Spacer();
         _2.add(_14, new com.intellij.uiDesigner.core.GridConstraints(6, 2, 1, 1, 0, 2, 1, 0, new Dimension(-1, 10), new Dimension(-1, 10), new Dimension(-1, 10)));
-        com.intellij.uiDesigner.core.Spacer _15;
+        final com.intellij.uiDesigner.core.Spacer _15;
         _15 = new com.intellij.uiDesigner.core.Spacer();
         _2.add(_15, new com.intellij.uiDesigner.core.GridConstraints(4, 2, 1, 1, 0, 2, 1, 0, new Dimension(-1, 10), new Dimension(-1, 10), new Dimension(-1, 10)));
-        com.intellij.uiDesigner.core.Spacer _16;
+        final com.intellij.uiDesigner.core.Spacer _16;
         _16 = new com.intellij.uiDesigner.core.Spacer();
         _2.add(_16, new com.intellij.uiDesigner.core.GridConstraints(2, 2, 1, 1, 0, 2, 1, 0, new Dimension(-1, 10), new Dimension(-1, 10), new Dimension(-1, -1)));
     }
