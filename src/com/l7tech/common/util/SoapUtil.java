@@ -291,9 +291,9 @@ public class SoapUtil {
         String id = node.getAttribute(ID_ATTRIBUTE_NAME);
         if (id == null || id.length() < 1) {
             id = node.getAttributeNS(SoapUtil.WSU_NAMESPACE, ID_ATTRIBUTE_NAME);
-        }
-        if (id == null || id.length() < 1) {
-            id = node.getAttributeNS(SoapUtil.WSU_NAMESPACE2, ID_ATTRIBUTE_NAME);
+            if (id == null || id.length() < 1) {
+                id = node.getAttributeNS(SoapUtil.WSU_NAMESPACE2, ID_ATTRIBUTE_NAME);
+            }
         }
         // for some reason this is set to "" when not present.
         if (id.length() < 1) id = null;
