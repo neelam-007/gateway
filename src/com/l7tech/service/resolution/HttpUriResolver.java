@@ -16,8 +16,12 @@ import javax.wsdl.WSDLException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
+ * Resolves services based on the URI part of the WSDL's soap:address extensibility
+ * element.  Currently relies on all "unknown" requests being mapped to the
+ *
  * @author alex
  * @version $Revision$
  */
@@ -45,7 +49,19 @@ public class HttpUriResolver extends NameValueServiceResolver {
     }
 
     protected Object getRequestValue(Request request) throws ServiceResolutionException {
-        return request.getParameter( Request.PARAM_HTTP_REQUEST_URI );
+        String originalUrl = (String)request.getParameter( Request.PARAM_HTTP_L7_ORIGINAL_URL );
+        if ( originalUrl == null )
+            return (String)request.getParameter( Request.PARAM_HTTP_REQUEST_URI );
+        else {
+            try {
+                URL url = new URL( originalUrl );
+                return url.getFile();
+            } catch (MalformedURLException e) {
+                String err = "Invalid L7-Original-URL value: '" + originalUrl + "'";
+                _log.log( Level.WARNING, err, e );
+                throw new ServiceResolutionException( err );
+            }
+        }
     }
 
     public int getSpeed() {
