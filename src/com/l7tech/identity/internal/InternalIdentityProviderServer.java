@@ -61,18 +61,13 @@ public class InternalIdentityProviderServer implements IdentityProvider {
         return groupManager;
     }
 
-    public User authenticate( LoginCredentials pc ) throws AuthenticationException {
+    public User authenticate( LoginCredentials pc ) throws AuthenticationException, FindException {
         String login = pc.getLogin();
         byte[] credentials = pc.getCredentials();
 
         try {
             InternalUser dbUser = null;
-            try {
-                dbUser = (InternalUser)userManager.findByLogin( login );
-            } catch (FindException e) {
-                logger.log(Level.SEVERE, "exception looking for user", e);
-                dbUser = null;
-            }
+            dbUser = (InternalUser)userManager.findByLogin( login );
             if ( dbUser == null ) {
                 String err = "Couldn't find user with login " + login;
                 logger.info(err);

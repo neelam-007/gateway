@@ -37,7 +37,7 @@ public class IdentityProviderStub implements IdentityProvider {
         return Registry.getDefault().getInternalGroupManager();
     }
 
-    public User authenticate( LoginCredentials pc ) throws AuthenticationException {
+    public User authenticate( LoginCredentials pc ) throws AuthenticationException, FindException {
         throw new AuthenticationException("not implemented");
     }
 

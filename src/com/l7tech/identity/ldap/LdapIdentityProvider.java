@@ -73,14 +73,9 @@ public class LdapIdentityProvider implements IdentityProvider {
         return groupManager;
     }
 
-    public User authenticate(LoginCredentials pc) throws AuthenticationException {
+    public User authenticate(LoginCredentials pc) throws AuthenticationException, FindException {
         LdapUser realUser = null;
-        try {
-            realUser = (LdapUser)userManager.findByLogin( pc.getLogin());
-        } catch (FindException e) {
-            logger.log(Level.INFO, "invalid user", e);
-            throw new BadCredentialsException("invalid user");
-        }
+        realUser = (LdapUser)userManager.findByLogin( pc.getLogin());
         if (realUser == null) {
             logger.info("invalid user");
             throw new BadCredentialsException("invalid user");

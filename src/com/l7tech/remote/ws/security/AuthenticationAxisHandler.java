@@ -22,27 +22,27 @@ import java.util.logging.Logger;
 
 /**
  * Axis handler that authenticates admin requests.
- *
+ * <p/>
  * This axis handler class does the following
  * 1. reads a basic auth header from the http request
  * 2. unbase64 it
  * 3. MD5s it
  * 4. compare it to the hash value for this user in the database
  * 5. if authentication succeeds, it checks that user is member of SSGAdmin local group
- *
+ * <p/>
  * The password has in the database is expected to have the following format:
  * MD5(username::password) hex encoded
- *
+ * <p/>
  * It must be declared in the server-config.wsdd file in order to be invoked as per below:
- *
- *
+ * <p/>
+ * <p/>
  * <transport name="http">
- *   <requestFlow>
- *     <handler type="URLMapper"/>
- *     <handler type="java:com.l7tech.remote.ws.security.AuthenticationAxisHandler"/>
- *   </requestFlow>
+ * <requestFlow>
+ * <handler type="URLMapper"/>
+ * <handler type="java:com.l7tech.remote.ws.security.AuthenticationAxisHandler"/>
+ * </requestFlow>
  * </transport>
- *
+ * <p/>
  * <br/><br/>
  * Layer 7 Technologies, inc.<br/>
  * User: flascelles<br/>
@@ -84,7 +84,7 @@ public class AuthenticationAxisHandler extends org.apache.axis.handlers.BasicHan
 
         // Process the Auth stuff in the headers
         String tmp = (String)messageContext.getProperty(HTTPConstants.HEADER_AUTHORIZATION);
-        if (tmp != null ) tmp = tmp.trim();
+        if (tmp != null) tmp = tmp.trim();
 
         User authenticatedUser = null;
 
@@ -100,7 +100,7 @@ public class AuthenticationAxisHandler extends org.apache.axis.handlers.BasicHan
         }
 
         // WAS AUTHENTICATION COMPLETE?
-        if (authenticatedUser == null) throw new AxisFault("Server.Unauthorized", "com.l7tech.remote.ws.security.AuthenticationAxisHandler failed", null, null );
+        if (authenticatedUser == null) throw new AxisFault("Server.Unauthorized", "com.l7tech.remote.ws.security.AuthenticationAxisHandler failed", null, null);
 
         // NOW, PROCEED TO AUTHORIZATION
         if (authorizeAdminMembership(authenticatedUser)) {
@@ -109,10 +109,9 @@ public class AuthenticationAxisHandler extends org.apache.axis.handlers.BasicHan
             session.setAttribute(AUTHENTICATED_USER, authenticatedUser);
             session.setMaxInactiveInterval(30); // 30 seconds times you out
             logger.info("created admin session for user " + authenticatedUser.getLogin());
-        }
-        else {
+        } else {
             logger.log(Level.SEVERE, "authorization failure for user " + authenticatedUser.getLogin());
-            throw new AxisFault("Server.Unauthorized", "com.l7tech.remote.ws.security.AuthenticationAxisHandler failed", null, null );
+            throw new AxisFault("Server.Unauthorized", "com.l7tech.remote.ws.security.AuthenticationAxisHandler failed", null, null);
         }
     }
 
@@ -124,15 +123,15 @@ public class AuthenticationAxisHandler extends org.apache.axis.handlers.BasicHan
         //return userIsMemberOfGroup(adminUser.getOid(), Group.ADMIN_GROUP_NAME);
         GroupManager gman = identityProviderConfigManager.getInternalIdentityProvider().getGroupManager();
         try {
-            if (adminUser == null ) return false;
-            Set groupHeaders = gman.getGroupHeaders( adminUser );
+            if (adminUser == null) return false;
+            Set groupHeaders = gman.getGroupHeaders(adminUser);
             for (Iterator i = groupHeaders.iterator(); i.hasNext();) {
                 Group grp = (Group)i.next();
                 if (grp.getName() != null && grp.getName().equals(Group.ADMIN_GROUP_NAME)) return true;
             }
             return false;
-        } catch ( FindException fe ) {
-            logger.log( Level.SEVERE, fe.getMessage(), fe );
+        } catch (FindException fe) {
+            logger.log(Level.SEVERE, fe.getMessage(), fe);
             return false;
         }
     }
@@ -141,25 +140,27 @@ public class AuthenticationAxisHandler extends org.apache.axis.handlers.BasicHan
         String login = null;
         String clearTextPasswd = null;
 
-        int i = value.indexOf( ':' );
+        int i = value.indexOf(':');
         if (i == -1) {
             throw new AxisFault("invalid basic credentials " + value);
-        }
-        else {
+        } else {
             login = value.substring(0, i);
-            clearTextPasswd = value.substring(i+1);
+            clearTextPasswd = value.substring(i + 1);
         }
 
-        LoginCredentials creds = new LoginCredentials( login, clearTextPasswd.getBytes());
+        LoginCredentials creds = new LoginCredentials(login, clearTextPasswd.getBytes());
 
         if (identityProviderConfigManager == null) {
             identityProviderConfigManager = (IdentityProviderConfigManager)Locator.getDefault().lookup(com.l7tech.identity.IdentityProviderConfigManager.class);
         }
-        
+
         try {
             try {
                 return identityProviderConfigManager.getInternalIdentityProvider().authenticate(creds);
             } catch (AuthenticationException e) {
+                logger.log(Level.SEVERE, "authentication failed for " + login, e);
+                return null;
+            } catch (FindException e) {
                 logger.log(Level.SEVERE, "authentication failed for " + login, e);
                 return null;
             }

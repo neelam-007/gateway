@@ -15,7 +15,7 @@ public interface IdentityProvider {
     UserManager getUserManager();
     GroupManager getGroupManager();
 
-    User authenticate( LoginCredentials pc ) throws AuthenticationException;
+    User authenticate( LoginCredentials pc ) throws AuthenticationException, FindException;
 
     /**
      * If true, the save, update and delete methods wont be supported on the usermanager and groupmanager objects
