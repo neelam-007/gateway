@@ -69,4 +69,16 @@ public class CredentialManagerImpl implements CredentialManager {
     public void notifyCertificateAlreadyIssued(Ssg ssg) {
         log.error("Certificate has already been issued for this account on Ssg " + ssg + "; the server refuses to give us a new one until the Ssg admin revokes our old one");
     }
+
+    /**
+     * Notify the user that an SSL connection to the SSG could not be established because the hostname did not match
+     * the one in the certificate.
+     *
+     * @param ssg
+     * @param whatWeWanted  the expected hostname, equal to ssg.getSsgAddress()
+     * @param whatWeGotInstead  the hostname in the peer's certificate
+     */
+    public void notifySsgHostnameMismatch(Ssg ssg, String whatWeWanted, String whatWeGotInstead) {
+        log.error("SSG hostname " + whatWeWanted + " does not match hostname in peer certificate: \"" + whatWeGotInstead + "\"");
+    }
 }
