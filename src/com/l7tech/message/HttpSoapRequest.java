@@ -22,4 +22,8 @@ public class HttpSoapRequest extends SoapRequest {
         HttpTransportMetadata htm = (HttpTransportMetadata)_transportMetadata;
         return htm.getRequest().getReader();
     }
+
+    public boolean isReplyExpected() {
+        return true;
+    }
 }

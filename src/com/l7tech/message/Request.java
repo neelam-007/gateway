@@ -103,6 +103,12 @@ public interface Request extends Message {
     boolean isAuthenticated();
 
     /**
+     * Return <code>true</code> if the sender of this request expects to receive an immediate reply to it.
+     * @return <code>true</code> if the sender of this request expects to receive an immediate reply to it.
+     */
+    boolean isReplyExpected();
+
+    /**
      * Sets the authenticated flag.
      *
      * Callers <b>MUST NOT</b> set this flag to <code>true</code> unless the request has been <b>SUCCESSFULLY</b> authenticated.

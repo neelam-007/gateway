@@ -16,6 +16,7 @@ import javax.jms.Message;
 import javax.jms.TextMessage;
 import java.io.*;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * @author alex
@@ -73,6 +74,18 @@ public class JmsSoapRequest extends SoapRequest {
             _logger.warning( "Can't get a reader for a non-text message! Returning a reader on an empty String!" );
             return new StringReader("");
         }
+    }
+
+    public boolean isReplyExpected() {
+        Message msg = _jms.getRequest();
+        try {
+            return msg.getJMSReplyTo() != null || 
+                   msg.getJMSCorrelationID() != null ||
+                   msg.getJMSCorrelationIDAsBytes().length > 0;
+        } catch ( JMSException e ) {
+            _logger.log( Level.SEVERE, "Caught JMSException", e );
+        }
+        return false;
     }
 
     private JmsTransportMetadata _jms;

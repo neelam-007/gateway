@@ -6,25 +6,18 @@
 
 package com.l7tech.server.transport.jms;
 
+import com.l7tech.common.transport.jms.JmsEndpoint;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.logging.LogManager;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.MessageProcessor;
-import com.l7tech.logging.LogManager;
-import com.l7tech.common.transport.jms.JmsEndpoint;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.service.PublishedService;
-import com.l7tech.message.Request;
 
 import javax.jms.*;
 import javax.xml.soap.*;
 import java.io.IOException;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.w3c.dom.Element;
 
 /**
  * @author alex
@@ -59,28 +52,32 @@ class JmsRequestHandler {
         }
     }
 
-    private void processMessage( JmsTransportMetadata jmsMetadata, JmsReceiver receiver, JmsBag bag ) throws JmsRuntimeException {
+    private void processMessage( JmsTransportMetadata jmsMetadata,
+                                 JmsReceiver receiver, JmsBag bag ) throws JmsRuntimeException {
         AssertionStatus status = AssertionStatus.UNDEFINED;
 
         Message jmsRequest = jmsMetadata.getRequest();
+        Message jmsResponse = null;
+        String faultMessage = null;
         JmsSoapRequest soapRequest = new JmsSoapRequest( jmsMetadata );
         JmsSoapResponse soapResponse = new JmsSoapResponse( jmsMetadata );
 
         try {
             jmsRequest.acknowledge(); // TODO parameterize acknowledge semantics?
 
-            status = MessageProcessor.getInstance().processMessage( soapRequest, soapResponse );
-
-            // TODO build response
-            Message jmsResponse = jmsMetadata.getResponse();
+            try {
+                status = MessageProcessor.getInstance().processMessage( soapRequest, soapResponse );
+                jmsResponse = jmsMetadata.getResponse();
+            } catch ( Throwable t ) {
+                _logger.log( Level.WARNING, "Exception while processing JMS message", t );
+                faultMessage = t.getMessage();
+                if ( faultMessage == null ) faultMessage = t.toString();
+            }
 
             String responseXml = soapResponse.getResponseXml();
             if ( responseXml == null || responseXml.length() == 0 ) {
-                SOAPMessage msg = SoapUtil.makeMessage();
-                SOAPPart spart = msg.getSOAPPart();
-                SOAPEnvelope senv = spart.getEnvelope();
-                SOAPFault fault = SoapUtil.addFaultTo( msg, SoapUtil.FC_SERVER,
-                                                       status.getMessage() );
+                if ( faultMessage == null ) faultMessage = status.getMessage();
+                SOAPMessage msg = SoapUtil.makeFaultMessage( SoapUtil.FC_SERVER, faultMessage );
                 responseXml = SoapUtil.soapMessageToString( msg, "UTF-8" ); // TODO ENCODING @)$(*)!!
             }
 
@@ -98,22 +95,11 @@ class JmsRequestHandler {
             sendResponse( soapRequest, receiver, bag, status );
         } catch (IOException e) {
             _logger.log( Level.WARNING, e.toString(), e );
-        } catch (PolicyAssertionException e) {
-            _logger.log( Level.WARNING, e.toString(), e );
         } catch (JMSException e) {
             _logger.log( Level.WARNING, "Couldn't acknowledge message!", e );
         } catch ( SOAPException e ) {
             e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
         }
-    }
-
-    private SOAPEnvelope makeFault( String faultCode, String faultString ) throws SOAPException {
-        SOAPMessage msg = SoapUtil.makeMessage();
-        SOAPPart spart = msg.getSOAPPart();
-        SOAPEnvelope senv = spart.getEnvelope();
-        SOAPFault fault = SoapUtil.addFaultTo(msg, faultCode, faultString);
-        msg.saveChanges();
-        return senv;
     }
 
     private void sendResponse( JmsSoapRequest soapRequest,

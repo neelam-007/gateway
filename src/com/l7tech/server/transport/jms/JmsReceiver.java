@@ -265,8 +265,7 @@ public class JmsReceiver implements ServerComponentLifecycle {
                         if ( jmsMessage != null ) {
                             oopses = 0;
                             // todo support concurrent JMS messages some day
-                            JmsRequestHandler handler = new JmsRequestHandler();
-                            handler.onMessage( JmsReceiver.this, _bag, jmsMessage );
+                            _handler.onMessage( JmsReceiver.this, _bag, jmsMessage );
                         }
                     } catch ( Throwable e ) {
                         _logger.log( Level.WARNING,
@@ -321,6 +320,6 @@ public class JmsReceiver implements ServerComponentLifecycle {
 
     }
 
+    private final JmsRequestHandler _handler = new JmsRequestHandler();
     private MessageLoop _loop;
-
 }

@@ -38,7 +38,8 @@ public class JmsUtil {
      * @throws NamingException
      * @throws JmsConfigException if no connection factory URL could be found for this connection
      */
-    public static JmsBag connect( JmsConnection connection, PasswordAuthentication auth ) throws JmsConfigException, JMSException, NamingException {
+    public static JmsBag connect( JmsConnection connection, PasswordAuthentication auth )
+            throws JmsConfigException, JMSException, NamingException {
         String icf = connection.getInitialContextFactoryClassname();
         String url = connection.getJndiUrl();
         String dcfUrl = connection.getDestinationFactoryUrl();

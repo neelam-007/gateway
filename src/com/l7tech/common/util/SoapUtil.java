@@ -350,11 +350,11 @@ public class SoapUtil {
         return importingDocument;
     }
 
-    public static SOAPFault makeFault( String faultCode, String faultString ) throws SOAPException {
+    public static SOAPMessage makeFaultMessage( String faultCode, String faultString ) throws SOAPException {
         SOAPMessage msg = makeMessage();
         SOAPPart spart = msg.getSOAPPart();
-        SOAPEnvelope senv = spart.getEnvelope();
-        return SoapUtil.addFaultTo(msg, faultCode, faultString);
+        SoapUtil.addFaultTo(msg, faultCode, faultString);
+        return msg;
     }
 
     public static String soapMessageToString( SOAPMessage msg, String encoding ) throws IOException, SOAPException {
