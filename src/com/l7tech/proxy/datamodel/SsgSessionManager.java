@@ -141,6 +141,8 @@ public class SsgSessionManager {
             throw e;
         } catch (NumberFormatException e) {
             throw new InvalidSessionIdException("SSG sent invalid session ID", e);
+        } finally {
+            getMethod.releaseConnection();
         }
     }
 
