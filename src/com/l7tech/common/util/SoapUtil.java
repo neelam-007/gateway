@@ -32,8 +32,8 @@ public class SoapUtil {
     public static final String HEADER_EL_NAME = "Header";
     public static final String SECURITY_EL_NAME = "Security";
     public static final String SECURITY_NAMESPACE_PREFIX = "wsse";
-    public static final String SECURITY_NAMESPACE = "http://schemas.xmlsoap.org/ws/2002/12/secext";
-    public static final String SECURITY_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2002/xx/secext";
+    public static final String SECURITY_NAMESPACE = "http://schemas.xmlsoap.org/ws/2002/xx/secext";
+    public static final String SECURITY_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2002/12/secext";
 
     public static Element getEnvelope( Document request ) {
         Element env = request.getDocumentElement();
@@ -123,13 +123,7 @@ public class SoapUtil {
             header.setPrefix(soapEnvNamespacePrefix);
 
             // if the body is there, get it so that the header can be inserted before it
-            Element body = null;
-            NodeList bodylist = soapMsg.getElementsByTagNameNS(soapEnvNS, BODY_EL_NAME);
-            if (bodylist.getLength() > 0) {
-                body = (Element)bodylist.item(0);
-            }
-
-            // insert new element
+            Element body = getBody(soapMsg);
             if (body != null)
                 soapMsg.getDocumentElement().insertBefore(header, body);
             else
@@ -137,6 +131,17 @@ public class SoapUtil {
             return header;
         }
         else return (Element)list.item(0);
+    }
+
+    public static Element getBody(Document soapMsg) {
+        // use the soap flavor of this document
+        String soapEnvNS = soapMsg.getDocumentElement().getNamespaceURI();
+        // if the body is there, get it so that the header can be inserted before it
+        Element body = null;
+        NodeList bodylist = soapMsg.getElementsByTagNameNS(soapEnvNS, BODY_EL_NAME);
+        if (bodylist.getLength() > 0) {
+            return (Element)bodylist.item(0);
+        } else return null;
     }
 
     /**
