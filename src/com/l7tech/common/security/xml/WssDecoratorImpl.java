@@ -92,10 +92,11 @@ public class WssDecoratorImpl implements WssDecorator {
         if (senderCertificate != null)
             addX509BinarySecurityToken(securityHeader, senderCertificate);
 
-        addEncryptedKey(c, securityHeader, recipientCertificate, elementsToEncrypt);
+        if (elementsToEncrypt.length > 0)
+            addEncryptedKey(c, securityHeader, recipientCertificate, elementsToEncrypt);
 
-        // todo sign
-        Element signature = addSignature(c, senderCertificate, senderPrivateKey, elementsToSign, securityHeader);
+        if (elementsToSign.length > 0)
+            addSignature(c, senderCertificate, senderPrivateKey, elementsToSign, securityHeader);
     }
 
     private Element addSignature(Context c, X509Certificate senderCertificate, PrivateKey senderPrivateKey,
