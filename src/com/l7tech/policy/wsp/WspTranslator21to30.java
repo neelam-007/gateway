@@ -67,7 +67,7 @@ public class WspTranslator21to30 implements WspTranslator {
     });
 
     private static Map makeMap(LookupEntry[] in) {
-        Map out = new HashMap();
+        Map out = new LinkedHashMap();
         for (int i = 0; i < in.length; i++)
             out.put(in[i].getKey(), in[i]);
         return out;

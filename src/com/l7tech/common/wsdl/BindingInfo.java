@@ -1,7 +1,7 @@
 package com.l7tech.common.wsdl;
 
 import java.io.Serializable;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -12,7 +12,7 @@ import java.util.Map;
 public class BindingInfo implements Serializable {
 
     protected String bindingName = "";
-    protected Map bindingOperations = new HashMap();   // a list of BindingOperationInfo
+    protected Map bindingOperations = new LinkedHashMap();   // a list of BindingOperationInfo
 
     public BindingInfo() {
     }

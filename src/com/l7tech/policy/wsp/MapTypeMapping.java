@@ -17,19 +17,19 @@ import java.util.*;
  */
 class MapTypeMapping extends ComplexTypeMapping {
     // This is utterly grotesque, but it's all Java's fault.  Please close eyes here
-    static final Constructor hashMapConstructor;
+    static final Constructor mapConstructor;
 
     static {
         try {
-            hashMapConstructor = HashMap.class.getConstructor(new Class[0]);
+            mapConstructor = LinkedHashMap.class.getConstructor(new Class[0]);
         } catch (Exception e) {
-            throw new LinkageError("Couldn't find HashMap's default constructor");
+            throw new LinkageError("Couldn't find LinkedHashMap's default constructor");
         }
     }
     // You may now open your eyes
 
     public MapTypeMapping() {
-        super(Map.class, "mapValue", hashMapConstructor);
+        super(Map.class, "mapValue", mapConstructor);
     }
 
     protected void populateElement(Element newElement, TypedReference object) {
