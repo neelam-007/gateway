@@ -1,10 +1,12 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.console.util.Preferences;
 import com.l7tech.console.event.*;
 import com.l7tech.common.security.TrustedCert;
+import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.util.Locator;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.objectmodel.*;
 import com.l7tech.identity.cert.ClientCertManager;
@@ -18,17 +20,12 @@ import java.awt.event.HierarchyListener;
 import java.awt.event.HierarchyEvent;
 import java.util.logging.Logger;
 import java.util.logging.Level;
-import java.util.Enumeration;
 import java.util.ResourceBundle;
 import java.util.Locale;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateEncodingException;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.NoSuchAlgorithmException;
-import java.security.KeyStore;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 
 /**
@@ -46,6 +43,7 @@ public class UserCertPanel extends JPanel {
     private UserPanel userPanel;
     private JLabel certStatusLabel;
     private JComponent certificateView = new JLabel();
+    private X509Certificate ssgcert = null;
     public static final GridBagConstraints CERTIFICATE_VIEW_CONSTRAINTS = new GridBagConstraints(0, 1, 2, 1, 1.0, 1.0,
             GridBagConstraints.NORTHWEST,
             GridBagConstraints.BOTH,
@@ -239,38 +237,6 @@ public class UserCertPanel extends JPanel {
         }
     };
 
-    /**
-     * obtain certificate from the application default
-     * truststore.
-     * This method is for testing and will be removed once the
-     * cert support is implemented
-     */
-    private void getTestCertificate() {
-        try {
-            KeyStore ks = KeyStore.getInstance("JKS");
-            char[] trustStorPassword = Preferences.getPreferences().getTrustStorePassword().toCharArray();
-            String trustStoreFile = Preferences.getPreferences().getTrustStoreFile();
-            FileInputStream ksfis = new FileInputStream(trustStoreFile);
-            try {
-                ks.load(ksfis, trustStorPassword);
-                for (Enumeration e = ks.aliases(); e.hasMoreElements();) {
-                    String alias = (String) e.nextElement();
-                    Certificate c = ks.getCertificate(alias);
-                    if (c != null && c instanceof X509Certificate) {
-                        cert = (X509Certificate) c;
-                        break;
-                    }
-                }
-            } catch (FileNotFoundException e) {
-                log.log(Level.WARNING, "Could not find application trust store", e);
-            } finally {
-                if (ksfis != null) ksfis.close();
-            }
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
     private void getUserCert() {
         ClientCertManager man = (ClientCertManager) Locator.getDefault().lookup(ClientCertManager.class);
         try {
@@ -317,35 +283,46 @@ public class UserCertPanel extends JPanel {
                                 String subjectDNFromCert = tc.getCertificate().getSubjectDN().getName();
 
                                 if (userPanel instanceof FederatedUserPanel) {
-                                    FederatedUserPanel fup = (FederatedUserPanel) userPanel;
-                                    if (userPanel.getUser().getSubjectDn().length() > 0) {
+                                    if (checkCertRelatedToSSG(tc)) {
 
-                                        if (subjectDNFromCert.compareToIgnoreCase(fup.getX509SubjectNameTextField().getText()) != 0) {
-                                            //prompt you if he wants to replace the subject DN name
-                                            Object[] options = {"Replace", "Cancel"};
-                                            int result = JOptionPane.showOptionDialog(null,
-                                                    "<html>The User's Subject DN is different from the one appearing in certificate being imported." +
-                                                    "<br>The user's Subject DN: " +  fup.getX509SubjectNameTextField().getText() +
-                                                    "<br>The Subject DN in the certiticate: " + subjectDNFromCert  +
-                                                    "<br>Do you want to replace the Subject DN with the one from the certificate" +
-                                                    "?<br>" +
-                                                    "<center>The certificate will not be added if this operation is cancelled." +
-                                                    "</center></html>",
-                                                    "Replace the Subject DN?",
-                                                    0, JOptionPane.WARNING_MESSAGE,
-                                                    null, options, options[1]);
-                                            if (result == 0) {
-                                                fup.getX509SubjectNameTextField().setText(subjectDNFromCert);
 
+                                        JOptionPane.showMessageDialog(UserCertPanel.this,
+                                                      "This cert cannot be associated to this user " +
+                                                      "because it is related to the\n" +
+                                                      "SecureSpan Gateway's root cert.",
+                                                      "Cannot add this cert",
+                                                      JOptionPane.ERROR_MESSAGE);
+                                    } else {
+                                        FederatedUserPanel fup = (FederatedUserPanel) userPanel;
+                                        if (userPanel.getUser().getSubjectDn().length() > 0) {
+
+                                            if (subjectDNFromCert.compareToIgnoreCase(fup.getX509SubjectNameTextField().getText()) != 0) {
+                                                //prompt you if he wants to replace the subject DN name
+                                                Object[] options = {"Replace", "Cancel"};
+                                                int result = JOptionPane.showOptionDialog(null,
+                                                        "<html>The User's Subject DN is different from the one appearing in certificate being imported." +
+                                                        "<br>The user's Subject DN: " +  fup.getX509SubjectNameTextField().getText() +
+                                                        "<br>The Subject DN in the certiticate: " + subjectDNFromCert  +
+                                                        "<br>Do you want to replace the Subject DN with the one from the certificate" +
+                                                        "?<br>" +
+                                                        "<center>The certificate will not be added if this operation is cancelled." +
+                                                        "</center></html>",
+                                                        "Replace the Subject DN?",
+                                                        0, JOptionPane.WARNING_MESSAGE,
+                                                        null, options, options[1]);
+                                                if (result == 0) {
+                                                    fup.getX509SubjectNameTextField().setText(subjectDNFromCert);
+
+                                                    certImported = true;
+                                                }
+                                            } else {
                                                 certImported = true;
                                             }
                                         } else {
+                                            // simply copy the dn to the user panel
+                                            fup.getX509SubjectNameTextField().setText(subjectDNFromCert);
                                             certImported = true;
                                         }
-                                    } else {
-                                        // simply copy the dn to the user panel
-                                        fup.getX509SubjectNameTextField().setText(subjectDNFromCert);
-                                        certImported = true;
                                     }
                                 }
                             } catch (IOException e) {
@@ -360,7 +337,7 @@ public class UserCertPanel extends JPanel {
                                         JOptionPane.ERROR_MESSAGE);
                             }
 
-                            if(certImported) {
+                            if (certImported) {
                                 try {
                                     saveUserCert(tc);
 
@@ -397,5 +374,36 @@ public class UserCertPanel extends JPanel {
 
     };
 
+    /**
+     * Check whether or not the passed cert is related somehow to the ssg's root cert.
+     * @return true if it is
+     */
+    private boolean checkCertRelatedToSSG(TrustedCert trustedCert) throws IOException, CertificateException {
+        if (ssgcert == null) {
+            ssgcert = getTrustedCertAdmin().getSSGRootCert();
+        }
+        byte[] certbytes = HexUtils.decodeBase64(trustedCert.getCertBase64());
+        X509Certificate[] chainToVerify = CertUtils.decodeCertChain(certbytes);
+        try {
+            CertUtils.verifyCertificateChain(chainToVerify, ssgcert, chainToVerify.length);
+        } catch (CertUtils.CertificateUntrustedException e) {
+            // this is what we were hoping for
+            log.finest("the cert is not related.");
+            return false;
+        }
+        log.finest("The cert appears to be related!");
+        return true;
+    }
+
+    private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
+        TrustedCertAdmin tca =
+                (TrustedCertAdmin) Locator.
+                getDefault().lookup(TrustedCertAdmin.class);
+        if (tca == null) {
+            throw new RuntimeException("Could not find registered " + TrustedCertAdmin.class);
+        }
+
+        return tca;
+    }
 
 }
