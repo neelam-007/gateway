@@ -8,8 +8,10 @@ import javax.crypto.spec.SecretKeySpec;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.InvalidKeyException;
+import java.io.IOException;
 
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.HexUtils;
 
 /**
  * Implement mechanism described in WS-Secure Conversation to derive
@@ -90,10 +92,18 @@ public class SecureConversationKeyDeriver {
             nonce = ((Text)nonceNode.getFirstChild()).getNodeValue();
         }
 
-        byte[] seed = new byte[secret.length + label.length() + nonce.length()];
-        System.arraycopy(secret, 0, seed, 0, secret.length);
-        System.arraycopy(label.getBytes(), 0, seed, secret.length, label.length());
-        System.arraycopy(nonce.getBytes(), 0, seed, secret.length+label.length(), nonce.length());
+
+        byte[] nonceA = new byte[1];
+
+        try {
+            nonceA = HexUtils.decodeBase64(nonce);
+        } catch (IOException ioe) {
+            //todo
+        }
+
+        byte[] seed = new byte[label.length() + nonceA.length];
+        System.arraycopy(label.getBytes(), 0, seed, 0, label.length());
+        System.arraycopy(nonceA, 0, seed, label.length(), nonceA.length);
 
         try{
             byte[] key = pSHA1(secret, seed, Integer.parseInt(length));
