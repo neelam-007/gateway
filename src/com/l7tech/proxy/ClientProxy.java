@@ -5,6 +5,10 @@ import org.mortbay.http.SocketListener;
 import org.mortbay.http.HttpContext;
 import org.mortbay.http.HttpServer;
 import org.mortbay.util.MultiException;
+import org.apache.log4j.Category;
+
+import java.net.URL;
+import java.net.MalformedURLException;
 
 /**
  * Encapsulates an HTTP proxy that processes SOAP messages.
@@ -13,9 +17,16 @@ import org.mortbay.util.MultiException;
  * Time: 1:32:33 PM
  */
 public class ClientProxy {
+    private final Category log = Category.getInstance(ClientProxy.class);
+
     private SsgFinder ssgFinder;
     private HttpServer httpServer;
     private RequestHandler requestHandler;
+
+    private int maxThreads;
+    private int minThreads;
+    private int bindPort;
+
     private boolean isRunning = false;
     private boolean isDestroyed = false;
 
@@ -23,8 +34,11 @@ public class ClientProxy {
      * Create a ClientProxy with the specified settings.
      * @param ssgFinder provides the list of SSGs to which we are proxying.
      */
-    ClientProxy(final SsgFinder ssgFinder) {
+    ClientProxy(final SsgFinder ssgFinder, final int bindPort, final int minThreads, final int maxThreads) {
         this.ssgFinder = ssgFinder;
+        this.bindPort = bindPort;
+        this.minThreads = minThreads;
+        this.maxThreads = maxThreads;
     }
 
     private void mustNotBeDestroyed() {
@@ -58,9 +72,9 @@ public class ClientProxy {
         if (httpServer == null) {
             httpServer = new HttpServer();
             final SocketListener socketListener = new SocketListener();
-            socketListener.setMaxThreads(100);
-            socketListener.setMinThreads(6);
-            socketListener.setPort(5555);
+            socketListener.setMaxThreads(maxThreads);
+            socketListener.setMinThreads(minThreads);
+            socketListener.setPort(bindPort);
             final HttpContext context = new HttpContext(httpServer, "/");
             context.addHandler(getRequestHandler());
             httpServer.addContext(context);
@@ -71,12 +85,24 @@ public class ClientProxy {
 
     /**
      * Start up the client proxy.
-     * @throws MultiException
+     * @return the client proxy's base URL.
+     * @throws MultiException if the proxy could not be started
      */
-    public synchronized void start() throws MultiException {
+    public synchronized URL start() throws MultiException {
         mustNotBeRunning();
         getHttpServer().start();
         isRunning = true;
+        URL url;
+        try {
+            url = new URL("http", "localhost", bindPort, "/");
+        } catch (MalformedURLException e) {
+            log.error(e);
+            throw new MultiException();
+        }
+
+        log.info("ClientProxy started; listening on " + url);
+
+        return url;
     }
 
     /**

@@ -18,17 +18,24 @@ import javax.net.ssl.TrustManagerFactory;
 import javax.net.ssl.TrustManager;
 
 /**
- * Begin execution of client proxy.
+ * Begin execution of client proxy along with an attached GUI.
  * User: mike
  * Date: May 15, 2003
  * Time: 3:33:14 PM
  */
 public class Main {
+    private static final int DEFAULT_PORT = 5555;
+    private static final int MIN_THREADS = 4;
+    private static final int MAX_THREADS = 20;
+
     private static ClientProxy clientProxy;
 
     /** Start a GUI-equipped client proxy and run it until it's shut down. */
     public static void main(final String[] argv) {
-        clientProxy = new ClientProxy(Managers.getSsgManager());
+        clientProxy = new ClientProxy(Managers.getSsgManager(),
+                                      DEFAULT_PORT,
+                                      MIN_THREADS,
+                                      MAX_THREADS);
 
         // Hook up the Message Viewer window
         clientProxy.getRequestHandler().setRequestInterceptor(Gui.getInstance().getRequestInterceptor());
