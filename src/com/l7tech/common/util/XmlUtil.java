@@ -9,6 +9,7 @@ package com.l7tech.common.util;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -77,6 +78,13 @@ public class XmlUtil {
         final StringWriter sw = new StringWriter();
         getXmlSerializer().setOutputCharStream(sw);
         getXmlSerializer().serialize(doc);
+        return sw.toString();
+    }
+
+    public static String elementToString(Element element) throws IOException {
+        final StringWriter sw = new StringWriter();
+        getXmlSerializer().setOutputCharStream(sw);
+        getXmlSerializer().serialize(element);
         return sw.toString();
     }
 }
