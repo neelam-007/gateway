@@ -13,7 +13,25 @@ import java.rmi.RemoteException;
  */
 public interface JmsAdmin extends Remote {
     JmsProvider[] getProviderList() throws RemoteException, FindException;
+
+    /**
+     * Finds all {@link JmsConnection}s in the database.
+     * Returns transient instances that are not enrolled in the Hibernate session.
+     *
+     * @return an array of transient {@link JmsConnection}s
+     * @throws RemoteException
+     * @throws FindException
+     */
     JmsConnection[] findAllConnections() throws RemoteException, FindException;
+
+    /**
+     * Finds the {@link JmsConnection} with the given OID.
+     * Returns a transient instance that are is enrolled in the Hibernate session.
+     *
+     * @return a transient {@link JmsConnection}
+     * @throws RemoteException
+     * @throws FindException
+     */
     JmsConnection findConnectionByPrimaryKey( long oid ) throws RemoteException, FindException;
     JmsEndpoint findEndpointByPrimaryKey( long oid ) throws RemoteException, FindException;
     void setEndpointMessageSource( long oid, boolean isMessageSource ) throws RemoteException, FindException, UpdateException;
@@ -34,9 +52,17 @@ public interface JmsAdmin extends Remote {
      */
     long saveEndpoint( JmsEndpoint endpoint ) throws RemoteException, UpdateException, SaveException, VersionException;
 
-
     void deleteEndpoint( long endpointOid ) throws RemoteException, FindException, DeleteException;
     void deleteConnection( long connectionOid ) throws RemoteException, FindException, DeleteException;
 
+    /**
+     * Returns an array of {@link JmsEndpoint}s that belong to the {@link JmsConnection} with the provided OID.
+     *
+     * Returns transient instances that are not enrolled in the Hibernate session.
+     * @param connectionOid
+     * @return an array of transient {@link JmsEndpoint}s
+     * @throws RemoteException
+     * @throws FindException
+     */
     JmsEndpoint[] getEndpointsForConnection( long connectionOid ) throws RemoteException, FindException;
 }
