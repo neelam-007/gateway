@@ -578,7 +578,7 @@ public class LogPanel extends JPanel {
      *  Clear the message table
      */
     public void clearMsgTable(){
-        getMsgDetails().setText("");
+        getMsgDetails().setText("Loading data...");
         msgTotal.setText(MSG_TOTAL_PREFIX + "0");
     }
 
