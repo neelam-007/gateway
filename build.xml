@@ -436,7 +436,7 @@
         <fileset dir="${build.dir}/lib" includes= "jini-core.jar,jini-ext.jar,reggie-dl.jar,reggie.jar,jh.jar,kunststoff.jar,
                                                    looks-1.1.3.jar,odmg.jar,hibernate2.jar,oswego-concurrent.jar,wsdl4j.jar,qname.jar, xercesImpl.jar,xml-apis.jar,
                                                    axis.jar,commons-httpclient-2.0-rc2.jar,commons-lang.jar,commons-collections.jar, commons-logging.jar, forms_rt.jar,jedit-syntax.jar,
-                                                   jaxen-core.jar,jaxen-dom.jar,saxpath.jar,jaxrpc.jar,saaj.jar, dom4j.jar"/>
+                                                   jaxen-core.jar,jaxen-dom.jar,saxpath.jar,jaxrpc.jar,saaj.jar, dom4j.jar, commons-discovery.jar"/>
       </signjar>
       <signjar jar="${build.dir}/Manager.jar" keystore="${src.root}/etc/ssgKeyStore" alias="signer" storepass="password"/>
 
@@ -447,7 +447,7 @@
         <zipfileset dir="${build.dir}/lib" includes="jini-core.jar,jini-ext.jar,reggie-dl.jar,reggie.jar,jh.jar,kunststoff.jar,
                                                      looks-1.1.3.jar,odmg.jar,hibernate2.jar,oswego-concurrent.jar,wsdl4j.jar,qname.jar, xercesImpl.jar,xml-apis.jar,
                                                      axis.jar,commons-httpclient-2.0-rc2.jar,commons-lang.jar,commons-collections.jar, commons-logging.jar, forms_rt.jar,jedit-syntax.jar,
-                                                     jaxen-core.jar,jaxen-dom.jar,saxpath.jar,jaxrpc.jar,saaj.jar " prefix="ssm/lib"/>
+                                                     jaxen-core.jar,jaxen-dom.jar,saxpath.jar,jaxrpc.jar,saaj.jar, dom4j.jar,commons-discovery.jar" prefix="ssm/lib"/>
         <zipfileset dir="${build.dir}" includes="Manager.jar" prefix="ssm"/>
       </war>
     </target>
