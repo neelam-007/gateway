@@ -7,30 +7,30 @@
     AssertionID="SAML-Assertion-786"
     Issuer="http://www.myEMarketPlace.com"
     IssueInstant="2003-03-11T02:00:00.173Z">
-    <Conditions
+    <saml:Conditions
         NotBefore="2003-03-11T02:00:00.173Z"
         NotOnOrAfter="2003-03-12T02:00:00.173Z"/>
-    <AuthenticationStatement
+    <saml:AuthenticationStatement
         AuthenticationMethod="urn:ietf:rfc:3075"
         AuthenticationInstant="2003-03-11T02:00:00.173Z">
-        <Subject>
-            <NameIdentifier
+        <saml:Subject>
+            <saml:NameIdentifier
                 NameQualifier="http://www.myEMarketPlace.com">
                 MyTourOperator
-            </NameIdentifier>
-            <SubjectConfirmation>
-                <ConfirmationMethod>
+            </saml:NameIdentifier>
+            <saml:SubjectConfirmation>
+                <saml:ConfirmationMethod>
                     urn:oasis:names:tc:SAML:1.0:cm:holder-of-key
-                </ConfirmationMethod>
+                </saml:ConfirmationMethod>
                 <!--
                                 <ds:KeyInfo>
                                     <ds:KeyName>MyTourOperatorKey</ds:KeyName>
                                     <ds:KeyValue> ... </ds:KeyValue>
                                 </ds:KeyInfo>
                 -->
-            </SubjectConfirmation>
-        </Subject>
-    </AuthenticationStatement>
+            </saml:SubjectConfirmation>
+        </saml:Subject>
+    </saml:AuthenticationStatement>
     <!--    <ds:Signature>...</ds:Signature> -->
 </saml:Assertion>
 

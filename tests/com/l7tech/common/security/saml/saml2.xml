@@ -7,33 +7,33 @@
     AssertionID="http://www.myEMarketPlace.com/AuthenticationService/SAMLAssertions/786"
     Issuer="http://www.myEMarketPlace.com"
     IssueInstant="2003-03-11T02:00:00.173Z">
-    <Conditions
+    <saml:Conditions
         NotBefore="2003-03-11T02:00:00.173Z"
         NotOnOrAfter="2003-03-12T02:00:00.173Z"/>
-    <AttributeStatement>
-        <Subject>
-            <NameIdentifier
+    <saml:AttributeStatement>
+        <saml:Subject>
+            <saml:NameIdentifier
                 NameQualifier="http://www.myEMarketPlace.com">
                 MyTourOperator
-            </NameIdentifier>
-            <SubjectConfirmation>
-                <ConfirmationMethod>
+            </saml:NameIdentifier>
+            <saml:SubjectConfirmation>
+                <saml:ConfirmationMethod>
                     urn:oasis:names:tc:SAML:1.0:cm:holder-of-key
-                </ConfirmationMethod>
+                </saml:ConfirmationMethod>
                 <!--
                              <ds:KeyInfo>
                                  <ds:KeyName>MyTourOperatorKey</ds:KeyName>
                                  <ds:KeyValue> ... </ds:KeyValue>
                              </ds:KeyInfo>
                 -->
-            </SubjectConfirmation>
-        </Subject>
+            </saml:SubjectConfirmation>
+        </saml:Subject>
         <Attribute
             AttributeName="PartnershipStatus"
             AttributeNamespace="http://www.myEMarketPlace.com/AttributeService">
             <AttributeValue>MostPreferredBusinessPartner</AttributeValue>
         </Attribute>
-    </AttributeStatement>
+    </saml:AttributeStatement>
     <!--
         <ds:Signature>...</ds:Signature>
     -->
