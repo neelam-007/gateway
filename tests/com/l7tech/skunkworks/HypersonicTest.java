@@ -9,11 +9,14 @@ package com.l7tech.skunkworks;
 import com.l7tech.objectmodel.HibernatePersistenceManager;
 
 import java.util.Properties;
+import java.util.logging.Logger;
 
 /**
  * @author mike
  */
 public class HypersonicTest {
+    public static final Logger logger = Logger.getLogger(HypersonicTest.class.getName());
+
     public static void main(String[] args) throws Exception {
         Properties p = new Properties();
 
@@ -44,6 +47,6 @@ public class HypersonicTest {
 
         HibernatePersistenceManager.initialise(p);
 
-
+        logger.info("Initialization was successful.");
     }
 }
