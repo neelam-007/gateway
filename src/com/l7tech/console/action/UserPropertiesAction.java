@@ -7,6 +7,7 @@ import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.UserNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 
@@ -56,8 +57,9 @@ public class UserPropertiesAction extends NodeAction {
         SwingUtilities.invokeLater(
           new Runnable() {
             public void run() {
-                // fla note. make sure this user is internal. otherwise dont show panel
-                if (!isParentIdProviderInternal((EntityHeaderNode)node)) {
+                IdentityProvider ip = Registry.getDefault().getIdentityProvider((EntityHeaderNode)node);
+                // read only mode not allowed at this point
+                if (ip.isReadOnly()) {
                     JOptionPane.showMessageDialog(null, "This user is read-only.",
                                                         "Read-only",
                                                         JOptionPane.INFORMATION_MESSAGE);
@@ -74,23 +76,5 @@ public class UserPropertiesAction extends NodeAction {
                 dialog.show();
             }
         });
-    }
-
-    private boolean isParentIdProviderInternal(EntityHeaderNode usernode) {
-        TreeNode parentNode = usernode.getParent();
-        while (parentNode != null) {
-            if (parentNode instanceof EntityHeaderNode) {
-                EntityHeader header = ((EntityHeaderNode)parentNode).getEntityHeader();
-                if (header.getType().equals(EntityType.ID_PROVIDER_CONFIG)) {
-                    // we found the parent, see if it's internal one
-                    if (header.getOid() !=
-                      IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID) return false;
-                    return true;
-                }
-            }
-            parentNode = parentNode.getParent();
-        }
-        // assume it is unless proven otherwise
-        return true;
     }
 }
