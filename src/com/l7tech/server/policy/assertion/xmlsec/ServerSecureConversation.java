@@ -46,12 +46,20 @@ public class ServerSecureConversation implements ServerAssertion {
                 WssProcessor.SecurityContextToken secConTok = (WssProcessor.SecurityContextToken)token;
                 String contextId = secConTok.getContextIdentifier();
                 SecureConversationSession session = SecureConversationContextManager.getInstance().getSession(contextId);
+                if (session == null) {
+                    logger.warning("The request referred to a SecureConversation token that is not recognized " +
+                                   "on this server. Perhaps the session has expired. Returning AUTH_FAILED.");
+                    return AssertionStatus.AUTH_FAILED;
+                }
                 User authenticatedUser = session.getUsedBy();
                 request.setAuthenticated(true);
                 request.setUser(authenticatedUser);
+                // todo, add WssDecorator.Requirements so that the response is secured using same session
+                logger.fine("Secure COnversation session recognized for user " + authenticatedUser.getLogin());
                 return AssertionStatus.NONE;
             }
         }
+        logger.info("This request did not seem to refer to a Secure Conversation token.");
         return AssertionStatus.AUTH_REQUIRED;
     }
 
