@@ -80,6 +80,7 @@ public class ClientWssBasic extends ClientWssCredentialSource {
         secElement = (Element)soapmsg.importNode(secElement, true);
         headerel.appendChild(secElement);
 
+        request.setSoapEnvelope(soapmsg);
         return AssertionStatus.NONE;
     }
 
