@@ -246,7 +246,9 @@ public class ClusterStatusWindow extends JFrame {
                                                              int row, int column) {
                   super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                   this.setHorizontalAlignment(SwingConstants.TRAILING);
-
+                  if(value instanceof Long) {
+                      this.setText(convertUptimeToString(((Long) value).longValue()));
+                  }
 
                   return this;
               }
@@ -409,19 +411,49 @@ public class ClusterStatusWindow extends JFrame {
         th.addMouseListener(listMouseListener);
     }
 
+    String convertUptimeToString(long uptime){
+
+        System.out.println("Current time is : " + System.currentTimeMillis());
+        long uptime_ms = System.currentTimeMillis()/1000 - uptime;
+
+        long serverUpTimeMinutues = uptime_ms/60;
+        long minutes_remain = serverUpTimeMinutues%60;
+        long hrs_total = serverUpTimeMinutues/60;
+        long hrs_remain = hrs_total%24;
+        long days = hrs_total/24;
+        String uptimeString = "";
+
+
+        // show days only if days > 0
+        if (days > 0) {
+            uptimeString += Long.toString(days) + " days ";
+        }
+
+        // show hrs only if hrs_remain > 0
+        if (hrs_remain > 0 || (days > 0 && hrs_remain == 0)) {
+            uptimeString += Long.toString(hrs_remain) + " hrs ";
+        }
+
+        uptimeString += Long.toString(minutes_remain) + " mins ";
+
+//        serverUpTime.setText(END_SPACE + SERVER_UP_TIME_PREFIX + uptimeString);
+ //       lastMinuteServerLoad.setText(LAST_MINUTE_SERVER_LOAD_PREFIX + Double.toString(metrics.getLoad1()) + END_SPACE);
+
+        return uptimeString;
+    }
 
     Vector getClusterStatusDummyData(){
 
      Vector dummyData = new Vector();
 
-        GatewayStatus node1 = new GatewayStatus(1, "SSG1", 20, 5, 1.5, "1 days 2 hrs 16 mins", "192.128.1.100");
-        GatewayStatus node2 = new GatewayStatus(1, "SSG2", 23, 10, 1.8, "2 days 10 hrs 3 mins", "192.128.1.101");
-        GatewayStatus node3 = new GatewayStatus(0, "SSG3", 0, 0, 0, "0", "192.128.1.102");
-        GatewayStatus node4 = new GatewayStatus(1, "SSG4", 17, 3, 1.1, "2 hrs 10 mins", "192.128.2.10");
-        GatewayStatus node5 = new GatewayStatus(1, "SSG5", 18, 8, 2.1, "6 days 8 hrs 55 mins", "192.128.2.11");
-        GatewayStatus node6 = new GatewayStatus(1, "SSG6", 22, 5, 0.8, "7 hrs 23 mins", "192.128.3.1");
-        GatewayStatus node7 = new GatewayStatus(0, "SSG7", 0, 0, 0, "0", "192.128.3.2");
-        GatewayStatus node8 = new GatewayStatus(0, "SSG8", 0, 0, 0, "0", "192.128.3.3");
+        GatewayStatus node1 = new GatewayStatus(1, "SSG1", 20, 5, 1.5,  1072746384, "192.128.1.100");
+        GatewayStatus node2 = new GatewayStatus(1, "SSG2", 23, 10, 1.8, 1072656394, "192.128.1.101");
+        GatewayStatus node3 = new GatewayStatus(0, "SSG3", 0, 0, 0,     1072746404, "192.128.1.102");
+        GatewayStatus node4 = new GatewayStatus(1, "SSG4", 17, 3, 1.1,  1072776414, "192.128.2.10");
+        GatewayStatus node5 = new GatewayStatus(1, "SSG5", 18, 8, 2.1,  1072746484, "192.128.2.11");
+        GatewayStatus node6 = new GatewayStatus(1, "SSG6", 22, 5, 0.8,  1072736464, "192.128.3.1");
+        GatewayStatus node7 = new GatewayStatus(0, "SSG7", 0, 0, 0,     1072808010, "192.128.3.2");
+        GatewayStatus node8 = new GatewayStatus(0, "SSG8", 0, 0, 0,     1072808325, "192.128.3.3");
 
         dummyData.add(node1);
         dummyData.add(node2);

@@ -80,7 +80,7 @@ public class ClusterStatusTableSorter extends FilteredDefaultTableModel {
             case 4:
                 return new Double(((GatewayStatus) sortedData[row]).getLoadAvg());
             case 5:
-                return ((GatewayStatus) sortedData[row]).getUptime();
+                return new Long(((GatewayStatus) sortedData[row]).getUptime());
             case 6:
                 return ((GatewayStatus) sortedData[row]).getIpAddress();
             default:
@@ -124,8 +124,8 @@ public class ClusterStatusTableSorter extends FilteredDefaultTableModel {
                     elementB = new Double(((GatewayStatus) b).getLoadAvg());
                     break;
                 case 5:
-                    elementA = ((GatewayStatus) a).getUptime();
-                    elementB = ((GatewayStatus) b).getUptime();
+                    elementA = new Long(((GatewayStatus) a).getUptime());
+                    elementB = new Long(((GatewayStatus) b).getUptime());
                     break;
                  case 6:
                     elementA = ((GatewayStatus) a).getIpAddress();

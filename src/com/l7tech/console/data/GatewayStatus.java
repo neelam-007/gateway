@@ -10,7 +10,7 @@ package com.l7tech.console.data;
 
 public class GatewayStatus {
 
-    public GatewayStatus(int status, String name, int loadSharing, int requestFailure, double loadAvg, String uptime, String ipAddress) {
+    public GatewayStatus(int status, String name, int loadSharing, int requestFailure, double loadAvg, long uptime, String ipAddress) {
         this.name = name;
         this.status = status;
         this.loadSharing = loadSharing;
@@ -58,7 +58,7 @@ public class GatewayStatus {
    /**
      * timestamp of when the node last booted
      */
-    public String getUptime() {
+    public long getUptime() {
         return uptime;
     }
 
@@ -74,6 +74,6 @@ public class GatewayStatus {
     private final int loadSharing;
     private final int requestFailure;
     private final double loadAvg;
-    private final String uptime;
+    private final long uptime;
     private final String ipAddress;
 }
