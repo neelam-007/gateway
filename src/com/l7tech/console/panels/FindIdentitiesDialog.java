@@ -68,7 +68,8 @@ public class FindIdentitiesDialog extends JDialog {
     /**
      * name search options
      */
-    private static final String[] NAME_SEARCH_OPTIONS = {"Equals", "Starts with"};
+    private static final String NAME_SEARCH_OPTION_EQUALS = "Equals";
+    private static final String NAME_SEARCH_OPTION_STARTS = "Starts with";
 
 
     private JPanel mainPanel = null;
@@ -435,7 +436,7 @@ public class FindIdentitiesDialog extends JDialog {
         constraints.insets = new Insets(12, 12, 5, 0);
         contents.add(findLabel, constraints);
 
-        searchNameOptions = new JComboBox(NAME_SEARCH_OPTIONS);
+        searchNameOptions = new JComboBox(new String[] {NAME_SEARCH_OPTION_EQUALS, NAME_SEARCH_OPTION_STARTS});
         constraints = new GridBagConstraints();
         constraints.gridx = 1;
         constraints.gridy = 3;
@@ -557,7 +558,7 @@ public class FindIdentitiesDialog extends JDialog {
     private boolean collectFormData() {
         String name = nameField.getText();
         String option = (String)searchNameOptions.getSelectedItem();
-        searchInfo.setSearchName(name, "equals".equals(option));
+        searchInfo.setSearchName(name, NAME_SEARCH_OPTION_EQUALS.equals(option));
         String key = (String)searchType.getSelectedItem();
         searchInfo.setSearchType((SearchType)oTypes.get(key));
         searchInfo.setProviderConfig((IdentityProviderConfig)providersComboBox.getSelectedItem());
