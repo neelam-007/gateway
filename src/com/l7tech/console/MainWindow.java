@@ -74,7 +74,6 @@ public class MainWindow extends JFrame {
     private JMenuItem menuItemPref = null;
     private JCheckBoxMenuItem logMenuItem = null;
     private JCheckBoxMenuItem statMenuItem = null;
-//    private JCheckBoxMenuItem gatewayClusterItem = null;
     private JMenuItem helpTopicsMenuItem = null;
 
     private Action refreshAction = null;
@@ -87,7 +86,6 @@ public class MainWindow extends JFrame {
     private Action togglePolicyMessageArea = null;
     private Action publishServiceAction = null;
     private Action createServiceAction = null;
-//    private Action toggleGatewayClusterWindowAction = null;
     private Action toggleGatewayLogWindowAction = null;
     private Action toggleClusterStatusWindowAction = null;
     private JPanel frameContentPane = null;
@@ -1104,14 +1102,14 @@ public class MainWindow extends JFrame {
               ConnectionListener listener = new ConnectionListener() {
                   public void onConnect(ConnectionEvent e) {
                       setEnabled(true);
-                      if (getLogMenuItem().isSelected()) {
+                      if (getStatMenuItem().isSelected()) {
                           getClusterStatusWindow().onConnect();
                       }
                   }
 
                   public void onDisconnect(ConnectionEvent e) {
                       setEnabled(false);
-                      if (getLogMenuItem().isSelected()) {
+                      if (getStatMenuItem().isSelected()) {
                           getClusterStatusWindow().onDisconnect();
                       }
                   }
