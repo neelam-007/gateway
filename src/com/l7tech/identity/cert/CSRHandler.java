@@ -3,6 +3,7 @@ package com.l7tech.identity.cert;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.User;
 import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.internal.InternalUserManagerServer;
 import com.l7tech.logging.LogManager;
 import com.l7tech.util.Locator;
 import com.l7tech.objectmodel.PersistenceContext;
@@ -77,8 +78,17 @@ public class CSRHandler extends HttpServlet {
         }
         LogManager.getInstance().getSystemLogger().log(Level.INFO, "User " + authenticatedUser.getLogin() + " has authenticated for CSR");
 
-        // todo, check if user is allowed to generate a new cert
-        // ClientCertManager.userCanGenCert ...
+        // check if user is allowed to generate a new cert
+        InternalUserManagerServer userMan = (InternalUserManagerServer)getConfigManager().getInternalIdentityProvider().getUserManager();
+        try {
+            if (!userMan.userCanResetCert(Long.toString(authenticatedUser.getOid()))) {
+                // todo
+            }
+        } catch (FindException e) {
+            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, e.getMessage(), e);
+            return;
+        }
 
         byte[] csr = readCSRFromRequest(request);
         Certificate cert = null;
