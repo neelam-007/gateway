@@ -116,9 +116,9 @@ CREATE TABLE published_service (
   objectid bigint NOT NULL primary key default '0',
   version int NOT NULL default '0',
   name varchar(255) NOT NULL default '',
-  policy_xml text,
+  policy_xml text NOT NULL default '',
   wsdl_url varchar(255) NOT NULL default '',
-  wsdl_xml text,
+  wsdl_xml text NOT NULL default '',
   disabled boolean NOT NULL default 'f'
 );
 
