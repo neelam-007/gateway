@@ -100,16 +100,17 @@ public class PolicyManagerImpl implements PolicyManager {
 
                 client.getState().setAuthenticationPreemptive(true);
 
-                String username = ssg.getUsername();
-                char[] password = ssg.password();
                 int attempts = 0;
                 for (;;) {
+                    String username = ssg.getUsername();
+                    char[] password = ssg.password();
                     client.getState().setCredentials(null, null, new UsernamePasswordCredentials(username, new String(password)));
                     getMethod = new GetMethod(newUrl);
                     getMethod.setDoAuthentication(true);
                     try {
                         status = client.executeMethod(getMethod);
-                        if (status == 401 && ++attempts < 3) {
+                        if (status == 401 && ++attempts < 10) {
+                            log.info("Got 401 status downloading policy; will get new credentials and try download again");
                             Managers.getCredentialManager().notifyInvalidCredentials(ssg);
                             Managers.getCredentialManager().getCredentials(ssg);
                             continue;
