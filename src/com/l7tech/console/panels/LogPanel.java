@@ -36,6 +36,8 @@ public class LogPanel extends JPanel {
     public static final int MSG_FILTER_LEVEL_SEVERE = 1;
     public static final int MSG_FILTER_LEVEL_NONE = 0;
 
+    public static final String MSG_TOTAL_PREFIX = "Total: ";
+
     private final static int TWO_SECONDS = 2000;
     private javax.swing.Timer logsRefreshTimer = null;
 
@@ -58,6 +60,7 @@ public class LogPanel extends JPanel {
     private JCheckBox details = null;
     private DefaultTableModel logTableModel = null;
     private FilteredLogTableModel logTableModelFilter = null;
+    private JLabel msgTotal = new JLabel(MSG_TOTAL_PREFIX + "0");
 
     /**
      * Constructor
@@ -149,6 +152,7 @@ public class LogPanel extends JPanel {
     public void showData(){
         getLogsRefreshTimer().stop();
         ((FilteredLogTableModel)getMsgTable().getModel()).getLogs(msgFilterLevel);
+        updateMsgTotal();
         setVisible(true);
         getLogsRefreshTimer().start();
     }
@@ -275,6 +279,7 @@ public class LogPanel extends JPanel {
             }
         });
         controlPane.add(details);
+        controlPane.add(msgTotal);
 /*
         JButton Refresh = new JButton();
         Refresh.setFont(new java.awt.Font("Dialog", 0, 11));
@@ -495,6 +500,9 @@ public class LogPanel extends JPanel {
                 getMsgDetails().setText("");
             }
         }
+
+        updateMsgTotal();
+
         // find the new index of the message selected
         getLogsRefreshTimer().start();
     }
@@ -517,16 +525,16 @@ public class LogPanel extends JPanel {
 
     private void updateMsgFilterLevel(int newFilterLevel) {
 
-        if(msgFilterLevel != newFilterLevel){
+        if (msgFilterLevel != newFilterLevel) {
 
-             msgFilterLevel = newFilterLevel;
+            msgFilterLevel = newFilterLevel;
 
-             ((FilteredLogTableModel)getMsgTable().getModel()).applyNewMsgFilter(newFilterLevel);
+            ((FilteredLogTableModel) getMsgTable().getModel()).applyNewMsgFilter(newFilterLevel);
 
-             getMsgDetails().setText("");
+            getMsgDetails().setText("");
 
+            updateMsgTotal();
         }
-
     }
 
     public void clearMsgTable(){
@@ -546,6 +554,10 @@ public class LogPanel extends JPanel {
         });
 
         return logsRefreshTimer;
+    }
+
+    private void updateMsgTotal(){
+         msgTotal.setText(MSG_TOTAL_PREFIX + msgTable.getRowCount());
     }
 
 }
