@@ -200,37 +200,56 @@ public class SamlAssertionValidate {
      * @param validationResults
      */
     private void validateConditions(AssertionType assertionType, Collection validationResults) throws IOException {
+        ConditionsType conditionsType = assertionType.getConditions();
         if (!requestWssSaml.isCheckAssertionValidity()) {
             logger.finer("No Assertion Validity requested");
+        }  else {
+            if (conditionsType == null) {
+                logger.finer("Can't validate conditions, no Conditions have been presented");
+                StringWriter sw = new StringWriter();
+                assertionType.save(sw);
+                validationResults.add(new Error("Can't validate conditions, no Conditions have been presented", sw.toString(), null, null));
+                return;
+            }
+            Calendar notBefore = conditionsType.getNotBefore();
+            Calendar notOnOrAfter = conditionsType.getNotOnOrAfter();
+            if (notBefore == null || notOnOrAfter == null) {
+                   logger.finer("No Validity Period conditions have been presented, cannot validate Conditions");
+                   StringWriter sw = new StringWriter();
+                   assertionType.save(sw);
+                   validationResults.add(new Error("No Validity Period conditions have been presented, cannot validate Conditions", sw.toString(), null, null));
+                   return;
+               }
+
+            Calendar now = Calendar.getInstance(UTC_TIME_ZONE);
+            now.clear(Calendar.MILLISECOND); //clear millis xsd:dateTime does not have it
+            if (now.before(notBefore)) {
+                logger.finer("Condition 'Not Before' check failed, now :" + now.toString() + " Not Before:" + notBefore.toString());
+                validationResults.add(new Error("Condition 'Not Before' check failed",
+                    conditionsType.toString(), new Object[]{notBefore.toString(), now.toString()}, null));
+            }
+
+            if (now.equals(notOnOrAfter) || now.after(notOnOrAfter)) {
+                logger.finer("Condition 'Not On Or After' check failed, now :" + now.toString() + " Not Before:" + notOnOrAfter.toString());
+                validationResults.add(new Error("Condition 'Not On Or After' check failed",
+                    conditionsType.toString(), new Object[]{notOnOrAfter.toString(), now.toString()}, null));
+            }
+        }
+
+        final String audienceRestriction = requestWssSaml.getAudienceRestriction();
+        if (audienceRestriction == null || "".equals(audienceRestriction)) {
+            logger.finer("No audience restriction requested");
             return;
         }
-        ConditionsType conditionsType = assertionType.getConditions();
+
         if (conditionsType == null) {
-            logger.finer("Can't validate conditions, no Conditions have been found");
+            logger.finer("Can't validate audience restrictions, no Conditions have been presented");
             StringWriter sw = new StringWriter();
             assertionType.save(sw);
             validationResults.add(new Error("Can't validate conditions, no Conditions have been found", sw.toString(), null, null));
             return;
         }
-        Calendar notBefore = conditionsType.getNotBefore();
-        Calendar notOnOrAfter = conditionsType.getNotOnOrAfter();
-        Calendar now = Calendar.getInstance(UTC_TIME_ZONE);
-        now.clear(Calendar.MILLISECOND); //clear millis xsd:dateTime does not have it
-        if (!now.before(notBefore)) {
-            logger.finer("Condition 'Not Before' check failed, now :" + now.toString() + " Not Before:" + notBefore.toString());
-            validationResults.add(new Error("Condition 'Not Before' check failed",
-                conditionsType.toString(), new Object[]{notBefore.toString(), now.toString()}, null));
-        }
 
-        if (now.equals(notOnOrAfter) || !now.after(notOnOrAfter)) {
-            logger.finer("Condition 'Not On Or After' check failed, now :" + now.toString() + " Not Before:" + notOnOrAfter.toString());
-            validationResults.add(new Error("Condition 'Not On Or After' check failed",
-                conditionsType.toString(), new Object[]{notOnOrAfter.toString(), now.toString()}, null));
-        }
-        final String audienceRestriction = requestWssSaml.getAudienceRestriction();
-        if (audienceRestriction == null) {
-            logger.finer("No audience restriction requested");
-        }
         AudienceRestrictionConditionType[] audienceRestrictionArray = conditionsType.getAudienceRestrictionConditionArray();
         boolean audienceRestrictionMatch = false;
         for (int i = 0; i < audienceRestrictionArray.length; i++) {
