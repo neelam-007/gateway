@@ -52,6 +52,9 @@ public interface AuditAdmin extends GenericLogAdmin {
     /**
      * Delete all sub-SEVERE AuditRecords that are more than 168 hours old (by default), while producing a new audit
      * record at {@link Level#SEVERE} documenting that this action has been performed (and by which administrator).
+     *
+     * {@link Level#SEVERE} AuditRecords can never be deleted.
+     *
      * @throws RemoteException if there was a problem communicating with the Gateway
      */
     void deleteOldAuditRecords() throws RemoteException;
