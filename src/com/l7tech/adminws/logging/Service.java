@@ -28,14 +28,15 @@ public class Service implements Log {
     // ************************************************
     private String[] logRecordsToStrings(LogRecord[] logs) {
         String[] output = new String[logs.length];
+        String delimiter = "|";
         SimpleDateFormat sdf = new SimpleDateFormat( "yyyyMMdd HH:mm:ss.SSS" );
         Calendar cal = Calendar.getInstance();
         for (int i = 0; i < logs.length; i++) {
             cal.setTimeInMillis( logs[i].getMillis() );
-            output[i] = sdf.format( cal.getTime() ) + " - " +
-                        logs[i].getLevel().toString() +  " - " +
-                        logs[i].getSourceClassName() +  " - " +
-                        logs[i].getSourceMethodName() +  " - " +
+            output[i] = sdf.format( cal.getTime() ) + delimiter +
+                        logs[i].getLevel().toString() + delimiter +
+                        logs[i].getSourceClassName() + delimiter +
+                        logs[i].getSourceMethodName() + delimiter +
                         logs[i].getMessage();
             if (logs[i].getThrown() != null)
                         output[i] += " Exception: " + logs[i].getThrown().getClass().getName() + " " + logs[i].getThrown().getMessage();
