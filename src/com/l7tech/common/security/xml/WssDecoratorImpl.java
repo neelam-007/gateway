@@ -155,9 +155,9 @@ public class WssDecoratorImpl implements WssDecorator {
         if (elementsToSign == null || elementsToSign.length < 1) return null;
 
         // make sure all elements already have an id
-        String[] sigedIds = new String[elementsToSign.length];
+        String[] singedIds = new String[elementsToSign.length];
         for (int i = 0; i < elementsToSign.length; i++) {
-            sigedIds[i] = getOrCreateWsuId(c, elementsToSign[i], null);
+            singedIds[i] = getOrCreateWsuId(c, elementsToSign[i], null);
         }
 
         String signaturemethod = null;
@@ -175,8 +175,10 @@ public class WssDecoratorImpl implements WssDecorator {
                                                            XSignature.SHA1, Canonicalizer.EXCLUSIVE, signaturemethod);
         template.setPrefix("ds");
         for (int i = 0; i < elementsToSign.length; i++) {
-            Reference ref = template.createReference("#" + sigedIds[i]);
+            Reference ref = template.createReference("#" + singedIds[i]);
             if (isWrappingOrSame(elementsToSign[i], securityHeader)) {
+                logger.info("Per policy request, breaking Basic Security Profile rules with enveloped signature" +
+                            " of element with Id=\"" + singedIds[i] + "\"");
                 ref.addTransform(Transform.ENVELOPED);
             }
             ref.addTransform(Transform.C14N_EXCLUSIVE);
