@@ -8,6 +8,7 @@ package com.l7tech.server.transport.jms;
 
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
+import com.l7tech.common.transport.jms.JmsProvider;
 import com.l7tech.objectmodel.*;
 
 import java.sql.SQLException;
@@ -21,6 +22,36 @@ import java.util.*;
  * @version $Revision$
  */
 public class JmsManager extends HibernateEntityManager {
+    private List _allProviders = null;
+
+    public Collection findAllProviders() throws FindException {
+        // TODO make this real
+        if ( _allProviders == null ) {
+            JmsProvider mqseries = new JmsProvider( "IBM MQSeries", "com.ibm.SomethingOrOther", "QueueConnectionFactory" );
+            List list = new ArrayList();
+            list.add( mqseries );
+            _allProviders = list;
+        }
+        return _allProviders;
+    }
+
+    public JmsConnection findConnectionByPrimaryKey( long oid ) throws FindException {
+        try {
+            return (JmsConnection)PersistenceManager.findByPrimaryKey( getContext(), JmsConnection.class, oid );
+        } catch ( SQLException e ) {
+            throw new FindException( e.toString(), e );
+        }
+    }
+
+    public JmsEndpoint findEndpointByPrimaryKey( long oid ) throws FindException {
+        try {
+            return (JmsEndpoint)PersistenceManager.findByPrimaryKey( getContext(), JmsEndpoint.class, oid );
+        } catch ( SQLException e ) {
+            throw new FindException( e.toString(), e );
+        }
+    }
+
+
     public Collection findMessageSourceEndpoints() throws FindException {
         StringBuffer query = new StringBuffer( "from endpoints in class " );
         query.append( JmsEndpoint.class.getName() );

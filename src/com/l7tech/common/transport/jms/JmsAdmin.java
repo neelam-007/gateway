@@ -12,7 +12,7 @@ import java.rmi.RemoteException;
  * @version $Revision$
  */
 public interface JmsAdmin extends Remote {
-    JmsProvider[] getProviderList() throws RemoteException;
+    JmsProvider[] getProviderList() throws RemoteException, FindException;
     EntityHeader[] findAllConnections() throws RemoteException, FindException;
     JmsConnection findConnectionByPrimaryKey( long oid ) throws RemoteException, FindException;
 
@@ -27,9 +27,9 @@ public interface JmsAdmin extends Remote {
      * Replace the list of JMS endpoints that are monitored for incoming messages for processing by the SSG.
      * @throws RemoteException      in case of network trouble
      * @throws FindException        if any of the specified OIDs were not valid JmsEndpoints
-     * @throws SaveException        if the changes could not be saved for some other reason 
+     * @throws UpdateException        if the changes could not be saved for some other reason
      */
-    void saveAllMonitoredEndpoints( long[] oids ) throws RemoteException, FindException, SaveException;
+    void saveAllMonitoredEndpoints( long[] oids ) throws RemoteException, FindException, UpdateException;
 
     /**
      * Save the specified JmsConnection, which may or may not have been newly created by the caller, to the database.

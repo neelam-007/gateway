@@ -10,6 +10,7 @@ import com.l7tech.common.gui.widgets.OptionalCredentialsPanel;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsProvider;
 import com.l7tech.console.util.Registry;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -222,7 +223,7 @@ public class NewJmsConnectionDialog extends JDialog {
                     }
                 });
 
-            } catch (RemoteException e) {
+            } catch (Exception e) {
                 throw new RuntimeException("Unable to obtain list of installed JMS providers from Gateway", e);
             }
         }
