@@ -75,13 +75,13 @@ public class Wsdl {
      *                        an XML document obeying the WSDL schema.
      *                        <p/>
      *                        <p>The example reads the WSDL definition from StringReader: <pre>
-     *                                                                                             // Retrieve the WSDL definition from the string representing
-     *                                                                                             // the wsdl and iterate over the services.
-     *                                                                                             <p/>
-     *                                                                                             Wsdl wsdl = Wsdl.newInstance(null, new StringReader(wsdlString));
-     *                                                                                             Iterator services = wsdl.getServices().iterator();
-     *                                                                                             ...
-     *                                                                                             </pre>
+     *                                                                                                                    // Retrieve the WSDL definition from the string representing
+     *                                                                                                                    // the wsdl and iterate over the services.
+     *                                                                                                                    <p/>
+     *                                                                                                                    Wsdl wsdl = Wsdl.newInstance(null, new StringReader(wsdlString));
+     *                                                                                                                    Iterator services = wsdl.getServices().iterator();
+     *                                                                                                                    ...
+     *                                                                                                                    </pre>
      * @throws javax.wsdl.WSDLException throw on error parsing the WSDL definition
      */
     public static Wsdl newInstance(String documentBaseURI, Reader reader)
@@ -288,18 +288,17 @@ public class Wsdl {
      *               <p>The example reads the WSDL definition from StringReader
      *               and then writes it ti the StringWriter:
      *               <p/>
-     *               <pre>
-     *                                                         // Retrieve the WSDL definition from the string representing
-     *                                                         // the wsdl and iterate over the services.
-     *                                                         <p/>
-     *                                                         Wsdl wsdl = Wsdl.newInstance(null, new StringReader(wsdlString));
-     *                                                         Iterator services = wsdl.getServices().iterator();
-     *                                                         ...
-     *                                                         StringWriter sw = new StringWriter();
-     *                                                         wsdl.toWriter(sw);
-     *                                                         System.out.println(sw.toString()):
-     *                                                         ...
-     *                                                         </pre>
+     *               <code>
+     *               // Retrieve the WSDL definition from the string representing
+     *               // the wsdl and iterate over the services.
+     *               Wsdl wsdl = Wsdl.newInstance(null, new StringReader(wsdlString));
+     *               Iterator services = wsdl.getServices().iterator();
+     *               ...
+     *               StringWriter sw = new StringWriter();
+     *               wsdl.toWriter(sw);
+     *               System.out.println(sw.toString()):
+     *               ...
+     *               </code>
      * @throws javax.wsdl.WSDLException throw on error parsing the WSDL definition
      */
     public void toWriter(Writer writer) throws WSDLException {
@@ -316,17 +315,16 @@ public class Wsdl {
      *           <p>The example reads the WSDL definition from StringReader
      *           and then writes it ti the file:
      *           <p/>
-     *           <pre>
-     *                                         // Retrieve the WSDL definition from the string representing
-     *                                         // the wsdl and iterate over the services.
-     *                                         <p/>
-     *                                         Wsdl wsdl = Wsdl.newInstance(null, new StringReader(wsdlString));
-     *                                         Iterator services = wsdl.getServices().iterator();
-     *                                         ...
-     *                                         FileOutputStream fos = new FileOutputStream("./service.wsdl");
-     *                                         wsdl.toOutputStream(fos);
-     *                                         ...
-     *                                         </pre>
+     *           <code>
+     *           // Retrieve the WSDL definition from the string representing
+     *           // the wsdl and iterate over the services.
+     *           Wsdl wsdl = Wsdl.newInstance(null, new StringReader(wsdlString));
+     *           Iterator services = wsdl.getServices().iterator();
+     *           ...
+     *           FileOutputStream fos = new FileOutputStream("./service.wsdl");
+     *           wsdl.toOutputStream(fos);
+     *           ...
+     *           </code>
      * @throws javax.wsdl.WSDLException throw on error parsing the WSDL definition
      */
     public void toOutputStream(OutputStream os) throws WSDLException {
@@ -478,7 +476,7 @@ public class Wsdl {
         for (Iterator i = uris.keySet().iterator(); i.hasNext();) {
             String uri = (String)i.next();
             String prefix = definition.getPrefix(uri);
-            if ( prefix == null ) prefix = (String)namespaceMap.get(uri);
+            if (prefix == null) prefix = (String)namespaceMap.get(uri);
 
             if (soapUris.contains(uri)) {
                 result.put(prefix, uri);
