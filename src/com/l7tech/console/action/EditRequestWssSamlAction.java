@@ -12,10 +12,7 @@ import com.l7tech.console.panels.saml.RequestWssSamlPropertiesPanel;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
-import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
-import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 
 import javax.swing.*;
 import java.util.logging.Level;
@@ -38,7 +35,7 @@ public class EditRequestWssSamlAction extends NodeAction {
     }
 
     public String getName() {
-        return "View/Edit SAML Assertiont";
+        return "View/Edit SAML Assertion";
     }
 
     public String getDescription() {
@@ -46,7 +43,7 @@ public class EditRequestWssSamlAction extends NodeAction {
     }
 
     protected String iconResource() {
-        return "com/l7tech/console/resources/xmlsignature.gif";
+        return "com/l7tech/console/resources/Edit16.gif";
     }
 
     protected void performAction() {
