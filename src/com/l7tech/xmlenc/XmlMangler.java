@@ -75,28 +75,6 @@ public class XmlMangler {
         }
     }
 
-    private static class AesKey implements SecretKey {
-        private byte[] bytes;
-
-        public AesKey(byte[] bytes) {
-            if (bytes.length != 16 && bytes.length != 24 && bytes.length != 32)
-                throw new IllegalArgumentException("Byte array is wrong length for AES128, AES192 or AES256");
-            this.bytes = bytes;
-        }
-
-        public String getAlgorithm() {
-            return "AES";
-        }
-
-        public String getFormat() {
-            return "RAW";
-        }
-
-        public byte[] getEncoded() {
-            return bytes;
-        }
-    }
-
     /**
      * In-place encrypt of the specified SOAP document's body element.  The body element will be encrypted with AES256
      * using the specified AES256 key, which will be tagged with the specified KeyName.
