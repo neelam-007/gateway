@@ -125,7 +125,7 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
     private boolean cRLNumberCritical;
 
     /**
-     *  Constructor for the RSASigner object sets all fields to their most common usage using
+     *  Constructor for the RsaCertificateSigner object sets all fields to their most common usage using
      * the passed keystore parameters to retreive the private key,
      */
     public BouncyCastleRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass) {

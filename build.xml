@@ -917,7 +917,7 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         <!-- Sign it! -->
         <echo>Signing SSL certificate...</echo>
         <delete file="${install.src.ssl.cer}"/>
-        <java classname="com.l7tech.identity.cert.RSASigner" classpathref="classpath">
+        <java classname="com.l7tech.identity.cert.RsaCertificateSigner" classpathref="classpath">
             <arg line="${install.src.ca.keystore}"/>
             <arg line="${install.pass.ca.keystore}"/>
             <arg line="${install.alias.ca.keystore}"/>

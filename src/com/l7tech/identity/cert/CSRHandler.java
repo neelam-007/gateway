@@ -204,14 +204,14 @@ public class CSRHandler extends AuthenticatableHttpServlet {
     }
 
     private Certificate sign(byte[] csr) throws Exception {
-        RSASigner signer = getSigner();
-        // todo, refactor RSASigner to throw more precise exceptions
+        RsaCertificateSigner signer = getSigner();
+        // todo, refactor RsaCertificateSigner to throw more precise exceptions
         Certificate cert = signer.createCertificate(csr);
         return cert;
     }
 
-    private RSASigner getSigner() {
-        return new RSASigner(rootkstore, rootkstorepasswd, "ssgroot", rootkstorepasswd);
+    private RsaCertificateSigner getSigner() {
+        return new RsaCertificateSigner(rootkstore, rootkstorepasswd, "ssgroot", rootkstorepasswd);
     }
 
     private boolean keystorePresent() {

@@ -18,26 +18,26 @@ import java.security.cert.Certificate;
  * User: flascelles<br/>
  * Date: Jul 28, 2003
  */
-public class RSASigner {
+public class RsaCertificateSigner {
     private RsaSignerEngine rsaSignerEngine;
 
     /**
-     * Constructor for the RSASigner object sets all fields to their most common usage using
+     * Constructor for the RsaCertificateSigner object sets all fields to their most common usage using
      * the passed keystore parameters to retreive the private key,
      */
-    public RSASigner(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass) {
+    public RsaCertificateSigner(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass) {
         rsaSignerEngine = JceProvider.createRsaSignerEngine(keyStorePath, storePass, privateKeyAlias, privateKeyPass);
     }
 
     /**
      * handles csr contained in a file. can be called from console when signing the ssl public key for ssg if the
      * root kstore is present.
-     * Usage : java RSASigner rootkstorePath rootkstorepass rootkeyAlias rootprivateKeyPass csrfilepath outputcertpath
+     * Usage : java RsaCertificateSigner rootkstorePath rootkstorepass rootkeyAlias rootprivateKeyPass csrfilepath outputcertpath
      */
     public static void main(String[] args) throws Exception {
         if (args == null || args.length < 6) {
             System.out.println("USAGE:");
-            System.out.println("java RSASigner rootkstorePath rootkstorepass rootkeyAlias rootprivateKeyPass csrfilepath outputcertpath");
+            System.out.println("java RsaCertificateSigner rootkstorePath rootkstorepass rootkeyAlias rootprivateKeyPass csrfilepath outputcertpath");
             return;
         }
         // read the csr from the file
@@ -53,7 +53,7 @@ public class RSASigner {
         csrfromfile = HexUtils.decodeBase64(b64str);
 
         // instantiate the signer
-        RSASigner me = new RSASigner(args[0], args[1], args[2], args[3]);
+        RsaCertificateSigner me = new RsaCertificateSigner(args[0], args[1], args[2], args[3]);
         Certificate cert = me.createCertificate(csrfromfile);
 
         // serialize the cert to the path provided
