@@ -8,7 +8,12 @@ package com.l7tech.console.panels;
 
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertionBase;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.XmlSecurityRecipientContext;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.WizardListener;
@@ -19,7 +24,14 @@ import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.ItemEvent;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateEncodingException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.io.IOException;
 
 /**
  * Corresponding GUI for the {@link com.l7tech.console.action.EditXmlSecurityRecipientContextAction} action.
@@ -41,6 +53,10 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
     private JPanel detailsPanel;
 
     private XmlSecurityAssertionBase assertion;
+    // key string (actor), value X509Certificate (recipient)
+    private HashMap xmlSecRecipientsFromOtherAssertions = new HashMap();
+    private String locallyDefinedActor;
+    private X509Certificate locallyDefinedRecipient;
 
 
     public XmlSecurityRecipientContextEditor(Frame owner, XmlSecurityAssertionBase assertion) {
@@ -87,7 +103,23 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
             }
         });
 
-        // todo, actorComboBox
+        actorComboBox.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
+                if (e.getStateChange() == ItemEvent.SELECTED) {
+                    String selecteditem = (String)e.getItem();
+                    X509Certificate selectedcert =
+                            (X509Certificate)xmlSecRecipientsFromOtherAssertions.get(selecteditem);
+                    if (selectedcert == null) {
+                        if (selecteditem != locallyDefinedActor) {
+                            throw new RuntimeException("actor selected seems to have no matching cert");
+                        } else {
+                            selectedcert = locallyDefinedRecipient;
+                        }
+                    }
+                    certSubject.setText(selectedcert.getSubjectDN().getName());
+                }
+            }
+        });
 
         assignCertButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -103,33 +135,101 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
                 w.addWizardListener(new WizardListener() {
                     public void wizardSelectionChanged(WizardEvent e) {}
                     public void wizardFinished(WizardEvent e) {
-                        // todo, make sure this data does not already exist
-                        X509Certificate cert = panel2.getCert();
-                        certSubject.setText(cert.getSubjectDN().getName());
-                        ((DefaultComboBoxModel)actorComboBox.getModel()).addElement(panel3.getCapturedValue());
-                        ((DefaultComboBoxModel)actorComboBox.getModel()).setSelectedItem(panel3.getCapturedValue());
+                        // make sure this data does not already exist in another assertion
+                        String maybeNewActor = panel3.getCapturedValue();
+                        X509Certificate maybeNewCert = panel2.getCert();
+                        if (xmlSecRecipientsFromOtherAssertions.containsKey(maybeNewActor)) {
+                            JOptionPane.showMessageDialog(assignCertButton, "The actor you have chosen is " +
+                                                                            "already associated to a recipient cert.");
+                        } else if (xmlSecRecipientsFromOtherAssertions.containsValue(maybeNewCert)) {
+                            JOptionPane.showMessageDialog(assignCertButton, "The cert you have chosen is " +
+                                                                            "already associated to an actor.");
+                        } else {
+                            locallyDefinedRecipient = maybeNewCert;
+                            certSubject.setText(locallyDefinedRecipient.getSubjectDN().getName());
+                            locallyDefinedActor = maybeNewActor;
+                            ((DefaultComboBoxModel)actorComboBox.getModel()).addElement(locallyDefinedActor);
+                            ((DefaultComboBoxModel)actorComboBox.getModel()).setSelectedItem(locallyDefinedActor);
+                        }
                     }
                     public void wizardCanceled(WizardEvent e) {}
                 });
-
                 w.pack();
                 w.setSize(800, 560);
                 Utilities.centerOnScreen(w);
                 w.setVisible(true);
             }
         });
+    }
 
+    private void populateRecipientsFromAssertionTree(Assertion toInspect) {
+        if (toInspect == assertion) {
+            return; // skip us
+        } else if (toInspect instanceof CompositeAssertion) {
+            CompositeAssertion ca = (CompositeAssertion)toInspect;
+            for (Iterator i = ca.children(); i.hasNext();) {
+                Assertion a = (Assertion)i.next();
+                populateRecipientsFromAssertionTree(a);
+            }
+        } else if (toInspect instanceof XmlSecurityAssertionBase) {
+            XmlSecurityAssertionBase xsecass = (XmlSecurityAssertionBase)toInspect;
+            if (!xsecass.getRecipientContext().localRecipient()) {
+                String existingactor = xsecass.getRecipientContext().getActor();
+                X509Certificate existingcert = null;
+                try {
+                    existingcert = CertUtils.decodeCert(HexUtils.decodeBase64(
+                                                        xsecass.getRecipientContext().getBase64edX509Certificate(), true));
+                } catch (CertificateException e) {
+                    throw new RuntimeException(e); // should not happen
+                } catch (IOException e) {
+                    throw new RuntimeException(e); // should not happen
+                }
+                xmlSecRecipientsFromOtherAssertions.put(existingactor, existingcert);
+            }
+        }
     }
 
     private void setInitialValues() {
+
+        // get to root of policy
+        Assertion root = assertion;
+        while (root.getParent() != null) {
+            root = root.getParent();
+        }
+        populateRecipientsFromAssertionTree(root);
+        for (Iterator i = xmlSecRecipientsFromOtherAssertions.keySet().iterator(); i.hasNext();) {
+            String actorvalue = (String)i.next();
+            ((DefaultComboBoxModel)actorComboBox.getModel()).addElement(actorvalue);
+        }
+
         if (assertion.getRecipientContext().localRecipient()) {
             specificRecipientRradio.setSelected(false);
             defaultRadio.setSelected(true);
+            String initialActorValue = null;
+            for (Iterator i = xmlSecRecipientsFromOtherAssertions.keySet().iterator(); i.hasNext();) {
+                initialActorValue = (String)i.next();
+                break;
+            }
+            X509Certificate initialcertvalue = (X509Certificate)xmlSecRecipientsFromOtherAssertions.get(initialActorValue);
+            certSubject.setText(initialcertvalue.getSubjectDN().getName());
         } else {
             specificRecipientRradio.setSelected(true);
             defaultRadio.setSelected(false);
+            locallyDefinedActor = assertion.getRecipientContext().getActor();
+            try {
+                locallyDefinedRecipient = CertUtils.decodeCert(
+                                            HexUtils.decodeBase64(
+                                                    assertion.getRecipientContext().getBase64edX509Certificate(), true));
+
+            } catch (CertificateException e) {
+                throw new RuntimeException(e); // should not happen
+            } catch (IOException e) {
+                throw new RuntimeException(e); // should not happen
+            }
+            certSubject.setText(locallyDefinedRecipient.getSubjectDN().getName());
+            ((DefaultComboBoxModel)actorComboBox.getModel()).addElement(locallyDefinedActor);
+            ((DefaultComboBoxModel)actorComboBox.getModel()).setSelectedItem(locallyDefinedActor);
         }
-        // todo, search assertion tree for existing combos
     }
 
     private void enableSpecificControls() {
@@ -155,7 +255,22 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
     }
 
     private void ok() {
-        // todo, remember value
+        // remember value
+        XmlSecurityRecipientContext newRecipientContext = new XmlSecurityRecipientContext();
+        newRecipientContext.setActor((String)actorComboBox.getSelectedItem());
+        X509Certificate cert = null;
+        if (newRecipientContext.getActor().equals(locallyDefinedActor)) {
+            cert = locallyDefinedRecipient;
+        } else {
+            cert = (X509Certificate)xmlSecRecipientsFromOtherAssertions.get(newRecipientContext.getActor());
+        }
+        try {
+            newRecipientContext.setBase64edX509Certificate(HexUtils.encodeBase64(cert.getEncoded(), true));
+        } catch (CertificateEncodingException e) {
+            throw new RuntimeException("could not encode cert", e);
+        }
+        assertion.setRecipientContext(newRecipientContext);
+        // split!
         XmlSecurityRecipientContextEditor.this.dispose();
     }
 
