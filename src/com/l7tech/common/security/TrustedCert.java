@@ -97,7 +97,11 @@ public class TrustedCert extends NamedEntityImp implements Serializable, Cloneab
      */
     public synchronized void setCertificate(X509Certificate cert) throws CertificateEncodingException {
         this.cachedCert = cert;
-        this.certBase64 = HexUtils.encodeBase64( cert.getEncoded() );
+        if (cert == null) {
+            this.certBase64 = null;
+        } else {
+            this.certBase64 = HexUtils.encodeBase64( cert.getEncoded() );
+        }
     }
 
     /**
@@ -114,6 +118,7 @@ public class TrustedCert extends NamedEntityImp implements Serializable, Cloneab
      */
     public synchronized void setCertBase64( String certBase64 ) {
         this.certBase64 = certBase64;
+        this.cachedCert = null;
     }
 
     /**
