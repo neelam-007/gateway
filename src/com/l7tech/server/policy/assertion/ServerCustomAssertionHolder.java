@@ -167,7 +167,7 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
         public void setDocument(Document document) {
             response.setDocument(document);
             try {
-                final String docstring = XmlUtil.documentToString(document);
+                final String docstring = XmlUtil.nodeToString(document);
                 logger.fine("Set the response document to" + docstring);
             } catch (IOException e) {
                 logger.log(Level.WARNING, "Error stringyfing document", e);
@@ -229,7 +229,7 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
         public void setDocument(Document document) {
             request.setDocument(document);
             try {
-                final String docstring = XmlUtil.documentToString(document);
+                final String docstring = XmlUtil.nodeToString(document);
                 logger.fine("Set the request document to" + docstring);
             } catch (IOException e) {
                 logger.log(Level.WARNING, "Error stringyfing document", e);

@@ -453,7 +453,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                 item.getParentNode().removeChild(item);
             }
         }
-        blankMessage = XmlUtil.documentToString(document);
+        blankMessage = XmlUtil.nodeToString(document);
     }
 
 

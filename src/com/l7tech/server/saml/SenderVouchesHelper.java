@@ -85,7 +85,7 @@ class SenderVouchesHelper {
             SoapUtil.importNode(soapMessage, doc, secElement);
             NodeList list = secElement.getElementsByTagNameNS(NS_SAML, "Assertion");
             if (list.getLength() == 0) {
-                throw new IOException("Cannot locate the saml assertion in \n"+XmlUtil.documentToString(soapMessage));
+                throw new IOException("Cannot locate the saml assertion in \n"+XmlUtil.nodeToString(soapMessage));
             }
             Node node = list.item(0);
 

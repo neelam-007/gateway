@@ -64,7 +64,7 @@ public class AcmeSoapClient extends TestCase {
         HttpClient client = new HttpClient();      
         PostMethod pm = new PostMethod(TEST_URL);
         Document req = XmlUtil.stringToDocument(SIMPLE_REQ);
-        pm.setRequestBody(XmlUtil.documentToString(req));
+        pm.setRequestBody(XmlUtil.nodeToString(req));
         log.info("Sending request: " + pm.getRequestBodyAsString());
         pm.addRequestHeader("SOAPAction", "\"http://warehouse.acme.com/ws/getProductDetails\"");
         pm.addRequestHeader("Content-Type", "text/xml");
@@ -79,10 +79,10 @@ public class AcmeSoapClient extends TestCase {
         Document req = XmlUtil.stringToDocument(SIMPLE_REQ);
         Key key = generateKey();
         XmlMangler.encryptXml(req, key.getEncoded(), "mine");
-        Document creq = XmlUtil.stringToDocument(XmlUtil.documentToString(req));
+        Document creq = XmlUtil.stringToDocument(XmlUtil.nodeToString(req));
         XmlMangler.decryptDocument(creq, key);
 
-        pm.setRequestBody(XmlUtil.documentToString(creq));
+        pm.setRequestBody(XmlUtil.nodeToString(creq));
         log.info("Sending request: " + pm.getRequestBodyAsString());
         pm.addRequestHeader("SOAPAction", "\"http://warehouse.acme.com/ws/getProductDetails\"");
         pm.addRequestHeader("Content-Type", "text/xml");

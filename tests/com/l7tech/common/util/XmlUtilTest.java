@@ -104,7 +104,7 @@ public class XmlUtilTest extends TestCase {
                                                                       SoapUtil.DIGSIG_URI,
                                                                       SoapUtil.SIGNATURE_EL_NAME );
         // Make sure it's really the first one
-        assertTrue( XmlUtil.elementToString( firstSignature ).indexOf( "#signref1" ) >= 0 );
+        assertTrue( XmlUtil.nodeToString( firstSignature ).indexOf( "#signref1" ) >= 0 );
         assertElementEquals( firstSignature, SoapUtil.DIGSIG_URI, SoapUtil.SIGNATURE_EL_NAME );
 
         Element sctoken = XmlUtil.findFirstChildElement( security );
@@ -128,7 +128,7 @@ public class XmlUtilTest extends TestCase {
         for ( int i = 0; i < signatures.size(); i++ ) {
             Element child  = (Element)signatures.get(i);
             assertElementEquals( child, SoapUtil.DIGSIG_URI, SoapUtil.SIGNATURE_EL_NAME );
-            assertTrue( XmlUtil.elementToString( child ).indexOf( "#signref" + (i+1) ) >= 0 );
+            assertTrue( XmlUtil.nodeToString( child ).indexOf( "#signref" + (i+1) ) >= 0 );
         }
 
         Element sctoken = XmlUtil.findFirstChildElement( security );

@@ -64,6 +64,6 @@ public class SecureSpanAgentTest {
         //String message = new String(slurpage.bytes);
         SecureSpanAgent.Result result = agent.send(soapaction, message);
         log.info("Got back http status " + result.getHttpStatus());
-        log.info("Got back envelope:\n" + XmlUtil.documentToString(result.getResponse()));
+        log.info("Got back envelope:\n" + XmlUtil.nodeToString(result.getResponse()));
     }
 }

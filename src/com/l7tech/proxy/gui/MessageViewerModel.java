@@ -168,7 +168,7 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
                 }
             }
             try {
-                str = headersToString(headers) + "\n" + XmlUtil.documentToString(message);
+                str = headersToString(headers) + "\n" + XmlUtil.nodeToString(message);
             } catch (IOException e) {
                 str = headersToString(headers) + "Unable to read message: " + e;
             }

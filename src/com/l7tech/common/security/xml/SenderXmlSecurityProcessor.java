@@ -188,7 +188,7 @@ class SenderXmlSecurityProcessor extends SecurityProcessor {
             List nodes = XpathEvaluator.newEvaluator(document, elementXpath.getNamespaces()).select(elementXpath.getExpression());
             if (nodes.isEmpty()) {
                 final String message = "The XPath result is empty '" + elementXpath.getExpression() + "'";
-                String logmessage = message + "\nMessage is\n" + XmlUtil.documentToString(document);
+                String logmessage = message + "\nMessage is\n" + XmlUtil.nodeToString(document);
                 logger.warning(logmessage);
                 throw new SecurityProcessorException(message);
             }

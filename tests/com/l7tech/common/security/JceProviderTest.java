@@ -105,7 +105,7 @@ public class JceProviderTest {
         KeyPair kp; // client cert private (and public) key
         X509Certificate signedClientCert; // signedClientCert client cert
         Document testDoc = XmlManglerTest.makeTestMessage();
-        final String testXml = XmlUtil.documentToString(testDoc);
+        final String testXml = XmlUtil.nodeToString(testDoc);
         Document signedDocument;
         String signedXml;
 
@@ -152,7 +152,7 @@ public class JceProviderTest {
             log.info("pretest: signing XML message");
             signedDocument = XmlUtil.stringToDocument(testXml);
             SoapMsgSigner.signEnvelope(signedDocument, kp.getPrivate(), new X509Certificate[] { signedClientCert });
-            signedXml = XmlUtil.documentToString(signedDocument);
+            signedXml = XmlUtil.nodeToString(signedDocument);
 
             log.info("pretest: checking XML message signature");
             SoapMsgSigner.validateSignature(XmlUtil.stringToDocument(signedXml));
@@ -185,7 +185,7 @@ public class JceProviderTest {
         final Document encryptedDoc = XmlUtil.stringToDocument(testXml);
         log.info("Before encryption: " + testXml);
         XmlMangler.encryptXml(encryptedDoc, keyBytes, "MyKeyName");
-        final String encryptedXml = XmlUtil.documentToString(encryptedDoc);
+        final String encryptedXml = XmlUtil.nodeToString(encryptedDoc);
         log.info("Encrypted XML message: " + encryptedXml);
 
         reportTime("Encrypt document", 1000 * scale, concur, new Testable() {

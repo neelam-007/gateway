@@ -118,31 +118,23 @@ public class XmlUtil {
         getFormattedXmlSerializer().serialize(doc);
     }
 
-    public static String documentToString(Document doc) throws IOException {
+    public static String nodeToString(Node node) throws IOException {
         final ByteArrayOutputStream out = new ByteArrayOutputStream(1024);
         Canonicalizer canon = getTransparentXMLSerializer();
-        canon.canonicalize(doc, out);
+        canon.canonicalize(node, out);
         return out.toString();
     }
 
-    public static String documentToFormattedString(Document doc) throws IOException {
+    public static String nodeToFormattedString(Node node) throws IOException {
         final StringWriter sw = new StringWriter();
-        getFormattedXmlSerializer().setOutputCharStream(sw);
-        getFormattedXmlSerializer().serialize(doc);
-        return sw.toString();
-    }
-
-    public static String elementToString(Element element) throws IOException {
-        final ByteArrayOutputStream out = new ByteArrayOutputStream(1024);
-        Canonicalizer canon = getTransparentXMLSerializer();
-        canon.canonicalize(element, out);
-        return out.toString();
-    }
-
-    public static String elementToFormattedString(Element element) throws IOException {
-        final StringWriter sw = new StringWriter();
-        getFormattedXmlSerializer().setOutputCharStream(sw);
-        getFormattedXmlSerializer().serialize(element);
+        XMLSerializer ser = getFormattedXmlSerializer();
+        ser.setOutputCharStream(sw);
+        if (node instanceof Document)
+            ser.serialize((Document)node);
+        else if (node instanceof Element)
+            ser.serialize((Element)node);
+        else
+            throw new IllegalArgumentException("Node must be either a Document or an Element");
         return sw.toString();
     }
 

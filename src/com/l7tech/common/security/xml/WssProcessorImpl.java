@@ -243,7 +243,7 @@ public class WssProcessorImpl implements WssProcessor {
 
             public String asXmlString() {
                 try {
-                    return XmlUtil.elementToString(usernameTokenElement);
+                    return XmlUtil.nodeToString(usernameTokenElement);
                 } catch (IOException e) {
                     return e.getMessage();
                 }
@@ -524,7 +524,7 @@ public class WssProcessorImpl implements WssProcessor {
 
         public String asXmlString() {
             try {
-                return XmlUtil.elementToString(element);
+                return XmlUtil.nodeToString(element);
             } catch (IOException e) {
                 throw new RuntimeException(e); // can't happen
             }
@@ -566,7 +566,7 @@ public class WssProcessorImpl implements WssProcessor {
 
             public String asXmlString() {
                 try {
-                    return XmlUtil.elementToString(timestampElement);
+                    return XmlUtil.nodeToString(timestampElement);
                 } catch (IOException e) {
                     throw new RuntimeException(e); // can't happen
                 }
@@ -620,7 +620,7 @@ public class WssProcessorImpl implements WssProcessor {
 
             public String asXmlString() {
                 try {
-                    return XmlUtil.elementToString(binarySecurityTokenElement);
+                    return XmlUtil.nodeToString(binarySecurityTokenElement);
                 } catch (IOException e) {
                     return e.getMessage();
                 }

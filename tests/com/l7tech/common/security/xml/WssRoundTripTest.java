@@ -125,7 +125,7 @@ public class WssRoundTripTest extends TestCase {
         WssDecorator martha = new WssDecoratorImpl();
         WssProcessor trogdor = new WssProcessorImpl();
 
-        log.info("Message before decoration:" + XmlUtil.documentToString(message));
+        log.info("Message before decoration:" + XmlUtil.nodeToString(message));
 
         martha.decorateMessage(message,
                                td.recipientCert,
@@ -135,10 +135,10 @@ public class WssRoundTripTest extends TestCase {
                                td.elementsToEncrypt,
                                td.elementsToSign);
 
-        log.info("Decorated message:\n\n" + XmlUtil.documentToString(message));
+        log.info("Decorated message:\n\n" + XmlUtil.nodeToString(message));
 
         // Serialize to string to simulate network transport
-        byte[] decoratedMessage = XmlUtil.documentToString(message).getBytes();
+        byte[] decoratedMessage = XmlUtil.nodeToString(message).getBytes();
 
         // ... pretend HTTP goes here ...
 
@@ -146,14 +146,14 @@ public class WssRoundTripTest extends TestCase {
         Document incomingMessage = XmlUtil.stringToDocument(new String(decoratedMessage));
 
         assertTrue("Serialization did not affect the integrity of the XML message",
-                   XmlUtil.documentToString(message).equals(XmlUtil.documentToString(incomingMessage)));
+                   XmlUtil.nodeToString(message).equals(XmlUtil.nodeToString(incomingMessage)));
 
         WssProcessor.ProcessorResult r = trogdor.undecorateMessage(incomingMessage,
                                                                    td.recipientCert,
                                                                    td.recipientKey);
 
         Document undecorated = r.getUndecoratedMessage();
-        log.info("After undecoration:" + XmlUtil.documentToString(undecorated));
+        log.info("After undecoration:" + XmlUtil.nodeToString(undecorated));
 
         Element[] encrypted = r.getElementsThatWereEncrypted();
             assertTrue(encrypted != null);

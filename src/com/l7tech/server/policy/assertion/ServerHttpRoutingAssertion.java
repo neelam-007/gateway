@@ -132,7 +132,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                     UserBean ub = new UserBean();
                     ub.setName("CN="+login);
                     ag.attachSenderVouches(document, ub, si);
-                    requestXml = XmlUtil.documentToString(document);
+                    requestXml = XmlUtil.nodeToString(document);
                 }
                 attachCookies(client, request.getTransportMetadata());
                 postMethod.setRequestBody(requestXml);

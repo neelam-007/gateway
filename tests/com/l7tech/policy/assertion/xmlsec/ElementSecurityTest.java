@@ -85,9 +85,9 @@ public class ElementSecurityTest extends TestCase {
             SecurityProcessor signer = SecurityProcessor.getSigner(session, signerInfo, key, data);
             SecurityProcessor verifier = SecurityProcessor.getVerifier(session, key, session.getId(), data);
             Document secureDoc = signer.process(document).getDocument();
-// System.out.println(XmlUtil.documentToString(secureDoc));
+// System.out.println(XmlUtil.nodeToString(secureDoc));
             Document verifiedDoc = verifier.processInPlace(secureDoc).getDocument();
-// System.out.println(XmlUtil.documentToString(verifiedDoc));
+// System.out.println(XmlUtil.nodeToString(verifiedDoc));
         }
     }
 
@@ -114,9 +114,9 @@ public class ElementSecurityTest extends TestCase {
             SecurityProcessor signer = SecurityProcessor.getSigner(session, signerInfo, key, data);
             SecurityProcessor verifier = SecurityProcessor.getVerifier(session, key, session.getId(), data);
             Document secureDoc = signer.process(document).getDocument();
-//System.out.println(XmlUtil.documentToString(secureDoc));
+//System.out.println(XmlUtil.nodeToString(secureDoc));
             Document verifiedDoc = verifier.processInPlace(secureDoc).getDocument();
-// System.out.println(XmlUtil.documentToString(verifiedDoc));
+// System.out.println(XmlUtil.nodeToString(verifiedDoc));
         }
     }
 
@@ -154,7 +154,7 @@ public class ElementSecurityTest extends TestCase {
 
         SecurityProcessor verifier = SecurityProcessor.getVerifier(session, key, session.getId(), data);
         Document verifiedDocument = verifier.process(securedDocument).getDocument();
-        // System.out.println(XmlUtil.documentToString(verifiedDocument));
+        // System.out.println(XmlUtil.nodeToString(verifiedDocument));
     }
 
     public void testVerifyUnsecureDocument() throws Exception {
@@ -182,7 +182,7 @@ public class ElementSecurityTest extends TestCase {
     public void testUndecorateSignedAndEncryptedEnvelopeRequest() throws Exception {
         Document decorated = XmlUtil.stringToDocument(LIST_PRODUCTS_ENV_SIGNED_ENCRYPTED);
 
-        System.out.println("Starting document: " + XmlUtil.documentToString(decorated));
+        System.out.println("Starting document: " + XmlUtil.nodeToString(decorated));
         Map nm = new HashMap();
         nm.put("soap", SOAPConstants.URI_NS_SOAP_ENVELOPE);
         nm.put("s0", "http://warehouse.acme.com/ws");
@@ -201,7 +201,7 @@ public class ElementSecurityTest extends TestCase {
 
         SecurityProcessor.Result result = verifier.processInPlace(decorated);
         System.out.println("Undecorated status = " + result.getType().desc);
-        System.out.println("Undecorated document: " + XmlUtil.documentToString(decorated));
+        System.out.println("Undecorated document: " + XmlUtil.nodeToString(decorated));
 
     }
 

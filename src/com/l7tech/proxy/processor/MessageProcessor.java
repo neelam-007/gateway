@@ -415,7 +415,7 @@ public class MessageProcessor {
             if (policy != null && policy.getVersion() != null)
                 postMethod.addRequestHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION, policy.getVersion());
 
-            String postBody = XmlUtil.documentToString(req.getSoapEnvelopeDirectly());
+            String postBody = XmlUtil.nodeToString(req.getSoapEnvelopeDirectly());
             if (logPosts())
                 log.info("Posting to Gateway: " + postBody);
             postMethod.setRequestBody(postBody);

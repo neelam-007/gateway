@@ -44,7 +44,7 @@ public class SsgResponse {
 
     public String getResponseAsString() throws IOException {
         if (responseDoc != null)
-            return XmlUtil.documentToString(responseDoc);
+            return XmlUtil.nodeToString(responseDoc);
         return responseString;
     }
 
