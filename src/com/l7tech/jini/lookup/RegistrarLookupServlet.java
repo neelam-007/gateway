@@ -6,10 +6,7 @@
 
 package com.l7tech.jini.lookup;
 
-import com.l7tech.identity.AuthenticationException;
-import com.l7tech.identity.BadCredentialsException;
-import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.identity.User;
+import com.l7tech.identity.*;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 import com.l7tech.common.util.Locator;
@@ -33,6 +30,8 @@ import java.net.URL;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Iterator;
+import java.security.AccessControlException;
 
 /**
  * The servlet that serializes the registrar obtained by the lookup
@@ -79,13 +78,16 @@ public class RegistrarLookupServlet extends HttpServlet {
             String authorizationHeader = request.getHeader(HTTPConstants.HEADER_AUTHORIZATION);
             if (authorizationHeader == null) {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-                logger.warning("Empty credentials received IP: "+request.getRemoteAddr());
+                logger.warning("Empty credentials received IP: " + request.getRemoteAddr());
                 return;
             }
             authorizationHeader = authorizationHeader.trim();
             PrincipalCredentials creds = extractCredentials(authorizationHeader);
 
             getConfigManager().getInternalIdentityProvider().authenticate(creds);
+            if (!hasPermission(creds.getUser())) {
+                throw new AccessControlException(creds.getUser().getName() + " does not have 'admin' privileges");
+            }
 
             LookupLocator ll = getLookupLocator();
             logger.info("Obtained locator");
@@ -111,6 +113,9 @@ public class RegistrarLookupServlet extends HttpServlet {
         } catch (AuthenticationException e) {
             logger.log(Level.WARNING, "Authentication exception", e);
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+        } catch (AccessControlException e) {
+            logger.log(Level.WARNING, "Authorization exception", e);
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Error obtaining the lookup locator", e);
             throw new ServletException(e);
@@ -123,6 +128,14 @@ public class RegistrarLookupServlet extends HttpServlet {
 
             }
         }
+    }
+
+    private boolean hasPermission(User user) {
+        for (Iterator i = user.getGroups().iterator(); i.hasNext();) {
+            Group grp = (Group) i.next();
+            if (Group.ADMIN_GROUP_NAME.equals(grp.getName())) return true;
+        }
+        return false;
     }
 
     /**
@@ -154,7 +167,7 @@ public class RegistrarLookupServlet extends HttpServlet {
      * @throws BadCredentialsException
      */
     private PrincipalCredentials extractCredentials(String tokenBasic)
-      throws BadCredentialsException {
+            throws BadCredentialsException {
         if (tokenBasic == null) {
             throw new BadCredentialsException("Null credentials passed");
         }
@@ -195,7 +208,4 @@ public class RegistrarLookupServlet extends HttpServlet {
         }
         return identityProviderConfigManager;
     }
-
-
-    private static final String AUTHORIZATION = "Authorizaiton";
 }
