@@ -1,0 +1,50 @@
+/*
+ * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
+ *
+ * $Id$
+ */
+package com.l7tech.console.panels.saml;
+
+import com.l7tech.console.panels.WizardStepPanel;
+
+import javax.swing.*;
+import java.awt.*;
+
+/**
+ * The SAML Conditions <code>WizardStepPanel</code>
+ * @author emil
+ * @version Jan 20, 2005
+ */
+public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
+    private JPanel mainPanel;
+    private JLabel titleLabel;
+    private JCheckBox checkBoxCheckAssertionValidity;
+    private JTextField textFieldTargetRestriction;
+    private JTextField textFieldAudienceRestriction;
+    private JTextField textFieldAction;
+    private JTextField textFieldActionNamespace;
+    private JTextField textFieldResource;
+
+    /**
+     * Creates new form WizardPanel
+     */
+    public AuthorizationStatementWizardStepPanel(WizardStepPanel next) {
+        super(next);
+        setLayout(new BorderLayout());
+        /** Set content pane */
+        add(mainPanel, BorderLayout.CENTER);
+        initialize();
+
+    }
+
+    private void initialize() {
+        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
+    }
+
+    /**
+     * @return the wizard step label
+     */
+    public String getStepLabel() {
+        return "Authorization Statement";
+    }
+}
