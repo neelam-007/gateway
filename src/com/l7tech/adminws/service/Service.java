@@ -8,6 +8,7 @@ import com.l7tech.logging.LogManager;
 
 import java.util.Collection;
 import java.util.logging.Level;
+import java.rmi.RemoteException;
 
 /**
  * Layer 7 Technologies, inc.
@@ -80,12 +81,18 @@ public class Service {
      * @param service the object to be saved or upodated
      * @throws java.rmi.RemoteException
      */
-    public long savePublishedService(PublishedService service) throws java.rmi.RemoteException {
+    public long savePublishedService(PublishedService service) throws RemoteException {
         try {
             // does that object have a history?
             if (service.getOid() > 0) {
-                // update patch to fix hibernate problem
+
                 ServiceManager manager = getServiceManagerAndBeginTransaction();
+                // check version
+                int currentVersion = manager.getCurrentPolicyVersion(service.getOid());
+                if (currentVersion > service.getVersion()) {
+                    throw new RemoteException("Outdated version of published service.");
+                }
+                // update patch to fix hibernate problem
                 PublishedService originalService = manager.findByPrimaryKey(service.getOid());
                 originalService.copyFrom(service);
                 manager.update(originalService);
