@@ -617,13 +617,11 @@ public class FindIdentitiesDialog extends JDialog {
         deleteButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
                 int rows[] = searchResultTable.getSelectedRows();
-                List principals = new ArrayList();
                 for (int i = 0; rows != null && i < rows.length; i++) {
                     int row = rows[i];
                     EntityHeader eh = (EntityHeader)searchResultTable.getModel().getValueAt(row, 0);
-                    principals.add(headerToPrincipal(eh));
+                    deleteEntity(eh, row);
                 }
-                selections = (Principal[])principals.toArray(new Principal[]{});
             }
         });
 
