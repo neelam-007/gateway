@@ -82,13 +82,14 @@ public abstract class SsgKeyStoreManager {
      * @throws IllegalArgumentException if the specified SSG has not yet had a password set
      * @throws KeyStoreException   if the key entry could not be saved for obscure reasons
      * @throws IOException  if there was a problem writing the keystore to disk
+     * @throws CertificateException if the returned certificate can't be parsed
      */
     public abstract void saveClientCertificate(PrivateKey privateKey, X509Certificate cert,
                                              char[] privateKeyPassword)
             throws KeyStoreException, IOException, KeyStoreCorruptException, CertificateException;
 
     public void installSsgServerCertificate(Ssg ssg, PasswordAuthentication credentials)
-            throws IOException, BadCredentialsException, OperationCanceledException, GeneralSecurityException, KeyStoreCorruptException
+            throws IOException, BadCredentialsException, OperationCanceledException, KeyStoreCorruptException, CertificateException, KeyStoreException
     {
         logger.log(Level.FINER, "Discovering server certificate for Gateway " + ssg + " (" + ssg.getLocalEndpoint() + ")");
         CertificateDownloader cd = new CertificateDownloader(ssg.getRuntime().getHttpClient(),
