@@ -8,7 +8,7 @@ import javax.swing.*;
 
 /**
  * The class represents a node element in the TreeModel.
- * It represents the SAML properties.
+ * It represents the SAML palette node.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
@@ -73,6 +73,6 @@ public class SamlSecurityNode extends AbstractTreeNode {
      * @param open for nodes that can be opened, can have children
      */
     protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/xmlencryption.gif";
+        return "com/l7tech/console/resources/xmlsignature.gif";
     }
 }
