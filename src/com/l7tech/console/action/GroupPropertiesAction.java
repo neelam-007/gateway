@@ -60,7 +60,7 @@ public class GroupPropertiesAction extends NodeAction {
                 if (config == null) {
                     config = getIdentityProviderConfig((EntityHeaderNode)node);
                 }
-                GroupPanel panel = new GroupPanel();
+                GroupPanel panel = new GroupPanel(config);
                 JFrame f = TopComponents.getInstance().getMainWindow();
                 final EntityHeader header = ((EntityHeaderNode)node).getEntityHeader();
                 EditorDialog dialog = new EditorDialog(f, panel);

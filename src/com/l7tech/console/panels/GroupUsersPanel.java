@@ -4,6 +4,7 @@ import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.util.SortedListModel;
 import com.l7tech.identity.Group;
+import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
@@ -49,15 +50,16 @@ class GroupUsersPanel extends JPanel {
     private boolean isLoading = false;
 
     private final static String USER_GROUP_MEMBER_LABEL = "Group Membership:";
-
+    private IdentityProviderConfig ipc;
 
     /**
      * The only constructor
      *
      * @param groupPanel the parent groupPanel
      */
-    public GroupUsersPanel(GroupPanel groupPanel) {
+    public GroupUsersPanel(GroupPanel groupPanel, IdentityProviderConfig ipc) {
         super();
+        this.ipc = ipc;
         try {
             this.groupPanel = groupPanel;
             layoutComponents();
@@ -349,7 +351,7 @@ class GroupUsersPanel extends JPanel {
                 public void actionPerformed(ActionEvent e) {
                     JDialog d = (JDialog)SwingUtilities.windowForComponent(GroupUsersPanel.this);
 
-                    JDialog dialog = new NewGroupMemberDialog(d, GroupUsersPanel.this);
+                    JDialog dialog = new NewGroupMemberDialog(d, GroupUsersPanel.this, ipc);
                     dialog.setResizable(false);
                     dialog.show();
 

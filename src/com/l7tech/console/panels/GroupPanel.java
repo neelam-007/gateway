@@ -6,10 +6,7 @@ import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.identity.Group;
-import com.l7tech.identity.GroupBean;
-import com.l7tech.identity.IdentityAdmin;
-import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
@@ -53,6 +50,7 @@ public class GroupPanel extends EntityEditorPanel {
     // Apply/Revert buttons
     private JButton okButton;
     private JButton cancelButton;
+    private IdentityProviderConfig ipc;
 
 
     // group
@@ -79,14 +77,15 @@ public class GroupPanel extends EntityEditorPanel {
                                                     };
 
     /**
-     * default constructor
+     * constructor
      */
-    public GroupPanel() {
+    public GroupPanel(IdentityProviderConfig ipc) {
+        this.ipc = ipc;
     }
 
     public void initialize() {
         try {
-            usersPanel = new GroupUsersPanel(this);
+            usersPanel = new GroupUsersPanel(this, ipc);
             // Initialize form components
             layoutComponents();
             this.addHierarchyListener(hierarchyListener);
@@ -545,23 +544,6 @@ public class GroupPanel extends EntityEditorPanel {
     private boolean validateForm() {
         return true;
     }
-
-    // debug
-    public static void main(String[] args) {
-
-        GroupPanel panel = new GroupPanel();
-        EntityHeader eh = new EntityHeader();
-        eh.setName("Test group");
-        eh.setType(EntityType.GROUP);
-        panel.edit(eh);
-
-        panel.setPreferredSize(new java.awt.Dimension(600, 300));
-        JFrame frame = new JFrame("Group panel Test");
-        frame.setContentPane(panel);
-        frame.pack();
-        frame.setVisible(true);
-    }
-
 
     /**
      * A listener to detect when Document components have changed. Once this is

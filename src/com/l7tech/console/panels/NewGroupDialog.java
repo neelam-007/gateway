@@ -372,7 +372,7 @@ public class NewGroupDialog extends JDialog {
                 SwingUtilities.invokeLater(
                         new Runnable() {
                             public void run() {
-                                GroupPanel panel = new GroupPanel();
+                                GroupPanel panel = new GroupPanel(ipc);
                                 if (panel == null) return;
                                 EntityHeader header = new EntityHeader();
                                 header.setType(EntityType.GROUP);

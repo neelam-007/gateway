@@ -5,6 +5,7 @@ import com.l7tech.console.util.FilterListModel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.SortedListModel;
 import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
@@ -23,6 +24,8 @@ import java.util.*;
 public class NewGroupMemberDialog extends JDialog {
     private FilterListModel listOutModel;
     private JList nonGroupMemberList;
+    private IdentityProviderConfig ipc;
+
     private final Comparator entityNameComparator = new Comparator() {
                         /**
                          * Compares group users by login alphabetically.
@@ -47,10 +50,11 @@ public class NewGroupMemberDialog extends JDialog {
      *
      * @param parent the GroupPanel parent.
      */
-    public NewGroupMemberDialog(JDialog owner, GroupUsersPanel parent) {
+    public NewGroupMemberDialog(JDialog owner, GroupUsersPanel parent, IdentityProviderConfig ipc) {
         // Init UI
         super(owner, true);
         this.parent = parent;
+        this.ipc = ipc;
         initResources();
         initComponents();
         pack();
@@ -204,7 +208,7 @@ public class NewGroupMemberDialog extends JDialog {
                     Set set = parent.getCurrentUsers();
                     if (set !=null) currentUsers.addAll(set);
 
-                    Collection nonMembers = Arrays.asList(Registry.getDefault().getIdentityAdmin().findAllUsers(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID));
+                    Collection nonMembers = Arrays.asList(Registry.getDefault().getIdentityAdmin().findAllUsers(ipc.getOid()));
 
                     for(Iterator i = nonMembers.iterator();i.hasNext();) {
                         EntityHeader eh = (EntityHeader)i.next();
