@@ -15,7 +15,7 @@ import java.awt.event.*;
  */
 public abstract class PropertyDialog extends JDialog {
     private static final String DFG = "defaultForeground";
-    protected static Dimension MIN_SIZE = new Dimension(200, 150);
+    protected static final Dimension MIN_SIZE = new Dimension(200, 150);
     protected JTabbedPane tabbedPane;
     protected JButton okButton;
     protected JButton cancelButton;
