@@ -3,6 +3,7 @@ package com.l7tech.message;
 import com.l7tech.policy.assertion.AssertionResult;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
+import com.l7tech.common.util.XmlUtil;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -42,7 +43,7 @@ public abstract class SoapResponse extends XmlMessageAdapter implements SoapMess
     public synchronized String getResponseXml() throws IOException {
         if (_responseXml == null && _document != null) {
             // serialize the document
-            _responseXml = serializeDoc(_document);
+            _responseXml = XmlUtil.nodeToString(_document);
         } else if ( _responseXml == null ) {
             // TODO: Encoding?
             InputStream protectedResponseStream = getProtectedResponseStream();
