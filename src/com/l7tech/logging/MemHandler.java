@@ -153,9 +153,6 @@ public class MemHandler extends java.util.logging.Handler {
             // reverse order on purpose so that most recent are at top
             return (int)(log2.getMillis() - log1.getMillis());
         }
-        public boolean equals(Object obj) {
-            return obj.equals(this);
-        }
     }
 
     private SortedSet buffer = null;
