@@ -235,6 +235,11 @@ class PathValidator {
                 result.addError(new PolicyValidatorResult.Error(a, assertionPath,
                   "XSL transformation on the response must be positioned after routing.", null));
             }
+        } else if (a instanceof RequestSwAAssertion) {
+            if(seenRouting) {
+                result.addError(new PolicyValidatorResult.Error(a, assertionPath,
+                  "The assertion must be positioned before the routing assertion.", null));
+            }
         } else if (a instanceof RequestWssIntegrity) {
             // REASON FOR THIS RULE:
             // it makes no sense to validate that an element is signed if we dont validate
@@ -364,8 +369,11 @@ class PathValidator {
 
     private boolean hasPreconditionAssertion(Assertion a) {
         // check preconditions for both SslAssertion and  ResponseWssIntegrity assertions - see processPrecondition()
-        if (a instanceof SslAssertion || a instanceof XpathBasedAssertion || a instanceof HttpClientCert ||
-          a instanceof XslTransformation)
+        if (a instanceof SslAssertion ||
+            a instanceof XpathBasedAssertion ||
+            a instanceof HttpClientCert ||
+            a instanceof XslTransformation ||
+            a instanceof RequestSwAAssertion)
             return true;
         return false;
     }
