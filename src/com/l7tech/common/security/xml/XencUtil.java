@@ -15,10 +15,8 @@ import org.w3c.dom.Element;
 
 import javax.crypto.Cipher;
 import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.KeyException;
-import java.security.PrivateKey;
-import java.security.SecureRandom;
+import java.security.*;
+import java.security.interfaces.RSAPublicKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.logging.Level;
@@ -248,6 +246,26 @@ public class XencUtil {
         padded[pos++] = 0;
         System.arraycopy(keyBytes, 0, padded, pos, keyBytes.length);
         return padded;
+    }
+
+    /**
+     * Takes the symmetric key bytes and encrypts it for a recipient's provided the recipient's public key.
+     * The encrypted key is then padded according to http://www.w3.org/2001/04/xmlenc#rsa-1_5 and then base64ed.
+     * @param keyBytes the bytes of the symmetric key to encrypt
+     * @param publicKey the public key of the recipient of the key
+     * @return
+     * @throws GeneralSecurityException
+     */
+    public static String encryptKeyWithRsaAndPad(byte[] keyBytes, PublicKey publicKey, SecureRandom rand) throws GeneralSecurityException {
+        Cipher rsa = Cipher.getInstance("RSA");
+        rsa.init(Cipher.ENCRYPT_MODE, publicKey);
+        if (!(publicKey instanceof RSAPublicKey))
+            throw new KeyException("Unable to encrypt -- unsupported recipient public key type " +
+                                   publicKey.getClass().getName());
+        final int modulusLength = ((RSAPublicKey)publicKey).getModulus().toByteArray().length;
+        byte[] paddedKeyBytes = XencUtil.padSymmetricKeyForRsaEncryption(keyBytes, modulusLength, rand);
+        byte[] encrypted = rsa.doFinal(paddedKeyBytes);
+        return HexUtils.encodeBase64(encrypted, true);
     }
 
 }
