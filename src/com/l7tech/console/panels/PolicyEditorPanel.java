@@ -292,7 +292,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         final HTMLEditorKit htmlEditorKit = new HTMLEditorKit();
         StyleSheet ss = htmlEditorKit.getStyleSheet();
         Style style = ss.getStyle("body");
-        if (style !=null){
+        if (style != null) {
             style.removeAttribute(StyleConstants.FontFamily);
             final Font font = label.getFont();
             style.addAttribute(StyleConstants.FontFamily, font.getFamily());
@@ -532,6 +532,11 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         public void treeNodesChanged(TreeModelEvent e) {
             if (!initialValidate) {
                 enableButtonSave();
+                SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        // validatePolicy();
+                    }
+                });
             }
         }
 

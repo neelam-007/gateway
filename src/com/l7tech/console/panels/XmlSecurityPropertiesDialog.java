@@ -91,13 +91,14 @@ public class XmlSecurityPropertiesDialog extends JDialog {
     private Viewer messageViewer;
     private ViewerToolBar messageViewerToolBar;
     private ExchangerDocument exchangerDocument;
+    private ActionListener okActionListener;
 
     /**
      * @param owner this panel owner
      * @param modal is this modal dialog or not
      * @param n     the xml security node
      */
-    public XmlSecurityPropertiesDialog(JFrame owner, boolean modal, XmlSecurityTreeNode n) {
+    public XmlSecurityPropertiesDialog(JFrame owner, boolean modal, XmlSecurityTreeNode n, ActionListener okListener) {
         super(owner, modal);
         if (n == null) {
             throw new IllegalArgumentException();
@@ -108,6 +109,8 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         }
         node = n;
         setTitle("XML security properties");
+
+        okActionListener = okListener;
 
         xmlSecAssertion = (XmlSecurityAssertion)node.asAssertion();
         serviceNode = AssertionTreeNode.getServiceNode(node);
@@ -204,7 +207,9 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                 }
             }
         });
-
+        if (okActionListener != null) {
+            okButton.addActionListener(okActionListener);
+        }
         addButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 TreePath path = operationsTree.getSelectionPath();

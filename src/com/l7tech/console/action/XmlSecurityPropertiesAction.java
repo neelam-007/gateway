@@ -12,6 +12,8 @@ import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertion;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -55,7 +57,7 @@ public class XmlSecurityPropertiesAction extends NodeAction {
     public void performAction() {
         XmlSecurityTreeNode n = (XmlSecurityTreeNode)node;
         final MainWindow mw = Registry.getDefault().getComponentRegistry().getMainWindow();
-        XmlSecurityPropertiesDialog dialog = new XmlSecurityPropertiesDialog(mw, false, n);
+        XmlSecurityPropertiesDialog dialog = new XmlSecurityPropertiesDialog(mw, false, n, okListener);
         dialog.pack();
         dialog.setSize(900, 650); //todo: consider some dynamic sizing - em
         Utilities.centerOnScreen(dialog);
@@ -90,17 +92,22 @@ public class XmlSecurityPropertiesAction extends NodeAction {
 
         if ((s != null) && (s.length() > 0)) {
             es.setEncryption(!s.equalsIgnoreCase(signOnly));
-            assertionChanged();
         }
     }
 
-    public void assertionChanged() {
-        JTree tree = ComponentRegistry.getInstance().getPolicyTree();
-        if (tree != null) {
-            DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-            model.nodeChanged(node);
-        } else {
-            log.log(Level.WARNING, "Unable to reach the palette tree.");
+    public ActionListener okListener = new ActionListener() {
+        public void actionPerformed(ActionEvent e) {
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    JTree tree = ComponentRegistry.getInstance().getPolicyTree();
+                    if (tree != null) {
+                        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                        model.nodeChanged(node);
+                    } else {
+                        log.log(Level.WARNING, "Unable to reach the palette tree.");
+                    }
+                }
+            });
         }
-    }
+    };
 }

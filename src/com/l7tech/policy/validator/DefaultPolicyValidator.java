@@ -1,12 +1,9 @@
 package com.l7tech.policy.validator;
 
 import com.l7tech.common.util.Locator;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.policy.AssertionPath;
-import com.l7tech.policy.PolicyPathBuilder;
-import com.l7tech.policy.PolicyPathResult;
-import com.l7tech.policy.PolicyValidator;
-import com.l7tech.policy.PolicyValidatorResult;
+import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
@@ -18,6 +15,7 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.xmlsec.ElementSecurity;
 import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
 import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
 
@@ -84,10 +82,8 @@ public class DefaultPolicyValidator extends PolicyValidator {
             pv.validate(ass[i]);
         }
         if (!pv.seenRouting) { // no routing report that
-            r.addWarning(
-              new PolicyValidatorResult.
-              Warning(ap.lastAssertion(), "No route assertion.", null)
-            );
+            r.addWarning(new PolicyValidatorResult.
+              Warning(ap.lastAssertion(), "No route assertion.", null));
         }
         if (!pv.seenCredentials) {
             r.addWarning(new PolicyValidatorResult.Warning(null,
@@ -129,21 +125,15 @@ public class DefaultPolicyValidator extends PolicyValidator {
 
         private void processAccessControl(IdentityAssertion a) {
             if (!seenCredentials) {
-                result.addError(
-                  new PolicyValidatorResult.Error(
-                    a, "Access control specified without authentication scheme.", null));
+                result.addError(new PolicyValidatorResult.Error(a, "Access control specified without authentication scheme.", null));
             }
 
             if (seenRouting) {
-                result.addWarning(
-                  new PolicyValidatorResult.Warning(a, "The assertion is after route.", null)
-                );
+                result.addWarning(new PolicyValidatorResult.Warning(a, "The assertion is after route.", null));
             }
 
             if (seenSpecificUserAssertion && isSpecificUser(a)) {
-                result.addError(
-                  new PolicyValidatorResult.Error(a, "Duplicate identity.", null)
-                );
+                result.addError(new PolicyValidatorResult.Error(a, "Duplicate identity.", null));
             }
 
 
@@ -180,28 +170,41 @@ public class DefaultPolicyValidator extends PolicyValidator {
 
         private void processCredentialSource(Assertion a) {
             if (seenAccessControl) {
-                result.addError(
-                  new PolicyValidatorResult.
+                result.addError(new PolicyValidatorResult.
                   Error(a, "Access control already set, this assertion might get ignored.", null));
             }
 
             if (seenRouting) {
-                result.addWarning(
-                  new PolicyValidatorResult.Warning(a, "The assertion might get ignored.", null)
-                );
+                result.addWarning(new PolicyValidatorResult.Warning(a, "The assertion might get ignored.", null));
             }
 
             if (seenCredentials) {
-                result.addWarning(
-                  new PolicyValidatorResult.Warning(a, "You already have a credential assertion.", null)
-                );
+                result.addWarning(new PolicyValidatorResult.Warning(a, "You already have a credential assertion.", null));
             }
 
             // new fla, check whether an assertion will require a client cert to function, this is important because
             // we only support client certs for internal users
-            if (a instanceof HttpClientCert || a instanceof XmlRequestSecurity) {
+            if (a instanceof HttpClientCert) {
                 seenCredAssertionThatRequiresClientCert = true;
             }
+            //
+            if (a instanceof XmlRequestSecurity) {
+                seenCredAssertionThatRequiresClientCert = true;
+                XmlRequestSecurity xmlSec = (XmlRequestSecurity)a;
+                ElementSecurity[] elements = xmlSec.getElements();
+                boolean envelope = false;
+                for (int i = 0; i < elements.length; i++) {
+                    ElementSecurity elementSecurity = xmlSec.getElements()[i];
+                    if (SoapUtil.SOAP_ENVELOPE_XPATH.equals(elementSecurity.getxPath().getExpression())) {
+                        envelope = true;
+                        break;
+                    }
+                }
+                if (!envelope) { // not considered credential source
+                    return;
+                }
+            }
+
 
             if (a instanceof HttpDigest) {
                 seenDigestAssertion = true;
@@ -228,37 +231,27 @@ public class DefaultPolicyValidator extends PolicyValidator {
                     sslForbidden = true;
                 }
                 if (seenRouting) {
-                    result.addWarning(
-                      new PolicyValidatorResult.Warning(a,
-                        "The assertion might not work as configured." +
-                      "\nThere is a routing assertion before this assertion.", null)
-                    );
+                    result.addWarning(new PolicyValidatorResult.Warning(a,
+                      "The assertion might not work as configured." +
+                      "\nThere is a routing assertion before this assertion.", null));
                 }
             } else if (a instanceof XmlResponseSecurity) {
                 if (!seenRouting) {
-                    result.addError(
-                      new PolicyValidatorResult.Error(a,
-                        "Xml Response Security must occur after routing.", null)
-                    );
+                    result.addError(new PolicyValidatorResult.Error(a,
+                      "Xml Response Security must occur after routing.", null));
                 }
                 if (seenXmlResponseSecurityAssertion) {
-                    result.addError(
-                      new PolicyValidatorResult.Error(a,
-                        "Xml Response Security cannot appear twice in path.", null)
-                    );
+                    result.addError(new PolicyValidatorResult.Error(a,
+                      "Xml Response Security cannot appear twice in path.", null));
                 }
                 seenXmlResponseSecurityAssertion = true;
             } else if (a instanceof HttpClientCert) {
                 if (!seenSsl) {
-                    result.addError(
-                      new PolicyValidatorResult.Error(a,
-                        "HttpClientCert requires to have SSL transport.", null)
-                    );
+                    result.addError(new PolicyValidatorResult.Error(a,
+                      "HttpClientCert requires to have SSL transport.", null));
                 } else if (sslForbidden) {
-                    result.addError(
-                      new PolicyValidatorResult.Error(a,
-                        "HttpClientCert requires to have SSL transport (not forbidden).", null)
-                    );
+                    result.addError(new PolicyValidatorResult.Error(a,
+                      "HttpClientCert requires to have SSL transport (not forbidden).", null));
                 }
                 processCredentialSource(a);
             }
@@ -269,18 +262,16 @@ public class DefaultPolicyValidator extends PolicyValidator {
             seenRouting = true;
             String url = a.getProtectedServiceUrl();
             if (url == null) {
-                result.addWarning(
-                  new PolicyValidatorResult.Warning(a,
-                    "The assertion might not work as configured." +
+                result.addWarning(new PolicyValidatorResult.Warning(a,
+                  "The assertion might not work as configured." +
                   "\nThe protected service url is empty.", null));
             } else {
                 try {
                     new URL(url);
                 } catch (MalformedURLException e) {
-                    result.addWarning(
-                  new PolicyValidatorResult.Warning(a,
-                    "The assertion might not work as configured." +
-                  "\nThe protected service url is malformed.", null));
+                    result.addWarning(new PolicyValidatorResult.Warning(a,
+                      "The assertion might not work as configured." +
+                      "\nThe protected service url is malformed.", null));
                 }
             }
         }
