@@ -11,9 +11,13 @@ import sun.misc.BASE64Decoder;
 
 import java.io.InputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.ByteArrayInputStream;
 import java.net.URLConnection;
 import java.net.URL;
 import java.util.Map;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -24,6 +28,8 @@ import java.util.regex.Pattern;
  * Time: 2:31:32 PM
  */
 public class HexUtils {
+    private static final Logger log = Logger.getLogger(HexUtils.class.getName());
+
     private HexUtils() {}
 
     private static final char[] hexadecimal = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
@@ -182,18 +188,36 @@ public class HexUtils {
     }
 
     /**
-     * Execute an HTTP GET on URL and return contents as a byte array.
+     * Execute an HTTP GET or POST on URL and return contents as a byte array.
      * @param url
+     * @param dataToPost  post data, or null to do a GET
      * @return
      * @throws java.io.IOException If any connection problems arise, or if number of bytes read does not equal expected number of bytes in HTTP header.
      */
-    public static Slurpage slurpUrl(URL url) throws IOException {
+    public static Slurpage slurpUrl(URL url, InputStream dataToPost, String postDataContentType) throws IOException {
         URLConnection urlConnection = url.openConnection();
+        urlConnection.setDoInput(true);
         urlConnection.setAllowUserInteraction(false);
+
+        if (dataToPost != null) {
+            if (postDataContentType != null)
+                urlConnection.setRequestProperty("Content-Type", postDataContentType);
+            urlConnection.setDoOutput(true);
+            OutputStream os = urlConnection.getOutputStream();
+            byte[] block = new byte[8192];
+            int size = 0;
+            while ((size = dataToPost.read(block)) > 0)
+                os.write(block, 0, size);
+        }
+
         int len = urlConnection.getContentLength();
-        if (len < 0)
-            throw new IOException("HTTP header does not include a Content-Length header (status = " + urlConnection.getHeaderField(null)
-                                  + "): " + url.toString());
+        if (len < 0) {
+            // no content lenth, have to do it the hard way
+            log.log(Level.FINE, "No content-length header in response; allocating up to 512kb");
+            byte[] got = slurpStream(urlConnection.getInputStream(), 1024 * 512);
+            return new Slurpage(got, urlConnection.getHeaderFields());
+        }
+
         byte[] byteArray = new byte[len];
         InputStream bin = null;
         try {
@@ -206,5 +230,26 @@ public class HexUtils {
             if (bin != null)
                 bin.close();
         }
+    }
+
+    /**
+     * Execute an HTTP GET or POST on URL and return contents as a byte array.
+     * @param url
+     * @param dataToPost  post data, or null to do a GET
+     * @return
+     * @throws java.io.IOException If any connection problems arise, or if number of bytes read does not equal expected number of bytes in HTTP header.
+     */
+    public static Slurpage slurpUrl(URL url, byte[] dataToPost, String postDataContentType) throws IOException {
+        return slurpUrl(url, new ByteArrayInputStream(dataToPost), postDataContentType);
+    }
+
+    /**
+     * Execute an HTTP GET on URL and return contents as a byte array.
+     * @param url
+     * @return
+     * @throws java.io.IOException If any connection problems arise, or if number of bytes read does not equal expected number of bytes in HTTP header.
+     */
+    public static Slurpage slurpUrl(URL url) throws IOException {
+        return slurpUrl(url, (InputStream)null, null);
     }
 }
