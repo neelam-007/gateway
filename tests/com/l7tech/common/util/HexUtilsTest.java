@@ -6,25 +6,18 @@
 
 package com.l7tech.common.util;
 
-import com.l7tech.proxy.SsgFaker;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import javax.xml.soap.SOAPConstants;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.net.URL;
 import java.security.MessageDigest;
 import java.util.Arrays;
-import java.util.List;
 import java.util.logging.Logger;
 
 /**
- *
- * User: mike
- * Date: Sep 4, 2003
- * Time: 12:15:53 PM
+ * Test for {@link HexUtils} facilities.
  */
 public class HexUtilsTest extends TestCase {
     private static Logger log = Logger.getLogger(HexUtilsTest.class.getName());
@@ -220,29 +213,4 @@ public class HexUtilsTest extends TestCase {
             "a44878c63b13cd7b6bbb82d9972094c464171252feab027210d0a0d0a0d0a0d0a2d2d2d2d3d5f7e344b2d5963584" +
             "45e752d2d0d0a";
 
-    public void testSlurpUrlPostAbility() throws Exception {
-        SsgFaker ssgFake = null;
-
-        try {
-            ssgFake = new SsgFaker();
-            String pingUrl = ssgFake.start();
-            pingUrl += "/soap/ssg";
-
-            log.info("Got ping url = " + pingUrl);
-
-            String ddd = "<soapenv:Envelope xmlns:soapenv=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\"><soapenv:Body><foo>" +
-                    "blah blah blah asdf reqw qwer afhsjhsjhs\n";
-            StringBuffer pd = new StringBuffer(ddd);
-            for (int i = 0; i < 20; ++i) pd.append("asdfhasdfh hfsdajkad ashdfkjashdf hasfjahsfka aksjhdfaksfh\n");
-            pd.append("</foo></soapenv:Body></soapenv:Envelope>");
-            byte[] postData = pd.toString().getBytes();
-
-            log.info("Posting: " + pd);
-            HexUtils.Slurpage r = HexUtils.slurpUrl(new URL(pingUrl), postData, "text/xml");
-            assertEquals(((List)r.headers.get("Content-Type")).get(0), "text/xml");
-
-        } finally {
-            if (ssgFake != null) ssgFake.destroy();
-        }
-    }
 }

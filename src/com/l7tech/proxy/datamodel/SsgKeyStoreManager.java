@@ -541,21 +541,23 @@ public class SsgKeyStoreManager {
             throws IOException, BadCredentialsException, OperationCanceledException, GeneralSecurityException, KeyStoreCorruptException
     {
         log.log(Level.FINER, "Discovering server certificate for Gateway " + ssg + " (" + ssg.getLocalEndpoint() + ")");
-        CertificateDownloader cd = new CertificateDownloader(ssg.getServerUrl(),
+        CertificateDownloader cd = new CertificateDownloader(ssg.getRuntime().getHttpClient(),
+                                                             ssg.getServerUrl(),
                                                              credentials != null ? credentials.getUserName() : null,
                                                              credentials != null ? credentials.getPassword() : null);
 
-        boolean isValidated = cd.downloadCertificate();
+        X509Certificate gotCert = cd.downloadCertificate();
+        boolean isValidated = cd.isValidCert();
         if (!isValidated) {
             if (cd.isUncheckablePassword()) {
                 // The username was known to the SSG, but at least one of the accounts with that username
                 // had an uncheckable password (either unavailable or hashed in an unsupported way).
-                Managers.getCredentialManager().notifySslCertificateUntrusted("the Gateway " + ssg, cd.getCertificate());
+                Managers.getCredentialManager().notifySslCertificateUntrusted("the Gateway " + ssg, gotCert);
             } else
                 throw new BadCredentialsException("The downloaded Gateway server certificate could not be verified with the current user name and password.");
         }
 
-        saveSsgCertificate(ssg, cd.getCertificate());
+        saveSsgCertificate(ssg, gotCert);
     }
 
 

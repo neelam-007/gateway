@@ -6,23 +6,19 @@
 
 package com.l7tech.common.util;
 
+import com.l7tech.common.http.SimpleHttpClient;
+import com.l7tech.common.http.UrlConnectionHttpClient;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import java.util.logging.Logger;
 import java.net.URL;
 
 /**
- * Test certificate downloading.  The SSG must be running on localhost:8080, and must contain
+ * Test certificate downloading.  The SSG must be running on sybok:8080, and must contain
  * a user "testuser" with the password "testpassword".
- *
- * User: mike
- * Date: Jul 15, 2003
- * Time: 3:07:31 PM
  */
 public class CertificateDownloaderTest extends TestCase {
-    private static Logger log = Logger.getLogger(CertificateDownloaderTest.class.getName());
 
     public CertificateDownloaderTest(String name) {
         super(name);
@@ -37,21 +33,22 @@ public class CertificateDownloaderTest extends TestCase {
     }
 
     public void testUserUnknown() throws Exception {
-        CertificateDownloader cd = new CertificateDownloader(new URL("http://sybok:8080"),
+        CertificateDownloader cd = new CertificateDownloader(new SimpleHttpClient(new UrlConnectionHttpClient()),
+                                                             new URL("http://sybok:8080"),
                                                              "tesasdfasdftuser",
                                                              "testpagergassword".toCharArray());
-        assertFalse(cd.downloadCertificate());
-        assertTrue(cd.getCertificate() != null);
-        assertTrue(cd.isUserUnknown());
+        assertNotNull(cd.downloadCertificate());
+        assertFalse(cd.isValidCert());
+        assertTrue(cd.isUncheckablePassword());
   }
 
     public void testSuccess() throws Exception {
-        CertificateDownloader cd = new CertificateDownloader(new URL("http://sybok:8080"),
+        CertificateDownloader cd = new CertificateDownloader(new SimpleHttpClient(new UrlConnectionHttpClient()),
+                                                             new URL("http://sybok:8080"),
                                                              "mike",
                                                              "asdfasdf".toCharArray());
-        assertTrue(cd.downloadCertificate());
-        assertTrue(cd.getCertificate() != null);
-        assertFalse(cd.isUserUnknown());
+        assertNotNull(cd.downloadCertificate());
         assertTrue(cd.isValidCert());
+        assertFalse(cd.isUncheckablePassword());
     }
 }

@@ -6,20 +6,18 @@
 
 package com.l7tech.common.util;
 
-import com.l7tech.common.mime.MimeUtil;
 import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
 
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Map;
 import java.util.StringTokenizer;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -58,8 +56,6 @@ public class HexUtils {
         sha1.reset();
         return sha1;
     }
-
-    private static final Logger log = Logger.getLogger(HexUtils.class.getName());
 
     private HexUtils() {}
 
@@ -263,80 +259,6 @@ public class HexUtils {
         } catch (MalformedURLException e) {
             return false;
         }
-    }
-
-    /** Holds the result of a slurpUrl() call. */
-    public static class Slurpage {
-        public final Map headers;
-        public final byte[] bytes;
-
-        private Slurpage(byte[] bytes, Map headers) { this.bytes = bytes; this.headers = headers; }
-    }
-
-    /**
-     * Execute an HTTP GET or POST on URL and return contents as a byte array.
-     * @param url
-     * @param dataToPost  post data, or null to do a GET
-     * @return
-     * @throws java.io.IOException If any connection problems arise, or if number of bytes read does not equal expected number of bytes in HTTP header.
-     */
-    public static Slurpage slurpUrl(URL url, InputStream dataToPost, String postDataContentType) throws IOException {
-        URLConnection urlConnection = url.openConnection();
-        urlConnection.setDoInput(true);
-        urlConnection.setAllowUserInteraction(false);
-
-        if (dataToPost != null) {
-            if (postDataContentType != null)
-                urlConnection.setRequestProperty(MimeUtil.CONTENT_TYPE, postDataContentType);
-            urlConnection.setDoOutput(true);
-            OutputStream os = urlConnection.getOutputStream();
-            byte[] block = new byte[8192];
-            int size = 0;
-            while ((size = dataToPost.read(block)) > 0)
-                os.write(block, 0, size);
-        }
-
-        int len = urlConnection.getContentLength();
-        if (len < 0) {
-            // no content lenth, have to do it the hard way
-            log.log(Level.FINE, "No content-length header in response; allocating up to 512kb");
-            byte[] got = slurpStream(urlConnection.getInputStream(), 1024 * 512);
-            return new Slurpage(got, urlConnection.getHeaderFields());
-        }
-
-        byte[] byteArray = new byte[len];
-        InputStream bin = null;
-        try {
-            bin = urlConnection.getInputStream();
-            int got = slurpStream(bin, byteArray);
-            if (got != len)
-                throw new IOException("Did not receive the correct number of bytes: " + url.toString());
-            return new Slurpage(byteArray, urlConnection.getHeaderFields());
-        } finally {
-            if (bin != null)
-                bin.close();
-        }
-    }
-
-    /**
-     * Execute an HTTP GET or POST on URL and return contents as a byte array.
-     * @param url
-     * @param dataToPost  post data, or null to do a GET
-     * @return
-     * @throws java.io.IOException If any connection problems arise, or if number of bytes read does not equal expected number of bytes in HTTP header.
-     */
-    public static Slurpage slurpUrl(URL url, byte[] dataToPost, String postDataContentType) throws IOException {
-        return slurpUrl(url, new ByteArrayInputStream(dataToPost), postDataContentType);
-    }
-
-    /**
-     * Execute an HTTP GET on URL and return contents as a byte array.
-     * @param url
-     * @return
-     * @throws java.io.IOException If any connection problems arise, or if number of bytes read does not equal expected number of bytes in HTTP header.
-     */
-    public static Slurpage slurpUrl(URL url) throws IOException {
-        return slurpUrl(url, (InputStream)null, null);
     }
 
     /**

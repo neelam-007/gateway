@@ -306,14 +306,14 @@ public class MessageProcessor {
             throw new OperationCanceledException("Unable to perform password ping with Federated SSG"); // can't happen
 
         // We'll just use the CertificateDownloader for this.
-        CertificateDownloader cd = new CertificateDownloader(ssg.getServerUrl(),
-          context.getUsername(),
-          context.getPassword());
+        CertificateDownloader cd = new CertificateDownloader(ssg.getRuntime().getHttpClient(),
+                                                             ssg.getServerUrl(),
+                                                             context.getUsername(),
+                                                             context.getPassword());
         try {
             // TODO: remove this stupid hack.  it doesn't help LDAP users anyway
-            boolean worked = cd.downloadCertificate();
-            ssg.getRuntime().passwordWorkedWithSsg(worked);
-            return worked;
+            cd.downloadCertificate();
+            return cd.isValidCert();
         } catch (CertificateException e) {
             log.log(Level.SEVERE, "Gateway sent us an invalid certificate during secure password ping", e);
             throw new IOException("Gateway sent us an invalid certificate during secure password ping");
@@ -804,7 +804,7 @@ public class MessageProcessor {
 
     /** Check for 401 or 402 status codes, and log and throw as appropriate. */
     private void checkStatus(int status, PostMethod postMethod, URL url, final Ssg ssg)
-            throws KeyStoreCorruptException, BadCredentialsException
+            throws BadCredentialsException
     {
         if (status == 401 || status == 402) {
             Header authHeader = postMethod.getResponseHeader("WWW-Authenticate");

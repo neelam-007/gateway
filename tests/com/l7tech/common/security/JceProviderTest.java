@@ -7,11 +7,11 @@
 package com.l7tech.common.security;
 
 import com.l7tech.common.security.prov.bc.BouncyCastleCertificateRequest;
-import com.l7tech.common.security.xml.processor.WssProcessorImpl;
-import com.l7tech.common.security.xml.processor.ProcessorResult;
-import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
-import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.WssDecoratorTest;
+import com.l7tech.common.security.xml.decorator.DecorationRequirements;
+import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.common.security.xml.processor.WssProcessorImpl;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
@@ -20,16 +20,15 @@ import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.w3c.dom.Document;
 
 import java.io.FileInputStream;
-import java.net.URL;
 import java.security.*;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Enumeration;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Test the performance of a JceProviderEngine.
@@ -157,7 +156,7 @@ public class JceProviderTest {
             if (LOAD_CSR_FROM_DISK) {
                 // Load CSR from disk
                 log.info("pretest: loading a certificate signing request...");
-                byte[] bytes = HexUtils.slurpUrl( new URL("file:///" + dir + "ssl.cer") ).bytes;
+                byte[] bytes = HexUtils.slurpStream( new FileInputStream("/" + dir + "ssl.cer"));
                 csr = new BouncyCastleCertificateRequest(new PKCS10CertificationRequest(bytes), asymProvName);
             } else {
                 // Make our own CSR

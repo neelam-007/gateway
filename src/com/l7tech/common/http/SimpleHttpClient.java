@@ -62,8 +62,20 @@ public class SimpleHttpClient implements GenericHttpClient {
      * @return the response.  Never null.
      * @throws GenericHttpException if there is a configuration, network or HTTP problem
      */
-    public GenericHttpResponse get(GenericHttpRequestParams params) throws GenericHttpException {
-        return client.createRequest(GenericHttpClient.GET, params).getResponse();
+    public SimpleHttpResponse get(GenericHttpRequestParams params) throws GenericHttpException {
+        GenericHttpRequest request = null;
+        GenericHttpResponse response = null;
+        try {
+            request = client.createRequest(GenericHttpClient.GET, params);
+            response = request.getResponse();
+            byte[] bodyBytes = HexUtils.slurpStream(response.getInputStream());
+            return new SimpleHttpResponseImpl(response, bodyBytes);
+        } catch (IOException e) {
+            throw new GenericHttpException(e);
+        } finally {
+            if (response != null) response.close();
+            if (request != null) request.close();
+        }
     }
 
     /**

@@ -6,79 +6,53 @@
 
 package com.l7tech.common.util;
 
+import com.l7tech.common.http.GenericHttpRequestParams;
+import com.l7tech.common.http.GenericHttpRequestParamsImpl;
+import com.l7tech.common.http.HttpHeader;
+import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.protocol.SecureSpanConstants;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
 
 /**
- * Download a certificate from the SSG, check it for validity, and import it.
- *
- * Typical usage:
- * <code>
- * CertificateDownloader cd = new CertificateDownloader();
- * cd.setSsgUrl("http://wherever:8080");
- * cd.setUsername("alice");
- * cd.setPassword("sekrit".toCharArray());
- * try {
- *   boolean result = cd.downloadCertificate();
- *   Certificate cert = cd.getCertificate();
- *   if (result) {
- *     // Certificate signature was validated with the given username and password
- *   } else {
- *     // A certificate was obtained, but it could not be validated
- *   }
- *   if (cd.isUserUnknown()) { }
- * } catch (Exception e) {
- *   // certificate download was unsuccessful.  cd.getCertificate() will probably return null.
- * }
- *
- * if (!cd.isValidCert()) {
- *   cd.setPassword("otherPass");  // You can try other passwords on the downloaded cert.
- *                                 // To try a different username though you'll need to downloadCertificate() again.
- *   if (!cd.isValidCert()) {
- *     // oh well
- *   }
- * }
- * </code>
- *
- * User: mike
- * Date: Jul 15, 2003
- * Time: 1:40:08 PM
+ * Download a certificate from the SSG and check it for validity, if possible.
  */
 public class CertificateDownloader {
     private static final int CHECK_PREFIX_LENGTH = SecureSpanConstants.HttpHeaders.CERT_CHECK_PREFIX.length();
 
-    private String username = null;
-    private char[] password = null;
-    private URL ssgUrl = null;
-    private X509Certificate cert = null;
+    private final SimpleHttpClient httpClient;
+    private final URL ssgUrl;
+    private final String username;
+    private final char[] password;
+
     private byte[] certBytes = null;
     private List checks = Collections.EMPTY_LIST;
     private String nonce = "";
     private boolean sawNoPass = false;
 
-    public CertificateDownloader() {
-    }
-
-    public CertificateDownloader(URL ssgUrl, String username, char[] password) {
-        setSsgUrl(ssgUrl);
-        setUsername(username);
-        setPassword(password);
-    }
-
-    public void setUsername(String username) {
+    /**
+     * Create a new CertificateDownloader using the specified HTTP client, target URL, and credentials.
+     *
+     * @param httpClient  the HTTP client to use.  Must not be null.
+     * @param ssgUrl      the URL of the certificate discovery service.  Must not be null.
+     * @param username    username to use to check the downloaded cert, or null to disable this feature.
+     * @param password    password to use to check the downloaded cert, or null to disable this feature.
+     */
+    public CertificateDownloader(SimpleHttpClient httpClient, URL ssgUrl, String username, char[] password) {
+        if (httpClient == null || ssgUrl == null) throw new NullPointerException();
+        this.httpClient = httpClient;
+        this.ssgUrl = ssgUrl;
         this.username = username;
-    }
-
-    public void setPassword(char[] password) {
         this.password = password;
     }
 
@@ -90,18 +64,6 @@ public class CertificateDownloader {
         md5.update(":".getBytes());
         md5.update((password == null ? "" : new String(password)).getBytes());
         return HexUtils.encodeMd5Digest(md5.digest());
-    }
-
-    public void setSsgUrl(URL ssgUrl) {
-        try {
-            this.ssgUrl = new URL(ssgUrl.getProtocol(), ssgUrl.getHost(), ssgUrl.getPort(), SecureSpanConstants.CERT_PATH);
-        } catch (MalformedURLException e) {
-            // can't happen
-        }
-    }
-
-    public X509Certificate getCertificate() {
-        return cert;
     }
 
     private class CheckInfo {
@@ -130,33 +92,37 @@ public class CertificateDownloader {
 
     /**
      * Download a certificate from the currently-configured ssgUrl, providing the specified username
-     * and validating the result with the specified password.
+     * and preparing to validate the result with the specified password.
      *
-     * @return true if the downloaded certificate checked out OK.  Use getCertificate() to get it either way.
+     * @return the downloaded certificate.  Never null.
      * @throws IOException in case of network trouble
      * @throws CertificateException if the returned certificate can't be parsed
      */
-    public boolean downloadCertificate() throws IOException, CertificateException {
+    public X509Certificate downloadCertificate() throws IOException, CertificateException {
         if (ssgUrl == null)
             throw new IllegalStateException("No Gateway url is set");
+        certBytes = null;
         nonce = String.valueOf(Math.abs(new SecureRandom().nextLong()));
-        String uri = ssgUrl.getPath() + "?" + "getcert=1&nonce=" + nonce;
+        String uri = SecureSpanConstants.CERT_PATH + "?" + "getcert=1&nonce=" + nonce;
         if (username != null)
             uri += "&username=" + URLEncoder.encode(username, "UTF-8");
 
-        URL remote = null;
-        remote = new URL(ssgUrl.getProtocol(), ssgUrl.getHost(), ssgUrl.getPort(), uri);
-        HexUtils.Slurpage result = HexUtils.slurpUrl(remote);
-        certBytes = result.bytes;
-        Map headers = result.headers;
-        cert = CertUtils.decodeCert(certBytes);
+        URL remote = new URL(ssgUrl.getProtocol(), ssgUrl.getHost(), ssgUrl.getPort(), uri);
+
+        GenericHttpRequestParams params = new GenericHttpRequestParamsImpl(remote);
+        SimpleHttpClient.SimpleHttpResponse result = httpClient.get(params);
+
+        certBytes = result.getBytes();
+        X509Certificate cert = CertUtils.decodeCert(certBytes);
+
+        HttpHeader[] headers = result.getHeaders();
         this.checks = new ArrayList();
 
         sawNoPass = false;
-        for (Iterator i = headers.keySet().iterator(); i.hasNext();) {
-            String key = (String) i.next();
-            List list = (List) headers.get(key);
-            String value = (String) list.get(0);
+        for (int i = 0; i < headers.length; i++) {
+            HttpHeader header = headers[i];
+            String key = header.getName();
+            String value = header.getFullValue();
             if (key == null || key.length() <= CHECK_PREFIX_LENGTH ||
                     !key.substring(0, CHECK_PREFIX_LENGTH).equalsIgnoreCase(
                             SecureSpanConstants.HttpHeaders.CERT_CHECK_PREFIX))
@@ -177,7 +143,7 @@ public class CertificateDownloader {
             else
                 checks.add(new CheckInfo(idp, hash, realm));
         }
-        return isValidCert();
+        return cert;
     }
 
     /**
@@ -187,8 +153,11 @@ public class CertificateDownloader {
      * This checks the password against every Cert-Check-NNN: header present when the cert was downloaded.
      *
      * @return true if the cert checks out.
+     * @throws IllegalStateException if {@link #downloadCertificate()} has not successfully returned a certificate.
      */
     public boolean isValidCert() {
+        if (certBytes == null) throw new IllegalStateException();
+
         for (Iterator i = checks.iterator(); i.hasNext();) {
             CheckInfo checkInfo = (CheckInfo) i.next();
             if (checkInfo.checkCert())
@@ -200,20 +169,15 @@ public class CertificateDownloader {
     }
 
     /**
-     * Check whether the specified username was known to the SSG.
-     * @return false if the SSG recognized the username; otherwise true
-     */
-    public boolean isUserUnknown() {
-        return checks.size() < 1 && !sawNoPass;
-    }
-
-    /**
      * Check whether an account with this username exists but whose password isn't available to the SSG.
      * @return true if at least one Cert-Check-NNN: header contatining "NOPASS" was in the response, or no password
      *         was provided when this CertificateDownloader was instantiated, or no Cert-Check headers at all
      *         were in the response.
+     * @throws IllegalStateException if {@link #downloadCertificate()} has not successfully returned a certificate.
      */
     public boolean isUncheckablePassword() {
+        if (certBytes == null) throw new IllegalStateException();
+
         return sawNoPass || password == null || checks.size() < 1;
     }
 }

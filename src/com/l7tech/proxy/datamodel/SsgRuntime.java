@@ -6,7 +6,7 @@
 
 package com.l7tech.proxy.datamodel;
 
-import com.l7tech.common.http.GenericHttpClient;
+import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.http.UrlConnectionHttpClient;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.util.DateTranslator;
@@ -57,7 +57,6 @@ public class SsgRuntime {
     private long credentialsUpdatedTimeMillis = 0;
     private PrivateKey privateKey = null; // cache of private key
     private boolean passwordWorkedForPrivateKey = false;
-    private boolean passwordWorkedWithSsg = false;
     private SSLContext sslContext = null;
     private ClientProxyTrustManager trustManager = null;
     private Cookie[] sessionCookies = null;
@@ -68,7 +67,7 @@ public class SsgRuntime {
     private Calendar secureConversationExpiryDate = null;
     private long timeOffset = 0;
     private Map tokenStrategiesByType;
-    SslPeerHttpClient sslPeerHttpClient = null;
+    SimpleHttpClient simpleHttpClient = null;
 
     private DateTranslator fromSsgDateTranslator = new DateTranslator() {
         public Date translate(Date source) {
@@ -159,7 +158,6 @@ public class SsgRuntime {
         synchronized (ssg) {
             if (this.password != password) {
                 this.passwordWorkedForPrivateKey = false;
-                this.passwordWorkedWithSsg = false;
             }
             this.password = password;
 
@@ -171,15 +169,6 @@ public class SsgRuntime {
             else
                 ssg.setPersistPassword(null);
         }
-    }
-
-    /** Check if the currently-configured password is known to have worked with the SSG. */
-    public boolean passwordWorkedWithSsg() {
-        return passwordWorkedWithSsg;
-    }
-
-    public void passwordWorkedWithSsg(boolean worked) {
-        passwordWorkedWithSsg = worked;
     }
 
     /**
@@ -569,11 +558,11 @@ public class SsgRuntime {
      * Currently this HTTP client is not very performant and should not be used in performance-critical sections of code.
      * @return the HTTP client.  Never null.
      */
-    public GenericHttpClient getHttpClient() {
+    public SimpleHttpClient getHttpClient() {
         synchronized (ssg) {
-            if (sslPeerHttpClient == null)
-                sslPeerHttpClient = new SslPeerHttpClient(new UrlConnectionHttpClient(), ssg);
-            return sslPeerHttpClient;
+            if (simpleHttpClient == null)
+                simpleHttpClient = new SimpleHttpClient(new SslPeerHttpClient(new UrlConnectionHttpClient(), ssg));
+            return simpleHttpClient;
         }
     }
 
