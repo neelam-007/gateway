@@ -346,7 +346,9 @@
                 <include name="start.jar"/>
                 <include name="wsdl4j.jar"/>
                 <include name="xbean.jar"/>
+                <include name="xbean-common.jar"/>
                 <include name="xbean-saml.jar"/>
+                <include name="xbean-wstrust.jar"/>
                 <include name="xercesImpl.jar"/>
                 <include name="xml-apis.jar"/>
                 <include name="xpp3-1.1.3.3.jar"/>
