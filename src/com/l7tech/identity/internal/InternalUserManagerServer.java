@@ -8,6 +8,7 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.UserManager;
 import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.SessionManager;
 
 import java.io.ByteArrayInputStream;
 import java.security.cert.Certificate;
@@ -212,8 +213,15 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
             pc = getContext();
             pc.beginTransaction();
             User u = findByPrimaryKey( oid );
-            u.setCert( null );
-            u.setCertResetCounter( 0 );
+            // if the user has a cert already, revoke it and revoke the password
+            if (u.getCert() != null && u.getCert().length() > 0) {
+                logger.info("revoking cert and password for user " + u.getLogin());
+                byte[] randomPasswd = new byte[32];
+                SessionManager.getInstance().getRand().nextBytes(randomPasswd);
+                u.setPassword(new String(randomPasswd));
+                u.setCert( null );
+                u.setCertResetCounter( 0 );
+            }
             pc.commitTransaction();
         } catch (SQLException e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
@@ -287,6 +295,7 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
             String newPasswd = user.getPassword();
 
             if (!originalPasswd.equals(newPasswd)) {
+                logger.info("Revoking cert for user " + originalUser.getLogin() + " because he is changing his passwd.");
                 // must revoke the cert
                 originalUser.setCert( null );
                 originalUser.setCertResetCounter( 0 );
