@@ -26,7 +26,18 @@ import java.security.cert.X509Certificate;
  * @author alex
  * @version $Revision$
  */
-public class TrustedCert extends NamedEntityImp implements Cloneable, Serializable {
+public class TrustedCert extends NamedEntityImp implements Serializable, Cloneable {
+    public void copyFrom(TrustedCert cert) {
+        this._oid = cert._oid;
+        this._name = cert._name;
+        this.subjectDn = cert.subjectDn;
+        this.certBase64 = cert.certBase64;
+        this.trustedForSsl = cert.trustedForSsl;
+        this.trustedForSigningClientCerts = cert.trustedForSigningClientCerts;
+        this.trustedForSigningServerCerts = cert.trustedForSigningServerCerts;
+        this.trustedForSigningSamlTokens = cert.trustedForSigningSamlTokens;
+    }
+
     public static final String CERT_FACTORY_ALGORITHM = "X.509";
 
     /**
