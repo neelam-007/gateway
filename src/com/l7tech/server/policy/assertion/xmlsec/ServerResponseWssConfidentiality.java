@@ -1,7 +1,11 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
 import com.l7tech.common.security.xml.SignerInfo;
+import com.l7tech.common.security.xml.WssDecorator;
+import com.l7tech.common.security.xml.WssProcessor;
 import com.l7tech.common.util.KeystoreUtils;
+import com.l7tech.common.xml.XpathEvaluator;
+import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -9,17 +13,19 @@ import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
+import org.jaxen.JaxenException;
 
 import java.io.IOException;
 import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.util.List;
+import java.security.cert.X509Certificate;
 
 /**
- * XML Digital signature on the soap response sent from the ssg server to the requestor (probably proxy). Also does
- * XML Encryption of the response's body if the assertion's property dictates it.
+ * XML encryption on the soap response sent from the ssg server to the requestor (probably proxy).
  * <p/>
- * On the server side, this decorates a response with an xml d-sig and maybe signs the body.
- * On the proxy side, this verifies that the Soap Response contains a valid xml d-sig for the entire envelope and maybe
- * decyphers the body.
+ * On the server side, this schedules decoration of a response with an xml encryption.
+ * On the proxy side, this verifies that the Soap Response contains a valid xml encryption for the elements.
  * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
@@ -37,63 +43,88 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
     /**
      * despite the name of this method, i'm actually working on the response document here
      */
-    public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
-        if (!(request instanceof SoapRequest)) {
-            throw new PolicyAssertionException("This type of assertion is only supported with SOAP type of messages");
-        }
-        if (!(response instanceof SoapResponse)) {
-            throw new PolicyAssertionException("This type of assertion is only supported with SOAP type of messages");
-        }
+    public AssertionStatus checkRequest(Request request, Response response)
+            throws IOException, PolicyAssertionException
+    {
+        if (!(request instanceof SoapRequest))
+            throw new PolicyAssertionException("This type of assertion is only supported with SOAP requests");
         SoapRequest soapRequest = (SoapRequest)request;
-        SoapResponse soapResponse = (SoapResponse)response;
-        // GET THE DOCUMENT
-        Document soapmsg = null;
-        try {
-            soapmsg = soapResponse.getDocument();
-        } catch (SAXException e) {
-            String msg = "cannot get an xml document from the response to sign";
-            logger.severe(msg);
-            return AssertionStatus.SERVER_ERROR;
+
+        // We'll need a public key for the recipient of this response.  Find a signed X509 token in the request
+        X509Certificate clientCert = null;
+        WssProcessor.ProcessorResult wssResult = soapRequest.getWssProcessorOutput();
+        WssProcessor.SecurityToken[] tokens = wssResult.getSecurityTokens();
+        for (int i = 0; i < tokens.length; i++) {
+            WssProcessor.SecurityToken token = tokens[i];
+            if (token instanceof WssProcessor.X509SecurityToken) {
+                WssProcessor.X509SecurityToken x509token = (WssProcessor.X509SecurityToken)token;
+                if (x509token.isPossessionProved()) {
+                    if (clientCert != null) {
+                        logger.log( Level.WARNING, "Request included more than one X509 security token whose key ownership was proven" );
+                        return AssertionStatus.BAD_REQUEST; // todo verify that this return value is appropriate
+                    }
+                    clientCert = x509token.asX509Certificate();
+                }
+            }
         }
 
-        // TODO replace response nonce with more standard mechanism when doing replay protection in Milestone 2
-        /*String nonceValue = (String)soapRequest.getParameter(Request.PARAM_HTTP_XML_NONCE);
+        if (clientCert == null) {
+            logger.log( Level.WARNING, "Unable to encrypt response -- request included no x509 token whose key ownership was proven" );
+            response.setAuthenticationMissing(true); // todo is it really, though?
+            response.setPolicyViolated(true);
+            return AssertionStatus.FAILED; // todo verify that this return value is appropriate
+        }
 
-        // (this is optional)
-        if (nonceValue != null && nonceValue.length() > 0) {
-            try {
-                SecureConversationTokenHandler.appendNonceToDocument(soapmsg, Long.parseLong(nonceValue));
-            } catch (MessageNotSoapException e) {
-                logger.log(Level.WARNING, e.getMessage(), e);
-                return AssertionStatus.FAILED;
+        final X509Certificate foundClientCert = clientCert;
+
+        response.addDeferredAssertion(this, new ServerAssertion() {
+            public AssertionStatus checkRequest(Request request, Response response)
+                    throws IOException, PolicyAssertionException
+            {
+                if (!(response instanceof SoapResponse))
+                    throw new PolicyAssertionException("This type of assertion is only supported with SOAP responses");
+                SoapResponse soapResponse = (SoapResponse)response;
+
+                // GET THE DOCUMENT
+                Document soapmsg = null;
+                try {
+                    soapmsg = soapResponse.getDocument();
+                } catch (SAXException e) {
+                    String msg = "cannot get an xml document from the response to encrypt";
+                    logger.severe(msg);
+                    return AssertionStatus.SERVER_ERROR;
+                }
+
+                final XpathExpression xpath = responseWssConfidentiality.getXpathExpression();
+                XpathEvaluator evaluator = XpathEvaluator.newEvaluator(soapmsg,
+                                                                       xpath.getNamespaces());
+                List selectedElements = null;
+                try {
+                    selectedElements = evaluator.selectElements(xpath.getExpression());
+                } catch (JaxenException e) {
+                    // this is thrown when there is an error in the expression
+                    // this is therefore a bad policy
+                    throw new PolicyAssertionException(e);
+                }
+
+                if (selectedElements == null || selectedElements.size() < 1) {
+                    logger.fine("No matching elements to encrypt in response.  Returning success.");
+                    return AssertionStatus.NONE;
+                }
+
+                SignerInfo si = KeystoreUtils.getInstance().getSignerInfo();
+                WssDecorator.DecorationRequirements wssReq = soapResponse.getOrMakeDecorationRequirements();
+                wssReq.setSenderCertificate(si.getCertificateChain()[0]);
+                wssReq.setSenderPrivateKey(si.getPrivate());
+                wssReq.setRecipientCertificate(foundClientCert);
+                wssReq.getElementsToEncrypt().addAll(selectedElements);
+                wssReq.setSignTimestamp(true);
+                logger.finest("Designated " + selectedElements.size() + " response elements for encryption");
+
+                return AssertionStatus.NONE;
             }
-        } else {
-            logger.finest("request did not include a nonce value to use for response's signature");
-        }*/
+        });
 
-        SignerInfo si = KeystoreUtils.getInstance().getSignerInfo();
-        // TODO verify rewrite     verify rewrite     verify rewrite
-        // TODO verify rewrite     verify rewrite     verify rewrite
-        // TODO verify rewrite     verify rewrite     verify rewrite
-        // TODO verify rewrite     verify rewrite     verify rewrite
-        // TODO verify rewrite     verify rewrite     verify rewrite
-        // TODO verify rewrite     verify rewrite     verify rewrite
-        // TODO verify rewrite     verify rewrite     verify rewrite
-        // TODO verify rewrite     verify rewrite     verify rewrite
-        // TODO verify rewrite     verify rewrite     verify rewrite
-
-        // TODO rewrite rewrite!!
-        // TODO rewrite rewrite!!
-        // TODO rewrite rewrite!!
-        // TODO rewrite rewrite!!
-        // TODO rewrite rewrite!!
-        // TODO rewrite rewrite!!
-        // TODO rewrite rewrite!!
-        // TODO rewrite rewrite!!
-        // TODO rewrite rewrite!!
-
-
-        ((XmlResponse)response).setDocument(soapmsg);
         return AssertionStatus.NONE;
     }
 
