@@ -25,6 +25,7 @@ import org.xml.sax.SAXException;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -178,7 +179,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             if (services.size() < 1) {
                 //res.sendError(HttpServletResponse.SC_NOT_FOUND, "no services or not authorized");
                 // return empty wsil
-                String emptywsil = "<?xml version=\"1.0\"?>\n" +
+                String emptywsil = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
                   "<?xml-stylesheet type=\"text/xsl\" href=\"" + styleURL(req) + "\"?>\n" +
                   "<inspection xmlns=\"http://schemas.xmlsoap.org/ws/2001/10/inspection/\" />\n";
                 res.setContentType(XmlUtil.TEXT_XML + "; charset=utf-8");
@@ -249,7 +250,9 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         uri = uri.replaceAll("wsil", "wsdl");
         String output = createWSILDoc(services, req.getServerName(), Integer.toString(req.getServerPort()), uri, req);
         res.setContentType(XmlUtil.TEXT_XML + "; charset=utf-8");
-        res.getOutputStream().println(output);
+        ServletOutputStream os = res.getOutputStream();
+        os.print(output);
+        os.close();
     }
 
     private Collection listAnonymouslyViewableServices() throws TransactionException, IOException, FindException {
@@ -357,7 +360,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         */
         String protocol = "http";
         if (port.equals("8443") || port.equals("443")) protocol = "https";
-        StringBuffer outDoc = new StringBuffer("<?xml version=\"1.0\"?>\n" +
+        StringBuffer outDoc = new StringBuffer("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
           "<?xml-stylesheet type=\"text/xsl\" href=\"" + styleURL(req) + "\"?>\n" +
           "<inspection xmlns=\"http://schemas.xmlsoap.org/ws/2001/10/inspection/\">\n");
         // for each service
