@@ -8,11 +8,6 @@ import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.TreePath;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
-import java.util.Vector;
 
 /**
  * Insert comments here.
@@ -23,17 +18,11 @@ import java.util.Vector;
 public class ViewerToolBar extends JToolBar {
     Viewer viewer;
     ViewerProperties properties;
-    private JComboBox xpathComboBox = null;
+    private JTextField xpathField = null;
     private CollapseAllAction collapse = null;
     private ExpandAllAction expand = null;
-    private JButton selectXpath;
 
-    public interface XPathSelectFeedback {
-        void selected(String xpathSelected);
-    }
-
-    public ViewerToolBar(ViewerProperties props, Viewer v, final XPathSelectFeedback selectionFeedback,
-                         final JRootPane rootPane) {
+    public ViewerToolBar(ViewerProperties props, Viewer v) {
         viewer = v;
         properties = props;
 
@@ -41,61 +30,29 @@ public class ViewerToolBar extends JToolBar {
         expand = new ExpandAllAction(v);
         collapse = new CollapseAllAction(v);
 
-        xpathComboBox = new JComboBox();
-        xpathComboBox.getEditor().getEditorComponent().addKeyListener(new KeyAdapter() {
-            public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                    String xpathString = (String)xpathComboBox.getEditor().getItem();
-                    if (viewer.selectXpath(xpathString)) {
-                        setXPaths();
-                    }
-                }
-            }
-        });
-
-
-        selectXpath = new JButton("Select");
-        selectXpath.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                String xpathString = (String)xpathComboBox.getEditor().getItem();
-                if (viewer.selectXpath(xpathString)) {
-                    setXPaths();
-                    if (selectionFeedback != null) {
-                        selectionFeedback.selected(xpathString);
-                    }
-                }
-            }
-        });
-
-        if (rootPane != null)
-            rootPane.setDefaultButton(selectXpath);        
-        setXPaths();
+        xpathField = new JTextField();
 
         JLabel xpathLabel = new JLabel("XPath:");
         xpathLabel.setForeground(new Color(102, 102, 102));
-        selectXpath.setMargin(new Insets(0, 5, 0, 5));
-        selectXpath.setFocusPainted(false);
 
         JPanel xpathPanel = new JPanel(new BorderLayout(5, 0));
         xpathPanel.setBorder(new EmptyBorder(2, 5, 2, 2));
         JPanel xpanel = new JPanel(new BorderLayout());
         xpanel.setBorder(new EmptyBorder(1, 0, 1, 0));
 
-        xpathComboBox.setFont(xpathComboBox.getFont().deriveFont(Font.PLAIN, 12));
-        xpathComboBox.setPreferredSize(new Dimension(100, 19));
-        xpathComboBox.setEditable(true);
+        xpathField.setFont(xpathField.getFont().deriveFont(Font.PLAIN, 12));
+        xpathField.setPreferredSize(new Dimension(100, 19));
+        xpathField.setEditable(true);
 
-        xpanel.add(xpathComboBox, BorderLayout.CENTER);
+        xpanel.add(xpathField, BorderLayout.CENTER);
         xpathPanel.add(xpathLabel, BorderLayout.WEST);
         xpathPanel.add(xpanel, BorderLayout.CENTER);
-        xpathPanel.add(selectXpath, BorderLayout.EAST);
 
         add(xpathPanel, BorderLayout.CENTER);
 
         add(expand);
         add(collapse);
         addSeparator();
-
 
         viewer.tree.addTreeSelectionListener(new TreeSelectionListener() {
             public void valueChanged(TreeSelectionEvent e) {
@@ -105,9 +62,9 @@ public class ViewerToolBar extends JToolBar {
                     ExchangerElement element = node.getElement();
 
                     if (element != null) {
-                        xpathComboBox.getEditor().setItem(node.getElement().getPath());
+                        xpathField.setText(node.getElement().getPath());
                     } else {
-                        xpathComboBox.getEditor().setItem(null);
+                        xpathField.setText(null);
                     }
                 }
             }
@@ -118,8 +75,8 @@ public class ViewerToolBar extends JToolBar {
      * Access the xpath combo box component. This accesses
      * @return the xpath combo box
      */
-    public JComboBox getXpathComboBox() {
-        return xpathComboBox;
+    public JTextField getxpathField() {
+        return xpathField;
     }
 
     /**
@@ -128,32 +85,15 @@ public class ViewerToolBar extends JToolBar {
      * @param enabled true if this component controls should be enabled, false otherwise
      */
     public void setToolbarEnabled(boolean enabled) {
-        xpathComboBox.setEnabled(enabled);
+        xpathField.setEnabled(enabled);
         collapse.setEnabled(enabled);
         expand.setEnabled(enabled);
-        selectXpath.setEnabled(enabled);
     }
 
     /**
      * @return the currently selected xpath or <b>null</b> if none selected
      */
     public String getXPath() {
-        final Object item = xpathComboBox.getEditor().getItem();
-        if (item == null) return null;
-        return item.toString();
+        return xpathField.getText();
     }
-
-
-    private void setXPaths() {
-        if (xpathComboBox.getItemCount() > 0) {
-            xpathComboBox.removeAllItems();
-        }
-
-        Vector xpaths = properties.getXPaths();
-
-        for (int i = 0; i < xpaths.size(); i++) {
-            xpathComboBox.addItem(xpaths.elementAt(i));
-        }
-    }
-
 }

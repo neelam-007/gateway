@@ -29,6 +29,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
+import org.jaxen.JaxenException;
 
 import javax.swing.*;
 import javax.swing.event.TreeSelectionEvent;
@@ -42,6 +43,8 @@ import javax.xml.soap.SOAPMessage;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyListener;
+import java.awt.event.KeyEvent;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -50,6 +53,7 @@ import java.net.URL;
 import java.rmi.RemoteException;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 
 /**
@@ -79,6 +83,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private ExchangerDocument exchangerDocument;
     private ActionListener okActionListener;
     private boolean isEncryption;
+    private XpathEvaluator testEvaluator;
 
     /**
      * @param owner this panel owner
@@ -135,10 +140,37 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         initialize();
 
         // display the existing xpath expression
-        messageViewerToolBar.getXpathComboBox().getEditor().setItem(xmlSecAssertion.getXpathExpression().getExpression());
+        messageViewerToolBar.getxpathField().setText(xmlSecAssertion.getXpathExpression().getExpression());
 
         // ok button is disabled until a change is made
         okButton.setEnabled(false);
+
+        // initialize the test evaluator
+        try {
+            testEvaluator = XpathEvaluator.newEvaluator(XmlUtil.stringToDocument("<blah xmlns=\"http://bzzt.com\"/>"),
+                                                        new HashMap());
+        } catch (IOException e) {
+            log.log(Level.WARNING, "cannot setup test evaluator", e);
+        } catch (SAXException e) {
+            log.log(Level.WARNING, "cannot setup test evaluator", e);
+        }
+    }
+
+    private boolean isValidValue(String xpath) {
+        if (xpath == null) return false;
+        xpath = xpath.trim();
+        if (xpath.length() < 1) return false;
+        if (isEncryption && xpath.equals("/soapenv:Envelope")) return false;
+        try {
+            testEvaluator.evaluate(xpath);
+        } catch (JaxenException e) {
+            log.fine(e.getMessage());
+            return false;
+        } catch (NullPointerException e) {
+            log.fine(e.getMessage());
+            return false;
+        }
+        return true;
     }
 
 
@@ -154,7 +186,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 // get xpath from control and the namespace map
                 // then save it in assertion
-                String xpath = (String)messageViewerToolBar.getXpathComboBox().getEditor().getItem();
+                String xpath = (String)messageViewerToolBar.getxpathField().getText();
                 if (isEncryption && xpath.equals("/soapenv:Envelope")) {
                     // dont allow encryption of entire envelope
                     JOptionPane.showMessageDialog(okButton, "The path " + xpath + " is not valid for XML encryption",
@@ -201,6 +233,8 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         } catch (DocumentException e) {
             throw new RuntimeException(e);
         }
+
+        messageViewerToolBar.getxpathField().addKeyListener(messageEditingListener);
     }
 
     /**
@@ -239,29 +273,6 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
 
 
     /**
-     * Select the operation by name
-     *
-     * @param name the operation name
-     */
-    private void selectOperation(String name) {
-        final DefaultTreeModel operationsTreeModel = (DefaultTreeModel)operationsTree.getModel();
-        DefaultMutableTreeNode wsdlTreeNode = (DefaultMutableTreeNode)operationsTreeModel.getRoot();
-        Enumeration enum = wsdlTreeNode.preorderEnumeration();
-        while (enum.hasMoreElements()) {
-            DefaultMutableTreeNode treeNode = (DefaultMutableTreeNode)enum.nextElement();
-
-            if (treeNode instanceof BindingOperationTreeNode) {
-                BindingOperation bo = ((BindingOperationTreeNode)treeNode).getOperation();
-                if (bo.getName().equals(name)) {
-                    log.finest("Operation matched, selecting " + bo.getName());
-                    operationsTree.setSelectionPath(new TreePath(treeNode.getPath()));
-                    break;
-                }
-            }
-        }
-    }
-
-    /**
      * Populate/initialize the operations tree
      *
      * @param wsdl      the wsdl
@@ -298,15 +309,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         exchangerDocument = asExchangerDocument(msg);
         messageViewer = new Viewer(cp.getViewer(), exchangerDocument, false);
         messageViewer.addDocumentTreeSelectionListener(messageSelectionListener);
-        messageViewerToolBar = new ViewerToolBar(cp.getViewer(),
-                                                 messageViewer,
-                                                 new ViewerToolBar.XPathSelectFeedback() {
-                                                    public void selected(String xpathSelected) {
-                                                        messageViewerToolBar.getXpathComboBox().getEditor().setItem(xpathSelected);
-                                                        okButton.setEnabled(true);
-                                                        okButton.doClick();
-                                                    }
-                                                 }, getRootPane());
+        messageViewerToolBar = new ViewerToolBar(cp.getViewer(), messageViewer);
         com.intellij.uiDesigner.core.GridConstraints gridConstraints = new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 7, 7, null, null, null);
         messageViewerToolbarPanel.add(messageViewerToolBar, gridConstraints);
         com.intellij.uiDesigner.core.GridConstraints gridConstraints2 = new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 7, 7, null, null, null);
@@ -376,17 +379,14 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
           public void valueChanged(TreeSelectionEvent e) {
               TreePath path = e.getNewLeadSelectionPath();
               if (path == null) {
-                  //addButton.setEnabled(false);
               } else {
                   final Object lpc = path.getLastPathComponent();
                   if (!((lpc instanceof BindingOperationTreeNode) || (lpc instanceof BindingTreeNode))) {
                       messageViewerToolBar.setToolbarEnabled(false);
-                      //addButton.setEnabled(false);
                       return;
                   }
                   if (lpc instanceof BindingTreeNode) {
                       messageViewerToolBar.setToolbarEnabled(false);
-                      //addButton.setEnabled(false);
                       try {
                           URL url = asTempFileURL("<all/>");
                           exchangerDocument.setProperties(url, null);
@@ -400,14 +400,12 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                   Message sreq = forOperation(boperation.getOperation());
                   messageViewerToolBar.setToolbarEnabled(true);
                   if (sreq == null) {
-                      //addButton.setEnabled(false);
                   } else {
-                      // addButton.setEnabled(true);
                       try {
                           SOAPMessage soapMessage = sreq.getSOAPMessage();
                           displayMessage(soapMessage);
                           if (e.getSource() == operationsTree.getSelectionModel()) {
-                              messageViewerToolBar.getXpathComboBox().getEditor().setItem("");
+                              messageViewerToolBar.getxpathField().setText("");
                           }
                       } catch (Exception e1) {
                           throw new RuntimeException(e1);
@@ -457,13 +455,17 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
     private final TreeSelectionListener
       messageSelectionListener = new TreeSelectionListener() {
           public void valueChanged(TreeSelectionEvent e) {
-              Object o = messageViewerToolBar.getXpathComboBox().getEditor().getItem();
-              boolean validXpath = true;
-              if (o == null)
-                  validXpath = false;
-              else if ("".equals(o.toString())) validXpath = false;
+              okButton.setEnabled(e.getNewLeadSelectionPath() != null &&
+                                  isValidValue(messageViewerToolBar.getxpathField().getText()));
+          }
+      };
 
-              okButton.setEnabled(e.getNewLeadSelectionPath() != null && validXpath);
+    private final KeyListener
+      messageEditingListener = new KeyListener() {
+          public void keyTyped(KeyEvent e) {}
+          public void keyPressed(KeyEvent e) {}
+          public void keyReleased(KeyEvent e) {
+              okButton.setEnabled(isValidValue(messageViewerToolBar.getxpathField().getText()));
           }
       };
 
