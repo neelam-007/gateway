@@ -20,6 +20,7 @@ import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 
 import java.io.IOException;
+import java.security.cert.X509Certificate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -123,7 +124,12 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
         response.addResult( new AssertionResult( _data, AssertionStatus.AUTH_FAILED, e == null ? "" : e.getMessage(), e ));
         StringBuffer message = new StringBuffer();
         message.append("Authentication failed for ");
-        message.append(pc.getLogin());
+        String name = pc.getLogin();
+        if (name == null || name.length() == 0) {
+            X509Certificate cert = pc.getClientCert();
+            if (cert != null) name = cert.getSubjectDN().getName();
+        }
+        message.append(name);
         if (e != null) {
             message.append(": ");
             message.append(e.getMessage());
