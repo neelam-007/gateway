@@ -2,7 +2,9 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.table.TableUtil;
 import com.l7tech.console.util.Preferences;
+import com.l7tech.console.util.Registry;
 import com.l7tech.identity.User;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
@@ -223,7 +225,8 @@ class CertificatePanel extends JPanel {
             if ((flags & HierarchyEvent.SHOWING_CHANGED) == HierarchyEvent.SHOWING_CHANGED) {
                 if (CertificatePanel.this.isShowing()) {
                     user = userPanel.getUser();
-                    getTestCertificate();
+                    //getTestCertificate();
+                    getUserCert();
                     CertificatePanel.this.loadCertificateInfo();
                 }
             }
@@ -298,6 +301,18 @@ class CertificatePanel extends JPanel {
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private void getUserCert() {
+        // fla note, in the future the cert will come from some sort of CertManager instead of the interal user manager
+        try {
+            Certificate clientCert = ((com.l7tech.adminws.identity.UserManagerClient)Registry.getDefault().getInternalUserManager()).retrieveUserCert(Long.toString(user.getOid()));
+            if (clientCert != null) {
+              cert = (X509Certificate)clientCert;
+            }
+        } catch (FindException e) {
+            log.log(Level.WARNING, "There was an error loading the certifuc", e);
         }
     }
 
