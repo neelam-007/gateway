@@ -64,6 +64,7 @@ public class ServerLogManager extends LogManager {
             } catch (RuntimeException e) {
                 System.err.println("Can't initialize server log.");
                 // continue without those special log handlers
+                return;
             }
             // add custom memory handler
             systemLogMemHandler = new MemHandler();
