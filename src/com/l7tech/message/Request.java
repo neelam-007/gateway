@@ -7,6 +7,7 @@
 package com.l7tech.message;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.RequestId;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
@@ -118,5 +119,7 @@ public interface Request extends Message {
      * Sets the route status, indicating that the request was routed, if equal to RoutingStatus.ROUTED.
      */
     void setRoutingStatus( RoutingStatus status );
+
+    RequestId getId();
 
 }

@@ -35,6 +35,8 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
         _requestXml = null;
     }
 
+    public RequestId getId() {return _id;}
+
     /**
      * Returns a DOM Document, getting the requestXml and thereby consuming the
      * requestStream if necessary.
