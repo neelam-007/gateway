@@ -95,6 +95,17 @@ public class XmlUtil {
         return (XMLSerializer) formattedXMLSerializer.get();
     }
 
+    private static ThreadLocal transparentXMLSerializer = new ThreadLocal() {
+        protected synchronized Object initialValue() {
+            XMLSerializer xmlSerializer = new XMLSerializer();
+            return xmlSerializer;
+        }
+    };
+
+    private static XMLSerializer getTransparentXMLSerializer() {
+        return (XMLSerializer) transparentXMLSerializer.get();
+    }
+
     public static void documentToOutputStream(Document doc, OutputStream os) throws IOException {
         XMLSerializer xmlSerializer = new XMLSerializer();
         xmlSerializer.setOutputCharStream(new OutputStreamWriter(os));
@@ -108,7 +119,7 @@ public class XmlUtil {
 
     public static String documentToString(Document doc) throws IOException {
         final StringWriter sw = new StringWriter();
-        XMLSerializer xmlSerializer = new XMLSerializer();
+        XMLSerializer xmlSerializer = getTransparentXMLSerializer();
         xmlSerializer.setOutputCharStream(sw);
         xmlSerializer.serialize(doc);
         return sw.toString();
