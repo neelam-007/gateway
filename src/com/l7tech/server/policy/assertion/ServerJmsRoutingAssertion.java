@@ -288,6 +288,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
             logger.finer( "Creating request as BytesMessage" );
             BytesMessage bmsg = bag.getSession().createBytesMessage();
             bmsg.writeBytes(outboundRequestBytes);
+            outboundRequestMsg = bmsg;
         }
 
         JmsReplyType replyType = endpoint.getReplyType();
