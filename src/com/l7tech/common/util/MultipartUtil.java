@@ -95,18 +95,18 @@ public class MultipartUtil {
                 if (name == null)
                     name = tok;
                 else if (value == null)
-                    value = unquote(tok);
+                    value = unquote(tok.trim());
                 else
                     throw new IOException("Encountered unexpected bare word '" + tok + "' in header");
             } else if (epos > 0) {
                 String aname = tok.substring(0,epos);
                 String avalue = tok.substring(epos+1);
-                avalue = unquote( avalue );
+                avalue = unquote(avalue.trim());
 
-                params.put(aname,avalue);
+                params.put(aname.trim(),avalue.trim());
             } else throw new IOException("Invalid Content-Type header format ('=' at position " + epos + ")");
         }
-        return new HeaderValue(name, value, params);
+        return new HeaderValue(name.trim(), value.trim(), params);
     }
 
     static public String unquote( String value ) throws IOException {
