@@ -9,7 +9,6 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
@@ -383,6 +382,10 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         java.util.List allAssertions = new ArrayList();
         java.util.List identityAssertions = new ArrayList();
 
+        if (sslCheckBox.isSelected()) {
+            allAssertions.add(new SslAssertion());
+        }
+
         if (!anonymousAccessCheckBox.isSelected()) {
             Iterator it = getIdentitiesInTableModel().getDataVector().iterator();
             while (it.hasNext()) {
@@ -409,11 +412,6 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
                 if (ca != null)
                     allAssertions.add(ca);
             }
-        }
-
-
-        if (sslCheckBox.isSelected()) {
-            allAssertions.add(new SslAssertion());
         }
 
         if (!allAssertions.isEmpty()) {

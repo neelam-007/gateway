@@ -133,11 +133,11 @@ System.out.println("** End Validating assertion path");
         }
 
         private void processPrecondition(Assertion a) {
-            if (seenAccessControl ||
-              seenCredentials ||
-              seenRouting) {
+            if (seenRouting) {
                 result.addWarning(
-                  new PolicyValidatorResult.Warning(a, "The assertion might get ignored.", null)
+                  new PolicyValidatorResult.Warning(a,
+                    "The assertion might not work as configured." +
+                   "\nThere is a routing assertion before this assertion.", null)
                 );
             }
             seenPreconditions = true;
