@@ -87,19 +87,28 @@ public class SslUtils {
 
     /**
      * Transmit a CSR to the SSG and download the newly-signed certificate.
+     * Afterward we'll verify that the signed cert is the one we asked for, and was signed by the CA we expect.
+     *
      * @param url       The URL that we should post our CSR to, whose response will be assumed to be our certificate.
      * @param username
      * @param password
      * @param csr
+     * @param caCert  the cert of the CA that is supposed to be signing the request
      * @return
-     * @throws IOException
-     * @throws CertificateException
+     * @throws IOException                  if there is a network problem talking to the CSR signing service
+     * @throws CertificateException         if the post to the CSR signer results in a status other than 200 (or 401)
+     * @throws NoSuchAlgorithmException     if one of the keys uses an algorithm that isn't installed
+     * @throws InvalidKeyException          if one of the keys is invalid
+     * @throws NoSuchProviderException      if no X.509 cert provider is installed (can't happen)
+     * @throws BadCredentialsException      if the signing service rejected the username and/or password
+     * @throws SignatureException           if the resulting cert was not signed by the correct CA key
      * @throws SslUtils.BadCredentialsException if the username or password was rejected by the CSR signer
      */
     public static X509Certificate obtainClientCertificate(URL url, String username, char[] password,
-                                                          PKCS10CertificationRequest csr)
+                                                          PKCS10CertificationRequest csr,
+                                                          X509Certificate caCert)
             throws IOException, CertificateException, NoSuchAlgorithmException,
-                   InvalidKeyException, NoSuchProviderException, BadCredentialsException
+                   InvalidKeyException, NoSuchProviderException, BadCredentialsException, SignatureException
     {
         X500Principal csrName = new X500Principal(csr.getCertificationRequestInfo().getSubject().toString());
         String csrNameString = csrName.getName(X500Principal.CANONICAL);
@@ -129,12 +138,11 @@ public class SslUtils {
 
             log.info("Got back a certificate with DN:" + certNameString);
 
-            // TODO: Verify using the CA public key for this SSG.
-            log.info("FIXME: need to verify this cert using SSG's public key");
             if (!certNameString.equals(csrNameString))
                 throw new CertificateException("We got a certificate, but it's distinguished name didn't match what we asked for.");
             if (!cert.getPublicKey().equals(csr.getPublicKey()))
                 throw new CertificateException("We got a certificate, but it certified the wrong public key.");
+            cert.verify(caCert.getPublicKey());
 
             log.info("Certificate appears to be OK");
             return cert;
