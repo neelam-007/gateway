@@ -36,7 +36,8 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
      */
     public User findByPrimaryKey(String dn) throws FindException {
         try {
-            Attributes attributes = getAnonymousContext().getAttributes(dn);
+            DirContext context = getAnonymousContext();
+            Attributes attributes = context.getAttributes(dn);
             LdapUser out = new LdapUser();
             out.setDN(dn);
             Object tmp = extractOneAttributeValue(attributes, EMAIL_ATTR_NAME);
@@ -53,6 +54,7 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
             if (tmp != null) out.setPassword(tmp.toString());
             Collection groupHeaders = findGroupMembershipsAsHeaders(out);
             out.setGroupHeaders(new HashSet(groupHeaders));
+            context.close();
             return out;
         } catch (NamingException e) {
             e.printStackTrace(System.err);
@@ -95,7 +97,8 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
             // String[] attrToReturn = {LOGIN_ATTR_NAME, NAME_ATTR_NAME};
             //answer = getAnonymousContext().search(config.getSearchBase(), null, attrToReturn);
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-            answer = getAnonymousContext().search(config.getSearchBase(), filter, sc);
+            DirContext context = getAnonymousContext();
+            answer = context.search(config.getSearchBase(), filter, sc);
             while (answer.hasMore())
             {
                 String login = null;
@@ -110,25 +113,31 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
                     output.add(header);
                 }
             }
+            if (answer != null) answer.close();
+            context.close();
         }
         catch (NamingException e)
         {
-            // if nothing can be found, just trace this exception and return empty collection
             e.printStackTrace(System.err);
+            throw new FindException(e.getMessage(), e);
         }
         return output;
     }
 
     public Collection findAllHeaders(int offset, int windowSize) throws FindException {
         Collection output = new ArrayList();
-        String[] attrToReturn = {LOGIN_ATTR_NAME, NAME_ATTR_NAME};
-
         if (config.getSearchBase() == null || config.getSearchBase().length() < 1) throw new FindException("No search base provided");
         try
         {
-            int count = 0;
             NamingEnumeration answer = null;
-            answer = getAnonymousContext().search(config.getSearchBase(), null, attrToReturn);
+            String filter = "(objectclass=" + USER_OBJCLASS + ")";
+            SearchControls sc = new SearchControls();
+            // String[] attrToReturn = {LOGIN_ATTR_NAME, NAME_ATTR_NAME};
+            //answer = getAnonymousContext().search(config.getSearchBase(), null, attrToReturn);
+            sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+            DirContext context = getAnonymousContext();
+            answer = context.search(config.getSearchBase(), filter, sc);
+            int count = 0;
             while (answer.hasMore())
             {
                 if (count < offset) {
@@ -151,6 +160,8 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
                     output.add(header);
                 }
             }
+            if (answer != null) answer.close();
+            context.close();
         }
         catch (NamingException e)
         {
@@ -213,7 +224,8 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
             String filter = "(" + GROUPOBJ_MEMBER_ATTR + "=" + user.getLogin() + ")";
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-            answer = getAnonymousContext().search(config.getSearchBase(), filter, sc);
+            DirContext context = getAnonymousContext();
+            answer = context.search(config.getSearchBase(), filter, sc);
             while (answer.hasMore())
             {
                 SearchResult sr = (SearchResult)answer.next();
@@ -232,6 +244,8 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
                 EntityHeader grpheader = new EntityHeader(dn, EntityType.USER, cn, description);
                 out.add(grpheader);
             }
+            if (answer != null) answer.close();
+            context.close();
         }
         catch (NamingException e)
         {
@@ -243,13 +257,8 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
 
     // mappings for attribute names
     // these may become properties of the LdapIdentityProviderConfig
-    private static final String LOGIN_ATTR_NAME = "uid";
     private static final String EMAIL_ATTR_NAME = "mail";
     private static final String FIRSTNAME_ATTR_NAME = "givenName";
     private static final String LASTNAME_ATTR_NAME = "sn";
-    private static final String NAME_ATTR_NAME = "cn";
     private static final String PASSWD_ATTR_NAME = "userPassword";
-    private static final String USER_OBJCLASS = "inetOrgPerson";
-    private static final String GROUPOBJ_MEMBER_ATTR = "memberUid";
-    private static final String DESCRIPTION_ATTR = "description";
 }
