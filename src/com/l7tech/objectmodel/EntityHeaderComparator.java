@@ -1,0 +1,22 @@
+package com.l7tech.objectmodel;
+
+import java.util.Comparator;
+
+/**
+ * User: flascell
+ * Date: Jul 21, 2003
+ * Time: 11:17:46 AM
+ *
+ * Used by sorted sets containing EntityHeaders.
+ * Could be extended to compare on properties other than name.
+ */
+public class EntityHeaderComparator implements Comparator {
+    public int compare(Object o1, Object o2) {
+        EntityHeader h1 = (EntityHeader)o1;
+        EntityHeader h2 = (EntityHeader)o2;
+        if (h1.getName() == null && h2.getName() == null) return 0;
+        else if (h1.getName() == null) return 1;
+        else if (h2.getName() == null) return -1;
+        else return h1.getName().compareTo(h2.getName());
+    }
+}
