@@ -22,6 +22,7 @@ import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 /**
  * Thread-local XML parsing and pretty-printing utilities.
@@ -218,5 +219,15 @@ public class XmlUtil {
         }
 
         return null;
+    }
+
+    public static boolean elementIsEmpty( Element element ) {
+        if ( !element.hasChildNodes() ) return true;
+        Node kid = element.getFirstChild();
+        while ( kid != null ) {
+            if ( kid.getNodeType() != Node.ATTRIBUTE_NODE ) return false;
+            kid = kid.getNextSibling();
+        }
+        return true;
     }
 }
