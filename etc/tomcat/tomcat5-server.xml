@@ -1,0 +1,42 @@
+<!-- Minimal Layer 7 SSG Configuration file -->
+
+<Server port="8005" shutdown="SHUTDOWN">
+  <!-- Define the Tomcat Stand-Alone Service -->
+  <Service name="Catalina">
+
+    <!-- Define a non-SSL HTTP/1.1 Connector on port 8080 -->
+    <Connector port="8080"
+               maxThreads="150" minSpareThreads="25" maxSpareThreads="75"
+               enableLookups="false" redirectPort="8443" acceptCount="100"
+               connectionTimeout="20000" disableUploadTimeout="true" />
+    <!-- Note : To disable connection timeouts, set connectionTimeout value
+     to 0 -->
+	
+	<!-- Note : To use gzip compression you could set the following properties :
+	
+			   compression="on" 
+			   compressionMinSize="2048" 
+			   noCompressionUserAgents="gozilla, traviata" 
+			   compressableMimeType="text/html,text/xml"
+	-->
+
+    <!-- Define a SSL HTTP/1.1 Connector on port 8443 -->
+    <Connector port="8443" 
+               maxThreads="150" minSpareThreads="25" maxSpareThreads="75"
+               enableLookups="false" disableUploadTimeout="true"
+               acceptCount="100" scheme="https" secure="true"
+               clientAuth="want" sslProtocol="TLS" keystoreFile="/ssg/etc/keys/ssl.ks" keystorePass="blahblah" keystoreType="BCPKCS12"/>
+
+    <!-- Define the top level container in our container hierarchy -->
+    <Engine name="Catalina" defaultHost="localhost">
+
+      <Host name="localhost" appBase="webapps"
+       unpackWARs="true" autoDeploy="true"
+       xmlValidation="false" xmlNamespaceAware="false">
+      </Host>
+
+    </Engine>
+
+  </Service>
+
+</Server>
