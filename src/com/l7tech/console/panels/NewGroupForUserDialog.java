@@ -100,10 +100,10 @@ public class NewGroupForUserDialog extends JDialog {
         panelTitle.setLayout(new BoxLayout(panelTitle, BoxLayout.X_AXIS));
 
         panelTitle.add(Box.createHorizontalGlue());
-        panelTitle.add(getUsersNonMemberLabel());
+        panelTitle.add(getGroupsNonMemberLabel());
         panelTitle.add(Box.createHorizontalGlue());
         panel.add(panelTitle);
-        panel.add(getUsersOutListJScrollPane());
+        panel.add(getGroupsOutListJScrollPane());
         panel.add(Box.createVerticalStrut(10));
         p.add(panel);
 
@@ -143,12 +143,12 @@ public class NewGroupForUserDialog extends JDialog {
         return panel;
     } // createButtonPanel()
 
-    private JLabel getUsersNonMemberLabel() {
-        if (usersNonMemberLabel == null) {
-            usersNonMemberLabel = new JLabel(NON_MEMBER_LABEL);
-            usersNonMemberLabel.setHorizontalAlignment(SwingConstants.CENTER);
+    private JLabel getGroupsNonMemberLabel() {
+        if (groupsNonMemberLabel == null) {
+            groupsNonMemberLabel = new JLabel(NON_MEMBER_LABEL);
+            groupsNonMemberLabel.setHorizontalAlignment(SwingConstants.CENTER);
         }
-        return usersNonMemberLabel;
+        return groupsNonMemberLabel;
     }
 
     /**
@@ -156,17 +156,17 @@ public class NewGroupForUserDialog extends JDialog {
      *
      * @return JScrollPane
      */
-    private JScrollPane getUsersOutListJScrollPane() {
-        if (usersOutListJScrollPane == null) {
-            usersOutListJScrollPane = new JScrollPane(getNonGroupMemberList());
-            usersOutListJScrollPane.setViewportBorder(BorderFactory.createEtchedBorder());
-            usersOutListJScrollPane.setBorder(BorderFactory.createLoweredBevelBorder());
-            usersOutListJScrollPane.setMinimumSize(new Dimension(140, 140));
-            usersOutListJScrollPane.setPreferredSize(new Dimension(140, 140));
-            usersOutListJScrollPane.getViewport().
+    private JScrollPane getGroupsOutListJScrollPane() {
+        if (groupsOutListJScrollPane == null) {
+            groupsOutListJScrollPane = new JScrollPane(getNonGroupMemberList());
+            groupsOutListJScrollPane.setViewportBorder(BorderFactory.createEtchedBorder());
+            groupsOutListJScrollPane.setBorder(BorderFactory.createLoweredBevelBorder());
+            groupsOutListJScrollPane.setMinimumSize(new Dimension(140, 140));
+            groupsOutListJScrollPane.setPreferredSize(new Dimension(140, 140));
+            groupsOutListJScrollPane.getViewport().
                     setBackground(getNonGroupMemberList().getBackground());
         }
-        return usersOutListJScrollPane;
+        return groupsOutListJScrollPane;
     }
 
 
@@ -206,15 +206,15 @@ public class NewGroupForUserDialog extends JDialog {
             /** */
             public void run() {
                 try {
-                    Set currentUsers = new TreeSet(entityNameComparator);
-                    Set set = parent.getCurrentUsers();
-                    if (set !=null) currentUsers.addAll(set);
+                    Set currentGroups = new TreeSet(entityNameComparator);
+                    Set set = parent.getCurrentGroups();
+                    if (set !=null) currentGroups.addAll(set);
 
-                    Collection nonMembers = Registry.getDefault().getInternalGroupManager().findAllHeaders();
+                    Collection nonMemberOf = Registry.getDefault().getInternalGroupManager().findAllHeaders();
 
-                    for(Iterator i = nonMembers.iterator();i.hasNext();) {
+                    for(Iterator i = nonMemberOf.iterator();i.hasNext();) {
                         EntityHeader eh = (EntityHeader)i.next();
-                        if (!currentUsers.contains(eh)) sl.add(eh);
+                        if (!currentGroups.contains(eh)) sl.add(eh);
                     }
 
                 } catch (FindException e) {
@@ -271,25 +271,25 @@ public class NewGroupForUserDialog extends JDialog {
         } else if (cmd.equals(CMD_CANCEL)) {
             this.dispose();
         } else if (cmd.equals(CMD_OK)) {
-            addSelectedUsers();
+            addSelectedGroups();
         }
     }
 
     /** Adds selected users into the group */
-    private void addSelectedUsers() {
+    private void addSelectedGroups() {
         // Get selected users
-        int[] usersToAdd = getNonGroupMemberList().getSelectedIndices();
-        int size = usersToAdd.length;
+        int[] groupsToAdd = getNonGroupMemberList().getSelectedIndices();
+        int size = groupsToAdd.length;
         if (0 == size) {
             return;
         }
 
-        Set userHeaders = new HashSet();
+        Set groupHeaders = new HashSet();
 
         for (int i=size-1; i >=0;i--){
-            userHeaders.add(listOutModel.getElementAt(usersToAdd[i]));
+            groupHeaders.add(listOutModel.getElementAt(groupsToAdd[i]));
         }
-        parent.addUsers(userHeaders);
+        parent.addGroups(groupHeaders);
         dispose();
     }
 
@@ -321,13 +321,13 @@ public class NewGroupForUserDialog extends JDialog {
 
     /** Parent GroupPanel where users are to be added to */
     private UserGroupsPanel parent;
-    private JScrollPane usersOutListJScrollPane;
-    private JLabel usersNonMemberLabel;
+    private JScrollPane groupsOutListJScrollPane;
+    private JLabel groupsNonMemberLabel;
 
     private ResourceBundle resources;
     private final String CMD_CANCEL = "cmd.cancel";
     private final String CMD_OK = "cmd.ok";
-    private static final String NON_MEMBER_LABEL = "Non Members";
+    private static final String NON_MEMBER_LABEL = "Not member of";
 
     private final ClassLoader cl = getClass().getClassLoader();
 }

@@ -498,6 +498,7 @@ public class UserPanel extends EntityEditorPanel {
         nameLabel.setText(user.getName());
         getFirstNameTextField().setText(user.getFirstName());
         getLastNameTextField().setText(user.getLastName());
+        getEmailTextField().setText(user.getEmail());
         setModified(false);
     }
 
@@ -510,7 +511,8 @@ public class UserPanel extends EntityEditorPanel {
     private User collectChanges() {
         user.setLastName(this.getLastNameTextField().getText());
         user.setFirstName(this.getFirstNameTextField().getText());
-
+        user.setEmail(getEmailTextField().getText());
+        user.setGroupHeaders(groupPanel.getCurrentGroups());
         return user;
     }
 

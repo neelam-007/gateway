@@ -70,14 +70,14 @@ class UserGroupsPanel extends JPanel {
     /**
      * package private method, allows adding users
      */
-    void addUsers(Set groupHeaders) {
+    void addGroups(Set groupHeaders) {
         listInModel.addAll(groupHeaders);
     }
 
     /**
      * package private method, allows adding users
      */
-    Set getCurrentUsers() {
+    Set getCurrentGroups() {
         return new HashSet(Arrays.asList(listInModel.toArray()));
     }
 
@@ -385,18 +385,18 @@ class UserGroupsPanel extends JPanel {
             long flags = e.getChangeFlags();
             if ((flags & HierarchyEvent.SHOWING_CHANGED) == HierarchyEvent.SHOWING_CHANGED) {
                 if (UserGroupsPanel.this.isShowing()) {
-                    loadGroupUsers();
+                    loadUserGroups();
                 }
             }
         }
     };
 
-    private void loadGroupUsers() {
+    private void loadUserGroups() {
         try {
             isLoading = true;
-            Collection members = userPanel.getUser().getGroupHeaders();
-            if (members != null) {
-                listInModel.addAll(members);
+            Collection groups = userPanel.getUser().getGroupHeaders();
+            if (groups != null) {
+                listInModel.addAll(groups);
             }
         } finally {
             isLoading = false;
