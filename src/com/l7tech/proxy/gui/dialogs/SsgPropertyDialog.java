@@ -301,6 +301,18 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
         PasswordAuthentication creds = ssg.getRuntime().getCredentialManager().getCredentials(ssg);
 
+        // make sure that the hostname is set
+        if (ssg.getHostname() == null || ssg.getHostname().length() < 1) {
+            String tmpValue = fieldServerAddress.getText();
+            if (tmpValue == null || tmpValue.length() < 1) {
+                JOptionPane.showMessageDialog(this,
+                                              "You must set a gateway hostname before you can apply for a client " +
+                                              "cert", "Cannot apply for client cert",
+                                              JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            ssg.setSsgAddress(tmpValue);
+        }
         if (ssg.getServerCertificate() == null) {
             ssg.getRuntime().getSsgKeyStoreManager().installSsgServerCertificate(ssg, creds);
         }
