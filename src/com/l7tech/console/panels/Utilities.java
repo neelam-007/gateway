@@ -10,7 +10,7 @@ import javax.swing.*;
 import java.awt.geom.Rectangle2D;
 
 /**
- * This class is a bag if utilites shared by panels.
+ * This class is a bag of utilites shared by panels.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
@@ -105,9 +105,8 @@ public class Utilities {
     /**
      *
      * Sets the JComponents in the array to be the same size.
-     * This is done dynamically by setting each button's
-     * preferred and maximum sizes after the components have
-     * been created.
+     * This is done by setting each component's preferred and
+     * maximum sizes after the components have been created.
      *
      *
      * @param components instances of JComponent
@@ -133,6 +132,38 @@ public class Utilities {
             oneComponent.setMaximumSize((Dimension)maxPreferred.clone());
         }
     }
+
+    /**
+     *
+     * Sets the JComponents in the array to be the same widthe.
+     * This is done by setting each component's preferred and
+     * maximum sizes after the components have been created.
+     *
+     *
+     * @param components instances of JComponent
+     */
+    public static void equalizeComponentWidth(JComponent[] components) {
+        // Get the largest width and height
+        int i = 0;
+        Dimension maxPreferred = new Dimension(0, 0);
+        JComponent oneComponent = null;
+        Dimension thisPreferred = null;
+        for (i = 0; i < components.length; ++i) {
+            oneComponent = components[i];
+            thisPreferred = oneComponent.getPreferredSize();
+            maxPreferred.width =
+              Math.max(maxPreferred.width, (int)thisPreferred.getWidth());
+        }
+
+        for (i = 0; i < components.length; ++i) {
+            oneComponent = components[i];
+            Dimension d = oneComponent.getPreferredSize();
+            d.width = maxPreferred.width;
+            oneComponent.setPreferredSize((Dimension)d.clone());
+            oneComponent.setMaximumSize((Dimension)d.clone());
+        }
+    }
+
 
     /**
      *

@@ -45,6 +45,7 @@ public class PolicyValidatorResult {
 
     /**
      * The class represents the policy validation error
+     * todo: add warning and info levels
      */
     public static class Error {
         private Assertion assertion;

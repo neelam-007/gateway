@@ -4,7 +4,6 @@ import com.l7tech.console.action.PublishServiceAction;
 import com.l7tech.service.ServiceManager;
 
 import javax.swing.*;
-import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.MutableTreeNode;
 import java.util.Enumeration;
 
@@ -53,7 +52,7 @@ public class ServicesFolderNode extends AbstractTreeNode {
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
-        return new Action[]{new PublishServiceAction(this)};
+        return new Action[]{new PublishServiceAction()};
     }
 
     /**

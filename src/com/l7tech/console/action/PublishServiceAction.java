@@ -14,6 +14,7 @@ import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
+import javax.swing.tree.DefaultMutableTreeNode;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -24,12 +25,10 @@ import java.util.logging.Level;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class PublishServiceAction extends NodeAction {
+public class PublishServiceAction extends BaseAction {
     static final Logger log = Logger.getLogger(PublishServiceAction.class.getName());
 
-    public PublishServiceAction(AbstractTreeNode node) {
-        super(node);
-        this.node = node;
+    public PublishServiceAction() {
     }
 
     /**
@@ -82,11 +81,12 @@ public class PublishServiceAction extends NodeAction {
                     EntityHeader eh = (EntityHeader) ev.getEntity();
                     JTree tree = (JTree) WindowManager.getInstance().getComponent(MainWindow.SERVICES_TREE);
                     if (tree != null) {
-                        TreeNode[] nodes = node.getPath();
+                        DefaultMutableTreeNode root = (DefaultMutableTreeNode)tree.getModel().getRoot();
+                        TreeNode[] nodes = root.getPath();
                         TreePath nPath = new TreePath(nodes);
                         if (tree.hasBeenExpanded(nPath)) {
                             DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
-                            model.insertNodeInto(TreeNodeFactory.asTreeNode(eh), node, node.getChildCount());
+                            model.insertNodeInto(TreeNodeFactory.asTreeNode(eh), root, root.getChildCount());
                         }
                     } else {
                         log.log(Level.WARNING, "Service tree unreachable.");

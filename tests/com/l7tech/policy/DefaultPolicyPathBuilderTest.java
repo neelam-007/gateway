@@ -76,11 +76,28 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
               new TrueAssertion()
           });
 
-        Assertion one = new OneOrMoreAssertion(kids);
-        Assertion oom = new OneOrMoreAssertion(Arrays.asList(new Assertion[] {one, one, one}));
-        DefaultPolicyPathBuilder builder = new DefaultPolicyPathBuilder();
+         final List kids2 =
+                  Arrays.asList(new Assertion[]{
+                      new TrueAssertion(),
+                      new FalseAssertion(),
+                      new TrueAssertion()
+                  });
 
-        assertTrue(builder.generate(oom).getPathCount() == 81);
+         final List kids3 =
+                  Arrays.asList(new Assertion[]{
+                      new TrueAssertion(),
+                      new FalseAssertion(),
+                      new TrueAssertion()
+                  });
+
+        Assertion one = new OneOrMoreAssertion(kids);
+        Assertion two = new OneOrMoreAssertion(kids2);
+        Assertion three = new OneOrMoreAssertion(kids3);
+
+        Assertion oom = new OneOrMoreAssertion(Arrays.asList(new Assertion[] {one, two, three}));
+        DefaultPolicyPathBuilder builder = new DefaultPolicyPathBuilder();
+        int count = builder.generate(oom).getPathCount();
+        assertTrue("The value received is "+count,  count == 9);
     }
 
     public void testTwoDepthPolicyPathWithConjunctionAnd() throws Exception {
@@ -91,11 +108,20 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
               new TrueAssertion()
           });
 
+        final List kids2 =
+          Arrays.asList(new Assertion[]{
+              new TrueAssertion(),
+              new FalseAssertion(),
+              new TrueAssertion()
+          });
+
         Assertion one = new OneOrMoreAssertion(kids);
-        Assertion two = new AllAssertion(Arrays.asList(new Assertion[] {new TrueAssertion()}));
-        Assertion oom = new OneOrMoreAssertion(Arrays.asList(new Assertion[] {one, one, two}));
+        Assertion two = new OneOrMoreAssertion(kids2);
+        Assertion three = new AllAssertion(Arrays.asList(new Assertion[] {new TrueAssertion()}));
+        Assertion oom = new OneOrMoreAssertion(Arrays.asList(new Assertion[] {one, two, three}));
         DefaultPolicyPathBuilder builder = new DefaultPolicyPathBuilder();
 
-        assertTrue(builder.generate(oom).getPathCount() == 27);
+        int count = builder.generate(oom).getPathCount();
+        assertTrue("The value received is "+count,  count == 7);
     }
 }

@@ -43,7 +43,6 @@ import java.util.*;
  */
 public class IdentityProviderWizardPanel extends WizardStepPanel {
     private DefaultComboBoxModel providersComboBoxModel;
-    private ComboBoxModel credentialsLocationComboBoxModel;
     private JCheckBox anonymousAccessCheckBox;
 
     /** Creates new form IdentityProviderWizardPanel */
@@ -71,9 +70,12 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         identitiesInScrollPane = new JScrollPane();
         identitiesInTable = new JTable();
         buttonPanel = new JPanel();
+
+        credentialsLocationComboBox =
+          Components.getCredentialsLocationComboBox();
+
         credentialsAndTransportPanel = new JPanel();
         credentialsLocationjPanel = new JPanel();
-        credentialsLocationComboBox = new JComboBox();
         sslCheckBox = new JCheckBox();
         sslPanel = new JPanel();
         anonymousAccessCheckBox = new JCheckBox();
@@ -288,7 +290,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         credentialsAndTransportPanel.setBorder(new TitledBorder("Credentials/transport"));
         credentialsLocationjPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
         sslPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
-        credentialsLocationComboBox.setModel(getCredentialsLocationComboBoxModel());
+
 
         credentialsLocationjPanel.add(credentialsLocationComboBox);
         credentialsAndTransportPanel.add(credentialsLocationjPanel);
@@ -303,20 +305,6 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         credentialsAndTransportPanel.add(ra);
 
         add(credentialsAndTransportPanel, java.awt.BorderLayout.CENTER);
-    }
-
-    /**
-     * create the credentials location (http, ws message) locaiton combo model
-     *
-     * @return the <code>ComboBoxModel</code> with credentials location list
-     */
-    private ComboBoxModel getCredentialsLocationComboBoxModel() {
-        if (credentialsLocationComboBoxModel != null)
-            return credentialsLocationComboBoxModel;
-
-        credentialsLocationComboBoxModel =
-          new DefaultComboBoxModel(credentialsLocationMap.keySet().toArray());
-        return credentialsLocationComboBoxModel;
     }
 
     /**
@@ -418,7 +406,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             Object o = credentialsLocationComboBox.getSelectedItem();
             if (o != null) {
                 CredentialSourceAssertion ca =
-                  (CredentialSourceAssertion)credentialsLocationMap.get(o);
+                  (CredentialSourceAssertion)Components.getCredentialsLocationMap().get(o);
                 if (ca != null)
                     allAssertions.add(ca);
             }
@@ -501,19 +489,6 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             return new ImageIcon(IconManager2.getInstance().getIcon(UserPanel.USER_ICON_RESOURCE));
         }
         return null;
-    }
-
-    static Map credentialsLocationMap = new TreeMap();
-
-    // maping assertion to tree nodes to
-    static {
-        credentialsLocationMap.put("HTTP basic", new HttpBasic());
-        credentialsLocationMap.put("HTTP digest", new HttpDigest());
-        credentialsLocationMap.put("HTTP client cert", new HttpClientCert());
-
-        credentialsLocationMap.put("WSS token basic", new WssBasic());
-        credentialsLocationMap.put("WSS token digest", new WssDigest());
-        credentialsLocationMap.put("WSS client cert", new WssClientCert());
     }
 
     /**

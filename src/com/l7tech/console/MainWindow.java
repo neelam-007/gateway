@@ -9,10 +9,7 @@ import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.panels.LogonDialog;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.PolicyToolBar;
-import com.l7tech.console.util.Preferences;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.WindowManager;
-import com.l7tech.console.util.IconManager2;
+import com.l7tech.console.util.*;
 
 import javax.help.HelpBroker;
 import javax.help.HelpSet;
@@ -93,7 +90,7 @@ public class MainWindow extends JFrame {
     private JPanel mainSplitPaneRight = null;
 
     /* progress bar indicator */
-    private JProgressBar progressBar = null;
+    private ProgressBar progressBar = null;
 
     /* this class classloader */
     private final ClassLoader cl = getClass().getClassLoader();
@@ -762,13 +759,15 @@ public class MainWindow extends JFrame {
             getStatusMsgRight().setBorder(border);
             rightPanel.add(getStatusMsgRight(), BorderLayout.WEST);
 
+            progressBar = new ProgressBar(0,100,20);
+            WindowManager.getInstance().registerComponent(ProgressBar.NAME, progressBar);
             // a bit of a hack here , set the size to the size of "disconnected" label
-//      progressBar.setPreferredSize(getStatusMsgLeft().getPreferredSize());
-//      progressBar.setMaximumSize(getStatusMsgLeft().getMaximumSize());
-//
-//      progressBar.setBorder(BorderFactory.createEmptyBorder(4,4,4,4));
-//      progressBar.setDoubleBuffered(true);
-//      rightPanel.add(progressBar, BorderLayout.EAST);
+            progressBar.setPreferredSize(getStatusMsgLeft().getPreferredSize());
+            progressBar.setMaximumSize(getStatusMsgLeft().getMaximumSize());
+
+            progressBar.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+
+            rightPanel.add(progressBar, BorderLayout.EAST);
             getStatusBarPane().add(rightPanel, BorderLayout.EAST);
         }
         return statusBarPane;
@@ -1502,24 +1501,6 @@ public class MainWindow extends JFrame {
         getStatusBarPane().setVisible(!(getStatusBarPane().isVisible()));
     }
 
-    /**
-     * start the progress bar indicator.
-     * Note that the progress bar updates can happen only
-     * on the Swing dispatching thread.
-     */
-    public void startProgressIndicator() {
-        //
-    }
-
-    /**
-     * stop the progress bar indicator.
-     * Note that the progress bar updates can happen only
-     * on the Swing dispatching thread.
-     */
-    public void stopProgressIndicator() {
-        progressBar.setValue(0);
-
-    }
 
     // -------------- inactivitiy timeout (close your eyes) -------------------
     final Timer
@@ -1707,7 +1688,6 @@ public class MainWindow extends JFrame {
                 });
               toggleConnectedMenus(true);
               new HomeAction().performAction();
-
           }
 
           /* invoked on authentication failure */

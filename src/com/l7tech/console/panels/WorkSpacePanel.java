@@ -1,22 +1,16 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.util.IconManager;
 import com.l7tech.console.util.Preferences;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * <CODE>WorkSpacePanel</CODE> represents the main editing panel
@@ -25,9 +19,7 @@ import java.util.logging.Level;
 public class WorkSpacePanel extends JPanel {
     static final Logger log = Logger.getLogger(WorkSpacePanel.class.getName());
 
-    private final JPanel listPane = new JPanel();
     private final JTabbedPane tabbedPane = new JTabbedPane();
-    private JScrollPane scrollPane = new JScrollPane();
     /* this class classloader */
     private final ClassLoader cl = getClass().getClassLoader();
 
@@ -47,12 +39,8 @@ public class WorkSpacePanel extends JPanel {
      * @param jc the new component to host
      */
     public void setComponent(JComponent jc) {
-        scrollPane.setViewportView(jc);
-        if (jc !=null) {
-            String name = jc.getName();
-            if (name != null)
-                tabbedPane.setTitleAt(0, jc.getName());
-        }
+        tabbedPane.removeAll();
+        tabbedPane.addTab(jc.getName(), jc);
     }
 
     /**
@@ -61,11 +49,6 @@ public class WorkSpacePanel extends JPanel {
     private void layoutComponents() {
         addHierarchyListener(hierarchyListener);
         setLayout(new BorderLayout());
-
-        listPane.setLayout(new BorderLayout());
-        listPane.add(scrollPane, BorderLayout.CENTER);
-        tabbedPane.addTab("", listPane);
-
         Font f = tabbedPane.getFont();
         tabbedPane.setFont(new Font(f.getName(), Font.BOLD, 12));
         add(tabbedPane, BorderLayout.CENTER);

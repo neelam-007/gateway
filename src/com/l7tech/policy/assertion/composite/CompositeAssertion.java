@@ -73,14 +73,8 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
         List newKids = new LinkedList();
         for (Iterator i = children.iterator(); i.hasNext(); ) {
             Assertion child = (Assertion)i.next();
-            Assertion newChild = null;
-            try {
-                newChild = (Assertion)child.clone();
-            } catch (CloneNotSupportedException e) {
-                throw new RuntimeException("Impossible exception", e); // can't happen
-            }
-            newChild.setParent(newParent);
-            newKids.add(newChild);
+            child.setParent(newParent);
+            newKids.add(child);
         }
         return newKids;
     }

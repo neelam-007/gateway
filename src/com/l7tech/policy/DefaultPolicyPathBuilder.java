@@ -2,14 +2,11 @@ package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Default policy path builder. The class builds assertion paths from
@@ -63,42 +60,54 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
      * @param assertion the root assertion
      */
     private Set generatePaths(Assertion assertion) {
-        Set assertionPaths = new HashSet();
-        assertionPaths.add(new AssertionPath(assertion));
+        Set assertionPaths = new LinkedHashSet();
+        AssertionPath lastPath = null;
         for (Iterator preorder = assertion.preorderIterator(); preorder.hasNext();) {
             Assertion anext = (Assertion)preorder.next();
-            if (createsNewPaths(anext)) {
-                CompositeAssertion ca = (CompositeAssertion)anext;
-                Iterator children = ca.getChildren().iterator();
-                Set newPaths = new HashSet();
-                Set removePaths = new HashSet();
-                for (; children.hasNext();) {
-                    Assertion child = (Assertion)children.next();
-                    for (Iterator ipaths = assertionPaths.iterator(); ipaths.hasNext();) {
-                        AssertionPath parentPath = (AssertionPath)ipaths.next();
-                        AssertionPath newPath = new AssertionPath(parentPath);
-                        newPath.addAssertion(child);
-                        newPaths.add(newPath);
-                        removePaths.add(parentPath);
-                    }
+            AssertionPath newPath = null;
+            if (parentCreatesNewPaths(anext)) {
+                if (anext.getParent() == null) {
+                    newPath = new AssertionPath(new Assertion[]{anext});
+                } else {
+                    newPath = new AssertionPath(anext.getPath());
                 }
-                assertionPaths.addAll(newPaths);
-                assertionPaths.removeAll(removePaths);
+                lastPath = newPath;
             } else {
-                for (Iterator ipaths = assertionPaths.iterator(); ipaths.hasNext();) {
-                    AssertionPath one = (AssertionPath)ipaths.next();
-                    one.addAssertion(anext);
-                }
+                newPath = lastPath.addAssertion(anext);
+                assertionPaths.remove(lastPath);
+                lastPath = newPath;
+            }
+            assertionPaths.add(newPath);
+        }
+        return pruneEmptyComposites(assertionPaths);
+    }
+
+    /**
+     * prune the assertion paths that end with emty composite
+     * assertions.
+     *
+     * @param assertionPaths the assertion path set to process
+     * @return the new <code>Set</code> without assertion paths
+     * that end with empty composites.
+     */
+    private Set pruneEmptyComposites(Set assertionPaths) {
+        Set result = new HashSet();
+        for (Iterator iterator = assertionPaths.iterator(); iterator.hasNext();) {
+            AssertionPath assertionPath = (AssertionPath)iterator.next();
+            if (!(assertionPath.lastAssertion() instanceof CompositeAssertion)) {
+                result.add(assertionPath);
             }
         }
-        return assertionPaths;
+        return result;
     }
+
 
     /**
      * default assertion path result holder
      */
     static class DefaultPolicyPathResult implements PolicyPathResult {
         private Set assertionPaths;
+
         public DefaultPolicyPathResult(Set paths) {
             assertionPaths = Collections.unmodifiableSet(paths);
         }
@@ -122,20 +131,24 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
         }
     }
 
+
     /**
-     * does this assertion creates new paths
+     * does the immediate composite parent of this assertion
+     * creates new paths
+     *
      * @param a the assertion to check
      * @return true if new paths, false otherwise
      */
-    static boolean createsNewPaths(Assertion a) {
-        return
-          a instanceof ExactlyOneAssertion ||
-          a instanceof OneOrMoreAssertion;
-    }
+    static boolean parentCreatesNewPaths(Assertion a) {
+        if (a.getParent() == null) return true;
 
-    static boolean isValidRoot(Assertion a) {
-        return
-          a instanceof AllAssertion ||
-          a instanceof OneOrMoreAssertion;
+        Assertion[] path = a.getPath();
+        if (path == null || path.length == 0)
+            throw new IllegalArgumentException("path null or empty");
+
+        for (int i = path.length - 2; i >= 0; i--) {
+            if (path[i] instanceof AllAssertion) return false;
+        }
+        return true;
     }
 }

@@ -9,6 +9,7 @@ package com.l7tech.policy.assertion;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.AssertionPath;
 import com.l7tech.proxy.datamodel.PendingRequest;
 
 import java.io.IOException;
@@ -77,7 +78,24 @@ public abstract class Assertion implements Cloneable, Serializable {
         return new PreorderIterator(this);
     }
 
+    /**
+     * Returns the path from the root, to get to this node. The last element
+     * in the path is this node.
+     *
+     * @return an assertion path instance containing the <code>AssertionPath</code>
+     * objects giving the path, where the first element in the path is the root and
+     * the last element is this node.
+     */
+    public Assertion[] getPath() {
+        Assertion node = this;
+        LinkedList ll = new LinkedList();
+        while (node !=null) {
+            ll.addFirst(node);
+            node = node.getParent();
+        }
+        return (Assertion[])ll.toArray(new Assertion[]{});
 
+    }
     public String toString() {
         return "<" + this.getClass().getName() + ">";
     }

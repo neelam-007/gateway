@@ -8,6 +8,7 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.TrueAssertion;
+import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
@@ -51,12 +52,15 @@ public class PublishServiceWizard extends JDialog {
             this.assertions = assertion;
         }
 
-        public void addAssertion(Assertion a) {
-            java.util.List list = new ArrayList(assertions.getChildren());
-            list.add(a);
-            assertions.setChildren(list);
+        public void setRoutingAssertion(RoutingAssertion ra) {
+            routingAssertion = ra;
         }
 
+        public RoutingAssertion getRoutingAssertion() {
+            return routingAssertion;
+        }
+
+        private RoutingAssertion routingAssertion = null;
         private PublishedService service = new PublishedService();
         private CompositeAssertion assertions = new AllAssertion();
     }
@@ -78,7 +82,7 @@ public class PublishServiceWizard extends JDialog {
     public PublishServiceWizard(Frame parent, boolean modal) {
         super(parent, modal);
         initComponents();
-        stepjPanel.add(panels[0], BorderLayout.CENTER);
+        stepPanel.add(panels[0], BorderLayout.CENTER);
         for (int i = 0; i < panels.length; i++) {
             panels[i].addChangeListener(changeListener);
         }
@@ -109,7 +113,7 @@ public class PublishServiceWizard extends JDialog {
     private void initComponents() {
         mainjPanel = new JPanel();
         titlePanel = new JPanel();
-        titlejLabel = new JLabel();
+        titleLabel = new JLabel();
         panelButtons = new JPanel();
         buttonBack = new JButton();
         buttonNext = new JButton();
@@ -117,12 +121,11 @@ public class PublishServiceWizard extends JDialog {
         cancelButton = new JButton();
         buttonHelp = new JButton();
         stepsjPanel = new JPanel();
-        stepsTitlejPanel = new javax.swing.JPanel();
-        stepsjLabel = new JLabel();
-        jSeparator1 = new JSeparator();
-        stepjPanel = new JPanel();
-        stepDescriptionjScrollPane = new JScrollPane();
-        stepDescriptionjTextArea = new JTextArea();
+        stepsTitlePanel = new JPanel();
+        stepsLabel = new JLabel();
+        stepPanel = new JPanel();
+        stepDescriptionScrollPane = new JScrollPane();
+        stepDescriptionTextArea = new JTextArea();
 
         setTitle("Publish service wizard");
         addHierarchyListener(new HierarchyListener() {
@@ -143,9 +146,9 @@ public class PublishServiceWizard extends JDialog {
         titlePanel.setLayout(new FlowLayout(FlowLayout.RIGHT));
 
         titlePanel.setBorder(new EmptyBorder(new Insets(5, 5, 5, 5)));
-        titlejLabel.setHorizontalAlignment(SwingConstants.TRAILING);
-        titlejLabel.setText("Publish Service wizard");
-        titlePanel.add(titlejLabel);
+        titleLabel.setHorizontalAlignment(SwingConstants.TRAILING);
+        titleLabel.setText("Publish Service wizard");
+        titlePanel.add(titleLabel);
 
         mainjPanel.add(titlePanel, BorderLayout.NORTH);
 
@@ -177,9 +180,16 @@ public class PublishServiceWizard extends JDialog {
                     for (int i = 0; i < panels.length; i++) {
                         panels[i].readSettings(saBundle);
                     }
+                    // routing assertion?
+                    if (saBundle.getRoutingAssertion() != null) {
+                        java.util.List ass = new ArrayList();
+                        ass.addAll(saBundle.getAssertion().getChildren());
+                        ass.add(saBundle.getRoutingAssertion());
+                        saBundle.getAssertion().setChildren(ass);
+                    }
                     saBundle.setAssertion(
                       pruneEmptyCompositeAssertions(saBundle.getAssertion()));
-                    if (saBundle.getAssertion() !=null) {
+                    if (saBundle.getAssertion() != null) {
                         ByteArrayOutputStream bo = new ByteArrayOutputStream();
                         WspWriter.writePolicy(saBundle.getAssertion(), bo);
                         saBundle.getService().setPolicyXml(bo.toString());
@@ -227,37 +237,37 @@ public class PublishServiceWizard extends JDialog {
         stepsjPanel.setBackground(new Color(213, 222, 222));
         stepsjPanel.setBorder(new EtchedBorder());
 
-        stepsTitlejPanel.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
-        stepsTitlejPanel.setPreferredSize(new Dimension(150, 40));
-        stepsTitlejPanel.setMaximumSize(new Dimension(150, 40));
+        stepsTitlePanel.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
+        stepsTitlePanel.setPreferredSize(new Dimension(150, 40));
+        stepsTitlePanel.setMaximumSize(new Dimension(150, 40));
 
-        stepsTitlejPanel.setBackground(new java.awt.Color(213, 222, 222));
-        stepsTitlejPanel.
+        stepsTitlePanel.setBackground(new java.awt.Color(213, 222, 222));
+        stepsTitlePanel.
           setBorder(new CompoundBorder(new EmptyBorder(new java.awt.Insets(5, 5, 5, 5)),
             new MatteBorder(new Insets(0, 0, 1, 0), new Color(0, 0, 0))));
 
-        stepsjLabel.setFont(new java.awt.Font("Dialog", 1, 14));
-        stepsjLabel.setText("Steps");
-        stepsTitlejPanel.add(stepsjLabel);
+        stepsLabel.setFont(new java.awt.Font("Dialog", 1, 14));
+        stepsLabel.setText("Steps");
+        stepsTitlePanel.add(stepsLabel);
 
-        stepsjPanel.add(stepsTitlejPanel);
+        stepsjPanel.add(stepsTitlePanel);
 
         mainjPanel.add(stepsjPanel, BorderLayout.WEST);
 
 
-        stepjPanel.setLayout(new BorderLayout());
-        stepjPanel.setBorder(new EmptyBorder(new Insets(5, 10, 5, 10)));
-        stepDescriptionjScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        stepDescriptionjTextArea.setEditable(false);
-        stepDescriptionjTextArea.setLineWrap(true);
-        stepDescriptionjTextArea.setWrapStyleWord(true);
-        stepDescriptionjTextArea.setRows(5);
-        stepDescriptionjTextArea.setBackground(stepDescriptionjScrollPane.getBackground());
-        stepDescriptionjScrollPane.setViewportView(stepDescriptionjTextArea);
+        stepPanel.setLayout(new BorderLayout());
+        stepPanel.setBorder(new EmptyBorder(new Insets(5, 10, 5, 10)));
+        stepDescriptionScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
+        stepDescriptionTextArea.setEditable(false);
+        stepDescriptionTextArea.setLineWrap(true);
+        stepDescriptionTextArea.setWrapStyleWord(true);
+        stepDescriptionTextArea.setRows(5);
+        stepDescriptionTextArea.setBackground(stepDescriptionScrollPane.getBackground());
+        stepDescriptionScrollPane.setViewportView(stepDescriptionTextArea);
 
-        stepjPanel.add(stepDescriptionjScrollPane, BorderLayout.SOUTH);
+        stepPanel.add(stepDescriptionScrollPane, BorderLayout.SOUTH);
 
-        mainjPanel.add(stepjPanel, BorderLayout.CENTER);
+        mainjPanel.add(stepPanel, BorderLayout.CENTER);
 
         getContentPane().add(mainjPanel, BorderLayout.CENTER);
 
@@ -313,7 +323,7 @@ public class PublishServiceWizard extends JDialog {
                 stepLabels = new JLabel[panels.length];
 
                 for (int i = 0; i < panels.length; i++) {
-                    stepLabels[i] = new JLabel(""+(i+1)+". "+panels[i].getStepLabel());
+                    stepLabels[i] = new JLabel("" + (i + 1) + ". " + panels[i].getStepLabel());
                     stepLabels[i].setFont(new java.awt.Font("Dialog", 1, 12));
                     stepLabels[i].setForeground(Color.WHITE);
                     stepsjPanel.add(stepLabels[i]);
@@ -322,23 +332,33 @@ public class PublishServiceWizard extends JDialog {
                 updateWizardUiState();
             }
         }
+    }
 
+    private void readThenStoreSettings() {
+        for (int i = 0; i < panels.length; i++) {
+            panels[i].readSettings(saBundle);
+        }
+        for (int i = 0; i < panels.length; i++) {
+            panels[i].storeSettings(saBundle);
+        }
     }
 
     private void buttonBackActionPerformed(ActionEvent evt) {
         // Add your handling code here:
-        stepjPanel.remove(panels[currentPanel]);
-        stepjPanel.add(panels[--currentPanel], BorderLayout.CENTER);
-        stepjPanel.updateUI();
+        stepPanel.remove(panels[currentPanel]);
+        stepPanel.add(panels[--currentPanel], BorderLayout.CENTER);
+        stepPanel.updateUI();
         updateWizardUiState();
+        readThenStoreSettings();
 
     }
 
     private void buttonNextActionPerformed(ActionEvent evt) {
-        stepjPanel.remove(panels[currentPanel]);
-        stepjPanel.add(panels[++currentPanel], BorderLayout.CENTER);
-        stepjPanel.updateUI();
+        stepPanel.remove(panels[currentPanel]);
+        stepPanel.add(panels[++currentPanel], BorderLayout.CENTER);
+        stepPanel.updateUI();
         updateWizardUiState();
+        readThenStoreSettings();
     }
 
     private void buttonCancelActionPerformed(ActionEvent evt) {
@@ -358,7 +378,7 @@ public class PublishServiceWizard extends JDialog {
         buttonBack.setEnabled(currentPanel > 0);
         buttonNext.setEnabled(currentPanel < panels.length - 1 && panels[currentPanel].isValid());
         if (panels.length > 0)
-            stepDescriptionjTextArea.setText(panels[currentPanel].getDescription());
+            stepDescriptionTextArea.setText(panels[currentPanel].getDescription());
     }
 
     private void updateWizardUiState() {
@@ -388,22 +408,20 @@ public class PublishServiceWizard extends JDialog {
         public void stateChanged(ChangeEvent e) {
             updateWizardUiState();
         }
-
     };
     private JPanel titlePanel;
-    private JLabel stepsjLabel;
-    private JScrollPane stepDescriptionjScrollPane;
+    private JLabel stepsLabel;
+    private JScrollPane stepDescriptionScrollPane;
     private JPanel mainjPanel;
     private JPanel panelButtons;
-    private JLabel titlejLabel;
+    private JLabel titleLabel;
     private JButton buttonFinish;
     private JPanel stepsjPanel;
-    private JPanel stepsTitlejPanel;
-    private JPanel stepjPanel;
+    private JPanel stepsTitlePanel;
+    private JPanel stepPanel;
     private JButton cancelButton;
-    private JSeparator jSeparator1;
     private JButton buttonNext;
-    private JTextArea stepDescriptionjTextArea;
+    private JTextArea stepDescriptionTextArea;
     private JButton buttonBack;
     private JButton buttonHelp;
 

@@ -1,11 +1,10 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.panels.PublishServiceWizard.ServiceAndAssertion;
 import com.l7tech.console.tree.wsdl.WsdlTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.Wsdl;
-import com.l7tech.policy.assertion.RoutingAssertion;
-import com.l7tech.console.panels.PublishServiceWizard.ServiceAndAssertion;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -140,7 +139,7 @@ public class ServicePanel extends WizardStepPanel {
         }
         try {
             PublishServiceWizard.ServiceAndAssertion
-              sa = (PublishServiceWizard.ServiceAndAssertion) settings;
+              sa = (PublishServiceWizard.ServiceAndAssertion)settings;
             PublishedService publishedService = sa.getService();
 
             publishedService.setName(service.getName());
@@ -151,9 +150,6 @@ public class ServicePanel extends WizardStepPanel {
             e.printStackTrace();
             isValid = false;
         }
-    }
-
-    public void storeSettings(Object settings) throws IllegalStateException {
     }
 
     /** @return the wizard step label    */
@@ -187,7 +183,7 @@ public class ServicePanel extends WizardStepPanel {
 
             this.setBackgroundNonSelectionColor(tree.getBackground());
 
-            WsdlTreeNode node = (WsdlTreeNode) value;
+            WsdlTreeNode node = (WsdlTreeNode)value;
             setText(node.toString());
             Image image = expanded ? node.getOpenedIcon() : node.getIcon();
             Icon icon = null;

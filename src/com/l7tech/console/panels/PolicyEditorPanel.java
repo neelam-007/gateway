@@ -2,13 +2,12 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.action.SavePolicyAction;
 import com.l7tech.console.action.ValidatePolicyAction;
+import com.l7tech.console.action.PolicyIdentityViewAction;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.WindowManager;
-import com.l7tech.policy.PolicyPathBuilder;
-import com.l7tech.policy.PolicyPathResult;
-import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.*;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.service.PublishedService;
 
@@ -36,6 +35,7 @@ public class PolicyEditorPanel extends JPanel {
     public PolicyEditorPanel(PublishedService svc) {
         this.service = svc;
         layoutComponents();
+        setName(svc.getName());
     }
 
     private void layoutComponents() {
@@ -88,9 +88,10 @@ public class PolicyEditorPanel extends JPanel {
 
     /**
      */
-    final class PolicyEditToolBar  extends JToolBar {
+    final class PolicyEditToolBar extends JToolBar {
         JButton buttonSave;
         JButton buttonValidate;
+        JToggleButton identityViewButton;
 
         public PolicyEditToolBar() {
             super();
@@ -103,40 +104,40 @@ public class PolicyEditorPanel extends JPanel {
             this.add(buttonSave);
 
             buttonValidate = new JButton(new ValidatePolicyAction());
-                        this.add(buttonValidate);
-                        buttonValidate.addActionListener(
-                                new ActionListener() {
-                                    /** Invoked when an action occurs.*/
-                                    public void actionPerformed(ActionEvent e) {
-                                        PolicyPathResult result =
-                                          PolicyPathBuilder.getDefault().
-                                          generate(rootAssertion.asAssertion());
-                                        StringWriter sw = new StringWriter();
-                                        sw.write("Paths :"+result.getPathCount()+"\n");
-                                        for (Iterator it = result.paths().iterator(); it.hasNext();) {
-                                            AssertionPath path = (AssertionPath)it.next();
-                                            sw.write("\n");
-                                            for (Iterator onepathit = path.assertions().iterator(); onepathit.hasNext();) {
-                                                Assertion ass = (Assertion)onepathit.next();
-                                                 sw.write(ass.toString());
-                                            }
-                                        }
-                                        appendToMessageArea(sw.toString());
-                                    }
-                                });
-
+            this.add(buttonValidate);
+            buttonValidate.addActionListener(
+              new ActionListener() {
+                  /** Invoked when an action occurs.*/
+                  public void actionPerformed(ActionEvent e) {
+                      PolicyValidatorResult result
+                        = PolicyValidator.getDefault().
+                        validate(rootAssertion.asAssertion());
+                      for (Iterator iterator = result.getErrors().iterator();
+                           iterator.hasNext();) {
+                          PolicyValidatorResult.Error pe =
+                            (PolicyValidatorResult.Error)iterator.next();
+                          appendToMessageArea("Assertion : " +
+                            pe.getAssertion().getClass() + " Error :" + pe.getMessage());
+                      }
+                      if (result.getErrors().isEmpty()) {
+                          appendToMessageArea("Policy validated ok.");
+                      }
+                  }
+              });
+            identityViewButton = new JToggleButton(new PolicyIdentityViewAction());
+            this.add(identityViewButton);
             Utilities.
-                    equalizeComponentSizes(
-                            new JComponent[]{
-                                buttonSave, buttonValidate
-                            });
+              equalizeComponentSizes(
+                new JComponent[]{
+                    buttonSave, buttonValidate, identityViewButton
+                });
         }
     }
 
     private void appendToMessageArea(String s) {
         try {
             int pos = messagesTextPane.getText().length();
-            if (pos >0) s= "\n"+s;
+            if (pos > 0) s = "\n" + s;
             StringReader sr = new StringReader(s);
             EditorKit editorKit = messagesTextPane.getEditorKit();
             editorKit.read(sr, messagesTextPane.getDocument(), pos);
@@ -145,5 +146,8 @@ public class PolicyEditorPanel extends JPanel {
         }
     }
 
+    private void overWriteMessageArea(String s) {
+        messagesTextPane.setText(s);
+    }
 
 }

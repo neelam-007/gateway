@@ -10,7 +10,6 @@ import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.Enumeration;
 
 /**
  * Class AssertionTreeNode.
@@ -44,13 +43,17 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
         java.util.List list = new ArrayList();
         list.addAll(Arrays.asList(super.getActions()));
 
+        Action sp = new SavePolicyAction(this);
+        //sp.setEnabled(false);
+        list.add(sp);
+
         Action da = new DeleteAssertionAction(this);
         da.setEnabled(canDelete());
         list.add(da);
 
-        Action sp = new SavePolicyAction(this);
-        //sp.setEnabled(false);
-        list.add(sp);
+        Action ea = new ExplainAssertionAction();
+        ea.setEnabled(canDelete());
+        list.add(ea);
 
         Action vp = new ValidatePolicyAction((AssertionTreeNode)getRoot());
         list.add(vp);

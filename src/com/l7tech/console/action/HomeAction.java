@@ -76,7 +76,16 @@ public class HomeAction extends BaseAction {
         htmlPane.addHyperlinkListener(new HyperlinkListener() {
             public void hyperlinkUpdate(HyperlinkEvent e) {
                 if (HyperlinkEvent.EventType.ACTIVATED == e.getEventType()) {
-                    System.out.println("activated " + e.getURL());
+                    String url = e.getURL().toString();
+                    if (ADD_SERVICE.equals(url)) {
+                        SwingUtilities.invokeLater(new Runnable() {
+                            public void run() {
+                                new PublishServiceAction().performAction();
+                            }
+                        });
+                    } else if (EDIT_POLICY.equals(url)) {
+
+                    }
                 }
             }
         });
@@ -89,4 +98,6 @@ public class HomeAction extends BaseAction {
 
     }
 
+    private static final String ADD_SERVICE = "file://add.service";
+    private static final String EDIT_POLICY = "file://edit.policy";
 }
