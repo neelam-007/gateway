@@ -32,7 +32,45 @@ public class TimeRangePropertiesDialog extends JDialog {
     }
 
     private void ok() {
-        // todo, validate and save data
+        if (assertion != null) {
+            // validate and save data
+            assertion.setControlTime(enableTimeOfDay.isSelected());
+            assertion.setControlDay(enableDayOfWeek.isSelected());
+            // get dialog start time
+            SpinnerNumberModel spinModel = (SpinnerNumberModel)startHr.getModel();
+            int localhr = spinModel.getNumber().intValue();
+            spinModel = (SpinnerNumberModel)startMin.getModel();
+            int localmin = spinModel.getNumber().intValue();
+            spinModel = (SpinnerNumberModel)startSec.getModel();
+            int localsec = spinModel.getNumber().intValue();
+            TimeOfDay utcstarttime = localToUTCTime(localhr, localmin, localsec);
+            // get dialog end time
+            spinModel = (SpinnerNumberModel)endHr.getModel();
+            localhr = spinModel.getNumber().intValue();
+            spinModel = (SpinnerNumberModel)endMin.getModel();
+            localmin = spinModel.getNumber().intValue();
+            spinModel = (SpinnerNumberModel)endSec.getModel();
+            localsec = spinModel.getNumber().intValue();
+            TimeOfDay utcendtime = localToUTCTime(localhr, localmin, localsec);
+            assertion.setTimeRange(new TimeOfDayRange(utcstarttime, utcendtime));
+            // get start and end day
+            SpinnerListModel spindayModel = (SpinnerListModel)startDay.getModel();
+            Object dayvalue = spindayModel.getValue();
+            for (int i = 0; i < week.length; i++) {
+                if (week[i].equals(dayvalue)) {
+                    assertion.setStartDayOfWeek(Calendar.SUNDAY + i);
+                    break;
+                }
+            }
+            spindayModel = (SpinnerListModel)endDay.getModel();
+            dayvalue = spindayModel.getValue();
+            for (int i = 0; i < week.length; i++) {
+                if (week[i].equals(dayvalue)) {
+                    assertion.setEndDayOfWeek(Calendar.SUNDAY + i);
+                    break;
+                }
+            }
+        }
         cancel();
     }
 
@@ -76,19 +114,14 @@ public class TimeRangePropertiesDialog extends JDialog {
         int localmin = spinModel.getNumber().intValue();
         spinModel = (SpinnerNumberModel)startSec.getModel();
         int localsec = spinModel.getNumber().intValue();
-        int utchr = localhr - hroffset;
-        int utcmin = localmin - minoffset;
-        while (utcmin >= 60) {
-            ++utchr;
-            utcmin -= 60;
-        }
-        while (utchr >= 24) {
-            utchr -= 24;
-        }
-        String utclabelvalue = (utchr < 10 ? "0" : "") + utchr +
-                               (utcmin < 10 ? ":0" : ":") + utcmin +
-                               (localsec < 10 ? ":0" : ":") + localsec;
-        utcStartTime.setText(utclabelvalue);
+        TimeOfDay utctime = localToUTCTime(localhr, localmin, localsec);
+        utcStartTime.setText(timeToString(utctime));
+    }
+
+    private String timeToString(TimeOfDay tod) {
+        return (tod.getHour() < 10 ? "0" : "") + tod.getHour() +
+               (tod.getMinute() < 10 ? ":0" : ":") + tod.getMinute() +
+               (tod.getSecond() < 10 ? ":0" : ":") + tod.getSecond();
     }
 
     private void refreshEndUTCLabel() {
@@ -99,19 +132,8 @@ public class TimeRangePropertiesDialog extends JDialog {
         int localmin = spinModel.getNumber().intValue();
         spinModel = (SpinnerNumberModel)endSec.getModel();
         int localsec = spinModel.getNumber().intValue();
-        int utchr = localhr - hroffset;
-        int utcmin = localmin - minoffset;
-        while (utcmin >= 60) {
-            ++utchr;
-            utcmin -= 60;
-        }
-        while (utchr >= 24) {
-            utchr -= 24;
-        }
-        String utclabelvalue = (utchr < 10 ? "0" : "") + utchr +
-                               (utcmin < 10 ? ":0" : ":") + utcmin +
-                               (localsec < 10 ? ":0" : ":") + localsec;
-        utcEndTime.setText(utclabelvalue);
+        TimeOfDay utctime = localToUTCTime(localhr, localmin, localsec);
+        utcEndTime.setText(timeToString(utctime));
     }
 
     /**
@@ -269,68 +291,71 @@ public class TimeRangePropertiesDialog extends JDialog {
                 hr = timeRange.getFrom().getHour();
                 min = timeRange.getFrom().getMinute();
                 sec = timeRange.getFrom().getSecond();
-                String utclabelvalue = (hr < 10 ? "0" : "") + hr +
-                                       (min < 10 ? ":0" : ":") + min +
-                                       (sec < 10 ? ":0" : ":") + sec;
-                utcStartTime.setText(utclabelvalue);
-                hr += hroffset;
-                min += minoffset;
-                while (min >= 60) {
-                    ++hr;
-                    min -= 60;
-                }
-                while (hr >= 24) {
-                    hr -= 24;
-                }
-                while (min < 0) {
-                    --hr;
-                    min += 60;
-                }
-                while (hr < 0) {
-                    hr += 24;
-                }
+                utcStartTime.setText(timeToString(new TimeOfDay(hr, min, sec)));
+                TimeOfDay localTime = this.utcToLocalTime(hr, min, sec);
                 SpinnerNumberModel spinNrModel = (SpinnerNumberModel)startHr.getModel();
-                spinNrModel.setValue(new Integer(hr));
+                spinNrModel.setValue(new Integer(localTime.getHour()));
                 spinNrModel = (SpinnerNumberModel)startMin.getModel();
-                spinNrModel.setValue(new Integer(min));
+                spinNrModel.setValue(new Integer(localTime.getMinute()));
                 spinNrModel = (SpinnerNumberModel)startSec.getModel();
-                spinNrModel.setValue(new Integer(sec));
-
+                spinNrModel.setValue(new Integer(localTime.getSecond()));
 
                 hr = timeRange.getTo().getHour();
                 min = timeRange.getTo().getMinute();
                 sec = timeRange.getTo().getSecond();
-                utclabelvalue = (hr < 10 ? "0" : "") + hr +
-                                (min < 10 ? ":0" : ":") + min +
-                                (sec < 10 ? ":0" : ":") + sec;
-                utcEndTime.setText(utclabelvalue);
-                hr += hroffset;
-                min += minoffset;
-                while (min >= 60) {
-                    ++hr;
-                    min -= 60;
-                }
-                while (hr >= 24) {
-                    hr -= 24;
-                }
-                while (min < 0) {
-                    --hr;
-                    min += 60;
-                }
-                while (hr < 0) {
-                    hr += 24;
-                }
+                utcEndTime.setText(timeToString(new TimeOfDay(hr, min, sec)));
+                localTime = this.utcToLocalTime(hr, min, sec);
                 spinNrModel = (SpinnerNumberModel)endHr.getModel();
-                spinNrModel.setValue(new Integer(hr));
+                spinNrModel.setValue(new Integer(localTime.getHour()));
                 spinNrModel = (SpinnerNumberModel)endMin.getModel();
-                spinNrModel.setValue(new Integer(min));
+                spinNrModel.setValue(new Integer(localTime.getMinute()));
                 spinNrModel = (SpinnerNumberModel)endSec.getModel();
-                spinNrModel.setValue(new Integer(sec));
+                spinNrModel.setValue(new Integer(localTime.getSecond()));
             }
         }
         // display UTC corresponding times
         refreshStartUTCLabel();
         refreshEndUTCLabel();
+    }
+
+    private TimeOfDay localToUTCTime(int hr, int min, int sec) {
+        int utchr = hr - hroffset;
+        int utcmin = min - minoffset;
+        while (utcmin >= 60) {
+            ++utchr;
+            utcmin -= 60;
+        }
+        while (utchr >= 24) {
+            utchr -= 24;
+        }
+        while (utcmin < 0) {
+            --utchr;
+            utcmin += 60;
+        }
+        while (utchr < 0) {
+            utchr += 24;
+        }
+        return new TimeOfDay(utchr, utcmin, sec);
+    }
+
+    private TimeOfDay utcToLocalTime(int hr, int min, int sec) {
+        int utchr = hr + hroffset;
+        int utcmin = min + minoffset;
+        while (utcmin >= 60) {
+            ++utchr;
+            utcmin -= 60;
+        }
+        while (utchr >= 24) {
+            utchr -= 24;
+        }
+        while (utcmin < 0) {
+            --utchr;
+            utcmin += 60;
+        }
+        while (utchr < 0) {
+            utchr += 24;
+        }
+        return new TimeOfDay(utchr, utcmin, sec);
     }
 
     private void initResources() {
@@ -550,11 +575,13 @@ public class TimeRangePropertiesDialog extends JDialog {
      */
     public static void main(String[] args) {
         TimeRange assertion = new TimeRange();
-        //assertion.setStartDayOfWeek(Calendar.WEDNESDAY);
-        assertion.setTimeRange(new TimeOfDayRange(new TimeOfDay(8,0,0), new TimeOfDay(17,0,0)));
-        TimeRangePropertiesDialog me = new TimeRangePropertiesDialog(null, true, assertion);
-        me.pack();
-        me.show();
+        // run dlg 5 times with same assertion
+        for (int i = 0; i < 5; i++) {
+
+            TimeRangePropertiesDialog me = new TimeRangePropertiesDialog(null, true, assertion);
+            me.pack();
+            me.show();
+        }
         System.exit(0);
     }
 
