@@ -19,7 +19,6 @@ import net.jini.lookup.JoinManager;
 
 import java.io.IOException;
 import java.rmi.Remote;
-import java.rmi.RemoteException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -30,7 +29,7 @@ import java.util.logging.Logger;
 /**
  * <code>RemoteService</code> is extended by the concrete Jini services.
  *
- * @author  <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
 public abstract class RemoteService implements Remote, ProxyAccessor {
@@ -50,7 +49,9 @@ public abstract class RemoteService implements Remote, ProxyAccessor {
     /* The configuration to use for configuring the server */
     protected final Configuration config;
 
-    /** The server proxy (for use by getProxyVerifier) */
+    /**
+     * The server proxy (for use by getProxyVerifier)
+     */
     protected Object serverProxy;
     protected Exporter exporter;
 
@@ -66,7 +67,7 @@ public abstract class RemoteService implements Remote, ProxyAccessor {
 
     public static void unexportAll() {
         for (Iterator iterator = serverImpls.keySet().iterator(); iterator.hasNext();) {
-            Object key = (Object) iterator.next();
+            Object key = (Object)iterator.next();
             RemoteService rs = (RemoteService)serverImpls.get(key);
             logger.finer("Unexporting service " + key);
 
@@ -81,33 +82,18 @@ public abstract class RemoteService implements Remote, ProxyAccessor {
     protected DiscoveryManagement getDiscoveryManager()
       throws ConfigurationException, IOException {
         /* Get the discovery manager, for discovering lookup services */
-
-        DiscoveryManagement discoveryManager;
-
-        for (int i = 0; i < components.length; i++) {
-            String entry = components[i];
-            try {
-                discoveryManager =
-                  (DiscoveryManagement) config.getEntry(
-                    entry,
-                    "discoveryManager", DiscoveryManagement.class);
-                return discoveryManager;
-            } catch (NoSuchEntryException e) {
-                continue;
-            }
-        }
-        /* Use the public group */
-        discoveryManager =
-          new LookupDiscovery(new String[]{""}, config);
-        return discoveryManager;
+        return
+          (DiscoveryManagement)getConfigEntry("discoveryManager",
+                                              DiscoveryManagement.class,
+                                              new LookupDiscovery(new String[]{""}, config));
     }
 
     /**
      * Initializes the server, including exporting it and storing its proxy in
      * the registry.
      *
-     * @throws java.io.IOException  if a problem occurs
-     * @throws ConfigurationException  if a problem occurs
+     * @throws java.io.IOException    if a problem occurs
+     * @throws ConfigurationException if a problem occurs
      */
     protected void init() throws IOException, ConfigurationException {
         /* Export the server */
@@ -128,43 +114,59 @@ public abstract class RemoteService implements Remote, ProxyAccessor {
      * Returns the exporter for exporting the server.
      *
      * @throws ConfigurationException if a problem occurs getting the exporter
-     *	       from the configuration
-     * @throws java.rmi.RemoteException if a remote communication problem occurs
+     *                                from the configuration
      */
-    protected Exporter getExporter()
-      throws ConfigurationException, RemoteException {
+    protected Exporter getExporter() throws ConfigurationException {
+        return
+          (Exporter)getConfigEntry("serverExporter", Exporter.class,
+                    new BasicJeriExporter(TcpServerEndpoint.getInstance(0), new BasicILFactory()));
+    }
 
-        Exporter exporter;
+    /**
+     * Searches the configuration entry in the <code>RemoteService</code> subclass section
+     * and the <code>RemoteService</code> section  in that order
+     *
+     * @param name  the configuration entry name
+     * @param clazz the confuguration entry class
+     * @param def the default value in case the entry is not found
+     * @throws ConfigurationException if a problem occurs getting the exporter
+     *                                from the configuration
+     */
+    protected final Object getConfigEntry(String name, Class clazz, Object def)
+      throws ConfigurationException {
+
+        Object result;
         for (int i = 0; i < components.length; i++) {
-            String entry = components[i];
+            String section = components[i];
             try {
-                exporter = (Exporter)config.getEntry(entry, "serverExporter", Exporter.class);
-                logger.info("Exporter config: "+exporter);
-                return exporter;
+                result = config.getEntry(section, name, clazz);
+                logger.fine("Found config entry "+result+" for name '"+name+"'");
+                return result;
             } catch (NoSuchEntryException e) {
                 continue;
             }
         }
-        exporter =
-          new BasicJeriExporter(TcpServerEndpoint.getInstance(0),
-            new BasicILFactory());
-        logger.warning("No exporter configured, (will use anonymous TCP port) "+ exporter);
-        return exporter;
+        logger.fine("Returning default value "+def+" for name '"+name+"'");
+        return def;
     }
+
 
     public Object getProxy() {
         return serverProxy;
     }
 
-    /** Returns the service ID for this server. */
+    /**
+     * Returns the service ID for this server.
+     */
     protected ServiceID getServiceID() {
         return createServiceID();
     }
 
-    /** Creates a new service ID. */
+    /**
+     * Creates a new service ID.
+     */
     protected static ServiceID createServiceID() {
         Uuid uuid = UuidFactory.generate();
-        return new ServiceID(
-          uuid.getMostSignificantBits(), uuid.getLeastSignificantBits());
+        return new ServiceID(uuid.getMostSignificantBits(), uuid.getLeastSignificantBits());
     }
 }
