@@ -6,20 +6,25 @@
 
 package com.l7tech.server;
 
-import com.l7tech.common.util.Locator;
-import com.l7tech.common.security.xml.SessionNotFoundException;
 import com.l7tech.common.security.xml.Session;
+import com.l7tech.common.security.xml.SessionNotFoundException;
+import com.l7tech.common.util.Locator;
+import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceManager;
+import com.l7tech.service.ServiceListener;
 import com.l7tech.service.resolution.ServiceResolutionException;
-import com.l7tech.logging.LogManager;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -28,7 +33,7 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class MessageProcessor {
+public class MessageProcessor implements ServiceListener {
     public AssertionStatus processMessage( Request request, Response response ) throws IOException, PolicyAssertionException {
         try {
             if ( _serviceManager == null ) throw new IllegalStateException( "ServiceManager is null!" );
@@ -70,9 +75,20 @@ public class MessageProcessor {
                 }
 
                 // run the policy
-                ServerAssertion ass = service.rootAssertion();
+
+                Assertion genericPolicy = service.rootAssertion();
+                Long oid = new Long( service.getOid() );
+                ServerAssertion serverPolicy;
+                synchronized( _serverPolicyCache ) {
+                    serverPolicy = (ServerAssertion)_serverPolicyCache.get( oid );
+                    if ( serverPolicy == null ) {
+                        serverPolicy = ServerPolicyFactory.getInstance().makeServerPolicy( genericPolicy );
+                        _serverPolicyCache.put( oid, serverPolicy );
+                    }
+                }
+
                 service.attemptedRequest();
-                status = ass.checkRequest( request, response );
+                status = serverPolicy.checkRequest( request, response );
 
                 if ( status == AssertionStatus.NONE ) {
                     service.authorizedRequest();
@@ -105,6 +121,7 @@ public class MessageProcessor {
         // This only uses Locator because only one instance of ServiceManager must
         // be active at once.
         _serviceManager = (ServiceManager)Locator.getDefault().lookup( ServiceManager.class );
+        _serviceManager.addServiceListener( this );
     }
 
     /** Returns the thread-local current request. Could be null! */
@@ -157,10 +174,23 @@ public class MessageProcessor {
         return false;
     }
 
+    public void serviceCreated( PublishedService service ) {
+        // Lazy
+    }
+
+    public void serviceDeleted(PublishedService service) {
+        _serverPolicyCache.remove( new Long( service.getOid() ) );
+    }
+
+    public void serviceUpdated(PublishedService service) {
+        _serverPolicyCache.remove( new Long( service.getOid() ) );
+    }
+
     private static MessageProcessor _instance = null;
     private static ThreadLocal _currentRequest = new ThreadLocal();
     private static ThreadLocal _currentResponse = new ThreadLocal();
 
+    private Map _serverPolicyCache = new HashMap();
     private ServiceManager _serviceManager;
     private Logger logger = LogManager.getInstance().getSystemLogger();
 }
