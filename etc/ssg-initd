@@ -71,8 +71,22 @@ stop() {
 		exit
 	fi	
 	if [ $RETVAL = 0 ]; then 
-	#	rm -f /var/lock/subsys/ssg /var/run/ssg.pid
-		echo "Success"
+		#	rm -f /var/lock/subsys/ssg /var/run/ssg.pid
+		# We sent a signal Lets make sure we're dead.
+		#
+		sleep 5;
+		find_tomcat;
+		if [ -z "$pid" ] ; then
+ 			echo "Success"
+			exit
+		fi
+		count=`expr $count + 1`
+		if [ "$count" -gt "$tries" ]; then
+			reallystop
+			exit
+		fi  
+		stop;
+		
 	else
 		sleep 2;
 		count=`expr $count + 1`
