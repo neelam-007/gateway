@@ -23,7 +23,7 @@ public class ClientCredentialManagerImpl extends ClientCredentialManager {
      * This requires the URL to be available in com.l7tech.console.util.Preferences.getPreferences().getServiceUrl();
      * IOException might be thrown otherwise.
      */
-    public void login(PasswordAuthentication creds)
+    public synchronized void login(PasswordAuthentication creds)
       throws LoginException, VersionException {
         resetCredentials();
         try {
@@ -59,7 +59,6 @@ public class ClientCredentialManagerImpl extends ClientCredentialManager {
             le.initCause(e); // no constructor with nested throwable
             throw le;
         }
-
     }
 
     protected void resetCredentials() {
@@ -80,6 +79,5 @@ public class ClientCredentialManagerImpl extends ClientCredentialManager {
         return prefUrl;
     }
 
-    private Call axisSessionCall = null;
-
+    private static Call axisSessionCall = null;
 }
