@@ -298,7 +298,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                 while (enum.hasMoreElements()) {
                     DefaultMutableTreeNode treeNode = (DefaultMutableTreeNode)enum.nextElement();
 
-                    if (treeNode instanceof BindingOperationTreeNode) {
+                    if (firstOperation != null && treeNode instanceof BindingOperationTreeNode) {                        
                         BindingOperation bo = ((BindingOperationTreeNode)treeNode).getOperation();
                         if (bo.getName().equals(firstOperation.getName())) {
                             log.finest("Operation matched, selecting "+bo.getName());
