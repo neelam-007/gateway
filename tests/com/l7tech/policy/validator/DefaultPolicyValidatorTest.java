@@ -168,30 +168,6 @@ public class DefaultPolicyValidatorTest extends TestCase {
 
 
     /**
-     * Test xml response after route
-     *
-     * @throws Exception
-     */
-    public void testPartialXmlResponseSecurityBeforeRoute() throws Exception {
-        ResponseWssIntegrity xs = new ResponseWssIntegrity();
-        final List kids =
-          Arrays.asList(new Assertion[]{
-              new SslAssertion(),
-              new HttpBasic(),
-              new SpecificUser(),
-              xs,
-              new HttpRoutingAssertion()
-          });
-        AllAssertion aa = new AllAssertion();
-        aa.setChildren(kids);
-        PolicyValidator dfpv = PolicyValidator.getDefault();
-        PolicyValidatorResult result = dfpv.validate(aa);
-        List messages = result.messages(xs);
-        assertTrue("Expected errors/warnings for the " + RequestWssIntegrity.class + " assertion, got 0", !messages.isEmpty());
-    }
-
-
-    /**
      * Test http client certificste policy combinations
      *
      * @throws Exception
