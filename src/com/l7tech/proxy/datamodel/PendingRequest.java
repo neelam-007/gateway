@@ -20,6 +20,7 @@ public class PendingRequest {
     private String soapAction = "";
     private String uri = "";
     private boolean isPolicyUpdated = false;
+    private boolean isCredentialsUpdated = false;
 
     // Policy settings, filled in by traversing poliy tree
     private static class PolicySettings {
@@ -135,5 +136,13 @@ public class PendingRequest {
 
     public void setPolicyUpdated(boolean policyUpdated) {
         isPolicyUpdated = policyUpdated;
+    }
+
+    public boolean isCredentialsUpdated() {
+        return isCredentialsUpdated;
+    }
+
+    public void setCredentialsUpdated(boolean credentialsUpdated) {
+        isCredentialsUpdated = credentialsUpdated;
     }
 }
