@@ -51,6 +51,10 @@ public class SsgListModel extends AbstractListModel {
         fireContentsChanged(this, 0, getSize());
     }
 
+    public Ssg createSsg() {
+        return Managers.getSsgManager().createSsg();
+    }
+
    /**
     * Save the SSG list to disk, overwriting the old file.
     */

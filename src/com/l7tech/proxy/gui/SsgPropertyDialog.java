@@ -4,6 +4,7 @@ import com.l7tech.proxy.datamodel.Ssg;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
+import javax.swing.border.Border;
 import java.awt.*;
 
 /**
@@ -21,7 +22,8 @@ public class SsgPropertyDialog extends PropertyDialog {
     private JTextField fieldName;
     private JTextField fieldLocalEndpoint;
     private JTextField fieldServerUrl;
-    private JPanel generalPane;
+    private JTextField fieldKeyStorePath;
+    private JComponent generalPane;
 
     /** Create an SsgPropertyDialog ready to edit an Ssg instance. */
     private SsgPropertyDialog(final Ssg ssg) {
@@ -42,42 +44,49 @@ public class SsgPropertyDialog extends PropertyDialog {
 
     /** Make a GridBagConstraints for a control, and move to next row. */
     private GridBagConstraints gbc() {
-        return new GridBagConstraints(1, gridY++, 1, 1, 0.0, 0.0,
+        return new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
                                       GridBagConstraints.WEST,
                                       GridBagConstraints.HORIZONTAL,
-                                      new Insets(0, 0, 0, 0), 0, 0);
+                                      new Insets(5, 5, 0, 5), 0, 0);
     }
 
     /** Make a GridBagConstraints for a label. */
     private GridBagConstraints gbcLabel() {
         return new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
                                       GridBagConstraints.EAST,
-                                      GridBagConstraints.HORIZONTAL,
-                                      new Insets(0, 0, 0, 0), 0, 0);
+                                      GridBagConstraints.NONE,
+                                      new Insets(5, 5, 0, 0), 0, 0);
     }
 
     /** Create panel controls.  Should be called only from a constructor. */
-    private JPanel getGeneralPane() {
+    private JComponent getGeneralPane() {
         if (generalPane == null) {
-            generalPane = new JPanel(new GridBagLayout());
+            JPanel pane = new JPanel(new GridBagLayout());
+            generalPane = new JScrollPane(pane);
+            generalPane.setBorder(BorderFactory.createEmptyBorder());
 
             fieldName = new JTextField();
             fieldName.setPreferredSize(new Dimension(200, 20));
-            generalPane.add(new JLabel("Name:"), gbcLabel());
-            generalPane.add(fieldName, gbc());
+            pane.add(new JLabel("Name:"), gbcLabel());
+            pane.add(fieldName, gbc());
 
             fieldLocalEndpoint = new JTextField();
             fieldLocalEndpoint.setPreferredSize(new Dimension(200, 20));
-            generalPane.add(new JLabel("Endpoint:"), gbcLabel());
-            generalPane.add(fieldLocalEndpoint, gbc());
+            pane.add(new JLabel("Endpoint:"), gbcLabel());
+            pane.add(fieldLocalEndpoint, gbc());
 
             fieldServerUrl = new JTextField();
             fieldServerUrl.setPreferredSize(new Dimension(250, 20));
-            generalPane.add(new JLabel("SSG URL:"), gbcLabel());
-            generalPane.add(fieldServerUrl, gbc());
+            pane.add(new JLabel("SSG URL:"), gbcLabel());
+            pane.add(fieldServerUrl, gbc());
+
+            fieldKeyStorePath = new JTextField();
+            fieldKeyStorePath.setPreferredSize(new Dimension(200, 20));
+            pane.add(new JLabel("Key store:"), gbcLabel());
+            pane.add(fieldKeyStorePath, gbc());
 
             // Have a spacer eat any leftover space
-            generalPane.add(new JPanel(),
+            pane.add(new JPanel(),
                             new GridBagConstraints(0, gridY++, 1, 1, 1.0, 1.0,
                                                    GridBagConstraints.CENTER,
                                                    GridBagConstraints.BOTH,
@@ -94,6 +103,7 @@ public class SsgPropertyDialog extends PropertyDialog {
         fieldName.setText(ssg.getName());
         fieldLocalEndpoint.setText(ssg.getLocalEndpoint());
         fieldServerUrl.setText(ssg.getServerUrl());
+        fieldKeyStorePath.setText(ssg.getKeyStorePath());
     }
 
     /**
@@ -105,6 +115,7 @@ public class SsgPropertyDialog extends PropertyDialog {
         ssg.setName(fieldName.getText());
         ssg.setLocalEndpoint(fieldLocalEndpoint.getText());
         ssg.setServerUrl(fieldServerUrl.getText());
+        ssg.setKeyStorePath(fieldKeyStorePath.getText());
         setSsg(ssg);
     }
 }

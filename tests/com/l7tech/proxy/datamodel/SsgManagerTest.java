@@ -23,11 +23,11 @@ public class SsgManagerTest extends TestCase {
     private static final SsgManagerImpl sm = SsgManagerImpl.getInstance();
 
     private static final Ssg SSG1 =
-            new Ssg("Test SSG1", "testssg1", "http://localhost:4444/soap", "fbunky", "sekrit");
+            new Ssg(sm.nextId(), "Test SSG1", "testssg1", "http://localhost:4444/soap");
     private static final Ssg SSG2 =
-            new Ssg("Test SSG2", "testssg2", "http://localhost:4445/soap", "fredb", "p-ass-word");
+            new Ssg(sm.nextId(), "Test SSG2", "testssg2", "http://localhost:4445/soap");
     private static final Ssg SSG3 =
-            new Ssg("Test SSG3", "testssg3", "http://localhost:4446/soap", "fredb", "p-ass-word");
+            new Ssg(sm.nextId(), "Test SSG3", "testssg3", "http://localhost:4446/soap");
     private static final Ssg SSG3_CLONE = SSG3.getCopy();
 
     private static final Ssg[] TEST_SSGS = { SSG1, SSG2, SSG3, SSG3_CLONE };
@@ -177,10 +177,17 @@ public class SsgManagerTest extends TestCase {
         assertTrue(loaded2.getName() != null);
         assertTrue(loaded2.getName().equals(SSG2.getName()));
 
-        // Duplicates aren't allowed if all significant fields are the same
+        // May not add two Ssgs with the same Id
+        // (Actually you shouldn't even be instantiating two Ssgs with the same Id)
         sm.add(SSG3);
-        sm.add(SSG3_CLONE);
+        SSG3_CLONE.setId(SSG3.getId());
+        assertFalse(sm.add(SSG3_CLONE));
         assertTrue(countNames(SSG3.getName()) == 1);
+
+        // May add two Ssgs with the same fields as long as the Ids differ.
+        SSG3_CLONE.setId(sm.nextId());
+        sm.add(SSG3_CLONE);
+        assertTrue(countNames(SSG3.getName()) == 2);
 
         eraseAllSsgs();
         assertTrue(sm.getSsgList().size() == 0);

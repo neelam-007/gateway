@@ -56,7 +56,7 @@ public class SsgListPanel extends JPanel {
 
         toolBar.add(new AbstractAction("New", IconManager.getAdd()) {
             public void actionPerformed(final ActionEvent e) {
-                final Ssg newSsg = new Ssg();
+                final Ssg newSsg = ssgListModel.createSsg();
                 newSsg.setName("New SSG");
                 try {
                     if (PropertyDialog.getPropertyDialogForObject(newSsg).runDialog())

@@ -77,7 +77,11 @@ public class FunctionalTest extends TestCase {
         // Configure the client proxy
         ssgManager = new SsgManagerStub();
         ssgManager.clear();
-        ssgManager.add(new Ssg("SSG Faker", ssg0ProxyEndpoint, ssgUrl, "", ""));
+        Ssg ssgFake = ssgManager.createSsg();
+        ssgFake.setName("SSG Faker");
+        ssgFake.setLocalEndpoint(ssg0ProxyEndpoint);
+        ssgFake.setServerUrl(ssgUrl);
+        ssgManager.add(ssgFake);
 
         // Start the client proxy
         clientProxy = new ClientProxy(ssgManager, DEFAULT_PORT, MIN_THREADS, MAX_THREADS);

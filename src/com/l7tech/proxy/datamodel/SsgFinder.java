@@ -14,7 +14,7 @@ public interface SsgFinder {
      * @return A List of the canonical Ssg objects.
      *         The List is read-only but the Ssg objects in it are the real deal.
      */
-    public List getSsgList();
+    List getSsgList();
 
     /**
      * Find the Ssg with the specified name.  If multiple Ssgs have the same name only the
@@ -24,7 +24,7 @@ public interface SsgFinder {
      * @return The requested Ssg.  Never null.
      * @throws com.l7tech.proxy.datamodel.SsgNotFoundException If the specified name was not found.
      */
-    public Ssg getSsgByName(String name) throws SsgNotFoundException;
+    Ssg getSsgByName(String name) throws SsgNotFoundException;
 
     /**
      * Find the Ssg with the specified local endpoint.  If multiple Ssgs have the same endpoint
@@ -34,5 +34,5 @@ public interface SsgFinder {
      * @return The requested Ssg.  Never null.
      * @throws com.l7tech.proxy.datamodel.SsgNotFoundException If the specified endpoint was not found.
      */
-    public Ssg getSsgByEndpoint(String endpoint) throws SsgNotFoundException;
+    Ssg getSsgByEndpoint(String endpoint) throws SsgNotFoundException;
 }

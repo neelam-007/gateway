@@ -1,18 +1,16 @@
 package com.l7tech.proxy;
 
+import org.apache.axis.AxisEngine;
+import org.apache.axis.encoding.DeserializationContextImpl;
+import org.apache.axis.message.SOAPBody;
+import org.apache.axis.message.SOAPEnvelope;
+import org.apache.axis.message.SOAPHandler;
+import org.apache.axis.message.SOAPHeader;
+import org.apache.log4j.Category;
 import org.mortbay.http.*;
 import org.mortbay.http.handler.AbstractHttpHandler;
 import org.mortbay.util.MultiException;
-import org.apache.log4j.Category;
-import org.apache.axis.message.SOAPEnvelope;
-import org.apache.axis.message.SOAPHeader;
-import org.apache.axis.message.SOAPBody;
-import org.apache.axis.message.SOAPHandler;
-import org.apache.axis.soap.SOAPConstants;
-import org.apache.axis.encoding.DeserializationContextImpl;
-import org.apache.axis.AxisEngine;
 import org.xml.sax.SAXException;
-import org.xml.sax.Attributes;
 import org.xml.sax.helpers.AttributesImpl;
 
 import javax.xml.soap.SOAPException;
@@ -113,7 +111,7 @@ public class SsgFaker {
             String namespace = requestEnvelope.getNamespaceURI();
 
             SOAPEnvelope responseEnvelope = new SOAPEnvelope();
-            responseEnvelope.setHeader(new SOAPHeader(requestEnvelope.getNamespaceURI(),
+            responseEnvelope.setHeader(new SOAPHeader(namespace,
                                                       localEndpoint,
                                                       requestEnvelope.getPrefix(),
                                                       new AttributesImpl(),
@@ -132,6 +130,21 @@ public class SsgFaker {
             response.commitHeader();
             response.getOutputStream().write(responseEnvelope.toString().getBytes());
             response.commit();
+        }
+    }
+
+    /** Fire up an SsgFaker for testing purposes. */
+    public static void main(String[] args) {
+        SsgFaker ssgFaker = new SsgFaker();
+        String url = ssgFaker.start();
+        System.out.println("SSG Faker is now listening on " + url);
+
+        Object forever = new Object();
+        synchronized(forever) {
+            try {
+                forever.wait();
+            } catch (InterruptedException e) {
+            }
         }
     }
 }

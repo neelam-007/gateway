@@ -22,6 +22,7 @@ class SsgManagerImpl implements SsgManager {
 
     private SortedSet ssgs = new TreeSet();
     private boolean init = false;
+    private long nextId = 1;
 
     private SsgManagerImpl() {
     }
@@ -61,9 +62,14 @@ class SsgManagerImpl implements SsgManager {
             if (newssgs != null) {
                 clear();
                 ssgs.addAll(newssgs);
+                for (Iterator i = ssgs.iterator(); i.hasNext();) {
+                    long id  = ((Ssg)i.next()).getId();
+                    if (nextId <= id)
+                        nextId = id + 1;
+                }
             }
         } catch (FileNotFoundException e) {
-            log.info(e);
+            log.info("No SSG store found -- will create a new one");
         } catch (IOException e) {
             log.error(e);
         } catch (ClassCastException e) {
@@ -111,12 +117,29 @@ class SsgManagerImpl implements SsgManager {
     }
 
     /**
+     * Find the Ssg with the specified ID.
+     * @param id the ID to look for (ie, 3)
+     * @return The requested Ssg.  Never null.
+     * @throws SsgNotFoundException If the specified name was not found.
+     */
+    public synchronized Ssg getSsgById(final long id) throws SsgNotFoundException {
+        if (!init)
+            initialize();
+        for (Iterator i = ssgs.iterator(); i.hasNext();) {
+            final Ssg ssg = (Ssg)i.next();
+            if (id == ssg.getId())
+                return ssg;
+        }
+        throw new SsgNotFoundException("No SSG is registered with the id " + id);
+    }
+
+    /**
      * Find the Ssg with the specified name.  If multiple Ssgs have the same name only the
      * first one is returned.
      *
      * @param name the name to look for (ie, "R&D Gateway")
      * @return The requested Ssg.  Never null.
-     * @throws com.l7tech.proxy.datamodel.SsgNotFoundException If the specified name was not found.
+     * @throws SsgNotFoundException If the specified name was not found.
      */
     public synchronized Ssg getSsgByName(final String name) throws SsgNotFoundException {
         if (!init)
@@ -135,7 +158,7 @@ class SsgManagerImpl implements SsgManager {
      *
      * @param endpoint The endpoint to look for (ie, "SSG0")
      * @return The requested Ssg.  Never null.
-     * @throws com.l7tech.proxy.datamodel.SsgNotFoundException If the specified endpoint was not found.
+     * @throws SsgNotFoundException If the specified endpoint was not found.
      */
     public synchronized Ssg getSsgByEndpoint(final String endpoint) throws SsgNotFoundException {
         if (!init)
@@ -149,14 +172,35 @@ class SsgManagerImpl implements SsgManager {
     }
 
     /**
+     * Get the next unused Ssg Id.
+     */
+    public synchronized long nextId() {
+        if (!init)
+            initialize();
+        return nextId++;
+    }
+
+    /**
+     * Create a new Ssg instance, but do not yet register it.
+     */
+    public synchronized Ssg createSsg() {
+        if (!init)
+            initialize();
+        return new Ssg(nextId());
+    }
+
+    /**
      * Register a new Ssg with this client proxy.  Takes no action if an Ssg that equals() the new object is
      * already registered.
      * @param ssg The new Ssg.
      * @return true iff. the given ssg was not already registered
+     * @throws IllegalArgumentException if the given Ssg was not obtained by calling createSsg()
      */
     public synchronized boolean add(final Ssg ssg) {
         if (!init)
             initialize();
+        if (ssg.getId() == 0)
+            throw new IllegalArgumentException("Unable to register ssg: it has not been assigned an ID");
         return ssgs.add(ssg);
     }
 

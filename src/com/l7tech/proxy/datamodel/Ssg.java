@@ -7,59 +7,43 @@ import org.apache.log4j.Category;
  * User: mike
  * Date: May 26, 2003
  * Time: 11:09:04 AM
- * To change this template use Options | File Templates.
  */
 public class Ssg implements Cloneable, Comparable {
     private static Category log = Category.getInstance(Ssg.class);
 
+    private long id = 0;
     private String name = "";
     private String localEndpoint = "";
     private String serverUrl = "";
-    private String username = "";
+    private String username = null;
     private String password = null;
+    private String keyStorePath = null;
 
     public int compareTo(final Object o) {
-        final Ssg that = (Ssg)o;
-        int res;
-
-        // Check each field
-        res = name.compareTo(that.name);
-        if (res != 0)
-            return res;
-
-        res = localEndpoint.compareTo(that.localEndpoint);
-        if (res != 0)
-            return res;
-
-        res = serverUrl.compareTo(that.serverUrl);
-        if (res != 0)
-            return res;
-
-        res = username.compareTo(that.username);
-        if (res != 0)
-            return res;
-
-        // none left
-        return res;
+        long id0 = getId();
+        long id1 = ((Ssg)o).getId();
+        if (id0 == 0 || id1 == 0)
+            throw new IllegalArgumentException("Comparison of Ssgs without Ids is not defined");
+        return id0 < id1 ? -1 : id0 > id1 ? 1 : 0;
     }
 
     public boolean equals(final Object o) {
-        if (this == o)
-            return true;
-        if (!this.getClass().equals(o.getClass()))
+        if (!o.getClass().equals(this.getClass()))
             return false;
-        return hashCode() == o.hashCode();
+        return getId() == ((Ssg)o).getId();
     }
 
     public int hashCode() {
-        return (int)(name.hashCode() * 257L +
-                localEndpoint.hashCode() * 997L +
-                serverUrl.hashCode() * 1103L +
-                username.hashCode() * 37L);
+        return (int)getId();
     }
 
-    /** Create a new Ssg instance with default field contents. */
-    public Ssg() {
+    /** Create a new Ssg instance with default fields. */
+    Ssg() {
+    }
+
+    /** Create a new Ssg instance with the given ID. */
+    Ssg(long id) {
+        this.id = id;
     }
 
     /**
@@ -67,15 +51,12 @@ public class Ssg implements Cloneable, Comparable {
      * @param name
      * @param localEndpoint
      * @param serverUrl
-     * @param username
-     * @param password
      */
-    public Ssg(final String name, final String localEndpoint, final String serverUrl, final String username, final String password) {
+    Ssg(long id, final String name, final String localEndpoint, final String serverUrl) {
+        this(id);
         this.name = name;
         this.localEndpoint = localEndpoint;
         this.serverUrl = serverUrl;
-        this.username = username;
-        this.password = password;
     }
 
     public Object clone() throws CloneNotSupportedException {
@@ -85,10 +66,13 @@ public class Ssg implements Cloneable, Comparable {
     /**
      * More user-friendly version of clone().  Caller is spared from having to catch
      * CloneNotSupportedException, or from having to cast the return value.
+     * @param newId the Id to use for the new Ssg instance
      */
-    public Ssg getCopy() {
+    public Ssg getCopy(long newId) {
         try {
-            return (Ssg)clone();
+            Ssg clone = (Ssg)clone();
+            clone.setId(0);
+            return clone;
         } catch (CloneNotSupportedException e) {
             // this can't happen
             log.error(e);
@@ -96,8 +80,25 @@ public class Ssg implements Cloneable, Comparable {
         }
     }
 
+    /**
+     * More user-friendly version of clone().  Caller is spared from having to catch
+     * CloneNotSupportedException, or from having to cast the return value.
+     * The new Ssg will not have a valid Id.
+     */
+    public Ssg getCopy() {
+        return getCopy(0);
+    }
+
     public String toString() {
         return getName();
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
     }
 
     public String getName() {
@@ -138,5 +139,13 @@ public class Ssg implements Cloneable, Comparable {
 
     public void setPassword(final String password) {
         this.password = password;
+    }
+
+    public String getKeyStorePath() {
+        return keyStorePath;
+    }
+
+    public void setKeyStorePath(final String keyStorePath) {
+        this.keyStorePath = keyStorePath;
     }
 }

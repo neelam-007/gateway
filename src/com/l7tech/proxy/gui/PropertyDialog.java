@@ -4,8 +4,7 @@ import com.l7tech.proxy.datamodel.Ssg;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
+import java.awt.event.*;
 
 /**
  * Superclass for property dialog boxes.
@@ -15,6 +14,7 @@ import java.awt.event.ActionEvent;
  * To change this template use Options | File Templates.
  */
 public abstract class PropertyDialog extends JDialog {
+    protected static Dimension MIN_SIZE = new Dimension(200, 150);
     protected JTabbedPane tabbedPane;
     protected JButton okButton;
     protected JButton cancelButton;
@@ -27,11 +27,30 @@ public abstract class PropertyDialog extends JDialog {
      * */
     protected PropertyDialog(final String title) {
         super(Gui.getInstance().getFrame(), title, true);
-        getContentPane().setLayout(new BorderLayout());
+
+        // Enforce minimum size
+        addComponentListener(new ComponentAdapter() {
+            public void componentResized(ComponentEvent e) {
+                Dimension size = PropertyDialog.this.getSize();
+                if (size.width < MIN_SIZE.width && size.height < MIN_SIZE.height)
+                    PropertyDialog.this.setSize(MIN_SIZE);
+                else if (size.width < MIN_SIZE.width)
+                    PropertyDialog.this.setSize(new Dimension(MIN_SIZE.width, size.height));
+                else if (size.height < MIN_SIZE.height)
+                    PropertyDialog.this.setSize(new Dimension(size.width, MIN_SIZE.height));
+            }
+        });
+
+        getContentPane().setLayout(new GridBagLayout());
 
         tabbedPane = new JTabbedPane(JTabbedPane.NORTH, JTabbedPane.WRAP_TAB_LAYOUT);
         tabbedPane.setPreferredSize(new Dimension(400, 450));
-        getContentPane().add(tabbedPane, BorderLayout.CENTER);
+        getContentPane().add(tabbedPane,
+                             new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
+                                                    GridBagConstraints.CENTER,
+                                                    GridBagConstraints.BOTH,
+                                                    new Insets(5, 5, 0, 5),
+                                                    4, 4));
 
         final JPanel buttonPane = new JPanel();
         buttonPane.setLayout(new GridBagLayout());
@@ -55,7 +74,7 @@ public abstract class PropertyDialog extends JDialog {
                        new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
                                               GridBagConstraints.EAST,
                                               GridBagConstraints.NONE,
-                                              new Insets(0, 0, 0, 0),
+                                              new Insets(5, 0, 0, 0),
                                               0, 0));
 
         cancelButton = new JButton("Cancel");
@@ -70,10 +89,15 @@ public abstract class PropertyDialog extends JDialog {
                        new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
                                               GridBagConstraints.EAST,
                                               GridBagConstraints.NONE,
-                                              new Insets(0, 0, 0, 0),
+                                              new Insets(5, 5, 0, 0),
                                               0, 0));
 
-        getContentPane().add(buttonPane, BorderLayout.SOUTH);
+        getContentPane().add(buttonPane,
+                             new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
+                                                    GridBagConstraints.EAST,
+                                                    GridBagConstraints.NONE,
+                                                    new Insets(0, 5, 5, 5),
+                                                    0, 0));
     }
 
     /**

@@ -13,9 +13,10 @@ import java.io.IOException;
  */
 public class SsgManagerStub implements SsgManager {
     List ssgs = new ArrayList(Arrays.asList(new Ssg[] {
-        new Ssg("Default SSG", "SSG0", "http://127.0.0.1:5555", "fbunky", "soopersekrit"),
-        new Ssg("Alternate SSG", "SSG1", "http://127.0.0.1:5556", "fredb", "p-ass-word")
+        new Ssg(0, "Default SSG", "SSG0", "http://127.0.0.1:5555"),
+        new Ssg(1, "Alternate SSG", "SSG1", "http://127.0.0.1:5556")
     }));
+    private long nextId = 2;
 
     public List getSsgList() {
         return Collections.unmodifiableList(ssgs);
@@ -39,7 +40,23 @@ public class SsgManagerStub implements SsgManager {
         throw new SsgNotFoundException();
     }
 
+    /**
+     * Get the next unused Id.
+     */
+    public synchronized long nextId() {
+        return nextId++;
+    }
+
+    /**
+     * Create a new Ssg instance, but do not yet register it.
+     */
+    public Ssg createSsg() {
+        return new Ssg(nextId());
+    }
+
     public boolean add(Ssg ssg) {
+        if (ssg.getId() == 0)
+            throw new IllegalArgumentException("Unable to register ssg: it has not been assigned an ID");
         return ssgs.add(ssg);
     }
 
