@@ -5,7 +5,7 @@ import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.ComponentManager;
+import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.policy.wsp.WspWriter;
 
 import javax.swing.*;
@@ -129,7 +129,7 @@ public class SavePolicyTemplateAction extends BaseAction {
 
     private void updateAssertionTree(File policyFile) {
         JTree tree =
-          (JTree)ComponentManager.getInstance().getComponent(AssertionsTree.NAME);
+          (JTree)ComponentRegistry.getInstance().getComponent(AssertionsTree.NAME);
         if (tree != null) {
             AbstractTreeNode node =
               (AbstractTreeNode)TreeNodeActions.

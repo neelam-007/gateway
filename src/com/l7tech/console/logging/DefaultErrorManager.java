@@ -1,8 +1,7 @@
 package com.l7tech.console.logging;
 
-import com.l7tech.util.Locator;
-import com.l7tech.console.util.ComponentManager;
 import com.l7tech.console.panels.Utilities;
+import com.l7tech.console.util.ComponentRegistry;
 
 import javax.swing.*;
 import java.util.logging.Level;
@@ -36,7 +35,7 @@ public class DefaultErrorManager extends ErrorManager {
     private JFrame getMainWindow() {
         if (mainFrame != null) return mainFrame;
 
-        ComponentManager instance = ComponentManager.getInstance();
+        ComponentRegistry instance = ComponentRegistry.getInstance();
         if (instance.hasMainWindow()) {
             mainFrame = instance.getMainWindow();
         }

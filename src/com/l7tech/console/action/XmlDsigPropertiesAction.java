@@ -7,7 +7,7 @@ import com.l7tech.console.panels.Utilities;
 import com.l7tech.console.panels.XmlDsigAssertionDialog;
 import com.l7tech.console.tree.policy.XmlDsigAssertionTreeNode;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.ComponentManager;
+import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.policy.assertion.xmlsec.XmlDsigAssertion;
 
 import javax.swing.*;
@@ -74,7 +74,7 @@ public class XmlDsigPropertiesAction extends NodeAction {
     private final PolicyListener listener = new PolicyListenerAdapter() {
         public void assertionsChanged(PolicyEvent e) {
             JTree tree =
-                  (JTree)ComponentManager.getInstance().getPolicyTree();
+                  (JTree)ComponentRegistry.getInstance().getPolicyTree();
                 if (tree != null) {
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                     model.nodeChanged(node);

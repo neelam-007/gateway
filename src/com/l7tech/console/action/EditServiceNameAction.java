@@ -9,7 +9,7 @@ import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.ComponentManager;
+import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.service.PublishedService;
 import com.l7tech.objectmodel.FindException;
 
@@ -66,7 +66,7 @@ public class EditServiceNameAction extends NodeAction {
           new Runnable() {
               public void run() {
                   try {
-                      ComponentManager wm =
+                      ComponentRegistry wm =
                         Registry.getDefault().getWindowManager();
                       PublishedService svc = ((ServiceNode)node).getPublishedService();
                       EditServiceNameDialog d =
@@ -84,7 +84,7 @@ public class EditServiceNameAction extends NodeAction {
      * check whethewr the current workspace service needs to be reloaded.
      */
     private void checkWorkspaceService() {
-        JTree tree = (JTree)ComponentManager.
+        JTree tree = (JTree)ComponentRegistry.
           getInstance().getComponent(PolicyTree.NAME);
         PublishedService svc = (PublishedService)tree.getClientProperty("service");
         try {
@@ -92,7 +92,7 @@ public class EditServiceNameAction extends NodeAction {
             ServiceNode sn = (ServiceNode)node;
             if (svc != null && (sn.getPublishedService().getOid() == svc.getOid())) {
 
-                ComponentManager.getInstance().
+                ComponentRegistry.getInstance().
                   getCurrentWorkspace().
                   setComponent(new PolicyEditorPanel(sn.getPublishedService()));
             }
@@ -115,7 +115,7 @@ public class EditServiceNameAction extends NodeAction {
                       ServiceNode n = ((ServiceNode)node);
                       n.clearServiceHolder();
                       JTree tree =
-                        (JTree)ComponentManager.getInstance().getComponent(ServicesTree.NAME);
+                        (JTree)ComponentRegistry.getInstance().getComponent(ServicesTree.NAME);
                       if (tree != null) {
                           DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                           model.nodeChanged(node);

@@ -1,7 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.util.Preferences;
-import com.l7tech.console.util.ComponentManager;
+import com.l7tech.console.util.ComponentRegistry;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
@@ -97,7 +97,7 @@ public class ImportCertificateAction extends BaseAction {
     }
 
     private JFrame getFrame() {
-        JFrame mw = ComponentManager.getInstance().getMainWindow();
+        JFrame mw = ComponentRegistry.getInstance().getMainWindow();
         return mw;
     }
 

@@ -3,7 +3,7 @@ package com.l7tech.console.action;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.PolicyTemplateNode;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
-import com.l7tech.console.util.ComponentManager;
+import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
@@ -72,7 +72,7 @@ public class AddAssertionAction extends BaseAction {
     }
 
     private void assignPolicyTemplate(PolicyTemplateNode pn) {
-        JTree tree = ComponentManager.getInstance().getPolicyTree();
+        JTree tree = ComponentRegistry.getInstance().getPolicyTree();
         PublishedService svc = (PublishedService)tree.getClientProperty("service");
         if (svc == null)
             throw new IllegalArgumentException("No edited service specified");

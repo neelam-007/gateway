@@ -2,7 +2,7 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.tree.AssertionsTree;
 import com.l7tech.console.tree.PolicyTemplateNode;
-import com.l7tech.console.util.ComponentManager;
+import com.l7tech.console.util.ComponentRegistry;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -58,7 +58,7 @@ public class DeletePolicyTemplateAction extends BaseAction {
         boolean deleted = Actions.deletePolicyTemplate(node);
         if (deleted) {
             JTree tree =
-              (JTree)ComponentManager.getInstance().getComponent(AssertionsTree.NAME);
+              (JTree)ComponentRegistry.getInstance().getComponent(AssertionsTree.NAME);
             DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
             model.removeNodeFromParent(node);
         }

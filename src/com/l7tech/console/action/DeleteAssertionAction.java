@@ -2,7 +2,7 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTree;
-import com.l7tech.console.util.ComponentManager;
+import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
@@ -62,7 +62,7 @@ public class DeleteAssertionAction extends BaseAction {
             boolean deleted = Actions.deleteAssertion(node);
         if (deleted) {
             JTree tree =
-              (JTree)ComponentManager.getInstance().getComponent(PolicyTree.NAME);
+              (JTree)ComponentRegistry.getInstance().getComponent(PolicyTree.NAME);
             DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
             model.removeNodeFromParent(node);
             Assertion ass = node.asAssertion();

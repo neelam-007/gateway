@@ -5,7 +5,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.console.action.AddAllAssertionAction;
 import com.l7tech.console.action.AddOneOrMoreAssertionAction;
 import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.util.ComponentManager;
+import com.l7tech.console.util.ComponentRegistry;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -67,7 +67,7 @@ public abstract class CompositeAssertionTreeNode extends AssertionTreeNode {
         }
 
         JTree tree =
-          (JTree)ComponentManager.
+          (JTree)ComponentRegistry.
           getInstance().getComponent(PolicyTree.NAME);
         if (tree != null) {
             DefaultTreeModel model = (DefaultTreeModel)tree.getModel();

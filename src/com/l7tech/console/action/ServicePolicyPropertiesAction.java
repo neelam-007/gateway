@@ -4,7 +4,7 @@ import com.l7tech.console.panels.PolicyEditorPanel;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.ComponentManager;
+import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
@@ -53,7 +53,7 @@ public class ServicePolicyPropertiesAction extends NodeAction {
           new Runnable() {
               public void run() {
                   try {
-                      ComponentManager windowManager =
+                      ComponentRegistry windowManager =
                         Registry.getDefault().getWindowManager();
                       WorkSpacePanel wpanel = windowManager.getCurrentWorkspace();
 

@@ -1,13 +1,14 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.panels.IdentityProviderDialog;
-import com.l7tech.console.tree.*;
-import com.l7tech.console.util.ComponentManager;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.MainWindow;
-import com.l7tech.console.event.EntityListenerAdapter;
-import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.event.EntityEvent;
+import com.l7tech.console.event.EntityListener;
+import com.l7tech.console.event.EntityListenerAdapter;
+import com.l7tech.console.panels.IdentityProviderDialog;
+import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.AssertionsTree;
+import com.l7tech.console.tree.TreeNodeFactory;
+import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 
@@ -85,7 +86,7 @@ public class NewProviderAction extends NodeAction {
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                       EntityHeader eh = (EntityHeader)ev.getEntity();
-                    JTree tree = (JTree)ComponentManager.getInstance().getComponent(AssertionsTree.NAME);
+                    JTree tree = (JTree)ComponentRegistry.getInstance().getComponent(AssertionsTree.NAME);
                     if (tree != null) {
                              TreeNode[] nodes = node.getPath();
                         TreePath nPath = new TreePath(nodes);

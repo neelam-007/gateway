@@ -7,7 +7,7 @@ import com.l7tech.console.panels.PublishServiceWizard;
 import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.ComponentManager;
+import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
@@ -79,7 +79,7 @@ public class PublishServiceAction extends BaseAction {
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     EntityHeader eh = (EntityHeader) ev.getEntity();
-                    JTree tree = (JTree) ComponentManager.getInstance().getComponent(ServicesTree.NAME);
+                    JTree tree = (JTree) ComponentRegistry.getInstance().getComponent(ServicesTree.NAME);
                     if (tree != null) {
                         DefaultMutableTreeNode root = (DefaultMutableTreeNode)tree.getModel().getRoot();
                         TreeNode[] nodes = root.getPath();
