@@ -34,7 +34,7 @@ public class SystemAuditListener implements GenericListener {
                 level = Level.SEVERE;
             }
             AuditContext.getCurrent().add(new SystemAuditRecord(level, nodeId, se.getComponent(), se.getAction(), se.getIpAddress()));
-            AuditContext.getCurrent().close();
+            AuditContext.getCurrent().flush();
         }
     }
 }
