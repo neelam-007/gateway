@@ -33,6 +33,11 @@ public class ClientHttpBasic extends ClientAssertion {
     public AssertionStatus decorateRequest(PendingRequest request)
             throws OperationCanceledException
     {
+        if (request.getSsg().getTrustedGateway() != null) {
+            log.info("this is a Federated SSG.  Assertion therefore fails.");
+            return AssertionStatus.FAILED;
+        }
+        
         request.getCredentials();
         request.setBasicAuthRequired(true);
         if (!request.getClientSidePolicy().isPlaintextAuthAllowed())

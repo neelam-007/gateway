@@ -25,6 +25,7 @@ import java.net.PasswordAuthentication;
 import java.security.KeyStoreException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.*;
 
 /**
  * Panel listing known SSGs and allowing create/edit/delete.
@@ -160,6 +161,33 @@ public class SsgListPanel extends JPanel {
                     if (ssg == null)
                         return;
 
+                    // check if there is any Federated Gateway using this as a Trusted Gateway.
+                    Collection ssgs = clientProxy.getSsgFinder().getSsgList();
+                    Collection trusting = new ArrayList();
+                    for (Iterator i = ssgs.iterator(); i.hasNext();) {
+                        Ssg s = (Ssg)i.next();
+                        if (s.getTrustedGateway() == ssg)
+                            trusting.add(s);
+                    }
+                    if (!trusting.isEmpty()) {
+                        StringBuffer sb = new StringBuffer();
+                        int added = 0;
+                        for (Iterator i = trusting.iterator(); i.hasNext();) {
+                            Ssg t = (Ssg)i.next();
+                            String un = t.getUsername() == null ? "" : " (" + t.getUsername() + ")";
+                            sb.append("   " + t.getLocalEndpoint() + ": " + t.getSsgAddress() + un + "\n");
+                            added++;
+                            if (added >= 10) {
+                                sb.append("   ...and " + (trusting.size() - added) + " more\n");
+                                break;
+                            }
+                        }
+                        String msg = "The following Federated Gateways are using this as a Trusted Gateway:\n\n" +
+                                sb.toString() + "\nThese Federated Gateways must be removed before this Trusted Gateway can be removed.";
+                        Gui.errorMessage(msg);
+                        return;
+                    }
+
                     Object[] options = { "Remove", "Cancel" };
                     int result = JOptionPane.showOptionDialog(null,
                                                               "Are you sure you want to remove the " +
@@ -214,7 +242,9 @@ public class SsgListPanel extends JPanel {
                     final Ssg ssg = getSelectedSsg();
                     log.info("Editing ssg " + ssg);
                     if (ssg != null) {
-                        if (SsgPropertyDialog.makeSsgPropertyDialog(clientProxy, ssg).runDialog()) {
+                        final SsgPropertyDialog ssgPropertyDialog = SsgPropertyDialog.makeSsgPropertyDialog(clientProxy, ssg, false);
+                        final boolean result = ssgPropertyDialog.runDialog();
+                        if (result) {
                             if (ssg.isDefaultSsg())
                                 ssgTableModel.setDefaultSsg(ssg);
                             ssgTableModel.editedSsg(ssg);
@@ -237,10 +267,12 @@ public class SsgListPanel extends JPanel {
                     log.info("Creating new Gateway registration " + newSsg);
                     if (ssgTableModel.getRowCount() < 1)
                         newSsg.setDefaultSsg(true);
-                        if (SsgPropertyDialog.makeSsgPropertyDialog(clientProxy, newSsg).runDialog()) {
-                            ssgTableModel.addSsg(newSsg);
-                            selectSsg(newSsg);
-                        }
+                    final SsgPropertyDialog ssgPropertyDialog = SsgPropertyDialog.makeSsgPropertyDialog(clientProxy, newSsg, true);
+                    final boolean result = ssgPropertyDialog.runDialog();
+                    if (result) {
+                        ssgTableModel.addSsg(newSsg);
+                        selectSsg(newSsg);
+                    }
                 }
             };
             actionNewSsg.putValue(Action.SHORT_DESCRIPTION, "Register a new Gateway with this Agent");

@@ -134,7 +134,10 @@ public class MessageProcessor {
                                 handleSslException(req.getSsg(), req.getCredentials(), e);
                             // FALLTHROUGH -- retry with new server certificate
                         } catch (ServerCertificateUntrustedException e) {
-                            SsgKeyStoreManager.installSsgServerCertificate(ssg, req.getCredentials()); // might throw BadCredentialsException
+                            if (req.getSsg().getTrustedGateway() != null)
+                                SsgKeyStoreManager.installSsgServerCertificate(ssg, null);
+                            else
+                                SsgKeyStoreManager.installSsgServerCertificate(ssg, req.getCredentials()); // might throw BadCredentialsException
                             // FALLTHROUGH allow policy to reset and retry
                         }
                     } catch (PolicyRetryableException e) {
@@ -262,6 +265,9 @@ public class MessageProcessor {
             throws IOException, OperationCanceledException
     {
         Ssg ssg = req.getSsg();
+        if (ssg.getTrustedGateway() != null)
+            throw new OperationCanceledException("Unable to perform password ping with Federated SSG"); // can't happen
+
         // We'll just use the CertificateDownloader for this.
         CertificateDownloader cd = new CertificateDownloader(ssg.getServerUrl(),
                                                              req.getUsername(),
@@ -485,6 +491,10 @@ public class MessageProcessor {
                 log.info("Gateway response contained a certficate status:invalid header.  Will get new client cert.");
                 // Try to get a new client cert; if this succeeds, it'll replace the old one
                 try {
+                    if (req.getSsg().getTrustedGateway() != null) {
+                        log.log(Level.SEVERE, "Federated Gateway " + req.getSsg() + " is trying to tell us to destroy our Trusted client certificate; ignoring it");
+                        throw new ConfigurationException("Federated Gateway rejected our client certificate");
+                    }
                     SsgKeyStoreManager.obtainClientCertificate(req.getSsg(), req.getCredentials());
                     throw new PolicyRetryableException(); // try again with the new cert
                 } catch (GeneralSecurityException e) {
@@ -633,6 +643,9 @@ public class MessageProcessor {
             log.info("No HTTP Basic or Digest authentication required by current policy");
             return;
         }
+
+        if (req.getSsg().getTrustedGateway() != null) // can't happen; password based assertions should have all failed
+            throw new OperationCanceledException("Password based authentication is not supported for Federated Gateway");
 
         String username = req.getUsername();
         char[] password = req.getPassword();

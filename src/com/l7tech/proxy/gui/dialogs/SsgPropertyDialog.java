@@ -47,6 +47,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     // Model
     private Ssg ssg; // The real Ssg instance, to which changes may be committed.
     private ClientProxy clientProxy;  // The Client Proxy we're attached to, so we can display the bind port.
+    private final boolean isNew; // true if this is a new Ssg; otherwise it's an existing one being customized.
 
     // View
     private int gridY = 0; // Used for layout
@@ -81,9 +82,10 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     private boolean policyFlushRequested = false;
 
     /** Create an SsgPropertyDialog ready to edit an Ssg instance. */
-    private SsgPropertyDialog(ClientProxy clientProxy, final Ssg ssg) {
+    private SsgPropertyDialog(ClientProxy clientProxy, final Ssg ssg, boolean isNew) {
         super("Gateway Properties");
         this.clientProxy = clientProxy;
+        this.isNew = isNew;
         tabbedPane.add("General", getGeneralPane());
         tabbedPane.add("Identity", getIdentityPane(ssg));
         tabbedPane.add("Network", getNetworkPane());
@@ -104,8 +106,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
      * @param ssg The ssg whose properties we intend to edit
      * @return The property dialog that will edit said properties.  Call show() on it to run it.
      */
-    public static SsgPropertyDialog makeSsgPropertyDialog(ClientProxy clientProxy, final Ssg ssg) {
-        return new SsgPropertyDialog(clientProxy, ssg);
+    public static SsgPropertyDialog makeSsgPropertyDialog(ClientProxy clientProxy, final Ssg ssg, boolean isNew) {
+        return new SsgPropertyDialog(clientProxy, ssg, isNew);
     }
 
     private class DisplayPolicyTableModel extends AbstractTableModel {
@@ -724,7 +726,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     }
 
     /** Set the Ssg object being edited by this panel. */
-    public void setSsg(final Ssg ssg) {
+    private void setSsg(final Ssg ssg) {
         this.ssg = ssg;
         synchronized (ssg) {
 
@@ -775,6 +777,12 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             updateCustomPortsEnableState();
             updatePolicyPanel();
         }
+
+        if (!isNew) {
+            identityPane.getTrustedSSGRadioButton().setEnabled(false);
+            identityPane.getFederatedSSGRadioButton().setEnabled(false);
+        }
+        
         checkOk();
     }
 

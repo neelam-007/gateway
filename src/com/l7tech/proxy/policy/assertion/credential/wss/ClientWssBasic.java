@@ -18,6 +18,7 @@ import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * decorates a request with a header that looks like that:
@@ -46,6 +47,11 @@ public class ClientWssBasic extends ClientWssCredentialSource {
     public AssertionStatus decorateRequest(PendingRequest request)
             throws OperationCanceledException, IOException, SAXException
     {
+        if (request.getSsg().getTrustedGateway() != null) {
+            log.log(Level.INFO, "Plaintext passwords not permitted with Federated Gateway.  Assertion therefore fails.");
+            return AssertionStatus.FAILED;
+        }
+
         // get the username and passwords
         final String username = request.getUsername();
         final byte[] password = new String(request.getPassword()).getBytes();

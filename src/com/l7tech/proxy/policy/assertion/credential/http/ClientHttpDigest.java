@@ -13,11 +13,15 @@ import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 
+import java.util.logging.Logger;
+
 /**
  * @author alex
  * @version $Revision$
  */
 public class ClientHttpDigest extends ClientAssertion {
+    public static final Logger log = Logger.getLogger(ClientHttpDigest.class.getName());
+
     public ClientHttpDigest( HttpDigest data ) {
         this.data = data;
     }
@@ -30,6 +34,10 @@ public class ClientHttpDigest extends ClientAssertion {
     public AssertionStatus decorateRequest(PendingRequest request)
             throws OperationCanceledException
     {
+        if (request.getSsg().getTrustedGateway() != null) {
+            log.info("this is a Federated SSG.  Assertion therefore fails.");
+            return AssertionStatus.FAILED;
+        }
         request.getCredentials();
         request.setDigestAuthRequired(true);
         return AssertionStatus.NONE;

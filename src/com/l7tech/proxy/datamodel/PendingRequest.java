@@ -92,6 +92,10 @@ public class PendingRequest {
     /**
      * Ensure that a client certificate is available for the current request.  Will apply for one
      * if necessary.
+     * <p>
+     * This will work for both Trusted and Federated Gateways.  In the Federated case, the cert
+     * will be applied for through the Trusted gateway.
+     *
      */
     public void prepareClientCertificate() throws OperationCanceledException, KeyStoreCorruptException,
             GeneralSecurityException, ClientCertificateException,
@@ -100,7 +104,12 @@ public class PendingRequest {
         try {
             if (!SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
                 log.info("PendingRequest: applying for client certificate");
-                SsgKeyStoreManager.obtainClientCertificate(ssg, getCredentials());
+                Ssg trusted = ssg.getTrustedGateway();
+                if (trusted != null) {
+                    SsgKeyStoreManager.obtainClientCertificate(trusted, getFederatedCredentials());
+                } else {
+                    SsgKeyStoreManager.obtainClientCertificate(ssg, getCredentials());
+                }
             }
         } catch (CertificateAlreadyIssuedException e) {
             // Bug #380 - if we haven't updated policy yet, try that first - mlyons
@@ -134,22 +143,47 @@ public class PendingRequest {
     }
 
     /**
-     * Assert that credentials must be available to continue processing this request.
+     * Assert that credentials must be available to continue processing this request, and return the credentials.
      * The user will be prompted for credentials if necessary.
      * If this method returns, getUsername() and getPassword() are guaranteed to return non-null
      * values for the rest of the lifetime of this request.
+     * <p>
+     * This method may not be used if the current SSG is federated.
      *
      * @throws OperationCanceledException if credentials are not available, and the CredentialManager
      *                                    was unable to get some, possibly because the user canceled
      *                                    the logon dialog.
      */
     public PasswordAuthentication getCredentials() throws OperationCanceledException {
-        if (pw == null || pw.getUserName() == null || pw.getUserName().length() < 1 || pw.getPassword() == null) {
-            if (ssg.getTrustedGateway() != null) {
-                pw = new PasswordAuthentication(ssg.getUsername() != null ? ssg.getUsername() : "", new char[0]);
-            } else
-                pw = credentialManager.getCredentials(ssg);
-        }
+        final Ssg trusted = ssg.getTrustedGateway();
+        if (trusted != null)
+            throw new OperationCanceledException("Not permitted to send real password to Federated Gateway.");
+        if (pw == null || pw.getUserName() == null || pw.getUserName().length() < 1 || pw.getPassword() == null)
+            pw = credentialManager.getCredentials(ssg);
+        return pw;
+    }
+
+    /**
+     * Assert that credentials must be available to continue processing this request, and return the credentials.
+     * The user will be prompted for credentials if necessary.
+     * This method does not affect the subsequent behaviour of getUsername() and getPassword().
+     * <p>
+     * This method may be only be used if the current SSG is federated.
+     * This method returns the credentials of the Trusted Gateway, and the caller is responsible for ensuring
+     * that these credentials are not exposed to the Federated Gateway at any time.
+     *
+     * @throws OperationCanceledException if credentials are not available, and the CredentialManager
+     *                                    was unable to get some, possibly because the user canceled
+     *                                    the logon dialog.
+     */
+    public PasswordAuthentication getFederatedCredentials()
+            throws OperationCanceledException
+    {
+        final Ssg trusted = ssg.getTrustedGateway();
+        if (trusted == null)
+            throw new OperationCanceledException("Trusted Gateway does not have any Federated credentials");
+        if (pw == null || pw.getUserName() == null || pw.getUserName().length() < 1 || pw.getPassword() == null)
+            pw = credentialManager.getCredentials(trusted);
         return pw;
     }
 
@@ -160,7 +194,6 @@ public class PendingRequest {
     public char[] getPassword() throws OperationCanceledException {
         return getCredentials().getPassword();
     }
-
 
     public long getNonce() {
         if (nonce == null)
@@ -340,7 +373,6 @@ public class PendingRequest {
             KeyStoreCorruptException, PolicyRetryableException, BadCredentialsException,
             IOException
     {
-        getCredentials();
         prepareClientCertificate();
         Ssg ssg = getSsg();
         log.log(Level.INFO, "Establishing new WS-SecureConversation session with Gateway " + ssg.toString());

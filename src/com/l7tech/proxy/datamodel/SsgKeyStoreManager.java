@@ -480,6 +480,8 @@ public class SsgKeyStoreManager {
                                              char[] privateKeyPassword)
             throws KeyStoreException, IOException, KeyStoreCorruptException, CertificateException
     {
+        if (ssg.getTrustedGateway() != null)
+            throw new IllegalArgumentException("Unable to save client certificate for Federated Gateway.");
         log.info("Saving client certificate to disk");
         synchronized (ssg) {
             ssg.clientCert(null);
@@ -542,6 +544,8 @@ public class SsgKeyStoreManager {
      * current user.  If this method returns, the certificate will have been downloaded and saved
      * locally, and the SSL context for this Client Proxy will have been reinitialized.
      *
+     * It is an error to pass in a Federated SSG; pass in the Trusted SSG (and it's credentials) instead.
+     *
      * @param ssg   the Gateway on to which we are sending our application
      * @param credentials  the username and password to use for the application
      * @throws ServerCertificateUntrustedException if we haven't yet discovered the Ssg server cert
@@ -556,6 +560,8 @@ public class SsgKeyStoreManager {
             throws BadCredentialsException, GeneralSecurityException, KeyStoreCorruptException,
                    CertificateAlreadyIssuedException, IOException
     {
+        if (ssg.getTrustedGateway() != null)
+            throw new IllegalArgumentException("Unable to obtain client certificate for Federated Gateway.");
         try {
             log.info("Generating new RSA key pair (could take several seconds)...");
             Managers.getCredentialManager().notifyLengthyOperationStarting(ssg, "Generating new client certificate...");
@@ -582,7 +588,7 @@ public class SsgKeyStoreManager {
      * @throws com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException if the SSG has already issued the client certificate for this account
      * @throws KeyStoreCorruptException   if the keystore is corrupt
      */
-    public static void obtainClientCertificate(Ssg ssg, PasswordAuthentication credentials, KeyPair keyPair)
+    private static void obtainClientCertificate(Ssg ssg, PasswordAuthentication credentials, KeyPair keyPair)
             throws  ServerCertificateUntrustedException, GeneralSecurityException, IOException,
                     BadCredentialsException, CertificateAlreadyIssuedException, KeyStoreCorruptException
     {
@@ -625,6 +631,8 @@ public class SsgKeyStoreManager {
                                                   char[] ssgPassword)
             throws IOException, GeneralSecurityException, KeyStoreCorruptException
     {
+        if (ssg.getTrustedGateway() != null)
+            throw new IllegalArgumentException("Unable to import client certificate for Federated Gateway.");
         KeyStore ks;
         try {
             ks = KeyStore.getInstance(KEYSTORE_TYPE);

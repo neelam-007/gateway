@@ -39,7 +39,6 @@ public class ClientRequestWssX509Cert extends ClientAssertion {
             IOException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException,
             PolicyRetryableException, PolicyAssertionException
     {
-        request.getCredentials();
         request.prepareClientCertificate();
 
         final Ssg ssg = request.getSsg();
