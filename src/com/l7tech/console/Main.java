@@ -1,6 +1,7 @@
 package com.l7tech.console;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.BuildInfo;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
 import net.jini.security.policy.DynamicPolicyProvider;
@@ -55,6 +56,9 @@ public class Main {
             // where locator looks for implementaitons
             System.setProperty("com.l7tech.common.locator.properties",
                     "/com/l7tech/console/resources/services.properties");
+            // Build information
+            System.setProperty("com.l7tech.buildstring", BuildInfo.getBuildString());
+            System.setProperty("com.l7tech.builddate", BuildInfo.getBuildDate() + BuildInfo.getBuildTime());
 
             main = Registry.getDefault().getWindowManager().getMainWindow();
             // Window listener
