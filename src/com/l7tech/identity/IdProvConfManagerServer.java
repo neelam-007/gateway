@@ -73,6 +73,7 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
         // we should not accept saving an internal type
         if (identityProviderConfig.type() != IdentityProviderType.LDAP) throw new UpdateException("this type of config cannot be updated");
         try {
+            IdentityProviderFactory.dropProvider(identityProviderConfig);
             _manager.update(getContext(), identityProviderConfig);
         } catch (SQLException se) {
             throw new UpdateException(se.toString(), se);
@@ -88,7 +89,7 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
                 LdapIdentityProviderServer ldapProvider = (LdapIdentityProviderServer)prov;
                 ldapProvider.invalidate();
             }
-
+            IdentityProviderFactory.dropProvider(identityProviderConfig);
             _manager.delete(getContext(), identityProviderConfig);
         } catch (SQLException se) {
             throw new DeleteException(se.toString(), se);
