@@ -7,6 +7,10 @@ import com.l7tech.console.action.DeleteAssertionAction;
 import com.l7tech.console.tree.AbstractTreeNode;
 
 import javax.swing.*;
+import javax.swing.border.EtchedBorder;
+import javax.swing.border.Border;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.EmptyBorder;
 import javax.swing.tree.TreePath;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.event.TreeSelectionEvent;
@@ -53,6 +57,12 @@ public class PolicyToolBar extends JToolBar {
      * initialize the toolbar
      */
     private void initialize() {
+        Border border = BorderFactory.createEtchedBorder(EtchedBorder.LOWERED);
+        setBorder(new CompoundBorder(
+          border,
+          new EmptyBorder(2, 3, 2, 3))
+        );
+
         addSeparator();
         setOrientation(JToolBar.VERTICAL);
         putClientProperty("JToolBar.isRollover", Boolean.TRUE);
@@ -136,7 +146,7 @@ public class PolicyToolBar extends JToolBar {
              * Invoked when an action occurs.
              */
             public void performAction() {
-               this.node = lastAssertionNode;
+                this.node = lastAssertionNode;
                 super.performAction();
                 this.node = null;
                 updateActions();
@@ -160,7 +170,7 @@ public class PolicyToolBar extends JToolBar {
 
     private void disableAll() {
         Component[] components = getComponents();
-        for (int i = components.length -1; i >=0; i--) {
+        for (int i = components.length - 1; i >= 0; i--) {
             if (components[i] instanceof JButton) {
                 components[i].setEnabled(false);
             }
@@ -169,29 +179,29 @@ public class PolicyToolBar extends JToolBar {
 
     private TreeSelectionListener
       assertionPaletteListener = new TreeSelectionListener() {
-        public void valueChanged(TreeSelectionEvent e) {
-            try {
-                TreePath path = e.getPath();
-                lastPaletteNode = (AbstractTreeNode)path.getLastPathComponent();
-                updateActions();
-            } catch (Exception e1) {
-                e1.printStackTrace();
-            }
-        }
-    };
+          public void valueChanged(TreeSelectionEvent e) {
+              try {
+                  TreePath path = e.getPath();
+                  lastPaletteNode = (AbstractTreeNode)path.getLastPathComponent();
+                  updateActions();
+              } catch (Exception e1) {
+                  e1.printStackTrace();
+              }
+          }
+      };
 
     private TreeSelectionListener
       policyTreeListener = new TreeSelectionListener() {
-        public void valueChanged(TreeSelectionEvent e) {
-            try {
-                TreePath path = e.getPath();
-                lastAssertionNode = (AssertionTreeNode)path.getLastPathComponent();
-                updateActions();
-            } catch (Exception e1) {
-                e1.printStackTrace();
-            }
-        }
-    };
+          public void valueChanged(TreeSelectionEvent e) {
+              try {
+                  TreePath path = e.getPath();
+                  lastAssertionNode = (AssertionTreeNode)path.getLastPathComponent();
+                  updateActions();
+              } catch (Exception e1) {
+                  e1.printStackTrace();
+              }
+          }
+      };
 
     private AbstractTreeNode lastPaletteNode;
     private AssertionTreeNode lastAssertionNode;

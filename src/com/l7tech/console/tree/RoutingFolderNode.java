@@ -2,21 +2,18 @@ package com.l7tech.console.tree;
 
 
 
-
 /**
- * The class represents a node element in the palette assertion tree.
- * It represents the folder with transport layer securitry.
+ * The class represents an gui node element in the TreeModel that
+ * represents a routing folder.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.1
+ * @version 1.0
  */
-public class AuthMethodFolderNode extends AbstractTreeNode {
+public class RoutingFolderNode extends AbstractTreeNode {
     /**
-     * construct the <CODE>PoliciesFolderNode</CODE> instance for
-     * a given entry.
-     *
+     * construct the <CODE>ProvidersFolderNode</CODE> instance.
      */
-    public AuthMethodFolderNode() {
+    public RoutingFolderNode() {
         super(null);
     }
 
@@ -33,7 +30,7 @@ public class AuthMethodFolderNode extends AbstractTreeNode {
      * Returns true if the receiver allows children.
      */
     public boolean getAllowsChildren() {
-        return true;
+        return false;
     }
 
     /**
@@ -41,21 +38,19 @@ public class AuthMethodFolderNode extends AbstractTreeNode {
      */
     protected void loadChildren() {
         int index = 0;
-        insert(new HttpBasicAuthNode(), index++);
-        insert(new HttpDigestAuthNode(), index++);
-        insert(new HttpClientCertificateAuthNode(), index++);
-        insert(new WsTokenBasicAuthNode(), index++);
-        insert(new WsTokenDigestAuthNode(), index++);
-        insert(new WsTokenClientCertAuthNode(), index++);
+        insert(new HttpRoutingNode(), index++);
+        insert(new SmtpRoutingNode(), index++);
     }
 
     /**
      * Returns the node name.
+     * Gui nodes have name to facilitate handling in
+     * hierarchical gui components such as JTree.
      *
-     * @return the name as a String
+     * @return the FQ name as a String
      */
     public String getName() {
-        return "Authentication methods";
+        return "Message routing";
     }
 
     /**
@@ -68,6 +63,7 @@ public class AuthMethodFolderNode extends AbstractTreeNode {
             return "com/l7tech/console/resources/folderOpen.gif";
 
         return "com/l7tech/console/resources/folder.gif";
+
     }
 
 }

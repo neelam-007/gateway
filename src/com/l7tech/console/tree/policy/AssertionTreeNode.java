@@ -1,9 +1,7 @@
 package com.l7tech.console.tree.policy;
 
 
-import com.l7tech.console.action.DeleteAssertionAction;
-import com.l7tech.console.action.AssertionMoveUpAction;
-import com.l7tech.console.action.AssertionMoveDownAction;
+import com.l7tech.console.action.*;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
@@ -37,9 +35,17 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
     public Action[] getActions() {
         java.util.List list = new ArrayList();
         list.addAll(Arrays.asList(super.getActions()));
+
         Action da = new DeleteAssertionAction(this);
         da.setEnabled(canDelete());
         list.add(da);
+
+        Action sp = new SavePolicyAction();
+        sp.setEnabled(false);
+        list.add(sp);
+
+        Action vp = new ValidatePolicyAction((AssertionTreeNode)getRoot());
+        list.add(vp);
 
         Action mu = new AssertionMoveUpAction();
         mu.setEnabled(canMoveUp());
