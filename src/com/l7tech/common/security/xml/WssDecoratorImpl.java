@@ -323,6 +323,9 @@ public class WssDecoratorImpl implements WssDecorator {
     private String encryptWithRsa(Context c, byte[] keyBytes, PublicKey publicKey) throws GeneralSecurityException {
         Cipher rsa = Cipher.getInstance("RSA");
         rsa.init(Cipher.ENCRYPT_MODE, publicKey);
+        if (!(publicKey instanceof RSAPublicKey))
+            throw new KeyException("Unable to encrypt -- unsupported recipient public key type " +
+                                   publicKey.getClass().getName());
         final int modulusLength = ((RSAPublicKey)publicKey).getModulus().toByteArray().length;
         byte[] paddedKeyBytes = padSymmetricKeyForRsaEncryption(c, keyBytes, modulusLength);
         byte[] encrypted = rsa.doFinal(paddedKeyBytes);
