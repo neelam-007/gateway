@@ -26,7 +26,7 @@ import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 public class SsgManagerTest extends TestCase {
     static Logger log = Logger.getLogger(SsgManagerTest.class.getName());
 
-    private static final SsgManagerImpl sm = SsgManagerImpl.getInstance();
+    private static final SsgManagerImpl sm = SsgManagerImpl.getSsgManagerImpl();
 
     private static final Ssg SSG1 =
             new Ssg(sm.nextId(), "Test SSG1", "http://localhost:4444/soap");
