@@ -71,5 +71,6 @@ public class IdentityProviderClientTest {
         testDeleteAdminUser(internalProvider);
 
         System.out.println("done");
+        System.exit(0);
     }
 }
