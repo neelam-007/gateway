@@ -11,7 +11,7 @@ import javax.wsdl.Message;
 public class BindingOperationTreeNode extends WsdlTreeNode {
     private BindingOperation operation;
 
-    BindingOperationTreeNode(BindingOperation bo) {
+    public BindingOperationTreeNode(BindingOperation bo) {
         super(null);
         this.operation = bo;
     }
