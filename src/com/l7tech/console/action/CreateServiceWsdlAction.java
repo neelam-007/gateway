@@ -16,6 +16,8 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.service.PublishedService;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.policy.assertion.TrueAssertion;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -34,6 +36,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Map;
 import java.util.Iterator;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * The <code>PublishServiceAction</code> action invokes the pubish
@@ -112,7 +116,13 @@ public class CreateServiceWsdlAction extends BaseAction implements ConnectionLis
                 Definition def = (Definition)w.getCollectedInformation();
                 // assign empty policy
                 ByteArrayOutputStream bo = new ByteArrayOutputStream();
-                WspWriter.writePolicy(new TrueAssertion(), bo); // means no policy
+                final List children = Arrays.asList(
+                                                new Assertion[] {
+                                                    new TrueAssertion()
+                                                });
+                WspWriter.writePolicy(
+                  new AllAssertion(children), bo);
+
                 service.setPolicyXml(bo.toString());
 
                 service.setDisabled(true);
