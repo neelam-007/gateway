@@ -1,13 +1,11 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.tree.ServiceNode;
-import com.l7tech.console.tree.ServicesTree;
-import com.l7tech.console.tree.policy.PolicyTree;
-import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
-import com.l7tech.console.poleditor.PolicyEditorPanel;
-import com.l7tech.console.MainWindow;
+import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.tree.ServicesTree;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
