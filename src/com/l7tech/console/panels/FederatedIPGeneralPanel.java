@@ -66,6 +66,16 @@ public class FederatedIPGeneralPanel extends IdentityProviderStepPanel {
      */
     public void storeSettings(Object settings) {
         //todo:
+
+    }
+
+    public boolean onNextButton() {
+        java.util.ArrayList skippedPanels = new java.util.ArrayList();
+        if(!x509CertCheckbox.isSelected()) skippedPanels.add(FederatedIPX509CertPanel.class.getName());
+        if(!samlCheckbox.isSelected()) skippedPanels.add(FederatedIPSamlPanel.class.getName());
+
+        setSkippedPanels(skippedPanels.toArray());
+        return true;
     }
 
     {
