@@ -3,7 +3,6 @@
  *
  * $Id$
  */
-
 package com.l7tech.server;
 
 import com.l7tech.cluster.ClusterNodeInfo;
@@ -26,8 +25,6 @@ import net.sf.hibernate.CallbackException;
 import net.sf.hibernate.Interceptor;
 import net.sf.hibernate.type.Type;
 import org.springframework.context.support.ApplicationObjectSupport;
-import org.springframework.transaction.support.TransactionSynchronizationAdapter;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.io.Serializable;
 import java.util.HashSet;
@@ -45,7 +42,6 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class PersistenceEventInterceptor extends ApplicationObjectSupport implements Interceptor {
-
     public PersistenceEventInterceptor() {
         ignoredClassNames = new HashSet();
         ignoredClassNames.add(SSGLogRecord.class.getName());
@@ -54,7 +50,7 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
         ignoredClassNames.add(AdminAuditRecord.class.getName());
         ignoredClassNames.add(SystemAuditRecord.class.getName());
         ignoredClassNames.add(MessageSummaryAuditRecord.class.getName());
-        ignoredClassNames.add(AuditDetail.class.getName());        
+        ignoredClassNames.add(AuditDetail.class.getName());
     }
 
     private final Set ignoredClassNames;
@@ -69,17 +65,9 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
      */
     public boolean onFlushDirty(final Object entity, final Serializable id, final Object[] currentState, final Object[] previousState, final String[] propertyNames, Type[] types) throws CallbackException {
         if (!ignored(entity)) {
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
-                public void beforeCommit(boolean readonly) {
-                    if (readonly) {
-                        throw new IllegalStateException("Object was modified in a supposedly read-only transaction");
-                    } else {
-                        logger.log(Level.FINE, "Updated " + entity.getClass().getName() + " " + id);
-                        EntityChangeSet changes = new EntityChangeSet(propertyNames, previousState, currentState);
-                        getApplicationContext().publishEvent(updatedEvent(entity, changes));
-                    }
-                }
-            });
+            logger.log(Level.FINE, "Updated " + entity.getClass().getName() + " " + id);
+            EntityChangeSet changes = new EntityChangeSet(propertyNames, previousState, currentState);
+            getApplicationContext().publishEvent(updatedEvent(entity, changes));
         }
         return false;
     }
@@ -89,17 +77,8 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
      */
     public boolean onSave(final Object entity, final Serializable id, Object[] state, String[] propertyNames, Type[] types) throws CallbackException {
         if (!ignored(entity)) {
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
-                public void beforeCommit(boolean readonly) {
-                    if (readonly) {
-                        throw new IllegalStateException("Object was modified in a supposedly read-only transaction");
-                    } else {
-                        logger.log(Level.FINE, "Created " + entity.getClass().getName() + " " + id);
-                        getApplicationContext().publishEvent(createdEvent(entity));
-
-                    }
-                }
-            });
+            logger.log(Level.FINE, "Created " + entity.getClass().getName() + " " + id);
+            getApplicationContext().publishEvent(createdEvent(entity));
         }
         return false;
     }
@@ -109,16 +88,8 @@ public class PersistenceEventInterceptor extends ApplicationObjectSupport implem
      */
     public void onDelete(final Object entity, final Serializable id, Object[] state, String[] propertyNames, Type[] types) throws CallbackException {
         if (!ignored(entity)) {
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
-                public void beforeCommit(boolean readonly) {
-                    if (readonly) {
-                        throw new IllegalStateException("Object was modified in a supposedly read-only transaction");
-                    } else {
-                        logger.log(Level.FINE, "Deleted " + entity.getClass().getName() + " " + id);
-                        getApplicationContext().publishEvent(deletedEvent(entity));
-                    }
-                }
-            });
+            logger.log(Level.FINE, "Deleted " + entity.getClass().getName() + " " + id);
+            getApplicationContext().publishEvent(deletedEvent(entity));
         }
     }
 
