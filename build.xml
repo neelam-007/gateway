@@ -293,9 +293,9 @@
                 <include name="commons-pool.jar"/>
                 <include name="dom4j.jar"/>
                 <include name="hibernate2.jar"/>
-		<include name="spring-core.jar"/>
-		<include name="spring-orm.jar"/>
-		<include name="spring-dao.jar"/>
+                <include name="spring-core.jar"/>
+                <include name="spring-orm.jar"/>
+                <include name="spring-dao.jar"/>
                 <include name="cglib-2.0-rc2.jar"/>
                 <include name="ehcache.jar"/>
                 <include name="jta.jar"/>
@@ -1058,7 +1058,10 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
 
         <!-- Copy server.xml & catalina.policy -->
         <copy todir="${install.src.tomcat}/conf">
-            <fileset dir="${src.root}/etc/tomcat" includes="server.xml, catalina.policy"/>
+            <fileset dir="${src.root}/etc/tomcat">
+                <include name="server.xml"/>
+                <include name="catalina.policy"/>
+            </fileset>
         </copy>
 
         <!-- Hack server.xml -->
