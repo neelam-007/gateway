@@ -5,11 +5,11 @@ import com.l7tech.console.tree.EntityTreeCellRenderer;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.proxy.RequestInterceptor;
+import com.l7tech.proxy.datamodel.HttpHeaders;
+import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgResponse;
-import com.l7tech.proxy.datamodel.PendingRequest;
-import com.l7tech.proxy.datamodel.HttpHeaders;
 import org.apache.log4j.Category;
 import org.w3c.dom.Document;
 
@@ -34,6 +34,10 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
     private static final int maxMessages = 32;
 
     private List messages = new ArrayList(maxMessages);
+
+    public MessageViewerModel() {
+        messages.add(new SavedTextMessage("Listening", ""));
+    }
 
     /** Represents an intercept message we are keeping track of. */
     private static abstract class SavedMessage {

@@ -12,13 +12,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import com.l7tech.proxy.gui.util.IconManager;
+import com.l7tech.common.gui.util.Utilities;
 
 /**
  * Displays a list of messages.
  * User: mike
  * Date: May 22, 2003
  * Time: 5:01:29 PM
- * To change this template use Options | File Templates.
  */
 public class MessageViewer extends JFrame {
     private static final Category log = Category.getInstance(MessageViewer.class);
@@ -56,14 +56,15 @@ public class MessageViewer extends JFrame {
             messageList.setSelectedIndex(idx);
         messageView.removeAll();
         if (idx >= 0 && idx <= messageViewerModel.getSize()) {
-            messageView.add(messageViewerModel.getComponentAt(idx),
+            JScrollPane messageViewPane = new JScrollPane(messageViewerModel.getComponentAt(idx));
+            messageView.add(messageViewPane,
                             new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
                                                    GridBagConstraints.CENTER,
                                                    GridBagConstraints.BOTH,
                                                    new Insets(0, 0, 0, 0), 0, 0));
         }
-        messageView.invalidate();
         messageView.validate();
+        messageView.updateUI();
     }
 
     /**
@@ -73,7 +74,8 @@ public class MessageViewer extends JFrame {
     public MessageViewer(final String title) {
         super(title);
         setIconImage(IconManager.getAppImage());
-        getContentPane().setLayout(new BorderLayout());
+        Container cp = getContentPane();
+        cp.setLayout(new GridBagLayout());
 
         messageViewerModel.addListDataListener(new MessageViewListener());
         messageList = new JList(messageViewerModel);
@@ -83,19 +85,22 @@ public class MessageViewer extends JFrame {
             }
         });
         final JScrollPane messageListPane = new JScrollPane(messageList);
-        messageListPane.setPreferredSize(new Dimension(210, 350));
+        messageList.setMinimumSize(new Dimension(150, 380));
+        messageList.setMaximumSize(new Dimension(150, 32768));
+        messageList.setPreferredSize(new Dimension(150, 380));
+        messageListPane.setMinimumSize(new Dimension(170, 400));
+        messageListPane.setMaximumSize(new Dimension(170, 32768));
 
         messageView = new JPanel(new GridBagLayout());
-        //messageView.setPreferredSize(new Dimension(500, 400));
+        messageView.add(new JLabel(""));
         final JScrollPane messageViewPane = new JScrollPane(messageView);
-        messageViewPane.setPreferredSize(new Dimension(610, 350));
+        messageViewPane.setMinimumSize(new Dimension(250, 400));
 
         final JButton clearButton = new JButton("Clear");
         clearButton.addActionListener(new ActionListener() {
             public void actionPerformed(final ActionEvent e) {
                 messageViewerModel.clear();
                 messageView.removeAll();
-                messageView.invalidate();
                 messageView.validate();
             }
         });
@@ -110,11 +115,25 @@ public class MessageViewer extends JFrame {
         buttonPanel.add(clearButton);
         buttonPanel.add(hideButton);
 
-        getContentPane().add(messageListPane, BorderLayout.WEST);
-        getContentPane().add(messageViewPane, BorderLayout.EAST);
-        getContentPane().add(buttonPanel, BorderLayout.SOUTH);
+        cp.add(messageListPane,
+               new GridBagConstraints(0, 0, 1, 1, 0.0, 1.0,
+                                      GridBagConstraints.EAST,
+                                      GridBagConstraints.BOTH,
+                                      new Insets(0, 0, 0, 0), 0, 0));
+        cp.add(messageViewPane,
+               new GridBagConstraints(1, 0, 1, 1, 1.0, 1.0,
+                                      GridBagConstraints.WEST,
+                                      GridBagConstraints.BOTH,
+                                      new Insets(0, 0, 0, 0), 0, 0));
+        cp.add(buttonPanel,
+               new GridBagConstraints(0, 1, GridBagConstraints.REMAINDER, 1, 0.0, 0.0,
+                                      GridBagConstraints.SOUTH,
+                                      GridBagConstraints.HORIZONTAL,
+                                      new Insets(0, 0, 0, 0), 0, 0));
 
-        pack();
+        setSize(500, 400);
+        validate();
+        Utilities.centerOnScreen(this);
     }
 
     /** Get the underlying MessageViewerModel. */
