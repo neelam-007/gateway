@@ -33,8 +33,14 @@ public class MessageProcessor {
                 Assertion ass = service.rootAssertion();
 
                 status = ass.checkRequest( request, response );
+
                 if ( status == AssertionStatus.NONE ) {
-                    _log.info( status );
+                    if ( request.isRouted() ) {
+                        _log.info( status );
+                    } else {
+                        _log.warn( "Request was not routed, executing default RoutingAssertion" );
+                        status = _defaultRoutingAssertion.checkRequest( request, response );
+                    }
                 } else {
                     _log.warn( status );
                 }
@@ -65,4 +71,6 @@ public class MessageProcessor {
     private ServiceManager _serviceManager;
 
     private static MessageProcessor _instance = null;
+
+    private transient RoutingAssertion _defaultRoutingAssertion = new RoutingAssertion();
 }
