@@ -295,6 +295,14 @@ public class PolicyTreeModel extends DefaultTreeModel {
     }
 
     /**
+     * Invoke this to insert newChild at location index in parents children without
+     * the advice support.
+     */
+    public void rawInsertNodeInto(MutableTreeNode newChild, MutableTreeNode parent, int index) {
+        super.insertNodeInto(newChild, parent, index);
+    }
+
+    /**
      * Invoke this to insert newChild at location index in parents children with
      * advice support.
      */

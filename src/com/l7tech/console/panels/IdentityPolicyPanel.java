@@ -1,15 +1,13 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.console.action.Actions;
-import com.l7tech.console.tree.policy.AssertionTreeNode;
-import com.l7tech.console.tree.policy.AssertionTreeNodeFactory;
-import com.l7tech.console.tree.policy.IdentityAssertionTreeNode;
-import com.l7tech.console.tree.policy.IdentityPath;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.HttpRoutingAssertion;
-import com.l7tech.policy.assertion.RoutingAssertion;
-import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.console.tree.policy.*;
+import com.l7tech.console.util.JmsUtilities;
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.Registry;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
@@ -55,6 +53,9 @@ public class IdentityPolicyPanel extends JPanel {
     private JTextField userRouteField;
     private JPasswordField passwordRouteField;
     private JTextField realmRouteField;
+    private JRadioButton httpRoutingRadioButton;
+    private JRadioButton jmsRoutingRadioButton;
+    private JComboBox jmsQueueComboBox;
 
     private Principal principal;
     private IdentityPath principalAssertionPaths;
@@ -65,13 +66,12 @@ public class IdentityPolicyPanel extends JPanel {
 
     private SslAssertion sslAssertion = null;
     private CredentialSourceAssertion existingCredAssertion = null;
-    private CredentialSourceAssertion newCredAssertion = null;
 
-    private HttpRoutingAssertion existingRoutingAssertion = null;
-    private HttpRoutingAssertion newRoutingAssertion = null;
+    private RoutingAssertion existingRoutingAssertion = null;
     private boolean routeEdited;
+    private boolean routeModifiable = true;
 
-    private DefaultTreeModel policyTreeModel;
+    private PolicyTreeModel policyTreeModel;
     private AssertionTreeNode rootAssertionTreeNode;
     private static final String[] XML_SEC_OPTIONS = new String[]{"sign only", "sign and encrypt"};
 
@@ -87,12 +87,12 @@ public class IdentityPolicyPanel extends JPanel {
                                IdentityAssertionTreeNode identityAssertionNode) {
         super();
         if (service == null ||
-          identityAssertionNode == null ||
-          model == null) {
+                identityAssertionNode == null ||
+                model == null) {
             throw new IllegalArgumentException();
         }
         this.service = service;
-        this.policyTreeModel = model;
+        this.policyTreeModel = (PolicyTreeModel)model;
         this.identityAssertionNode = identityAssertionNode;
         this.principal = IdentityPath.extractIdentity(identityAssertionNode.asAssertion());
         rootAssertionTreeNode = (AssertionTreeNode)identityAssertionNode.getRoot();
@@ -104,6 +104,21 @@ public class IdentityPolicyPanel extends JPanel {
     }
 
     private void initialize() {
+        {
+            ButtonGroup routingProtocolButtonGroup = new ButtonGroup();
+            routingProtocolButtonGroup.add(jmsRoutingRadioButton);
+            routingProtocolButtonGroup.add(httpRoutingRadioButton);
+            ActionListener routingRadioButtonListener = new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    routeEdited = true;
+                    enableOrDisableRoutingControls();
+                }
+            };
+            httpRoutingRadioButton.addActionListener(routingRadioButtonListener);
+            jmsRoutingRadioButton.addActionListener(routingRadioButtonListener);
+            jmsQueueComboBox.setModel(new DefaultComboBoxModel(JmsUtilities.loadQueueItems()));
+            jmsQueueComboBox.addActionListener(routingRadioButtonListener);
+        }
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 exitHandler(e);
@@ -121,7 +136,7 @@ public class IdentityPolicyPanel extends JPanel {
             public void itemStateChanged(ItemEvent e) {
                 Object key = e.getItem();
                 CredentialSourceAssertion ca =
-                  (CredentialSourceAssertion)Components.getCredentialsLocationMap().get(key);
+                        (CredentialSourceAssertion)Components.getCredentialsLocationMap().get(key);
                 xmlSecOptions.setEnabled(ca instanceof XmlRequestSecurity);
             }
         });
@@ -152,11 +167,11 @@ public class IdentityPolicyPanel extends JPanel {
         }
         otherPaths.removeAll(remove);
 
-
         routeToUrlField.getDocument().addDocumentListener(wasRouteEditedListener);
         userRouteField.getDocument().addDocumentListener(wasRouteEditedListener);
         passwordRouteField.getDocument().addDocumentListener(wasRouteEditedListener);
         realmRouteField.getDocument().addDocumentListener(wasRouteEditedListener);
+        Utilities.enableGrayOnDisabled(passwordRouteField);
 
         updateSslAssertion();
         updateAuthMethod();
@@ -207,7 +222,7 @@ public class IdentityPolicyPanel extends JPanel {
         }
 
         Set principalCredAssertions =
-          principalAssertionPaths.getAssignableAssertions(CredentialSourceAssertion.class);
+                principalAssertionPaths.getAssignableAssertions(CredentialSourceAssertion.class);
         for (Iterator it = principalCredAssertions.iterator(); it.hasNext();) {
             existingCredAssertion = (CredentialSourceAssertion)it.next();
             selectAuthMethodComboItem(existingCredAssertion);
@@ -230,7 +245,7 @@ public class IdentityPolicyPanel extends JPanel {
     }
 
     private void updateRouting() {
-        boolean routeModifiable = true;
+        routeModifiable = true;
 
         Set othersRouteAssertions = new HashSet();
         for (Iterator iterator = otherPaths.iterator(); iterator.hasNext();) {
@@ -240,22 +255,54 @@ public class IdentityPolicyPanel extends JPanel {
 
         Set principalRouteAssertions = principalAssertionPaths.getAssignableAssertions(RoutingAssertion.class);
         for (Iterator it = principalRouteAssertions.iterator(); it.hasNext();) {
-            existingRoutingAssertion = (HttpRoutingAssertion)it.next();
-            routeToUrlField.setText(existingRoutingAssertion.getProtectedServiceUrl());
-            userRouteField.setText(existingRoutingAssertion.getLogin());
-            passwordRouteField.setText(existingRoutingAssertion.getPassword());
-            realmRouteField.setText(existingRoutingAssertion.getRealm());
+            existingRoutingAssertion = (RoutingAssertion)it.next();
+            if (existingRoutingAssertion instanceof HttpRoutingAssertion) {
+                HttpRoutingAssertion hra = (HttpRoutingAssertion)existingRoutingAssertion;
+                routeToUrlField.setText(hra.getProtectedServiceUrl());
+                userRouteField.setText(hra.getLogin());
+                passwordRouteField.setText(hra.getPassword());
+                realmRouteField.setText(hra.getRealm());
+            } else if (existingRoutingAssertion instanceof JmsRoutingAssertion) {
+                JmsRoutingAssertion jra = (JmsRoutingAssertion)existingRoutingAssertion;
+                JmsUtilities.selectEndpoint(jmsQueueComboBox, jra.getEndpointOid());
+            } else {
+                throw new RuntimeException("Unrecognized type of routing assertion: " +
+                        existingRoutingAssertion.getClass().getName());
+            }
             if (othersRouteAssertions.contains(existingRoutingAssertion)) {
                 routeModifiable = false;
                 break;
             }
         }
 
-        routeToUrlField.setEnabled(routeModifiable);
-        userRouteField.setEditable(routeModifiable);
-        passwordRouteField.setEnabled(routeModifiable);
-        realmRouteField.setEnabled(routeModifiable);
-        defaultUrlButton.setEnabled(routeModifiable);
+        boolean isJms = existingRoutingAssertion instanceof JmsRoutingAssertion;
+        if (!isJms)
+            jmsQueueComboBox.setSelectedIndex(-1);
+        jmsRoutingRadioButton.setSelected(isJms);
+        jmsRoutingRadioButton.setEnabled(routeModifiable);
+        httpRoutingRadioButton.setSelected(!isJms);
+        httpRoutingRadioButton.setEnabled(routeModifiable);
+        enableOrDisableRoutingControls();
+    }
+
+    private Boolean wasJms = null;
+
+    private void enableOrDisableRoutingControls() {
+        boolean isJms = jmsRoutingRadioButton.isSelected();
+        if (wasJms != null && wasJms.booleanValue() == isJms)
+        // no change
+            return;
+        wasJms = Boolean.valueOf(isJms);
+
+        boolean enableHttp = routeModifiable && !isJms;
+        routeToUrlField.setEnabled(enableHttp);
+        userRouteField.setEditable(enableHttp);
+        passwordRouteField.setEnabled(enableHttp);
+        realmRouteField.setEnabled(enableHttp);
+        defaultUrlButton.setEnabled(enableHttp);
+
+        boolean enableJms = routeModifiable && isJms;
+        jmsQueueComboBox.setEnabled(enableJms);
     }
 
     private DocumentListener wasRouteEditedListener = new DocumentListener() {
@@ -291,7 +338,7 @@ public class IdentityPolicyPanel extends JPanel {
                 }
             }
 
-            collectCredentialsAssertion();
+            CredentialSourceAssertion newCredAssertion = collectCredentialsAssertion();
             if (newCredAssertion != null) {
                 if (existingCredAssertion != null) {
                     replaceAssertions.add(new Assertion[]{existingCredAssertion, newCredAssertion});
@@ -300,7 +347,7 @@ public class IdentityPolicyPanel extends JPanel {
                 }
             }
 
-            collectRoutingAssertion();
+            RoutingAssertion newRoutingAssertion = collectRoutingAssertion();
             if (newRoutingAssertion != null) {
                 if (existingRoutingAssertion != null) {
                     replaceAssertions.add(new Assertion[]{existingRoutingAssertion, newRoutingAssertion});
@@ -314,8 +361,9 @@ public class IdentityPolicyPanel extends JPanel {
             }
             final Assertion[] aa = (Assertion[])addAssertions.toArray(new Assertion[]{});
             final Assertion[] ar = (Assertion[])removeAssertions.toArray(new Assertion[]{});
-            addAsAssertionTreeNodes(aa);
+            addAssertionTreeNodes(aa);
             removeAssertionTreeNodes(ar);
+            scheduleValidate();
             exitHandler(e);
 
         }
@@ -338,23 +386,21 @@ public class IdentityPolicyPanel extends JPanel {
             }
         }
 
-        private void addAsAssertionTreeNodes(Assertion[] aa) {
+        private void addAssertionTreeNodes(Assertion[] aa) {
+            if (aa.length == 0) return;
             final AssertionTreeNode parent = (AssertionTreeNode)identityAssertionNode.getParent();
             int index = policyTreeModel.getIndexOfChild(parent, identityAssertionNode);
 
             if (parent.asAssertion() instanceof AllAssertion) { // just add
                 for (int i = 0; i < aa.length; i++) {
-                    policyTreeModel.insertNodeInto(AssertionTreeNodeFactory.asTreeNode(aa[i]),
-                      parent, index);
-
+                    policyTreeModel.rawInsertNodeInto(AssertionTreeNodeFactory.asTreeNode(aa[i]), parent, index);
                 }
             } else {
-                final AssertionTreeNode newParent =
-                  AssertionTreeNodeFactory.asTreeNode(new AllAssertion());
-                policyTreeModel.insertNodeInto(newParent, parent, index);
+                final AssertionTreeNode newParent = AssertionTreeNodeFactory.asTreeNode(new AllAssertion());
+                policyTreeModel.rawInsertNodeInto(newParent, parent, index);
                 policyTreeModel.removeNodeFromParent(identityAssertionNode);
-                policyTreeModel.insertNodeInto(identityAssertionNode, newParent, 0);
-                addAsAssertionTreeNodes(aa);
+                policyTreeModel.rawInsertNodeInto(identityAssertionNode, newParent, 0);
+                addAssertionTreeNodes(aa);
             }
         }
 
@@ -375,29 +421,57 @@ public class IdentityPolicyPanel extends JPanel {
             }
             final MutableTreeNode parent = (MutableTreeNode)outAssertion.getParent();
             int pos = parent.getIndex(outAssertion);
-            policyTreeModel.insertNodeInto(AssertionTreeNodeFactory.asTreeNode(n), parent, pos);
+            policyTreeModel.rawInsertNodeInto(AssertionTreeNodeFactory.asTreeNode(n), parent, pos);
             policyTreeModel.removeNodeFromParent(outAssertion);
         }
     };
 
-    private void collectCredentialsAssertion() {
-        if (!authMethodComboBox.isEnabled()) return;
+    private void scheduleValidate() {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                final WorkSpacePanel cw = Registry.getDefault().getComponentRegistry().getCurrentWorkspace();
+                final JComponent c = cw.getComponent();
+                if (c != null && c instanceof PolicyEditorPanel) {
+                    PolicyEditorPanel pp = (PolicyEditorPanel)c;
+                    pp.validatePolicy();
+                }
+            }
+        });
+    }
+
+    private CredentialSourceAssertion collectCredentialsAssertion() {
+        if (!authMethodComboBox.isEnabled()) return null;
 
         Object key = authMethodComboBox.getSelectedItem();
-        newCredAssertion = (CredentialSourceAssertion)Components.getCredentialsLocationMap().get(key);
+        CredentialSourceAssertion newCredAssertion = (CredentialSourceAssertion)Components.getCredentialsLocationMap().get(key);
         if (newCredAssertion instanceof XmlRequestSecurity) {
             boolean encrypt = xmlSecOptions.getSelectedItem().equals(XML_SEC_OPTIONS[1]);
             //((XmlRequestSecurity)newCredAssertion).setEncryption(encrypt);
         }
+        return newCredAssertion;
     }
 
-    private void collectRoutingAssertion() {
-        if (!routeToUrlField.isEnabled() || !routeEdited) return;
-        newRoutingAssertion = new HttpRoutingAssertion();
-        newRoutingAssertion.setLogin(userRouteField.getText());
-        newRoutingAssertion.setProtectedServiceUrl(routeToUrlField.getText());
-        newRoutingAssertion.setPassword(new String(passwordRouteField.getPassword()));
-        newRoutingAssertion.setRealm(realmRouteField.getText());
+    private RoutingAssertion collectRoutingAssertion() {
+        if (!routeModifiable || !routeEdited)
+            return null;
+        if (jmsRoutingRadioButton.isSelected()) {
+            JmsRoutingAssertion jmsRa = new JmsRoutingAssertion();
+            JmsUtilities.QueueItem selected = (JmsUtilities.QueueItem)jmsQueueComboBox.getSelectedItem();
+            if (selected != null) {
+                final JmsEndpoint endpoint = selected.getQueue().getEndpoint();
+                jmsRa.setEndpointOid(new Long(endpoint.getOid()));
+                jmsRa.setEndpointName(endpoint.getName());
+            }
+            return jmsRa;
+        } else if (httpRoutingRadioButton.isSelected()) {
+            HttpRoutingAssertion httpRa = new HttpRoutingAssertion();
+            httpRa.setLogin(userRouteField.getText());
+            httpRa.setProtectedServiceUrl(routeToUrlField.getText());
+            httpRa.setPassword(new String(passwordRouteField.getPassword()));
+            httpRa.setRealm(realmRouteField.getText());
+            return httpRa;
+        } else
+            throw new IllegalStateException("Neither type of routin assertion is selected");
     }
 
     {

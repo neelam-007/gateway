@@ -46,6 +46,25 @@ public class GroupBean implements Group, Serializable {
         return providerId;
     }
 
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof GroupBean)) return false;
+
+        final GroupBean groupBean = (GroupBean)o;
+
+        if (providerId != groupBean.providerId) return false;
+        if (_uniqueId != null ? !_uniqueId.equals(groupBean._uniqueId) : groupBean._uniqueId != null) return false;
+
+        return true;
+    }
+
+    public int hashCode() {
+        int result;
+        result = (_uniqueId != null ? _uniqueId.hashCode() : 0);
+        result = 29 * result + (int)(providerId ^ (providerId >>> 32));
+        return result;
+    }
+
     /**
      * this is not persisted, it is set at run time by the provider who creates the object
      */

@@ -54,13 +54,16 @@ public class AddRoutingAssertionAdvice implements Advice {
             pc.proceed();
         } else if (assertions[0] instanceof JmsRoutingAssertion) {
             JmsRoutingAssertion ra = (JmsRoutingAssertion) assertions[0];
-            final MainWindow mainWindow = Registry.getDefault().getComponentRegistry().getMainWindow();
-            JmsRoutingAssertionDialog dialog = new JmsRoutingAssertionDialog(mainWindow, ra);
-            dialog.setModal(true);
-            dialog.pack();
-            Utilities.centerOnScreen(dialog);
-            dialog.show();
-            if (!dialog.isCanceled())
+            if (ra.getEndpointOid() == null) {
+                final MainWindow mainWindow = Registry.getDefault().getComponentRegistry().getMainWindow();
+                JmsRoutingAssertionDialog dialog = new JmsRoutingAssertionDialog(mainWindow, ra);
+                dialog.setModal(true);
+                dialog.pack();
+                Utilities.centerOnScreen(dialog);
+                dialog.show();
+                if (!dialog.isCanceled())
+                    pc.proceed();
+            } else
                 pc.proceed();
         }
     }
