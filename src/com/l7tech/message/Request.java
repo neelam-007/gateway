@@ -18,6 +18,8 @@ public interface Request extends Message {
     static final String PREFIX_HTTP        = PREFIX + ".http";
     static final String PREFIX_HTTP_HEADER = PREFIX_HTTP + ".header";
 
+    public static final String PARAM_SERVICE                = PREFIX + ".service";
+
     public static final String PARAM_SOAP_URN               = PREFIX + ".soap.urn";
 
     public static final String PARAM_HTTP_SOAPACTION        = PREFIX_HTTP_HEADER + ".soapaction";
