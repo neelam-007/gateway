@@ -30,7 +30,6 @@ import org.xml.sax.SAXException;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.wsdl.WSDLException;
 import java.io.IOException;
@@ -325,7 +324,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         HttpState state = client.getState();
         Cookie updatedCookie = null;
 
-        Cookie[] cookies = req.getCookies();
+        javax.servlet.http.Cookie[] cookies = req.getCookies();
         org.apache.commons.httpclient.Cookie cookieOut = null;
 
         // if no cookies found in the request but there is cookies in the udpatedCookies list (i.e. new cookies)
@@ -350,7 +349,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             }
         } else {
             for (int i = 0; cookies != null && i < cookies.length; i++) {
-                Cookie incomingCookie = cookies[i];
+                javax.servlet.http.Cookie incomingCookie = cookies[i];
                 cookieOut = new org.apache.commons.httpclient.Cookie(url.getHost(), incomingCookie.getName(), incomingCookie.getValue());
                 cookieOut.setPath(url.getPath());
 
