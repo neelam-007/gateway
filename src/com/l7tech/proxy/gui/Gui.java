@@ -1,14 +1,18 @@
 /* $Id$ */
 package com.l7tech.proxy.gui;
 
+import com.l7tech.console.panels.Utilities;
 import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.gui.util.IconManager;
-import com.l7tech.console.panels.Utilities;
+import com.l7tech.proxy.util.JavaVersionChecker;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
 import javax.swing.plaf.metal.MetalTheme;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 /**
  * Encapsulates the Client Proxy's user interface.
@@ -44,43 +48,51 @@ public class Gui {
         return instance;
     }
 
-    /** Try to set the Kunststoff look and feel. */
-    private static void setKunststoffLnF() throws Exception {
-        final Class kunststoffClass = Class.forName(KUNSTSTOFF_CLASSNAME);
-        final Object kunststoffLnF = kunststoffClass.newInstance();
-        final Class themeClass = Class.forName(KUNSTSTOFF_THEME_CLASSNAME);
-        final Object theme = themeClass.newInstance();
-        kunststoffClass.getMethod("setCurrentTheme", new Class[] {MetalTheme.class}).invoke(kunststoffLnF,
-                                                                                            new Object[] {theme});
-        UIManager.setLookAndFeel((LookAndFeel)kunststoffLnF);
+    private static interface LnfSetter {
+        void setLnf() throws Exception;
     }
+
+    /** Try to set the Kunststoff look and feel. */
+    private static LnfSetter kunststoffLnfSetter = new LnfSetter() {
+        public void setLnf() throws Exception {
+            final Class kunststoffClass = Class.forName(KUNSTSTOFF_CLASSNAME);
+            final Object kunststoffLnF = kunststoffClass.newInstance();
+            final Class themeClass = Class.forName(KUNSTSTOFF_THEME_CLASSNAME);
+            final Object theme = themeClass.newInstance();
+            kunststoffClass.getMethod("setCurrentTheme", new Class[] {MetalTheme.class}).invoke(kunststoffLnF,
+                                                                                                new Object[] {theme});
+            UIManager.setLookAndFeel((LookAndFeel)kunststoffLnF);
+        }
+    };
 
     /** Try to set the Windows look and feel. */
-    private static void setWindowsLnF() throws Exception {
-
-        UIManager.LookAndFeelInfo[] feels = UIManager.getInstalledLookAndFeels();
-        for (int i = 0; i < feels.length; i++) {
-            UIManager.LookAndFeelInfo feel = feels[i];
-            if (feel.getName().indexOf("indow") >= 0) {
-                UIManager.setLookAndFeel(feel.getClassName());
-                break;
+    private static LnfSetter windowsLnfSetter = new LnfSetter() {
+        public void setLnf() throws Exception {
+            UIManager.LookAndFeelInfo[] feels = UIManager.getInstalledLookAndFeels();
+            for (int i = 0; i < feels.length; i++) {
+                UIManager.LookAndFeelInfo feel = feels[i];
+                if (feel.getName().indexOf("indows") >= 0) {
+                    UIManager.setLookAndFeel(feel.getClassName());
+                    break;
+                }
             }
         }
-    }
+    };
 
     /**
      * Initialize the Gui.
      */
     private Gui() {
-        // Try to set up enhanced look and feel
-        try {
-            setKunststoffLnF();      // vvv Swap these two lines to prefer Windows look and feel vvv
-        } catch (Exception e) {
+        boolean haveXpLnf = JavaVersionChecker.isJavaVersionAtLeast(new int[] {1, 4, 2});
+        LnfSetter[] order = haveXpLnf ? new LnfSetter[] { windowsLnfSetter, kunststoffLnfSetter }
+                                      : new LnfSetter[] { kunststoffLnfSetter, windowsLnfSetter };
+        for (int i = 0; i < order.length; i++) {
             try {
-                setWindowsLnF();     // ^^^ Swap these two lines to prefer Windows look and feel ^^^
-            } catch (Exception e1) {
-                log.warn(e1);
+                order[i].setLnf();
+            } catch (Exception e) {
+                continue;
             }
+            break;
         }
 
         try {
