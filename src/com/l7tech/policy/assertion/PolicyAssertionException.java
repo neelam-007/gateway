@@ -18,6 +18,10 @@ public class PolicyAssertionException extends Exception {
         super( message );
     }
 
+    public PolicyAssertionException( Throwable cause ) {
+        super( cause );
+    }
+
     public PolicyAssertionException( String message, Throwable cause ) {
         super( message, cause );
     }
