@@ -525,6 +525,10 @@ public class ClusterStatusWindow extends JFrame {
                     su.setStatus(0);
                     su.resetTimeStampUpdateFailureCount();
                 }
+                else{
+                    // has not hit the limit, the node status is considered is active
+                    su.setStatus(1);
+                }
             }
 
             if (getClusterRequestCount() != 0) {

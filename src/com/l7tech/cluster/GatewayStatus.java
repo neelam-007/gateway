@@ -1,6 +1,7 @@
 package com.l7tech.cluster;
 
 import java.util.Vector;
+import java.util.logging.Logger;
 
 /*
  * This class encapsulates the data to be displayed in the cluster status panel.
@@ -28,7 +29,7 @@ public class GatewayStatus {
     private Vector completedCounterCache = new Vector();
     private long secondLastUpdateTimeStamp;
     private int timeStampUpdateFailureCount;
-
+    static Logger logger = Logger.getLogger(GatewayStatus.class.getName());
     /**
      * Constructor
      * @param clusterInfo  The node info of the gateway
@@ -297,6 +298,10 @@ public class GatewayStatus {
      */
     public void incrementTimeStampUpdateFailureCount() {
         timeStampUpdateFailureCount++;
+
+        if(timeStampUpdateFailureCount >= MAX_UPDATE_FAILURE_COUNT) {
+            logger.warning("The Node " + getName() + " has not updated the status table for " + timeStampUpdateFailureCount * REFRESH_INTERVAL + " seconds.");
+        }
     }
 
     /**
