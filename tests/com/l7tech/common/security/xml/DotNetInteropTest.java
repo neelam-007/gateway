@@ -16,6 +16,7 @@ import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 
 /**
  * Test xml digital signature and encryption interoperability with messages
@@ -57,6 +58,16 @@ public class DotNetInteropTest extends TestCase {
             signatureFailed = true;
         }
         assertTrue(signatureFailed);
+    }
+
+    public void testGetEncryptedKey() throws Exception {
+        Document encryptedDoc = getEncryptedDoc();
+        X509Certificate servercert = getRikerCert();
+        PrivateKey privateServerKey = getRikerPrivateKey();
+        XmlMangler.ProcessedEncryptedKey[] encryptionKeys = XmlMangler.getEncryptedKeyFromMessage(encryptedDoc,
+                                                                                                  privateServerKey,                                                                                                  servercert.getExtensionValue("2.5.29.14"));
+        assertTrue(encryptionKeys.length == 1);
+        assertTrue(Arrays.equals(DECRYPTED_KEY, encryptionKeys[0].decryptedKey.getEncoded()));
     }
 
     public void testDecryptdotNetRequest() throws Exception {
@@ -108,4 +119,5 @@ public class DotNetInteropTest extends TestCase {
     private Document getInvalidSignedRequest() throws Exception {
         return TestDocuments.getTestDocument(TestDocuments.DOTNET_SIGNED_TAMPERED_REQUEST);
     }
+    public static final byte[] DECRYPTED_KEY = {-54, 33,-19, 87, -46, 31, -86, 44, -10, 3, -37, 111, 125, -94, -64, 24};
 }
