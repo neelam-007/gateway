@@ -1,22 +1,21 @@
 package com.l7tech.identity.ldap;
 
 import com.l7tech.identity.*;
-import com.l7tech.credential.PrincipalCredentials;
-import com.l7tech.credential.CredentialFormat;
 import com.l7tech.logging.LogManager;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.EntityHeaderComparator;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.policy.assertion.credential.CredentialFormat;
+import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 
+import javax.naming.Context;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
-import javax.naming.Context;
 import javax.naming.directory.*;
-import java.util.logging.Level;
 import java.util.Collection;
-import java.util.ArrayList;
 import java.util.TreeSet;
+import java.util.logging.Level;
 
 /**
  * Layer 7 Technologies, inc.

@@ -3,7 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.util.IconManager;
 import com.l7tech.console.util.IconManager2;
 import com.l7tech.console.util.Registry;
-import com.l7tech.credential.PrincipalCredentials;
+import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;

@@ -1,6 +1,6 @@
 package com.l7tech.message;
 
-import com.l7tech.credential.PrincipalCredentials;
+import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 

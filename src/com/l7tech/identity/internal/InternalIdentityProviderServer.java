@@ -5,8 +5,8 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.EntityHeaderComparator;
 import com.l7tech.logging.LogManager;
-import com.l7tech.credential.PrincipalCredentials;
-import com.l7tech.credential.CredentialFormat;
+import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.common.util.HexUtils;
 
 import javax.naming.NamingException;
