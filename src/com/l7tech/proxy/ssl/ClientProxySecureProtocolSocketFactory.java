@@ -46,8 +46,8 @@ public class ClientProxySecureProtocolSocketFactory implements SecureProtocolSoc
                 Certificate[] certs = event.getPeerCertificates();
                 if (certs.length < 1)
                     throw new RuntimeException("Server presented no server certificates");
-                if (certs.length > 1)
-                    throw new RuntimeException("Server presented more than one certificate");
+                /*if (certs.length > 1)
+                    throw new RuntimeException("Server presented more than one certificate");*/
                 if (!(certs[0] instanceof X509Certificate))
                     throw new RuntimeException("Server certificate was in the wrong format");
                 X509Certificate cert = (X509Certificate) certs[0];
