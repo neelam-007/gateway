@@ -24,7 +24,7 @@ public class RequestIdGenerator {
             seq = instance.nextSequence();
             time = instance._bootTime;
         }
-        return new RequestId( instance._serverId, time, seq );
+        return new RequestId(time, seq);
     }
 
     private static synchronized RequestIdGenerator getInstance() {
