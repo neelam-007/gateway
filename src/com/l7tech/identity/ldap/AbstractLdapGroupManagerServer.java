@@ -239,34 +239,6 @@ public abstract class AbstractLdapGroupManagerServer extends LdapManager impleme
         valid = false;
     }
 
-    private EntityHeader getUserHeaderFromUid(String uid) throws NamingException {
-        AbstractLdapConstants constants = getConstants();
-        NamingEnumeration answer = null;
-        String filter = "(&(objectclass=" + constants.userObjectClass() + ")(" + constants.userLoginAttribute() + "=" + uid + "))";
-        SearchControls sc = new SearchControls();
-        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
-        DirContext context = getBrowseContext();
-        answer = context.search(config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), filter, sc);
-        while (answer.hasMore()) {
-            String login = null;
-            String dn = null;
-            SearchResult sr = (SearchResult)answer.next();
-            dn = sr.getName() + "," + config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE);
-            Attributes atts = sr.getAttributes();
-            Object tmp = extractOneAttributeValue(atts, constants.userLoginAttribute());
-            if (tmp != null) login = tmp.toString();
-            if (login != null && dn != null) {
-                EntityHeader header = new EntityHeader(dn, EntityType.USER, login, null);
-                answer.close();
-                context.close();
-                return header;
-            }
-        }
-        answer.close();
-        context.close();
-        return null;
-    }
-
     private volatile boolean valid = true;
     private Logger logger = LogManager.getInstance().getSystemLogger();
 }
