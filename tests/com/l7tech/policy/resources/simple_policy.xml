@@ -169,6 +169,7 @@
                     <RequireProofOfPosession booleanValue="true"/>
                     <CheckAssertionValidity booleanValue="true"/>
                     <NameQualifier stringValueNull="null"/>
+                    <NoSubjectConfirmation booleanValue="false"/>
                     <AuthenticationMethods stringArrayValue="included"/>
                 </SamlAuthenticationStatement>
                 <SamlAuthorizationStatement>
@@ -185,6 +186,7 @@
                     <CheckAssertionValidity booleanValue="true"/>
                     <Resource stringValueNull="null"/>
                     <NameQualifier stringValueNull="null"/>
+                    <NoSubjectConfirmation booleanValue="false"/>
                 </SamlAuthorizationStatement>
                 <SalmAttributeStatement>
                     <AudienceRestriction stringValueNull="null"/>
@@ -197,6 +199,7 @@
                     <RequireProofOfPosession booleanValue="true"/>
                     <CheckAssertionValidity booleanValue="true"/>
                     <NameQualifier stringValueNull="null"/>
+                    <NoSubjectConfirmation booleanValue="false"/>
                 </SalmAttributeStatement>
                 <AuditAssertion>
                     <SaveRequest booleanValue="false"/>
