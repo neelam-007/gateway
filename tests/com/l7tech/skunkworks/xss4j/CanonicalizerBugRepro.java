@@ -10,6 +10,7 @@ import com.ibm.xml.dsig.Canonicalizer;
 import com.ibm.xml.dsig.transform.ExclusiveC11r;
 import com.ibm.xml.dsig.transform.ExclusiveC11rWC;
 import com.ibm.xml.dsig.transform.W3CCanonicalizer;
+import com.ibm.xml.dsig.transform.W3CCanonicalizer2WC;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.TestDocuments;
 import junit.framework.Test;
@@ -52,6 +53,10 @@ public class CanonicalizerBugRepro extends TestCase {
 
     public void testW3CCanonicalizer() throws Exception {
         useCanon(new W3CCanonicalizer());
+    }
+
+    public void testW3CCanonicalizer2WC() throws Exception {
+        useCanon(new W3CCanonicalizer2WC());
     }
 
     private void useCanon(Canonicalizer canon) throws Exception {
