@@ -74,8 +74,19 @@ public abstract class Assertion implements Cloneable, Serializable {
         return (Assertion[])ll.toArray(new Assertion[]{});
 
     }
+
+    public String toIndentedString(int indentLevel) {
+        StringBuffer b = new StringBuffer();
+        for (int i = 0; i < indentLevel; ++i)
+            b.append("\t");
+        b.append(toString());
+        b.append("\n");
+        return b.toString();
+    }
+
     public String toString() {
-        return "<" + this.getClass().getName() + ">";
+        String fullClass = getClass().getName();
+        return fullClass.substring(fullClass.lastIndexOf('.') + 1);
     }
 
     /**
