@@ -134,7 +134,7 @@ public class MessageProcessor {
         log.warn("Too many attempts to conform to policy; giving up");
         if (req.getLastErrorResponse() != null)
             return req.getLastErrorResponse();
-        throw new ConfigurationException("Unable to conform to policy, and no useful fault from Ssg.");
+        throw new ConfigurationException("Unable to conform to policy, and no useful fault from Gateway.");
     }
 
     private void handleBadCredentialsException(Ssg ssg, PendingRequest req, BadCredentialsException e)
@@ -146,8 +146,8 @@ public class MessageProcessor {
         if (SsgKeyStoreManager.isClientCertAvailabile(ssg) && SsgKeyStoreManager.isPasswordWorkedForPrivateKey(ssg)) {
             if (securePasswordPing(req)) {
                 // password works with our keystore, and with the SSG, so why did it fail just now?
-                String message = "Recieved password failure, but it worked with our keystore and the SSG liked it when we double-checked it.  " +
-                        "Could be an internal error, or an attack, or the SSG admin toggling your account on and off.";
+                String message = "Recieved password failure, but it worked with our keystore and the Gateway liked it when we double-checked it.  " +
+                        "Could be an internal error, or an attack, or the Gateway admin toggling your account on and off.";
                 log.error(message);
                 throw new ConfigurationException(message, e);
             }
@@ -222,8 +222,8 @@ public class MessageProcessor {
             ssg.passwordWorkedWithSsg(worked);
             return worked;
         } catch (CertificateException e) {
-            log.error("SSG sent us an invalid certificate during secure password ping", e);
-            throw new IOException("SSG sent us an invalid certificate during secure password ping");
+            log.error("Gateway sent us an invalid certificate during secure password ping", e);
+            throw new IOException("Gateway sent us an invalid certificate during secure password ping");
         }
     }
 
@@ -294,7 +294,7 @@ public class MessageProcessor {
                                                      url.getProtocol());
             }
         } catch (MalformedURLException e) {
-            throw new ConfigurationException("Client Proxy: SSG \"" + ssg + "\" has an invalid server url: " +
+            throw new ConfigurationException("Client Proxy: Gateway \"" + ssg + "\" has an invalid server url: " +
                                              ssg.getServerUrl());
         }
 
@@ -349,12 +349,12 @@ public class MessageProcessor {
 
             String postBody = XmlUtil.documentToString(req.getSoapEnvelopeDirectly());
             if (logPosts())
-                log.info("Posting to SSG: " + postBody);
+                log.info("Posting to Gateway: " + postBody);
             postMethod.setRequestBody(postBody);
 
-            log.info("Posting request to SSG " + ssg + ", url " + url);
+            log.info("Posting request to Gateway " + ssg + ", url " + url);
             int status = client.executeMethod(postMethod);
-            log.info("POST to SSG completed with HTTP status code " + status);
+            log.info("POST to Gateway completed with HTTP status code " + status);
 
             Header sessionStatus = postMethod.getResponseHeader(SecureSpanConstants.HttpHeaders.SESSION_STATUS_HTTP_HEADER);
             if (sessionStatus != null) {
@@ -365,11 +365,11 @@ public class MessageProcessor {
                     throw new PolicyRetryableException();
                 }
             } else
-                log.info("SSG response contained no session status header");
+                log.info("Gateway response contained no session status header");
 
             Header certStatusHeader = postMethod.getResponseHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS);
             if (certStatusHeader != null && "invalid".equalsIgnoreCase(certStatusHeader.getValue())) {
-                log.info("SSG response contained a certficate status:invalid header.  Will get new client cert.");
+                log.info("Gateway response contained a certficate status:invalid header.  Will get new client cert.");
                 // Try to get a new client cert; if this succeeds, it'll replace the old one
                 try {
                     req.getClientProxy().obtainClientCertificate(req);
@@ -383,17 +383,17 @@ public class MessageProcessor {
 
             Header policyUrlHeader = postMethod.getResponseHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER);
             if (policyUrlHeader != null) {
-                log.info("SSG response contained a PolicyUrl header: " + policyUrlHeader.getValue());
+                log.info("Gateway response contained a PolicyUrl header: " + policyUrlHeader.getValue());
                 // Have we already updated a policy while processing this request?
                 if (req.isPolicyUpdated())
-                    throw new ConfigurationException("Policy was updated, but SSG says it's still out-of-date");
+                    throw new ConfigurationException("Policy was updated, but Gateway says it's still out-of-date");
                 URL policyUrl;
                 try {
                     policyUrl = new URL(policyUrlHeader.getValue());
                     // force the policy URL to point at the SSG hostname the user typed
                     policyUrl = new URL(policyUrl.getProtocol(), ssg.getSsgAddress(), policyUrl.getPort(), policyUrl.getFile());
                 } catch (MalformedURLException e) {
-                    throw new ConfigurationException("The Ssg sent us an invalid Policy URL.");
+                    throw new ConfigurationException("Gateway sent us an invalid Policy URL.");
                 }
 
                 policyManager.updatePolicy(req, policyUrl);
@@ -414,13 +414,13 @@ public class MessageProcessor {
 
             SsgResponse response = new SsgResponse(postMethod.getResponseBodyAsString(), headers);
             if (logResponse())
-                log.info("Got response from SSG: " + response);
+                log.info("Got response from Gateway: " + response);
             if (status == 401) {
                 req.setLastErrorResponse(response);
                 Header authHeader = postMethod.getResponseHeader("WWW-Authenticate");
                 log.info("Got auth header: " + (authHeader == null ? "<null>" : authHeader.getValue()));
                 if (authHeader == null && "https".equals(url.getProtocol()) && SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
-                    log.info("Got 401 response from SSG over https; possible that client cert is no good");
+                    log.info("Got 401 response from Gateway over https; possible that client cert is no good");
                 }
 
                 throw new BadCredentialsException();
