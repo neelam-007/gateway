@@ -1,5 +1,10 @@
 package com.l7tech.proxy.policy.assertion.xmlsec;
 
+import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import com.l7tech.proxy.datamodel.PendingRequest;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+
 /**
  * User: flascell
  * Date: Aug 26, 2003
@@ -13,5 +18,16 @@ package com.l7tech.proxy.policy.assertion.xmlsec;
  *
  * @author flascell
  */
-public class ClientXmlDsigResAssertion {
+public class ClientXmlDsigResAssertion implements ClientAssertion {
+
+    /**
+     * i dont want to decorate a request but rather validate something in the response
+     *
+     * @param request left untouched
+     * @return AssertionStatus.NONE (always)
+     * @throws PolicyAssertionException no
+     */
+    public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
+        return AssertionStatus.NONE;
+    }
 }
