@@ -13,6 +13,7 @@ import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.History;
 import com.l7tech.console.MainWindow;
+import com.l7tech.console.event.ConnectionEvent;
 import com.sun.net.ssl.HostnameVerifier;
 import com.sun.net.ssl.HttpsURLConnection;
 
@@ -459,6 +460,7 @@ public class LogonDialog extends JDialog {
                 if (dialog.isAborted()) break;
                 frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
                 ClientCredentialManager credentialManager = getCredentialManager();
+                getCredentialManager().onDisconnect(new ConnectionEvent(dialog, ConnectionEvent.DISCONNECTED));
 
                 // if the service is not avail, format the message and show to te client
                 if (!dialog.isServiceAvailable(serviceURL) && !dialog.sslHostNameMismatchUserNotified) {
@@ -715,23 +717,16 @@ public class LogonDialog extends JDialog {
         Throwable cause = ExceptionUtils.unnestToRoot(e);
         if (cause instanceof VersionException) {
             log.log(Level.WARNING, "logon()", e);
-            String msg =
-              MessageFormat.format(
-                dialog.resources.getString("logon.version.mismatch"),
+            String msg = MessageFormat.format(dialog.resources.getString("logon.version.mismatch"),
                 new Object[]{BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber()});
-            // NOTE: we show the product version number to users, not the ADMIN_PROTOCOL_VERSION number (in the exception msg)
-            JOptionPane.
-              showMessageDialog(dialog, msg, "Warning", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(dialog, msg, "Warning", JOptionPane.ERROR_MESSAGE);
         } else if (cause instanceof ConnectException ||
                    cause instanceof UnknownHostException ||
                    cause instanceof FileNotFoundException) {
             log.log(Level.WARNING, "logon()", e);
             String msg =
-              MessageFormat.format(
-                dialog.resources.getString("logon.connect.error"),
-                new Object[]{getHostPart(serviceUrl)});
-            JOptionPane.
-              showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
+              MessageFormat.format(dialog.resources.getString("logon.connect.error"), new Object[]{getHostPart(serviceUrl)});
+            JOptionPane.showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
         } else if (cause instanceof RemoteException) {
             log.log(Level.WARNING, "Could not connect to server", e);
             String hostname = serviceUrl;
@@ -741,11 +736,8 @@ public class LogonDialog extends JDialog {
             } catch (MalformedURLException e2) {
                 log.log(Level.SEVERE, "this sould not happen", e);
             }
-            String msg = MessageFormat.format(
-              dialog.resources.getString("service.unavailable.error"),
-              new Object[]{hostname});
-            JOptionPane.
-              showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
+            String msg = MessageFormat.format(dialog.resources.getString("service.unavailable.error"), new Object[]{hostname});
+            JOptionPane.showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
         } else if (cause instanceof LoginException) {
             log.log(Level.WARNING, "logon()", e);
             dialog.showInvalidCredentialsMessage();
@@ -755,13 +747,9 @@ public class LogonDialog extends JDialog {
         } else {
             log.log(Level.WARNING, "logon()", e);
             String msg =
-              MessageFormat.format(
-                dialog.resources.getString("logon.connect.error"),
-                new Object[]{getHostPart(serviceUrl)});
-            JOptionPane.
-              showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
+              MessageFormat.format(dialog.resources.getString("logon.connect.error"), new Object[]{getHostPart(serviceUrl)});
+            JOptionPane.showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
         }
-
     }
 
     /**
