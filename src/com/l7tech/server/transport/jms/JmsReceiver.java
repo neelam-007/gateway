@@ -48,6 +48,7 @@ public class JmsReceiver implements ServerComponentLifecycle {
     private Connection _failureConnection;
 
     private boolean _initialized = false;
+    private InitialContext _context;
 
     /**
      * Complete constructor
@@ -100,20 +101,20 @@ public class JmsReceiver implements ServerComponentLifecycle {
             properties.put( InitialContext.PROVIDER_URL, url );
 
         try {
-            InitialContext ictx = new InitialContext( properties );
+            _context = new InitialContext( properties );
 
             String qcfUrl = _connection.getQueueFactoryUrl();
             String tcfUrl = _connection.getTopicFactoryUrl();
             String dcfUrl = _connection.getDestinationFactoryUrl();
 
             if ( qcfUrl != null && qcfUrl.length() > 0 )
-                _queueConnectionFactory = (QueueConnectionFactory)ictx.lookup( qcfUrl );
+                _queueConnectionFactory = (QueueConnectionFactory)_context.lookup( qcfUrl );
 
             if ( tcfUrl != null && tcfUrl.length() > 0 )
-                _topicConnectionFactory = (TopicConnectionFactory)ictx.lookup( tcfUrl );
+                _topicConnectionFactory = (TopicConnectionFactory)_context.lookup( tcfUrl );
 
             if ( dcfUrl != null && dcfUrl.length() > 0 )
-                _destinationConnectionFactory = (ConnectionFactory)ictx.lookup( dcfUrl );
+                _destinationConnectionFactory = (ConnectionFactory)_context.lookup( dcfUrl );
 
             if ( _queueConnectionFactory == null &&
                  _topicConnectionFactory == null &&
@@ -139,7 +140,7 @@ public class JmsReceiver implements ServerComponentLifecycle {
         String username = _inboundRequestEndpoint.getUsername();
         String password = _inboundRequestEndpoint.getPassword();
 
-        if ( username == null ) {
+        if ( username == null || username.length() == 0 ) {
             username = _connection.getUsername();
             password = _connection.getPassword();
         }
@@ -158,10 +159,10 @@ public class JmsReceiver implements ServerComponentLifecycle {
             conn = _destinationConnectionFactory.createConnection( username, password );
 
         if ( conn == null &&  _queueConnectionFactory != null )
-            conn = _queueConnectionFactory.createConnection( username, password );
+            conn = _queueConnectionFactory.createQueueConnection( username, password );
 
         if ( conn == null && _topicConnectionFactory != null )
-            conn = _topicConnectionFactory.createConnection( username, password );
+            conn = _topicConnectionFactory.createTopicConnection( username, password );
 
         String msg = "No connection factories were able to establish a connection to " + _inboundRequestEndpoint.toString();
         _logger.warning( msg );
