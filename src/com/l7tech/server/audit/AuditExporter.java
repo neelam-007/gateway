@@ -47,7 +47,7 @@ public class AuditExporter {
             "ter join audit_admin on audit_main.objectid=audit_admin.objectid left outer join audit_message on audit_main." +
             "objectid=audit_message.objectid left outer join audit_system on audit_main.objectid=audit_system.objecti" +
             "d";
-    private static final String SIG_XML = "<L7:AuditMetadata xmlns:L7=\"http://l7tech.com/ns/2004/Oct/08/audit\" />";
+    private static final String SIG_XML = "<audit:AuditMetadata xmlns:audit=\"http://l7tech.com/ns/2004/Oct/08/audit\" />";
     private static final char DELIM = ':';
     private static final Pattern badCharPattern = Pattern.compile("([^\\040-\\0176]|\\\\|\\" + DELIM + ")");
 
