@@ -24,6 +24,11 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable {
     private JmsReplyType _replyType;
     private String _username;
     private String _password;
+    /** Optional, set only if {@link #_replyType} is {@link com.l7tech.common.transport.jms.JmsReplyType#REPLY_TO_OTHER} */
+    private JmsEndpoint _replyEndpoint;
+
+    /** Optional */
+    private JmsEndpoint _failureEndpoint;
 
     public String getUsername() {
         return _username;
@@ -44,12 +49,6 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable {
     public String toString() {
         return _connection.getName() + "/" + _name;
     }
-
-    /** Optional, set only if {@link #_replyType} is {@link com.l7tech.common.transport.jms.JmsReplyType#REPLY_TO_OTHER} */
-    private JmsEndpoint _replyEndpoint;
-
-    /** Optional */
-    private JmsEndpoint _failureEndpoint;
 
     public JmsConnection getConnection() {
         return _connection;
