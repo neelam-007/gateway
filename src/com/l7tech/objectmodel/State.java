@@ -1,4 +1,4 @@
-package com.l7tech.ssg.objectmodel;
+package com.l7tech.objectmodel;
 
 public interface State extends NamedEntity {
     Country getCountry();

@@ -1,13 +1,13 @@
 /*
  * Created on 7-May-2003
  */
-package com.l7tech.ssg.objectmodel.imp;
+package com.l7tech.objectmodel.imp;
 
 import java.util.Collection;
 
-import com.l7tech.ssg.objectmodel.Address;
-import com.l7tech.ssg.objectmodel.InternalOrganization;
-import com.l7tech.ssg.objectmodel.InternalUser;
+import com.l7tech.objectmodel.Address;
+import com.l7tech.objectmodel.InternalOrganization;
+import com.l7tech.objectmodel.InternalUser;
 
 /**
  * @author alex

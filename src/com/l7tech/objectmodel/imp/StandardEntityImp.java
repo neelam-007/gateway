@@ -1,9 +1,9 @@
 /*
  * Created on 7-May-2003
  */
-package com.l7tech.ssg.objectmodel.imp;
+package com.l7tech.objectmodel.imp;
 
-import com.l7tech.ssg.objectmodel.StandardEntity;
+import com.l7tech.objectmodel.StandardEntity;
 import cirrus.hibernate.*;
 
 import java.io.Serializable;

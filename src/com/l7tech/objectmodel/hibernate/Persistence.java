@@ -1,4 +1,4 @@
-package com.l7tech.ssg.objectmodel.hibernate;
+package com.l7tech.objectmodel.hibernate;
 
 import java.sql.Connection;
 import java.sql.SQLException;

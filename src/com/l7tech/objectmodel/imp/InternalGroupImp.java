@@ -1,11 +1,11 @@
 /*
  * Created on 7-May-2003
  */
-package com.l7tech.ssg.objectmodel.imp;
+package com.l7tech.objectmodel.imp;
 
 import java.util.Collection;
 
-import com.l7tech.ssg.objectmodel.InternalGroup;
+import com.l7tech.objectmodel.InternalGroup;
 
 /**
  * @author alex

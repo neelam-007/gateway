@@ -1,4 +1,4 @@
-package com.l7tech.ssg.objectmodel;
+package com.l7tech.objectmodel;
 
 public interface NamedEntity extends StandardEntity {
     String getName();

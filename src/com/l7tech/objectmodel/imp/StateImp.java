@@ -1,10 +1,10 @@
 /*
  * Created on 7-May-2003
  */
-package com.l7tech.ssg.objectmodel.imp;
+package com.l7tech.objectmodel.imp;
 
-import com.l7tech.ssg.objectmodel.Country;
-import com.l7tech.ssg.objectmodel.State;
+import com.l7tech.objectmodel.Country;
+import com.l7tech.objectmodel.State;
 
 /**
  * @author alex

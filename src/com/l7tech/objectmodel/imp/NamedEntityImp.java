@@ -1,4 +1,4 @@
-package com.l7tech.ssg.objectmodel.imp;
+package com.l7tech.objectmodel.imp;
 
 public abstract class NamedEntityImp extends StandardEntityImp {
     public String getName() { return _name; }
