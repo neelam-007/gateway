@@ -66,7 +66,7 @@ public class HttpClientCertCredentialFinder extends HttpCredentialFinder {
         // fla changed this to:
         String certCN = null;
         try {
-            X500Name x500name = new X500Name(clientCert.getSubjectX500Principal().getName());
+            X500Name x500name = new X500Name( clientCert.getSubjectX500Principal().getName() );
             certCN = x500name.getCommonName();
         } catch (IOException e) {
             _log.log(Level.SEVERE, e.getMessage(), e);
@@ -75,15 +75,9 @@ public class HttpClientCertCredentialFinder extends HttpCredentialFinder {
 
         _log.log(Level.INFO, "cert found for user " + certCN);
 
-        try {
-            User u = new User();
-            u.setLogin(certCN);
-            PrincipalCredentials pc = new PrincipalCredentials( u, clientCert.getEncoded(), CredentialFormat.CLIENTCERT );
-            return pc;
-        } catch (CertificateEncodingException cee) {
-            _log.log( Level.WARNING, cee.toString(), cee );
-            throw new CredentialFinderException( "Client certificate could not be properly encoded", cee, AssertionStatus.AUTH_FAILED );
-        }
+        User u = new User();
+        u.setLogin(certCN);
+        return new PrincipalCredentials( u, null, CredentialFormat.CLIENTCERT, null, clientCert );
     }
 
     protected Logger _log = LogManager.getInstance().getSystemLogger();
