@@ -126,10 +126,7 @@ public class UserManagerClient extends IdentityManagerClient implements UserMana
     // PRIVATES
     // ************************************************
     private boolean userIsAdministrator(User userpassed) throws FindException {
-
-        System.out.println("userIsAdministrator?");
-
-        // i actually dont get the user
+        // i actually dont get the user, the console only construct a new user and sets the oid
         User user = findByPrimaryKey(Long.toString(userpassed.getOid()));
         Set groupMembershipHeaders = user.getGroupHeaders();
         for (Iterator i = groupMembershipHeaders.iterator(); i.hasNext();) {
