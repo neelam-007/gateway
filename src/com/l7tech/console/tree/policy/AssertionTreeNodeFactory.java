@@ -4,6 +4,8 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
+import com.l7tech.policy.assertion.xmlsec.XmlEncAssertion;
+import com.l7tech.policy.assertion.xmlsec.XmlDsigAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
@@ -11,6 +13,7 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.console.tree.XmlEncryptionNode;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -41,6 +44,8 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(HttpDigest.class, HttpDigestAuthAssertionTreeNode.class);
         assertionMap.put(RoutingAssertion.class, RoutingAssertionTreeNode.class);
         assertionMap.put(TrueAssertion.class, AnonymousAssertionTreeNode.class);
+        assertionMap.put(XmlEncAssertion.class, XmlEncAssertionTreeNode.class);
+        assertionMap.put(XmlDsigAssertion.class, XmlDsigAssertionTreeNode.class);
     }
 
     /**

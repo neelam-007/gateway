@@ -1,6 +1,7 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.xmlsec.XmlDsigAssertion;
 
 import javax.swing.*;
 
@@ -37,7 +38,7 @@ public class XmlSignatureNode extends AbstractTreeNode {
      * @return the assertion this node represnts
      */
     public Assertion asAssertion() {
-        return null;
+        return new XmlDsigAssertion();
     }
 
     /**

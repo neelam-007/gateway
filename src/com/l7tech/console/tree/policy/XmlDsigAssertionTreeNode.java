@@ -4,13 +4,14 @@ package com.l7tech.console.tree.policy;
 import com.l7tech.policy.assertion.Assertion;
 
 /**
- * Class <code>SslAssertionTreeNode</code> specifies the SSL
- * assertion requirement.
+ * Class <code>XmlDsigAssertionTreeNode</code> specifies the policy
+ * element that represents the XML message signing requirement.
+ * <p>
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-class SslAssertionTreeNode extends LeafAssertionTreeNode {
+class XmlDsigAssertionTreeNode extends LeafAssertionTreeNode {
 
-    public SslAssertionTreeNode(Assertion assertion) {
+    public XmlDsigAssertionTreeNode(Assertion assertion) {
         super(assertion);
     }
 
@@ -18,7 +19,7 @@ class SslAssertionTreeNode extends LeafAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Require SSL transport";
+        return "XML message signed";
     }
 
     /**
@@ -36,6 +37,6 @@ class SslAssertionTreeNode extends LeafAssertionTreeNode {
      * @param open for nodes that can be opened, can have children
      */
     protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/ssl.gif";
+        return "com/l7tech/console/resources/xmlsignature.gif";
     }
 }
