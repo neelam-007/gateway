@@ -308,9 +308,9 @@ public abstract class Locator {
     }
 
     /**
-     * recycle the current locator, (used by testing)
+     * recycle the current locator
      */
-    protected static void recycle() {
+    public static synchronized void recycle() {
         defaultLocator = null;
     }
 

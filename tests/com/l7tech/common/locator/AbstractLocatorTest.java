@@ -104,7 +104,7 @@ public class AbstractLocatorTest extends TestCase {
     }
 
     static abstract class LocatorStub extends Locator {
-        protected static void recycle() {
+        public static void recycle() {
             Locator.recycle();
         }
     }

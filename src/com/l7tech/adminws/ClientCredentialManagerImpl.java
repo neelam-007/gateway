@@ -50,5 +50,6 @@ public class ClientCredentialManagerImpl extends ClientCredentialManager {
         logger.info("Disconnect message received, invalidating service lookup reference");
         // invalidate lookup
         serviceLookup = null;
+        Locator.recycle();
     }
 }
