@@ -202,6 +202,11 @@
                 <CustomAssertion>
                     <base64SerializedValue>rO0ABXNyADFjb20ubDd0ZWNoLnBvbGljeS5hc3NlcnRpb24uQ3VzdG9tQXNzZXJ0aW9uSG9sZGVyZtcreFwddTICAAJMAAhjYXRlZ29yeXQAKkxjb20vbDd0ZWNoL3BvbGljeS9hc3NlcnRpb24vZXh0L0NhdGVnb3J5O0wAD2N1c3RvbUFzc2VydGlvbnQAMUxjb20vbDd0ZWNoL3BvbGljeS9hc3NlcnRpb24vZXh0L0N1c3RvbUFzc2VydGlvbjt4cgAlY29tLmw3dGVjaC5wb2xpY3kuYXNzZXJ0aW9uLkFzc2VydGlvbttfY5k8vaKxAgAAeHBwcA==</base64SerializedValue>
                 </CustomAssertion>
+                <WsTrustCredentialExchange>
+                    <TokenServiceUrl stringValueNull="null"/>
+                    <RequestType requestTypeNull="null"/>
+                    <AppliesTo stringValueNull="null"/>
+                </WsTrustCredentialExchange>
                 <UnknownAssertion>
                     <DetailMessage stringValueNull="null"/>
                     <OriginalXml stringValueNull="null"/>
