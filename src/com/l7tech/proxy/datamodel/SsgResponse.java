@@ -6,56 +6,54 @@
 
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.util.XmlUtil;
 import org.apache.log4j.Category;
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
-import javax.xml.soap.MessageFactory;
-import javax.xml.soap.SOAPEnvelope;
-import javax.xml.soap.SOAPException;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
 /**
- * Class encapsulating the response from the Ssg to a given request.
+ * Class encapsulating the response from the Ssg to a given request.  Does parsing on-demand.
  * User: mike
  * Date: Aug 15, 2003
  * Time: 9:48:45 AM
  */
 public class SsgResponse {
     private static final Category log = Category.getInstance(SsgResponse.class);
-    private String stringVersion = null;
-    private SOAPEnvelope soapEnvelope = null;
+    private String responseString = null;
+    private Document responseDoc = null;
 
     public SsgResponse(String response) {
-        this.stringVersion = response;
+        this.responseString = response;
     }
 
-    public SsgResponse(SOAPEnvelope response) {
-        this.soapEnvelope = response;
+    public SsgResponse(Document response) {
+        this.responseDoc = response;
     }
 
-    public String getResponseAsString() {
-        if (soapEnvelope != null)
-            return soapEnvelope.toString();
-        return stringVersion;
+    public String getResponseAsString() throws IOException {
+        if (responseDoc != null)
+            return XmlUtil.documentToString(responseDoc);
+        return responseString;
     }
 
-    public SOAPEnvelope getResponseAsSoapEnvelope() throws SOAPException {
-        if (soapEnvelope != null)
-            return soapEnvelope;
-        if (stringVersion == null)
+    public Document getResponseAsDocument() throws IOException, SAXException {
+        if (responseDoc != null)
+            return responseDoc;
+        if (responseString == null)
             return null;
 
-        try {
-            soapEnvelope = MessageFactory.newInstance().createMessage(null, new ByteArrayInputStream(stringVersion.getBytes())).getSOAPPart().getEnvelope();
-        } catch (IOException e) {
-            log.error("Impossible error", e);  // can't happen
-            return null;
-        }
-        stringVersion = null;
-        return soapEnvelope;
+        responseDoc = XmlUtil.stringToDocument(responseString);
+        return responseDoc;
     }
 
     public String toString() {
-        return getResponseAsString();
+        try {
+            return getResponseAsString();
+        } catch (IOException e) {
+            log.error(e);
+            return "<SsgResponse toString error: " + e + ">";
+        }
     }
 }
