@@ -15,7 +15,8 @@ import java.util.Enumeration;
  * @version 1.0
  */
 public class PropertiesLocator extends AbstractLocator {
-
+     /** The default resource name of the properties source.  */
+    public static final String DEFAULT_PROPERTIES = "/services.properties";
     /**
      * Default constructor, uses this class cllassloader, and the default
      * service properties location
@@ -35,7 +36,7 @@ public class PropertiesLocator extends AbstractLocator {
         this.servicesResource = resource;
         try {
             initialize();
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new InstantiationException("Cannot load " + DEFAULT_PROPERTIES, e);
         }
     }
@@ -89,6 +90,5 @@ public class PropertiesLocator extends AbstractLocator {
     private String servicesResource;
     private final ClassLoader cl;
     private Properties properties = new Properties();
-    /** The resource name of the properties source.  */
-    private static final String DEFAULT_PROPERTIES = "/services.properties";
+
 }
