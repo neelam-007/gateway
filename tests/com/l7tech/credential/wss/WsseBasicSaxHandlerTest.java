@@ -4,6 +4,7 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.InputSource;
 import org.xml.sax.helpers.XMLReaderFactory;
 import com.l7tech.util.SAXParsingCompleteException;
+import com.l7tech.server.policy.assertion.credential.wss.WsseBasicSaxHandler;
 
 /**
  * User: flascell
