@@ -171,7 +171,9 @@ public class TokenService {
                                                                     "xmlns:wsse=\"" + SoapUtil.SECURITY_NAMESPACE + "\" " +
                                                                     "xmlns:wsc=\"" + SoapUtil.WSSC_NAMESPACE + "\">" +
                                     "<wst:RequestedSecurityToken>" +
+                                      "<wsc:SecurityContextToken>" +
                                         "<wsc:Identifier>" + newSession.getIdentifier() + "</wsc:Identifier>" +
+                                      "</wsc:SecurityContextToken>" +
                                     "</wst:RequestedSecurityToken>" +
                                     "<wst:RequestedProofToken>" +
                                       encryptedKeyRawXML +

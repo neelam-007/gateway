@@ -176,7 +176,9 @@ public class TokenServiceClient {
         if (rst == null) throw new InvalidDocumentFormatException("Response contained no RequestedSecurityToken");
 
         // Extract session ID
-        Element identifierEl = XmlUtil.findOnlyOneChildElementByName(rst, SoapUtil.WSSC_NAMESPACE, "Identifier");
+        Element scTokenEl = XmlUtil.findOnlyOneChildElementByName(rst, SoapUtil.WSSC_NAMESPACE, "SecurityContextToken");
+        if (scTokenEl == null) throw new InvalidDocumentFormatException("Response contained no wsc:SecurityContextToken");
+        Element identifierEl = XmlUtil.findOnlyOneChildElementByName(scTokenEl, SoapUtil.WSSC_NAMESPACE, "Identifier");
         if (identifierEl == null) throw new InvalidDocumentFormatException("Response contained no wsc:Identifier");
         String identifier = XmlUtil.getTextValue(identifierEl).trim();
         if (identifier == null || identifier.length() < 4) throw new InvalidDocumentFormatException("Response wsc:Identifier was empty or too short");
