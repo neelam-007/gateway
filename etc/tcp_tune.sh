@@ -1,5 +1,4 @@
 #!/bin/bash
-#
 # Network Startup config
 #
 # chkconfig: - 99 01
@@ -18,9 +17,9 @@ start() {
 	echo "Setting wide local port range for more outbound connections"
 	echo "1024 65530" > /proc/sys/net/ipv4/ip_local_port_range
 	echo "Setting Low latency TCP"
-	echo 1> /proc/sys/net/ipv4/tcp_low_latency
+	echo 1 > /proc/sys/net/ipv4/tcp_low_latency
 	echo "Lowering keepalive time"
-	echo 1200 >/proc/sys/net/ipv4/tcp_keepalive_time
+	echo 1200 > /proc/sys/net/ipv4/tcp_keepalive_time
 	echo 5 > /proc/sys/net/ipv4/tcp_keepalive_intvl
 	echo "Lowering FIN timeout"
 	echo 10 > /proc/sys/net/ipv4/tcp_fin_timeout
@@ -28,6 +27,7 @@ start() {
 	echo 0 > /proc/sys/net/ipv4/tcp_timestamps
 	echo "Turning On Window scaling"
 	echo 1 > /proc/sys/net/ipv4/tcp_window_scaling
+	echo "Turning On Selective Acknowledgement"
 	echo 1 > /proc/sys/net/ipv4/tcp_sack
 	echo "Increasing SYN packet Backlog"
 	echo 4096 > /proc/sys/net/ipv4/tcp_max_syn_backlog
@@ -37,8 +37,8 @@ start() {
 	echo "4096 87380 4194304" > /proc/sys/net/ipv4/tcp_rmem
 	echo "4096 65536 4194304" > /proc/sys/net/ipv4/tcp_wmem
 	echo "Turning on TIME_WAIT recyle and reuse"
-	echo 1> /proc/sys/net/ipv4/tcp_tw_recycle
-	echo 1> /proc/sys/net/ipv4/tcp_tw_reuse
+	echo 1 > /proc/sys/net/ipv4/tcp_tw_recycle
+	echo 1 > /proc/sys/net/ipv4/tcp_tw_reuse
 	echo "Increasing number of TIME_WAIT buckets"
 	echo 360000 > /proc/sys/net/ipv4/tcp_max_tw_buckets
 	echo "Disabling Route Triangulation"
