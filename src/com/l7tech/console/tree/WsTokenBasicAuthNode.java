@@ -55,7 +55,7 @@ public class WsTokenBasicAuthNode extends AbstractTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "WS Token Basic auhentication";
+        return "WS Token Basic";
     }
 
     /**

@@ -54,7 +54,7 @@ public class HttpBasicAuthNode extends AbstractTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "HTTP Basic authentication";
+        return "HTTP Basic";
     }
 
     /**

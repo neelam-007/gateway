@@ -54,7 +54,7 @@ public class HttpDigestAuthNode extends AbstractTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "HTTP Digest authentication";
+        return "HTTP Digest";
     }
 
     /**

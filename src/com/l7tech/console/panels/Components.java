@@ -72,13 +72,13 @@ public class Components {
     static {
         credentialsLocationMap.put("Anonymous", new TrueAssertion());
 
-        credentialsLocationMap.put("HTTP basic", new HttpBasic());
-        credentialsLocationMap.put("HTTP digest", new HttpDigest());
-        credentialsLocationMap.put("HTTP client cert", new HttpClientCert());
+        credentialsLocationMap.put("HTTP Basic", new HttpBasic());
+        credentialsLocationMap.put("HTTP Digest", new HttpDigest());
+        credentialsLocationMap.put("HTTP Client Certificate", new HttpClientCert());
 
-        credentialsLocationMap.put("WSS token basic", new WssBasic());
-        credentialsLocationMap.put("WSS token digest", new WssDigest());
-        credentialsLocationMap.put("WSS signed request", new XmlRequestSecurity());
+        credentialsLocationMap.put("WS Token Basic", new WssBasic());
+        credentialsLocationMap.put("WS Token Digest", new WssDigest());
+        credentialsLocationMap.put("XML Digital Signature", new XmlRequestSecurity());
 
         credentialsLocationMap = Collections.unmodifiableMap(credentialsLocationMap);
     }

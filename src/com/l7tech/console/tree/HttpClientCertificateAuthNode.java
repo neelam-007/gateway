@@ -54,7 +54,7 @@ public class HttpClientCertificateAuthNode extends AbstractTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "HTTP client certificate";
+        return "HTTP Client Certificate";
     }
 
     /**
