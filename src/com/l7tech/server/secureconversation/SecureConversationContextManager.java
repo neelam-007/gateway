@@ -80,7 +80,7 @@ public class SecureConversationContextManager implements WssProcessor.SecurityCo
 
     private byte[] generateNewSecret() {
         // return some random secret
-        byte[] output = new byte[256];
+        byte[] output = new byte[32];
         random.nextBytes(output);
         return output;
     }
