@@ -2,12 +2,15 @@ package com.l7tech.identity.ldap;
 
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.Group;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.DeleteException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 
+import javax.naming.directory.*;
+import javax.naming.NamingException;
+import javax.naming.NamingEnumeration;
 import java.util.Collection;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.HashSet;
 
 /**
  * Layer 7 Technologies, inc.
@@ -15,45 +18,212 @@ import java.util.Collection;
  * Date: Jun 13, 2003
  *
  */
-public class LdapGroupManagerServer implements GroupManager {
+public class LdapGroupManagerServer extends LdapManager implements GroupManager {
 
     public LdapGroupManagerServer(LdapIdentityProviderConfig config) {
-        this.config = config;
+        super(config);
     }
 
-    public Group findByPrimaryKey(String oid) throws FindException {
-        return null;
+    public Group findByPrimaryKey(String dn) throws FindException {
+        try {
+            DirContext context = getAnonymousContext();
+            Attributes attributes = context.getAttributes(dn);
+            LdapGroup out = new LdapGroup();
+            out.setDN(dn);
+            Object tmp = extractOneAttributeValue(attributes, DESCRIPTION_ATTR);
+            if (tmp != null) out.setDescription(tmp.toString());
+            tmp = extractOneAttributeValue(attributes, NAME_ATTR_NAME);
+            if (tmp != null) out.setName(tmp.toString());
+
+            // create a header for all "memberUid" attributes
+            Attribute valuesWereLookingFor = attributes.get(GROUPOBJ_MEMBER_ATTR);
+            if (valuesWereLookingFor != null) {
+                HashSet membersSet = new HashSet();
+                for (int i = 0; i < valuesWereLookingFor.size(); i++) {
+                    Object val = valuesWereLookingFor.get(i);
+                    if (val != null) {
+                        String memberUid = val.toString();
+                        EntityHeader userHeader = getUserHeaderFromUid(memberUid);
+                        if (userHeader != null) {
+                            membersSet.add(userHeader);
+                        }
+                    }
+                }
+                out.setMemberHeaders(membersSet);
+            }
+
+            context.close();
+            return out;
+        } catch (NamingException e) {
+            e.printStackTrace(System.err);
+            throw new FindException(e.getMessage(), e);
+        }
     }
 
     public void delete(Group group) throws DeleteException {
+        throw new DeleteException("Not supported in LdapUserManagerServer");
     }
 
     public long save(Group group) throws SaveException {
-        return 0;
+        throw new SaveException("Not supported in LdapUserManagerServer");
     }
 
     public void update(Group group) throws UpdateException {
+        throw new UpdateException("Not supported in LdapUserManagerServer");
     }
 
     public Collection findAllHeaders() throws FindException {
-        return null;
+        Collection output = new ArrayList();
+        if (config.getSearchBase() == null || config.getSearchBase().length() < 1) throw new FindException("No search base provided");
+        try
+        {
+            NamingEnumeration answer = null;
+            String filter = "(objectclass=" + GROUP_OBJCLASS + ")";
+            SearchControls sc = new SearchControls();
+            sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+            DirContext context = getAnonymousContext();
+            answer = context.search(config.getSearchBase(), filter, sc);
+            while (answer.hasMore())
+            {
+                String dn = null;
+                String cn = null;
+                SearchResult sr = (SearchResult)answer.next();
+                dn = sr.getName() + "," + config.getSearchBase();
+                Attributes atts = sr.getAttributes();
+                Object tmp = extractOneAttributeValue(atts, NAME_ATTR_NAME);
+                if (tmp != null) cn = tmp.toString();
+
+                if (cn != null && dn != null) {
+                    EntityHeader header = new EntityHeader(dn, EntityType.GROUP, cn, null);
+                    output.add(header);
+                }
+            }
+            if (answer != null) answer.close();
+            context.close();
+        }
+        catch (NamingException e)
+        {
+            e.printStackTrace(System.err);
+            throw new FindException(e.getMessage(), e);
+        }
+        return output;
     }
 
     public Collection findAllHeaders(int offset, int windowSize) throws FindException {
-        return null;
+        Collection output = new ArrayList();
+        if (config.getSearchBase() == null || config.getSearchBase().length() < 1) throw new FindException("No search base provided");
+        try
+        {
+            NamingEnumeration answer = null;
+            String filter = "(objectclass=" + GROUP_OBJCLASS + ")";
+            SearchControls sc = new SearchControls();
+            sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+            DirContext context = getAnonymousContext();
+            answer = context.search(config.getSearchBase(), filter, sc);
+            int count = 0;
+            while (answer.hasMore())
+            {
+                if (count < offset) {
+                    ++count;
+                    continue;
+                }
+                if (count >= offset+windowSize) {
+                    break;
+                }
+                ++count;
+                String dn = null;
+                String cn = null;
+                SearchResult sr = (SearchResult)answer.next();
+                dn = sr.getName() + "," + config.getSearchBase();
+                Attributes atts = sr.getAttributes();
+                Object tmp = extractOneAttributeValue(atts, NAME_ATTR_NAME);
+                if (tmp != null) cn = tmp.toString();
+
+                if (cn != null && dn != null) {
+                    EntityHeader header = new EntityHeader(dn, EntityType.GROUP, cn, null);
+                    output.add(header);
+                }
+            }
+            if (answer != null) answer.close();
+            context.close();
+        }
+        catch (NamingException e)
+        {
+            e.printStackTrace(System.err);
+            throw new FindException(e.getMessage(), e);
+        }
+        return output;
     }
 
     public Collection findAll() throws FindException {
-        return null;
+        Collection headers = findAllHeaders();
+        Collection output = new ArrayList();
+        Iterator i = headers.iterator();
+        while (i.hasNext()) {
+            EntityHeader header = (EntityHeader)i.next();
+            output.add(findByPrimaryKey(header.getStrId()));
+        }
+        return output;
     }
 
     public Collection findAll(int offset, int windowSize) throws FindException {
-        return null;
+        Collection headers = findAllHeaders(offset, windowSize);
+        Collection output = new ArrayList();
+        Iterator i = headers.iterator();
+        while (i.hasNext()) {
+            EntityHeader header = (EntityHeader)i.next();
+            output.add(findByPrimaryKey(header.getStrId()));
+        }
+        return output;
     }
 
     // ************************************************
     // PRIVATES
     // ************************************************
 
-    private LdapIdentityProviderConfig config;
+    public static void main(String[] args) throws Exception {
+        LdapIdentityProviderConfig config = new LdapIdentityProviderConfig();
+        // use this url when ssh forwarding locally
+        config.setLdapHostURL("ldap://localhost:3899");
+        // use this url when in the office
+        //config.setLdapHostURL("ldap://spock:389");
+        config.setSearchBase("dc=layer7-tech,dc=com");
+        LdapGroupManagerServer me = new LdapGroupManagerServer(config);
+        Collection res = me.findAll();
+        Iterator i = res.iterator();
+        while (i.hasNext()) {
+            LdapGroup group = (LdapGroup)i.next();
+            System.out.println(group);
+        }
+    }
+
+    private EntityHeader getUserHeaderFromUid(String uid) throws NamingException {
+        NamingEnumeration answer = null;
+        String filter = "(&(objectclass=" + USER_OBJCLASS + ")(" + LOGIN_ATTR_NAME + "=" + uid + "))";
+        SearchControls sc = new SearchControls();
+        sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+        DirContext context = getAnonymousContext();
+        answer = context.search(config.getSearchBase(), filter, sc);
+        while (answer.hasMore())
+        {
+            String login = null;
+            String dn = null;
+            SearchResult sr = (SearchResult)answer.next();
+            dn = sr.getName() + "," + config.getSearchBase();
+            Attributes atts = sr.getAttributes();
+            Object tmp = extractOneAttributeValue(atts, LOGIN_ATTR_NAME);
+            if (tmp != null) login = tmp.toString();
+            if (login != null && dn != null) {
+                EntityHeader header = new EntityHeader(dn, EntityType.USER, login, null);
+                answer.close();
+                context.close();
+                return header;
+            }
+        }
+        answer.close();
+        context.close();
+        return null;
+    }
+
+    private static final String GROUP_OBJCLASS = "posixGroup";
 }
