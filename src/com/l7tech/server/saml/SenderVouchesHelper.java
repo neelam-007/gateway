@@ -77,6 +77,8 @@ class SenderVouchesHelper {
 
         try {
             doc.getDocumentElement().setAttribute("Id", "SamlTicket");
+            // TODO replace SoapMsgSigner with WssDecorator (if this is supposed to be a WSS-decorated SOAP message)
+            // or something like XmlSigner if the intent is just to do dsig on the xml
             SoapMsgSigner.signEnvelope(doc, signerInfo.getPrivate(), signerInfo.getCertificateChain());
             Element secElement = SoapUtil.getOrMakeSecurityElement(soapMessage);
             if ( secElement == null ) {
