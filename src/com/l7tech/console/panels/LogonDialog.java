@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.security.ClientCredentialManager;
 import com.l7tech.common.VersionException;
+import com.l7tech.common.BuildInfo;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.CertificateDownloader;
 import com.l7tech.common.util.ExceptionUtils;
@@ -676,7 +677,8 @@ public class LogonDialog extends JDialog {
             String msg =
                     MessageFormat.format(
                             dialog.resources.getString("logon.version.mismatch"),
-                            new Object[]{((VersionException) e).getExpectedVersion()});
+                            new Object[]{BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber()});
+            // NOTE: we show the product version number to users, not the ADMIN_PROTOCOL_VERSION number (in the exception msg)
             JOptionPane.
                     showMessageDialog(dialog, msg, "Warning", JOptionPane.ERROR_MESSAGE);
         } else if (cause instanceof ConnectException) {
