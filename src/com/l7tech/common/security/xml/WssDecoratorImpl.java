@@ -235,8 +235,14 @@ public class WssDecoratorImpl implements WssDecorator {
         dkt.setAttributeNS(SoapUtil.WSSC_NAMESPACE, wssc + "Algorithm", SoapUtil.ALGORITHM_PSHA);
         Element str = XmlUtil.createAndAppendElementNS(dkt, SoapUtil.SECURITYTOKENREFERENCE_EL_NAME, wsseNs, wsse);
         Element ref = XmlUtil.createAndAppendElementNS(str, "Reference", wsseNs, wsse);
+
+        // fla 18 Aug, 2004
+        // NOTE This method of reffering to the SCT uses a Reference URI that contains the Identifier value
+        // instead of the actual #wsuid of the SCT.
+        // We do this for better interop with .net clients (WSE 2.0)
+        // we may want to support different methods based on the user agent
+        // the alternative would be : ref.setAttribute("URI", "#" + getOrCreateWsuId(c, sct, null));
         ref.setAttribute("URI", session.getId());
-        //ref.setAttribute("URI", "#" + getOrCreateWsuId(c, sct, null));
         ref.setAttribute("ValueType", SoapUtil.VALUETYPE_SECURECONV);
 
         // Gather derived key params
