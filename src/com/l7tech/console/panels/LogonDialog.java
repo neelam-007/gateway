@@ -19,9 +19,11 @@ import javax.net.ssl.SSLHandshakeException;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.IOException;
+import java.io.FileNotFoundException;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
+import java.net.ConnectException;
 import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -578,19 +580,6 @@ public class LogonDialog extends JDialog {
     }
 
     /**
-     * logoff from the
-     */
-    public static void logoff() {
-        try {
-            // logoff here
-        } catch (Exception e) {
-            log.log(Level.WARNING, "logoff()", e);
-        } finally {
-        }
-    }
-
-
-    /**
      *
      * @return the <CODE>PasswordAuthentication</CODE> collected from
      *         the dialog.
@@ -622,6 +611,7 @@ public class LogonDialog extends JDialog {
     }
 
     /**
+     * todo: refactor exception handling
      * handle the logon throwable. Unwrap the exception
      * @param e
      */
@@ -635,7 +625,26 @@ public class LogonDialog extends JDialog {
                     new Object[]{((VersionException)e).getExpectedVersion()});
                 JOptionPane.
                   showMessageDialog(dialog, msg, "Warning", JOptionPane.ERROR_MESSAGE);
+        } else if (cause instanceof ConnectException) {
+            log.log(Level.WARNING, "logon()", e);
+                    String msg =
+                      MessageFormat.format(
+                        dialog.resources.getString("logon.connect.error"),
+                        new Object[]{getHostPart(serviceUrl)});
+                    JOptionPane.
+                      showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
+        } else if (cause instanceof FileNotFoundException) {
+            log.log(Level.WARNING, "logon()", e);
+                    String msg =
+                      MessageFormat.format(
+                        dialog.resources.getString("logon.connect.error"),
+                        new Object[]{getHostPart(serviceUrl)});
+                    JOptionPane.
+                      showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
         } else if (cause instanceof LoginException) {
+             log.log(Level.WARNING, "logon()", e);
+              dialog.showInvalidCredentialsMessage();
+        } else if (cause instanceof IOException) {
              log.log(Level.WARNING, "logon()", e);
               dialog.showInvalidCredentialsMessage();
         } else {

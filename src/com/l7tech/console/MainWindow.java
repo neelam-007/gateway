@@ -2,25 +2,33 @@ package com.l7tech.console;
 
 import com.incors.plaf.kunststoff.KunststoffLookAndFeel;
 import com.incors.plaf.kunststoff.themes.KunststoffDesktopTheme;
+import com.l7tech.common.gui.util.ImageCache;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.util.Locator;
 import com.l7tech.console.action.AboutAction;
 import com.l7tech.console.action.ConsoleAction;
-import com.l7tech.console.action.HomeAction;
 import com.l7tech.console.action.FindIdentityAction;
+import com.l7tech.console.action.HomeAction;
+import com.l7tech.console.event.ConnectionEvent;
+import com.l7tech.console.event.ConnectionListener;
+import com.l7tech.console.event.WeakEventListenerList;
 import com.l7tech.console.panels.LogonDialog;
 import com.l7tech.console.panels.PreferencesDialog;
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.PolicyToolBar;
-import com.l7tech.console.util.*;
-import com.l7tech.common.gui.util.ImageCache;
+import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.Preferences;
+import com.l7tech.console.util.ProgressBar;
+import com.l7tech.console.util.Registry;
+import com.l7tech.adminws.ClientCredentialManager;
 
 import javax.help.HelpBroker;
 import javax.help.HelpSet;
 import javax.help.HelpSetException;
 import javax.swing.*;
 import javax.swing.border.Border;
-import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.EventListenerList;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import java.awt.*;
@@ -29,6 +37,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.net.URL;
+import java.util.EventListener;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
@@ -104,6 +113,9 @@ public class MainWindow extends JFrame {
     public static final String TITLE = "SSG Management Console";
     public static final String NAME = "main.window"; // registered
     private JTree policyTree;
+    private EventListenerList listenerList = new WeakEventListenerList();
+    // cached credential manager
+    private ClientCredentialManager credentialManager;
 
     /**
      * MainWindow constructor comment.
@@ -111,6 +123,48 @@ public class MainWindow extends JFrame {
     public MainWindow() throws IOException {
         super(TITLE);
         initialize();
+    }
+
+    /**
+     * add the ConnectionListener
+     *
+     * @param listener the ConnectionListener
+     */
+    public void addConnectionListener(ConnectionListener listener) {
+        listenerList.add(ConnectionListener.class, listener);
+    }
+
+    /**
+     * remove the the ConnectionListener
+     *
+     * @param listener the ConnectionListener
+     */
+    public void removeConnectionListener(ConnectionListener listener) {
+        listenerList.remove(ConnectionListener.class, listener);
+    }
+
+    /**
+     * Notifies all listeners that have registered interest for
+     * notification on this event type (connection event).
+     */
+    private void fireConnected() {
+        ConnectionEvent event = new ConnectionEvent(this, ConnectionEvent.CONNECTED);
+        EventListener[] listeners = listenerList.getListeners(ConnectionListener.class);
+        for (int i = 0; i < listeners.length; i++) {
+            ((ConnectionListener)listeners[i]).onConnect(event);
+        }
+    }
+
+    /**
+     * Notifies all listeners that have registered interest for
+     * notification on this event type (connection event).
+     */
+    private void fireDisconnected() {
+        ConnectionEvent event = new ConnectionEvent(this, ConnectionEvent.DISCONNECTED);
+        EventListener[] listeners = listenerList.getListeners(ConnectionListener.class);
+        for (int i = 0; i < listeners.length; i++) {
+            ((ConnectionListener)listeners[i]).onDisconnect(event);
+        }
     }
 
     /**
@@ -582,7 +636,6 @@ public class MainWindow extends JFrame {
      * Initialize the workspace. Invoked on successfull login.
      */
     private void initalizeWorkspace() {
-
         DefaultTreeModel treeModel = new FilteredTreeModel(null);
         final AbstractTreeNode paletteRootNode =
           new AssertionsPaletteRootNode("Policy Assertions");
@@ -925,7 +978,7 @@ public class MainWindow extends JFrame {
      * @param event  ActionEvent
      */
     private void disconnectHandler(ActionEvent event) {
-        LogonDialog.logoff();
+        fireDisconnected();
         getStatusMsgLeft().setText("Disconnected");
         getStatusMsgRight().setText("");
 
@@ -941,23 +994,12 @@ public class MainWindow extends JFrame {
             inactivityTimer.stop();
         }
 
-    }
-
-    /**
-     * Invoked on node selection change, update the right panel
-     * @param event
-     * @see TreeSelectionEvent for details
-     */
-    private void treeSelectionEventHandler(TreeSelectionEvent event) {
-        // get the node and call panel factory
-        Object object = getServicesTree().getLastSelectedPathComponent();
-        // if not EntityTreeNode silently return
-        if (object instanceof AbstractTreeNode) {
-            AbstractTreeNode node = (AbstractTreeNode)object;
-            // update actions for the node
-            updateActions(node);
-            object = node.getUserObject();
-        }
+        SwingUtilities.invokeLater(
+          new Runnable() {
+            public void run() {
+                System.gc(); // hack to help clearing references
+            }
+        });
     }
 
     /**
@@ -1025,6 +1067,15 @@ public class MainWindow extends JFrame {
         } catch (IOException e) {
             log.log(Level.WARNING, "cannot get preferences", e);
         }
+        credentialManager =
+          (ClientCredentialManager)Locator.getDefault().lookup(ClientCredentialManager.class);
+        if (credentialManager == null) {
+            log.log(Level.WARNING, "Cannot obtain current credential manager");
+        } else {
+            log.log(Level.FINEST, "Registering the connection listener "+credentialManager.getClass());
+            addConnectionListener(credentialManager);
+        }
+
 
         // exitMenuItem listener
         getExitMenuItem().
@@ -1095,10 +1146,7 @@ public class MainWindow extends JFrame {
                     key));
               }
           });
-
-
     }
-
 
     /**
      * Tweak any global preferences.
@@ -1376,6 +1424,7 @@ public class MainWindow extends JFrame {
                     public void run() {
                         MainWindow.this.
                           setInactivitiyTimeout(fTimeout);
+                        MainWindow.this.fireConnected();
                     }
                 });
               toggleConnectedMenus(true);

@@ -1,25 +1,19 @@
 package com.l7tech.jini.lookup;
 
-import com.l7tech.common.locator.ObjectFactory;
 import net.jini.config.*;
-import net.jini.core.lookup.ServiceItem;
-import net.jini.core.lookup.ServiceTemplate;
+import net.jini.core.discovery.LookupLocator;
 import net.jini.core.lookup.ServiceMatches;
 import net.jini.core.lookup.ServiceRegistrar;
-import net.jini.core.discovery.LookupLocator;
-import net.jini.discovery.LookupDiscovery;
-import net.jini.lookup.ServiceDiscoveryManager;
+import net.jini.core.lookup.ServiceTemplate;
 import net.jini.security.BasicProxyPreparer;
 import net.jini.security.ProxyPreparer;
 import net.jini.security.policy.DynamicPolicyProvider;
-import net.jini.security.policy.PolicyInitializationException;
 
 import java.io.IOException;
+import java.security.Policy;
 import java.util.Collection;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.security.Policy;
-import java.net.URL;
 
 /**
  * <code>ServiceLookup</code> is the utility class that
@@ -28,14 +22,13 @@ import java.net.URL;
  * @author  <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class ServiceLookup implements ObjectFactory {
+public class ServiceLookup {
     protected static final Logger logger = Logger.getLogger(ServiceLookup.class.getName());
     protected int timeout = 5000;
     private final Configuration config;
     private static final String CLIENT_CONFIG = "etc/jini/client.config";
     String[] configOptions = {CLIENT_CONFIG};
-    private ServiceDiscoveryManager discoveryManager;
-    private ServiceRegistrar registrar;
+    protected ServiceRegistrar registrar;
 
 
     static {
@@ -70,7 +63,7 @@ public class ServiceLookup implements ObjectFactory {
      * @param context optional context collection
      * @return the object instance of the class type
      */
-    public Object getInstance(Class cl, Collection context) {
+    public Object lookup(Class cl, Collection context) {
         /* Look up the remote server */
         try {
             ServiceMatches matches =
@@ -91,44 +84,20 @@ public class ServiceLookup implements ObjectFactory {
         } catch (ConfigurationException e) {
             logger.log(Level.SEVERE, "Unable to obtain the service proxy", e);
         } catch (ClassNotFoundException e) {
-            e.printStackTrace();  //To change body of catch statement use Options | File Templates.
+            logger.log(Level.SEVERE, "Unable to obtain the service proxy", e);
         }
         return null;
     }
 
 
-    /**
-     * Get the service discovery manager.
-     *
-     * @return
-     * @throws IOException
-     * @throws ConfigurationException
-     */
-    protected ServiceDiscoveryManager getServiceDiscovery()
-      throws IOException, ConfigurationException {
-        if (discoveryManager != null) return discoveryManager;
-
-        String entry = ServiceLookup.class.getName();
-        try {
-            discoveryManager =
-              (ServiceDiscoveryManager) config.getEntry(
-                entry,
-                "serviceDiscovery", ServiceDiscoveryManager.class);
-            return discoveryManager;
-        } catch (NoSuchEntryException e) {
-            // use default
-        }
-        discoveryManager =
-          new ServiceDiscoveryManager(
-            new LookupDiscovery(new String[]{""}, config),
-            null, config);
-        return discoveryManager;
-    }
-
     protected ServiceRegistrar getRegistrar()
       throws ConfigurationException, IOException, ClassNotFoundException {
         if (registrar == null) {
             registrar = getLookupLocator().getRegistrar(timeout);
+        }
+        if (registrar == null) {
+            throw new IOException("Cannot obtain registrar");
+
         }
         return registrar;
     }
@@ -146,7 +115,7 @@ public class ServiceLookup implements ObjectFactory {
         String entry = ServiceLookup.class.getName();
         try {
             LookupLocator locator =
-              (LookupLocator) config.getEntry(
+              (LookupLocator)config.getEntry(
                 entry,
                 "lookupLocator", LookupLocator.class);
             return locator;
@@ -173,7 +142,7 @@ public class ServiceLookup implements ObjectFactory {
             String entry = components[i];
             try {
                 preparer =
-                  (ProxyPreparer) config.getEntry(entry,
+                  (ProxyPreparer)config.getEntry(entry,
                     "preparer",
                     ProxyPreparer.class);
                 return preparer;

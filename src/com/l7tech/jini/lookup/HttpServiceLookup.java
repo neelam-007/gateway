@@ -40,7 +40,7 @@ public class HttpServiceLookup extends ServiceLookup {
      * @throws ConfigurationException on configuration error
      */
     public HttpServiceLookup()
-     throws ConfigurationException {
+      throws ConfigurationException {
         super();
     }
 
@@ -55,7 +55,7 @@ public class HttpServiceLookup extends ServiceLookup {
      * @param context optional context collection
      * @return the object instance of the class type
      */
-    public Object getInstance(Class cl, Collection context) {
+    public Object lookup(Class cl, Collection context) {
         /* Look up the remote server */
         try {
             ServiceMatches matches =
@@ -86,31 +86,22 @@ public class HttpServiceLookup extends ServiceLookup {
      * @throws IOException
      * @throws ConfigurationException
      */
-    protected ServiceRegistrar getRegistrar()
+    protected synchronized ServiceRegistrar getRegistrar()
       throws IOException, ConfigurationException, ClassNotFoundException {
+        if (registrar !=null) {
+            logger.fine("Returning cached service registrar " +registrar);
+            return registrar;
+        }
 
         URLConnection conn = null;
         String serviceUrl = Preferences.getPreferences().getServiceUrl();
         if (serviceUrl == null) {
             throw new ConfigurationException("The service url cannot be null");
         }
-        logger.fine("Attempting connection to "+serviceUrl);
-;
-        URL url = new URL(serviceUrl+"/registrar");
+        logger.fine("Attempting connection to " + serviceUrl);
+        URL url = new URL(serviceUrl + "/registrar");
         conn = url.openConnection();
-
-        Subject subject = Subject.getSubject(AccessController.getContext());
-        sun.misc.BASE64Encoder encoder = new sun.misc.BASE64Encoder();
-        if (subject != null) {
-            Iterator i = subject.getPrincipals().iterator();
-
-            String cred = i.hasNext() ? ((Principal)i.next()).getName() : "";
-            i = subject.getPrivateCredentials().iterator();
-            cred += (i.hasNext() ? (":" + new String((char[])i.next())) : "");
-
-            String encoded = encoder.encode(cred.getBytes());
-            conn.setRequestProperty("Authorization", "Basic "+encoded);
-        }
+        setAuthorizationHeader(conn);
 
         // for both input and output
         conn.setUseCaches(false);
@@ -122,10 +113,34 @@ public class HttpServiceLookup extends ServiceLookup {
         ObjectInputStream oi = new ObjectInputStream(conn.getInputStream());
 
         try {
-            return (ServiceRegistrar)oi.readObject();
+            registrar = (ServiceRegistrar)oi.readObject();
+            return registrar;
+
         } finally {
-            if (oi !=null) oi.close();
+            if (oi != null) oi.close();
         }
     }
 
+    /**
+     * set the authorizaition properties for the connection
+     * 
+     * @param conn the connection
+     */
+    private void setAuthorizationHeader(URLConnection conn) {
+        Subject subject = Subject.getSubject(AccessController.getContext());
+        if (subject == null) {
+            logger.warning("No subject associated. The authentication will not be attempted");
+            return;
+        }
+
+        sun.misc.BASE64Encoder encoder = new sun.misc.BASE64Encoder();
+        Iterator i = subject.getPrincipals().iterator();
+
+        String cred = i.hasNext() ? ((Principal)i.next()).getName() : "";
+        i = subject.getPrivateCredentials().iterator();
+        cred += (i.hasNext() ? (":" + new String((char[])i.next())) : "");
+
+        String encoded = encoder.encode(cred.getBytes());
+        conn.setRequestProperty("Authorization", "Basic " + encoded);
+    }
 }

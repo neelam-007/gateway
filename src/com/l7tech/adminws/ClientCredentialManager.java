@@ -1,5 +1,8 @@
 package com.l7tech.adminws;
 
+import com.l7tech.console.event.ConnectionListener;
+import com.l7tech.console.event.ConnectionEvent;
+
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
 import java.net.PasswordAuthentication;
@@ -13,7 +16,7 @@ import java.util.logging.Logger;
  * Date: Jun 5, 2003
  *
  */
-public abstract class ClientCredentialManager {
+public abstract class ClientCredentialManager implements ConnectionListener {
     protected static final Logger logger = Logger.getLogger(ClientCredentialManager.class.getName());
 
 
@@ -60,6 +63,18 @@ public abstract class ClientCredentialManager {
             subject.getPrivateCredentials().add(pa.getPassword());
         }
     }
+
+    /**
+     * Invoked on connection event (empty implementation)
+     * @param e describing the connection event
+     */
+    public void onConnect(ConnectionEvent e) {}
+
+    /**
+     * Invoked on disconnect (empty implementation)
+     * @param e describing the dosconnect event
+     */
+    public void onDisconnect(ConnectionEvent e) {}
 
     /**
      * internal principal holder class

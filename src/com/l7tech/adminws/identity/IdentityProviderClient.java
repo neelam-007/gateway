@@ -40,11 +40,13 @@ public class IdentityProviderClient implements com.l7tech.identity.IdentityProvi
         return groupManager;
     }
 
-    public void authenticate( PrincipalCredentials pc ) throws AuthenticationException {
+    public void authenticate(PrincipalCredentials pc) throws AuthenticationException {
         throw new AuthenticationException("not supported in this impl");
     }
 
-    public boolean isReadOnly() { return true; }
+    public boolean isReadOnly() {
+        return true;
+    }
 
     public Collection search(EntityType[] types, String searchString) throws FindException {
         EntityHeader[] array = null;
@@ -66,16 +68,13 @@ public class IdentityProviderClient implements com.l7tech.identity.IdentityProvi
     // PRIVATES
     // ************************************************
     private IdentityService getStub() throws RemoteException {
-        if (localStub == null) {
-            localStub = (IdentityService)Locator.getDefault().lookup(IdentityService.class);
-            if (localStub == null) {
-                throw new RemoteException("Cannot obtain the identity service");
-            }
+        IdentityService svc = (IdentityService)Locator.getDefault().lookup(IdentityService.class);
+        if (svc == null) {
+            throw new RemoteException("Cannot obtain the identity service");
         }
-        return localStub;
+        return svc;
     }
 
-    protected IdentityService localStub = null;
     private IdentityProviderConfig config;
     private UserManagerClient userManager;
     private GroupManagerClient groupManager;

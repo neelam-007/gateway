@@ -16,19 +16,17 @@ public class IdentityManagerClient {
     public IdentityManagerClient(IdentityProviderConfig config) {
         this.config = config;
     }
+
     // ************************************************
     // PRIVATES
     // ************************************************
     protected IdentityService getStub() throws RemoteException {
-        if (localStub == null) {
-            localStub = (IdentityService)Locator.getDefault().lookup(IdentityService.class);
-            if (localStub == null) {
-                throw new RemoteException("Cannot obtain the identity service");
-            }
+        IdentityService svc = (IdentityService)Locator.getDefault().lookup(IdentityService.class);
+        if (svc == null) {
+            throw new RemoteException("Cannot obtain the identity service");
         }
-        return localStub;
+        return svc;
     }
 
-    protected IdentityService localStub = null;
     protected IdentityProviderConfig config;
 }

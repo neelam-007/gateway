@@ -41,9 +41,9 @@ public class ComponentRegistry {
      * </UL>
      * @return the applicaiton Main Window
      */
-    public JFrame getMainWindow() {
+    public MainWindow getMainWindow() {
         synchronized (componentsRegistry) {
-            JFrame main = (JFrame)getComponent(MainWindow.NAME);
+            MainWindow main = (MainWindow)getComponent(MainWindow.NAME);
             if (main != null) return main;
             try {
                 MainWindow m = new MainWindow();
@@ -63,9 +63,7 @@ public class ComponentRegistry {
      */
     public boolean hasMainWindow() {
         synchronized (componentsRegistry) {
-            JFrame main = (JFrame)getComponent(MainWindow.NAME);
-
-            return (main != null);
+            return (getComponent(MainWindow.NAME) != null);
         }
     }
 

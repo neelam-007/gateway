@@ -30,25 +30,10 @@ public class RegistryImpl extends Registry {
     }
 
     /**
-     * @return the identity provider config manager
-     */
-    private IdentityProviderConfigManager getGlobalIdProviderConfManager()
-      throws RuntimeException {
-        IdentityProviderConfigManager ipc =
-          (IdentityProviderConfigManager)Locator.
-          getDefault().lookup(IdentityProviderConfigManager.class);
-        if (ipc == null) {
-            throw new RuntimeException("Could not find registered " + IdentityProviderConfigManager.class);
-        }
-        return ipc;
-    }
-
-
-    /**
      * @return the internal identity provider
      */
     public IdentityProvider getInternalProvider() {
-        IdentityProviderConfigManager ipc = getGlobalIdProviderConfManager();
+        IdentityProviderConfigManager ipc = getProviderConfigManager();
         if (ipc == null) {
             throw new RuntimeException("Could not find registered " + IdentityProviderConfigManager.class);
         }

@@ -1,12 +1,10 @@
 package com.l7tech.common.locator;
 
-import com.l7tech.common.locator.AbstractLocator;
-
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.FileNotFoundException;
-import java.util.Properties;
 import java.util.Enumeration;
+import java.util.Properties;
 
 
 /**

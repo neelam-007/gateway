@@ -6,8 +6,10 @@ import com.l7tech.adminws.identity.IdentityService;
 
 import javax.security.auth.login.LoginException;
 import java.net.PasswordAuthentication;
+import java.rmi.RemoteException;
 
 import com.l7tech.adminws.identity.Service;
+import com.l7tech.console.event.ConnectionEvent;
 
 /**
  * Default <code>ClientCredentialManager</code> implementaiton that validates
@@ -15,35 +17,39 @@ import com.l7tech.adminws.identity.Service;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class ClientCredentialManagerImpl extends ClientCredentialManager {
+    private ServiceLookup serviceLookup;
+
     /**
-     * Determines if the passed credentials will grant access to the admin web service.
+     * Determines if the passed credentials will grant access to the admin service.
      * If successful, those credentials will be cached for future admin ws calls.
-     *
-     * This requires the URL to be available in com.l7tech.console.util.Preferences.getPreferences().getServiceUrl();
-     * IOException might be thrown otherwise.
      */
     public synchronized void login(PasswordAuthentication creds)
       throws LoginException, VersionException {
         resetCredentials();
-        try {
-            setCredentials(creds);
-            Object serviceLookup =
-                    Locator.getDefault().lookup(ServiceLookup.class);
-        } catch (Exception e) {
-            LoginException le = new LoginException();
-            le.initCause(e); // no constructor with nested throwable
-            throw le;
-        }
+        setCredentials(creds);
+        serviceLookup =
+          (ServiceLookup)Locator.getDefault().lookup(ServiceLookup.class);
+        logger.info(Locator.getDefault().toString());
         // version check
-        IdentityService remoteInterace = (IdentityService)Locator.getDefault().lookup(IdentityService.class);
         try {
-            String remoteVersion = remoteInterace.echoVersion();
+            IdentityService is = (IdentityService)Locator.getDefault().lookup(IdentityService.class);
+            String remoteVersion = is.echoVersion();
             if (!Service.VERSION.equals(remoteVersion)) {
-                throw new VersionException("Version mismatch. Client= " + Service.VERSION + ". Server= " + remoteVersion);
+                throw new VersionException(Service.VERSION, remoteVersion);
             }
-
-        } catch (java.rmi.RemoteException e) {
+        } catch (RemoteException e) {
             throw new VersionException(e);
         }
+    }
+
+
+    /**
+     * Invoked on disconnect
+     * @param e describing the dosconnect event
+     */
+    public void onDisconnect(ConnectionEvent e) {
+        logger.info("Disconnect message received, invalidating service lookup reference");
+        // invalidate lookup
+        serviceLookup = null;
     }
 }

@@ -1,9 +1,10 @@
 package com.l7tech.common.locator;
 
 import com.l7tech.common.util.Locator;
-import com.l7tech.common.util.WeakSet;
 
+import java.lang.ref.WeakReference;
 import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * This class provides the default way of how to store (Class, Object)
@@ -15,6 +16,8 @@ import java.util.*;
  * @version 1.0
  */
 public abstract class AbstractLocator extends Locator {
+    protected static final Logger logger = Logger.getLogger(AbstractLocator.class.getName());
+
 
     /** The general lookup method.
      * @param template a template describing the services to look for
@@ -147,7 +150,6 @@ public abstract class AbstractLocator extends Locator {
     final class ClassPair extends Item {
         private Class itemInterface;
         private Class itemImplementation;
-        private Object instance;
         private String id;
 
         /**
@@ -156,7 +158,7 @@ public abstract class AbstractLocator extends Locator {
          * @param impl object implementaiton to register
          */
         public ClassPair(Class intf, Class impl) {
-           this(null, intf, impl);
+            this(null, intf, impl);
         }
 
         /**
@@ -187,23 +189,31 @@ public abstract class AbstractLocator extends Locator {
          * @return the instance of the object.
          */
         public Object getInstance() {
-            if (instance != null) {
-                return instance;
-            }
             try {
-                instance = createInstance();
-                WeakSet ws = (WeakSet)instancesCache.get(getType());
-                if (ws == null) {
-                    ws = new WeakSet();
-                    instancesCache.put(getType(), ws);
+                synchronized (instancesCache) {
+                    Object instance;
+                    WeakReference ref = (WeakReference)instancesCache.get(this);
+                    if (ref == null) {
+                        logger.finest("Cache lookup failed, creating new instance - type " + itemImplementation.getName());
+                        Object o = createInstance();
+                        instancesCache.put(this, new WeakReference(o));
+                        instance = o;
+                    } else {
+                        Object o = ref.get();
+                        if (o == null) {
+                            logger.finest("Cache lookup failed, removing weak reference - type " + itemImplementation.getName());
+                            instancesCache.remove(this);
+                            return getInstance();
+                        }
+                        logger.finest("Cache lookup success, returns instance " +o);
+                        instance = o;
+                    }
+                    return instance;
                 }
-                ws.add(instance);
-                return instance;
             } catch (Exception e) {
                 e.printStackTrace(System.err);
                 throw new RuntimeException("error instantiating " + itemImplementation, e);
             }
-
         }
 
         private Object createInstance()

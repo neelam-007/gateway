@@ -131,15 +131,11 @@ public class IdProvConfManagerClient implements IdentityProviderConfigManager {
     // PRIVATES
     // ************************************************
     private IdentityService getStub() throws RemoteException {
-        if (localStub == null) {
-            // localStub = new Client();
-            localStub = (IdentityService)Locator.getDefault().lookup(IdentityService.class);
-            if (localStub == null) {
-                throw new RemoteException("Cannot connect to identity service");
-            }
+        IdentityService svc = (IdentityService)Locator.getDefault().lookup(IdentityService.class);
+        if (svc == null) {
+            throw new RemoteException("Unable to obtain the remote service");
         }
-        return localStub;
+        return svc;
     }
 
-    private IdentityService localStub = null;
 }
