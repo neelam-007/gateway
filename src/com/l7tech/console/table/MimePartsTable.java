@@ -4,6 +4,7 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellEditor;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Vector;
@@ -29,6 +30,10 @@ public class MimePartsTable extends JTable {
         getTableHeader().setReorderingAllowed(false);
         getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
+        TableCellEditor  cellEditor = getDefaultEditor(Integer.class);
+        if(cellEditor instanceof DefaultCellEditor) {
+            ((DefaultCellEditor) cellEditor).setClickCountToStart(1);
+        }
         addMouseListenerToHeaderInTable();
     }
 

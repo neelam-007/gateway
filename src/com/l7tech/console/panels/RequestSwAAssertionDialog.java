@@ -19,6 +19,7 @@ import com.intellij.uiDesigner.core.Spacer;
 import javax.swing.*;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableCellEditor;
 import javax.swing.event.EventListenerList;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
@@ -93,6 +94,14 @@ public class RequestSwAAssertionDialog extends JDialog {
         okButton.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
+
+                TableCellEditor  cellEditor = getMimePartsTable().getDefaultEditor(Integer.class);
+
+                if(!cellEditor.stopCellEditing()) {
+                    JOptionPane.showMessageDialog(RequestSwAAssertionDialog.this, "The max. length must be an integer. Please re-enter an integer.", "Error!", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
                 fireEventAssertionChanged(assertion);
                 dispose();
             }
