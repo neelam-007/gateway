@@ -91,7 +91,7 @@ public class XmlSecurityPropertiesAction extends NodeAction {
 
         String signOnly = "Sign only";
         String encrypt = "Sign and encrypt";
-        ElementSecurity[] ese = ass.elements();
+        ElementSecurity[] ese = ass.getElements();
         if (ese == null || ese.length == 0) {
             throw new IllegalArgumentException("empty elements");
         }

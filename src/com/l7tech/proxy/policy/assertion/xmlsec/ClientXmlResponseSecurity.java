@@ -59,7 +59,7 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
             todo: temporary change in migration to multielement sign/encrypt
             need to upgrade the multielement handling below
         */ 
-        this.data = data.elements()[0];
+        this.data = data.getElements()[0];
     }
 
     /**
