@@ -2,6 +2,11 @@ package com.l7tech.console.tree.policy;
 
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.console.action.SslPropertiesAction;
+
+import javax.swing.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Class <code>SslAssertionTreeNode</code> specifies the SSL
@@ -29,6 +34,22 @@ public class SslAssertionTreeNode extends LeafAssertionTreeNode {
     public boolean canDelete() {
         return true;
     }
+
+
+    /**
+     * Get the set of actions associated with this node.
+     * This may be used e.g. in constructing a context menu.
+     *
+     * @return actions appropriate to the node
+     */
+    public Action[] getActions() {
+        java.util.List list = new ArrayList();
+        list.addAll(Arrays.asList(super.getActions()));
+        Action a = new SslPropertiesAction(this);
+        list.add(a);
+        return (Action[]) list.toArray(new Action[]{});
+    }
+
 
     /**
      * subclasses override this method specifying the resource name
