@@ -47,10 +47,10 @@ public class Main {
      */
     public void run(String[] args) {
         try {
+            setInitialEnvironment();
             final SplashScreen screen = new SplashScreen("/com/l7tech/console/resources/splash-screen.gif");
             try {
                 screen.splash();
-                setInitialEnvironment();
                 JdkLoggerConfigurator.configure("com.l7tech.console", "com/l7tech/console/resources/logging.properties");
                 Logger log = Logger.getLogger(getClass().getName());
 
