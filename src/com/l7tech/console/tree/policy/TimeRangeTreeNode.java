@@ -34,7 +34,7 @@ public class TimeRangeTreeNode extends LeafAssertionTreeNode {
             String nodeName = "Available ";
             if (nodeAssertion.isControlDay()) {
                 nodeName += week[nodeAssertion.getStartDayOfWeek()-1] +
-                            " trough " + week[nodeAssertion.getEndDayOfWeek()-1] + " ";
+                            " through " + week[nodeAssertion.getEndDayOfWeek()-1] + " ";
             }
 
             if (nodeAssertion.isControlTime() && nodeAssertion.getTimeRange() != null) {
