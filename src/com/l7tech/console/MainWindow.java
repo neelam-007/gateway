@@ -2142,6 +2142,16 @@ public class MainWindow extends JFrame {
           }
       };
 
+    /**
+     * called when the policy currently edited gets deleted
+     */
+    public void firePolicyEditDeleted() {
+        getValidateMenuItem().setEnabled(false);
+        getSaveMenuItem().setEnabled(false);
+        getExportMenuItem().setEnabled(false);
+        getImportMenuItem().setEnabled(false);
+    }
+
     public void firePolicyEdit(PolicyEditorPanel policyPanel) {
         // enable the items that make sense to show when a policy is being edited
         getValidateMenuItem().setAction(policyPanel.getValidateAction());
