@@ -4,6 +4,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
 import com.l7tech.identity.InvalidIdProviderCfgException;
+import com.l7tech.identity.Group;
 
 import java.rmi.RemoteException;
 import java.rmi.Remote;
@@ -23,7 +24,7 @@ public interface IdentityService  extends Remote {
 
     IdentityProviderConfig findIdentityProviderConfigByPrimaryKey(long oid) throws RemoteException, FindException;
 
-    long saveIdentityProviderConfig(IdentityProviderConfig identityProviderConfig)
+    long saveIdentityProviderConfig(IdentityProviderConfig cfg)
                                 throws RemoteException, SaveException, UpdateException;
 
     void deleteIdentityProviderConfig(long oid) throws RemoteException, DeleteException;
@@ -36,7 +37,7 @@ public interface IdentityService  extends Remote {
     EntityHeader[] searchIdentities(long idProvCfgId, EntityType[] types, String pattern)
                                 throws RemoteException, FindException;
 
-    com.l7tech.identity.User findUserByPrimaryKey(long idProvCfgId, String userId)
+    User findUserByPrimaryKey(long idProvCfgId, String userId)
                                 throws RemoteException, FindException;
 
     void deleteUser(long idProvCfgId, String userId) throws RemoteException, DeleteException;
@@ -48,12 +49,12 @@ public interface IdentityService  extends Remote {
     EntityHeader[] findAllGroupsByOffset(long idProvCfgId, int offset, int windowSize)
                                 throws RemoteException, FindException;
 
-    com.l7tech.identity.Group findGroupByPrimaryKey(long idProvCfgId, String groupId)
+    Group findGroupByPrimaryKey(long idProvCfgId, String groupId)
                                 throws RemoteException, FindException;
 
     void deleteGroup(long idProvCfgId, String groupId) throws RemoteException, DeleteException;
 
-    long saveGroup(long idProvCfgId, com.l7tech.identity.Group group)
+    long saveGroup(long idProvCfgId, Group group)
                                 throws RemoteException, SaveException, UpdateException;
 
     String getUserCert(long idProvCfgId, String userId)
@@ -61,6 +62,6 @@ public interface IdentityService  extends Remote {
 
     void revokeCert(long idProvCfgId, String userId) throws RemoteException, UpdateException;
 
-    void testIdProviderConfig(IdentityProviderConfig identityProviderConfig)
+    void testIdProviderConfig(IdentityProviderConfig cfg)
                                 throws RemoteException, InvalidIdProviderCfgException;
 }
