@@ -15,6 +15,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Properties;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -174,6 +175,9 @@ public class HibernatePersistenceManager extends PersistenceManager {
             logger.throwing( getClass().getName(), "doFindByPrimaryKey", se );
             close( context );
             throw new FindException( se.toString(), se );
+        } catch (ObjectNotFoundException e) {
+            logger.log(Level.FINE, "object not found, returning null", e);
+            return null;
         } catch ( HibernateException he ) {
             logger.throwing( getClass().getName(), "doFindByPrimaryKey", he );
             throw new FindException( he.toString(), he );
