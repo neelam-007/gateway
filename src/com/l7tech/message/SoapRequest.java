@@ -98,7 +98,8 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
     }
 
     /**
-     * Closes any resources associated with the request.  If you override this method, you MUST call super.close() in your overridden version!
+     * Closes any resources associated with the request.  If you override this
+     * method, you MUST call super.close() in your overridden version!
      */
     public void close() {
         MessageProcessor.setCurrentRequest(null);
