@@ -1,8 +1,7 @@
 package com.l7tech.logging;
 
-import java.util.logging.Logger;
-import java.util.logging.LogRecord;
-import java.util.logging.Level;
+import javax.naming.NamingException;
+import java.util.logging.*;
 
 /**
  * Layer 7 technologies, inc.
@@ -37,12 +36,39 @@ public class ServerLogManager extends LogManager {
             systemLogger = java.util.logging.Logger.getLogger(SYSTEM_LOGGER_NAME);
             systemLogMemHandler = new MemHandler();
             systemLogger.addHandler(systemLogMemHandler);
-            systemLogger.setLevel(Level.INFO);
+            /* add our own logging file (instead of catalina.out
+            try {
+                FileHandler fileHandler = new FileHandler("ssglog");
+                fileHandler.setFormatter(new SimpleFormatter());
+                systemLogger.addHandler(fileHandler);
+            } catch (Exception e) {
+                // dont use normal logger here
+                e.printStackTrace(System.err);
+                throw new RuntimeException(e);
+            }*/
+            Level level = getLogLevel();
+            systemLogger.setLevel(level);
             // add other log handlers here as necessary
         }
+    }
+
+    private Level getLogLevel() {
+        // default level is INFO but is customizable through web.xml
+        try {
+            javax.naming.Context cntx = new javax.naming.InitialContext();
+            String level = (String)(cntx.lookup("java:comp/env/" + levelEnvEntryName));
+            if (level != null && level.length() > 0)
+                return Level.parse(level);
+
+        } catch (NamingException e) {
+            // note, should not user logger here
+            e.printStackTrace(System.err);
+        }
+        return Level.INFO;
     }
 
     private Logger systemLogger = null;
     private static final String SYSTEM_LOGGER_NAME = "SSG System Log";
     private MemHandler systemLogMemHandler = null;
+    private static final String levelEnvEntryName = "SsgLogLevel";
 }

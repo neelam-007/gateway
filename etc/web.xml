@@ -174,4 +174,12 @@
         <env-entry-type>java.lang.String</env-entry-type>
     </env-entry>
 
+    <env-entry>
+        <description>Log level for the mem handler and catalina.out.</description>
+        <!-- hint: INFO for normal use, FINE or FINER for debug -->
+        <env-entry-name>SsgLogLevel</env-entry-name>
+        <env-entry-value>INFO</env-entry-value>
+        <env-entry-type>java.lang.String</env-entry-type>
+    </env-entry>
+
 </web-app>
