@@ -26,6 +26,8 @@ import java.sql.SQLException;
 public class VersionCheckBenchmarkTest extends TestCase {
     static final String JDBC_URL = "jdbc:mysql://localhost/test?user=webuser&password=resubew";
     static final String JDBC_DRIVER = "com.mysql.jdbc.Driver";
+    private static final String VERSION_CHECK_SQL = "select version from test_version_check where id = ?";
+
     static DataSource dataSource;
 
     int runnableInvocationsCounter = 0;
@@ -104,7 +106,7 @@ public class VersionCheckBenchmarkTest extends TestCase {
                 Connection conn = null;
                 try {
                     conn = dataSource.getConnection();
-                    PreparedStatement ps = conn.prepareStatement("select version from test_version_check where id = ?");
+                    PreparedStatement ps = conn.prepareStatement(VERSION_CHECK_SQL);
                     ps.setInt(1, 1);
                     ResultSet rs = ps.executeQuery();
                     rs.getInt(1);
