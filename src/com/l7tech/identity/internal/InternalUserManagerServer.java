@@ -2,17 +2,12 @@ package com.l7tech.identity.internal;
 
 import cirrus.hibernate.HibernateException;
 import cirrus.hibernate.Session;
-import com.l7tech.identity.Group;
-import com.l7tech.identity.IdProvConfManagerServer;
-import com.l7tech.identity.User;
-import com.l7tech.identity.UserManager;
+import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.*;
 import com.l7tech.common.util.Locator;
 
-import java.security.cert.Certificate;
-import java.security.cert.CertificateEncodingException;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
@@ -34,7 +29,7 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
 
     public User findByPrimaryKey(String oid) throws FindException {
         try {
-            User out = (User)_manager.findByPrimaryKey( getContext(), getImpClass(), Long.parseLong(oid));
+            InternalUser out = (InternalUser)_manager.findByPrimaryKey( getContext(), getImpClass(), Long.parseLong(oid));
             out.setProviderId(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID);
             return out;
         } catch ( SQLException se ) {
@@ -53,7 +48,7 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
             case 0:
                 return null;
             case 1:
-                User u = (User)users.get(0);
+                InternalUser u = (InternalUser)users.get(0);
                 u.setProviderId( IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID );
                 return u;
             default:
@@ -132,14 +127,16 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
     }
 
     public void delete(User user) throws DeleteException {
+        InternalUser imp = cast(user);
+
         try {
-            User originalUser = findByPrimaryKey(Long.toString(user.getOid()));
+            InternalUser originalUser = (InternalUser)findByPrimaryKey( imp.getUniqueIdentifier() );
             if (isLastAdmin(originalUser)) {
                 String msg = "An attempt was made to nuke the last standing adminstrator";
                 logger.severe(msg);
                 throw new DeleteException(msg);
             }
-            _manager.delete( getContext(), user );
+            _manager.delete( getContext(), imp );
         } catch ( SQLException se ) {
             logger.log(Level.SEVERE, null, se);
             throw new DeleteException( se.toString(), se );
@@ -149,7 +146,15 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
         }
     }
 
-    public long save(User user) throws SaveException {
+    public void delete(String identifier) throws DeleteException {
+        InternalUser imp = new InternalUser();
+        imp.setOid( Long.valueOf( identifier ).longValue() );
+        delete( imp );
+    }
+
+    public String save(User user) throws SaveException {
+        InternalUser imp = cast(user);
+
         try {
             // check to see if an existing user with same login exist
             User existingDude = null;
@@ -162,11 +167,21 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
                 throw new SaveException("Cannot save this user. Existing user with login \'"
                                         + user.getLogin() + "\' present.");
             }
-            return _manager.save( getContext(), user );
+            return new Long( _manager.save( getContext(), imp ) ).toString();
         } catch ( SQLException se ) {
             logger.log(Level.SEVERE, null, se);
             throw new SaveException( se.toString(), se );
         }
+    }
+
+    static InternalUser cast(User user) {
+        InternalUser imp;
+        if ( user instanceof UserBean ) {
+            imp = new InternalUser( (UserBean)user );
+        } else {
+            imp = (InternalUser)user;
+        }
+        return imp;
     }
 
     /**
@@ -175,14 +190,16 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
      * @param user existing user
      */
     public void update( User user ) throws UpdateException {
+        InternalUser imp = cast( user );
+
         try {
-            User originalUser = findByPrimaryKey(Long.toString(user.getOid()));
+            InternalUser originalUser = (InternalUser)findByPrimaryKey( user.getUniqueIdentifier() );
             // here, we should make sure that IF the user is an administrator, he should not
             // delete his membership to the admin group unless there is another exsiting member
             if (isLastAdmin(originalUser)) {
                 // was he stupid enough to nuke his admin membership?
                 boolean stillAdmin = false;
-                Iterator newgrpsiterator = user.getGroups().iterator();
+                Iterator newgrpsiterator = imp.getGroups().iterator();
                 while (newgrpsiterator.hasNext()) {
                     Group grp = (Group)newgrpsiterator.next();
                     if (Group.ADMIN_GROUP_NAME.equals(grp.getName())) {
@@ -203,6 +220,7 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
             if (!originalPasswd.equals(newPasswd)) {
                 logger.info("Revoking cert for user " + originalUser.getLogin() + " because he is changing his passwd.");
                 // must revoke the cert
+
                 ClientCertManager man = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
                 try {
                     man.revokeUserCert(originalUser);
@@ -225,7 +243,8 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
     }
 
     public EntityHeader userToHeader(User user) {
-        return new EntityHeader(user.getOid(), EntityType.USER, user.getName(), null);
+        InternalUser imp = (InternalUser)user;
+        return new EntityHeader(imp.getUniqueIdentifier(), EntityType.USER, user.getName(), null);
     }
 
     public User headerToUser(EntityHeader header) {
@@ -242,7 +261,7 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
     }
 
     public Class getImpClass() {
-        return User.class;
+        return InternalUser.class;
     }
 
     public Class getInterfaceClass() {
@@ -260,7 +279,8 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
      * @return true is this user is an administrator and no other users are
      */
     private boolean isLastAdmin(User currentUser) {
-        Iterator i = currentUser.getGroups().iterator();
+        InternalUser imp = (InternalUser)currentUser;
+        Iterator i = imp.getGroups().iterator();
         while (i.hasNext()) {
             Group grp = (Group)i.next();
             // is he an administrator?
