@@ -134,6 +134,10 @@ public class CertManagerWindow extends JDialog {
 
                 try {
                     getTrustedCertAdmin().deleteCert(((Long) o).longValue());
+                    
+                    // reload all certs from server
+                    loadTrustedCerts();
+
                 } catch (FindException e) {
                     e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
                 } catch (DeleteException e) {
@@ -191,7 +195,7 @@ public class CertManagerWindow extends JDialog {
     public void addMouseListenerToHeaderInTable(JTable table) {
 
         final JTable tableView = table;
-        tableView.setColumnSelectionAllowed(true);
+        tableView.setColumnSelectionAllowed(false);
         MouseAdapter listMouseListener = new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
                 TableColumnModel columnModel = tableView.getColumnModel();
@@ -233,6 +237,10 @@ public class CertManagerWindow extends JDialog {
 
                             try {
                                 getTrustedCertAdmin().saveCert(ci.getTrustedCert());
+
+                                // reload all certs from server
+                                loadTrustedCerts();
+
                             } catch (SaveException e) {
                                 e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
                             } catch (RemoteException e) {
@@ -320,6 +328,14 @@ public class CertManagerWindow extends JDialog {
         }
 
         return tca;
+    }
+
+    /**
+     * clean up when the window is closed.
+     */
+    public void dispose() {
+        instance = null;
+        super.dispose();
     }
 
     {
