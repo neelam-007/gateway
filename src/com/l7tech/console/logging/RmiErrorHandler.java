@@ -9,6 +9,7 @@ import com.l7tech.common.util.ExceptionUtils;
 import javax.swing.*;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
+import java.net.SocketException;
 
 /**
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
@@ -26,7 +27,7 @@ public class RmiErrorHandler implements ErrorHandler {
      */
     public void handle(ErrorEvent e) {
         final Throwable throwable = ExceptionUtils.unnestToRoot(e.getThrowable());
-        if (throwable instanceof RemoteException) {
+        if (throwable instanceof RemoteException || throwable instanceof SocketException) {
             final Throwable t = e.getThrowable();
             Level level = e.getLevel();
             if (level != Level.SEVERE) { // bump if necessary
