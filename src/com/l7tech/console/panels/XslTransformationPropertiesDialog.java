@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
@@ -147,7 +148,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
     }
 
     private void readFromFile() {
-        JFileChooser dlg = new JFileChooser();
+        JFileChooser dlg = Utilities.createJFileChooser();
 
         if (JFileChooser.APPROVE_OPTION != dlg.showOpenDialog(this)) {
             return;

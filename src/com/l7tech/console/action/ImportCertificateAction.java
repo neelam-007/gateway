@@ -1,5 +1,6 @@
 package com.l7tech.console.action;
 
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.TopComponents;
@@ -59,7 +60,7 @@ public class ImportCertificateAction extends SecureAction {
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        JFileChooser fc = new JFileChooser();
+        JFileChooser fc = Utilities.createJFileChooser();
         FileFilter filter = new FileFilter() {
             public boolean accept(File f) {
                 if (f.isDirectory())

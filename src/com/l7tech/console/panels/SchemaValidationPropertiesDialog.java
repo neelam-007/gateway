@@ -1,5 +1,6 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
@@ -9,15 +10,14 @@ import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.service.PublishedService;
-import com.l7tech.common.gui.util.Utilities;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
+import org.dom4j.DocumentException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
-import org.dom4j.DocumentException;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
@@ -294,7 +294,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
     }
 
     private void readFromFile() throws DocumentException, IOException, SAXParseException {
-        JFileChooser dlg = new JFileChooser();
+        JFileChooser dlg = Utilities.createJFileChooser();
 
         if (JFileChooser.APPROVE_OPTION != dlg.showOpenDialog(this)) {
             return;

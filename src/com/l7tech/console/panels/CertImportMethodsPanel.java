@@ -4,6 +4,7 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.l7tech.common.gui.util.FontUtil;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.util.CertUtils;
@@ -75,7 +76,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         browseButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
                 //Create a file chooser
-                final JFileChooser fc = new JFileChooser();
+                final JFileChooser fc = Utilities.createJFileChooser();
 
                 int returnVal = fc.showOpenDialog(CertImportMethodsPanel.this);
 

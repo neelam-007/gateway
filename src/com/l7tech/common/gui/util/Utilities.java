@@ -6,17 +6,11 @@ package com.l7tech.common.gui.util;
 import javax.swing.*;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.FocusListener;
-import java.awt.event.FocusEvent;
+import java.awt.event.*;
 import java.awt.geom.Rectangle2D;
-import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.util.logging.Logger;
 
 /**
  * This class is a bag of utilites shared by panels.
@@ -24,6 +18,8 @@ import java.beans.PropertyChangeEvent;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class Utilities {
+    private static final Logger logger = Logger.getLogger(Utilities.class.getName());
+
     public static final String CONTEXT_CUT = "Cut";
     public static final String CONTEXT_COPY = "Copy";
     public static final String CONTEXT_PASTE = "Paste";
@@ -267,6 +263,35 @@ public class Utilities {
      * mouse listener will do an automatic "select all" before popping up the menu.
      */
     public static final String PROPERTY_CONTEXT_MENU_AUTO_SELECT_ALL = "com.l7tech.common.gui.util.Utilities.contextMenuAutoSelectAll";
+
+    /**
+     * A factory that creates a JFileChooser, working around Java bug parade #4711700.  Will retry
+     * for up to one second.
+     * @return a new JFileChooser instance.  Never null.
+     * @throws RuntimeException if a new JFileChooser could not be created.
+     */
+    public static JFileChooser createJFileChooser() throws RuntimeException {
+        JFileChooser fc = null;
+        int tries = 40;
+        while (fc == null) {
+            try {
+                fc = new JFileChooser();
+                break;
+            } catch (NullPointerException nfe) {
+                // Bug parade 4711700 -- retry a few times before giving up
+                if (--tries < 0)
+                    throw new RuntimeException("J4711700 workaround: retry count exceeded", nfe);
+                try {
+                    Thread.sleep(25);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("J4711700 workaround: interrupted while waiting to retry", nfe);
+                }
+                logger.finest("J4711700 workaround: retrying");
+            }
+        }
+        return fc;
+    }
 
     /**
      * Creates pop-up menus for text components.
