@@ -36,7 +36,7 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
     private boolean showTitleLabel;
 
     /**
-     * Creates new form WizardPanel
+     * Creates new form SubjectConfirmationWizardStepPanel
      */
     public SubjectConfirmationWizardStepPanel(WizardStepPanel next, boolean showTitleLabel) {
         super(next);
@@ -45,10 +45,21 @@ public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
     }
 
     /**
-     * Creates new form Subject confirmation WizardPanel
+     * Creates new form SubjectConfirmationWizardStepPanel
      */
     public SubjectConfirmationWizardStepPanel(WizardStepPanel next) {
         this(next, true);
+    }
+
+
+    /**
+     * Creates new form Subject confirmation WizardPanel
+     */
+    public SubjectConfirmationWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, JDialog owner) {
+        super(next);
+        this.showTitleLabel = showTitleLabel;
+        setOwner(owner);
+        initialize();
     }
 
     /**

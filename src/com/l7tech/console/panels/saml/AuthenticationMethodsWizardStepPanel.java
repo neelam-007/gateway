@@ -46,13 +46,25 @@ public class AuthenticationMethodsWizardStepPanel extends WizardStepPanel {
     private boolean showTitleLabel;
 
     /**
-     * Creates new form WizardPanel. Full constructor, specifiy
+     * Creates new form AuthenticationMethodsWizardStepPanel.
      */
     public AuthenticationMethodsWizardStepPanel(WizardStepPanel next, boolean showTitleLabel) {
         super(next);
         this.showTitleLabel = showTitleLabel;
         initialize();
     }
+
+    /**
+     * Creates new form AuthenticationMethodsWizardStepPanel. Full constructor, that specifies
+     * the owner dialog.
+     */
+    public AuthenticationMethodsWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, JDialog owner) {
+        super(next);
+        this.showTitleLabel = showTitleLabel;
+        setOwner(owner);
+        initialize();
+    }
+
     /**
      * Creates new form WizardPanel with default optins
      */

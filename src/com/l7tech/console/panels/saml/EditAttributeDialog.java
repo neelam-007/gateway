@@ -329,7 +329,7 @@ public class EditAttributeDialog extends JDialog {
     private boolean validateInput() {
         String name = attributeNameField.getText();
 
-        if (name == null || "".equals(name)) {
+        if (name == null || "".equals(name.trim())) {
             JOptionPane.
             showMessageDialog(this,
                               resources.getString("attributeNameField.error.empty"),
@@ -340,7 +340,7 @@ public class EditAttributeDialog extends JDialog {
         }
 
         String value = attributeValueField.getText();
-        if (value == null || "".equals(value)) {
+        if (value == null || "".equals(value.trim())) {
             JOptionPane.
             showMessageDialog(this,
                               resources.getString("attributeValueField.error.empty"),

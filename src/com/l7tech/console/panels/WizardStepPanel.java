@@ -16,7 +16,7 @@ import java.util.EventListener;
  * @version 1.0
  */
 public abstract class WizardStepPanel extends JPanel {
-    protected Wizard owner;
+    protected JDialog owner;
     private EventListenerList listenerList = new WeakEventListenerList();
     private WizardStepPanel nextPanel;
     private boolean showDescriptionPanel = true;
@@ -30,11 +30,11 @@ public abstract class WizardStepPanel extends JPanel {
         this.skipped = skipped;
     }
 
-    protected JDialog getOwner() {
+    public JDialog getOwner() {
         return owner;
     }
 
-    protected void setOwner(Wizard owner) {
+    protected void setOwner(JDialog owner) {
         this.owner = owner;
     }
 

@@ -33,18 +33,29 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
     private boolean showTitleLabel;
 
     /**
-      * Creates new form WizardPanel
-      */
-     public SubjectConfirmationNameIdentifierWizardStepPanel(WizardStepPanel next, boolean showTitleLabel) {
-         super(next);
-        this.showTitleLabel = showTitleLabel;
-         initialize();
-     }
-    /**
-     * Creates new form WizardPanel
+     * Creates new form SubjectConfirmationNameIdentifierWizardStepPanel
      */
-    public SubjectConfirmationNameIdentifierWizardStepPanel(WizardStepPanel next) {
-        this(next, true);
+    public SubjectConfirmationNameIdentifierWizardStepPanel(WizardStepPanel next, boolean showTitleLabel) {
+        super(next);
+        this.showTitleLabel = showTitleLabel;
+        initialize();
+    }
+
+    /**
+      * Creates new form SubjectConfirmationNameIdentifierWizardStepPanel
+      */
+     public SubjectConfirmationNameIdentifierWizardStepPanel(WizardStepPanel next) {
+         this(next, true);
+     }
+
+    /**
+     * Creates new form SubjectConfirmationNameIdentifierWizardStepPanel
+     */
+    public SubjectConfirmationNameIdentifierWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, JDialog owner) {
+        super(next);
+        this.showTitleLabel = showTitleLabel;
+        setOwner(owner);
+        initialize();
     }
 
     /**

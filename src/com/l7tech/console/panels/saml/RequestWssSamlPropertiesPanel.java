@@ -64,33 +64,33 @@ public class RequestWssSamlPropertiesPanel extends JDialog {
     private void initialize() {
         final Border emptyBorder = BorderFactory.createEmptyBorder(10, 10, 5, 10);
         Collection panels = new ArrayList();
-        if (assertion.getAuthenticationStatement() !=null) {
-            AuthenticationMethodsWizardStepPanel authenticationMethodsWizardStepPanel = new AuthenticationMethodsWizardStepPanel(null, false);
+        if (assertion.getAuthenticationStatement() != null) {
+            AuthenticationMethodsWizardStepPanel authenticationMethodsWizardStepPanel = new AuthenticationMethodsWizardStepPanel(null, false, this);
             authenticationMethodsWizardStepPanel.setBorder(emptyBorder);
-             panels.add(authenticationMethodsWizardStepPanel);
-             tabbedPane.add(authenticationMethodsWizardStepPanel.getStepLabel(), authenticationMethodsWizardStepPanel);
+            panels.add(authenticationMethodsWizardStepPanel);
+            tabbedPane.add(authenticationMethodsWizardStepPanel.getStepLabel(), authenticationMethodsWizardStepPanel);
         }
-        if (assertion.getAuthorizationStatement() !=null) {
-            AuthorizationStatementWizardStepPanel authorizationStatementWizardStepPanel = new AuthorizationStatementWizardStepPanel(null, false);
+        if (assertion.getAuthorizationStatement() != null) {
+            AuthorizationStatementWizardStepPanel authorizationStatementWizardStepPanel = new AuthorizationStatementWizardStepPanel(null, false, this);
             authorizationStatementWizardStepPanel.setBorder(emptyBorder);
             panels.add(authorizationStatementWizardStepPanel);
             tabbedPane.add(authorizationStatementWizardStepPanel.getStepLabel(), authorizationStatementWizardStepPanel);
         }
-        if (assertion.getAttributeStatement() !=null) {
-            AttributeStatementWizardStepPanel attributeMethodsWizardStepPanel = new AttributeStatementWizardStepPanel(null, false);
+        if (assertion.getAttributeStatement() != null) {
+            AttributeStatementWizardStepPanel attributeMethodsWizardStepPanel = new AttributeStatementWizardStepPanel(null, false, this);
             attributeMethodsWizardStepPanel.setBorder(emptyBorder);
             panels.add(attributeMethodsWizardStepPanel);
             tabbedPane.add(attributeMethodsWizardStepPanel.getStepLabel(), attributeMethodsWizardStepPanel);
         }
-        SubjectConfirmationWizardStepPanel subjectConfirmationWizardStepPanel = new SubjectConfirmationWizardStepPanel(null, false);
+        SubjectConfirmationWizardStepPanel subjectConfirmationWizardStepPanel = new SubjectConfirmationWizardStepPanel(null, false, this);
         subjectConfirmationWizardStepPanel.setBorder(emptyBorder);
         panels.add(subjectConfirmationWizardStepPanel);
 
-        SubjectConfirmationNameIdentifierWizardStepPanel subjectConfirmationNameIdentifierWizardStepPanel = new SubjectConfirmationNameIdentifierWizardStepPanel(null, false);
+        SubjectConfirmationNameIdentifierWizardStepPanel subjectConfirmationNameIdentifierWizardStepPanel = new SubjectConfirmationNameIdentifierWizardStepPanel(null, false, this);
         subjectConfirmationNameIdentifierWizardStepPanel.setBorder(emptyBorder);
         panels.add(subjectConfirmationNameIdentifierWizardStepPanel);
 
-        ConditionsWizardStepPanel conditionsWizardStepPanel = new ConditionsWizardStepPanel(null, false);
+        ConditionsWizardStepPanel conditionsWizardStepPanel = new ConditionsWizardStepPanel(null, false, this);
         conditionsWizardStepPanel.setBorder(emptyBorder);
         panels.add(conditionsWizardStepPanel);
         wizardPanels = (WizardStepPanel[])panels.toArray(new WizardStepPanel[]{});

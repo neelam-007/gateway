@@ -24,19 +24,32 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
     private boolean showTitleLabel;
 
     /**
-     * Creates new form WizardPanel
+     * Creates new form ConditionsWizardStepPanel
      */
     public ConditionsWizardStepPanel(WizardStepPanel next, boolean showTitleLabel) {
         super(next);
         this.showTitleLabel = showTitleLabel;
         initialize();
     }
+
+
     /**
-     * Creates new form WizardPanel
+     * Creates new form ConditionsWizardStepPanel
+     */
+    public ConditionsWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, JDialog owner) {
+        super(next);
+        this.showTitleLabel = showTitleLabel;
+        setOwner(owner);
+        initialize();
+    }
+
+    /**
+     * Creates new form ConditionsWizardStepPanel
      */
     public ConditionsWizardStepPanel(WizardStepPanel next) {
         this(next, true);
     }
+
 
     /**
      * Provides the wizard panel with the opportunity to update the

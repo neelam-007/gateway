@@ -28,7 +28,7 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
     private boolean showTitleLabel;
 
     /**
-     * Creates new form WizardPanel
+     * Creates new form AuthorizationStatementWizardStepPanel
      */
     public AuthorizationStatementWizardStepPanel(WizardStepPanel next, boolean showTitleLabel) {
         super(next);
@@ -37,10 +37,21 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
     }
 
     /**
-     * Creates new form WizardPanel
+     * Creates new form AuthorizationStatementWizardStepPanel
      */
     public AuthorizationStatementWizardStepPanel(WizardStepPanel next) {
         this(next, true);
+    }
+
+
+    /**
+     * Creates new form AuthorizationStatementWizardStepPanel
+     */
+    public AuthorizationStatementWizardStepPanel(WizardStepPanel next,  boolean showTitleLabel, JDialog owner) {
+        super(next);
+        this.showTitleLabel = showTitleLabel;
+        setOwner(owner);
+        initialize();
     }
 
     /**

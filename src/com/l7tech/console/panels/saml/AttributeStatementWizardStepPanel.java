@@ -38,7 +38,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
     private DefaultTableModel attributesTableModel;
 
     /**
-     * Creates new form WizardPanel
+     * Creates new form AttributeStatementWizardStepPanel
      */
     public AttributeStatementWizardStepPanel(WizardStepPanel next, boolean showTitleLabel) {
         super(next);
@@ -47,10 +47,20 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
     }
 
     /**
-     * Creates new form WizardPanel
+      * Creates new form AttributeStatementWizardStepPanel
+      */
+     public AttributeStatementWizardStepPanel(WizardStepPanel next) {
+         this(next, true);
+     }
+
+    /**
+     * Creates new form AttributeStatementWizardStepPanel
      */
-    public AttributeStatementWizardStepPanel(WizardStepPanel next) {
-        this(next, true);
+    public AttributeStatementWizardStepPanel(WizardStepPanel next, boolean showTitleLabel, JDialog owner) {
+        super(next);
+        this.showTitleLabel = showTitleLabel;
+        setOwner(owner);
+        initialize();
     }
 
     /**
