@@ -43,7 +43,7 @@ public class JmsAdminStub implements JmsAdmin {
         return providers;
     }
 
-    public EntityHeader[] findAllConnections() throws RemoteException, FindException {
+    public synchronized EntityHeader[] findAllConnections() throws RemoteException, FindException {
         Collection list = new ArrayList();
         for (Iterator i = connections.keySet().iterator(); i.hasNext();) {
             Long key = (Long) i.next();
@@ -52,15 +52,15 @@ public class JmsAdminStub implements JmsAdmin {
         return (EntityHeader[]) list.toArray(new EntityHeader[] {});
     }
 
-    private EntityHeader fromConnection(JmsConnection p) {
+    private synchronized EntityHeader fromConnection(JmsConnection p) {
         return new EntityHeader(p.getOid(), EntityType.JMS_CONNECTION, p.getName(), null);
     }
 
-    public JmsConnection findConnectionByPrimaryKey(long oid) throws RemoteException, FindException {
+    public synchronized JmsConnection findConnectionByPrimaryKey(long oid) throws RemoteException, FindException {
         return (JmsConnection) connections.get(new Long(oid));
     }
 
-    public EntityHeader[] findAllMonitoredEndpoints() throws RemoteException, FindException {
+    public synchronized EntityHeader[] findAllMonitoredEndpoints() throws RemoteException, FindException {
         Collection list = new ArrayList();
         for (Iterator i = monitoredEndpoints.iterator(); i.hasNext();) {
             JmsEndpoint endpoint = (JmsEndpoint) i.next();
@@ -69,11 +69,27 @@ public class JmsAdminStub implements JmsAdmin {
         return (EntityHeader[]) list.toArray(new EntityHeader[0]);
     }
 
+    public synchronized void saveAllMonitoredEndpoints(long[] oids) throws RemoteException, FindException {
+        List foundEndpoints = new ArrayList();
+        for (int i = 0; i < oids.length; i++) {
+            long oid = oids[i];
+            JmsEndpoint endpoint = findEndpointByPrimaryKey(oid);
+            foundEndpoints.add(endpoint);
+        }
+
+        List monitoredHeaders = new ArrayList();
+        for (Iterator i = foundEndpoints.iterator(); i.hasNext();) {
+            JmsEndpoint endpoint = (JmsEndpoint) i.next();
+            monitoredHeaders.add(fromEndpoint(endpoint));
+        }
+        monitoredEndpoints = monitoredHeaders;
+    }
+
     private EntityHeader fromEndpoint(JmsEndpoint endpoint) {
         return new EntityHeader(endpoint.getOid(), EntityType.UNDEFINED,  endpoint.getDestinationName(), endpoint.getName());
     }
 
-    public long saveConnection(JmsConnection connection) throws RemoteException, UpdateException, SaveException, VersionException {
+    public synchronized long saveConnection(JmsConnection connection) throws RemoteException, UpdateException, SaveException, VersionException {
         long oid = connection.getOid();
         if (oid == 0 || oid == Entity.DEFAULT_OID) {
             oid = StubDataStore.defaultStore().nextObjectId();
@@ -84,9 +100,33 @@ public class JmsAdminStub implements JmsAdmin {
         return oid;
     }
 
-    public void deleteConnection(long id) throws RemoteException, DeleteException {
+    public synchronized void deleteConnection(long id) throws RemoteException, DeleteException {
         if (connections.remove(new Long(id)) == null) {
             throw new RemoteException("Could not find jms connection oid= " + id);
         }
+    }
+
+    public synchronized JmsEndpoint findEndpointByPrimaryKey(long oid) throws RemoteException, FindException {
+        for (Iterator i = connections.keySet().iterator(); i.hasNext();) {
+            Long key = (Long) i.next();
+            JmsConnection connection = (JmsConnection) connections.get(key);
+            Set endpoints = connection.getEndpoints();
+            for (Iterator e = endpoints.iterator(); e.hasNext();) {
+                JmsEndpoint endpoint = (JmsEndpoint) e.next();
+                if (oid == endpoint.getOid())
+                    return endpoint;
+            }
+        }
+        throw new FindException("No endpoint with OID " + oid + " is known");
+    }
+
+    public synchronized void saveEndpoint(JmsEndpoint endpoint) throws RemoteException, FindException, UpdateException, SaveException, VersionException {
+        JmsEndpoint oldEndpoint = findEndpointByPrimaryKey(endpoint.getOid());
+        if (oldEndpoint.getConnection().getOid() != endpoint.getConnection().getOid())
+            throw new FindException("New endpoint belongs to a different connection");
+        JmsConnection connection = (JmsConnection) connections.get(new Long(endpoint.getConnection().getOid()));
+        connection.getEndpoints().remove(oldEndpoint);
+        connection.getEndpoints().add(endpoint);
+        saveConnection(connection);
     }
 }

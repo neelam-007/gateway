@@ -22,6 +22,8 @@ public class MonitoredEndpointsWindowTest {
     }
 
     private static void realMain() throws Exception {
+        System.setProperty("com.l7tech.common.locator", "com.l7tech.common.locator.StubModeLocator");
+        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         final JFrame owner = new JFrame("main");
         owner.show();
         MonitoredEndpointsWindow w = new MonitoredEndpointsWindow(owner);

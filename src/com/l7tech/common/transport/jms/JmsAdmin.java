@@ -24,6 +24,14 @@ public interface JmsAdmin extends Remote {
     EntityHeader[] findAllMonitoredEndpoints() throws RemoteException, FindException;
 
     /**
+     * Replace the list of JMS endpoints that are monitored for incoming messages for processing by the SSG.
+     * @throws RemoteException      in case of network trouble
+     * @throws FindException        if any of the specified OIDs were not valid JmsEndpoints
+     * @throws SaveException        if the changes could not be saved for some other reason 
+     */
+    void saveAllMonitoredEndpoints( long[] oids ) throws RemoteException, FindException, SaveException;
+
+    /**
      * Save the specified JmsConnection, which may or may not have been newly created by the caller, to the database.
      *
      * @param connection the JmsConnection to save
