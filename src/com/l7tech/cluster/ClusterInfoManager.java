@@ -11,9 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.net.Inet4Address;
+import java.net.UnknownHostException;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
@@ -157,12 +155,8 @@ public class ClusterInfoManager {
         if (selfCI != null) {
             selfCI.setBootTime(newboottimevalue);
             selfCI.setLastUpdateTimeStamp(newboottimevalue);
-            try {
-                String add = getIPAddress();
-                selfCI.setAddress(add);
-            } catch (SocketException e) {
-                logger.warning("cannot get localhost address: " + e.getMessage());
-            }
+            String add = getIPAddress();
+            selfCI.setAddress(add);
             try {
                 HibernatePersistenceContext pc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
                 Session session = pc.getSession();
@@ -253,12 +247,7 @@ public class ClusterInfoManager {
 
     private ClusterNodeInfo selfPopulateClusterDB(String macid) {
         ClusterNodeInfo newClusterInfo = new ClusterNodeInfo();
-        String add = null;
-        try {
-            add = getIPAddress();
-        } catch (SocketException e) {
-            logger.warning("cannot get localhost address: " + e.getMessage());
-        }
+        String add = getIPAddress();
         newClusterInfo.setAddress(add);
         boolean isMaster = isMasterMode();
         newClusterInfo.setIsMaster(isMaster);
@@ -379,7 +368,7 @@ public class ClusterInfoManager {
         ArrayList output = new ArrayList();
         try {
             try {
-                up = Runtime.getRuntime().exec("/sbin/ifconfig");
+                up = Runtime.getRuntime().exec("/sbin/ifconfig eth0");
                 got = new BufferedInputStream(up.getInputStream());
                 byte[] buff = HexUtils.slurpStream(got, 4096);
                 ifconfigOutput = new String(buff);
@@ -421,6 +410,50 @@ public class ClusterInfoManager {
             }
         }
         return output;
+    }
+
+    private String getIfConfigIpAddress() {
+        Process up = null;
+        InputStream got = null;
+        String ifconfigOutput = null;
+        try {
+            try {
+                up = Runtime.getRuntime().exec("/sbin/ifconfig eth0");
+                got = new BufferedInputStream(up.getInputStream());
+                byte[] buff = HexUtils.slurpStream(got, 4096);
+                ifconfigOutput = new String(buff);
+                up.waitFor();
+            } finally {
+                if (got != null)
+                    got.close();
+                if (up != null)
+                    up.destroy();
+            }
+        } catch (IOException e) {
+            logger.log(Level.FINE, "error getting ifconfig", e);
+        } catch (InterruptedException e) {
+            logger.log(Level.FINE, "error getting ifconfig", e);
+        }
+
+        // ifconfig output pattern
+        //eth0    Link encap:Ethernet  HWaddr 00:0C:6E:69:8D:CA
+        //        inet addr:192.168.1.227  Bcast:192.168.1.255  Mask:255.255.255.0
+        //        UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+        //        RX packets:5015473 errors:2 dropped:1 overruns:0 frame:0
+        //        TX packets:69559 errors:0 dropped:0 overruns:0 carrier:0
+        //        collisions:0 txqueuelen:100
+        //        RX bytes:357230125 (340.6 Mb)  TX bytes:6648567 (6.3 Mb)
+        //        Interrupt:11 Base address:0x1000
+        //
+        if (ifconfigOutput == null) return null;
+        String[] splitted = breakIntoLines(ifconfigOutput);
+        for (int i = 0; i < splitted.length; i++) {
+            Matcher matchr = ifconfigAddrPattern.matcher(splitted[i]);
+            if (matchr.matches()) {
+                return matchr.group(1);
+            }
+        }
+        return null;
     }
 
     /**
@@ -473,34 +506,34 @@ public class ClusterInfoManager {
     }
 
     /**
-     * This method gets this server's ip address by consulting the network interfaces
-     * inet addresses. This information used to be extracted from InetAddress.getLocalHost()
-     * but this does not work under certain linux configurations where the host name is
-     * not dnsed nor has an entry in /etc/hosts
+     * This method gets this server's ip address by parsing ifconfig eth0.
+     * If that does not work, then the ip address returned is the one given
+     * by InetAddress.getLocalHost().getHostAddress(). (for cygwin support)
+     *
+     * If none of these methods work (is that possible?) then the output is null.
      */
-    private synchronized String getIPAddress() throws SocketException {
+    private synchronized String getIPAddress() {
         if (thisNodeIPAddress == null) {
-            Enumeration enum = NetworkInterface.getNetworkInterfaces();
-            while (enum.hasMoreElements()) {
-                NetworkInterface net = (NetworkInterface)enum.nextElement();
-                Enumeration enum2 = net.getInetAddresses();
-                while (enum2.hasMoreElements()) {
-                    InetAddress add = (InetAddress)enum2.nextElement();
-                    if (add instanceof Inet4Address && (add.getAddress()[0] & 0xff) != 127) {
-                        thisNodeIPAddress = add.getHostAddress();
-                        return thisNodeIPAddress;
-                    }
+            thisNodeIPAddress = getIfConfigIpAddress();
+            if (thisNodeIPAddress == null) {
+                try {
+                    thisNodeIPAddress = InetAddress.getLocalHost().getHostAddress();
+                } catch (UnknownHostException e) {
+                    logger.log(Level.FINEST, "problem getting address with InetAddress.getLocalHost().getHostAddress()", e);
                 }
             }
         }
         return thisNodeIPAddress;
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         ClusterInfoManager me = new ClusterInfoManager();
         for (Iterator i = me.getMacs().iterator(); i.hasNext();) {
             System.out.println("MAC Match: " + i.next());
         }
+
+        String tested = me.getIPAddress();
+        System.out.println("IP Parsed:" + tested);
     }
 
     private static final String TABLE_NAME = "cluster_info";
@@ -517,6 +550,9 @@ public class ClusterInfoManager {
 
     private static Pattern ifconfigMacPattern = Pattern.compile(".*HWaddr\\s+(\\w\\w.\\w\\w.\\w\\w." +
                                                                 "\\w\\w.\\w\\w.\\w\\w).*", Pattern.DOTALL);
+
+    private static Pattern ifconfigAddrPattern = Pattern.compile(".*inet addr:(\\d+\\.\\d+\\.\\d+\\.\\d+).*", Pattern.DOTALL);
+
     private static Pattern ipconfigMacPattern = Pattern.compile(".*Physical Address.*(\\w\\w.\\w\\w.\\w\\w." +
                                                                 "\\w\\w.\\w\\w.\\w\\w).*", Pattern.DOTALL);
     private final Logger logger = Logger.getLogger(getClass().getName());
