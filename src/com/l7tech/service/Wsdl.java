@@ -338,6 +338,27 @@ public class Wsdl {
         return url;
     }
 
+    /**
+     * In-place adjust the port URL of this WSDL.
+     *
+     * @param wsdlPort
+     * @param url
+     */
+    public void setPortUrl(Port wsdlPort, URL url) {
+        List elements = wsdlPort.getExtensibilityElements();
+        ExtensibilityElement eel;
+        int num = 0;
+        for ( int i = 0; i < elements.size(); i++ ) {
+            eel = (ExtensibilityElement)elements.get(i);
+            if ( eel instanceof SOAPAddress ) {
+                SOAPAddress sadd = (SOAPAddress)eel;
+                num++;
+                sadd.setLocationURI(url.toString());
+            }
+        }
+
+        if ( num > 1 ) _log.warning( "WSDL " + getDefinition().getTargetNamespace() + " contained multiple <soap:address> elements" );
+    }
 
     private Definition definition;
 
