@@ -63,7 +63,6 @@ public class IdentityRule extends Filter {
                     removeSelfAndAllSiblings(arg);
                     //removeSelfFromParent(arg, true);
                 }
-                else if (parent instanceof OneOrMoreAssertion) removeSelfFromParent(arg, true);
                 else removeSelfFromParent(arg, false);
             }
             return true;
