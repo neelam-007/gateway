@@ -83,6 +83,7 @@ public class SsgListPanel extends JPanel {
         ssgTable.getColumnModel().getColumn(2).setHeaderValue("Username");
         ssgTable.getSelectionModel().setSelectionInterval(0, 0);
         ssgTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        ssgTable.getTableHeader().setReorderingAllowed(false);
         ssgTable.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2)
