@@ -5,6 +5,7 @@ import org.w3c.dom.NodeList;
 import org.w3c.dom.Node;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.policy.assertion.Assertion;
 
 import java.util.Collection;
 import java.util.ArrayList;
@@ -25,13 +26,22 @@ public abstract class ExternalReference {
      * references to xml format.
      * @param referencesParentElement
      */
-    public abstract void serializeToRefElement(Element referencesParentElement);
+    abstract void serializeToRefElement(Element referencesParentElement);
 
     /**
      * Checks whether or not an external reference can be mapped on this local
      * system without administrator interaction.
      */
-    public abstract boolean verifyReference();
+    abstract boolean verifyReference();
+
+    /**
+     * Once an exported policy is loaded with it's references and the references are
+     * verified, this method will apply the necessary changes to the assertion. If
+     * the assertion type passed does not relate to the reference, it will be left
+     * untouched.
+     * @param assertionToLocalize will be fixed once this method returns.
+     */
+    abstract void localizeAssertion(Assertion assertionToLocalize);
 
     /**
      * Parse references from an exported policy's exp:References element.
