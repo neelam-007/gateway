@@ -4,6 +4,7 @@ import com.l7tech.common.RequestId;
 
 import java.util.logging.LogRecord;
 import java.util.logging.Level;
+import java.io.Serializable;
 
 /**
  * Log record that can be persisted.
@@ -17,7 +18,7 @@ import java.util.logging.Level;
  * $Id$<br/>
  *
  */
-public class SSGLogRecord extends LogRecord {
+public class SSGLogRecord extends LogRecord implements Serializable {
 
     public SSGLogRecord() {
         super(Level.FINEST, null);
