@@ -15,6 +15,7 @@ import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.service.PublishedService;
@@ -23,11 +24,18 @@ import com.l7tech.service.ServiceListener;
 import com.l7tech.service.ServiceStatistics;
 import com.l7tech.service.resolution.ServiceResolutionException;
 
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import org.xmlpull.v1.XmlPullParserFactory;
+import org.xmlpull.v1.XmlPullParserException;
+import org.xmlpull.v1.XmlPullParser;
 
 
 /**
@@ -111,11 +119,12 @@ public class MessageProcessor implements ServiceListener {
 
                 if ( status == AssertionStatus.NONE ) {
                     getServiceStatistics( service.getOid() ).authorizedRequest();
-                    if ( request.isRouted() ) {
+                    RoutingStatus rstat = request.getRoutingStatus();
+                    if ( rstat == RoutingStatus.ROUTED ) {
                         logger.fine( "Request was routed with status " + " " + status.getNumeric() + " (" + status.getMessage() + ")" );
                         getServiceStatistics( service.getOid() ).completedRequest();
-                    } else {
-                        logger.severe( "Request was not routed but status was " + status.getNumeric() + " (" + status.getMessage() + ")" );
+                    } else if ( rstat == RoutingStatus.ATTEMPTED ) {
+                        logger.severe( "Request routing failed with status " + status.getNumeric() + " (" + status.getMessage() + ")" );
                         status = AssertionStatus.FALSIFIED;
                     }
                 } else {
@@ -149,11 +158,31 @@ public class MessageProcessor implements ServiceListener {
         return _instance;
     }
 
+    public DocumentBuilder getDomParser() throws ParserConfigurationException {
+        return _dbf.newDocumentBuilder();
+    }
+
+    public XmlPullParser getPullParser() throws XmlPullParserException {
+        return _xppf.newPullParser();
+    }
+
     private MessageProcessor() {
         // This only uses Locator because only one instance of ServiceManager must
         // be active at once.
         _serviceManager = (ServiceManager)Locator.getDefault().lookup( ServiceManager.class );
         _serviceManager.addServiceListener( this );
+
+        _dbf = DocumentBuilderFactory.newInstance();
+        _dbf.setNamespaceAware(true);
+        _dbf.setValidating(false);
+
+        try {
+            _xppf = XmlPullParserFactory.newInstance();
+        } catch (XmlPullParserException e) {
+            throw new RuntimeException( e );
+        }
+        _xppf.setNamespaceAware( true );
+        _xppf.setValidating( false );
     }
 
     /** Returns the thread-local current request. Could be null! */
@@ -226,4 +255,7 @@ public class MessageProcessor implements ServiceListener {
     private ServiceManager _serviceManager;
     private Logger logger = LogManager.getInstance().getSystemLogger();
     private Map _serviceStatistics = new HashMap();
+
+    private DocumentBuilderFactory _dbf;
+    private XmlPullParserFactory _xppf;
 }
