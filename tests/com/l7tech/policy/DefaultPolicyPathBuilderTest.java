@@ -142,3 +142,4 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
         // TODO -- check for duplicated path subcomponents
 
     }
+}
