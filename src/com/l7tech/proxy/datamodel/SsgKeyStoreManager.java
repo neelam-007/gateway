@@ -465,11 +465,13 @@ public class SsgKeyStoreManager {
     private static void clearCachedKeystoreData(Ssg ssg) {
         synchronized (ssg) {
             ssg.keyStore(null);
+            ssg.trustStore(null);
             ssg.privateKey(null);
             ssg.passwordWorkedForPrivateKey(false);
             ssg.haveClientCert(null);
             ssg.clientCert(null);
             ssg.serverCert(null);
+            ssg.resetSslContext();
         }
     }
 

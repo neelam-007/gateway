@@ -807,6 +807,14 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     /** Flush SSL context and cached certificates. */
     public synchronized void resetSslContext()
     {
+        keyStore(null);
+        trustStore(null);
+        privateKey(null);
+        passwordWorkedForPrivateKey(false);
+        haveClientCert(null);
+        clientCert(null);
+        serverCert(null);
+        clearSessionCookies();
         sslContext = createSslContext();
         serverCert = null;
         clientCert = null;

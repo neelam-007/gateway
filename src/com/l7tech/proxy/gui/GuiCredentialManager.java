@@ -77,6 +77,7 @@ public class GuiCredentialManager extends CredentialManager {
         if (problemSsg == null) problemSsg = ssg;
         notifyKeyStoreCorrupt(problemSsg);
         SsgKeyStoreManager.deleteStores(problemSsg);
+        ssg.resetSslContext();
     }
 
     public PasswordAuthentication getCredentials(final Ssg ssg) throws OperationCanceledException {

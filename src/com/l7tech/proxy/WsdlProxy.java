@@ -168,6 +168,7 @@ public class WsdlProxy {
                                 if (problemSsg == null) problemSsg = ssg;
                                 Managers.getCredentialManager().notifyKeyStoreCorrupt(problemSsg);
                                 SsgKeyStoreManager.deleteStores(problemSsg);
+                                ssg.resetSslContext();
                                 status = -1; // hack hack hack: fake status meaning "try again"
                                 // FALLTHROUGH -- try again with newly-emptied keystore
                             }

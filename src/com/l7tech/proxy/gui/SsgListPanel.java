@@ -222,6 +222,7 @@ public class SsgListPanel extends JPanel {
                                 if (problemSsg == null) problemSsg = ssg;
                                 Managers.getCredentialManager().notifyKeyStoreCorrupt(problemSsg);
                                 SsgKeyStoreManager.deleteStores(problemSsg);
+                                ssg.resetSslContext();
                                 // FALLTHROUGH -- continue with newly-emptied keystore
                             } catch (OperationCanceledException e2) {
                                 return; // cancel the remove as well
@@ -407,6 +408,7 @@ public class SsgListPanel extends JPanel {
                                     if (problemSsg == null) problemSsg = ssg;
                                     Managers.getCredentialManager().notifyKeyStoreCorrupt(problemSsg);
                                     SsgKeyStoreManager.deleteStores(problemSsg);
+                                    ssg.resetSslContext();
                                     retry = true;
                                     // FALLTHROUGH -- retry with newly-emptied keystore
                                 } catch (OperationCanceledException e2) {

@@ -6,6 +6,7 @@
 
 package com.l7tech.proxy.processor;
 
+import com.l7tech.common.attachments.MultipartMessageReader;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
@@ -15,7 +16,6 @@ import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
-import com.l7tech.common.attachments.MultipartMessageReader;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
@@ -171,6 +171,7 @@ public class MessageProcessor {
                     if (problemSsg == null) problemSsg = ssg;
                     Managers.getCredentialManager().notifyKeyStoreCorrupt(problemSsg);
                     SsgKeyStoreManager.deleteStores(problemSsg);
+                    ssg.resetSslContext();
                     // FALLTHROUGH -- retry, creating new keystore
                 } catch (DecoratorException e) {
                     throw new ConfigurationException(e);
@@ -229,6 +230,7 @@ public class MessageProcessor {
                 if (problemSsg == null) problemSsg = ssg;
                 Managers.getCredentialManager().notifyKeyStoreCorrupt(problemSsg);
                 SsgKeyStoreManager.deleteStores(problemSsg);
+                ssg.resetSslContext();
             }
             ssg.resetSslContext();
             // FALLTHROUGH -- retry, creating new keystore

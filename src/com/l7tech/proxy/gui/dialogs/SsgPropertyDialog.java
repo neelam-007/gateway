@@ -773,6 +773,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 if (problemSsg == null) problemSsg = ssg;
                 Managers.getCredentialManager().notifyKeyStoreCorrupt(problemSsg);
                 SsgKeyStoreManager.deleteStores(problemSsg);
+                ssg.resetSslContext();
                 // FALLTHROUGH -- continue, with newly-blank keystore
             } catch (OperationCanceledException e1) {
                 // FALLTHROUGH -- continue, pretending we had no keystore
