@@ -61,7 +61,7 @@ public class RequestResovler {
          * @return the saml response
          */
         public ResponseDocument getResponse() {
-            return null;
+            return Responses.getEmpty("Unknown saml request");
         }
     }
 }
