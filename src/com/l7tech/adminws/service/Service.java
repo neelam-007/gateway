@@ -1,7 +1,6 @@
 package com.l7tech.adminws.service;
 
 import com.l7tech.service.PublishedService;
-import com.l7tech.service.ServiceManager;
 import com.l7tech.objectmodel.*;
 import com.l7tech.util.Locator;
 import com.l7tech.logging.LogManager;
@@ -16,7 +15,7 @@ import java.rmi.RemoteException;
  * Date: Jun 6, 2003
  *
  */
-public class Service implements com.l7tech.adminws.service.ServiceManager {
+public class Service implements ServiceManager {
 
     public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/serviceAdmin";
 
@@ -85,7 +84,7 @@ public class Service implements com.l7tech.adminws.service.ServiceManager {
         try {
             // does that object have a history?
             if (service.getOid() > 0) {
-                ServiceManager manager = getServiceManagerAndBeginTransaction();
+                com.l7tech.service.ServiceManager manager = getServiceManagerAndBeginTransaction();
                 manager.update(service);
                 return service.getOid();
             }
@@ -124,7 +123,7 @@ public class Service implements com.l7tech.adminws.service.ServiceManager {
     // PRIVATES
     // ************************************************
 
-    private ServiceManager getServiceManagerAndBeginTransaction() throws java.rmi.RemoteException {
+    private com.l7tech.service.ServiceManager getServiceManagerAndBeginTransaction() throws java.rmi.RemoteException {
         try {
             PersistenceContext.getCurrent().beginTransaction();
             if (serviceManagerInstance == null) {
