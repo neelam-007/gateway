@@ -1,9 +1,8 @@
 package com.l7tech.common.security.xml;
 
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.FileUtils;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -11,16 +10,12 @@ import junit.framework.TestSuite;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import java.security.cert.X509Certificate;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateFactory;
-import java.security.PrivateKey;
-import java.security.KeyStore;
-import java.security.Key;
-import java.io.FileInputStream;
-import java.io.InputStream;
 import java.io.ByteArrayInputStream;
-import java.util.List;
+import java.io.InputStream;
+import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 
 /**
  * Test xml digital signature and encryption interoperability with messages
