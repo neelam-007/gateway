@@ -2,15 +2,20 @@ package com.l7tech.policy.server.filter;
 
 import com.l7tech.identity.User;
 import com.l7tech.identity.Group;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.IdentityProvider;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.common.util.Locator;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.logging.LogManager;
+
 import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.logging.Logger;
 import java.util.logging.Level;
 
 /**
@@ -98,6 +103,7 @@ public class IdentityRule extends Filter {
 
     public static boolean canUserPassIDAssertion(IdentityAssertion idassertion, User user) throws FilteringException {
         if (user == null) return false;
+        Logger logger = LogManager.getInstance().getSystemLogger();
         // check what type of assertion we have
         if (idassertion instanceof SpecificUser) {
             SpecificUser userass = (SpecificUser)idassertion;
@@ -106,15 +112,36 @@ public class IdentityRule extends Filter {
             return false;
         } else if (idassertion instanceof MemberOfGroup) {
             MemberOfGroup grpmemship = (MemberOfGroup)idassertion;
-            if (grpmemship.getIdentityProviderOid() == user.getProviderId()) {
+            long idprovider = grpmemship.getIdentityProviderOid();
+            if (idprovider == user.getProviderId()) {
+                // try to match user to group
                 Iterator i = user.getGroups().iterator();
                 while (i.hasNext()) {
                     Group grp = (Group)i.next();
                     if (grp.getName().equals(grpmemship.getGroupName())) return true;
                 }
+                // try to match group to user
+                try {
+                    IdentityProvider prov = getIdentityProviderConfigManager().getIdentityProvider(idprovider);
+                    Group grp = prov.getGroupManager().findByName(grpmemship.getGroupName());
+                    for (Iterator jj = grp.getMembers().iterator(); jj.hasNext();) {
+                        User memberx = (User)jj.next();
+                        if (memberx.getLogin().equals(user.getLogin())) {
+                            return true;
+                        }
+                    }
+                } catch (FindException e) {
+                    logger.log(Level.WARNING, "Cannot get group from provider", e);
+                    return false;
+                }
             }
             return false;
         } else throw new FilteringException("unsupported IdentityAssertion type " + idassertion.getClass().getName());
+    }
+
+    private static IdentityProviderConfigManager getIdentityProviderConfigManager() {
+        return (IdentityProviderConfigManager)Locator.getDefault().
+                                                lookup(IdentityProviderConfigManager.class);
     }
 
     private User requestor = null;
