@@ -23,6 +23,7 @@ import org.xmlpull.v1.XmlPullParserException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
+import java.util.Map;
 import java.util.Iterator;
 
 /**
@@ -30,7 +31,6 @@ import java.util.Iterator;
  * @version $Revision$
  */
 public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMessage {
-
     public XmlMessageAdapter( TransportMetadata tm ) {
         super(tm);
     }
@@ -113,6 +113,35 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
         }
     }
 
+    public Map getAttachments() throws IOException {
+
+        if(multipartReader == null) throw new IllegalStateException("The attachment cannot be retrieved as the soap part has not been read.");
+         return multipartReader.getMessageAttachments();
+    }
+
+    public MultipartUtil.Part getAttachment(int position) throws IOException {
+        if(multipartReader == null) throw new IllegalStateException("The attachment cannot be retrieved as the soap part has not been read.");
+        return multipartReader.getMessagePart(position);
+    }
+
+    public MultipartUtil.Part getSoapPart() throws IOException {
+        if(multipartReader == null) throw new IllegalStateException("The attachment cannot be retrieved as the soap part has not been read.");
+        return multipartReader.getMessagePart(0);
+    }
+
+    public String getMultipartBoundary() {
+        if(multipartReader == null) throw new IllegalStateException("The attachment cannot be retrieved as the soap part has not been read.");
+        return multipartReader.getMultipartBoundary();
+    }
+
+     public MultipartMessageReader getMultipartReader() {
+        return multipartReader;
+    }
+
+    public boolean isMultipart() {
+        return multipart;
+    }
+
     public boolean isSoap() {
         if ( soap == null ) {
             Element docEl = null;
@@ -147,4 +176,5 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
     protected boolean multipart = false;
     protected MultipartMessageReader multipartReader = null;
     protected Boolean soap = null;
+
 }

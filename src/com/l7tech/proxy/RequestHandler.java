@@ -199,10 +199,10 @@ public class RequestHandler extends AbstractHttpHandler {
             if(ctype.startsWith(XmlUtil.MULTIPART_CONTENT_TYPE)) {
                 multipart = true;
 
-                String multipartBoundary = (String)contentTypeHeader.getParam(XmlUtil.MULTIPART_BOUNDARY);
+                String multipartBoundary = ((String)contentTypeHeader.getParam(XmlUtil.MULTIPART_BOUNDARY)).replace('\"', ' ').trim();
                 if (multipartBoundary == null) throw new IOException("Multipart header did not contain a boundary");
 
-                String innerType = (String)contentTypeHeader.getParam(XmlUtil.MULTIPART_TYPE);
+                String innerType = ((String)contentTypeHeader.getParam(XmlUtil.MULTIPART_TYPE)).replace('\"', ' ').trim();
                 if (innerType.startsWith(XmlUtil.TEXT_XML)) {
                 multipartReader = new MultipartMessageReader(request.getInputStream(), multipartBoundary);
 

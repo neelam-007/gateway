@@ -105,10 +105,10 @@ public class RequestXpathAssertionTest extends TestCase {
             }
             public void setRequestXml(String xml) {}
 
-            public Map getRequestAttachments() throws IOException {
+            public Map getAttachments() throws IOException {
                 return null;
             }
-            public MultipartUtil.Part getRequestAttachment(int position) throws IOException {
+            public MultipartUtil.Part getAttachment(int position) throws IOException {
                 return null;
             }
             

@@ -40,16 +40,4 @@ public interface XmlRequest extends Request, XmlMessage {
      * @param xml
      */
     void setRequestXml( String xml );
-
-    public Map getRequestAttachments() throws IOException;
-
-    public MultipartUtil.Part getRequestAttachment(int position) throws IOException;
-
-    public String getMultipartBoundary();
-
-    public MultipartMessageReader getMultipartReader();
-
-    public MultipartUtil.Part getSoapPart() throws IOException;
-
-    public boolean isMultipart();
 }
