@@ -56,31 +56,38 @@ public class ProviderNode extends EntityHeaderNode {
         list.add(new FindIdentityAction(options));
         final Action newUserAction;
         final NewGroupAction newGroupAction;
+        final NewVirtualGroupAction newVirtualGroupAction;
 
         IdentityProviderConfig config = getProviderConfig();
 
         if (config.type() == IdentityProviderType.INTERNAL) {
             newUserAction = new NewInternalUserAction(this);
             newGroupAction = new NewGroupAction(this);
+            newVirtualGroupAction = new NewVirtualGroupAction(this);
             newUserAction.setEnabled(true);
             newGroupAction.setEnabled(true);
+            newVirtualGroupAction.setEnabled(false);
         } else if (config.type() == IdentityProviderType.FEDERATED) {
             newUserAction = new NewFederatedUserAction(this);
             newGroupAction = new NewGroupAction(this);
+            newVirtualGroupAction = new NewVirtualGroupAction(this);
             newUserAction.setEnabled(true);
             newGroupAction.setEnabled(true);
-        } else {           
+            newVirtualGroupAction.setEnabled(true);
+        } else {
             // the actions here is dummy as they are always disabled from the beginning
             // this is currently for LDAP user
             newUserAction = new NewInternalUserAction(this);
             newGroupAction = new NewGroupAction(this);
+            newVirtualGroupAction = new NewVirtualGroupAction(this);
             newUserAction.setEnabled(false);
             newGroupAction.setEnabled(false);
+            newVirtualGroupAction.setEnabled(false);
         }
-
 
         list.add(newUserAction);
         list.add(newGroupAction);
+        list.add(newVirtualGroupAction);
 
         list.addAll(Arrays.asList(super.getActions()));
         for (Iterator iterator = list.iterator(); iterator.hasNext();) {
