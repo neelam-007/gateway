@@ -22,6 +22,7 @@ PREPARING THE SERVER
 [ROOT] chkconfig postgresql on (make sure mysqld starts at boot)
 
 [POSTGRES]	createdb ssg
+[POSTGRES]	psql ssg -f ssg.sql
 [POSTGRES]	CREATE USER gateway WITH PASSWORD 'same_as_linux_passwd';
 [POSTGRES]	GRANT ALL PRIVILEGES ON ssg.* to gateway;
 
