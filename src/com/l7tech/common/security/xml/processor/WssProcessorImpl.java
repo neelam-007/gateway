@@ -201,7 +201,7 @@ public class WssProcessorImpl implements WssProcessor {
                 if ("1".equals(mu) || "true".equalsIgnoreCase(mu)) {
                     String msg = "Unrecognized element in default Security header: " +
                                  securityChildToProcess.getNodeName() +
-                                 " with mustUnderstand=\"true\"; rejecting message";
+                                 " with mustUnderstand=\"" + mu + "\"; rejecting message";
                     logger.warning(msg);
                     throw new ProcessorException(msg);
                 } else {
