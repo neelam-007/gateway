@@ -51,7 +51,7 @@ public class LogsWorker  extends SwingWorker {
 
                 if (rawLogs.length > 0) {
 
-                    for (int i = 0; i < rawLogs.length; i++) {
+                    for (int i = 0; i < (rawLogs.length) && (newLogs.size() < FilteredLogTableModel.MAX_NUMBER_OF_LOG_MESSGAES); i++) {
                         logMsg = new LogMessage(rawLogs[i]);
                         newLogs.add(logMsg);
                     }
