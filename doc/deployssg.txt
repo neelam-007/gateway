@@ -21,18 +21,15 @@ SSG deployment steps for a clean linux box
 		1. GRANT ALL ON ssg.* TO ssg@localhost IDENTIFIED BY the_ssg_password;
 [SSG]	check out UneasyRooster somewhere (3 steps)
 		1. cvs -d :pserver:flascell@sarek:/home/cvsuser login
-		2. cvs -d :pserver:flascell@sarek:/home/cvsuser co -r beta_candidate_1 UneasyRooster
+		2. cvs -d :pserver:flascell@sarek:/home/cvsuser co -r tag_label_wanted UneasyRooster
 		3. cvs -d :pserver:flascell@sarek:/home/cvsuser logout
 
 [ROOT]  copy UneasyRooster/etc/ssgruntimedefs.sh to /etc/profile.d
 [SSG]   edit /etc/profile.d/ssgruntimedefs.sh. make sure JAVA_HOME and TOMCAT_HOME point to the right place
 [SSG]   edit UneasyRooster/etc/web.xml, uncomment security-constraint and login-config to enforce ssl on admin services
-[SSG]   edit UneasyRooster/etc/web.xml, check that the value of "RootKeyStore" points to the correct path (hint is tomcat
-        really installed in that directory)
 [SSG]	edit default_build.properties change database username and password to "ssg" and it's password
 [SSG]	go to root of UneasyRooster and run "./build.sh deploy"
 [SSG]	go to UneasyRooster/etc/ and run rootcaGen.sh (creation of root keystore)
-        if the password chosen here is different than "password" you must edit web.xml accordingly
 [SSG]	go to UneasyRooster/etc/ and run sslGen.sh (creation of the ssl keystore)
 [SSG]	go to UneasyRooster/etc/ and run signsslcsr.sh (creation of the ssl cert)
 [SSG]	run "resetAdmin.sh ssg the_ssg_password" this creates the admin login + passwd
