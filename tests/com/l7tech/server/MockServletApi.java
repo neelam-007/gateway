@@ -2,7 +2,9 @@ package com.l7tech.server;
 
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
+import com.l7tech.message.Message;
 import com.l7tech.service.PublishedService;
+import com.l7tech.common.util.XmlUtil;
 import com.mockobjects.dynamic.C;
 import com.mockobjects.dynamic.Mock;
 
@@ -62,10 +64,13 @@ public class MockServletApi {
                 servletRequestMock.matchAndReturn("getAttribute", Response.PARAM_HTTP_STATUS, new Integer(200));
 
                 servletRequestMock.matchAndReturn("getAttribute", Request.PARAM_HTTP_AUTHORIZATION, null);
-
                 servletRequestMock.matchAndReturn("getAttribute", Response.PARAM_HTTP_WWWAUTHENTICATE, null);
+                // Authorization
+                servletRequestMock.matchAndReturn("getHeader", "Authorization", null);
                 servletRequestMock.matchAndReturn("getHeader", "WWW-Authenticate", null);
 
+                servletRequestMock.matchAndReturn("getAttribute", Message.PARAM_HTTP_CONTENT_TYPE, null);
+                servletRequestMock.matchAndReturn("getHeader", XmlUtil.CONTENT_TYPE, null);
                 servletRequestMock.matchAndReturn("getScheme", "http");
                 servletRequestMock.matchAndReturn("getServerName", InetAddress.getLocalHost().getHostName());
                 servletRequestMock.matchAndReturn("getServerPort", 8080);

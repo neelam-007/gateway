@@ -3,6 +3,7 @@ package com.l7tech.server;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.xml.SoapMessageGenerator;
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.security.Keys;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceAdmin;
@@ -43,9 +44,8 @@ public class MockServletApiTest extends TestCase {
              * @throws Exception on error deleting the stub data store
              */
             protected void setUp() throws Exception {
+                Keys.createTestSsgKeystoreProperties();
                 System.setProperty("com.l7tech.common.locator.properties", "/com/l7tech/common/locator/test.properties");
-
-                //ServiceCache.initialize(); // need to do this, otherwise is a no go
             }
 
             protected void tearDown() throws Exception {
