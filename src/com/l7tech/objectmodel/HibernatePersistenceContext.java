@@ -99,7 +99,7 @@ public class HibernatePersistenceContext extends PersistenceContext {
      * @throws SQLException if MAXRETRIES have been made, the SQLException resulting from the last connection attempt.
      * @throws HibernateException if MAXRETRIES have been made, the HibernateException resulting from the last connection attempt.
      */
-    synchronized Session getSession() throws SQLException, HibernateException {
+    public synchronized Session getSession() throws SQLException, HibernateException {
         Connection conn = null;
         ResultSet rs = null;
         PreparedStatement pingStmt = null;
