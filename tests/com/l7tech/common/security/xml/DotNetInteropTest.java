@@ -60,29 +60,27 @@ public class DotNetInteropTest extends TestCase {
         assertTrue(signatureFailed);
     }
 
-    public void testGetEncryptedKey() throws Exception {
+    public XmlMangler.ProcessedEncryptedKey testGetEncryptedKey() throws Exception {
         Document encryptedDoc = getEncryptedDoc();
         X509Certificate servercert = getRikerCert();
-        PrivateKey privateServerKey = getRikerPrivateKey();
-        XmlMangler.ProcessedEncryptedKey[] encryptionKeys = XmlMangler.getEncryptedKeyFromMessage(encryptedDoc,
-                                                                                                  privateServerKey,                                                                                                  servercert.getExtensionValue("2.5.29.14"));
-        assertTrue(encryptionKeys.length == 1);
-        assertTrue(Arrays.equals(DECRYPTED_KEY, encryptionKeys[0].decryptedKey.getEncoded()));
-    }
-
-    public void testDecryptdotNetRequest() throws Exception {
-        Document encryptedDoc = getEncryptedDoc();
-        X509Certificate servercert = getRikerCert();
-
         PrivateKey privateServerKey = getRikerPrivateKey();
         XmlMangler.ProcessedEncryptedKey[] encryptionKeys = XmlMangler.getEncryptedKeyFromMessage(encryptedDoc,
                                                                                                   privateServerKey,
                                                                                                   servercert.getExtensionValue("2.5.29.14"));
+        assertTrue(encryptionKeys.length == 1);
+        assertTrue(Arrays.equals(DECRYPTED_KEY, encryptionKeys[0].decryptedKey.getEncoded()));
+        System.out.println("Symmetric key decrypted succesfully");
+        return encryptionKeys[0];
+    }
 
+    public void testDecryptdotNetRequest() throws Exception {
+        Document encryptedDoc = getEncryptedDoc();
+        XmlMangler.ProcessedEncryptedKey encryptionKey = testGetEncryptedKey();
         Element body = SoapUtil.getBody(encryptedDoc);
-        XmlMangler.decryptElement(body, encryptionKeys[0].decryptedKey, encryptionKeys[0].referenceList);
-        String result = XmlUtil.documentToString(encryptedDoc);
-        System.out.println(result);
+        XmlMangler.decryptElement(body, encryptionKey.decryptedKey, encryptionKey.referenceList);
+        Element bodyChild = XmlUtil.findFirstChildElement(body);
+        assertTrue("listProducts".equals(bodyChild.getLocalName()));
+        System.out.println("Body decrypted successfully");
     }
 
     private PrivateKey getRikerPrivateKey() throws Exception {
