@@ -57,11 +57,18 @@ public class IntegerField extends PlainDocument {
       }
     }
     try {
-      String s = getText(0, getLength())+str;
+      String s = getText(0, getLength())+str;  // TODO: this is wrong -- insertion always at end (see bug #825)
       int newInt = Integer.parseInt(s);
       if (newInt >=minInt && newInt <= maxInt) {
         super.insertString(offs, str, a);
       } else {
+          // TODO: this is awkward -- interrupts user editing flow if intermediate form passes through (Bug #825)
+          // an invalid format while editing (example:  changing port number 45679 to 15679 by positioning
+          // caret in front of 4 and typeing '1' followed by Delete.
+          //    Expected outcome: "15679".
+          //    Actual outcome: "5679" (insertion of '1' blocked by validation rule)
+          // Recommended work-around: use IntegerField instead, with a maximum length of 6, and use
+          // Utilties#constrainTextFieldToIntegerRange to clean up field after each edit.
       }
     } catch(NumberFormatException e) {
     }
