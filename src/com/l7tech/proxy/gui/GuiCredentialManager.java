@@ -311,11 +311,11 @@ public class GuiCredentialManager extends CredentialManager {
     }
 
     public void notifySsgCertificateUntrusted(Ssg ssg, final X509Certificate certificate) throws OperationCanceledException {
-        String mess = "The authenticity of this Gateway server certificate could not be verified using the " +
+        String mess = "The authenticity of the SecureSpan Gateway server certificate could not be verified using the " +
                 "current user name and password.  Do you want to trust the Gateway " + ssg + " using this server certificate?  " +
                 "If you don't know, click Cancel.";
         final TrustCertificateDialog tcd = new TrustCertificateDialog(certificate,
-                                                                      "Trust this Gateway certificate?",
+                                                                      "Trust Gateway Certificate",
                                                                       mess);
         invokeDialog(new Runnable() {
             public void run() {
@@ -323,7 +323,7 @@ public class GuiCredentialManager extends CredentialManager {
             }
         });
         if (!tcd.isTrusted())
-            throw new OperationCanceledException("The downloaded Gateway server certificate could not be verified with the current user name and password.");
+            throw new OperationCanceledException("The downloaded SecureSpan Gateway server certificate could not be verified with the current user name and password.");
     }
 
     private PleaseWaitDialog getPleaseWaitDialog() {
