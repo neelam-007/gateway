@@ -15,6 +15,7 @@ import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
+import com.l7tech.common.attachments.MultipartMessageReader;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
@@ -35,9 +36,7 @@ import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
 import javax.net.ssl.SSLException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PushbackInputStream;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
@@ -188,6 +187,13 @@ public class MessageProcessor {
                 if (req.getActivePolicy() != null) {
                     log.log(Level.FINE, "Request failed to get a response from the SSG -- marking cached policy as invalid");
                     req.getActivePolicy().invalidate();
+                }
+            }
+
+            // clean up for SOAP request with attachment
+            if(req.isMultipart()) {
+                if(req.getMultipartReader() != null) {
+                    req.getMultipartReader().deleteCacheFile();
                 }
             }
         }
@@ -534,6 +540,7 @@ public class MessageProcessor {
                     log.info("Posting to Gateway: " + postBody);
             }
 
+            InputStream is = null;
             if(req.isMultipart()) {
                 postMethod.addRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.MULTIPART_CONTENT_TYPE +
                         "; type=" + XmlUtil.TEXT_XML  +
@@ -541,19 +548,41 @@ public class MessageProcessor {
 
                 StringBuffer sb = new StringBuffer();
 
+                MultipartMessageReader requestMultipartReader = req.getMultipartReader();
+
                 // add modified SOAP part
                 MultipartUtil.addModifiedSoapPart(sb,
                         postBody,
-                        req.getMultipartReader().getSoapPart(),
-                        req.getMultipartReader().getMultipartBoundary());
+                        requestMultipartReader.getSoapPart(),
+                        requestMultipartReader.getMultipartBoundary());
 
-                PushbackInputStream pbis = req.getMultipartReader().getPushbackInputStream();
+                if(requestMultipartReader.getFileCache() != null) {
+
+                    // close the connection for writing data to the temp file before opening the file for read operation
+                    requestMultipartReader.closeFileCache();
+
+                    // read raw attachments from a temp file
+                    is = new FileInputStream(requestMultipartReader.getFileCacheName());
+
+                } else {
+
+                    // read raw attachments from memory
+                    byte[] dataBuf = new byte[requestMultipartReader.getMemoryCacheDataLength()];
+                    byte[] data = requestMultipartReader.getMemoryCache();
+                    for(int i=0; i < dataBuf.length; i++) {
+                        dataBuf[i] = data[i];
+                    }
+                    is = new ByteArrayInputStream(dataBuf);
+                }
+
+                PushbackInputStream pushbackInputStream = new PushbackInputStream(is, MultipartMessageReader.SOAP_PART_BUFFER_SIZE);
 
                 // push the modified SOAP part back to the input stream
-                pbis.unread(sb.toString().getBytes());
+                pushbackInputStream.unread(sb.toString().getBytes());
 
                 // post the request using input stream
-                postMethod.setRequestBody(pbis);
+                postMethod.setRequestBody(pushbackInputStream);
+
             } else {
                 postMethod.setRequestBody(postBody);
                 postMethod.addRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
@@ -564,6 +593,11 @@ public class MessageProcessor {
             int status = client.executeMethod(postMethod);
             CurrentRequest.setPeerSsg(null);
             log.info("POST to Gateway completed with HTTP status code " + status);
+
+            if(is != null) {
+                is.close();
+                is =null;
+            }
 
             Header certStatusHeader = postMethod.getResponseHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS);
             if (certStatusHeader != null && SecureSpanConstants.INVALID.equalsIgnoreCase(certStatusHeader.getValue())) {
@@ -632,7 +666,7 @@ public class MessageProcessor {
                 return new SsgResponse(XmlUtil.stringToDocument(CannedSoapFaults.RESPONSE_NOT_XML), null, 500, null, null);
 
             String responseString = null;
-            ClientMultipartMessageReader multipartReader = null;
+            ClientMultipartMessageReader responseMultipartReader = null;
             if(contentType.getValue().startsWith(XmlUtil.MULTIPART_CONTENT_TYPE)) {
                 MultipartUtil.HeaderValue contentTypeHeader = MultipartUtil.parseHeader(XmlUtil.CONTENT_TYPE + ": " + contentType.getValue());
 
@@ -642,10 +676,10 @@ public class MessageProcessor {
                 String innerType = MultipartUtil.unquote((String)contentTypeHeader.getParam(XmlUtil.MULTIPART_TYPE));
                 if (innerType.startsWith(XmlUtil.TEXT_XML)) {
 
-                    InputStream is = postMethod.getResponseBodyAsStream();
-                    multipartReader = new ClientMultipartMessageReader(is, multipartBoundary);
+                    InputStream respIs = postMethod.getResponseBodyAsStream();
+                    responseMultipartReader = new ClientMultipartMessageReader(respIs, multipartBoundary);
 
-                    MultipartUtil.Part part = multipartReader.getSoapPart();
+                    MultipartUtil.Part part = responseMultipartReader.getSoapPart();
                     if (!part.getHeader(XmlUtil.CONTENT_TYPE).getValue().equals(innerType)) throw new IOException("Content-Type of first part doesn't match type of Multipart header");
 
                     responseString = part.getContent();
@@ -710,7 +744,7 @@ public class MessageProcessor {
                 processorResult = null;
             }
 
-            response = new SsgResponse(responseDocument, processorResult, status, headers, multipartReader);
+            response = new SsgResponse(responseDocument, processorResult, status, headers, responseMultipartReader);
             if (status == 401 || status == 402) {
                 req.setLastErrorResponse(response);
                 Header authHeader = postMethod.getResponseHeader("WWW-Authenticate");

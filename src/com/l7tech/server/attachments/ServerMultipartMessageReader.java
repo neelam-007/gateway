@@ -34,6 +34,25 @@ public class ServerMultipartMessageReader extends MultipartMessageReader {
         return true;
     }
 
+    protected String getFileCachePath() {
+        String propsKey = "ssg.etc";
+        String propsPath = ServerConfig.getInstance().getProperty(propsKey);
+        if (propsPath != null && propsPath.length() > 0) {
+            File f = new File(propsPath);
+            if (!f.exists()) {
+                String errorMsg = "The directory " + propsPath + "is required for caching the big attachments but not found. Please ensure the SecureSpan gateway is properly installed.";
+                logger.severe(errorMsg);
+                throw new RuntimeException(errorMsg);
+            }
+        } else {
+
+            String errorMsg = "The property " + propsKey + " is not defined. Please ensure the SecureSpan gateway is properly configured.";
+            logger.severe(errorMsg);
+            throw new RuntimeException(errorMsg);
+        }
+        return propsPath;
+    }
+
     /**
      * Get all attachements of the message.
      *
@@ -61,14 +80,6 @@ public class ServerMultipartMessageReader extends MultipartMessageReader {
             }
         }
         return attachments;
-    }
-
-    public byte[] getRawAttachments() {
-        return attachmentsRawData;
-    }
-
-    public int getRawAttachmentsSize() {
-        return writeIndex;
     }
 
     /**

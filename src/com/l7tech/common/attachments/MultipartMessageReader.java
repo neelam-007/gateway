@@ -16,10 +16,10 @@ import java.util.logging.Logger;
  * <p> @author fpang </p>
  * $Id$
  */
-public class MultipartMessageReader {
+abstract public class MultipartMessageReader {
     public static final int ATTACHMENTS_BUFFER_SIZE = 100000;
     public static final int SOAP_PART_BUFFER_SIZE = 30000;
-    private static final int ATTACHMENT_BLOCK_SIZE = 4096;
+    protected static final int ATTACHMENT_BLOCK_SIZE = 4096;
     protected boolean atLeastOneAttachmentParsed;
     protected String multipartBoundary;
     protected PushbackInputStream pushbackInputStream = null;
@@ -27,11 +27,13 @@ public class MultipartMessageReader {
     protected byte[] attachmentsRawData = new byte[ATTACHMENTS_BUFFER_SIZE];
     protected int writeIndex = 0;
     String fileCacheId = null;
+    String fileCachePath = null;
     FileOutputStream fileCache = null;
     String fileCacheName = null;
-    boolean bufferFlushed = false;
+    protected boolean bufferFlushed = false;
     private final Logger logger = Logger.getLogger(getClass().getName());
-    
+
+    abstract protected String getFileCachePath();
 
     public String getMultipartBoundary() {
         return multipartBoundary;
@@ -60,8 +62,15 @@ public class MultipartMessageReader {
     public void closeFileCache() throws IOException {
         if(fileCache != null) {
             fileCache.close();
-            fileCache = null;
         }
+    }
+
+    public byte[] getMemoryCache() {
+        return attachmentsRawData;
+    }
+
+    public int getMemoryCacheDataLength() {
+        return writeIndex;
     }
 
     /**
@@ -363,7 +372,7 @@ public class MultipartMessageReader {
         }
     }
 
-    private void writeDataToFileCache(byte[] data) throws IOException {
+    protected void writeDataToFileCache(byte[] data) throws IOException {
 
         writeDataToFileCache(data, 0, data.length);
     }
@@ -376,38 +385,25 @@ public class MultipartMessageReader {
      * @param len  The number of bytes to be stored in the file cache.
      * @throws java.io.IOException if there is error reading the input data stream.
      */
-    private void writeDataToFileCache(byte[] data, int off, int len) throws IOException {
+    protected void writeDataToFileCache(byte[] data, int off, int len) throws IOException {
 
         if(fileCache == null) {
             if(fileCacheId == null) throw new RuntimeException("File name is NULL. Cannot create file for storing the raw attachments.");
 
-            String propsPath = null;
-            String propsKey = "ssg.etc";
             try {
-
-                propsPath = ServerConfig.getInstance().getProperty(propsKey);
-                if (propsPath != null && propsPath.length() > 0) {
-                    File f = new File(propsPath);
-                    if (!f.exists()) {
-                        String errorMsg = "The directory " + propsPath + "is required for caching the big attachments but not found. Please ensure the SecureSpan gateway is properly installed.";
-                        logger.warning(errorMsg);
-                        throw new RuntimeException(errorMsg);
-                    }
-
-                    fileCacheName = propsPath + "/req-att-" + fileCacheId;
+                if(getFileCachePath() != null) {
+                    fileCacheName = getFileCachePath() + "/req-att-" + fileCacheId;
                     fileCache = new FileOutputStream(fileCacheName, true);
                 } else {
-
-                    String errorMsg = "The property " + propsKey + " is not defined. Please ensure the SecureSpan gateway is properly configured.";
-                    logger.warning(errorMsg);
-                    throw new RuntimeException(errorMsg);
+                    throw new RuntimeException("The File Cache path is NULL");                    
                 }
             } catch (FileNotFoundException e) {
-                throw new RuntimeException("Unable to create a new file " + propsPath + fileCacheId);
+                throw new RuntimeException("Unable to create a new file " + getFileCachePath() + fileCacheId);
             }
         }
 
         fileCache.write(data, off, len);
+        fileCache.flush();
     }
 
     /**
@@ -627,5 +623,34 @@ public class MultipartMessageReader {
         } while(!newlineFound);
 
         return sb.toString().trim();
+    }
+
+    /**
+     * Delete the cache file
+     */
+    public void deleteCacheFile() {
+
+        final File deleteFile = new File(getFileCacheName());
+
+        if(fileCache != null) {
+            try {
+                fileCache.close();
+            } catch (IOException e) {
+                // do nothing
+                // the fileCache input stream already been close
+            }
+            fileCache = null;
+        }
+
+        // remove the cache file (attachments) after request is sent
+        Thread t = new Thread(new Runnable() {
+            public void run() {
+                if(!deleteFile.delete()) {
+                    logger.warning("Cannot delete the cache file: " + getFileCacheName());
+                }
+            }
+        });
+
+        t.start();
     }
 }

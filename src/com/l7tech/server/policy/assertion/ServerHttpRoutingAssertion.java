@@ -259,8 +259,8 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                         } else {
 
                             // read raw attachments from memory
-                            byte[] dataBuf = new byte[multipartReader.getRawAttachmentsSize()];
-                            byte[] data = multipartReader.getRawAttachments();
+                            byte[] dataBuf = new byte[multipartReader.getMemoryCacheDataLength()];
+                            byte[] data = multipartReader.getMemoryCache();
                             for(int i=0; i < dataBuf.length; i++) {
                                 dataBuf[i] = data[i];
                             }
@@ -307,20 +307,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 }
 
                 if (multipartReader != null) {
-                    final String fileToDelete = multipartReader.getFileCacheName();
-
-                    // remove the cache file (attachments) after request is sent
-                    Thread t = new Thread(new Runnable() {
-                        public void run() {
-                            try {
-                                Runtime.getRuntime().exec("rm " + fileToDelete);
-                            } catch (IOException e) {
-                                logger.warning("Cannot delete the cache file: " + fileToDelete);
-                            }
-                        }
-                    });
-
-                    t.start();
+                    multipartReader.deleteCacheFile();
                 }
             } catch (WSDLException we) {
                 logger.log(Level.SEVERE, null, we);

@@ -212,8 +212,15 @@ public class RequestHandler extends AbstractHttpHandler {
                 if (innerType.startsWith(XmlUtil.TEXT_XML)) {
                 multipartReader = new ClientMultipartMessageReader(request.getInputStream(), multipartBoundary);
 
+                // we use the current time stamp as the unique file name
+                multipartReader.setFileCacheId(new Long(System.currentTimeMillis()).toString());
+
                 // get SOAP part
                 MultipartUtil.Part soapPart = multipartReader.getSoapPart();
+
+                // store all attachments to cache
+                multipartReader.storeAllAttachmentsToCache();
+
                 if (!soapPart.getHeader(XmlUtil.CONTENT_TYPE).getValue().equals(innerType)) throw new IOException("Content-Type of first part doesn't match type of Multipart header");
 
                 envelope = XmlUtil.stringToDocument(soapPart.getContent());
