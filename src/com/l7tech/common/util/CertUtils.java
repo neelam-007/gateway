@@ -19,8 +19,8 @@ import java.security.interfaces.DSAParams;
 import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.util.*;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -104,7 +104,7 @@ public class CertUtils {
         certificate.checkValidity();
         final long now = System.currentTimeMillis();
         final long expires = certificate.getNotAfter().getTime();
-        int days = (int)(.5f + ((now - expires) * 1000 * 86400));
+        int days = (int)(.5f + ((expires - now) * 1000 * 86400));
         return new CertificateExpiry(days);
     }
 
