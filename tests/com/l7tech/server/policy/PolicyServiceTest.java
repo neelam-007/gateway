@@ -31,6 +31,7 @@ import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.util.PolicyServiceClient;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.filter.FilterManager;
 import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -111,7 +112,8 @@ public class PolicyServiceTest extends TestCase {
     private Document getPolicyResponse(final Assertion policyToTest, PolicyEnforcementContext context) throws Exception {
         PolicyService ps = new PolicyService(TestDocuments.getDotNetServerPrivateKey(),
                                              TestDocuments.getDotNetServerCertificate(),
-                                             (ServerPolicyFactory)applicationContext.getBean("policyFactory"));
+                                             (ServerPolicyFactory)applicationContext.getBean("policyFactory"),
+          (FilterManager)applicationContext.getBean("policyFilterManager"));
         PolicyService.PolicyGetter policyGetter = new PolicyService.PolicyGetter() {
             public PolicyService.ServiceInfo getPolicy(String serviceId) {
                 return new PolicyService.ServiceInfo() {

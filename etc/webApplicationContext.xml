@@ -251,6 +251,19 @@
      </property>
  </bean>
 
+    <!-- server side policy filter manager  -->
+ <bean id="policyFilterManager" class="com.l7tech.server.policy.filter.FilterManager">
+     <constructor-arg>
+         <ref bean="identityProviderConfigManager"/>
+     </constructor-arg>
+     <constructor-arg>
+         <list>
+            <value>com.l7tech.server.policy.filter.IdentityRule</value>
+            <value>com.l7tech.server.policy.filter.HideUnsupportedClientAssertions</value>
+         </list>
+     </constructor-arg>
+ </bean>
+
     <!-- server side client cert manager -->
   <bean id="clientCertManager" class="com.l7tech.server.identity.cert.ClientCertManagerImp">
       <property name="sessionFactory">
@@ -367,6 +380,9 @@
       </constructor-arg>
       <constructor-arg>
           <ref bean="policyFactory"/>
+      </constructor-arg>
+      <constructor-arg>
+          <ref bean="policyFilterManager"/>
       </constructor-arg>
   </bean>
 

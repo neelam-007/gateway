@@ -13,7 +13,7 @@ import java.util.logging.Logger;
  * Date: Aug 14, 2003<br/>
  * $Id$
  */
-public abstract class Filter {
+public interface Filter {
     /**
      * Applies a rule that affects how an external requestor sees a policy.
      *
@@ -22,10 +22,5 @@ public abstract class Filter {
      * @return a filtered policy. may return null if the result of the filter is that the requestor may not
      * consume this service at all.
      */
-    public abstract Assertion filter(User policyRequestor, Assertion assertionTree) throws FilteringException;
-
-    public Filter() {
-    }
-
-    protected static final Logger logger = Logger.getLogger(Filter.class.getName());
+    Assertion filter(User policyRequestor, Assertion assertionTree) throws FilteringException;
 }

@@ -8,9 +8,10 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import java.util.Iterator;
-import java.util.logging.Level;
 
 /**
  * If there is at least one identity assertion, and the user does not "pass" any of them, the result will be null
@@ -29,16 +30,25 @@ import java.util.logging.Level;
  * Date: Aug 14, 2003<br/>
  * $Id$
  */
-public class IdentityRule extends Filter {
-    public IdentityRule() {
-        super();
+public class IdentityRule implements Filter {
+    private static final Log logger = LogFactory.getLog(IdentityRule.class);
+    private final IdentityProviderConfigManager identityProviderConfigManager;
+
+    public IdentityRule(FilterManager filterManager) {
+        if (filterManager == null) {
+            throw new IllegalArgumentException("Filter Manager cannot be null");
+        }
+        this.identityProviderConfigManager = filterManager.getIdentityProviderConfigManager();
+        if (identityProviderConfigManager == null) {
+            throw new IllegalArgumentException("Identity Provider Config Manager is required");
+        }
     }
     public Assertion filter(User policyRequestor, Assertion assertionTree) throws FilteringException {
         requestor = policyRequestor;
         if (assertionTree == null) return null;
         applyRules(assertionTree, null, null);
         if (anIdentityAssertionWasFound && !userPassedAtLeastOneIdentityAssertion && requestor != null) {
-            logger.severe("This user is not authorized to consume this service. Policy filter returning null.");
+            logger.error("This user is not authorized to consume this service. Policy filter returning null.");
             return null;
         }
         return assertionTree;
@@ -118,7 +128,7 @@ public class IdentityRule extends Filter {
      * check whether the user validates this assertion
      */
     private boolean validateIdAssertion(IdentityAssertion idassertion) throws FilteringException {
-        return canUserPassIDAssertion(idassertion, requestor, null);
+        return canUserPassIDAssertion(idassertion, requestor, identityProviderConfigManager);
     }
 
     public static boolean canUserPassIDAssertion(IdentityAssertion idassertion, User user, IdentityProviderConfigManager identityProviderConfigManager) throws FilteringException {
@@ -138,21 +148,21 @@ public class IdentityRule extends Filter {
                 try {
                     IdentityProvider prov = identityProviderConfigManager.getIdentityProvider(idprovider);
                     if (prov == null) {
-                        logger.warning("IdentityProvider #" + idprovider + " no longer exists");
+                        logger.warn("IdentityProvider #" + idprovider + " no longer exists");
                         return false;
                     }
                     GroupManager gman = prov.getGroupManager();
                     Group grp = gman.findByPrimaryKey(grpmemship.getGroupId());
                     if (grp == null) {
-                        logger.warning("The group " + grpmemship.getGroupId() + " does not exist.");
+                        logger.warn("The group " + grpmemship.getGroupId() + " does not exist.");
                         return false;
                     }
                     return gman.isMember(user, grp);
                 } catch (FindException e) {
-                    logger.log(Level.WARNING, "Cannot get group from provider", e);
+                    logger.warn("Cannot get group from provider", e);
                     return false;
                 } catch (IllegalStateException e) {
-                    logger.log(Level.WARNING, "Cannot get group from provider", e);
+                    logger.warn("Cannot get group from provider", e);
                     return false;
                 }
             }

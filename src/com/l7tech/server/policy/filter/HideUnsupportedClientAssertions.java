@@ -15,7 +15,7 @@ import java.util.Iterator;
 /**
  * Hide all non-whitelisted assertions.
  */
-public class HideUnsupportedClientAssertions extends Filter {
+public class HideUnsupportedClientAssertions implements Filter {
     public Assertion filter(User policyRequestor, Assertion assertionTree) throws FilteringException {
         if (assertionTree == null) return null;
         applyRules(assertionTree, null);

@@ -18,13 +18,17 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.common.ApplicationContexts;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import junit.extensions.TestSetup;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Logger;
+
+import org.springframework.context.ApplicationContext;
 
 /**
  * Test of some policy filter scenarios.
@@ -34,14 +38,32 @@ import java.util.logging.Logger;
  */
 public class FilterTest extends TestCase {
     private static Logger log = Logger.getLogger(FilterTest.class.getName());
+    private static ApplicationContext applicationContext;
+    private static FilterManager filterManager;
 
     public FilterTest(String name) throws Exception {
         super(name);
-        System.setProperty("com.l7tech.common.locator", "com.l7tech.common.locator.StubModeLocator");
     }
 
     public static Test suite() {
-        return new TestSuite(FilterTest.class);
+        final TestSuite suite = new TestSuite(FilterTest.class);
+        TestSetup wrapper = new TestSetup(suite) {
+
+            protected void setUp() throws Exception {
+                applicationContext = createApplicationContext();
+                filterManager = (FilterManager)applicationContext.getBean("policyFilterManager");
+
+            }
+
+            protected void tearDown() throws Exception {
+                ;
+            }
+
+            private ApplicationContext createApplicationContext() {
+                return ApplicationContexts.getTestApplicationContext();
+            }
+        };
+        return wrapper;
     }
 
     public static void main(String[] args) throws Exception {
@@ -67,8 +89,7 @@ public class FilterTest extends TestCase {
         InternalUser alice = new InternalUser();
         alice.setLogin("alice");
         alice.setProviderId(providerid);
-
-        Assertion filtered = FilterManager.getInstance().applyAllFilters(alice, pol);
+        Assertion filtered = filterManager.applyAllFilters(alice, pol);
         //log.info("Policy filtered for alice: " + WspWriter.getPolicyXml(filtered));
 
         assertTrue(filtered instanceof AllAssertion);
@@ -102,21 +123,21 @@ public class FilterTest extends TestCase {
         log.info("Starting policy: " + policy);
 
 
-        Assertion forAnon = FilterManager.getInstance().applyAllFilters(null, policy.getCopy());
+        Assertion forAnon = filterManager.applyAllFilters(null, policy.getCopy());
         log.info("Policy forAnon = " + forAnon);
         assertTrue("Filtered policy for invalid user is null", forAnon == null);
 
         InternalUser alice = new InternalUser();
         alice.setProviderId(providerid);
         alice.setLogin("alice");
-        Assertion forAlice = FilterManager.getInstance().applyAllFilters(alice, policy.getCopy());
+        Assertion forAlice = filterManager.applyAllFilters(alice, policy.getCopy());
         log.info("Policy forAlice = " + forAlice);
         assertTrue("Filtered policy for valid user alice is not null", forAlice != null);
 
         InternalUser bob = new InternalUser();
         bob.setProviderId(providerid);
         bob.setLogin("bob");
-        Assertion forBob = FilterManager.getInstance().applyAllFilters(bob, policy.getCopy());
+        Assertion forBob = filterManager.applyAllFilters(bob, policy.getCopy());
         log.info("Policy forBob = " + forBob);
         assertTrue("Filtered policy for valid user bob is not null", forBob != null);
 

@@ -74,7 +74,7 @@ public class PolicyService extends ApplicationObjectSupport {
         ServiceInfo getPolicy(String serviceId);
     }
 
-    public PolicyService(PrivateKey privateServerKey, X509Certificate serverCert, ServerPolicyFactory policyFactory) {
+    public PolicyService(PrivateKey privateServerKey, X509Certificate serverCert, ServerPolicyFactory policyFactory, FilterManager filterManager) {
         // populate all possible credentials sources
         allCredentialAssertions = new ArrayList();
         for (int i = 0; i < CredentialSourceAssertion.ALL_CREDENTIAL_ASSERTIONS_TYPES.length; i++) {
@@ -96,6 +96,7 @@ public class PolicyService extends ApplicationObjectSupport {
         if (policyFactory == null) {
             throw new IllegalArgumentException("Policy Factory is required");
         }
+        this.filterManager = filterManager;
     }
 
 
@@ -117,7 +118,7 @@ public class PolicyService extends ApplicationObjectSupport {
         boolean isanonymous = atLeastOnePathIsAnonymous(targetPolicy);
         if (preAuthenticatedUser == null && !isanonymous) return null;
 
-        Assertion filteredAssertion = FilterManager.getInstance().applyAllFilters(preAuthenticatedUser, targetPolicy);
+        Assertion filteredAssertion = filterManager.applyAllFilters(preAuthenticatedUser, targetPolicy);
         if (filteredAssertion == null) {
             if (isanonymous) {
                 return XmlUtil.stringToDocument(WspWriter.getPolicyXml(null));
@@ -423,5 +424,6 @@ public class PolicyService extends ApplicationObjectSupport {
     private final PrivateKey privateServerKey;
     private final X509Certificate serverCert;
     private final ServerPolicyFactory policyFactory;
+    private final FilterManager filterManager;
     private final Logger logger = Logger.getLogger(PolicyService.class.getName());
 }
