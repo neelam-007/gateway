@@ -176,20 +176,21 @@ public class TokenServiceTest extends TestCase {
     }
 
     public void testCreateFimRst() throws Exception {
-        InputStream fimIs = getClass().getClassLoader().getResourceAsStream("com/l7tech/example/resources/tivoli/FIM_RST.xml");
-        final String origRst = XmlUtil.nodeToFormattedString(XmlUtil.parse(fimIs));
 
         UsernameToken usernameToken = new UsernameTokenImpl("testuser", "passw0rd".toCharArray());
 
         // TODO after FIM interop use AppliesTo like http://l7tech.com/services/TokenServiceTest instead
-        Document rstDoc = TokenServiceClient.createRequestSecurityTokenIssueMessage(null,
+        Document rstDoc = TokenServiceClient.createRequestSecurityTokenMessage(null,
                                                                                     TokenServiceClient.RequestType.VALIDATE,
                                                                                     usernameToken,
                                                                                     "http://samlpart.com/sso");
-        String rst = XmlUtil.nodeToFormattedString(rstDoc);
+        assertNotNull(rstDoc);
 
         // TODO check this somehow, other than uncommenting below line and eyeballing the diff
-        //assertEquals(rst, origRst);
+//        InputStream fimIs = getClass().getClassLoader().getResourceAsStream("com/l7tech/example/resources/tivoli/FIM_RST.xml");
+//        final String origRst = XmlUtil.nodeToFormattedString(XmlUtil.parse(fimIs));
+//        String rst = XmlUtil.nodeToFormattedString(rstDoc);
+//        assertEquals(rst, origRst);
     }
 
     public void testParseFimRstr() throws Exception {
@@ -199,6 +200,8 @@ public class TokenServiceTest extends TestCase {
         Object got = TokenServiceClient.parseUnsignedRequestSecurityTokenResponse(rstr);
 
         SamlAssertion saml = (SamlAssertion)got;
+        assertEquals(saml.getNameIdentifierFormat(), SamlConstants.NAMEIDENTIFIER_EMAIL);
+        assertEquals(saml.getNameIdentifierValue(), "testloser");
 
         assertFalse(saml.isHolderOfKey());
         assertFalse(saml.isSenderVouches());

@@ -43,7 +43,7 @@ public class SamlAssertion implements SamlSecurityToken {
     public static final ConfirmationMethod HOLDER_OF_KEY = new ConfirmationMethod("Holder-of-key");
     public static final ConfirmationMethod SENDER_VOUCHES = new ConfirmationMethod("Sender-vouches");
 
-    private static class ConfirmationMethod {
+    private static final class ConfirmationMethod {
         private final String name;
         private ConfirmationMethod(String name) { this.name = name; }
         public String toString() { return name; }
@@ -61,6 +61,7 @@ public class SamlAssertion implements SamlSecurityToken {
     private String nameIdentifierFormat;
     private String nameQualifier;
     private String nameIdentifierValue;
+    private String authenticationMethod;
 
     /**
      * Currently only ever set by {@link com.l7tech.common.security.xml.processor.WssProcessorImpl#processSamlSecurityToken}
@@ -106,6 +107,7 @@ public class SamlAssertion implements SamlSecurityToken {
             // Extract subject certificate
             AuthenticationStatementType authStatement = authStatements[0];
             SubjectType subject = authStatement.getSubject();
+            this.authenticationMethod = authStatement.getAuthenticationMethod();
             NameIdentifierType nameIdentifier = subject.getNameIdentifier();
             if (nameIdentifier != null) {
                 this.nameIdentifierFormat = nameIdentifier.getFormat();
@@ -275,17 +277,25 @@ public class SamlAssertion implements SamlSecurityToken {
             throw new CausedSignatureException(e);
         }
     }
-
+    
+    /** @return the name identifier format, or null if there wasn't one. {@see SamlConstants} */
     public String getNameIdentifierFormat() {
         return nameIdentifierFormat;
     }
 
+    /** @return the name qualifier, or null if there wasn't one. {@see SamlConstants} */
     public String getNameQualifier() {
         return nameQualifier;
     }
 
+    /** @return the name identifier value, or null if there wasn't one. {@see SamlConstants} */
     public String getNameIdentifierValue() {
         return nameIdentifierValue;
+    }
+
+    /** @return the authentication method, or null if there wasn't one. {@see SamlConstants} */
+    public String getAuthenticationMethod() {
+        return authenticationMethod;
     }
 
     public Calendar getExpires() {

@@ -165,7 +165,7 @@ public class TokenServiceClient {
         return msg;
     }
 
-    public static Document createRequestSecurityTokenIssueMessage(SecurityTokenType desiredTokenType, RequestType requestType, SecurityToken base, String appliesToAddress) {
+    public static Document createRequestSecurityTokenMessage(SecurityTokenType desiredTokenType, RequestType requestType, SecurityToken base, String appliesToAddress) {
         try {
             return requestSecurityTokenMessageTemplate(desiredTokenType, requestType, appliesToAddress, base);
         } catch (IOException e) {
@@ -208,7 +208,7 @@ public class TokenServiceClient {
             throws IOException, GeneralSecurityException, OperationCanceledException {
         URL url = new URL("https", ssg.getSsgAddress(), ssg.getSslPort(), SecureSpanConstants.TOKEN_SERVICE_FILE);
 
-        Document requestDoc = createRequestSecurityTokenIssueMessage(SecurityTokenType.WSSC, RequestType.ISSUE, null, null);
+        Document requestDoc = createRequestSecurityTokenMessage(SecurityTokenType.WSSC, RequestType.ISSUE, null, null);
         Object result = obtainResponse(url, ssg, requestDoc, serverCertificate);
 
         if (!(result instanceof SecureConversationSession))
