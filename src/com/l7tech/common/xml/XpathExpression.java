@@ -77,4 +77,23 @@ public class XpathExpression implements Serializable {
             this.namespaces.putAll(namespaces);
         }
     }
+
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof XpathExpression)) return false;
+
+        final XpathExpression xpathExpression = (XpathExpression)o;
+
+        if (expression != null ? !expression.equals(xpathExpression.expression) : xpathExpression.expression != null) return false;
+        if (!namespaces.equals(xpathExpression.namespaces)) return false;
+
+        return true;
+    }
+
+    public int hashCode() {
+        int result;
+        result = (expression != null ? expression.hashCode() : 0);
+        result = 29 * result + namespaces.hashCode();
+        return result;
+    }
 }
