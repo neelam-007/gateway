@@ -69,10 +69,10 @@ public class PolicyServlet extends HttpServlet {
 
     protected void doGet(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse) throws ServletException, IOException {
         // GET THE PARAMETERS PASSED
-        String str_oid = httpServletRequest.getParameter("serviceoid");
-        String getCert = httpServletRequest.getParameter("getcert");
-        String username = httpServletRequest.getParameter("username");
-        String nonce = httpServletRequest.getParameter("nonce");
+        String str_oid = httpServletRequest.getParameter(PARAM_SERVICEOID);
+        String getCert = httpServletRequest.getParameter(PARAM_GETCERT);
+        String username = httpServletRequest.getParameter(PARAM_USERNAME);
+        String nonce = httpServletRequest.getParameter(PARAM_NONCE);
 
         // See if it's actually a certificate download request
         if (getCert != null) {
@@ -87,7 +87,7 @@ public class PolicyServlet extends HttpServlet {
         // RESOLVE THE PUBLISHED SERVICE
         PublishedService targetService = null;
         if ( str_oid == null || str_oid.length() == 0 )
-            throw new ServletException( "str_oid is required" );
+            throw new ServletException( PARAM_SERVICEOID + " parameter is required" );
         else
             targetService = resolveService(Long.parseLong(str_oid));
 
@@ -364,5 +364,10 @@ public class PolicyServlet extends HttpServlet {
 
     private ServiceManager serviceManagerInstance = null;
     private Logger logger = null;
+
+    static final String PARAM_SERVICEOID = "serviceoid";
+    static final String PARAM_GETCERT = "getcert";
+    static final String PARAM_USERNAME = "username";
+    static final String PARAM_NONCE = "nonce";
 }
 
