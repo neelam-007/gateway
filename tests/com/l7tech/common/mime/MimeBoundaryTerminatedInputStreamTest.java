@@ -7,6 +7,7 @@
 package com.l7tech.common.mime;
 
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.io.NullOutputStream;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -16,6 +17,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PushbackInputStream;
 import java.util.logging.Logger;
+import java.util.Random;
 
 /**
  * @author mike
@@ -35,55 +37,98 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         junit.textui.TestRunner.run(suite());
     }
 
+    /**
+     * Create a SwaTestcaseFactory which can be used to generate test messages.  The same stream of test messages
+     * will be generated every time this is called with the same numparts, size, and simpleSeed.
+     *
+     * @param numparts    number of parts to generate, not including the preamble
+     * @param size        size of each part in bytes
+     * @param simpleSeed  a small number to seed the PRNG so that the test runs the same way every time.
+     *                    Will be combined with the size and numparts to make a unique but reproducable test message.
+     * @return a new SwaTestCaseFactory configured to produce messages with the given number of parts, each
+     *         with the specified size, and with the PRNG seeded based on the numparts, size, and simpleSeed.
+     */
+    private static SwaTestcaseFactory makeStfu(int numparts, int size, int simpleSeed) {
+        return new SwaTestcaseFactory(numparts, size, simpleSeed*28387 + size*149 + numparts*487 + 521 + simpleSeed);
+    }
+
+    public void testSinglepart() throws Exception {
+        // A singlepart message will not contain the boundary, so should throw.
+        byte[] crap = new byte[11000];
+        new Random(98899).nextBytes(crap);
+
+        // A random boundary
+        final SwaTestcaseFactory stfu = makeStfu(1, 100, 10);
+        stfu.makeTestMessage();
+        byte[] rawBoundary = stfu.getBoundary();
+        byte[] boundary = new String("--" + new String(rawBoundary)).getBytes();
+
+        // Make sure we didn't include the boundary in our generated test garbage by accident (unlikely)
+        assertEquals(-1, HexUtils.matchSubarrayOrPrefix(crap, 0, crap.length, boundary, 0));
+
+        // Now try to test it
+        int pushSize = 4096 - 11;
+        PushbackInputStream in = new PushbackInputStream(new ByteArrayInputStream(crap));
+        MimeBoundaryTerminatedInputStream mbti = new MimeBoundaryTerminatedInputStream(boundary, in, pushSize);
+
+        try {
+            HexUtils.copyStream(mbti, new NullOutputStream());
+            fail("Failed to throw exception when reading a message that contained no MIME boundaries");
+        } catch (IOException e) {
+            // Ok
+            log.info("Caught expected exception reading message that contains no MIME boundaries: " + e.getMessage());
+        }
+    }
+
     public void testMultipartWithOnePart() throws Exception {
         int numparts = 1;
         int size = 500;
-        SwaTestcaseFactory stfu = new SwaTestcaseFactory(numparts, size);
+        SwaTestcaseFactory stfu = makeStfu(numparts, size, 1);
         byte[] testMsg = stfu.makeTestMessage();
-        log.info("Constructed test MIME multipart message " + testMsg.length + " bytes long: \n" + new String(testMsg));
+        log.info("Constructed test MIME multipart message " + testMsg.length + " bytes long");
         readParts(testMsg, numparts, 4096);
     }
 
     public void testManyMultiparts() throws Exception {
         int numparts = 50;
         int size = 2030;
-        SwaTestcaseFactory stfu = new SwaTestcaseFactory(numparts, size);
+        SwaTestcaseFactory stfu = makeStfu(numparts, size, 2);
         byte[] testMsg = stfu.makeTestMessage();
-        log.info("Constructed test MIME multipart message " + testMsg.length + " bytes long: \n" + new String(testMsg));
+        log.info("Constructed test MIME multipart message " + testMsg.length + " bytes long");
         readParts(testMsg, numparts, 4096);
     }
 
     public void testSmallBlockSize() throws Exception {
         int numparts = 3;
         int size = 1000;
-        SwaTestcaseFactory stfu = new SwaTestcaseFactory(numparts, size);
+        SwaTestcaseFactory stfu = makeStfu(numparts, size, 3);
         byte[] testMsg = stfu.makeTestMessage();
-        log.info("Constructed test MIME multipart message " + testMsg.length + " bytes long: \n" + new String(testMsg));
+        log.info("Constructed test MIME multipart message " + testMsg.length + " bytes long");
         readParts(testMsg, numparts, 512);
     }
 
     public void testTinyBlockSize() throws Exception {
         int numparts = 4;
         int size = 400;
-        SwaTestcaseFactory stfu = new SwaTestcaseFactory(numparts, size);
+        SwaTestcaseFactory stfu = makeStfu(numparts, size, 4);
         byte[] testMsg = stfu.makeTestMessage();
-        log.info("Constructed test MIME multipart message " + testMsg.length + " bytes long: \n" + new String(testMsg));
+        log.info("Constructed test MIME multipart message " + testMsg.length + " bytes long");
         readParts(testMsg, numparts, 5);
     }
 
     public void testMicroscopicBlockSize() throws Exception {
         int numparts = 4;
         int size = 400;
-        SwaTestcaseFactory stfu = new SwaTestcaseFactory(numparts, size);
+        SwaTestcaseFactory stfu = makeStfu(numparts, size, 5);
         byte[] testMsg = stfu.makeTestMessage();
-        log.info("Constructed test MIME multipart message " + testMsg.length + " bytes long: \n" + new String(testMsg));
+        log.info("Constructed test MIME multipart message " + testMsg.length + " bytes long");
         readParts(testMsg, numparts, 3);
     }
 
     public void testHugeBlockSize() throws Exception {
         int numparts = 2;
         int size = 1024 * 200 + 17;
-        SwaTestcaseFactory stfu = new SwaTestcaseFactory(numparts, size);
+        SwaTestcaseFactory stfu = makeStfu(numparts, size, 6);
         byte[] testMsg = stfu.makeTestMessage();
         log.info("Constructed test MIME multipart message " + testMsg.length + " bytes long");
         readParts(testMsg, numparts, 60000);
@@ -92,13 +137,150 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
     public void testHugeAttachment() throws Exception {
         int numparts = 2;
         int size = 1024 * 200 + 17;
-        SwaTestcaseFactory stfu = new SwaTestcaseFactory(numparts, size);
+        SwaTestcaseFactory stfu = makeStfu(numparts, size, 7);
         byte[] testMsg = stfu.makeTestMessage();
         log.info("Constructed test MIME multipart message " + testMsg.length + " bytes long");
         readParts(testMsg, numparts, 512);
     }
 
-    private void readParts(byte[] testMsg, int numparts, int blockSize) throws IOException {
+    public void testBadIntermediateBoundaries() throws Exception {
+        int numparts = 4;
+        int size = 1024 + 17;
+        SwaTestcaseFactory stfu = makeStfu(numparts, size, 8);
+        byte[] testMsg = stfu.makeTestMessage();
+        byte[] crlfBoundary;
+        {
+            byte[] rawBoundary = stfu.getBoundary();
+            byte[] boundary = new String("--" + new String(rawBoundary)).getBytes();
+            crlfBoundary = new String("\r\n" + new String(boundary)).getBytes();
+        }
+
+        // Find opening boundary of first part
+        int first = HexUtils.matchSubarrayOrPrefix(testMsg, 0, testMsg.length, crlfBoundary, 0);
+        assertTrue(first > 0);
+        assertTrue(HexUtils.compareArrays(testMsg, first, crlfBoundary, 0, crlfBoundary.length));
+
+        // Find closing boundary of first part
+        int second = HexUtils.matchSubarrayOrPrefix(testMsg, first + crlfBoundary.length + 2,
+                                                    testMsg.length - (first + crlfBoundary.length + 2),
+                                                    crlfBoundary, 0);
+        assertTrue(second > first);
+        assertTrue(HexUtils.compareArrays(testMsg, second, crlfBoundary, 0, crlfBoundary.length));
+
+        class Term {
+            String test;
+            Class expectedResult; // null = success; otherwise, exception superclass that must be thrown
+            Term(String test, Class expectedResult) {
+                this.test = test;
+                this.expectedResult = expectedResult;
+            }
+        }
+
+        Term[] terminators = {
+            new Term("\r\n", null), // just the line ending (should be ignored)
+            new Term("\n\r", null), // a backwards line ending (should be ignored)
+            new Term("--\r\n",     NotEnoughPartsException.class),// a normal final terminator (should end the message early)
+            new Term(" --\r\n",    NotEnoughPartsException.class),// terminator on same line (should end the message early)
+            new Term("ashs--\r\n", NotEnoughPartsException.class),// terminator on same line (should end the message early)
+            new Term("---\r",      NotEnoughPartsException.class),// terminator on same line (should end the message early)
+            new Term("---\n",      NotEnoughPartsException.class),// terminator on same line (should end the message early)
+            new Term("--\r\n",     NotEnoughPartsException.class),// terminator on same line (should end the message early)
+            new Term("-\n--\r",    NotEnoughPartsException.class),// terminator on same line (should end the message early)
+            new Term("-\n--\r\n",  NotEnoughPartsException.class),// terminator on same line (should end the message early)
+            new Term("- - -\r", null), // divided terminator (should be ignored)
+            new Term("-\r-\n", null),  // divided terminator (should be ignored)
+            new Term("-\n-\r", null),  // divided terminator (should be ignored)
+            new Term("\n-\r-", null),  // divided terminator (should be ignored)
+            new Term("\r\n--", null),  // terminator on next line (should be ignored as part of next part's headers)
+            new Term("\n\r--", null),  // terminator on next line (should be ignored as part of next part's headers)
+            new Term("\r\n\r\n", null), // extra line (should be ignored, will terminate next part's headers early)
+            new Term("\r\r\n\n", null), // eventual CRLF (should be ignored, will leave bare LF as first byte of header)
+            new Term("\n\r\n\r", null), // backwards LFCRs (should be ignored, will leave backwards LFCR as start of next header)
+        };
+
+        byte[] saved = new byte[10];
+        System.arraycopy(testMsg, second + crlfBoundary.length, saved, 0, saved.length);
+        for (int i = 0; i < terminators.length; i++) {
+            Term term = terminators[i];
+            String t = term.test;
+            Class ex = term.expectedResult;
+            final String hex = HexUtils.hexDump(t.getBytes());
+            System.arraycopy(saved, 0, testMsg, second + crlfBoundary.length, saved.length); // restore saved
+            System.arraycopy(t.getBytes(), 0, testMsg, second + crlfBoundary.length, t.length()); // overwrite
+            log.info("Testing boundary suffix: " + hex);
+            try {
+                readParts(testMsg, numparts, 512);
+                if (ex != null)
+                    fail("Failed to throw expected exception " + ex + " using terminator " + hex);
+            } catch (Exception e) {
+                if (ex == null)
+                    throw new RuntimeException("Unexpected exception was thrown: " + e.getMessage(), e);
+                if (!ex.isAssignableFrom(e.getClass()))
+                    throw new RuntimeException("Wrong exception was thrown: " + e.getMessage(), e);
+                log.info("Expected exception was thrown: " + e.getMessage());
+            }
+        }
+        System.arraycopy(saved, 0, testMsg, second + crlfBoundary.length, saved.length); // restore saved
+
+    }
+
+    public void testBadTerminatingBoundaries() throws Exception {
+        int numparts = 4;
+        int size = 1024 + 17;
+        SwaTestcaseFactory stfu = makeStfu(numparts, size, 9);
+        byte[] testMsg = stfu.makeTestMessage();
+        byte[] rawBoundary = stfu.getBoundary();
+        byte[] boundary = new String("\r\n--" + new String(rawBoundary) + "--\r\n").getBytes();
+
+        int match = HexUtils.matchSubarrayOrPrefix(testMsg, testMsg.length - boundary.length - 6, boundary.length + 6, boundary, 0);
+        assertTrue(match > 0);
+        assertTrue(HexUtils.compareArrays(testMsg, match, boundary, 0, boundary.length));
+
+        // Verify that acceptable terminator variants work as expected
+
+        String[] goodTerminators = {
+            "--\r\n",
+            "--\n\r",
+            "----",
+            "---\r",
+            "---\n",
+        };
+
+        for (int i = 0; i < goodTerminators.length; i++) {
+            String t = goodTerminators[i];
+            System.arraycopy(t.getBytes(), 0, testMsg, match + boundary.length - t.length(), t.length());
+            readParts(testMsg, numparts, 512);
+        }
+
+        // Now try various nasty terminating boundaries
+
+        String[] badTerminators = {
+            "-\r-\n",
+            "-\n-\r",
+            "\r\n--",
+            "\n\r--",
+            "\n-\r-",
+            "\r\n\r\n",
+            "\r\r\n\n",
+            "\n\r\n\r",
+        };
+
+        for (int i = 0; i < badTerminators.length; i++) {
+            String t = badTerminators[i];
+            System.arraycopy(t.getBytes(), 0, testMsg, match + boundary.length - t.length(), t.length());
+            try {
+                readParts(testMsg, numparts, 512);
+                fail("Failed to complain about extra parts after bogus terminator: " + HexUtils.hexDump(t.getBytes()));
+            } catch (TooManyPartsException e) {
+                // Ok
+            }
+        }
+    }
+
+    private static class TooManyPartsException extends Exception {}
+    private static class NotEnoughPartsException extends Exception {}
+
+    private void readParts(byte[] testMsg, int numparts, int blockSize) throws IOException, TooManyPartsException, NotEnoughPartsException {
         ByteArrayInputStream bais = new ByteArrayInputStream(testMsg);
         int psize = 4096;
         PushbackInputStream pis = new PushbackInputStream(bais, psize);
@@ -112,7 +294,7 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
 
         ByteArrayOutputStream preamble = new ByteArrayOutputStream();
         HexUtils.copyStream(mbtis, preamble, blockSize);
-        log.info("Successfully read " + preamble.toByteArray().length + " bytes of preamble: \n" + new String(preamble.toByteArray()));
+        log.info("Successfully read " + preamble.toByteArray().length + " bytes of preamble");
 
         MimeHeaders innerHeaders;
         ByteArrayOutputStream part1;
@@ -127,13 +309,23 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
             part1 = new ByteArrayOutputStream();
             HexUtils.copyStream(mbtis, part1, blockSize);
             total = part1.toByteArray().length;
-            log.info("Successfully read " + total + " bytes of part1");
+            assertTrue(total > 0);
+            log.info("Successfully read " + total + " bytes of part #" + partNum);
 
             if (innerHeaders.hasContentLength()) {
                 assertEquals(total, innerHeaders.getContentLength());
                 log.info("Verified that length of part matched its declared Content-Length.");
             } else
                 log.info("(Not verifying length -- part1 had no Content-Length header)");
+
+            if (partNum >= numparts - 1) {
+                if (!mbtis.isLastPartProcessed()) {
+                    throw new TooManyPartsException(); // got at least one extra part
+                }
+            } else if (mbtis.isLastPartProcessed()) {
+                throw new NotEnoughPartsException(); // saw message end before we expected it
+            }
+
         }
     }
 
@@ -145,14 +337,18 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
     }
 
     public void testRubyMultipartWithTwoPartsAndNoPreamble() throws Exception {
+        // This is actual a legal multipart message -- messages with no preamble will have "--" as their first bytes
+        // rather than "\r\n--" -- but rather than special case this, MimeBoundaryTerminatedInputStream requires that
+        // the extra "\r\n" be inserted by its client.  This test verifies the expected failure if this is not done.
+
         byte[] testMsg = ("Content-Type: " + MultipartMessageTest.CT2 + "\r\n\r\n" +
                 MultipartMessageTest.MESS2).getBytes();
         log.info("Constructed test MIME multipart message " + testMsg.length + " bytes long: \n" + new String(testMsg));
         try {
             readParts(testMsg, 2, 4096);
             fail("Did not receive expected IOException reading preamble with no CRLF before initial boundary");
-        } catch (IOException e) {
-            log.info("Received expected IOException when trying to read preamble with no CRLF before initial boundary: " + e.getMessage());
+        } catch (NotEnoughPartsException e) {
+            log.info("Received expected exception when trying to read preamble with no CRLF before initial boundary: " + e.getMessage());
         }
     }
 

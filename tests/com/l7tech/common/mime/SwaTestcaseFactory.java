@@ -27,9 +27,10 @@ class SwaTestcaseFactory {
      * @param num number of parts to produce in each multipart/related message
      * @param partSize the size of each part
      */
-    SwaTestcaseFactory(int num, int partSize) {
+    SwaTestcaseFactory(int num, int partSize, long seed) {
         this.numParts = num;
         this.partSize = partSize;
+        this.random = new Random(seed);
         this.boundary = randomBoundary();
     }
 
@@ -60,16 +61,28 @@ class SwaTestcaseFactory {
      * Returns an array of max bytes in a small number of bytes have been replaced with a fragment of the {@link #boundary}.
      */
     private byte[] randomBinary(int max) {
+
+        // Fill the part with random bytes
         byte[] bytes = new byte[max];
-        int oopsPos = random.nextInt(max - boundary.length - 3);
-        int oopsLen = random.nextInt(boundary.length - 2) + 1;
         random.nextBytes(bytes);
-        bytes[oopsPos++] = '\r';
-        bytes[oopsPos++] = '\n';
-        bytes[oopsPos++] = '-';
-        bytes[oopsPos++] = '-';
-        for (int i = 0; i < oopsLen; i++) {
-            bytes[oopsPos + i] = boundary[i];
+
+        // Generate a random number of "red herring" fake almost-boundaries
+        int numOopses = random.nextInt((max / (random.nextInt(150) + 100)) + random.nextInt(4));
+        for (int oopsNum = 0; oopsNum < numOopses; oopsNum++) {
+            // Position it right to the end; we'll truncate it if necessary
+            int oopsPos = random.nextInt(max);
+
+            // never emit last 2 bytes of boundary -- it starts getting too likely for next random
+            // character to happen to match it
+            int oopsLen = random.nextInt(boundary.length + 3);
+
+            if (oopsPos < max && oopsLen-- > 0) bytes[oopsPos++] = '\r';
+            if (oopsPos < max && oopsLen-- > 0) bytes[oopsPos++] = '\n';
+            if (oopsPos < max && oopsLen-- > 0) bytes[oopsPos++] = '-';
+            if (oopsPos < max && oopsLen-- > 0) bytes[oopsPos++] = '-';
+            for (int i = 0; oopsLen > 0 && i < oopsLen && i + oopsPos < max; i++) {
+                bytes[oopsPos + i] = boundary[i];
+            }
         }
         return bytes;
     }
@@ -86,7 +99,7 @@ class SwaTestcaseFactory {
             numParts = Integer.parseInt(args[0]);
             maxSize = Integer.parseInt(args[1]);
         }
-        SwaTestcaseFactory me = new SwaTestcaseFactory(numParts, maxSize);
+        SwaTestcaseFactory me = new SwaTestcaseFactory(numParts, maxSize, 37362);
         System.out.write(me.makeTestMessage());
     }
 
@@ -129,9 +142,18 @@ class SwaTestcaseFactory {
         return baos.toByteArray();
     }
 
+    /**
+     * @return the boundary used by the last message generated, not including leading dashes or any CRLF.  Never null.
+     * @throws IllegalStateException if no message has been generated yet  
+     */
+    public byte[] getBoundary() {
+        if (boundary == null) throw new IllegalStateException("No message has been generated yet");
+        return boundary;
+    }
+
     private final int numParts;
     private final int partSize;
     private final byte[] boundary;
-    private final Random random = new Random();
+    private final Random random;
     public static final byte[] CRLF = "\r\n".getBytes();
 }
