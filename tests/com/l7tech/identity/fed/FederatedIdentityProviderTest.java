@@ -1,5 +1,9 @@
 package com.l7tech.identity.fed;
 
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.server.SsgAdminSession;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -82,6 +86,35 @@ public class FederatedIdentityProviderTest extends TestCase {
                 return null;
             }
         }.doIt();
+    }
+
+    public void testSaveVirtualGroup() throws Exception {
+        final IdentityProviderConfig config = (IdentityProviderConfig) new SsgAdminSession() {
+            protected Object doSomething() throws Exception {
+                EntityHeader[] configs = getIdentityAdmin().findAllIdentityProviderConfig();
+                for ( int i = 0; i < configs.length; i++ ) {
+                    EntityHeader entityHeader = configs[i];
+                    if ( entityHeader.getType() == EntityType.ID_PROVIDER_CONFIG ) {
+                        IdentityProviderConfig config = getIdentityAdmin().findIdentityProviderConfigByPrimaryKey(entityHeader.getOid());
+                        if ( config.type() == IdentityProviderType.FEDERATED ) return config;
+                    }
+                }
+                return null;
+            }
+        }.doIt();
+
+        assertNotNull("There must already be a Federated Identity Provider", config);
+
+        final VirtualGroup vg = new VirtualGroup();
+        vg.setName("CN is anything");
+        vg.setX509SubjectDnPattern("CN=*");
+        String soid = (String)new SsgAdminSession() {
+            protected Object doSomething() throws Exception {
+                return getIdentityAdmin().saveGroup(config.getOid(), vg, null);
+            }
+        }.doIt();
+
+        assertNotNull("Couldn't save virtual group",soid);
     }
 
     /**
