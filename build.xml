@@ -478,6 +478,7 @@
                 <exclude name="com/l7tech/policy/server/**/*"/>
                 <include name="com/l7tech/identity/**/*"/>
                 <include name="com/l7tech/common/**/*"/>
+                <exclude name="com/l7tech/common/message/**/*"/>
                 <exclude name="com/l7tech/common/security/prov/**/*"/>
                 <exclude name="com/l7tech/common/security/saml/**/*"/>
                 <exclude name="com/l7tech/common/xml/saml/**/*"/>
@@ -486,7 +487,7 @@
                 <exclude name="com/l7tech/common/security/Cert*.class"/>
                 <exclude name="com/l7tech/common/security/Jce*.class"/>
                 <exclude name="com/l7tech/common/security/Rsa*.class"/>
-                <!-- <exclude name="com/l7tech/common/security/**/*"/>-->
+                <exclude name="com/l7tech/common/xml/TarariUtil.class"/>
                 <exclude name="com/l7tech/common/util/Pkcs12*.class"/>
                 <exclude name="com/l7tech/common/security/xml/processor/**/*"/>
                 <exclude name="com/l7tech/common/security/xml/decorator/**/*"/>
