@@ -11,6 +11,7 @@ import com.l7tech.common.util.CertificateDownloader;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.proxy.ConfigurationException;
+import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.ssl.HostnameMismatchException;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.PendingRequest;
@@ -128,10 +129,10 @@ public class MessageProcessor {
                     }
 
                     // We don't trust the server cert.  Perform certificate discovery and try again
-                    installSsgServerCertificate(ssg); // might throw BadCredentialsException
+                    ClientProxy.installSsgServerCertificate(ssg); // might throw BadCredentialsException
                     // FALLTHROUGH -- retry with new server certificate
                 } catch (ServerCertificateUntrustedException e) {
-                    installSsgServerCertificate(ssg); // might throw BadCredentialsException
+                    ClientProxy.installSsgServerCertificate(ssg); // might throw BadCredentialsException
                     // FALLTHROUGH allow policy to reset and retry
                 }
             } catch (PolicyRetryableException e) {
@@ -426,33 +427,5 @@ public class MessageProcessor {
             state.setCredentials(null, null,
                                  new UsernamePasswordCredentials(username, password));
         }
-    }
-
-    /**
-     * Get credentials, and download and install the SSG certificate.  If this completes successfully, the
-     * next attempt to connect to the SSG via SSL should at least get past the SSL handshake.
-     *
-     * @throws IOException if there was a network problem downloading the server cert
-     * @throws IOException if there was a problem reading or writing the keystore for this SSG
-     * @throws BadCredentialsException if the downloaded cert could not be verified with the SSG username and password
-     * @throws OperationCanceledException if credentials were needed but the user declined to enter them
-     * @throws GeneralSecurityException for miscellaneous and mostly unlikely certificate or key store problems
-     */
-    private void installSsgServerCertificate(Ssg ssg)
-            throws IOException, BadCredentialsException, OperationCanceledException, GeneralSecurityException
-    {
-        if (!ssg.isCredentialsConfigured())
-            Managers.getCredentialManager().getCredentials(ssg);
-
-        CertificateDownloader cd = new CertificateDownloader(ssg.getServerUrl(),
-                                                             ssg.getUsername(),
-                                                             ssg.password());
-
-        if (cd.downloadCertificate()) {
-            SsgKeyStoreManager.saveSsgCertificate(ssg, (X509Certificate) cd.getCertificate());
-            return; // Success.
-        }
-
-        throw new BadCredentialsException("Unable to verify server certificate with the current username and password for SSG " + ssg);
     }
 }

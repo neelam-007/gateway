@@ -1,25 +1,30 @@
 package com.l7tech.proxy;
 
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.proxy.datamodel.CurrentRequest;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgFinder;
-import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
 import com.l7tech.proxy.datamodel.SsgResponse;
-import com.l7tech.proxy.datamodel.CurrentRequest;
+import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
 import com.l7tech.proxy.processor.MessageProcessor;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
+import com.l7tech.service.Wsdl;
 import org.apache.log4j.Category;
 import org.mortbay.http.HttpException;
 import org.mortbay.http.HttpRequest;
 import org.mortbay.http.HttpResponse;
 import org.mortbay.http.handler.AbstractHttpHandler;
 import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Node;
+import org.w3c.dom.NamedNodeMap;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.net.URL;
 import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.regex.Pattern;
 
 /**
  * Handle an incoming HTTP request, and proxy it if it's a SOAP request we know how to deal with.
@@ -29,7 +34,7 @@ import java.net.MalformedURLException;
  * To change this template use Options | File Templates.
  */
 public class RequestHandler extends AbstractHttpHandler {
-    private final Category log = Category.getInstance(RequestHandler.class);
+    private static final Category log = Category.getInstance(RequestHandler.class);
     private ClientProxy clientProxy;
     private SsgFinder ssgFinder;
     private MessageProcessor messageProcessor;
@@ -103,10 +108,24 @@ public class RequestHandler extends AbstractHttpHandler {
     {
         log.info("Incoming request: " + request.getURI().getPath());
 
-        validateRequestMethod(request);
+        // Find endpoint, and see if this is a WSDL request
+        String endpoint = request.getURI().getPath().substring(1); // skip leading slash
+        boolean isWsdl = false;
+        if (endpoint.endsWith(ClientProxy.WSDL_SUFFIX)) {
+            endpoint = endpoint.substring(0, endpoint.length() - ClientProxy.WSDL_SUFFIX.length());
+            isWsdl = true;
+        }
 
-        final Ssg ssg = getDesiredSsg(request);
+        final Ssg ssg = getDesiredSsg(endpoint);
         log.info("Mapped to SSG: " + ssg);
+        CurrentRequest.setCurrentSsg(ssg);
+
+        if (isWsdl) {
+            handleWsdlRequest(request, response, ssg);
+            return;
+        }
+
+        requirePostMethod(request);
 
         final Document requestEnvelope;
         try {
@@ -164,7 +183,7 @@ public class RequestHandler extends AbstractHttpHandler {
      * @param request           the Request that should be an HTTP POST
      * @throws HttpException    thrown if it isn't
      */
-    private void validateRequestMethod(final HttpRequest request) throws HttpException {
+    private void requirePostMethod(final HttpRequest request) throws HttpException {
         if (request.getMethod().compareToIgnoreCase("POST") != 0) {
             final HttpException t = new HttpException(405); // "Method not allowed"
             interceptor.onMessageError(t);
@@ -174,16 +193,18 @@ public class RequestHandler extends AbstractHttpHandler {
 
     /**
      * Figure out which SSG the client is trying to reach.
-     * @param request   the request sent by the client
+     *
+     * @param endpoint   the endpoint string sent by the client (ie, "/ssg3"), with any WSDL suffix stripped
      * @return          the Ssg to route it to
      * @throws HttpException    if there was Trouble
      */
-    private Ssg getDesiredSsg(final HttpRequest request) throws HttpException {
+    private Ssg getDesiredSsg(String endpoint) throws HttpException {
         // Figure out which SSG is being invoked.
-        final String endpoint = request.getURI().getPath().substring(1); // skip leading slash
         try {
             try {
-                return ssgFinder.getSsgByEndpoint(endpoint);
+                String[] splitted = endpoint.split("/", 2);
+                log.info("Looking for " + splitted[0]);
+                return ssgFinder.getSsgByEndpoint(splitted[0]);
             } catch (SsgNotFoundException e) {
                 return ssgFinder.getDefaultSsg();
             }
@@ -211,7 +232,6 @@ public class RequestHandler extends AbstractHttpHandler {
 
         try {
             PendingRequest pendingRequest = gatherRequest(request, requestEnvelope, ssg);
-            CurrentRequest.setCurrentRequest(pendingRequest);
             SsgResponse reply = messageProcessor.processMessage(pendingRequest);
             interceptor.onReceiveReply(reply);
             log.info("Returning result");
@@ -237,5 +257,80 @@ public class RequestHandler extends AbstractHttpHandler {
     /** Turn off message interception. */
     public void clearRequestInterceptor() {
         setRequestInterceptor(NullRequestInterceptor.INSTANCE);
+    }
+
+    /**
+     * Handle a WSDL proxying request.
+     *
+     * @param request
+     * @param response
+     */
+    private void handleWsdlRequest(HttpRequest request, HttpResponse response, Ssg ssg) throws HttpException {
+        String oidStr = request.getParameter("serviceoid");
+        if (oidStr != null) {
+            handleWsdlRequestForOid(request, response, ssg, oidStr);
+            return;
+        }
+
+        handleWsdlRequestForWsil(request, response, ssg);
+    }
+
+    private void handleWsdlRequestForWsil(HttpRequest request, HttpResponse response, Ssg ssg)
+            throws HttpException
+    {
+        try {
+            Document wsil = WsdlProxy.obtainWsilForServices(ssg);
+
+            // Rewrite the wsdl URLs
+            int port = clientProxy.getBindPort();
+            String newUrl = "http://" + request.getHost() + ":" + port + "/" +
+                    ssg.getLocalEndpoint() + ClientProxy.WSDL_SUFFIX + "?serviceoid=";
+            NodeList descList = wsil.getElementsByTagName("description");
+            Pattern replaceService = Pattern.compile("http.*serviceoid=(-?\\d+)");
+            for (int i = 0; i < descList.getLength(); ++i) {
+                Node desc = descList.item(i);
+                NamedNodeMap attrs = desc.getAttributes();
+                Node location = attrs.getNamedItem("location");
+                String origUrl = location.getNodeValue();
+                String newval = replaceService.matcher(origUrl).replaceAll(newUrl + "$1");
+                location.setNodeValue(newval);
+            }
+
+            response.addField("Content-Type", "text/xml");
+            XmlUtil.documentToOutputStream(wsil, response.getOutputStream());
+            response.commit();
+            return;
+        } catch (WsdlProxy.ServiceNotFoundException e) {
+            log.error("WSIL proxy request failed: ", e);
+            throw new HttpException(404, e.getMessage());
+        } catch (Exception e) {
+            log.error("WSIL proxy request failed: ", e);
+            throw new HttpException(500, "WSIL proxy request failed: " + e);
+        }
+    }
+
+    /** Download a WSDL from the SSG and rewrite the port URL to point to our proxy endpoint for that SSG. */
+    private void handleWsdlRequestForOid(HttpRequest request, HttpResponse response, Ssg ssg, String oidStr) throws HttpException {
+        try {
+            long oid = Long.parseLong(oidStr);
+            Wsdl wsdl = WsdlProxy.obtainWsdlForService(ssg, oid);
+
+            // Rewrite the wsdl URL
+            int port = clientProxy.getBindPort();
+            URL newUrl = new URL("http", request.getHost(), port,
+                                 "/" + ssg.getLocalEndpoint() + "/service/" + oid);
+            wsdl.setPortUrl(wsdl.getSoapPort(), newUrl);
+
+            response.addField("Content-Type", "text/xml");
+            wsdl.toOutputStream(response.getOutputStream());
+            response.commit();
+            return;
+        } catch (WsdlProxy.ServiceNotFoundException e) {
+            log.error("WSDL proxy request failed: ", e);
+            throw new HttpException(404, e.getMessage());
+        } catch (Exception e) {
+            log.error("WSDL proxy request failed: ", e);
+            throw new HttpException(500, "WSDL proxy request failed: " + e);
+        }
     }
 }

@@ -12,6 +12,7 @@ import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
 import com.l7tech.proxy.ssl.ClientProxyTrustManager;
 import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.common.util.SslUtils;
+import com.l7tech.common.util.CertificateDownloader;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.log4j.Category;
@@ -47,6 +48,13 @@ public class ClientProxy {
     private static final Category log = Category.getInstance(ClientProxy.class);
     public static final String PROXY_CONFIG =
             System.getProperties().getProperty("user.home") + File.separator + ".l7tech";
+
+    /**
+     * This is the suffix appended to the local endpoint to form local WSDL discovery URLs.
+     * For example, an Agent listening on http://localhost:7700/ssg3 will treat anything addressed
+     * to http://localhost:7700/ssg3/wsdl as a WSDL discovery request to the corresponding SSG.
+     */
+    public static final String WSDL_SUFFIX = "/wsdl";
 
     private SsgFinder ssgFinder;
     private HttpServer httpServer;
@@ -320,6 +328,34 @@ public class ClientProxy {
                 throw new OperationCanceledException();
             }
         }
+    }
+
+    /**
+     * Get credentials, and download and install the SSG certificate.  If this completes successfully, the
+     * next attempt to connect to the SSG via SSL should at least get past the SSL handshake.
+     *
+     * @throws IOException if there was a network problem downloading the server cert
+     * @throws IOException if there was a problem reading or writing the keystore for this SSG
+     * @throws BadCredentialsException if the downloaded cert could not be verified with the SSG username and password
+     * @throws OperationCanceledException if credentials were needed but the user declined to enter them
+     * @throws GeneralSecurityException for miscellaneous and mostly unlikely certificate or key store problems
+     */
+    public static void installSsgServerCertificate(Ssg ssg)
+            throws IOException, BadCredentialsException, OperationCanceledException, GeneralSecurityException
+    {
+        if (!ssg.isCredentialsConfigured())
+            Managers.getCredentialManager().getCredentials(ssg);
+
+        CertificateDownloader cd = new CertificateDownloader(ssg.getServerUrl(),
+                                                             ssg.getUsername(),
+                                                             ssg.password());
+
+        if (cd.downloadCertificate()) {
+            SsgKeyStoreManager.saveSsgCertificate(ssg, (X509Certificate) cd.getCertificate());
+            return; // Success.
+        }
+
+        throw new BadCredentialsException("Unable to verify server certificate with the current username and password for SSG " + ssg);
     }
 }
 

@@ -7,7 +7,7 @@
 package com.l7tech.proxy.ssl;
 
 import com.l7tech.proxy.datamodel.CurrentRequest;
-import com.l7tech.proxy.datamodel.PendingRequest;
+import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import org.apache.log4j.Category;
@@ -31,12 +31,12 @@ public class ClientProxyTrustManager implements X509TrustManager {
     private static final Category log = Category.getInstance(ClientProxyTrustManager.class);
 
     public X509Certificate[] getAcceptedIssuers() {
-        // Find our current request
-        PendingRequest req = CurrentRequest.getCurrentRequest();
-        if (req == null)
-            throw new IllegalStateException("No current PendingRequest is available in this thread");
+        // Find our current ssg
+        Ssg ssg = CurrentRequest.getCurrentSsg();
+        if (ssg == null)
+            throw new IllegalStateException("No current Ssg is available in this thread");
 
-        X509Certificate ssgCert = SsgKeyStoreManager.getServerCert(req.getSsg());
+        X509Certificate ssgCert = SsgKeyStoreManager.getServerCert(ssg);
         return ssgCert == null ? new X509Certificate[0] : new X509Certificate[] { ssgCert };
     }
 
@@ -49,13 +49,13 @@ public class ClientProxyTrustManager implements X509TrustManager {
         if (x509Certificates == null || x509Certificates.length < 1 || s == null)
             throw new IllegalArgumentException("empty certificate chain, or null auth type");
 
-        // Find our current request
-        PendingRequest req = CurrentRequest.getCurrentRequest();
-        if (req == null)
-            throw new IllegalStateException("No current PendingRequest is available in this thread");
+        // Find our current ssg
+        Ssg ssg = CurrentRequest.getCurrentSsg();
+        if (ssg == null)
+            throw new IllegalStateException("No current Ssg is available in this thread");
 
         // Verify the hostname
-        String expectedHostname = req.getSsg().getSsgAddress();
+        String expectedHostname = ssg.getSsgAddress();
         String cn = "";
         try {
             X509Certificate cert = x509Certificates[0];
@@ -72,7 +72,7 @@ public class ClientProxyTrustManager implements X509TrustManager {
                                                 expectedHostname + ")");
 
         // Get the trusted CA key for this SSG.
-        X509Certificate trustedCert = SsgKeyStoreManager.getServerCert(req.getSsg());
+        X509Certificate trustedCert = SsgKeyStoreManager.getServerCert(ssg);
         if (trustedCert == null)
             throw new ServerCertificateUntrustedException("We have not yet discovered this SSG's server certificate");
 

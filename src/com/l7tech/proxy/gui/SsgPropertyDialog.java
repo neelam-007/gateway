@@ -65,6 +65,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     //   View for Network pane
     private JComponent networkPane;
     private WrappingLabel fieldLocalEndpoint;
+    private WrappingLabel fieldWsdlEndpoint;
     private JRadioButton radioStandardPorts;
     private JRadioButton radioNonstandardPorts;
     private JTextField fieldSsgPort;
@@ -78,7 +79,6 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     private DisplayPolicyTableModel displayPolicyTableModel;
     private JButton buttonFlushPolicies;
     private boolean policyFlushRequested = false;
-
 
     /** Create an SsgPropertyDialog ready to edit an Ssg instance. */
     private SsgPropertyDialog(ClientProxy clientProxy, final Ssg ssg) {
@@ -307,7 +307,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             // Endpoint panel
 
             JPanel epp = new JPanel(new GridBagLayout());
-            epp.setBorder(BorderFactory.createTitledBorder(" Our proxy URL "));
+            epp.setBorder(BorderFactory.createTitledBorder(" Incoming requests to this Agent "));
             pane.add(epp, new GridBagConstraints(0, gridY++, 2, 1, 1000.0, 0.0,
                                                  GridBagConstraints.WEST,
                                                  GridBagConstraints.HORIZONTAL,
@@ -317,7 +317,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             gridY = 0;
 
             WrappingLabel splain01 = new WrappingLabel("The Agent will listen for incoming messages at this local " +
-                                                       "URL, and route any such messages to this Gateway.", 2);
+                                                       "URL, and route any such messages to this Gateway:", 2);
             epp.add(splain01,
                     new GridBagConstraints(0, gridY++, 2, 1, 0.0, 0.0,
                                            GridBagConstraints.WEST,
@@ -326,14 +326,35 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
             fieldLocalEndpoint = new WrappingLabel("");
             fieldLocalEndpoint.setCopyMenuEnabled(true);
-            epp.add(new JLabel("Proxy URL:"), new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
-                                                              GridBagConstraints.EAST,
-                                                              GridBagConstraints.NONE,
-                                                              new Insets(5, 5, 5, 0), 0, 0));
-            epp.add(fieldLocalEndpoint, new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
-                                                              GridBagConstraints.WEST,
-                                                              GridBagConstraints.HORIZONTAL,
-                                                              new Insets(5, 5, 5, 5), 0, 0));
+            epp.add(new JLabel("Proxy URL:"),
+                    new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
+                                           GridBagConstraints.EAST,
+                                           GridBagConstraints.NONE,
+                                           new Insets(5, 15, 5, 0), 0, 0));
+            epp.add(fieldLocalEndpoint,
+                    new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
+                                           GridBagConstraints.WEST,
+                                           GridBagConstraints.HORIZONTAL,
+                                           new Insets(5, 5, 5, 5), 0, 0));
+
+            WrappingLabel splain02 = new WrappingLabel("The Agent will offer proxied WSDL lookups at this local URL:", 1);
+            epp.add(splain02,
+                    new GridBagConstraints(0, gridY++, 2, 1, 0.0, 0.0,
+                                           GridBagConstraints.WEST,
+                                           GridBagConstraints.HORIZONTAL,
+                                           new Insets(10, 5, 0, 0), 0, 0));
+            fieldWsdlEndpoint = new WrappingLabel("");
+            fieldWsdlEndpoint.setCopyMenuEnabled(true);
+            epp.add(new JLabel("WSDL URL:"),
+                    new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
+                                           GridBagConstraints.EAST,
+                                           GridBagConstraints.NONE,
+                                           new Insets(5, 15, 5, 0), 0, 0));
+            epp.add(fieldWsdlEndpoint,
+                    new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
+                                           GridBagConstraints.WEST,
+                                           GridBagConstraints.HORIZONTAL,
+                                           new Insets(5, 5, 5, 5), 0, 0));
 
             gridY = oy;
 
@@ -341,7 +362,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             // Gateway ports panel
 
             JPanel gpp = new JPanel(new GridBagLayout());
-            gpp.setBorder(BorderFactory.createTitledBorder(" Gateway ports "));
+            gpp.setBorder(BorderFactory.createTitledBorder(" Outgoing requests to the Gateway "));
             pane.add(gpp,
                      new GridBagConstraints(0, gridY++, 2, 1, 1000.0, 0.0,
                                             GridBagConstraints.WEST,
@@ -626,7 +647,9 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         this.ssg = ssg;
 
         fieldLocalEndpoint.setText("http://localhost:" + clientProxy.getBindPort() + "/" +
-                                       ssg.getLocalEndpoint());
+                                   ssg.getLocalEndpoint());
+        fieldWsdlEndpoint.setText("http://localhost:" + clientProxy.getBindPort() + "/" +
+                                  ssg.getLocalEndpoint() + ClientProxy.WSDL_SUFFIX);
         fieldServerAddress.setText(ssg.getSsgAddress());
         fieldUsername.setText(ssg.getUsername());
         boolean hasPassword = ssg.password() != null;

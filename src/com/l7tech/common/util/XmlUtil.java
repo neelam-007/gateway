@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.io.ByteArrayInputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 
 /**
  * Thread-local XML parsing and pretty-printing utilities.
@@ -68,6 +70,11 @@ public class XmlUtil {
 
     public static XMLSerializer getXmlSerializer() {
         return (XMLSerializer) xmlSerializer.get();
+    }
+
+    public static void documentToOutputStream(Document doc, OutputStream os) throws IOException {
+        getXmlSerializer().setOutputCharStream(new OutputStreamWriter(os));
+        getXmlSerializer().serialize(doc);
     }
 
     public static String documentToString(Document doc) throws IOException {

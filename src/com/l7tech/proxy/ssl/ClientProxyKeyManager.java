@@ -7,7 +7,6 @@
 package com.l7tech.proxy.ssl;
 
 import com.l7tech.proxy.datamodel.CurrentRequest;
-import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
@@ -35,10 +34,10 @@ public class ClientProxyKeyManager implements X509KeyManager {
         try {
             log.info("ClientProxyKeyManager: getClientCertPrivateKey for " + s);
             // Find our current request
-            PendingRequest req = CurrentRequest.getCurrentRequest();
-            if (req == null)
-                throw new IllegalStateException("No current PendingRequest is available in this thread");
-            PrivateKey pk = SsgKeyStoreManager.getClientCertPrivateKey(req.getSsg());
+            Ssg ssg = CurrentRequest.getCurrentSsg();
+            if (ssg == null)
+                throw new IllegalStateException("No current Ssg is available in this thread");
+            PrivateKey pk = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
             log.info("Returning PrivateKey: " + (pk == null ? "NULL" : "<it's a real key; numbers not shown>"));
             return pk;
         } catch (NoSuchAlgorithmException e) {
@@ -55,10 +54,9 @@ public class ClientProxyKeyManager implements X509KeyManager {
 
     public X509Certificate[] getCertificateChain(String s) {
         log.info("ClientProxyKeyManager: getCertificateChain for " + s);
-        PendingRequest req = CurrentRequest.getCurrentRequest();
-        if (req == null)
-            throw new IllegalStateException("No current PendingRequest is available in this thread");
-        Ssg ssg = req.getSsg();
+        Ssg ssg = CurrentRequest.getCurrentSsg();
+        if (ssg == null)
+            throw new IllegalStateException("No current Ssg is available in this thread");
         X509Certificate[] certs = SsgKeyStoreManager.getClientCertificateChain(ssg);
         log.info("Found " + certs.length + " client certificates with SSG " + ssg);
         if (certs.length < 1) {
@@ -86,10 +84,9 @@ public class ClientProxyKeyManager implements X509KeyManager {
 
     public String chooseClientAlias(String[] strings, Principal[] principals, Socket socket) {
         log.info("ClientProxyKeyManager: SSG is asking for our client certificate");
-        PendingRequest req = CurrentRequest.getCurrentRequest();
-        if (req == null)
-            throw new IllegalStateException("No current PendingRequest is available in this thread");
-        Ssg ssg = req.getSsg();
+        Ssg ssg = CurrentRequest.getCurrentSsg();
+        if (ssg == null)
+            throw new IllegalStateException("No current Ssg is available in this thread");
         String hostname = ssg.getSsgAddress();
         if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
             try {

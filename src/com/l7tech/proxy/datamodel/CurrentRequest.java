@@ -7,7 +7,7 @@
 package com.l7tech.proxy.datamodel;
 
 /**
- * Holds current PendingRequest in thread-local storage.
+ * Holds current Ssg in thread-local storage.
  *
  * User: mike
  * Date: Sep 15, 2003
@@ -16,12 +16,12 @@ package com.l7tech.proxy.datamodel;
 public class CurrentRequest {
     private static ThreadLocal currentRequest = new ThreadLocal();
 
-    public static void setCurrentRequest(PendingRequest req) {
-        currentRequest.set(req);
+    public static void setCurrentSsg(Ssg ssg) {
+        currentRequest.set(ssg);
     }
 
-    public static PendingRequest getCurrentRequest() {
-        return (PendingRequest) currentRequest.get();
+    public static Ssg getCurrentSsg() {
+        return (Ssg) currentRequest.get();
     }
 
     public static void clearCurrentRequest() {
