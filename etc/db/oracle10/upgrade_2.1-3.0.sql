@@ -156,3 +156,11 @@ CREATE TABLE audit_system (
 );
 CREATE INDEX i_audit_system_component ON audit_system (component);
 CREATE INDEX i_audit_system_action ON audit_system (action);
+
+
+CREATE TABLE message_id (
+  messageid varchar(255) NOT NULL,
+  expires number(38,0) NOT NULL,
+  PRIMARY KEY (messageid)
+);
+

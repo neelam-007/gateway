@@ -150,3 +150,10 @@ CREATE TABLE audit_system (
   KEY idx_action (action)
 ) TYPE=InnoDB;
 
+
+CREATE TABLE message_id (
+  messageid varchar(255) NOT NULL PRIMARY KEY,
+  expires bigint(20) NOT NULL
+) TYPE=InnoDB;
+
+
