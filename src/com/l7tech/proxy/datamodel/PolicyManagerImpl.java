@@ -10,14 +10,19 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.proxy.ConfigurationException;
+import com.l7tech.proxy.processor.ServerCertificateUntrustedException;
+import com.l7tech.proxy.processor.ClientCertificateException;
 import com.l7tech.proxy.policy.ClientPolicyFactory;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientTrueAssertion;
 import com.l7tech.proxy.util.ThreadLocalHttpClient;
 import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.Header;
+import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.log4j.Category;
 
+import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.net.URL;
 
@@ -64,7 +69,7 @@ public class PolicyManagerImpl implements PolicyManager {
      * @throws ConfigurationException if a policy update was already attempted for this request
      * @throws IOException if the policy could not be read from the SSG
      */
-    public void updatePolicy(PendingRequest request, URL policyUrl) throws ConfigurationException, IOException {
+    public void updatePolicy(PendingRequest request, URL policyUrl) throws ConfigurationException, IOException, ServerCertificateUntrustedException {
         HttpClient client = ThreadLocalHttpClient.getHttpClient();
         client.getState().setAuthenticationPreemptive(false);
         client.getState().setCredentials(null, null, null);
@@ -73,6 +78,33 @@ public class PolicyManagerImpl implements PolicyManager {
         try {
             log.info("Downloading new policy from " + policyUrl);
             int status = client.executeMethod(getMethod);
+
+            // fla, added - try again once after first 401
+            if (status == 401) {
+                getMethod.releaseConnection();
+                // was a new url provided ?
+                Header newURLHeader = getMethod.getResponseHeader("PolicyUrl");
+                String newUrl = policyUrl.toString();
+                if (newURLHeader != null) {
+                    newUrl = newURLHeader.getValue();
+                }
+                log.info("Policy download unauthorized, trying again with credentials at " + newUrl);
+                client.getState().setAuthenticationPreemptive(true);
+
+                String username = request.getSsg().getUsername();
+                char[] password = request.getSsg().password();
+                client.getState().setCredentials(null, null, new UsernamePasswordCredentials(username, new String(password)));
+                getMethod = new GetMethod(newUrl);
+                getMethod.setDoAuthentication(true);
+                try {
+                    status = client.executeMethod(getMethod);
+                } catch (SSLHandshakeException e) {
+                        if (e.getCause() instanceof ServerCertificateUntrustedException)
+                            throw (ServerCertificateUntrustedException) e.getCause();
+                }
+            }
+            // fla, end of my addition
+
             log.info("Policy download completed with HTTP status " + status);
             Assertion policy = WspReader.parse(getMethod.getResponseBodyAsStream());
             PolicyAttachmentKey pak = new PolicyAttachmentKey(request.getUri(), request.getSoapAction());
