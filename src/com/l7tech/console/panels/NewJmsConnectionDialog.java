@@ -241,7 +241,6 @@ public class NewJmsConnectionDialog extends JDialog {
         if (matcher.matches() && matcher.group(1).length() > 0)
             s = matcher.group(1);
         defaultName = d + " on " + s;
-        System.err.println("Default name: " + defaultName);
     }
 
     private FormPreener formPreener = new FormPreener();
