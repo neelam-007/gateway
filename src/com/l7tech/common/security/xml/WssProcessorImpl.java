@@ -137,6 +137,8 @@ public class WssProcessorImpl implements WssProcessor {
                 processBinarySecurityToken(securityChildToProcess, cntx);
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.SIGNATURE_EL_NAME)) {
                 processSignature(securityChildToProcess, cntx);
+            } else if (securityChildToProcess.getLocalName().equals("UsernameToken")) {
+                processUsernameToken(securityChildToProcess, cntx);
             } else {
                 // Unhandled child elements of the Security Header
                 String mu = securityChildToProcess.getAttributeNS(currentSoapNamespace, SoapUtil.MUSTUNDERSTAND_ATTR_NAME).trim();
@@ -180,6 +182,10 @@ public class WssProcessorImpl implements WssProcessor {
         // want to change the actor here to set it back to default value todo
 
         return produceResult(cntx);
+    }
+
+    private void processUsernameToken(Element usernameTokenElement, ProcessingStatusHolder cntx) throws ProcessorException {
+        // todo
     }
 
     private void processEncryptedKey(Element encryptedKeyElement,
