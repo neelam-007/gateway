@@ -261,9 +261,15 @@ public class MultipartMessage {
         return new PartIterator() {
             int nextPart = 0;
 
-            public boolean hasNext() {
+            public boolean hasNext() throws IOException {
                 final int numParts = partInfos.size();
-                return nextPart < numParts || (nextPart == numParts && isMorePartsPossible());
+                if (nextPart < numParts)
+                    return true;
+
+                if (isMorePartsPossible())
+                    return readUpToPartNoThrow(nextPart+1);
+
+                return false;
             }
 
             public PartInfo next() throws IOException, NoSuchPartException {
@@ -539,6 +545,33 @@ public class MultipartMessage {
             stashCurrentPartBody();
             readNextPartHeaders();
         }
+    }
+
+    /**
+     * Consume the main input stream until we are positioned at the first byte of the body of the specified part.
+     * When called, the main input stream must be positioned at the first byte of the body of the current part.
+     *
+     * @param ordinal  the ordinal of the part to position before.
+     * @return true if we have read the headers and are positioned to read the body of the requested part ordinal
+     *         false if we ran out of parts to read before we found the headers for the requested part ordinal
+     * @throws IOException  if there was a problem reading the main InputStream.
+     */
+    private boolean readUpToPartNoThrow(int ordinal) throws IOException {
+        checkErrorIO();
+
+        if (boundary == null) throw new IllegalStateException("Not supported in single-part mode");
+        while (partInfos.size() <= ordinal) {
+            if (!moreParts) return false;
+            stashCurrentPartBody();
+            if (!moreParts) return false;
+            try {
+                readNextPartHeaders();
+            } catch (NoSuchPartException e) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**

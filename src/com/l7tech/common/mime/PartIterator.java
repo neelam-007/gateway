@@ -11,8 +11,9 @@ public interface PartIterator {
      * Check if there are any more {@link PartInfo}s remaining to iterate.
      * @return true if there appear to be more parts remaining in the {@link MultipartMessage};
      *         false if additional parts have been completely ruled out.
+     * @throws IOException if there was a problem reading the message stream
      */
-    public boolean hasNext();
+    public boolean hasNext() throws IOException;
 
     /**
      * @return the next {@link PartInfo} in the {@link MultipartMessage}.  Never null.

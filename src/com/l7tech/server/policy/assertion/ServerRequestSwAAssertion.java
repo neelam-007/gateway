@@ -22,10 +22,10 @@ import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -162,7 +162,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                         Element parameterElementRequest = (Element)parameterNodeRequest;
                         Attr href = parameterElementRequest.getAttributeNode("href");
 
-                        Vector hrefs = new Vector();
+                        List hrefs = new ArrayList();
                         if (href == null) {
                             // maybe it is an array
                             Node currentNode = parameterElementRequest.getFirstChild();
@@ -190,20 +190,32 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
 
                         // each attachment must fulfill the requirement of the input parameter specified in the SwA Request Assertion
                         for (int i = 0; i < hrefs.size(); i++) {
-                            href = (Attr)hrefs.elementAt(i);
+                            href = (Attr)hrefs.get(i);
 
-                            String mimePartCID = href.getValue();
-                            logger.fine("The href of the parameter " + part.getName() + " is found in the request, value=" + mimePartCID);
+                            String mimePartCIDUrl = href.getValue();
+                            logger.fine("The href of the parameter " + part.getName() + " is found in the request, value=" + mimePartCIDUrl);
+                            int cpos = mimePartCIDUrl.indexOf(":");
+                            if (cpos < 0) {
+                                logger.info("Invalid Content-ID URL '" + mimePartCIDUrl);
+                                return AssertionStatus.FALSIFIED;
+                            }
 
-                            PartInfo mimepartRequest = request.getPartByContentId(mimePartCID);
+                            String scheme = mimePartCIDUrl.substring(0,cpos);
+                            String id = mimePartCIDUrl.substring(cpos+1);
+                            if (!"cid".equals(scheme)) {
+                                logger.info("Invalid Content-ID URL '" + mimePartCIDUrl);
+                                return AssertionStatus.FALSIFIED;
+                            }
+
+                            PartInfo mimepartRequest = request.getPartByContentId(id);
 
                             if (mimepartRequest != null) {
                                 // validate the content type
                                 if (!part.validateContentType(mimepartRequest.getContentType())) {
                                     if (part.getContentTypes().length > 1) {
-                                        logger.info("The content type of the attachment " + mimePartCID + " must be one of the types: " + part.retrieveAllContentTypes());
+                                        logger.info("The content type of the attachment " + mimePartCIDUrl + " must be one of the types: " + part.retrieveAllContentTypes());
                                     } else {
-                                        logger.info("The content type of the attachment " + mimePartCID + " must be: " + part.retrieveAllContentTypes());
+                                        logger.info("The content type of the attachment " + mimePartCIDUrl + " must be: " + part.retrieveAllContentTypes());
                                     }
                                     return AssertionStatus.FALSIFIED;
                                 }
@@ -215,7 +227,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                                     if (hrefs.size() > 1) {
                                         logger.info("The parameter [" + part.getName() + "] has " + hrefs.size() + " attachments. The total length exceeds the limit: " + part.getMaxLength() + "K bytes");
                                     } else {
-                                        logger.info("The length of the attachment " + mimePartCID + " exceeds the limit: " + part.getMaxLength() + "K bytes");
+                                        logger.info("The length of the attachment " + mimePartCIDUrl + " exceeds the limit: " + part.getMaxLength() + "K bytes");
                                     }
                                     return AssertionStatus.FALSIFIED;
                                 }
@@ -224,32 +236,29 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                                 // set the validated flag of the attachment to true
                                 mimepartRequest.setValidated(true);
                             } else {
-                                logger.info("The required attachment " + mimePartCID + " is not found in the request");
+                                logger.info("The required attachment " + mimePartCIDUrl + " is not found in the request");
                                 return AssertionStatus.FALSIFIED;
                             }
                         } // for each attachment
                     } // for each input parameter
 
                     // also check if there is any unexpected attachments in the request
-                    if (xreq.isAdditionalUnreadPartsPossible()) {
-                        logger.info("Unexpected attachment(s) found in the request.");
-                        return AssertionStatus.FALSIFIED;
-                    } else {
-                        PartIterator pi = xreq.getParts();
-                        while (pi.hasNext()) {
-                            PartInfo attachment =  pi.next();
-                            String attachmentName = attachment.getContentId();
-                            if (attachmentName == null || attachmentName.length() < 1)
-                                attachmentName = "in position #" + attachment.getPosition();
-                            if (!attachment.isValidated()) {
-                                logger.info("Unexpected attachment " + attachmentName + " found in the request.");
-                                return AssertionStatus.FALSIFIED;
-                            }
+                    PartIterator pi = xreq.getParts();
+                    while (pi.hasNext()) {
+                        PartInfo attachment =  pi.next();
+                        if (attachment.getPosition() == 0)
+                            continue; // skip over SOAP part
+                        String attachmentName = attachment.getContentId();
+                        if (attachmentName == null || attachmentName.length() < 1)
+                            attachmentName = "in position #" + attachment.getPosition();
+                        if (!attachment.isValidated()) {
+                            logger.info("Unexpected attachment " + attachmentName + " found in the request.");
+                            return AssertionStatus.FALSIFIED;
                         }
-
-                        // all attachments are satisfied
-                        return AssertionStatus.NONE;
                     }
+
+                    // all attachments are satisfied
+                    return AssertionStatus.NONE;
                 }  // while next operation of the binding found in assertion
             }   // while next binding found in assertion
         } catch (SAXException e) {
@@ -262,7 +271,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
             logger.log(Level.WARNING, "Caught JaxenException when retrieving xml document from request", e);
             return AssertionStatus.SERVER_ERROR;
         } catch (NoSuchPartException e) {
-            logger.info("The required attachment " + e.getWhatWasMissing() + "was not found in the request");
+            logger.log(Level.INFO, "The required attachment " + e.getWhatWasMissing() + "was not found in the request", e);
             return AssertionStatus.FALSIFIED;
         }
 

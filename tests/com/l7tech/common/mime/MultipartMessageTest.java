@@ -272,6 +272,30 @@ public class MultipartMessageTest extends TestCase {
         assertEquals(MESS_RUBYCID, ((PartInfo)parts.get(1)).getContentId());
     }
 
+    public void testIterator2() throws Exception {
+        SwaTestcaseFactory stfu = new SwaTestcaseFactory(23, 888, 29);
+        byte[] testMsg = stfu.makeTestMessage();
+        InputStream mess = new ByteArrayInputStream(testMsg);
+        MultipartMessage mm = new MultipartMessage(new ByteArrayStashManager(),
+                                                   ContentTypeHeader.parseValue("multipart/mixed; boundary=\"" +
+                                                                                new String(stfu.getBoundary()) + "\""),
+                                                   mess);
+
+        List parts = new ArrayList();
+        for (PartIterator i = mm.iterator(); i.hasNext(); ) {
+            PartInfo partInfo = i.next();
+            if (partInfo.getPosition() == 0)
+                continue;
+            parts.add(partInfo);
+            log.info("Saw part: " + partInfo.getContentId());
+            partInfo.getPosition();
+            // Force body to be stashed
+            //partInfo.getInputStream(false).close();
+        }
+
+        assertEquals(22, parts.size());
+    }
+
     public final String MESS_SOAPCID = "-76394136.15558";
     public final String MESS_RUBYCID = "-76392836.15558";
     public static final String CT = "multipart/related; type=\"text/xml\"; boundary=\"----=Part_-763936460.407197826076299\"; start=\"-76394136.15558\"";
