@@ -1,12 +1,14 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -15,6 +17,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.EventListener;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -25,6 +29,7 @@ import java.util.EventListener;
  * @version 1.0
  */
 public class RoutingAssertionDialog extends JDialog {
+    static final Logger log = Logger.getLogger(LogonDialog.class.getName());
     private RoutingAssertion assertion;
     private JButton cancelButton;
     private JPanel buttonPanel;
@@ -154,7 +159,27 @@ public class RoutingAssertionDialog extends JDialog {
         JButton buttonDefaultUrl = new JButton();
         buttonDefaultUrl.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                 serviceUrlTextField.setText(assertion.getProtectedServiceUrl());
+                if (service != null) {
+
+                    try {
+                        Wsdl wsdl = service.getPublishedService().parsedWsdl();
+                        String serviceURI = null;
+                        if (wsdl != null) {
+                            serviceURI = wsdl.getServiceURI();
+                            serviceUrlTextField.setText(serviceURI);
+                        } else {
+                            log.log(Level.INFO, "Can't retrieve WSDL from the published service");
+                        }
+                    } catch (java.rmi.RemoteException re) {
+                        log.log(Level.INFO, "RoutingAssertionDialog", re);
+                    } catch (FindException fe) {
+                        log.log(Level.INFO, "RoutingAssertionDialog", fe);
+                    } catch (javax.wsdl.WSDLException we) {
+                        log.log(Level.INFO, "RoutingAssertionDialog", we);
+                    }
+                } else {
+                    log.log(Level.INFO, "Can't find the service");
+                }
             }
         });
         buttonDefaultUrl.setText("Reset");
