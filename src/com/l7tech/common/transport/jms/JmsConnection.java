@@ -42,6 +42,10 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
         setPassword( other.getPassword() );
     }
 
+    public String toString() {
+        return "<JmsConnection oid=\"" + _oid + "\" name=\"" + _name + "\"/>";
+    }
+
     public EntityHeader toEntityHeader() {
         return new EntityHeader(getOid(), EntityType.JMS_CONNECTION, getName(), null);        
     }

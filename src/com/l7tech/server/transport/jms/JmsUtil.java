@@ -29,7 +29,10 @@ public class JmsUtil {
      * Establishes a connection to a JMS provider, returning the necessary {@link ConnectionFactory},
      * {@link Connection} and {@link Session} inside a {@link JmsBag}.
      * <p/>
-     * The JmsBag should eventually be closed by the caller.
+     * The {@link Connection} that is returned will not have been started.
+     * <p/>
+     * The JmsBag should eventually be closed by the caller, since the {@link Connection} and {@link Session}
+     * objects inside are often pretty heavyweight.
      *
      * @param connection a {@link JmsConnection} that encapsulates the information required
      * to connect to a JMS provider.
@@ -41,6 +44,7 @@ public class JmsUtil {
      */
     public static JmsBag connect( JmsConnection connection, PasswordAuthentication auth )
             throws JmsConfigException, JMSException, NamingException {
+        logger.fine( "Connecting to " + connection.toString() );
         String icf = connection.getInitialContextFactoryClassname();
         String url = connection.getJndiUrl();
         String dcfUrl = connection.getDestinationFactoryUrl();
@@ -65,7 +69,6 @@ public class JmsUtil {
         Connection conn = null;
         Session sess = null;
 
-        _logger.finer( "Getting JNDI InitialContext" );
         Properties props = new Properties();
         props.put( Context.PROVIDER_URL, url );
         props.put( Context.INITIAL_CONTEXT_FACTORY, icf );
@@ -79,18 +82,16 @@ public class JmsUtil {
 
             if ( cfUrl == null ) {
                 String msg = "The specified connection did not include at least one connection factory URL";
-                _logger.warning( msg );
+                logger.warning( msg );
                 throw new JmsConfigException( msg );
             }
-
-            _logger.finer( "Finding JMS connection factory" );
 
             Object o = jndiContext.lookup( cfUrl );
             if ( o instanceof Reference ) {
                 String msg = "The ConnectionFactory lookup returned a reference to the class\n"
                              + ((Reference)o).getClassName() + ",  which cannot be loaded on the Gateway.\n" 
                              + "Most likely the Gateway has not yet been configured for this JMS provider.";
-                _logger.warning( msg );
+                logger.warning( msg );
                 throw new JmsConfigException(msg);
             }
 
@@ -125,9 +126,11 @@ public class JmsUtil {
             sess = null;
             jndiContext = null;
 
+            logger.fine( "Connected to " + connection.toString() );
+
             return result;
         } catch ( RuntimeException rte ) {
-            _logger.log( Level.WARNING, "Caught RuntimeException while attempting to connect to JMS provider" );
+            logger.log( Level.WARNING, "Caught RuntimeException while attempting to connect to JMS provider" );
             throw new JmsConfigException(rte.toString());
         } finally {
             try { if ( sess != null ) sess.close(); } catch (Throwable t) { logit(t); }
@@ -137,7 +140,7 @@ public class JmsUtil {
     }
 
     private static void logit( Throwable t ) {
-        _logger.log( Level.WARNING, "Exception during cleanup", t);
+        logger.log( Level.WARNING, "Exception during cleanup", t);
     }
 
     /**
@@ -147,6 +150,6 @@ public class JmsUtil {
         return connect( connection, null );
     }
 
-    private static final Logger _logger = LogManager.getInstance().getSystemLogger();
+    private static final Logger logger = LogManager.getInstance().getSystemLogger();
     public static final String DEFAULT_ENCODING = "UTF-8";
 }

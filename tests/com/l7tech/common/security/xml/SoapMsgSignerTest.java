@@ -189,6 +189,23 @@ public class SoapMsgSignerTest extends TestCase {
         checkSignatureOnElement( testDoc, "price" );
     }
 
+    public void testValidateElements_CryptSign2_CheckOpposite() throws Exception {
+        Document testDoc = getCleartextDocument();
+        signElement( testDoc, "price",     false, 1, 0 );
+        signElement( testDoc, "accountid", true, 2, 1 );
+        checkSignatureOnElement( testDoc, "accountid" );
+        checkSignatureOnElement( testDoc, "price" );
+    }
+
+    public void testValidateElements_CryptSign2_CheckSame() throws Exception {
+        Document testDoc = getCleartextDocument();
+        signElement( testDoc, "price",     false, 1, 0 );
+        signElement( testDoc, "accountid", true, 2, 1 );
+        checkSignatureOnElement( testDoc, "price" );
+        checkSignatureOnElement( testDoc, "accountid" );
+    }
+
+
     public void testValidateElements_CryptSignCrypt() throws Exception {
         Document testDoc = getCleartextDocument();
         signElement( testDoc, "accountid", true, 1, 1 );

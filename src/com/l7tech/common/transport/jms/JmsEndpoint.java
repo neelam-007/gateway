@@ -102,7 +102,7 @@ public class JmsEndpoint extends NamedEntityImp implements Serializable, Compara
     }
 
     public String toString() {
-        return "Connection " + _connectionOid + "/" + _name;
+        return "<JmsEndpoint connectionOid=\"" + _connectionOid + "\" name=\"" + _name + "\"/>";
     }
 
     public long getConnectionOid() {

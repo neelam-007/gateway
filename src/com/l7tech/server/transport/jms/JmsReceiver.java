@@ -176,10 +176,6 @@ public class JmsReceiver implements ServerComponentLifecycle {
 
     private class MessageLoop implements Runnable {
         MessageLoop() throws JMSException, NamingException, JmsConfigException {
-            Session session = getBag().getSession();
-            if ( !(session instanceof QueueSession) )
-                throw new IllegalArgumentException("Only QueueSession is supported");
-
             _thread = new Thread( this, toString() );
             _thread.setDaemon( true );
         }
@@ -187,6 +183,7 @@ public class JmsReceiver implements ServerComponentLifecycle {
         private synchronized JmsBag getBag() throws JmsConfigException, JMSException, NamingException {
             if ( _bag == null ) {
                 _bag = JmsUtil.connect( _connection, _inboundRequestEndpoint.getPasswordAuthentication() );
+                _bag.getConnection().start();
             }
             return _bag;
         }
@@ -215,7 +212,6 @@ public class JmsReceiver implements ServerComponentLifecycle {
 
         synchronized void start() throws JMSException, NamingException, JmsConfigException {
             _logger.fine( "Starting " + toString() );
-            getBag().getConnection().start();
             _thread.start();
             _logger.fine( "Started " + toString() );
         }
