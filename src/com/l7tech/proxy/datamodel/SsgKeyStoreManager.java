@@ -289,11 +289,15 @@ public class SsgKeyStoreManager {
     }
 
     /**
-     * Set our client certificate for this Ssg.
+     * Set our client certificate for this Ssg.  Caller must ensure that the correct password is set
+     * on the SSG before calling this, since the password will be used to protect the private key.  The
+     * safest way to ensure this is to use the same password that was used to successfully apply for
+     * the client certificate you are about to save.
      *
      * @param ssg  the Ssg whose KeyStore to save
      * @param privateKey   the RSA private key corresponding to the public key in the certificate
      * @param cert    the certificate, signed by the SSG CA, and whose public key corrsponds to privateKey
+     * @throws IllegalArgumentException if the specified SSG has not yet had a password set
      * @throws KeyStoreException   if the key entry could not be saved for obscure reasons
      * @throws IOException  if there was a problem writing the keystore to disk
      */
