@@ -6,29 +6,26 @@
 
 package com.l7tech.common.util;
 
+import com.l7tech.common.protocol.SecureSpanConstants;
 import org.apache.log4j.Category;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import com.l7tech.common.protocol.SecureSpanConstants;
 
 /**
  * Download a certificate from the SSG, check it for validity, and import it.
@@ -74,9 +71,9 @@ public class CertificateDownloader {
     private String username = null;
     private char[] password = null;
     private URL ssgUrl = null;
-    private Certificate cert = null;
+    private X509Certificate cert = null;
+    private byte[] certBytes = null;
     private List checks = Collections.EMPTY_LIST;
-    private MessageDigest md5 = null;
     private String nonce = "";
 
     public CertificateDownloader() {
@@ -97,7 +94,12 @@ public class CertificateDownloader {
     }
 
     private String getHa1(String realm) {
-        MessageDigest md5 = getMd5();
+        MessageDigest md5 = null;
+        try {
+            md5 = MessageDigest.getInstance("MD5");
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e); // can't happen
+        }
         md5.reset();
         md5.update((username == null ? "" : username).getBytes());
         md5.update(":".getBytes());
@@ -128,23 +130,21 @@ public class CertificateDownloader {
             this.oid = oid;
             this.digest = digest;
             this.realm = realm;
-            log.info("CheckInfo: oid=" + oid + "  digest=" + digest + "  realm=" + realm);
         }
 
         public boolean checkCert() {
-            MessageDigest md5 = getMd5();
-            md5.reset();
-            md5.update(nonce.getBytes());
-            md5.update(String.valueOf(oid).getBytes());
+            MessageDigest md5;
             try {
-                md5.update(cert.getEncoded());
-            } catch (CertificateEncodingException e) {
+                md5 = MessageDigest.getInstance("MD5");
+            } catch (NoSuchAlgorithmException e) {
                 throw new RuntimeException(e); // can't happen
             }
+            md5.reset();
+            md5.update(nonce.getBytes());
+            md5.update(oid.getBytes());
+            md5.update(certBytes);
             md5.update(getHa1(realm).getBytes());
             String desiredValue = HexUtils.encodeMd5Digest(md5.digest());
-            log.info("Computed HA1 = " + getHa1(realm));
-            log.info("Computed check for nonce=" + nonce + "  username=" + username + "  realm=" + realm + ": " + desiredValue);
             return desiredValue.equals(digest);
         }
     }
@@ -166,52 +166,36 @@ public class CertificateDownloader {
             uri += "&username=" + URLEncoder.encode(username, "UTF-8");
 
         URL remote = null;
-        URLConnection conn = null;
-        InputStream connStream = null;
-        try {
-            remote = new URL(ssgUrl.getProtocol(), ssgUrl.getHost(), ssgUrl.getPort(), uri);
-            log.info("Connecting to " + remote);
-            conn = remote.openConnection();
-            conn.setAllowUserInteraction(false);
-            conn.connect();
-            connStream = conn.getInputStream();
-            Map headers = conn.getHeaderFields();
-            //log.info("Got headers: " + headers);
-            byte[] certBytes = HexUtils.slurpStream(connStream, 16384);
-            ByteArrayInputStream bais = new ByteArrayInputStream(certBytes);
-            Certificate cert = CertificateFactory.getInstance("X.509").generateCertificate(bais);
-            this.cert = cert;
-            this.checks = new ArrayList();
+        remote = new URL(ssgUrl.getProtocol(), ssgUrl.getHost(), ssgUrl.getPort(), uri);
+        log.info("Connecting to certificate discovery service at " + remote);
+        HexUtils.Slurpage result = HexUtils.slurpUrl(remote);
+        certBytes = result.bytes;
+        Map headers = result.headers;
+        ByteArrayInputStream bais = new ByteArrayInputStream(certBytes);
+        cert = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(bais);
+        log.info("Certificate decoded successfully; let's see if we trust it.  DN=" + cert.getSubjectDN());
+        this.checks = new ArrayList();
 
-            for (Iterator i = headers.keySet().iterator(); i.hasNext();) {
-                String key = (String) i.next();
-                List list = (List) headers.get(key);
-                log.info("Found header " + key + "=" + list.get(0));
-                if (key == null || key.length() <= CHECK_PREFIX_LENGTH ||
-                        !key.substring(0, CHECK_PREFIX_LENGTH).equals(
-                                SecureSpanConstants.HttpHeaders.CERT_CHECK_PREFIX))
-                    continue;
-                String idp = key.substring(11);
-                String value = (String) list.get(0);
-                int semiPos = value.indexOf(';');
-                if (semiPos < 0) {
-                    log.error("Cert check header from SSG was badly formatted: " + key + ":" + value);
-                    continue;
-                }
-                String hash = value.substring(0, semiPos);
-                String realm = value.substring(semiPos + 1);
-                if (realm.substring(0, 1).equals(" "))
-                    realm = realm.substring(1);
-                checks.add(new CheckInfo(idp, hash, realm));
+        for (Iterator i = headers.keySet().iterator(); i.hasNext();) {
+            String key = (String) i.next();
+            List list = (List) headers.get(key);
+            String value = (String) list.get(0);
+            if (key == null || key.length() <= CHECK_PREFIX_LENGTH ||
+                    !key.substring(0, CHECK_PREFIX_LENGTH).equals(
+                            SecureSpanConstants.HttpHeaders.CERT_CHECK_PREFIX))
+                continue;
+            String idp = key.substring(CHECK_PREFIX_LENGTH);
+            int semiPos = value.indexOf(';');
+            if (semiPos < 0) {
+                log.error("Cert check header from SSG was badly formatted (ignoring): " + key + ":" + value);
+                continue;
             }
-            log.info("Got back " + checks.size() + " Cert-Check: headers.");
-        } catch (MalformedURLException e) {
-            // can't happen
-        } finally {
-            if (connStream != null)
-                connStream.close();
+            String hash = value.substring(0, semiPos);
+            String realm = value.substring(semiPos + 1);
+            if (realm.substring(0, 1).equals(" "))
+                realm = realm.substring(1);
+            checks.add(new CheckInfo(idp, hash, realm));
         }
-
         return isValidCert();
     }
 
@@ -229,6 +213,7 @@ public class CertificateDownloader {
             if (checkInfo.checkCert())
                 return true;
         }
+        log.warn("Downloaded certificate was not trusted");
         return false;
     }
 
@@ -239,16 +224,5 @@ public class CertificateDownloader {
      */
     public boolean isUserUnknown() {
         return checks.size() < 1;
-    }
-
-    private MessageDigest getMd5() {
-        if (md5 == null) {
-            try {
-                md5 = MessageDigest.getInstance("MD5");
-            } catch (NoSuchAlgorithmException e) {
-                throw new RuntimeException(e); // can't happen
-            }
-        }
-        return md5;
     }
 }
