@@ -112,4 +112,14 @@ public interface SecureSpanAgent {
      * @throws CertificateAlreadyIssuedException if the Gateway has already issued a client certificate to this account
      */
     void ensureCertificatesAreAvailable() throws IOException, BadCredentialsException, GeneralSecurityException, CertificateAlreadyIssuedException;
+
+    /**
+     * Delete your client certificate from the keystore, perhaps so that you can apply for a new one.
+     * <b><i>Note that this only deletes your local client-side copy of your certificate.
+     * The Gateway will not allow you to obtain a new client certificate until a Gateway
+     * administrator has revoked your server-side copy of the client certificate.</i></b>
+     * @throws IOException if the client certificate could not be removed, or
+     *                     if there was a problem saving the keystore to disk.
+     */
+    void destroyClientCertificate() throws IOException;
 }

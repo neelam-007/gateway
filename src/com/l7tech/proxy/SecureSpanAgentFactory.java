@@ -30,6 +30,7 @@ import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.KeyStoreException;
 import java.security.cert.X509Certificate;
 
 /**
@@ -185,6 +186,16 @@ public class SecureSpanAgentFactory {
                     throw new CausedBadCredentialsException(e);
                 } catch (com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException e) {
                     throw new CausedCertificateAlreadyIssuedException(e);
+                }
+            }
+
+            public void destroyClientCertificate() throws IOException {
+                try {
+                    SsgKeyStoreManager.deleteClientCert(ssg);
+                } catch (KeyStoreException e) {
+                    throw new CausedIOException(e);
+                } catch (KeyStoreCorruptException e) {
+                    throw new CausedIOException(e);
                 }
             }
         };
