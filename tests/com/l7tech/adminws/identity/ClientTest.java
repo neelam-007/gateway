@@ -8,11 +8,9 @@ import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import net.jini.security.policy.DynamicPolicyProvider;
 
 import java.io.File;
 import java.net.PasswordAuthentication;
-import java.security.Policy;
 
 /**
  * Layer 7 Technologies, inc.

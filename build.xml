@@ -271,11 +271,18 @@
             <test name="com.l7tech.proxy.policy.ClientPolicyFactoryTest" haltonfailure="no"/>
             <test name="com.l7tech.server.policy.ServerPolicyFactoryTest" haltonfailure="no"/>
             <test name="com.l7tech.policy.server.filter.FilterTest" haltonfailure="no"/>
-            <test name="com.l7tech.common.util.HexUtilsTest" haltonfailure="no"/>
             <!--
              ** add policy tests into the com.l7tech.policy.AllTests class
             -->
             <test name="com.l7tech.policy.AllTests" haltonfailure="no"/>
+             <!--
+             ** TODO: make sure -security flag is added to the 'nightly' build/test
+             ** Tomcat config. When done enable the tests below.
+             **
+            <test name="com.l7tech.adminws.LogCLientTest" haltonfailure="no"/>
+            <test name="com.l7tech.adminws.identity.ClientTest" haltonfailure="no"/>
+            <test name="com.l7tech.adminws.service.ServiceManagerTest" haltonfailure="no"/>
+            -->
             <!--
               ** add tests here **
               -->
@@ -331,6 +338,9 @@
             <zipfileset dir="${src.root}/src/com/l7tech/util/locator" includes="services.properties" prefix="WEB-INF/classes/com/l7tech/util/locator"/>
             <zipfileset dir="${src.root}/web" includes="index.html" prefix="ssg"/>
             <zipfileset dir="${src.root}/web" includes="index.html"/>
+            <!-- Jini config -->
+            <zipfileset dir="${src.root}/etc/jini" includes="start-services.config, services.config, services.policy" prefix="WEB-INF/classes"/>
+
         </war>
         <!-- the client proxy jar -->
         <jar jarfile="${build.dir}/ClientProxy.jar" manifest="${src.root}/etc/ClientProxy.mf">
@@ -398,9 +408,6 @@
             <fileset dir="${src.root}/src">
                 <include name="com/l7tech/jini/lookup/*.config"/>
             </fileset>
-
-            <fileset dir="${src.root}/etc/jini" includes="start-services.config, services.config, services.policy"/>
-
         </copy>
 
         <!-- make sure that the tomcat path is properly referenced in the keystore properties -->

@@ -1,27 +1,23 @@
 package com.l7tech.adminws.service;
 
-import java.security.Policy;
-import java.rmi.RemoteException;
-import java.io.FileReader;
-import java.io.FileNotFoundException;
-import java.io.StringWriter;
-import java.util.Iterator;
-import java.util.List;
-
-import junit.framework.TestCase;
-import junit.framework.Test;
-import junit.framework.TestSuite;
-import junit.extensions.TestSetup;
-import net.jini.security.policy.DynamicPolicyProvider;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.Wsdl;
 import com.l7tech.util.Locator;
+import junit.extensions.TestSetup;
+import junit.framework.Test;
+import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 import javax.wsdl.*;
 import javax.wsdl.extensions.ExtensibilityElement;
-import javax.wsdl.extensions.soap.SOAPBody;
 import javax.wsdl.extensions.soap.SOAPAddress;
+import javax.wsdl.extensions.soap.SOAPBody;
 import javax.wsdl.extensions.soap.SOAPOperation;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.StringWriter;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * Created by IntelliJ IDEA.
@@ -56,11 +52,8 @@ public class ServiceManagerTest extends TestCase {
              * @throws Exception on error deleting the stub data store
              */
             protected void setUp() throws Exception {
-
-                System.setProperty("java.security.policy", "etc/jini/policy.all");
                 System.setProperty("com.l7tech.util.locator.properties",
                         "/com/l7tech/console/resources/services.properties");
-                Policy.setPolicy(new DynamicPolicyProvider());
                 ServiceManagerTest.manager =
                         (ServiceManager) Locator.getDefault().lookup(ServiceManager.class);
                 if (manager == null) {
