@@ -6,6 +6,7 @@
 
 package com.l7tech.common.security.xml;
 
+import com.l7tech.common.mime.MimeBodyTest;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
@@ -14,13 +15,12 @@ import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.TestDocuments;
-import com.l7tech.common.mime.MimeBodyTest;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
-import com.l7tech.server.saml.HolderOfKeyHelper;
 import com.l7tech.server.saml.SamlAssertionGenerator;
+import com.l7tech.server.saml.SubjectStatement;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -402,9 +402,9 @@ public class WssDecoratorTest extends TestCase {
                                                       RequestWssX509Cert.class,
                                                       null,
                                                       subjectCert);
-        HolderOfKeyHelper hh = new HolderOfKeyHelper(null, samlOptions, creds, si);
-        Document ass = hh.createSignedAssertion(null);
-        return ass.getDocumentElement();
+        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds, SubjectStatement.HOLDER_OF_KEY);
+        SamlAssertionGenerator generator = new SamlAssertionGenerator(si);
+        return generator.createAssertion(subjectStatement, samlOptions).getDocumentElement();
     }
 
     public void testSignedEmptyElement() throws Exception {

@@ -9,11 +9,11 @@ import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
-import com.l7tech.server.saml.*;
+import com.l7tech.server.saml.SamlAssertionGenerator;
+import com.l7tech.server.saml.SubjectStatement;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.apache.xerces.dom.DocumentImpl;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
@@ -67,15 +68,16 @@ public class SignedSamlTest extends TestCase {
         System.out.println("Client cert: " + clientCertChain[0]);
     }
 
-    private Document getUnsignedHolderOfKeyAssertion(String id) throws IOException, SAXException, CertificateException {
+    private Document getUnsignedHolderOfKeyAssertion(String id) throws IOException, SAXException, CertificateException, SignatureException {
         LoginCredentials creds = new LoginCredentials(null, null, CredentialFormat.CLIENTCERT, RequestWssX509Cert.class, null, clientCertChain[0]);
         SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
         samlOptions.setClientAddress(InetAddress.getLocalHost());
-        Document doc = new DocumentImpl();
+        samlOptions.setSignAssertion(false);
         SignerInfo si = new SignerInfo(caPrivateKey, caCertChain);
-        HolderOfKeyHelper hh = new HolderOfKeyHelper(doc, samlOptions, creds, si);
-        Document samlDoc = hh.createAssertion(id);
-        return samlDoc;
+        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(creds, SubjectStatement.HOLDER_OF_KEY);
+        SamlAssertionGenerator generator = new SamlAssertionGenerator(si);
+        samlOptions.setId(id);
+        return generator.createAssertion(subjectStatement, samlOptions);
     }
 
     public Document getSignedHolderOfKey(final String assertionId) throws Exception {
@@ -83,9 +85,7 @@ public class SignedSamlTest extends TestCase {
 
         String s2 = XmlUtil.nodeToFormattedString(assertionDoc);
         System.out.println("Before signing: " + s2);
-
-        SamlAssertionHelper.signAssertion(assertionDoc, caPrivateKey, caCertChain);
-
+        SamlAssertionGenerator.signAssertion(assertionDoc, caPrivateKey, caCertChain);
         return assertionDoc;
     }
 
@@ -147,9 +147,11 @@ public class SignedSamlTest extends TestCase {
         samlOptions.setExpiryMinutes(5);
         samlOptions.setProofOfPosessionRequired(false);
         samlOptions.setId(bstId);
-
-        SenderVouchesHelper svh = new SenderVouchesHelper(request, samlOptions, LoginCredentials.makeCertificateCredentials(clientCertChain[0], getClass()), new SignerInfo(caPrivateKey, caCertChain));
-        Document samlsvAssertion = svh.createSignedAssertion(bstId);
+        final LoginCredentials credentials = LoginCredentials.makeCertificateCredentials(clientCertChain[0], getClass());
+        SubjectStatement subjectStatement = SubjectStatement.createAuthenticationStatement(credentials, SubjectStatement.SENDER_VOUCHES);
+        SamlAssertionGenerator generator = new SamlAssertionGenerator(new SignerInfo(caPrivateKey, caCertChain));
+        samlOptions.setId(bstId);
+        Document samlsvAssertion = generator.createAssertion(subjectStatement, samlOptions);
 
         Node importedNode = request.importNode(samlsvAssertion.getDocumentElement(), true);
         security.replaceChild(importedNode, bst);
