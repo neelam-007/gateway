@@ -68,7 +68,7 @@ class CertificatePanel extends JPanel {
 
         certStatusLabel = new JLabel();
         Font f = certStatusLabel.getFont();
-        certStatusLabel.setFont(new Font(f.getName(), Font.BOLD, f.getSize()));
+        certStatusLabel.setFont(new Font(f.getName(), Font.PLAIN, f.getSize()));
         add(certStatusLabel,
           new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
             GridBagConstraints.WEST,
@@ -152,9 +152,9 @@ class CertificatePanel extends JPanel {
             boolean enabled = cert != null;
             getRevokeCertButton().setEnabled(enabled);
             if (enabled) {
-                certStatusLabel.setText("Certificate status: issued");
+                certStatusLabel.setText("Certificate Status: Issued");
             } else {
-                certStatusLabel.setText("Certificate status: not issued");
+                certStatusLabel.setText("Certificate Status: Not Issued");
             }
             this.remove(certificateView);
             try {

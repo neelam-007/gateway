@@ -313,7 +313,7 @@ public class NewGroupForUserDialog extends JDialog {
     private ResourceBundle resources;
     private final String CMD_CANCEL = "cmd.cancel";
     private final String CMD_OK = "cmd.ok";
-    private static final String NON_MEMBER_LABEL = "Not member of";
+    private static final String NON_MEMBER_LABEL = "Not a member of";
 
     private final ClassLoader cl = getClass().getClassLoader();
 }
