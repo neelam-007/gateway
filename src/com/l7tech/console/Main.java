@@ -3,10 +3,15 @@ package com.l7tech.console;
 import com.l7tech.console.panels.Utilities;
 import com.l7tech.console.util.Preferences;
 
+import javax.servlet.GenericServlet;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * This class is the SSG console Main entry point.
@@ -14,6 +19,7 @@ import java.io.IOException;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class Main {
+    static Logger log = Logger.getLogger(Main.class.getName());
     // splash screen
 
     private SplashScreen mainSplashScreen = null;
@@ -66,6 +72,10 @@ public class Main {
         }
     }
 
+    void initializeLogging() {
+
+    }
+
     /**
      * the "Splash Screen"
      */
@@ -90,7 +100,7 @@ public class Main {
             prefs.setLastWindowSize(curWindowSize);
             prefs.store();
         } catch (IOException e) {
-            MainWindow.log.debug("unable to save window position prefs: ", e);
+            log.log(Level.WARNING, "unable to save window position prefs: ", e);
         }
     }
 

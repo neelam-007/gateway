@@ -4,7 +4,6 @@ import com.l7tech.console.MainWindow;
 import com.l7tech.console.table.DynamicTableModel;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.EntityTreeNode;
-import org.apache.log4j.Category;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -22,7 +21,6 @@ import java.util.*;
  */
 public class FindDialog extends JDialog {
     private final ClassLoader cl = getClass().getClassLoader();
-    final Category log = Category.getInstance(FindDialog.class.getName());
 
     static Map oTypes = new TreeMap(); // sorted
 

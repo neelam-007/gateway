@@ -1,24 +1,22 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.util.IconManager;
-import com.l7tech.console.util.SortedListModel;
 import com.l7tech.console.util.IconManager2;
-import com.l7tech.identity.User;
+import com.l7tech.console.util.SortedListModel;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import org.apache.log4j.Category;
 
 import javax.swing.*;
+import javax.swing.event.ListDataEvent;
+import javax.swing.event.ListDataListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.event.ListDataListener;
-import javax.swing.event.ListDataEvent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * UserGroupsPanel is the panel for administering the
@@ -29,7 +27,7 @@ import java.util.*;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 class UserGroupsPanel extends JPanel {
-    static final Category log = Category.getInstance(UserGroupsPanel.class.getName());
+    static Logger log = Logger.getLogger(UserGroupsPanel.class.getName());
 
     // the parent panel (main GroupPanel)
     private UserPanel userPanel;
@@ -65,7 +63,7 @@ class UserGroupsPanel extends JPanel {
             this.addHierarchyListener(hierarchyListener);
             this.setDoubleBuffered(true);
         } catch (Exception e) {
-            log.error("GroupUsersPanel()", e);
+            log.log(Level.WARNING, "GroupUsersPanel()", e);
         }
     }
 
@@ -175,7 +173,6 @@ class UserGroupsPanel extends JPanel {
             public void intervalRemoved(ListDataEvent e) {
                 if (!isLoading) {
                     userPanel.setModified(true);
-
                 }
             }
 
@@ -188,9 +185,7 @@ class UserGroupsPanel extends JPanel {
                     userPanel.setModified(true);
                 }
             }
-
         });
-
         return listInModel;
     }
 

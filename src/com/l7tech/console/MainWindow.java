@@ -10,7 +10,6 @@ import com.l7tech.console.tree.*;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.WindowManager;
-import org.apache.log4j.Category;
 
 import javax.help.HelpBroker;
 import javax.help.HelpSet;
@@ -27,6 +26,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 
 /**
@@ -35,8 +36,8 @@ import java.util.ResourceBundle;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class MainWindow extends JFrame {
-    static final Category log = Category.getInstance(MainWindow.class.getName());
-    /** the resource path for the application */
+    static Logger log = Logger.getLogger(MainWindow.class.getName());
+        /** the resource path for the application */
     public static final String RESOURCE_PATH = "com/l7tech/console/resources";
 
     /** the path to JavaHelp helpset file */
@@ -284,7 +285,7 @@ public class MainWindow extends JFrame {
         try {
             jcm.setSelected(Preferences.getPreferences().isStatusBarBarVisible());
         } catch (IOException e) {
-            log.error("preferences retrieve error :", e);
+            log.log(Level.WARNING, "preferences retrieve error :", e);
         }
         viewMenu.add(jcm);
         return viewMenu;
@@ -1235,13 +1236,13 @@ public class MainWindow extends JFrame {
                    * event source and the property that has changed.
                    */
                   public void propertyChange(PropertyChangeEvent evt) {
-                      MainWindow.log.debug("preferences have been updated");
+                      MainWindow.log.info("preferences have been updated");
                       MainWindow.this.setLookAndFeel(prefs.getString(Preferences.LOOK_AND_FEEL));
                       MainWindow.this.setInactivitiyTimeout(prefs.getInactivityTimeout());
                   }
               });
         } catch (IOException e) {
-            log.warn("cannot get preferences", e);
+            log.log(Level.WARNING, "cannot get preferences", e);
         }
 
         // exitMenuItem listener
@@ -1274,7 +1275,7 @@ public class MainWindow extends JFrame {
                         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
                       treeSelectionEventHandler(e);
                   } catch (Exception ex) {
-                      log.error("main()", ex);
+                      log.log(Level.SEVERE, "main()", ex);
                   } finally {
                       getContentPane().
                         setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
@@ -1453,7 +1454,7 @@ public class MainWindow extends JFrame {
             KunststoffLookAndFeel.setCurrentTheme(new KunststoffDesktopTheme());
             Preferences prefs = Preferences.getPreferences();
         } catch (IOException e) {
-            log.warn("cannot get preferences", e);
+            log.log(Level.WARNING, "cannot get preferences", e);
         }
     }
 
@@ -1486,7 +1487,7 @@ public class MainWindow extends JFrame {
             prefs.store();
             prefs.updateSystemProperties();
         } catch (IOException e) {
-            log.debug("unable to fetch or set window position prefs: ", e);
+            log.log(Level.WARNING, "unable to fetch or set window position prefs: ", e);
         }
 
         if (!posWasSet)
@@ -1524,7 +1525,7 @@ public class MainWindow extends JFrame {
               helpsetName + " is not available",
               "Warning",
               JOptionPane.WARNING_MESSAGE);
-            log.error(helpsetName + " file was not found. " + hex.toString());
+            log.log(Level.SEVERE, helpsetName + " file was not found. " + hex.toString());
         }
     }
 
@@ -1628,7 +1629,7 @@ public class MainWindow extends JFrame {
         if (inactivityTimeout == 0) {
             if (inactivityTimer.isRunning()) {
                 inactivityTimer.stop();
-                log.debug("inactivity timeout disabled (timeout = 0)");
+                log.log(Level.WARNING, "inactivity timeout disabled (timeout = 0)");
             }
         } else if (inactivityTimeout > 0) {
             //  substract 1 secs (tollerance)
@@ -1638,9 +1639,9 @@ public class MainWindow extends JFrame {
                 inactivityTimer.stop();
             }
             inactivityTimer.start();
-            log.debug("inactivity timeout enabled (timeout = " + inactivityTimeout + ")");
+            log.log(Level.WARNING, "inactivity timeout enabled (timeout = " + inactivityTimeout + ")");
         } else {
-            log.error("incorrect timeout value " + inactivityTimeout);
+            log.log(Level.SEVERE, "incorrect timeout value " + inactivityTimeout);
             setInactivitiyTimeout(0);
         }
     }
@@ -1698,7 +1699,7 @@ public class MainWindow extends JFrame {
         try {
             timeout = Preferences.getPreferences().getInactivityTimeout();
         } catch (IOException e) {
-            log.warn("unable to get preferences", e);
+            log.log(Level.WARNING, "unable to get preferences", e);
         }
         final int fTimeout = timeout;
         SwingUtilities.invokeLater(
@@ -1735,7 +1736,7 @@ public class MainWindow extends JFrame {
                       prefs.store();
                   }
               } catch (IOException e) {
-                  log.debug("onAuthSuccess()", e);
+                  log.log(Level.WARNING, "onAuthSuccess()", e);
               }
           }
 

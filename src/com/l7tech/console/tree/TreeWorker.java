@@ -1,7 +1,6 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.console.util.SwingWorker;
-import org.apache.log4j.Category;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -15,7 +14,6 @@ import javax.swing.tree.TreePath;
  * @version 1.5
  */
 public class TreeWorker extends SwingWorker {
-    static final Category log = Category.getInstance(TreeWorker.class.getName());
     // current worker
     private static TreeWorker worker;
     private TreePath path;

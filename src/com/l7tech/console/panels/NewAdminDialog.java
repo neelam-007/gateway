@@ -2,7 +2,6 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.tree.AdminFolderNode;
-import org.apache.log4j.Category;
 
 import javax.swing.*;
 import java.awt.*;
@@ -17,8 +16,6 @@ import java.util.ResourceBundle;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class NewAdminDialog extends JDialog {
-    private static final Category log = Category.getInstance(NewAdminDialog.class.getName());
-
 
     /** Resource bundle with default locale */
     private ResourceBundle resources = null;

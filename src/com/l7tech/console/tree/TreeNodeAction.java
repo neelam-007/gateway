@@ -1,7 +1,5 @@
 package com.l7tech.console.tree;
 
-import org.apache.log4j.Category;
-
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
@@ -12,9 +10,6 @@ import java.util.Enumeration;
  * TreeNodeAction - bag of utility methods for TreeNodes.
  */
 public class TreeNodeAction {
-    private static final Category log =
-      Category.getInstance(TreeNodeAction.class.getName());
-
 
     // Hide the constructor
     private TreeNodeAction() {

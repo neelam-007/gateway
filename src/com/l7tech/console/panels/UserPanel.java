@@ -6,7 +6,6 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import org.apache.log4j.Category;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -16,6 +15,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * UserPanel - edits the <CODE>User/CODE> instances.
@@ -24,7 +25,7 @@ import java.awt.event.HierarchyListener;
  * @version 1.1
  */
 public class UserPanel extends EntityEditorPanel {
-    private static final Category log = Category.getInstance(UserPanel.class.getName());
+    static Logger log = Logger.getLogger(UserPanel.class.getName());
     final static String USER_ICON_RESOURCE = "com/l7tech/console/resources/user16.png";
 
     private JLabel nameLabel;
@@ -74,7 +75,7 @@ public class UserPanel extends EntityEditorPanel {
             layoutComponents();
             this.addHierarchyListener(hierarchyListener);
         } catch (Exception e) {
-            log.error("GroupPanel()", e);
+            log.log(Level.SEVERE, "GroupPanel()", e);
             e.printStackTrace();
         }
     }
@@ -128,7 +129,7 @@ public class UserPanel extends EntityEditorPanel {
             // Populate the form for insert/update
             setData(user);
         } catch (Exception e) {
-            log.error("GroupPanel Edit Exception: " + e.toString());
+            log.log(Level.SEVERE, "GroupPanel Edit Exception: " + e.toString());
             e.printStackTrace();
         }
     }
@@ -583,7 +584,7 @@ public class UserPanel extends EntityEditorPanel {
                     msg.toString(),
                     "Error",
                     JOptionPane.ERROR_MESSAGE);
-            log.error("Error updating User: " + e.toString());
+            log.log(Level.SEVERE, "Error updating User: " + e.toString());
             e.printStackTrace();
             result = false;
         }

@@ -1,7 +1,6 @@
 package com.l7tech.console.util;
 
 import com.l7tech.console.jnlp.JNLPPreferences;
-import org.apache.log4j.BasicConfigurator;
 
 import java.awt.*;
 import java.beans.PropertyChangeEvent;
@@ -12,10 +11,9 @@ import java.net.URL;
 import java.net.URLStreamHandler;
 import java.net.URLStreamHandlerFactory;
 import java.security.Security;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 /**
  * The Preferencs class is a console property manager, that is
@@ -224,13 +222,27 @@ public class Preferences extends PropertyChangeSupport {
      * initialize logging
      */
     private void logIinitialize() {
-        BasicConfigurator.configure();
-/*    File file = new File(CONSOLE_CONFIG+File.separator+"log4j.properties");
-    if (file.exists()) {
-      PropertyConfigurator.configure(file.getAbsolutePath());
-    } else {
-      BasicConfigurator.configure();
-    }*/
+        InputStream in = null;
+
+        try {
+            ClassLoader cl = getClass().getClassLoader();
+            in = cl.getResourceAsStream("com/l7tech/console/resources/logging.properties");
+            if (in !=null) {
+                LogManager.getLogManager().readConfiguration(in);
+                Logger.getLogger("com.l7tech").info("Policy editor logging initialized");
+            } else {
+                System.err.println("Unable to load default log file");
+            }
+        } catch (IOException e) {
+            e.printStackTrace(System.err);
+        } catch (SecurityException e) {
+            e.printStackTrace(System.err);
+        } finally {
+            try {
+                if (in !=null) in.close();
+            } catch (IOException e) { /*swallow*/ }
+        }
+
     }
 
     /**
@@ -605,10 +617,6 @@ public class Preferences extends PropertyChangeSupport {
     /** toolbars property (icons, text, icons and text) */
     public static final String STATUS_BAR_VISIBLE = "status.bar.enable";
 
-/** text only */
-    public static final Integer TEXT = new Integer(1);
-    /** icons only */
-    public static final Integer ICONS = new Integer(2);
     // Screen size last time the app was started up
     public static final String LAST_SCREEN_SIZE_WIDTH = "last.screen.size.width";
     public static final String LAST_SCREEN_SIZE_HEIGHT = "last.screen.size.height";

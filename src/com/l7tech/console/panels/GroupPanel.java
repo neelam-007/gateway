@@ -5,7 +5,6 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import org.apache.log4j.Category;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -15,12 +14,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * GroupPanel is the main entry point panel for the <CODE>Group</CODE>.
  */
 public class GroupPanel extends EntityEditorPanel {
-    private static final Category log = Category.getInstance(GroupPanel.class.getName());
+    static Logger log = Logger.getLogger(GroupPanel.class.getName());
 
     final static String GROUP_ICON_RESOURCE = "com/l7tech/console/resources/group16.png";
 
@@ -63,7 +64,7 @@ public class GroupPanel extends EntityEditorPanel {
             layoutComponents();
             this.addHierarchyListener(hierarchyListener);
         } catch (Exception e) {
-            log.error("GroupPanel()", e);
+            log.log(Level.SEVERE, "GroupPanel()", e);
             e.printStackTrace();
         }
     }
@@ -116,7 +117,7 @@ public class GroupPanel extends EntityEditorPanel {
             // Populate the form for insert/update
             setData(group);
         } catch (Exception e) {
-            log.error("GroupPanel Edit Exception: " + e.toString());
+            log.log(Level.SEVERE, "GroupPanel Edit Exception: " + e.toString());
         }
     }
 
@@ -453,7 +454,7 @@ public class GroupPanel extends EntityEditorPanel {
                     msg.toString(),
                     "Error",
                     JOptionPane.ERROR_MESSAGE);
-            log.error("Error updating Group: " + e.toString());
+            log.log(Level.SEVERE, "Error updating Group: " + e.toString());
             e.printStackTrace();
             result = false;
         }

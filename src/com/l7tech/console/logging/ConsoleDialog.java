@@ -9,6 +9,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.*;
+import java.util.Dictionary;
+import java.util.Hashtable;
 
 /**
  * This class implements a frame that displays the applicaiton
@@ -27,28 +29,20 @@ public class ConsoleDialog extends JFrame {
         return instance;
     }
 
-    /**
-     *
-     * @return the stream attached ot the console
-     */
-    public OutputStream getOutputStream() {
-        return new BufferedOutputStream(logOutputStream);
-    }
 
-
-
-    private JTextArea console;
+    private JTextArea logTextArea;
     private ConsoleDialog() {
         super("Application Console and logs");
 
-        console = new JTextArea();
-        console.setEditable(false);
+        logTextArea = new JTextArea();
+        logTextArea.setEditable(false);
         JScrollPane scroller = new JScrollPane();
         scroller.setPreferredSize(new Dimension(400, 400));
-        scroller.getViewport().add(console);
+        scroller.getViewport().add(logTextArea);
 
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(scroller, BorderLayout.CENTER);
+        panel.add(createTopBarPanel(), BorderLayout.NORTH);
         panel.add(createButtonPanel(), BorderLayout.SOUTH);
 
         getContentPane().add(panel, BorderLayout.CENTER);
@@ -64,8 +58,28 @@ public class ConsoleDialog extends JFrame {
         Utilities.centerOnScreen(this);
     }
 
+    JPanel createTopBarPanel() {
+        BorderLayout layout = new BorderLayout();
+
+        JPanel panel = new JPanel(layout);
+
+        JSlider slider = new JSlider(0, 160);
+        slider.setMajorTickSpacing(40);
+        Dictionary table = new Hashtable();
+        table.put(new Integer(0), new JLabel("finest"));
+        table.put(new Integer(40), new JLabel("info"));
+        table.put(new Integer(80), new JLabel("warning"));
+        table.put(new Integer(120), new JLabel("severe"));
+        table.put(new Integer(160), new JLabel("off"));
+        slider.setPaintLabels(true);
+        slider.setLabelTable(table);
+        slider.setSnapToTicks(true);
+        panel.add(slider, BorderLayout.NORTH);
+        return panel;
+    }
+
     JPanel createButtonPanel() {
-        GridLayout layout = new GridLayout(1, 4);
+        GridLayout layout = new GridLayout(1, 3);
         layout.setHgap(5);
 
         JPanel panel = new JPanel(layout);
@@ -83,12 +97,13 @@ public class ConsoleDialog extends JFrame {
         });
 
         JButton clear = new JButton("Clear");
-        clear.setToolTipText("Clear console");
+        clear.setToolTipText("Clear logTextArea");
         clear.addActionListener(new ActionListener() {
             /**
              * Invoked when an action occurs.
              */
             public void actionPerformed(ActionEvent e) {
+                logTextArea.setText("");
             }
         });
 
@@ -100,51 +115,16 @@ public class ConsoleDialog extends JFrame {
         return panel;
     }
 
-    private OutputStream logOutputStream = new OutputStream() {
-        /**
-         * Writes the specified byte to this output stream. The general
-         * contract for <code>write</code> is that one byte is written
-         * to the output stream. The byte to be written is the eight
-         * low-order bits of the argument <code>b</code>. The 24
-         * high-order bits of <code>b</code> are ignored.
-         * <p>
-         * Subclasses of <code>OutputStream</code> must provide an
-         * implementation for this method.
-         *
-         * @param      b   the <code>byte</code>.
-         * @exception  IOException  if an I/O error occurs. In particular,
-         *             an <code>IOException</code> may be thrown if the
-         *             output stream has been closed.
-         */
-        public void write(final int b) throws IOException {
-            SwingUtilities.
-              invokeLater(new Runnable() {
-                  public void run() {
-                      console.append(Byte.toString((byte)b));
-                  }
-              });
-        }
-
-        /**
-         * Writes <code>len</code> bytes from the specified byte array
-         * starting at offset <code>off</code> to this output stream.
-         *
-         * @param      b     the data.
-         * @param      off   the start offset in the data.
-         * @param      len   the number of bytes to write.
-         * @exception  IOException  if an I/O error occurs. In particular,
-         *             an <code>IOException</code> is thrown if the output
-         *             stream is closed.
-         */
-        public synchronized void write(final byte b[], int off, int len)
-          throws IOException {
-            SwingUtilities.
-              invokeLater(new Runnable() {
-                  public void run() {
-                      console.append(new String(b));
-                  }
-              });
-        }
-    };
-
+    /**
+     * sink the message to the console text area
+     * @param msg
+     */
+    final synchronized void sink(final String msg) {
+        SwingUtilities.
+          invokeLater(new Runnable() {
+              public void run() {
+                  logTextArea.append(msg);
+              }
+          });
+    }
 }

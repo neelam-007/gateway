@@ -1,11 +1,12 @@
 package com.l7tech.console.tree;
 
-import org.apache.log4j.Category;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 import java.util.*;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 
 /**
@@ -16,7 +17,7 @@ import java.util.*;
  * @see com.l7tech.console.tree.AbstractTreeNode
  */
 public class EntityTreeNode extends DefaultMutableTreeNode {
-    private static final Category log = Category.getInstance(EntityTreeNode.class.getName());
+    static Logger log = Logger.getLogger(EntityTreeNode.class.getName());
 
     /**
      * creates a <CODE>TreeNode</CODE> with the given AbstractTreeNode
@@ -126,7 +127,7 @@ public class EntityTreeNode extends DefaultMutableTreeNode {
             }
             hasLoaded = true;
         } catch (Exception e) {
-            log.error("loadChildren()", e);
+            log.log(Level.SEVERE, "loadChildren()", e);
         }
     }
 
