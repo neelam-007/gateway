@@ -4,9 +4,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
-import com.l7tech.policy.assertion.xmlsec.XmlEncAssertion;
-import com.l7tech.policy.assertion.xmlsec.XmlDsigReqAssertion;
-import com.l7tech.policy.assertion.xmlsec.XmlDsigResAssertion;
+import com.l7tech.policy.assertion.xmlsec.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
@@ -45,8 +43,8 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(HttpClientCert.class, HttpClientCertAssertionTreeNode.class);
         assertionMap.put(RoutingAssertion.class, RoutingAssertionTreeNode.class);
         assertionMap.put(TrueAssertion.class, AnonymousAssertionTreeNode.class);
-        assertionMap.put(XmlEncAssertion.class, XmlEncAssertionTreeNode.class);
-        assertionMap.put(XmlDsigReqAssertion.class, XmlDsigReqAssertionTreeNode.class);
+        assertionMap.put(XmlEncReqAssertion.class, XmlEncReqAssertionTreeNode.class);
+        assertionMap.put(XmlEncResAssertion.class, XmlEncResAssertionTreeNode.class);
         assertionMap.put(XmlDsigResAssertion.class, XmlDsigResAssertionTreeNode.class);
     }
 
