@@ -68,8 +68,26 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
     }
 
     public User findByLogin(String login) throws FindException {
-        // todo
-        return null;
+        try {
+            DirContext context = getAnonymousContext();
+            // Search using attribute list.
+            Attributes matchAttrs = new BasicAttributes(true); // ignore attribute name case
+            matchAttrs.put(new BasicAttribute(LOGIN_ATTR_NAME, login));
+            String[] attrToReturn = {"dn"};
+            NamingEnumeration answer = null;
+            answer = context.search(config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), matchAttrs, attrToReturn);
+            // Close the anon context now that we're done with it
+            context.close();
+            String dn = null;
+            if (answer.hasMore()) {
+                SearchResult sr = (SearchResult)answer.next();
+                dn = sr.getName() + "," + config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE);
+            } else return null;
+            return findByPrimaryKey(dn);
+        } catch (NamingException e) {
+            e.printStackTrace(System.err);
+            throw new FindException(e.getMessage(), e);
+        }
     }
 
     /**
