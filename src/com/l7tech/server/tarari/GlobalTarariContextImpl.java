@@ -20,13 +20,14 @@ import java.util.Arrays;
  */
 public class GlobalTarariContextImpl implements GlobalTarariContext {
     private Xpaths currentXpaths = buildDefaultXpaths();
+    private long compilerGeneration = 1;
 
     public void compile() {
         while (true) {
             try {
                 String[] expressions = currentXpaths.getExpressions();
                 XPathCompiler.compile(expressions, 0);
-                currentXpaths.installed(expressions);
+                currentXpaths.installed(expressions, nextCompilerGeneration());
                 return; // No exception, we're done
             } catch (XPathCompilerException e) {
                 int badIndex = e.getCompilerErrorLine() - 1; // Silly Tarari, 1-based arrays are for kids!
@@ -37,6 +38,14 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
         }
     }
 
+    private synchronized long nextCompilerGeneration() {
+        return ++compilerGeneration;
+    }
+
+    public long getCompilerGeneration() {
+        return compilerGeneration;
+    }
+
     public void add(String expression) throws InvalidXpathException {
         currentXpaths.add(expression);
     }
@@ -45,8 +54,9 @@ public class GlobalTarariContextImpl implements GlobalTarariContext {
         currentXpaths.remove(expression);
     }
 
-    public int getIndex(String expression) {
-        return currentXpaths.getIndex(expression) + 1;
+    public int getIndex(String expression, long targetCompilerGeneration) {
+        if (expression == null) return -1;
+        return currentXpaths.getIndex(expression, targetCompilerGeneration) + 1;
     }
 
     /**

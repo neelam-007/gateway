@@ -16,15 +16,25 @@ import com.tarari.xml.xpath.RAXContext;
 public class TarariMessageContextImpl implements TarariMessageContext {
     private final XMLDocument tarariDoc;
     private final RAXContext raxContext;
+    private final long compilerGeneration;
 
-    TarariMessageContextImpl(XMLDocument doc, RAXContext context) {
+    TarariMessageContextImpl(XMLDocument doc, RAXContext context, long compilerGeneration) {
         if (doc == null || context == null) throw new IllegalArgumentException();
         this.tarariDoc = doc;
         this.raxContext = context;
+        this.compilerGeneration = compilerGeneration;
     }
 
     public void close() {
         tarariDoc.release();
+    }
+
+    /**
+     * @return the {@link GlobalTarariContext} compiler generation count that was in effect when this
+     *         TarariMessageContext was produced.
+     */
+    public long getCompilerGeneration() {
+        return compilerGeneration;
     }
 
     public XMLDocument getTarariDoc() {

@@ -33,12 +33,25 @@ public interface GlobalTarariContext {
     int[] getSoapNamespaceUriIndices();
 
     /**
-     * @return the 1-based Tarari index for the given expression, or -1 if it could not be compiled.
+     * @param expression the expression to look for.
+     * @param targetCompilerGeneration the GlobalTarariContext compiler generation count that was in effect when your
+     *                                 {@link TarariMessageContext} was produced.  This is a mandatory parameter.
+     *                                 See {@link TarariMessageContext#getCompilerGeneration}.                                 
+     * @return the 1-based Tarari index for the given expression, or a number less than 1
+     *         if the given expression was not included in the specified compiler generation count.
      */
-    int getIndex(String expression);
+    int getIndex(String expression, long targetCompilerGeneration);
 
     /**
      * Compiles the list of XPath expressions that have been gathered so far onto the Tarari card.
      */
     void compile();
+
+    /**
+     * Get the compiler generation count of the most recently installed set of xpaths.  This is used to check whether
+     * a particular xpath was present in the hardware when a particular TarariMessageContext was created.
+     *
+     * @return the compiler generation count of the most recently installed set of xpaths.
+     */
+    long getCompilerGeneration();
 }

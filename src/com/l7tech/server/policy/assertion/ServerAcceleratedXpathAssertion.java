@@ -92,12 +92,7 @@ public abstract class ServerAcceleratedXpathAssertion implements ServerAssertion
             return softwareDelegate.checkRequest(context);
         }
 
-        int index = tarariContext.getIndex(expr);
-        if (index < 1) {
-            auditor.logAndAudit(AssertionMessages.ACCEL_XPATH_UNSUPPORTED_PATTERN);
-            return softwareDelegate.checkRequest(context);
-        }
-
+        // TODO Very bad race condition here that can lead to bogus results.  See Bug #1598.
         TarariKnob tknob = null;
         Message mess = isReq ? context.getRequest() : context.getResponse();
         try {
@@ -114,6 +109,12 @@ public abstract class ServerAcceleratedXpathAssertion implements ServerAssertion
             TarariMessageContextImpl tmContext = (TarariMessageContextImpl)tmc;
             if (tmContext == null) {
                 auditor.logAndAudit(AssertionMessages.ACCEL_XPATH_NO_CONTEXT);
+                return softwareDelegate.checkRequest(context);
+            }
+
+            int index = tarariContext.getIndex(expr, tmc.getCompilerGeneration());
+            if (index < 1) {
+                auditor.logAndAudit(AssertionMessages.ACCEL_XPATH_UNSUPPORTED_PATTERN);
                 return softwareDelegate.checkRequest(context);
             }
 

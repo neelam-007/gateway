@@ -12,9 +12,16 @@ public class XpathHandle {
     private int refCount = 0;
     private final int index;
     private final String expression;
-    private boolean installed = false;
+    private long firstCompilerGeneration = -1;
 
+    /**
+     * Create a handle for tracking a compilable xpath.
+     *
+     * @param index   index into the expression array.  This is the zero-based Java index, not the 1-based Tarari index.
+     * @param expr    the XPath expression to track.  Must not be null.
+     */
     public XpathHandle(int index, String expr) {
+        if (expr == null) throw new NullPointerException();
         this.expression = expr;
         this.index = index;
     }
@@ -40,11 +47,22 @@ public class XpathHandle {
         return (refCount > 0);
     }
 
-    public void setInstalled() {
-        this.installed = true;
+    /**
+     * @param compilerGeneration the first GlobalTarariContext compiler generation number when this expression went live.
+     *        MessageContexts evaluated against earlier compiler generations will not include this expression.
+     */
+    public void setInstalled(long compilerGeneration) {
+        if (firstCompilerGeneration == -1)
+            firstCompilerGeneration = compilerGeneration;
     }
 
-    public boolean isInstalled() {
-        return installed;
+    /** @return true iff. this xpath has been installed in the hardware already. */
+    private boolean isInstalled() {
+        return firstCompilerGeneration >= 0;
+    }
+
+    /** @return true iff. this xpath was present in the specified GlobalTarariContext compiler generation number. */
+    public boolean isInstalled(long targetCompilerGeneration) {
+        return targetCompilerGeneration >= firstCompilerGeneration;
     }
 }

@@ -111,12 +111,6 @@ public class ClientAcceleratedXpathAssertion extends ClientXpathAssertion {
             return null;
         }
 
-        int index = tarariContext.getIndex(expr);
-        if (index < 1) {
-            logger.log(Level.INFO, "Hardware acceleration not supported for this xpath expression; falling back to software xpath processing.");
-            return null;
-        }
-
         TarariKnob tknob = null;
         try {
             // Ensure Tarari context is attached, if possible
@@ -132,6 +126,12 @@ public class ClientAcceleratedXpathAssertion extends ClientXpathAssertion {
             TarariMessageContextImpl tmContext = (TarariMessageContextImpl)tmc;
             if (tmContext == null) {
                 logger.log(Level.WARNING, "This message has no hardware acceleration context; falling back to software xpath processing.");
+                return null;
+            }
+
+            int index = tarariContext.getIndex(expr, tmc.getCompilerGeneration());
+            if (index < 1) {
+                logger.log(Level.INFO, "Hardware acceleration not supported for this xpath expression; falling back to software xpath processing.");
                 return null;
             }
 

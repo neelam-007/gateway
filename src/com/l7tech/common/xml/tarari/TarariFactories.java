@@ -32,7 +32,7 @@ public class TarariFactories implements SoapInfoFactory, TarariMessageContextFac
     private static final Logger logger = Logger.getLogger(TarariFactories.class.getName());
 
     public SoapInfo getSoapInfo(TarariMessageContext messageContext) throws SAXException {
-        GlobalTarariContext globalContext = (GlobalTarariContext)TarariLoader.getGlobalContext();
+        GlobalTarariContext globalContext = TarariLoader.getGlobalContext();
         return getSoapInfoTarari(globalContext, messageContext);
     }
 
@@ -116,7 +116,7 @@ public class TarariFactories implements SoapInfoFactory, TarariMessageContextFac
             tarariDoc = new XMLDocument(inputStream);
             XPathProcessor tproc = new XPathProcessor(tarariDoc);
             RAXContext context = tproc.processXPaths();
-            return new TarariMessageContextImpl(tarariDoc, context);
+            return new TarariMessageContextImpl(tarariDoc, context, TarariLoader.getGlobalContext().getCompilerGeneration());
         } catch (XPathProcessorException e) {
             TarariUtil.translateException(e);
         } catch (XMLDocumentException e) {

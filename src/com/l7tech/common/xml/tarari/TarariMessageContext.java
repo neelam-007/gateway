@@ -16,4 +16,10 @@ public interface TarariMessageContext {
      * Free all resources used by this message context.
      */
     void close();
+
+    /**
+     * @return the {@link GlobalTarariContext} compiler generation count that was in effect when this
+     *         TarariMessageContext was produced.
+     */
+    long getCompilerGeneration();
 }

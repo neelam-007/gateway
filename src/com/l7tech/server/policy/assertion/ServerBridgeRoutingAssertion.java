@@ -231,6 +231,10 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
                     return hardcodedPolicy;
                 }
 
+                public Policy findMatchingPolicy(PolicyAttachmentKey policyAttachmentKey) {
+                    return hardcodedPolicy;
+                }
+
                 public void setPolicy(PolicyAttachmentKey key, Policy policy) {
                     throw new IllegalStateException("Unable to store new policy: this Bridge Routing Assertion has a hardcoded policy.");
                 }

@@ -49,7 +49,7 @@ public class TarariTest {
         System.out.println("SOAP");
 
         for (int i = 0; i < xpathArray.length; i++) {
-            int index = tarariContext.getIndex(xpathArray[i]);
+            int index = tarariContext.getIndex(xpathArray[i], tarariContext.getCompilerGeneration());
             System.out.print("XPath " + xpathArray[i]);
             if (index < 1) {
                 System.out.println(" could not be compiled");

@@ -11,8 +11,8 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.service.resolution.*;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
-import org.springframework.context.support.ApplicationObjectSupport;
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.context.support.ApplicationObjectSupport;
 
 import java.io.IOException;
 import java.util.*;
@@ -427,6 +427,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
                             cacheNoLock(toUpdateOrAdd);
                         } // otherwise, next integrity check shall delete this service from cache
                     }
+                    // TODO can we skip this step if no xpath assertions have changed?
                     TarariLoader.compile();
                     for (Iterator i = deletions.iterator(); i.hasNext();) {
                         Long key = (Long)i.next();

@@ -107,7 +107,7 @@ public class AssertionMessages extends Messages {
 
     // ServerRequestAcceleratedXpathAssertion & ServerResponseAcceleratedXpathAssertion messages
     public static final M ACCEL_XPATH_NO_HARDWARE                 = m(4750, Level.INFO, "Hardware acceleration not available; falling back to software xpath processing.");
-    public static final M ACCEL_XPATH_UNSUPPORTED_PATTERN         = m(4751, Level.INFO, "Hardware acceleration not supported for this xpath expression; falling back to software xpath processing.");
+    public static final M ACCEL_XPATH_UNSUPPORTED_PATTERN         = m(4751, Level.INFO, "Hardware acceleration not available for this xpath expression; falling back to software xpath processing.");
     public static final M ACCEL_XPATH_NO_CONTEXT                  = m(4752, Level.WARNING, "This message has no hardware acceleration context; falling back to software xpath processing.");
     
     // ServerRequestWssX509Cert messages

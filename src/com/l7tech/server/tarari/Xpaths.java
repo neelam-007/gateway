@@ -114,9 +114,17 @@ class Xpaths {
         return (String[])expressions.toArray(new String[0]);
     }
 
-    synchronized int getIndex(String expression) {
+    /**
+     * Get the specified expression's zero-based index into the XPath result array in the specified compiler generation.
+     *
+     * @return the zero-based index if this xpath was present in the specified
+     *         GlobalTarariContext compiler generation number,
+     *         or NO_SUCH_EXPRESSION otherwise.  Note that this is the zero-based Java index rather than the one-based
+     *         Tarari index.
+     */
+    synchronized int getIndex(String expression, long targetCompilerGeneration) {
         XpathHandle handle = (XpathHandle)expressionsToHandles.get(expression);
-        if (handle == null || !handle.isInstalled()) {
+        if (handle == null || !handle.isInstalled(targetCompilerGeneration)) {
             return GlobalTarariContext.NO_SUCH_EXPRESSION;
         } else {
             return handle.getIndex();
@@ -131,11 +139,18 @@ class Xpaths {
         return (XpathHandle)expressionsToHandles.get(expression);
     }
 
-    synchronized void installed(String[] expressions) {
+    /**
+     * Mark the specified expression as installed and available in the hardware as of the specified compiler
+     * generation count.
+     *
+     * @param expressions   the expression strings that have been installed.
+     * @param compilerGeneration  the compiler generation in which they were installed.
+     */
+    synchronized void installed(String[] expressions, long compilerGeneration) {
         for (int i = 0; i < expressions.length; i++) {
             String expression = expressions[i];
             XpathHandle handle = (XpathHandle)expressionsToHandles.get(expression);
-            if (handle != null) handle.setInstalled();
+            if (handle != null) handle.setInstalled(compilerGeneration);
         }
     }
 }
