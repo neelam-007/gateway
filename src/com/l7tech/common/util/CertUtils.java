@@ -7,6 +7,8 @@
 package com.l7tech.common.util;
 
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.NoSuchAlgorithmException;
@@ -22,7 +24,35 @@ import java.security.interfaces.DSAParams;
  * @version 1.0
  */
 public class CertUtils {
-    /** Returns a properties instance filled out with info about the certificate. */
+
+    /**
+     * Display structured information about a certificate.
+     *
+     * @param cert The certificate to analyze
+     * @return a single multi-line string that can be printed out
+     * @throws CertificateEncodingException if the cert could not be decoded
+     * @throws NoSuchAlgorithmException if the cert required an algorithm that is not available
+     */
+    public static String toString(X509Certificate cert) throws CertificateEncodingException, NoSuchAlgorithmException {
+        StringBuffer sb = new StringBuffer();
+        List p = getCertProperties(cert);
+        for (Iterator i = p.iterator(); i.hasNext();) {
+            String[] s = (String[]) i.next();
+            String label = s[0];
+            String value = s[1];
+            sb.append(label + ": " + value + "\n");
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Obtain structured information about a certificate in an easy-to-display tabular format.
+     *
+     * @param cert The certificate to analyze
+     * @return a list of String[] tuples, where each is of the form {"Label", "Value"}
+     * @throws CertificateEncodingException if the cert could not be decoded
+     * @throws NoSuchAlgorithmException if the cert required an algorithm that is not available
+     */
     public static ArrayList getCertProperties(X509Certificate cert)
       throws CertificateEncodingException, NoSuchAlgorithmException {
         ArrayList l = new ArrayList();
