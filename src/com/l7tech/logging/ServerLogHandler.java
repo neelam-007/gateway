@@ -45,6 +45,7 @@ public class ServerLogHandler extends Handler {
      * note the two phase construction ServerLogHandler.initialize()
      */
     public ServerLogHandler() {
+        super();
     }
 
     public void publish(LogRecord record) {
