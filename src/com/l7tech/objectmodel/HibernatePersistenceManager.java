@@ -242,7 +242,7 @@ public class HibernatePersistenceManager extends PersistenceManager {
             ContextHolder h = getContextHolder(context);
             String deleteQuery = "from temp in class " +
                                  entityClass.getName() +
-                                 " where oid = ?";
+                                 " where temp.oid = ?";
             h._session.delete( deleteQuery, new Long( oid ), Hibernate.LONG );
         } catch (HibernateException he) {
             throw new DeleteException(he.toString(), he);
