@@ -68,18 +68,34 @@ public class GenericUserPanel extends UserPanel {
     private JButton changePassButton;
     private final String USER_DOES_NOT_EXIST_MSG = "This user no longer exists";
 
+    public GenericUserPanel() {
+        super();
+    }
 
-    public void initialize() {
+    private void initialize() {
         try {
             // Initialize form components
             groupPanel = new UserGroupsPanel(this, config);
             certPanel = new CertificatePanel(this, passwordChangeListener);
             layoutComponents();
             this.addHierarchyListener(hierarchyListener);
+
+            applyFormSecurity();
+
         } catch (Exception e) {
             log.log(Level.SEVERE, "GroupPanel()", e);
             e.printStackTrace();
         }
+    }
+
+    private void applyFormSecurity() {
+        // list components that are subject to security (they require the full admin role)
+        securityFormPreparer.prepare(new Component[]{
+            emailTextField,
+            changePassButton,
+            firstNameTextField,
+            lastNameTextField
+        });
     }
 
 

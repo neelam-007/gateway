@@ -8,8 +8,9 @@ package com.l7tech.console.util;
 import javax.swing.*;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
-import java.lang.reflect.Method;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
 
 /**
  * The <code>FormPreparer</code> class processes the form elements and applies the
@@ -29,6 +30,7 @@ public class FormPreparer {
 
     /**
      * Prepare the <code>JFrame</code> visit each component on the frame
+     *
      * @param frame the frame to prepare
      */
     public void prepare(JFrame frame) {
@@ -45,6 +47,12 @@ public class FormPreparer {
         traverse(dialog.getComponents());
     }
 
+    public void prepare(Component[] components) {
+        for (int i = 0; i < components.length; i++) {
+            Component component = components[i];
+            visit(component);
+        }
+    }
 
     private void traverse(Component[] components) {
         for (int i = 0; i < components.length; i++) {
@@ -62,7 +70,7 @@ public class FormPreparer {
             if (mostSpecific == null) {
                 componentPreparer.prepare(c);
             } else {
-                mostSpecific.invoke(this, new Object[]{c});
+                mostSpecific.invoke(componentPreparer, new Object[]{c});
             }
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
@@ -103,6 +111,16 @@ public class FormPreparer {
         return null;
     }
 
+    protected static CompositePreparer combinePreparers(ComponentPreparer grantToRolePreparer, ComponentPreparer[] preparers) {
+        java.util.List allPreparers = new ArrayList();
+        for (int i = 0; preparers != null && i < preparers.length; i++) {
+            ComponentPreparer preparer = preparers[i];
+            allPreparers.add(preparer);
+        }
+        allPreparers.add(grantToRolePreparer);
+        return new CompositePreparer((ComponentPreparer[])allPreparers.toArray(new ComponentPreparer[]{}));
+    }
+
 
     /**
      * The <code>ComponentPreparer</code> interfacde defines the method that is invoked
@@ -114,7 +132,9 @@ public class FormPreparer {
         void prepare(Component c);
     }
 
-    /** the precanned <code>ComponentPreparer</code> that sets the text component read only */
+    /**
+     * the precanned <code>ComponentPreparer</code> that sets the text component read only
+     */
     public static ComponentPreparer TEXT_COMPONENT_READONLY_PREPARER = new ComponentPreparer() {
         public void prepare(Component c) {}
 
@@ -127,7 +147,7 @@ public class FormPreparer {
      * <code>CompositePreparer</code> holder for one or more preparers
      */
     public static final class CompositePreparer implements ComponentPreparer {
-        private ComponentPreparer[] visitors = new ComponentPreparer[] {};
+        private ComponentPreparer[] visitors = new ComponentPreparer[]{};
 
         public CompositePreparer(ComponentPreparer[] visitors) {
             if (visitors != null) {

@@ -1,7 +1,11 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.util.Locator;
 import com.l7tech.console.MainWindow;
+import com.l7tech.console.security.RoleFormPreparer;
+import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.UserBean;
 import com.l7tech.objectmodel.EntityHeader;
@@ -14,14 +18,13 @@ import java.util.Set;
 /**
  * A abstract class for handling common tasks of User Panel. A subclass derived from this
  * abstract class will handle different type of users.
- * 
+ * <p/>
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
  * <p> @author fpang </p>
  * $Id$
  */
 abstract public class UserPanel extends EntityEditorPanel {
     final static String USER_ICON_RESOURCE = "com/l7tech/console/resources/user16.png";
-    private final String USER_DOES_NOT_EXIST_MSG = "This user no longer exists";
 
     // user
     protected EntityHeader userHeader;
@@ -31,8 +34,17 @@ abstract public class UserPanel extends EntityEditorPanel {
     protected boolean formModified;
     protected IdentityProviderConfig config;
     protected final MainWindow mainWindow = TopComponents.getInstance().getMainWindow();
+    protected RoleFormPreparer securityFormPreparer;
 
     abstract public boolean certExist();
+
+    protected UserPanel() {
+        final SecurityProvider provider = (SecurityProvider)Locator.getDefault().lookup(SecurityProvider.class);
+        if (provider == null) {
+            throw new IllegalStateException("Could not instantiate security provider");
+        }
+        securityFormPreparer = new RoleFormPreparer(provider, new String[]{Group.ADMIN_GROUP_NAME});
+    }
 
     /**
      * Enables or disables the buttons based

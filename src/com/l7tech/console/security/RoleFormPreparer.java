@@ -8,11 +8,10 @@ package com.l7tech.console.security;
 import com.l7tech.console.util.FormPreparer;
 
 import javax.security.auth.Subject;
+import javax.swing.*;
 import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.security.AccessController;
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * The <code>RoleFormPreparer</code>
@@ -23,22 +22,22 @@ import java.util.List;
 public class RoleFormPreparer extends FormPreparer {
 
     public RoleFormPreparer(SecurityProvider provider, String[] editGrantedRoles) {
-        super(new GrantRolePreparer(editGrantedRoles, provider));
+        super(new GrantToRolePreparer(editGrantedRoles, provider));
     }
 
     public RoleFormPreparer(SecurityProvider provider, String[] editGrantedRoles, ComponentPreparer[] preparers) {
-        super(combinePreparers(new GrantRolePreparer(editGrantedRoles, provider), preparers));
+        super(combinePreparers(new GrantToRolePreparer(editGrantedRoles, provider), preparers));
     }
 
 
     /**
-     * <code>RoleBasedPreparer</code> holder for one or more preparers
+     * <code>GrantToRolePreparer</code> grants component action for a given role
      */
-    public static class GrantRolePreparer implements ComponentPreparer {
+    public static class GrantToRolePreparer implements ComponentPreparer {
         private final String[] editGrantedRoles;
         private final SecurityProvider provider;
 
-        public GrantRolePreparer(String[] editGrantedRole, SecurityProvider provider) {
+        public GrantToRolePreparer(String[] editGrantedRole, SecurityProvider provider) {
             this.editGrantedRoles = editGrantedRole;
             this.provider = provider;
         }
@@ -49,22 +48,14 @@ public class RoleFormPreparer extends FormPreparer {
             c.setEditable(isInRole());
         }
 
+        public void prepare(JButton c) {
+            c.setEnabled(isInRole());
+        }
+
         protected boolean isInRole() {
             Subject subject = Subject.getSubject(AccessController.getContext());
             if (subject == null) return false;
             return provider.isSubjectInRole(subject, editGrantedRoles);
         }
     }
-
-
-    private static CompositePreparer combinePreparers(GrantRolePreparer grantRolePreparer, ComponentPreparer[] preparers) {
-        List allPreparers = new ArrayList();
-        for (int i = 0; preparers != null && i < preparers.length; i++) {
-            ComponentPreparer preparer = preparers[i];
-            allPreparers.add(preparer);
-        }
-        allPreparers.add(grantRolePreparer);
-        return new CompositePreparer((ComponentPreparer[])allPreparers.toArray(new ComponentPreparer[]{}));
-    }
-
 }
