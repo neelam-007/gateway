@@ -98,10 +98,10 @@ public class XmlMangler {
     }
 
     /**
-     * In-place encrypt of the specified SOAP document.  The document will be encrypted with AES256 using the specified
-     * AES256 key, which will be tagged with the specified KeyName.
+     * In-place encrypt of the specified SOAP document's body element.  The body element will be encrypted with AES256
+     * using the specified AES256 key, which will be tagged with the specified KeyName.
      *
-     * @param soapMsg  the SOAP document to encrypt
+     * @param soapMsg  the SOAP document whose body to encrypt
      * @param keyBytes   the 32 byte AES256 symmetric key to use to encrypt it
      * @param keyName    an identifier for this Key that will be meaningful to a consumer of the encrypted message
      * @throws IllegalArgumentException  if the key was not an array of exactly 32 bytes of key material
