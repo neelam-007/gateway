@@ -2,9 +2,9 @@ package com.l7tech.console;
 
 import java.awt.*;
 import java.awt.event.WindowAdapter;
-import javax.swing.JPanel;
-import javax.swing.JLabel;
-import javax.swing.JWindow;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import javax.swing.*;
 
 /**
  * The splash screen class
@@ -12,7 +12,7 @@ import javax.swing.JWindow;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.2
  */
-class SplashScreen extends JWindow {
+class SplashScreen extends JWindow implements MouseListener {
     /* this class classloader */
     private final ClassLoader cl = getClass().getClassLoader();
     private JPanel windowContentPane = null;
@@ -91,6 +91,8 @@ class SplashScreen extends JWindow {
                   windowClosingHandler(e);
               }
           });
+        // egg
+        this.addMouseListener(this);
     }
 
     /**
@@ -102,6 +104,14 @@ class SplashScreen extends JWindow {
         setContentPane(getJWindowContentPane());
         initializeListeners();
     }
+
+    public void mouseClicked(MouseEvent e) {
+            labelSplash.setIcon(new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/rooster.gif")));
+    }
+    public void mousePressed(MouseEvent e) {}
+    public void mouseReleased(MouseEvent e) {}
+    public void mouseEntered(MouseEvent e) {}
+    public void mouseExited(MouseEvent e) {}
 
     /**
      * main entrypoint - starts the part when it is run as an application
