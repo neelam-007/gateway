@@ -23,6 +23,11 @@ import java.io.IOException;
 import java.io.StringReader;
 
 /**
+ * User: flascell
+ * Date: Aug 11, 2003
+ * $Id$
+ *
+ * Finds wss basic creds from the request
  */
 public class WssBasicCredentialFinder extends WssCredentialFinder {
     public PrincipalCredentials findCredentials(Request request) throws CredentialFinderException {
