@@ -193,6 +193,26 @@ public class PolicyServiceTest extends TestCase {
         testPolicy(root, null);
     }
 
+    public void testFullAnonymous() throws Exception {
+        AllAssertion root = new AllAssertion();
+        OneOrMoreAssertion or = new OneOrMoreAssertion();
+        root.getChildren().add(or);
+
+        AllAssertion branch1 = new AllAssertion();
+        branch1.getChildren().add(new RequestXpathAssertion(new XpathExpression("/anonymousPath")));
+        branch1.getChildren().add(new ResponseWssIntegrity());
+        branch1.setChildren(branch1.getChildren());
+
+        or.getChildren().add(branch1);
+        
+        root.getChildren().add(new HttpRoutingAssertion("http://soap.spacecrocodile.com"));
+        root.setChildren(root.getChildren());
+        or.setChildren(or.getChildren());
+        log.info(root.toString());
+
+        testPolicy(root, null);
+    }
+
     private static final String TESTUSER_UID = "666";
     private static final String TESTUSER_LOGIN = "franco";
     private static final String TESTUSER_PASSWD = "password";
