@@ -36,7 +36,7 @@ public class AgentAboutBox extends JDialog {
                                         GridBagConstraints.BOTH,
                                         new Insets(8, 20, 0, 20), 0, 0));
 
-        JLabel version = new JLabel(BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber() + " (" + BuildInfo.getBuildTag() + ")");
+        JLabel version = new JLabel(BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber());
         pane.add(version,
                  new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
                                         GridBagConstraints.WEST,
