@@ -1,0 +1,243 @@
+<project name="UneasyRooster" default="dev" basedir=".">
+
+  <!-- ssg build file (Ant) -->
+  <property name="app.name" value="ssg"/>
+
+  <!-- Uncomment for jikes/emacs to be used
+  <property name="build.compiler" value="jikes"/>
+  <property name="build.compiler.emacs" value="true"/> -->
+
+  <!-- as the file name says -->
+  <property file="${src.root}/etc/ssg.version"/>
+
+  <!-- configuration defaults (dev build only) -->
+  <property file="${user.home}/build.properties"/>
+
+  <!-- where the builds go -->
+  <property name="dist.build.home" value="${src.root}/dist"/>
+  <property name="dev.build.home" value="${src.root}/build"/>
+
+  <!-- distribution archive names -->
+  <property name="war" value="${app.name}.war"/>
+  <property name="tar" value="${app.name}.tar"/>
+  <property name="tar.gz" value="${app.name}_${app.version}.tar.gz"/>
+
+  <!-- ear not used
+    <property name="ear"        value="${app.name}.ear"/>
+  -->
+
+  <!-- project classpath -->
+  <path id="project.class.path">
+    <pathelement location="src"/>
+    <fileset dir="lib">
+      <include name="*.jar"/>
+    </fileset>
+    <fileset dir="lib">
+      <include name="*.zip"/>
+    </fileset>
+  </path>
+  <property name="test.class.path" refid="project.class.path"/>
+
+  <!--
+    ** init dev target The "dev" target depends on this target.
+    -->
+  <target name="init-dev">
+    <property name="build.dir" value="${dev.build.home}"/>
+    <property name="build.classes" value="${build.dir}/classes"/>
+    <property name="doc.root" value="${build.dir}/htdocs"/>
+    <property name="build.lib" value="${build.dir}/lib"/>
+    <property name="build.etc" value="${build.dir}/etc"/>
+    <!-- javadoc home -->
+    <property name="javadoc.home" value="${doc.root}/javadoc"/>
+  </target>
+
+
+  <!--
+    ** config dist target. The "dist" target depends on this target.
+    -->
+  <target name="init-dist">
+    <property name="dist.build" value="true"/>
+    <property name="build.dir" value="${dist.build.home}"/>
+
+    <property name="build.classes" value="${build.dir}/classes"/>
+    <property name="doc.root" value="${build.dir}/htdocs"/>
+    <property name="build.lib" value="${build.dir}/lib"/>
+    <property name="build.etc" value="${build.dir}/etc"/>
+
+    <!-- javadoc home -->
+    <property name="javadoc.home" value="${doc.root}/javadoc"/>
+  </target>
+
+
+  <!--
+    ** configure and invoke developer's build
+    -->
+  <target name="dev" depends="init-dev">
+    <antcall target="compile">
+    </antcall>
+    <antcall target="compile-one">
+    </antcall>
+  </target>
+
+  <!--
+    ** configure and invoke developer's build for source files
+    ** that match the pattern passed as -Dcompile.pattern
+    -->
+  <target name="compile-one" depends="init-dev" if="compile.pattern">
+    <echo message="Compiling **/*${compile.pattern}* in ${src.root}."/>
+    <javac srcdir="src" destdir="${build.classes}" debug="on"
+      optimize="off"
+      includes="**/*${compile.pattern}*" deprecation="on" depend="on"
+      verbose="no">
+      <classpath refid="project.class.path"/>
+    </javac>
+  </target>
+
+  <!--
+    ** developer's 'deploy' target.
+    ** compile and package the application.
+    ** Then deploy a package into the ${tomcat.home}/webapps ($TOMCAT_HOME/webapps)
+    -->
+  <target name="deploy" depends="init-dev">
+    <antcall target="package">
+    </antcall>
+
+    <delete dir="${tomcat.home}/webapps/${app.name}"/>
+    <delete dir="${tomcat.home}/webapps/${app.name}"/>
+    <copy todir="${tomcat.home}/webapps">
+      <fileset dir="${build.dir}" includes="*.war"/>
+    </copy>
+
+    <!--
+      ** the authorization jar has to be common to all applications and
+      ** so it lives in the tomcat lib directory rather than an
+application
+      ** specific location.  Since the authorization code needs to
+      ** access our authentication services (database and external)
+then
+      ** it also needs all that code too.
+      -->
+    <copy todir="${tomcat.home}/lib/common">
+      <fileset dir="${build.dir}/lib"
+        includes="et-auth.jar, mm.mysql-2.0.11-bin.jar,
+        jacorb.jar, jdbc2_0-stdext.jar, idinterceptor.jar, jaas.jar,
+        radclient3.jar"/>
+    </copy>
+  </target>
+
+  <!--
+    ** configure and invoke unit tests
+    -->
+  <target name="test" depends="dev">
+
+    <junit printsummary="yes" haltonfailure="yes" fork="off">
+      <classpath>
+        <pathelement path="${test.class.path}"/>
+        <pathelement path="${build.dir}/classes"/>
+      </classpath>
+
+      <formatter type="plain"/>
+      <sysproperty key="src.root" value="${src.root}"/>
+      <test name="tests.ThreadPoolTest" haltonfailure="no"/>
+      <!--
+        ** add tests here **
+        -->
+    </junit>
+
+  </target>
+
+  <!--
+    ** Clean the directory structure.
+    ** This is used only by developer's build.
+    -->
+  <target name="clean" depends="init-dev">
+    <delete dir="${build.classes}"/>
+    <delete dir="${src.root}/src/com/l7tech/corba/ens"/>
+    <delete dir="${doc.root}"/>
+    <delete dir="${build.lib}"/>
+    <delete dir="${build.dir}"/>
+    <delete dir="${javadoc.home}"/>
+    <delete file="${src.root}/src/com/l7tech/util/Version.java"/>
+  </target>
+
+  <!-- javadoc target -->
+  <target name="javadoc" depends="prepare">
+    <javadoc packagenames="com.*" sourcepath="src"
+      destdir="${javadoc.home}">
+      <classpath refid="project.class.path"/>
+    </javadoc>
+  </target>
+
+  <!--
+    ** Non 'build' targets from this point; just various helper
+targets.
+    ** Please do not invoke below targets as main targets.
+  -->
+
+  <!--
+    ** 'package' target.
+    ** package the application ( both client and server) in their
+    ** respective archives (war, jar).
+    ** This target is invoked by other targets such as deploy and dist.
+    -->
+  <target name="package" depends="compile">
+    <!-- the ssg war -->
+    <war warfile="${build.dir}/${war}" webxml="${build.etc}/web.xml">
+      <lib dir="${build.dir}/lib" excludes="**/servlet.jar, **/commons-httpclient.jar, **/jh.jar"/>
+      <classes dir="${build.classes}"/>
+    </war>
+
+  </target>
+
+  <!--
+    ** Create the directory structure, copy the resources, libs and
+    ** update version tokens
+    -->
+  <target name="prepare">
+    <!-- time stamp -->
+    <tstamp/>
+    <mkdir dir="${build.dir}"/>
+    <mkdir dir="${build.lib}"/>
+    <mkdir dir="${build.classes}"/>
+    <mkdir dir="${build.etc}"/>
+    <mkdir dir="${build.etc}/deploy"/>
+    <mkdir dir="${doc.root}"/>
+    <!-- lib -->
+    <copy todir="${build.lib}">
+      <fileset dir="${src.root}/lib" 
+               excludes="**/CVS/*,**/**ant*,**/optional.jar,**/*xml-apis.jar,
+                         **/*junit.jar, **/*xercesImpl.jar"/>
+    </copy>
+
+    <!-- etc -->
+    <copy todir="${build.classes}">
+      <fileset dir="${src.root}/etc" includes="log4j.properties"/>
+    </copy>
+
+
+    <!-- the web.xml, et-auth.mf and deploy/build.xml -->
+    <copy todir="${build.etc}">
+      <fileset dir="${src.root}/etc" includes="web.xml"/>
+    </copy>
+
+    <!-- html and other static web files -->
+    <copy todir="${doc.root}">
+      <fileset dir="${src.root}/web" includes="**/*"
+        excludes="**/CVS/*"/>
+    </copy>
+
+    <mkdir dir="${javadoc.home}"/>
+  </target>
+
+  <!--
+    ** compile target
+    -->
+  <target name="compile" depends="prepare" unless="compile.pattern">
+    <javac srcdir="src" destdir="${build.classes}" debug="on" optimize="off" 
+           deprecation="on" depend="on" verbose="no">
+      <classpath refid="project.class.path"/>
+    </javac>
+  </target>
+
+  <target name="all" depends="clean, dev,javadoc"/>
+</project>
