@@ -1,3 +1,9 @@
+--
+-- THIS SCRIPT DROPS TABLES!
+--
+-- $Id$
+--
+
 -- MySQL dump 8.22
 --
 -- Host: spock    Database: ssg
