@@ -21,6 +21,7 @@ import java.net.MalformedURLException;
  * $Id$<br/>
  */
 public class NonSoapServicePanel extends WizardStepPanel {
+    public static final String DEF_PREFIX = "/xml/";
     /**
      * Creates new form WizardPanel
      */
@@ -38,7 +39,7 @@ public class NonSoapServicePanel extends WizardStepPanel {
         add(mainPanel);
         // set the prefix based on what host we are connected to
         final MainWindow mw = TopComponents.getInstance().getMainWindow();
-        prefixURL.setText(mw.ssgURL() + "/ssg/xml/");
+        prefixURL.setText(mw.ssgURL() + DEF_PREFIX);
     }
 
     private void bark(Component control, String msg) {
@@ -70,7 +71,7 @@ public class NonSoapServicePanel extends WizardStepPanel {
             bark(ssgURLSuffix, msg);
             return false;
         } else {
-            routingURI = "/ssg/xml/" + tmp;
+            routingURI = DEF_PREFIX + tmp;
         }
         // check that this is a valid url
         try {
