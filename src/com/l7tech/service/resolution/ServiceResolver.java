@@ -16,7 +16,7 @@ import java.util.*;
  * @author alex
  * @version $Revision$
  */
-public abstract class ServiceResolver implements Comparable, ServiceListener {
+public abstract class ServiceResolver implements Comparable {
     public static final int FAST = 0;
     public static final int SLOW = 100;
 
