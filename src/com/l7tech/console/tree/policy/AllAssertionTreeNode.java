@@ -14,7 +14,7 @@ import java.util.Arrays;
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-class AllAssertionTreeNode extends CompositeAssertionTreeNode {
+public class AllAssertionTreeNode extends CompositeAssertionTreeNode {
     /**
      * The <code>AllAssertionTreeNode</code> is the composite
      * assertion node that represents the 'AND' conjunction.
@@ -39,16 +39,16 @@ class AllAssertionTreeNode extends CompositeAssertionTreeNode {
         list.addAll(Arrays.asList(super.getActions()));
         Action a = new AddIdentityAssertionAction(this);
         list.add(a);
-        return (Action[]) list.toArray(new Action[]{});
+        return (Action[])list.toArray(new Action[]{});
     }
 
     /**
-     *Test if the node can be deleted. Default is <code>true</code>
+     * Test if the node can be deleted. Default is <code>true</code>
      *
      * @return true if the node can be deleted, false otherwise
      */
     public boolean canDelete() {
-        return getParent() !=null;
+        return getParent() != null;
     }
 
     /**

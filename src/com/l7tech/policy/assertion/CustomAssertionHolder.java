@@ -10,13 +10,14 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 
 /**
- * The custom assertion holder wraps a user defined bean instance that
- * represents user defined set of properties that describe the assertion.
- * The <code>customAssertionBean,/code> property is required to
- * be serializable and must offer Java Bean style get/set operations.
+ * The custom assertion holder is a placeholder <code>Assertion</code>
+ * that wraps a bean instance that implements the <code>CustomAssertion</code>
+ * The <code>customAssertionBean</code> property is required to
+ * be serializable and must offer JavaBean style get/set operations.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
+ * @author <a href="mailto:emarceta@layer7tech.com">Emil Marceta</a>
  * @version 1.0
+ * @see CustomAssertion
  */
 public class CustomAssertionHolder extends Assertion {
     protected transient CompositeAssertion parent;
@@ -38,7 +39,7 @@ public class CustomAssertionHolder extends Assertion {
     }
 
     /**
-     * @return the custome assertion bean
+     * @return the custom assertion bean
      */
     public CustomAssertion getCustomAssertion() {
         return customAssertion;

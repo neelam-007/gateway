@@ -6,10 +6,11 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 /**
  * Class HttpDigestAuthAssertionTreeNode is a tree node that corresponds
  * to the <code>HttpDigest</code> asseriton.
- * <p>
+ * <p/>
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-class HttpDigestAuthAssertionTreeNode extends LeafAssertionTreeNode {
+public class HttpDigestAuthAssertionTreeNode extends LeafAssertionTreeNode {
 
     public HttpDigestAuthAssertionTreeNode(HttpDigest assertion) {
         super(assertion);
@@ -23,7 +24,7 @@ class HttpDigestAuthAssertionTreeNode extends LeafAssertionTreeNode {
     }
 
     /**
-     *Test if the node can be deleted. Default is <code>true</code>
+     * Test if the node can be deleted. Default is <code>true</code>
      *
      * @return true if the node can be deleted, false otherwise
      */

@@ -1,5 +1,6 @@
 package com.l7tech.console.tree.policy;
 
+import com.l7tech.common.util.ConstructorInvocation;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
@@ -7,16 +8,17 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.xmlsec.*;
+import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
+import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * Supporting class for assertion descriptions.
- * <p>
+ * <p/>
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class Descriptions {
@@ -53,19 +55,15 @@ public class Descriptions {
     private static AssertionDescription makeDescription(Class classNode, Assertion assertion)
       throws InstantiationException, InvocationTargetException, IllegalAccessException {
 
-        Constructor ctor =
-          Utils.findMatchingConstructor(classNode, new Class[]{assertion.getClass()});
-        if (ctor != null)
-            return (AssertionDescription)ctor.newInstance(new Object[]{assertion});
-        throw new RuntimeException("Cannot locate expected he constructor in " + classNode);
-
+        ConstructorInvocation ci = new ConstructorInvocation(classNode, new Object[]{assertion});
+        return (AssertionDescription)ci.invoke();
     }
 
     /**
      * the class MemberOfGroupDescription returns the specific assertion
      * description for the MemberOfGroup assertion
      */
-    static class MemberOfGroupDescription extends AssertionDescription {
+    public static class MemberOfGroupDescription extends AssertionDescription {
 
         public MemberOfGroupDescription(MemberOfGroup a) {
             super(a);
@@ -74,6 +72,7 @@ public class Descriptions {
         /**
          * The method returns the assertion parameters for MemeberOfGroup
          * to be used in messages.
+         *
          * @return the <CODE>Object[]</CODE> array of assertion parameters
          */
         protected Object[] parameters() {
@@ -87,14 +86,16 @@ public class Descriptions {
      * the class SpecificUserDescription returns the specific assertion
      * description for the SpecificUser
      */
-    static class SpecificUserDescription extends AssertionDescription {
+    public static class SpecificUserDescription extends AssertionDescription {
 
         public SpecificUserDescription(SpecificUser a) {
             super(a);
         }
+
         /**
          * The method returns the assertion parameters for MemeberOfGroup
          * to be used in messages.
+         *
          * @return the <CODE>Object[]</CODE> array of assertion parameters
          */
         protected Object[] parameters() {
@@ -105,49 +106,52 @@ public class Descriptions {
     }
 
     /**
-       * the class SpecificUserDescription returns the specific assertion
-       * description for the SpecificUser
-       */
-      static class RoutingDescription extends AssertionDescription {
+     * the class SpecificUserDescription returns the specific assertion
+     * description for the SpecificUser
+     */
+    public static class RoutingDescription extends AssertionDescription {
 
-          public RoutingDescription(RoutingAssertion a) {
-              super(a);
-          }
-          /**
-           * The method returns the assertion parameters for MemeberOfGroup
-           * to be used in messages.
-           * @return the <CODE>Object[]</CODE> array of assertion parameters
-           */
-          protected Object[] parameters() {
-              if (assertion instanceof HttpRoutingAssertion) {
-                                return new Object[]{
-                                    ((HttpRoutingAssertion)assertion).getProtectedServiceUrl()
-                                };
-              } else if (assertion instanceof JmsRoutingAssertion) {
-                  JmsRoutingAssertion ass = (JmsRoutingAssertion) assertion;
-                  String s;
-                  if (ass.getEndpointOid() == null) {
-                      s = "Route to as-yet-undefined JMS Endpoint";
-                  } else {
-                      String name = ass.getEndpointName();
-                      if (name == null)
+        public RoutingDescription(RoutingAssertion a) {
+            super(a);
+        }
+
+        /**
+         * The method returns the assertion parameters for MemeberOfGroup
+         * to be used in messages.
+         *
+         * @return the <CODE>Object[]</CODE> array of assertion parameters
+         */
+        protected Object[] parameters() {
+            if (assertion instanceof HttpRoutingAssertion) {
+                return new Object[]{
+                    ((HttpRoutingAssertion)assertion).getProtectedServiceUrl()
+                };
+            } else if (assertion instanceof JmsRoutingAssertion) {
+                JmsRoutingAssertion ass = (JmsRoutingAssertion)assertion;
+                String s;
+                if (ass.getEndpointOid() == null) {
+                    s = "Route to as-yet-undefined JMS Endpoint";
+                } else {
+                    String name = ass.getEndpointName();
+                    if (name == null)
                         name = "(unnamed)";
-                      s = "Route to JMS Endpoint " + name;
-                  }
-                  return new Object[] { s };
-              } else {
-                  return new Object[] { "Route using unknown protocol" };
-              }
-          }
-      }
+                    s = "Route to JMS Endpoint " + name;
+                }
+                return new Object[]{s};
+            } else {
+                return new Object[]{"Route using unknown protocol"};
+            }
+        }
+    }
 
     /**
      * the NoParam assertion description is used for the assertions
      * that do not have any specific (instance) arguments
      */
-    static class NoParam extends AssertionDescription {
+    public static class NoParam extends AssertionDescription {
         /**
          * the subclasses must implement the
+         *
          * @param assertion
          */
         public NoParam(Assertion assertion) {
@@ -156,9 +160,9 @@ public class Descriptions {
 
         /**
          * The method returns the empty array of assertion parameters.
-
+         *
          * @return the <CODE>Object[]</CODE> array of assertion
-         * parameters
+         *         parameters
          */
         protected Object[] parameters() {
             return new Object[]{};
@@ -168,9 +172,10 @@ public class Descriptions {
     /**
      * the class UnknonwnAssertionDescription is a 'null object' description
      */
-    static class UnknonwnAssertionDescription extends NoParam {
+    public static class UnknonwnAssertionDescription extends NoParam {
         /**
          * the subclasses must implement the
+         *
          * @param assertion
          */
         public UnknonwnAssertionDescription(Assertion assertion) {
@@ -191,7 +196,7 @@ public class Descriptions {
         descriptionsMap.put(HttpBasic.class, NoParam.class);
         descriptionsMap.put(HttpDigest.class, NoParam.class);
         descriptionsMap.put(RoutingAssertion.class, RoutingDescription.class);
-        descriptionsMap.put(XmlRequestSecurity.class,  NoParam.class);
+        descriptionsMap.put(XmlRequestSecurity.class, NoParam.class);
         descriptionsMap.put(XmlResponseSecurity.class, NoParam.class);
     }
 }

@@ -9,7 +9,7 @@ import com.l7tech.policy.assertion.credential.wss.WssDigest;
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-class WssDigestAuthAssertionTreeNode extends LeafAssertionTreeNode {
+public class WssDigestAuthAssertionTreeNode extends LeafAssertionTreeNode {
 
     public WssDigestAuthAssertionTreeNode(WssDigest assertion) {
         super(assertion);
@@ -23,7 +23,7 @@ class WssDigestAuthAssertionTreeNode extends LeafAssertionTreeNode {
     }
 
     /**
-     *Test if the node can be deleted. Default is <code>true</code>
+     * Test if the node can be deleted. Default is <code>true</code>
      *
      * @return true if the node can be deleted, false otherwise
      */

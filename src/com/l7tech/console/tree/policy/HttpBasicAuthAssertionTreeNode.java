@@ -9,7 +9,7 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-class HttpBasicAuthAssertionTreeNode extends LeafAssertionTreeNode {
+public class HttpBasicAuthAssertionTreeNode extends LeafAssertionTreeNode {
 
     public HttpBasicAuthAssertionTreeNode(HttpBasic assertion) {
         super(assertion);
@@ -23,7 +23,7 @@ class HttpBasicAuthAssertionTreeNode extends LeafAssertionTreeNode {
     }
 
     /**
-     *Test if the node can be deleted. Default is <code>true</code>
+     * Test if the node can be deleted. Default is <code>true</code>
      *
      * @return true if the node can be deleted, false otherwise
      */

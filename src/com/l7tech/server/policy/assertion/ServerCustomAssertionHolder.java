@@ -36,8 +36,8 @@ import java.util.logging.Logger;
 
 /**
  * The <code>ServerCustomAssertionHolder</code> class represents the server side of the
- * custom assertion. It implenets the <code>ServerAssertion</code> interface, and it
- * preapres the environment for executing the custom assertion <code>ServiceInvocation<code>.
+ * custom assertion. It implemets the <code>ServerAssertion</code> interface, and it
+ * prepares the environment for executing the custom assertion <code>ServiceInvocation<code>.
  *
  * @author <a href="mailto:emarceta@layer7tech.com">Emil Marceta</a>
  * @version 1.0

@@ -1,5 +1,6 @@
 package com.l7tech.console.tree.policy;
 
+import com.l7tech.common.util.ConstructorInvocation;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
@@ -16,7 +17,6 @@ import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
 import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
@@ -107,17 +107,12 @@ public class AssertionTreeNodeFactory {
      * @throws InvocationTargetException thrown on error invoking the constructor
      * @throws IllegalAccessException    thrown if there is no access to the desired
      *                                   constructor
-     * @see Utils#findMatchingConstructor(Class, Class[])
      */
     private static AssertionTreeNode makeAssertionNode(Class classNode, Assertion assertion)
       throws InstantiationException, InvocationTargetException, IllegalAccessException {
 
-        Constructor ctor =
-          Utils.findMatchingConstructor(classNode, new Class[]{assertion.getClass()});
-        if (ctor != null)
-            return (AssertionTreeNode)ctor.newInstance(new Object[]{assertion});
-        throw new RuntimeException("Cannot locate expected he constructor in " + classNode);
-
+        ConstructorInvocation ci = new ConstructorInvocation(classNode, new Object[]{assertion});
+        return (AssertionTreeNode)ci.invoke();
     }
 
     /**
