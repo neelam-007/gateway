@@ -118,9 +118,7 @@ public abstract class ServerHttpCredentialSource extends ServerCredentialSourceA
         return doFindCredentials( request, response );
     }
 
-    private void challenge( Request request, Response response ) {
-        response.setAuthenticationMissing( true );
-
+    protected void challenge( Request request, Response response ) {
         StringBuffer challengeHeader = new StringBuffer( scheme() );
         challengeHeader.append( " " );
         String realm = _data.getRealm();
