@@ -23,8 +23,6 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.springframework.context.ApplicationContext;
-
 /**
  * Holds message processing state needed by policy enforcement server (SSG) message processor and policy assertions.
  * TODO write some farking javadoc
@@ -37,7 +35,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private final RequestId requestId;
     private final Map deferredAssertions = new LinkedHashMap();
     private boolean replyExpected;
-    private RoutingStatus routingStatus;
+    private RoutingStatus routingStatus = RoutingStatus.NONE;
     private User authenticatedUser;
     private boolean authenticated;
     private Level auditLevel;
@@ -49,23 +47,17 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private boolean isPolicyViolated = false;
     private PublishedService service;
     private final Vector updatedCookies = new Vector();
-    private final ApplicationContext springContext;
 
-    public PolicyEnforcementContext(Message request, Message response, ApplicationContext springContext) {
-        this(request, response, null, null, springContext);
+    public PolicyEnforcementContext(Message request, Message response) {
+        this(request, response, null, null);
     }
 
     public PolicyEnforcementContext(Message request, Message response,
-                                    HttpServletRequest hrequest, HttpServletResponse hresponse, ApplicationContext springContext) {
+                                    HttpServletRequest hrequest, HttpServletResponse hresponse) {
         super(request, response);
         this.hrequest = hrequest;
         this.hresponse = hresponse;
         this.requestId = RequestIdGenerator.next();
-        this.springContext = springContext;
-
-        if (springContext == null) {
-            throw new IllegalArgumentException("Spring context is required");
-        }
     }
 
     public boolean isAuthenticated() {
@@ -213,9 +205,5 @@ public class PolicyEnforcementContext extends ProcessingContext {
 
     public Vector getUpdatedCookies() {
         return updatedCookies;
-    }
-
-    public ApplicationContext getSpringContext() {
-        return springContext;
     }
 }
