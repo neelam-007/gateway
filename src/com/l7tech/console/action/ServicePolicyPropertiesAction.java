@@ -65,7 +65,7 @@ public class ServicePolicyPropertiesAction extends NodeAction {
                       wpanel.addWorkspaceContainerListener(pep);
                   } catch (Exception e) {
                       ErrorManager.getDefault().
-                        notify(Level.WARNING, e, "Unable to retrieve service properties "+serviceNode.getName());
+                        notify(Level.SEVERE, e, "Unable to retrieve service properties "+serviceNode.getName());
                   }
               }
           });

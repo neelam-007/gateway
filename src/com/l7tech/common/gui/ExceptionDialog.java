@@ -2,8 +2,10 @@ package com.l7tech.common.gui;
 
 
 import com.l7tech.common.gui.widgets.HyperlinkLabel;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
+import javax.swing.border.Border;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.text.html.HTML;
@@ -28,6 +30,7 @@ public class ExceptionDialog extends JDialog implements ActionListener {
     private static final String CLOSE_HTML = "</html>";
     private JPanel main = new JPanel();
     private JPanel messagePanel = new JPanel();
+    private JPanel internalErroLabelPanel = new JPanel();
     private JPanel buttons = new JPanel();
     private JTabbedPane tabPane = new JTabbedPane();
     private JTextArea textArea = new JTextArea();
@@ -36,10 +39,14 @@ public class ExceptionDialog extends JDialog implements ActionListener {
     private Icon errorIcon = uiDefaults.getIcon("OptionPane.errorIcon");
     private Icon warningIcon = uiDefaults.getIcon("OptionPane.warningIcon");
     private Icon informationIcon = uiDefaults.getIcon("OptionPane.informationIcon");
+    private JLabel internalErrorLabel = null;
     private JLabel messageLabel = null;
     private JLabel exceptionMessageLabel = null;
     private JLabel iconLabel = null;
     private JButton close = new JButton("Close");
+
+    private JButton shutdown = new JButton("Shutdown");
+    private JButton ignore = new JButton("Ignore");
 
 
     /**
@@ -90,8 +97,22 @@ public class ExceptionDialog extends JDialog implements ActionListener {
         messageLabel = new JLabel(createMessage(message), SwingConstants.CENTER);
         iconLabel = levelIcon(level);
         iconLabel.setBorder(BorderFactory.createEmptyBorder(0, 30, 0, 0));
-        close.addActionListener(this);
-        buttons.add(close);
+
+        if (level == Level.SEVERE) {
+            shutdown.addActionListener(this);
+            ignore.addActionListener(this);
+            buttons.add(shutdown);
+            buttons.add(ignore);
+            Utilities.equalizeButtonSizes(
+              new AbstractButton[] {
+                  shutdown,
+                  ignore
+            });
+        } else {
+            close.addActionListener(this);
+            buttons.add(close);
+        }
+        
 
         //
         textArea.setText(stackTrace(throwable));
@@ -105,18 +126,27 @@ public class ExceptionDialog extends JDialog implements ActionListener {
             e.printStackTrace(System.err);
         }
 
-        messagePanel.setLayout(new GridLayout(exceptionMessageLabel == null ? 3 : 4,1));
+        messagePanel.setLayout(new GridLayout(exceptionMessageLabel == null ? 3 : 4, 1));
         messagePanel.add(Box.createGlue());
         messagePanel.add(messageLabel);
 
-        if (exceptionMessageLabel !=null) {
-                    messagePanel.add(exceptionMessageLabel);
-                }
+        if (exceptionMessageLabel != null) {
+            messagePanel.add(exceptionMessageLabel);
+        }
         messagePanel.add(Box.createGlue());
 
         main.setLayout(new BorderLayout());
         main.add(iconLabel, BorderLayout.WEST);
         main.add(messagePanel, BorderLayout.CENTER);
+
+        if (level == Level.SEVERE) {
+            internalErroLabelPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+            internalErroLabelPanel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5 ,0));
+            internalErrorLabel = new JLabel("An internal error has occurred. " +
+                                            "You may need to restart the application");
+            internalErroLabelPanel.add(internalErrorLabel);
+            main.add(internalErroLabelPanel, BorderLayout.NORTH);
+        }
 
         main.add(buttons, BorderLayout.SOUTH);
 
@@ -129,7 +159,7 @@ public class ExceptionDialog extends JDialog implements ActionListener {
         pane.add(tabPane, BorderLayout.CENTER);
         pane.add(buttons, BorderLayout.SOUTH);
         //todo: dynamically resize
-        tabPane.setMaximumSize(new Dimension(650, 250));
+        tabPane.setMaximumSize(new Dimension(650, 300));
         tabPane.setPreferredSize(new Dimension(550, 175));
 
     }
@@ -137,7 +167,7 @@ public class ExceptionDialog extends JDialog implements ActionListener {
     private JLabel getExceptionMessageLabel(Throwable t)
       throws MalformedURLException {
         HyperlinkLabel label = null;
-        if (t == null || (t.getMessage() ==null || "".equals(t.getMessage())))
+        if (t == null || (t.getMessage() == null || "".equals(t.getMessage())))
             return null;
         label = new HyperlinkLabel(t.getMessage(), null, "file://", SwingConstants.CENTER);
         label.addHyperlinkListener(new HyperlinkListener() {
@@ -166,11 +196,11 @@ public class ExceptionDialog extends JDialog implements ActionListener {
 
 
     private String openTag(HTML.Tag t) {
-        return "<"+t+">";
+        return "<" + t + ">";
     }
 
     private String closeTag(HTML.Tag t) {
-        return "</"+t+">";
+        return "</" + t + ">";
     }
 
     private int getDecorationStyle(Level level) {
@@ -206,7 +236,6 @@ public class ExceptionDialog extends JDialog implements ActionListener {
     }
 
 
-
     private String stackTrace(Throwable throwable) {
         String value = null;
         if (throwable == null) {
@@ -226,16 +255,19 @@ public class ExceptionDialog extends JDialog implements ActionListener {
 
 
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == close) {
+        final Object source = e.getSource();
+        if (source == close || source == ignore) {
             this.dispose();
+        } else if (source == shutdown) {
+            System.exit(-1);
         }
     }
 
     public static void main(String[] args) {
         ExceptionDialog d = new
-                ExceptionDialog(null,
+          ExceptionDialog(null,
             "There was problem that caused this messich. The program will now exit.",
-            new Exception("Exception message"), Level.INFO);
+            new Exception("Exception message"), Level.SEVERE);
         d.pack();
         d.show();
         System.exit(-1);
