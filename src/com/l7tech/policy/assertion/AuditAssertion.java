@@ -13,6 +13,8 @@ import java.util.logging.Level;
  */
 public class AuditAssertion extends Assertion {
     private Level level;
+    private boolean saveRequest = false;
+    private boolean saveResponse = false;
 
     /**
      * Create a new AuditAssertion with the default level.
@@ -56,6 +58,22 @@ public class AuditAssertion extends Assertion {
             }
         }
         throw new IllegalArgumentException("Unsupported level: " + level);
+    }
+
+    public boolean isSaveRequest() {
+        return saveRequest;
+    }
+
+    public void setSaveRequest(boolean saveRequest) {
+        this.saveRequest = saveRequest;
+    }
+
+    public boolean isSaveResponse() {
+        return saveResponse;
+    }
+
+    public void setSaveResponse(boolean saveResponse) {
+        this.saveResponse = saveResponse;
     }
 
     public static final String[] ALLOWED_LEVELS = new String[] {

@@ -137,4 +137,25 @@ public interface Request extends Message {
      * Note that the audit level cannot be reduced; if the current level is INFO and you call setAuditLevel({@link Level#FINEST}) it will have no effect.
      */
     void setAuditLevel( Level auditLevel );
+
+    /**
+     * @return true if the request XML will be saved in any audit record for this request
+     */
+    boolean isAuditSaveRequest();
+
+    /**
+     * @param saveRequest true if the request XML will be saved in any audit record for this request
+     */
+    void setAuditSaveRequest(boolean saveRequest);
+
+    /**
+     * @return true if the response XML will be saved in any audit record for this request
+     */
+    boolean isAuditSaveResponse();
+
+    /**
+     * @param saveResponse true if the response XML will be saved in any audit record for this request
+     */
+    void setAuditSaveResponse(boolean saveResponse);
+
 }

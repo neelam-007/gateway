@@ -1,7 +1,6 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.common.RequestId;
-import com.l7tech.server.attachments.ServerMultipartMessageReader;
 import com.l7tech.common.util.MultipartUtil;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.TestDocuments;
@@ -14,6 +13,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.server.attachments.ServerMultipartMessageReader;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.ServerRequestXpathAssertion;
 import junit.framework.Test;
@@ -83,6 +83,20 @@ public class RequestXpathAssertionTest extends TestCase {
             }
 
             public void setAuditLevel( Level auditLevel ) {
+            }
+
+            public boolean isAuditSaveRequest() {
+                return false;
+            }
+
+            public void setAuditSaveRequest(boolean saveRequest) {
+            }
+
+            public boolean isAuditSaveResponse() {
+                return false;
+            }
+
+            public void setAuditSaveResponse(boolean saveResponse) {
             }
 
             public LoginCredentials getPrincipalCredentials() {

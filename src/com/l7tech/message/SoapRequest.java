@@ -135,6 +135,22 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
         this.auditLevel = auditLevel;
     }
 
+    public boolean isAuditSaveResponse() {
+        return auditSaveResponse;
+    }
+
+    public void setAuditSaveResponse(boolean auditSaveResponse) {
+        this.auditSaveResponse = auditSaveResponse;
+    }
+
+    public boolean isAuditSaveRequest() {
+        return auditSaveRequest;
+    }
+
+    public void setAuditSaveRequest(boolean auditSaveRequest) {
+        this.auditSaveRequest = auditSaveRequest;
+    }
+
     /**
      * Closes any resources associated with the request.  If you override this
      * method, you MUST call super.close() in your overridden version!
@@ -167,8 +183,11 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
     protected InputStream _requestInputStream;
     protected User _user;
     protected RoutingStatus _routingStatus = RoutingStatus.NONE;
+
     // Set to lowest by default so it can be overridden by MessageProcessor
     protected Level auditLevel = Level.ALL;
+    protected boolean auditSaveRequest = false;
+    protected boolean auditSaveResponse = false;
 
     /** The cached XML document. */
     protected String _requestXml;

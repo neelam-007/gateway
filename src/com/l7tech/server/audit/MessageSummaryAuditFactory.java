@@ -108,8 +108,10 @@ public class MessageSummaryAuditFactory {
         }
 
         return new MessageSummaryAuditRecord(level, nodeId, requestId, status, clientAddr,
-                                             requestXml, requestContentLength,
-                                             responseXml, responseContentLength,
+                                             currentRequest.isAuditSaveRequest() ? requestXml : null,
+                                             requestContentLength,
+                                             currentRequest.isAuditSaveResponse() ? responseXml : null,
+                                             responseContentLength,
                                              serviceOid, serviceName,
                                              authenticated, identityProviderOid, userName, userId);
     }

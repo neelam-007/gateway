@@ -29,6 +29,8 @@ public class ServerAuditAssertion implements ServerAssertion {
 
     public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
         request.setAuditLevel(level);
+        request.setAuditSaveRequest(data.isSaveRequest());
+        request.setAuditSaveResponse(data.isSaveResponse());
         return AssertionStatus.NONE;
     }
 }
