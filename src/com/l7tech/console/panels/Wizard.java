@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.event.WizardListener;
+import com.l7tech.console.action.Actions;
 
 import javax.swing.*;
 import javax.swing.border.*;
@@ -53,6 +54,7 @@ public class Wizard extends JDialog {
     /** Creates new wizard */
     public Wizard(Frame parent, WizardStepPanel panel) {
         super(parent, true);
+        Actions.setEscKeyStrokeDisposes(this);
         if (panel == null) {
             throw new IllegalArgumentException("panel == null");
         }
