@@ -50,11 +50,16 @@ public class ServerSpecificUser extends ServerIdentityAssertion implements Serve
             if ( requiredUid == null || requiredUid.equals(requestUid) ) {
                 // They can't both be null (already checked) so this is safe
                 if ( requiredLogin == null || requiredLogin.equals(requestLogin) ) {
+                    logger.finest("Match successful");
                     return AssertionStatus.NONE;
-                }
-            }
+                } else logger.fine("Authentication failed because login did not match " +
+                                   "(" + requestLogin + " instead of " + requiredLogin + ").");
+            } else logger.fine("Authentication failed because object id did not match " +
+                               "(" + requestUid + " instead of " + requiredUid + ").");
+        } else {
+            logger.fine("Authentication failed because providers id did not " +
+                        "match (" + requestProvider + " instead of " + requiredProvider + ").");
         }
-        logger.fine("No credentials found");
         return AssertionStatus.AUTH_FAILED;
     }
 
