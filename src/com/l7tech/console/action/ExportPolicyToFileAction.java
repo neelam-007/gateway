@@ -9,6 +9,7 @@ import com.l7tech.policy.exporter.PolicyExporter;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
 import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
@@ -92,9 +93,25 @@ public class ExportPolicyToFileAction extends BaseAction {
         chooser.setDialogTitle("Export to ...");
         // Allow single selection only
         chooser.setMultiSelectionEnabled(false);
+        chooser.setFileFilter(new FileFilter() {
+            public boolean accept(File f) {
+                if (f.getAbsolutePath().endsWith(".xml") || f.getAbsolutePath().endsWith(".XML")) {
+                    return true;
+                }
+                if (f.isDirectory()) return true;
+                return false;
+            }
+            public String getDescription() {
+                return "XML Files";
+            }
+        });
         int ret = chooser.showSaveDialog(TopComponents.getInstance().getMainWindow());
         if (JFileChooser.APPROVE_OPTION != ret) return;
         String name = chooser.getSelectedFile().getPath();
+        // add extension if not present
+        if (name.indexOf('.') == -1) {
+            name = name + ".xml";
+        }
         int overwrite = JOptionPane.YES_OPTION;
         File policyFile = new File(name);
         final boolean policyFileExists = policyFile.exists();
