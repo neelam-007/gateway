@@ -22,6 +22,8 @@ public class MsadGroupManagerServer extends AbstractLdapGroupManagerServer imple
         super( config );
     }
 
+    /*
+    alex, is this dead code?
     protected String groupMemberToLogin( String member ) {
         StringTokenizer stok = new StringTokenizer( member, "," );
         String token;
@@ -39,7 +41,7 @@ public class MsadGroupManagerServer extends AbstractLdapGroupManagerServer imple
         }
 
         return "";
-    }
+    }*/
 
     protected AbstractLdapConstants getConstants() {
         return _constants;

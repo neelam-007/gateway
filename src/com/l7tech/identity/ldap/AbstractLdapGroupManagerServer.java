@@ -26,9 +26,11 @@ public abstract class AbstractLdapGroupManagerServer extends LdapManager impleme
         super( config );
     }
 
+    /*
+    alex, is this dead code?
     protected String groupMemberToLogin( String member ) {
         return member;
-    }
+    }*/
 
     protected abstract AbstractLdapConstants getConstants();
 
