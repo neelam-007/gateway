@@ -14,14 +14,14 @@
     <type>javax.help.TOCView</type>
     <data>secure_span_gateway_console_help_toc.xml</data>
   </view>
-
+  <!--
   <view>
     <name>Index</name>
     <label>Index</label>
     <type>javax.help.IndexView</type>
     <data>secure_span_gateway_console_help_ndx.xml</data>
   </view>
-
+  -->
   <view>
     <name>Search</name>
     <label>Search</label>
