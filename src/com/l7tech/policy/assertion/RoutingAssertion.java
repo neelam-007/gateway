@@ -31,6 +31,16 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
         _connectionManager = new MultiThreadedHttpConnectionManager();
     }
 
+    public RoutingAssertion(String protectedServiceUrl) {
+        this();
+        setProtectedServiceUrl(protectedServiceUrl);
+    }
+
+    public RoutingAssertion(String protectedServiceUrl, PrincipalCredentials protectedServiceCredentials) {
+        this(protectedServiceUrl);
+        setPrincipalCredentials(protectedServiceCredentials);
+    }
+
     public Object clone() throws CloneNotSupportedException {
         RoutingAssertion n = (RoutingAssertion)super.clone();
         return n;
