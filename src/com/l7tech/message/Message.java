@@ -6,12 +6,13 @@
 
 package com.l7tech.message;
 
-import java.io.*;
+import java.util.Iterator;
 
 /**
  * @author alex
  */
 public interface Message {
+    Iterator getParameterNames();
     void setParameter( Object name, Object value );
     Object getParameter( Object name );
 }

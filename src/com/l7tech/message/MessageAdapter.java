@@ -7,7 +7,6 @@
 package com.l7tech.message;
 
 import java.util.*;
-import java.io.*;
 
 /**
  * @author alex
@@ -21,6 +20,10 @@ public abstract class MessageAdapter implements Message {
 
     public Object getParameter( Object name ) {
         return _params.get( name );
+    }
+
+    public Iterator getParameterNames() {
+        return _params.keySet().iterator();
     }
 
     protected Map _params = Collections.EMPTY_MAP;

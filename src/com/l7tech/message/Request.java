@@ -15,6 +15,11 @@ import java.util.Set;
  * @author alex
  */
 public interface Request extends Message {
+    static final String PREFIX = "com.l7tech.message.request";
+
+    public static final String PARAM_URN        = PREFIX + ".urn";
+    public static final String PARAM_SOAPACTION = PREFIX + ".soapaction";
+
     InputStream getRequestStream();
     PrincipalCredentials getPrincipalCredentials();
     void setPrincipalCredentials( PrincipalCredentials pc );
