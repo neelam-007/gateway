@@ -176,7 +176,12 @@
             </fileset>
 
             <fileset dir="${src.root}/lib">
-                <include name="jgroups-core.jar"/>
+                <include name="jgroups.jar"/>
+                <include name="jta.jar"/>
+                <include name="jboss-cache.jar"/>
+                <include name="jboss-common.jar"/>
+                <include name="jboss-system.jar"/>
+                <include name="jboss-jmx.jar"/>
                 <include name="commons-logging.jar"/>
                 <include name="oswego-concurrent.jar"/>
             </fileset>
@@ -313,6 +318,7 @@
                 <include name="bcprov-jdk14-124.jar"/> - because the SSL keystore is BCPKCS12
                 <include name="jgroups-core.jar"/> - ClassCircularityError
                 <include name="commons-logging.jar"/> - needed by JGroups
+                <include name="jta.jar"/>
                 <include name="oswego-concurrent.jar"/> - needed by JGroups
                 -->
                 <include name="commons-collections.jar"/>
@@ -328,7 +334,6 @@
                 <include name="spring-dao.jar"/>
                 <include name="cglib-2.0-rc2.jar"/>
                 <include name="ehcache.jar"/>
-                <include name="jta.jar"/>
                 <include name="jaxen-1.1-beta-2-l7.jar"/>
                 <include name="jaxrpc.jar"/>
                 <include name="jini-core.jar"/>
@@ -382,7 +387,7 @@
                 <include name="server-config.wsdd"/>
             </zipfileset>
             <zipfileset dir="${src.root}/web" includes="index.html" prefix="ssg"/>
-            <zipfileset dir="${src.root}/web" includes="index.html"/>
+            <zipfileset dir="${src.root}/web" includes="*"/>
             <!-- Jini config -->
             <zipfileset dir="${src.root}/etc/jini" includes="start-services.config, services.config, services.policy" prefix="WEB-INF/classes"/>
             <zipfileset dir="${src.root}/etc/jini" includes="PREFERRED.LIST" prefix="WEB-INF/classes/META-INF"/>
@@ -685,6 +690,7 @@
                 <include name="keystore.properties" if="dev.build"/>
                 <include name="ssglog.properties"/>
 		        <include name="spring.xml"/>
+                <include name="treecache-service.xml"/>
             </fileset>
 
             <fileset dir="${src.root}/src">

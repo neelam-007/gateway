@@ -35,10 +35,6 @@ public class ClusterBootProcess implements TransactionalComponent {
         private String address;
     }
 
-    private String jgroupsProperties( String address ) {
-        return PROPERTIES_PREFIX + address + PROPERTIES_SUFFIX;
-    }
-
     public void init( ComponentConfig config ) throws LifecycleException {
         clusterInfoManager = ClusterInfoManager.getInstance();
         multicastAddress = config.getProperty(ServerConfig.PARAM_MULTICAST_ADDRESS);
@@ -76,7 +72,7 @@ public class ClusterBootProcess implements TransactionalComponent {
             StatusUpdater.initialize();
 
             logger.info("Initializing DistributedMessageIdManager");
-            DistributedMessageIdManager.initialize(jgroupsProperties(multicastAddress));
+            DistributedMessageIdManager.initialize(multicastAddress, PORT);
             logger.info("Initialized DistributedMessageIdManager");
         } catch (UpdateException e) {
             final String msg = "error updating boot time of node.";
@@ -124,4 +120,5 @@ public class ClusterBootProcess implements TransactionalComponent {
 
     private ClusterInfoManager clusterInfoManager;
     private String multicastAddress;
+    private static final int PORT = 8777;
 }

@@ -8,12 +8,15 @@ package com.l7tech.cluster;
 
 import com.l7tech.server.util.MessageId;
 import com.l7tech.server.util.MessageIdManager;
-import org.jgroups.Address;
-import org.jgroups.MembershipListener;
-import org.jgroups.View;
-import org.jgroups.blocks.TransactionalHashtable;
-import org.jgroups.blocks.Xid;
+import org.jboss.cache.PropertyConfigurator;
+import org.jboss.cache.TreeCache;
+import org.jboss.cache.transaction.DummyTransactionManager;
+import org.jboss.cache.transaction.DummyUserTransaction;
 
+import javax.naming.Context;
+import javax.transaction.SystemException;
+import javax.transaction.UserTransaction;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,22 +25,58 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class DistributedMessageIdManager implements MessageIdManager {
-    public static final String STATE_KEY = DistributedMessageIdManager.class.getName() + ".state";
-
-    public static final Integer STATE_OPERATIONAL = new Integer(1);
-    public static final Integer STATE_SHUTTINGDOWN = new Integer(2);
-
-    static void initialize(String jgroupsProperties) throws Exception {
+    static void initialize(String address, int port) throws Exception {
         if (singleton != null) throw new IllegalStateException("Can only initialize once");
-        singleton = new DistributedMessageIdManager(jgroupsProperties);
+        singleton = new DistributedMessageIdManager(address, port);
         // if we're the first, load old message ids from database
         singleton.start();
     }
 
+    private class GarbageCollectionTask extends TimerTask {
+        public void run() {
+            final long now = System.currentTimeMillis();
+            UserTransaction tx = null;
+            try {
+                tx = new DummyUserTransaction(DummyTransactionManager.getInstance());
+                Set names = tree.getChildrenNames(MESSAGEID_PARENT_NODE);
+                if (names == null) return;
+                for ( Iterator i = names.iterator(); i.hasNext(); ) {
+                    String name = (String)i.next();
+                    Long expires = (Long)tree.get(name, EXPIRES_ATTR);
+                    if (expires == null) continue; // Maybe someone else removed it
+                    if (expires.longValue() < now ) {
+                        // Expired
+                        logger.info("Removing stale message ID " + name + " that expired " +
+                                    (now - expires.longValue()) + "ms ago");
+                        tree.remove(name);
+                    }
+                }
+                tx.commit();
+            } catch ( Exception e ) {
+                logger.log( Level.WARNING, "Caught exception while trying to begin garbage collection transaction", e );
+                try {
+                    if (tx != null) tx.rollback();
+                } catch ( SystemException e1 ) {
+                    logger.log( Level.WARNING, "Caught exception while trying to rollback garbage collection transaction", e );
+                }
+            }
+        }
+    }
+
     private void start() throws Exception {
+        tree.startService(); // kick start tree cache
+
+        gcTimer = new Timer();
+        // Perturb delay to avoid synchronization with other cluster nodes
+        long when = GC_PERIOD * 2 + new Random().nextInt(1 + (int)GC_PERIOD/4);
+        gcTimer.schedule(new GarbageCollectionTask(), when, GC_PERIOD);
+        UserTransaction tx = null;
         try {
-            hash.begin(Xid.REPEATABLE_READ);
-            Integer state = (Integer)hash.get(STATE_KEY);
+            tx = new DummyUserTransaction(DummyTransactionManager.getInstance());
+            tx.begin();
+            Integer state = (Integer)tree.get(STATE_NODE, STATE_ATTR);
+            tx.commit();
+            tx = null;
             if ( state == null ) {
                 // TODO load old message ids from database
             } else if ( STATE_SHUTTINGDOWN.equals(state) ) {
@@ -46,24 +85,29 @@ public class DistributedMessageIdManager implements MessageIdManager {
                 throw new IllegalStateException("Cluster state unknown: " + state);
             }
         } finally {
-            hash.commit();
+            if (tx != null) tx.rollback();
         }
     }
 
     void close() throws Exception {
         // if we're the last one out the door, turn out the lights
+        UserTransaction tx = null;
         try {
-            hash.begin();
-            Integer state = (Integer)hash.get(STATE_KEY);
+            tx = new DummyUserTransaction(DummyTransactionManager.getInstance());
+            tx.begin();
+            Integer state = (Integer)tree.get(STATE_NODE, STATE_ATTR);
             if ( state == null ) {
                 logger.info("Close was called when the cluster thinks it hasn't started yet");
             } else if ( STATE_SHUTTINGDOWN.equals(state) ) {
                 logger.info("Another node is cleaning up");
             } else if ( STATE_OPERATIONAL.equals(state) ) {
-                if (lastView != null && lastView.getMembers().size() == 1) {
+                if (tree.getMembers().size() == 1) {
                     logger.info("Last cluster node shutting down, will save replay records");
+                    tree.put(STATE_NODE, STATE_ATTR, STATE_SHUTTINGDOWN);
+                    tx.commit();
                     // TODO save message ids to database
-                    hash.put(STATE_KEY, STATE_SHUTTINGDOWN);
+                    // TODO set state to DOWN
+                    tx = null;
                 } else {
                     logger.info("Cluster node shutting down. Another node should save replay records");
                 }
@@ -71,7 +115,7 @@ public class DistributedMessageIdManager implements MessageIdManager {
                 throw new IllegalStateException("Cluster state unknown: " + state);
             }
         } finally {
-            hash.commit();
+            if (tx != null) tx.rollback();
         }
     }
 
@@ -80,33 +124,29 @@ public class DistributedMessageIdManager implements MessageIdManager {
         return singleton;
     }
 
-    private DistributedMessageIdManager(String jgroupsProperties) throws Exception {
-        hash = new TransactionalHashtable(getClass().getName(), jgroupsProperties, 5000);
-        hash.setMembershipListener(new MembershipListener() {
-            public void viewAccepted( View newView ) {
-                logger.info("The cluster currently has " + newView.getMembers().size() + " members");
-                lastView = newView;
-            }
-
-            public void suspect( Address suspect ) {
-                logger.info("The cluster node at address " + suspect.toString() + " is suspected to be down");
-            }
-
-            public void block() {
-                logger.warning("This cluster node is supposed to block but there's not much we can do");
-            }
-        });
+    private DistributedMessageIdManager( String address, int port ) throws Exception {
+        Properties prop = new Properties();
+        prop.put(Context.INITIAL_CONTEXT_FACTORY, "org.jboss.cache.transaction.DummyContextFactory");
+        tree = new TreeCache();
+        PropertyConfigurator config = new PropertyConfigurator();
+        config.configure(tree, "treecache-service.xml");
+        String props = tree.getClusterProperties();
+        props = props.replaceFirst("mcast_addr=[0-9\\.]+", "mcast_addr=" + address);
+        props = props.replaceFirst("mcast_port=[0-9]+", "mcast_port=" + port);
+        tree.setClusterProperties(props);
     }
 
     public void assertMessageIdIsUnique(MessageId prospect) throws DuplicateMessageIdException {
-        TransactionalHashtable h = hash;
+        UserTransaction tx = null;
         try {
-            h.begin(Xid.READ_COMMITTED); // TODO is this too conservative?
-            Long expires = (Long)hash.get(prospect.getOpaqueIdentifier());
+            tx = new DummyUserTransaction(DummyTransactionManager.getInstance());
+            tx.begin();
+            final String messageIdNodeName = MESSAGEID_PARENT_NODE + "/" + prospect.getOpaqueIdentifier();
+            Long expires = (Long)tree.get(messageIdNodeName, EXPIRES_ATTR);
             if (expires == null) {
-                h.put(prospect.getOpaqueIdentifier(), new Long(prospect.getNotValidOnOrAfterDate()));
-                h.commit();
-                h = null;
+                tree.put(messageIdNodeName, EXPIRES_ATTR, new Long(prospect.getNotValidOnOrAfterDate()) );
+                tx.commit();
+                tx = null;
                 return;
             }
         } catch ( Exception e ) {
@@ -114,15 +154,32 @@ public class DistributedMessageIdManager implements MessageIdManager {
             logger.log( Level.SEVERE, msg, e );
             throw new RuntimeException(msg,e);
         } finally {
-            if (h != null) h.rollback();
+            try {
+                if (tx != null) tx.rollback();
+            } catch ( SystemException e ) {
+                final String msg = "Unable to rollback transaction";
+                logger.log( Level.WARNING, msg, e );
+                throw new RuntimeException(msg, e);
+            }
         }
         // We must have either returned or thrown by now
         throw new DuplicateMessageIdException();
     }
 
-    private final TransactionalHashtable hash;
     private final Logger logger = Logger.getLogger(getClass().getName());
     private static DistributedMessageIdManager singleton;
 
-    private View lastView = null;
+    private Timer gcTimer;
+    private static final int GC_PERIOD = 4000;
+
+    private TreeCache tree;
+    private static final String STATE_NODE = DistributedMessageIdManager.class.getName() + "/state";
+    private static final String MESSAGEID_PARENT_NODE = DistributedMessageIdManager.class.getName() + "/messageId";
+
+    private static final String EXPIRES_ATTR = "expires";
+    private static final String STATE_ATTR = "state";
+
+    private static final Integer STATE_OPERATIONAL = new Integer(1);
+    private static final Integer STATE_SHUTTINGDOWN = new Integer(2);
+
 }
