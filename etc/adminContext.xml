@@ -56,6 +56,29 @@
         </property>
     </bean>
 
+      <!--
+        configure the codebase for class downloading
+    -->
+     <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+         <property name="staticMethod">
+             <value>com.l7tech.spring.remoting.rmi.codebase.Config.configureCodeBase</value>
+         </property>
+     </bean>
+
+      <!--
+    set the internal trust failurte handler. This is required when the ssl connection to self is attempted,
+    such as when connection to the local rmi registry.
+    -->
+     <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
+         <property name="staticMethod">
+             <value>com.l7tech.spring.remoting.rmi.codebase.ClassSetAnnotation.setIncludePatterns</value>
+         </property>
+         <property name="arguments">
+             <list>
+                 <value>**</value>
+             </list>
+         </property>
+     </bean>
 
     <!--    shared export properties, inherited with parent= -->
     <bean id="sharedExportProperties">

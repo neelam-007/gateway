@@ -35,27 +35,42 @@ public class ClassServerServlet extends HttpServlet {
         final String requestURI = request.getRequestURI();
         logger.fine("The request URI is " + requestURI);
 
-        if (requestURI.startsWith(URI_PREFIX)) {
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        if (!requestURI.startsWith(URI_PREFIX)) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
-        String resource = requestURI.substring(URI_PREFIX.length()+1);
-        logger.fine("The resource is '"+resource+"'");
-        ClassLoader cl = Thread.currentThread().getContextClassLoader();
-        InputStream resUrl = cl.getResourceAsStream(resource);
+        byte[] bytes;
+        InputStream in = null;
+        try {
+            String resource = null;
+            for (int i = 1; i >= 0; i--) {
+                resource = requestURI.substring(URI_PREFIX.length() - i);
+                logger.fine("Lookup for the resource '" + resource + "'");
+                ClassLoader cl = Thread.currentThread().getContextClassLoader();
+                in = cl.getResourceAsStream(resource);
+                if (in != null) {
+                    break;
+                }
+            }
 
-        if (null == resUrl) {
-            logger.warning("Unable to read the resource '"+resource+"'");
-            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
-            logger.fine("The resource '"+resource+"' is not found");
-            return;
+            if (null == in) {
+                logger.warning("Unable to locate the resource '" + resource + "'");
+                response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                logger.fine("The resource '" + resource + "' is not found");
+                return;
+            }
+
+            bytes = HexUtils.slurpStream(in, 32768);
+            response.setContentLength(bytes.length);
+            response.setContentType("application/java");
+            response.getOutputStream().write(bytes);
+            response.setStatus(HttpServletResponse.SC_OK);
+        } finally {
+            if (null != in) {
+                in.close();
+            }
         }
-
-        byte[] bytes = HexUtils.slurpStream(resUrl, 32768);
-         response.setContentLength(bytes.length);
-        response.setContentType("application/java");
-        response.getOutputStream().write(bytes);
-        response.setStatus(HttpServletResponse.SC_OK);
     }
-    private static final String URI_PREFIX = "/classerver/";
+
+    static final String URI_PREFIX = "/classserver/";
 }

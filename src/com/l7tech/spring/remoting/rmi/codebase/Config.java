@@ -44,12 +44,13 @@ public final class Config {
             boolean firstPass = true;
             for (int i = 0; i < schemes.length; i++) {
                 Object[] scheme = schemes[i];
-                if (!firstPass) {
-                    sb.append(" ");
-                }
                 for (int j = 1; j < scheme.length; j++) {
                     Object o = scheme[j];
-                    sb.append(scheme[0]+"://"+serverHostname+":"+o.toString()+"/classerver");
+                    if (!firstPass) {
+                        sb.append(" ");
+                    }
+                    sb.append(scheme[0]+"://"+serverHostname+":"+o.toString()+ClassServerServlet.URI_PREFIX);
+                    firstPass = false;
                 }
             }
             final String codebase = sb.toString();
