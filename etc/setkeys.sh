@@ -140,7 +140,7 @@ then
         rm "$ROOT_KEYSTORE_FILE"
     fi
     # GENERATE THE KEYSTORE
-    $KEYTOOL -genkey -alias ssgroot -dname $DN -v -keystore "$ROOT_KEYSTORE_FILE" -keyalg RSA -keypass $KEYSTORE_PASSWORD -storepass "$KEYSTORE_PASSWORD"
+    $KEYTOOL -genkey -alias ssgroot -dname $DN -v -keystore "$ROOT_KEYSTORE_FILE" -keyalg RSA -keypass $KEYSTORE_PASSWORD -storepass "$KEYSTORE_PASSWORD" -validity 730
 
     # CHECK THAT THIS KEYSTORE WAS SET SUCCESSFULLY
     if [ -e "$ROOT_KEYSTORE_FILE" ]
@@ -167,7 +167,7 @@ DN="CN="$HOST_NAME
     if [ -e "$SSL_KEYSTORE_FILE" ]; then
         rm "$SSL_KEYSTORE_FILE"
     fi
-$KEYTOOL -genkey -v -alias tomcat -dname $DN -keystore "$SSL_KEYSTORE_FILE" -keyalg RSA -keypass $KEYSTORE_PASSWORD -storepass "$KEYSTORE_PASSWORD"
+$KEYTOOL -genkey -v -alias tomcat -dname $DN -keystore "$SSL_KEYSTORE_FILE" -keyalg RSA -keypass $KEYSTORE_PASSWORD -storepass "$KEYSTORE_PASSWORD" -validity 730
 # CHECK THAT THIS KEYSTORE WAS SET SUCCESSFULLY
 if [ -e "$SSL_KEYSTORE_FILE" ]
 then
