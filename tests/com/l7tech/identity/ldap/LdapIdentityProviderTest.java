@@ -64,6 +64,24 @@ public class LdapIdentityProviderTest extends TestCase {
         return orclTemplate;
     }
 
+    /**
+     * an orcl that adds a bogus mapping
+     */
+    private LdapIdentityProviderConfig getModifiedConfigForOracle() throws IOException {
+        LdapIdentityProviderConfig orclTemplate = getConfigForOracle();
+        UserMappingConfig cfg = new UserMappingConfig();
+        cfg.setObjClass("blah");
+        cfg.setNameAttrName("bzzt");
+        cfg.setEmailNameAttrName("nnv");
+        cfg.setFirstNameAttrName("lkj");
+        cfg.setLastNameAttrName("iir");
+        cfg.setLoginAttrName("poiu");
+        cfg.setPasswdAttrName("p2wok");
+        cfg.setPasswdType(PasswdStrategy.CLEAR);
+        orclTemplate.setUserMapping(cfg);
+        return orclTemplate;
+    }
+
     private LdapIdentityProvider getSpockProvider() throws IOException {
         LdapIdentityProvider spock =  new LdapIdentityProvider();
         spock.initialize(getConfigForSpock());
@@ -88,7 +106,17 @@ public class LdapIdentityProviderTest extends TestCase {
         return orcl;
     }
 
+    private LdapIdentityProvider getModifiedOracleProvider() throws IOException {
+        LdapIdentityProvider orcl =  new LdapIdentityProvider();
+        orcl.initialize(getModifiedConfigForOracle());
+        return orcl;
+    }
+
     public void testGetUsers() throws Exception {
+        if (localProvider == null) {
+            System.out.println("NOT READY");
+            return;
+        }
         Collection users = localProvider.getUserManager().findAll();
         for (Iterator i = users.iterator(); i.hasNext(); ) {
             LdapUser user = (LdapUser)i.next();
@@ -97,6 +125,10 @@ public class LdapIdentityProviderTest extends TestCase {
     }
 
     public void testGetGroupsAndMembers() throws Exception {
+        if (localProvider == null) {
+            System.out.println("NOT READY");
+            return;
+        }
         GroupManager manager = localProvider.getGroupManager();
         Collection groups = manager.findAll();
         for (Iterator i = groups.iterator(); i.hasNext(); ) {
@@ -139,9 +171,10 @@ public class LdapIdentityProviderTest extends TestCase {
 
         //me.localProvider = me.getSpockProvider();
         //me.localProvider = me.getMSADProvider();
-        //me.localProvider = me.getOracleProvider();
-        me.localProvider = me.getTimTamProvider();
-        me.testAuthenticate("test_user", "passw0rd");
+        me.localProvider = me.getOracleProvider();
+        //me.localProvider = me.getModifiedOracleProvider();
+        //me.localProvider = me.getTimTamProvider();
+        //me.testAuthenticate("test_user", "passw0rd");
         me.testGetUsers();
         me.testGetGroupsAndMembers();
     }
