@@ -2,6 +2,8 @@ package com.l7tech.identity;
 
 import com.l7tech.objectmodel.*;
 import com.l7tech.identity.internal.InternalIdentityProviderServer;
+import com.l7tech.identity.ldap.LdapIdentityProviderServer;
+
 import java.util.Collection;
 import java.util.ArrayList;
 import java.sql.SQLException;
@@ -68,6 +70,12 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
         // we should not accept deleting an internal type
         if (identityProviderConfig.type() != IdentityProviderType.LDAP) throw new DeleteException("this type of config cannot be deleted");
         try {
+            IdentityProvider prov = IdentityProviderFactory.makeProvider(identityProviderConfig);
+            if (prov instanceof LdapIdentityProviderServer) {
+                LdapIdentityProviderServer ldapProvider = (LdapIdentityProviderServer)prov;
+                ldapProvider.invalidate();
+            }
+            
             _manager.delete( getContext(), identityProviderConfig );
         } catch ( SQLException se ) {
             throw new DeleteException( se.toString(), se );
