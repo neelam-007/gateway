@@ -26,6 +26,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Text;
 
 import javax.crypto.Cipher;
 import java.io.IOException;
@@ -104,7 +105,7 @@ public class WssDecoratorImpl implements WssDecorator {
         }
 
         if (usernameTokenCredentials != null && usernameTokenCredentials.getFormat() == CredentialFormat.CLEARTEXT) {
-            Element usernameToken = createUsernameToken(securityHeader);
+            Element usernameToken = createUsernameToken(securityHeader, usernameTokenCredentials);
         }
 
         Element bst = null;
@@ -225,12 +226,13 @@ public class WssDecoratorImpl implements WssDecorator {
         return signatureElement;
     }
 
-    private Element createUsernameToken(Element securityHeader) {
+    private Element createUsernameToken(Element securityHeader, LoginCredentials usernameTokenCredentials) {
         // What this element looks like:
         // <wsse:UsernameToken>
         //    <wsse:Username>username</wsse:Username>
         //    <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">password</wsse:Password>
         // </wsse:UsernameToken>
+        // create elements
         Document doc = securityHeader.getOwnerDocument();
         Element untokEl = doc.createElementNS(securityHeader.getNamespaceURI(), "UsernameToken");
         untokEl.setPrefix(securityHeader.getPrefix());
@@ -238,11 +240,19 @@ public class WssDecoratorImpl implements WssDecorator {
         usernameEl.setPrefix(untokEl.getPrefix());
         Element passwdEl = doc.createElementNS(securityHeader.getNamespaceURI(), "Password");
         passwdEl.setPrefix(untokEl.getPrefix());
-
-
-
-        // todo
-        return null;
+        // attach them
+        securityHeader.appendChild(untokEl);
+        untokEl.appendChild(usernameEl);
+        untokEl.appendChild(passwdEl);
+        // fill in username value
+        Text txtNode = doc.createTextNode(usernameTokenCredentials.getLogin());
+        usernameEl.appendChild(txtNode);
+        // fill in password value and type
+        txtNode = doc.createTextNode(new String(usernameTokenCredentials.getCredentials()));
+        passwdEl.appendChild(txtNode);
+        passwdEl.setAttribute("Type",
+                              "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText");
+        return untokEl;
     }
 
     private Element addEncryptedKey(Context c,
