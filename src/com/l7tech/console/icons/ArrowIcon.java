@@ -23,6 +23,11 @@ public class ArrowIcon implements Icon {
     private int size;
     private int direction;
 
+    /**
+     * Constructor
+     *
+     * @param direction  The direction of the arrow.
+     */
     public ArrowIcon(int direction) {
         init(UIManager.getColor("controlHighlight"),
                 UIManager.getColor("controlShadow"),
@@ -30,12 +35,14 @@ public class ArrowIcon implements Icon {
                 DEFAULT_SIZE, direction);
     }
 
-    public ArrowIcon(Color edge1, Color edge2, Color fill,
-                     int size, int direction) {
-        init(edge1, edge2, fill, size, direction);
-    }
-
-
+    /**
+     * Paint the icon object.
+     *
+     * @param c  The component object.
+     * @param g  The graphic object.
+     * @param x  The x-coordinate of the arrow's origin.
+     * @param y  The y-coordinate of the arrow's origin.
+     */
     public void paintIcon(Component c, Graphics g, int x, int y) {
         switch (direction) {
             case DOWN:
@@ -47,15 +54,33 @@ public class ArrowIcon implements Icon {
         }
     }
 
+    /**
+     * Return the width of the icon.
+     *
+     * @return int  The width of the icon.
+     */
     public int getIconWidth() {
         return size;
     }
 
+    /**
+     * return the height of the icon.
+     *
+     * @return int  The height of the icon.
+     */
     public int getIconHeight() {
         return size;
     }
 
-
+    /**
+     * Initialize the variables.
+     *
+     * @param edge1  The color of the highlight.
+     * @param edge2  The color of the shadow.
+     * @param fill  The fill color.
+     * @param size  The size of the arrow.
+     * @param direction  The direction of the arrow.
+     */
     private void init(Color edge1, Color edge2, Color fill,
                       int size, int direction) {
         this.edge1 = edge1;
@@ -65,6 +90,13 @@ public class ArrowIcon implements Icon {
         this.direction = direction;
     }
 
+    /**
+     * Draw the arrow icon in downward direction.
+     *
+     * @param g  The graphic object reference.
+     * @param xo  The x-coordinate of the arrow's origin.
+     * @param yo  The y-coordinate of the arrow's origin.
+     */
     private void drawDownArrow(Graphics g, int xo, int yo) {
         g.setColor(edge1);
         g.drawLine(xo, yo, xo + size - 1, yo);
@@ -94,6 +126,13 @@ public class ArrowIcon implements Icon {
         g.drawLine(xo + (size / 2), yo + size - 1, xo + (size / 2), yo + size - 1);
     }
 
+    /**
+     * Draw the arrow icon in upward direction.
+     *
+     * @param g  The graphic object reference.
+     * @param xo  The x-coordinate of the arrow origin.
+     * @param yo  The y-coordinate of the arrow origin.
+     */
     private void drawUpArrow(Graphics g, int xo, int yo) {
         g.setColor(edge1);
         int x = xo + (size / 2);
