@@ -2,13 +2,16 @@ package com.l7tech.util;
 
 import com.l7tech.logging.LogManager;
 import com.l7tech.common.util.HexUtils;
-
+import com.l7tech.common.util.FileUtils;
 import java.util.Properties;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.security.*;
+import java.security.cert.CertificateException;
 
 /**
  * User: flascell
@@ -25,6 +28,9 @@ public class KeystoreUtils {
     public static final String ROOT_STORENAME = "rootcakstorename";
     public static final String ROOT_CERTNAME = "rootcacert";
     public static final String ROOT_STOREPASSWD = "rootcakspasswd";
+    public static final String SSL_KSTORE_NAME = "sslkstorename";
+    public static final String SSL_KSTORE_PASSWD = "sslkspasswd";
+    public static final String TOMCATALIAS = "tomcat";
 
     public static KeystoreUtils getInstance() {
         return SingletonHolder.singleton;
@@ -64,6 +70,50 @@ public class KeystoreUtils {
 
     public String getRootKeystorePasswd() {
         return getProps().getProperty(ROOT_STOREPASSWD);
+    }
+
+    public KeyStore getSSLKeyStore() throws KeyStoreException {
+        try {
+            KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            FileInputStream fis = null;
+            String sslkeystorepath = getProps().getProperty(KSTORE_PATH_PROP_NAME) + "/" + getProps().getProperty(SSL_KSTORE_NAME);
+            String sslkeystorepassword = getProps().getProperty(SSL_KSTORE_PASSWD);
+            fis = FileUtils.loadFileSafely(sslkeystorepath);
+            keyStore.load(fis, sslkeystorepassword.toCharArray());
+            fis.close();
+            return keyStore;
+        } catch (FileNotFoundException e) {
+            logger.log(Level.SEVERE, "error loading keystore", e);
+            throw new KeyStoreException(e.getMessage());
+        } catch (CertificateException e) {
+            logger.log(Level.SEVERE, "error loading keystore", e);
+            throw new KeyStoreException(e.getMessage());
+        } catch (NoSuchAlgorithmException e) {
+            logger.log(Level.SEVERE, "error loading keystore", e);
+            throw new KeyStoreException(e.getMessage());
+        } catch (IOException e) {
+            logger.log(Level.SEVERE, "error loading keystore", e);
+            throw new KeyStoreException(e.getMessage());
+        }
+    }
+
+    public PrivateKey getSSLPrivateKey() throws KeyStoreException {
+        KeyStore keystore = getSSLKeyStore();
+        String sslkeystorepassword = getProps().getProperty(SSL_KSTORE_PASSWD);
+        PrivateKey output = null;
+        try {
+            output = (PrivateKey)keystore.getKey(TOMCATALIAS, sslkeystorepassword.toCharArray());
+        } catch (KeyStoreException e) {
+            logger.log(Level.SEVERE, "error getting key", e);
+            throw new KeyStoreException(e.getMessage());
+        } catch (NoSuchAlgorithmException e) {
+            logger.log(Level.SEVERE, "error getting key", e);
+            throw new KeyStoreException(e.getMessage());
+        } catch (UnrecoverableKeyException e) {
+            logger.log(Level.SEVERE, "error getting key", e);
+            throw new KeyStoreException(e.getMessage());
+        }
+        return output;
     }
 
     private static class SingletonHolder {
