@@ -6,6 +6,7 @@ import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.identity.Group;
 
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
@@ -22,7 +23,7 @@ import java.net.URL;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class HomeAction extends BaseAction {
+public class HomeAction extends SecureAction {
     private WorkSpacePanel wpanel;
     private ClassLoader cl = getClass().getClassLoader();
 
@@ -68,7 +69,8 @@ public class HomeAction extends BaseAction {
 
 
     private JComponent getHomePageComponent() {
-        final String home = MainWindow.RESOURCE_PATH + "/home.html";
+
+        final String home = getHomePageForAdminRole();
         HTMLDocument doc = new HTMLDocument();
         JTextPane htmlPane = new JTextPane(doc) {
             public void paint(Graphics g) {
@@ -103,7 +105,7 @@ public class HomeAction extends BaseAction {
                     } else if (ADD_USER.equals(url)) {
                         new NewInternalUserAction(null).invoke();
                     } else if (ADD_GROUP.equals(url)) {
-                        new NewGroupAction(null).actionPerformed(null);
+                        new NewGroupAction(null).invoke();
                     } else if (SEARCH_ID_PROVIDER.equals(url)) {
                         FindIdentitiesDialog.Options options = new FindIdentitiesDialog.Options();
                         options.enableDeleteAction();
@@ -119,6 +121,10 @@ public class HomeAction extends BaseAction {
                           (DefaultMutableTreeNode)getIdentitiesTree().getModel().getRoot();
                         AbstractTreeNode node = (AbstractTreeNode)root;
                         new NewFederatedIdentityProviderAction(node).invoke();
+                    } else if (ANALYZE_GATEWAY_LOG.equals(url)) {
+                        new ViewGatewayLogsAction().invoke();
+                    } else if (VIEW_CLUSTER_STATUS.equals(url)) {
+                        new ViewClusterStatusAction().invoke();
                     }
                 }
             }
@@ -129,6 +135,23 @@ public class HomeAction extends BaseAction {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Return the required roles for this action, one of the roles. The base
+     * implementatoinm requires the strongest admin role.
+     *
+     * @return the list of roles that are allowed to carry out the action
+     */
+    protected String[] requiredRoles() {
+        return new String[]{Group.ADMIN_GROUP_NAME, Group.OPERATOR_GROUP_NAME};
+    }
+
+    private String getHomePageForAdminRole() {
+        if (isInRole(new String[]{Group.ADMIN_GROUP_NAME})) {
+            return MainWindow.RESOURCE_PATH + "/home.html";
+        }
+        return MainWindow.RESOURCE_PATH + "/home-operator.html";
     }
 
     private JTree getIdentitiesTree() {
