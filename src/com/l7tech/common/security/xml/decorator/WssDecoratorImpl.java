@@ -626,6 +626,7 @@ public class WssDecoratorImpl implements WssDecorator {
         EncryptedData encData = new EncryptedData();
         encData.setCipherData(cipherData);
         encData.setEncryptionMethod(encMethod);
+        encData.setType(EncryptedData.CONTENT);
         Element encDataElement = null;
         try {
             encDataElement = encData.createElement(soapMsg, true);
