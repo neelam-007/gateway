@@ -83,4 +83,10 @@ public class XencUtilTest extends TestCase {
         assertTrue(Arrays.equals(keyBytes, decrypted));
     }
 
+    public void testWeirdLeadin0InSunJCE() throws Exception {
+        PrivateKey pkey = TestDocuments.getDotNetServerPrivateKey();
+        String keypaddedandencryptedwithsunjce = "TK0T2LPWmCYDUtE32P7s7aVvjnfJ9flQm+GOiriGyY677g2/RgDbWncSJcPipm1zRmYRkmvKbNYFpReVl1SrVqsCbYudX/y8WQyI3LVInoc3TNfBPryphoVrxtjLDeAhfxxdsxYSq12Ze62RvLr3Y3k9vxaKotJcOejMtyHj9T4=";
+        byte[] decrypted = XencUtil.decryptKey(keypaddedandencryptedwithsunjce, pkey);
+    }
+
 }
