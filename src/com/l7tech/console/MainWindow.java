@@ -624,7 +624,11 @@ public class MainWindow extends JFrame {
 
     private NewInternalUserAction getNewInternalUserAction() {
         if (newInernalUserAction != null) return newInernalUserAction;
-        newInernalUserAction = new NewInternalUserAction(null);
+        newInernalUserAction = new NewInternalUserAction(null) {
+            public String getName() {
+                return "Create Internal User";
+            }
+        };
         MainWindow.this.addLogonListener(newInernalUserAction);
         newInernalUserAction.setEnabled(false);
         return newInernalUserAction;
@@ -632,7 +636,11 @@ public class MainWindow extends JFrame {
 
     private NewGroupAction getNewInternalGroupAction() {
         if (newInernalGroupAction != null) return newInernalGroupAction;
-        newInernalGroupAction = new NewGroupAction(null);
+        newInernalGroupAction = new NewGroupAction(null){
+            public String getName() {
+                return "Create Internal Group";
+            }
+        };
         MainWindow.this.addLogonListener(newInernalGroupAction);
         newInernalGroupAction.setEnabled(false);
         return newInernalGroupAction;
