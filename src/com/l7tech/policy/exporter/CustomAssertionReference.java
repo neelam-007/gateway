@@ -3,6 +3,7 @@ package com.l7tech.policy.exporter;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.Assertion;
@@ -86,7 +87,7 @@ public class CustomAssertionReference extends ExternalReference {
         referencesParentElement.appendChild(refEl);
         Element nameEl = referencesParentElement.getOwnerDocument().createElement(ASSNAME_EL_NAME);
         if (customAssertionName != null) {
-            Text txt = referencesParentElement.getOwnerDocument().createTextNode(customAssertionName);
+            Text txt = XmlUtil.createTextNode(referencesParentElement, customAssertionName);
             nameEl.appendChild(txt);
         }
         refEl.appendChild(nameEl);

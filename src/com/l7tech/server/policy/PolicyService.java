@@ -267,7 +267,7 @@ public class PolicyService {
                                                    "</soap:Body></soap:Envelope>");
             Element header = SoapUtil.getHeaderElement(responseDoc);
             Element pver = XmlUtil.findFirstChildElement(header);
-            pver.appendChild(responseDoc.createTextNode(policyVersion));
+            pver.appendChild(XmlUtil.createTextNode(responseDoc, policyVersion));
             Element body = SoapUtil.getBodyElement(responseDoc);
             Element gpr = XmlUtil.findFirstChildElement(body);
             gpr.appendChild(responseDoc.importNode(policyDoc.getDocumentElement(), true));

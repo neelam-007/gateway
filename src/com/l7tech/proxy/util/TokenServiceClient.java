@@ -70,7 +70,7 @@ public class TokenServiceClient {
             Element body = XmlUtil.findFirstChildElement(env);
             Element rst = XmlUtil.findFirstChildElement(body);
             Element tokenType = XmlUtil.createAndPrependElementNS(rst, "TokenType", SoapUtil.WST_NAMESPACE, "wst");
-            tokenType.appendChild(msg.createTextNode(desiredTokenType));
+            tokenType.appendChild(XmlUtil.createTextNode(msg, desiredTokenType));
 
             // Sign it
             WssDecorator wssDecorator = new WssDecoratorImpl();

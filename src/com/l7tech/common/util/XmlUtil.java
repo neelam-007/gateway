@@ -22,6 +22,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Thread-local XML parsing and pretty-printing utilities.
@@ -571,6 +572,24 @@ public class XmlUtil {
         }
 
         return false;
+    }
+
+    /**
+     * Safely create a text node.  Just like node.getOwnerDocument().createTextNode(), except will
+     * translate a null nodeValue into the empty string.  A warning is logged whenever
+     * this safety net is used.
+     *
+     * @param factory
+     * @param nodeValue
+     * @return
+     */
+    public static Text createTextNode(Node factory, String nodeValue) {
+        if (nodeValue == null) {
+            final String msg = "Attempt to create DOM text node with null value; using empty string instead.  Please report this.ok c";
+            logger.log(Level.WARNING, msg, new NullPointerException(msg));
+            nodeValue = "";
+        }
+        return factory.getOwnerDocument().createTextNode(nodeValue);
     }
 
     private static final Logger logger = Logger.getLogger(XmlUtil.class.getName());

@@ -1,6 +1,7 @@
 package com.l7tech.common.security.xml;
 
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.MessageNotSoapException;
 import org.w3c.dom.*;
 
@@ -185,7 +186,7 @@ public class SecureConversationTokenHandler {
         Element idElement = securityContextTokenEl.getOwnerDocument().createElementNS(WSU_NAMESPACE, IDENTIFIER_EL_NAME);
         idElement.setPrefix(WSU_NAMESPACE_PREFIX);
         idElement.setAttribute("xmlns:" + WSU_NAMESPACE_PREFIX, WSU_NAMESPACE);
-        Text valNode = securityContextTokenEl.getOwnerDocument().createTextNode(value);
+        Text valNode = XmlUtil.createTextNode(securityContextTokenEl, value);
         idElement.appendChild(valNode);
         securityContextTokenEl.insertBefore(idElement, null);
     }
@@ -194,7 +195,7 @@ public class SecureConversationTokenHandler {
         Element idElement = securityContextTokenEl.getOwnerDocument().createElementNS(L7_NAMESPACE, SEQ_EL_NAME);
         idElement.setPrefix(L7_NAMESPACE_PREFIX);
         idElement.setAttribute("xmlns:" + L7_NAMESPACE_PREFIX, L7_NAMESPACE);
-        Text valNode = securityContextTokenEl.getOwnerDocument().createTextNode(value);
+        Text valNode = XmlUtil.createTextNode(securityContextTokenEl, value);
         idElement.appendChild(valNode);
         securityContextTokenEl.insertBefore(idElement, null);
     }

@@ -1,6 +1,7 @@
 package com.l7tech.policy.wsp;
 
 import com.l7tech.policy.assertion.UnknownAssertion;
+import com.l7tech.common.util.XmlUtil;
 import org.apache.axis.encoding.Base64;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -31,7 +32,7 @@ class SerializedJavaClassMapping extends WspConstants.BeanTypeMapping {
             Serializable se = (Serializable)object.target;
             Element entryElement = element.getOwnerDocument().createElement(ELEMENT_NAME);
             element.appendChild(entryElement);
-            entryElement.appendChild(element.getOwnerDocument().createTextNode(objectToBase64(se)));
+            entryElement.appendChild(XmlUtil.createTextNode(element, objectToBase64(se)));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

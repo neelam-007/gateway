@@ -544,7 +544,7 @@ public class SoapUtil {
 
         Element header = getOrMakeHeader(soapMsg);
         idEl = XmlUtil.createAndPrependElementNS(header, MESSAGEID_EL_NAME, L7_MESSAGEID_NAMESPACE, L7_MESSAGEID_PREFIX);
-        idEl.appendChild(idEl.getOwnerDocument().createTextNode(messageId));
+        idEl.appendChild(XmlUtil.createTextNode(idEl, messageId));
     }
 
     /**
@@ -563,7 +563,7 @@ public class SoapUtil {
 
         Element header = getOrMakeHeader(soapMsg);
         idEl = XmlUtil.createAndPrependElementNS(header, RELATESTO_EL_NAME, L7_MESSAGEID_NAMESPACE, L7_MESSAGEID_PREFIX);
-        idEl.appendChild(idEl.getOwnerDocument().createTextNode(relatesTo));
+        idEl.appendChild(XmlUtil.createTextNode(idEl, relatesTo));
         return idEl;
     }
 

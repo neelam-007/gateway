@@ -86,8 +86,11 @@ public class WssDecoratorImpl implements WssDecorator {
         Element sct = null;
         WssDecorator.DecorationRequirements.SecureConversationSession session =
                                                             decorationRequirements.getSecureConversationSession();
-        if (session != null)
+        if (session != null) {
+            if (session.getId() == null)
+                throw new DecoratorException("SeureConversation Session ID must not be null");
             sct = addSecurityContextToken(securityHeader, session.getId());
+        }
 
         Element saml = null;
         if (decorationRequirements.getSenderSamlToken() != null && !signList.isEmpty())
@@ -236,13 +239,13 @@ public class WssDecoratorImpl implements WssDecorator {
 
         // Encode derived key params for the recipient
         Element generationEl = XmlUtil.createAndAppendElementNS(dkt, "Generation", SoapUtil.WSSC_NAMESPACE, "wssc");
-        generationEl.appendChild(factory.createTextNode("0"));
+        generationEl.appendChild(XmlUtil.createTextNode(factory, "0"));
         Element lengthEl = XmlUtil.createAndAppendElementNS(dkt, "Length", SoapUtil.WSSC_NAMESPACE, "wssc");
-        lengthEl.appendChild(factory.createTextNode(Integer.toString(length)));
+        lengthEl.appendChild(XmlUtil.createTextNode(factory, Integer.toString(length)));
         Element labelEl = XmlUtil.createAndAppendElementNS(dkt, "Label", SoapUtil.WSSC_NAMESPACE, "wssc");
-        labelEl.appendChild(factory.createTextNode(label));
+        labelEl.appendChild(XmlUtil.createTextNode(factory, label));
         Element nonceEl = XmlUtil.createAndAppendElementNS(dkt, "Nonce", wsseNs, wsse);
-        nonceEl.appendChild(factory.createTextNode(HexUtils.encodeBase64(nonce, true)));
+        nonceEl.appendChild(XmlUtil.createTextNode(factory, HexUtils.encodeBase64(nonce, true)));
 
         // Derive a copy of the key for ourselves
         byte[] seed = new byte[label.length() + nonce.length];
@@ -262,7 +265,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                                               "Identifier",
                                                               SoapUtil.WSSC_NAMESPACE,
                                                               "wssc");
-        identifier.appendChild(identifier.getOwnerDocument().createTextNode(id));
+        identifier.appendChild(XmlUtil.createTextNode(identifier, id));
         return sct;
     }
 
@@ -407,10 +410,10 @@ public class WssDecoratorImpl implements WssDecorator {
         untokEl.appendChild(usernameEl);
         untokEl.appendChild(passwdEl);
         // fill in username value
-        Text txtNode = doc.createTextNode(usernameTokenCredentials.getLogin());
+        Text txtNode = XmlUtil.createTextNode(doc, usernameTokenCredentials.getLogin());
         usernameEl.appendChild(txtNode);
         // fill in password value and type
-        txtNode = doc.createTextNode(new String(usernameTokenCredentials.getCredentials()));
+        txtNode = XmlUtil.createTextNode(doc, new String(usernameTokenCredentials.getCredentials()));
         passwdEl.appendChild(txtNode);
         passwdEl.setAttribute("Type",
                               "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText");
@@ -549,7 +552,7 @@ public class WssDecoratorImpl implements WssDecorator {
         Element cipherData = XmlUtil.createAndAppendElementNS(encryptedKey, "CipherData", xencNs, xenc);
         Element cipherValue = XmlUtil.createAndAppendElementNS(cipherData, "CipherValue", xencNs, xenc);
         final String base64 = XencUtil.encryptKeyWithRsaAndPad(keyBytes, recipientCertificate.getPublicKey(), c.rand);
-        cipherValue.appendChild(soapMsg.createTextNode(base64));
+        cipherValue.appendChild(XmlUtil.createTextNode(soapMsg, base64));
         Element referenceList = XmlUtil.createAndAppendElementNS(encryptedKey, SoapUtil.REFLIST_EL_NAME, xencNs, xenc);
 
         int numElementsEncrypted = 0;
@@ -656,7 +659,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                                          wsseNs, wssePrefix);
         keyId.setAttribute("ValueType", valueType);
         String recipSkiB64 = HexUtils.encodeBase64(idBytes, true);
-        keyId.appendChild(soapMsg.createTextNode(recipSkiB64));
+        keyId.appendChild(XmlUtil.createTextNode(soapMsg, recipSkiB64));
     }
 
     /**
@@ -709,7 +712,7 @@ public class WssDecoratorImpl implements WssDecorator {
         Document factory = timestamp.getOwnerDocument();
         Element element = factory.createElementNS(timestamp.getNamespaceURI(), createdElName);
         element.setPrefix(timestamp.getPrefix());
-        element.appendChild(factory.createTextNode(ISO8601Date.format(time)));
+        element.appendChild(XmlUtil.createTextNode(factory, ISO8601Date.format(time)));
         return element;
     }
 
@@ -722,7 +725,7 @@ public class WssDecoratorImpl implements WssDecorator {
         element.setPrefix(securityHeader.getPrefix());
         element.setAttribute("ValueType", SoapUtil.VALUETYPE_X509);
         element.setAttribute("EncodingType", SoapUtil.ENCODINGTYPE_BASE64BINARY);
-        element.appendChild(factory.createTextNode(HexUtils.encodeBase64(certificate.getEncoded(), true)));
+        element.appendChild(XmlUtil.createTextNode(factory, HexUtils.encodeBase64(certificate.getEncoded(), true)));
         securityHeader.appendChild(element);
         return element;
     }

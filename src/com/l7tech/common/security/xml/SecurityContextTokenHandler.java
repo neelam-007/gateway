@@ -181,7 +181,7 @@ public class SecurityContextTokenHandler {
         Element messageNumberEl = doc.createElementNS(L7_NAMESPACE, MESSAGE_NUMBER_ELNAME);
         messageNumberEl.setAttribute("xmlns:" + L7_NAMESPACE_PREFIX, L7_NAMESPACE);
         messageNumberEl.setPrefix(L7_NAMESPACE_PREFIX);
-        Text messageNumberText = doc.createTextNode(String.valueOf(messageNumber));
+        Text messageNumberText = XmlUtil.createTextNode(doc, String.valueOf(messageNumber));
         messageNumberEl.appendChild(messageNumberText);
         securityContextToken.insertBefore(messageNumberEl, null);
     }
@@ -191,7 +191,7 @@ public class SecurityContextTokenHandler {
         createdEl.setAttribute("xmlns:" + DEF_WSU_PREFIX, WSU_NAMESPACE);
         createdEl.setPrefix(DEF_WSU_PREFIX);
         String stamp = ISO8601Date.format(new Date(creationTimeStamp));
-        Text valNode = securityCtxTokenEl.getOwnerDocument().createTextNode(stamp);
+        Text valNode = XmlUtil.createTextNode(securityCtxTokenEl, stamp);
         createdEl.appendChild(valNode);
         securityCtxTokenEl.insertBefore(createdEl, null);
     }
@@ -200,7 +200,7 @@ public class SecurityContextTokenHandler {
         String currentwscPrefix = securityCtxTokenEl.getPrefix();
         Element idElement = securityCtxTokenEl.getOwnerDocument().createElementNS(WSC_NAMESPACE, SCTOKEN_ID_ELNAME);
         idElement.setPrefix(currentwscPrefix);
-        Text valNode = securityCtxTokenEl.getOwnerDocument().createTextNode(sessionIdToURI(sessionid));
+        Text valNode = XmlUtil.createTextNode(securityCtxTokenEl, sessionIdToURI(sessionid));
         idElement.appendChild(valNode);
         securityCtxTokenEl.insertBefore(idElement, null);
     }

@@ -1,6 +1,7 @@
 package com.l7tech.policy.exporter;
 
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityAdmin;
@@ -97,23 +98,23 @@ public class IdProviderReference extends ExternalReference {
         refEl.setAttribute(ExporterConstants.REF_TYPE_ATTRNAME, IdProviderReference.class.getName());
         referencesParentElement.appendChild(refEl);
         Element oidEl = referencesParentElement.getOwnerDocument().createElement(OID_EL_NAME);
-        Text txt = referencesParentElement.getOwnerDocument().createTextNode(Long.toString(providerId));
+        Text txt = XmlUtil.createTextNode(referencesParentElement, Long.toString(providerId));
         oidEl.appendChild(txt);
         refEl.appendChild(oidEl);
         Element nameEl = referencesParentElement.getOwnerDocument().createElement(NAME_EL_NAME);
-        txt = referencesParentElement.getOwnerDocument().createTextNode(providerName);
+        txt = XmlUtil.createTextNode(referencesParentElement, providerName);
         nameEl.appendChild(txt);
         refEl.appendChild(nameEl);
         Element propsEl = referencesParentElement.getOwnerDocument().createElement(PROPS_EL_NAME);
         if (idProviderConfProps != null) {
             // base 64 the props
             String encoded = HexUtils.encodeBase64(idProviderConfProps.getBytes());
-            txt = referencesParentElement.getOwnerDocument().createTextNode(encoded);
+            txt = XmlUtil.createTextNode(referencesParentElement, encoded);
             propsEl.appendChild(txt);
         }
         refEl.appendChild(propsEl);
         Element typeEl = referencesParentElement.getOwnerDocument().createElement(TYPEVAL_EL_NAME);
-        txt = referencesParentElement.getOwnerDocument().createTextNode(Integer.toString(idProviderTypeVal));
+        txt = XmlUtil.createTextNode(referencesParentElement, Integer.toString(idProviderTypeVal));
         typeEl.appendChild(txt);
         refEl.appendChild(typeEl);
     }

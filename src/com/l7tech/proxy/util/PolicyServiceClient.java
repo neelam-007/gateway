@@ -118,7 +118,7 @@ public class PolicyServiceClient {
             Element header = SoapUtil.getHeaderElement(msg);
             Element sid = XmlUtil.findOnlyOneChildElementByName(header, SoapUtil.L7_MESSAGEID_NAMESPACE,
                                                                 SoapUtil.L7_SERVICEID_ELEMENT);
-            sid.appendChild(msg.createTextNode(serviceId));
+            sid.appendChild(XmlUtil.createTextNode(msg, serviceId));
             SoapUtil.setL7aMessageId(msg, SoapUtil.generateUniqeUri()); // correlation ID
         } catch (IOException e) {
             throw new RuntimeException(e); // can't happen

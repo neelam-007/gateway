@@ -4,6 +4,7 @@ import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.console.util.JmsUtilities;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
@@ -113,7 +114,7 @@ public class JMSEndpointReference extends ExternalReference {
         refEl.setAttribute(ExporterConstants.REF_TYPE_ATTRNAME, JMSEndpointReference.class.getName());
         referencesParentElement.appendChild(refEl);
         Element oidEl = referencesParentElement.getOwnerDocument().createElement(OID_EL_NAME);
-        Text txt = referencesParentElement.getOwnerDocument().createTextNode(Long.toString(oid));
+        Text txt = XmlUtil.createTextNode(referencesParentElement, Long.toString(oid));
         oidEl.appendChild(txt);
         refEl.appendChild(oidEl);
         Element icfcEl = referencesParentElement.getOwnerDocument().createElement(CONTEXT_EL_NAME);
@@ -129,27 +130,27 @@ public class JMSEndpointReference extends ExternalReference {
         Element epnEl = referencesParentElement.getOwnerDocument().createElement(EPNAME_EL_NAME);
         refEl.appendChild(epnEl);
         if (initialContextFactoryClassname != null) {
-            txt = referencesParentElement.getOwnerDocument().createTextNode(initialContextFactoryClassname);
+            txt = XmlUtil.createTextNode(referencesParentElement, initialContextFactoryClassname);
             icfcEl.appendChild(txt);
         }
         if (jndiUrl != null) {
-            txt = referencesParentElement.getOwnerDocument().createTextNode(jndiUrl);
+            txt = XmlUtil.createTextNode(referencesParentElement, jndiUrl);
             jndiEl.appendChild(txt);
         }
         if (queueFactoryUrl != null) {
-            txt = referencesParentElement.getOwnerDocument().createTextNode(queueFactoryUrl);
+            txt = XmlUtil.createTextNode(referencesParentElement, queueFactoryUrl);
             qfuEl.appendChild(txt);
         }
         if (topicFactoryUrl != null) {
-            txt = referencesParentElement.getOwnerDocument().createTextNode(topicFactoryUrl);
+            txt = XmlUtil.createTextNode(referencesParentElement, topicFactoryUrl);
             tfuEl.appendChild(txt);
         }
         if (destinationFactoryUrl != null) {
-            txt = referencesParentElement.getOwnerDocument().createTextNode(destinationFactoryUrl);
+            txt = XmlUtil.createTextNode(referencesParentElement, destinationFactoryUrl);
             dfuEl.appendChild(txt);
         }
         if (endpointName != null) {
-            txt = referencesParentElement.getOwnerDocument().createTextNode(endpointName);
+            txt = XmlUtil.createTextNode(referencesParentElement, endpointName);
             epnEl.appendChild(txt);
         }
     }
