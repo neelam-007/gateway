@@ -12,6 +12,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.PublishedService;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
@@ -258,8 +259,8 @@ public class IdentityProviderPanel extends WizardStepPanel {
         credentialsAndTransportjPanel.setLayout(new BoxLayout(credentialsAndTransportjPanel, BoxLayout.Y_AXIS));
 
         credentialsAndTransportjPanel.setBorder(new TitledBorder("Credentials/transport"));
-        credentialsLocationjPanel.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
-        ssljPanel.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
+        credentialsLocationjPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+        ssljPanel.setLayout(new java.awt.FlowLayout(FlowLayout.LEFT));
         credentialsLocationjComboBox.setModel(new DefaultComboBoxModel(new String[]{"HTTP Basic", "HTTP Digest", "Message Basic"}));
         credentialsLocationjPanel.add(credentialsLocationjComboBox);
         credentialsAndTransportjPanel.add(credentialsLocationjPanel);
@@ -353,7 +354,7 @@ public class IdentityProviderPanel extends WizardStepPanel {
         if (ip == null) {
             publishedService.setPolicyXml(null);
         }
-        java.util.List assertions = new ArrayList();
+        java.util.List identityAssertions = new ArrayList();
         Iterator it = getIdentitiesInTableModel().getDataVector().iterator();
         while (it.hasNext()) {
             java.util.List row = (java.util.List)it.next();
@@ -361,20 +362,22 @@ public class IdentityProviderPanel extends WizardStepPanel {
             if (EntityType.USER.equals(eh.getType())) {
                 User u = new User();
                 u.setName(eh.getName());
-                assertions.add(new SpecificUser(ip, u));
+                identityAssertions.add(new SpecificUser(ip, u));
             } else if (EntityType.GROUP.equals(eh.getType())) {
                 Group g = new Group();
                 g.setName(eh.getName());
-                assertions.add(new MemberOfGroup(ip, g));
+                identityAssertions.add(new MemberOfGroup(ip, g));
             }
         }
-        Assertion assertion = new OneOrMoreAssertion(assertions);
+        java.util.List allAssertions =
+          Arrays.asList(new Assertion[] {
+            new OneOrMoreAssertion(identityAssertions), new HttpBasic()});
+
         if (ssljCheckBox.isSelected()) {
-            Assertion sslAssertion = new SslAssertion();
-            assertion = new AllAssertion(Arrays.asList(new Assertion[]{sslAssertion, assertion}));
+            allAssertions.add(new SslAssertion());
         }
         ByteArrayOutputStream bo = new ByteArrayOutputStream();
-        WspWriter.writePolicy(assertion, bo);
+        WspWriter.writePolicy(new AllAssertion(allAssertions), bo);
         publishedService.setPolicyXml(bo.toString());
     }
 

@@ -33,8 +33,10 @@ class AllAssertionTreeNode extends CompositeAssertionTreeNode {
     }
 
 
-    /** @return  a string representation of the object.  */
-    public String toString() {
-        return getUserObject().getClass().getName();
+    /**
+     * @return the node name that is displayed
+     */
+    public String getName() {
+        return "All assertions must evaluate true";
     }
 }

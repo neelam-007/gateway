@@ -3,6 +3,7 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.console.util.IconManager2;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
+import com.l7tech.policy.assertion.identity.SpecificUser;
 
 import javax.swing.*;
 import java.awt.*;
@@ -13,7 +14,7 @@ import java.awt.*;
  */
 class SpecificUserAssertionTreeNode extends LeafAssertionTreeNode {
 
-    public SpecificUserAssertionTreeNode(IdentityAssertion assertion) {
+    public SpecificUserAssertionTreeNode(SpecificUser assertion) {
         super(assertion);
     }
 
@@ -24,5 +25,12 @@ class SpecificUserAssertionTreeNode extends LeafAssertionTreeNode {
      */
     protected String iconResource(boolean open) {
         return "com/l7tech/console/resources/user16.png";
+    }
+
+    /**
+     * @return the node name that is displayed
+     */
+    public String getName() {
+        return "Identity is "+ ((SpecificUser)getUserObject()).getUser().getName();
     }
 }

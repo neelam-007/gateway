@@ -1,10 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.panels.*;
-import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.UserNode;
-import com.l7tech.console.tree.EntityHeaderNode;
-import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.EntityHeader;
@@ -64,11 +61,12 @@ public class ServicePolicyPropertiesAction extends NodeAction {
                       PublishedService svc = ((ServiceNode)node).getPublishedService();
                       PolicyTreeModel model = new PolicyTreeModel(svc.rootAssertion());
                       JTree tree = new JTree(model);
+                      tree.setCellRenderer(new EntityTreeCellRenderer());
+                      tree.setName(svc.getName());
                       wpanel.setComponent(tree);
-                  } catch (FindException e) {
+                  } catch (Exception e) {
                       //todo: ErroManager someday?
                       e.printStackTrace();
-
                   }
 
               }

@@ -2,6 +2,7 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
@@ -33,6 +34,7 @@ class AssertionTreeNodeFactory {
         assertionMap.put(MemberOfGroup.class, MemberOfGroupAssertionTreeNode.class);
         assertionMap.put(OneOrMoreAssertion.class, OneOrMoreAssertionTreeNode.class);
         assertionMap.put(AllAssertion.class, AllAssertionTreeNode.class);
+        assertionMap.put(HttpBasic.class, HttpBasicAuthAssertionTreeNode.class);
     }
 
     /**

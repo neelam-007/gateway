@@ -28,7 +28,6 @@ abstract class AssertionTreeNode extends AbstractTreeNode {
         return this.toString();
     }
 
-
 }
 
 

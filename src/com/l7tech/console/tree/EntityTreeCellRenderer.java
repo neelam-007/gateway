@@ -1,16 +1,12 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.console.tree.wsdl.WsdlTreeNode;
-import com.l7tech.console.util.IconManager;
-import com.l7tech.policy.assertion.Assertion;
-
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import java.awt.*;
 
 /**
- * Console custom <CODE>TreeCellRenderer</CODE>.
- * Labels, and the image icon for tree nodes.
+ * Default <CODE>TreeCellRenderer</CODE> implementaiton that handles
+ * <code>AbstractTreeNode</code> nodes.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
@@ -40,11 +36,11 @@ public class EntityTreeCellRenderer
         Icon icon = null;
         if (!(value instanceof AbstractTreeNode)) return this;
 
-        AbstractTreeNode assertionTreeNode = ((AbstractTreeNode) value);
-        setText(assertionTreeNode.getName());
+        AbstractTreeNode node = ((AbstractTreeNode)value);
+        setText(node.getName());
         icon = expanded ?
-          new ImageIcon(assertionTreeNode.getOpenedIcon()) :
-          new ImageIcon(assertionTreeNode.getIcon());
+          new ImageIcon(node.getOpenedIcon()) :
+          new ImageIcon(node.getIcon());
 
         if (icon != null) {
             setIcon(icon);

@@ -28,4 +28,5 @@ public class WindowManager {
     }
 
     private WorkSpacePanel workSpacePanel = new WorkSpacePanel();
+
 }

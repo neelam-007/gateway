@@ -4,6 +4,8 @@ package com.l7tech.console.tree.policy;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
+import com.l7tech.policy.assertion.identity.MemberOfGroup;
+import com.l7tech.policy.assertion.identity.SpecificUser;
 
 import java.util.Iterator;
 
@@ -19,7 +21,7 @@ class MemberOfGroupAssertionTreeNode extends LeafAssertionTreeNode {
      *
      * @param assertion the composite assertion
      */
-    public MemberOfGroupAssertionTreeNode(IdentityAssertion assertion) {
+    public MemberOfGroupAssertionTreeNode(MemberOfGroup assertion) {
         super(assertion);
         if (assertion == null) {
             throw new IllegalArgumentException();
@@ -34,8 +36,10 @@ class MemberOfGroupAssertionTreeNode extends LeafAssertionTreeNode {
     }
 
 
-    /** @return  a string representation of the object.  */
-    public String toString() {
-        return getUserObject().getClass().getName();
+    /**
+     * @return the node name that is displayed
+     */
+    public String getName() {
+        return "Group membership "+ ((MemberOfGroup)getUserObject()).getGroup().getName();
     }
 }

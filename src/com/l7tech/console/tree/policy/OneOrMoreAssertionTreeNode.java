@@ -37,9 +37,10 @@ class OneOrMoreAssertionTreeNode extends CompositeAssertionTreeNode {
         return "com/l7tech/console/resources/folder.gif";
     }
 
-
-    /** @return  a string representation of the object.  */
-    public String toString() {
-        return getUserObject().getClass().getName();
+    /**
+     * @return the node name that is displayed
+     */
+    public String getName() {
+        return "At least on assertion must evaluate to true";
     }
 }

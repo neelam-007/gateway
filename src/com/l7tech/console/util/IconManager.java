@@ -27,39 +27,6 @@ public class IconManager {
         loadimages();
     }
 
-    /**
-     * Get the Icon for the AbstractTreeNode passed.
-     *
-     * @param node   the AbstractTreeNode instance
-     * @return ImageIcon for the given node
-     */
-    public ImageIcon getIcon(AbstractTreeNode node) {
-        if (node == null) {
-            throw new NullPointerException("node");
-        }
-        ClassLoader cl = node.getClass().getClassLoader();
-        Class clazz = node.getClass();
-        if (clazz.equals(ProvidersFolderNode.class)) {
-            return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/providers16.gif"));
-        } else if (clazz.equals(PoliciesFolderNode.class)) {
-            return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/policy16.gif"));
-        } else if (clazz.equals(ServicesFolderNode.class)) {
-            return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/server16.gif"));
-        } else if (clazz.equals(ServiceNode.class)) {
-            return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/services16.png"));
-        } else if (clazz.equals(AdminFolderNode.class)) {
-            return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/user16.png"));
-        } else if (clazz.equals(GroupFolderNode.class)) {
-            return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/group16.png"));
-        } else if (clazz.equals(UserFolderNode.class)) {
-            return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/user16.png"));
-        } else if (clazz.equals(RootNode.class)) {
-            return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/root.gif"));
-        }
-
-        return null;
-    }
-
 
     /**
      * load icon images using this instance ClassLoader.

@@ -3,7 +3,6 @@ package com.l7tech.console.panels;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.util.IconManager;
 import com.l7tech.console.util.Preferences;
-import org.apache.log4j.Category;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -16,13 +15,15 @@ import java.awt.event.HierarchyListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * <CODE>WorkSpacePanel</CODE> represents the main editing panel
  * for elements such as policies.
  */
 public class WorkSpacePanel extends JPanel {
-    private static final Category log = Category.getInstance(WorkSpacePanel.class.getName());
+    static final Logger log = Logger.getLogger(WorkSpacePanel.class.getName());
 
     private final JPanel listPane = new JPanel();
     private final JTabbedPane tabbedPane = new JTabbedPane();
@@ -52,6 +53,8 @@ public class WorkSpacePanel extends JPanel {
     public void setComponent(JComponent jc) {
         scrollPane.setViewportView(jc);
         if (jc !=null) {
+            String name = jc.getName();
+            if (name == null)
             tabbedPane.setTitleAt(0, jc.getName());
         }
     }
@@ -98,7 +101,7 @@ public class WorkSpacePanel extends JPanel {
             l = new PropertyChangeListener() {
                 /** This method gets called when a property is changed.*/
                 public void propertyChange(PropertyChangeEvent evt) {
-                    log.debug("toolbar view changed to " + evt.getNewValue());
+                    log.info("toolbar view changed to " + evt.getNewValue());
                 }
             };
 
@@ -107,7 +110,9 @@ public class WorkSpacePanel extends JPanel {
                     addPropertyChangeListener(Preferences.STATUS_BAR_VISIBLE, l);
 
         } catch (IOException e) {
-            log.warn("error instantiaitng preferences", e);
+            // java.util.Logging does not specify explicit 'level' methods with
+            // throwables as params. why?
+            log.log(Level.WARNING, "error instantiaitng preferences", e);
         }
     }
 
