@@ -77,13 +77,15 @@ public class KeystoreUtils {
     }
 
     public String getKeyStoreType() {
-        return getProps().getProperty(KSTORE_TYPE);
+        String type = getProps().getProperty(KSTORE_TYPE);
+        if ( type == null || type.length() == 0 ) type = KeyStore.getDefaultType();
+        return type;
     }
 
 
     public KeyStore getSSLKeyStore() throws KeyStoreException {
         try {
-            KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+            KeyStore keyStore = KeyStore.getInstance(getKeyStoreType());
             FileInputStream fis = null;
             String sslkeystorepath = getProps().getProperty(KSTORE_PATH_PROP_NAME) + PS + getProps().getProperty(SSL_KSTORE_NAME);
             String sslkeystorepassword = getProps().getProperty(SSL_KSTORE_PASSWD);
@@ -128,6 +130,9 @@ public class KeystoreUtils {
     /**
      * Load the <code>KeyStore</code> from a given keystore file that is protected with a specified
      * password.
+     *
+     * <b>Note:</b> Assumes that the keystore is of the default type!  Do not use in Agent or Gateway!
+     *
      * @param path     the keystore file path
      * @param password the keystore password
      * @return
