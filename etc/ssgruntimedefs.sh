@@ -15,7 +15,7 @@ esac
 export SSG_HOME=/ssg
 
 # define java home
-JAVA_HOME=/ssg/j2sdk1.4.2_04_04
+JAVA_HOME=/ssg/j2sdk1.4.2_04
 if $cygwin; then
     JAVA_HOME=`cygpath --path --unix "$JAVA_HOME"`
 fi
