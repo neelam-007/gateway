@@ -18,6 +18,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.rmi.RemoteException;
 
+
 /**
  * Created by IntelliJ IDEA.
  * User: fpang
@@ -27,6 +28,7 @@ import java.rmi.RemoteException;
  */
 public class LogPanel {
 
+    private static final int MAX_MESSAGE_BLOCK_SIZE = 100;
     private JPanel selectPane = null;
     private JPanel msgPane = null;
     private JPanel filter = new JPanel();
@@ -108,18 +110,23 @@ public class LogPanel {
                               switch (value) {
                                   case 0:
                                       //adjustHandlerLevel(Level.FINEST);
+                                      simpleTest("Finest");
                                       break;
                                   case 40:
                                       //adjustHandlerLevel(Level.INFO);
+                                      simpleTest("Info");
                                       break;
                                   case 80:
                                       //adjustHandlerLevel(Level.WARNING);
+                                      simpleTest("Warning");
+                                      break;
+                                  case 120:
+                                      //adjustHandlerLevel(Level.SEVERE);
+                                      simpleTest("Severe");
                                       break;
                                   case 160:
-                                      //adjustHandlerLevel(Level.SEVERE);
-                                      break;
-                                  case 240:
                                       //adjustHandlerLevel(Level.OFF);
+                                      simpleTest("Off");
                                       break;
                                   default:
                                       System.err.println("Unhandled value " + value);
@@ -254,36 +261,47 @@ public class LogPanel {
         Log log = (Log) Locator.getDefault().lookup(Log.class);
         if (log == null) throw new IllegalStateException("cannot obtain log remote reference");
 
-        try {
-            String[] rawLogs = log.getSystemLog(0, 500);
+        String[] rawLogs = new String[] {};
+        int numOfMsgReceived = 0;
+        boolean cleanUp = true;
+        do
+        {
+            try {
+                    rawLogs = log.getSystemLog(numOfMsgReceived, MAX_MESSAGE_BLOCK_SIZE);
 
-            while(msgTable.getRowCount() > 0)
-           {
-                 System.out.println("Number of row left is: " + msgTable.getRowCount() + "\n");
-                ((DefaultTableModel)(msgTable.getModel())).removeRow(0);
-           }
- //           ((DefaultTableModel)msgTable.getModel()).rowsRemoved(new TableModelEvent(msgTable.getModel()));
-            for (int i = 0; i < rawLogs.length; i++) {
-                 //msgTable.setValueAt(rawLogs[i], i, 0);
-                Vector newRow = new Vector();
+                    numOfMsgReceived += rawLogs.length;
 
-                LogMessage logMsg = new LogMessage(rawLogs[i]);
-                newRow.add(logMsg.getTime());
-                newRow.add(logMsg.getSeverity());
-                newRow.add(logMsg.getMessageDetail());
-                newRow.add(logMsg.getMessageClass());
-                newRow.add(logMsg.getMessageMethod());
-                ((DefaultTableModel)msgTable.getModel()).addRow(newRow);
-                System.out.println("adding a new row (" + i + ") .....\n");
-                System.out.println(rawLogs[i]);
+                    if(cleanUp)
+                    {
+                        while(msgTable.getRowCount() > 0){
+                             System.out.println("Number of row left is: " + msgTable.getRowCount() + "\n");
+                            ((DefaultTableModel)(msgTable.getModel())).removeRow(0);
+                        }
+                         cleanUp = false;
+                    }
+         //           ((DefaultTableModel)msgTable.getModel()).rowsRemoved(new TableModelEvent(msgTable.getModel()));
+                     for (int i = 0; i < rawLogs.length; i++) {
+                     //msgTable.setValueAt(rawLogs[i], i, 0);
+                        Vector newRow = new Vector();
+
+                        LogMessage logMsg = new LogMessage(rawLogs[i]);
+                        newRow.add(logMsg.getTime());
+                        newRow.add(logMsg.getSeverity());
+                        newRow.add(logMsg.getMessageDetail());
+                        newRow.add(logMsg.getMessageClass());
+                        newRow.add(logMsg.getMessageMethod());
+                        ((DefaultTableModel)msgTable.getModel()).addRow(newRow);
+                        System.out.println("adding a new row (" + i + ") .....\n");
+                        System.out.println(rawLogs[i]);
+                    }
+
+                ((AbstractTableModel)(msgTable.getModel())).fireTableDataChanged();
+
             }
-
-            ((AbstractTableModel)(msgTable.getModel())).fireTableDataChanged();
-
-        }
-        catch (RemoteException e) {
-            System.err.println("Unable to retrieve logs from server");
-        }
+            catch (RemoteException e) {
+                System.err.println("Unable to retrieve logs from server");
+            }
+        }  while(rawLogs.length == MAX_MESSAGE_BLOCK_SIZE);    // may be more messages for retrieval
     }
 
     private void RefreshActionPerformed(java.awt.event.ActionEvent evt) {
@@ -323,6 +341,12 @@ public class LogPanel {
          jSplitPane1.setDividerLocation(jSplitPane1.getMaximumDividerLocation());
          msgDetails.setVisible(false);
      }
+
+    private void simpleTest(String severity) {
+
+        System.out.println("Severity is: " + severity);
+    }
+
 
  /*
      private Action getLogRefreshAction() {
