@@ -1355,7 +1355,7 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
                 <include name="ssg-initd"/>
                 <include name="tcp_tune.sh"/>
 	    </fileset>
-	    <fileset dir="${src.root}/etc/db/mysql/my.cnf">
+	    <fileset dir="${src.root}/etc/db/mysql">
                 <include name="my.cnf"/>
             </fileset>
             <fileset dir="${src.root}/native/linux">
