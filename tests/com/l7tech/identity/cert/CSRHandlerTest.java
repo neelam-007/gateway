@@ -20,7 +20,7 @@ public class CSRHandlerTest {
         System.setProperty("javax.net.ssl.trustStore", System.getProperties().getProperty("user.home") + File.separator + ".l7tech" + File.separator + "trustStore");
         System.setProperty("javax.net.ssl.trustStorePassword", "password");
 
-        URL url = new URL("https://riker:8443/csr");
+        URL url = new URL("https://riker:8443/ssg/csr");
         HttpURLConnection connection = (HttpURLConnection)url.openConnection();
         connection.setRequestMethod("POST");
         connection.setDoOutput(true);
