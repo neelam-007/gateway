@@ -29,47 +29,101 @@ import java.rmi.RemoteException;
  */
 public class LogPanel extends JPanel {
 
+     // Titles/Labels
+//    private static final String LOG_LABEL = "Log";
+
     private static final int MAX_MESSAGE_BLOCK_SIZE = 100;
     private JPanel selectPane = null;
     private JPanel msgPane = null;
-    private JPanel filter = new JPanel();
-    private JCheckBox severe = new JCheckBox();
-    private JCheckBox warning = new JCheckBox();
-    private JCheckBox info = new JCheckBox();
-    private JCheckBox finest = new JCheckBox();
-    private JPanel control = new JPanel();
-    private JCheckBox details = new JCheckBox();
-    private JButton Refresh = new JButton();
-    private JSplitPane jSplitPane1 = new JSplitPane();
-    private JScrollPane jScrollPane1 = new JScrollPane();
-    private JTable msgTable;
-    private JScrollPane jScrollPane2 = new JScrollPane();
-    private JTextArea msgDetails = new JTextArea();
+    private JPanel filterPane = null;
 
-    private JPanel jLogPane = new JPanel();
+    private JPanel controlPane = null;
+    private JSplitPane logPaneTop = null;
+    private JScrollPane msgTablePane = null;
+    private JTable msgTable = null;
+    private JScrollPane msgDetailsPane = null;
+    private JTextArea msgDetails = null;
+ //   private JTabbedPane tabbedLogPane = null;
+    private JSlider slider = null;
+    private JCheckBox details = null;
     private AbstractTableModel logTableModel = null;
 
 
-    public JPanel getPane() {
-        return jLogPane;
+    public LogPanel() {
+        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+
+        setBorder(new javax.swing.border.LineBorder(new java.awt.Color(0, 0, 0)));
+        setMinimumSize(new Dimension(100, 150));
+
+        add(getMsgPane());
+        add(getSelectPane());
+
+        // the logPane is not shown default
+        setVisible(false);
+
+        getMsgTable().getSelectionModel().
+                addListSelectionListener(new ListSelectionListener() {
+                    /**
+                     * Called whenever the value of the selection changes.
+                     * @param e the event that characterizes the change.
+                     */
+                    public void valueChanged(ListSelectionEvent e) {
+                        int row = getMsgTable().getSelectedRow();
+                        String msg;
+
+                        if (row == -1) return;
+
+                        //msg = "The selected row is: " + row + "\n";
+                        msg = "";
+
+                        if (getMsgTable().getModel().getValueAt(row, 0) != null)
+                            msg = msg + "Time    : " + getMsgTable().getModel().getValueAt(row, 0).toString() + "\n";
+                        if (getMsgTable().getModel().getValueAt(row, 1) != null)
+                            msg = msg + "Severity: " + getMsgTable().getModel().getValueAt(row, 1).toString() + "\n";
+                        if (getMsgTable().getModel().getValueAt(row, 2) != null)
+                            msg = msg + "Message : " + getMsgTable().getModel().getValueAt(row, 2).toString() + "\n";
+                        if (getMsgTable().getModel().getValueAt(row, 3) != null)
+                            msg = msg + "Class   : " + getMsgTable().getModel().getValueAt(row, 3).toString() + "\n";
+                        if (getMsgTable().getModel().getValueAt(row, 4) != null)
+                            msg = msg + "Method  :" + getMsgTable().getModel().getValueAt(row, 4).toString() + "\n";
+                        getMsgDetails().setText(msg);
+
+                    }
+                });
     }
 
+    private JPanel getSelectPane(){
+        if(selectPane == null){
+            selectPane = new JPanel();
+        }
 
-    public LogPanel() {
-        jLogPane.setLayout(new BoxLayout(jLogPane, BoxLayout.Y_AXIS));
-
-        jLogPane.setBorder(new javax.swing.border.LineBorder(new java.awt.Color(0, 0, 0)));
-        jLogPane.setMinimumSize(new Dimension(100, 150));
-
-        selectPane = new JPanel();
         selectPane.setLayout(new FlowLayout(FlowLayout.LEFT));
+        selectPane.add(getFilterPane());
+        selectPane.add(getControlPane());
 
-        filter.setLayout(new BorderLayout());
-        JSlider slider = new JSlider(0, 160);
+        return selectPane;
+    }
+
+    private JPanel getFilterPane(){
+        if(filterPane == null){
+            filterPane = new JPanel();
+        }
+
+        filterPane.setLayout(new BorderLayout());
+        filterPane.add(getSlider());
+
+        return filterPane;
+    }
+
+    private JSlider getSlider(){
+        if(slider == null){
+            slider = new JSlider(0, 160);
+        }
+
         slider.setMajorTickSpacing(40);
 
         Dictionary table = new Hashtable();
-        JLabel aLabel = new JLabel("finest");
+        JLabel aLabel = new JLabel("all");
 
         aLabel.setFont(new java.awt.Font("Dialog", 0, 11));
         table.put(new Integer(0), aLabel);
@@ -100,8 +154,8 @@ public class LogPanel extends JPanel {
                     int value = source.getValue();
                     switch (value) {
                         case 0:
-                            //adjustHandlerLevel(Level.FINEST);
-                            simpleTest("Finest");
+                            //adjustHandlerLevel(Level.ALL);
+                            simpleTest("all");
                             break;
                         case 40:
                             //adjustHandlerLevel(Level.INFO);
@@ -126,8 +180,19 @@ public class LogPanel extends JPanel {
             }
         });
 
-        filter.add(slider);
-        control.setLayout(new FlowLayout());
+        return slider;
+    }
+
+    private JPanel getControlPane(){
+        if(controlPane == null){
+             controlPane = new JPanel();
+        }
+
+        controlPane.setLayout(new FlowLayout());
+
+        if(details == null){
+            details = new JCheckBox();
+        }
         details.setFont(new java.awt.Font("Dialog", 0, 11));
         details.setText("Details");
         details.setSelected(true);
@@ -136,8 +201,9 @@ public class LogPanel extends JPanel {
                 detailsActionPerformed(evt);
             }
         });
+        controlPane.add(details);
 
-        control.add(details);
+        JButton Refresh = new JButton();
         Refresh.setFont(new java.awt.Font("Dialog", 0, 11));
         Refresh.setText("Refresh");
         Refresh.addActionListener(new java.awt.event.ActionListener() {
@@ -145,69 +211,78 @@ public class LogPanel extends JPanel {
                 RefreshActionPerformed(evt);
             }
         });
+        controlPane.add(Refresh);
 
-        control.add(Refresh);
-        selectPane.add(filter);
-        selectPane.add(control);
+        return controlPane;
+    }
 
-        msgTable = new JTable(getLogTableModel(), getLogColumnModel());
+    private JTable getMsgTable(){
+        if(msgTable == null){
+            msgTable = new JTable(getLogTableModel(), getLogColumnModel());
+        }
 
         msgTable.setShowHorizontalLines(false);
         msgTable.setShowVerticalLines(false);
         msgTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
-        jScrollPane1.setViewportView(msgTable);
+        return msgTable;
+    }
 
-        jSplitPane1.setLeftComponent(jScrollPane1);
+    private JScrollPane getMsgTablePane(){
+        if(msgTablePane == null){
+            msgTablePane = new JScrollPane();
+        }
+        msgTablePane.setViewportView(getMsgTable());
+
+        return msgTablePane;
+    }
+
+    private JSplitPane getLogPaneTop(){
+        if(logPaneTop == null){
+            logPaneTop = new JSplitPane();
+        }
+
+        logPaneTop.setLeftComponent(getMsgTablePane());
+        logPaneTop.setRightComponent(getMsgDetailsPane());
+        logPaneTop.setResizeWeight(0.5);
+
+        return logPaneTop;
+    }
+
+    private JScrollPane getMsgDetailsPane(){
+        if(msgDetailsPane == null){
+            msgDetailsPane = new JScrollPane();
+        }
+        msgDetailsPane.setViewportView(getMsgDetails());
+        msgDetailsPane.setMinimumSize(new Dimension(0, 0));
+
+        return msgDetailsPane;
+    }
+
+    private JTextArea getMsgDetails()
+    {
+        if(msgDetails == null){
+            msgDetails = new JTextArea();
+        }
 
         msgDetails.setEditable(false);
-        jScrollPane2.setViewportView(msgDetails);
         msgDetails.setMinimumSize(new Dimension(0, 0));
 
-        jSplitPane1.setRightComponent(jScrollPane2);
-        jSplitPane1.setResizeWeight(0.5);
-        jScrollPane2.setMinimumSize(new Dimension(0, 0));
+        return msgDetails;
+    }
 
-        msgPane = new JPanel();
+    private JPanel getMsgPane(){
+        if(msgPane == null){
+            msgPane = new JPanel();
+        }
+
         msgPane.setLayout(new BorderLayout());
 
-        msgPane.add(jSplitPane1, BorderLayout.CENTER);
-        jLogPane.add(msgPane);
-        jLogPane.add(selectPane);
+        msgPane.add(getLogPaneTop(), BorderLayout.CENTER);
 
-        // the logPane is not shown default
-        jLogPane.setVisible(false);
-
-        msgTable.getSelectionModel().
-                addListSelectionListener(new ListSelectionListener() {
-                    /**
-                     * Called whenever the value of the selection changes.
-                     * @param e the event that characterizes the change.
-                     */
-                    public void valueChanged(ListSelectionEvent e) {
-                        int row = msgTable.getSelectedRow();
-                        String msg;
-
-                        if (row == -1) return;
-
-                        //msg = "The selected row is: " + row + "\n";
-                        msg = "";
-
-                        if (msgTable.getModel().getValueAt(row, 0) != null)
-                            msg = msg + "Time    : " + msgTable.getModel().getValueAt(row, 0).toString() + "\n";
-                        if (msgTable.getModel().getValueAt(row, 1) != null)
-                            msg = msg + "Severity: " + msgTable.getModel().getValueAt(row, 1).toString() + "\n";
-                        if (msgTable.getModel().getValueAt(row, 2) != null)
-                            msg = msg + "Message : " + msgTable.getModel().getValueAt(row, 2).toString() + "\n";
-                        if (msgTable.getModel().getValueAt(row, 3) != null)
-                            msg = msg + "Class   : " + msgTable.getModel().getValueAt(row, 3).toString() + "\n";
-                        if (msgTable.getModel().getValueAt(row, 4) != null)
-                            msg = msg + "Method  :" + msgTable.getModel().getValueAt(row, 4).toString() + "\n";
-                        msgDetails.setText(msg);
-
-                    }
-                });
+        return msgPane;
     }
+
 
 
     private DefaultTableColumnModel getLogColumnModel() {
@@ -218,11 +293,11 @@ public class LogPanel extends JPanel {
         columnModel.addColumn(new TableColumn(2, 200));
         columnModel.addColumn(new TableColumn(3, 100));
         columnModel.addColumn(new TableColumn(4, 30));
-        columnModel.getColumn(0).setHeaderValue(logTableModel.getColumnName(0));
-        columnModel.getColumn(1).setHeaderValue(logTableModel.getColumnName(1));
-        columnModel.getColumn(2).setHeaderValue(logTableModel.getColumnName(2));
-        columnModel.getColumn(3).setHeaderValue(logTableModel.getColumnName(3));
-        columnModel.getColumn(4).setHeaderValue(logTableModel.getColumnName(4));
+        columnModel.getColumn(0).setHeaderValue(getLogTableModel().getColumnName(0));
+        columnModel.getColumn(1).setHeaderValue(getLogTableModel().getColumnName(1));
+        columnModel.getColumn(2).setHeaderValue(getLogTableModel().getColumnName(2));
+        columnModel.getColumn(3).setHeaderValue(getLogTableModel().getColumnName(3));
+        columnModel.getColumn(4).setHeaderValue(getLogTableModel().getColumnName(4));
 
         return columnModel;
     }
@@ -261,9 +336,9 @@ public class LogPanel extends JPanel {
                 numOfMsgReceived += rawLogs.length;
 
                 if (cleanUp) {
-                    while (msgTable.getRowCount() > 0) {
-                        System.out.println("Number of row left is: " + msgTable.getRowCount() + "\n");
-                        ((DefaultTableModel) (msgTable.getModel())).removeRow(0);
+                    while (getMsgTable().getRowCount() > 0) {
+                        //System.out.println("Number of row left is: " + msgTable.getRowCount() + "\n");
+                        ((DefaultTableModel) (getMsgTable().getModel())).removeRow(0);
                     }
                     cleanUp = false;
                 }
@@ -278,12 +353,12 @@ public class LogPanel extends JPanel {
                     newRow.add(logMsg.getMessageDetail());
                     newRow.add(logMsg.getMessageClass());
                     newRow.add(logMsg.getMessageMethod());
-                    ((DefaultTableModel) msgTable.getModel()).addRow(newRow);
-                    System.out.println("adding a new row (" + i + ") .....\n");
-                    System.out.println(rawLogs[i]);
+                    ((DefaultTableModel) getMsgTable().getModel()).addRow(newRow);
+                    //System.out.println("adding a new row (" + i + ") .....\n");
+                    //System.out.println(rawLogs[i]);
                 }
 
-                ((AbstractTableModel) (msgTable.getModel())).fireTableDataChanged();
+                ((AbstractTableModel) (getMsgTable().getModel())).fireTableDataChanged();
 
             } catch (RemoteException e) {
                 System.err.println("Unable to retrieve logs from server");
@@ -297,14 +372,14 @@ public class LogPanel extends JPanel {
 
     private void detailsActionPerformed(java.awt.event.ActionEvent evt) {
         if (details.isSelected()) {
-            jSplitPane1.setDividerLocation(0.7);
-            msgDetails.setVisible(true);
+            getLogPaneTop().setDividerLocation(0.7);
+            getMsgDetails().setVisible(true);
         } else {
             hideMsgDetails();
         }
     }
 
-    private void finestActionPerformed(java.awt.event.ActionEvent evt) {
+    private void allActionPerformed(java.awt.event.ActionEvent evt) {
         // Add your handling code here:
     }
 
@@ -322,8 +397,8 @@ public class LogPanel extends JPanel {
 
     private void hideMsgDetails() {
 
-        jSplitPane1.setDividerLocation(jSplitPane1.getMaximumDividerLocation());
-        msgDetails.setVisible(false);
+        getLogPaneTop().setDividerLocation(getLogPaneTop().getMaximumDividerLocation());
+        getMsgDetails().setVisible(false);
     }
 
     private void simpleTest(String severity) {
@@ -331,6 +406,21 @@ public class LogPanel extends JPanel {
         System.out.println("Severity is: " + severity);
     }
 
+/*
+     private JTabbedPane getLogTabbedPane() {
+        // If tabbed pane not already created
+        if (tabbedLogPane == null) {
+            // Create tabbed pane
+            tabbedLogPane = new JTabbedPane();
+
+            // Add all tabs
+            tabbedLogPane.add(getLogPaneTop(), LOG_LABEL);
+        }
+
+        // Return tabbed pane
+        return tabbedLogPane;
+     }
+ */
 
     /*
         private Action getLogRefreshAction() {

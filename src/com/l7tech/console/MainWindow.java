@@ -560,31 +560,30 @@ public class MainWindow extends JFrame {
         String atext = "Gateway Log";
 
         toggleShowLogAction =
-          new AbstractAction(atext) {
-              /**
-               * Invoked when an action occurs.
-               *
-               * @param event  the event that occured
-               * @see Action#removePropertyChangeListener
-               */
-              public void actionPerformed(ActionEvent event) {
-                  JCheckBoxMenuItem item = (JCheckBoxMenuItem)event.getSource();
-                  //                Component[] comps = getMainLeftJPanel().getComponents();
-                  //               for (int i = comps.length - 1; i >= 0; i--) {
-                  //                 if (comps[i] instanceof JSplitPane) {
-                  //
-                  if (item.isSelected()) {
-                      getLogPane().getLogs();
-                  }
-                  getLogPane().getPane().setVisible(item.isSelected());
-                  mainJSplitPane.setDividerLocation(700);
+                new AbstractAction(atext) {
+                    /**
+                     * Invoked when an action occurs.
+                     *
+                     * @param event  the event that occured
+                     * @see Action#removePropertyChangeListener
+                     */
+                    public void actionPerformed(ActionEvent event) {
+                        JCheckBoxMenuItem item = (JCheckBoxMenuItem) event.getSource();
 
-                  validate();
-                  repaint();
-              }
-              //               }
-              //            }
-          };
+                        getLogPane().setVisible(item.isSelected());
+                        if (item.isSelected()) {
+                            getLogPane().getLogs();
+                            getMainJSplitPane().setDividerLocation(700);
+                            getMainJSplitPane().setDividerSize(10);
+                            validate();
+                            repaint();
+                        }
+                        else{
+                            getMainJSplitPane().setDividerSize(0);
+                        }
+                    }
+                };
+
         toggleShowLogAction.putValue(Action.SHORT_DESCRIPTION, atext);
         return toggleShowLogAction;
     }
@@ -944,10 +943,13 @@ public class MainWindow extends JFrame {
         if (mainJSplitPane == null) {
             mainJSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
             mainJSplitPane.setResizeWeight(0.75);
+
             mainJSplitPane.setTopComponent(getMainJSplitPaneTop());
-            mainJSplitPane.setBottomComponent(getLogPane().getPane());
+            mainJSplitPane.setBottomComponent(getLogPane());
             // mainJSplitPane.setDividerLocation(mainJSplitPane.getSize().getHeight() * 0.5);
+
             mainJSplitPane.setDividerLocation(700);
+            mainJSplitPane.setDividerSize(0);
         }
         return mainJSplitPane;
     }
@@ -1445,6 +1447,7 @@ public class MainWindow extends JFrame {
 
     // -------------- inactivitiy timeout (close your eyes) -------------------
     final Timer
+
       inactivityTimer =
       new Timer(60 * 1000 * 20,
         new ActionListener() {
@@ -1503,6 +1506,7 @@ public class MainWindow extends JFrame {
                   addAWTEventListener(listener, mask);
             }
         });
+
     // -------------- inactivitiy timeout end (open your eyes) -------------------
 
 
