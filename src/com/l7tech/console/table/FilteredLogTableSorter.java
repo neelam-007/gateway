@@ -99,7 +99,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
 
         sortData(columnToSort, false);
 //        System.out.println("Number of rows in sortedData array: " + sortedData.length);
-        realModel.setRowCount((sortedData.length));
+
         realModel.fireTableDataChanged();
     }
 
@@ -126,6 +126,9 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
 
         Arrays.sort(sorted, new FilteredLogTableSorter.ColumnSorter(columnToSort, ascending));
         sortedData = sorted;
+
+        // update the row count
+        realModel.setRowCount((sortedData.length));
     }
 
     public Object getValueAt(int row, int col) {
