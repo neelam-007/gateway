@@ -41,7 +41,7 @@ public class HibernatePersistenceContext implements PersistenceContext {
         }
     }
 
-    private UserTransaction getUserTransaction() throws TransactionException {
+    protected UserTransaction getUserTransaction() throws TransactionException {
         try {
             return (UserTransaction)new InitialContext().lookup("java:comp/UserTransaction");
         } catch ( Exception e ) {
@@ -71,5 +71,5 @@ public class HibernatePersistenceContext implements PersistenceContext {
         }
     }
 
-    private Session _session;
+    protected Session _session;
 }
