@@ -253,6 +253,7 @@ class SsgNetworkPanel extends JPanel {
 
     public void setUseOverrideIpAddresses(boolean useOverrideIpAddresses) {
         radioCustomIpAddresses.setSelected(useOverrideIpAddresses);
+        radioDefaultIpAddresses.setSelected(!useOverrideIpAddresses);
         updateCustomPortsEnableState();
     }
 
