@@ -31,54 +31,65 @@ public class JmsBag {
     }
 
     public ConnectionFactory getConnectionFactory() {
+        if ( _closed ) throw new IllegalStateException("Bag has been closed");
         return _connectionFactory;
     }
 
     public Connection getConnection() {
+        if ( _closed ) throw new IllegalStateException("Bag has been closed");
         return _connection;
     }
 
     public Session getSession() {
+        if ( _closed ) throw new IllegalStateException("Bag has been closed");
         return _session;
     }
 
     public Context getJndiContext() {
+        if ( _closed ) throw new IllegalStateException("Bag has been closed");
         return _jndiContext;
     }
 
     public void close() {
-        _closed = true;
         try {
-            if ( _session != null ) _session.close();
-        } catch ( JMSException e ) {
-        } finally {
-            _session = null;
-        }
+            try {
+                if ( _session != null ) _session.close();
+            } catch ( JMSException e ) {
+            } finally {
+                _session = null;
+            }
 
-        try {
-            if ( _connection != null ) _connection.stop();
-        } catch ( JMSException e ) {
-        }
+            try {
+                if ( _connection != null ) _connection.stop();
+            } catch ( JMSException e ) {
+            }
 
-        try {
-            if ( _connection != null ) _connection.close();
-        } catch ( JMSException e ) {
-        } finally {
-            _connection = null;
-        }
+            try {
+                if ( _connection != null ) _connection.close();
+            } catch ( JMSException e ) {
+            } finally {
+                _connection = null;
+            }
 
-        try {
-            if ( _jndiContext != null ) _jndiContext.close();
-        } catch ( NamingException e ) {
+            try {
+                if ( _jndiContext != null ) _jndiContext.close();
+            } catch ( NamingException e ) {
+            } finally {
+                _jndiContext = null;
+            }
         } finally {
-            _jndiContext = null;
+            _closed = true;
         }
     }
 
-    protected void finalize() {
-        if ( !_closed ) {
-            _logger.warning( "JmsBag finalized" );
-            close();
+    protected void finalize() throws Throwable {
+        try {
+            if ( !_closed ) {
+                _logger.warning( "JmsBag finalized" );
+                close();
+            }
+        } finally {
+            super.finalize();
         }
     }
 
