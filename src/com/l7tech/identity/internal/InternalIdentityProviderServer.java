@@ -82,6 +82,7 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                         _log.log( Level.FINE, "Request cert serial# is " + pcCert.getSerialNumber().toString() );
                         if ( pcCert.equals( dbCertX509 ) ) {
                             _log.log( Level.INFO, "Authenticated user " + login + " using an SSL client certificate" );
+                            pc.getUser().copyFrom( dbUser );
                             return true;
                         } else {
                             _log.log( Level.WARNING, "Failed to authenticate user " + login + " using an SSL client certificate (request certificate doesn't match database)" );
