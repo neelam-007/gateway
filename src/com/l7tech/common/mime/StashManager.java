@@ -22,7 +22,8 @@ public interface StashManager {
      * specified ordinal number.
      *
      * @param ordinal  a unique small non-negative integer to identify this InputStream for later recall.
-     * @param in  the InputStream to stash.  Will be drained, read all the way to EOF, before this method returns.
+     * @param in  the InputStream to stash.  Will be drained, read all the way to EOF, before this method returns,
+     *                                       but will not be closed by this method.
      * @throws IOException if there is a problem stashing this InputStream.
      */
     void stash(int ordinal, InputStream in) throws IOException;

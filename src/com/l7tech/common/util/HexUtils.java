@@ -442,6 +442,54 @@ public class HexUtils {
         return true;
     }
 
+    /**
+     * Compare two InputStreams for an exact match.  This method returns true if and only if both InputStreams
+     * produce exactly the same bytes when read from the current position through EOF, and that both reach EOF
+     * at the same time.  If so requested, each stream can be closed after reading.  Otherwise, if the comparison
+     * succeeds, both streams are left positioned at EOF; if the comparison fails due to a mismatched byte,
+     * both streams will be positioned somewhere after the mismatch; and, if the comparison fails due to one of the
+     * streams reaching EOF early, the other stream will be left positioned somewhere after the its counterpart
+     * reached EOF.  The states of both streams is undefined if IOException is thrown.
+     * <p>
+     * <b>Caveat</b>: the comparison may produce a false negative if either stream returns short reads before
+     * the final block.
+     *
+     * @param left          one of the InputStreams to compare
+     * @param closeLeft     if true, left will be closed when the comparison finishes
+     * @param right         the other InputStream to compare
+     * @param closeRight    if true, right will be closed when the comparison finishes
+     * @return              true if both streams produced the same byte stream and ended at the same time;
+     *                      false if one of streams ended early or produced a mismatch.
+     * @throws IOException  if there was an IOException reading or closing one of the streams.
+     *                      the state of the streams is undefined if this method throws.
+     */
+    public static boolean compareInputStreams(InputStream left, boolean closeLeft,
+                                              InputStream right, boolean closeRight) throws IOException
+    {
+        byte[] lb = new byte[2048];
+        byte[] rb = new byte[2048];
+        boolean match = true;
+
+        for (;;) {
+            int gotleft = left.read(lb);
+            int gotright = right.read(rb);
+            if (gotleft != gotright) {
+                match = false;
+                break;
+            } else if (gotleft == -1)
+                break;
+            else if (!compareArrays(lb, 0, rb, 0, gotleft)) {
+                match = false;
+                break;
+            }
+        }
+
+        if (closeLeft) left.close();
+        if (closeRight) right.close();
+
+        return match;
+    }
+
     private static ThreadLocal md5s = new ThreadLocal();
     private static ThreadLocal sha1s = new ThreadLocal();
 }

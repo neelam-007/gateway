@@ -18,7 +18,7 @@ import java.util.ArrayList;
  * A StashManager that can only be used for a single request, and which always buffers all InputStreams in memory.
  */
 public class ByteArrayStashManager implements StashManager {
-    private final ArrayList stashed = new ArrayList(); // an array of ByteArrayOutputStreams
+    private ArrayList stashed = new ArrayList(); // an array of ByteArrayOutputStreams
 
     public ByteArrayStashManager() {
     }
@@ -61,5 +61,6 @@ public class ByteArrayStashManager implements StashManager {
 
     public void close() {
         stashed.clear();
+        stashed = new ArrayList();
     }
 }
