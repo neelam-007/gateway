@@ -1,13 +1,11 @@
 package com.l7tech.server;
 
 import com.l7tech.common.security.TrustedCert;
-import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.util.HexUtils;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import javax.net.ssl.SSLContext;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.cert.CertificateException;
@@ -19,8 +17,12 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * This test is pretty fragile because it relies on http://mail.l7tech.com/ and https://mail.l7tech.com/
- * being up and using a self-signed cert with an incorrect hostname.
+ * This test is pretty fragile and probably shouldn't be in the nightly run because:
+ * <ul>
+ * <li>Some tests rely on http://mail.l7tech.com/ and https://mail.l7tech.com/
+ * being up and using a self-signed cert with an incorrect hostname
+ * <li>Other tests rely on the last SSG used by the Console on the machine being up and running
+ * </ul>
  *
  * @author alex
  * @version $Revision$
@@ -39,15 +41,6 @@ public class TrustedCertAdminTest extends TestCase {
     public static Test suite() {
         TestSuite suite = new TestSuite( TrustedCertAdminTest.class );
         return suite;
-    }
-
-    public void setUp() throws Exception {
-        fakeCertAdmin = new TrustedCertAdminImpl(null,null);
-        SSLContext.getInstance("SSL").init(null,null,null);
-    }
-
-    public void tearDown() throws Exception {
-        fakeCertAdmin = null;
     }
 
     public void testRetrieveCertIgnoreHostname() throws Exception {
@@ -263,8 +256,6 @@ public class TrustedCertAdminTest extends TestCase {
                                              Throwable {
         junit.textui.TestRunner.run( suite() );
     }
-
-    private TrustedCertAdmin fakeCertAdmin;
 
     private static final String CERT_BASE64 =
             "MIICZjCCAc8CBD2+61QwDQYJKoZIhvcNAQEEBQAwejELMAkGA1UEBhMCVVMxEzARBgNV\n" +
