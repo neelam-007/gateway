@@ -7,17 +7,17 @@
 package com.l7tech.common.security.xml;
 
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.xml.MessageNotSoapException;
 import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Iterator;
-import java.util.Set;
-import java.util.HashSet;
+import java.util.*;
 import java.util.logging.Logger;
 import java.security.cert.X509Certificate;
 
@@ -53,18 +53,37 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
             }
 
             // precondition satisfied
+            // TODO verify correct handling of null expression xpath (meaning env should be signed and body encrypted)
             XpathExpression elementXpath = elementSecurity.getElementXpath();
-            XpathEvaluator elementEval = XpathEvaluator.newEvaluator(document, elementXpath.getNamespaces());
             List elementMatches = null;
-            try {
-                elementMatches = elementEval.select(elementXpath.getExpression());
-            } catch (JaxenException e) {
-                return Result.error(e);
-            }
-            if ( elementMatches == null || elementMatches.size() == 0 ) {
-                return Result.error(new SecurityProcessorException("Precondition matched but element not found"));
-            }
+            List cryptMatches = null;
+            if (elementXpath != null) {
+                XpathEvaluator elementEval = XpathEvaluator.newEvaluator(document, elementXpath.getNamespaces());
+                try {
+                    elementMatches = elementEval.select(elementXpath.getExpression());
+                    if (elementSecurity.isEncryption())
+                        cryptMatches = elementMatches;
+                } catch (JaxenException e) {
+                    return Result.error(e);
+                }
+                if ( elementMatches == null || elementMatches.size() == 0 ) {
+                    return Result.error(new SecurityProcessorException("Precondition matched but element not found"));
+                }
+            } else {
+                // null element xpath.. this means envelope must be signed and body must encrypted
+                elementMatches = Arrays.asList(new Element[] { document.getDocumentElement() });
 
+                if (elementSecurity.isEncryption()) {
+                    try {
+                        Element body = SoapUtil.getBodyElement(document);
+                        if (body == null)
+                            return Result.error(new MessageNotSoapException("Message contains no Body element"));
+                        cryptMatches = Arrays.asList(new Element[] { body });
+                    } catch (InvalidDocumentFormatException e) {
+                        return Result.error(e);
+                    }
+                }
+            }
 
             // Ensure that every matching element was signed and/or encrypted
             for (Iterator ei = elementMatches.iterator(); ei.hasNext();) {
@@ -83,21 +102,28 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                     return Result.policyViolation(new SecurityProcessorException("Element " +
                                                                                  targetElement.getLocalName() +
                                                                                  " was not signed"));
+            }
 
-                if (elementSecurity.isEncryption() && !XmlUtil.elementIsEmpty(targetElement)) {
-                    boolean encrypted = false;
-                    for (int ci = 0; ci < elementsThatWereEncrypted.length; ci++) {
-                        Element encryptedElement = elementsThatWereEncrypted[ci];
-                        if (XmlUtil.isElementAncestor(targetElement, encryptedElement)) {
-                            encrypted = true;
-                            break;
+            if (elementSecurity.isEncryption() && cryptMatches != null) {
+                // Ensure that every matching element was encrypted
+                for (Iterator eci = cryptMatches.iterator(); eci.hasNext();) {
+                    Element targetElement = (Element) eci.next();
+
+                    if (!XmlUtil.elementIsEmpty(targetElement)) {
+                        boolean encrypted = false;
+                        for (int ci = 0; ci < elementsThatWereEncrypted.length; ci++) {
+                            Element encryptedElement = elementsThatWereEncrypted[ci];
+                            if (XmlUtil.isElementAncestor(targetElement, encryptedElement)) {
+                                encrypted = true;
+                                break;
+                            }
                         }
-                    }
 
-                    if (!encrypted)
-                        return Result.policyViolation(new SecurityProcessorException("Element " +
-                                                                                     targetElement.getLocalName() +
-                                                                                     " was not encrypted"));
+                        if (!encrypted)
+                            return Result.policyViolation(new SecurityProcessorException("Element " +
+                                                                                         targetElement.getLocalName() +
+                                                                                         " was not encrypted"));
+                    }
                 }
             }
 
