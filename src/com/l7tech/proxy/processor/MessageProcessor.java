@@ -12,6 +12,7 @@ import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.ConfigurationException;
+import com.l7tech.proxy.ssl.HostnameMismatchException;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Policy;
@@ -103,10 +104,22 @@ public class MessageProcessor {
 
                     if (ExceptionUtils.causedBy(e, ServerCertificateUntrustedException.class))
                         installSsgServerCertificate(ssg); // might throw BadCredentialsException
-                        // allow policy to reset and retry
-                    else
+                        // FALLTHROUGH
+                    else {
+                        HostnameMismatchException hme = (HostnameMismatchException)
+                                        ExceptionUtils.getCauseIfCausedBy(e, HostnameMismatchException.class);
+                        if (hme != null) {
+                            String wanted = hme.getWhatWasWanted();
+                            String got = hme.getWhatWeGotInstead();
+                            Managers.getCredentialManager().notifySsgHostnameMismatch(ssg,
+                                                                                      wanted,
+                                                                                      got);
+                        }
+
                         // not sure what happened; throw it up and abort the request
                         throw e;
+                    }
+                    // FALLTHROUGH
                 } catch (ServerCertificateUntrustedException e) {
                     installSsgServerCertificate(ssg); // might throw BadCredentialsException
                     // allow policy to reset and retry
