@@ -104,15 +104,13 @@ public class WindowManager {
     }
 
     /**
-     * Returns the component with the given name or <b>null</b> if none
-     * found.
+     * Unregisters the component with the given name
      */
     public Component unregisterComponent(String name) {
         synchronized (componentsRegistry) {
-            WeakReference wr = (WeakReference)componentsRegistry.get(name);
+            WeakReference wr = (WeakReference)componentsRegistry.remove(name);
             if (wr == null) return null;
             Component c = (Component)wr.get();
-            if (c == null) componentsRegistry.remove(name);
             return c;
         }
     }
