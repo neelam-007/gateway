@@ -12,7 +12,7 @@ import java.util.Iterator;
  * @author alex
  */
 public interface Message {
-    static final String PREFIX             = "com.l7tech.message.request";
+    static final String PREFIX             = "com.l7tech.message";
     static final String PREFIX_HTTP        = PREFIX + ".http";
     static final String PREFIX_HTTP_HEADER = PREFIX_HTTP + ".header";
     public static final String PARAM_HTTP_CONTENT_TYPE      = PREFIX_HTTP_HEADER + ".content-type";
