@@ -557,7 +557,7 @@ public class MainWindow extends JFrame {
         if (toggleShowLogAction != null) return toggleShowLogAction;
 
         //String atext = resapplication.getString("toggle.log.display");
-        String atext = "Debug Log";
+        String atext = "Gateway Log";
 
         toggleShowLogAction =
           new AbstractAction(atext) {
