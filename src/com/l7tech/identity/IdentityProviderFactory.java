@@ -26,7 +26,7 @@ public class IdentityProviderFactory {
         return Collections.unmodifiableList( providers );
     }
 
-    private static IdentityProvider makeProvider( IdentityProviderConfig config ) {
+    public static IdentityProvider makeProvider( IdentityProviderConfig config ) {
         IdentityProviderType type = config.getType();
         String interfaceClassName = type.getClassName();
         IdentityProvider provider;
