@@ -154,24 +154,12 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
             TrustedCert caTrust = getCachedCertBySubjectDn(issuerDn, 30000);
 
             if ( caTrust == null )
-                throw new FindException("Couldn't find CA cert with DN '" + issuerDn + "'" );
+                throw new CertificateException("Couldn't find CA cert with DN '" + issuerDn + "'" );
 
             if ( !caTrust.isTrustedForSigningServerCerts() )
                 throw new CertificateException("CA Cert with DN '" + issuerDn + "' found but not trusted for signing SSL Server Certs");
 
-            if ( serverCertChain.length < 2 ) {
-                // TODO this might conceivably be normal
-                throw new CertificateException("Couldn't find CA Cert in chain");
-            } else if ( serverCertChain.length > 2 ) {
-                // TODO support more than two levels?
-                throw new CertificateException("Certificate chains with more than two levels are not supported");
-            }
-
-            X509Certificate caCert = serverCertChain[1];
             X509Certificate caTrustCert = caTrust.getCertificate();
-
-            if ( !CertUtils.certsAreEqual(caCert, caTrustCert) )
-                throw new CertificateException("CA cert from server didn't match stored version");
 
             serverCertChain[0].verify(caTrustCert.getPublicKey());
             return;
