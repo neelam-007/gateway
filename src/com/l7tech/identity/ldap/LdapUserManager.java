@@ -6,10 +6,7 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.logging.LogManager;
 
 import javax.naming.directory.*;
-import javax.naming.NamingException;
-import javax.naming.NamingEnumeration;
-import javax.naming.Context;
-import javax.naming.AuthenticationException;
+import javax.naming.*;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -64,6 +61,9 @@ public class LdapUserManager implements UserManager {
                     return out;
                 }
             }
+            return null;
+        } catch (NameNotFoundException e) {
+            logger.finest("user " + dn + " does not exist" + e.getMessage());
             return null;
         } catch ( NamingException ne ) {
             logger.log( Level.SEVERE, ne.getMessage(), ne );
