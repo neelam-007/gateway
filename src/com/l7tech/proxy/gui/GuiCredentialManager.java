@@ -121,7 +121,7 @@ public class GuiCredentialManager extends CredentialManager {
             if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
                 X509Certificate cert = SsgKeyStoreManager.getClientCert(ssg);
                 X500Principal certName = new X500Principal(cert.getSubjectDN().toString());
-                String certNameString = certName.getName(X500Principal.CANONICAL);
+                String certNameString = certName.getName(X500Principal.RFC2253);
                 holder.showUsername = certNameString.substring(3);
                 ssg.setUsername(holder.showUsername);
                 holder.lockUsername = true;

@@ -93,7 +93,7 @@ public class SslUtils {
                    SignatureException, CertificateAlreadyIssuedException
     {
         X500Principal csrName = new X500Principal(csr.getSubjectAsString());
-        String csrNameString = csrName.getName(X500Principal.CANONICAL);
+        String csrNameString = csrName.getName(X500Principal.RFC2253);
         HttpClient hc = new HttpClient();
         hc.getState().setAuthenticationPreemptive(true);
         hc.getState().setCredentials(null, null,
@@ -115,7 +115,7 @@ public class SslUtils {
             post.releaseConnection();
             post = null;
             X500Principal certName = new X500Principal(cert.getSubjectDN().toString());
-            String certNameString = certName.getName(X500Principal.CANONICAL);
+            String certNameString = certName.getName(X500Principal.RFC2253);
 
             if (!certNameString.equals(csrNameString))
                 throw new CertificateException("We got a certificate, but it's distinguished name didn't match what we asked for.");
