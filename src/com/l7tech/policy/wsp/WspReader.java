@@ -31,7 +31,7 @@ public class WspReader {
      * Reads an XML-encoded policy document from the given input stream and
      * returns the corresponding policy tree.
      * @param wspStream the stream to read
-     * @return          the policy tree it contained, or null
+     * @return the policy tree it contained, or null
      * @throws IOException if the stream did not contain a valid policy
      */
     public static Assertion parse(InputStream wspStream) throws IOException {
@@ -45,6 +45,8 @@ public class WspReader {
                 throw new InvalidPolicyStreamException("No enclosing Policy tag was found (using namespace " +
                                                        WspConstants.POLICY_NS + ")");
             List childElements = WspConstants.getChildElements(policy);
+            // allow empty policies.
+            if (childElements.isEmpty()) return null;
             if (childElements.size() != 1)
                 throw new InvalidPolicyStreamException("Policy does not have exactly one immediate child");
             Node node = (Node) childElements.get(0);
