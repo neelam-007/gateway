@@ -125,48 +125,22 @@ public abstract class InternalIDSecurityAxisHandler extends org.apache.axis.hand
 
     private UserManager getInternalUserManagerAndBeginTransaction() throws java.sql.SQLException {
         try {
-            IdentityProviderConfigManager identityProviderConfigManager = (com.l7tech.identity.IdentityProviderConfigManager)Locator.getDefault().lookup(com.l7tech.identity.IdentityProviderConfigManager.class);
-            if (identityProviderConfigManager == null) throw new java.sql.SQLException("Cannot instantiate the IdentityProviderConfigManager");
             PersistenceContext.getCurrent().beginTransaction();
-            Collection ipcCollection = identityProviderConfigManager.findAll();
-            Iterator i = ipcCollection.iterator();
-            while (i.hasNext()) {
-                IdentityProviderConfig ipc = (IdentityProviderConfig)i.next();
-                // todo, verify we have the right type of provider (once more than one type exist)
-                IdentityProvider provider = IdentityProviderFactory.makeProvider(ipc);
-                return provider.getUserManager();
-            }
+            return GlobalIdentityConfigManager.getInstance().getInternalIdentityProvider().getUserManager();
         } catch (TransactionException e) {
             e.printStackTrace(System.err);
             throw new java.sql.SQLException("TransactionException in getInternalUserManagerAndBeginTransaction "+ e.getMessage());
-        } catch (FindException e) {
-            e.printStackTrace(System.err);
-            throw new java.sql.SQLException("TransactionException in getInternalUserManagerAndBeginTransaction "+ e.getMessage());
         }
-        return null;
     }
 
     private GroupManager getInternalGroupManagerAndBeginTransaction() throws java.sql.SQLException {
         try {
-            IdentityProviderConfigManager identityProviderConfigManager = (com.l7tech.identity.IdentityProviderConfigManager)Locator.getDefault().lookup(com.l7tech.identity.IdentityProviderConfigManager.class);
-            if (identityProviderConfigManager == null) throw new java.sql.SQLException("Cannot instantiate the IdentityProviderConfigManager");
             PersistenceContext.getCurrent().beginTransaction();
-            Collection ipcCollection = identityProviderConfigManager.findAll();
-            Iterator i = ipcCollection.iterator();
-            while (i.hasNext()) {
-                IdentityProviderConfig ipc = (IdentityProviderConfig)i.next();
-                // todo, verify we have the right type of provider (once more than one type exist)
-                IdentityProvider provider = IdentityProviderFactory.makeProvider(ipc);
-                return provider.getGroupManager();
-            }
+            return GlobalIdentityConfigManager.getInstance().getInternalIdentityProvider().getGroupManager();
         } catch (TransactionException e) {
             e.printStackTrace(System.err);
             throw new java.sql.SQLException("TransactionException in getInternalGroupManagerAndBeginTransaction "+ e.getMessage());
-        } catch (FindException e) {
-            e.printStackTrace(System.err);
-            throw new java.sql.SQLException("TransactionException in getInternalGroupManagerAndBeginTransaction "+ e.getMessage());
         }
-        return null;
     }
 
     private void endTransaction() {
