@@ -8,6 +8,7 @@ package com.l7tech.server.transport.jms;
 
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
+import com.l7tech.common.util.Locator;
 import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityHeader;
@@ -29,7 +30,13 @@ import java.util.logging.Level;
  */
 public class JmsBootProcess implements ServerComponentLifecycle, JmsCrudListener {
     public JmsBootProcess() {
-        _manager = new JmsManager();
+        _manager = (JmsManager)Locator.getDefault().lookup( JmsManager.class );
+        if ( _manager == null ) {
+            _logger.severe( "Couldn't find JmsManager! JMS functionality will be disabled!" );
+            _valid = false;
+        } else {
+            _valid = true;
+        }
     }
 
     public String toString() {
@@ -37,7 +44,9 @@ public class JmsBootProcess implements ServerComponentLifecycle, JmsCrudListener
     }
 
     public void init(ComponentConfig config) throws LifecycleException {
+        if ( !_valid ) return;
         if (_booted) throw new LifecycleException("Can't boot JmsBootProcess twice!");
+        _manager.addCrudListener(this);
 
         try {
             Collection endpoints = _manager.findMessageSourceEndpoints();
@@ -52,7 +61,6 @@ public class JmsBootProcess implements ServerComponentLifecycle, JmsCrudListener
                 _receivers.add(receiver);
             }
 
-            _manager.addCrudListener(this);
 
             _booted = true;
         } catch (FindException e) {
@@ -66,6 +74,7 @@ public class JmsBootProcess implements ServerComponentLifecycle, JmsCrudListener
      * Any exception that is thrown in a JmsReceiver's start() method will be logged but not propagated.
      */
     public void start() {
+        if ( !_valid ) return;
         for (Iterator i = _receivers.iterator(); i.hasNext();) {
             JmsReceiver receiver = (JmsReceiver)i.next();
             _logger.info("Starting JMS receiver '" + receiver.toString() + "'...");
@@ -92,19 +101,6 @@ public class JmsBootProcess implements ServerComponentLifecycle, JmsCrudListener
             JmsReceiver receiver = (JmsReceiver)i.next();
             _logger.info("Closing JMS receiver '" + receiver.toString() + "'");
             close(receiver);
-        }
-    }
-
-    /**
-     * Handles the event fired by the deletion of a JmsConnection.
-     */
-    public void connectionDeleted(JmsConnection connection) {
-        for (Iterator i = _receivers.iterator(); i.hasNext();) {
-            JmsReceiver receiver = (JmsReceiver)i.next();
-            if (receiver.getConnection().getOid() == connection.getOid()) {
-                stop(receiver);
-                close(receiver);
-            }
         }
     }
 
@@ -152,10 +148,28 @@ public class JmsBootProcess implements ServerComponentLifecycle, JmsCrudListener
         }
     }
 
+
+    /**
+     * Handles the event fired by the deletion of a JmsConnection.
+     */
+    public void connectionDeleted(JmsConnection connection) {
+        _logger.info( "Connection " + connection + " deleted!" );
+
+        for (Iterator i = _receivers.iterator(); i.hasNext();) {
+            JmsReceiver receiver = (JmsReceiver)i.next();
+            if (receiver.getConnection().getOid() == connection.getOid()) {
+                stop(receiver);
+                close(receiver);
+            }
+        }
+    }
+
     /**
      * Handles the event fired by the update of a JmsConnection.
      */
     public synchronized void connectionUpdated(JmsConnection updatedConnection) {
+        _logger.info( "Connection " + updatedConnection + " updated!" );
+
         for (Iterator i = _receivers.iterator(); i.hasNext();) {
             JmsReceiver receiver = (JmsReceiver)i.next();
             stop(receiver);
@@ -187,6 +201,8 @@ public class JmsBootProcess implements ServerComponentLifecycle, JmsCrudListener
      * Handles the event fired by the deletion of a JmsEndpoint.
      */
     public synchronized void endpointDeleted(JmsEndpoint deletedEndpoint) {
+        _logger.info( "Endpoint " + deletedEndpoint + " deleted!" );
+
         for (Iterator i = _receivers.iterator(); i.hasNext();) {
             JmsReceiver receiver = (JmsReceiver)i.next();
             JmsEndpoint existingEndpoint = receiver.getInboundRequestEndpoint();
@@ -201,6 +217,8 @@ public class JmsBootProcess implements ServerComponentLifecycle, JmsCrudListener
      * Handles the event fired by the update of a JmsEndpoint.
      */
     public synchronized void endpointUpdated(JmsEndpoint updatedEndpoint) {
+        _logger.info( "Endpoint " + updatedEndpoint + " updated!" );
+
         for (Iterator i = _receivers.iterator(); i.hasNext();) {
             JmsReceiver receiver = (JmsReceiver)i.next();
             JmsEndpoint originalEndpoint = receiver.getInboundRequestEndpoint();
@@ -241,4 +259,5 @@ public class JmsBootProcess implements ServerComponentLifecycle, JmsCrudListener
     private JmsManager _manager;
     private boolean _booted = false;
     private Set _receivers = new HashSet();
+    private boolean _valid = false;
 }
