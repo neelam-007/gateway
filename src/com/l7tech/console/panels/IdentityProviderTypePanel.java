@@ -16,6 +16,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
 /*
+ * This class provides a panel for users to select the type of LDAP identity provider.
+ *
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
  * $Id$
@@ -23,7 +25,11 @@ import java.awt.event.ActionEvent;
 
 public class IdentityProviderTypePanel extends WizardStepPanel {
 
-    /** Creates new form ServicePanel */
+    /**
+     * Constructor - create a new provider type panel.
+     *
+     * @param next  The panel for use in the next step.
+     */
     public IdentityProviderTypePanel(WizardStepPanel next) {
         super(next);
         initResources();
@@ -38,9 +44,15 @@ public class IdentityProviderTypePanel extends WizardStepPanel {
         resources = ResourceBundle.getBundle("com.l7tech.console.resources.IdentityProviderDialog", locale);
     }
 
-     public String getDescription() {
+    /**
+     * Provide the description for the step being taken on this panel.
+     *
+     * @return
+     */
+    public String getDescription() {
         return "Select the type of LDAP identity provider.";
     }
+
     /**
      * This method is called from within the constructor to
      * initialize the dialog.
@@ -82,15 +94,14 @@ public class IdentityProviderTypePanel extends WizardStepPanel {
     } // initComponents()
 
 
-    /** @return the wizard step label    */
+    /** @return the wizard step label  */
     public String getStepLabel() {
         return "Provider Type";
     }
 
     /**
      * A method that returns a JCheckBox that indicates
-     * wether the user wishes to define additional properties
-     * of the entity
+     * the type of identity provider selected by the user.
      *
      * @return the CheckBox component
      */
@@ -126,13 +137,18 @@ public class IdentityProviderTypePanel extends WizardStepPanel {
 
                     // notify the wizard to update the state of the control buttons
                     notifyListeners();
-
                 }
             });
         }
         return providerTypesCombo;
     }
 
+    /**
+     * Get the ProviderConfigManager object reference.
+     *
+     * @return  the object reference to the ProviderConfigManager.
+     * @throws RuntimeException  when the ProviderConfigManager cannot be located.
+     */
     private IdentityProviderConfigManager getProviderConfigManager()
       throws RuntimeException {
         IdentityProviderConfigManager ipc =
@@ -146,8 +162,11 @@ public class IdentityProviderTypePanel extends WizardStepPanel {
     }
 
     /**
-     * This method is called from within the constructor to
-     * initialize the dialog.
+     * Store the values of all fields on the panel to the wizard object which is a used for
+     * keeping all the modified values. The wizard object will be used for providing the
+     * updated values when updating the server.
+     *
+     * @param settings the object representing wizard panel state
      */
     public void storeSettings(Object settings) {
 
@@ -176,6 +195,10 @@ public class IdentityProviderTypePanel extends WizardStepPanel {
         return advanceAllowed;
     }
 
+    /**
+     *  A cell renderer for displaying the name of the identity provider type in JBoxCombo component.
+     *
+     **/
     private ListCellRenderer
       providerTypeRenderer = new DefaultListCellRenderer() {
           /**
