@@ -4,9 +4,6 @@ package com.l7tech.console.util;
 import com.l7tech.adminws.logging.Log;
 import com.l7tech.logging.LogMessage;
 import com.l7tech.console.table.FilteredLogTableModel;
-import com.l7tech.console.panels.LogPanel;
-
-import javax.swing.*;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
