@@ -8,15 +8,13 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
-import com.l7tech.server.identity.ldap.LdapGroupManager;
-import com.l7tech.server.identity.ldap.LdapIdentityProvider;
-import com.l7tech.server.identity.ldap.LdapUserManager;
+import com.l7tech.server.identity.ldap.*;
 import org.springframework.context.ApplicationContext;
 
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.Attributes;
+import javax.naming.Context;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
@@ -39,6 +37,17 @@ public class LdapIdentityProviderTest {
         spockTemplate.setLdapUrl(new String[]{"ldap://spock:389"});
         spockTemplate.setSearchBase("dc=layer7-tech,dc=com");
         return spockTemplate;
+    }
+
+    private LdapIdentityProviderConfig getConfigForBones() throws IOException {
+        LdapConfigTemplateManager templateManager = new LdapConfigTemplateManager();
+        LdapIdentityProviderConfig bonesTemplate = templateManager.getTemplate("GenericLDAP");
+        bonesTemplate.setLdapUrl(new String[]{"ldap://bones:389"});
+        //bonesTemplate.setLdapUrl(new String[]{"ldap://localhost:3899"});
+        bonesTemplate.setBindDN("cn=Manager,dc=layer7-tech,dc=com");
+        bonesTemplate.setBindPasswd("7layer");
+        bonesTemplate.setSearchBase("dc=layer7-tech,dc=com");
+        return bonesTemplate;
     }
 
     private LdapIdentityProviderConfig getConfigForSpockWithBadSearchBase() throws IOException {
@@ -115,6 +124,19 @@ public class LdapIdentityProviderTest {
 
         spock.afterPropertiesSet();
         return spock;
+    }
+
+    private LdapIdentityProvider getBonesProvider() throws Exception {
+        LdapIdentityProvider bones = new LdapIdentityProvider(getConfigForBones());
+        LdapUserManager usman = new LdapUserManager(bones);
+        bones.setUserManager(usman);
+        LdapGroupManager grpman = new LdapGroupManager(bones);
+        bones.setGroupManager(grpman);
+        bones.setClientCertManager((ClientCertManager)applicationContext.getBean("clientCertManager"));
+        bones.setServerConfig((ServerConfig)applicationContext.getBean("serverConfig"));
+
+        bones.afterPropertiesSet();
+        return bones;
     }
 
     private LdapIdentityProvider getTimTamProvider() throws IOException {
@@ -202,7 +224,8 @@ public class LdapIdentityProviderTest {
 
     public static void main(String[] args) throws Exception {
         LdapIdentityProviderTest me = new LdapIdentityProviderTest();
-        me.localProvider = me.getSpockProvider();
+        /*//me.localProvider = me.getSpockProvider();
+        me.localProvider = me.getBonesProvider();
         //me.localProvider = me.getSpockProviderWithBadSearchBase();
         //me.localProvider = me.getMSADProvider();
         //me.localProvider = me.getOracleProvider();
@@ -212,15 +235,23 @@ public class LdapIdentityProviderTest {
         //me.localProvider.test();
         //me.testGetUsers();
         //me.testGetGroupsAndMembers();
-        LoginCredentials creds = new LoginCredentials("flascelles", "blah".toCharArray(), null);
+        LoginCredentials creds = new LoginCredentials("flascelles", "".toCharArray(), null);
         User authenticated = me.localProvider.authenticate(creds);
-        System.out.println("USER " + authenticated);
+        System.out.println("USER " + authenticated);*/
 
-        //me.checkSasl("ldap://localhost:3899");
+        me.checkSasl("ldap://localhost:3899");
     }
 
     private void checkSasl(String url) throws Exception {
-        DirContext cntx = new InitialDirContext();
+
+        UnsynchronizedNamingProperties env = new UnsynchronizedNamingProperties();
+        env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
+        env.put(Context.PROVIDER_URL, url);
+        env.put(Context.SECURITY_AUTHENTICATION, "simple");
+        env.put(Context.SECURITY_PRINCIPAL, "cn=Manager,dc=layer7-tech,dc=com");
+        env.put(Context.SECURITY_CREDENTIALS, "7layer");
+        env.lock();
+        DirContext cntx = new InitialDirContext(env);
         Attributes attrs = cntx.getAttributes(url, new String[]{"supportedSASLMechanisms"});
         System.out.println(attrs);
     }
