@@ -4,6 +4,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.KeyEvent;
 
 /**
  * A dialog that lets a user specify a namespace URI and an associated prefix.
@@ -44,6 +46,23 @@ public class NamespacePrefixQueryForm extends JDialog {
                 cancel();
             }
         });
+
+        // implement default behavior for esc and enter keys
+        KeyListener defBehaviorKeyListener = new KeyListener() {
+            public void keyPressed(KeyEvent e) {}
+            public void keyReleased(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+                    cancel();
+                } else if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    ok();
+                }
+            }
+            public void keyTyped(KeyEvent e) {}
+        };
+        uritxt.addKeyListener(defBehaviorKeyListener);
+        prefixtxt.addKeyListener(defBehaviorKeyListener);
+        cancelbutton.addKeyListener(defBehaviorKeyListener);
+        okbutton.addKeyListener(defBehaviorKeyListener);
     }
 
     private void ok() {

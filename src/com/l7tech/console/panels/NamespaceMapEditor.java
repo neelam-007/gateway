@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.action.Actions;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
@@ -184,6 +185,25 @@ public class NamespaceMapEditor extends JDialog {
                 enableRemoveBasedOnSelection();
             }
         });
+
+        // implement default behavior for esc and enter keys
+        KeyListener defBehaviorKeyListener = new KeyListener() {
+            public void keyPressed(KeyEvent e) {}
+            public void keyReleased(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+                    cancel();
+                } else if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    ok();
+                }
+            }
+            public void keyTyped(KeyEvent e) {}
+        };
+        table1.addKeyListener(defBehaviorKeyListener);
+        removeButton.addKeyListener(defBehaviorKeyListener);
+        addButton.addKeyListener(defBehaviorKeyListener);
+        okButton.addKeyListener(defBehaviorKeyListener);
+        helpButton.addKeyListener(defBehaviorKeyListener);
+        cancelButton.addKeyListener(defBehaviorKeyListener);
     }
 
     private void enableRemoveBasedOnSelection() {
@@ -207,11 +227,13 @@ public class NamespaceMapEditor extends JDialog {
 
         NamespacePrefixQueryForm grabber = new NamespacePrefixQueryForm(this);
         grabber.pack();
+        Utilities.centerOnScreen(grabber);
         grabber.show();
 
         if (grabber.cancelled) return;
 
-        if (grabber.prefix == null || grabber.nsuri == null) {
+        if (grabber.prefix == null || grabber.nsuri == null ||
+            grabber.prefix.length() < 1 || grabber.nsuri.length() < 1) {
             JOptionPane.showMessageDialog(addButton, "The prefix and namespace URI must both be specified");
             return;
         }
