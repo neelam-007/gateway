@@ -25,7 +25,7 @@ public class Updated extends AdminEvent {
         super(entity, note );
         this.changeSet = changes;
     }
-
+                                                
     public Updated(Entity original, EntityChangeSet changes) {
         this(original, changes, null);
     }
