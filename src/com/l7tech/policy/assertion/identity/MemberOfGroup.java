@@ -30,5 +30,9 @@ public class MemberOfGroup extends IdentityAssertion {
         _groupName = groupName;
     }
 
+    public String toString() {
+        return super.toString() + " " + getGroupName();
+    }
+
     protected String _groupName;
 }
