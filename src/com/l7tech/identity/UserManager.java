@@ -3,8 +3,6 @@ package com.l7tech.identity;
 import com.l7tech.objectmodel.*;
 import com.l7tech.identity.User;
 
-import java.util.Collection;
-
 /**
  * @author alex
  */
