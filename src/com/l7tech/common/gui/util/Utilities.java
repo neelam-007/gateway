@@ -15,6 +15,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.FocusEvent;
 import java.awt.geom.Rectangle2D;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeEvent;
 
 /**
  * This class is a bag of utilites shared by panels.
@@ -410,5 +412,30 @@ public class Utilities {
             public void focusLost(FocusEvent e) {
             }
         });
+    }
+
+    private static final Color DISABLED_FOREGROUND_COLOR = Color.GRAY;
+    private static final Color DISABLED_BACKGROUND_COLOR = new Color(232, 232, 232);
+
+    /**
+     * Configure the specified component to change its foreground color to Gray whenever it is disabled.
+     *
+     * @param component  the component whose behaviour will be altered
+     */
+    public static void enableGrayOnDisabled(JComponent component) {
+        final Color defaultForeground = component.getForeground();
+        final Color defaultBackground = component.getBackground();
+        component.addPropertyChangeListener("enabled", new PropertyChangeListener() {
+            public void propertyChange(PropertyChangeEvent evt) {
+                if (evt.getSource() instanceof JComponent && "enabled".equals(evt.getPropertyName())) {
+                    JComponent component = (JComponent) evt.getSource();
+                    boolean enabled = ((Boolean) evt.getNewValue()).booleanValue();
+                    component.setForeground(enabled ? defaultForeground : DISABLED_FOREGROUND_COLOR);
+                    component.setBackground(enabled ? defaultBackground : DISABLED_BACKGROUND_COLOR);
+                }
+            }
+        });
+        component.setForeground(component.isEnabled() ? defaultForeground : DISABLED_FOREGROUND_COLOR);
+        component.setBackground(component.isEnabled() ? defaultBackground : DISABLED_BACKGROUND_COLOR);
     }
 }
