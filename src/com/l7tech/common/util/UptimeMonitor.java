@@ -30,7 +30,8 @@ public class UptimeMonitor {
         "/bin/uptime",
         "c:/cygwin/bin/uptime",
     };
-    private String foundUptime = null;
+    private static String foundUptime = null;
+
     private Thread thread = null;
     private UptimeMetrics result = null;
 
@@ -47,7 +48,7 @@ public class UptimeMonitor {
     }
 
     private void startMonitor() {
-        foundUptime = findUptime(UPTIME_PATHS);
+        this.result = findUptime(UPTIME_PATHS);
         if (foundUptime != null) {
             this.thread = new Thread(new Runnable() { public void run() { runMonitorThread(); }});
             thread.setDaemon(true);
@@ -56,29 +57,31 @@ public class UptimeMonitor {
     }
 
     /**
-     * Given a list of candidate paths, find the path that uptime is actually at.
+     * Given a list of candidate paths, find the path that uptime is actually at, and collect
+     * it's initial output.
      *
      * @param uptimePaths  An array of paths to search.
-     * @return The path of the uptime executable on this system, or null if it wasn't found.
+     * @return The output of the uptime command we found, or null if we didn't find out.
      */
-    private static String findUptime(String[] uptimePaths) {
-        String found = null;
+    private static UptimeMetrics findUptime(String[] uptimePaths) {
         for (int i = 0; i < uptimePaths.length; i++) {
             String uptimePath = uptimePaths[i];
             try {
+                UptimeMetrics snapshot = runUptime(uptimePath);
                 Process up = Runtime.getRuntime().exec(uptimePath);
                 up.waitFor();
-                found = uptimePath;
-                logger.info("Using uptime executable: " + found);
-                break;
+                foundUptime = uptimePath;
+                logger.info("Using uptime executable: " + foundUptime);
+                return snapshot;
             } catch (IOException e) {
                 // loop around and try the next one
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                return found;
+                return null;
             }
         }
-        return found;
+        logger.warning("Did not find uptime executable on this system");
+        return null;
     }
 
     /**
@@ -109,7 +112,7 @@ public class UptimeMonitor {
      * @throws FileNotFoundException  if uptime is not available here
      * @throws IllegalStateException  if the monitor thread has been shut down
      */
-    private UptimeMetrics doGetLastUptime() throws FileNotFoundException, IllegalStateException {
+    private synchronized UptimeMetrics doGetLastUptime() throws FileNotFoundException, IllegalStateException {
         if (foundUptime == null)
             throw new FileNotFoundException("The uptime executable was not found on this sytem.");
         if (thread == null)
@@ -133,20 +136,31 @@ public class UptimeMonitor {
     }
 
     /**
+     * Attempt to run uptime at the provided path, and update our uptime metrics if successful.
+     * @param uptimePath    the path to try
+     * @return the string output by the uptime program, limited to 512 bytes
+     * @throws IOException   if the program could not be executed
+     * @throws InterruptedException  if this thread was interrupted
+     */
+    private static UptimeMetrics runUptime(String uptimePath) throws IOException, InterruptedException {
+        Process up = Runtime.getRuntime().exec(uptimePath);
+        InputStream got = new BufferedInputStream(up.getInputStream());
+        byte[] buff = HexUtils.slurpStream(got, 512);
+        String uptimeOutput = new String(buff);
+        UptimeMetrics snapshot = new UptimeMetrics(uptimeOutput);
+        up.waitFor();
+        return snapshot;
+    }
+
+    /**
      * Runs in own thread.  Gather uptime information every 30 seconds.
      */
     private void runMonitorThread() {
         logger.info("Uptime monitor thread is starting");
-        int failuresInRow = 0;
+        long failuresInRow = 0;
         for (;;) {
-            Process up;
             try {
-                up = Runtime.getRuntime().exec(foundUptime);
-                up.waitFor();
-                InputStream got = new BufferedInputStream(up.getInputStream());
-                byte[] buff = HexUtils.slurpStream(got, 512);
-                String result = new String(buff);
-                UptimeMetrics snapshot = new UptimeMetrics(result);
+                UptimeMetrics snapshot = runUptime(foundUptime);
                 synchronized (this) {
                     this.result = snapshot;
                 }
