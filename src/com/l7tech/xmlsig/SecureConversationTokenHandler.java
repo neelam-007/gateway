@@ -1,9 +1,6 @@
 package com.l7tech.xmlsig;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Text;
-import org.w3c.dom.NodeList;
+import org.w3c.dom.*;
 import com.l7tech.util.SoapUtil;
 
 /**
@@ -88,9 +85,34 @@ public class SecureConversationTokenHandler {
         writeIdentifierElementToSecurityContextTokenElement(securityCtxTokEl, Long.toString(nonce));
     }
 
-    public long readNonceFromDocument(Document soapmsg) {
-        // todo
-        return -1;
+    /**
+     * Look for a nonce in the soap document in the SecurityContextToken/Identifier element
+     * Document is not affected by this method.
+     *
+     * @param soapmsg the xml document contiaining the soap msg. this document will not be affected by this method
+     * @return the nonce in the SecurityContextToken/Identifier element
+     * @throws XMLSecurityElementNotFoundException if not present
+     */
+    public long readNonceFromDocument(Document soapmsg) throws XMLSecurityElementNotFoundException {
+        Element secContxTokEl = getSecurityContextTokenElement(soapmsg);
+        if (secContxTokEl == null) {
+            throw new XMLSecurityElementNotFoundException(SECURITY_CONTEXT_TOKEN_EL_NAME + " element not present.");
+        }
+
+        NodeList listIdentifierElements = secContxTokEl.getElementsByTagNameNS(WSU_NAMESPACE, IDENTIFIER_EL_NAME);
+        if (listIdentifierElements.getLength() < 1) {
+            throw new XMLSecurityElementNotFoundException(IDENTIFIER_EL_NAME + " element not present.");
+        }
+        Element identifier = (Element)listIdentifierElements.item(0);
+        NodeList children = identifier.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node kid = children.item(i);
+            if (kid.getNodeType() == Node.TEXT_NODE) {
+                String value = kid.getNodeValue();
+                return Long.parseLong(value);
+            }
+        }
+        throw new XMLSecurityElementNotFoundException(IDENTIFIER_EL_NAME + " element does not contain nonce value.");
     }
 
     public void appendSessIdAndSeqNrToDocument(Document soapmsg, long sessId, long seqNr) {
@@ -127,8 +149,17 @@ public class SecureConversationTokenHandler {
         securityContextTokenEl.insertBefore(idElement, null);
     }
 
+    private Element getSecurityContextTokenElement(Document soapMsg) {
+        NodeList listSecurityElements = soapMsg.getElementsByTagNameNS(SECURITY_NAMESPACE, SECURITY_CONTEXT_TOKEN_EL_NAME);
+        if (listSecurityElements.getLength() < 1) {
+            return null;
+        } else {
+            return (Element)listSecurityElements.item(0);
+        }
+    }
+
     private Element getOrMakeSecurityContextTokenElement(Document soapMsg) {
-        NodeList listSecurityElements = soapMsg.getElementsByTagName(SECURITY_CONTEXT_TOKEN_EL_NAME);
+        NodeList listSecurityElements = soapMsg.getElementsByTagNameNS(SECURITY_NAMESPACE, SECURITY_CONTEXT_TOKEN_EL_NAME);
         if (listSecurityElements.getLength() < 1) {
             // element does not exist
             Element securityEl = SoapUtil.getOrMakeSecurityElement(soapMsg);
