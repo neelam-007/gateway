@@ -48,15 +48,14 @@ abstract class LeafAssertionTreeNode extends AssertionTreeNode {
         if (true == super.receive(node)) {
             return true;
         }
-        JTree tree =
-          (JTree)ComponentRegistry.
-          getInstance().getComponent(PolicyTree.NAME);
+        JTree tree = (JTree)ComponentRegistry.getInstance().getComponent(PolicyTree.NAME);
         if (tree != null) {
             DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
             Assertion nass = node.asAssertion();
 
             if (nass != null) {
                 AssertionTreeNode as = AssertionTreeNodeFactory.asTreeNode(nass);
+
                 as = prepareNode(as);
                 final MutableTreeNode parent = (MutableTreeNode)getParent();
 

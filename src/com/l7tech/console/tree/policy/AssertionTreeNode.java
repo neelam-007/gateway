@@ -29,13 +29,23 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Class AssertionTreeNode.
+ * Class <code>AssertionTreeNode</code> is the base superclass for the
+ * asserttion tree policy nodes.
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public abstract class AssertionTreeNode extends AbstractTreeNode {
     private static final Logger log =
       Logger.getLogger(AssertionTreeNode.class.getName());
 
+    protected Precondition precondition;
+
+    /**
+     * package private constructor accepting the asseriton
+     * this node represents.
+
+     * @param assertion that this node represents
+     */
     AssertionTreeNode(Assertion assertion) {
         super(assertion);
         this.setAllowsChildren(false);
@@ -86,12 +96,13 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
         md.setEnabled(canMoveDown());
         list.add(md);
 
+    /*
         Action sp = new SavePolicyAction(this);
         list.add(sp);
 
         Action vp = new ValidatePolicyAction((AssertionTreeNode)getRoot());
         list.add(vp);
-
+    */
 
         return (Action[])list.toArray(new Action[]{});
     }
@@ -159,6 +170,13 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
         return false;
     }
 
+    /**
+     * Get the precondition for this node.
+     * @return the precondition for this node
+     */
+    public Precondition getPrecondition() {
+        return precondition;
+    }
 
     /**
      * assign the policy template.
@@ -205,20 +223,9 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
         }
     }
 
-//    private boolean confirmApplyPolicyTemplate(ServiceNode sn) {
-//        if ((JOptionPane.showConfirmDialog(
-//          ComponentRegistry.getInstance().getMainWindow(),
-//          "<html><center><b>Are you sure you wish to apply policy template ?<br> (This will permanently overwrite the " +
-//          "policy for '" + sn.getName() + "')</b></center></html>",
-//          "Overwrite Service policy",
-//          JOptionPane.YES_NO_OPTION)) != JOptionPane.YES_OPTION) {
-//            return false;
-//        }
-//        return true;
-//    }
 
     /**
-     * @return the published service cookie or null if not founds
+     * @return the published service cookie or null if not found
      */
     private ServiceNode getServiceNodeCookie() {
         for (Iterator i = ((AbstractTreeNode)getRoot()).cookies(); i.hasNext();) {

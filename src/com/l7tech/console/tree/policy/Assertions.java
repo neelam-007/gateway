@@ -66,4 +66,14 @@ public class Assertions {
         return true;
     }
 
+
+    /**
+     * the empty preparer that simply returns the same node that is passed
+     */
+    protected static final NodePreparer EMPTY_PREPARER = new NodePreparer() {
+        public AssertionTreeNode prepare(AssertionTreeNode node) {
+            return node;
+        }
+    };
+
 }
