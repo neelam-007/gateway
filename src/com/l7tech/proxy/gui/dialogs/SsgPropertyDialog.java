@@ -210,6 +210,11 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 try {
                     X509Certificate cert = ssg.getClientCertificate();
                     if (cert == null) {
+                        NoClientCert dlg = new NoClientCert(SsgPropertyDialog.this, ssgName());
+                        dlg.pack();
+                        dlg.show();
+                        int r = dlg.getExitCondition();
+                        /*
                         final String close = "   Close   ";
                         int r = JOptionPane.showOptionDialog(Gui.getInstance().getFrame(),
                                                              "A client certificate for the SecureSpan Gateway " + ssgName() + "\n" +
@@ -218,10 +223,16 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                                              JOptionPane.YES_NO_OPTION,
                                                              JOptionPane.INFORMATION_MESSAGE,
                                                              null,
-                                                             new String[] {"Import Client Certificate", close},
+                                                             new String[] {"Import Client Certificate",
+                                                                           "Request Certificate From"  + ssgName(),
+                                                                           close},
                                                              close);
-                        if (r == 0)
+                                                             */
+                        if (r == NoClientCert.REQUESTED_IMPORT) {
                             importClientCertificate();
+                        } else if (r == NoClientCert.REQUESTED_CSR) {
+                            // TODO, fla
+                        }
                         return;
                     }
                     new CertDialog(cert, "Client Certificate", "Client Certificate for Gateway " + ssgName()).show();
