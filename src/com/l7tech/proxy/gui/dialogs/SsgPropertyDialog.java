@@ -242,6 +242,10 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         if (row >= 0 && row < displayPolicies.size())
             policy = ssg.lookupPolicy((PolicyAttachmentKey)displayPolicies.get(row));
         policyTree.setModel((policy == null || policy.getClientAssertion() == null) ? null : new PolicyTreeModel(policy.getClientAssertion()));
+        int erow = 0;
+        while (erow < policyTree.getRowCount()) {
+            policyTree.expandRow(erow++);
+        }
     }
 
     private SsgPropertyPanel getIdentityPane(final Ssg ssg) {

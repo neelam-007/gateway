@@ -118,6 +118,9 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
             JTree policyTree = new JTree((TreeModel)null);
             policyTree.setCellRenderer(new PolicyTreeCellRenderer());
             policyTree.setModel(policy == null ? null : new PolicyTreeModel(policy));
+            int erow = 0;
+            while (erow < policyTree.getRowCount())
+                policyTree.expandRow(erow++);            
             panel.add(policyTree,
                       new GridBagConstraints(0, 2, GridBagConstraints.REMAINDER, 1, 1.0, 1.0,
                                              GridBagConstraints.SOUTH,
