@@ -32,6 +32,14 @@ public class LdapIdentityProviderTest extends TestCase {
         return spockTemplate;
     }
 
+    private LdapIdentityProviderConfig getConfigForSpockWithBadSearchBase() throws IOException {
+        LdapConfigTemplateManager templateManager = new LdapConfigTemplateManager();
+        LdapIdentityProviderConfig spockTemplate = templateManager.getTemplate("GenericLDAP");
+        spockTemplate.setLdapUrl("ldap://spock:389");
+        spockTemplate.setSearchBase("dc=layer8-tech,dc=com");
+        return spockTemplate;
+    }
+
     private LdapIdentityProviderConfig getConfigForMSAD() throws IOException {
         LdapConfigTemplateManager templateManager = new LdapConfigTemplateManager();
         LdapIdentityProviderConfig msadTemplate = templateManager.getTemplate("MSAD");
@@ -80,6 +88,12 @@ public class LdapIdentityProviderTest extends TestCase {
         cfg.setPasswdType(PasswdStrategy.CLEAR);
         orclTemplate.setUserMapping(cfg);
         return orclTemplate;
+    }
+
+    private LdapIdentityProvider getSpockProviderWithBadSearchBase() throws IOException {
+        LdapIdentityProvider spock =  new LdapIdentityProvider();
+        spock.initialize(getConfigForSpockWithBadSearchBase());
+        return spock;
     }
 
     private LdapIdentityProvider getSpockProvider() throws IOException {
@@ -169,15 +183,16 @@ public class LdapIdentityProviderTest extends TestCase {
     public static void main(String[] args) throws Exception {
         LdapIdentityProviderTest me = new LdapIdentityProviderTest();
 
-        //me.localProvider = me.getSpockProvider();
+        me.localProvider = me.getSpockProvider();
+        //me.localProvider = me.getSpockProviderWithBadSearchBase();
         //me.localProvider = me.getMSADProvider();
         //me.localProvider = me.getOracleProvider();
-        me.localProvider = me.getModifiedOracleProvider();
+        //me.localProvider = me.getModifiedOracleProvider();
         //me.localProvider = me.getTimTamProvider();
         //me.testAuthenticate("test_user", "passw0rd");
         me.localProvider.test();
-        me.testGetUsers();
-        me.testGetGroupsAndMembers();
+        //me.testGetUsers();
+        //me.testGetGroupsAndMembers();
     }
 
     private LdapIdentityProvider localProvider;
