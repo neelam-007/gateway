@@ -9,17 +9,22 @@ package com.l7tech.credential;
 import com.l7tech.identity.User;
 
 /**
- * Stores a reference to a Principal and its associated Credential (i.e. password).
+ * Stores a reference to a User and its associated credentials (i.e. password).
  *
  * Immutable.
+ *
  * @author alex
  */
 public class PrincipalCredentials {
-    public PrincipalCredentials( User user, byte[] credentials, String realm, CredentialFinder finder ) {
+    public PrincipalCredentials( User user, byte[] credentials, CredentialFormat format, String realm  ) {
         _user = user;
         _credentials = credentials;
         _realm = realm;
-        _finder = finder;
+        _format = format;
+    }
+
+    public PrincipalCredentials( User user, byte[] credentials, CredentialFormat format ) {
+        this( user, credentials, format, null );
     }
 
     public User getUser() {
@@ -30,20 +35,20 @@ public class PrincipalCredentials {
         return _credentials;
     }
 
+    /**
+     * Could be null.
+     * @return
+     */
     public String getRealm() {
         return _realm;
     }
 
-    public CredentialFinder getFinder() {
-        return _finder;
-    }
-
-    public void setFinder( CredentialFinder finder ) {
-        _finder = finder;
+    public CredentialFormat getFormat() {
+        return _format;
     }
 
     private final User _user;
     private final byte[] _credentials;
     private final String _realm;
-    private CredentialFinder _finder;
+    private CredentialFormat _format;
 }
