@@ -4,42 +4,32 @@ Date: Jul 07, 2003
 
 SSG deployment steps for a clean linux box
 
-[user]	command
+Preconditions
+linux is installed including postgresql
+know the root password
+
+PREPARING THE SERVER
 =========================================
-[ROOT]	create user ssg, choose a password for this user, remember it
+[ROOT]	create user gateway, choose a password for this user, remember it
 [ROOT]	check /etc/hosts. make sure first line reads 127.0.0.1 localhost localhost.localdomain
-[ROOT]	download and install jdk
-[ROOT]	change group on java install dir to ssg
-[SSG]	download and uncompress tomcat 4.1.24 l7 custom version
+[GATEWAY] download and install jdk 1.4.1 it should go in /usr/java/j2sdk1.4.1
+[GATEWAY] download and uncompress tomcat custom version it should go in /usr/java/tomcat-4.1.27-l7p2
 
-[ROOT]	service mysqld start (starts mysql)
-[ROOT]	chkconfig mysqld on (make sure mysqld starts at boot)
-[ROOT]	Create database (2 steps)
-		1. mysql -u root -p -e CREATE DATABASE ssg;
-		2. mysql -u root -p ssg < ssg.sql
-[ROOT]	create ssg mysql user for runtime (2 steps)
-		1. GRANT ALL ON ssg.* TO ssg@localhost IDENTIFIED BY the_ssg_password;
-[SSG]	check out UneasyRooster somewhere (3 steps)
-		1. cvs -d :pserver:flascell@sarek:/home/cvsuser login
-		2. cvs -d :pserver:flascell@sarek:/home/cvsuser co -r tag_label_wanted UneasyRooster
-		3. cvs -d :pserver:flascell@sarek:/home/cvsuser logout
+[ROOT]	user postgres should already exist, set its password "passwd postgres"
+[POSTGRES] initdb --pgdata=/var/lib/pgsql/data
+[POSTGRES] change /var/lib/pgsql/data/postgresql.conf to allow network access (required for jdbc access) look for tcpip_socket
+[ROOT] service postgresql start
+[ROOT] chkconfig postgresql on (make sure mysqld starts at boot)
 
-[ROOT]  copy UneasyRooster/etc/ssgruntimedefs.sh to /etc/profile.d
-[SSG]   edit /etc/profile.d/ssgruntimedefs.sh. make sure JAVA_HOME and TOMCAT_HOME point to the right place
-[SSG]   edit UneasyRooster/etc/web.xml, uncomment security-constraint and login-config to enforce ssl on admin services
-[SSG]	edit default_build.properties change database username and password to "ssg" and it's password
-[SSG]	go to root of UneasyRooster and run "./build.sh deploy"
-[SSG]	go to UneasyRooster/etc/ and run rootcaGen.sh (creation of root keystore)
-[SSG]	run "resetAdmin.sh ssg the_ssg_password" this creates the admin login + passwd
-[SSG]   copy all config scripts (.sh, .pl) located in UneasyRooster/etc/ somewhere where they can later be called from 
-[SSG]	remove UneasyRooster
-[SSG]	startssg (start the server)
+[POSTGRES]	createdb ssg
+[POSTGRES]	CREATE USER gateway WITH PASSWORD 'same_as_linux_passwd';
+[POSTGRES]	GRANT ALL PRIVILEGES ON ssg.* to gateway;
+
+DEPLOYING THE SSG
+=========================================
+[GATEWAY] get the ssg distribution tar
+[ROOT] copy UneasyRooster/etc/ssgruntimedefs.sh to /etc/profile.d make sure JAVA_HOME and TOMCAT_HOME are correct
+[GATEWAY] run deploy.sh
+[GATEWAY] startssg (start the server)
 
 SSG SERVER NOW UP AND RUNNING
-
-You can now proceed to the deployment of the console
-You will need the file $TOMCAT_HOME/kstores/ssg.cer which contains the ssg ssl certificate
-
-(you might need to set an entry on the console pc etc/hosts file so that the name you chose for the dn of
-the certificate points to the right IP address of the ssg server)
-
