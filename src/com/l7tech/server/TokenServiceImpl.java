@@ -10,16 +10,20 @@ import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.message.XmlKnob;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.saml.HolderOfKeyHelper;
 import com.l7tech.server.saml.SamlAssertionGenerator;
 import com.l7tech.server.secureconversation.DuplicateSessionException;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -72,10 +76,60 @@ public class TokenServiceImpl implements TokenService {
      */
     public void respondToSecurityTokenRequest(PolicyEnforcementContext context) throws InvalidDocumentFormatException,
                                                                                 TokenServiceImpl.TokenServiceException,
-                                                                                ProcessorException {
+                                                                                ProcessorException, 
+                                                                                BadSecurityContextException,
+                                                                                GeneralSecurityException,
+                                                                                AuthenticationException {
+        try {
+            WssProcessor trogdor = new WssProcessorImpl();
+            final XmlKnob reqXml = context.getRequest().getXmlKnob();
+            X509Certificate serverSSLcert = getServerCert();
+            PrivateKey sslPrivateKey = getServerKey();
+            ProcessorResult wssOutput = trogdor.undecorateMessage(reqXml.getDocument(),
+                                                                  serverSSLcert,
+                                                                  sslPrivateKey,
+                                                                  SecureConversationContextManager.getInstance());
+            reqXml.setProcessorResult(wssOutput);
+        } catch (IOException e) {
+            throw new ProcessorException(e);
+        } catch (SAXException e) {
+            throw new InvalidDocumentFormatException(e);
+        }
+
+        AssertionStatus status = AssertionStatus.UNDEFINED;
+        ServerAssertion policy = getGenericEnforcementPolicy();
+        try {
+            status = policy.checkRequest(context);
+        } catch (IOException e) {
+            throw new ProcessorException(e);
+        } catch (PolicyAssertionException e) {
+            throw new ProcessorException(e);
+        }
+
+        // todo, something about the status
+
+        User authenticatedUser = null;
+        if (context.isAuthenticated()) {
+                authenticatedUser = context.getAuthenticatedUser();
+        }
+        if (authenticatedUser == null) {
+            String msg = "The request for a token was not authenticated";
+            logger.info(msg);
+            throw new AuthenticationException(msg);
+        }
+
+        // todo
+        // change handling methods to use a context instead of straight document
+        // handle request
+
         throw new UnsupportedOperationException("TODO!");
-        // todo, run a policy that allows for WSS signature, SAML auth, and transport level authentication
-        // if the request is signed, then the response's secret will contain a response
+
+    }
+
+    private ServerAssertion getGenericEnforcementPolicy() {
+        // todo, construct a policy to enforce on token requests
+        // should allow for WSS signature, SAML auth, and transport level authentication
+        return null;
     }
 
     /**
@@ -91,6 +145,7 @@ public class TokenServiceImpl implements TokenService {
 
     /**
      * Handles the request for a security token (either secure conversation context or saml thing).
+     * @deprecated should use method that uses PolicyEnforcementContext (once it's fully implemented)
      * @param request the request for the secure conversation context
      * @param authenticator resolved credentials such as an X509Certificate to an actual user to associate the context with
      * @return

@@ -33,10 +33,14 @@ public interface TokenService {
      */
     void respondToSecurityTokenRequest(PolicyEnforcementContext context) throws InvalidDocumentFormatException,
                                                                                 TokenServiceImpl.TokenServiceException,
-                                                                                ProcessorException;
+                                                                                ProcessorException,
+                                                                                BadSecurityContextException,
+                                                                                GeneralSecurityException,
+                                                                                AuthenticationException;
 
     /**
      * Handles the request for a security token (either secure conversation context or saml thing).
+     * @deprecated should use method that uses PolicyEnforcementContext (once it's fully implemented)
      * @param request the request for the secure conversation context
      * @param authenticator resolved credentials such as an X509Certificate to an actual user to associate the context with
      * @return
