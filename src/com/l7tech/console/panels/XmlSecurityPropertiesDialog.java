@@ -175,7 +175,9 @@ public class XmlSecurityPropertiesDialog extends JDialog {
             wsdlMessagesTree.getSelectionModel().addTreeSelectionListener(treeSelectionListener);
             securedMessagePartsTableModel = new SecuredMessagePartsTableModel();
             securedItemsTable.setModel(securedMessagePartsTableModel);
-            securedItemsTable.getSelectionModel().addListSelectionListener(tableSelectionListener);
+            final ListSelectionModel selectionModel = securedItemsTable.getSelectionModel();
+            selectionModel.addListSelectionListener(tableSelectionListener);
+            selectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
             setContentPane(mainPanel);
         } catch (WSDLException e) {
             throw new RuntimeException(e);
