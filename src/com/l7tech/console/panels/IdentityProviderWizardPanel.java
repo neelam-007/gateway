@@ -324,7 +324,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
                 modelOut.addRow(fromHeader((EntityHeader)i.next(), ipc));
             }
 
-            SortedSingleColumnTableModel modelIn = getIdentitiesInTableModel();
+            //SortedSingleColumnTableModel modelIn = getIdentitiesInTableModel();
             //modelIn.clearDataSet();
 
             getIdentitiesOutTableModel().fireTableDataChanged();
@@ -700,7 +700,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
 
     private JRadioButton getAuthRadio() {
         if (authRadio == null) {
-            authRadio = new JRadioButton("Require Users to Authenticate");
+            authRadio = new JRadioButton("Require Users to Authenticate:");
             authRadio.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     populateIdentityTables();
