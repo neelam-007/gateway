@@ -56,22 +56,24 @@ public class GroupPropertiesAction extends NodeAction {
     public void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                IdentityProvider ip = Registry.getDefault().getIdentityProvider((EntityHeaderNode)node);
-                // read only mode not allowed at this point
-                if (ip.isReadOnly()) {
-                    JOptionPane.showMessageDialog(null, "This group is read-only.", "Read-only",
-                                                  JOptionPane.INFORMATION_MESSAGE);
-                    return;
+                if (idProvider == null) {
+                    idProvider = Registry.getDefault().getIdentityProvider((EntityHeaderNode)node);
                 }
                 GroupPanel panel = new GroupPanel();
                 JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
                 EditorDialog dialog = new EditorDialog(f, panel);
 
-                panel.edit(((EntityHeaderNode)node).getEntityHeader());
+                panel.edit(((EntityHeaderNode)node).getEntityHeader(), idProvider);
                 dialog.pack();
                 Utilities.centerOnScreen(dialog);
                 dialog.show();
             }
         });
     }
+
+    public void setIdProvider(IdentityProvider idProvider) {
+        this.idProvider = idProvider;
+    }
+
+    private IdentityProvider idProvider;
 }

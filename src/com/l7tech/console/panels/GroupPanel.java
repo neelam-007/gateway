@@ -6,6 +6,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.identity.GroupBean;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.Group;
+import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 
@@ -40,7 +41,7 @@ public class GroupPanel extends EntityEditorPanel {
     private JPanel buttonPanel;
 
     private JTabbedPane tabbedPane;
-    private final GroupUsersPanel usersPanel = new GroupUsersPanel(this); // membership
+    private GroupUsersPanel usersPanel; // membership
 
     // Apply/Revert buttons
     private JButton okButton;
@@ -61,11 +62,17 @@ public class GroupPanel extends EntityEditorPanel {
     private static final String CANCEL_BUTTON = "Cancel";
     private boolean formModified;
 
+    private IdentityProvider idProvider;
+
     /**
      * default constructor
      */
     public GroupPanel() {
+    }
+
+    public void initialize() {
         try {
+            usersPanel = new GroupUsersPanel(this);
             // Initialize form components
             layoutComponents();
             this.addHierarchyListener(hierarchyListener);
@@ -83,6 +90,16 @@ public class GroupPanel extends EntityEditorPanel {
         // If entity not already changed
         formModified = true;
 
+    }
+
+    /**
+     * Constructs the panel
+     * @param grpHeader
+     * @param idProvider
+     */
+    public void edit(EntityHeader grpHeader, IdentityProvider idProvider) {
+        this.idProvider = idProvider;
+        edit(grpHeader);
     }
 
 
@@ -108,31 +125,30 @@ public class GroupPanel extends EntityEditorPanel {
                         + "\nReceived: " + groupHeader.getType());
             }
 
+            if (idProvider == null) {
+                throw new RuntimeException("Group edit operation without specified identity provider.");
+            }
+
             boolean isNew = groupHeader.getOid() == 0;
             if (isNew) {
                 group = new GroupBean();
                 group.setName(groupHeader.getName());
                 groupMembers = null;
             } else {
-                GroupManager gman = getGroupManager();
-                Group g = gman.findByPrimaryKey( groupHeader.getStrId() );
+                Group g = idProvider.getGroupManager().findByPrimaryKey( groupHeader.getStrId() );
                 group = g.getGroupBean();
-                groupMembers = gman.getUserHeaders( group.getUniqueIdentifier() );
+                groupMembers = idProvider.getGroupManager().getUserHeaders( group.getUniqueIdentifier() );
 
                 if (group == null) {
                     throw new RuntimeException("Group missing " + groupHeader.getOid());
                 }
             }
-
+            initialize();
             // Populate the form for insert/update
             setData(group);
         } catch (Exception e) {
-            log.log(Level.SEVERE, "GroupPanel Edit Exception: " + e.toString());
+            log.log(Level.SEVERE, "GroupPanel Edit Exception: " + e.toString(), e);
         }
-    }
-
-    private GroupManager getGroupManager() {
-        return Registry.getDefault().getInternalGroupManager();
     }
 
     /**
@@ -145,6 +161,10 @@ public class GroupPanel extends EntityEditorPanel {
      */
     GroupBean getGroup() {
         return group;
+    }
+
+    IdentityProvider getIdProvider() {
+        return idProvider;
     }
 
 
@@ -319,6 +339,8 @@ public class GroupPanel extends EntityEditorPanel {
             descriptionTextField.getDocument().addDocumentListener(documentListener);
         }
 
+        if (idProvider.isReadOnly()) descriptionTextField.setEnabled(false);
+
         // Return text field
         return descriptionTextField;
     }
@@ -385,6 +407,7 @@ public class GroupPanel extends EntityEditorPanel {
                     }
                 }
             });
+            if (idProvider.isReadOnly()) okButton.setEnabled(false);
         }
 
         // Return button
@@ -457,7 +480,7 @@ public class GroupPanel extends EntityEditorPanel {
 
         // Try adding/updating the Group
         try {
-            GroupManager gman = getGroupManager();
+            GroupManager gman = idProvider.getGroupManager();
             String id;
             if (groupHeader.getStrId() != null) {
                 gman.update(group, groupMembers );
