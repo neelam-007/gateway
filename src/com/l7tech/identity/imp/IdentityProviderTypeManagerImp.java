@@ -22,10 +22,6 @@ public class IdentityProviderTypeManagerImp extends HibernateEntityManager imple
         return IdentityProviderType.class;
     }
 
-    public IdentityProviderTypeManagerImp( PersistenceContext context ) {
-        super(context);
-    }
-
     public IdentityProviderTypeManagerImp() {
         super();
     }

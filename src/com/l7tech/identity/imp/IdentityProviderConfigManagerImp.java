@@ -10,10 +10,6 @@ import java.sql.SQLException;
  * @author alex
  */
 public class IdentityProviderConfigManagerImp extends HibernateEntityManager implements IdentityProviderConfigManager {
-    public IdentityProviderConfigManagerImp( PersistenceContext context ) {
-        super( context );
-    }
-
     public IdentityProviderConfigManagerImp() {
         super();
     }

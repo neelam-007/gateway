@@ -17,10 +17,6 @@ import java.sql.SQLException;
 public class GroupManagerImp extends ProviderSpecificEntityManager implements GroupManager {
     public static final Class IMPCLASS = GroupImp.class;
 
-    public GroupManagerImp( PersistenceContext context ) {
-        super( context );
-    }
-
     public GroupManagerImp() {
         super();
     }

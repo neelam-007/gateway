@@ -15,10 +15,6 @@ import java.sql.SQLException;
  * @author alex
  */
 public class OrganizationManagerImp extends ProviderSpecificEntityManager implements OrganizationManager {
-    public OrganizationManagerImp( PersistenceContext context ) {
-        super( context );
-    }
-
     public OrganizationManagerImp() {
         super();
     }

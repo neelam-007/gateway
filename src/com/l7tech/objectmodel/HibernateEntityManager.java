@@ -32,17 +32,6 @@ public abstract class HibernateEntityManager implements EntityManager {
     public abstract Class getInterfaceClass();
     public abstract String getTableName();
 
-    /**
-     * Constructs a new <code>HibernateEntityManager</code> with a specific context.
-     * @param context
-     */
-    public HibernateEntityManager( PersistenceContext context ) {
-        PersistenceManager manager = PersistenceManager.getInstance();
-        if ( !(manager instanceof HibernatePersistenceManager ) ) throw new IllegalStateException( "Can't instantiate a " + getClass().getName() + "without first initializing a HibernatePersistenceManager!");
-        _manager = manager;
-        _context = context;
-    }
-
     public Collection findAllHeaders() throws FindException {
         try {
             Iterator i = _manager.find( getContext(), getAllQuery() ).iterator();
@@ -81,11 +70,8 @@ public abstract class HibernateEntityManager implements EntityManager {
     }
 
     protected PersistenceContext getContext() throws SQLException {
-        if ( _context == null )
-            _context = PersistenceContext.getCurrent();
-        return _context;
+        return PersistenceContext.getCurrent();
     }
 
     protected PersistenceManager _manager;
-    protected PersistenceContext _context;
 }

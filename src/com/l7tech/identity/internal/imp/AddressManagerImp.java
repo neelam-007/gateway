@@ -9,10 +9,6 @@ import java.sql.SQLException;
  * @author alex
  */
 public class AddressManagerImp extends ProviderSpecificEntityManager implements AddressManager {
-    public AddressManagerImp( PersistenceContext context ) {
-        super( context );
-    }
-
     public AddressManagerImp() {
         super();
     }

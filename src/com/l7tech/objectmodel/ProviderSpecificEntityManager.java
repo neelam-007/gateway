@@ -11,10 +11,6 @@ package com.l7tech.objectmodel;
  * @version $Revision$
  */
 public abstract class ProviderSpecificEntityManager extends HibernateEntityManager {
-    public ProviderSpecificEntityManager( PersistenceContext context ) {
-        super( context );
-    }
-
     public ProviderSpecificEntityManager() {
         super();
     }

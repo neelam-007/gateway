@@ -31,12 +31,14 @@ public class HibernatePersistenceContext extends PersistenceContext {
             else
                 throw new IllegalStateException( "Can't commit when there's no session!" );
 
-            _htxn.commit();
+            if ( _htxn != null ) _htxn.commit();
         } catch ( Exception e ) {
             throw new TransactionException( e.toString(), e );
         } finally {
             try {
                 if ( _session != null ) _session.close();
+                _session = null;
+                _htxn = null;
             } catch ( Exception e ) {
                 throw new TransactionException( e.toString(), e );
             }
@@ -45,7 +47,7 @@ public class HibernatePersistenceContext extends PersistenceContext {
 
     public void beginTransaction() throws TransactionException {
         try {
-            if ( _session == null || !_session.isOpen() )
+            if ( _session == null || !_session.isOpen() || !_session.isConnected() )
                 _session = _manager.getSession();
             _htxn = _session.beginTransaction();
         } catch ( Exception e ) {
@@ -55,12 +57,14 @@ public class HibernatePersistenceContext extends PersistenceContext {
 
     public void rollbackTransaction() throws TransactionException {
         try {
-            _htxn.rollback();
+            if ( _htxn != null ) _htxn.rollback();
         } catch ( Exception e ) {
             throw new TransactionException( e.toString(), e );
         } finally {
             try {
                 if ( _session != null ) _session.close();
+                _session = null;
+                _htxn = null;
             } catch ( Exception e ) {
                 throw new TransactionException( e.toString(), e );
             }

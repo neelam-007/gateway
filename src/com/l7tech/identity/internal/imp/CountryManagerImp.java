@@ -19,10 +19,6 @@ import java.sql.SQLException;
 public class CountryManagerImp extends HibernateEntityManager implements CountryManager {
     public static final Class IMPCLASS = CountryImp.class;
 
-    public CountryManagerImp( PersistenceContext context ) {
-        super( context );
-    }
-
     public CountryManagerImp() {
         super();
     }

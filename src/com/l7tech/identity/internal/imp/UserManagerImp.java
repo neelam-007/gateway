@@ -17,10 +17,6 @@ import java.sql.SQLException;
  * @author alex
  */
 public class UserManagerImp extends ProviderSpecificEntityManager implements UserManager {
-    public UserManagerImp( PersistenceContext context ) {
-        super( context );
-    }
-
     public UserManagerImp() {
         super();
     }

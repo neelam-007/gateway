@@ -15,10 +15,6 @@ import java.sql.SQLException;
  * @author alex
  */
 public class StateManagerImp extends HibernateEntityManager implements StateManager {
-    public StateManagerImp( PersistenceContext context ) {
-        super( context );
-    }
-
     public StateManagerImp() {
         super();
     }
