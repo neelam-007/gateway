@@ -159,7 +159,6 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 if (httpRoutingAssertion.isAttachSamlSenderVouches()) {
                     Document document = XmlUtil.stringToDocument(requestXml);
                     SamlAssertionGenerator ag = new SamlAssertionGenerator();
-    //                SignerInfo si = new com.l7tech.common.security.Keys().asSignerInfo("CN="+ServerConfig.getInstance().getHostname());
                     SignerInfo si = KeystoreUtils.getInstance().getSignerInfo();
                     SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
                     final TransportMetadata tm = request.getTransportMetadata();
@@ -172,8 +171,10 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                             logger.warning("Couldn't resolve client IP address");
                         }
                     }
+                    samlOptions.setExpiryMinutes(5);
                     ag.attachSenderVouches(document, si, request.getPrincipalCredentials(), samlOptions);
                     requestXml = XmlUtil.nodeToString(document);
+                    logger.info(requestXml);
                 }
                 attachCookies(client, request.getTransportMetadata());
                 postMethod.setRequestBody(requestXml);
