@@ -32,7 +32,8 @@ CREATE TABLE identity_provider (
   description mediumtext default '',
   type bigint(20) NOT NULL default '0',
   properties text,
-  PRIMARY KEY  (oid)
+  PRIMARY KEY  (oid),
+  UNIQUE KEY ipnm_idx (name)
 ) TYPE=InnoDB;
 
 --
@@ -51,7 +52,8 @@ CREATE TABLE internal_group (
   version int(11) NOT NULL default '0',
   name varchar(128) NOT NULL default '',
   description mediumtext,
-  PRIMARY KEY  (oid)
+  PRIMARY KEY  (oid),
+  UNIQUE KEY g_idx (name)
 ) TYPE=InnoDB;
 
 --
@@ -76,7 +78,8 @@ CREATE TABLE internal_user (
   last_name varchar(32) default NULL,
   email varchar(128) default NULL,
   title varchar(64) default NULL,
-  PRIMARY KEY  (oid)
+  PRIMARY KEY  (oid),
+  UNIQUE KEY l_idx (login)
 ) TYPE=InnoDB;
 
 --
@@ -94,7 +97,7 @@ DROP TABLE IF EXISTS internal_user_group;
 CREATE TABLE internal_user_group (
   internal_user bigint(20) NOT NULL default '0',
   internal_group bigint(20) NOT NULL default '0',
-  PRIMARY KEY  (internal_user,internal_group)
+  PRIMARY UNIQUE KEY  (internal_user,internal_group)
 ) TYPE=InnoDB;
 
 --
