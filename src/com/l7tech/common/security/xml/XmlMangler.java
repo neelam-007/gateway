@@ -4,7 +4,7 @@
 * $Id$
 */
 
-package com.l7tech.xmlenc;
+package com.l7tech.common.security.xml;
 
 import com.ibm.xml.dsig.XSignatureException;
 import com.ibm.xml.enc.AlgorithmFactoryExtn;
@@ -19,7 +19,6 @@ import com.ibm.xml.enc.type.EncryptionMethod;
 import com.ibm.xml.enc.type.KeyInfo;
 import com.ibm.xml.enc.type.KeyName;
 import com.ibm.xml.enc.util.AdHocIdResolver;
-import com.l7tech.xmlsig.XMLSecurityElementNotFoundException;
 import com.l7tech.common.security.AesKey;
 import org.apache.log4j.Category;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;

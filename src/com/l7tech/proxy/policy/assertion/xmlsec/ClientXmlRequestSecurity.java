@@ -16,10 +16,10 @@ import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpClientCert;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
-import com.l7tech.xmlsig.SoapMsgSigner;
-import com.l7tech.xmlsig.SecureConversationTokenHandler;
-import com.l7tech.xmlenc.XmlMangler;
-import com.l7tech.xmlenc.Session;
+import com.l7tech.common.security.xml.SoapMsgSigner;
+import com.l7tech.common.security.xml.SecureConversationTokenHandler;
+import com.l7tech.common.security.xml.XmlMangler;
+import com.l7tech.common.security.xml.Session;
 import org.w3c.dom.Document;
 import org.apache.log4j.Category;
 

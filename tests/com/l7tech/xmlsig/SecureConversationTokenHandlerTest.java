@@ -9,6 +9,7 @@ import javax.xml.parsers.DocumentBuilder;
 
 import com.ibm.xml.dsig.util.DOMParserNS;
 import com.ibm.xml.sax.StandardErrorHandler;
+import com.l7tech.common.security.xml.SecureConversationTokenHandler;
 
 import java.io.StringReader;
 import java.io.StringWriter;

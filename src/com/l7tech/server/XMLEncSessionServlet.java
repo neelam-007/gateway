@@ -9,7 +9,7 @@ import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.objectmodel.PersistenceContext;
-import com.l7tech.xmlenc.Session;
+import com.l7tech.common.security.xml.Session;
 
 import org.apache.axis.encoding.Base64;
 

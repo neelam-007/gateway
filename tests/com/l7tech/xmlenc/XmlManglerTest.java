@@ -30,7 +30,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.logging.Logger;
 
-import com.l7tech.xmlsig.XMLSecurityElementNotFoundException;
+import com.l7tech.common.security.xml.XMLSecurityElementNotFoundException;
+import com.l7tech.common.security.xml.XmlMangler;
 
 /**
  * Test XML encryption and decryption.

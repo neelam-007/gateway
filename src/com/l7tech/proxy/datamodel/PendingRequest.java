@@ -9,7 +9,7 @@ package com.l7tech.proxy.datamodel;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.NullRequestInterceptor;
 import com.l7tech.proxy.RequestInterceptor;
-import com.l7tech.xmlenc.Session;
+import com.l7tech.common.security.xml.Session;
 import org.w3c.dom.Document;
 
 import java.net.URL;

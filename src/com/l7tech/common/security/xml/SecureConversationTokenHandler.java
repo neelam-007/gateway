@@ -1,4 +1,4 @@
-package com.l7tech.xmlsig;
+package com.l7tech.common.security.xml;
 
 import org.w3c.dom.*;
 import com.l7tech.util.SoapUtil;

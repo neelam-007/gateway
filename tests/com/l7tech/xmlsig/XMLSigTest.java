@@ -10,6 +10,9 @@ import javax.xml.parsers.DocumentBuilder;
 import com.ibm.xml.dsig.util.DOMParserNS;
 import com.ibm.xml.sax.StandardErrorHandler;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.security.xml.InvalidSignatureException;
+import com.l7tech.common.security.xml.SecureConversationTokenHandler;
+import com.l7tech.common.security.xml.SoapMsgSigner;
 
 import java.io.*;
 import java.security.KeyStore;

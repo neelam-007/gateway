@@ -1,4 +1,4 @@
-package com.l7tech.xmlsig;
+package com.l7tech.common.security.xml;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -12,6 +12,8 @@ import java.security.cert.X509Certificate;
 import com.ibm.xml.dsig.util.AdHocIDResolver;
 import com.ibm.xml.dsig.*;
 import com.l7tech.util.SoapUtil;
+import com.l7tech.common.security.xml.InvalidSignatureException;
+import com.l7tech.common.security.xml.SignatureNotFoundException;
 
 /**
  * User: flascell
@@ -95,8 +97,8 @@ public class SoapMsgSigner {
      *
      * @param soapMsg the soap message that potentially contains a digital signature
      * @return the cert used as part of the message's signature (not checked against any authority) never null
-     * @throws SignatureNotFoundException if no signature is found in document
-     * @throws InvalidSignatureException if the signature is invalid, not in an expected format or is missing information
+     * @throws com.l7tech.common.security.xml.SignatureNotFoundException if no signature is found in document
+     * @throws com.l7tech.common.security.xml.InvalidSignatureException if the signature is invalid, not in an expected format or is missing information
      */
     public X509Certificate validateSignature(Document soapMsg) throws SignatureNotFoundException, InvalidSignatureException {
 

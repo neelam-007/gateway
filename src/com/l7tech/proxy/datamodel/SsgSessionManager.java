@@ -6,7 +6,7 @@
 
 package com.l7tech.proxy.datamodel;
 
-import com.l7tech.xmlenc.Session;
+import com.l7tech.common.security.xml.Session;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;

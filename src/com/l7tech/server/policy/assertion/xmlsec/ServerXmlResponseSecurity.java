@@ -11,12 +11,12 @@ import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.ServerSoapUtil;
 import com.l7tech.util.KeystoreUtils;
-import com.l7tech.xmlenc.Session;
+import com.l7tech.common.security.xml.Session;
 import com.l7tech.server.SessionManager;
-import com.l7tech.xmlenc.SessionNotFoundException;
-import com.l7tech.xmlenc.XmlMangler;
-import com.l7tech.xmlsig.SecureConversationTokenHandler;
-import com.l7tech.xmlsig.SoapMsgSigner;
+import com.l7tech.common.security.xml.SessionNotFoundException;
+import com.l7tech.common.security.xml.XmlMangler;
+import com.l7tech.common.security.xml.SecureConversationTokenHandler;
+import com.l7tech.common.security.xml.SoapMsgSigner;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
