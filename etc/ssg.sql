@@ -14,12 +14,10 @@ CREATE TABLE address (
   address varchar(128) NOT NULL default '',
   address2 varchar(128) default NULL,
   city varchar(64) default NULL,
-  state_oid bigint(20) default NULL,
-  country_oid bigint(20) default NULL,
+  state bigint(20) default NULL,
+  country bigint(20) default NULL,
   postal_code varchar(64) default NULL,
-  PRIMARY KEY  (oid),
-  KEY city (city),
-  KEY version (version)
+  PRIMARY KEY  (oid)
 ) TYPE=InnoDB;
 
 --
@@ -31,10 +29,27 @@ CREATE TABLE country (
   version int(11) NOT NULL default '0',
   code char(2) NOT NULL default '',
   name varchar(64) NOT NULL default '',
-  PRIMARY KEY  (oid),
-  KEY version (version,code,name)
+  PRIMARY KEY  (oid)
 ) TYPE=InnoDB;
 
+
+--
+-- Table structure for table 'published_service'
+--
+
+CREATE TABLE published_service (
+  oid bigint(20) not null default '0',
+  version int(11) not null default '0',
+  name varchar(64) not null default '',
+  policy_xml text,
+  wsdl_url varchar(255) not null default '',
+  wsdl_xml text,
+  PRIMARY KEY (oid)
+) TYPE=InnoDB;
+
+--
+-- Table structure for table 'hibernate_unique_key'
+--
 --
 -- Table structure for table 'hibernate_unique_key'
 --
@@ -42,6 +57,8 @@ CREATE TABLE country (
 CREATE TABLE hibernate_unique_key (
   next_hi int(11) default NULL
 ) TYPE=InnoDB;
+
+INSERT INTO hibernate_unique_key VALUES (0);
 
 --
 -- Table structure for table 'identity_provider'
@@ -53,10 +70,7 @@ CREATE TABLE identity_provider (
   name varchar(128) NOT NULL default '',
   description mediumtext NOT NULL,
   type bigint(20) NOT NULL default '0',
-  PRIMARY KEY  (oid),
-  UNIQUE KEY name (name),
-  KEY version (version),
-  KEY type (type)
+  PRIMARY KEY  (oid)
 ) TYPE=InnoDB;
 
 --
@@ -69,9 +83,7 @@ CREATE TABLE identity_provider_type (
   name varchar(128) NOT NULL default '',
   description mediumtext,
   class_name varchar(255) NOT NULL default '',
-  PRIMARY KEY  (oid),
-  KEY version (version,name),
-  KEY class_name (class_name)
+  PRIMARY KEY  (oid)
 ) TYPE=InnoDB;
 
 --
@@ -83,8 +95,7 @@ CREATE TABLE internal_group (
   version int(11) NOT NULL default '0',
   name varchar(128) NOT NULL default '',
   description mediumtext,
-  PRIMARY KEY  (oid),
-  KEY version (version)
+  PRIMARY KEY  (oid)
 ) TYPE=InnoDB;
 
 --
@@ -95,12 +106,10 @@ CREATE TABLE internal_organization (
   oid bigint(20) NOT NULL default '0',
   version int(11) NOT NULL default '0',
   name varchar(128) NOT NULL default '',
-  address_oid bigint(20) default '0',
-  billing_address_oid bigint(20) default '0',
-  mailing_address_oid bigint(20) default NULL,
-  PRIMARY KEY  (oid),
-  KEY version (version),
-  KEY mailing_address_oid (mailing_address_oid)
+  address bigint(20) default '0',
+  billing_address bigint(20) default '0',
+  mailing_address bigint(20) default NULL,
+  PRIMARY KEY  (oid)
 ) TYPE=InnoDB;
 
 --
@@ -110,7 +119,7 @@ CREATE TABLE internal_organization (
 CREATE TABLE internal_user (
   oid bigint(20) NOT NULL default '0',
   version int(11) NOT NULL default '0',
-  provider_oid bigint(20) NOT NULL default '0',
+  provider bigint(20) NOT NULL default '0',
   login varchar(32) NOT NULL default '',
   password varchar(32) NOT NULL default '',
   first_name varchar(32) default NULL,
@@ -122,15 +131,7 @@ CREATE TABLE internal_user (
   address bigint(20) default NULL,
   mailing_address bigint(20) default NULL,
   billing_address bigint(20) default NULL,
-  PRIMARY KEY  (oid),
-  UNIQUE KEY email (email),
-  KEY provider_oid (provider_oid,login),
-  KEY first_name (first_name),
-  KEY last_name (last_name),
-  KEY mailing_address_oid (mailing_address,billing_address),
-  KEY address_oid (address),
-  KEY password (password),
-  KEY organization_oid (organization)
+  PRIMARY KEY  (oid)
 ) TYPE=InnoDB;
 
 --
@@ -138,9 +139,9 @@ CREATE TABLE internal_user (
 --
 
 CREATE TABLE internal_user_group (
-  user_oid bigint(20) NOT NULL default '0',
-  group_oid bigint(20) NOT NULL default '0',
-  PRIMARY KEY  (user_oid,group_oid)
+  internal_user bigint(20) NOT NULL default '0',
+  internal_group bigint(20) NOT NULL default '0',
+  PRIMARY KEY  (internal_user,internal_group)
 ) TYPE=InnoDB;
 
 --
@@ -163,10 +164,9 @@ CREATE TABLE object_identity (
 
 CREATE TABLE state (
   oid bigint(20) NOT NULL default '0',
-  country_oid bigint(20) NOT NULL default '0',
+  country bigint(20) NOT NULL default '0',
   code varchar(16) NOT NULL default '',
   name varchar(64) NOT NULL default '',
-  PRIMARY KEY  (oid),
-  KEY country_oid (country_oid,code,name)
+  PRIMARY KEY  (oid)
 ) TYPE=InnoDB;
 
