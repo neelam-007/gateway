@@ -56,6 +56,7 @@ public class WsdlAnalizer {
             System.out.println(XmlUtil.nodeToFormattedString(schemas[i]));
         }
 
+        Collection outputQnames = new ArrayList();
         NodeList outputlist = wsdl.getElementsByTagNameNS(WSDL_NS, "output");
         for (int i = 0; i < outputlist.getLength(); i++) {
             Element item = (Element)outputlist.item(i);
@@ -67,7 +68,13 @@ public class WsdlAnalizer {
                     QName qn = (QName) iterator.next();
                     System.out.println("\twith schema element: " + qn.getNamespaceURI() + " : " + qn.getLocalPart());
                 }
+                outputQnames.addAll(schemaElements);
             }
+        }
+        schemas = trimSchemasForElements(outputQnames);
+        System.out.println("OUPUT SCHEMAS:");
+        for (int i = 0; i < schemas.length; i++) {
+            System.out.println(XmlUtil.nodeToFormattedString(schemas[i]));
         }
     }
 
