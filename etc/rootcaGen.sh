@@ -2,7 +2,7 @@
 # -----------------------------------------------------------------------------
 # FILE [rootcaGen.sh]
 # LAYER 7 TECHNOLOGIES
-# $Id:
+# $Id$:
 #
 # THIS SCRIPT GENERATES THE PRIVATE KEYSTORE OF THE SSG
 #

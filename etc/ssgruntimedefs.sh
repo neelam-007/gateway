@@ -1,7 +1,7 @@
 # FILE /etc/profile.d/ssgruntimedefs.sh
 # LAYER 7 TECHNOLOGIES
 # 07-07-2003, flascelles
-#
+# $Id$
 # Defines JAVA_HOME, TOMCAT_HOME, etc
 # Edit at deployment time to ensure values are accurate
 #
