@@ -11,6 +11,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
 
 import com.l7tech.proxy.gui.Gui;
+import com.l7tech.proxy.gui.GuiCredentialManager;
 import com.l7tech.proxy.datamodel.Managers;
 
 import javax.net.ssl.SSLContext;
@@ -57,6 +58,8 @@ public class Main {
                 System.exit(0);
             }
         });
+
+        Managers.setCredentialManager(GuiCredentialManager.getInstance());
 
         Gui.getInstance().start();
 
