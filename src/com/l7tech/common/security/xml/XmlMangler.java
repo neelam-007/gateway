@@ -235,6 +235,7 @@ public class XmlMangler {
             referenceListList = new ArrayList();
             referenceListList.add(keyKefList);
         } else {
+            logger.finest("Looking for reference lists.");
             // find reference lists
             referenceListList = XmlUtil.findChildElementsByName(security, SoapUtil.XMLENC_NS, "ReferenceList");
         }
@@ -252,6 +253,7 @@ public class XmlMangler {
             for (Iterator j = dataRefEls.iterator(); j.hasNext();) {
                 Element dataRefEl = (Element)j.next();
                 String dataRefUri = dataRefEl.getAttribute(SoapUtil.REFERENCE_URI_ATTR_NAME);
+                if (dataRefUri.charAt(0) == '#') dataRefUri = dataRefUri.substring(1);
                 if ( dataRefUri != null && dataRefUri.equals(messagePartId ) ) {
                     // Create decryption context and decrypt the EncryptedData subtree. Note that this effects the
                     // soapMsg document
