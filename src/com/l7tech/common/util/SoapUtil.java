@@ -86,6 +86,7 @@ public class SoapUtil {
     public static final String TIMESTAMP_EL_NAME = "Timestamp";
     public static final String CREATED_EL_NAME = "Created";
     public static final String EXPIRES_EL_NAME = "Expires";
+    public static final String USERNAME_TOK_EL_NAME = "UsernameToken";
 
     // Misc
     public static final String FC_CLIENT = "Client";
