@@ -2,7 +2,7 @@
 Summary: Secure Span Gateway
 Name: ssg
 Version: 3.0
-Release: 1 
+Release: 1
 Group: Applications/Internet
 Copyright: Copyright Layer7 Technologies 2003-2004
 URL: http://www.layer7tech.com
@@ -10,14 +10,14 @@ Packager: Layer7 Technologies, <support@layer7tech.com>
 Source0: /tmp/ssg.tar.gz
 buildroot: %{_tmppath}/%{name}-builddir
 provides: ssg
-
+Requires: MySQL-Max >= 4.0.17
 
 # Prevents rpm build from erroring and halting
 %undefine       __check_files
 
 %description
-Build number: BUILD_NUMBER RPM to install SSG on standard system
-Does: installs ssg, network config, profiles
+SSG software distribution on standard system
+Does: ssg, network config, profiles
 Does not: overwrite mysql config, set up db clustering, failover
 
 %clean 
@@ -36,12 +36,12 @@ mkdir %{buildroot}/etc/init.d/
 mkdir %{buildroot}/etc/iptables
 mkdir %{buildroot}/etc/sysconfig
 
-cp %{buildroot}/ssg/bin/ssg-initd %{buildroot}/etc/init.d/ssg 
-cp %{buildroot}/ssg/bin/my.cnf %{buildroot}/etc/my.cnf.ssg
-cp %{buildroot}/ssg/bin/iptables %{buildroot}/etc/sysconfig/iptables
-cp %{buildroot}/ssg/bin/ssgruntimedefs.sh %{buildroot}/etc/profile.d/ssgruntimedefs.sh
-cp %{buildroot}/ssg/bin/back_route %{buildroot}/etc/init.d/back_route
-cp %{buildroot}/ssg/bin/tcp_tune.sh %{buildroot}/etc/init.d/tcp_tune
+mv %{buildroot}/ssg/bin/ssg-initd %{buildroot}/etc/init.d/ssg 
+mv %{buildroot}/ssg/bin/my.cnf %{buildroot}/etc/my.cnf.ssg
+mv %{buildroot}/ssg/bin/iptables %{buildroot}/etc/sysconfig/iptables
+mv %{buildroot}/ssg/bin/ssgruntimedefs.sh %{buildroot}/etc/profile.d/ssgruntimedefs.sh
+mv %{buildroot}/ssg/bin/back_route %{buildroot}/etc/init.d/back_route
+mv %{buildroot}/ssg/bin/tcp_tune.sh %{buildroot}/etc/init.d/tcp_tune
 rm -rf %{buildroot}/ssg/j2sdk1.4.2_05/demo
 
 %files 
@@ -55,7 +55,8 @@ rm -rf %{buildroot}/ssg/j2sdk1.4.2_05/demo
 
 %defattr(-,gateway,gateway)
 /ssg/*
-
+%pre
+adduser gateway
 %post
 if [ -e /etc/SSG_INSTALL ]; then 
 	echo "Running upgrade script"
@@ -79,4 +80,4 @@ fi
 %changelog 
 
 * Thu Oct 28 2004 JWT 
-- First version. Upgrade story planned
+- Build 3079. Does not yet overwrite mysql configuration files. Provides relatively small version of install.pl
