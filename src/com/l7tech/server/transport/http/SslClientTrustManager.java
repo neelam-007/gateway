@@ -77,8 +77,10 @@ public class SslClientTrustManager implements X509TrustManager {
                     if ( !caTrust.isTrustedForSigningServerCerts() )
                         throw new CertificateException("CA Cert with DN '" + issuerDn + "' found but not trusted for signing SSL Server Certs");
 
-                    if ( certs.length < 2 )
+                    if ( certs.length < 2 ) {
+                        // TODO this might conceivably be normal
                         throw new CertificateException("Couldn't find CA Cert in chain");
+                    }
 
                     X509Certificate caCert = certs[1];
                     X509Certificate caTrustCert = caTrust.getCertificate();
