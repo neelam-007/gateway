@@ -1,18 +1,35 @@
 package com.l7tech.server.saml;
 
+import com.l7tech.common.security.xml.SignerInfo;
+import com.l7tech.common.security.xml.WssDecorator;
+import com.l7tech.common.security.xml.WssDecoratorImpl;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.xml.XpathEvaluator;
 import org.apache.xmlbeans.XmlOptions;
-import x0Protocol.oasisNamesTcSAML1.ResponseType;
-import x0Protocol.oasisNamesTcSAML1.StatusType;
-import x0Protocol.oasisNamesTcSAML1.StatusCodeType;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
+import org.jaxen.JaxenException;
 import x0Protocol.oasisNamesTcSAML1.ResponseDocument;
+import x0Protocol.oasisNamesTcSAML1.ResponseType;
+import x0Protocol.oasisNamesTcSAML1.StatusCodeType;
+import x0Protocol.oasisNamesTcSAML1.StatusType;
 
 import javax.xml.namespace.QName;
-import java.util.Map;
+import javax.xml.soap.SOAPBody;
+import javax.xml.soap.SOAPException;
+import javax.xml.soap.SOAPMessage;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.List;
 
 /**
- * Package private class that contains precanned responses and utility methods
- * that deal with saml responses.
+ * Package private class that contains method for creating responses, precanned responses
+ * and utility methods that deal with saml responses.
  *
  * @author emil
  */
@@ -45,6 +62,54 @@ class Responses {
     }
 
     /**
+     * Create the SOAP message, inclding the SAML response, signing the document if the
+     * <code>SignerInfo</code> is not null.
+     *
+     * @param rdoc the response document
+     * @param si  the signer info
+     * @return the SOAP message as a DOM document containing the saml response, optionally signed
+     * @throws SOAPException on soap error
+     * @throws IOException  on io error
+     * @throws SAXException  on SAX parser error
+     * @throws InvalidDocumentFormatException if document is invalid format
+     * @throws GeneralSecurityException thrown on security related error
+     * @throws WssDecorator.DecoratorException
+     */
+    static Document asSoapMessage(ResponseDocument rdoc, SignerInfo si)
+      throws SOAPException, IOException, SAXException, InvalidDocumentFormatException,
+             GeneralSecurityException, WssDecorator.DecoratorException {
+        SOAPMessage sm = SoapUtil.makeMessage();
+        SOAPBody body = sm.getSOAPPart().getEnvelope().getBody();
+
+        final Document document = (Document)rdoc.newDomNode(Responses.options());
+        final Element documentElement = document.getDocumentElement();
+        SoapUtil.domToSOAPElement(body, documentElement);
+        String strMsg = SoapUtil.soapMessageToString(sm, "UTF-8");
+        Document domDocument = XmlUtil.stringToDocument(strMsg);
+
+        if (si !=null) {
+            WssDecorator wssd = getWssDecorator();
+            WssDecorator.DecorationRequirements wssRequirements = new WssDecorator.DecorationRequirements();
+            wssRequirements.setSenderCertificate(si.getCertificateChain()[0]);
+            wssRequirements.setSenderPrivateKey(si.getPrivate());
+            try {
+                final Map namespaces = XpathEvaluator.getNamespaces(sm);
+                List list = (List)XpathEvaluator.newEvaluator(domDocument, namespaces).evaluate("//soapenv:Envelope/soapenv:Body/samlp:Response");
+                if (list.isEmpty()) {
+                    throw new InvalidDocumentFormatException("Could not find the samlp:Response :"+strMsg);
+                }
+                Element element = (Element)list.get(0);
+                wssRequirements.getElementsToSign().add(element);
+                wssd.decorateMessage(domDocument, wssRequirements);
+            } catch (JaxenException e) {
+                throw new SOAPException(e);
+            }
+        }
+
+        return domDocument;
+    }
+
+    /**
      * Precanned response that indicates not implemented functionality. It
      * is a empty response with the status code 'Responder' (see saml1.1 core 3.4.3.1).
      *
@@ -67,6 +132,7 @@ class Responses {
         return rdoc;
     }
 
+
     /**
      * Precanned empty response that contains no assertions with the 'Success' status.
      * Used in scenarios such as SAML authority unable provide an assertion with any
@@ -75,7 +141,7 @@ class Responses {
      * @param detail message
      * @return the precanned empty  <code>ResponseDocument</code>
      */
-    static ResponseDocument getEmpty(String detail) {
+    static ResponseDocument getEmptySuccess(String detail) {
         ResponseType empty = ResponseType.Factory.newInstance(options());
         StatusType status = empty.addNewStatus();
         StatusCodeType scode = status.addNewStatusCode();
@@ -99,7 +165,15 @@ class Responses {
         return options;
     }
 
-    /** cannot instantiate this class */
+    private static WssDecorator wssDecorator;
+    private static synchronized WssDecorator getWssDecorator() {
+        if (wssDecorator != null) return wssDecorator;
+        return wssDecorator = new WssDecoratorImpl();
+    }
+
+    /**
+     * cannot instantiate this class
+     */
     private Responses() {
     }
 

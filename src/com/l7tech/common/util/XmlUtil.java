@@ -41,6 +41,9 @@ public class XmlUtil {
     
     /** This is the namespace that the special namespace prefix "xmlns" logically belongs to. */
     public static final String XMLNS_NS = "http://www.w3.org/2000/xmlns/";
+    public static final String JAXP_SCHEMA_LANGUAGE = "http://java.sun.com/xml/jaxp/properties/schemaLanguage";
+    public static final String W3C_XML_SCHEMA = "http://www.w3.org/2001/XMLSchema";
+    public static final String JAXP_SCHEMA_SOURCE = "http://java.sun.com/xml/jaxp/properties/schemaSource";
     
     /** This is the namespace that the special namespace prefix "xml" logically belongs to. */
     //public static final String XML_NS = "http://www.w3.org/XML/1998/namespace";

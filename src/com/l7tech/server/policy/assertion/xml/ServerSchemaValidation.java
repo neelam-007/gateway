@@ -95,9 +95,9 @@ public class ServerSchemaValidation implements ServerAssertion {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 	    dbf.setNamespaceAware(true);
 	    dbf.setValidating(true);
-        dbf.setAttribute(JAXP_SCHEMA_LANGUAGE, W3C_XML_SCHEMA);
+        dbf.setAttribute(XmlUtil.JAXP_SCHEMA_LANGUAGE, XmlUtil.W3C_XML_SCHEMA);
 	    // Specify other factory configuration settings
-	    dbf.setAttribute(JAXP_SCHEMA_SOURCE, schemaIS);
+	    dbf.setAttribute(XmlUtil.JAXP_SCHEMA_SOURCE, schemaIS);
         DocumentBuilder db = null;
         try {
             db = dbf.newDocumentBuilder();
@@ -193,10 +193,6 @@ public class ServerSchemaValidation implements ServerAssertion {
         }
         private final ArrayList errors = new ArrayList();
     }
-
-    static final String JAXP_SCHEMA_LANGUAGE = "http://java.sun.com/xml/jaxp/properties/schemaLanguage";
-    static final String W3C_XML_SCHEMA = "http://www.w3.org/2001/XMLSchema";
-    static final String JAXP_SCHEMA_SOURCE = "http://java.sun.com/xml/jaxp/properties/schemaSource";
 
     private SchemaValidation data;
     private final Logger logger = Logger.getLogger(getClass().getName());

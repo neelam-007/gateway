@@ -10,10 +10,10 @@ import x0Protocol.oasisNamesTcSAML1.ResponseDocument;
  * @author emil
  * @version 28-Jul-2004
  */
-public class RequestResovler {
+public class RequestResolver {
 
     /** cannot instantiate this class */
-    private RequestResovler() {
+    private RequestResolver() {
     }
 
     /**
@@ -61,7 +61,7 @@ public class RequestResovler {
          * @return the saml response
          */
         public ResponseDocument getResponse() {
-            return Responses.getEmpty("Unknown saml request");
+            return Responses.getEmptySuccess("Unknown saml request");
         }
     }
 }

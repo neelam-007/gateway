@@ -1,8 +1,16 @@
 package com.l7tech.server.saml;
 
-import x0Protocol.oasisNamesTcSAML1.RequestDocument;
-import x0Protocol.oasisNamesTcSAML1.RequestType;
-import x0Protocol.oasisNamesTcSAML1.ResponseDocument;
+import x0Protocol.oasisNamesTcSAML1.*;
+
+import javax.xml.namespace.QName;
+
+import x0Assertion.oasisNamesTcSAML1.*;
+
+import java.util.Calendar;
+import java.io.IOException;
+
+import com.l7tech.common.util.XmlUtil;
+import org.apache.xmlbeans.XmlOptions;
 
 /**
  * @author emil
@@ -44,6 +52,32 @@ public class AuthenticationQueryHandler implements SamlRequestHandler {
         if (response !=null) {
             return response;
         }
-        return Responses.getEmpty("");
+        final XmlOptions xmlOptions = Responses.options();
+        response =  ResponseDocument.Factory.newInstance(xmlOptions);
+        ResponseType responseType = ResponseType.Factory.newInstance(xmlOptions);
+//        StatusType status = StatusType.Factory.newInstance(xmlOptions);
+//        StatusCodeType statusCode = StatusCodeType.Factory.newInstance(xmlOptions);
+//        statusCode.setValue(new QName(Constants.NS_SAMLP, Constants.STATUS_SUCCESS));
+//        status.setStatusCode(statusCode);
+//        responseType.setStatus(status);
+
+        AssertionType assertion = responseType.addNewAssertion();
+        AuthenticationStatementType authStatement = assertion.addNewAuthenticationStatement();
+        authStatement.setAuthenticationInstant(Calendar.getInstance());
+        authStatement.setAuthenticationMethod(Constants.PASSWORD_AUTHENTICATION);
+        SubjectType subjectType = authStatement.addNewSubject();
+        NameIdentifierType nameIdentifier = subjectType.addNewNameIdentifier();
+        nameIdentifier.setFormat(Constants.NAMEIDENTIFIER_X509_SUBJECT);
+        final String subjectName = getRequestNameIdentifierValue();
+        nameIdentifier.setStringValue(subjectName);
+        SubjectConfirmationType subjectConfirmation = subjectType.addNewSubjectConfirmation();
+        subjectConfirmation.addConfirmationMethod(Constants.CONFIRMATION_HOLDER_OF_KEY);
+
+        response.setResponse(responseType);
+        return response;
+    }
+
+    private String getRequestNameIdentifierValue() {
+        return request.getRequest().getAuthenticationQuery().getSubject().getNameIdentifier().getStringValue();
     }
 }
