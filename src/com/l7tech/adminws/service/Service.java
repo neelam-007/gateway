@@ -11,6 +11,10 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.rmi.RemoteException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.io.InputStream;
+import java.io.IOException;
 
 /**
  * Layer 7 Technologies, inc.
@@ -26,11 +30,11 @@ public class Service implements ServiceManager {
         logger = LogManager.getInstance().getSystemLogger();
     }
 
-    public String resolveWsdlTarget(String url) throws java.rmi.RemoteException {
+    public String resolveWsdlTarget(String url) throws RemoteException {
         try {
-            java.net.URL urltarget = new java.net.URL(url);
-            java.net.URLConnection connection = urltarget.openConnection();
-            java.io.InputStream in = connection.getInputStream();
+            URL urltarget = new URL(url);
+            URLConnection connection = urltarget.openConnection();
+            InputStream in = connection.getInputStream();
             byte[] buffer = new byte[2048];
             int read = in.read(buffer);
             StringBuffer out = new StringBuffer();
@@ -39,39 +43,40 @@ public class Service implements ServiceManager {
                 read = in.read(buffer);
             }
             return out.toString();
-        } catch (java.io.IOException e) {
-            logger.log(Level.SEVERE, null, e);
-            throw new java.rmi.RemoteException("com.l7tech.adminws.service.Service cannot resolve WSDL " + e.getMessage(), e);
+        } catch (IOException e) {
+            String msg = "com.l7tech.adminws.service.Service cannot resolve WSDL ";
+            logger.log(Level.SEVERE, msg, e);
+            throw new RemoteException(msg + e.getMessage(), e);
         }
     }
 
-    public PublishedService findServiceByPrimaryKey(long oid) throws java.rmi.RemoteException {
+    public PublishedService findServiceByPrimaryKey(long oid) throws RemoteException {
         try {
             return getServiceManagerAndBeginTransaction().findByPrimaryKey(oid);
         } catch (FindException e) {
-            throw new java.rmi.RemoteException(e.getMessage(), e);
+            throw new RemoteException(e.getMessage(), e);
         } finally {
             endTransaction();
         }
     }
 
-    public com.l7tech.objectmodel.EntityHeader[] findAllPublishedServices() throws java.rmi.RemoteException {
+    public EntityHeader[] findAllPublishedServices() throws RemoteException {
         try {
             Collection res = getServiceManagerAndBeginTransaction().findAllHeaders();
             return collectionToHeaderArray(res);
         } catch (FindException e) {
-            throw new java.rmi.RemoteException(e.getMessage(), e);
+            throw new RemoteException(e.getMessage(), e);
         } finally {
             endTransaction();
         }
     }
 
-    public com.l7tech.objectmodel.EntityHeader[] findAllPublishedServicesByOffset(int offset, int windowSize) throws java.rmi.RemoteException {
+    public EntityHeader[] findAllPublishedServicesByOffset(int offset, int windowSize) throws RemoteException {
         try {
             Collection res = getServiceManagerAndBeginTransaction().findAllHeaders(offset, windowSize);
             return collectionToHeaderArray(res);
         } catch (FindException e) {
-            throw new java.rmi.RemoteException(e.getMessage(), e);
+            throw new RemoteException(e.getMessage(), e);
         } finally {
             endTransaction();
         }
@@ -110,26 +115,26 @@ public class Service implements ServiceManager {
                 return getServiceManagerAndBeginTransaction().save(service);
             }
         } catch (UpdateException e) {
-            throw new java.rmi.RemoteException(e.getMessage(), e);
+            throw new RemoteException(e.getMessage(), e);
         }  catch (SaveException e) {
-            throw new java.rmi.RemoteException(e.getMessage(), e);
+            throw new RemoteException(e.getMessage(), e);
         }  catch (VersionException e) {
-            throw new java.rmi.RemoteException(e.getMessage(), e);
+            throw new RemoteException(e.getMessage(), e);
         } finally {
             endTransaction();
         }
     }
 
-    public void deletePublishedService(long oid) throws java.rmi.RemoteException {
+    public void deletePublishedService(long oid) throws RemoteException {
         try {
             com.l7tech.service.ServiceManager theManagerDude = getServiceManagerAndBeginTransaction();
             PublishedService theExecutionee = theManagerDude.findByPrimaryKey(oid);
             theManagerDude.delete(theExecutionee);
             logger.info("Deleted PublishedService: " + oid);
         } catch (FindException e) {
-            throw new java.rmi.RemoteException(e.getMessage(), e);
+            throw new RemoteException(e.getMessage(), e);
         } catch (DeleteException e) {
-            throw new java.rmi.RemoteException(e.getMessage(), e);
+            throw new RemoteException(e.getMessage(), e);
         } finally {
             endTransaction();
         }
@@ -143,7 +148,7 @@ public class Service implements ServiceManager {
     // PRIVATES
     // ************************************************
 
-    private com.l7tech.service.ServiceManager getServiceManagerAndBeginTransaction() throws java.rmi.RemoteException {
+    private com.l7tech.service.ServiceManager getServiceManagerAndBeginTransaction() throws RemoteException {
         try {
             PersistenceContext.getCurrent().beginTransaction();
             if (serviceManagerInstance == null) {
@@ -151,49 +156,53 @@ public class Service implements ServiceManager {
             }
         } catch (Throwable e) {
             logger.log(Level.SEVERE, "Exception in initialiseServiceManager", e);
-            throw new java.rmi.RemoteException("Exception in ServiceManager.getServiceManagerAndBeginTransaction : "+ e.getMessage(), e);
+            throw new RemoteException(e.getMessage(), e);
         }
         return serviceManagerInstance;
     }
 
-    private void endTransaction() throws java.rmi.RemoteException {
+    private void endTransaction() throws RemoteException {
         try {
             PersistenceContext context = PersistenceContext.getCurrent();
             context.commitTransaction();
             context.close();
         } catch (java.sql.SQLException e) {
             logger.log(Level.SEVERE, null, e);
-            throw new java.rmi.RemoteException("Exception commiting", e);
+            throw new RemoteException("Exception commiting", e);
         } catch (TransactionException e) {
             logger.log(Level.SEVERE, null, e);
-            throw new java.rmi.RemoteException("Exception commiting", e);
+            throw new RemoteException("Exception commiting", e);
         }
     }
 
-    private com.l7tech.objectmodel.EntityHeader[] collectionToHeaderArray(java.util.Collection input) throws java.rmi.RemoteException {
-        if (input == null) return new com.l7tech.objectmodel.EntityHeader[0];
-        com.l7tech.objectmodel.EntityHeader[] output = new com.l7tech.objectmodel.EntityHeader[input.size()];
+    private EntityHeader[] collectionToHeaderArray(java.util.Collection input) throws RemoteException {
+        if (input == null) return new EntityHeader[0];
+        EntityHeader[] output = new EntityHeader[input.size()];
         int count = 0;
         java.util.Iterator i = input.iterator();
         while (i.hasNext()) {
             try {
-                output[count] = (com.l7tech.objectmodel.EntityHeader)i.next();
+                output[count] = (EntityHeader)i.next();
             } catch (ClassCastException e) {
                 logger.log(Level.SEVERE, null, e);
-                throw new java.rmi.RemoteException("Collection contained something other than a com.l7tech.objectmodel.EntityHeader", e);
+                throw new RemoteException("Collection contained something other than a EntityHeader", e);
             }
             ++count;
         }
         return output;
     }
 
-    private synchronized void initialiseServiceManager() throws java.rmi.RemoteException {
+    private synchronized void initialiseServiceManager() throws RemoteException {
         try {
-            serviceManagerInstance = (com.l7tech.service.ServiceManager)Locator.getDefault().lookup(com.l7tech.service.ServiceManager.class);
-            if (serviceManagerInstance == null) throw new java.rmi.RemoteException("Cannot instantiate the ServiceManager");
+            serviceManagerInstance = (com.l7tech.service.ServiceManager)Locator.getDefault().
+                                        lookup(com.l7tech.service.ServiceManager.class);
+            if (serviceManagerInstance == null) {
+                throw new RemoteException("Cannot instantiate the ServiceManager");
+            }
         } catch (Throwable e) {
-            logger.log(Level.SEVERE, "Exception in Locator.getDefault().lookup(com.l7tech.service.ServiceManager.class)" + e.getMessage(), e);
-            throw new java.rmi.RemoteException("Exception in Locator.getDefault().lookup: "+ e.getMessage(), e);
+            String msg = "Exception in Locator.getDefault().lookup(com.l7tech.service.ServiceManager.class)";
+            logger.log(Level.SEVERE, msg + e.getMessage(), e);
+            throw new RemoteException(msg + e.getMessage(), e);
         }
     }
 
