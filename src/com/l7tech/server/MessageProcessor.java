@@ -56,12 +56,25 @@ public class MessageProcessor implements ServiceListener {
                 String requestorVersion = (String)request.getParameter( Request.PARAM_HTTP_POLICY_VERSION );
                 if (requestorVersion != null && requestorVersion.length() > 0) {
                     // format is policyId|policyVersion (seperated with char '|')
-                    long reqPolicyId = Long.parseLong(requestorVersion.substring(0, requestorVersion.indexOf('|')));
-                    long reqPolicyVer = Long.parseLong(requestorVersion.substring(requestorVersion.indexOf('|')+1));
-                    if (reqPolicyVer != service.getVersion() || reqPolicyId != service.getOid()) {
+                    boolean wrongPolicyVersion = false;
+                    int indexofbar = requestorVersion.indexOf('|');
+                    if (indexofbar < 0) {
+                        logger.finest("policy version passed has incorrect format");
+                        wrongPolicyVersion = true;
+                    } else {
+                        long reqPolicyId = Long.parseLong(requestorVersion.substring(0, indexofbar));
+                        long reqPolicyVer = Long.parseLong(requestorVersion.substring(indexofbar+1));
+                        if (reqPolicyVer != service.getVersion() || reqPolicyId != service.getOid()) {
+                            logger.finest("policy version passed is invalid");
+                            wrongPolicyVersion = true;
+                        }
+                    }
+                    if (wrongPolicyVersion) {
+                        String msg = "Wrong policy version " + requestorVersion;
+                        logger.fine(msg);
                         // this will make the servlet send back the URL of the policy
                         response.setPolicyViolated(true);
-                        throw new PolicyAssertionException("Wrong policy version " + requestorVersion);
+                        throw new PolicyAssertionException(msg);
                     }
                 } else {
                     logger.fine("Requestor did not provide policy id.");
