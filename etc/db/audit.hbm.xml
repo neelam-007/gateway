@@ -15,7 +15,7 @@
             <generator class="hilo"/>
         </id>
 
-        <version name="version" column="version" type="integer"/>
+        <!-- No version column required, since these never get modified -->
         <property name="nodeId" column="nodeid" type="string"/>
         <property name="time" column="time" type="long"/>
         <property name="strLvl" column="level" type="string"/>
