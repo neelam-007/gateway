@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.Iterator;
 
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.identity.*;
 
 /**
@@ -16,24 +17,26 @@ import com.l7tech.identity.*;
  *
  */
 public class TestLdapIdentityProviderServer extends junit.framework.TestCase {
+
+    public TestLdapIdentityProviderServer() {
+        IdentityProviderConfig config = new IdentityProviderConfig(IdentityProviderType.LDAP);
+        // use this url when ssh forwarding locally
+        config.putProperty(LdapConfigSettings.LDAP_HOST_URL, "ldap://localhost:3899");
+        // use this url when in the office
+        // config.putProperty(LdapConfigSettings.LDAP_HOST_URL, "ldap://spock:389");
+        config.putProperty(LdapConfigSettings.LDAP_SEARCH_BASE, "dc=layer7-tech,dc=com");
+
+        // create the provider
+        provider = new LdapIdentityProviderServer();
+        provider.initialize(config);
+    }
+
     public static Test suite() {
         TestSuite suite = new TestSuite(TestLdapIdentityProviderServer.class);
         return suite;
     }
 
     public void testFindAllUsers() throws Exception {
-        IdentityProviderConfig config = new IdentityProviderConfig(IdentityProviderType.LDAP);
-        // use this url when ssh forwarding locally
-        // config.setLdapHostURL("ldap://localhost:3899");
-        // use this url when in the office
-        config.putProperty(LdapConfigSettings.LDAP_HOST_URL, "ldap://spock:389");
-        config.putProperty(LdapConfigSettings.LDAP_SEARCH_BASE, "dc=layer7-tech,dc=com");
-
-        // create the provider
-        LdapIdentityProviderServer provider = new LdapIdentityProviderServer();
-        provider.initialize(config);
-
-
         // get the user manager
         UserManager me = provider.getUserManager();
 
@@ -52,21 +55,8 @@ public class TestLdapIdentityProviderServer extends junit.framework.TestCase {
     }
 
     public void testFindAllGroups() throws Exception {
-        IdentityProviderConfig config = new IdentityProviderConfig(IdentityProviderType.LDAP);
-        // use this url when ssh forwarding locally
-        // config.setLdapHostURL("ldap://localhost:3899");
-        // use this url when in the office
-        config.putProperty(LdapConfigSettings.LDAP_HOST_URL, "ldap://spock:389");
-        config.putProperty(LdapConfigSettings.LDAP_SEARCH_BASE, "dc=layer7-tech,dc=com");
-
-        // create the provider
-        LdapIdentityProviderServer provider = new LdapIdentityProviderServer();
-        provider.initialize(config);
-
-
         // get the user manager
         GroupManager me = provider.getGroupManager();
-
         // use it
         Collection res = me.findAll();
         Iterator i = res.iterator();
@@ -80,9 +70,23 @@ public class TestLdapIdentityProviderServer extends junit.framework.TestCase {
         assertTrue("receiving groups", grpsReceived);
     }
 
+    public void testSearch() throws Exception {
+        Collection res = provider.search(new EntityType[] {EntityType.GROUP, EntityType.USER}, "j*");
+        // Collection res = provider.search(new EntityType[] {EntityType.GROUP}, "j*");
+        boolean entitiesReceived = false;
+        for (Iterator i = res.iterator(); i.hasNext();) {
+            EntityHeader header = (EntityHeader)i.next();
+            System.out.println(header);
+            entitiesReceived = true;
+        }
+        assertTrue("recieving search results", entitiesReceived);
+    }
+
     public static void main(String[] args) throws Exception {
         junit.textui.TestRunner.run(suite());
     }
+
+    private LdapIdentityProviderServer provider;
 }
 
 
