@@ -111,7 +111,12 @@
    <parameter name="userId" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
   </operation>
 
-  <parameter name="allowedMethods" value="echoVersion findAllIdentityProviderConfig findAllIdentityProviderConfigByOffset findIdentityProviderConfigByPrimaryKey saveIdentityProviderConfig deleteIdentityProviderConfig findAllUsers findAllUsersByOffset findUserByPrimaryKey deleteUser saveUser findAllGroups findAllGroupsByOffset findGroupByPrimaryKey deleteGroup saveGroup searchIdentities getUserCert"/>
+  <operation name="revokeCert" qname="ns10:revokeCert" xmlns:ns10="http://www.layer7-tech.com/identity">
+   <parameter name="identityProviderConfigId" type="xsd:long" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
+   <parameter name="userId" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
+  </operation>
+
+  <parameter name="allowedMethods" value="echoVersion findAllIdentityProviderConfig findAllIdentityProviderConfigByOffset findIdentityProviderConfigByPrimaryKey saveIdentityProviderConfig deleteIdentityProviderConfig findAllUsers findAllUsersByOffset findUserByPrimaryKey deleteUser saveUser findAllGroups findAllGroupsByOffset findGroupByPrimaryKey deleteGroup saveGroup searchIdentities getUserCert revokeCert"/>
   <parameter name="wsdlPortType" value="identityPortType"/>
   <parameter name="scope" value="Application"/>
   <parameter name="className" value="com.l7tech.adminws.identity.Service"/>

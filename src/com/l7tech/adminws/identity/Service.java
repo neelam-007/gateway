@@ -360,7 +360,7 @@ public class Service {
 
     public String getUserCert(long identityProviderConfigId, String userId) throws RemoteException {
         // currently, this is only supported in the internal user manager
-        // therefore, let this cast throw
+        // therefore, let this cast throw if it does
         InternalUserManagerServer userManager = (InternalUserManagerServer)retrieveUserManagerAndBeginTransaction(identityProviderConfigId);
         try {
             Certificate cert = userManager.retrieveUserCert(userId);
@@ -374,10 +374,19 @@ public class Service {
         } catch (CertificateEncodingException e) {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new RemoteException("FindException in getUserCert", e);
-        } /*finally {
-            endTransaction();
-        }*/
+        }
+    }
 
+    public void revokeCert(long identityProviderConfigId, String userId) throws RemoteException {
+        // currently, this is only supported in the internal user manager
+        // therefore, let this cast throw if it does
+        InternalUserManagerServer userManager = (InternalUserManagerServer)retrieveUserManagerAndBeginTransaction(identityProviderConfigId);
+        try {
+            userManager.revokeCert(userId);
+        } catch (UpdateException e) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
+            throw new RemoteException("FindException in getUserCert", e);
+        }
     }
 
     // ************************************************
