@@ -105,7 +105,11 @@ public class IdentityAdminImpl implements IdentityAdmin {
             logger.log(Level.SEVERE, null, e);
             throw new UpdateException("This object cannot be found (it no longer exist?).", e);
         } finally {
-            endTransaction();
+            try {
+                endTransaction();
+            } catch (TransactionException e) {
+                throw new SaveException(e.getMessage());
+            }
         }
     }
 
@@ -119,7 +123,11 @@ public class IdentityAdminImpl implements IdentityAdmin {
             logger.log(Level.SEVERE, null, e);
             throw new DeleteException("This object cannot be found (it no longer exist?).", e);
         } finally {
-            endTransaction();
+            try {
+                endTransaction();
+            } catch (TransactionException e) {
+                throw new DeleteException(e.toString());
+            }
         }
     }
 
@@ -192,7 +200,11 @@ public class IdentityAdminImpl implements IdentityAdmin {
             logger.log(Level.SEVERE, null, e);
             throw new DeleteException("This object cannot be found (it no longer exist?).", e);
         } finally {
-            endTransaction();
+            try {
+                endTransaction();
+            } catch (TransactionException e) {
+                throw new DeleteException(e.toString());
+            }
         }
     }
 
@@ -218,7 +230,11 @@ public class IdentityAdminImpl implements IdentityAdmin {
             logger.log(Level.SEVERE, null, e);
             throw new RemoteException("Exception in saveUser", e);
         } finally {
-            endTransaction();
+            try {
+                endTransaction();
+            } catch (TransactionException e) {
+                throw new SaveException(e.toString());
+            }
         }
     }
 
@@ -266,7 +282,11 @@ public class IdentityAdminImpl implements IdentityAdmin {
         } catch (FindException e) {
             throw new DeleteException("This object cannot be found (it no longer exist?).", e);
         } finally {
-            endTransaction();
+            try {
+                endTransaction();
+            } catch (TransactionException e) {
+                throw new DeleteException(e.toString());
+            }
         }
     }
 
@@ -292,7 +312,11 @@ public class IdentityAdminImpl implements IdentityAdmin {
             logger.log(Level.SEVERE, null, e);
             throw new RemoteException("FindException in saveGroup", e);
         } finally {
-            endTransaction();
+                        try {
+                endTransaction();
+            } catch (TransactionException e) {
+                throw new SaveException(e.toString());
+            }
         }
     }
 
@@ -340,7 +364,11 @@ public class IdentityAdminImpl implements IdentityAdmin {
         } catch (FindException e) {
             throw new UpdateException("error resetting user's password", e);
         } finally {
-            endTransaction();
+            try {
+                endTransaction();
+            } catch (TransactionException e) {
+                throw new UpdateException(e.toString());
+            }
         }
 
     }
@@ -405,7 +433,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
         }
     }
 
-    private void endTransaction() {
+    private void endTransaction() throws TransactionException{
         try {
             PersistenceContext context = PersistenceContext.getCurrent();
             //context.flush();
@@ -413,8 +441,10 @@ public class IdentityAdminImpl implements IdentityAdmin {
             context.close();
         } catch (java.sql.SQLException e) {
             logger.log(Level.SEVERE, "could not end transaction", e);
+            throw new TransactionException(e.getMessage());
         } catch (ObjectModelException e) {
             logger.log(Level.SEVERE, "could not end transaction", e);
+            throw new TransactionException(e.getMessage());
         }
     }
 
