@@ -327,6 +327,14 @@ CREATE TABLE fed_group (
   UNIQUE KEY i_name (provider_oid, name)
 ) TYPE=InnoDB;
 
+DROP TABLE IF EXISTS fed_user_group;
+CREATE TABLE fed_user_group (
+  provider_oid bigint(20) NOT NULL,
+  fed_user_oid bigint(20) NOT NULL,
+  fed_group_oid bigint(20) NOT NULL,
+  PRIMARY KEY (provider_oid,internal_user,internal_group)
+) TYPE=InnoDB;
+
 DROP TABLE IF EXISTS fed_group_virtual;
 CREATE TABLE fed_group_virtual (
   objectid bigint(20) NOT NULL,
