@@ -1,6 +1,7 @@
 package com.l7tech.identity.internal.imp;
 
 import com.l7tech.identity.*;
+import com.l7tech.identity.internal.InternalIdentityProvider;
 import com.l7tech.objectmodel.PersistenceManager;
 
 /**
@@ -9,7 +10,7 @@ import com.l7tech.objectmodel.PersistenceManager;
  * Date: May 14, 2003
  *
  */
-public class InternalIdentityProviderImp implements IdentityProvider {
+public class InternalIdentityProviderImp implements InternalIdentityProvider {
     public InternalIdentityProviderImp() {
     }
 
