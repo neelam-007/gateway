@@ -85,7 +85,7 @@ public class ServiceNode extends EntityHeaderNode {
         if (!svc.isSoap()) {
             return new Action[]{
                 new EditServicePolicyAction(this),
-                // todo, some action to edit/view the routing uri
+                new EditServiceRoutingURIAction(this),
                 new EditServiceNameAction(this),
                 ea,
                 da,
