@@ -35,10 +35,6 @@ public class ServiceManagerClientImp implements ServiceManager {
         return null;
     }
 
-    public ProtectedService createProtectedService(String wsdlUrl) {
-        return null;
-    }
-
     public long save(PublishedService service) throws SaveException {
         return 0;
     }

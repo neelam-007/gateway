@@ -14,13 +14,7 @@ import java.util.HashMap;
  * Service API. Get instance of this through the Locator class.
  */
 public interface ServiceManager extends EntityManager {
-    /**
-     *
-     * @param wsdlUrl
-     * @return
-     */
-    public ProtectedService createProtectedService( String wsdlUrl );
-
+    public String resolveWsdlTarget(String url) throws java.rmi.RemoteException;
     public long save( PublishedService service ) throws SaveException;
     public void update( PublishedService service ) throws UpdateException;
     public void delete( PublishedService service ) throws DeleteException;
