@@ -43,6 +43,8 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
 
     final protected CustomAssertion customAssertion;
     final private boolean isAuthAssertion;
+    private CustomAssertionDescriptor descriptor;
+    private ServiceInvocation serviceInvocation;
 
     public ServerCustomAssertionHolder(CustomAssertionHolder ca) {
         if (ca == null || ca.getCustomAssertion() == null) {
@@ -52,9 +54,29 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
         isAuthAssertion = Category.ACCESS_CONTROL.equals(ca.getCategory());
     }
 
+    private void initialize() throws PolicyAssertionException {
+        descriptor = CustomAssertions.getDescriptor(customAssertion.getClass());
+
+        if (!checkDescriptor(descriptor)) {
+            throw new PolicyAssertionException("Custom assertion is misconfigured");
+        }
+        Class sa = descriptor.getServerAssertion();
+        try {
+            serviceInvocation = (ServiceInvocation)sa.newInstance();
+            serviceInvocation.setCustomAssertion(customAssertion);
+        } catch (InstantiationException e) {
+            throw new PolicyAssertionException("Custom assertion is misconfigured", e);
+        } catch (IllegalAccessException e) {
+            throw new PolicyAssertionException("Custom assertion is misconfigured", e);
+        }
+    }
+
     public AssertionStatus checkRequest(final PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         // Bugzilla #707 - removed the logger.entering()/exiting() as they are just for debugging purpose
         //logger.entering(ServerCustomAssertionHolder.class.getName(), "checkRequest");
+
+        if(serviceInvocation == null) initialize();
+
         try {
             PublishedService service = context.getService();
             final CustomAssertionDescriptor descriptor = CustomAssertions.getDescriptor(customAssertion.getClass());
@@ -81,13 +103,10 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
             subject.setReadOnly();
             Subject.doAs(subject, new PrivilegedExceptionAction() {
                 public Object run() throws Exception {
-                    Class sa = descriptor.getServerAssertion();
-                    ServiceInvocation si = (ServiceInvocation)sa.newInstance();
-                    si.setCustomAssertion(customAssertion);
                     if (isPostRouting(context)) {
-                        si.onResponse(new CustomServiceResponse(context));
+                        serviceInvocation.onResponse(new CustomServiceResponse(context));
                     } else {
-                        si.onRequest(new CustomServiceRequest(context));
+                        serviceInvocation.onRequest(new CustomServiceRequest(context));
                     }
                     return null;
                 }
