@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<java version="1.4.1_02" class="java.beans.XMLDecoder"> 
+ <object class="com.l7tech.policy.assertion.ExactlyOneAssertion"> 
+  <void property="children"> 
+   <object class="java.util.ArrayList"> 
+    <void method="add"> 
+     <object class="com.l7tech.policy.assertion.TrueAssertion"/> 
+    </void> 
+    <void method="add"> 
+     <object class="com.l7tech.policy.assertion.FalseAssertion"/> 
+    </void> 
+   </object> 
+  </void> 
+ </object> 
+</java> 
