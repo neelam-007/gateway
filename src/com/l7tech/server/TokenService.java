@@ -11,6 +11,7 @@ import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.server.secureconversation.DuplicateSessionException;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
@@ -124,19 +125,10 @@ public class TokenService {
                 }
             }
         }
-        String certCN = null;
-        try {
-            X500Name x500name = new X500Name(clientCert.getSubjectX500Principal().getName());
-            certCN = x500name.getCommonName();
-        } catch (IOException e) {
-            throw new TokenServiceException("cannot get cert subject", e);
-        }
-        User authenticatedUser = authenticator.authenticate(new LoginCredentials(certCN,
-                                                                                 null,
-                                                                                 CredentialFormat.CLIENTCERT,
-                                                                                 null,
-                                                                                 null,
-                                                                                 clientCert));
+        
+        User authenticatedUser = authenticator.authenticate(LoginCredentials.
+                                                                makeCertificateCredentials(clientCert,
+                                                                                           RequestWssX509Cert.class));
         if (authenticatedUser == null) {
             logger.info("Throwing AuthenticationException because credentials cannot be authenticated.");
             throw new AuthenticationException("Cert found, but cannot associate to a user.");
