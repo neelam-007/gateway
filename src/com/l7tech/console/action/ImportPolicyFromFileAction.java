@@ -1,28 +1,17 @@
 package com.l7tech.console.action;
 
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.tree.PoliciesFolderNode;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.policy.exporter.ExporterConstants;
-import com.l7tech.policy.exporter.ExternalReference;
-import com.l7tech.policy.exporter.RemoteReferenceResolver;
-import com.l7tech.policy.exporter.PolicyImporter;
-import com.l7tech.policy.wsp.WspConstants;
-import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.policy.wsp.InvalidPolicyStreamException;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.exporter.PolicyImporter;
+import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -79,7 +68,9 @@ public class ImportPolicyFromFileAction extends BaseAction {
      * without explicitly asking for the AWT event thread!
      */
     public void performAction() {
+        newPolicyXml = null;
         if (pubService == null) {
+            log.severe("This action was called without a service set.");
             throw new IllegalStateException("no service specified");
         }
         // get file from user
@@ -124,10 +115,17 @@ public class ImportPolicyFromFileAction extends BaseAction {
             // for some reason, the PublishedService class does not allow to set a policy
             // directly, it must be set through the XML
             if (newRoot != null) {
-                pubService.setPolicyXml(WspWriter.getPolicyXml(newRoot));
+                newPolicyXml = WspWriter.getPolicyXml(newRoot);
+                pubService.setPolicyXml(newPolicyXml);
             }
         } catch (IOException e) {
             log.log(Level.WARNING, "could not localize or read policy from " + chooser.getSelectedFile().getPath(), e);
         }
     }
+
+    public String getNewPolicyXml() {
+        return newPolicyXml;
+    }
+
+    private String newPolicyXml = null;
 }
