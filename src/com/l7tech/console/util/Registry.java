@@ -3,6 +3,7 @@ package com.l7tech.console.util;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.UserManager;
 import com.l7tech.identity.GroupManager;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.util.Locator;
 
 
@@ -15,7 +16,7 @@ import com.l7tech.util.Locator;
  */
 public abstract class Registry {
     /**
-     * A dummy locator that never returns any results.
+     * A dummy registry that never returns any services.
      */
     public static final Registry EMPTY = new Empty();
     /** default instance */
@@ -29,7 +30,7 @@ public abstract class Registry {
         if (instance != null) {
             return instance;
         }
-        instance = (Registry)Locator.getDefault().lookup(Registry.class);
+        instance = (Registry) Locator.getDefault().lookup(Registry.class);
         if (instance == null) {
             instance = EMPTY;
         }
@@ -39,6 +40,11 @@ public abstract class Registry {
     /** Empty constructor for use by subclasses. */
     protected Registry() {
     }
+
+    /**
+     * @return the identity provider config manager
+     */
+    abstract public IdentityProviderConfigManager getProviderConfigManager();
 
     /**
      * @return the internal identity provider
@@ -60,6 +66,13 @@ public abstract class Registry {
      */
     private static final class Empty extends Registry {
         Empty() {
+        }
+
+        /**
+         * @return the identity provider config manager
+         */
+        public IdentityProviderConfigManager getProviderConfigManager() {
+            return null;
         }
 
         public IdentityProvider getInternalProvider() {

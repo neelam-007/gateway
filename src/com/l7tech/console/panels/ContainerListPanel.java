@@ -75,7 +75,7 @@ public class ContainerListPanel extends EntityEditorPanel {
     public void setParentNode(JTree tree, DefaultMutableTreeNode node) {
         parentNode = node;
         this.tree = tree;
-        parentBasicTreeNode = (BasicTreeNode)node.getUserObject();
+        parentBasicTreeNode = (BasicTreeNode) node.getUserObject();
 
         if (tabbedPane.getTabCount() != 1) {
             throw new
@@ -135,9 +135,9 @@ public class ContainerListPanel extends EntityEditorPanel {
                         if (e.getClickCount() == 2) {
                             int row = jTable.getSelectedRow();
                             if (row == -1) return;
-                            Object o = ((ContextListTableModel)jTable.getModel()).getValueAt(row);
+                            Object o = ((ContextListTableModel) jTable.getModel()).getValueAt(row);
                             if (o == null) return;
-                            handleExploreRequest((BasicTreeNode)o);
+                            handleExploreRequest((BasicTreeNode) o);
                         }
                     }
 
@@ -157,14 +157,14 @@ public class ContainerListPanel extends EntityEditorPanel {
                         int row = jTable.getSelectedRow();
                         if (row == -1) return;
                         Object o = jTable.getValueAt(row, 0);
-                        BasicTreeNode dobj = (BasicTreeNode)o;
+                        BasicTreeNode dobj = (BasicTreeNode) o;
                         int keyCode = e.getKeyCode();
                         if (keyCode == KeyEvent.VK_DELETE) {
                             handleDeleteRequest(dobj, row, true);
                         } else if (keyCode == KeyEvent.VK_BACK_SPACE) {
                             browseUpRequest(parentNode);
                         } else if (keyCode == KeyEvent.VK_ENTER) {
-                            handleExploreRequest((BasicTreeNode)o);
+                            handleExploreRequest((BasicTreeNode) o);
                         }
                     }
                 });
@@ -230,7 +230,7 @@ public class ContainerListPanel extends EntityEditorPanel {
                                     String text = "";
                                     if (o instanceof EntityHeader) {
                                         if (col == 1) {
-                                            text = ((EntityHeader)o).getName();
+                                            text = ((EntityHeader) o).getName();
                                         } else {
                                             return o;
                                         }
@@ -279,7 +279,7 @@ public class ContainerListPanel extends EntityEditorPanel {
 
             TreeNode n = TreeNodeAction.nodeByName(dobj.getName(), parentNode);
             if (n != null) {
-                TreeNode[] nodes = ((DefaultMutableTreeNode)n).getPath();
+                TreeNode[] nodes = ((DefaultMutableTreeNode) n).getPath();
                 final TreePath path = new TreePath(nodes);
                 SwingUtilities.
                         invokeLater(
@@ -303,7 +303,7 @@ public class ContainerListPanel extends EntityEditorPanel {
      */
     private void browseUpRequest(DefaultMutableTreeNode node) {
         DefaultMutableTreeNode pNode =
-                (DefaultMutableTreeNode)node.getParent();
+                (DefaultMutableTreeNode) node.getParent();
 
         TreeNode[] nodes = pNode.getPath();
         final TreePath path = new TreePath(nodes);
@@ -351,17 +351,17 @@ public class ContainerListPanel extends EntityEditorPanel {
      */
     private JDialog getNewEntryDialog() {
         JDialog dlg = null;
-        JFrame f = (JFrame)SwingUtilities.windowForComponent(ContainerListPanel.this);
+        JFrame f = (JFrame) SwingUtilities.windowForComponent(ContainerListPanel.this);
         if (parentBasicTreeNode instanceof AdminFolderNode) {
             AdminFolderNode adminFolder =
-                    (AdminFolderNode)parentBasicTreeNode;
+                    (AdminFolderNode) parentBasicTreeNode;
             NewAdminDialog dialog = new NewAdminDialog(f, adminFolder);
             dialog.setPanelListener(panelListener);
             dialog.setResizable(false);
             dlg = dialog;
         } else if (parentBasicTreeNode instanceof UserFolderNode) {
             UserFolderNode userFolder =
-                    (UserFolderNode)parentBasicTreeNode;
+                    (UserFolderNode) parentBasicTreeNode;
             NewUserDialog dialog = new NewUserDialog(f);
             dialog.setPanelListener(panelListener);
             dialog.setResizable(false);
@@ -383,10 +383,10 @@ public class ContainerListPanel extends EntityEditorPanel {
     private void showEntryDialog(BasicTreeNode bn) {
         if (!(bn instanceof EntityTreeNode)) return;
 
-        JPanel panel = PanelFactory.getPanel((EntityTreeNode)bn, panelListener);
+        JPanel panel = PanelFactory.getPanel((EntityTreeNode) bn, panelListener);
 
         if (panel == null) return;
-        JFrame f = (JFrame)SwingUtilities.windowForComponent(ContainerListPanel.this);
+        JFrame f = (JFrame) SwingUtilities.windowForComponent(ContainerListPanel.this);
         EditorDialog dialog = new EditorDialog(f, panel);
 
         dialog.pack();
@@ -418,7 +418,7 @@ public class ContainerListPanel extends EntityEditorPanel {
                     // based on value type and column, determine cell contents
                     setIcon(null);
                     if (value instanceof BasicTreeNode) {
-                        BasicTreeNode bn = (BasicTreeNode)value;
+                        BasicTreeNode bn = (BasicTreeNode) value;
                         if (column == 0) {
                             ImageIcon icon = IconManager.getIcon(bn);
                             if (icon == null) {
@@ -434,7 +434,7 @@ public class ContainerListPanel extends EntityEditorPanel {
                         }
                     } else if (value instanceof String) {
                         setIcon(null);
-                        setText((String)value);
+                        setText((String) value);
                     } else {
                         if (column == 0) {
                             setText("Unknown type " + value.getClass());
@@ -482,7 +482,7 @@ public class ContainerListPanel extends EntityEditorPanel {
         if (mouseEvent.isPopupTrigger()) {
             int row = jTable.getSelectedRow();
             if (row == -1) return;
-            Object o = ((ContextListTableModel)jTable.getModel()).getValueAt(row);
+            Object o = ((ContextListTableModel) jTable.getModel()).getValueAt(row);
             if (o == null) return;
             JPopupMenu menu = getTableItemJPopupMenu(o, row);
             if (menu != null) {
@@ -539,15 +539,15 @@ public class ContainerListPanel extends EntityEditorPanel {
                             JOptionPane.INFORMATION_MESSAGE);
                     return;
                 }
-                BasicTreeNode bn = (BasicTreeNode)object;
+                BasicTreeNode bn = (BasicTreeNode) object;
 
                 if (object instanceof EntityHeaderNode) {
 
                     // a node or expandable folder with properties
                     if (TableRowMenu.BROWSE.equals(e.getActionCommand())) {
-                        handleExploreRequest((BasicTreeNode)object);
+                        handleExploreRequest((BasicTreeNode) object);
                     } else if (TableRowMenu.PROPERTIES.equals(e.getActionCommand())) {
-                        showEntryDialog((BasicTreeNode)object);
+                        showEntryDialog((BasicTreeNode) object);
                     } else if (TableRowMenu.DELETE.equals(e.getActionCommand())) {
                         handleDeleteRequest(bn, row, true);
                     } else {
@@ -560,9 +560,9 @@ public class ContainerListPanel extends EntityEditorPanel {
                     // might be a RealmFolder, or a CompanyFolder, or any Folder
                     // might be a report or a log too
                     if (TableRowMenu.BROWSE.equals(e.getActionCommand())) {
-                        handleExploreRequest((BasicTreeNode)object);
+                        handleExploreRequest((BasicTreeNode) object);
                     } else if (TableRowMenu.PROPERTIES.equals(e.getActionCommand())) {
-                        showEntryDialog((BasicTreeNode)object);
+                        showEntryDialog((BasicTreeNode) object);
                     } else {
                         log.debug("action not implemented " + e.getActionCommand());
                     }
@@ -570,7 +570,7 @@ public class ContainerListPanel extends EntityEditorPanel {
             }
         };
 
-        return TableRowMenu.forNode(new EntityTreeNode((BasicTreeNode)object), listener);
+        return TableRowMenu.forNode(new EntityTreeNode((BasicTreeNode) object), listener);
     }
 
     private class
@@ -582,7 +582,7 @@ public class ContainerListPanel extends EntityEditorPanel {
          */
         public void onInsert(Object object) {
             BasicTreeNode row =
-                    TreeNodeFactory.getTreeNode((EntityHeader)object);
+                    TreeNodeFactory.getTreeNode((EntityHeader) object);
             tableModel.addRow(row);
 
         }
@@ -673,7 +673,7 @@ public class ContainerListPanel extends EntityEditorPanel {
                             if (row == -1) return;
                             Object o = jTable.getModel().getValueAt(row, 0);
                             if (o == null) return;
-                            handleExploreRequest((BasicTreeNode)o);
+                            handleExploreRequest((BasicTreeNode) o);
                         }
                     });
 
@@ -710,7 +710,7 @@ public class ContainerListPanel extends EntityEditorPanel {
                             if (row == -1) return;
                             Object o = jTable.getModel().getValueAt(row, 0);
                             if (o == null) return;
-                            showEntryDialog((BasicTreeNode)o);
+                            showEntryDialog((BasicTreeNode) o);
                         }
                     });
 
@@ -731,7 +731,7 @@ public class ContainerListPanel extends EntityEditorPanel {
                             // return the basictreenode
                             Object o = jTable.getModel().getValueAt(row, 0);
                             if (o == null) return;
-                            BasicTreeNode n = (BasicTreeNode)o;
+                            BasicTreeNode n = (BasicTreeNode) o;
                             handleDeleteRequest(n, row, true);
                         }
                     });
@@ -760,7 +760,7 @@ public class ContainerListPanel extends EntityEditorPanel {
             // return the basictreenode
             Object o = jTable.getModel().getValueAt(row, 0);
             if (o == null) return;
-            BasicTreeNode n = (BasicTreeNode)o;
+            BasicTreeNode n = (BasicTreeNode) o;
 
             buttonDelete.setEnabled(TableRowAction.canDelete(n));
             buttonEdit.setEnabled(TableRowAction.hasProperties(n));
@@ -771,7 +771,7 @@ public class ContainerListPanel extends EntityEditorPanel {
 
     // hierarchy listener
     private final
-            HierarchyListener hierarchyListener =
+    HierarchyListener hierarchyListener =
             new HierarchyListener() {
                 /** Called when the hierarchy has been changed.*/
                 public void hierarchyChanged(HierarchyEvent e) {
@@ -791,7 +791,10 @@ public class ContainerListPanel extends EntityEditorPanel {
                             } catch (InterruptedException ex) {
                             }
                         } else {
-                            tableModel.stop();
+                            if (tableModel != null) {
+                                tableModel.stop();
+                            }
+
                         }
                     }
                 }

@@ -3,6 +3,8 @@
 package com.l7tech.console.sbar;
 
 
+import com.l7tech.console.action.BaseAction;
+
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.*;
@@ -25,39 +27,33 @@ public class JOutlookBar extends JPanel implements ActionListener {
     /**
      * outlook buttons and here is the code that is called when button is pressed.
      * param		context - its folder (some call it context) name
-     * param		btnText - text for button
-     * param		image - button image URL
-     * param		action - ActionListener called by button when pressed
+     * param		action - the Action called by button when pressed
      */
-    public void addIcon(String context, String btnText, String image, ActionListener action) {
+    public void addIcon(String context, Action action) {
         int index;
-        ImageIcon ikona = null;
 
         JToolBar view;
         if ((index = names.indexOf(context)) > -1) {
-            view = (JToolBar) views.elementAt(index);
+            view = (JToolBar) views.get(index);
         } else {
             view = new JToolBar(JToolBar.HORIZONTAL);
             view.putClientProperty("JToolBar.isRollover", Boolean.TRUE);
             view.setFloatable(false);
             view.setLayout(new VerticalFlowLayout());
-            names.addElement(context);
-            views.addElement(view);
+            names.add(context);
+            views.add(view);
             addTab(context, new ScrollingPanel(view));
         }
-        if (image != null) {
-            java.net.URL url = getClass().getClassLoader().getResource(image);
-            if (url != null)
-                ikona = new ImageIcon(url);
-        }
 
-        JButton button = new JButton(btnText, ikona);
+        JButton button = new JButton(action);
+        Icon largeIcon = (Icon)action.getValue(BaseAction.LARGE_ICON);
+        if (largeIcon != null)
+            button.setIcon(largeIcon);
         button.setMargin(new Insets(0, 0, 0, 0));
         button.setBorderPainted(false);
         button.setVerticalTextPosition(SwingConstants.BOTTOM);
         button.setHorizontalTextPosition(SwingConstants.CENTER);
 
-        button.addActionListener(action);
         view.add(button);
         doLayout();
     }

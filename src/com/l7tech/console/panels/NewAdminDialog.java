@@ -13,7 +13,7 @@ import java.util.ResourceBundle;
 /**
  * This class is the New Admin dialog.
  *
- * @author <a href="mailto:sw@l7tech.com>Scott Wilshire</a>
+ * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
 public class NewAdminDialog extends JDialog {
   private static final Category log = Category.getInstance(NewAdminDialog.class.getName());

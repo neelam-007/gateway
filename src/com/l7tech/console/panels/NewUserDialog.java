@@ -1,20 +1,18 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.text.FilterDocument;
+import com.l7tech.console.util.Registry;
+import com.l7tech.identity.User;
+import com.l7tech.identity.internal.imp.UserImp;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.imp.EntityHeaderImp;
-import com.l7tech.identity.*;
-import com.l7tech.identity.internal.imp.UserImp;
-import com.l7tech.util.Locator;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.Collection;
 
 /**
  * New User dialog.
@@ -342,7 +340,7 @@ public class NewUserDialog extends JDialog {
                  * that need to occur when an item is selected (or deselected).
                  */
                 public void itemStateChanged(ItemEvent e) {
-                    if (e.getStateChange() == e.SELECTED) {
+                    if (e.getStateChange() == ItemEvent.SELECTED) {
                         createThenEdit = true;
                     }
                 }
@@ -449,7 +447,7 @@ public class NewUserDialog extends JDialog {
                                EntityHeader header = new EntityHeaderImp();
                                header.setType(User.class);
                                header.setName(user.getName());
-                               getInternalUserManager().save(user);
+                               Registry.getDefault().getInternalUserManager().save(user);
                                panelListener.onInsert(header);
                                insertSuccess = true;
                                } catch (SaveException e) {
@@ -528,31 +526,6 @@ public class NewUserDialog extends JDialog {
             return false;
         }
         return true;
-    }
-    /**
-     *
-     * @return the internal user manager
-     * @throws RuntimeException if internal user manager could not be obtained
-     */
-    private UserManager getInternalUserManager()
-       throws RuntimeException {
-        try {
-            IdentityProviderConfigManager ipc =
-            (IdentityProviderConfigManager)Locator.
-                    getDefault().lookup(IdentityProviderConfigManager.class);
-            if (ipc == null) {
-                throw new RuntimeException("Could not find registered "+IdentityProviderConfigManager.class);
-            }
-            Collection ips = ipc.findAllIdentityProviders();
-
-            if (ips.isEmpty()) {
-                throw new RuntimeException("Could not retrieve identity providers.");
-            }
-            IdentityProvider iprovider = (IdentityProvider)ips.iterator().next();
-            return iprovider.getUserManager();
-        } catch (FindException e) {
-            throw new RuntimeException(e);
-        }
     }
 
 }

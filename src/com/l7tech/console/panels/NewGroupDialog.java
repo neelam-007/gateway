@@ -1,20 +1,18 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.text.FilterDocument;
+import com.l7tech.console.util.Registry;
+import com.l7tech.identity.Group;
+import com.l7tech.identity.internal.imp.GroupImp;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.imp.EntityHeaderImp;
-import com.l7tech.identity.*;
-import com.l7tech.identity.internal.imp.GroupImp;
-import com.l7tech.util.Locator;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.Collection;
 
 /**
  * New Group dialog.
@@ -296,7 +294,7 @@ public class NewGroupDialog extends JDialog {
 
         if (actionCommand != null) {
             if (actionCommand instanceof ActionEvent) {
-                cmd = ((ActionEvent)actionCommand).getActionCommand();
+                cmd = ((ActionEvent) actionCommand).getActionCommand();
             } else {
                 cmd = actionCommand.toString();
             }
@@ -326,11 +324,11 @@ public class NewGroupDialog extends JDialog {
                             EntityHeader header = new EntityHeaderImp();
                             header.setType(Group.class);
                             header.setName(group.getName());
-                            getInternalGroupManager().save(group);
+                            Registry.getDefault().getInternalGroupManager().save(group);
                             panelListener.onInsert(header);
                             insertSuccess = true;
-                            } catch (SaveException e) {
-                                e.printStackTrace();
+                        } catch (SaveException e) {
+                            e.printStackTrace();
                         } catch (RuntimeException e) {
                             e.printStackTrace();
                         }
@@ -381,32 +379,6 @@ public class NewGroupDialog extends JDialog {
      */
     private boolean validateInput() {
         return true;
-    }
-
-    /**
-     *
-     * @return the internal user manager
-     * @throws RuntimeException if internal user manager could not be obtained
-     */
-    private GroupManager getInternalGroupManager()
-            throws RuntimeException {
-        try {
-            IdentityProviderConfigManager ipc =
-                    (IdentityProviderConfigManager)Locator.
-                    getDefault().lookup(IdentityProviderConfigManager.class);
-            if (ipc == null) {
-                throw new RuntimeException("Could not find registered " + IdentityProviderConfigManager.class);
-            }
-            Collection ips = ipc.findAllIdentityProviders();
-
-            if (ips.isEmpty()) {
-                throw new RuntimeException("Could not retrieve identity providers.");
-            }
-            IdentityProvider iprovider = (IdentityProvider)ips.iterator().next();
-            return iprovider.getGroupManager();
-        } catch (FindException e) {
-            throw new RuntimeException(e);
-        }
     }
 
 }

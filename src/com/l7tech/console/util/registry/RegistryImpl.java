@@ -19,58 +19,53 @@ import java.util.Collection;
  * @version 1.0
  */
 public class RegistryImpl extends Registry {
+
+    /**
+     * @return the identity provider config manager
+     */
+    public IdentityProviderConfigManager getProviderConfigManager()
+      throws RuntimeException {
+        IdentityProviderConfigManager ipc =
+        (IdentityProviderConfigManager)Locator.
+                getDefault().lookup(IdentityProviderConfigManager.class);
+        if (ipc == null) {
+            throw new RuntimeException("Could not find registered "+IdentityProviderConfigManager.class);
+        }
+        return ipc;
+    }
+
     /**
      * @return the internal identity provider
      */
     public IdentityProvider getInternalProvider() {
-        return null;
+        try {
+            IdentityProviderConfigManager ipc = getProviderConfigManager();
+            if (ipc == null) {
+                throw new RuntimeException("Could not find registered " + IdentityProviderConfigManager.class);
+            }
+            Collection ips = ipc.findAllIdentityProviders();
+
+            if (ips.isEmpty()) {
+                throw new RuntimeException("Could not retrieve identity providers.");
+            }
+            return (IdentityProvider) ips.iterator().next();
+        } catch (FindException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     /**
      * @return the internal user manager
      */
     public UserManager getInternalUserManager() {
-        try {
-            IdentityProviderConfigManager ipc =
-                    (IdentityProviderConfigManager)Locator.
-                    getDefault().lookup(IdentityProviderConfigManager.class);
-            if (ipc == null) {
-                throw new RuntimeException("Could not find registered " + IdentityProviderConfigManager.class);
-            }
-            Collection ips = ipc.findAllIdentityProviders();
-
-            if (ips.isEmpty()) {
-                throw new RuntimeException("Could not retrieve identity providers.");
-            }
-            IdentityProvider iprovider = (IdentityProvider)ips.iterator().next();
-            return iprovider.getUserManager();
-        } catch (FindException e) {
-            throw new RuntimeException(e);
-        }
-
+     return getInternalProvider().getUserManager();
     }
 
     /**
      * @return the internal group manager
      */
     public GroupManager getInternalGroupManager() {
-        try {
-            IdentityProviderConfigManager ipc =
-                    (IdentityProviderConfigManager)Locator.
-                    getDefault().lookup(IdentityProviderConfigManager.class);
-            if (ipc == null) {
-                throw new RuntimeException("Could not find registered " + IdentityProviderConfigManager.class);
-            }
-            Collection ips = ipc.findAllIdentityProviders();
-
-            if (ips.isEmpty()) {
-                throw new RuntimeException("Could not retrieve identity providers.");
-            }
-            IdentityProvider iprovider = (IdentityProvider)ips.iterator().next();
-            return iprovider.getGroupManager();
-        } catch (FindException e) {
-            throw new RuntimeException(e);
-        }
+     return getInternalProvider().getGroupManager();
     }
-
 }
