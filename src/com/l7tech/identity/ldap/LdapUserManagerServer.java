@@ -39,6 +39,10 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
      * @throws FindException
      */
     public User findByPrimaryKey(String dn) throws FindException {
+        if (!valid) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "invalid user manager");
+            throw new FindException("invalid manager");
+        }
         try {
             DirContext context = getAnonymousContext();
             Attributes attributes = context.getAttributes(dn);
@@ -69,6 +73,10 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
     }
 
     public User findByLogin(String login) throws FindException {
+        if (!valid) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "invalid user manager");
+            throw new FindException("invalid manager");
+        }
         try {
             DirContext context = getAnonymousContext();
             // Search using attribute list.
@@ -116,6 +124,10 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
     }
 
     public Collection findAllHeaders() throws FindException {
+        if (!valid) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "invalid user manager");
+            throw new FindException("invalid manager");
+        }
         Collection output = new ArrayList();
         if (config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE) == null || config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE).length() < 1) throw new FindException("No search base provided");
         try
@@ -154,6 +166,10 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
     }
 
     public Collection findAllHeaders(int offset, int windowSize) throws FindException {
+        if (!valid) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "invalid user manager");
+            throw new FindException("invalid manager");
+        }
         Collection output = new ArrayList();
         if (config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE) == null || config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE).length() < 1) throw new FindException("No search base provided");
         try
@@ -199,6 +215,10 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
     }
 
     public Collection findAll() throws FindException {
+        if (!valid) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "invalid user manager");
+            throw new FindException("invalid manager");
+        }
         Collection headers = findAllHeaders();
         Collection output = new ArrayList();
         Iterator i = headers.iterator();
@@ -210,6 +230,10 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
     }
 
     public Collection findAll(int offset, int windowSize) throws FindException {
+        if (!valid) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "invalid user manager");
+            throw new FindException("invalid manager");
+        }
         Collection headers = findAllHeaders(offset, windowSize);
         Collection output = new ArrayList();
         Iterator i = headers.iterator();
@@ -221,6 +245,9 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
     }
 
     public boolean authenticateBasic(String dn, String passwd) {
+        if (!valid) {
+            return false;
+        }
         Hashtable env = new Hashtable();
         env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
         env.put(Context.PROVIDER_URL, config.getProperty(LdapConfigSettings.LDAP_HOST_URL));
@@ -242,6 +269,10 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
         }
         LogManager.getInstance().getSystemLogger().info("User: "+ dn +" authenticated successfully.");
         return true;
+    }
+
+    public void invalidate() {
+        valid = false;
     }
 
     // ************************************************
@@ -291,4 +322,5 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
     private static final String FIRSTNAME_ATTR_NAME = "givenName";
     private static final String LASTNAME_ATTR_NAME = "sn";
     private static final String PASSWD_ATTR_NAME = "userPassword";
+    private boolean valid = true;
 }

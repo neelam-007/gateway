@@ -35,6 +35,10 @@ public class LdapIdentityProviderServer implements com.l7tech.identity.IdentityP
     }
 
     public boolean authenticate( PrincipalCredentials pc ) {
+        if (!valid) {
+            LogManager.getInstance().getSystemLogger().log(Level.INFO, "invalid id provider asked to authenticate");
+            return false;
+        }
         User realUser = null;
         try {
             realUser = userManager.findByLogin(pc.getUser().getLogin());
@@ -59,6 +63,12 @@ public class LdapIdentityProviderServer implements com.l7tech.identity.IdentityP
 
     public boolean isReadOnly() { return true; }
 
+    public void invalidate() {
+        valid = false;
+        groupManager.invalidate();
+        userManager.invalidate();
+    }
+
 
     // ************************************************
     // PRIVATES
@@ -66,4 +76,5 @@ public class LdapIdentityProviderServer implements com.l7tech.identity.IdentityP
     private IdentityProviderConfig cfg = null;
     private LdapGroupManagerServer groupManager = null;
     private LdapUserManagerServer userManager = null;
+    private boolean valid = true;
 }

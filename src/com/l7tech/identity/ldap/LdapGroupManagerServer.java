@@ -32,6 +32,10 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
     }
 
     public Group findByPrimaryKey(String dn) throws FindException {
+        if (!valid) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "invalid group manager");
+            throw new FindException("invalid manager");
+        }
         try {
             DirContext context = getAnonymousContext();
             Attributes attributes = context.getAttributes(dn);
@@ -82,6 +86,10 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
     }
 
     public Collection findAllHeaders() throws FindException {
+        if (!valid) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "invalid group manager");
+            throw new FindException("invalid manager");
+        }
         Collection output = new ArrayList();
         if (config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE) == null || config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE).length() < 1) throw new FindException("No search base provided");
         try
@@ -119,6 +127,10 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
     }
 
     public Collection findAllHeaders(int offset, int windowSize) throws FindException {
+        if (!valid) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "invalid group manager");
+            throw new FindException("invalid manager");
+        }
         Collection output = new ArrayList();
         if (config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE) == null || config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE).length() < 1) throw new FindException("No search base provided");
         try
@@ -165,6 +177,10 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
     }
 
     public Collection findAll() throws FindException {
+        if (!valid) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "invalid group manager");
+            throw new FindException("invalid manager");
+        }
         Collection headers = findAllHeaders();
         Collection output = new ArrayList();
         Iterator i = headers.iterator();
@@ -176,6 +192,10 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
     }
 
     public Collection findAll(int offset, int windowSize) throws FindException {
+        if (!valid) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "invalid group manager");
+            throw new FindException("invalid manager");
+        }
         Collection headers = findAllHeaders(offset, windowSize);
         Collection output = new ArrayList();
         Iterator i = headers.iterator();
@@ -184,6 +204,10 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
             output.add(findByPrimaryKey(header.getStrId()));
         }
         return output;
+    }
+
+    public void invalidate() {
+        valid = false;
     }
 
     // ************************************************
@@ -219,4 +243,5 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
     }
 
     private static final String GROUP_OBJCLASS = "posixGroup";
+    private boolean valid = true;
 }
