@@ -44,7 +44,7 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
         return serviceSet;
     }
 
-    Set doResolve( Request request, Set set ) throws ServiceResolutionException {
+    protected Set doResolve( Request request, Set set ) throws ServiceResolutionException {
         Object value = getRequestValue(request);
         Set serviceSet = getServiceSet( value );
         if ( serviceSet.isEmpty() ) return serviceSet;
