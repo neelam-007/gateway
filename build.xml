@@ -204,6 +204,7 @@
             <test name="com.l7tech.common.util.ThreadPoolTest" haltonfailure="no"/>
             <test name="com.l7tech.common.locator.AbstractLocatorTest" haltonfailure="no"/>
             <test name="com.l7tech.proxy.datamodel.SsgManagerTest" haltonfailure="no"/>
+            <test name="com.l7tech.proxy.datamodel.SsgTest" haltonfailure="no"/>
             <test name="com.l7tech.proxy.FunctionalTest" haltonfailure="no"/>
             <test name="com.l7tech.proxy.ClientPolicyTest" haltonfailure="no"/>
             <test name="com.l7tech.service.WsdlTest" haltonfailure="no"/>
@@ -272,7 +273,7 @@
         <!-- the ssg war -->
         <war warfile="${build.dir}/${war}" webxml="${build.etc}/web.xml">
             <lib dir="${build.dir}/lib"
-                excludes="commons-logging.jar, jh.jar, kunststoff.jar, servlet.jar, catalina.jar, jedit-syntax.jar, forms_rt.jar, mockobjects*, systray*">
+                excludes="commons-logging.jar, jh.jar, kunststoff.jar, servlet.jar, catalina.jar, jedit-syntax.jar, forms_rt.jar, mockobjects*, systray*, Phaos*">
             </lib>
             <classes dir="${build.classes}"/>
 
