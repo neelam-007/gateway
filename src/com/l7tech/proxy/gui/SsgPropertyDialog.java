@@ -474,7 +474,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
     private JButton getServerCertificateButton() {
         if (serverCertButton == null) {
-            serverCertButton = new JButton("View SSG's server certificate");
+            serverCertButton = new JButton("View Gateway's certificate");
             serverCertButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     try {
@@ -482,17 +482,17 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                         if (cert == null) {
                             JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
                                                           "We haven't yet discovered the server certificate\n" +
-                                                          "for the SSG " + ssg,
+                                                          "for the Gateway " + ssg,
                                                           "No server certificate",
                                                           JOptionPane.INFORMATION_MESSAGE);
                             return;
                         }
-                        new CertDialog(cert, "Server Certificate", "Server Certificate for SSG " + ssg).show();
+                        new CertDialog(cert, "Server Certificate", "Server Certificate for Gateway " + ssg).show();
                     } catch (Exception e1) {
                         log.error(e1);
                         e1.printStackTrace();
                         JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
-                                                      "Unable to access server certificate for SSG " + ssg + ": " + e1,
+                                                      "Unable to access server certificate for Gateway " + ssg + ": " + e1,
                                                       "Unable to access server certificate",
                                                       JOptionPane.ERROR_MESSAGE);
                     }
@@ -519,17 +519,17 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                         if (cert == null) {
                             JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
                                                           "We don't currently have a client certificate\n" +
-                                                          "for the SSG " + ssg,
+                                                          "for the Gateway " + ssg,
                                                           "No client certificate",
                                                           JOptionPane.INFORMATION_MESSAGE);
                             return;
                         }
-                        new CertDialog(cert, "Client Certificate", "Client Certificate for SSG " + ssg).show();
+                        new CertDialog(cert, "Client Certificate", "Client Certificate for Gateway " + ssg).show();
                     } catch (Exception e1) {
                         log.error(e1);
                         e1.printStackTrace();
                         JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
-                                                      "Unable to access client certificate for SSG " + ssg + ": " + e1,
+                                                      "Unable to access client certificate for Gateway " + ssg + ": " + e1,
                                                       "Unable to access client certificate",
                                                       JOptionPane.ERROR_MESSAGE);
                     }
