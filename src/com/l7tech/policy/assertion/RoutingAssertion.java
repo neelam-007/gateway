@@ -108,6 +108,8 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
             InputStream responseStream = postMethod.getResponseBodyAsStream();
             response.setProtectedResponseStream( responseStream );
 
+            request.setRouted( true );
+
             return AssertionStatus.NONE;
         } catch ( WSDLException we ) {
             _log.error( we );
