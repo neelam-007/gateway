@@ -28,7 +28,6 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
 
     public Object clone() throws CloneNotSupportedException {
         RoutingAssertion n = (RoutingAssertion)super.clone();
-        n.setProtectedServiceUrl(new String(protectedServiceUrl));
         return n;
     }
 
