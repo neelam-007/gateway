@@ -11,6 +11,7 @@ import com.l7tech.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.MimeKnob;
 import com.l7tech.common.message.TcpKnob;
+import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -92,8 +93,8 @@ public class MessageSummaryAuditFactory {
             clientAddr = reqTcp.getRemoteAddress();
 
         // Response info
+        Message response = context.getResponse();
         if (context.isAuditSaveResponse()) {
-            Message response = context.getResponse();
             if (response.getKnob(MimeKnob.class) != null) {
                 try {
                     byte[] resp = HexUtils.slurpStream(response.getMimeKnob().getFirstPart().getInputStream(false));
@@ -107,12 +108,35 @@ public class MessageSummaryAuditFactory {
             if (responseXml != null) responseContentLength = responseXml.length();
         }
 
+        int responseHttpStatus = -1;
+        HttpResponseKnob respKnob = (HttpResponseKnob)response.getKnob(HttpResponseKnob.class);
+        if (respKnob != null) {
+            responseHttpStatus = respKnob.getStatus();
+        }
+
+        long start = context.getRoutingStartTime();
+        if (start <= 0) start = System.currentTimeMillis();
+        long end = context.getRoutingEndTime();
+        if (end <= 0) end = start;
+
+        int routingLatency = (int)(context.getRoutingEndTime() - context.getRoutingStartTime());
+
+        // TODO
+        // TODO
+        // TODO
+        String operationName = null;
+        // TODO
+        // TODO
+        // TODO
+
         return new MessageSummaryAuditRecord(context.getAuditLevel(), nodeId, requestId, status, clientAddr,
                                              context.isAuditSaveRequest() ? requestXml : null,
                                              requestContentLength,
                                              context.isAuditSaveResponse() ? responseXml : null,
                                              responseContentLength,
-                                             serviceOid, serviceName,
+                                             responseHttpStatus,
+                                             routingLatency,
+                                             serviceOid, serviceName, operationName,
                                              authenticated, identityProviderOid, userName, userId);
     }
 

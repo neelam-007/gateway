@@ -33,6 +33,7 @@
             <property name="status" type="int"/>
             <property name="strRequestId" column="request_id" type="string"/>
             <property name="serviceOid" column="service_oid" type="long"/>
+            <property name="operationName" column="operation_name" type="string"/>
             <property name="identityProviderOid" column="provider_oid" type="long"/>
             <property name="userId" column="user_id" type="string"/>
             <property name="userName" column="user_name" type="string"/>
@@ -41,6 +42,8 @@
             <property name="requestContentLength" column="request_length" type="int"/>
             <property name="responseXml" column="response_xml" type="text"/>
             <property name="responseContentLength" column="response_length" type="int"/>
+            <property name="responseHttpStatus" column="response_status" type="int"/>
+            <property name="routingLatency" column="routing_latency" type="int"/>
         </joined-subclass>
 
         <joined-subclass name="com.l7tech.common.audit.AdminAuditRecord" table="audit_admin">

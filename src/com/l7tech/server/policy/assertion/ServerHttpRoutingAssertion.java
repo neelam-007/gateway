@@ -135,34 +135,39 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
      */
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException
     {
-        final URL u;
-
-        PublishedService service = context.getService();
         try {
-            u = getProtectedServiceUrl(service);
-        } catch (WSDLException we) {
-            auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, we);
-            return AssertionStatus.FAILED;
-        }
+            final URL u;
 
-        if (failoverStrategy == null)
-            return tryUrl(context, u);
-
-        for (int tries = 0; tries < maxFailoverAttempts; tries++) {
-            String host = (String)failoverStrategy.selectService();
-            if (host == null) // strategy says it's time to give up
-                break;
-            URL url = new URL(u.getProtocol(), host, u.getPort(), u.getFile());
-            AssertionStatus result = tryUrl(context, url);
-            if (result == AssertionStatus.NONE) {
-                failoverStrategy.reportSuccess(host);
-                return result;
+            PublishedService service = context.getService();
+            context.routingStarted();
+            try {
+                u = getProtectedServiceUrl(service);
+            } catch (WSDLException we) {
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, we);
+                return AssertionStatus.FAILED;
             }
-            failoverStrategy.reportFailure(host);
-        }
 
-        auditor.logAndAudit(AssertionMessages.TOO_MANY_ROUTING_ATTEMPTS);
-        return AssertionStatus.FAILED;
+            if (failoverStrategy == null)
+                return tryUrl(context, u);
+
+            for (int tries = 0; tries < maxFailoverAttempts; tries++) {
+                String host = (String)failoverStrategy.selectService();
+                if (host == null) // strategy says it's time to give up
+                    break;
+                URL url = new URL(u.getProtocol(), host, u.getPort(), u.getFile());
+                AssertionStatus result = tryUrl(context, url);
+                if (result == AssertionStatus.NONE) {
+                    failoverStrategy.reportSuccess(host);
+                    return result;
+                }
+                failoverStrategy.reportFailure(host);
+            }
+
+            auditor.logAndAudit(AssertionMessages.TOO_MANY_ROUTING_ATTEMPTS);
+            return AssertionStatus.FAILED;
+        } finally {
+            context.routingFinished();
+        }
     }
 
 

@@ -54,7 +54,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
     public synchronized AssertionStatus checkRequest(PolicyEnforcementContext context)
             throws IOException, PolicyAssertionException {
 
-        context.setRoutingStatus( RoutingStatus.ATTEMPTED );
+        context.setRoutingStatus(RoutingStatus.ATTEMPTED);
         Destination jmsInboundDest = null;
         MessageProducer jmsProducer = null;
         MessageConsumer jmsConsumer = null;
@@ -64,14 +64,14 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
             Message jmsOutboundRequest = null;
             int oopses = 0;
 
-            while ( true ) {
+            while (true) {
                 try {
                     JmsBag bag = getJmsBag(auditor);
                     jmsSession = bag.getSession();
-                    jmsOutboundRequest = makeRequest( context, auditor );
+                    jmsOutboundRequest = makeRequest(context, auditor);
                     break; // if successful, no need for further retries
-                } catch ( Throwable t ) {
-                    if ( ++oopses < MAX_OOPSES ) {
+                } catch (Throwable t) {
+                    if (++oopses < MAX_OOPSES) {
                         String msg = "Failed to establish JMS connection on try #" +
                                 oopses +  ".  Will retry after " + RETRY_DELAY + "ms.";
                         auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, t);
@@ -128,12 +128,14 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
             }
 
             auditor.logAndAudit(AssertionMessages.JMS_ROUTING_REQUEST_ROUTED);
+            context.routingStarted();
             jmsProducer.send( jmsOutboundRequest );
 
             if ( inbound ) {
                 auditor.logAndAudit(AssertionMessages.JMS_ROUTING_GETTING_RESPONSE);
                 int timeout = data.getResponseTimeout();
                 final Message jmsResponse = jmsConsumer.receive( timeout );
+                context.routingFinished();
                 if ( jmsResponse == null ) {
                     auditor.logAndAudit(AssertionMessages.JMS_ROUTING_NO_RESPONSE, new String[]{String.valueOf(timeout)});
 
@@ -160,6 +162,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                     context.setRoutingStatus( RoutingStatus.ROUTED );
                 }
             } else {
+                context.routingFinished();
                 auditor.logAndAudit(AssertionMessages.JMS_ROUTING_NO_RESPONSE_EXPECTED);
                 context.setRoutingStatus( RoutingStatus.ROUTED );
             }
@@ -187,6 +190,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
             closeBag();
             return AssertionStatus.SERVER_ERROR;
         } finally {
+            if (context.getRoutingEndTime() == 0) context.routingFinished(); 
             try {
                 if ( jmsInboundDest instanceof TemporaryQueue ) {
                     if ( jmsConsumer != null ) jmsConsumer.close();

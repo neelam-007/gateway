@@ -24,6 +24,7 @@ import java.util.logging.Level;
  * @version $Revision$
  */
 public class MessageSummaryAuditRecord extends AuditRecord {
+
     /** @deprecated to be called only for serialization and persistence purposes! */
     public MessageSummaryAuditRecord() {
     }
@@ -47,10 +48,10 @@ public class MessageSummaryAuditRecord extends AuditRecord {
      * @param userName the name or login of the user who was authenticated, or null if the request was not authenticated.
      * @param userId the OID or DN of the user who was authenticated, or null if the request was not authenticated.
      */
-    public MessageSummaryAuditRecord(Level level, String nodeId, String requestId, AssertionStatus status, String clientAddr,
-                                     String requestXml, int requestContentLength,
-                                     String responseXml, int responseContentLength,
-                                     long serviceOid, String serviceName,
+    public MessageSummaryAuditRecord(Level level, String nodeId, String requestId, AssertionStatus status,
+                                     String clientAddr, String requestXml, int requestContentLength,
+                                     String responseXml, int responseContentLength, int httpRespStatus, int routingLatency,
+                                     long serviceOid, String serviceName, String operationName,
                                      boolean authenticated, long identityProviderOid, String userName, String userId)
     {
         super(level, nodeId, clientAddr, serviceName, null);
@@ -69,6 +70,9 @@ public class MessageSummaryAuditRecord extends AuditRecord {
         this.requestContentLength = requestContentLength;
         this.responseXml = responseXml;
         this.responseContentLength = responseContentLength;
+        this.responseHttpStatus = httpRespStatus;
+        this.routingLatency = routingLatency;
+        this.operationName = operationName;
         this.serviceOid = serviceOid;
         this.authenticated = authenticated;
         this.identityProviderOid = identityProviderOid;
@@ -156,6 +160,30 @@ public class MessageSummaryAuditRecord extends AuditRecord {
         return responseContentLength;
     }
 
+    /**
+     * @return the HTTP status code of the back-end response
+     */
+    public int getResponseHttpStatus() {
+        return responseHttpStatus;
+    }
+
+    /**
+     * @return the time (in milliseconds) spent routing the request to the protected service
+     */
+    public int getRoutingLatency() {
+        return routingLatency;
+    }
+
+    /** @return the name of the operation the request was for if it's a SOAP service, or likely null otherwise */
+    public String getOperationName() {
+        return operationName;
+    }
+
+    /** @deprecated to be called only for serialization and persistence purposes! */
+    public void setOperationName(String operationName) {
+        this.operationName = operationName;
+    }
+
     /** @deprecated to be called only for serialization and persistence purposes! */
     public void setStatus( int status ) {
         this.status = status;
@@ -206,6 +234,16 @@ public class MessageSummaryAuditRecord extends AuditRecord {
         this.responseContentLength = responseContentLength;
     }
 
+    /** @deprecated to be called only for serialization and persistence purposes! */
+    public void setResponseHttpStatus(int responseHttpStatus) {
+        this.responseHttpStatus = responseHttpStatus;
+    }
+
+    /** @deprecated to be called only for serialization and persistence purposes! */
+    public void setRoutingLatency(int routingLatency) {
+        this.routingLatency = routingLatency;
+    }
+
     /** Status of the request so far, or AssertionStatus.UNDEFINED if it's not yet known. */
     protected int status;
 
@@ -235,4 +273,13 @@ public class MessageSummaryAuditRecord extends AuditRecord {
 
     /** Length of the response */
     protected int responseContentLength = -1;
+
+    /** HTTP status code of protected service response */
+    private int responseHttpStatus = -1;
+
+    /** Time (in milliseconds) spent routing the request to the protected service*/
+    private int routingLatency = -1;
+
+    /** Name of the operation the request was for if it's a SOAP service, or likely null otherwise */
+    private String operationName;
 }

@@ -46,6 +46,8 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private final Vector updatedCookies = new Vector();
     private AuditContext auditContext = null;
     private final Map vars = new HashMap();
+    private long routingStartTime;
+    private long routingEndTime;
 
     public PolicyEnforcementContext(Message request, Message response) {
         super(request, response);
@@ -211,5 +213,21 @@ public class PolicyEnforcementContext extends ProcessingContext {
 
     public Object getVariable(String name) {
         return vars.get(name);
+    }
+
+    public void routingStarted() {
+        this.routingStartTime = System.currentTimeMillis();
+    }
+
+    public void routingFinished() {
+        this.routingEndTime = System.currentTimeMillis();
+    }
+
+    public long getRoutingStartTime() {
+        return routingStartTime;
+    }
+
+    public long getRoutingEndTime() {
+        return routingEndTime;
     }
 }
