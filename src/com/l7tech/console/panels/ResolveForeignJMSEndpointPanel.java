@@ -151,6 +151,12 @@ public class ResolveForeignJMSEndpointPanel extends WizardStepPanel {
             return;
         }
         queueSelector.setModel(model);
+        if (model.getSize() < 1) {
+            // disable this option since there are no other options
+            changeRadio.setEnabled(false);
+        } else {
+            changeRadio.setEnabled(true);
+        }
     }
 
     public String getDescription() {
