@@ -22,9 +22,6 @@ import java.util.logging.Level;
  */
 public class IdProvConfManagerServer extends HibernateEntityManager implements IdentityProviderConfigManager {
 
-    // since this provider config is not persisted, we need a special id to identify it for certain operations
-    public static final long INTERNALPROVIDER_SPECIAL_OID = -2;
-
     public IdProvConfManagerServer() {
         super();
         // construct the internal id provider

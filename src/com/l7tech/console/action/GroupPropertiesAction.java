@@ -1,15 +1,14 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.panels.*;
-import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.UserNode;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.console.panels.EditorDialog;
+import com.l7tech.console.panels.GroupPanel;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.GroupNode;
 import com.l7tech.console.util.Registry;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.identity.IdProvConfManagerServer;
 
 import javax.swing.*;
 import javax.swing.tree.TreeNode;
@@ -56,22 +55,22 @@ public class GroupPropertiesAction extends NodeAction {
     public void performAction() {
         SwingUtilities.invokeLater(
           new Runnable() {
-            public void run() {
-                // fla note. make sure this user is internal. otherwise dont show panel
-                if (!isParentIdProviderInternal((EntityHeaderNode)node)) {
-                    JOptionPane.showMessageDialog(null, "This group is read-only.", "Read-only", JOptionPane.INFORMATION_MESSAGE);
-                    return;
-                }
-                GroupPanel panel = new GroupPanel();
-                JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
-                EditorDialog dialog = new EditorDialog(f, panel);
+              public void run() {
+                  // fla note. make sure this user is internal. otherwise dont show panel
+                  if (!isParentIdProviderInternal((EntityHeaderNode)node)) {
+                      JOptionPane.showMessageDialog(null, "This group is read-only.", "Read-only", JOptionPane.INFORMATION_MESSAGE);
+                      return;
+                  }
+                  GroupPanel panel = new GroupPanel();
+                  JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
+                  EditorDialog dialog = new EditorDialog(f, panel);
 
-                panel.edit(((EntityHeaderNode)node).getEntityHeader());
-                dialog.pack();
-                Utilities.centerOnScreen(dialog);
-                dialog.show();
-            }
-        });
+                  panel.edit(((EntityHeaderNode)node).getEntityHeader());
+                  dialog.pack();
+                  Utilities.centerOnScreen(dialog);
+                  dialog.show();
+              }
+          });
     }
 
     private boolean isParentIdProviderInternal(EntityHeaderNode usernode) {
@@ -81,7 +80,7 @@ public class GroupPropertiesAction extends NodeAction {
                 EntityHeader header = ((EntityHeaderNode)parentNode).getEntityHeader();
                 if (header.getType().equals(EntityType.ID_PROVIDER_CONFIG)) {
                     // we found the parent, see if it's internal one
-                    if (header.getOid() != IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID) return false;
+                    if (header.getOid() != IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID) return false;
                     return true;
                 }
             }

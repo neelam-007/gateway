@@ -1,6 +1,7 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.identity.UserManager;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.console.action.NewUserAction;
 
 import javax.swing.tree.MutableTreeNode;
@@ -69,7 +70,9 @@ public class UserFolderNode extends AbstractTreeNode {
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
-        return new Action[]{new NewUserAction(this)};
+        final NewUserAction newUserAction = new NewUserAction(this);
+        newUserAction.setEnabled(providerId == IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+        return new Action[]{newUserAction};
     }
 
     /**

@@ -335,10 +335,13 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
         // PolicyDropTargetListener interface
         public void dragEnter(DropTargetDragEvent e) {
-            if (!isDragAcceptable(e))
+            if (!isDragAcceptable(e)) {
                 e.rejectDrag();
-            else
+                log.fine("REJECTING DRAG:");
+            } else {
+                log.fine("ACCEPT DRAG:");
                 e.acceptDrag(e.getDropAction());
+            }
         }
 
         public void dragExit(DropTargetEvent e) {
@@ -388,6 +391,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
 
             TreePath path = getClosestPathForLocation(pt.x, pt.y);
+
             int row = getRowForLocation(pt.x, pt.y);
             if (row == -1) {
                 path = new TreePath(getModel().getRoot());
@@ -584,6 +588,11 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 // prohibit dropping onto the drag source...
                 Point pt = e.getLocation();
                 TreePath path = getClosestPathForLocation(pt.x, pt.y);
+                int row = getRowForLocation(pt.x, pt.y);
+                if (row == -1) {
+                    path = new TreePath(getModel().getRoot());
+                }
+
                 if (path.equals(pathSource))
                     return false;
                 return true;
@@ -608,6 +617,9 @@ public class PolicyTree extends JTree implements DragSourceListener,
             // Do this if you want to prohibit dropping onto the drag source...
             Point pt = e.getLocation();
             TreePath path = getClosestPathForLocation(pt.x, pt.y);
+            if (path == null) {
+                path = new TreePath(getModel().getRoot());
+            }
             if (path.equals(pathSource))
                 return false;
 

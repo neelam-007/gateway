@@ -3,6 +3,7 @@ package com.l7tech.console.tree;
 
 import com.l7tech.console.action.NewGroupAction;
 import com.l7tech.identity.GroupManager;
+import com.l7tech.identity.IdentityProviderConfigManager;
 
 import javax.swing.*;
 import javax.swing.tree.MutableTreeNode;
@@ -81,7 +82,9 @@ public class GroupFolderNode extends AbstractTreeNode {
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
-        return new Action[]{new NewGroupAction(this)};
+        final NewGroupAction newGroupAction = new NewGroupAction(this);
+        newGroupAction.setEnabled(providerId == IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+        return new Action[]{newGroupAction};
     }
 
     /**

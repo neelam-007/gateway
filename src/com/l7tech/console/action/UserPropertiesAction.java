@@ -1,16 +1,14 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.panels.NewUserDialog;
-import com.l7tech.console.panels.EditorDialog;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.console.panels.EditorDialog;
 import com.l7tech.console.panels.UserPanel;
-import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.UserNode;
 import com.l7tech.console.tree.EntityHeaderNode;
+import com.l7tech.console.tree.UserNode;
 import com.l7tech.console.util.Registry;
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.identity.IdProvConfManagerServer;
 
 import javax.swing.*;
 import javax.swing.tree.TreeNode;
@@ -85,7 +83,8 @@ public class UserPropertiesAction extends NodeAction {
                 EntityHeader header = ((EntityHeaderNode)parentNode).getEntityHeader();
                 if (header.getType().equals(EntityType.ID_PROVIDER_CONFIG)) {
                     // we found the parent, see if it's internal one
-                    if (header.getOid() != IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID) return false;
+                    if (header.getOid() !=
+                      IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID) return false;
                     return true;
                 }
             }
@@ -94,5 +93,4 @@ public class UserPropertiesAction extends NodeAction {
         // assume it is unless proven otherwise
         return true;
     }
-
 }
