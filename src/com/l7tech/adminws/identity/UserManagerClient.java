@@ -51,7 +51,9 @@ public class UserManagerClient extends IdentityManagerClient implements UserMana
 
     public long save(User user) throws SaveException {
         try {
-            return getStub().saveUser(config.getOid(), user);
+            long res = getStub().saveUser(config.getOid(), user);
+            if (res > 0) user.setOid(res);
+            return res;
         } catch (java.rmi.RemoteException e) {
             throw new SaveException(e.getMessage(), e);
         }
