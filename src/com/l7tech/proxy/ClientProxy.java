@@ -141,7 +141,8 @@ public class ClientProxy {
         // Set up SSL context
         ClientProxyKeyManager keyManager = getKeyManager();
         ClientProxyTrustManager trustManager = getTrustManager();
-        SSLContext sslContext = SSLContext.getInstance("SSL", "SunJSSE");
+        SSLContext sslContext = SSLContext.getInstance("SSL", System.getProperty("com.l7tech.proxy.sslProvider",
+                                                                                 "SunJSSE"));
         sslContext.init(new X509KeyManager[] {keyManager},
                         new X509TrustManager[] {trustManager},
                         null);
