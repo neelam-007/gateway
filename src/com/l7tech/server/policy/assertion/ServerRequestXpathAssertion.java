@@ -90,16 +90,16 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
                 }
 
                 if ( result == null || result.size() == 0 ) {
-                    auditor.logAndAudit(AssertionMessages.REQUEST_XPATH_PATTERN_NOT_MATCHED);
+                    auditor.logAndAudit(AssertionMessages.REQUEST_XPATH_PATTERN_NOT_MATCHED, new String[] {pattern});
                     return AssertionStatus.FALSIFIED;
                 } else {
                     Object o = result.get(0);
                     if ( o instanceof Boolean ) {
                         if ( ((Boolean)o).booleanValue() ) {
-                            auditor.logAndAudit(AssertionMessages.REQUEST_XPATH_RESULT_TRUE);
+                            auditor.logAndAudit(AssertionMessages.REQUEST_XPATH_RESULT_TRUE, new String[] {pattern});
                             return AssertionStatus.NONE;
                         } else {
-                            auditor.logAndAudit(AssertionMessages.REQUEST_XPATH_RESULT_FALSE);
+                            auditor.logAndAudit(AssertionMessages.REQUEST_XPATH_RESULT_FALSE, new String[] {pattern});
                             return AssertionStatus.FALSIFIED;
                         }
                     } else if ( o instanceof Node ) {
