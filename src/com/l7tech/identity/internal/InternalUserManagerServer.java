@@ -5,6 +5,7 @@ import com.l7tech.identity.UserManager;
 import com.l7tech.identity.User;
 import com.l7tech.identity.IdProvConfManagerServer;
 import com.l7tech.logging.LogManager;
+import com.l7tech.common.util.HexUtils;
 
 import java.sql.*;
 import java.util.List;
@@ -15,7 +16,10 @@ import java.util.logging.Level;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateFactory;
+import java.security.SignatureException;
 import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.io.FileInputStream;
 
 import cirrus.hibernate.HibernateException;
 
@@ -193,8 +197,26 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
             sun.misc.BASE64Decoder base64decoder = new sun.misc.BASE64Decoder();
             byte[] certbytes = base64decoder.decodeBuffer(dbcert);
             Certificate dledcert = CertificateFactory.getInstance("X.509").generateCertificate(new ByteArrayInputStream(certbytes));
+            /*
+            // Verify that this cert was signed by our current root (this is now done in authentication code)
+            javax.naming.Context cntx = new javax.naming.InitialContext();
+            String rootCertLoc = (String)(cntx.lookup("java:comp/env/RootCertLocation"));
+            InputStream certStream = new FileInputStream(rootCertLoc);
+            byte[] rootcacertbytes = HexUtils.slurpStream(certStream, 16384);
+            certStream.close();
+            ByteArrayInputStream bais = new ByteArrayInputStream(rootcacertbytes);
+            java.security.cert.Certificate rootcacert = CertificateFactory.getInstance("X.509").generateCertificate(bais);
+            LogManager.getInstance().getSystemLogger().log(Level.INFO, "Verifying db cert against current root cert...");
+            try {
+                dledcert.verify(rootcacert.getPublicKey());
+            } catch (SignatureException e) {
+                LogManager.getInstance().getSystemLogger().log(Level.WARNING, "key found in database does not verify against current root ca cert. maybe our root cert changed since this cert was created.", e);
+                throw new FindException("key found in database does not verify against current root ca cert " + e.getMessage(), e);
+            }
+            LogManager.getInstance().getSystemLogger().log(Level.INFO, "Verification OK - db cert is valid.");
+            // End of verification
+            */
             return dledcert;
-
         } catch (Exception e) {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, e.getMessage(), e);
             throw new FindException(e.toString(), e);
