@@ -34,7 +34,7 @@ public class IdentityPolicyAction extends SecureAction {
      * @return the action name
      */
     public String getName() {
-        return "View Identity policy";
+        return "View Identity Policy";
     }
 
     /**
