@@ -254,7 +254,7 @@ public class LogPanel extends JPanel {
             msgTablePane = new JScrollPane();
         }
         msgTablePane.setViewportView(getMsgTable());
-        msgTablePane.setBackground(getMsgTable().getBackground());
+        msgTablePane.getViewport().setBackground(getMsgTable().getBackground());
 
         return msgTablePane;
     }
@@ -267,7 +267,6 @@ public class LogPanel extends JPanel {
         logPaneTop.setLeftComponent(getMsgTablePane());
         logPaneTop.setRightComponent(getMsgDetailsPane());
         logPaneTop.setResizeWeight(0.5);
-
         return logPaneTop;
     }
 
