@@ -81,7 +81,7 @@ public class WssDecoratorImpl implements WssDecorator {
         Set signList = decorationRequirements.getElementsToSign();
 
         // If we aren't signing the entire message, find extra elements to sign
-        if (decorationRequirements.isSignTimestamp()/* || !signList.isEmpty() */) {  // use only timestamp flag - em
+        if (decorationRequirements.isSignTimestamp() || !signList.isEmpty()) {
             int timeoutMillis = decorationRequirements.getTimestampTimeoutMillis();
             if (timeoutMillis < 1)
                 timeoutMillis = TIMESTAMP_TIMOUT_MILLIS;
@@ -119,8 +119,12 @@ public class WssDecoratorImpl implements WssDecorator {
         }
 
         Element saml = null;
-        if (decorationRequirements.getSenderSamlToken() != null && !signList.isEmpty()) // todo: for other then hok need to add a token even if sign list is emtpy
+        if (decorationRequirements.getSenderSamlToken() != null) {
             saml = addSamlSecurityToken(securityHeader, decorationRequirements.getSenderSamlToken());
+            if (decorationRequirements.isIncludeSamlTokenInSignature()) {
+                decorationRequirements.getElementsToSign().add(saml);
+            }
+        }
 
         Element signature = null;
         if (decorationRequirements.getElementsToSign().size() > 0) {
