@@ -6,12 +6,9 @@
 
 package com.l7tech.server.service.resolution;
 
-import com.l7tech.common.xml.Wsdl;
 import com.l7tech.message.Request;
 import com.l7tech.service.PublishedService;
 
-import javax.wsdl.Port;
-import javax.wsdl.WSDLException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Set;
@@ -38,14 +35,16 @@ public class HttpUriResolver extends NameValueServiceResolver {
         String originalUrl = (String)request.getParameter( Request.PARAM_HTTP_ORIGINAL_URL );
         if ( originalUrl == null ) {
             String uri = (String)request.getParameter( Request.PARAM_HTTP_REQUEST_URI );
+            if (!uri.startsWith("/xml")) uri = "";
             logger.finest("returning uri " + uri);
             return uri;
         } else {
             try {
                 URL url = new URL( originalUrl );
                 String uri = url.getFile();
+                if (!uri.startsWith("/xml")) uri = "";
                 logger.finest("returning uri " + uri);
-                return uri; 
+                return uri;
             } catch (MalformedURLException e) {
                 String err = "Invalid L7-Original-URL value: '" + originalUrl + "'";
                 logger.log( Level.WARNING, err, e );
