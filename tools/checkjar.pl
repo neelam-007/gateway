@@ -23,7 +23,7 @@ my $stuff = shift @stuff;
 $stuff =~ s/^Class-Path:\s*|\s+$|^\s+//gi;
 $stuff =~ s/\s+/$pathsep/g;
 
-my $cmd = qq{$JAVA_HOME/bin/java -cp "tools$pathsep$stuff$pathsep$jar" com.l7tech.tools.JarChecker $jar};
+my $cmd = qq{$JAVA_HOME/bin/java -cp "tools$pathsep$stuff$pathsep$jar" -Djava.awt.headless=true com.l7tech.tools.JarChecker $jar};
 warn "Running command: $cmd\n";
 
 system $cmd;
