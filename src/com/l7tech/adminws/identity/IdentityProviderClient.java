@@ -1,7 +1,9 @@
 package com.l7tech.adminws.identity;
 
-import com.l7tech.identity.*;
-import java.security.Principal;
+import com.l7tech.credential.PrincipalCredentials;
+import com.l7tech.identity.GroupManager;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.UserManager;
 
 /**
  * Layer 7 Technologies, inc.
@@ -29,7 +31,7 @@ public class IdentityProviderClient implements com.l7tech.identity.IdentityProvi
         return groupManager;
     }
 
-    public boolean authenticate( User user, byte[] credentials) {
+    public boolean authenticate( PrincipalCredentials pc ) {
         return false;
     }
 

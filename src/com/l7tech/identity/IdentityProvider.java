@@ -1,6 +1,6 @@
 package com.l7tech.identity;
 
-import java.security.Principal;
+import com.l7tech.credential.PrincipalCredentials;
 
 /**
  * @author alex
@@ -10,7 +10,7 @@ public interface IdentityProvider {
     IdentityProviderConfig getConfig();
     UserManager getUserManager();
     GroupManager getGroupManager();
-    boolean authenticate( User user, byte[] credentials );
+    boolean authenticate( PrincipalCredentials pc );
     /**
      * If true, the save, update and delete methods wont be supported on the usermanager and groupmanager objects
      */
