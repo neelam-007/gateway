@@ -73,8 +73,8 @@ class SamlAuthorizationDecisionStatementValidate extends SamlStatementValidate {
             return;
         }
         String constraintsAction = authorizationStatementRequirements.getAction();
-        if (constraintsAction == null) {
-            validationResults.add(new SamlAssertionValidate.Error("No Action specified", authorizationStatementRequirements, null, null));
+        if (constraintsAction == null || "".equals(constraintsAction)) {
+            logger.fine("No Action constraint requested");
             return;
         }
 
@@ -83,7 +83,7 @@ class SamlAuthorizationDecisionStatementValidate extends SamlStatementValidate {
 
         for (int i = 0; i < actionArray.length; i++) {
             ActionType actionType = actionArray[i];
-            if (constraintsActionNameSpace != null) {
+            if (constraintsActionNameSpace != null && !"".equals(constraintsActionNameSpace)) {
                if (!constraintsActionNameSpace.equals(actionType.getNamespace())) {
                    continue;
                }
