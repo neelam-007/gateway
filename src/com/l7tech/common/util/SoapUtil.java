@@ -564,7 +564,9 @@ public class SoapUtil {
     }
 
     /**
-     * Transform the DOM document as a SOAP message
+     * Create the SOAP message from the DOM document. The caller must ensure
+     * that the DOM source is valid SOAP message; the api <code>javax.xml.soap.*</code>
+     * does not validate if the document is valid SOAP message or not.
      * <p/>
      *
      * @param doc the SOAP message as a DOM document
