@@ -14,7 +14,6 @@ import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
-import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
