@@ -137,11 +137,11 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
 
                     _resolvers.add( resolver );
                 } catch ( ClassNotFoundException cnfe ) {
-                    _log.log( Level.SEVERE, cnfe.toString(), cnfe );
+                    logger.log( Level.SEVERE, cnfe.toString(), cnfe );
                 } catch ( InstantiationException ie ) {
-                    _log.log( Level.SEVERE, ie.toString(), ie );
+                    logger.log( Level.SEVERE, ie.toString(), ie );
                 } catch ( IllegalAccessException iae ) {
-                    _log.log( Level.SEVERE, iae.toString(), iae );
+                    logger.log( Level.SEVERE, iae.toString(), iae );
                 }
             }
         }
@@ -163,15 +163,15 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
             fireCreated( service );
             return oid;
         } catch ( SQLException se ) {
-            _log.log( Level.SEVERE, se.toString(), se );
+            logger.log( Level.SEVERE, se.toString(), se );
             throw new SaveException( se.toString(), se );
         } catch ( WSDLException we ) {
             SaveException se = new SaveException( "Missing or invalid WSDL", we );
-            _log.log( Level.SEVERE, se.toString(), se );
+            logger.log( Level.SEVERE, se.toString(), se );
             throw se;
         } catch ( DuplicateObjectException doe ) {
             SaveException se = new SaveException( "Duplicate service resolution parameters", doe );
-            _log.log( Level.SEVERE, se.toString(), se );
+            logger.log( Level.SEVERE, se.toString(), se );
             throw se;
         }
     }
@@ -206,7 +206,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
 
             // check version
             if (original.getVersion() != service.getVersion()) {
-                _log.severe("db service has version: " + original.getVersion() + ". requestor service has version: " + service.getVersion());
+                logger.severe("db service has version: " + original.getVersion() + ". requestor service has version: " + service.getVersion());
                 throw new VersionException("the published service you are trying to update is no longer valid.");
             }
 
@@ -222,15 +222,15 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
             putService(original);
             fireUpdated(original);
         } catch ( SQLException se ) {
-            _log.log( Level.SEVERE, se.toString(), se );
+            logger.log( Level.SEVERE, se.toString(), se );
             throw new UpdateException( se.toString(), se );
         } catch ( WSDLException we ) {
             UpdateException ue = new UpdateException( "Missing or invalid WSDL", we );
-            _log.log( Level.SEVERE, ue.toString(), ue );
+            logger.log( Level.SEVERE, ue.toString(), ue );
             throw ue;
         } catch ( DuplicateObjectException doe ) {
             UpdateException ue = new UpdateException( "Duplicate service resolution parameters" );
-            _log.log( Level.SEVERE, ue.toString(), ue );
+            logger.log( Level.SEVERE, ue.toString(), ue );
             throw ue;
         }
     }
@@ -284,7 +284,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
 
 
 
-    private static final Logger _log = LogManager.getInstance().getSystemLogger();
+    private static final Logger logger = LogManager.getInstance().getSystemLogger();
 
     protected SortedSet _resolvers;
 

@@ -313,9 +313,9 @@ public class Wsdl {
 
                 }
             }
-            if ( numPorts > 1 ) _log.warning( "WSDL " + getDefinition().getTargetNamespace() + " has more than one port, used the first." );
+            if ( numPorts > 1 ) logger.warning( "WSDL " + getDefinition().getTargetNamespace() + " has more than one port, used the first." );
         }
-        if ( numServices > 1 ) _log.warning( "WSDL " + getDefinition().getTargetNamespace() + " has more than one service, used the first." );
+        if ( numServices > 1 ) logger.warning( "WSDL " + getDefinition().getTargetNamespace() + " has more than one service, used the first." );
         return soapPort;
     }
 
@@ -333,7 +333,7 @@ public class Wsdl {
             }
         }
 
-        if ( num > 1 ) _log.warning( "WSDL " + getDefinition().getTargetNamespace() + " contained multiple <soap:address> elements" );
+        if ( num > 1 ) logger.warning( "WSDL " + getDefinition().getTargetNamespace() + " contained multiple <soap:address> elements" );
 
         return url;
     }
@@ -357,10 +357,10 @@ public class Wsdl {
             }
         }
 
-        if ( num > 1 ) _log.warning( "WSDL " + getDefinition().getTargetNamespace() + " contained multiple <soap:address> elements" );
+        if ( num > 1 ) logger.warning( "WSDL " + getDefinition().getTargetNamespace() + " contained multiple <soap:address> elements" );
     }
 
     private Definition definition;
 
-    private transient Logger _log = LogManager.getInstance().getSystemLogger();
+    private transient Logger logger = LogManager.getInstance().getSystemLogger();
 }

@@ -40,10 +40,10 @@ public class HttpUriResolver extends NameValueServiceResolver {
             else
                 return new String[] { url.getFile() };
         } catch ( WSDLException we ) {
-            _log.throwing( getClass().getName(), "getTargetValues", we );
+            logger.throwing( getClass().getName(), "getTargetValues", we );
             return new String[0];
         } catch ( MalformedURLException mue ) {
-            _log.throwing( getClass().getName(), "getTargetValues", mue );
+            logger.throwing( getClass().getName(), "getTargetValues", mue );
             return new String[0];
         }
     }
@@ -58,7 +58,7 @@ public class HttpUriResolver extends NameValueServiceResolver {
                 return url.getFile();
             } catch (MalformedURLException e) {
                 String err = "Invalid L7-Original-URL value: '" + originalUrl + "'";
-                _log.log( Level.WARNING, err, e );
+                logger.log( Level.WARNING, err, e );
                 throw new ServiceResolutionException( err );
             }
         }
@@ -68,5 +68,5 @@ public class HttpUriResolver extends NameValueServiceResolver {
         return FAST;
     }
 
-    protected Logger _log = LogManager.getInstance().getSystemLogger();
+    protected Logger logger = LogManager.getInstance().getSystemLogger();
 }

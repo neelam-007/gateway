@@ -45,7 +45,7 @@ public class ServerHttpClientCert extends ServerCredentialSourceAssertion implem
 
         if ( param == null ) {
             String err = "No Client Certificate was present in the request.";
-            _log.log( Level.WARNING, err );
+            logger.log( Level.WARNING, err );
             throw new CredentialFinderException( err, AssertionStatus.AUTH_REQUIRED );
         } else {
             Object cert = null;
@@ -57,7 +57,7 @@ public class ServerHttpClientCert extends ServerCredentialSourceAssertion implem
                     if ( cert instanceof X509Certificate ) clientCert = (X509Certificate)cert;
                 }
             } catch ( ClassCastException cce ) {
-                _log.log( Level.WARNING, cce.toString(), cce );
+                logger.log( Level.WARNING, cce.toString(), cce );
                 throw new CredentialFinderException( "Client Certificate " + cert + " was of the wrong type (" + cert.getClass().getName() + ")", AssertionStatus.AUTH_FAILED );
             }
         }
@@ -65,10 +65,10 @@ public class ServerHttpClientCert extends ServerCredentialSourceAssertion implem
         try {
             clientCert.checkValidity();
         } catch (CertificateExpiredException cee) {
-            _log.log( Level.WARNING, cee.toString(), cee );
+            logger.log( Level.WARNING, cee.toString(), cee );
             throw new CredentialFinderException( "Client Certificate has expired", cee, AssertionStatus.AUTH_FAILED );
         } catch (CertificateNotYetValidException cnyve ) {
-            _log.log( Level.WARNING, cnyve.toString(), cnyve );
+            logger.log( Level.WARNING, cnyve.toString(), cnyve );
             throw new CredentialFinderException( "Client Certificate is not yet valid", cnyve, AssertionStatus.AUTH_FAILED );
         }
 
@@ -80,11 +80,11 @@ public class ServerHttpClientCert extends ServerCredentialSourceAssertion implem
             X500Name x500name = new X500Name( clientCert.getSubjectX500Principal().getName() );
             certCN = x500name.getCommonName();
         } catch (IOException e) {
-            _log.log(Level.SEVERE, e.getMessage(), e);
+            logger.log(Level.SEVERE, e.getMessage(), e);
             throw new CredentialFinderException("cannot extract name from cert", e, AssertionStatus.AUTH_FAILED);
         }
 
-        _log.log(Level.INFO, "cert found for user " + certCN);
+        logger.log(Level.INFO, "cert found for user " + certCN);
 
         User u = new User();
         u.setLogin(certCN);

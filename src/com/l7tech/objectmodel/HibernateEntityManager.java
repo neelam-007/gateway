@@ -68,7 +68,7 @@ public abstract class HibernateEntityManager implements EntityManager {
             List results = s.find( stmt );
             if ( results.size() == 0 ) {
                 String err = "Object to be updated does not exist!";
-                _log.log( Level.WARNING, err );
+                logger.log( Level.WARNING, err );
                 throw new UpdateException( err );
             }
 
@@ -76,14 +76,14 @@ public abstract class HibernateEntityManager implements EntityManager {
 
             if ( savedVersion != ent.getVersion() ) {
                 String err = "Object to be updated is stale (a later version exists in the database)!";
-                _log.log( Level.WARNING, err );
+                logger.log( Level.WARNING, err );
                 throw new StaleUpdateException( err );
             }
         } catch (SQLException e) {
-            _log.log( Level.SEVERE, e.getMessage(), e );
+            logger.log( Level.SEVERE, e.getMessage(), e );
             throw new UpdateException( e.getMessage(), e );
         } catch (HibernateException e) {
-            _log.log( Level.SEVERE, e.getMessage(), e );
+            logger.log( Level.SEVERE, e.getMessage(), e );
             throw new UpdateException( e.getMessage(), e );
         }
     }
@@ -139,5 +139,5 @@ public abstract class HibernateEntityManager implements EntityManager {
     }
 
     protected PersistenceManager _manager;
-    protected Logger _log = LogManager.getInstance().getSystemLogger();
+    protected Logger logger = LogManager.getInstance().getSystemLogger();
 }

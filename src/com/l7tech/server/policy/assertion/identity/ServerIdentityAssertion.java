@@ -52,7 +52,7 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
             // No credentials have been found yet
             if ( request.isAuthenticated() ) {
                 String err = "Request is authenticated but request has no PrincipalCredentials!";
-                _log.log(Level.SEVERE, err);
+                logger.log(Level.SEVERE, err);
                 throw new IllegalStateException( err );
             } else {
                 // Authentication is required for any IdentityAssertion
@@ -67,12 +67,12 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
 
            if ( request.isAuthenticated() ) {
                 // The user was authenticated by a previous IdentityAssertion.
-                _log.log(Level.FINEST, "Request already authenticated");
+                logger.log(Level.FINEST, "Request already authenticated");
                 return checkUser( user );
             } else {
                 if ( _data.getIdentityProviderOid() == Entity.DEFAULT_OID ) {
                     String err = "Can't call checkRequest() when no valid identityProviderOid has been set!";
-                    _log.log(Level.SEVERE, err);
+                    logger.log(Level.SEVERE, err);
                     throw new IllegalStateException( err );
                 }
 
@@ -82,32 +82,32 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
 
                     // Authentication succeeded
                     request.setAuthenticated(true);
-                    _log.log(Level.FINEST, "Authenticated " + user.getLogin() );
+                    logger.log(Level.FINEST, "Authenticated " + user.getLogin() );
                     // Make sure this guy matches our criteria
                     return checkUser( user );
                 } catch ( BadCredentialsException bce ) {
                     // Authentication failure
                     response.addResult( new AssertionResult( _data, AssertionStatus.AUTH_FAILED, bce.getMessage(), bce ));
-                    _log.log(Level.INFO, "Authentication failed for " + user.getLogin() );
+                    logger.log(Level.INFO, "Authentication failed for " + user.getLogin() );
                     return AssertionStatus.AUTH_FAILED;
                 } catch ( InvalidClientCertificateException icce ) {
                     response.addResult( new AssertionResult( _data, AssertionStatus.AUTH_FAILED, icce.getMessage(), icce ));
-                    _log.log(Level.INFO, "Invalid client cert for " + user.getLogin() );
+                    logger.log(Level.INFO, "Invalid client cert for " + user.getLogin() );
                     // set some response header so that the CP is made aware of this situation
                     response.setParameter(Response.PARAM_HTTP_CERT_STATUS, "invalid");
                     return AssertionStatus.AUTH_FAILED;
                 } catch ( MissingCredentialsException mce ) {
                     response.setAuthenticationMissing(true);
                     response.addResult( new AssertionResult( _data, AssertionStatus.AUTH_REQUIRED, mce.getMessage(), mce ));
-                    _log.log(Level.INFO, "Authentication failed for " + user.getLogin() );
+                    logger.log(Level.INFO, "Authentication failed for " + user.getLogin() );
                     return AssertionStatus.AUTH_REQUIRED;
                 } catch ( AuthenticationException ae ) {
-                    _log.log(Level.INFO, "Authentication failed for " + user.getLogin() );
+                    logger.log(Level.INFO, "Authentication failed for " + user.getLogin() );
                     response.addResult( new AssertionResult( _data, AssertionStatus.AUTH_FAILED, ae.getMessage(), ae ));
                     return AssertionStatus.AUTH_FAILED;
                 } catch ( FindException fe ) {
                     String err = "Couldn't find identity provider!";
-                    _log.log( Level.SEVERE, err, fe );
+                    logger.log( Level.SEVERE, err, fe );
                     throw new IdentityAssertionException( err, fe );
                 }
 
@@ -134,7 +134,7 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
 
     protected transient IdentityProviderConfigManager _configManager = null;
     protected transient IdentityProvider _identityProvider;
-    protected transient Logger _log = LogManager.getInstance().getSystemLogger();
+    protected transient Logger logger = LogManager.getInstance().getSystemLogger();
 
     protected IdentityAssertion _data;
 }

@@ -61,7 +61,7 @@ public class ServerSslAssertion implements ServerAssertion {
             message = ssl ? "SSL optional and present" : "SSL optional and not present";
         }
 
-        _log.log(level, message);
+        logger.log(level, message);
 
         if (status == AssertionStatus.FALSIFIED) response.setPolicyViolated(true);
 
@@ -70,5 +70,5 @@ public class ServerSslAssertion implements ServerAssertion {
 
     protected SslAssertion _data;
 
-    protected transient Logger _log = LogManager.getInstance().getSystemLogger();
+    protected transient Logger logger = LogManager.getInstance().getSystemLogger();
 }

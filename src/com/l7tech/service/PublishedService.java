@@ -37,7 +37,7 @@ public class PublishedService extends NamedEntityImp {
     public synchronized ServerAssertion rootAssertion() throws IOException {
         String policyXml = getPolicyXml();
         if ( policyXml == null || policyXml.length() == 0 ) {
-            _log.warning( "Service " + _oid + " has an invalid or empty policy_xml field.  Using null policy." );
+            logger.warning( "Service " + _oid + " has an invalid or empty policy_xml field.  Using null policy." );
             return new ServerFalseAssertion( FalseAssertion.getInstance() );
         } else {
             if ( _rootAssertion == null ) {
@@ -135,7 +135,7 @@ public class PublishedService extends NamedEntityImp {
 
             if ( url == null ) {
                 String err = "WSDL " + getWsdlUrl() + " did not contain a valid URL";
-                _log.severe( err );
+                logger.severe( err );
                 throw new WSDLException( SoapUtil.FC_SERVER, err );
             }
 
@@ -216,7 +216,7 @@ public class PublishedService extends NamedEntityImp {
     protected boolean _disabled;
 
     protected transient volatile int _requestCount = 0;
-    protected transient Logger _log = LogManager.getInstance().getSystemLogger();
+    protected transient Logger logger = LogManager.getInstance().getSystemLogger();
     protected transient Wsdl _parsedWsdl;
     protected transient Port _wsdlPort;
     protected transient URL _serviceUrl;

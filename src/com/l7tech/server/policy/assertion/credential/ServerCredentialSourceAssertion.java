@@ -52,7 +52,7 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
             if ( pc == null ) {
                 response.setAuthenticationMissing( true );
                 challenge( request, response );
-                _log.log(Level.INFO, AssertionStatus.AUTH_REQUIRED.getMessage());
+                logger.log(Level.INFO, AssertionStatus.AUTH_REQUIRED.getMessage());
                 return AssertionStatus.AUTH_REQUIRED;
             } else {
                 request.setPrincipalCredentials( pc );
@@ -61,13 +61,13 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
         } catch ( CredentialFinderException cfe ) {
             AssertionStatus status = cfe.getStatus();
             if ( status == null ) {
-                _log.log(Level.SEVERE, cfe.getMessage(), cfe);
+                logger.log(Level.SEVERE, cfe.getMessage(), cfe);
                 throw new PolicyAssertionException( cfe.getMessage(), cfe );
             } else {
                 response.addResult( new AssertionResult( _data, status, cfe.getMessage() ) );
                 challenge( request, response );
                 // Suppress exception trace by omitting exception argument
-                _log.info( cfe.getMessage() );
+                logger.info( cfe.getMessage() );
                 if ( status == AssertionStatus.AUTH_REQUIRED )
                     response.setAuthenticationMissing(true);
                 else
@@ -81,7 +81,7 @@ public abstract class ServerCredentialSourceAssertion implements ServerAssertion
     protected abstract AssertionStatus checkCredentials( Request request, Response response ) throws CredentialFinderException;
     protected abstract void challenge( Request request, Response response );
 
-    protected Logger _log = LogManager.getInstance().getSystemLogger();
+    protected Logger logger = LogManager.getInstance().getSystemLogger();
     protected transient Map _credentialFinders = new HashMap();
 
     protected CredentialSourceAssertion _data;

@@ -86,10 +86,10 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
         DigestSessions sessions = DigestSessions.getInstance();
 
         if ( sessions.use( nonce ) ) {
-            _log.fine( "Nonce " + nonce + " still valid" );
+            logger.fine( "Nonce " + nonce + " still valid" );
             return AssertionStatus.NONE;
         } else {
-            _log.info( "Nonce " + nonce + " expired" );
+            logger.info( "Nonce " + nonce + " expired" );
             sessions.invalidate( nonce );
             return AssertionStatus.AUTH_FAILED;
         }
@@ -194,7 +194,7 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
                         }
                         if ( value == null ) {
                             CredentialFinderException cfe = new CredentialFinderException( "Unterminated quoted string in WWW-Authorize header" );
-                            _log.log( Level.WARNING, cfe.toString(), cfe );
+                            logger.log( Level.WARNING, cfe.toString(), cfe );
                             throw cfe;
                         }
                     }
@@ -207,12 +207,12 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
                     authParams.put( HttpCredentialSourceAssertion.PARAM_SCHEME, scheme );
                 } else {
                     CredentialFinderException cfe = new CredentialFinderException( "Unexpected value '" + token + "' in WWW-Authorize header" );
-                    _log.log( Level.WARNING, cfe.toString(), cfe );
+                    logger.log( Level.WARNING, cfe.toString(), cfe );
                     throw cfe;
                 }
 
                 if ( !scheme().equals(scheme) ) {
-                    _log.log( Level.INFO, "Invalid scheme '" + scheme + "' in WWW-Authorize header" );
+                    logger.log( Level.INFO, "Invalid scheme '" + scheme + "' in WWW-Authorize header" );
                     return null;
                 }
             }

@@ -83,7 +83,7 @@ public abstract class ServerHttpCredentialSource extends ServerCredentialSourceA
 
         String challenge = challengeHeader.toString();
 
-        _log.fine( "Sending WWW-Authenticate: " + challenge );
+        logger.fine( "Sending WWW-Authenticate: " + challenge );
         response.setParameterIfEmpty( Response.PARAM_HTTP_WWWAUTHENTICATE, challenge.toString() );
     }
 
