@@ -413,9 +413,9 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
     private JList getUserList() {
         if (userList != null) return userList;
 
-        userList = new javax.swing.JList(getUserListModel());
+        userList = new JList(getUserListModel());
         userList.setFont(new java.awt.Font("Dialog", 0, 12));
-        userList.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_INTERVAL_SELECTION);
+        userList.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
         userList.setMaximumSize(new java.awt.Dimension(300, 400));
         userList.setMinimumSize(new java.awt.Dimension(150, 250));
         userList.setCellRenderer(renderer);
@@ -481,35 +481,35 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
     private void initComponents() {
         java.awt.GridBagConstraints gridBagConstraints;
 
-        mainPanel = new javax.swing.JPanel();
-        userPanel = new javax.swing.JPanel();
-        userListPanel = new javax.swing.JPanel();
-        userListScrollPane = new javax.swing.JScrollPane();
-        userListTitleLabel = new javax.swing.JLabel();
-        userActionPanel = new javax.swing.JPanel();
-        userAttributePanel = new javax.swing.JPanel();
-        attributeTitleLabel = new javax.swing.JLabel();
-        nameAttributeLabel = new javax.swing.JLabel();
-        loginNameAttributeLabel = new javax.swing.JLabel();
-        nameAttribute = new javax.swing.JTextField();
-        loginNameAttribute = new javax.swing.JTextField();
-        passwordAttributeLabel = new javax.swing.JLabel();
-        passwordAttribute = new javax.swing.JTextField();
-        firstNameAttributeLabel = new javax.swing.JLabel();
-        firstNameAttribute = new javax.swing.JTextField();
-        lastNameAttributeLabel = new javax.swing.JLabel();
-        lastNameAttribute = new javax.swing.JTextField();
-        emailAttributeLabel = new javax.swing.JLabel();
-        emailAttribute = new javax.swing.JTextField();
+        mainPanel = new JPanel();
+        userPanel = new JPanel();
+        userListPanel = new JPanel();
+        userListScrollPane = new JScrollPane();
+        userListTitleLabel = new JLabel();
+        userActionPanel = new JPanel();
+        userAttributePanel = new JPanel();
+        attributeTitleLabel = new JLabel();
+        nameAttributeLabel = new JLabel();
+        loginNameAttributeLabel = new JLabel();
+        nameAttribute = new JTextField();
+        loginNameAttribute = new JTextField();
+        passwordAttributeLabel = new JLabel();
+        passwordAttribute = new JTextField();
+        firstNameAttributeLabel = new JLabel();
+        firstNameAttribute = new JTextField();
+        lastNameAttributeLabel = new JLabel();
+        lastNameAttribute = new JTextField();
+        emailAttributeLabel = new JLabel();
+        emailAttribute = new JTextField();
 
 
         /*   Commented out the password strategry for the time being as the server does not handle it right now (Bugzilla #615)
-        passwordStrategyAttributeLabel = new javax.swing.JLabel();
-        passwordStrategyAttribute = new javax.swing.JComboBox();  */
+        passwordStrategyAttributeLabel = new JLabel();
+        passwordStrategyAttribute = new JComboBox();  */
 
-        valueTitleLabel = new javax.swing.JLabel();
-        mappingTitleLabel = new javax.swing.JLabel();
-        objectClassLabel = new javax.swing.JLabel();
+        valueTitleLabel = new JLabel();
+        mappingTitleLabel = new JLabel();
+        objectClassLabel = new JLabel();
 
         userPanel.setLayout(new java.awt.BorderLayout());
 
@@ -677,7 +677,7 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
         userAttributePanel.add(passwordStrategyAttributeLabel, gridBagConstraints);
 
         passwordStrategyAttribute.setFont(new java.awt.Font("Dialog", 0, 12));
-        passwordStrategyAttribute.setModel(new javax.swing.DefaultComboBoxModel(new String[]{"CLEAR", "HASHED"}));
+        passwordStrategyAttribute.setModel(new DefaultComboBoxModel(new String[]{"CLEAR", "HASHED"}));
         passwordStrategyAttribute.setPreferredSize(new java.awt.Dimension(150, 20));
         passwordStrategyAttribute.setToolTipText(resources.getString("passwordStrategyAttributeTextField.tooltip"));
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -798,39 +798,39 @@ public class LdapUserMappingPanel extends IdentityProviderStepPanel {
                 }
             };
 
-    private javax.swing.JLabel attributeTitleLabel;
-    private javax.swing.JLabel firstNameAttributeLabel;
-    private javax.swing.JLabel emailAttributeLabel;
-    private javax.swing.JLabel lastNameAttributeLabel;
-    private javax.swing.JLabel loginNameAttributeLabel;
-    private javax.swing.JLabel mappingTitleLabel;
-    private javax.swing.JLabel nameAttributeLabel;
-    private javax.swing.JLabel objectClassLabel;
-    private javax.swing.JLabel passwordAttributeLabel;
-    private javax.swing.JLabel valueTitleLabel;
+    private JLabel attributeTitleLabel;
+    private JLabel firstNameAttributeLabel;
+    private JLabel emailAttributeLabel;
+    private JLabel lastNameAttributeLabel;
+    private JLabel loginNameAttributeLabel;
+    private JLabel mappingTitleLabel;
+    private JLabel nameAttributeLabel;
+    private JLabel objectClassLabel;
+    private JLabel passwordAttributeLabel;
+    private JLabel valueTitleLabel;
 
-    private javax.swing.JTextField emailAttribute;
-    private javax.swing.JTextField firstNameAttribute;
-    private javax.swing.JTextField lastNameAttribute;
-    private javax.swing.JTextField loginNameAttribute;
-    private javax.swing.JTextField nameAttribute;
-    private javax.swing.JTextField objectClass;
-    private javax.swing.JTextField passwordAttribute;
+    private JTextField emailAttribute;
+    private JTextField firstNameAttribute;
+    private JTextField lastNameAttribute;
+    private JTextField loginNameAttribute;
+    private JTextField nameAttribute;
+    private JTextField objectClass;
+    private JTextField passwordAttribute;
 
     /*   Commented out the password strategry for the time being as the server does not handle it right now (Bugzilla #615)
-    private javax.swing.JLabel passwordStrategyAttributeLabel;
-    private javax.swing.JComboBox passwordStrategyAttribute;   */
+    private JLabel passwordStrategyAttributeLabel;
+    private JComboBox passwordStrategyAttribute;   */
 
-    private javax.swing.JButton addButton;
-    private javax.swing.JButton removeButton;
-    private javax.swing.JPanel userActionPanel;
-    private javax.swing.JPanel userAttributePanel;
-    private javax.swing.JList userList;
-    private javax.swing.JPanel userListPanel;
-    private javax.swing.JScrollPane userListScrollPane;
-    private javax.swing.JLabel userListTitleLabel;
-    private javax.swing.JPanel userPanel;
-    private javax.swing.JPanel mainPanel;
+    private JButton addButton;
+    private JButton removeButton;
+    private JPanel userActionPanel;
+    private JPanel userAttributePanel;
+    private JList userList;
+    private JPanel userListPanel;
+    private JScrollPane userListScrollPane;
+    private JLabel userListTitleLabel;
+    private JPanel userPanel;
+    private JPanel mainPanel;
 
     private LdapIdentityProviderConfig iProviderConfig = null;
     private SortedListModel userListModel = null;

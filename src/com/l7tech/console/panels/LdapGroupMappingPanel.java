@@ -221,14 +221,14 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
             memberStrategy.setSelectedIndex(0);
     }
 
-        /**
+    /**
      * Test whether the step panel allows testing the settings.
      *
      * @return true if the panel is valid, false otherwis
      */
 
     public boolean canTest() {
-        return false;
+        return true;
     }
 
     /**
@@ -392,10 +392,10 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
     private JList getGroupList() {
         if (groupList != null) return groupList;
 
-        groupList = new javax.swing.JList(getGroupListModel());
+        groupList = new JList(getGroupListModel());
 
         groupList.setFont(new java.awt.Font("Dialog", 0, 12));
-        groupList.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_INTERVAL_SELECTION);
+        groupList.setSelectionMode(ListSelectionModel.SINGLE_INTERVAL_SELECTION);
         groupList.setMaximumSize(new java.awt.Dimension(300, 400));
         groupList.setMinimumSize(new java.awt.Dimension(150, 250));
         groupList.setCellRenderer(renderer);
@@ -462,23 +462,23 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
     private void initComponents() {
         java.awt.GridBagConstraints gridBagConstraints;
 
-        mainPanel =  new javax.swing.JPanel();
-        groupPanel = new javax.swing.JPanel();
-        groupListPanel = new javax.swing.JPanel();
-        groupListScrollPane = new javax.swing.JScrollPane();
-        groupListTitle = new javax.swing.JLabel();
-        groupActionPanel = new javax.swing.JPanel();
-        groupAttributesPanel = new javax.swing.JPanel();
-        attributeTitleLabel = new javax.swing.JLabel();
-        nameAttributeLabel = new javax.swing.JLabel();
-        memberAttributeLabel = new javax.swing.JLabel();
-        nameAttribute = new javax.swing.JTextField();
-        memberAttribute = new javax.swing.JTextField();
-        memberStrategyAttributeLabel = new javax.swing.JLabel();
-        memberStrategy = new javax.swing.JComboBox();
-        valueTitleLabel = new javax.swing.JLabel();
-        mappingTitle = new javax.swing.JLabel();
-        objectClassLabel = new javax.swing.JLabel();
+        mainPanel =  new JPanel();
+        groupPanel = new JPanel();
+        groupListPanel = new JPanel();
+        groupListScrollPane = new JScrollPane();
+        groupListTitle = new JLabel();
+        groupActionPanel = new JPanel();
+        groupAttributesPanel = new JPanel();
+        attributeTitleLabel = new JLabel();
+        nameAttributeLabel = new JLabel();
+        memberAttributeLabel = new JLabel();
+        nameAttribute = new JTextField();
+        memberAttribute = new JTextField();
+        memberStrategyAttributeLabel = new JLabel();
+        memberStrategy = new JComboBox();
+        valueTitleLabel = new JLabel();
+        mappingTitle = new JLabel();
+        objectClassLabel = new JLabel();
 
         groupPanel.setLayout(new java.awt.BorderLayout());
 
@@ -573,7 +573,7 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
 
         memberStrategy.setToolTipText(resources.getString("groupMemberStrategy.tooltip"));
         memberStrategy.setFont(new java.awt.Font("Dialog", 0, 12));
-        memberStrategy.setModel(new javax.swing.DefaultComboBoxModel(new String[]{"Member is User DN",
+        memberStrategy.setModel(new DefaultComboBoxModel(new String[]{"Member is User DN",
                                                                                   "Member is User Login",
                                                                                   "Member is NV Pair",
                                                                                   "OU Group"}));
@@ -696,28 +696,28 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
                 }
             };
 
-    private javax.swing.JButton addButton;
-    private javax.swing.JButton removeButton;
-    private javax.swing.JLabel objectClassLabel;
-    private javax.swing.JLabel valueTitleLabel;
-    private javax.swing.JLabel attributeTitleLabel;
-    private javax.swing.JPanel groupActionPanel;
-    private javax.swing.JPanel groupAttributesPanel;
-    private javax.swing.JList groupList;
-    private javax.swing.JPanel groupListPanel;
-    private javax.swing.JScrollPane groupListScrollPane;
-    private javax.swing.JLabel groupListTitle;
-    private javax.swing.JPanel groupPanel;
-    private javax.swing.JPanel mainPanel;
-    private javax.swing.JLabel mappingTitle;
-    private javax.swing.JLabel memberAttributeLabel;
-    private javax.swing.JLabel memberStrategyAttributeLabel;
-    private javax.swing.JLabel nameAttributeLabel;
+    private JButton addButton;
+    private JButton removeButton;
+    private JLabel objectClassLabel;
+    private JLabel valueTitleLabel;
+    private JLabel attributeTitleLabel;
+    private JPanel groupActionPanel;
+    private JPanel groupAttributesPanel;
+    private JList groupList;
+    private JPanel groupListPanel;
+    private JScrollPane groupListScrollPane;
+    private JLabel groupListTitle;
+    private JPanel groupPanel;
+    private JPanel mainPanel;
+    private JLabel mappingTitle;
+    private JLabel memberAttributeLabel;
+    private JLabel memberStrategyAttributeLabel;
+    private JLabel nameAttributeLabel;
 
-    private javax.swing.JTextField memberAttribute;
-    private javax.swing.JTextField nameAttribute;
-    private javax.swing.JTextField objectClass;
-    private javax.swing.JComboBox memberStrategy;
+    private JTextField memberAttribute;
+    private JTextField nameAttribute;
+    private JTextField objectClass;
+    private JComboBox memberStrategy;
 
     private LdapIdentityProviderConfig iProviderConfig = null;
     private SortedListModel groupListModel = null;

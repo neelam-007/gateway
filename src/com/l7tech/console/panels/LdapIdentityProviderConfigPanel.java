@@ -498,6 +498,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
      * @return true if the panel is valid, false otherwis
      */
     public boolean canTest() {
+        if (advanceAllowed) return true;
         return false;
     }
 
