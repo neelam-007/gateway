@@ -143,13 +143,13 @@ public class RSASigner {
             System.out.println("java RSASigner rootkstorePath rootkstorepass rootkeyAlias rootprivateKeyPass csrfilepath outputcertpath");
             return;
         }
-
         // read the csr from the file
         byte[] csrfromfile = null;
         byte[] b64Encoded = HexUtils.slurpStream(new FileInputStream(args[4]), 16384);
         String tmpStr = new String(b64Encoded);
-        String beginKey = "-----BEGIN CERTIFICATE REQUEST-----";
-        String endKey = "-----END CERTIFICATE REQUEST-----";
+        String beginKey = "-----BEGIN NEW CERTIFICATE REQUEST-----";
+        String endKey = "-----END NEW CERTIFICATE REQUEST-----";
+
         int beggining = tmpStr.indexOf(beginKey) + beginKey.length();
         int end = tmpStr.indexOf(endKey);
         String b64str = tmpStr.substring(beggining, end);
