@@ -1,13 +1,18 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.action.Actions;
+import com.l7tech.console.event.PolicyListener;
+import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.policy.assertion.TimeRange;
 import com.l7tech.policy.assertion.TimeOfDayRange;
 import com.l7tech.policy.assertion.TimeOfDay;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.AssertionPath;
 
 import javax.swing.*;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ChangeEvent;
+import javax.swing.event.EventListenerList;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -29,6 +34,35 @@ public class TimeRangePropertiesDialog extends JDialog {
         super(owner, modal);
         this.assertion = assertion;
         initialize();
+    }
+
+    /**
+     * add the PolicyListener
+     *
+     * @param listener the PolicyListener
+     */
+    public void addPolicyListener(PolicyListener listener) {
+        listenerList.add(PolicyListener.class, listener);
+    }
+
+    /**
+     * notfy the listeners
+     *
+     * @param a the assertion
+     */
+    private void fireEventAssertionChanged(final Assertion a) {
+        SwingUtilities.invokeLater(
+          new Runnable() {
+              public void run() {
+                  int[] indices = new int[a.getParent().getChildren().indexOf(a)];
+                  PolicyEvent event = new
+                          PolicyEvent(this, new AssertionPath(a.getPath()), indices, new Assertion[]{a});
+                  EventListener[] listeners = listenerList.getListeners(PolicyListener.class);
+                  for (int i = 0; i < listeners.length; i++) {
+                      ((PolicyListener)listeners[i]).assertionsChanged(event);
+                  }
+              }
+          });
     }
 
     /**
@@ -106,6 +140,8 @@ public class TimeRangePropertiesDialog extends JDialog {
                     break;
                 }
             }
+
+            fireEventAssertionChanged(assertion);
         }
         cancel();
     }
@@ -620,4 +656,6 @@ public class TimeRangePropertiesDialog extends JDialog {
 
     private final static int BORDER_PADDING = 20;
     private final static int CONTROL_SPACING = 5;
+
+    private final EventListenerList listenerList = new EventListenerList();
 }
