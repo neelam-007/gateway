@@ -6,11 +6,7 @@
 
 package com.l7tech.policy.assertion.identity;
 
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
 import com.l7tech.identity.IdentityProvider;
-import com.l7tech.identity.User;
-import com.l7tech.credential.PrincipalCredentials;
 import com.l7tech.policy.assertion.AssertionError;
 
 import java.security.Principal;
