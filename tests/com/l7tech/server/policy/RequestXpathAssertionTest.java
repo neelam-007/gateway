@@ -90,6 +90,7 @@ public class RequestXpathAssertionTest extends TestCase {
         "/soapenv:Envelope[@*[local-name()=\"soapenv\"]]",
         "//*[@sesyn:encodingStyle]",
         "/soapenv:Envelope[3=3]",
+        "soapenv:Envelope/soapenv:Body", // relative match should match against document element
     };
 
     private String[] failingXpaths =
@@ -99,5 +100,6 @@ public class RequestXpathAssertionTest extends TestCase {
         "/foo:Envelope/bar:Body/baz:placeOrder/productid='-9206260647417300294'", // fails with bogus namespaces
         "/soapenv:Envelope/soapenv:Body/ns1:placeOrder/productid='blah'", // wrong value with correct namespaces
         "/Envelope/Body/placeOrder/productid='blah'", // wrong value without namespaces
+        "soapenv:Envelopee/soapenv:Body", // misspelled Envelopee
     };
 }

@@ -9,8 +9,12 @@ import java.text.ParseException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class TarariXpathConverter {
+
+    private static final Pattern FINDPOS = Pattern.compile("^line \\d+:(\\d+): ");
 
     /**
      * Convert the specified prefix-adorned XPath expression into a Tarari-friendly
@@ -34,9 +38,11 @@ public class TarariXpathConverter {
     public static String convertToTarariXpath(Map nsmap, String xpath) throws ParseException {
         // Reject multiline xpaths
         int lf = xpath.indexOf('\n');
-        if (lf >= 0) throw new ParseException(xpath, lf);
+        if (lf >= 0) throw new ParseException("XPath contains a newline: " + xpath, lf);
         int cr = xpath.indexOf('\r');
-        if (cr >= 0) throw new ParseException(xpath, cr);
+        if (cr >= 0) throw new ParseException("XPath contains a carriage return: " + xpath, cr);
+
+        if (!xpath.startsWith("/")) throw new ParseException("XPath must start with a slash: " + xpath, 0);
 
         // Build input stream
         StringBuffer in = new StringBuffer();
@@ -74,11 +80,21 @@ public class TarariXpathConverter {
             return out.toString("UTF-8").trim();
 
         } catch (TokenStreamException e) {
-            throw (ParseException)new ParseException(xpath, 0).initCause(e);
+            String tseMess = e.getMessage();
+            Matcher matcher = FINDPOS.matcher(tseMess);
+            int pos = 0;
+            if (matcher.find())
+                try { pos = Integer.parseInt(matcher.group(1)); } catch (NumberFormatException nfe) {}
+            throw (ParseException)new ParseException("Pos " + pos + " of XPath: " + xpath, pos).initCause(e);
         } catch (UnsupportedEncodingException e) {
-            throw (ParseException)new ParseException(xpath, 0).initCause(e); // can't happen
+            throw (ParseException)new ParseException("Unsupported encoding in XPath: " + xpath, 0).initCause(e); // can't happen
         } catch (RecognitionException e) {
-            throw (ParseException)new ParseException(xpath, 0).initCause(e); // can't happen
+            String tseMess = e.getMessage();
+            Matcher matcher = FINDPOS.matcher(tseMess);
+            int pos = 0;
+            if (matcher.find())
+                try { pos = Integer.parseInt(matcher.group(1)); } catch (NumberFormatException nfe) {}
+            throw (ParseException)new ParseException("Pos " + pos + " of XPath: " + xpath, pos).initCause(e);
         }
     }
 }

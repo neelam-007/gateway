@@ -17,8 +17,12 @@ public interface XprParserTokenTypes {
 	int RPAREN = 13;
 	int STAR = 14;
 	int COL = 15;
-	int PRED = 16;
-	int IPRED = 17;
-	int STRING = 18;
+	int SQLEFT = 16;
+	int INTEGER = 17;
+	int SQRIGHT = 18;
 	int ID = 19;
+	int DASH = 20;
+	int STRING = 21;
+	int PARENLEFT = 22;
+	int PARENRIGHT = 23;
 }

@@ -33,28 +33,44 @@ public class TarariXpathConverterTest extends TestCase {
         junit.textui.TestRunner.run(suite());
     }
 
-    // TODO reenable when this problem is fixed
-    public void DISABLED_testNestedPredicate() throws Exception {
+    public void testNestedPredicate() throws Exception {
         Map m = new HashMap();
         m.put("s", "urn:s");
         String got;
         String gave;
 
-        gave = "/foo[@*[local-name()=\"blah\"]]";
-        got = TarariXpathConverter.convertToTarariXpath(m, gave);
-        assertEquals("/foo[@*[local-name()=\"blah\"]]", got);
+        try {
+            gave = "/foo[@*[local-name()=\"blah\"]]";
+            got = TarariXpathConverter.convertToTarariXpath(m, gave);
+            fail("Expected exception was not thrown for nested predicate.  got=" + got);
+
+            // If this worked, it'd pass through the nested predicate unchanged, but nested preds don't work on Tarari
+            //assertEquals("/foo[@*[local-name()=\"blah\"]]", got);
+        } catch (ParseException e) {
+            // Ok
+        }
     }
 
-    // TODO reenable when this problem is fixed
-    public void DISABLED_testAttributePredicate() throws Exception {
+    public void testAttributePredicate() throws Exception {
         Map m = new HashMap();
         m.put("s", "urn:s");
         String got;
         String gave;
 
-        gave = "/foo[@s:blah]";
+        try {
+            gave = "/foo[@s:blah]";
+            got = TarariXpathConverter.convertToTarariXpath(m, gave);
+            fail("Expected exception was not thrown:\ngave=" + gave + "\n got=" + got);
+            // If this worked, it'd look like this, which is incompatible with Tarari due to the nested predicate:
+            //assertEquals("/foo[@*[local-name() = \"blah\"  and namespace-uri() =\"urn:s\" ]]", got);
+        } catch (ParseException e) {
+            // ok
+        }
+
+        gave = "/foo[@undeclared:blah]";
         got = TarariXpathConverter.convertToTarariXpath(m, gave);
-        assertEquals("/foo[@*[local-name() = \"blah\"  and namespace-uri() =\"urn:s\" ]]", got);
+        assertEquals(gave, got);
+
     }
 
     public void testSimple() throws Exception {
@@ -90,6 +106,15 @@ public class TarariXpathConverterTest extends TestCase {
 
             got = TarariXpathConverter.convertToTarariXpath(smallMap, "//e:*");
             assertEquals("//*[namespace-uri() =\"http://junk.com/emp\" ]", got);
+
+            got = TarariXpathConverter.convertToTarariXpath(smallMap, "/foo/*:bar");
+            assertEquals("/foo/*[local-name() = \"bar\" ]", got);
+
+            got = TarariXpathConverter.convertToTarariXpath(smallMap, "/foo/bar:*");
+            assertEquals("/foo/bar:*", got); // should pass through undeclared NS as literal match
+
+            got = TarariXpathConverter.convertToTarariXpath(smallMap, "/foo/e:*");
+            assertEquals("/foo/*[namespace-uri() =\"http://junk.com/emp\" ]", got);
         }
 
         {
@@ -113,16 +138,68 @@ public class TarariXpathConverterTest extends TestCase {
         }
     }
 
-    public void testUndeclaredPrefix() throws Exception {
-        Map smallMap = new HashMap();
-        smallMap.put("asdf", "http://junk.com/emp");
-
+    public void testIntegers() throws Exception {
+        Map m = new HashMap();
+        String gave;
         String got;
+
         try {
-            got = TarariXpathConverter.convertToTarariXpath(smallMap, "/e:employees/e:emp");
-            fail("Expected exception was not throws after using undeclared namespace prefix");
+            gave = "/foo[3=3]";
+            got = TarariXpathConverter.convertToTarariXpath(m, gave);
+            fail("Expected exception was not thrown.  got=" + got);
+
+            // If this worked, it would pass through unchanged:
+            //assertEquals(gave, got);
+            // Note that there is no reason this coudn't work with Tarari -- that this fails is a bug in xparser.g
+            // TODO fix this bug
         } catch (ParseException e) {
             // Ok
         }
+    }
+
+    public void testRelativeXpath() throws Exception {
+        Map m = new HashMap();
+        String gave;
+        String got;
+
+        try {
+            gave = "foo/bar";
+            got = TarariXpathConverter.convertToTarariXpath(m, gave);
+            fail("Expected exception was not thrown.  got=" + got);
+        } catch (ParseException e) {
+            // Ok
+        }
+    }
+
+    public void testBadSyntax() throws Exception {
+        Map m = new HashMap();
+        String gave;
+        String got;
+
+        String[] badones = new String[] {
+            "/foo/@@bar",
+            "/foo[@bar[]",
+        };
+
+        for (int i = 0; i < badones.length; i++) {
+            gave = badones[i];
+            try {
+                got = TarariXpathConverter.convertToTarariXpath(m, gave);
+                fail("Expected exception was not thrown.  got=" + got);
+            } catch (ParseException e) {
+                // Ok
+            }
+        }
+    }
+
+    public void testUndeclaredPrefix() throws Exception {
+        Map smallMap = new HashMap();
+        smallMap.put("asdf", "http://junk.com/emp");
+        String gave;
+        String got;
+
+        gave = "/e:employees/e:emp";
+        got = TarariXpathConverter.convertToTarariXpath(smallMap, gave);
+        assertEquals("Undeclared prefix should pass-through as literal match", gave, got);
     }
 }

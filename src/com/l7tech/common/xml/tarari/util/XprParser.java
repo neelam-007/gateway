@@ -13,9 +13,13 @@ public class XprParser extends antlr.LLkParser       implements XprParserTokenTy
 
     PrintWriter wp ;
     HashMap prefixTab ;
-    StringBuffer sbuf ;
-    String nsName ;
-    String localName ;
+    int inPred = 0;
+
+    private static class PrefixedName {
+        private String nsPrefix = null;
+        private String localName = null;
+	    private String pass = null; // passthrough unchanged
+    }
 
     public void myReportError( String msg ) throws TokenStreamException {
         throw new TokenStreamException(msg);
@@ -223,15 +227,14 @@ public XprParser(ParserSharedInputState state) {
 	public final void pathExpr() throws RecognitionException, TokenStreamException {
 		
 		
-		sbuf = new StringBuffer() ;
+		String s = "";
 		
 		
 		try {      // for error handling
-			pathsteps();
+			s=pathsteps();
 			match(NL);
 			
-			wp.println( sbuf.toString() ) ;
-			sbuf = new StringBuffer() ;
+			wp.println( s ) ;
 				
 		}
 		catch ( RecognitionException ex ) {
@@ -241,9 +244,12 @@ public XprParser(ParserSharedInputState state) {
 		}
 	}
 	
-	public final void pathsteps() throws RecognitionException, TokenStreamException {
+	public final String  pathsteps() throws RecognitionException, TokenStreamException {
+		String s;
 		
 		
+		s = "";
+		String ss = "";
 		
 		
 		try {      // for error handling
@@ -253,7 +259,9 @@ public XprParser(ParserSharedInputState state) {
 			do {
 				if ((LA(1)==SLASH)) {
 					match(SLASH);
-					stepExpr();
+					s += "/";
+					ss=stepExpr();
+					s += ss;
 				}
 				else {
 					if ( _cnt15>=1 ) { break _loop15; } else {throw new NoViableAltException(LT(1), getFilename());}
@@ -268,44 +276,52 @@ public XprParser(ParserSharedInputState state) {
 					myReportError( ex.toString() ) ;
 				
 		}
+		return s;
 	}
 	
-	public final void stepExpr() throws RecognitionException, TokenStreamException {
+	public final String  stepExpr() throws RecognitionException, TokenStreamException {
+		String s;
 		
 		
-		sbuf.append("/") ;
+		s = "";
+		String ss = "";
 		
 		
 		try {      // for error handling
-			axisStep();
+			ss=axisStep();
+			s += ss;
 		}
 		catch ( RecognitionException ex ) {
 			
 					myReportError( ex.toString() ) ;
 				
 		}
+		return s;
 	}
 	
-	public final void axisStep() throws RecognitionException, TokenStreamException {
+	public final String  axisStep() throws RecognitionException, TokenStreamException {
+		String s;
 		
 		
 		String c1 ;
 		int nsflag = 0 ;
 		String existingPredicate = null ;
+		PrefixedName pn = null;
+		s = "";
 		
 		
 		try {      // for error handling
-			forwardStep();
+			pn=forwardStep();
 			{
 			switch ( LA(1)) {
-			case PRED:
-			case IPRED:
+			case SQLEFT:
 			{
 				existingPredicate=predicate();
 				break;
 			}
 			case NL:
 			case SLASH:
+			case SQRIGHT:
 			{
 				break;
 			}
@@ -316,39 +332,61 @@ public XprParser(ParserSharedInputState state) {
 			}
 			}
 			
-			if (( localName != null) || ( nsName != null ) || (existingPredicate != null)) {
-			sbuf.append("[") ;
-					if ( localName != null) {
-					    sbuf.append( "local-name() = \"" ) ;
-					    sbuf.append( localName );
-					    sbuf.append( "\" " );
-					    if ( nsName != null )
-					        sbuf.append(" and ");
-					    localName = null;
-					}
-			if ( nsName != null ) {
-			String uristr = (String) prefixTab.get( nsName ) ;
-			if ( uristr == null ) {
-			throw new TokenStreamException("Undefined prefix " + nsName +". fatal error") ;
+				    StringBuffer sbuf = new StringBuffer();
+			
+				    if (pn != null && pn.pass != null) {
+				        sbuf.append(pn.pass);
+				        pn.pass = null;
+				    }
+			
+				    String nsUri = null;
+			if ( pn.nsPrefix != null ) {
+			nsUri = (String) prefixTab.get( pn.nsPrefix ) ;
+			
+			if (nsUri == null) {
+			sbuf.append(pn.nsPrefix);
+			sbuf.append(":");
+			sbuf.append(pn.localName == null ? "*" : pn.localName);
+			if (existingPredicate != null) {
+			sbuf.append("[");
+			sbuf.append(existingPredicate);
+			sbuf.append("]");
+			existingPredicate = null;
 			}
+			pn = null;
+			}
+			}
+			
+				    if (( pn != null && pn.localName != null) || ( pn != null && pn.nsPrefix != null ))
+			sbuf.append("*") ;
+				    if (( pn != null && pn.localName != null) || ( pn != null && pn.nsPrefix != null ) || (existingPredicate != null)) {
+			sbuf.append("[") ;
+					    if ( pn.localName != null) {
+					    if (inPred > 0) throw new RecognitionException("Unable to express nested predicate");
+					    sbuf.append( "local-name() = \"" ) ;
+					    sbuf.append( pn.localName );
+					    sbuf.append( "\" " );
+					    if ( pn.nsPrefix != null )
+					        sbuf.append(" and ");
+			nsflag = 1 ;
+					}
+			if ( nsUri != null ) {
+					    if (inPred > 0) throw new RecognitionException("Unable to express nested predicate");
 			sbuf.append( "namespace-uri() =\"" ) ;
-			sbuf.append( uristr ) ;
+			sbuf.append( nsUri ) ;
 			sbuf.append("\" " ) ;
 			nsflag = 1 ;
-			nsName = null ;
 			}
 			if ( existingPredicate != null ) {
-			
-			if ( nsflag == 1 ) {
+			if ( nsflag == 1 )
 			sbuf.append(" and (" ) ;
-			}
 			sbuf.append( existingPredicate ) ;
-			if( nsflag == 1 ) {
+			if( nsflag == 1 )
 			sbuf.append(")" ) ;
-			}
 			}
 			sbuf.append("]") ;
 			}
+				    s += sbuf.toString();
 				
 		}
 		catch ( RecognitionException ex ) {
@@ -356,57 +394,70 @@ public XprParser(ParserSharedInputState state) {
 					myReportError( ex.toString() ) ;
 				
 		}
+		return s;
 	}
 	
-	public final void forwardStep() throws RecognitionException, TokenStreamException {
+	public final PrefixedName  forwardStep() throws RecognitionException, TokenStreamException {
+		PrefixedName ret;
 		
 		
+			PrefixedName n = null;
+			ret = null;
 		
 		
 		try {      // for error handling
-			abbrevForwardStep();
+			n=abbrevForwardStep();
+			
+				    ret = n;
+				
 		}
 		catch ( RecognitionException ex ) {
 			
 					myReportError( ex.toString() ) ;
 				
 		}
+		return ret;
 	}
 	
 	public final String  predicate() throws RecognitionException, TokenStreamException {
 		String n;
 		
-		Token  z = null;
 		Token  y = null;
 		
 		n = null ;
+		String ss = null;
 		
 		
 		try {      // for error handling
-			switch ( LA(1)) {
-			case PRED:
+			match(SQLEFT);
+			inPred++; if (inPred > 1) throw new RecognitionException("Nested predicates not supported");
 			{
-				z = LT(1);
-				match(PRED);
+			if ((_tokenSet_1.member(LA(1)))) {
+				ss=simplepredicate();
 				
-				n = z.getText() ;
+				n = ss ;
 				
-				break;
 			}
-			case IPRED:
-			{
+			else if ((LA(1)==INTEGER)) {
 				y = LT(1);
-				match(IPRED);
+				match(INTEGER);
 				
 				n = "position() = "+y.getText() ;
 				
-				break;
 			}
-			default:
-			{
+			else if ((_tokenSet_2.member(LA(1)))) {
+				ss=stepExpr();
+				
+					   n = ss;
+					
+			}
+			else {
 				throw new NoViableAltException(LT(1), getFilename());
 			}
+			
 			}
+			match(SQRIGHT);
+			inPred--;
 		}
 		catch ( RecognitionException ex ) {
 			
@@ -416,9 +467,13 @@ public XprParser(ParserSharedInputState state) {
 		return n;
 	}
 	
-	public final void abbrevForwardStep() throws RecognitionException, TokenStreamException {
+	public final PrefixedName  abbrevForwardStep() throws RecognitionException, TokenStreamException {
+		PrefixedName ret;
 		
 		
+			PrefixedName n = null;
+			ret = new PrefixedName();
+			ret.pass = "";
 		
 		
 		try {      // for error handling
@@ -427,13 +482,13 @@ public XprParser(ParserSharedInputState state) {
 			case AT:
 			{
 				match(AT);
-				sbuf.append("@") ;
+				ret.pass += "@";
 				break;
 			}
 			case SLASH:
 			{
 				match(SLASH);
-				sbuf.append("/") ;
+				ret.pass += "/";
 				break;
 			}
 			case LITERAL_text:
@@ -448,8 +503,14 @@ public XprParser(ParserSharedInputState state) {
 			}
 			}
 			}
-			nodeTest();
+			n=nodeTest();
 			
+				    if (n != null) {
+				        ret.localName = n.localName;
+					ret.nsPrefix = n.nsPrefix;
+					if (n.pass != null)
+					    ret.pass += n.pass;
+				    }
 				
 		}
 		catch ( RecognitionException ex ) {
@@ -457,12 +518,15 @@ public XprParser(ParserSharedInputState state) {
 					myReportError( ex.toString() ) ;
 				
 		}
+		return ret;
 	}
 	
-	public final void nodeTest() throws RecognitionException, TokenStreamException {
+	public final PrefixedName  nodeTest() throws RecognitionException, TokenStreamException {
+		PrefixedName ret;
 		
 		
-		String n = null  ;
+			PrefixedName n = null;
+			ret = null;
 		
 		
 		try {      // for error handling
@@ -486,7 +550,7 @@ public XprParser(ParserSharedInputState state) {
 			}
 			}
 			
-			sbuf.append( n ) ;
+				    ret = n;
 			
 		}
 		catch ( RecognitionException ex ) {
@@ -494,10 +558,11 @@ public XprParser(ParserSharedInputState state) {
 					myReportError( ex.toString() ) ;
 				
 		}
+		return ret;
 	}
 	
-	public final String  nameTest() throws RecognitionException, TokenStreamException {
-		String n;
+	public final PrefixedName  nameTest() throws RecognitionException, TokenStreamException {
+		PrefixedName ret;
 		
 		Token  z = null;
 		Token  y = null;
@@ -506,7 +571,7 @@ public XprParser(ParserSharedInputState state) {
 		int nsflag = 0 ;
 		String c1 = null ;
 		String c2 = null ;
-		n = null ;
+		ret = new PrefixedName();
 		
 		
 		try {      // for error handling
@@ -544,8 +609,8 @@ public XprParser(ParserSharedInputState state) {
 				}
 				case NL:
 				case SLASH:
-				case PRED:
-				case IPRED:
+				case SQLEFT:
+				case SQRIGHT:
 				{
 					break;
 				}
@@ -557,14 +622,9 @@ public XprParser(ParserSharedInputState state) {
 				}
 				
 						if ( nsflag == 1 ) {
-							localName = c1;
-							if ( c1 != null ) {
-								n = "*" ;
-							} else {
-								n = "*" ;
-							}
+							ret.localName = c1;
 						} else {
-						    n  = "*" ;
+						   ret.pass = "*";
 						}
 					
 				break;
@@ -601,8 +661,8 @@ public XprParser(ParserSharedInputState state) {
 				}
 				case NL:
 				case SLASH:
-				case PRED:
-				case IPRED:
+				case SQLEFT:
+				case SQRIGHT:
 				{
 					break;
 				}
@@ -613,16 +673,13 @@ public XprParser(ParserSharedInputState state) {
 				}
 				}
 				
-						if ( nsflag == 1 ) {
-							nsName = c1 ;
+				if ( nsflag == 1 ) {
+						    ret.nsPrefix = c1 ;
 							if ( c2 != null ) {
-								localName = c2;
-								n = "*" ;
-							} else {
-								n = "*" ;
+								ret.localName = c2;
 							}
 						} else {
-							n = c1  ;
+							ret.pass = c1;
 						}
 					
 				break;
@@ -638,14 +695,14 @@ public XprParser(ParserSharedInputState state) {
 					myReportError( ex.toString() ) ;
 				
 		}
-		return n;
+		return ret;
 	}
 	
-	public final String  kindTest() throws RecognitionException, TokenStreamException {
-		String n;
+	public final PrefixedName  kindTest() throws RecognitionException, TokenStreamException {
+		PrefixedName ret;
 		
 		
-		n = null ;
+		ret = new PrefixedName();
 		
 		
 		try {      // for error handling
@@ -653,13 +710,205 @@ public XprParser(ParserSharedInputState state) {
 			match(LPAREN);
 			match(RPAREN);
 			
-			n = "text()" ;
+				    ret.localName = "text()" ;
 				
 		}
 		catch ( RecognitionException ex ) {
 			
 					myReportError( ex.toString() ) ;
 				
+		}
+		return ret;
+	}
+	
+	public final String  simplepredicate() throws RecognitionException, TokenStreamException {
+		String n;
+		
+		
+		n = "" ;
+		String ss = null ;
+		
+		
+		try {      // for error handling
+			{
+			int _cnt34=0;
+			_loop34:
+			do {
+				if ((_tokenSet_1.member(LA(1)))) {
+					ss=simplepredicatenoint();
+					n+=ss;
+				}
+				else {
+					if ( _cnt34>=1 ) { break _loop34; } else {throw new NoViableAltException(LT(1), getFilename());}
+				}
+				
+				_cnt34++;
+			} while (true);
+			}
+			{
+			_loop36:
+			do {
+				if ((_tokenSet_3.member(LA(1)))) {
+					ss=simplepredicateint();
+					n+=ss;
+				}
+				else {
+					break _loop36;
+				}
+				
+			} while (true);
+			}
+		}
+		catch (RecognitionException ex) {
+			reportError(ex);
+			consume();
+			consumeUntil(_tokenSet_4);
+		}
+		return n;
+	}
+	
+	public final String  simplepredicatenoint() throws RecognitionException, TokenStreamException {
+		String n;
+		
+		Token  a = null;
+		Token  b = null;
+		Token  c = null;
+		Token  d = null;
+		Token  e = null;
+		Token  f = null;
+		Token  g = null;
+		
+		n = "";
+		
+		
+		try {      // for error handling
+			{
+			int _cnt42=0;
+			_loop42:
+			do {
+				if ((LA(1)==ID)) {
+					a = LT(1);
+					match(ID);
+					n+=a.getText();
+				}
+				else if ((LA(1)==DASH)) {
+					b = LT(1);
+					match(DASH);
+					n+=b.getText();
+				}
+				else if ((LA(1)==COL)) {
+					c = LT(1);
+					match(COL);
+					n+=c.getText();
+				}
+				else if ((LA(1)==EQ)) {
+					d = LT(1);
+					match(EQ);
+					n+=d.getText();
+				}
+				else if ((LA(1)==STRING)) {
+					e = LT(1);
+					match(STRING);
+					n+='"' + e.getText() + '"';
+				}
+				else if ((LA(1)==PARENLEFT)) {
+					f = LT(1);
+					match(PARENLEFT);
+					n+=f.getText();
+				}
+				else if ((LA(1)==PARENRIGHT)) {
+					g = LT(1);
+					match(PARENRIGHT);
+					n+=g.getText();
+				}
+				else {
+					if ( _cnt42>=1 ) { break _loop42; } else {throw new NoViableAltException(LT(1), getFilename());}
+				}
+				
+				_cnt42++;
+			} while (true);
+			}
+		}
+		catch (RecognitionException ex) {
+			reportError(ex);
+			consume();
+			consumeUntil(_tokenSet_5);
+		}
+		return n;
+	}
+	
+	public final String  simplepredicateint() throws RecognitionException, TokenStreamException {
+		String n;
+		
+		Token  a = null;
+		Token  b = null;
+		Token  c = null;
+		Token  d = null;
+		Token  e = null;
+		Token  f = null;
+		Token  g = null;
+		Token  h = null;
+		
+		n = "" ;
+		
+		
+		try {      // for error handling
+			{
+			int _cnt39=0;
+			_loop39:
+			do {
+				if ((LA(1)==ID)) {
+					a = LT(1);
+					match(ID);
+					n+=a.getText();
+				}
+				else if ((LA(1)==DASH)) {
+					b = LT(1);
+					match(DASH);
+					n+=b.getText();
+				}
+				else if ((LA(1)==COL)) {
+					c = LT(1);
+					match(COL);
+					n+=c.getText();
+				}
+				else if ((LA(1)==EQ)) {
+					d = LT(1);
+					match(EQ);
+					n+=d.getText();
+				}
+				else if ((LA(1)==STRING)) {
+					e = LT(1);
+					match(STRING);
+					n+='"' + e.getText() + '"';
+				}
+				else if ((LA(1)==PARENLEFT)) {
+					f = LT(1);
+					match(PARENLEFT);
+					n+=f.getText();
+				}
+				else if ((LA(1)==PARENRIGHT)) {
+					g = LT(1);
+					match(PARENRIGHT);
+					n+=g.getText();
+				}
+				else if ((LA(1)==INTEGER)) {
+					h = LT(1);
+					match(INTEGER);
+					n+=h.getText();
+				}
+				else {
+					if ( _cnt39>=1 ) { break _loop39; } else {throw new NoViableAltException(LT(1), getFilename());}
+				}
+				
+				_cnt39++;
+			} while (true);
+			}
+		}
+		catch (RecognitionException ex) {
+			reportError(ex);
+			consume();
+			consumeUntil(_tokenSet_5);
 		}
 		return n;
 	}
@@ -682,10 +931,14 @@ public XprParser(ParserSharedInputState state) {
 		"RPAREN",
 		"STAR",
 		"COL",
-		"PRED",
-		"IPRED",
+		"SQLEFT",
+		"INTEGER",
+		"SQRIGHT",
+		"ID",
+		"DASH",
 		"STRING",
-		"ID"
+		"PARENLEFT",
+		"PARENRIGHT"
 	};
 	
 	private static final long[] mk_tokenSet_0() {
@@ -693,5 +946,30 @@ public XprParser(ParserSharedInputState state) {
 		return data;
 	}
 	public static final BitSet _tokenSet_0 = new BitSet(mk_tokenSet_0());
+	private static final long[] mk_tokenSet_1() {
+		long[] data = { 16285952L, 0L};
+		return data;
+	}
+	public static final BitSet _tokenSet_1 = new BitSet(mk_tokenSet_1());
+	private static final long[] mk_tokenSet_2() {
+		long[] data = { 544256L, 0L};
+		return data;
+	}
+	public static final BitSet _tokenSet_2 = new BitSet(mk_tokenSet_2());
+	private static final long[] mk_tokenSet_3() {
+		long[] data = { 16417024L, 0L};
+		return data;
+	}
+	public static final BitSet _tokenSet_3 = new BitSet(mk_tokenSet_3());
+	private static final long[] mk_tokenSet_4() {
+		long[] data = { 262144L, 0L};
+		return data;
+	}
+	public static final BitSet _tokenSet_4 = new BitSet(mk_tokenSet_4());
+	private static final long[] mk_tokenSet_5() {
+		long[] data = { 16679168L, 0L};
+		return data;
+	}
+	public static final BitSet _tokenSet_5 = new BitSet(mk_tokenSet_5());
 	
 	}
