@@ -117,7 +117,7 @@
                                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
                                 </constraints>
                                 <properties>
-                                  <text value="View Gateway's certificate"/>
+                                  <text value="View Gateway's Certificate"/>
                                 </properties>
                               </component>
                               <hspacer id="2a58d">
@@ -174,7 +174,7 @@
                         <children>
                           <component id="58904" class="javax.swing.JLabel" binding="usernameLabel">
                             <constraints>
-                              <xy x="5" y="8" width="52" height="14"/>
+                              <xy x="5" y="8" width="56" height="14"/>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
                             </constraints>
                             <properties>
@@ -257,22 +257,22 @@
                             <children>
                               <hspacer id="3c9c5">
                                 <constraints>
-                                  <xy x="309" y="6" width="242" height="11"/>
+                                  <xy x="311" y="6" width="240" height="11"/>
                                   <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
                                 </constraints>
                               </hspacer>
                               <component id="6fbee" class="javax.swing.JButton" binding="trustedSSGCertButton">
                                 <constraints>
-                                  <xy x="0" y="0" width="160" height="24"/>
+                                  <xy x="0" y="0" width="162" height="24"/>
                                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
                                 </constraints>
                                 <properties>
-                                  <text value="View Gateway's certificate"/>
+                                  <text value="View Gateway's Certificate"/>
                                 </properties>
                               </component>
                               <component id="289c3" class="javax.swing.JButton" binding="clientCertButton">
                                 <constraints>
-                                  <xy x="170" y="0" width="139" height="24"/>
+                                  <xy x="172" y="0" width="139" height="24"/>
                                   <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
                                 </constraints>
                                 <properties>

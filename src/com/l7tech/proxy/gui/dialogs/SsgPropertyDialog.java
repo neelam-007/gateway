@@ -480,7 +480,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                            GridBagConstraints.HORIZONTAL,
                                            new Insets(5, 5, 5, 5), 0, 0));
 
-            WrappingLabel splain02 = new WrappingLabel("The SecureSpan Agent offers proxied WSDL lookups at the following local URL:", 1);
+            WrappingLabel splain02 = new WrappingLabel("The SecureSpan Agent offers proxied WSDL lookups at the " +
+                                                       "following local WSDL URL:", 1);
             epp.add(splain02,
                     new GridBagConstraints(0, gridY++, 2, 1, 0.0, 0.0,
                                            GridBagConstraints.WEST,
@@ -519,7 +520,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                            new Insets(0, 5, 0, 0), 0, 0));
 
             ButtonGroup bg = new ButtonGroup();
-            radioStandardPorts = new JRadioButton("Gateway Using Standard Ports:", true);
+            radioStandardPorts = new JRadioButton("Gateway Uses Standard Ports:", true);
             radioStandardPorts.addChangeListener(new ChangeListener() {
                 public void stateChanged(ChangeEvent e) {
                     updateCustomPortsEnableState();
@@ -635,8 +636,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                             GridBagConstraints.NONE,
                                             new Insets(25, 5, 0, 0), 0, 0));
 
-            String splaintext = "Please enter the host name or Internet address " +
-                                "of the SecureSpan Gateway that will be processing requests.";
+            String splaintext = "Enter the host name or Internet address of the SecureSpan " +
+                    "Gateway that will process Web service requests.";
             WrappingLabel splain01 = new WrappingLabel(splaintext, 3);
             pane.add(splain01,
                      new GridBagConstraints(0, gridY++, 2, 1, 1000.0, 0.0,
