@@ -145,9 +145,6 @@ public class InterNodeServiceLookup extends ServiceLookup {
                       return true;
                   }
               });
-        } else {
-            logger.warning("not https: " + conn.getClass());
-            //sun.net.www.protocol.https.HttpsURLConnectionImpl
         }
     }
 
