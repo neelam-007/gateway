@@ -3,6 +3,8 @@ package com.l7tech.policy;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.validator.DefaultPolicyValidator;
 
+import java.util.Iterator;
+
 /**
  * A class for validating policies.
  *
@@ -42,5 +44,27 @@ public abstract class PolicyValidator {
      * @param assertion the assertion tree to be validated.
      * @return the result of the validation
      */
-    abstract public PolicyValidatorResult validate(Assertion assertion);
+    public PolicyValidatorResult validate(Assertion assertion) {
+        if (assertion == null) {
+            throw new IllegalArgumentException();
+        }
+        PolicyPathResult path = PolicyPathBuilder.getDefault().generate(assertion);
+
+        // where to collect the result
+        PolicyValidatorResult result = new PolicyValidatorResult();
+
+        for (Iterator iterator = path.paths().iterator(); iterator.hasNext();) {
+            AssertionPath assertionPath = (AssertionPath)iterator.next();
+            validatePath(assertionPath, result);
+        }
+        return result;
+    }
+
+    /**
+     * Validate the the asserion path and collect the result into the validator result
+     *
+     * @param ap the assertion path to validate
+     * @param r  the result collect parameter
+     */
+    abstract public void validatePath(AssertionPath ap, PolicyValidatorResult r);
 }

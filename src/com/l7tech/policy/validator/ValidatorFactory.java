@@ -1,6 +1,7 @@
 package com.l7tech.policy.validator;
 
 import com.l7tech.policy.PolicyValidatorResult;
+import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
 
@@ -143,6 +144,6 @@ class ValidatorFactory {
             assertion = a;
         }
 
-        public void validate(PolicyValidatorResult result) {}
+        public void validate(AssertionPath path, PolicyValidatorResult result) {}
     }
 }

@@ -2,6 +2,8 @@ package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.Assertion;
 
+import java.util.logging.Logger;
+
 /**
  * A class for building policy assertion paths.
  *
@@ -14,6 +16,8 @@ import com.l7tech.policy.assertion.Assertion;
  * @version 1.0
  */
 public abstract class PolicyPathBuilder {
+    static Logger log = Logger.getLogger(PolicyPathBuilder.class.getName());
+
     /**
      * Protected constructor, the <code>PolicyPathBuilder</code> instances
      * are obtained using factory methods.

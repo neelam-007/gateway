@@ -6,7 +6,6 @@ import com.l7tech.console.action.EditServicePolicyAction;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.AssertionsTree;
-import com.l7tech.console.tree.FilteredTreeModel;
 import com.l7tech.console.tree.TransferableTreePath;
 import com.l7tech.console.util.ArrowImage;
 import com.l7tech.console.util.PopUpMouseListener;
@@ -42,7 +41,9 @@ import java.util.logging.Logger;
 public class PolicyTree extends JTree implements DragSourceListener,
   DragGestureListener, Autoscroll, TreeModelListener, Refreshable {
     static final Logger log = Logger.getLogger(PolicyTree.class.getName());
-    /** component name */
+    /**
+     * component name
+     */
     public final static String NAME = "policy.tree";
     private PolicyEditorPanel policyEditorPanel;
 
@@ -135,6 +136,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
     class TreeMouseListener extends PopUpMouseListener {
         int initialToolTipDelay = -1;
         int dismissToolTipDelay = -1;
+
         /**
          * Handle the mouse click popup when the Tree item is right clicked. The context sensitive
          * menu is displayed if the right click was over an item.
@@ -212,17 +214,17 @@ public class PolicyTree extends JTree implements DragSourceListener,
             initialToolTipDelay = ToolTipManager.sharedInstance().getInitialDelay();
             ToolTipManager.sharedInstance().setInitialDelay(100);
             dismissToolTipDelay = ToolTipManager.sharedInstance().getDismissDelay();
-            ToolTipManager.sharedInstance().setDismissDelay(60*1000);
+            ToolTipManager.sharedInstance().setDismissDelay(60 * 1000);
         }
 
         /**
          * Invoked when the mouse exits a component.
          */
         public void mouseExited(MouseEvent e) {
-            if (initialToolTipDelay !=-1) {
+            if (initialToolTipDelay != -1) {
                 ToolTipManager.sharedInstance().setInitialDelay(initialToolTipDelay);
             }
-             if (dismissToolTipDelay !=-1) {
+            if (dismissToolTipDelay != -1) {
                 ToolTipManager.sharedInstance().setDismissDelay(dismissToolTipDelay);
             }
         }
@@ -291,8 +293,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
 			
         // Get the cell renderer (which is a JLabel) for the path being dragged
         JLabel lbl = (JLabel)getCellRenderer().getTreeCellRendererComponent
-          (
-            this, // tree
+          (this, // tree
             path.getLastPathComponent(), // value
             false, // isSelected	(dont want a colored background)
             isExpanded(path), // isExpanded
@@ -351,15 +352,18 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
     private boolean isIdentityView() {
         TreeModel model = getModel();
-        return (model instanceof FilteredTreeModel &&
-          ((FilteredTreeModel)model).getFilter() != null);
+        AssertionTreeNode node = (AssertionTreeNode)model.getRoot();
+        return isIdentityView(node);
     }
 
+    public static boolean isIdentityView(AssertionTreeNode an) {
+        return an.getRoot() instanceof IdentityViewRootNode;
+    }
 
     private void sayWhat(TreeModelEvent e) {
         log.fine(e.getTreePath().getLastPathComponent().toString());
         int[] nIndex = e.getChildIndices();
-        for (int i = 0; nIndex !=null && i < nIndex.length; i++) {
+        for (int i = 0; nIndex != null && i < nIndex.length; i++) {
             log.fine(i + ". " + nIndex[i]);
         }
     }
@@ -380,12 +384,10 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
         // Constructor...
         public PolicyDropTargetListener() {
-            colorCueLine = new Color(
-              SystemColor.controlShadow.getRed(),
+            colorCueLine = new Color(SystemColor.controlShadow.getRed(),
               SystemColor.controlShadow.getGreen(),
               SystemColor.controlShadow.getBlue(),
-              64
-            );
+              64);
 
             // Set up a hover timer, so that a node will be automatically expanded or collapsed
             // if the user lingers on it for more than a short time
@@ -693,13 +695,13 @@ public class PolicyTree extends JTree implements DragSourceListener,
             }
 
             // Do this if you want to prohibit dropping onto the drag source...
-            Point pt = e.getLocation();
-            TreePath path = getClosestPathForLocation(pt.x, pt.y);
-            if (path == null) {
-                path = new TreePath(getModel().getRoot());
-            }
-            if (path.equals(pathSource))
-                return false;
+//            Point pt = e.getLocation();
+//            TreePath path = getClosestPathForLocation(pt.x, pt.y);
+//            if (path == null) {
+//                path = new TreePath(getModel().getRoot());
+//            }
+//            if (path.equals(pathSource))
+//                return false;
 
             return true;
         }
@@ -748,21 +750,20 @@ public class PolicyTree extends JTree implements DragSourceListener,
     public Insets getAutoscrollInsets() {
         Rectangle raOuter = getBounds();
         Rectangle raInner = getParent().getBounds();
-        return new Insets(
-          raInner.y - raOuter.y + AUTOSCROLL_MARGIN, raInner.x - raOuter.x + AUTOSCROLL_MARGIN,
+        return new Insets(raInner.y - raOuter.y + AUTOSCROLL_MARGIN, raInner.x - raOuter.x + AUTOSCROLL_MARGIN,
           raOuter.height - raInner.height - raInner.y + raOuter.y + AUTOSCROLL_MARGIN,
           raOuter.width - raInner.width - raInner.x + raOuter.x + AUTOSCROLL_MARGIN);
     }
 
 // TreeModelListener interface implemntations
     public void treeNodesChanged(TreeModelEvent e) {
-        log.fine("treeNodesChanged");
-        sayWhat(e);
+     //   log.fine("treeNodesChanged");
+     //   sayWhat(e);
 // We dont need to reset the selection path, since it has not moved
     }
 
     public void treeNodesInserted(TreeModelEvent e) {
-        sayWhat(e);
+        //sayWhat(e);
         int nChildIndex = e.getChildIndices()[0];
         TreePath pathParent = e.getTreePath();
         final TreePath childPath = getChildPath(pathParent, nChildIndex);
@@ -838,8 +839,8 @@ public class PolicyTree extends JTree implements DragSourceListener,
     }
 
     public void treeStructureChanged(TreeModelEvent e) {
-        log.fine("treeStructureChanged ");
-        sayWhat(e);
+        //log.fine("treeStructureChanged ");
+        //sayWhat(e);
     }
 
     public void refresh() {
@@ -849,6 +850,6 @@ public class PolicyTree extends JTree implements DragSourceListener,
     }
 
     public boolean canRefresh() {
-        return policyEditorPanel != null && policyEditorPanel.getServiceNode() !=null;
+        return policyEditorPanel != null && policyEditorPanel.getServiceNode() != null;
     }
 }

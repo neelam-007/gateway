@@ -5,6 +5,7 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 
 import java.util.*;
+import java.util.logging.Level;
 
 /**
  * Default policy path builder. The class builds assertion paths from
@@ -45,11 +46,11 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
      */
     public PolicyPathResult generate(Assertion assertion) {
         Set paths = generatePaths(assertion);
-
-//        for (Iterator iterator = paths.iterator(); iterator.hasNext();) {
-//            printPath((AssertionPath)iterator.next());
-//        }
-
+        if (log.isLoggable(Level.FINE)) {
+            for (Iterator iterator = paths.iterator(); iterator.hasNext();) {
+                printPath((AssertionPath)iterator.next());
+            }
+        }
         return new DefaultPolicyPathResult(paths);
     }
 
@@ -185,8 +186,9 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
      * @return true if new paths, false otherwise
      */
     static boolean parentCreatesNewPaths(Assertion a) {
-        if (a.getParent() == null) return true;
-        return a.getParent() instanceof OneOrMoreAssertion;
+        CompositeAssertion parent = a.getParent();
+        if (parent == null) return true;
+        return parent instanceof OneOrMoreAssertion && !((OneOrMoreAssertion)parent).getChildren().isEmpty();
     }
 
 
@@ -197,17 +199,18 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
      * @return true if split path, false otherwise
      */
     static boolean isSplitPath(Assertion a) {
-        return a instanceof OneOrMoreAssertion;
+        return a instanceof OneOrMoreAssertion && !((OneOrMoreAssertion)a).getChildren().isEmpty();
     }
 
     private static void printPath(AssertionPath ap) {
         Assertion[] ass = ap.getPath();
-        System.out.println("** Begin assertion path");
+        StringBuffer sb = new StringBuffer("** Begin assertion path\n");
         for (int i = 0; i < ass.length; i++) {
-            System.out.println(ass[i].getClass());
+            sb.append(""+(i+1)+" "+ass[i].getClass().toString())
+              .append("\n");
         }
-        System.out.println("** End assertion path");
-
+        sb.append("** End assertion path");
+        log.fine(sb.toString());
     }
 
 }

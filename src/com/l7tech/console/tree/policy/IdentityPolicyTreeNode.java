@@ -2,18 +2,18 @@ package com.l7tech.console.tree.policy;
 
 
 import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.policy.AssertionPath;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.identity.IdentityAssertion;
-import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.identity.MemberOfGroup;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.User;
+import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.identity.IdentityAssertion;
+import com.l7tech.policy.assertion.identity.MemberOfGroup;
+import com.l7tech.policy.assertion.identity.SpecificUser;
 
+import java.security.Principal;
 import java.util.Iterator;
 import java.util.Set;
-import java.security.Principal;
 
 /**
  * Class IdentityPolicyTreeNode.
@@ -28,8 +28,9 @@ public class IdentityPolicyTreeNode extends AssertionTreeNode {
     /**
      * Construct the new <code>IdentityPolicyTreeNode</code> for
      * the identity path.
-     * <p>
-     * @param path the identity patht
+     * <p/>
+     *
+     * @param path the identity path
      */
     public IdentityPolicyTreeNode(IdentityPath path, Assertion root) {
         super(root);
@@ -44,12 +45,12 @@ public class IdentityPolicyTreeNode extends AssertionTreeNode {
             Group g = (Group)principal;
             identityAssertion = new MemberOfGroup(g.getProviderId(), g.getName(), g.getUniqueIdentifier());
             iconResource = "com/l7tech/console/resources/group16.png";
-        }  else if (principal instanceof User) {
+        } else if (principal instanceof User) {
             User u = (User)principal;
             identityAssertion = new SpecificUser(u.getProviderId(), u.getLogin());
             iconResource = "com/l7tech/console/resources/user16.png";
         } else {
-            throw new IllegalArgumentException("Unknown principal class "+principal.getClass());
+            throw new IllegalArgumentException("Unknown principal class " + principal.getClass());
         }
         identityAssertionTreeNode = AssertionTreeNodeFactory.asTreeNode(identityAssertion);
     }
@@ -60,8 +61,15 @@ public class IdentityPolicyTreeNode extends AssertionTreeNode {
     protected void loadChildren() {
         CompositeAssertion assertion = (CompositeAssertion)asAssertion();
         children = null;
-        insert(AssertionTreeNodeFactory.asTreeNode(assertion), 0);
+        LoadChildrenStrategy loader = LoadChildrenStrategy.newStrategy(this);
+        loader.loadChildren(this, assertion);
+//        int index = 0;
+//        for (Iterator iterator = assertion.children(); iterator.hasNext();) {
+//            Assertion a = (Assertion)iterator.next();
+//            insert(AssertionTreeNodeFactory.asTreeNode(a), index++);
+//        }
     }
+
 
     protected boolean pathContains(Assertion a) {
         Set paths = getIdentityPath().getPaths();
@@ -75,6 +83,16 @@ public class IdentityPolicyTreeNode extends AssertionTreeNode {
         }
         return false;
     }
+
+    protected boolean contains(AssertionPath a) {
+        Set paths = getIdentityPath().getPaths();
+        for (Iterator i = paths.iterator(); i.hasNext();) {
+            AssertionPath ap = (AssertionPath)i.next();
+            if (ap.equals(a)) return true;
+        }
+        return false;
+    }
+
 
     /**
      * By default, this node accepts leaf nodes.
@@ -94,7 +112,7 @@ public class IdentityPolicyTreeNode extends AssertionTreeNode {
     }
 
     /**
-     *Test if the node can be deleted. Default is <code>true</code>
+     * Test if the node can be deleted. Default is <code>true</code>
      *
      * @return true if the node can be deleted, false otherwise
      */

@@ -1,25 +1,30 @@
 package com.l7tech.console.tree.policy;
 
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.common.util.Locator;
 import com.l7tech.objectmodel.FindException;
 
+import javax.swing.tree.TreeNode;
+import javax.swing.tree.DefaultMutableTreeNode;
 import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.*;
 
 /**
  * An assertion node in an assertion tree that refers to a user or group.
- *
+ * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
- *
+ * <p/>
  * User: flascell<br/>
  * Date: Oct 7, 2003<br/>
  * Time: 2:49:00 PM<br/>
  * $Id$
- *
  */
 public abstract class IdentityAssertionTreeNode extends LeafAssertionTreeNode {
     public IdentityAssertionTreeNode(IdentityAssertion idass) {
@@ -63,7 +68,74 @@ public abstract class IdentityAssertionTreeNode extends LeafAssertionTreeNode {
         return ipc;
     }
 
-    private static final Logger log = Logger.getLogger(LeafAssertionTreeNode .class.getName());
+    /**
+     * Set the validator messages into this node. Overriden so the messages can
+     * be shown in the identity view. Messages Are
+     *
+     * @param messages the validator messages
+     */
+    public void setValidatorMessages(Collection messages) {
+        if (!PolicyTree.isIdentityView(this)) {
+            super.setValidatorMessages(messages);
+            return;
+        }
+        // identity view
+        AssertionTreeNode previous = (AssertionTreeNode)getPreviousSibling();
+        AssertionTreeNode next = (AssertionTreeNode)getNextSibling();
+        AssertionTreeNode parent = (AssertionTreeNode)getParent();
+        if (previous != null) {
+            mergeMessages(previous, messages);
+        } else if (next != null) {
+            mergeMessages(next, messages);
+        } else if (parent != null) {
+            AssertionTreeNode p = parent;
+            while (p != null) {
+                if (isDisiplayable(p)) {
+                    mergeMessages(p, messages);
+                    break;
+                }
+                p = (AssertionTreeNode)p.getParent();
+            }
+        }
+    }
+
+    private boolean isDisiplayable(AssertionTreeNode p) {
+        if (!PolicyTree.isIdentityView(this)) {
+            return true;
+        }
+        if (p instanceof IdentityPolicyTreeNode) return true;
+        TreeNode[] path = ((DefaultMutableTreeNode)p).getPath();
+        if (path.length < 2) return true;
+        IdentityPolicyTreeNode in = (IdentityPolicyTreeNode)path[1];
+
+        if (p instanceof OneOrMoreAssertionTreeNode) {
+            List pathAssertions = new ArrayList();
+            CompositeAssertion ca = (CompositeAssertion)p.asAssertion();
+            for (Iterator iterator = ca.getChildren().iterator(); iterator.hasNext();) {
+                Assertion assertion = (Assertion)iterator.next();
+                if (in.pathContains(assertion)) {
+                    pathAssertions.add(assertion);
+                }
+            }
+            return pathAssertions.size() > 1;
+        }
+        return false;
+    }
+
+    /**
+     * Merge passed messages and the receiver messages into the receiver messages
+     *
+     * @param receiver the receiver node
+     * @param messages the messages
+     */
+    private void mergeMessages(AssertionTreeNode receiver, Collection messages) {
+        Set newMessages = new HashSet();
+        newMessages.addAll(messages);
+        newMessages.addAll(receiver.getAllValidatorMessages());
+        receiver.setValidatorMessages(newMessages);
+    }
+
+    static final Logger log = Logger.getLogger(IdentityAssertionTreeNode.class.getName());
     private IdentityAssertion assertion;
     private String provName = null;
     public static final String NA = "provider not available";

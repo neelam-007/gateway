@@ -73,6 +73,8 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
         tree.addTreeSelectionListener(policyTreeListener);
         tree.getModel().addTreeModelListener(policyTreeModelListener);
         rootAssertionNode = (AssertionTreeNode)tree.getModel().getRoot();
+        lastAssertionNode  = rootAssertionNode;
+        updateActions();
     }
 
     /**
@@ -88,6 +90,7 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
             model.removeTreeModelListener(policyTreeModelListener);
         }
         lastAssertionNode = null;
+        disableAll();
     }
 
 
@@ -116,20 +119,24 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
         putClientProperty("JToolBar.isRollover", Boolean.TRUE);
 
         JButton b = add(getAddAssertionAction());
+        b.setFocusable(false);
         b.setMargin(new Insets(0, 0, 0, 0));
         d = new Dimension();
         d.height = 8;
         addSeparator(d);
 
         b = add(getAssertionMoveUpAction());
+        b.setFocusable(false);
         b.setMargin(new Insets(0, 0, 0, 0));
         addSeparator(d);
 
         b = add(getAssertionMoveDownAction());
+        b.setFocusable(false);
         b.setMargin(new Insets(0, 0, 0, 0));
         addSeparator(d);
 
         b = add(getDeleteAssertionAction());
+        b.setFocusable(false);
         b.setMargin(new Insets(0, 0, 0, 0));
         addSeparator(d);
     }
@@ -221,7 +228,7 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
     }
 
     private boolean validPolicyAssertionNode() {
-        return lastAssertionNode != null;
+        return lastAssertionNode != null && !PolicyTree.isIdentityView(lastAssertionNode);
     }
 
     private boolean validPaletteNode() {

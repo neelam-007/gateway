@@ -123,7 +123,7 @@ public class IdentityPath {
                 if (isIdentity(assertion)) {
                     Principal principal = extractIdentity(assertion);
                     if (IDCOMPARATOR.compare(principal, p) == 0) {
-                        ipath.identityPaths.add(path);
+                        ipath.identityPaths.add(ap);
                         continue outer;
                     }
                 }
@@ -150,7 +150,7 @@ public class IdentityPath {
                     continue outer;
                 }
             }
-            ipath.identityPaths.add(path);
+            ipath.identityPaths.add(ap);
         }
         return ipath;
 
@@ -201,7 +201,7 @@ public class IdentityPath {
         }
 
         for (Iterator iterator = identityPaths.iterator(); iterator.hasNext();) {
-            Assertion[] assertions = (Assertion[])iterator.next();
+            Assertion[] assertions = ((AssertionPath)iterator.next()).getPath();
             for (int i = 0; i < assertions.length; i++) {
                 Assertion assertion = assertions[i];
                 if (assertion.getClass().equals(cl)) {
@@ -226,7 +226,7 @@ public class IdentityPath {
         }
 
         for (Iterator iterator = identityPaths.iterator(); iterator.hasNext();) {
-            Assertion[] assertions = (Assertion[])iterator.next();
+            Assertion[] assertions = ((AssertionPath)iterator.next()).getPath();
             for (int i = 0; i < assertions.length; i++) {
                 Assertion assertion = assertions[i];
                 if (cl.isAssignableFrom(assertion.getClass())) {

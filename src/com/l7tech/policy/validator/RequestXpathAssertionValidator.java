@@ -7,6 +7,7 @@
 package com.l7tech.policy.validator;
 
 import com.l7tech.policy.PolicyValidatorResult;
+import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
 import org.jaxen.dom.DOMXPath;
 
@@ -24,10 +25,10 @@ public class RequestXpathAssertionValidator implements AssertionValidator {
         assertion = ra;
     }
 
-    public void validate(PolicyValidatorResult result) {
+    public void validate(AssertionPath path, PolicyValidatorResult result) {
         String pattern = assertion.getPattern();
         if (pattern == null) {
-            result.addError(new PolicyValidatorResult.Error(assertion, "XPath pattern is missing", null));
+            result.addError(new PolicyValidatorResult.Error(assertion, path, "XPath pattern is missing", null));
             logger.info("XPath pattern is missing");
             return;
         }
@@ -35,7 +36,7 @@ public class RequestXpathAssertionValidator implements AssertionValidator {
         try {
             new DOMXPath(pattern);
         } catch (Exception e) {
-            result.addError(new PolicyValidatorResult.Error(assertion, "XPath pattern is not valid", e));
+            result.addError(new PolicyValidatorResult.Error(assertion, path, "XPath pattern is not valid", e));
             logger.info("XPath pattern is not valid");
             return;
         }

@@ -130,8 +130,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      * validate the service policy.
      */
     public void validatePolicy() {
-        PolicyValidatorResult result =
-          PolicyValidator.getDefault().validate(rootAssertion.asAssertion());
+        final PolicyValidatorResult result = PolicyValidator.getDefault().validate(rootAssertion.asAssertion());
         displayPolicyValidateResult(pruneDuplicates(result));
     }
 
@@ -217,8 +216,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     /**
      * Render the service policy into the editor
      * 
-     * @param identityView 
-     * @throws FindException 
+     * @param identityView
+     * @throws FindException
      */
     private void renderPolicy(boolean identityView)
       throws FindException, RemoteException {
@@ -461,8 +460,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
     /**
-     * package pruivate method that displays the policy validation
-     * result
+     * display the policy validation result
      * 
      * @param r the policy validation result
      */
@@ -471,9 +469,10 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             AssertionTreeNode an = (AssertionTreeNode)en.nextElement();
             an.setValidatorMessages(r.messages(an.asAssertion()));
         }
-        if (!validating)
-            ((DefaultTreeModel)policyTree.getModel()).nodeChanged(rootAssertion.getRoot());
-        overWriteMessageArea("");
+        if (!validating) {
+               ((DefaultTreeModel)policyTree.getModel()).nodeChanged(rootAssertion);
+           }
+           overWriteMessageArea("");
         for (Iterator iterator = r.getErrors().iterator();
              iterator.hasNext();) {
             PolicyValidatorResult.Error pe =
@@ -634,6 +633,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                       renderPolicy(false);
                       policyEditorToolbar.buttonSave.setEnabled(true);
                       policyEditorToolbar.buttonSave.getAction().setEnabled(true);
+                      validatePolicy();
                   }
               } catch (FindException e) {
                   log.log(Level.WARNING, "Error finding service " + serviceNode.getEntityHeader().getOid());
@@ -691,7 +691,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         policyTree.setPolicyEditor(null);
         policyTree.setModel(null);
         final PolicyToolBar pt = topComponents.getMainWindow().getPolicyToolBar();
-        if (pt !=null) {
+        if (pt != null) {
             pt.unregisterPolicyTree(policyTree);
         }
     }

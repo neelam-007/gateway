@@ -107,14 +107,16 @@ public class PolicyValidatorResult {
         private Assertion assertion;
         private String message;
         private Throwable throwable;
+        private AssertionPath assertionPath;
 
-        Message(Assertion erroAssertion, String message, Throwable throwable) {
+        Message(Assertion errorAssertion, AssertionPath ap, String message, Throwable throwable) {
             if (message == null) {
                 throw new IllegalArgumentException();
             }
-            this.assertion = erroAssertion;
+            this.assertion = errorAssertion;
             this.message = message;
             this.throwable = throwable;
+            this.assertionPath = ap;
         }
 
         public Assertion getAssertion() {
@@ -127,6 +129,10 @@ public class PolicyValidatorResult {
 
         public Throwable getThrowable() {
             return throwable;
+        }
+
+        public AssertionPath getAssertionPath() {
+            return assertionPath;
         }
 
         public boolean equals(Object o) {
@@ -151,14 +157,14 @@ public class PolicyValidatorResult {
     }
 
     public static class Error extends Message {
-        public Error(Assertion erroAssertion, String message, Throwable throwable) {
-            super(erroAssertion, message, throwable);
+        public Error(Assertion errorAssertion, AssertionPath ap, String message, Throwable throwable) {
+            super(errorAssertion, ap, message, throwable);
         }
     }
 
     public static class Warning extends Message {
-        public Warning(Assertion erroAssertion, String message, Throwable throwable) {
-            super(erroAssertion, message, throwable);
+        public Warning(Assertion errorAssertion, AssertionPath ap, String message, Throwable throwable) {
+            super(errorAssertion, ap, message, throwable);
         }
     }
 }

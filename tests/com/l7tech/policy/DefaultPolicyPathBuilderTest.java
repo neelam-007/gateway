@@ -20,7 +20,6 @@ import junit.framework.TestSuite;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.Iterator;
 
 /**
  * Test the default policy assertion path builder/analyzer class

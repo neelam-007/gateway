@@ -10,6 +10,7 @@ import java.util.Arrays;
 
 /**
  * Class SpecificUserAssertionTreeNode.
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class SpecificUserAssertionTreeNode extends IdentityAssertionTreeNode {
@@ -38,11 +39,11 @@ public class SpecificUserAssertionTreeNode extends IdentityAssertionTreeNode {
         Action a = new IdentityPolicyAction(this);
         list.add(a);
         list.addAll(Arrays.asList(super.getActions()));
-        return (Action[]) list.toArray(new Action[]{});
+        return (Action[])list.toArray(new Action[]{});
     }
 
     /**
-     *Test if the node can be deleted. Default is <code>true</code>
+     * Test if the node can be deleted. Default is <code>true</code>
      *
      * @return true if the node can be deleted, false otherwise
      */
@@ -63,7 +64,17 @@ public class SpecificUserAssertionTreeNode extends IdentityAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "User: "+ ((SpecificUser)getUserObject()).getUserLogin() +
-                        " [" + idProviderName() + "]";
+        String userLogin = ((SpecificUser)getUserObject()).getUserLogin();
+        if (isAnonymous()) {
+            return "User: " + userLogin;
+        }
+        return "User: " + userLogin + " [" + idProviderName() + "]";
     }
+
+    private boolean isAnonymous() {
+        String userLogin = ((SpecificUser)getUserObject()).getUserLogin();
+        return "Anonymous".equals(userLogin);
+    }
+
+
 }

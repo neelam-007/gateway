@@ -5,14 +5,13 @@ import com.l7tech.console.action.*;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.PolicyTemplateNode;
 import com.l7tech.console.tree.ServiceNode;
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Cookie;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import java.io.ByteArrayOutputStream;
@@ -20,10 +19,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.logging.Level;
 
 /**
@@ -34,6 +30,7 @@ import java.util.logging.Level;
  */
 public abstract class AssertionTreeNode extends AbstractTreeNode {
     private List validatorMessages = new ArrayList();
+    private List viewValidatorMessages = null;
 
     /**
      * package private constructor accepting the asseriton
@@ -63,20 +60,58 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
      *
      * @param messages the messages
      */
-    public void setValidatorMessages(List messages) {
+    public void setValidatorMessages(Collection messages) {
         this.validatorMessages = new ArrayList();
         if (messages != null) {
             validatorMessages.addAll(messages);
         }
+        viewValidatorMessages = null;
     }
 
     /**
-     * Set the validator messages for this node.
+     * Get the full collection of validator messages.
      *
-     * @return tthe list of validator messages
+     * @return the collection of validator messages
+     */
+    public Collection getAllValidatorMessages() {
+        if (validatorMessages != null) {
+            return validatorMessages;
+        }
+        return Collections.EMPTY_LIST;
+    }
+
+
+    /**
+     * Get the validator messages for this node. Returns the messages
+     * depending on the view. For the identity view only the messages
+     * that rlate to the set of paths that are associated with the view
+     * will be returned.
+     *
+     * @return the list of validator messages
      */
     public List getValidatorMessages() {
-        return this.validatorMessages;
+        if (viewValidatorMessages != null) {
+            return viewValidatorMessages;
+        }
+
+        if (!PolicyTree.isIdentityView(this)) {
+            viewValidatorMessages = this.validatorMessages;
+        } else {
+            //select only the path messages
+            List pathMessages = new ArrayList();
+            TreeNode[] path = getPath();
+            if (path.length >= 2) {
+                IdentityPolicyTreeNode in = (IdentityPolicyTreeNode)path[1];
+                for (Iterator it = validatorMessages.iterator(); it.hasNext();) {
+                    PolicyValidatorResult.Message message = (PolicyValidatorResult.Message)it.next();
+                    if (in.contains(message.getAssertionPath())) {
+                        pathMessages.add(message);
+                    }
+                }
+            }
+            viewValidatorMessages = pathMessages;
+        }
+        return viewValidatorMessages;
     }
 
     /**
@@ -85,12 +120,13 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
      * @return the tooltip text or null
      */
     public String getTooltipText() {
-        if (validatorMessages.isEmpty()) {
+        List messages = getValidatorMessages();
+        if (messages.isEmpty()) {
             return super.getTooltipText();
         }
         StringBuffer sb = new StringBuffer();
         sb.append("<html><strong> There are {0}<br>");
-        Iterator it = this.validatorMessages.iterator();
+        Iterator it = messages.iterator();
         boolean first = true;
         boolean hasWarnings = false;
         boolean hasErrors = false;

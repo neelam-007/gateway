@@ -195,7 +195,8 @@ public class Descriptions {
         descriptionsMap.put(AllAssertion.class, NoParam.class);
         descriptionsMap.put(HttpBasic.class, NoParam.class);
         descriptionsMap.put(HttpDigest.class, NoParam.class);
-        descriptionsMap.put(RoutingAssertion.class, RoutingDescription.class);
+        descriptionsMap.put(HttpRoutingAssertion.class, RoutingDescription.class);
+        descriptionsMap.put(JmsRoutingAssertion.class, RoutingDescription.class);
         descriptionsMap.put(XmlRequestSecurity.class, NoParam.class);
         descriptionsMap.put(XmlResponseSecurity.class, NoParam.class);
     }

@@ -219,8 +219,7 @@ public class AssertionPath {
                 return false;
 
             for (AssertionPath apath = this; apath != null; apath = apath.parentPath) {
-                if (!(apath.lastPathComponent.equals
-                  (oAssertionPath.lastPathComponent))) {
+                if (!(apath.lastPathComponent.equals(oAssertionPath.lastPathComponent))) {
                     return false;
                 }
                 oAssertionPath = oAssertionPath.parentPath;

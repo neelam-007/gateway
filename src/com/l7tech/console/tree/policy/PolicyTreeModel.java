@@ -26,9 +26,7 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 import java.rmi.RemoteException;
-import java.util.EventListener;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 
 
 /**
@@ -158,22 +156,18 @@ public class PolicyTreeModel extends DefaultTreeModel {
          * @return true if filter accepts the node, false otherwise
          */
         public boolean accept(TreeNode node) {
-            if (node instanceof SpecificUserAssertionTreeNode ||
-              node instanceof MemberOfGroupAssertionTreeNode)
+            if (node instanceof IdentityAssertionTreeNode) {
                 return false;
-
-            if (node instanceof CompositeAssertionTreeNode) {
-                if (((CompositeAssertionTreeNode)node).getChildCount(this) == 0)
-                    return false;
             }
 
             TreeNode[] path = ((DefaultMutableTreeNode)node).getPath();
+            if (path.length < 2)  return true;
             IdentityPolicyTreeNode in = (IdentityPolicyTreeNode)path[1];
             AssertionTreeNode an = (AssertionTreeNode)node;
             IdentityPath ip = in.getIdentityPath();
             Set paths = ip.getPaths();
             for (Iterator iterator = paths.iterator(); iterator.hasNext();) {
-                Assertion[] apath = (Assertion[])iterator.next();
+                Assertion[] apath = ((AssertionPath)iterator.next()).getPath();
                 for (int i = apath.length - 1; i >= 0; i--) {
                     Assertion assertion = apath[i];
                     if (assertion.equals(an.asAssertion())) return true;
