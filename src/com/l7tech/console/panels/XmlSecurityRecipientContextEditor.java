@@ -88,20 +88,18 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
 
         assignCertButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                CertImportMethodsPanel sp = new CertImportMethodsPanel(new CertDetailsPanel(null) {
-                                                                public boolean canFinish() {
-                                                                   return true;
-                                                                }
-                                                               },
-                                                               true);
 
-                // todo a 3rd panel that lets you set an actor value
+                RecipientSecurityHeaderWizardStep panel3 = new RecipientSecurityHeaderWizardStep(null);
+                CertDetailsPanel panel2 = new CertDetailsPanel(panel3);
+                CertImportMethodsPanel panel1 = new CertImportMethodsPanel(panel2, true);
+
+
 
                 JFrame f = TopComponents.getInstance().getMainWindow();
-                Wizard w = new AddCertificateWizard(f, sp);
+                Wizard w = new AddCertificateWizard(f, panel1);
                 w.setTitle("Define new XML security recipient");
                 w.pack();
-                w.setSize(780, 560);
+                w.setSize(800, 560);
                 Utilities.centerOnScreen(w);
                 w.setVisible(true);
 
