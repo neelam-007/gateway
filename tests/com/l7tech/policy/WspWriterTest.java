@@ -26,9 +26,6 @@ import java.util.logging.Logger;
 
 /**
  * Test serializing policy tree to XML.
- * User: mike
- * Date: Jun 10, 2003
- * Time: 3:33:11 PM
  */
 public class WspWriterTest extends TestCase {
     private static Logger log = Logger.getLogger(WspWriterTest.class.getName());
