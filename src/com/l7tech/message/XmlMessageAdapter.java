@@ -78,11 +78,11 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
                     if (!part.getHeader(XmlUtil.CONTENT_TYPE).getValue().equals(innerType)) throw new IOException("Content-Type of first part doesn't match type of Multipart header");
 
                     soapPartParsed = true;
-                    return part.getContent();
+                    return part.getContentString();
                 } else throw new IOException("Expected first part of multipart message to be XML (was '" + innerType + "')");
             } else {
                 if(multipartReader != null) {
-                    return multipartReader.getSoapPart().getContent();
+                    return multipartReader.getSoapPart().getContentString();
                 } else {
                     // should never happen
                     throw new IllegalStateException("The soap part was parsed once but the multipartReader is NULL.");
@@ -114,11 +114,6 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
 
         if(multipartReader == null) throw new IllegalStateException("The attachment cannot be retrieved as the soap part has not been read.");
          return multipartReader.getMessageAttachments();
-    }
-
-    public MultipartUtil.Part getAttachment(int position) throws IOException {
-        if(multipartReader == null) throw new IllegalStateException("The attachment cannot be retrieved as the soap part has not been read.");
-        return multipartReader.getMessagePart(position);
     }
 
     public MultipartUtil.Part getSoapPart() throws IOException {

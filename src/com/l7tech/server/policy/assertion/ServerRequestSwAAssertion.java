@@ -177,12 +177,12 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                                 }
 
                                 // check the max. length allowed
-                                if(mimepartRequest.getContent().length() > part.getMaxLength() * 1000) {
+                                if(mimepartRequest.getContentLength() > part.getMaxLength() * 1000) {
                                     logger.info("The length of the attachment " + mimePartCID + " exceeds the limit: " + part.getMaxLength() + "K bytes");
                                     return AssertionStatus.FALSIFIED;
                                 }
 
-                                // the attachment is validated OK
+                                 // the attachment is validated OK
                                 // set the validated flag of the attachment to true
                                 mimepartRequest.setValidated(true);
                             } else {

@@ -8,10 +8,7 @@ package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.security.xml.SignerInfo;
-import com.l7tech.common.util.KeystoreUtils;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.MultipartUtil;
+import com.l7tech.common.util.*;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
@@ -246,12 +243,17 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                             request.getMultipartBoundary());
 
                     if(request.getMultipartReader().isAtLeastOneAttachmentParsed()){
-                        MultipartUtil.addMultiparts(sb,
-                                request.getAttachments(),
-                                request.getMultipartBoundary());
 
-                        // add all Attachments
-                        postMethod.setRequestBody(sb.toString());
+                        byte[] dataBuf = new byte[request.getMultipartReader().getgetRawAttachmentsSize()];
+                        byte[] data = request.getMultipartReader().getRawAttachments();
+                        for(int i=0; i < dataBuf.length; i++) {
+                            dataBuf[i] = data[i];
+                        }
+                        ByteArrayInputStream bais = new ByteArrayInputStream(dataBuf);
+                        PushbackInputStream pushbackInputStream = new PushbackInputStream(bais, MultipartMessageReader.SOAP_PART_BUFFER_SIZE);
+                        pushbackInputStream.unread(sb.toString().getBytes());
+                        postMethod.setRequestBody(pushbackInputStream);
+
                     } else {
                         PushbackInputStream pbis = request.getMultipartReader().getPushbackInputStream();
 

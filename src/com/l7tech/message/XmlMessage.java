@@ -32,8 +32,6 @@ public interface XmlMessage extends Message {
     
     public Map getAttachments() throws IOException;
 
-    public MultipartUtil.Part getAttachment(int position) throws IOException;
-
     public String getMultipartBoundary();
 
     public MultipartMessageReader getMultipartReader();

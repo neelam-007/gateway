@@ -117,9 +117,6 @@ public class RequestXpathAssertionTest extends TestCase {
             public Map getAttachments() throws IOException {
                 return null;
             }
-            public MultipartUtil.Part getAttachment(int position) throws IOException {
-                return null;
-            }
             
             public MultipartUtil.Part getSoapPart() throws IOException { return null; }
 

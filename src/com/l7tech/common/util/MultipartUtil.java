@@ -1,6 +1,9 @@
 package com.l7tech.common.util;
 
 import java.io.IOException;
+import java.io.ByteArrayInputStream;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.util.*;
 
 /**
@@ -39,50 +42,6 @@ public class MultipartUtil {
         }
         sbuf.append("\r\n").append(modifiedSoapEnvelope);
         sbuf.append("\r\n" + XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + "\r\n");
-    }
-
-
-    static public void addMultiparts(StringBuffer sbuf, Map multiparts, String boundary) {
-
-        if(sbuf == null) throw new IllegalArgumentException("The StringBuffer is NULL");
-        if(multiparts == null) throw new IllegalArgumentException("The multiparts map is NULL");
-        if(boundary == null) throw new IllegalArgumentException("The multiparts boundary is NULL");
-
-        boolean fisrtAttachment = true;
-
-        // add attachments
-        Set attachmentKeys = multiparts.keySet();
-        Iterator itr = attachmentKeys.iterator();
-        while (itr.hasNext()) {
-            if(!fisrtAttachment)
-                sbuf.append("\r\n" + XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + "\r\n");
-
-            Object o = (Object) itr.next();
-            Part part = (Part) multiparts.get(o);
-
-            Map headers = part.getHeaders();
-            Set headerKeys = headers.keySet();
-            Iterator headerItr = headerKeys.iterator();
-            while (headerItr.hasNext()) {
-                String headerName = (String) headerItr.next();
-                HeaderValue hv = (HeaderValue) headers.get(headerName);
-                sbuf.append(hv.getName()).append(": ").append(hv.getValue());
-
-                // append parameters of the header
-                Map parameters = hv.getParams();
-                Set paramKeys = parameters.keySet();
-                Iterator paramItr = paramKeys.iterator();
-                while (paramItr.hasNext()) {
-                    String paramName = (String) paramItr.next();
-                    sbuf.append("; ").append(paramName).append("=").append(parameters.get(paramName));
-                }
-                sbuf.append("\r\n");
-            }
-            sbuf.append("\r\n" + part.getContent());
-        }
-
-        // the last boundary has delimiter after the boundary
-        sbuf.append("\r\n" + XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + XmlUtil.MULTIPART_BOUNDARY_PREFIX + "\r\n");
     }
 
     static public HeaderValue parseHeader(String header) throws IOException {
@@ -187,14 +146,22 @@ public class MultipartUtil {
             this.position = position;
         }
 
-        public String getContent() {
+        public byte[] getContent() {
             return content;
         }
 
         public Map getHeaders() {
             return headers;
         }
-        
+
+        public int getContentLength() {
+            return contentLength;
+        }
+
+        public void setContentLength(int length) {
+            contentLength = length;
+        }
+
         public boolean isValidated() {
             return validated;
         }
@@ -203,9 +170,22 @@ public class MultipartUtil {
             this.validated = validated;
         }
 
-        protected String content;
+        public String getContentString() throws IOException {
+            ByteArrayInputStream bais = new ByteArrayInputStream(content);
+            BufferedReader br = new BufferedReader(new InputStreamReader(bais, ENCODING));
+
+            String line = null;
+            StringBuffer sb = new StringBuffer();
+            while((line = br.readLine()) != null){
+                sb.append(line);
+            }
+            return sb.toString();
+        }
+
+        protected byte[] content;
         protected Map headers = new HashMap();
         protected int position;
         protected boolean validated = false;
+        int contentLength;
     }
 }
