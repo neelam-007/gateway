@@ -18,7 +18,7 @@ import java.util.Set;
 public class MultipartMessageReader {
 
     private Document _document;
-    private boolean multipart;
+    private boolean atLeastOneAttachmentParsed;
     private String multipartBoundary;
     private PushbackInputStream pushbackInputStream = null;
     private Map multipartParts = new HashMap();
@@ -34,6 +34,10 @@ public class MultipartMessageReader {
 
     public PushbackInputStream getPushbackInputStream() {
         return pushbackInputStream;
+    }
+
+    public boolean isAtLeastOneAttachmentParsed() {
+        return atLeastOneAttachmentParsed;
     }
 
     /**
@@ -207,6 +211,7 @@ public class MultipartMessageReader {
             part.setPostion(multipartParts.size());
             multipartParts.put(part.getHeader(XmlUtil.CONTENT_ID).getValue(), part);
         }
+        if(multipartParts.size() >= 2 ) atLeastOneAttachmentParsed = true;
         return part;
     }
 
@@ -229,7 +234,7 @@ public class MultipartMessageReader {
         if((part = getMessagePartFromMap(cid)) != null) return part;
         String line;
 
-        while (!partFound && (line = readLine()) != null)  {
+        while ((line = readLine()) != null)  {
             part = new MultipartUtil.Part();
             boolean headers = true;
             do {
@@ -261,8 +266,11 @@ public class MultipartMessageReader {
             if(cid.endsWith(contentId)) {
                 // the requested MIME part is found, stop here.
                 partFound = true;
+                break;
             }
         }
+
+        if(multipartParts.size() >= 2 ) atLeastOneAttachmentParsed = true;
 
         if(partFound) {
             return part;
