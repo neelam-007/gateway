@@ -4,6 +4,7 @@ import com.l7tech.console.action.GroupPropertiesAction;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
+import com.l7tech.identity.IdentityProviderConfigManager;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -40,10 +41,30 @@ public class GroupNode extends EntityHeaderNode {
      */
     public Action[] getActions() {
            java.util.List list = new ArrayList();
-        list.add(new GroupPropertiesAction(this));
+         final GroupPropertiesAction groupPropertiesAction = new GroupPropertiesAction(this);
+         groupPropertiesAction.setEnabled(canDelete());
+         list.add(groupPropertiesAction);
         list.addAll(Arrays.asList(super.getActions()));
 
         return (Action[]) list.toArray(new Action[]{});
+    }
+
+    /**
+     * test whether the node can be deleted. Only the internal
+     * nodes can be deleted.
+     * @return true if the node can be deleted, false otherwise
+     */
+    public boolean canDelete() {
+        return isInternal();
+    }
+
+    /**
+     * test whether the node belongs to the internal provider
+     * @return true if the node is internal, false otherwise
+     */
+    protected final boolean isInternal() {
+        GroupFolderNode parent = (GroupFolderNode)getParent();
+        return parent.getProviderId() == IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
     }
 
     /**

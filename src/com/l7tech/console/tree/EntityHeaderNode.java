@@ -41,7 +41,9 @@ public abstract class EntityHeaderNode extends AbstractTreeNode {
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
-        return new Action[]{new DeleteEntityAction(this)};
+        final DeleteEntityAction deleteAction = new DeleteEntityAction(this);
+        deleteAction.setEnabled(canDelete());
+        return new Action[]{deleteAction};
     }
 
     /**
