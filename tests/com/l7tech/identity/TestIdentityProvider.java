@@ -6,24 +6,27 @@
 
 package com.l7tech.identity;
 
-import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.objectmodel.*;
 import com.l7tech.identity.cert.ClientCertManager;
+import com.l7tech.objectmodel.*;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 
 import java.io.IOException;
-import java.util.*;
 import java.security.cert.X509Certificate;
+import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * @author mike
  */
 public class TestIdentityProvider implements IdentityProvider {
+    public static long PROVIDER_ID = 9898;
+    private static Logger log = Logger.getLogger(TestIdentityProvider.class.getName());
     private static Map usernameMap = Collections.synchronizedMap(new HashMap());
     private static IdentityProviderConfig config = new IdentityProviderConfig(new IdentityProviderType(9898,
                                                                                                        "TestIdentityProvider",
                                                                                                        TestIdentityProvider.class.getName()));
     {
-        config.setOid(9898);
+        config.setOid(PROVIDER_ID);
         config.setName("TestIdentityProvider");
         config.setDescription("ID provider for testing");
         config.setVersion(1);
@@ -82,8 +85,9 @@ public class TestIdentityProvider implements IdentityProvider {
     public User authenticate(LoginCredentials pc) throws AuthenticationException, FindException, IOException {
         MyUser mu = (MyUser)usernameMap.get(pc.getLogin());
         if (mu == null) return null;
-        if (Arrays.equals(mu.password,  pc.getCredentials()))
+        if (Arrays.equals(mu.password, pc.getCredentials())) {
             return mu.user;
+        }
         throw new AuthenticationException("Invalid username or password");
     }
 
