@@ -2,13 +2,18 @@ package com.l7tech.cluster;
 
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.remote.jini.export.RemoteService;
+import com.l7tech.logging.LogManager;
 import com.sun.jini.start.LifeCycle;
 import net.jini.config.ConfigurationException;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.rmi.RemoteException;
+import java.sql.SQLException;
 
 /**
  * Server side implementation of the ClusterStatusAdmin interface.
@@ -31,26 +36,34 @@ public class ClusterStatusAdminImp extends RemoteService implements ClusterStatu
      * get status for all nodes recorded as part of the cluster.
      */
     public ClusterNodeInfo[] getClusterStatus() throws FindException {
-        Collection res = ciman.retrieveClusterStatus();
-        Object[] resarray = res.toArray();
-        ClusterNodeInfo[] output = new ClusterNodeInfo[res.size()];
-        for (int i = 0; i < resarray.length; i++) {
-            output[i] = (ClusterNodeInfo)resarray[i];
+        try {
+            Collection res = ciman.retrieveClusterStatus();
+            Object[] resarray = res.toArray();
+            ClusterNodeInfo[] output = new ClusterNodeInfo[res.size()];
+            for (int i = 0; i < resarray.length; i++) {
+                output[i] = (ClusterNodeInfo)resarray[i];
+            }
+            return output;
+        } finally {
+            closeContext();
         }
-        return output;
     }
 
     /**
      * get service usage as currently recorded in database.
      */
     public ServiceUsage[] getServiceUsage() throws FindException {
-        Collection res = suman.getAll();
-        Object[] resarray = res.toArray();
-        ServiceUsage[] output = new ServiceUsage[res.size()];
-        for (int i = 0; i < resarray.length; i++) {
-            output[i] = (ServiceUsage)resarray[i];
+        try {
+            Collection res = suman.getAll();
+            Object[] resarray = res.toArray();
+            ServiceUsage[] output = new ServiceUsage[res.size()];
+            for (int i = 0; i < resarray.length; i++) {
+                output[i] = (ServiceUsage)resarray[i];
+            }
+            return output;
+        } finally {
+            closeContext();
         }
-        return output;
     }
 
     /**
@@ -77,7 +90,15 @@ public class ClusterStatusAdminImp extends RemoteService implements ClusterStatu
         throw new UnsupportedOperationException();
     }
 
+    private void closeContext() {
+        try {
+            PersistenceContext.getCurrent().close();
+        } catch (SQLException e) {
+            logger.log(Level.WARNING, "error closing context", e);
+        }
+    }
+
     private final ClusterInfoManager ciman = ClusterInfoManager.getInstance();
     private final ServiceUsageManager suman = new ServiceUsageManager();
-    //private final Logger logger = LogManager.getInstance().getSystemLogger();
+    private final Logger logger = LogManager.getInstance().getSystemLogger();
 }
