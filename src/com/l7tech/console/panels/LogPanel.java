@@ -102,7 +102,7 @@ public class LogPanel extends JPanel {
                         if (getMsgTable().getModel().getValueAt(row, 4) != null)
                             msg = msg + "Class    : " + getMsgTable().getModel().getValueAt(row, 4).toString() + "\n";
                         if (getMsgTable().getModel().getValueAt(row, 5) != null)
-                            msg = msg + "Method   :" + getMsgTable().getModel().getValueAt(row, 5).toString() + "\n";
+                            msg = msg + "Method   : " + getMsgTable().getModel().getValueAt(row, 5).toString() + "\n";
                         getMsgDetails().setText(msg);
 
                     }
@@ -155,10 +155,9 @@ public class LogPanel extends JPanel {
      * @return JPanel
      */
     private JPanel getSelectPane(){
-        if(selectPane == null){
-            selectPane = new JPanel();
-        }
+        if(selectPane != null) return selectPane;
 
+        selectPane = new JPanel();
         selectPane.setMinimumSize(new Dimension((int)selectPane.getSize().getWidth(), 35));
         selectPane.setLayout(new FlowLayout(FlowLayout.LEFT));
         selectPane.add(getFilterPane());
@@ -172,10 +171,9 @@ public class LogPanel extends JPanel {
      * @return JPanel
      */
     private JPanel getFilterPane(){
-        if(filterPane == null){
-            filterPane = new JPanel();
-        }
+        if(filterPane != null) return filterPane;
 
+        filterPane = new JPanel();
         filterPane.setLayout(new BorderLayout());
         filterPane.add(getFilterSlider());
 
@@ -187,10 +185,9 @@ public class LogPanel extends JPanel {
      * @return JSlider
      */
     private JSlider getFilterSlider(){
-        if(slider == null){
-            slider = new JSlider(0, 120);
-        }
+        if(slider != null)  return slider;
 
+        slider = new JSlider(0, 120);
         slider.setMajorTickSpacing(40);
 
         Dictionary table = new Hashtable();
@@ -247,10 +244,9 @@ public class LogPanel extends JPanel {
      * @return  JPanel
      */
     private JPanel getControlPane(){
-        if(controlPane == null){
-             controlPane = new JPanel();
-        }
+        if(controlPane != null) return controlPane;
 
+        controlPane = new JPanel();
         controlPane.setLayout(new FlowLayout());
 
         if(details == null){
@@ -292,10 +288,9 @@ public class LogPanel extends JPanel {
      * @return JTable
      */
     private JTable getMsgTable(){
-        if(msgTable == null){
-            msgTable = new JTable(getLogTableModelFilter(), getLogColumnModel());
-        }
+        if(msgTable != null) return msgTable;
 
+        msgTable = new JTable(getLogTableModelFilter(), getLogColumnModel());
         msgTable.setShowHorizontalLines(false);
         msgTable.setShowVerticalLines(false);
         msgTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -309,9 +304,9 @@ public class LogPanel extends JPanel {
      * @return JScrollPane
      */
     private JScrollPane getMsgTablePane(){
-        if(msgTablePane == null){
-            msgTablePane = new JScrollPane();
-        }
+        if(msgTablePane != null) return msgTablePane;
+
+        msgTablePane = new JScrollPane();
         msgTablePane.setViewportView(getMsgTable());
         msgTablePane.getViewport().setBackground(getMsgTable().getBackground());
 
@@ -323,10 +318,9 @@ public class LogPanel extends JPanel {
      * @return JSplitPane
      */
     private JSplitPane getLogPaneTop(){
-        if(logPaneTop == null){
-            logPaneTop = new JSplitPane();
-        }
+        if(logPaneTop != null)  return logPaneTop;
 
+        logPaneTop = new JSplitPane();
         logPaneTop.setLeftComponent(getMsgTablePane());
         logPaneTop.setRightComponent(getMsgDetailsPane());
         logPaneTop.setResizeWeight(0.5);
@@ -338,9 +332,9 @@ public class LogPanel extends JPanel {
      * @return JScrollPane
      */
     private JScrollPane getMsgDetailsPane(){
-        if(msgDetailsPane == null){
-            msgDetailsPane = new JScrollPane();
-        }
+        if(msgDetailsPane != null)  return msgDetailsPane;
+
+        msgDetailsPane = new JScrollPane();
         msgDetailsPane.setViewportView(getMsgDetails());
         //msgDetailsPane.setMinimumSize(new Dimension(0, 0));
 
@@ -353,10 +347,9 @@ public class LogPanel extends JPanel {
      */
     private JTextArea getMsgDetails()
     {
-        if(msgDetails == null){
-            msgDetails = new JTextArea();
-        }
+        if(msgDetails != null) return msgDetails;
 
+        msgDetails = new JTextArea();
         msgDetails.setEditable(false);
        // msgDetails.setMinimumSize(new Dimension(0, 0));
 
@@ -368,10 +361,9 @@ public class LogPanel extends JPanel {
      * @return JPanel
      */
     private JPanel getMsgPane(){
-        if(msgPane == null){
-            msgPane = new JPanel();
-        }
+        if(msgPane != null) return msgPane;
 
+        msgPane = new JPanel();
         msgPane.setLayout(new BorderLayout());
 
         msgPane.add(getLogPaneTop(), BorderLayout.CENTER);
@@ -408,10 +400,10 @@ public class LogPanel extends JPanel {
      * @return FilteredLogTableModel
      */
     private FilteredLogTableModel getLogTableModelFilter(){
-        if(logTableModelFilter == null){
-            logTableModelFilter = new FilteredLogTableModel();
-            logTableModelFilter.setRealModel(getLogTableModel());
-        }
+        if(logTableModelFilter != null) return logTableModelFilter;
+
+        logTableModelFilter = new FilteredLogTableModel();
+        logTableModelFilter.setRealModel(getLogTableModel());
 
         return logTableModelFilter;
     }
