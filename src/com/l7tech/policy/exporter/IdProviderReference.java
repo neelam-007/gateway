@@ -24,6 +24,7 @@ import java.util.logging.Logger;
 import java.util.Map;
 import java.util.Set;
 import java.util.Iterator;
+import java.util.Arrays;
 
 /**
  * A reference to an id provider.
@@ -180,8 +181,6 @@ public class IdProviderReference extends ExternalReference {
                 if (configOnThisSystem.getTypeVal() != getIdProviderTypeVal()) {
                     logger.info("Type mismatch " + configOnThisSystem.getTypeVal() + " vs " + getIdProviderTypeVal());
                     continue;
-                } else {
-                    logger.info("\n\n\n\nWe have type match\n\n\n\n");
                 }
                 String localProps = null;
                 try {
@@ -236,6 +235,8 @@ public class IdProviderReference extends ExternalReference {
             // either a map or a string
             if (val1 instanceof Map) {
                 if (!mapEquals((Map)val1, (Map)val2)) return false;
+            } else if (val1 instanceof Object[] && val2 instanceof Object[]) {
+                if (!Arrays.equals((Object[])val1, (Object[])val2)) return false;
             } else if (!val1.equals(val2)) {
                 logger.info("Mismatch on properties " + key + "" + val1 + "" + val2);
                 return false;
