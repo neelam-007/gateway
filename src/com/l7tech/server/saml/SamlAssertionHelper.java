@@ -277,7 +277,8 @@ public abstract class SamlAssertionHelper {
         } else {
             ni.setFormat(Constants.NAMEIDENTIFIER_UNSPECIFIED);
         }
-        ni.setStringValue(credentials.getLogin());
+        if (credentials.getLogin() != null)
+            ni.setStringValue(credentials.getLogin());
         InetAddress clientAddress = options.getClientAddress();
         if (clientAddress != null) {
             final SubjectLocalityType subjectLocality = at.addNewSubjectLocality();
