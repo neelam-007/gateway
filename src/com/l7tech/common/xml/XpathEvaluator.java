@@ -1,6 +1,7 @@
 package com.l7tech.common.xml;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 import org.jaxen.dom.DOMXPath;
 import org.jaxen.XPath;
 import org.jaxen.JaxenException;
@@ -124,7 +125,7 @@ public class XpathEvaluator {
      * this evaluator's Document.
      *
      * @param expression the XPath expression
-     * @return the nodes that are selectable by this XPath expression.
+     * @return a List of Node - the nodes that are selectable by this XPath expression.
      * @throws JaxenException thrown on evaluation error
      */
     public List select(String expression) throws JaxenException {
@@ -133,6 +134,31 @@ public class XpathEvaluator {
             xpath.setNamespaceContext(nameSpaceContext);
         }
         return xpath.selectNodes(document);
+    }
+
+    /**
+     * Select the nodes that are selectable with this expression against
+     * this evaluator's Document.  If any of the selected Nodes are not Elements,
+     * this will throw a JaxenException.
+     *
+     * @param expression
+     * @return a List of Element - the elements that are selectable by this XPath expression
+     * @throws JaxenException if the expression is bad, or any non-Element nodes were selected
+     */
+    public List selectElements(String expression) throws JaxenException {
+        XPath xpath = new DOMXPath(expression);
+        if (nameSpaceContext !=null) {
+            xpath.setNamespaceContext(nameSpaceContext);
+        }
+        List nodes = xpath.selectNodes(document);
+        if (nodes == null)
+            return nodes;
+        for (Iterator i = nodes.iterator(); i.hasNext();) {
+            Node node = (Node)i.next();
+            if (node.getNodeType() != Node.ELEMENT_NODE)
+                throw new JaxenException("Xpath result included a non-Element Node of type " + node.getNodeType());
+        }
+        return nodes;
     }
 
     /**
