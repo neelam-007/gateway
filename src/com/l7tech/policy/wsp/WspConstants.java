@@ -37,7 +37,8 @@ import java.util.*;
  * Contains the guts of the WspReader and WspWriter, and the registry of types we can serialize.
  */
 public class WspConstants {
-    public static final String POLICY_NS = "http://www.layer7tech.com/ws/policy";
+    public static final String WSP_POLICY_NS = "http://schemas.xmlsoap.org/ws/2002/12/policy";
+    public static final String L7_POLICY_NS = "http://www.layer7tech.com/ws/policy";
     public static final String POLICY_ELNAME = "Policy";
 
     static boolean isNullableType(Class type) {
@@ -406,7 +407,7 @@ public class WspConstants {
         }
 
         public TypedReference thaw(Element source) throws InvalidPolicyStreamException {
-            if (!POLICY_NS.equals(source.getNamespaceURI()))
+            if (!L7_POLICY_NS.equals(source.getNamespaceURI()))
                 throw new InvalidPolicyStreamException("Policy contains node \"" + source.getNodeName() +
                   "\" with unrecognized namespace URI \"" + source.getNamespaceURI() + "\"");
 

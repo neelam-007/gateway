@@ -12,7 +12,7 @@ import com.l7tech.policy.wsp.WspConstants;
  * $Id$<br/>
  */
 public class ExporterConstants {
-    public static final String EXPORTED_POL_NS = WspConstants.POLICY_NS + "/export";
+    public static final String EXPORTED_POL_NS = WspConstants.L7_POLICY_NS + "/export";
     public static final String EXPORTED_POL_PREFIX = "exp";
     public static final String EXPORTED_DOCROOT_ELNAME = "Export";
     public static final String EXPORTED_REFERENCES_ELNAME = "References";

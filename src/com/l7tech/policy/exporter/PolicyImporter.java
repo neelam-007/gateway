@@ -70,7 +70,7 @@ public class PolicyImporter {
                         "an old-school style policy export.");
         }
         Element policy = XmlUtil.findFirstChildElementByName(readDoc.getDocumentElement(),
-                                                             WspConstants.POLICY_NS,
+                                                             WspConstants.L7_POLICY_NS,
                                                              WspConstants.POLICY_ELNAME);
         if (policy != null) {
             return resolver.localizePolicy(policy);

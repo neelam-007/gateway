@@ -25,7 +25,7 @@ public class WspReader {
     /**
      * Reads an XML-encoded policy document from the given element and
      * returns the corresponding policy tree.
-     * @param policyElement an element of type WspConstants.POLICY_NS:WspConstants.POLICY_ELNAME
+     * @param policyElement an element of type WspConstants.L7_POLICY_NS:WspConstants.POLICY_ELNAME
      * @return the policy tree it contained.  A null return means a valid &lt;Policy/&gt; tag was present, but
      *         it was empty.
      * @throws InvalidPolicyStreamException if the stream did not contain a valid policy
@@ -53,14 +53,13 @@ public class WspReader {
     public static Assertion parse(InputStream wspStream) throws IOException {
         try {
             Document doc = XmlUtil.parse(wspStream);
-            NodeList policyTags = doc.getElementsByTagNameNS(WspConstants.POLICY_NS,  WspConstants.POLICY_ELNAME);
-            if (policyTags.getLength() > 1)
-                throw new InvalidPolicyStreamException("More than one Policy tag was found");
-            Node policy = policyTags.item(0);
-            if (policy == null)
-                throw new InvalidPolicyStreamException("No enclosing Policy tag was found (using namespace " +
-                                                       WspConstants.POLICY_NS + ")");
-            return parse((Element)policy);
+            Element root = doc.getDocumentElement();
+            if (!WspConstants.POLICY_ELNAME.equals(root.getLocalName()))
+                throw new InvalidPolicyStreamException("Document element is not wsp:Policy");
+            String rootNs = root.getNamespaceURI();
+            if (!WspConstants.WSP_POLICY_NS.equals(rootNs) && !WspConstants.L7_POLICY_NS.equals(rootNs))
+                throw new InvalidPolicyStreamException("Document element is not in a recognized namespace");
+            return parse(root);
         } catch (Exception e) {
             throw new InvalidPolicyStreamException("Unable to parse policy", e);
         }
