@@ -32,6 +32,15 @@ public class InternalUser extends NamedEntityImp implements User {
         return new Long( _oid ).toString();
     }
 
+    public void setOid( long oid ) {
+        super.setOid( oid );
+        _userBean.setUniqueIdentifier( Long.toString( oid ) );
+    }
+
+    public long getOid() {
+        return new Long( _userBean.getUniqueIdentifier() ).longValue();
+    }
+
     /**
      * this is not persisted, it is set at run time by the provider who creates the object
      */
