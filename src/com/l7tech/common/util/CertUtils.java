@@ -28,6 +28,7 @@ import java.security.interfaces.DSAParams;
  * @version 1.0
  */
 public class CertUtils {
+    public static final String X509_OID_SUBJECTKEYID = "2.5.29.14";
 
     /**
      * Display structured information about a certificate.

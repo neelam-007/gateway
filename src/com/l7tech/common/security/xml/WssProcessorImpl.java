@@ -11,6 +11,7 @@ import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import org.w3c.dom.Document;
@@ -103,7 +104,7 @@ public class WssProcessorImpl implements WssProcessor {
         while (securityChildToProcess != null) {
             if (securityChildToProcess.getLocalName().equals(SoapUtil.ENCRYPTEDKEY_EL_NAME)) {
                 processEncryptedKey(securityChildToProcess, recipientKey,
-                                    recipientCert.getExtensionValue("2.5.29.14"), cntx);
+                                    recipientCert.getExtensionValue(CertUtils.X509_OID_SUBJECTKEYID), cntx);
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.TIMESTAMP_EL_NAME)) {
                 processTimestamp(cntx, securityChildToProcess);
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.BINARYSECURITYTOKEN_EL_NAME)) {
@@ -243,7 +244,10 @@ public class WssProcessorImpl implements WssProcessor {
         logger.finest("Processing EncryptedKey");
 
         // Check that this is for us by checking the ds:KeyInfo/wsse:SecurityTokenReference/wsse:KeyIdentifier
-        if (ski != null) {
+        if (ski == null) {
+            logger.fine("Our own certificate has no Subject Key Identifier -- unable to confirm for sure that we " +
+                        "are the intended recipient of this EncryptedKey.  Continuing anyway");
+        } else {
             Element kinfo = XmlUtil.findOnlyOneChildElementByName(encryptedKeyElement, SoapUtil.DIGSIG_URI, "KeyInfo");
             if (kinfo != null) {
                 Element str = XmlUtil.findOnlyOneChildElementByName(kinfo,
@@ -288,7 +292,7 @@ public class WssProcessorImpl implements WssProcessor {
             if (encMethodValue == null || encMethodValue.length() < 1) {
                 logger.warning("Algorithm not specified in EncryptionMethod element");
                 return;
-            } else if (!encMethodValue.equals(SUPPORTED_ENCRYPTEDKEY_ALGO)) {
+            } else if (!encMethodValue.equals(SoapUtil.SUPPORTED_ENCRYPTEDKEY_ALGO)) {
                 logger.warning("Algorithm not supported " + encMethodValue);
                 return;
             }
@@ -738,5 +742,4 @@ public class WssProcessorImpl implements WssProcessor {
         WssProcessor.Timestamp timestamp = null;
         Element releventSecurityHeader = null;
     }
-    public static final String SUPPORTED_ENCRYPTEDKEY_ALGO = "http://www.w3.org/2001/04/xmlenc#rsa-1_5";
 }

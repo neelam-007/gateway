@@ -94,6 +94,7 @@ public class SoapUtil {
     public static final String FC_CLIENT = "Client";
     public static final String FC_SERVER = "Server";
     public static final String SOAPACTION = "SOAPAction";
+    public static final String SUPPORTED_ENCRYPTEDKEY_ALGO = "http://www.w3.org/2001/04/xmlenc#rsa-1_5";
 
     // Well-known actors (SOAP 1.1)
     public static final String ACTOR_VALUE_NEXT = "http://schemas.xmlsoap.org/soap/actor/next";

@@ -54,10 +54,10 @@ public class WssDecoratorTest extends TestCase {
             body = (Element)message.getElementsByTagNameNS(soapNs, SoapUtil.BODY_EL_NAME).item(0);
             payload = XmlUtil.findFirstChildElement(body);
             payloadNs = payload.getNamespaceURI();
-            price = (Element)message.getElementsByTagNameNS(payloadNs, "price").item(0);
-            amount = (Element)message.getElementsByTagNameNS(payloadNs, "amount").item(0);
-            productid = (Element)message.getElementsByTagNameNS(payloadNs, "productid").item(0);
-            accountid = (Element)message.getElementsByTagNameNS(payloadNs, "accountid").item(0);
+            price = (Element)message.getElementsByTagNameNS("", "price").item(0);
+            amount = (Element)message.getElementsByTagNameNS("", "amount").item(0);
+            productid = (Element)message.getElementsByTagNameNS("", "productid").item(0);
+            accountid = (Element)message.getElementsByTagNameNS("", "accountid").item(0);
         }
     }
 
@@ -68,7 +68,7 @@ public class WssDecoratorTest extends TestCase {
         log.info("Before decoration:" + XmlUtil.documentToFormattedString(c.message));
 
         decorator.decorateMessage(c.message,
-                                  TestDocuments.getEttkServerCertificate(),
+                                  TestDocuments.getDotNetServerCertificate(),
                                   TestDocuments.getEttkClientCertificate(),
                                   TestDocuments.getEttkClientPrivateKey(),
                                   new Element[0],
@@ -91,7 +91,7 @@ public class WssDecoratorTest extends TestCase {
         log.info("Before decoration:" + XmlUtil.documentToFormattedString(c.message));
 
         decorator.decorateMessage(c.message,
-                                  TestDocuments.getEttkServerCertificate(),
+                                  TestDocuments.getDotNetServerCertificate(),
                                   TestDocuments.getEttkClientCertificate(),
                                   TestDocuments.getEttkClientPrivateKey(),
                                   new Element[0],
@@ -107,7 +107,7 @@ public class WssDecoratorTest extends TestCase {
         log.info("Before decoration:" + XmlUtil.documentToFormattedString(c.message));
 
         decorator.decorateMessage(c.message,
-                                  TestDocuments.getEttkServerCertificate(),
+                                  TestDocuments.getDotNetServerCertificate(),
                                   TestDocuments.getEttkClientCertificate(),
                                   TestDocuments.getEttkClientPrivateKey(),
                                   new Element[] { c.productid,  c.accountid },
