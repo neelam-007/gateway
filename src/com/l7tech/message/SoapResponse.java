@@ -4,6 +4,8 @@ import com.l7tech.policy.assertion.AssertionResult;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.security.xml.WssProcessor;
+import com.l7tech.common.security.xml.WssDecorator;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -136,11 +138,20 @@ public abstract class SoapResponse extends XmlMessageAdapter implements SoapMess
         _policyViolated = policyViolated;
     }
 
+    public WssDecorator.DecorationRequirements getDecorationRequirements() {
+        return _decorationRequirements;
+    }
+
+    public void setDecorationRequirements(WssDecorator.DecorationRequirements requirements) {
+        _decorationRequirements = requirements;
+    }
+
     protected List _assertionResults = Collections.EMPTY_LIST;
     protected InputStream _responseStream;
     protected String _responseXml;
     protected boolean _authMissing;
     protected boolean _policyViolated;
+    protected WssDecorator.DecorationRequirements _decorationRequirements = null;
 
     protected transient List _runOnClose = Collections.EMPTY_LIST;
 }
