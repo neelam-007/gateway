@@ -50,6 +50,7 @@ public class JOutlookBar extends JPanel implements ActionListener {
             if (url != null)
                 ikona = new ImageIcon(url);
         }
+
         JButton button = new JButton(btnText, ikona);
         button.setMargin(new Insets(0, 0, 0, 0));
         button.setVerticalTextPosition(SwingConstants.BOTTOM);

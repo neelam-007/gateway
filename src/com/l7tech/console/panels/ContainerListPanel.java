@@ -549,7 +549,7 @@ public class ContainerListPanel extends EditorPanel {
                     return;
                 }
                 BasicTreeNode bn = (BasicTreeNode) object;
-                // if it's specificlly an EntryNode (Realm, Company, Agent, VPN etc..)
+
                 if (object instanceof EntryTreeNode) {
 
                     // a node or expandable folder with properties

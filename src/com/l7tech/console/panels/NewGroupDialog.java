@@ -11,12 +11,13 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 
 /**
- * New User dialog.
+ * New Group dialog.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
-public class NewUserDialog extends JDialog {
-       /** Resource bundle with default locale */
+public class NewGroupDialog extends JDialog {
+
+    /** Resource bundle with default locale */
     private ResourceBundle resources = null;
 
     private String CMD_CANCEL = "cmd.cancel";
@@ -26,17 +27,12 @@ public class NewUserDialog extends JDialog {
     private JButton createButton = null;
 
     /** ID text field */
-    private JTextField idTextField = null;
-    private JPasswordField passwordField = null;
-    private JPasswordField passwordConfirmField = null;
+    private JTextField groupIdTextField = null;
     private JCheckBox additionalPropertiesCheckBox = null;
     private JFrame parent;
 
     private boolean insertSuccess = false;
     private boolean createThenEdit = false;
-
-    /* new user Password */
-    private char[] newPassword;
 
     /* the provider user is added to */
     private EntityHeader cEntry;
@@ -44,15 +40,13 @@ public class NewUserDialog extends JDialog {
     /* the panel listener */
     private PanelListener panelListener;
 
-    private int MIN_PASSWORD_LENGTH = 6;
-
     /**
      * Create a new NewUserDialog fdialog for a given Company
      *
      * @param parent  the parent Frame. May be <B>null</B>
      * @param cEntry the company entry
      */
-    public NewUserDialog(JFrame parent, EntityHeader cEntry) {
+    public NewGroupDialog(JFrame parent, EntityHeader cEntry) {
         super(parent, true);
         this.cEntry = cEntry;
         this.parent = parent;
@@ -76,7 +70,7 @@ public class NewUserDialog extends JDialog {
      */
     private void initResources() {
         Locale locale = Locale.getDefault();
-        resources = ResourceBundle.getBundle("com.l7tech.console.resources.NewUserDialog", locale);
+        resources = ResourceBundle.getBundle("com.l7tech.console.resources.NewGroupDialog", locale);
     }
 
     /**
@@ -103,9 +97,9 @@ public class NewUserDialog extends JDialog {
 
 
         // user name label
-        JLabel userIdLabel = new JLabel();
-        userIdLabel.setToolTipText(resources.getString("idTextField.tooltip"));
-        userIdLabel.setText(resources.getString("idTextField.label"));
+        JLabel groupIdLabel = new JLabel();
+        groupIdLabel.setToolTipText(resources.getString("groupIdTextField.tooltip"));
+        groupIdLabel.setText(resources.getString("groupIdTextField.label"));
 
         constraints = new GridBagConstraints();
         constraints.gridx = 0;
@@ -115,9 +109,9 @@ public class NewUserDialog extends JDialog {
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(12, 12, 0, 0);
-        panel.add(userIdLabel, constraints);
+        panel.add(groupIdLabel, constraints);
 
-        // user name text field
+        // group name text field
         constraints = new GridBagConstraints();
         constraints.gridx = 1;
         constraints.gridy = 0;
@@ -126,61 +120,14 @@ public class NewUserDialog extends JDialog {
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(12, 7, 0, 11);
-        panel.add(getUserIdTextField(), constraints);
+        panel.add(getGroupIdTextField(), constraints);
 
-        // password label
-        JLabel passwordLabel = new JLabel();
-        passwordLabel.setToolTipText(resources.getString("passwordField.tooltip"));
-        passwordLabel.setText(resources.getString("passwordField.label"));
 
-        constraints = new GridBagConstraints();
-        constraints.gridx = 0;
-        constraints.gridy = 2;
-        constraints.weightx = 0.0;
-        constraints.gridwidth = 1;
-        constraints.fill = GridBagConstraints.NONE;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(12, 12, 0, 0);
-        panel.add(passwordLabel, constraints);
-
-        constraints = new GridBagConstraints();
-        constraints.gridx = 1;
-        constraints.gridy = 2;
-        constraints.weightx = 0.0;
-        constraints.gridwidth = 1;
-        constraints.fill = GridBagConstraints.NONE;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(12, 7, 0, 11);
-        panel.add(getPasswordField(), constraints);
-
-        // password confirm label
-        JLabel passwordConfirmLabel = new JLabel();
-        passwordConfirmLabel.setToolTipText(resources.getString("passwordConfirmField.tooltip"));
-        passwordConfirmLabel.setText(resources.getString("passwordConfirmField.label"));
-
-        constraints.gridx = 0;
-        constraints.gridy = 3;
-        constraints.weightx = 0.0;
-        constraints.gridwidth = 1;
-        constraints.fill = GridBagConstraints.NONE;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(12, 12, 0, 0);
-        panel.add(passwordConfirmLabel, constraints);
-
-        constraints = new GridBagConstraints();
-        constraints.gridx = 1;
-        constraints.gridy = 3;
-        constraints.weightx = 0.0;
-        constraints.gridwidth = 1;
-        constraints.fill = GridBagConstraints.NONE;
-        constraints.anchor = GridBagConstraints.WEST;
-        constraints.insets = new Insets(12, 7, 0, 11);
-        panel.add(getConfirmPasswordField(), constraints);
 
         // additional properties
         constraints = new GridBagConstraints();
         constraints.gridx = 0;
-        constraints.gridy = 4;
+        constraints.gridy = 1;
         constraints.gridwidth = 2;
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
@@ -191,7 +138,7 @@ public class NewUserDialog extends JDialog {
         // button panel
         constraints = new GridBagConstraints();
         constraints.gridx = 1;
-        constraints.gridy = 5;
+        constraints.gridy = 2;
         constraints.gridwidth = 2;
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.EAST;
@@ -237,15 +184,15 @@ public class NewUserDialog extends JDialog {
      *
      * @return the user ID textfield
      */
-    private JTextField getUserIdTextField() {
-        if (idTextField != null) return idTextField;
+    private JTextField getGroupIdTextField() {
+        if (groupIdTextField != null) return groupIdTextField;
 
-        idTextField = new JTextField();
-        idTextField.setPreferredSize(new Dimension(200, 20));
-        idTextField.setMinimumSize(new Dimension(200, 20));
-        idTextField.setToolTipText(resources.getString("idTextField.tooltip"));
+        groupIdTextField = new JTextField();
+        groupIdTextField.setPreferredSize(new Dimension(200, 20));
+        groupIdTextField.setMinimumSize(new Dimension(200, 20));
+        groupIdTextField.setToolTipText(resources.getString("groupIdTextField.tooltip"));
 
-        idTextField.
+        groupIdTextField.
                 setDocument(
                         new FilterDocument(24,
                                 new FilterDocument.Filter() {
@@ -254,69 +201,7 @@ public class NewUserDialog extends JDialog {
                                         return true;
                                     }
                                 }));
-        return idTextField;
-    }
-
-    /**
-     * A method that returns the 1st JPasswordField
-     *
-     * @return the 1st JPasswordField
-     */
-    private JPasswordField getPasswordField() {
-        // password field
-        if (passwordField != null) return passwordField;
-        passwordField = new JPasswordField();
-
-        passwordField.setPreferredSize(new Dimension(200, 20));
-        passwordField.setMinimumSize(new Dimension(200, 20));
-        passwordField.setToolTipText(resources.getString("passwordField.tooltip"));
-        Font echoCharFont = new Font("Lucida Sans", Font.PLAIN, 12);
-        passwordField.setFont(echoCharFont);
-        passwordField.setEchoChar('\u2022');
-
-        passwordField.
-                setDocument(
-                        new FilterDocument(32,
-                                new FilterDocument.Filter() {
-                                    public boolean accept(String str) {
-                                        if (str == null) return false;
-                                        // password shares the same char set rules as id
-                                        return true;
-                                    }
-                                }));
-
-        return passwordField;
-    }
-
-    /**
-     * A method that returns the password confirm field
-     *
-     * @return the password confirm JPasswordField
-     */
-    private JPasswordField getConfirmPasswordField() {
-        // password confirm field
-        if (passwordConfirmField != null)
-            return passwordConfirmField;
-        passwordConfirmField = new JPasswordField();
-
-        passwordConfirmField.setPreferredSize(new Dimension(200, 20));
-        passwordConfirmField.setMinimumSize(new Dimension(200, 20));
-        passwordConfirmField.setToolTipText(resources.getString("passwordConfirmField.tooltip"));
-        Font echoCharFont = new Font("Lucida Sans", Font.PLAIN, 12);
-        passwordConfirmField.setFont(echoCharFont);
-        passwordConfirmField.setEchoChar('\u2022');
-        passwordConfirmField.
-                setDocument(
-                        new FilterDocument(32,
-                                new FilterDocument.Filter() {
-                                    public boolean accept(String str) {
-                                        if (str == null) return false;
-                                        // password shares the same char set rules as id
-                                        return true;
-                                    }
-                                }));
-
-        return passwordConfirmField;
+        return groupIdTextField;
     }
 
     /**
@@ -418,24 +303,17 @@ public class NewUserDialog extends JDialog {
             this.dispose();
         } else if (cmd.equals(CMD_OK)) {
             if (!validateInput()) {
-                idTextField.requestFocus();
-                passwordField.setText(null);
-                passwordConfirmField.setText(null);
+                groupIdTextField.requestFocus();
                 return;
             }
-            if (!validatePassword(passwordField.getPassword(), passwordConfirmField.getPassword())) {
-                passwordField.requestFocus();
-                passwordField.setText(null);
-                passwordConfirmField.setText(null);
-                return;
-            }
-            insertUser();
+
+            insertGroup();
         }
     }
 
 
-    /** insert user */
-    private void insertUser() {
+    /** insert the Group */
+    private void insertGroup() {
 
     }
 
@@ -479,30 +357,4 @@ public class NewUserDialog extends JDialog {
         return true;
     }
 
-    /**
-     * validate the passwords
-     *
-     * @param password user password
-     * @param confirmPassword the password to compare for confirmation
-     * @return true validated, false othwerwise
-     */
-    private boolean validatePassword(char[] password, char[] confirmPassword) {
-        if (password.length < MIN_PASSWORD_LENGTH) {
-            JOptionPane.
-                    showMessageDialog(this,
-                            resources.getString("passwordField.error.empty"),
-                            resources.getString("passwordField.error.title"),
-                            JOptionPane.ERROR_MESSAGE);
-            return false;
-        }
-        if (!((new String(password)).equals(new String(confirmPassword)))) {
-            JOptionPane.
-                    showMessageDialog(this,
-                            resources.getString("passwordConfirmField.error"),
-                            resources.getString("passwordConfirmField.error.title"),
-                            JOptionPane.ERROR_MESSAGE);
-            return false;
-        }
-        return true;
-    }
 }

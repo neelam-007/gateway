@@ -1,6 +1,3 @@
-/*
- * $Header$
- */
 package com.l7tech.console.tree;
 
 import org.apache.log4j.Category;
@@ -23,7 +20,6 @@ import java.awt.event.ActionListener;
  * @see java.awt.event.ActionEvent#getActionCommand()
  */
 public class TreeNodeMenu extends JPopupMenu {
-  private static final Category log = Category.getInstance(TreeNodeMenu.class.getName());
 
   /**
    * creates a tree node menu for the particular Object and listener.
@@ -56,6 +52,8 @@ public class TreeNodeMenu extends JPopupMenu {
       retMenu = forAdminFolder((AdminFolderTreeNode)object, listener);
     } else if (object instanceof UserFolderTreeNode) {
       retMenu = forUserFolder((UserFolderTreeNode)object, listener);
+    } else if (object instanceof GroupFolderTreeNode) {
+         retMenu = forGroupFolder((GroupFolderTreeNode)object, listener);
     }
     
     // if there is no menu yet make one..
@@ -151,7 +149,7 @@ public class TreeNodeMenu extends JPopupMenu {
   
   
   /**
-   * create the popup menu <CODE>JpopUpMenu</CODE> for the Agent Folder
+   * create the popup menu <CODE>JpopUpMenu</CODE> for the user Folder
    * node passed.
    * 
    * @param user    the user folder node
@@ -169,8 +167,29 @@ public class TreeNodeMenu extends JPopupMenu {
     return treeMenu;
   }
 
+
+
   /**
-   * create the popup menu <CODE>JpopUpMenu</CODE> for the Agent
+   * create the popup menu <CODE>JpopUpMenu</CODE> for the Group Folder
+   * node passed.
+   *
+   * @param group    the group folder node
+   * @param listener the <CODE>ActionListener</CODE> where the
+   *                 events will be sent.
+   * @return JpopUpMenu for the node
+   */
+  private static JPopupMenu forGroupFolder(GroupFolderTreeNode group, ActionListener listener) {
+    TreeNodeMenu treeMenu = new TreeNodeMenu(group, listener);
+
+    JMenu menu = new JMenu(NEW);
+    menu.add(NEW_GROUP).addActionListener(listener);
+    treeMenu.add(menu);
+
+    return treeMenu;
+  }
+
+  /**
+   * create the popup menu <CODE>JpopUpMenu</CODE> for the user
    * node passed.
    * 
    * @param entry    The entry to add the menu for
@@ -203,7 +222,7 @@ public class TreeNodeMenu extends JPopupMenu {
   private Object dirObject;
   private ActionListener listener;
 
-  public static final String NEW_PROVIDER = "Realm";
+  public static final String NEW_PROVIDER = "Provider";
   public static final String NEW_USER = "User";
   public static final String NEW_GROUP = "Group";
   public static final String NEW_ADMINISTRATOR = "Admin";
