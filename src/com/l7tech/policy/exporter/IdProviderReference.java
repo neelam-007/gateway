@@ -44,6 +44,7 @@ public class IdProviderReference extends ExternalReference {
         } else {
             try {
                 setIdProviderConfProps(config.getSerializedProps());
+                setProviderName(config.getName());
             } catch (IOException e) {
                 logger.log(Level.WARNING, "Error getting properties from id provider", e);
             }
@@ -61,6 +62,7 @@ public class IdProviderReference extends ExternalReference {
         if (val != null) {
             output.providerId = Long.parseLong(val);
         }
+        output.providerName = getParamFromEl(el, NAME_EL_NAME);
         output.idProviderConfProps = getParamFromEl(el, PROPS_EL_NAME);
         return output;
     }
@@ -77,6 +79,10 @@ public class IdProviderReference extends ExternalReference {
         Text txt = referencesParentElement.getOwnerDocument().createTextNode(Long.toString(providerId));
         oidEl.appendChild(txt);
         refEl.appendChild(oidEl);
+        Element nameEl = referencesParentElement.getOwnerDocument().createElement(NAME_EL_NAME);
+        txt = referencesParentElement.getOwnerDocument().createTextNode(providerName);
+        nameEl.appendChild(txt);
+        refEl.appendChild(nameEl);
         Element propsEl = referencesParentElement.getOwnerDocument().createElement(PROPS_EL_NAME);
         if (idProviderConfProps != null) {
             txt = referencesParentElement.getOwnerDocument().createTextNode(idProviderConfProps);
@@ -122,11 +128,21 @@ public class IdProviderReference extends ExternalReference {
         this.idProviderConfProps = idProviderConfProps;
     }
 
+    public String getProviderName() {
+        return providerName;
+    }
+
+    public void setProviderName(String providerName) {
+        this.providerName = providerName;
+    }
+
     private long providerId;
+    private String providerName;
     private String idProviderConfProps;
     private final Logger logger = Logger.getLogger(IdProviderReference.class.getName());
 
     public static final String REF_EL_NAME = "IDProviderReference";
     public static final String PROPS_EL_NAME = "Props";
     public static final String OID_EL_NAME = "OID";
+    public static final String NAME_EL_NAME = "Name";
 }
