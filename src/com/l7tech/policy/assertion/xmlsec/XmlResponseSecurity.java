@@ -1,5 +1,7 @@
 package com.l7tech.policy.assertion.xmlsec;
 
+import com.l7tech.policy.assertion.Assertion;
+
 /**
  * LAYER 7 TECHNOLOGIES, INC
  *
@@ -13,7 +15,22 @@ package com.l7tech.policy.assertion.xmlsec;
  *
  * Whether XML encryption is used depends on the property encryption
  */
-public class XmlResponseSecurity extends XmlSecurityAssertion {
+public class XmlResponseSecurity extends Assertion {
     public static final String XML_SESSID_HEADER_NAME = "L7-Session-Id";
     public static final String XML_NONCE_HEADER_NAME = "L7-Nonce";
+    /**
+     * This property describes whether or not the body should be encrypted as opposed to only signed
+     */
+    public boolean isEncryption() {
+        return encryption;
+    }
+
+    /**
+     * This property describes whether or not the body should be encrypted as opposed to only signed
+     */
+    public void setEncryption(boolean encryption) {
+        this.encryption = encryption;
+    }
+
+    private boolean encryption = false;
 }

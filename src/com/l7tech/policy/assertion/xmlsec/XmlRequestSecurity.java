@@ -1,5 +1,7 @@
 package com.l7tech.policy.assertion.xmlsec;
 
+import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
+
 /**
  * LAYER 7 TECHNOLOGIES, INC
  *
@@ -13,6 +15,21 @@ package com.l7tech.policy.assertion.xmlsec;
  *
  * Whether XML encryption is used depends on the property encryption
  */
-public class XmlRequestSecurity extends XmlSecurityAssertion {
+public class XmlRequestSecurity extends CredentialSourceAssertion {
     public static final String SESSION_STATUS_HTTP_HEADER = "l7-session-status";
+    /**
+     * This property describes whether or not the body should be encrypted as opposed to only signed
+     */
+    public boolean isEncryption() {
+        return encryption;
+    }
+
+    /**
+     * This property describes whether or not the body should be encrypted as opposed to only signed
+     */
+    public void setEncryption(boolean encryption) {
+        this.encryption = encryption;
+    }
+
+    private boolean encryption = false;
 }
