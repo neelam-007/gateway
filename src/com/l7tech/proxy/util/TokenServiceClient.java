@@ -343,10 +343,10 @@ public class TokenServiceClient {
             // check for fault message from server
             Element payload = SoapUtil.getPayloadElement(response);
             if (payload == null)
-                throw new MissingRequiredElementException("Policy server response is missing SOAP Body or payload element");
+                throw new MissingRequiredElementException("Token server response is missing SOAP Body or payload element");
             if (response.getDocumentElement().getNamespaceURI().equals(payload.getNamespaceURI()) && "Fault".equals(payload.getLocalName())) {
                 SoapFaultDetail sfd = SoapFaultUtils.gatherSoapFaultDetail(response);
-                throw new InvalidDocumentFormatException("Unexpected SOAP fault from policy service: " + sfd.getFaultCode() + ": " + sfd.getFaultString());
+                throw new InvalidDocumentFormatException("Unexpected SOAP fault from token service: " + sfd.getFaultCode() + ": " + sfd.getFaultString());
             }
         }
     }
