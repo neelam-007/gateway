@@ -102,7 +102,7 @@ public class MainWindow extends JFrame {
     private JPanel statusBarPane = null;
     private JLabel statusMsgLeft = null;
     private JLabel statusMsgRight = null;
-    private LogPanel logPane = LogPanel.instance();
+    private LogPanel logPane = null;
 
 
     private JToolBar toolBarPane = null;
@@ -488,9 +488,9 @@ public class MainWindow extends JFrame {
       //
                               if(item.isSelected())
                               {
-                                  logPane.getLogs();
+                                  getLogPane().getLogs();
                               }
-                             logPane.getPane().setVisible(item.isSelected());
+                             getLogPane().getPane().setVisible(item.isSelected());
                               mainJSplitPane.setDividerLocation(700);
 
                               validate();
@@ -854,14 +854,19 @@ public class MainWindow extends JFrame {
             mainJSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
             mainJSplitPane.setResizeWeight(0.75);
              mainJSplitPane.setTopComponent(getMainJSplitPaneTop());
-            mainJSplitPane.setBottomComponent(logPane.getPane());
+            mainJSplitPane.setBottomComponent(getLogPane().getPane());
            // mainJSplitPane.setDividerLocation(mainJSplitPane.getSize().getHeight() * 0.5);
             mainJSplitPane.setDividerLocation(700);
         }
         return mainJSplitPane;
     }
 
-
+    private LogPanel getLogPane(){
+        if(logPane == null) {
+            logPane = new LogPanel();
+        }
+        return logPane;
+    }
 
     /**
      * Return the StatusBarPane property value.
