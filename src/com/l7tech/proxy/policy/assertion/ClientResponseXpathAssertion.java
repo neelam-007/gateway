@@ -22,8 +22,8 @@ import org.xml.sax.SAXException;
  * @author mike
  * @version 1.0
  */
-public class ClientRequestXpathAssertion extends ClientAssertion {
-    public ClientRequestXpathAssertion(RequestXpathAssertion requestXpathAssertion) {
+public class ClientResponseXpathAssertion extends ClientAssertion {
+    public ClientResponseXpathAssertion(RequestXpathAssertion requestXpathAssertion) {
     }
 
     public AssertionStatus decorateRequest(PendingRequest request)
@@ -41,7 +41,7 @@ public class ClientRequestXpathAssertion extends ClientAssertion {
     }
 
     public String getName() {
-        return "Request must match XPath expression";
+        return "Response must match XPath expression";
     }
 
     public String iconResource(boolean open) {
