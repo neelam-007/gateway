@@ -16,7 +16,7 @@ import java.util.*;
  * @version $Revision$
  */
 public abstract class NameValueServiceResolver extends ServiceResolver {
-    public synchronized void doSetServices( Collection services ) {
+    public synchronized void doSetServices( Set services ) {
         Iterator i = services.iterator();
         _valueToServiceSetMap = new HashMap();
         PublishedService service;

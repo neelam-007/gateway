@@ -22,7 +22,7 @@ public abstract class ServiceResolver implements Comparable {
      * Sets the <code>Collection</code> of services in the system.  Concrete implementations should override this method and invalidate any caches based on this Collection whenever this method is called.
      * @param services A Collection of all the services in the system.
      */
-    public synchronized void setServices( Collection services ) {
+    public synchronized void setServices( Set services ) {
         _services = services;
         doSetServices(services);
     }
@@ -33,7 +33,7 @@ public abstract class ServiceResolver implements Comparable {
         return doResolve( request, set );
     }
 
-    abstract void doSetServices( Collection services );
+    abstract void doSetServices( Set services );
     abstract Set doResolve( Request request, Set set ) throws ServiceResolutionException;
     public abstract int getSpeed();
 
