@@ -4,8 +4,9 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.security.Principal;
 
-public class Group extends NamedEntityImp {
+public class Group extends NamedEntityImp implements Principal {
 
     public static final String ADMIN_GROUP_NAME = "SSGAdmin";
 
