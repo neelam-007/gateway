@@ -190,16 +190,16 @@ public class ClusterStatusWindow extends JFrame {
 
         //loadShareRenderer.setLimits(limitColors1);
 
-        BarIndicator requestFailureRenderer = new BarIndicator(MIN, MAX, Color.red);
-        requestFailureRenderer.setStringPainted(true);
-        requestFailureRenderer.setBackground(jTable2.getBackground());
+        BarIndicator requestRoutedRenderer = new BarIndicator(MIN, MAX, Color.blue);
+        requestRoutedRenderer.setStringPainted(true);
+        requestRoutedRenderer.setBackground(jTable2.getBackground());
 
         Hashtable limitColors2 = new Hashtable();
         limitColors2.put(new Integer(0), Color.red);
         //requestFailureRenderer.setLimits(limitColors2);
 
         jTable2.getColumnModel().getColumn(2).setCellRenderer(loadShareRenderer);
-        jTable2.getColumnModel().getColumn(3).setCellRenderer(requestFailureRenderer);
+        jTable2.getColumnModel().getColumn(3).setCellRenderer(requestRoutedRenderer);
 
         jTable2.getColumnModel().getColumn(0).setMinWidth(0);
         jTable2.getColumnModel().getColumn(0).setMaxWidth(0);
@@ -324,7 +324,7 @@ public class ClusterStatusWindow extends JFrame {
         Object[][] rows = new Object[][]{};
 
         String[] cols = new String[]{
-            "Status", "Gateway", "Load Sharing %", "Request Failure%", "Load Avg", "Uptime", "IP Address"
+            "Status", "Gateway", "Load Sharing %", "Request Routed %", "Load Avg", "Uptime", "IP Address"
         };
 
         Class[] types = new Class[]{

@@ -76,7 +76,7 @@ public class ClusterStatusTableSorter extends FilteredDefaultTableModel {
             case 2:
                 return new Integer(((GatewayStatus) sortedData[row]).getLoadSharing());
             case 3:
-                return new Integer(((GatewayStatus) sortedData[row]).getRequestFailure());
+                return new Integer(((GatewayStatus) sortedData[row]).getRequestRouted());
             case 4:
                 return new Double(((GatewayStatus) sortedData[row]).getAvgLoad());
             case 5:
@@ -122,8 +122,8 @@ public class ClusterStatusTableSorter extends FilteredDefaultTableModel {
                     elementB = new Long(((GatewayStatus) b).getLoadSharing());
                     break;
                 case 3:
-                    elementA = new Long(((GatewayStatus) a).getRequestFailure());
-                    elementB = new Long(((GatewayStatus) b).getRequestFailure());
+                    elementA = new Long(((GatewayStatus) a).getRequestRouted());
+                    elementB = new Long(((GatewayStatus) b).getRequestRouted());
                     break;
                 case 4:
                     elementA = new Double(((GatewayStatus) a).getAvgLoad());

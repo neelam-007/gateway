@@ -52,7 +52,7 @@ public class GatewayStatus {
     /**
      * Get request failure (%)
      */
-    public int getRequestFailure() {
+    public int getRequestRouted() {
         long totalRequest = getTotalCountFromCache(requestCounterCache);
 
  //       System.out.println("Node is: " + getName());
@@ -61,14 +61,12 @@ public class GatewayStatus {
             long totalCompleted = getTotalCountFromCache(completedCounterCache);
  //           System.out.println("totalCompleted : " + totalCompleted);
 
-            return (new Long((totalRequest - totalCompleted)*100/ totalRequest)).intValue();
+            return (new Long(totalCompleted*100/ totalRequest)).intValue();
         }
         else {
  //           System.out.println("totalRequest : 0");
             return 0;
         }
-
-
     }
 
     /**
