@@ -8,7 +8,7 @@ import com.l7tech.console.panels.StatisticsPanel;
 import com.l7tech.console.table.ClusterStatusTableSorter;
 import com.l7tech.console.table.LogTableModel;
 import com.l7tech.console.table.StatisticsTableSorter;
-import com.l7tech.console.data.GatewayStatus;
+import com.l7tech.cluster.GatewayStatus;
 import com.l7tech.console.icons.ArrowIcon;
 import com.l7tech.common.gui.util.ImageCache;
 

@@ -1,7 +1,7 @@
 package com.l7tech.console.table;
 
 import com.l7tech.logging.StatisticsRecord;
-import com.l7tech.console.data.GatewayStatus;
+import com.l7tech.cluster.GatewayStatus;
 
 import javax.swing.table.DefaultTableModel;
 import java.util.logging.Logger;
