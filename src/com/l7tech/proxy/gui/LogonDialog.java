@@ -97,7 +97,7 @@ public class LogonDialog extends JDialog {
             constraints.insets = new Insets(15, 15, 5, 15);
             contents.add(icon, constraints);
 
-            JLabel badPasswordMessage = new JLabel("Your username or password was incorrect.");
+            JLabel badPasswordMessage = new JLabel("Your username or password was unauthorized.");
             constraints.gridx = 1;
             constraints.gridy = 0;
             constraints.gridwidth = 3;
