@@ -58,6 +58,10 @@ public class FileStashManager implements StashManager {
         putFileInfo(ordinal, fi);
     }
 
+    public void stash(int ordinal, byte[] in) throws IOException {
+        stash(ordinal, new ByteArrayInputStream(in)); // byte array doesn't help us in this case
+    }
+
     /** @return a File pointed at the name uniqueFilenamePrefix_ordinal.part in parentDirectory */
     private File makeFile(int ordinal) {
         return new File(parentDirectory, uniqueFilenamePrefix + "_" + ordinal + ".part");
@@ -75,6 +79,7 @@ public class FileStashManager implements StashManager {
             return;
         }
         fi.close();
+        stashed.remove(new Integer(ordinal));
     }
 
     /** @return the stashed FileInfo for the specified ordinal, or null if there isn't one. */

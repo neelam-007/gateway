@@ -61,7 +61,7 @@ public class MimeUtil {
         try {
             headers = new InternetHeaders(stream);
         } catch (MessagingException e) {
-            throw new CausedIOException("Coudln't parse MIME headers", e);
+            throw new CausedIOException("Couldn't parse MIME headers", e);
         }
 
         MimeHeaders result = new MimeHeaders();

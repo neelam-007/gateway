@@ -48,7 +48,7 @@ public class ClientResponseWssConfidentiality extends ClientAssertion {
 
     public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response)
             throws ServerCertificateUntrustedException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException, PolicyAssertionException {
-        Document soapmsg = response.getResponseAsDocument();
+        Document soapmsg = response.getOriginalDocument();
         ProcessorResult wssRes = response.getProcessorResult();
         if (wssRes == null) {
             log.info("WSS processing was not done on this response.");

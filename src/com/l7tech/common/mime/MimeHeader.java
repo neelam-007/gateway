@@ -11,7 +11,7 @@ import javax.mail.internet.MimeUtility;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -25,7 +25,7 @@ import java.util.Map;
  *    params={charset=>"UTF-8"}
  */
 public class MimeHeader {
-    /** Encoding used by MIME headers.  Actually limited 7-bit ASCII, but UTF-8 is safer. */
+    /** Encoding used by MIME headers.  Actually limited to 7-bit ASCII per RFC, but UTF-8 is a safer choice. */
     public static final String ENCODING = "UTF-8";
 
     // Bytes of common stuff needed when serializing mime header
@@ -47,12 +47,26 @@ public class MimeHeader {
     private final String value;
     protected final Map params;
 
+    protected byte[] serializedBytes;
+
+    /**
+     *
+     * @param name   the name of the header, preferably in canonical form, not including the colon, ie "Content-Type".
+     *               must not be empty or null.
+     * @param value  the value, ie "text/xml", not including any params that have already been parsed out into params.
+     *               May be empty, but must not be null.
+     * @param params the parameters, ie {charset=>"utf8"}.  May be empty or null.
+     *               Caller must not modify this map after giving it to this constructor.
+     *
+     */
     protected MimeHeader(String name, String value, Map params) {
         if (name == null || value == null)
             throw new IllegalArgumentException("name and value must not be null");
+        if (name.length() < 1)
+            throw new IllegalArgumentException("name must not be empty");
         this.name = name;
         this.value = value;
-        this.params = params == null ? new HashMap() : params;
+        this.params = params == null ? Collections.EMPTY_MAP : Collections.unmodifiableMap(params);
     }
 
     /**
@@ -82,6 +96,14 @@ public class MimeHeader {
         return name;
     }
 
+    /**
+     * @return The value of this header, possibly including parameters.  Never null.
+     *         If this header was not one whose format was recognized (ie, was not Content-Type),
+     *         any parameters will have been left unparsed and will be returned as part of getValue().
+     *         <p>
+     *         For headers with a predefined value format (ie, "Content-Type: text/xml; charset=utf8"),
+     *         this will return only the value (ie, "text/xml")
+     */
     public String getValue() {
         return value;
     }
@@ -89,6 +111,11 @@ public class MimeHeader {
     /** @return the specified parameter, or null if it didn't exist. */
     public String getParam(String name) {
         return (String)params.get(name);
+    }
+
+    /** @return the entire params map.  Never null. */
+    protected Map getParams() {
+        return params;
     }
 
     public String toString() {
@@ -101,10 +128,59 @@ public class MimeHeader {
         }
     }
 
+    /**
+     * @return The complete value of this header, including all parameters.  Never null.
+     *         This will return the complete value even for headers with a predefined value format.
+     *         (that is, it will return "text/xml; charset=utf8" rather than "text/xml").
+     */
+    public String getFullValue() {
+        try {
+            ByteArrayOutputStream out = new ByteArrayOutputStream(32);
+            writeValue(out);
+            return out.toString(ENCODING);
+        } catch (IOException e) {
+            throw new RuntimeException(e); // can't happen
+        }
+    }
+
+    /**
+     * Get the serialized byte form of this MimeHeader.
+     *
+     * @return the byte array representing the serialized form.  Never null or zero-length.
+     */
+    byte[] getSerializedBytes() {
+        if (serializedBytes == null) {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream(32);
+            try {
+                write(baos);
+            } catch (IOException e) {
+                throw new RuntimeException(e); // can't happen
+            }
+            serializedBytes = baos.toByteArray();
+        }
+        return serializedBytes;
+    }
+
+    /** @return the length of the serialized form of this MimeHeader. */
+    int getSerializedLength() {
+        return getSerializedBytes().length;
+    }
+
+    /** Reserialize entire header including name and trailing CRLF. */
     void write(OutputStream os) throws IOException {
+        if (serializedBytes != null) {
+            os.write(serializedBytes);
+            return;
+        }
+
         os.write(getName().getBytes(ENCODING));
         os.write(COLON);
-//        os.write(MimeUtility.quote(getValue(), HeaderTokenizer.MIME).getBytes(ENCODING));
+        writeValue(os);
+        os.write(CRLF);
+    }
+
+    /** Write just the complete value part of this header, including all params. */
+    void writeValue(OutputStream os) throws IOException {
         os.write(getValue().getBytes(ENCODING));
         for (Iterator i = params.entrySet().iterator(); i.hasNext();) {
             Map.Entry entry = (Map.Entry)i.next();
@@ -116,6 +192,5 @@ public class MimeHeader {
             os.write('=');
             os.write(MimeUtility.quote(value, HeaderTokenizer.MIME).getBytes(ENCODING));
         }
-        os.write(CRLF);
     }
 }

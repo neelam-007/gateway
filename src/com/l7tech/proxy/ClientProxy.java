@@ -34,6 +34,9 @@ public class ClientProxy {
     public static final String PROXY_CONFIG =
             System.getProperties().getProperty("user.home") + File.separator + ".l7tech";
 
+    // Threshold for storing attachments on disk instead of in ram
+    public static final int ATTACHMENT_DISK_THRESHOLD = 131071;
+
     /**
      * This is the suffix appended to the local endpoint to form local WSDL discovery URLs.
      * For example, a Bridge listening on http://localhost:7700/ssg3 will treat anything addressed

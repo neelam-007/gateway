@@ -137,7 +137,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                     XmlResponse xresp = (XmlResponse)response;
 
                     if ( jmsResponse instanceof TextMessage ) {
-                        xresp.setResponseXml( ((TextMessage)jmsResponse).getText() );
+                        xresp.setXml( ((TextMessage)jmsResponse).getText() );
                     } else if ( jmsResponse instanceof BytesMessage ) {
                         BytesMessage bmsg = (BytesMessage)jmsResponse;
                         BytesMessageInputStream bmis = new BytesMessageInputStream(bmsg);
@@ -148,7 +148,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
                         while (-1 != (got = isr.read(buff))) {
                             sb.append( buff, 0, got );
                         }
-                        xresp.setResponseXml( sb.toString() );
+                        xresp.setXml( sb.toString() );
                     } else {
                         logger.warning( "Received JMS reply with unsupported message type " +
                                         jmsResponse.getClass().getName() );
@@ -287,7 +287,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
             Message jmsOriginalRequest = jtm.getRequest();
             if ( jmsOriginalRequest instanceof TextMessage ) {
                 logger.finer( "Creating request as TextMessage" );
-                msg = bag.getSession().createTextMessage( xreq.getRequestXml() );
+                msg = bag.getSession().createTextMessage( xreq.getXml() );
             }
         }
 
@@ -296,7 +296,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
             logger.finer( "Creating request as BytesMessage" );
             BytesMessage bmsg = bag.getSession().createBytesMessage();
             ByteArrayOutputStream baos = new ByteArrayOutputStream(BUFFER_SIZE);
-            baos.write( xreq.getRequestXml().getBytes(JmsUtil.DEFAULT_ENCODING) ); // TODO DEFAULT_ENCODING #@)($*&!)!
+            baos.write( xreq.getXml().getBytes(JmsUtil.DEFAULT_ENCODING) ); // TODO DEFAULT_ENCODING #@)($*&!)!
             bmsg.writeBytes( baos.toByteArray() );
             msg = bmsg;
         }

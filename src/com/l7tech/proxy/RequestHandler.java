@@ -1,13 +1,10 @@
 package com.l7tech.proxy;
 
-import com.l7tech.common.mime.MimeHeader;
-import com.l7tech.common.mime.MimeUtil;
-import com.l7tech.common.mime.PartInfo;
+import com.l7tech.common.mime.*;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.Wsdl;
-import com.l7tech.proxy.attachments.ClientMultipartMessageReader;
 import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
@@ -61,16 +58,14 @@ public class RequestHandler extends AbstractHttpHandler {
         this.bindPort = bindPort;
     }
 
-    /**
-     * Construct a PendingRequest from the given request.
-     *
-     * @param request
-     * @return
-     */
-    private PendingRequest gatherRequest(final HttpRequest request,
-                                         Document requestEnvelope,
-                                         String endpoint,
-                                         Ssg ssg) {
+    private PolicyAttachmentKey gatherPolicyAttachmentKey(final HttpRequest request, Document requestEnvelope, URL originalUrl) {
+        String sa = request.getField("SOAPAction");
+        String namespaceUri = SoapUtil.getNamespaceUri(requestEnvelope);
+        PolicyAttachmentKey pak = new PolicyAttachmentKey(namespaceUri, sa, originalUrl.getFile());
+        return pak;
+    }
+
+    private HttpHeaders gatherHeaders(final HttpRequest request) {
         HttpHeaders headers = new HttpHeaders(request.getFieldNames(), new HttpHeaders.ValueProvider() {
             public String getHeaderValue(String headerName) {
                 StringBuffer sb = new StringBuffer();
@@ -86,18 +81,18 @@ public class RequestHandler extends AbstractHttpHandler {
                 return sb.toString();
             }
         });
-        String sa = request.getField("SOAPAction");
-        String namespaceUri = SoapUtil.getNamespaceUri(requestEnvelope);
-        URL originalUrl = getOriginalUrl(request, endpoint);
-        PolicyAttachmentKey pak = new PolicyAttachmentKey(namespaceUri, sa, originalUrl.getFile());
-        PendingRequest pr = new PendingRequest(requestEnvelope,
-          ssg,
-          interceptor,
-          pak,
-          originalUrl,
-          headers);
-        log.finer("Request SOAPAction=" + sa + "   BodyURI=" + namespaceUri + "   originalUrl=" + originalUrl.toString() + "   isSoapRequest=" + pr.isSoapRequest());
-        return pr;
+        return headers;
+    }
+
+    private ContentTypeHeader gatherContentTypeHeader(HttpRequest request) {
+        ContentTypeHeader ctype;
+        try {
+            ctype = ContentTypeHeader.parseValue(request.getContentType());
+        } catch (IOException e) {
+            ctype = ContentTypeHeader.XML_DEFAULT;
+            log.warning("Incoming message had missing or invalid outer Content-Type header; assuming " + ctype.getValue());
+        }
+        return ctype;
     }
 
     private URL getOriginalUrl(HttpRequest request, String endpoint) {
@@ -143,7 +138,6 @@ public class RequestHandler extends AbstractHttpHandler {
             if (pendingRequest != null) {
                 pendingRequest.close();
             }
-
         }
     }
 
@@ -201,48 +195,23 @@ public class RequestHandler extends AbstractHttpHandler {
 
         PendingRequest pendingRequest;
         try {
-            // TODO: PERF: this XML parsing is causing a performance bottleneck
-            final String ctype = request.getContentType();
-            final boolean multipart = (ctype != null && ctype.startsWith(MimeUtil.MULTIPART_CONTENT_TYPE));
-
-            Document envelope = null;
-            ClientMultipartMessageReader multipartReader = null;
-
-            if (multipart) {
-                MimeHeader contentTypeHeader = MimeUtil.parseHeader(MimeUtil.CONTENT_TYPE + ": " + ctype);
-                String multipartBoundary = MimeUtil.unquote((String)contentTypeHeader.getParam(MimeUtil.MULTIPART_BOUNDARY));
-                if (multipartBoundary == null) throw new IOException("Multipart header did not contain a boundary");
-                final String innerType = MimeUtil.unquote(((String)contentTypeHeader.getParam(MimeUtil.MULTIPART_TYPE)));
-                if (innerType == null) throw new IOException("Missing inner Content-Type");
-                if (innerType.startsWith(XmlUtil.TEXT_XML)) {
-                    multipartReader = new ClientMultipartMessageReader(request.getInputStream(), multipartBoundary);
-
-                    // we use the current time stamp as the unique file name
-                    multipartReader.setFileCacheId(String.valueOf(System.currentTimeMillis()));
-
-                    // get SOAP part
-                    PartInfo soapPart = multipartReader.getSoapPart();
-
-                    // store all attachments to cache
-                    multipartReader.storeAllAttachmentsToCache();
-
-                    if (!soapPart.getHeader(MimeUtil.CONTENT_TYPE).getValue().equals(innerType))
-                        throw new IOException("Content-Type of first part doesn't match type of Multipart header");
-
-                    envelope = XmlUtil.stringToDocument(new String(soapPart.getContent(), soapPart.getContentType().getEncoding()));
-
-                } else
-                    throw new IOException("Expected first part of multipart message to be XML");
-
-            } else {
-                envelope = XmlUtil.parse(request.getInputStream());
-            }
-
-            pendingRequest = gatherRequest(request, envelope, endpoint, ssg);
-            if (multipart && multipartReader != null) {
-                pendingRequest.setMultipart(true);
-                pendingRequest.setMultipartReader(multipartReader);
-            }
+            // TODO: PERF: doing full XML parsing for every request is causing a performance bottleneck
+            HttpHeaders headers = gatherHeaders(request);
+            ContentTypeHeader outerContentType = gatherContentTypeHeader(request);
+            MultipartMessage multipartMessage = null;
+            multipartMessage = new MultipartMessage(Managers.createStashManager(),
+                                                    outerContentType,
+                                                    request.getInputStream());
+            Document envelope = XmlUtil.parse(multipartMessage.getFirstPart().getInputStream(true)); // throw away undecorated soap part as we parse it
+            URL originalUrl = getOriginalUrl(request, endpoint);
+            PolicyAttachmentKey pak = gatherPolicyAttachmentKey(request, envelope, originalUrl);
+            pendingRequest = new PendingRequest(ssg,
+                                                headers,
+                                                multipartMessage,
+                                                envelope,
+                                                interceptor,
+                                                pak,
+                                                originalUrl);
 
             if (ssg.isChainCredentialsFromClient())
                 pendingRequest.setCredentials(new PasswordAuthentication(reqUsername, reqPassword.toCharArray()));
@@ -319,46 +288,18 @@ public class RequestHandler extends AbstractHttpHandler {
             OutputStream os = response.getOutputStream();
 
             response.setStatus(status);
-
-            ClientMultipartMessageReader multipartReader = null;
-            if ((multipartReader = ssgResponse.getMultipartReader()) != null) {
-                response.addField(MimeUtil.CONTENT_TYPE, MimeUtil.MULTIPART_CONTENT_TYPE +
-                  "; type=\"" + XmlUtil.TEXT_XML + "\"" +
-                  "; start=\"" + multipartReader.getSoapPart().getHeader(MimeUtil.CONTENT_ID).getValue() + "\"" +
-                  "; " + MimeUtil.MULTIPART_BOUNDARY + "=\"" + multipartReader.getMultipartBoundary() + "\"");
-
-                StringBuffer sb = new StringBuffer();
-
-                // add modified SOAP part
-                MimeUtil.addModifiedSoapPart(sb,
-                  XmlUtil.XML_VERSION + ssgResponse.getResponseAsString(),
-                  multipartReader.getSoapPart(),
-                  multipartReader.getMultipartBoundary());
-
-                PushbackInputStream pbis = multipartReader.getPushbackInputStream();
-
-                // push the modified SOAP part back to the input stream
-                pbis.unread(sb.toString().getBytes());
-
-                byte[] buf = new byte[1024];
-                int read = pbis.read(buf, 0, buf.length);
-                while (read > 0) {
-                    os.write(buf, 0, read);
-                    read = pbis.read(buf, 0, buf.length);
-                }
-
-            } else {
-                response.addField(MimeUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
-                os.write(ssgResponse.getResponseAsString().getBytes());
-            }
+            response.setContentType(ssgResponse.getOuterContentType().getFullValue());
+            final long contentLength = ssgResponse.getContentLength();
+            if (contentLength > Integer.MAX_VALUE)
+                throw new IOException("Resposne from Gateway was too large to be processed; maximum size is " + Integer.MAX_VALUE + " bytes");
+            response.setContentLength((int) contentLength);
+            HexUtils.copyStream(ssgResponse.getEntireMessageBody(), os);
             response.commit();
         } catch (IOException e) {
             interceptor.onReplyError(e);
             throw e;
         } finally {
-            if (ssgResponse.getDownstreamPostMethod() != null) {
-                ssgResponse.getDownstreamPostMethod().releaseConnection();
-            }
+            ssgResponse.close();
         }
     }
 

@@ -50,13 +50,7 @@ public class HttpSoapResponse extends SoapResponse {
                 if ( name == null || ovalue == null ) continue;
 
                 if ( PARAM_HTTP_CONTENT_TYPE.equals( name ) ) {
-                    if(sresp.isMultipart()) {
-                        hresponse.setContentType(MimeUtil.MULTIPART_CONTENT_TYPE +
-                            "; type=\"" + XmlUtil.TEXT_XML + "\"" +
-                            "; " + MimeUtil.MULTIPART_BOUNDARY + "=\"" + sresp.getMultipartBoundary()  + "\"");
-                    } else {
-                        hresponse.setContentType( (String)ovalue );
-                    }
+                    hresponse.setContentType( sresp.getOuterContentType().getValue() );
                     continue;
                 }
 

@@ -79,7 +79,7 @@ class JmsRequestHandler {
                 if ( faultMessage == null ) faultMessage = t.toString();
             }
 
-            String responseXml = soapResponse.getResponseXml();
+            String responseXml = soapResponse.getXml();
             if ( responseXml == null || responseXml.length() == 0 ) {
                 if ( faultMessage == null ) faultMessage = status.getMessage();
                 try {

@@ -10,11 +10,8 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Encapsulates a MIME part, including metadata (map of name=>MimeHeader, ordinal position within the
- * set of attachments starting from zero, a content length in bytes, and a validated flag), and sometimes
- * including the actual attachment content (when it is small enough to fit in a String).
- * <p>
- * The content held by PartInfo is not believed to contain the MIME separator.
+ * Encapsulates a MIME part and its metadata, and provides a way to
+ * access the part's body content (wherever it might currently be stored).
  */
 public interface PartInfo {
     /** @return the specified MIME header (ie, "Content-Disposition") or null if this Part did not include it. */
@@ -22,14 +19,6 @@ public interface PartInfo {
 
     /** @return the ordinal position of this Part in the message.  The SOAP part is always ordinal zero. */
     public int getPosition();
-
-    /**
-     * Get the part's body content as a byte array.
-     * TODO do we need this?
-     * @return the content of this part as a byte array.  Never null.
-     * @deprecated use getInputStream() instead.
-     */
-    public byte[] getContent() throws IOException;
 
     /**
      * Obtain this multipart part's content as an InputStream.  This method can be called more than once on the same
@@ -50,6 +39,17 @@ public interface PartInfo {
      */
     public InputStream getInputStream(boolean destroyAsRead) throws IOException;
 
+    /**
+     * Completely replace the body content of this multipart part.  This may require reading and discarding the
+     * old content, and will result in the new content being stashed.
+     *
+     * @param newBody         the new body content to substitute
+     * @param newContentType  the content type that goes with the new part body
+     * @throws IOException    if there is a problem reading past the original part body in the main InputStream
+     * @throws IOException    if there is a problem stashing the new part body
+     */
+    public void replaceBody(byte[] newBody, ContentTypeHeader newContentType) throws IOException;
+
     /** @return the MimeHeaders describing this Part.  Never null. */
     public MimeHeaders getHeaders();
 
@@ -68,9 +68,15 @@ public interface PartInfo {
     /** @return the Content-ID value with any enclosing &lt; &gt; characters removed; or null if there isn't one. */
     public String getContentId();
 
-    // TODO do we need this?
+    /**
+     * @return true if this PartInfo was previously tagged as valid with setValidated(true).
+     *         This flag is not used by artInfo itself in any way.
+     */
     public boolean isValidated();
 
-    // TODO do we need this?
+    /**
+     * @param validated true if you would like to flag this attachment as valid.
+     *        This flag is not used by PartInfo itself in any way. 
+     */
     public void setValidated(boolean validated);
 }

@@ -19,6 +19,7 @@ import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ResponseValidationException;
 import org.jaxen.JaxenException;
 import org.xml.sax.SAXException;
+import org.w3c.dom.Document;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
@@ -48,7 +49,7 @@ public class ClientResponseXpathAssertion extends ClientAssertion {
             SAXException, ResponseValidationException, KeyStoreCorruptException, PolicyAssertionException
     {
         final XpathExpression xpathExpression = responseXpathAssertion.getXpathExpression();
-        final XpathEvaluator eval = XpathEvaluator.newEvaluator(response.getResponseAsDocument(),
+        final XpathEvaluator eval = XpathEvaluator.newEvaluator(response.getOriginalDocument(),
                                                                 xpathExpression.getNamespaces());
         try {
             List nodes = eval.select(xpathExpression.getExpression());

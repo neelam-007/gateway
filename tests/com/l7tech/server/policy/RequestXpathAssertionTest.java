@@ -2,6 +2,9 @@ package com.l7tech.server.policy;
 
 import com.l7tech.common.RequestId;
 import com.l7tech.common.mime.PartInfo;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.PartIterator;
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.XpathEvaluator;
@@ -13,16 +16,17 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.server.attachments.ServerMultipartMessageReader;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.ServerRequestXpathAssertion;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.io.InputStream;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -74,10 +78,6 @@ public class RequestXpathAssertionTest extends TestCase {
             public Document getDocument() {
                 return doc;
             }
-            protected Reader doGetRequestReader() throws IOException {
-                return null;
-            }
-
             public Level getAuditLevel() {
                 return Level.INFO;
             }
@@ -123,21 +123,10 @@ public class RequestXpathAssertionTest extends TestCase {
                 return null;
             }
             public void setDocument(Document doc) {}
-            public String getRequestXml() throws IOException {
+            public String getXml() throws IOException {
                 return null;
             }
-            public void setRequestXml(String xml) {}
-
-            public Map getAttachments() throws IOException {
-                return null;
-            }
-            
-            public PartInfo getSoapPart() throws IOException { return null; }
-
-            public boolean isMultipart() { return false; }
-            public String getMultipartBoundary() { return null; }
-
-            public ServerMultipartMessageReader getMultipartReader() {return null;}
+            public void setXml(String xml) {}
 
             public TransportMetadata getTransportMetadata() {
                 return null;
@@ -158,6 +147,43 @@ public class RequestXpathAssertionTest extends TestCase {
             }
             public void addDeferredAssertion(ServerAssertion owner, ServerAssertion decoration) {}
             public void removeDeferredAssertion(ServerAssertion owner) {}
+
+            public ContentTypeHeader getOuterContentType() throws IOException {
+                return null;
+            }
+
+            public void setInputStream(InputStream stream) {
+            }
+
+            public void runOnClose(Runnable runMe) {
+            }
+
+            public boolean isMultipart() throws IOException {
+                return false;
+            }
+
+            public PartIterator getParts() throws IOException {
+                return null;
+            }
+
+            public PartInfo getPartByContentId(String contentId) throws IOException, NoSuchPartException {
+                return null;
+            }
+
+            public boolean isAdditionalUnreadPartsPossible() throws IOException {
+                return false;
+            }
+
+            public long getContentLength() throws IOException, SAXException {
+                return 0;
+            }
+
+            public InputStream getEntireMessageBody() throws IOException, SAXException {
+                return null;
+            }
+
+            public void close() {
+            }
         };
     }
 

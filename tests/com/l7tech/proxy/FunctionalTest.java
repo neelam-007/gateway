@@ -231,7 +231,7 @@ public class FunctionalTest extends TestCase {
 
         System.out.println("Client:  I Sent: " + reqEnvelope);
         System.out.println("Client:  I Got back: " + responseEnvelope);
-        MessageElement re = (MessageElement)responseEnvelope.getBody().getChildElements().next();
+        MessageElement re = (MessageElement)responseEnvelope.getEntireMessageBody().getChildElements().next();
         MessageElement rec = (MessageElement)re.getChildren().get(0);
         assertTrue(rec.getValue().equals(payload));     */
     }

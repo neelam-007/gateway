@@ -293,7 +293,7 @@ public class PolicyService {
                 signresponse(responseDoc, pver, rte);
             else
                 SoapUtil.addTimestamp(header, SoapUtil.WSU_NAMESPACE, null, 0);
-            response.setResponseXml(XmlUtil.nodeToString(responseDoc));
+            response.setXml(XmlUtil.nodeToString(responseDoc));
         } catch (IOException e) {
             throw new RuntimeException(e); // can't happen
         } catch (SAXException e) {

@@ -19,7 +19,7 @@ import java.util.*;
  * @author alex
  * @version $Revision$
  */
-public abstract class SoapResponse extends XmlMessageAdapter implements SoapMessage, XmlResponse {
+public abstract class SoapResponse extends XmlMessageAdapter implements SoapMessage, Response {
     public static final String ENCODING = "UTF-8";
 
     public SoapResponse( TransportMetadata tm ) {
@@ -27,26 +27,19 @@ public abstract class SoapResponse extends XmlMessageAdapter implements SoapMess
         MessageProcessor.setCurrentResponse( this );
     }
 
-    public synchronized InputStream getProtectedResponseStream() {
-        return _responseStream;
-    }
-
-    public synchronized void setProtectedResponseStream( InputStream is ) {
-        _responseStream = is;
-    }
-
-    public synchronized void setResponseXml( String xml ) {
+    public synchronized void setXml( String xml ) {
         _responseXml = xml;
         _document = null;
     }
 
-    public synchronized String getResponseXml() throws IOException {
+    // TODO check handling of attachments; perhaps return stream here instead of String
+    public synchronized String getXml() throws IOException {
         if (_responseXml == null && _document != null) {
             // serialize the document
             _responseXml = XmlUtil.nodeToString(_document);
         } else if ( _responseXml == null ) {
             // TODO: Encoding?
-            InputStream protectedResponseStream = getProtectedResponseStream();
+            InputStream protectedResponseStream = getInputStream();
             if ( protectedResponseStream != null ) {
                 _responseXml = getMessageXml(protectedResponseStream, null);
             }
@@ -61,7 +54,7 @@ public abstract class SoapResponse extends XmlMessageAdapter implements SoapMess
 
     public synchronized Document getDocument() throws IOException, SAXException {
         if (_document == null) {
-            String xml = getResponseXml();
+            String xml = getXml();
             if (xml == null || xml.length() == 0) {
                 throw new NoDocumentPresentException();
             } else {
@@ -106,19 +99,8 @@ public abstract class SoapResponse extends XmlMessageAdapter implements SoapMess
         if ( authMissing ) _policyViolated = authMissing;
     }
 
-    public synchronized void runOnClose( Runnable runMe ) {
-        if ( _runOnClose == Collections.EMPTY_LIST ) _runOnClose = new ArrayList();
-        _runOnClose.add( runMe );
-    }
-
     public synchronized void close() {
-        Runnable runMe;
-        Iterator i = _runOnClose.iterator();
-        while ( i.hasNext() ) {
-            runMe = (Runnable)i.next();
-            runMe.run();
-            i.remove();
-        }
+        super.close();
         MessageProcessor.setCurrentResponse(null);
     }
 
@@ -165,13 +147,11 @@ public abstract class SoapResponse extends XmlMessageAdapter implements SoapMess
         return fault;
     }
 
-    protected List _assertionResults = Collections.EMPTY_LIST;
-    protected InputStream _responseStream;
-    protected String _responseXml;
-    protected boolean _authMissing;
-    protected boolean _policyViolated;
-    protected DecorationRequirements _decorationRequirements = null;
+    private List _assertionResults = Collections.EMPTY_LIST;
+    private String _responseXml;
+    private boolean _authMissing;
+    private boolean _policyViolated;
+    private DecorationRequirements _decorationRequirements = null;
 
-    protected transient List _runOnClose = Collections.EMPTY_LIST;
-    protected SoapFaultDetail fault = null;
+    private SoapFaultDetail fault = null;
 }

@@ -20,6 +20,8 @@ public interface StashManager {
     /**
      * Stash the complete content of the specified InputStream into this StashManager instance keyed with the
      * specified ordinal number.
+     * <p>
+     * If you already have a byte array, the stash(int, byte[]) method will save you wrapping it in a ByteArrayInputStream.
      *
      * @param ordinal  a unique small non-negative integer to identify this InputStream for later recall.
      * @param in  the InputStream to stash.  Will be drained, read all the way to EOF, before this method returns,
@@ -27,6 +29,28 @@ public interface StashManager {
      * @throws IOException if there is a problem stashing this InputStream.
      */
     void stash(int ordinal, InputStream in) throws IOException;
+
+    /**
+     * For callers that already possess the entire content as a byte array, this method can be used
+     * to stash the byte array directly without needing to wrap it in a ByteArrayInputStream.
+     * <p>
+     * Prefer this stash(int, byte[]) method, but <i>only if you already have a byte array</i>.  Otherwise, it is
+     * recommended to feed the InputStream into the stash(int, InputStream) method instead.
+     *
+     * @param ordinal a small non-negative integer to identify this stream within the stash
+     * @param in      the byte array to stash.  May be zero-length but must be non-null.
+     * @throws IOException if there is a problem stashing this byte array.
+     */
+    void stash(int ordinal, byte[] in) throws IOException;
+
+    /**
+     * Free all resources used by the specified previously-stashed InputStream.  After this call, recall(ordinal)
+     * will return null and peek(ordinal) will return false.  If no such ordinal is currently stashed, this
+     * method takes no action.
+     *
+     * @param ordinal the ordinal that will be unstashed.
+     */
+    void unstash(int ordinal);
 
     /**
      * Check the size of a previously-stashed InputStream in bytes, if this information is available.

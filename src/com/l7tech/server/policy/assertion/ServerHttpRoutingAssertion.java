@@ -8,7 +8,6 @@ package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.mime.MimeUtil;
-import com.l7tech.common.mime.MultipartMessageReader;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.SoapUtil;
@@ -19,7 +18,6 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
-import com.l7tech.server.attachments.ServerMultipartMessageReader;
 import com.l7tech.server.saml.SamlAssertionGenerator;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.service.PublishedService;
@@ -100,7 +98,6 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
         PostMethod postMethod = null;
         InputStream inputStream = null;
-        ServerMultipartMessageReader multipartReader = null;
 
         try {
             try {
@@ -140,15 +137,15 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 // todo: check if we need to support HTTP 1.1.
                 postMethod.setHttp11(false);
 
-                multipartReader = request.getMultipartReader();
-                if (request.isMultipart()) {
-                    postMethod.setRequestHeader(MimeUtil.CONTENT_TYPE, MimeUtil.MULTIPART_CONTENT_TYPE +
-                      "; type=\"" + XmlUtil.TEXT_XML + "\"" +
-                      "; start=\"" + multipartReader.getSoapPart().getHeader(MimeUtil.CONTENT_ID).getValue() + "\"" +
-                      "; " + MimeUtil.MULTIPART_BOUNDARY + "=\"" + request.getMultipartBoundary() + "\"");
-                } else {
-                    postMethod.setRequestHeader(MimeUtil.CONTENT_TYPE, XmlUtil.TEXT_XML + "; charset=" + ENCODING.toLowerCase());
-                }
+                postMethod.addRequestHeader(MimeUtil.CONTENT_TYPE, request.getOuterContentType().getFullValue());
+
+                // Fix for Bug #1282 - Must set a content-length on PostMethod or it will try to buffer the whole thing
+                final long contentLength = request.getContentLength();
+                if (contentLength > Integer.MAX_VALUE)
+                    throw new IOException("Body content is too long to be processed -- maximum is " + Integer.MAX_VALUE + " bytes");
+                postMethod.setRequestContentLength((int)contentLength);
+                final InputStream bodyInputStream = request.getEntireMessageBody();
+                postMethod.setRequestBody(bodyInputStream);
 
                 String userAgent = httpRoutingAssertion.getUserAgent();
                 if (userAgent == null || userAgent.length() == 0) userAgent = DEFAULT_USER_AGENT;
@@ -216,7 +213,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                     state.setCredentials(null, null, new UsernamePasswordCredentials(login, new String(password)));
                 }
 
-                String requestXml = request.getRequestXml();
+                String requestXml = request.getXml();
                 if (httpRoutingAssertion.isAttachSamlSenderVouches()) {
                     Document document = XmlUtil.stringToDocument(requestXml);
                     SamlAssertionGenerator ag = new SamlAssertionGenerator();
@@ -240,58 +237,6 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                     }
                 }
                 attachCookies(client, request.getTransportMetadata(), url);
-                if (request.isMultipart()) {
-                    long contentLength = 0;
-                    StringBuffer sb = new StringBuffer();
-
-                    // add modified SOAP part
-                    MimeUtil.addModifiedSoapPart(sb,
-                      XmlUtil.XML_VERSION + requestXml,
-                      request.getSoapPart(),
-                      request.getMultipartBoundary());
-
-                    if (multipartReader.isAtLeastOneAttachmentParsed()) {
-                        if (multipartReader.getFileCache() != null) {
-
-                            // close the connection for writing data to the temp file before opening the file for read operation
-                            multipartReader.closeFileCache();
-
-                            // read raw attachments from a temp file
-                            final String fileCacheName = multipartReader.getFileCacheName();
-                            inputStream = new FileInputStream(fileCacheName);
-                            contentLength += new File(fileCacheName).length();
-                        } else {
-
-                            // read raw attachments from memory
-                            byte[] dataBuf = new byte[multipartReader.getMemoryCacheDataLength()];
-                            contentLength += dataBuf.length;
-                            byte[] data = multipartReader.getMemoryCache();
-                            for (int i = 0; i < dataBuf.length; i++) {
-                                dataBuf[i] = data[i];
-                            }
-                            inputStream = new ByteArrayInputStream(dataBuf);
-                        }
-
-                        PushbackInputStream pushbackInputStream = new PushbackInputStream(inputStream, MultipartMessageReader.SOAP_PART_BUFFER_SIZE);
-                        final byte[] unreadBytes = sb.toString().getBytes();
-                        contentLength += unreadBytes.length;
-                        pushbackInputStream.unread(unreadBytes);
-                        postMethod.setRequestBody(pushbackInputStream);
-                        postMethod.setRequestContentLength((int)contentLength);
-
-                    } else {
-                        PushbackInputStream pbis = multipartReader.getPushbackInputStream();
-
-                        // push the modified SOAP part back to the input stream
-                        final byte[] unreadBytes = sb.toString().getBytes();
-                        pbis.unread(unreadBytes);
-
-                        // post the request using input stream
-                        postMethod.setRequestBody(pbis);
-                    }
-                } else {
-                    postMethod.setRequestBody(requestXml);
-                }
 
                 if (hconf == null) {
                     client.executeMethod(postMethod);
@@ -334,10 +279,10 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 InputStream responseStream = postMethod.getResponseBodyAsStream();
                 String ctype = postMethod.getResponseHeader(MimeUtil.CONTENT_TYPE).getValue();
                 response.setParameter(Response.PARAM_HTTP_CONTENT_TYPE, ctype);
-                response.setProtectedResponseStream(responseStream);
+                response.setInputStream(responseStream);
 
-                String responseXml = response.getResponseXml();
-                response.setResponseXml(responseXml);
+                String responseXml = response.getXml();
+                response.setXml(responseXml);
 
             } catch (IOException e) {
                 logger.log(Level.FINE, "error reading response", e);

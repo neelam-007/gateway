@@ -6,15 +6,14 @@
 
 package com.l7tech.message;
 
-import com.l7tech.common.mime.*;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.MultipartMessage;
+import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.server.MessageProcessor;
-import com.l7tech.server.ServerConfig;
-import com.l7tech.server.attachments.ServerMultipartMessageReader;
-import com.l7tech.server.transport.jms.BytesMessageInputStream;
-import com.l7tech.server.transport.jms.JmsUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;
@@ -24,10 +23,8 @@ import org.xmlpull.v1.XmlPullParserException;
 
 import java.io.*;
 import java.util.Iterator;
-import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 
 /**
  * @author alex
@@ -35,8 +32,6 @@ import java.util.regex.Pattern;
  */
 public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMessage {
     private static final Logger logger = Logger.getLogger(XmlMessageAdapter.class.getName());
-    public static final Pattern MULTIPART_DETECTOR_VAN = Pattern.compile("\\s*" + MimeUtil.MULTIPART_CONTENT_TYPE + "\\b.*");
-    private static int stashFileUnique = 1;
 
     public XmlMessageAdapter( TransportMetadata tm ) {
         super(tm);
@@ -53,10 +48,6 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
         return xpp;
     }
 
-    private static synchronized int getStashFileUnique() {
-        return stashFileUnique++;
-    }
-
     /**
      * Gets the XML part of the message from the provided reader.
      * <p>
@@ -71,7 +62,8 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
      */
     protected String getMessageXml(InputStream is, String id) throws IOException {
 
-        MultipartMessage mm = getMultipartMessage(is);
+        setInputStream(is);
+        MultipartMessage mm = getMultipartMessage();
 
         final PartInfo soapPart;
         try {
@@ -98,124 +90,6 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
             read = reader.read(buf);
         }
         return xml.toString();
-    }
-
-    private String OLD_getMessageXml(InputStream is, String id) throws IOException {
-        String ctype = (String)getParameter(Message.PARAM_HTTP_CONTENT_TYPE);
-
-        if (MULTIPART_DETECTOR_VAN.matcher(ctype).matches()) {
-            multipart = true;
-            MimeHeaders headers = MimeUtil.parseHeaders(is);
-            ContentTypeHeader contentTypeHeader = headers.getContentType();
-
-            if(!soapPartParsed) {
-                String multipartBoundary = (String)contentTypeHeader.getParam(MimeUtil.MULTIPART_BOUNDARY);
-                if (multipartBoundary == null) throw new IOException("Multipart header '" + contentTypeHeader.getName() + "' did not contain a boundary");
-
-                String innerType = (String)contentTypeHeader.getParam(MimeUtil.MULTIPART_TYPE);
-                if (innerType.equalsIgnoreCase(XmlUtil.TEXT_XML)) {
-                    multipartReader = new ServerMultipartMessageReader(is, multipartBoundary);
-                    multipartReader.setFileCacheId(id);
-
-                    PartInfo part = multipartReader.getSoapPart();
-                    if (part == null)
-                        return ""; // Bug #1350 - avoid NPE with empty request
-                    final String soapPartContentType = part.getHeader(MimeUtil.CONTENT_TYPE).getValue();
-                    if (!soapPartContentType.equals(innerType)) throw new IOException("Content-Type of first part doesn't match type of Multipart header");
-
-                    soapPartParsed = true;
-                    return new String(part.getContent(), part.getContentType().getEncoding());
-                } else throw new IOException("Expected first part of multipart message to be XML (was '" + innerType + "')");
-            } else {
-                if (multipartReader == null)
-                    throw new IllegalStateException("The soap part was parsed once but the multipartReader is NULL.");
-
-                return new String(multipartReader.getSoapPart().getContent(), contentTypeHeader.getEncoding());
-            }
-        } else {
-            // It's not multipart/related; we assume it's not SwA and we can just read the whole damned thing
-            ContentTypeHeader outerCtypeHeader = ContentTypeHeader.parseValue(ctype);
-
-            // Not multipart, read the whole thing
-            StringBuffer xml = new StringBuffer();
-
-            BufferedReader reader;
-            if(is instanceof BytesMessageInputStream) {
-                reader = new BufferedReader(new InputStreamReader(is, JmsUtil.DEFAULT_ENCODING));
-            } else {
-                reader = new BufferedReader(new InputStreamReader(is, outerCtypeHeader.getEncoding()));
-            }
-
-            char[] buf = new char[4096];
-            int read = reader.read(buf);
-            while (read > 0) {
-                xml.append(buf, 0, read);
-                read = reader.read(buf);
-            }
-            return xml.toString();
-        }
-    }
-
-    private MultipartMessage getMultipartMessage(InputStream is) throws IOException {
-        if (multipartMessage == null) {
-            String ctypeval = (String)getParameter(Message.PARAM_HTTP_CONTENT_TYPE);
-            ContentTypeHeader ctype;
-            try {
-                ctype = ContentTypeHeader.parseValue(ctypeval);
-            } catch (IOException e) {
-                ctype = ContentTypeHeader.parseValue("text/xml; charset=utf8");
-                logger.warning("Incoming message had missing or invalid outer Content-Type header; assuming " + ctype.getValue());
-            }
-            try {
-                multipartMessage = MultipartMessage.createMultipartMessage(getStashManager(),
-                                                                           ctype,
-                                                                           is);
-            } catch (NoSuchPartException e) {
-                throw new CausedIOException("Incoming message had an invalid MIME multipart format", e);
-            }
-        }
-        return multipartMessage;
-    }
-
-    private StashManager getStashManager() {
-        if (stashManager == null) {
-            stashManager = new HybridStashManager(ServerConfig.getInstance().getAttachmentDiskThreshold(),
-                                                  ServerConfig.getInstance().getAttachmentDirectory(),
-                                                  "att" + getStashFileUnique());
-        }
-        return stashManager;
-    }
-
-    public Map getAttachments() throws IOException {
-        if(multipartReader == null) throw new IllegalStateException("The attachment cannot be retrieved as the soap part has not been read.");
-         return multipartReader.getMessageAttachments();
-    }
-
-    public PartInfo getSoapPart() throws IOException {
-        if(multipartReader == null) throw new IllegalStateException("The attachment cannot be retrieved as the soap part has not been read.");
-        return multipartReader.getMessagePart(0);
-    }
-
-    public String getMultipartBoundary() {
-        if(multipartReader == null) throw new IllegalStateException("The attachment cannot be retrieved as the soap part has not been read.");
-        return multipartReader.getMultipartBoundary();
-    }
-
-     public ServerMultipartMessageReader getMultipartReader() {
-        return multipartReader;
-    }
-
-    public boolean isMultipart() throws IOException {
-        // if not multipart set, may be because the request has not been read yet
-        // and if it was and not multipart message, the call is cheap as messages are cached 
-        if (!multipart) {
-            if (this instanceof XmlRequest) {
-               ((XmlRequest)this).getRequestXml();
-            } else if(this instanceof XmlResponse) {
-                ((XmlResponse)this).getResponseXml();
-            }
-        }
-        return multipart;
     }
 
     public boolean isSoap() {
@@ -253,11 +127,20 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
         return soap.booleanValue();
     }
 
+    protected ContentTypeHeader getUpToDateFirstPartContentType() throws IOException {
+        return ContentTypeHeader.XML_DEFAULT;
+    }
+
+    protected byte[] getUpToDateFirstPartBodyBytes() throws IOException {
+        try {
+            // Encoding used here must agree with the encoding returned by getUpToDateFirstPartContentType
+            return XmlUtil.nodeToString(getDocument()).getBytes("UTF-8");
+        } catch (SAXException e) {
+            throw new CausedIOException("Unable to serialize message XML", e);
+        }
+    }
+
     protected Document _document;
     protected boolean soapPartParsed = false;
-    protected boolean multipart = false;
-    protected ServerMultipartMessageReader multipartReader = null;
     protected Boolean soap = null;
-    private MultipartMessage multipartMessage = null;
-    private StashManager stashManager;
 }

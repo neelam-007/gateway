@@ -6,6 +6,12 @@
 
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.common.mime.StashManager;
+import com.l7tech.common.mime.HybridStashManager;
+import com.l7tech.proxy.ClientProxy;
+
+import java.io.File;
+
 /**
  * Used to obtain datamodel classes.
  *
@@ -15,6 +21,7 @@ package com.l7tech.proxy.datamodel;
  */
 public class Managers {
     private static CredentialManager credentialManager = null;
+    private static int stashFileUnique = 1; // used to generate unique filenames for stashing large attachments
 
     /**
      * Get the PolicyManager.
@@ -41,5 +48,20 @@ public class Managers {
      */
     public static void setCredentialManager(CredentialManager credentialManager) {
         Managers.credentialManager = credentialManager;
+    }
+
+    private static synchronized int getStashFileUnique() {
+        return stashFileUnique++;
+    }
+
+    /**
+     * Obtain a stash manager.  Currently always creates a new {@link HybridStashManager}.
+     *
+     * @return a new StashManager reader to stash input stream to RAM or disk according to their size.
+     */
+    public static StashManager createStashManager() {
+        final File dir = new File(ClientProxy.PROXY_CONFIG + "/attachments");
+        return new HybridStashManager(ClientProxy.ATTACHMENT_DISK_THRESHOLD, dir,
+                                      "att" + getStashFileUnique());
     }
 }

@@ -6,34 +6,26 @@
 
 package com.l7tech.proxy.processor;
 
-import com.l7tech.common.mime.MimeHeader;
-import com.l7tech.common.mime.MimeUtil;
-import com.l7tech.common.mime.MultipartMessageReader;
-import com.l7tech.common.mime.PartInfo;
+import com.l7tech.common.mime.*;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.security.xml.processor.*;
-import com.l7tech.common.util.CertificateDownloader;
-import com.l7tech.common.util.ExceptionUtils;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.proxy.ConfigurationException;
-import com.l7tech.proxy.attachments.ClientMultipartMessageReader;
 import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
 import com.l7tech.proxy.ssl.HostnameMismatchException;
-import com.l7tech.proxy.util.CannedSoapFaults;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.protocol.Protocol;
@@ -42,7 +34,8 @@ import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
 import javax.net.ssl.SSLException;
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
@@ -135,11 +128,14 @@ public class MessageProcessor {
                 CurrentRequest.setPeerSsg(null); // force all SSL connections to set peer SSG first
                 try {
                     try {
+                        SsgResponse responseNeedingClose = null;
                         try {
                             enforcePolicy(req);
                             SsgResponse res = obtainResponse(req);
+                            responseNeedingClose = res;
                             undecorateResponse(req, res);
                             succeeded = true;
+                            responseNeedingClose = null;
                             return res;
                         } catch (SSLException e) {
                             if (req.getSsg().getTrustedGateway() != null) {
@@ -165,6 +161,9 @@ public class MessageProcessor {
                             } else
                                 SsgKeyStoreManager.installSsgServerCertificate(ssg, req.getCredentials()); // might throw BadCredentialsException
                             // FALLTHROUGH allow policy to reset and retry
+                        } finally {
+                            if (responseNeedingClose != null)
+                                responseNeedingClose.close();
                         }
                     } catch (PolicyRetryableException e) {
                         // FALLTHROUGH allow policy to reset and retry
@@ -195,18 +194,6 @@ public class MessageProcessor {
                     log.log(Level.FINE, "Request failed to get a response from the SSG -- marking cached policy as invalid");
                     req.getActivePolicy().invalidate();
                 }
-            }
-
-            // clean up for SOAP request with attachment
-            if (req.isMultipart()) {
-                req.addCleanupRunnable(new Runnable() {
-                    public void run() {
-                        final ClientMultipartMessageReader multipartReader = req.getMultipartReader();
-                        if (multipartReader != null) {
-                            multipartReader.deleteCacheFile();
-                        }
-                    }
-                });
             }
         }
     }
@@ -385,7 +372,7 @@ public class MessageProcessor {
                             SoapUtil.setL7aMessageId(req.getDecoratedDocument(), req.getL7aMessageId());
 
                     // Do all WSS processing all at once
-                    if (req.isSoapRequest()) {
+                    if (req.isSoap()) {
                         log.info("Running pending request through WS-Security decorator");
                         req.getWssRequirements().setTimestampCreatedDate(req.getSsg().dateTranslatorToSsg().translate(new Date()));
                         wssDecorator.decorateMessage(req.getDecoratedDocument(), req.getWssRequirements());
@@ -550,50 +537,16 @@ public class MessageProcessor {
             }
 
             InputStream is = null;
-            if (req.isMultipart()) {
-                postMethod.addRequestHeader(MimeUtil.CONTENT_TYPE, MimeUtil.MULTIPART_CONTENT_TYPE +
-                  "; type=" + XmlUtil.TEXT_XML +
-                  "; " + MimeUtil.MULTIPART_BOUNDARY + "=" + req.getMultipartReader().getMultipartBoundary());
+            postMethod.addRequestHeader(MimeUtil.CONTENT_TYPE, req.getOuterContentType().getFullValue());
 
-                StringBuffer sb = new StringBuffer();
+            // Fix for Bug #1282 - Must set a content-length on PostMethod or it will try to buffer the whole thing
+            final long contentLength = req.getContentLength();
+            if (contentLength > Integer.MAX_VALUE)
+                throw new IOException("Body content is too long to be processed -- maximum is " + Integer.MAX_VALUE + " bytes");
+            postMethod.setRequestContentLength((int)contentLength);
+            final InputStream bodyInputStream = req.getEntireMessageBody();
 
-                MultipartMessageReader requestMultipartReader = req.getMultipartReader();
-
-                // add modified SOAP part
-                MimeUtil.addModifiedSoapPart(sb,
-                  postBody,
-                  requestMultipartReader.getSoapPart(),
-                  requestMultipartReader.getMultipartBoundary());
-                long contentLength = 0;
-                if (requestMultipartReader.getFileCache() != null) {
-                    // close the connection for writing data to the temp file before opening the file for read operation
-                    requestMultipartReader.closeFileCache();
-                    contentLength = new File(requestMultipartReader.getFileCacheName()).length();
-                    // read raw attachments from a temp file
-                    is = new FileInputStream(requestMultipartReader.getFileCacheName());
-                } else {
-                    // read raw attachments from memory
-                    byte[] dataBuf = new byte[requestMultipartReader.getMemoryCacheDataLength()];
-                    contentLength = dataBuf.length;
-                    byte[] data = requestMultipartReader.getMemoryCache();
-                    for (int i = 0; i < dataBuf.length; i++) {
-                        dataBuf[i] = data[i];
-                    }
-                    is = new ByteArrayInputStream(dataBuf);
-                }
-
-                PushbackInputStream pushbackInputStream = new PushbackInputStream(is, MultipartMessageReader.SOAP_PART_BUFFER_SIZE);
-                // push the modified SOAP part back to the input stream
-                final byte[] unreadBytes = sb.toString().getBytes();
-                pushbackInputStream.unread(unreadBytes);
-                contentLength += unreadBytes.length;
-                // post the request using input stream
-                postMethod.setRequestContentLength((int)contentLength);
-                postMethod.setRequestBody(pushbackInputStream);
-            } else { // non multipart
-                postMethod.setRequestBody(postBody);
-                postMethod.addRequestHeader(MimeUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
-            }
+            postMethod.setRequestBody(bodyInputStream);
 
             log.info("Posting request to Gateway " + ssg + ", url " + url);
             CurrentRequest.setPeerSsg(ssg);
@@ -668,49 +621,32 @@ public class MessageProcessor {
 
             Header contentType = postMethod.getResponseHeader(MimeUtil.CONTENT_TYPE);
             log.info("Response Content-Type: " + contentType);
-            if (contentType == null || contentType.getValue() == null || contentType.getValue().indexOf(XmlUtil.TEXT_XML) < 0)
-                return new SsgResponse(XmlUtil.stringToDocument(CannedSoapFaults.RESPONSE_NOT_XML), null, 500, null, null);
+            if (contentType == null || contentType.getValue() == null)
+                throw new IOException("Response from Gateway did not inlcude a Content-Type");
+            final ContentTypeHeader outerContentType = ContentTypeHeader.parseValue(contentType.getValue());
+            if (!(outerContentType.isXml() || outerContentType.isMultipart()))
+                throw new IOException("Response from Gateway was unsupported Content-Type " + outerContentType.getFullValue());
+            final MultipartMessage multipartMessage = new MultipartMessage(Managers.createStashManager(),
+                                                                           outerContentType,
+                                                                           postMethod.getResponseBodyAsStream());
 
-            String responseString = null;
-            ClientMultipartMessageReader responseMultipartReader = null;
-            if (contentType.getValue().startsWith(MimeUtil.MULTIPART_CONTENT_TYPE)) {
-                MimeHeader contentTypeHeader = MimeUtil.parseHeader(MimeUtil.CONTENT_TYPE + ": " + contentType.getValue());
-
-                String multipartBoundary = MimeUtil.unquote((String)contentTypeHeader.getParam(MimeUtil.MULTIPART_BOUNDARY));
-                if (multipartBoundary == null) throw new IOException("Multipart header '" + contentTypeHeader.getName() + "' did not contain a boundary");
-
-                String innerType = MimeUtil.unquote((String)contentTypeHeader.getParam(MimeUtil.MULTIPART_TYPE));
-                if (innerType.startsWith(XmlUtil.TEXT_XML)) {
-
-                    InputStream respIs = postMethod.getResponseBodyAsStream();
-                    responseMultipartReader = new ClientMultipartMessageReader(respIs, multipartBoundary);
-
-                    PartInfo part = responseMultipartReader.getSoapPart();
-                    if (!part.getHeader(MimeUtil.CONTENT_TYPE).getValue().equals(innerType)) throw new IOException("Content-Type of first part doesn't match type of Multipart header");
-
-                    responseString = new String(part.getContent(), part.getHeaders().getContentType().getEncoding());
-                } else
-                    throw new IOException("Expected first part of multipart message to be XML (was '" + innerType + "')");
-
-            } else {
-                responseString = postMethod.getResponseBodyAsString();
-            }
+            PartInfo firstPart = multipartMessage.getFirstPart();
+            ContentTypeHeader firstPartContentType = firstPart.getContentType();
+            if (!firstPartContentType.isXml())
+                throw new IOException("Multipart response from Gateway contained a non-XML first part of type " + firstPartContentType.getFullValue());
+            // TODO pester Sun for a DocumentBuilder that will take an encoding hint along with the InputStream
+            // we'll eat (destructively read) the first body part here; it will always be overwritten anyway by the undecorated XML
+            Document responseDocument = XmlUtil.parse(firstPart.getInputStream(true));
 
             if (logResponse()) {
                 if (reformatLogs()) {
-                    String logStr = responseString;
-                    try {
-                        logStr = XmlUtil.nodeToFormattedString(XmlUtil.stringToDocument(responseString));
-                    } catch (Exception e) {
-                        logStr = responseString;
-                    }
+                    String logStr = XmlUtil.nodeToFormattedString(responseDocument);
                     log.info("Got response from Gateway (reformatted): " + logStr);
-                } else
-                    log.info("Got response from Gateway: " + responseString);
+                } else {
+                    String logStr = XmlUtil.nodeToString(responseDocument);
+                    log.info("Got response from Gateway: " + logStr);
+                }
             }
-
-
-            Document responseDocument = XmlUtil.stringToDocument(responseString);
 
             log.info("Running SSG response through WS-Security undecorator");
             SecurityContextFinder scf = null;
@@ -751,7 +687,7 @@ public class MessageProcessor {
                 processorResult = null;
             }
 
-            response = new SsgResponse(responseDocument, processorResult, status, headers, responseMultipartReader);
+            response = new SsgResponse(multipartMessage, responseDocument, processorResult, status, headers);
             if (status == 401 || status == 402) {
                 req.setLastErrorResponse(response);
                 Header authHeader = postMethod.getResponseHeader("WWW-Authenticate");
@@ -763,9 +699,12 @@ public class MessageProcessor {
                 throw new BadCredentialsException();
             }
 
+            // Transfer ownership of this PostMethod to the response so it will be closed when the response is disposed of
             response.setDownstreamPostMethod(postMethod);
             return response;
 
+        } catch (NoSuchPartException e) {
+            throw new CausedIOException("Response from Gateway used invalid or unsupported MIME multipart syntax", e);
         } finally {
             if (postMethod != null) {
                 if (state.getCookies() == null) {
@@ -774,8 +713,8 @@ public class MessageProcessor {
                     req.getSsg().storeSessionCookies(state.getCookies());
                 }
 
-                // if not deferring the connection release
-                if (response != null && response.getDownstreamPostMethod() == null) {
+                // if not deferring the connection release, release it now
+                if (response != null && !response.isDownstreamPostMethod()) {
                     postMethod.releaseConnection();
                 }
             }

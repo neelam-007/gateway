@@ -82,10 +82,10 @@ public class ServerXslTransformation implements ServerAssertion {
         // 3. Replace original document with output from transformation
         switch (subject.getDirection()) {
             case XslTransformation.APPLY_TO_REQUEST:
-                ((SoapRequest)req).setRequestXml(output);
+                ((SoapRequest)req).setXml(output);
                 break;
             case XslTransformation.APPLY_TO_RESPONSE:
-                ((SoapResponse)res).setResponseXml(output);
+                ((SoapResponse)res).setXml(output);
                 break;
         }
 

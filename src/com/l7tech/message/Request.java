@@ -157,5 +157,4 @@ public interface Request extends Message {
      * @param saveResponse true if the response XML will be saved in any audit record for this request
      */
     void setAuditSaveResponse(boolean saveResponse);
-
 }

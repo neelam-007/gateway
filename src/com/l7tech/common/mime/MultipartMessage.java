@@ -10,6 +10,7 @@ import com.l7tech.common.io.EmptyInputStream;
 import com.l7tech.common.io.IOExceptionThrowingInputStream;
 import com.l7tech.common.io.NullOutputStream;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.CausedIOException;
 
 import java.io.*;
 import java.util.*;
@@ -32,12 +33,12 @@ public class MultipartMessage {
     private static final Logger logger = Logger.getLogger(MultipartMessage.class.getName());
     private static final int BLOCKSIZE = 4096;
 
-    private final PushbackInputStream mainInputStream;
+    private final PushbackInputStream mainInputStream; // always pointed at current part's body, or just past end of message
     private final int pushbackSize;
     private final StashManager stashManager;
     private final ContentTypeHeader outerContentType;
 
-    private final List partInfos = new ArrayList(); // our PartInfo instances.
+    private final List partInfos = new ArrayList(); // our PartInfo instances.  current part is (partInfos.size() - 1)
     private final PartInfo firstPart; // equivalent to (PartInfo)partInfos.get(0)
     private final Map partInfosByCid = new HashMap(); // our PartInfo-by-cid lookup.
 
@@ -47,7 +48,30 @@ public class MultipartMessage {
 
     private boolean moreParts = true; // assume there are more parts until we find the end of the stream
 
-    private MultipartMessage(StashManager stashManager,
+    private Exception errorCondition = null;  // If non-null, the specified error condition will be reported by public methods
+
+    /**
+     * Create a new MultipartMessage instance that will read from the specified mainInputStream, treating the content
+     * as the specified outerContentType.
+     * <p>
+     * When you have finished with a MultipartMessage, call {@link #close} to free any resources being used, including
+     * the StashManager. 
+     *
+     * @param stashManager the StashManager to use.  Must not be null.  See {@link ByteArrayStashManager} for an example.
+     *                     If a MultipartMessage is succesfully created, it takes ownership of the stashManager.
+     *                     {@link #close} to free resources used by this MultipartMessage
+     * @param outerContentType   a ContentTypeHeader describing the bytes produced by mainInputStream.
+     *                           May be any single-part type, and
+     *                           may be multipart/related if the message body is appropriately formatted (including
+     *                           boundary lines matching the boundary in the ContentTypeHeader, etc).  Must not be null.
+     *                           Use {@link ContentTypeHeader#OCTET_STREAM_DEFAULT} if you have absolutely no clue.
+     * @param mainInputStream  the primary InputStream.  May not be null.  Must be positioned to the first byte
+     *                         of the body content, regardless of whether or not the body is multipart.
+     *                         If a MultipartMessage is successfully created, it takes ownership of the mainInputStream.
+     * @throws NoSuchPartException if this message is multpart/related but does not have any parts
+     * @throws IOException if the mainInputStream cannot be read or a multipart message is not in valid MIME format
+     */
+    public MultipartMessage(StashManager stashManager,
                              ContentTypeHeader outerContentType,
                              InputStream mainInputStream)
             throws IOException, NoSuchPartException
@@ -81,7 +105,7 @@ public class MultipartMessage {
             outerHeaders.add(outerContentType);
             // TODO refactor this to share more code with PartInfoImpl
             final PartInfoImpl mainPartInfo = new PartInfoImpl(0, outerHeaders) {
-                            public byte[] getContent() throws IOException {
+                            public byte[] getContent() {
                                 throw new UnsupportedOperationException("Not yet implemented for singlepart");
                             }
 
@@ -128,6 +152,24 @@ public class MultipartMessage {
     }
 
     /**
+     * Create a MultipartMessage out of the specified byte array interpreted as the specified outerContentType.
+     * This will always create a new ByteArrayStashManager.
+     *
+     * @param bytes  bytes of the message body.  Must not be null.
+     * @param outerContentType   a ContentTypeHeader describing the bytes.  May be any single-part type, and
+     *                           may be multipart/related if the message body is appropriately formatted (including
+     *                           boundary lines matching the boundary in the ContentTypeHeader, etc).  Must not be null.
+     *                           Use {@link ContentTypeHeader#OCTET_STREAM_DEFAULT} if you have absolutely no clue.
+     * @throws NoSuchPartException if this message is multpart/related but does not have any parts
+     * @throws IOException if the mainInputStream cannot be read, or a multipart message is not in valid MIME format
+     */
+    public MultipartMessage(byte[] bytes, ContentTypeHeader outerContentType) throws IOException, NoSuchPartException {
+        this(new ByteArrayStashManager(),
+             outerContentType,
+             new ByteArrayInputStream(bytes));
+    }
+
+    /**
      * Consume the headers of the next part, and store a PartInfo.  The main InputStream must be positioned just
      * beyond the boundary, at the first byte of the next part's headers.
      *
@@ -168,28 +210,6 @@ public class MultipartMessage {
     }
 
     /**
-     * Create a new MultipartMessage instance that will read from the specified mainInputStream, treating the content
-     * as the specified outerContentType.  After this call
-     *
-     * @param stashManager the StashManager to use.  Must not be null.  See {@link ByteArrayStashManager} for an example.
-     * @param outerContentType the content-type of the outer stream.  May not be null.
-     *                         Use {@link MimeHeaders#DEFAULT_CONTENT_TYPE} if you have absolutely no clue.
-     * @param mainInputStream  the primary InputStream.  May not be null.  Must be positioned to the first byte
-     *                         of the body content, regardless of whether or not the body is multipart.
-     *                         If a MultipartMessage is successfully created, it takes ownership of the mainInputStream.
-     * @return a new MultipartMessage ready to provide access to the content of any MIME parts.
-     * @throws NoSuchPartException if this message is multpart/related but does not have any parts
-     * @throws IOException if the mainInputStream cannot be read
-     */
-    public static MultipartMessage createMultipartMessage(StashManager stashManager,
-                                                          ContentTypeHeader outerContentType,
-                                                          InputStream mainInputStream)
-            throws IOException, NoSuchPartException
-    {
-        return new MultipartMessage(stashManager, outerContentType, mainInputStream);
-    }
-
-    /**
      * Get the specified PartInfo from this message by ordinal position, with the first part as part #0.
      * Note that getting the parts out of order is supported but will involve reading and stashing the
      * intervening parts in the current StashManager.
@@ -203,11 +223,42 @@ public class MultipartMessage {
         if (ordinal < 0)
             throw new IllegalArgumentException("ordinal must be non-negative");
         if (ordinal > 0 && boundary == null)
-            throw new NoSuchPartException("There is only one part in a single-part message");
+            throw new NoSuchPartException("There is only one part in a single-part message", ordinal);
         // Have we already prepared this part?
         if (ordinal >= partInfos.size())
             readUpToPart(ordinal);
         return (PartInfo)partInfos.get(ordinal);
+    }
+
+    /**
+     * Obtain an iterator that can be used to lazily iterate some or all parts in this MultipartMessage.
+     * The iterator can be abandoned at any time, in which case any still-unread parts will be left in the main InputStream
+     * (as long as they hadn't already needed to be read due to other method calls on MultipartMessage or PartInfo).
+     * <p>
+     * Since this iterator is roughly equivalent to just calling {@link #getPart(int)}
+     * while {@link #isMorePartsPossible()}, it is safe to call other MultipartMessage and {@link PartInfo} methods
+     * while iterating.  The usual caveats regarding PartInfo methods apply though: specifically, it is not safe to
+     * call any MultipartMessage or PartInfo methods whatsoever if any destroyAsRead InputStreams are open
+     * on a PartInfo.
+     * <p>
+     * Note that, differing from {@link java.util.Iterator}, this PartIterator might throw NoSuchPartException
+     * from next() even if hasNext() returned true, if the input message was not properly terminated.
+     *
+     * @return a {@link PartIterator} ready to iterate all parts of this message from beginning to end.  Never null.
+     */
+    public PartIterator iterator() {
+        return new PartIterator() {
+            int nextPart = 0;
+
+            public boolean hasNext() {
+                final int numParts = partInfos.size();
+                return nextPart < numParts || (nextPart == numParts && isMorePartsPossible());
+            }
+
+            public PartInfo next() throws IOException, NoSuchPartException {
+                return getPart(nextPart++);
+            }
+        };
     }
 
     /**
@@ -225,7 +276,7 @@ public class MultipartMessage {
         PartInfo partInfo = (PartInfo)partInfosByCid.get(contentId);
         while (partInfo == null) {
             if (!moreParts)
-                throw new NoSuchPartException("No part was found with the Content-ID: " + contentId);
+                throw new NoSuchPartException("No part was found with the Content-ID: " + contentId, contentId);
             stashCurrentPartBody();
             readNextPartHeaders();
             partInfo = (PartInfo)partInfosByCid.get(contentId);
@@ -256,23 +307,16 @@ public class MultipartMessage {
      *
      * @param destroyAsRead  if true, the parts will be read destructively.
      * @return an InputStream that, when read, will endeavor to reproduce the original multipart message body.
-     * @throws IOException if a problem is detected early, such as one or more parts already having been read destructively
+     * @throws IOException if there is a problem reading enough of the main input stream to prepare the new InputStream
+     * @throws NoSuchPartException if one or more part bodies have already been read destructively
      */
-    public InputStream getEntireMessageBodyAsInputStream(boolean destroyAsRead) throws IOException {
+    public InputStream getEntireMessageBodyAsInputStream(boolean destroyAsRead) throws IOException, NoSuchPartException {
+        checkErrorBoth();
 
-        if (!destroyAsRead) {
-            // Ensure that everything is stashed right now
-            if (boundary != null)
-                readAllParts(); // multipart
-            else
-                firstPart.getInputStream(false).close();  // singlepart
-        }
+        if (!destroyAsRead)
+            readAndStashEntireMessage();
 
-        for (Iterator i = partInfos.iterator(); i.hasNext();) {
-            PartInfoImpl partInfo = (PartInfoImpl)i.next();
-            if (!partInfo.bodyAvailable())
-                throw new IOException("Part #" + partInfo.getPosition() + " has already been destructively read");
-        }
+        assertNoPartBodiesDestroyed();
 
         if (boundary == null) {
             // Special case for single-part
@@ -295,6 +339,9 @@ public class MultipartMessage {
             }
 
             public Object nextElement() {
+                if (errorCondition != null)
+                    return new IOExceptionThrowingInputStream(new CausedIOException(errorCondition));
+
                 // Generate the next input stream for the user to read.
                 if (done)
                     throw new NoSuchElementException();
@@ -388,6 +435,61 @@ public class MultipartMessage {
     }
 
     /**
+     * Assert that no part bodies have been destructively read.  If this returns, it means that all remaining
+     * multipart parts either have not yet been read from the main input stream, or have already been read and
+     * their bodies stashed.
+     *
+     * @throws NoSuchPartException if one or more part bodies have already been read destructively
+     */
+    private void assertNoPartBodiesDestroyed() throws NoSuchPartException {
+        checkErrorNoPart();
+
+        for (Iterator i = partInfos.iterator(); i.hasNext();) {
+            PartInfoImpl partInfo = (PartInfoImpl)i.next();
+            if (!partInfo.bodyAvailable())
+                throw new NoSuchPartException("Part #" + partInfo.getPosition() + " has already been destructively read", partInfo.getPosition());
+        }
+    }
+
+    /**
+     * Compute the length of the entire message body, were it to be reserialized right now.  Calling this method
+     * will force any still-unread part bodies to be read and stashed.
+     *
+     * @return the number of bytes that would be produced by the InputStream returned by
+     *         getEntireMessageBodyAsInputStream() if it were to be called right now; or, a number less than zero
+     *         if the total length could not be determined.
+     * @throws NoSuchPartException if one or more part bodies have already been read destructively
+     * @throws IOException if the main input stream could not be read or the info could not be stashed.
+     * @throws IOException if the headers could not be read
+     */
+    public long getEntireMessageBodyLength() throws IOException, NoSuchPartException {
+        checkErrorBoth();
+
+        readAndStashEntireMessage();
+        assertNoPartBodiesDestroyed();
+
+        if (boundary == null) {
+            // singlepart.  Nice and easy :)
+            return firstPart.getContentLength();
+        }
+
+        long len = 0;
+        for (Iterator i = partInfos.iterator(); i.hasNext();) {
+            PartInfo partInfo = (PartInfo) i.next();
+            // Opening delimiter: CRLF + boundary (which includes initial 2 dashes) + CRLF
+            len += 2 + boundary.length + 2;
+            len += partInfo.getHeaders().getSerializedLength();
+            long bodylen = partInfo.getContentLength();
+            if (bodylen < 0)
+                return bodylen;
+            len += bodylen;
+        }
+        // Closing delimiter: CRLF + boundary (which includes initial 2 dashes) + two dashses + CRLF
+        len += 2 + boundary.length + 2 + 2;
+        return len;
+    }
+
+    /**
      * Stashes the current part's body.  When called, the input stream must be positioned at the first byte
      * of the current part's body.  When this method returns, the input stream will be positioned at the first
      * byte of the next part's headers, unless this is the final part, in which case moreParts will be false.
@@ -395,6 +497,8 @@ public class MultipartMessage {
      * @throws IOException if the main input stream could not be read or the info could not be stashed.
      */
     private void stashCurrentPartBody() throws IOException {
+        checkErrorIO();
+
         int currentOrdinal = partInfos.size() - 1;
         final MimeBoundaryTerminatedInputStream in = new MimeBoundaryTerminatedInputStream(boundary, mainInputStream, pushbackSize);
         stashManager.stash(currentOrdinal, in);
@@ -411,24 +515,37 @@ public class MultipartMessage {
      * @throws IOException  if there was a problem reading the main InputStream.
      */
     private void readUpToPart(int ordinal) throws IOException, NoSuchPartException {
+        checkErrorBoth();
+
         if (boundary == null) throw new IllegalStateException("Not supported in single-part mode");
         while (partInfos.size() <= ordinal) {
             if (!moreParts)
                 throw new NoSuchPartException("This message does not have a part #" + ordinal +
-                                              "; there were only " + partInfos.size() + " parts");
+                                              "; there were only " + partInfos.size() + " parts", ordinal);
             stashCurrentPartBody();
             readNextPartHeaders();
         }
     }
 
     /**
-     * Read and stash all remaining parts until the end of the message is encountered.
+     * Read and stash all remaining parts until the end of the message is encountered, perhaps so that
+     * the main InputStream can be safely closed.
+     * <p>
+     * For a singlepart message, this just ensures that the body content has been read and stashed.
      *
      * @throws IOException if the main input stream could not be read or the info could not be stashed.
      * @throws IOException if the headers could not be read
      */
-    private void readAllParts() throws IOException {
-        if (boundary == null) throw new IllegalStateException("Not supported in single-part mode");
+    public void readAndStashEntireMessage() throws IOException {
+        checkErrorIO();
+
+        if (boundary == null) {
+            // singlepart
+            firstPart.getInputStream(false).close();
+            return;
+        }
+
+        // multipart
         while (moreParts) {
             stashCurrentPartBody();
             if (!moreParts)
@@ -446,19 +563,90 @@ public class MultipartMessage {
         return outerContentType;
     }
 
-    /** @return true if there might be more parts in the stream not yet reported by getNumPartsKnown */
+    /**
+     * Check if more parts might remain in the stream, in addition to the ones already reported by {@link #getNumPartsKnown}().
+     *
+     * @return true if there might be more parts in the stream not yet reported by {@link #getNumPartsKnown}().
+     */
     public boolean isMorePartsPossible() {
         return moreParts;
     }
 
+    /**
+     * @return the number of parts known to exist in this message.  Will always be greater than zero.
+     * <p>
+     *         Calling {@link #getPart}() with a number between zero (inclusive) and getNumPartsKnown() (exclusive)
+     *         is guaranteed to return a {@link PartInfo} without throwing.
+     * <p>
+     *         If {@link #isMorePartsPossible}() is true, calling {@link #getPart}() with the number getNumPartsKnown() will
+     *         return another {@link PartInfo} without throwing unless the input message is malformed.
+     */
     public int getNumPartsKnown() {
         return partInfos.size();
+    }
+
+    /**
+     * @return the first part of this message.  For multipart messages, this is the part right after the boundary
+     *         that ends the preamble.  For singlepart messages, this is the virtual part representing the
+     *         entire message body.
+     */
+    public PartInfo getFirstPart() {
+        return firstPart;
+    }
+
+    /**
+     * Check if this is a multipart message or not.  This should almost never be necessary.
+     *
+     * @return true if this message is multipart, or false if it is single-part
+     */
+    public boolean isMultipart() {
+        return boundary != null;
+    }
+
+    private void checkErrorIO() throws IOException {
+        if (errorCondition != null)
+            throw new CausedIOException(errorCondition.getMessage(), errorCondition);
+    }
+
+    private void checkErrorNoPart() throws NoSuchPartException {
+        if (errorCondition instanceof NoSuchPartException) {
+            NoSuchPartException e = (NoSuchPartException) errorCondition;
+            throw new NoSuchPartException(e.getMessage(), e.getCid(), e.getOrdinal(), e);
+        }
+
+        if (errorCondition != null)
+            throw new NoSuchPartException(errorCondition.getMessage(), errorCondition);
+    }
+
+    private void checkErrorBoth() throws IOException, NoSuchPartException {
+        if (errorCondition instanceof NoSuchPartException) {
+            NoSuchPartException e = (NoSuchPartException) errorCondition;
+            throw new NoSuchPartException(e.getMessage(), e.getCid(), e.getOrdinal(), e);
+        }
+
+        if (errorCondition != null)
+            throw new CausedIOException(errorCondition.getMessage(), errorCondition);
+    }
+
+    /**
+     * Free any resources being used by this MultipartMessage.  In particular this closes the StashManager.
+     * The behaviour of other MultipartMessage or PartInfo methods is undefined after close() has been called.
+     * <p>
+     * Note that this does *not* close the main InputStream.  This is in case the user wishes to parse
+     * more than one MultipartMessage out of the same InputStream.
+     * <p>
+     * TODO: to make multiple messages per stream actualyl work, the PushbackInputStream will need to be passed into
+     *       the MultipartMessage constructor instead of being created locally.
+     */
+    public void close() {
+        stashManager.close();
     }
 
     /** Our PartInfo implementation. */
     private class PartInfoImpl implements PartInfo {
         protected final int ordinal;
         protected final MimeHeaders headers;
+        private boolean validated = false;  // slightly painful design here
 
         private PartInfoImpl(int ordinal, MimeHeaders headers) {
             this.ordinal = ordinal;
@@ -473,10 +661,6 @@ public class MultipartMessage {
             return ordinal;
         }
 
-        public byte[] getContent() throws IOException {
-            throw new UnsupportedOperationException();
-        }
-
         /**
          * See if it will be possible to call getInputStream() on this PartInfo and get back a non-null InputStream.
          *
@@ -489,7 +673,7 @@ public class MultipartMessage {
                 if (stashManager.peek(ordinal))
                     return true;
             } catch (IOException e) {
-                logger.log(Level.FINE, "Unable to peek ordinal in StashManager; ignoring", e);
+                logger.log(Level.SEVERE, "Unable to peek ordinal in StashManager; ignoring", e);
             }
 
             // Guarantee: if this PartInfo exists, its headers have been read.
@@ -504,7 +688,25 @@ public class MultipartMessage {
             return true;
         }
 
+        public void replaceBody(byte[] newBody, ContentTypeHeader newContentType) throws IOException {
+            checkErrorIO();
+
+            if (stashManager.peek(ordinal))
+                stashManager.unstash(ordinal);
+
+            // Are we the current Part?
+            if (partInfos.size() == ordinal + 1 && moreParts)
+                HexUtils.copyStream(getInputStream(true), new NullOutputStream()); // Read and discard existing body
+
+            stashManager.stash(ordinal, newBody);
+            headers.replace(newContentType);
+            headers.replace(new MimeHeader(MimeUtil.CONTENT_LENGTH, Integer.toString(newBody.length), null));
+            return;
+        }
+
         public InputStream getInputStream(boolean destroyAsRead) throws IOException {
+            checkErrorIO();
+
             // See if we have one stashed already
             InputStream is = stashManager.recall(ordinal);
             if (is != null)
@@ -521,6 +723,19 @@ public class MultipartMessage {
             // Prepare to read this Part's body
             is = new MimeBoundaryTerminatedInputStream(boundary, mainInputStream, pushbackSize);
             ((MimeBoundaryTerminatedInputStream)is).setEndOfStreamHook(new Runnable() {
+                public void run() {
+                    try {
+                        readNextPartHeaders();
+                    } catch (IOException e) {
+                        // No way to report this error directly.  Remember it for next call
+                        errorCondition = e;
+                    } catch (NoSuchPartException e) {
+                        // No way to report this error directly.  Remember it for next call
+                        errorCondition = e;
+                    }
+                }
+            });
+            ((MimeBoundaryTerminatedInputStream)is).setFinalBoundaryHook(new Runnable() {
                 public void run() {
                     moreParts = false;
                 }
@@ -565,14 +780,12 @@ public class MultipartMessage {
             return headers.getContentId();
         }
 
-        // TODO do we need this?
         public boolean isValidated() {
-            throw new UnsupportedOperationException();
+            return validated;
         }
 
-        // TODO do we need this?
         public void setValidated(boolean validated) {
-            throw new UnsupportedOperationException();
+            this.validated = validated;
         }
     }
 }

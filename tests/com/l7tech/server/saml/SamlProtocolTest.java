@@ -126,7 +126,7 @@ public class SamlProtocolTest extends TestCase {
         SOAPMessage msg = msgFactory.createMessage(new MimeHeaders(), new ByteArrayInputStream(contents.getBytes()));
         SOAPPart soapPart = msg.getSOAPPart();
         //todo: find out why the below call fails
-//        SOAPFault fault = soapPart.getEnvelope().getBody().getFault();
+//        SOAPFault fault = soapPart.getEnvelope().getEntireMessageBody().getFault();
 //        assertTrue(fault != null);
     }
 

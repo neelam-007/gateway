@@ -11,19 +11,16 @@ import com.l7tech.common.util.CausedIOException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 
 /**
  * Encapsulates a collection of MimeHeaders, as might appear at the start of a MIME multipart body.
  */
 public class MimeHeaders {
     private final Map headers = new TreeMap(String.CASE_INSENSITIVE_ORDER);
-    public static final ContentTypeHeader DEFAULT_CONTENT_TYPE = new ContentTypeHeader("application",
-                                                                                       "octet-stream",
-                                                                                       Collections.EMPTY_MAP);
+    private final List headerOrder = new ArrayList();
+
+    private int serializedLength = -1;  // size in bytes of serialized form, or -1 if not currently known.
 
     MimeHeaders() {
     }
@@ -42,6 +39,28 @@ public class MimeHeaders {
         if (MimeUtil.CONTENT_TYPE.equalsIgnoreCase(name) && !(header instanceof ContentTypeHeader))
             throw new IllegalStateException("Content-Type header was not stored in ContentTypeHeader instance");
         headers.put(name, header);
+        headerOrder.add(header);
+        serializedLength = -1;
+    }
+
+    /**
+     * Replace a possibly-existing MIME header with the new header.
+     * @param header the header to add or replace
+     */
+    public void replace(MimeHeader header) {
+        final String name = header.getName();
+        headers.put(name, header);
+        boolean preexisting = false;
+        for (int i = 0; i < headerOrder.size(); ++i) {
+            MimeHeader h = (MimeHeader)headerOrder.get(i);
+            if (h.getName().equalsIgnoreCase(name)) {
+                headerOrder.set(i, header);
+                preexisting = true;
+            }
+        }
+        if (!preexisting)
+            headerOrder.add(header);
+        serializedLength = -1;
     }
 
     /**
@@ -63,7 +82,7 @@ public class MimeHeaders {
         MimeHeader ctype = get(MimeUtil.CONTENT_TYPE);
         if (ctype instanceof ContentTypeHeader)
             return (ContentTypeHeader)ctype;
-        return DEFAULT_CONTENT_TYPE;
+        return ContentTypeHeader.OCTET_STREAM_DEFAULT;
     }
 
     /** @return true if there is a Content-Length header. */
@@ -112,6 +131,20 @@ public class MimeHeaders {
         return headers.size();
     }
 
+    /** @return the size of the current serialized form of these headers, in bytes, including final CRLF. */
+    public int getSerializedLength() {
+        if (serializedLength >= 0)
+            return serializedLength;
+        int len = 0;
+        for (Iterator i = headerOrder.iterator(); i.hasNext();) {
+            MimeHeader header = (MimeHeader) i.next();
+            len += header.getSerializedLength();
+        }
+        len += MimeHeader.CRLF.length;
+        serializedLength = len;
+        return len;
+    }
+
     /**
      * @return the MIME headers re-encoded as a byte array.
      */
@@ -132,8 +165,8 @@ public class MimeHeaders {
      * @throws IOException if the underlying OutputStream cannot be written to.
      */
     public void write(OutputStream os) throws IOException {
-        for (Iterator i = headers.values().iterator(); i.hasNext();) {
-            MimeHeader h = (MimeHeader)i.next();
+        for (Iterator i = headerOrder.iterator(); i.hasNext();) {
+            MimeHeader h = (MimeHeader) i.next();
             h.write(os);
         }
         os.write(MimeHeader.CRLF);

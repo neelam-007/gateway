@@ -74,6 +74,27 @@ public class HybridStashManager implements StashManager {
         ramstash.stash(ordinal, baos.toByteArray());
     }
 
+    public void stash(int ordinal, byte[] in) throws IOException {
+        ramstash.unstash(ordinal);
+        size += in.length;
+
+        if (size  > limit) {
+            getFilestash().stash(ordinal, in);
+            return;
+        }
+
+        ramstash.stash(ordinal, in);
+    }
+
+    /**
+     * Unstash the specified ordinal.
+     * This does not affect the size limit -- once the limit is reached, file mode won't be turned off. 
+     */
+    public void unstash(int ordinal) {
+        ramstash.unstash(ordinal);
+        if (filestash != null) filestash.unstash(ordinal);
+    }
+
     public long getSize(int ordinal) {
         long s = ramstash.getSize(ordinal);
         if (s != -1) return s;

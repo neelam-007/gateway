@@ -16,6 +16,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
+import java.util.List;
+import java.util.ArrayList;
 import java.util.logging.Logger;
 
 /**
@@ -108,7 +110,7 @@ public class MultipartMessageTest extends TestCase {
         InputStream mess = new ByteArrayInputStream(message.getBytes());
         ContentTypeHeader mr = ContentTypeHeader.parseValue(contentTypeValue);
         StashManager sm = new ByteArrayStashManager();
-        MultipartMessage mm = MultipartMessage.createMultipartMessage(sm, mr, mess);
+        MultipartMessage mm = new MultipartMessage(sm, mr, mess);
         return mm;
     }
 
@@ -142,6 +144,13 @@ public class MultipartMessageTest extends TestCase {
         int bodyStart = bodyStr.indexOf("<?xml ");
 
         assertEquals(MESS.substring(MESS.indexOf("<?xml ")), bodyStr.substring(bodyStart));
+
+        try {
+            mm.getEntireMessageBodyLength();
+            fail("Failed to get expected exception trying to compute body length with part bodies missing");
+        } catch (NoSuchPartException e) {
+            log.info("Got expected exception: " + e.getMessage());
+        }
     }
 
     public void testStreamAllConsumedRubyPart() throws Exception {
@@ -151,9 +160,9 @@ public class MultipartMessageTest extends TestCase {
         HexUtils.slurpStream(mm.getPart(1).getInputStream(true));
 
         try {
-            InputStream bodyStream = mm.getEntireMessageBodyAsInputStream(true);
+            mm.getEntireMessageBodyAsInputStream(true);
             fail("Failed to get expected exception when trying to stream all after destructively reading 1 part");
-        } catch (IOException e) {
+        } catch (NoSuchPartException e) {
             log.info("Got expected exception: " + e.getMessage());
         }
     }
@@ -166,10 +175,11 @@ public class MultipartMessageTest extends TestCase {
         InputStream bodyStream = mm.getEntireMessageBodyAsInputStream(true);
         byte[] body = HexUtils.slurpStream(bodyStream);
         final String bodyStr = new String(body);
+        assertEquals(body.length, mm.getEntireMessageBodyLength());
         int bodyStart = bodyStr.indexOf("<?xml ");
 
-        // TODO less senstivie comparision that will not give false negative here (due to reordered headers)
-        //assertEquals(MESS.substring(MESS.indexOf("<?xml ")), bodyStr.substring(bodyStart));
+        // TODO less sensitive comparision that will not give false negative here (due to reordered headers)
+        assertEquals(MESS.substring(MESS.indexOf("<?xml ")), bodyStr.substring(bodyStart));
     }
 
     public void testStreamAllWithFirstPartStashed() throws Exception {
@@ -182,22 +192,21 @@ public class MultipartMessageTest extends TestCase {
         final String bodyStr = new String(body);
         int bodyStart = bodyStr.indexOf("<?xml ");
 
+        // TODO less sensitive comparision that will not give false negative here (due to reordered headers)
         assertEquals(MESS.substring(MESS.indexOf("<?xml ")), bodyStr.substring(bodyStart));
     }
 
     public void testLookupsByCid() throws Exception {
         MultipartMessage mm = makeMessage(MESS, CT);
-        final String soapCid = "-76394136.15558";
-        final String rubyCid = "-76392836.15558";
 
-        PartInfo rubyPart = mm.getPartByContentId(rubyCid);
+        PartInfo rubyPart = mm.getPartByContentId(MESS_RUBYCID);
         InputStream rubyStream = rubyPart.getInputStream(true);
         ByteArrayOutputStream bo = new ByteArrayOutputStream();
         HexUtils.copyStream(rubyStream, bo);
         assertTrue(Arrays.equals(RUBY.getBytes(), bo.toByteArray()));
         log.info("Ruby part retrieved " + bo.toByteArray().length + " bytes: \n" + new String(bo.toByteArray()));
 
-        PartInfo soapPart = mm.getPartByContentId(soapCid);
+        PartInfo soapPart = mm.getPartByContentId(MESS_SOAPCID);
         InputStream soapStream = soapPart.getInputStream(true);
         bo = new ByteArrayOutputStream();
         HexUtils.copyStream(soapStream, bo);
@@ -222,6 +231,40 @@ public class MultipartMessageTest extends TestCase {
         }
     }
 
+    public void testByteArrayCtorNullByteArray() {
+        try {
+            new MultipartMessage(null, ContentTypeHeader.XML_DEFAULT);
+            fail("Did not get a fast-failure exception passing null byte array to MultipartMessage(byte[], ctype)");
+        } catch (NullPointerException e) {
+            // This is acceptable
+        } catch (IllegalArgumentException e) {
+            // So is this
+        } catch (NoSuchPartException e) {
+            throw new RuntimeException("Wrong exception", e);
+        } catch (IOException e) {
+            throw new RuntimeException("Wrong exception", e);
+        }
+    }
+
+    public void testIterator() throws Exception {
+        MultipartMessage mm = makeMessage(MESS, CT);
+
+        List parts = new ArrayList();
+        for (PartIterator i = mm.iterator(); i.hasNext(); ) {
+            PartInfo partInfo = i.next();
+            parts.add(partInfo);
+            log.info("Saw part: " + partInfo.getContentId());
+            // Force body to be stashed
+            partInfo.getInputStream(false).close();
+        }
+
+        assertEquals(2, parts.size());
+        assertEquals(MESS_SOAPCID, ((PartInfo)parts.get(0)).getContentId());
+        assertEquals(MESS_RUBYCID, ((PartInfo)parts.get(1)).getContentId());
+    }
+
+    private final String MESS_SOAPCID = "-76394136.15558";
+    private final String MESS_RUBYCID = "-76392836.15558";
     public static final String CT = "multipart/related; type=\"text/xml\"; boundary=\"----=Part_-763936460.407197826076299\"; start=\"-76394136.15558\"";
     public static final String SOAP = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
             "<env:Envelope xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"\n" +
@@ -269,7 +312,7 @@ public class MultipartMessageTest extends TestCase {
             "\r\n" +
              RUBY +
             "\r\n" +
-            "------=Part_-763936460.407197826076299--";
+            "------=Part_-763936460.407197826076299--\r\n";
 
     public static final String CT2 = "multipart/related; type=\"text/xml\"; boundary=\"----=Part_-763936460.00306951464153826\"; start=\"-76394136.13454\"";
     public static final String MESS2 = "------=Part_-763936460.00306951464153826\r\n" +

@@ -101,7 +101,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 status = MessageProcessor.getInstance().processMessage(sreq, sresp);
 
                 sresp.setHeadersIn(hresponse, sresp, status);
-                String protRespXml = sresp.getResponseXml();
+                String protRespXml = sresp.getXml();
 
                 if (status == AssertionStatus.NONE) {
                     logger.fine("servlet transport returning 200");
@@ -114,32 +114,9 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                             hresponse.setContentType(ctype);
                         }
 
-                        if(sresp.isMultipart()) {
-                            StringBuffer sb = new StringBuffer();
-
-                            // add modified SOAP part
-                            MimeUtil.addModifiedSoapPart(sb,
-                                    protRespXml,
-                                    sresp.getSoapPart(),
-                                    sresp.getMultipartBoundary());
-
-                            // add all Attachments
-                            PushbackInputStream pbis = sresp.getMultipartReader().getPushbackInputStream();
-
-                            // push the modified SOAP part back to the input stream
-                            pbis.unread(sb.toString().getBytes());
-
-                            byte[] buf = new byte[1024];
-                            int read;
-
-                            while ((read = pbis.read(buf, 0, buf.length)) > 0) {
-                                os.write(buf, 0, read);
-                            }
-
-                        } else {
-                            respWriter = new BufferedWriter(new OutputStreamWriter(os, ENCODING));
-                            respWriter.write(protRespXml);
-                        }
+                        // TODO verify proper behaviour of attachments here
+                        respWriter = new BufferedWriter(new OutputStreamWriter(os, ENCODING));
+                        respWriter.write(protRespXml);
                     }
                 } else if (sresp.isAuthenticationMissing() || status.isAuthProblem()) {
                     logger.fine("servlet transport returning challenge");

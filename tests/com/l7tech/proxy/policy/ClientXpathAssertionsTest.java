@@ -12,6 +12,7 @@ import junit.framework.TestSuite;
 
 import java.util.logging.Logger;
 import java.util.Map;
+import java.io.IOException;
 
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
@@ -23,6 +24,10 @@ import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.mime.MultipartMessage;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.policy.assertion.*;
 import org.w3c.dom.Document;
 
@@ -50,15 +55,15 @@ public class ClientXpathAssertionsTest extends TestCase {
         RequestInterceptor ri = NullRequestInterceptor.INSTANCE;
         Document emptyDoc = XmlUtil.stringToDocument(
                 "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\"/>");
-        PendingRequest emptyReq = new PendingRequest(emptyDoc, ssg, ri, null);
+        PendingRequest emptyReq = new PendingRequest(ssg, null, null, emptyDoc, ri, null, null);
 
         // build simulated placeOrder response (we'll fake it with the request XML though)
         Document placeorderDoc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
-        SsgResponse placeorderRes = new SsgResponse(placeorderDoc, null, 200, null, null);
+        SsgResponse placeorderRes = new SsgResponse(makemm(placeorderDoc), placeorderDoc, null, 200, null);
 
         // build simulated getQuote response (we'll faek it with the request XML though)
         Document getquoteDoc = TestDocuments.getTestDocument(TestDocuments.ETTK_SIGNED_REQUEST);
-        SsgResponse getquoteRes = new SsgResponse(getquoteDoc, null, 200, null, null);
+        SsgResponse getquoteRes = new SsgResponse(makemm(placeorderDoc), getquoteDoc, null, 200, null);
 
         // build xpath assertion that matches placeorder, with a namespace prefix
         Map placeorderNsmap = XpathBasedAssertion.createDefaultNamespaceMap();
@@ -100,17 +105,28 @@ public class ClientXpathAssertionsTest extends TestCase {
         }
     }
 
+    private MultipartMessage makemm(Document placeorderDoc) {
+        try {
+            return new MultipartMessage(XmlUtil.nodeToString(placeorderDoc).getBytes("UTF-8"),
+                                        ContentTypeHeader.XML_DEFAULT);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (NoSuchPartException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void testClientRequestXpathAssertion() throws Exception {
         Ssg ssg = new Ssg(1);
         RequestInterceptor ri = NullRequestInterceptor.INSTANCE;
 
         // build simulated placeOrder request
         Document placeorderDoc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
-        PendingRequest placeorderReq = new PendingRequest(placeorderDoc, ssg, ri, null);
+        PendingRequest placeorderReq = new PendingRequest(ssg, null, null, placeorderDoc, ri, null, null);
 
         // build simulated getQuote request
         Document getquoteDoc = TestDocuments.getTestDocument(TestDocuments.ETTK_SIGNED_REQUEST);
-        PendingRequest getquoteReq = new PendingRequest(getquoteDoc, ssg, ri, null);
+        PendingRequest getquoteReq = new PendingRequest(ssg, null, null, getquoteDoc, ri, null, null);
 
         // build xpath assertion that matches placeorder, with a namespace prefix
         Map placeorderNsmap = XpathBasedAssertion.createDefaultNamespaceMap();

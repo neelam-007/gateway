@@ -46,10 +46,10 @@ class MimeBoundaryTerminatedInputStream extends FilterInputStream {
      */
     private boolean lastPartProcessed = false;
 
-    /**
-     * If one of these is set, it will be notified when the stream ends.
-     */
+    /** Hook invoked when current part ends. */
     private Runnable endOfStreamHook = null;
+
+    private Runnable finalBoundaryHook = null;
 
     /**
      * Creates a filtered InputStream that will read the specified PushbackInputStream and pass through the results
@@ -241,7 +241,9 @@ class MimeBoundaryTerminatedInputStream extends FilterInputStream {
                     sawonedash = false;
             }
         }
-        if (lastPartProcessed && endOfStreamHook != null)
+        if (lastPartProcessed && finalBoundaryHook != null)
+            finalBoundaryHook.run();
+        else if (endOfStreamHook != null)
             endOfStreamHook.run();
     }
 
@@ -282,7 +284,31 @@ class MimeBoundaryTerminatedInputStream extends FilterInputStream {
         return lastPartProcessed;
     }
 
+    /**
+     * If one of these is set, it will be notified when the stream ends after encountering the multipart
+     * boundary at the end of the current part.
+     * <p>
+     * At this point the main InputStream will be left pointing to the next byte just beyond the boundary's
+     * CRLF; or equivalently, according to MIME, pointing at the first byte of the next part's MIME headers.
+     * <p>
+     * @param endOfStreamHook a callback hook that will be invoked when the current part ends.
+     */
     public void setEndOfStreamHook(Runnable endOfStreamHook) {
         this.endOfStreamHook = endOfStreamHook;
+    }
+
+    /**
+     * If one of these is set, it will be notified (<i>INSTEAD</i> of the endOfStreamHook, if any) when the stream
+     * ends after seeing the final boundary, with the terminating "--" suffix indicating the end of the final Part in
+     * the multipart message.
+     * <p>
+     * At this point the main InputStream will be left pointing at the next byte just beyond the final delimiter's
+     * CRLF, or at EOF if there was nothing after the final CRLF.
+     * <p>
+     * @param finalBoundaryHook a callback hook that will be invoked when the current part ends if the
+     *                          current part turns out to be the last part in the multipart message.
+     */
+    public void setFinalBoundaryHook(Runnable finalBoundaryHook) {
+        this.finalBoundaryHook = finalBoundaryHook;
     }
 }

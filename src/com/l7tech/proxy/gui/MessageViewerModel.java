@@ -13,6 +13,9 @@ import javax.swing.*;
 import javax.swing.tree.TreeModel;
 import java.awt.*;
 import java.io.IOException;
+import java.io.PrintStream;
+import java.io.ByteArrayOutputStream;
+import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -240,7 +243,7 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
      */
     public void onReceiveMessage(PendingRequest request) {
         appendMessage(new SavedXmlMessage("From Client",
-                                          request.getUndecoratedDocument(),
+                                          request.getOriginalDocument(),
                                           request.getHeaders()));
     }
 
@@ -250,11 +253,9 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
      * @param reply
      */
     public void onReceiveReply(SsgResponse reply) {
-        Object r = reply.getResponseFast();
-        if (r instanceof Document)
-            appendMessage(new SavedXmlMessage("From Server", (Document) r, reply.getResponseHeaders()));
-        else
-            appendMessage(new SavedXmlMessage("From Server", r.toString(), reply.getResponseHeaders()));
+        Object r = reply.getOriginalDocument();
+        if (r instanceof Document) appendMessage(new SavedXmlMessage("From Server", (Document) r, reply.getHeaders()));
+        else appendMessage(new SavedXmlMessage("From Server", r.toString(), reply.getHeaders()));
     }
 
     /**
@@ -262,7 +263,16 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
      * @param t The error that occurred during the request.
      */
     public void onMessageError(final Throwable t) {
-        appendMessage(new SavedTextMessage("Client Error", t.getMessage()));
+        try {
+            final ByteArrayOutputStream b = new ByteArrayOutputStream(2048);
+            PrintStream p = new PrintStream(b, true, "UTF-8");
+            t.printStackTrace(p);
+            p.flush();
+            appendMessage(new SavedTextMessage("Client Error", b.toString("UTF-8")));
+        } catch (UnsupportedEncodingException e) {
+            log.log(Level.SEVERE, e.getMessage(), e);
+            appendMessage(new SavedTextMessage("Client Error", t.getMessage()));
+        }
     }
 
     /**
@@ -270,7 +280,16 @@ class MessageViewerModel extends AbstractListModel implements RequestInterceptor
      * @param t The error that occurred during the request.
      */
     public void onReplyError(final Throwable t) {
-        appendMessage(new SavedTextMessage("Server Error", t.getMessage()));
+        try {
+            final ByteArrayOutputStream b = new ByteArrayOutputStream(2048);
+            PrintStream p = new PrintStream(b, true, "UTF-8");
+            t.printStackTrace(p);
+            p.flush();
+            appendMessage(new SavedTextMessage("Server Error", b.toString("UTF-8")));
+        } catch (UnsupportedEncodingException e) {
+            log.log(Level.SEVERE, e.getMessage(), e);
+            appendMessage(new SavedTextMessage("Server Error", t.getMessage()));
+        }
     }
 
     /**

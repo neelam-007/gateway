@@ -1,7 +1,8 @@
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.common.mime.MimeUtil;
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.mime.PartInfo;
+import com.l7tech.common.mime.PartIterator;
 import com.l7tech.common.wsdl.BindingInfo;
 import com.l7tech.common.wsdl.BindingOperationInfo;
 import com.l7tech.common.wsdl.MimePartInfo;
@@ -12,7 +13,6 @@ import com.l7tech.message.XmlRequest;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RequestSwAAssertion;
-import com.l7tech.server.attachments.ServerMultipartMessageReader;
 import org.jaxen.JaxenException;
 import org.jaxen.dom.DOMXPath;
 import org.w3c.dom.Attr;
@@ -69,7 +69,6 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
         XmlRequest xreq = (XmlRequest)request;
         boolean assertionStatusOK = true;
         boolean operationElementFound = false;
-        ServerMultipartMessageReader multipartReader = null;
 
         if (!isSoap(request)) {
             logger.finest("The operation specified in the request is invalid.");
@@ -196,15 +195,11 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                             String mimePartCID = href.getValue();
                             logger.fine("The href of the parameter " + part.getName() + " is found in the request, value=" + mimePartCID);
 
-
-                            multipartReader = xreq.getMultipartReader();
-
-                            if (multipartReader == null) throw new IllegalStateException("ServerMultipartMessageReader must be created first before use");
-                            PartInfo mimepartRequest = multipartReader.getMessagePart(mimePartCID);
+                            PartInfo mimepartRequest = request.getPartByContentId(mimePartCID);
 
                             if (mimepartRequest != null) {
                                 // validate the content type
-                                if (!part.validateContentType(mimepartRequest.getHeader(MimeUtil.CONTENT_TYPE).getValue())) {
+                                if (!part.validateContentType(mimepartRequest.getContentType())) {
                                     if (part.getContentTypes().length > 1) {
                                         logger.info("The content type of the attachment " + mimePartCID + " must be one of the types: " + part.retrieveAllContentTypes());
                                     } else {
@@ -236,17 +231,17 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                     } // for each input parameter
 
                     // also check if there is any unexpected attachments in the request
-                    if (xreq.getMultipartReader().hasNextMessagePart()) {
+                    if (xreq.isAdditionalUnreadPartsPossible()) {
                         logger.info("Unexpected attachment(s) found in the request.");
                         return AssertionStatus.FALSIFIED;
                     } else {
 
-                        // check if all parsed attachments in the request are validated
-                        Map attachments = xreq.getMultipartReader().getMessageAttachments();
-                        Iterator attItr = attachments.keySet().iterator();
-                        while (attItr.hasNext()) {
-                            String attachmentName = (String)attItr.next();
-                            PartInfo attachment = (PartInfo)attachments.get(attachmentName);
+                        PartIterator pi = xreq.getParts();
+                        while (pi.hasNext()) {
+                            PartInfo attachment =  pi.next();
+                            String attachmentName = attachment.getContentId();
+                            if (attachmentName == null || attachmentName.length() < 1)
+                                attachmentName = "in position #" + attachment.getPosition();
                             if (!attachment.isValidated()) {
                                 logger.info("Unexpected attachment " + attachmentName + " found in the request.");
                                 return AssertionStatus.FALSIFIED;
@@ -267,6 +262,9 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
         } catch (JaxenException e) {
             logger.log(Level.WARNING, "Caught JaxenException when retrieving xml document from request", e);
             return AssertionStatus.SERVER_ERROR;
+        } catch (NoSuchPartException e) {
+            logger.info("The required attachment " + e.getWhatWasMissing() + "was not found in the request");
+            return AssertionStatus.FALSIFIED;
         }
 
         if (!operationElementFound) {

@@ -64,7 +64,7 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
      */
     public synchronized Document getDocument() throws SAXException, IOException {
         if ( _document == null ) {
-            String xml = getRequestXml();
+            String xml = getXml();
             if ( xml == null ) {
                 throw new NoDocumentPresentException();
             } else {
@@ -75,10 +75,10 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
     }
 
     public XmlPullParser getPullParser() throws IOException, XmlPullParserException {
-        return pullParser( getRequestXml() );
+        return pullParser( getXml() );
     }
 
-    public String getRequestXml() throws IOException {
+    public String getXml() throws IOException {
         if (_requestXml == null && _document != null) {
             // serialize the document
             _requestXml = XmlUtil.nodeToString(_document);
@@ -89,7 +89,7 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
         return _requestXml;
     }
 
-    public void setRequestXml( String xml ) {
+    public void setXml( String xml ) {
         if (xml == null) throw new IllegalArgumentException("Can't set null XML");
         _requestXml = xml;
         _document = null;

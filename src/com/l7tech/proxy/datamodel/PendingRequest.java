@@ -6,12 +6,13 @@
 
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.common.mime.MultipartMessage;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
+import com.l7tech.proxy.NullRequestInterceptor;
 import com.l7tech.proxy.RequestInterceptor;
-import com.l7tech.proxy.attachments.ClientMultipartMessageReader;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.util.TokenServiceClient;
 import org.w3c.dom.Document;
@@ -22,7 +23,10 @@ import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
-import java.util.*;
+import java.util.Calendar;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.TimeZone;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,35 +36,28 @@ import java.util.logging.Logger;
  * Date: Jun 16, 2003
  * Time: 12:04:09 PM
  */
-public class PendingRequest {
+public class PendingRequest extends ClientXmlMessage {
     private static final Logger log = Logger.getLogger(PendingRequest.class.getName());
     private static final TimeZone UTC_TIME_ZONE = TimeZone.getTimeZone("UTC");
     private static final int SAML_PREEXPIRE_SEC = 30;
     private static final int WSSC_PREEXPIRE_SEC = 30;
 
-    //private ClientProxy clientProxy;
     private final CredentialManager credentialManager = Managers.getCredentialManager();
-    private final Document undecoratedDocument;
     private final Ssg ssg;
     private final RequestInterceptor requestInterceptor;
     private final PolicyAttachmentKey policyAttachmentKey;
     private final URL originalUrl;
-    private final boolean isSoapRequest;
     private SsgResponse lastErrorResponse = null; // Last response received from SSG in the case of 401 or 500 status
     private boolean isPolicyUpdated = false;
     private Long nonce = null; // nonce.  set on-demand, and only set once
-    private HttpHeaders headers = null;
     private PasswordAuthentication pw = null;
     private ClientSidePolicy clientSidePolicy = ClientSidePolicy.getPolicy();
     private String secureConversationId = null;
     private byte[] secureConversationSharedSecret = null;
     private SamlHolderOfKeyAssertion samlHolderOfKeyAssertion = null;
     private Calendar secureConversationExpiryDate = null;
-    private boolean multipart = false;
-    private ClientMultipartMessageReader multipartReader = null;
-    private Collection cleanupRunnables = new ArrayList();
 
-    // Policy settings, filled in by traversing policy tree
+    // Policy settings, filled in by traversing policy tree, and which can all be rolled back by reset()
     private static class PolicySettings {
         private Document decoratedDocument = null;
         private Policy activePolicy = null; // the policy that we most recently started applying to this request, if any
@@ -78,38 +75,51 @@ public class PendingRequest {
     /**
      * Construct a PendingRequest around the given SOAPEnvelope going to the given SSG.
      *
-     * @deprecated this constructor is for legacy unit tests only; it does not make a proper origUrl
+     * @param ssg                the Ssg to which this request is destined.  Must not be null.
+     * @param headers            HTTP headers for logging purposes, or null if there weren't any.
+     * @param multipartMessage   MultipartMessage instance that is managing the InputStream, or null.
+     *                           If no MultipartMessage is provided, one will be made up by serializing the document
+     *                           and treating it as a single-part message of type text/xml.
+     * @param originalDocument   The undecorated XML document in the message.  Must not be null.
+     * @param requestInterceptor a RequestInterceptor that wishes to be notified about policy updates, or null.
+     * @param policyAttachmentKey the soapaction, namespace, and uri that apply to this request, or null
+     * @param origUrl            the reconstructed local URL from which this request arrived, or null
+     * @throws IOException       if originalDocument needs to be serialized, but cannot be, due to some
+     *                           canonicalizer problem (relative namespaces, maybe)
      */
-    public PendingRequest(Document soapEnvelope, Ssg ssg, RequestInterceptor requestInterceptor, PolicyAttachmentKey policyAttachmentKey) {
-        this.undecoratedDocument = soapEnvelope;
+    public PendingRequest(Ssg ssg, HttpHeaders headers, MultipartMessage multipartMessage, Document originalDocument,
+                          RequestInterceptor requestInterceptor, PolicyAttachmentKey policyAttachmentKey, URL origUrl)
+            throws IOException
+    {
+        super(multipartMessage, originalDocument, headers);
+        if (ssg == null) throw new NullPointerException("ssg is null");
+        if (requestInterceptor == null)
+            requestInterceptor = NullRequestInterceptor.INSTANCE;
+        if (origUrl == null)
+            origUrl = makeFakeOriginalUrl();
+        if (policyAttachmentKey == null)
+            policyAttachmentKey = new PolicyAttachmentKey(null, null, null);
+        this.originalUrl = origUrl;
         this.ssg = ssg;
         this.requestInterceptor = requestInterceptor;
+        this.policyAttachmentKey = policyAttachmentKey;
+    }
+
+    private URL makeFakeOriginalUrl() {
+        URL origUrl;
         try {
-            this.originalUrl = new URL("http://localhost/");
+           origUrl = new URL("http://localhost:7700/nourl");
         } catch (MalformedURLException e) {
             throw new RuntimeException(e); // can't happen
         }
-        this.headers = null;
-        this.policyAttachmentKey = policyAttachmentKey != null ? policyAttachmentKey : new PolicyAttachmentKey(null, null, null);
-        this.isSoapRequest = soapEnvelope == null ? false : SoapUtil.isSoapMessage(soapEnvelope);
-    }
-
-    public PendingRequest(Document soapEnvelope, Ssg ssg, RequestInterceptor ri, PolicyAttachmentKey policyAttachmentKey, URL origUrl, HttpHeaders headers) {
-        this.undecoratedDocument = soapEnvelope;
-        this.ssg = ssg;
-        this.requestInterceptor = ri;
-        this.headers = headers;
-        if (origUrl == null)
-            throw new IllegalArgumentException("An original URL must be provided.");
-        this.originalUrl = origUrl;
-        this.policyAttachmentKey = policyAttachmentKey != null ? policyAttachmentKey : new PolicyAttachmentKey(null, null, null);
-        this.isSoapRequest = soapEnvelope == null ? false : SoapUtil.isSoapMessage(soapEnvelope);
+        return origUrl;
     }
 
     /**
      * Reset all policy settings in preperation for starting processing over again with a different policy.
      */
     public void reset() {
+        invalidateFirstBodyPart();
         policySettings = new PolicySettings();
     }
 
@@ -235,40 +245,14 @@ public class PendingRequest {
      * @return A copy of the SOAP envelope Document, which may be freely modified.
      */
     public Document getDecoratedDocument() {
+        invalidateFirstBodyPart();
         if (policySettings.decoratedDocument != null)
             return policySettings.decoratedDocument;
-        return policySettings.decoratedDocument = (Document)undecoratedDocument.cloneNode(true);
-    }
-
-    /**
-     * Get the actual Document representing the request, which should not be modified.  Any change
-     * to this Document will prevent the reset() method from returning this PendingRequest to
-     * its original state.  If you need to change the Document, use getDecoratedDocument() instead.
-     *
-     * @return A reference to the original SOAP envelope Document, which must not be modified in any way.
-     */
-    public Document getUndecoratedDocument() {
-        return undecoratedDocument;
+        return policySettings.decoratedDocument = (Document)getOriginalDocument().cloneNode(true);
     }
 
     public Ssg getSsg() {
         return ssg;
-    }
-
-    public boolean isMultipart() {
-        return multipart;
-    }
-
-    public void setMultipart(boolean multipart) {
-        this.multipart = multipart;
-    }
-
-    public ClientMultipartMessageReader getMultipartReader() {
-        return multipartReader;
-    }
-
-    public void setMultipartReader(ClientMultipartMessageReader multipartReader) {
-        this.multipartReader = multipartReader;
     }
 
     public RequestInterceptor getRequestInterceptor() {
@@ -334,10 +318,6 @@ public class PendingRequest {
         return this.policySettings.sslForbidden;
     }
 
-    public HttpHeaders getHeaders() {
-        return headers;
-    }
-
     public ClientSidePolicy getClientSidePolicy() {
         return clientSidePolicy;
     }
@@ -380,7 +360,7 @@ public class PendingRequest {
      */
     public void prepareWsaMessageId() throws InvalidDocumentFormatException {
         if (getL7aMessageId() == null) {
-            String id = SoapUtil.getL7aMessageId(getUndecoratedDocument());
+            String id = SoapUtil.getL7aMessageId(getOriginalDocument());
 
             if (id == null) {
                 id = SoapUtil.generateUniqeUri();
@@ -595,43 +575,4 @@ public class PendingRequest {
         return samlHolderOfKeyAssertion;
     }
 
-    public boolean isSoapRequest() {
-        return isSoapRequest;
-    }
-
-    /**
-     * Close the request and run the cleanup runnables.
-     */
-    public void close() {
-        for (Iterator iterator = cleanupRunnables.iterator(); iterator.hasNext();) {
-            Runnable runnable = (Runnable)iterator.next();
-            try {
-                runnable.run();
-            } catch (Exception e) {
-                log.log(Level.WARNING, "exception during post request cleanup", e);
-            }
-        }
-    }
-
-    /**
-     * Register a <code>Runnable</code> that will run after the request
-     * has been completely, processed, just before returning the thread
-     * to the Jetty.
-     * If Runnable throws it will be logged and ignored
-     *
-     * @param r the runnable
-     */
-    public void addCleanupRunnable(Runnable r) {
-        cleanupRunnables.add(r);
-    }
-
-    /**
-     * Unregister a cleanup runnable
-     *
-     * @param r the runnable
-     * @see PendingRequest#addCleanupRunnable(Runnable)
-     */
-    public void removeCleanupRunnable(Runnable r) {
-        cleanupRunnables.remove(r);
-    }
 }

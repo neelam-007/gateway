@@ -11,7 +11,9 @@ import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.proxy.attachments.ClientMultipartMessageReader;
+import com.l7tech.common.mime.MultipartMessage;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.NoSuchPartException;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.w3c.dom.Document;
@@ -28,17 +30,13 @@ import java.util.logging.Logger;
  * Date: Aug 15, 2003
  * Time: 9:48:45 AM
  */
-public class SsgResponse {
+public class SsgResponse extends ClientXmlMessage {
     private static final Logger log = Logger.getLogger(SsgResponse.class.getName());
-    final private Document responseDoc;
-    final private HttpHeaders headers;
     final private int httpStatus;
     final private ProcessorResult processorResult;
     private String responseString = null;
-    private ClientMultipartMessageReader multipartReader;
     private PostMethod downstreamPostMethod = null;
 
-    private transient Boolean isSoap = null;
     private transient Boolean isFault = null;
 
     // Fields that are only meaningful if this is a fault
@@ -47,22 +45,27 @@ public class SsgResponse {
     private transient Element faultdetail = null;
     private transient String faultactor = null;
 
-    public SsgResponse(Document wssProcessedResponse, ProcessorResult wssProcessorResult,
-                       int httpStatus, HttpHeaders headers, ClientMultipartMessageReader multipartReader)
+    /**
+     * Create a new SsgResponse object with the specified values.
+     *
+     * @param multipartMessage      a MultipartMessage managing any extra multipart parts that may have accompanied this response.
+     *                              May not be null.
+     * @param wssProcessedResponse  the response document, already processed by the WssProcessor if applicable.  May not be null.
+     * @param wssProcessorResult    the result of running the response through the WssProcessor, or null if this wasn't done.
+     * @param httpStatus            the HTTP result code of the response (ie, 500)
+     * @param headers               the HTTP headers that came with the response, for logging purposes, or null.
+     * @throws IOException          if originalDocument needs to be serialized, but cannot be, due to some
+     *                              canonicalizer problem (relative namespaces, maybe)
+     */
+    public SsgResponse(MultipartMessage multipartMessage, Document wssProcessedResponse, ProcessorResult wssProcessorResult,
+                       int httpStatus, HttpHeaders headers)
+            throws IOException
     {
-        if (wssProcessedResponse == null) throw new IllegalArgumentException("response document must be non-null");
-        this.responseDoc = wssProcessedResponse;
+        super(multipartMessage, wssProcessedResponse, headers);
+        if (multipartMessage == null) throw new NullPointerException("multipartMessage must be non-null");
+        if (wssProcessedResponse == null) throw new NullPointerException("wssProcessedResponse must be non-null");
         this.httpStatus = httpStatus;
-        this.headers = headers;
         this.processorResult = wssProcessorResult;
-        this.multipartReader = multipartReader;
-    }
-
-    /** @return true if this SSG response appears to be a SOAP message. */
-    public boolean isSoap() {
-        if (isSoap == null)
-            isSoap = Boolean.valueOf(SoapUtil.isSoapMessage(responseDoc));
-        return isSoap.booleanValue();
     }
 
     /** @return true if this SSG response appears to be a SOAP fault. */
@@ -72,8 +75,10 @@ public class SsgResponse {
                 isFault = Boolean.FALSE;
             } else {
                 try {
-                    Element payload = SoapUtil.getPayloadElement(responseDoc);
-                    if (payload != null && "Fault".equals(payload.getLocalName()) && payload.getNamespaceURI().equals(responseDoc.getDocumentElement().getNamespaceURI())) {
+                    Element payload = SoapUtil.getPayloadElement(getOriginalDocument());
+                    if (payload != null && "Fault".equals(payload.getLocalName()) &&
+                        payload.getNamespaceURI().equals(getOriginalDocument().getDocumentElement().getNamespaceURI()))
+                    {
                         Element faultcodeEl = XmlUtil.findFirstChildElementByName(payload, (String)null, "faultcode");
                         if (faultcodeEl != null)
                             faultcode = XmlUtil.getTextValue(faultcodeEl);
@@ -116,10 +121,26 @@ public class SsgResponse {
         return faultdetail;
     }
 
-    public PostMethod getDownstreamPostMethod() {
-        return downstreamPostMethod;
+    /**
+     * Check if a PostMethod will be released by this SsgResponse when it is closed.
+     *
+     * @return true iff. this SsgResponse is holding a PostMethod that will be released on {@link #close}.
+     */
+    public boolean isDownstreamPostMethod() {
+        return downstreamPostMethod != null;
     }
 
+    /**
+     * Transfer ownership of a PostMethod to this SsgResponse so it will be closed when the response is
+     * finished being processed.
+     * <p>
+     * If the reponse is being streamed from a live InputStream from a PostMethod, the PostMethod
+     * cannot safely be released until the response has been fully streamed.  In this situation, call this
+     * method to transfer ownership of the PostMethod to this SsgResponse.  Then, the PostMethod will be
+     * released when this response is closed, after being processed.
+     *
+     * @param downstreamPostMethod a PostMethod to release on close, or null to avoid doing so.
+     */
     public void setDownstreamPostMethod(PostMethod downstreamPostMethod) {
         this.downstreamPostMethod = downstreamPostMethod;
     }
@@ -131,10 +152,16 @@ public class SsgResponse {
                                                                         null,
                                                                         faultActor);
             HttpHeaders headers = new HttpHeaders(new Header[0]);
-            return new SsgResponse(XmlUtil.stringToDocument(responseString), null, 500, headers, null);
+            final Document soapEnvelope = XmlUtil.stringToDocument(responseString);
+            final byte[] xmlBytes = XmlUtil.nodeToString(soapEnvelope).getBytes();
+            final MultipartMessage multipartMessage = new MultipartMessage(xmlBytes, ContentTypeHeader.XML_DEFAULT);
+            return new SsgResponse(multipartMessage,
+                                   soapEnvelope, null, 500, headers);
         } catch (IOException e) {
             throw new RuntimeException(e); // can't happen
         }  catch (SAXException e) {
+            throw new RuntimeException(e); // can't happen
+        } catch (NoSuchPartException e) {
             throw new RuntimeException(e); // can't happen
         }
     }
@@ -143,33 +170,9 @@ public class SsgResponse {
         return this.httpStatus;
     }
 
-    public ClientMultipartMessageReader getMultipartReader() {
-        return multipartReader;
-    }
-
     public String getResponseAsString() throws IOException {
         if (responseString != null) return responseString;
-        return responseString = XmlUtil.nodeToString(responseDoc);
-    }
-
-    public Document getResponseAsDocument() throws IOException, SAXException {
-        return responseDoc;
-    }
-
-    /**
-     * Returns the response as a Document, if one is already available, or as a String otherwise.  Use
-     * to avoid parsing when possible, if you don't prefer either format.
-     *
-     * @return
-     */
-    public Object getResponseFast() {
-        if (responseDoc != null)
-            return responseDoc;
-        return responseString;
-    }
-
-    public HttpHeaders getResponseHeaders() {
-        return headers;
+        return responseString = XmlUtil.nodeToString(getOriginalDocument());
     }
 
     public String toString() {
@@ -187,5 +190,22 @@ public class SsgResponse {
      */
     public ProcessorResult getProcessorResult() {
         return processorResult;
+    }
+
+    /**
+     * Free any resources being used by this SsgResponse.  If a downstream PostMethod has been set,
+     * it will be released here.
+     */
+    public void close() {
+        super.close();
+        if (downstreamPostMethod != null) {
+            downstreamPostMethod.releaseConnection();
+            downstreamPostMethod = null;
+        }
+    }
+
+    protected void finalize() throws Throwable {
+        super.finalize();
+        close();
     }
 }

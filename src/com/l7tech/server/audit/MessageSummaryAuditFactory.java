@@ -9,10 +9,7 @@ package com.l7tech.server.audit;
 import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.identity.User;
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
-import com.l7tech.message.XmlRequest;
-import com.l7tech.message.XmlResponse;
+import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.MessageProcessor;
@@ -51,7 +48,7 @@ public class MessageSummaryAuditFactory {
             if ( currentRequest instanceof XmlRequest ) {
                 XmlRequest xreq = (XmlRequest)currentRequest;
                 try {
-                    requestXml = xreq.getRequestXml();
+                    requestXml = xreq.getXml();
                 } catch (IOException e) {
                     requestXml = null;
                 }
@@ -102,10 +99,10 @@ public class MessageSummaryAuditFactory {
 
         Response currentResponse = MessageProcessor.getCurrentResponse();
         if ( currentResponse != null ) {
-            if ( currentResponse instanceof XmlResponse ) {
-                XmlResponse xresp = (XmlResponse)currentResponse;
+            if ( currentResponse instanceof XmlMessage ) {
+                XmlMessage xresp = (XmlMessage)currentResponse;
                 try {
-                    responseXml = xresp.getResponseXml();
+                    responseXml = xresp.getXml();
                 } catch (IOException e) {
                     responseXml = null;
                 }

@@ -84,9 +84,8 @@ public class XmlUtil {
     }
 
     public static Document parse(InputStream input) throws IOException, SAXException {
-        return getDocumentBuilder().parse(input);
+        return getDocumentBuilder().parse(input); // TODO wtf is there no version that takes an encoding :(
     }
-
 
     private static ThreadLocal formattedXMLSerializer = new ThreadLocal() {
         protected synchronized Object initialValue() {

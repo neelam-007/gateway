@@ -153,7 +153,7 @@ public class SecureSpanBridgeFactory {
             final URL origUrl = new URL("http://layer7tech.com" + localUri);
             String namespaceUri = SoapUtil.getNamespaceUri(message);
             PolicyAttachmentKey pak = new PolicyAttachmentKey(namespaceUri, soapAction, origUrl.getFile());
-            PendingRequest pr = new PendingRequest(message, ssg, nri, pak, origUrl, null);
+            PendingRequest pr = new PendingRequest(ssg, null, null, message, nri, pak, origUrl);
             try {
                 final SsgResponse response = mp.processMessage(pr);
                 return new Result() {
@@ -162,7 +162,7 @@ public class SecureSpanBridgeFactory {
                     }
 
                     public Document getResponse() throws IOException, SAXException {
-                        return response.getResponseAsDocument();
+                        return response.getOriginalDocument();
                     }
                 };
             } catch (com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException e) {
