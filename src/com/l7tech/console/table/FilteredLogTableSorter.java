@@ -30,6 +30,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     private ClusterStatusAdmin clusterStatusAdmin = null;
     private LogAdmin logService = null;
     private boolean canceled;
+    private String msgNumberOfSelectedRow = "-1";
 
 
     /**
@@ -150,6 +151,24 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
          if (rawLogCache.get(nodeId) != null) {
                 rawLogCache.remove(nodeId);
          }
+    }
+
+    /**
+     * Store the message number of the selected row in the log table.
+     *
+     * @param msgNumber  The message number of the selected row.
+     */
+    private void setMsgNumOfSelectedRow(String msgNumber){
+         msgNumberOfSelectedRow = msgNumber;
+    }
+
+    /**
+     * Return the messsage number of the selected row in the log table.
+     *
+     * @return String  The message number of the selected row.
+     */
+    private String getMsgNumOfSelectedRow() {
+         return msgNumberOfSelectedRow;
     }
 
     /**
@@ -405,6 +424,8 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
 
         long endMsgNumber = -1;
 
+        setMsgNumOfSelectedRow(msgNumSelected);
+
         if (newRefresh) {
 
             requests = new Vector();
@@ -454,7 +475,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                         logPane.updateTimeStamp();
                         logPane.updateMsgTotal();
 
-                        logPane.setSelectedRow(msgNumSelected);
+                        logPane.setSelectedRow(getMsgNumOfSelectedRow());
 
                         final Vector unfilledRequest = getUnfilledRequest();
 
@@ -463,7 +484,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                             SwingUtilities.invokeLater(
                                     new Runnable() {
                                         public void run() {
-                                            refreshLogs(msgFilterLevel, logPane, msgNumSelected, restartTimer, unfilledRequest, false);
+                                            refreshLogs(msgFilterLevel, logPane, getMsgNumOfSelectedRow(), restartTimer, unfilledRequest, false);
                                         }
                                     });
 

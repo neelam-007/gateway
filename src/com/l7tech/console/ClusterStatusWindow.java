@@ -837,7 +837,6 @@ public class ClusterStatusWindow extends JFrame {
 
                             try {
                                 clusterStatusAdmin.removeStaleNode((String) getClusterStatusTable().getValueAt(selectedRowIndexOld, STATUS_TABLE_NODE_ID_COLUMN_INDEX));
-                                System.out.println("Delete the node: " + nodeNameSelected);
 
                             } catch (DeleteException e) {
                                 logger.warning("Cannot delete the node: " + nodeNameSelected);

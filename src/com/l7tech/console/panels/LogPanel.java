@@ -626,13 +626,25 @@ public class LogPanel extends JPanel {
         tableView.setColumnSelectionAllowed(false);
         MouseAdapter listMouseListener = new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
+
                 TableColumnModel columnModel = tableView.getColumnModel();
                 int viewColumn = columnModel.getColumnIndexAtX(e.getX());
                 int column = tableView.convertColumnIndexToModel(viewColumn);
                 if (e.getClickCount() == 1 && column != -1) {
 
-                    ((FilteredLogTableSorter)tableView.getModel()).sortData(column, true);
-                    ((FilteredLogTableSorter)tableView.getModel()).fireTableDataChanged();
+                    // get the selected row index
+                    int selectedRowIndexOld = getMsgTable().getSelectedRow();
+                    String msgNumSelected = null;
+
+                    // save the number of selected message
+                    if (selectedRowIndexOld >= 0) {
+                        msgNumSelected = getMsgTable().getValueAt(selectedRowIndexOld, 0).toString();
+                    }
+
+                    ((FilteredLogTableSorter) tableView.getModel()).sortData(column, true);
+                    ((FilteredLogTableSorter) tableView.getModel()).fireTableDataChanged();
+
+                    setSelectedRow(msgNumSelected);
                     tableView.getTableHeader().resizeAndRepaint();
                 }
             }
