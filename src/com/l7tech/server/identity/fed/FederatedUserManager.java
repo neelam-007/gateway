@@ -45,24 +45,9 @@ public class FederatedUserManager extends PersistentUserManager {
         return User.class;
     }
 
-    protected PersistentUser cast( User user ) {
-        FederatedUser imp;
-        if ( user instanceof UserBean ) {
-            imp = new FederatedUser( (UserBean)user );
-        } else {
-            imp = (FederatedUser)user;
-        }
-        return imp;
-    }
-
-    protected String getNameFieldname() {
-        return "name";
-    }
-
     public String getTableName() {
         return "fed_user";
     }
-
 
     public FederatedUser findBySubjectDN(String dn) throws FindException {
         try {
@@ -80,6 +65,20 @@ public class FederatedUserManager extends PersistentUserManager {
         } catch ( SQLException e ) {
             throw new FindException("Couldn't find user", e);
         }
+    }
+
+    protected PersistentUser cast( User user ) {
+        FederatedUser imp;
+        if ( user instanceof UserBean ) {
+            imp = new FederatedUser( (UserBean)user );
+        } else {
+            imp = (FederatedUser)user;
+        }
+        return imp;
+    }
+
+    protected String getNameFieldname() {
+        return "name";
     }
 
     protected void addFindAllCriteria( Criteria findHeadersCriteria ) {
