@@ -80,6 +80,31 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
         }
     }
 
+    /**
+     * determines whether a user is allowed to get a new cert.
+     * the rules are: if a cert is already present and had been used -> not allowed
+     * if a cert is present and has never been user -> user can reset maximum of ten times
+     */
+    public boolean userCanResetCert(String oid) throws FindException{
+        /*try {
+            List result = _manager.find(getContext(), "select " + getTableName() + ".cert_reset_counter from " + getTableName() + " in class " + getImpClass().getName() + " where " + getTableName() + ".oid=" + oid);
+            for (Iterator i = result.iterator(); i.hasNext();) {
+                System.out.println("FIND RESULT FOR userCanResetCert : " + i.next().toString());
+            }
+        } catch (SQLException e) {
+            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "error getting cert_reset_counter value for " + oid, e);
+            throw new FindException(e.toString(), e);
+        } finally {
+            try {
+                PersistenceContext.getCurrent().close();
+            } catch (SQLException e) {
+                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "SQLException in finally ", e);
+            }
+        }*/
+        // todo
+        return true;
+    }
+
     public void delete(User user) throws DeleteException {
         try {
             _manager.delete( getContext(), user );
