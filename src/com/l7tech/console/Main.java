@@ -194,7 +194,7 @@ public class Main {
         lfName = prefs.getString(Preferences.LOOK_AND_FEEL);
         LookAndFeel lf = null;
         if (lfName == null) {
-            lf = new KunststoffLookAndFeel();
+            lf = new Plastic3DLookAndFeel();
         } else {
             try {
                 lf = (LookAndFeel)Class.forName(lfName).newInstance();

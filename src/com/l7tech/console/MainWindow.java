@@ -1630,8 +1630,10 @@ public class MainWindow extends JFrame {
             log.log(Level.WARNING, "unable to fetch or set window position prefs: ", e);
         }
 
-        if (!posWasSet)
+        if (!posWasSet) {
+            this.setSize(curScreenSize);
             Utilities.centerOnScreen(this);
+        }
     }
 
 
@@ -1796,8 +1798,7 @@ public class MainWindow extends JFrame {
         // there was a problem setting l&f, try crossplatform one (best bet)
         if (!lfSet) {
             try {
-                UIManager.setLookAndFeel(UIManager.
-                  getCrossPlatformLookAndFeelClassName());
+                UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
             } catch (Exception e) {
                 return;
             }
