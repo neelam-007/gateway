@@ -1,5 +1,14 @@
 package com.l7tech.console.tree;
 
+import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
+import com.l7tech.policy.assertion.ext.Category;
+import com.l7tech.policy.assertion.CustomAssertionHolder;
+import com.l7tech.console.util.Registry;
+
+import java.util.Iterator;
+import java.util.logging.Level;
+import java.rmi.RemoteException;
+
 /**
  * The class represents an gui node element in the TreeModel that
  * represents a routing folder.
@@ -35,7 +44,17 @@ public class XmlFolderNode extends AbstractTreeNode {
         insert( new ResponseXpathPaletteNode(), index++ );
         insert(new SchemaValidationPaletteNode(), index++);
         insert(new XslTransformationPaletteNode(), index++);
-        insert(new RequestSwAAssertionPaletteNode(), index++);        
+        insert(new RequestSwAAssertionPaletteNode(), index++);
+        final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
+        try {
+            Iterator it = cr.getAssertions(Category.MESSAGE).iterator();
+            while (it.hasNext()) {
+                CustomAssertionHolder a = (CustomAssertionHolder)it.next();
+                insert(new CustomAccessControlNode(a), index++);
+            }
+        } catch (RemoteException e1) {
+            logger.log(Level.WARNING, "Unable to retrieve custom assertions", e1);
+        }        
     }
 
     /**
