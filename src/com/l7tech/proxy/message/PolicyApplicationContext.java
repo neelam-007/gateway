@@ -13,6 +13,7 @@ import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
@@ -424,6 +425,8 @@ public class PolicyApplicationContext extends ProcessingContext {
                 throw new OperationCanceledException("Unable to obtain a client certificate");
             }
         } catch (IOException e) {
+            if (ExceptionUtils.causedBy(e, ServerCertificateUntrustedException.class))
+                throw new ServerCertificateUntrustedException(e);
             throw new ClientCertificateException("Unable to obtain a client certificate", e);
         }
     }
