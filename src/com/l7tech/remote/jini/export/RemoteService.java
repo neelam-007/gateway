@@ -1,5 +1,7 @@
 package com.l7tech.remote.jini.export;
 
+import com.l7tech.logging.LogManager;
+import com.sun.jini.start.LifeCycle;
 import net.jini.config.Configuration;
 import net.jini.config.ConfigurationException;
 import net.jini.config.ConfigurationProvider;
@@ -14,20 +16,16 @@ import net.jini.jeri.BasicILFactory;
 import net.jini.jeri.BasicJeriExporter;
 import net.jini.jeri.tcp.TcpServerEndpoint;
 import net.jini.lookup.JoinManager;
-import net.jini.security.ProxyPreparer;
-import net.jini.security.BasicProxyPreparer;
 
 import java.io.IOException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Iterator;
-import java.util.logging.Logger;
+import java.util.Map;
 import java.util.logging.Level;
-
-import com.sun.jini.start.LifeCycle;
+import java.util.logging.Logger;
 
 /**
  * <code>RemoteService</code> is extended by the concrete Jini services.
@@ -38,7 +36,8 @@ import com.sun.jini.start.LifeCycle;
 public abstract class RemoteService implements Remote {
     private String[] configOptions;
     private final LifeCycle lifeCycle;
-    private static final Logger logger = Logger.getLogger(RemoteService.class.getName());
+    //private static final Logger logger = Logger.getLogger(RemoteService.class.getName());
+    private static final Logger logger = LogManager.getInstance().getSystemLogger();
     private final String[] components = {getClass().getName(),
                                          RemoteService.class.getName()};
 

@@ -1,6 +1,7 @@
 package com.l7tech.remote.jini;
 
 import com.sun.jini.start.ServiceStarter;
+import com.l7tech.logging.LogManager;
 
 import java.net.URL;
 import java.util.logging.Logger;
@@ -16,7 +17,8 @@ import net.jini.config.ConfigurationException;
  */
 public class Services {
     public static final String SERVICES_CONFIG = "start-services.config";
-    static Logger logger = Logger.getLogger(Services.class.getName());
+    //static Logger logger = Logger.getLogger(Services.class.getName());
+    static Logger logger = LogManager.getInstance().getSystemLogger();
     private static Services instance = null;
 
     /**

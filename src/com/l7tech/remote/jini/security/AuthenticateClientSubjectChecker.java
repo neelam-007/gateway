@@ -1,6 +1,7 @@
 package com.l7tech.remote.jini.security;
 
 import com.sun.jini.discovery.ClientSubjectChecker;
+import com.l7tech.logging.LogManager;
 
 import javax.security.auth.Subject;
 import java.util.logging.Logger;
@@ -17,8 +18,8 @@ import java.security.Principal;
  */
 public class AuthenticateClientSubjectChecker
   implements ClientSubjectChecker {
-    private final Logger logger =
-      Logger.getLogger(AuthenticateClientSubjectChecker.class.getName());
+    private final Logger logger = LogManager.getInstance().getSystemLogger();
+      //Logger.getLogger(AuthenticateClientSubjectChecker.class.getName());
 
     public void checkClientSubject(Subject subject) {
         if (subject == null) {
