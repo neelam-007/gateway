@@ -7,6 +7,7 @@
 package com.l7tech.proxy.gui;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.proxy.datamodel.CredentialManager;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
@@ -16,15 +17,14 @@ import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.gui.dialogs.LogonDialog;
 import com.l7tech.proxy.gui.dialogs.PleaseWaitDialog;
 import com.l7tech.proxy.gui.dialogs.TrustCertificateDialog;
-import java.util.logging.Logger;
-import java.util.logging.Level;
 
-import javax.security.auth.x500.X500Principal;
 import javax.swing.*;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.PasswordAuthentication;
 import java.security.cert.X509Certificate;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * GUI implementation of the CredentialManager.
@@ -123,12 +123,11 @@ public class GuiCredentialManager extends CredentialManager {
             // Check if username is locked into a client certificate
             holder.showUsername = ssg.getUsername();
             if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
-                X509Certificate cert = SsgKeyStoreManager.getClientCert(ssg);
-                X500Principal certName = new X500Principal(cert.getSubjectDN().toString());
-                String certNameString = certName.getName(X500Principal.RFC2253);
-                holder.showUsername = certNameString.substring(3);
-                ssg.setUsername(holder.showUsername);
-                holder.lockUsername = true;
+                final X509Certificate cert = SsgKeyStoreManager.getClientCert(ssg);
+                if (cert != null) {
+                    holder.showUsername = CertUtils.extractUsernameFromClientCertificate(cert);
+                    holder.lockUsername = true;
+                }
             }
         }
 
