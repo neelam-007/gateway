@@ -6,10 +6,9 @@
 
 package com.l7tech.common.security;
 
-import java.security.InvalidKeyException;
-import java.security.KeyPair;
-import java.security.Provider;
-import java.security.SignatureException;
+import javax.crypto.Cipher;
+import javax.crypto.NoSuchPaddingException;
+import java.security.*;
 
 /**
  * Provide a single point where our JCE provider can be altered.
@@ -57,6 +56,17 @@ public abstract class JceProvider {
 
     public static Provider getAsymmetricJceProvider() {
         return Holder.engine.getAsymmetricProvider();
+    }
+
+    public static Cipher getRSANoPaddingCipher() throws NoSuchAlgorithmException, NoSuchProviderException, NoSuchPaddingException {
+        String provider = getAsymmetricJceProvider().getName();
+        if (provider == "BC") {
+            return Cipher.getInstance("RSA/NONE/NoPadding", getAsymmetricJceProvider().getName());
+        } else { // todo, add cases for both SUN and IBM 
+            // try this default value
+            return Cipher.getInstance("RSA/NONE/NoPadding", getAsymmetricJceProvider().getName());
+        }
+
     }
 
     public static RsaSignerEngine createRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass, String storeType) {
