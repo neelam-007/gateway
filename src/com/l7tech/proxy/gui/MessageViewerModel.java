@@ -2,7 +2,6 @@ package com.l7tech.proxy.gui;
 
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.proxy.RequestInterceptor;
-import com.l7tech.proxy.util.ClientLogger;
 import com.l7tech.proxy.datamodel.HttpHeaders;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Policy;
@@ -12,6 +11,7 @@ import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.gui.policy.PolicyTreeCellRenderer;
 import com.l7tech.proxy.gui.policy.PolicyTreeModel;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import com.l7tech.proxy.util.ClientLogger;
 import org.w3c.dom.Document;
 
 import javax.swing.*;
@@ -83,10 +83,43 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
         }
 
         public Component getComponent() {
+            JPanel panel = new JPanel(new GridBagLayout());
+
+            final JLabel namespaceLabel = new JLabel("Body Namespace:  ");
+            panel.add(namespaceLabel,
+                      new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
+                                             GridBagConstraints.EAST,
+                                             GridBagConstraints.NONE,
+                                             new Insets(5, 5, 3, 0), 0, 0));
+            final JLabel namespace = new JLabel(key.getUri());
+            panel.add(namespace,
+                      new GridBagConstraints(1, 0, 1, 1, 1.0, 0.0,
+                                             GridBagConstraints.WEST,
+                                             GridBagConstraints.HORIZONTAL,
+                                             new Insets(5, 0, 3, 5), 0, 0));
+            final JLabel soapActionLabel = new JLabel("SOAPAction:  ");
+            panel.add(soapActionLabel,
+                      new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
+                                             GridBagConstraints.EAST,
+                                             GridBagConstraints.NONE,
+                                             new Insets(0, 5, 5, 0), 0, 0));
+            final JLabel soapAction = new JLabel(key.getSoapAction());
+            panel.add(soapAction,
+                      new GridBagConstraints(1, 1, 1, 1, 1.0, 0.0,
+                                             GridBagConstraints.WEST,
+                                             GridBagConstraints.HORIZONTAL,
+                                             new Insets(0, 0, 5, 5), 0, 0));
+
             JTree policyTree = new JTree((TreeModel)null);
             policyTree.setCellRenderer(new PolicyTreeCellRenderer());
             policyTree.setModel(policy == null ? null : new PolicyTreeModel(policy));
-            return policyTree;
+            panel.add(policyTree,
+                      new GridBagConstraints(0, 2, GridBagConstraints.REMAINDER, 1, 1.0, 1.0,
+                                             GridBagConstraints.SOUTH,
+                                             GridBagConstraints.BOTH,
+                                             new Insets(0, 0, 0, 0), 0, 0));
+
+            return panel;
         }
     }
 
