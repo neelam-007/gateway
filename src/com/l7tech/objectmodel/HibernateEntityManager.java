@@ -34,6 +34,53 @@ public abstract class HibernateEntityManager implements EntityManager {
         _manager = manager;
     }
 
+    public Entity findByPrimaryKey( long oid ) throws FindException {
+        String alias = getTableName();
+        String query = "FROM " + alias +
+                       " IN CLASS " + getImpClass() +
+                       " WHERE " + alias + ".objectid = ?";
+        try {
+            List results = PersistenceManager.find( getContext(), query, new Long( oid ), Long.TYPE );
+            if ( results.size() == 0 ) return null;
+            if ( results.size() > 1 ) throw new FindException( "Multiple results found!" );
+            Object result = results.get(0);
+            if ( !(result instanceof Entity) ) throw new FindException( "Found " + result.getClass().getName() + " when looking for Entity!" );
+            return (Entity)results.get(0);
+        } catch ( SQLException e ) {
+            throw new FindException( e.toString(), e );
+        }
+    }
+
+    public Map findVersionMap() throws FindException {
+        Map result = new HashMap();
+        Class impClass = getImpClass();
+        String alias = getTableName();
+        if ( !Entity.class.isAssignableFrom( impClass ) ) throw new FindException( "Can't find non-Entities!" );
+
+        String query = "SELECT " + alias + ".objectid, " + alias + ".version" +
+                       " FROM " + alias +
+                       " IN CLASS " + getImpClass() +
+                       " WHERE " + alias + ".objectid = ?";
+
+        try {
+            List results = PersistenceManager.find( getContext(), query );
+            if ( results.size() > 0 ) {
+                for ( Iterator i = results.iterator(); i.hasNext(); ) {
+                    Object[] row = (Object[])i.next();
+                    if ( row[0] instanceof Long && row[1] instanceof Integer ) {
+                        result.put( row[0], row[1] );
+                    } else {
+                        throw new FindException( "Got unexpected fields " + row[0] + " and " + row[1] + " from query!" );
+                    }
+                }
+            }
+        } catch ( SQLException e ) {
+            throw new FindException( e.toString(), e );
+        }
+
+        return result;
+    }
+
     /**
      * Generates a Hibernate query string for retrieving a single field from a User.
      * @param oid The objectId of the User to query
