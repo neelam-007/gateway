@@ -51,6 +51,7 @@ public interface WssProcessor {
     public interface SecurityContextToken extends SecurityToken {
         SecurityContext getSecurityContext();
         String getContextIdentifier();
+        boolean isPossessionProved();
     }
 
     /**

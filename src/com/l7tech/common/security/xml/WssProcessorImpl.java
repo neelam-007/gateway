@@ -1012,6 +1012,8 @@ public class WssProcessorImpl implements WssProcessor {
         if (signingCertToken != null) {
             signingCertToken.onPossessionProved();
         }
+        if (dkt != null)
+            dkt.getSecurityContextToken().onPossessionProved();            
 
         // Remember which elements were covered
         for (int i = 0; i < validity.getNumberOfReferences(); i++) {
@@ -1231,6 +1233,7 @@ public class WssProcessorImpl implements WssProcessor {
         private final WssProcessor.SecurityContext secContext;
         private final Element secConTokEl;
         private final String identifier;
+        private boolean possessionProved = false;
 
         public SecurityContextTokenImpl(WssProcessor.SecurityContext secContext, Element secConTokEl, String identifier) {
             this.secContext = secContext;
@@ -1250,6 +1253,14 @@ public class WssProcessorImpl implements WssProcessor {
 
         public String getContextIdentifier() {
             return identifier;
+        }
+
+        public boolean isPossessionProved() {
+            return possessionProved;
+        }
+
+        void onPossessionProved() {
+            possessionProved = true;
         }
     }
 }
