@@ -105,6 +105,9 @@ public class WssProcessorImpl implements WssProcessor {
             if (securityChildToProcess.getLocalName().equals(SoapUtil.ENCRYPTEDKEY_EL_NAME)) {
                 processEncryptedKey(securityChildToProcess, recipientKey,
                                     recipientCert, cntx);
+                // if this element is processed BEFORE the signature validation, it should be removed
+                // for the signature to validate properly
+                securityChildToProcess.getParentNode().removeChild(securityChildToProcess);
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.TIMESTAMP_EL_NAME)) {
                 processTimestamp(cntx, securityChildToProcess);
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.BINARYSECURITYTOKEN_EL_NAME)) {
