@@ -23,9 +23,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.StringWriter;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.EventListener;
@@ -92,6 +90,12 @@ public class XslTransformationPropertiesDialog extends JDialog {
                 readFromUrl();
             }
         });
+
+        loadFromFile.addActionListener( new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                readFromFile();
+            }
+        });
     }
 
     private void ok() {
@@ -137,6 +141,60 @@ public class XslTransformationPropertiesDialog extends JDialog {
                   }
               }
           });
+    }
+
+    private void readFromFile() {
+        JFileChooser dlg = new JFileChooser();
+
+        if (JFileChooser.APPROVE_OPTION != dlg.showOpenDialog(this)) {
+            return;
+        }
+        FileInputStream fis = null;
+        String filename = dlg.getSelectedFile().getAbsolutePath();
+        try {
+            fis = new FileInputStream(dlg.getSelectedFile());
+        } catch (FileNotFoundException e) {
+            log.log(Level.FINE, "cannot open file" + filename, e);
+            return;
+        }
+
+        // try to get document
+        InputSource is = new InputSource(fis);
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+        Document doc = null;
+        try {
+            doc = dbf.newDocumentBuilder().parse(is);
+        } catch (SAXException e) {
+            displayError(resources.getString("error.noxmlaturl") + " " + filename, null);
+            log.log(Level.FINE, "cannot parse " + filename, e);
+            return;
+        } catch (IOException e) {
+            displayError(resources.getString("error.noxmlaturl") + " " + filename, null);
+            log.log(Level.FINE, "cannot parse " + filename, e);
+            return;
+        } catch (ParserConfigurationException e) {
+            displayError(resources.getString("error.noxmlaturl") + " " + filename, null);
+            log.log(Level.FINE, "cannot parse " + filename, e);
+            return;
+        }
+        // check if it's a xslt
+        if (docIsXsl(doc)) {
+            // set the new xslt
+            String printedxml = null;
+            try {
+                printedxml = doc2String(doc);
+            } catch (IOException e) {
+                String msg = "error serializing document";
+                displayError(msg, null);
+                log.log(Level.FINE, msg, e);
+                return;
+            }
+            xmlTextArea.setText(printedxml);
+            //okButton.setEnabled(true);
+        } else {
+            displayError(resources.getString("error.urlnoxslt") + " " + filename, null);
+        }
     }
 
     /**
@@ -302,6 +360,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
         toppanel.setLayout(new BoxLayout(toppanel, BoxLayout.Y_AXIS));
         toppanel.add(constructDirectionPanel());
         toppanel.add(constructLoadFromUrlPanel());
+        toppanel.add(loadFromFilePanel());
 
         // panel that contains the xml display
         JPanel centerpanel = new JPanel();
@@ -315,6 +374,24 @@ public class XslTransformationPropertiesDialog extends JDialog {
         output.add(centerpanel, BorderLayout.CENTER);
 
         return output;
+    }
+
+    private JPanel loadFromFilePanel() {
+        JPanel blah = new JPanel();
+        blah.setLayout(new BorderLayout());
+        blah.add(loadFromFile, BorderLayout.WEST);
+
+        // wrap this with border settings
+        GridBagConstraints constraints = new GridBagConstraints();
+        constraints.fill = GridBagConstraints.BOTH;
+        constraints.weightx = 1.0;
+        constraints.weighty = 1.0;
+        constraints.insets = new Insets(BORDER_PADDING, BORDER_PADDING, BORDER_PADDING, BORDER_PADDING);
+        JPanel bordered = new JPanel();
+        bordered.setLayout(new GridBagLayout());
+        bordered.add(blah, constraints);
+
+        return bordered;
     }
 
     private JPanel constructXmlDisplayPanel() {
@@ -433,6 +510,8 @@ public class XslTransformationPropertiesDialog extends JDialog {
         xmlTextArea.setDocument(new SyntaxDocument());
         xmlTextArea.setEditable(true);
         xmlTextArea.setTokenMarker(new XMLTokenMarker());
+        loadFromFile = new JButton();
+        loadFromFile.setText(resources.getString("loadFromFile.name"));
     }
 
     private void initResources() {
@@ -452,6 +531,7 @@ public class XslTransformationPropertiesDialog extends JDialog {
     private JButton helpButton;
     private JButton okButton;
     private JButton cancelButton;
+    private JButton loadFromFile;
     private JComboBox directionCombo;
     private JButton resolveButton;
     private JTextField urlTxtFld;
