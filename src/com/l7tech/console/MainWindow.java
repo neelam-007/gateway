@@ -97,9 +97,6 @@ public class MainWindow extends JFrame {
     /* this class classloader */
     private final ClassLoader cl = getClass().getClassLoader();
 
-    /** the panel listener broker */
-    private final
-    PanelListenerBroker listenerBroker = new PanelListenerBroker();
     private Action addAssertionAction;
     private Action assertionMoveUpAction;
     private Action assertionMoveDownAction;
@@ -1507,7 +1504,6 @@ public class MainWindow extends JFrame {
           };
         ptree.addKeyListener(keyListener);
         stree.addKeyListener(keyListener);
-        listenerBroker.addPanelListener(paletteTreeObjectListener);
     }
 
 

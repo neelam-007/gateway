@@ -59,8 +59,10 @@ public class UserPanel extends EntityEditorPanel {
 
     private static final String OK_BUTTON = "OK";
     private static final String CANCEL_BUTTON = "Cancel";
+    private final static String CHANGE_PASSWORD_LABEL = "Change Password";
     private JLabel emailLabel;
     private JTextField emailTextField;
+    private JButton changePassButton;
 
 
     /**
@@ -149,7 +151,8 @@ public class UserPanel extends EntityEditorPanel {
      */
     private void layoutComponents() {
         // Set layout
-        this.setName("Group");
+        if (user !=null)
+            this.setName(user.getName());
         this.setLayout(new GridBagLayout());
         this.setMaximumSize(new Dimension(380, 450));
         this.setPreferredSize(new Dimension(380, 450));
@@ -172,7 +175,7 @@ public class UserPanel extends EntityEditorPanel {
         mainPanel.setLayout(new GridBagLayout());
 
         // Add GroupTabbedPane
-        mainPanel.add(getGroupTabbedPane(),
+        mainPanel.add(getTabbedPane(),
                 new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
                         GridBagConstraints.CENTER,
                         GridBagConstraints.BOTH,
@@ -190,7 +193,7 @@ public class UserPanel extends EntityEditorPanel {
     }
 
     /** Returns tabbedPane */
-    private JTabbedPane getGroupTabbedPane() {
+    private JTabbedPane getTabbedPane() {
         // If tabbed pane not already created
         if (null != tabbedPane) return tabbedPane;
 
@@ -232,7 +235,7 @@ public class UserPanel extends EntityEditorPanel {
                             GridBagConstraints.BOTH,
                             new Insets(10, 10, 0, 10), 0, 0));
 
-        detailsPanel.add(getFirstNameLabel(),
+            detailsPanel.add(getFirstNameLabel(),
                       new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
                               GridBagConstraints.WEST,
                               GridBagConstraints.NONE,
@@ -256,13 +259,13 @@ public class UserPanel extends EntityEditorPanel {
                             GridBagConstraints.HORIZONTAL,
                             new Insets(10, 15, 0, 10), 0, 0));
 
-        detailsPanel.add(getEmailLabel(),
+            detailsPanel.add(getEmailLabel(),
                          new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
                                  GridBagConstraints.WEST,
                                  GridBagConstraints.NONE,
                                  new Insets(10, 10, 0, 0), 0, 0));
 
-                 detailsPanel.add(getEmailTextField(),
+            detailsPanel.add(getEmailTextField(),
                          new GridBagConstraints(1, 4, 1, 1, 1.0, 0.0,
                                  GridBagConstraints.WEST,
                                  GridBagConstraints.HORIZONTAL,
@@ -274,10 +277,16 @@ public class UserPanel extends EntityEditorPanel {
                             GridBagConstraints.BOTH,
                             new Insets(15, 10, 0, 10), 0, 0));
 
+            detailsPanel.add(getChangePassButton(),
+                        new GridBagConstraints(1, 12, 1, 1, 0.0, 0.0,
+                                GridBagConstraints.EAST,
+                                GridBagConstraints.NONE,
+                                new Insets(15, 10, 0, 10), 0, 0));
+
             Component strut = Box.createVerticalStrut(8);
 
             detailsPanel.add(strut,
-                    new GridBagConstraints(0, 12, 2, 1, 1.0, 1.0,
+                    new GridBagConstraints(0, 13, 2, 1, 1.0, 1.0,
                             GridBagConstraints.CENTER,
                             GridBagConstraints.BOTH,
                             new Insets(10, 0, 0, 0), 0, 0));
@@ -334,8 +343,6 @@ public class UserPanel extends EntityEditorPanel {
     }
 
 
-
-
     /** Returns lastNameLabel */
     private JLabel getLastNameLabel() {
         // If label not already created
@@ -368,8 +375,6 @@ public class UserPanel extends EntityEditorPanel {
     }
 
 
-
-
     /** Returns email Label */
     private JLabel getEmailLabel() {
         // If label not already created
@@ -400,7 +405,6 @@ public class UserPanel extends EntityEditorPanel {
         // Return text field
         return emailTextField;
     }
-
 
     /** Returns buttonPanel */
     private JPanel getButtonPanel() {
@@ -439,8 +443,7 @@ public class UserPanel extends EntityEditorPanel {
         return buttonPanel;
     }
 
-
-    /** Returns okButton */
+            /** Returns okButton */
     private JButton getOKButton() {
         // If button not already created
         if (null == okButton) {
@@ -489,6 +492,29 @@ public class UserPanel extends EntityEditorPanel {
         // Return button
         return cancelButton;
     }
+
+    /** Create the Change password button */
+      private JButton getChangePassButton() {
+        if (changePassButton == null) {
+          changePassButton = new JButton(CHANGE_PASSWORD_LABEL);
+
+          changePassButton.
+          addActionListener(new ActionListener() {
+                             public void actionPerformed(ActionEvent e) {
+                               new PasswordDialog(null, user).show();
+                               // Refresh the panel (since the agent's cert might have been revoked)
+                               try {
+                                   setData(
+                                     Registry.getDefault().getInternalUserManager().findByPrimaryKey(userHeader.getStrId()));
+                               } catch (Exception ex) {
+
+                               }
+                             }
+                           });
+
+        }
+        return changePassButton;
+      }
 
 
     /**
