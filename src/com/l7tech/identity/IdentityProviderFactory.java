@@ -13,6 +13,8 @@ import com.l7tech.identity.internal.InternalIdentityProviderServer;
 import java.util.*;
 
 /**
+ * This factory caches identity providers!
+ *
  * @author alex
  */
 public class IdentityProviderFactory {
@@ -25,6 +27,19 @@ public class IdentityProviderFactory {
             providers.add(makeProvider(config));
         }
         return Collections.unmodifiableList(providers);
+    }
+
+    /**
+     * call this because a config object is being updated or deleted and you want to inform the cache that
+     * correcponding id provider should be removed from cache
+     */
+    public synchronized static void dropProvider(IdentityProviderConfig config) {
+        if (providers == null) return;
+        Long key = new Long(config.getOid());
+        IdentityProvider existingProvider = (IdentityProvider)providers.get(key);
+        if (existingProvider != null) {
+            providers.remove(key);
+        }
     }
 
     public synchronized static IdentityProvider makeProvider(IdentityProviderConfig config) {
