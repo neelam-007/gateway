@@ -19,6 +19,7 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
     public synchronized void setServices( Set services ) {
         Iterator i = services.iterator();
         _valueToServiceMapMap = new HashMap();
+        _serviceOidToValuesArrayMap = new HashMap();
         PublishedService service;
         Object[] values;
         Map serviceMap;
@@ -27,6 +28,7 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
             service = (PublishedService)i.next();
             oid = new Long( service.getOid() );
             values = getTargetValues( service );
+            _serviceOidToValuesArrayMap.put( oid, values );
             for (int j = 0; j < values.length; j++) {
                 Object value = values[j];
                 serviceMap = getServiceMap(value);
@@ -40,6 +42,9 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
         Object value;
         Map serviceMap;
         Long oid = new Long( service.getOid() );
+
+        _serviceOidToValuesArrayMap.put( oid, values );
+
         for (int i = 0; i < values.length; i++) {
             value = values[i];
             serviceMap = getServiceMap( value );
@@ -52,6 +57,9 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
         Object value;
         Map serviceMap;
         Long oid = new Long( service.getOid() );
+
+        _serviceOidToValuesArrayMap.remove( oid );
+
         for (int i = 0; i < values.length; i++) {
             value = values[i];
             serviceMap = getServiceMap( value );
@@ -65,7 +73,21 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
     }
 
     protected abstract String getParameterName();
-    protected abstract Object[] getTargetValues( PublishedService service );
+
+    protected Object[] getTargetValues( PublishedService service ) {
+        Long oid = new Long( service.getOid() );
+        synchronized( _serviceOidToValuesArrayMap ) {
+            Object[] values = (Object[])_serviceOidToValuesArrayMap.get( oid );
+            if ( values == null ) {
+                values = doGetTargetValues( service );
+                _serviceOidToValuesArrayMap.put( oid, values );
+            }
+            return values;
+        }
+    }
+
+    protected abstract Object[] doGetTargetValues( PublishedService service );
+
     protected abstract Object getRequestValue( Request request ) throws ServiceResolutionException;
 
     protected boolean matches( PublishedService matchService ) {
@@ -89,7 +111,7 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
         return false;
     }
 
-    protected synchronized Map getServiceMap( Object value ) {
+    private synchronized Map getServiceMap( Object value ) {
         Map serviceMap = (Map)_valueToServiceMapMap.get(value);
         if ( serviceMap == null ) {
             serviceMap = new HashMap();
@@ -98,27 +120,27 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
         return serviceMap;
     }
 
-    protected synchronized Set doResolve( Request request, Set set ) throws ServiceResolutionException {
+    public Set resolve( Request request, Set serviceSubset ) throws ServiceResolutionException {
         Object value = getRequestValue(request);
         Map serviceMap = getServiceMap( value );
-        if ( serviceMap.isEmpty() ) return Collections.EMPTY_SET;
 
-        Iterator i = serviceMap.keySet().iterator();
-        PublishedService service;
+        if ( serviceMap == null || serviceMap.isEmpty() ) return Collections.EMPTY_SET;
+
         Set resultSet = null;
         Object[] targetValues;
-        Long oid;
 
-        while ( i.hasNext() ) {
-            oid = (Long)i.next();
-            service = (PublishedService)serviceMap.get( oid );
-            targetValues = getTargetValues(service);
-            Object targetValue;
-            for ( int j = 0; j < targetValues.length; j++ ) {
-                targetValue = targetValues[j];
-                if ( targetValue != null && targetValue.equals(value) ) {
-                    if ( resultSet == null ) resultSet = new HashSet();
-                    resultSet.add(service);
+        for (Iterator i = serviceMap.keySet().iterator(); i.hasNext();) {
+            Long oid = (Long)i.next();
+            PublishedService service = (PublishedService)serviceMap.get(oid);
+            if ( serviceSubset.contains( service ) ) {
+                targetValues = getTargetValues(service);
+                Object targetValue;
+                for ( int j = 0; j < targetValues.length; j++ ) {
+                    targetValue = targetValues[j];
+                    if ( targetValue != null && targetValue.equals(value) ) {
+                        if ( resultSet == null ) resultSet = new HashSet();
+                        resultSet.add(service);
+                    }
                 }
             }
         }
@@ -128,5 +150,6 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
         return resultSet;
     }
 
-    protected Map _valueToServiceMapMap;
+    private Map _valueToServiceMapMap;
+    private Map _serviceOidToValuesArrayMap;
 }
