@@ -43,6 +43,7 @@ public class ClientCertManagerImp implements ClientCertManager {
     }
 
     public boolean userCanGenCert(User user) {
+        if (user == null) throw new IllegalArgumentException("can't call this with null");
         logger.finest("userCanGenCert for " + user.getLogin());
         CertEntryRow userData = getFromTable(user);
         // if this user has no data at all, then he is allowed to generate a cert
@@ -55,6 +56,7 @@ public class ClientCertManagerImp implements ClientCertManager {
     }
 
     public void recordNewUserCert(User user, Certificate cert) throws UpdateException {
+        if (user == null) throw new IllegalArgumentException("can't call this with null");
         logger.finest("recordNewUserCert for " + user.getLogin());
 
         // check if operation is permitted
@@ -108,6 +110,7 @@ public class ClientCertManagerImp implements ClientCertManager {
     }
 
     public Certificate getUserCert(User user) throws FindException {
+        if (user == null) throw new IllegalArgumentException("can't call this with null");
         logger.finest("getUserCert for " + user.getLogin());
         CertEntryRow userData = getFromTable(user);
         if (userData != null) {
@@ -138,6 +141,7 @@ public class ClientCertManagerImp implements ClientCertManager {
     }
 
     public void revokeUserCert(User user) throws UpdateException {
+        if (user == null) throw new IllegalArgumentException("can't call this with null");
         logger.finest("revokeUserCert for " + user.getLogin());
         CertEntryRow currentdata = getFromTable(user);
         if (currentdata != null) {
@@ -163,6 +167,7 @@ public class ClientCertManagerImp implements ClientCertManager {
     }
 
     public void forbidCertReset(User user) throws UpdateException {
+        if (user == null) throw new IllegalArgumentException("can't call this with null");
         logger.finest("forbidCertReset for " + user.getLogin());
         CertEntryRow currentdata = getFromTable(user);
         if (currentdata != null) {
