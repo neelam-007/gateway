@@ -9,7 +9,6 @@ package com.l7tech.objectmodel;
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.HibernatePersistenceManager;
 import com.l7tech.objectmodel.imp.EntityHeaderImp;
-import com.l7tech.identity.IdentityProviderConfig;
 
 import java.util.*;
 import java.sql.SQLException;
@@ -19,6 +18,8 @@ import java.sql.SQLException;
  * @version $Revision$
  */
 public abstract class HibernateEntityManager implements EntityManager {
+    public static final String EMPTY_STRING = "";
+
     /**
      * Constructs a new <code>HibernateEntityManager</code>.
      */
@@ -35,12 +36,17 @@ public abstract class HibernateEntityManager implements EntityManager {
     public Collection findAllHeaders() throws FindException {
         try {
             Iterator i = _manager.find( getContext(), getAllQuery() ).iterator();
-            NamedEntity config;
+            NamedEntity ne;
+            Entity e;
             EntityHeader header;
             List headers = new ArrayList(5);
             while ( i.hasNext() ) {
-                config = (IdentityProviderConfig)i.next();
-                header = new EntityHeaderImp( config.getOid(), getInterfaceClass(), config.getName() );
+                e = (Entity)i.next();
+                if ( e instanceof NamedEntity ) {
+                    ne = (NamedEntity)e;
+                    header = new EntityHeaderImp( ne.getOid(), getInterfaceClass(), ne.getName() );
+                } else
+                    header = new EntityHeaderImp( e.getOid(), getInterfaceClass(), EMPTY_STRING );
                 headers.add(header);
             }
             return Collections.unmodifiableList(headers);
