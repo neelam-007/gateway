@@ -1,26 +1,25 @@
 package com.l7tech.server.saml;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.apache.xmlbeans.XmlOptions;
-import org.xml.sax.SAXException;
-
-import javax.xml.soap.*;
-
+import com.l7tech.common.security.xml.SignerInfo;
+import com.l7tech.common.security.xml.SoapMsgSigner;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import x0Assertion.oasisNamesTcSAML1.AssertionDocument;
-import x0Assertion.oasisNamesTcSAML1.AssertionType;
-import x0Assertion.oasisNamesTcSAML1.ConditionsType;
-import x0Assertion.oasisNamesTcSAML1.SubjectStatementAbstractType;
+import com.l7tech.identity.User;
+import org.apache.xmlbeans.XmlOptions;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
+import x0Assertion.oasisNamesTcSAML1.*;
 
-import java.math.BigInteger;
-import java.util.Calendar;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.logging.Logger;
-import java.io.StringWriter;
+import javax.xml.soap.*;
 import java.io.IOException;
+import java.io.StringWriter;
+import java.math.BigInteger;
+import java.security.SignatureException;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * Class SenderVouchesHelper.
@@ -29,16 +28,58 @@ import java.io.IOException;
  */
 class SenderVouchesHelper {
     static final Logger log = Logger.getLogger(SenderVouchesHelper.class.getName());
+    static final int DEFAULT_EXPIRY_MINUTES = 5;
+    private int expiryMinutes = DEFAULT_EXPIRY_MINUTES;
+    private boolean includeGroupStatement = true;
+    private User user;
+    private String issuer;
+    private SignerInfo signerInfo;
+    private SOAPMessage soapMessage;
 
-    private int expiryMinutes;
-    private AssertionDocument assertionDocument;
+    SenderVouchesHelper(SOAPMessage sm, User user, boolean includeGroupStatement,
+                        int expiryMinutes, String issuer, SignerInfo signer) {
+        if (sm == null || user == null || issuer == null || signer == null || expiryMinutes <= 0) {
+            throw new IllegalArgumentException();
+        }
+
+        this.user = user;
+        this.includeGroupStatement = includeGroupStatement;
+        this.expiryMinutes = expiryMinutes;
+        this.issuer = issuer;
+        this.signerInfo = signer;
+        this.soapMessage = sm;
+    }
+
+    /**
+     * attach the assertion header to the <code>SOAPMEssage</code>
+     * @param sign if true the
+     */
+    void attachAssertion(boolean sign)
+      throws IOException, SAXException, SignatureException {
+        Document doc = createAssertion();
+
+        try {
+            doc.getDocumentElement().setAttribute("Id", "SamlTicket");
+            SoapMsgSigner signer = new SoapMsgSigner();
+            signer.signEnvelope(doc, signerInfo.getPrivate(), signerInfo.getCertificate());
+            attachAssertionHeader(soapMessage, doc);
+        } catch (Exception e) {
+            SignatureException ex =  new SignatureException("error signing the saml ticket");
+            ex.initCause(e);
+            throw ex;
+        }
+    }
 
     int getExpiryMinutes() {
         return expiryMinutes;
     }
 
-    void setExpiryMinutes(int expiryMinutes) {
-        this.expiryMinutes = expiryMinutes;
+    boolean isIncludeGroupStatement() {
+        return includeGroupStatement;
+    }
+
+    User getUser() {
+        return user;
     }
 
     /**
@@ -72,14 +113,16 @@ class SenderVouchesHelper {
 
 
     Document createAssertion() throws IOException, SAXException {
-        assertionDocument = AssertionDocument.Factory.newInstance();
+        AssertionDocument assertionDocument = AssertionDocument.Factory.newInstance();
         AssertionType assertion = AssertionType.Factory.newInstance();
+        Calendar now = Calendar.getInstance();
 
         assertion.setMinorVersion(new BigInteger("0"));
         assertion.setMajorVersion(new BigInteger("1"));
         assertion.setAssertionID(Long.toHexString(System.currentTimeMillis()));
-        assertion.setIssuer("ssg");
-        assertion.setIssueInstant(Calendar.getInstance());
+        assertion.setIssuer(issuer);
+        assertion.setIssueInstant(now);
+
         ConditionsType ct = ConditionsType.Factory.newInstance();
         Calendar calendar = Calendar.getInstance();
         calendar.set(Calendar.SECOND, 0);
@@ -89,7 +132,17 @@ class SenderVouchesHelper {
         c2.roll(Calendar.MINUTE, expiryMinutes);
         ct.setNotOnOrAfter(c2);
         assertion.setConditions(ct);
-        SubjectStatementAbstractType ss = assertion.addNewSubjectStatement();
+
+        AuthenticationStatementType at = assertion.addNewAuthenticationStatement();
+        at.setAuthenticationMethod("urn:oasis:names:tc:SAML:1.0:am:password");
+        at.setAuthenticationInstant(now);
+        SubjectType subject = at.addNewSubject();
+        NameIdentifierType ni = subject.addNewNameIdentifier();
+        ni.setStringValue(user.getName());
+        SubjectConfirmationType st = subject.addNewSubjectConfirmation();
+        st.addConfirmationMethod("urn:oasis:names:tc:SAML:1.0:cm:sender-vouches");
+
+
         StringWriter sw = new StringWriter();
         assertionDocument.setAssertion(assertion);
 
@@ -97,10 +150,11 @@ class SenderVouchesHelper {
         Map namespaces = new HashMap();
         namespaces.put("saml", "urn:oasis:names:tc:SAML:1.0:assertion");
         xo.setSaveImplicitNamespaces(namespaces);
+        /*
         xo.setSavePrettyPrint();
         xo.setSavePrettyPrintIndent(2);
         xo.setLoadLineNumbers();
-
+        */
         assertionDocument.save(sw, xo);
         return XmlUtil.stringToDocument(sw.toString());
     }
