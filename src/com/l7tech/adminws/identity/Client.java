@@ -5,18 +5,30 @@ import javax.xml.namespace.QName;
 import javax.xml.rpc.ServiceException;
 import java.net.MalformedURLException;
 
+import com.l7tech.adminws.CredentialsInvalidatorCallback;
+import com.l7tech.adminws.ClientCredentialManager;
+import com.l7tech.util.Locator;
+
 /**
  * Layer 7 Technologies, inc.
  * User: flascelles
  * Date: May 26, 2003
  *
  */
-public class Client {
+public class Client implements CredentialsInvalidatorCallback {
+
     public Client(String targetURL, String username, String password) {
         this.url = targetURL;
         this.username = username;
         this.password = password;
     }
+
+    public synchronized void invalidateCredentials() {
+        sessionCall = null;
+        this.username = null;
+        this.password = null;
+    }
+
     public String echoVersion() throws java.rmi.RemoteException {
         Call call = createStubCall();
         call.setOperationName(new QName(IDENTITY_URN, "echoVersion"));
@@ -157,6 +169,14 @@ public class Client {
             //sessionCall.removeAllParameters();
             return sessionCall;
         }
+
+        ClientCredentialManager credentialManager = (ClientCredentialManager)Locator.getDefault().lookup(ClientCredentialManager.class);
+        if (username == null || password == null) {
+            username = credentialManager.getUsername();
+            password = credentialManager.getPassword();
+        }
+        credentialManager.registerForInvalidation(this);
+        
         // create service, call
         org.apache.axis.client.Service service = new org.apache.axis.client.Service();
         Call call = null;
