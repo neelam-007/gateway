@@ -51,9 +51,8 @@ public class ClientRequestXpathAssertion extends ClientAssertion {
         }
     }
 
-    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) {
-        // No action required on response.
-        return AssertionStatus.NONE;
+    public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws PolicyAssertionException {
+        return decorateRequest(request); // make sure we follow the same policy path when processing the response
     }
 
     public String getName() {
