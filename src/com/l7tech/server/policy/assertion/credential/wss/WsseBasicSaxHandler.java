@@ -2,6 +2,7 @@ package com.l7tech.server.policy.assertion.credential.wss;
 
 import org.xml.sax.*;
 import com.l7tech.common.util.SAXParsingCompleteException;
+import com.l7tech.common.util.SoapUtil;
 
 /**
  * SAX Handler for xml document which contains a wsse usernametoken element.
@@ -60,19 +61,19 @@ public class WsseBasicSaxHandler implements ContentHandler {
             if (parsedUsername != null) throw new SAXParsingCompleteException();
         }
         else if (localName.equals(USERNAMETOKEN_TAGNAME) && insideUsernameToken) insideUsernameToken = false;
-        else if (localName.equals(SECURITY_TAGNAME) && insideSecurity) insideSecurity = false;
-        else if (localName.equals(HEADER_TAGNAME) && insideHeader) {
+        else if (localName.equals(SoapUtil.SECURITY_EL_NAME) && insideSecurity) insideSecurity = false;
+        else if (localName.equals(SoapUtil.HEADER_EL_NAME) && insideHeader) {
             insideHeader = false;
             // passed that, we are not going to find what we are seeking
             throw new SAXParsingCompleteException();
         }
-        else if (localName.equals(ENVELOPE_TAGNAME) && insideEnvelope) insideEnvelope = false;
+        else if (localName.equals(SoapUtil.ENVELOPE_EL_NAME) && insideEnvelope) insideEnvelope = false;
     }
 
     public void startElement(String namespaceURI, String localName, String qName, Attributes atts) throws SAXException {
-        if (localName.equals(ENVELOPE_TAGNAME) && !insideEnvelope) insideEnvelope = true;
-        else if (localName.equals(HEADER_TAGNAME) && insideEnvelope) insideHeader = true;
-        else if (localName.equals(SECURITY_TAGNAME) && insideEnvelope && insideHeader) insideSecurity = true;
+        if (localName.equals(SoapUtil.ENVELOPE_EL_NAME) && !insideEnvelope) insideEnvelope = true;
+        else if (localName.equals(SoapUtil.HEADER_EL_NAME) && insideEnvelope) insideHeader = true;
+        else if (localName.equals(SoapUtil.SECURITY_EL_NAME) && insideEnvelope && insideHeader) insideSecurity = true;
         else if (localName.equals(USERNAMETOKEN_TAGNAME) && insideEnvelope && insideHeader && insideSecurity) insideUsernameToken = true;
         else if (localName.equals(USERNAME_TAGNAME) && insideEnvelope && insideHeader && insideSecurity) insideUsername = true;
         else if (localName.equals(PASSWORD_TAGNAME) && insideEnvelope && insideHeader && insideSecurity) {
@@ -128,9 +129,7 @@ public class WsseBasicSaxHandler implements ContentHandler {
     protected boolean insideUsernameToken = false;
     protected boolean insideUsername = false;
     protected boolean insidePassword = false;
-    protected static final String ENVELOPE_TAGNAME = "Envelope";
-    protected static final String HEADER_TAGNAME = "Header";
-    protected static final String SECURITY_TAGNAME = "Security";
+
     protected static final String USERNAMETOKEN_TAGNAME = "UsernameToken";
     protected static final String USERNAME_TAGNAME = "Username";
     protected static final String PASSWORD_TAGNAME = "Password";
