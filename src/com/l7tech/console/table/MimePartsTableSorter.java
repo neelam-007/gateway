@@ -63,6 +63,46 @@ public class MimePartsTableSorter  extends FilteredDefaultTableModel {
         sortData(columnToSort, false);
     }
 
+    public boolean isCellEditable(int row, int col) {
+         if(col == MimePartsTableSorter.MIME_PART_TABLE_MAX_LENGTH_COLUMN_INDEX)
+             return true;
+         else
+             return false;
+     }
+
+   /**
+     * Update the data of a row.
+     * @param row  The row index.
+     * @param col The col index.
+     * @param aValue The new data to be stored.
+     */
+   public void setValueAt(Object aValue, int row, int col) {
+       // only max length column can be modified
+       if(col == MimePartsTableSorter.MIME_PART_TABLE_MAX_LENGTH_COLUMN_INDEX) {
+
+           Object o = (Object) getValueAt(row, MIME_PART_TABLE_PARAM_NAME_COLUMN_INDEX);
+
+           if (o instanceof String) {
+               String mimePartName = (String) o;
+
+               for (int i = 0; i < rawdata.size(); i++) {
+                   MimePartInfo mimePart = (MimePartInfo) rawdata.elementAt(i);
+                   if (mimePart != null && mimePart.getName() == mimePartName) {
+                       // replace the old one
+                       if(aValue instanceof Integer) {
+                           mimePart.setMaxLength(((Integer)aValue).intValue());
+                       } else if (aValue instanceof String) {
+                           mimePart.setMaxLength((new Integer(((String)aValue))).intValue());
+                       }
+                       break;
+                   }
+               }
+               // sort the data
+               sortData(columnToSort, false);
+           }
+       }
+   }
+
     /**
      * Delete a row from the table model
      * @param rowIndex  The index of the row to be deleted.
@@ -83,29 +123,6 @@ public class MimePartsTableSorter  extends FilteredDefaultTableModel {
         }
     }*/
 
-    /**
-     * Update the data of a row.
-     * @param row  The row index.
-     * @param data The new data to be stored.
-     */
-/*    public void updateData(int row, Object data) {
-
-        TrustedCert tc = null;
-
-        if (data instanceof TrustedCert) {
-            TrustedCert newtc = (TrustedCert) data;
-
-            for (int i = 0; i < rawdata.size(); i++) {
-                tc = (TrustedCert) rawdata.elementAt(i);
-                if (tc != null && tc.getOid() == newtc.getOid()) {
-                    // replace the old one
-                    rawdata.set(i, newtc);
-                }
-            }
-            // sort the data
-            sortData(columnToSort, false);
-        }
-    }*/
 
     /**
      * Return the column index of the sorted column.

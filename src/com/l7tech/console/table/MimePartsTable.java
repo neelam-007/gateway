@@ -54,14 +54,7 @@ public class MimePartsTable extends JTable {
                 "Parameter Name", "MIME Part Content Type", "MIME Part Length Max."
             };
 
-            tableSorter = new MimePartsTableSorter(new DefaultTableModel(rows, cols) {
-                public boolean isCellEditable(int row, int col) {
-                    if(col == MimePartsTableSorter.MIME_PART_TABLE_MAX_LENGTH_COLUMN_INDEX)
-                        return true;
-                    else
-                        return false;
-                }
-            });
+            tableSorter = new MimePartsTableSorter(new DefaultTableModel(rows, cols)); 
         }
 
         return tableSorter;

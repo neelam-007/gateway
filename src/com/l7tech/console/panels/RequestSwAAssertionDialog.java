@@ -166,15 +166,32 @@ public class RequestSwAAssertionDialog extends JDialog {
 
     }
 
+    private void saveData(BindingOperationInfo bo) {
+        if(bo == null) throw new RuntimeException("bindingOperation is NULL");
+
+        Vector dataSet = getMimePartsTable().getTableSorter().getAllData();
+        for (int i = 0; i < dataSet.size(); i++) {
+            MimePartInfo mimePart = (MimePartInfo) dataSet.elementAt(i);
+            MimePartInfo mimePartFound = (MimePartInfo) bo.getMultipart().get(mimePart.getName());
+            if(mimePartFound != null) {
+                mimePartFound.setMaxLength(mimePart.getMaxLength());
+            }            
+        }
+    }
+
     private void populateBindingOperationsData(BindingInfo binding) {
         if(binding == null) throw new RuntimeException("binding info is NULL");
+
+        // save the mime part data to the assertion before populating the new data
+        int selectedOperation = getBindingOperationsTable().getSelectedRow();
+        if(selectedOperation >= 0) {
+            BindingOperationInfo bo = (BindingOperationInfo) getBindingOperationsTableModel().getValueAt(selectedOperation, 0);
+            saveData(bo);
+        }
 
         // clear the operation table
         getBindingOperationsTableModel().removeRows(getBindingOperationsTableModel().getDataSet());
         getBindingOperationsTableModel().clearDataSet();
-
-        // clear the MIME part table
-        getMimePartsTable().removeAll();
 
         Iterator bindingOperationsItr = binding.getBindingOperations().keySet().iterator();
         while(bindingOperationsItr.hasNext()) {
