@@ -4,10 +4,7 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.logging.LogManager;
-import com.l7tech.objectmodel.EntityHeaderComparator;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
@@ -28,6 +25,7 @@ import java.util.Map;
 import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.sql.SQLException;
 
 /**
  * Layer 7 Technologies, inc.
@@ -157,7 +155,18 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                             logger.finest("Authenticated user " + login + " using a client certificate" );
                             pc.getUser().copyFrom( dbUser );
                             // remember that this cert was used at least once successfully
-                            man.forbidCertReset(dbUser);
+                            try {
+                                PersistenceContext.getCurrent().beginTransaction();
+                                man.forbidCertReset(dbUser);
+                                PersistenceContext.getCurrent().flush();
+                                // dont close context here. the message processor will do it
+                            } catch (SQLException e) {
+                                logger.log(Level.WARNING, "transaction error around forbidCertReset", e);
+                            } catch (TransactionException e) {
+                                logger.log(Level.WARNING, "transaction error around forbidCertReset", e);
+                            } catch (ObjectModelException e) {
+                                logger.log(Level.WARNING, "transaction error around forbidCertReset", e);
+                            }
                             return;
                         } else {
                             String err = "Failed to authenticate user " + login + " using an SSL client certificate (request certificate doesn't match database)";
@@ -225,9 +234,6 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                     throw new BadCredentialsException();
                 }
             }
-        } catch (UpdateException e ) {
-            logger.log(Level.SEVERE, null, e);
-            throw new AuthenticationException( e.getMessage(), e );
         } catch ( UnsupportedEncodingException uee ) {
             logger.log(Level.SEVERE, null, uee);
             throw new AuthenticationException( uee.getMessage(), uee );
