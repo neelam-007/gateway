@@ -45,6 +45,7 @@ public class ClientHttpBasic extends ClientAssertion {
         if (!ssg.isCredentialsConfigured())
             Managers.getCredentialManager().getCredentials(ssg);
         request.setBasicAuthRequired(true);
+        request.setSslRequired(true); // force SSL when using HTTP Basic
         log.info("HttpBasic: will use HTTP basic on this request to " + request.getSsg());
         return AssertionStatus.NONE;
     }
