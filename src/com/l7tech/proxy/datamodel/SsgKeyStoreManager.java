@@ -7,23 +7,22 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.util.FileUtils;
+import org.apache.log4j.Category;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
-import java.security.UnrecoverableKeyException;
 import java.security.PublicKey;
-import java.security.GeneralSecurityException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.security.cert.Certificate;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.FileOutputStream;
-
-import org.apache.log4j.Category;
 
 /**
  * Maintain the SSG-specified KeyStores.
