@@ -24,6 +24,7 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
 
     synchronized void parse( InputStream is ) throws SAXException, IOException {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware( true );
         try {
             // TODO: Ensure this is a lazy parser
             DocumentBuilder parser = dbf.newDocumentBuilder();
