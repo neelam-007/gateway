@@ -1,5 +1,8 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.policy.exporter.IdProviderReference;
+import com.l7tech.identity.IdentityProviderType;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -17,17 +20,22 @@ import java.awt.*;
  * $Id$
  */
 public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
-    public ResolveForeignIdentityProviderPanel(WizardStepPanel next) {
+    public ResolveForeignIdentityProviderPanel(WizardStepPanel next, IdProviderReference unresolvedRef) {
         super(next);
+        this.unresolvedRef = unresolvedRef;
         initialize();
     }
 
     private void initialize() {
         setLayout(new BorderLayout());
         add(mainPanel);
+        foreignProviderName.setText(unresolvedRef.getProviderName());
+        foreignProviderType.setText(IdentityProviderType.fromVal(unresolvedRef.getIdProviderTypeVal()).description());
     }
 
     private JPanel mainPanel;
     private JTextField foreignProviderName;
     private JTextField foreignProviderType;
+
+    private IdProviderReference unresolvedRef;
 }
