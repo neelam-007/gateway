@@ -53,7 +53,7 @@ public class SamlAssertionGenerator {
         }
         SenderVouchesHelper svh = new SenderVouchesHelper(document, options, creds, signer);
         svh.attachAssertion(true);
-        svh.signEnvelope();
+        if (options.isSignEnvelope()) svh.signEnvelope();
     }
 
     public static class Options {
