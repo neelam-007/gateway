@@ -851,9 +851,14 @@ public class WssProcessorImpl implements WssProcessor {
         }
 
         if (signingKey == null) {
-            String msg = "Was not able to get cert or derived key from signature's keyinfo";
-            logger.warning(msg);
-            throw new InvalidDocumentFormatException(msg);
+            // some toolkits can base their signature on a usernametoken
+            // although the ssg does not support that, we should not throw
+            // but just ignore this signature because the signature may be
+            // useful for a downstream service (see bugzilla #1585)
+            String msg = "Was not able to get cert or derived key from signature's keyinfo. ignoring this signature";
+            logger.info(msg);
+            // dont throw, just ignore signature!
+            return;
         }
 
         if (signingCert != null) {
