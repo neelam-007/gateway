@@ -20,12 +20,13 @@ import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.log4j.Category;
-import org.apache.axis.encoding.Base64;
 
 import java.net.URL;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.io.IOException;
+
+import sun.misc.BASE64Decoder;
 
 /**
  * Keep track of open security sessions with SSGs
@@ -110,11 +111,12 @@ public class SsgSessionManager {
 
             String idstr = header(getMethod, SecureSpanConstants.HttpHeaders.XML_SESSID_HEADER_NAME);
             String b64keyreq = header(getMethod, SecureSpanConstants.HttpHeaders.HEADER_KEYREQ);
-            byte[] keyreq = Base64.decode(b64keyreq);
+            BASE64Decoder b64decoder = new BASE64Decoder();
+            byte[] keyreq = b64decoder.decodeBuffer(b64keyreq);
             if (keyreq == null)
                 throw new IOException("SSG sent invalid request key in session: base64 keyreq=" + b64keyreq);
             String b64keyres = header(getMethod, SecureSpanConstants.HttpHeaders.HEADER_KEYRES);
-            byte[] keyres = Base64.decode(b64keyres);
+            byte[] keyres = b64decoder.decodeBuffer(b64keyres);
             if (keyres == null)
                 throw new IOException("SSG sent invalid response key in session: base64 keyres=" + b64keyres);
 
