@@ -116,8 +116,8 @@ public class PolicyManagerImpl implements PolicyManager {
                     getMethod.setDoAuthentication(true);
                     try {
                         status = client.executeMethod(getMethod);
-                        if (status == 401 && ++attempts < 10) {
-                            log.info("Got 401 status downloading policy; will get new credentials and try download again");
+                        if ((status == 401 || status == 404) && ++attempts < 10) {
+                            log.info("Got " + status + " status downloading policy; will get new credentials and try download again");
                             Managers.getCredentialManager().notifyInvalidCredentials(ssg);
                             Managers.getCredentialManager().getCredentials(ssg);
                             continue;
