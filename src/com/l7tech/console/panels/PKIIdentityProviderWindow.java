@@ -5,19 +5,15 @@ import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.util.Locator;
 import com.l7tech.console.table.TrustedCertsTable;
 import com.l7tech.console.table.TrustedCertTableSorter;
-import com.l7tech.objectmodel.FindException;
-
 import javax.swing.*;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
 import java.util.ResourceBundle;
 import java.util.Locale;
-import java.util.Vector;
 import java.util.logging.Logger;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.rmi.RemoteException;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -67,6 +63,8 @@ public class PKIIdentityProviderWindow extends JDialog {
     }
 
     private void initialize() {
+
+        final JDialog thisDialog = this;
         Container p = getContentPane();
         p.setLayout(new BorderLayout());
         p.add(mainPanel, BorderLayout.CENTER);
@@ -93,7 +91,9 @@ public class PKIIdentityProviderWindow extends JDialog {
 
         addButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                //loadTrustedCerts();
+                CertSearchPanel sp = new CertSearchPanel(thisDialog);
+                sp.show();
+                sp.setSize(400, 600);
             }
         });
 
@@ -122,35 +122,6 @@ public class PKIIdentityProviderWindow extends JDialog {
             }
         });
 
-    }
-
-    /**
-     * Load the certs from the database
-     */
-    private void loadTrustedCerts() {
-
-        java.util.List certList = null;
-        try {
-            certList = getTrustedCertAdmin().findAllCerts();
-
-            Vector certs = new Vector();
-            for (int i = 0; i < certList.size(); i++) {
-                Object o = (Object) certList.get(i);
-                certs.add(o);
-            }
-            trustedCertTable.getTableSorter().setData(certs);
-            trustedCertTable.getTableSorter().getRealModel().setRowCount(certs.size());
-            trustedCertTable.getTableSorter().fireTableDataChanged();
-
-        } catch (RemoteException re) {
-            JOptionPane.showMessageDialog(this, resources.getString("cert.remote.exception"),
-                                        resources.getString("load.error.title"),
-                                        JOptionPane.ERROR_MESSAGE);
-        } catch (FindException e) {
-            JOptionPane.showMessageDialog(this, resources.getString("cert.find.error"),
-                                        resources.getString("load.error.title"),
-                                        JOptionPane.ERROR_MESSAGE);
-        }
     }
 
     /**
