@@ -38,7 +38,7 @@ public class CustomAssertionsBootProcess implements ServerComponentLifecycle {
     public void init(ComponentConfig config) throws LifecycleException {
         fileName = config.getProperty(KEY_CONFIG_FILE);
         if (fileName == null) {
-            logger.info("'"+KEY_CONFIG_FILE+"' not specified");
+            logger.info("'" + KEY_CONFIG_FILE + "' not specified");
         }
     }
 
@@ -87,6 +87,7 @@ public class CustomAssertionsBootProcess implements ServerComponentLifecycle {
         String clientClass = null;
         String serverClass = null;
         String assertionClass = null;
+        String securityManagerClass = null;
         Category category = Category.UNFILLED;
 
         assertionClass = (String)properties.get(baseKey + ".class");
@@ -98,6 +99,8 @@ public class CustomAssertionsBootProcess implements ServerComponentLifecycle {
                     clientClass = (String)properties.get(key);
                 } else if (key.endsWith(".server")) {
                     serverClass = (String)properties.get(key);
+                } else if (key.endsWith(".security.manager")) {
+                    securityManagerClass = (String)properties.get(key);
                 } else if (key.endsWith(".category")) {
                     Category c = Category.asCategory((String)properties.get(key));
                     if (c != null) {
@@ -119,9 +122,13 @@ public class CustomAssertionsBootProcess implements ServerComponentLifecycle {
             Class a = Class.forName(assertionClass);
             Class ca = Class.forName(clientClass);
             Class sa = Class.forName(serverClass);
-            CustomAssertionDescriptor eh = new CustomAssertionDescriptor(baseKey, a, ca, sa, category);
+            SecurityManager sm = null;
+            if (securityManagerClass != null) {
+                sm = (SecurityManager)Class.forName(securityManagerClass).newInstance();
+            }
+            CustomAssertionDescriptor eh = new CustomAssertionDescriptor(baseKey, a, ca, sa, category, sm);
             CustomAssertions.register(eh);
-            logger.info("Registered custom assertion "+eh);
+            logger.info("Registered custom assertion " + eh);
         } catch (ClassNotFoundException e) {
             StringBuffer sb = new StringBuffer("Cannot load class(es) for extensibility assertion, skipping...\n");
             sb.append("[ assertion class=" + assertionClass);
