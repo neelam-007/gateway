@@ -3,7 +3,7 @@
 <html>
 <head>
 
-<title>Layer 7 Management Console</title>
+<title>SecureSpan Manager</title>
 
 <!--(Meta)==========================================================-->
 
@@ -26,8 +26,9 @@
 BODY {
 	font: Arial Tahoma Verdana Dialog;
 }
-.style1 {font-family: Arial, Helvetica, sans-serif}
 .style4 {font-family: Arial, Helvetica, sans-serif; font-size: 12px; }
+.style5 {font-size: 12px}
+.style6 {font-family: Arial, Helvetica, sans-serif}
 
 -->
 </style>
@@ -41,10 +42,9 @@ BODY {
 <body>
 
 <!--(Table)=========================================================-->
-<table x-use-null-cells
-		style="width: 100%; x-cell-content-align: Center;"
-		width=100%>
-
+<table
+		width=100% align="left"
+		style="width: 100%; x-cell-content-align: Center;" x-use-null-cells>
 <tr style="x-cell-content-align: center; height: 27px;"
 	valign=middle>
   <td colspan="2" align="left"	style="vertical-align: top;
@@ -59,7 +59,7 @@ BODY {
 			padding-left: 0px;
 			padding-top: 0px;
 			padding-right: 0px;
-			padding-bottom: 0px;"><img src="PageBanner.gif" width="661" height="38"></td>
+			padding-bottom: 0px;"><img src="PageBanner.png" width="500" height="38"></td>
 </tr>
 
 <tr style="x-cell-content-align: center; height: 32px;"
@@ -68,7 +68,7 @@ BODY {
 			padding-left: 0px;
 			padding-top: 0px;
 			padding-right: 0px;
-			padding-bottom: 0px;"><img src="WelcomeText.gif" width="661" height="38"></td>
+			padding-bottom: 0px;"><img src="WelcomeText.png" width="500" height="38"></td>
 </tr>
 <tr style="x-cell-content-align: center; height: 32px;"
 	valign=middle>
@@ -76,83 +76,83 @@ BODY {
 			padding-left: 0px;
 			padding-top: 0px;
 			padding-right: 0px;
-			padding-bottom: 0px;"><img src="TasksBanner.gif" width="661" height="30"></td>
+			padding-bottom: 0px;"><img src="TasksBanner.png" width="500" height="30"></td>
   </tr>
-<tr style="x-cell-content-align: center; height: 32px;"
-	valign=middle>
-  <td width="6%" align="center" valign="middle" style="vertical-align: top;
+<tr align="left"
+	valign=middle style="x-cell-content-align: center; height: 32px;">
+  <td width="6%" style="vertical-align: top;
 			padding-left: 0px;
 			padding-top: 2px;
 			padding-right: 0px;
-			padding-bottom: 2px;"><a href="file://create.definition"><img src="policy32.gif"
+			padding-bottom: 2px;"><div align="center"><a href="file://create.definition" class="style6"><img src="policy32.gif"
 											style="border-style: none; border-style: none;"
-											border=0></a></td>
-  <td width="93%" align="left" valign="middle" class="style4" style="vertical-align: top;
+											border=0></a></div></td>
+  <td width="94%" class="style4" style="vertical-align: top;
 			padding-left: 3px;
 			padding-top: 8px;
 			padding-right: 0px;
-			padding-bottom: 0px;"><a href="file://add.identity.provider" class="style4">Create Identity Provider</a></span></td>
+			padding-bottom: 0px;"><a href="file://add.identity.provider" class="style5">Create Identity Provider</a></span></td>
   </tr>
-<tr style="x-cell-content-align: center; height: 32px;"
-	valign=middle>
-  <td align="center" valign="middle" style="vertical-align: top;
+<tr align="left"
+	valign=middle style="x-cell-content-align: center; height: 32px;">
+  <td style="vertical-align: top;
 			padding-left: 0px;
 			padding-top: 2px;
 			padding-right: 0px;
-			padding-bottom: 2px;"><a href="file://add.group"><img src="group32.png"
+			padding-bottom: 2px;"><div align="center"><a href="file://add.group" class="style6"><img src="group32.png"
 									style="border-style: none; border-style: none;"
-									border=0></a></td>
-  <td align="left" valign="middle" class="style4" style="vertical-align: top;
+									border=0></a></div></td>
+  <td class="style4" style="vertical-align: top;
 			padding-left: 3px;
 			padding-top: 8px;
 			padding-right: 0px;
-			padding-bottom: 0px;"><a href="file://add.group">Create Group</a></td>
+			padding-bottom: 0px;"><a href="file://add.group" class="style6">Create Group</a></td>
 </tr>
-<tr style="x-cell-content-align: center; height: 32px;"
-	valign=middle>
-  <td align="center" valign="middle" style="vertical-align: top;
+<tr align="left"
+	valign=middle style="x-cell-content-align: center; height: 32px;">
+  <td style="vertical-align: top;
 			padding-left: 0px;
 			padding-top: 2px;
 			padding-right: 0px;
-			padding-bottom: 2px;"><a href="file://add.user"><img 
+			padding-bottom: 2px;"><div align="center"><a href="file://add.user" class="style6"><img 
  src="user32.png"
 	style="border-style: none; border-style: none;"
-	border=0></a></td>
-  <td align="left" valign="middle" class="style4" style="vertical-align: top;
+	border=0></a></div></td>
+  <td class="style4" style="vertical-align: top;
 			padding-left: 3px;
 			padding-top: 8px;
 			padding-right: 0px;
 			padding-bottom: 0px;"><a href="file://add.user" class="style4">Create User</a></td>
 </tr>
-<tr style="x-cell-content-align: center; height: 32px;"
-	valign=middle>
-  <td align="center" valign="middle" style="vertical-align: top;
+<tr align="left"
+	valign=middle style="x-cell-content-align: center; height: 32px;">
+  <td style="vertical-align: top;
 			padding-left: 0px;
 			padding-top: 2px;
 			padding-right: 0px;
-			padding-bottom: 2px;"><a href="file://add.service"><img src="services32.png"
+			padding-bottom: 2px;"><div align="center"><a href="file://add.service" class="style6"><img src="services32.png"
 									style="border-style: none; border-style: none;"
-									border=0></a></td>
-  <td align="left" valign="middle" class="style4" style="vertical-align: top;
+									border=0></a></div></td>
+  <td class="style4" style="vertical-align: top;
 			padding-left: 3px;
 			padding-top: 8px;
 			padding-right: 0px;
 			padding-bottom: 0px;"><a href="file://add.service" class="style4">Publish Web Service</a></td>
   </tr>
-<tr style="x-cell-content-align: center; height: 32px;"
-	valign=middle>
-  <td align="center" valign="middle" style="vertical-align: top;
+<tr align="left"
+	valign=middle style="x-cell-content-align: center; height: 32px;">
+  <td style="vertical-align: top;
 			padding-left: 0px;
 			padding-top: 2px;
 			padding-right: 0px;
-			padding-bottom: 2px;"><a href="file://create.definition"><img src="policy32.gif"
+			padding-bottom: 2px;"><div align="center"><a href="file://create.definition" class="style6"><img src="policy32.gif"
 											style="border-style: none; border-style: none;"
-											border=0></a></td>
-  <td align="left" valign="middle" class="style4" style="vertical-align: top;
+											border=0></a></div></td>
+  <td class="style4" style="vertical-align: top;
 			padding-left: 3px;
 			padding-top: 8px;
 			padding-right: 0px;
-			padding-bottom: 0px;"><a href="file://create.definition">Create WDSL</a></td>
+			padding-bottom: 0px;"><a href="file://create.definition" class="style6">Create WDSL</a></td>
   </tr>
 <tr style="x-cell-content-align: center; height: 32px;"
 	valign=middle>
@@ -161,14 +161,14 @@ BODY {
 			padding-top: 2px;
 			padding-right: 0px;
 			padding-bottom: 2px;">&nbsp;</td>
-  </tr>
+</tr>
 <tr style="x-cell-content-align: center; height: 32px;"
 	valign=middle>
   <td colspan="2" align="center" valign="middle" style="vertical-align: top;
 			padding-left: 0px;
 			padding-top: 0px;
 			padding-right: 0px;
-			padding-bottom: 0px;"><div align="left"><img src="LOGOsmall.png" width="160" height="41"></div></td>
+			padding-bottom: 0px;"><div align="left"><img src="LOGOsmall.png" width="130" height="33"></div></td>
   </tr>
 <tr style="x-cell-content-align: center; height: 32px;"
 	valign=middle>
