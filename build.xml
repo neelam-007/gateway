@@ -412,7 +412,7 @@
                 <include name="ojdbc14.jar" if="db.oracle9"/>
                 <include name="ojdbc14.jar" if="db.oracle10"/>
 
-                <include name="mysql-connector-java-3.0.14-stable-bin.jar" if="db.mysql"/>
+                <include name="mysql-connector-java-3.1.6-stable-bin.jar" if="db.mysql"/>
                 <include name="postgresql.jar" if="db.postgres"/>
             </lib>
 
