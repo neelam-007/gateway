@@ -194,10 +194,14 @@ public class JceProviderTest {
     private static String privateKeyInfo(PrivateKey pk) {
         if (pk instanceof RSAPrivateKey) {
             RSAPrivateKey rsaKey = (RSAPrivateKey)pk;
-            String modulus = rsaKey.getModulus().toString(16);
-            String strength = (modulus.length() * 4) + " bits";
-            String exponent = rsaKey.getPrivateExponent().toString(16);
-            return "RSA key; " + strength + "; modulus=" + trunc10(modulus) + "; privateExponent=" + trunc10(exponent);
+            try {
+                String modulus = rsaKey.getModulus().toString(16);
+                String strength = (modulus.length() * 4) + " bits";
+                String exponent = rsaKey.getPrivateExponent().toString(16);
+                return "RSA key; " + strength + "; modulus=" + trunc10(modulus) + "; privateExponent=" + trunc10(exponent);
+            } catch ( RuntimeException rte ) {
+                return "RSA key; assuming hardware: " + rte.getMessage();
+            }
         } else
             return "Unknown private key";
     }
