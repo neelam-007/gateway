@@ -3,10 +3,7 @@ package com.l7tech.server.policy.assertion.xmlsec;
 import com.l7tech.common.security.xml.*;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.xml.MessageNotSoapException;
-import com.l7tech.message.Request;
-import com.l7tech.message.Response;
-import com.l7tech.message.XmlResponse;
-import com.l7tech.message.SoapRequest;
+import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
@@ -45,23 +42,20 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
     /**
      * despite the name of this method, i'm actually working on the response document here
      */
-    public AssertionStatus checkRequest(Request arequest, Response response) throws IOException, PolicyAssertionException {
-        if (!(arequest instanceof SoapRequest))
-            return AssertionStatus.NOT_APPLICABLE;      // TODO verify that this is the appropriate return value
-        SoapRequest soapRequest = (SoapRequest)arequest;
-        if (!soapRequest.isSoap())
-            return AssertionStatus.NOT_APPLICABLE;      // TODO verify that this is the appropriate return value
-
+    public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
+        if (!(request instanceof SoapRequest)) {
+            throw new PolicyAssertionException("This type of assertion is only supported with SOAP type of messages");
+        }
+        if (!(response instanceof SoapResponse)) {
+            throw new PolicyAssertionException("This type of assertion is only supported with SOAP type of messages");
+        }
+        SoapRequest soapRequest = (SoapRequest)request;
+        SoapResponse soapResponse = (SoapResponse)response;
         // GET THE DOCUMENT
         Document soapmsg = null;
         try {
-            soapmsg = ServerSoapUtil.getDocument(response);
+            soapmsg = soapResponse.getDocument();
         } catch (SAXException e) {
-            String msg = "cannot get an xml document from the response to sign";
-            logger.severe(msg);
-            return AssertionStatus.SERVER_ERROR;
-        }
-        if (soapmsg == null) {
             String msg = "cannot get an xml document from the response to sign";
             logger.severe(msg);
             return AssertionStatus.SERVER_ERROR;
@@ -74,8 +68,8 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
         if (nonceValue != null && nonceValue.length() > 0) {
             try {
                 SecureConversationTokenHandler.appendNonceToDocument(soapmsg, Long.parseLong(nonceValue));
-            } catch ( MessageNotSoapException e ) {
-                logger.log( Level.WARNING, e.getMessage(), e );
+            } catch (MessageNotSoapException e) {
+                logger.log(Level.WARNING, e.getMessage(), e);
                 return AssertionStatus.FAILED;
             }
         } else {
