@@ -86,6 +86,10 @@ public class ServerHttpBasic extends ServerHttpCredentialSource implements Serve
         _data = data;
     }
 
+    protected String realm(Request request) {
+        return _data.getRealm();
+    }
+
     protected AssertionStatus doCheckCredentials(Request request, Response response) {
         return AssertionStatus.NONE;
     }
