@@ -267,11 +267,11 @@ public class LdapIdentityProvider implements IdentityProvider {
             throw new IllegalArgumentException("types must contain users and or groups");
         }
         Collection output = new TreeSet(new EntityHeaderComparator());
+        String filter = null;
         try
         {
             NamingEnumeration answer = null;
             // search string for users and or groups based on passed types wanted
-            String filter = null;
             if (wantUsers && wantGroups) {
                 filter = "(|" + userSearchFilterWithParam(searchString) + groupSearchFilterWithParam(searchString) + ")";
             } else if (wantUsers) {
@@ -296,7 +296,7 @@ public class LdapIdentityProvider implements IdentityProvider {
             if (answer != null) answer.close();
             context.close();
         } catch (NamingException e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
+            logger.log(Level.SEVERE, "error searching with filter: " + filter, e);
         }
         return output;
     }
