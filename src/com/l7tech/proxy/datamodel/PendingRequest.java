@@ -20,7 +20,9 @@ public class PendingRequest {
     private String soapAction = "";
     private String uri = "";
     private boolean isPolicyUpdated = false;
-    private boolean isCredentialsUpdated = false;
+
+    /** Number of times credentials have been updated while processing this request. */
+    private int timesCredentialsUpdated = 0;
 
     // Policy settings, filled in by traversing poliy tree
     private static class PolicySettings {
@@ -139,12 +141,16 @@ public class PendingRequest {
         isPolicyUpdated = policyUpdated;
     }
 
-    public boolean isCredentialsUpdated() {
-        return isCredentialsUpdated;
+    public int getTimesCredentialsUpdated() {
+        return timesCredentialsUpdated;
     }
 
-    public void setCredentialsUpdated(boolean credentialsUpdated) {
-        isCredentialsUpdated = credentialsUpdated;
+    public void setTimesCredentialsUpdated(int timesCredentialsUpdated) {
+        this.timesCredentialsUpdated = timesCredentialsUpdated;
+    }
+
+    public void incrementTimesCredentialsUpdated() {
+        this.timesCredentialsUpdated++;
     }
 
     public boolean isCredentialsWouldHaveHelped() {
