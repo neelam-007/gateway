@@ -8,8 +8,6 @@ import java.io.IOException;
 
 import com.l7tech.credential.PrincipalCredentials;
 
-import javax.servlet.http.HttpServletRequest;
-
 /**
  * @author alex
  * @version $Revision$
@@ -21,7 +19,7 @@ public class SoapRequest extends XmlMessageAdapter implements SoapMessage, XmlRe
 
     /**
      * Returns a DOM Document, parsing the requestStream if necessary.  If the requestStream has not already been parsed, this method will begin parsing it and return a "lazy DOM" implementation.
-     * @return a "lazy dom" implementation
+     * @return a "lazy dom" implementation -- hopefully
      * @throws SAXException if some sort of
      * @throws IOException
      */
@@ -36,6 +34,12 @@ public class SoapRequest extends XmlMessageAdapter implements SoapMessage, XmlRe
         return _document;
     }
 
+    /**
+     * Returns an InputStream from the request. Could be null!
+     *
+     * @return The InputStream from the request, if any.
+     * @throws IOException
+     */
     public InputStream getRequestStream() throws IOException {
         if ( _requestStream == null ) {
             if ( _transportMetadata instanceof HttpTransportMetadata ) {
@@ -56,20 +60,22 @@ public class SoapRequest extends XmlMessageAdapter implements SoapMessage, XmlRe
         _principalCredentials = pc;
     }
 
+    /**
+     * Returns true if this request has been authenticated.
+     * @return true if this request has been authenticated.
+     */
     public boolean isAuthenticated() {
         return _authenticated;
     }
 
+    /**
+     * Sets this request's authenticated property.
+     * @param authenticated
+     */
     public void setAuthenticated(boolean authenticated) {
         _authenticated = authenticated;
     }
 
-    public Object getParameter( Object name ) {
-        // TODO: Get from _axisEnvelope?
-        return null;
-    }
-
-    protected HttpServletRequest _request;
     protected boolean _authenticated;
     protected PrincipalCredentials _principalCredentials;
     protected InputStream _requestStream;
