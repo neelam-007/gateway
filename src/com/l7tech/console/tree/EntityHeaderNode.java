@@ -1,23 +1,30 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.console.action.DeleteEntityAction;
+import com.l7tech.console.util.Registry;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.identity.IdentityProvider;
 
 import javax.swing.*;
+import java.util.logging.Level;
 
 /**
  * The class represents an entity gui node element in the
  * TreeModel.
- *
+ * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
 public abstract class EntityHeaderNode extends AbstractTreeNode {
+    private IdentityProvider provider;
+
     /**
      * construct the <CODE>EntityHeaderNode</CODE> instance for a given
      * <CODE>id</CODE>
-     *
-     * @param e  the e represented by this <CODE>EntityHeaderNode</CODE>
+     * 
+     * @param e the e represented by this <CODE>EntityHeaderNode</CODE>
      */
     public EntityHeaderNode(EntityHeader e) {
         super(e);
@@ -26,7 +33,7 @@ public abstract class EntityHeaderNode extends AbstractTreeNode {
 
     /**
      * Returns true if the receiver is a leaf.
-     *
+     * 
      * @return true if leaf, false otherwise
      */
     public boolean isLeaf() {
@@ -37,7 +44,7 @@ public abstract class EntityHeaderNode extends AbstractTreeNode {
      * Get the set of actions associated with this node.
      * This returns actions that are used buy entity nodes
      * such .
-     *
+     * 
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
@@ -47,9 +54,9 @@ public abstract class EntityHeaderNode extends AbstractTreeNode {
     }
 
     /**
-     *Test if the node can be deleted. Default for entites
+     * Test if the node can be deleted. Default for entites
      * is <code>true</code>
-     *
+     * 
      * @return true if the node can be deleted, false otherwise
      */
     public boolean canDelete() {
@@ -58,11 +65,27 @@ public abstract class EntityHeaderNode extends AbstractTreeNode {
 
     /**
      * Returns the entity this node contains.
-     *
+     * 
      * @return the <code>EntityHeader</code>
      */
     public EntityHeader getEntityHeader() {
-        return (EntityHeader) getUserObject();
+        return (EntityHeader)getUserObject();
+    }
+
+    /**
+     * @return the <code>IdentityProvider</code>
+     */
+    public IdentityProvider getProvider() {
+        if (provider != null) {
+            return provider;
+        }
+        try {
+            long oid = getEntityHeader().getOid();
+            provider = Registry.getDefault().getProviderConfigManager().getIdentityProvider(oid);
+            return provider;
+        } catch (FindException e) {
+            throw new RuntimeException("Unable to locate the identity provider "+getEntityHeader().getName(), e);
+        }
     }
 
     /**

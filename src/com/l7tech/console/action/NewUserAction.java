@@ -49,7 +49,7 @@ public class NewUserAction extends NodeAction {
      * specify the resource name for this action
      */
     protected String iconResource() {
-        return "com/l7tech/console/resources/New16.gif";
+        return "com/l7tech/console/resources/user16.png";
     }
 
     /** Actually perform the action.

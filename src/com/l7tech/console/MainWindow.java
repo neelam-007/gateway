@@ -482,7 +482,7 @@ public class MainWindow extends JFrame {
                           (DefaultMutableTreeNode)getAssertionPaletteTree().getModel().getRoot();
                         AbstractTreeNode parent =
                           (AbstractTreeNode)TreeNodeActions.
-                          nodeByNamePath(new String[]{"Internal Identity Provider", "Users"},
+                          nodeByNamePath(new String[]{"Internal Identity Provider"},
                             root);
                         node = parent;
                     }
@@ -520,7 +520,7 @@ public class MainWindow extends JFrame {
                           (DefaultMutableTreeNode)getAssertionPaletteTree().getModel().getRoot();
                         AbstractTreeNode parent =
                           (AbstractTreeNode)TreeNodeActions.
-                          nodeByNamePath(new String[]{"Internal Identity Provider", "Groups"},
+                          nodeByNamePath(new String[]{"Internal Identity Provider"},
                             root);
                         node = parent;
                     }
@@ -545,13 +545,7 @@ public class MainWindow extends JFrame {
                     setEnabled(true);
                     final DefaultMutableTreeNode root =
                       (DefaultMutableTreeNode)getAssertionPaletteTree().getModel().getRoot();
-                    AbstractTreeNode parent =
-                      (AbstractTreeNode)TreeNodeActions.nodeByName(
-                        ProvidersFolderNode.NAME,
-                        root
-                      );
-                    node = parent;
-
+                    node = (AbstractTreeNode)root;
                 }
 
                 public void onDisconnect(ConnectionEvent e) {

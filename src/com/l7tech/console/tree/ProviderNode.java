@@ -2,20 +2,25 @@ package com.l7tech.console.tree;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.console.action.IdentityProviderPropertiesAction;
-import com.l7tech.console.action.FindIdentityAction;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.console.action.*;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.IdentityProviderConfigManager;
 
 import javax.swing.*;
 import javax.swing.tree.MutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
+import java.awt.*;
 
 /**
  * The class represents an tree node gui node element that
  * corresponds to the Provider entity.
- *
+ * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.2
  */
@@ -25,10 +30,9 @@ public class ProviderNode extends EntityHeaderNode {
      * a given entity.
      * The parameter entity must represent a provider, otherwise the
      * runtime IllegalArgumentException exception is thrown.
-     *
-     * @param e  the Entry instance, must be provider
-     * @exception IllegalArgumentException
-     *                   thrown if the entity instance is not a provider
+     * 
+     * @param e the Entry instance, must be provider
+     * @throws IllegalArgumentException thrown if the entity instance is not a provider
      */
     public ProviderNode(EntityHeader e) {
         super(e);
@@ -42,13 +46,25 @@ public class ProviderNode extends EntityHeaderNode {
     /**
      * Get the set of actions associated with this node.
      * This may be used e.g. in constructing a context menu.
-     *
+     * 
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
         java.util.List list = new ArrayList();
         list.add(new IdentityProviderPropertiesAction(this));
         list.add(new FindIdentityAction());
+        final NewUserAction newUserAction = new NewUserAction(this);
+        final NewGroupAction newGroupAction = new NewGroupAction(this);
+
+        final long oid = getEntityHeader().getOid();
+        newUserAction.setEnabled(oid == IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+        newGroupAction.setEnabled(oid == IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
+        list.add(newUserAction);
+        list.add(newGroupAction);
+        RefreshAction ra = new ProviderRefreshAction(this);
+        list.add(ra);
+
+
         list.addAll(Arrays.asList(super.getActions()));
 
         return (Action[])list.toArray(new Action[]{});
@@ -56,6 +72,7 @@ public class ProviderNode extends EntityHeaderNode {
 
     /**
      * Gets the default action for this node.
+     * 
      * @return <code>null</code> indicating there should be none default action
      */
     public Action getPreferredAction() {
@@ -63,37 +80,30 @@ public class ProviderNode extends EntityHeaderNode {
     }
 
     /**
-     * Populates the children of the node.
+     * subclasses override this method
      */
     protected void loadChildren() {
-        long oid = getEntityHeader().getOid();
         try {
+            long oid = getEntityHeader().getOid();
             IdentityProvider ip =
               Registry.getDefault().getProviderConfigManager().getIdentityProvider(oid);
-            Enumeration kids = Collections.enumeration(Collections.EMPTY_LIST);
-            if (ip == null) {
-                logger.warning("Error obtaining identity provider " + oid);
-            } else {
-                List list =
-                  Arrays.asList(new AbstractTreeNode[]{
-                      new UserFolderNode(ip, "Users"),
-                      new GroupFolderNode(ip, "Groups")
-                  });
-                kids = Collections.enumeration(list);
-            }
+            final IdentityEntitiesCollection collection =
+              new IdentityEntitiesCollection(ip, new EntityType[]{EntityType.USER, EntityType.GROUP});
+            Enumeration en = TreeNodeFactory.getTreeNodeEnumeration(new EntitiesEnumeration(collection));
             int index = 0;
             children = null;
-            for (; kids.hasMoreElements();) {
-                insert((MutableTreeNode)kids.nextElement(), index++);
+            for (; en.hasMoreElements();) {
+                insert((MutableTreeNode)en.nextElement(), index++);
             }
         } catch (FindException e) {
-            logger.log(Level.WARNING, "Error obtaining identity provider " + oid, e);
+            logger.log(Level.SEVERE, "Error obtaining identity provider " + getEntityHeader().getName(), e);
         }
     }
 
+
     /**
      * Returns true if the receiver is a leaf.
-     *
+     * 
      * @return true if leaf, false otherwise
      */
     public boolean isLeaf() {
@@ -102,10 +112,48 @@ public class ProviderNode extends EntityHeaderNode {
 
     /**
      * subclasses override this method specifying the resource name
-     *
+     * 
      * @param open for nodes that can be opened, can have children
      */
     protected String iconResource(boolean open) {
         return "com/l7tech/console/resources/providers16.gif";
     }
+
+
+
+    /**
+     * the refresh groups action class
+     */
+    class ProviderRefreshAction extends RefreshAction {
+        public ProviderRefreshAction(ProviderNode node) {
+            super(node);
+        }
+
+        public void performAction() {
+            if (tree == null) {
+                logger.warning("No tree assigned, ignoring the refresh action");
+                return;
+            }
+
+            Runnable runnable = new Runnable() {
+                public void run() {
+                    try {
+                        SwingUtilities.getWindowAncestor(tree);
+                        tree.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+
+                        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                        TreePath treePath = new TreePath(ProviderNode.this.getPath());
+                        if (tree.isExpanded(treePath)) {
+                            ProviderNode.this.hasLoadedChildren = false;
+                            model.reload(ProviderNode.this);
+                        }
+                    } finally {
+                        tree.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+                    }
+                }
+            };
+            SwingUtilities.invokeLater(runnable);
+        }
+    }
+
 }

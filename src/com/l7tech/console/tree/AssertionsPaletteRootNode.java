@@ -3,14 +3,21 @@ package com.l7tech.console.tree;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.console.action.NewProviderAction;
 
+import javax.swing.tree.MutableTreeNode;
+import javax.swing.*;
 import java.io.IOException;
 import java.util.logging.Level;
+import java.util.Enumeration;
+import java.util.Collections;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * The class represents an <code>AbstractTreeNode</code> specialization
  * element that represents the assertions palette root.
- *
+ * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
@@ -28,7 +35,7 @@ public class AssertionsPaletteRootNode extends AbstractTreeNode {
 
     /**
      * Returns true if the receiver is a leaf.
-     *
+     * 
      * @return true if leaf, false otherwise
      */
     public boolean isLeaf() {
@@ -53,29 +60,45 @@ public class AssertionsPaletteRootNode extends AbstractTreeNode {
         } catch (IOException e) {
             // something bad happened to the preferences home path
             ErrorManager.
-                      getDefault().
-                      notify(Level.WARNING, e, "There was an error in retreiving preferences.");
+              getDefault().
+              notify(Level.WARNING, e, "There was an error in retreiving preferences.");
             homePath = System.getProperty("user.home");
         }
-        AbstractTreeNode[] nodes =
-            new AbstractTreeNode[]{
-                // new UserFolderNode(r.getInternalUserManager(), providerId),
-                // new GroupFolderNode(r.getInternalGroupManager(), providerId),
-                new ProvidersFolderNode(r.getProviderConfigManager()),
-                new PoliciesFolderNode(homePath),
-                new AuthMethodFolderNode(),
-                new TransportLayerSecurityFolderNode(),
-                new XmlSecurityFolderNode(),
-                new RoutingFolderNode()
-            };
+        Enumeration e =
+          TreeNodeFactory.
+          getTreeNodeEnumeration(
+            new EntitiesEnumeration(new ProviderEntitiesCollection(r.getProviderConfigManager())));
+        List nodeList = new ArrayList();
+        nodeList.addAll(Collections.list(e));
+        nodeList.add(new PoliciesFolderNode(homePath));
+        nodeList.add(new AuthMethodFolderNode());
+        nodeList.add(new TransportLayerSecurityFolderNode());
+        nodeList.add(new XmlSecurityFolderNode());
+        nodeList.add(new RoutingFolderNode());
+
+        AbstractTreeNode[] nodes = (AbstractTreeNode[])nodeList.toArray(new AbstractTreeNode[]{});
+
         children = null;
         for (int i = 0; i < nodes.length; i++) {
             insert(nodes[i], i);
         }
     }
 
+
     /**
+     * Get the set of actions associated with this node.
+     * This may be used e.g. in constructing a context menu.
      *
+     * <P>
+     * By default returns the empty actions arrays.
+     *
+     * @return actions appropriate to the node
+     */
+    public Action[] getActions() {
+        return new Action[]{new NewProviderAction(this)};
+    }
+
+    /**
      * @return the root name
      */
     public String getName() {
@@ -84,7 +107,7 @@ public class AssertionsPaletteRootNode extends AbstractTreeNode {
 
     /**
      * subclasses override this method specifying the resource name
-     *
+     * 
      * @param open for nodes that can be opened, can have children
      */
     protected String iconResource(boolean open) {

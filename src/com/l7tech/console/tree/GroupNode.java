@@ -63,8 +63,8 @@ public class GroupNode extends EntityHeaderNode {
      * @return true if the node is internal, false otherwise
      */
     protected final boolean isInternal() {
-        GroupFolderNode parent = (GroupFolderNode)getParent();
-        return parent.getProviderId() == IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
+        ProviderNode parent = (ProviderNode)getParent();
+        return parent.getEntityHeader().getOid() == IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
     }
 
     /**
@@ -74,9 +74,9 @@ public class GroupNode extends EntityHeaderNode {
      * @return the popup menu
      */
     public Assertion asAssertion() {
-        GroupFolderNode parent = (GroupFolderNode)getParent();
-        EntityHeader e = (EntityHeader)getUserObject();
-        MemberOfGroup memberOfGroup = new MemberOfGroup(parent.getProviderId(), e.getName());
+        ProviderNode parent = (ProviderNode)getParent();
+        EntityHeader e = getEntityHeader();
+        MemberOfGroup memberOfGroup = new MemberOfGroup(parent.getEntityHeader().getOid(), e.getName());
         memberOfGroup.setGroupName(e.getName());
         return memberOfGroup;
     }
@@ -97,4 +97,5 @@ public class GroupNode extends EntityHeaderNode {
     protected String iconResource(boolean open) {
         return "com/l7tech/console/resources/group16.png";
     }
+
 }
