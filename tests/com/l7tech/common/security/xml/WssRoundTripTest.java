@@ -134,6 +134,8 @@ public class WssRoundTripTest extends TestCase {
                                td.elementsToEncrypt,
                                td.elementsToSign);
 
+        log.info("Decorated message:\n\n" + XmlUtil.documentToString(message));
+
         // Serialize to string to simulate network transport
         byte[] decoratedMessage = XmlUtil.documentToString(message).getBytes();
 
