@@ -1,9 +1,7 @@
 package com.l7tech.identity;
 
-import com.l7tech.console.security.ClientCredentialManager;
-import com.l7tech.identity.IdentityProviderType;
-import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.common.util.Locator;
+import com.l7tech.console.security.ClientCredentialManager;
 import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -78,9 +76,9 @@ public class ClientTest extends TestCase {
                 System.out.println("group " + res2[j].getOid());
                 com.l7tech.identity.Group group = me.findGroupByPrimaryKey(ipc.getOid(), res2[j].getStrId());
                 System.out.println("group found " + group.toString());
-                // System.out.println("save group" + me.saveGroup(ipc.getOid(), group));
+                // System.out.println("save group" + me.saveGroup(providerConfigOid.getOid(), group));
                 // System.out.println("delete group");
-                // me.deleteGroup(ipc.getOid(), group.getOid());
+                // me.deleteGroup(providerConfigOid.getOid(), group.getOid());
             }
 
             System.out.println("fetching users");
@@ -89,12 +87,12 @@ public class ClientTest extends TestCase {
                 System.out.println(res2[j].toString());
                 com.l7tech.identity.User user = me.findUserByPrimaryKey(ipc.getOid(), res2[j].getStrId());
                 System.out.println("user found " + user.toString());
-                // System.out.println("save user" + me.saveUser(ipc.getOid(), user));
+                // System.out.println("save user" + me.saveUser(providerConfigOid.getOid(), user));
                 // System.out.println("delete user");
-                // me.deleteUser(ipc.getOid(), user.getOid());
+                // me.deleteUser(providerConfigOid.getOid(), user.getOid());
             }
-            // System.out.println("re-saved" + me.saveIdentityProviderConfig(ipc));
-            // me.deleteIdentityProviderConfig(ipc.getOid());
+            // System.out.println("re-saved" + me.saveIdentityProviderConfig(providerConfigOid));
+            // me.deleteIdentityProviderConfig(providerConfigOid.getOid());
             // System.out.println("deleted");
 
 

@@ -260,7 +260,8 @@ public class StubDataStore {
         memberOfGroup.setGroupId(g.getUniqueIdentifier());
         identities.add(memberOfGroup);
         for (Iterator i = users.values().iterator(); i.hasNext();) {
-            identities.add(new SpecificUser(providerId, ((User)i.next()).getLogin()));
+            final User u = (User)i.next();
+            identities.add(new SpecificUser(providerId, u.getLogin(), u.getUniqueIdentifier(), u.getName()));
         }
         OneOrMoreAssertion oom = new OneOrMoreAssertion(identities);
         AllAssertion assertion =

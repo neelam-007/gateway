@@ -456,7 +456,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
                 Principal p = (Principal)it.next();
                 if (p instanceof User) {
                     User u = (User)p;
-                    identityAssertions.add(new SpecificUser(u.getProviderId(), u.getLogin()));
+                    identityAssertions.add(new SpecificUser(u.getProviderId(), u.getLogin(), u.getUniqueIdentifier(), u.getName()));
                 } else if (p instanceof Group) {
                     Group g = (Group)p;
                     MemberOfGroup ma = new MemberOfGroup(g.getProviderId(), g.getName(), g.getUniqueIdentifier());
@@ -513,7 +513,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             Principal p = (Principal)it.next();
             if (p instanceof User) {
                 User u = (User)p;
-                identityAssertion.add(new SpecificUser(u.getProviderId(), u.getLogin()));
+                identityAssertion.add(new SpecificUser(u.getProviderId(), u.getLogin(), u.getUniqueIdentifier(), u.getName()));
             } else if (p instanceof Group) {
                 Group g = (Group)p;
                 MemberOfGroup ma = new MemberOfGroup(g.getProviderId(), g.getName(), g.getUniqueIdentifier());

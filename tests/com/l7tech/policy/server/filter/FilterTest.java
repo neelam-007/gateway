@@ -10,7 +10,6 @@ import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
@@ -19,6 +18,7 @@ import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -55,8 +55,8 @@ public class FilterTest extends TestCase {
             new SslAssertion(),
             new HttpBasic(),
             new ExactlyOneAssertion(Arrays.asList(new Assertion[] {
-                new SpecificUser(providerid, "alice"),
-                new SpecificUser(providerid, "bob"),
+                new SpecificUser(providerid, "alice", null, null),
+                new SpecificUser(providerid, "bob", null, null),
                 new MemberOfGroup(providerid, "sales", "666")
             })),
             new SamlSecurity(),
@@ -86,13 +86,13 @@ public class FilterTest extends TestCase {
             new ExactlyOneAssertion(Arrays.asList(new Assertion[] {
                 new AllAssertion(Arrays.asList(new Assertion[] {
                     new HttpDigest(),
-                    new SpecificUser(providerid, "bob"),
+                    new SpecificUser(providerid, "bob", null, null),
                     new HttpRoutingAssertion()
                 })),
                 new AllAssertion(Arrays.asList(new Assertion[] {
                     new SslAssertion(),
                     new HttpClientCert(),
-                    new SpecificUser(providerid, "alice"),
+                    new SpecificUser(providerid, "alice", null, null),
                     new HttpRoutingAssertion()
                 })),
             })),

@@ -3,11 +3,11 @@ package com.l7tech.policy.exporter;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
+import com.l7tech.policy.assertion.JmsRoutingAssertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
-import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -50,7 +50,7 @@ public class PolicyExporterTest extends TestCase {
 
     private Assertion createTestPolicy() {
         AllAssertion root = new AllAssertion();
-        SpecificUser suass = new SpecificUser(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, "john");
+        SpecificUser suass = new SpecificUser(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, "john", null, null);
         root.getChildren().add(suass);
         JmsRoutingAssertion jrass = new JmsRoutingAssertion();
         jrass.setEndpointName("blah");

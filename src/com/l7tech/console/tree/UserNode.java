@@ -3,8 +3,11 @@ package com.l7tech.console.tree;
 import com.l7tech.console.action.FederatedUserPropertiesAction;
 import com.l7tech.console.action.GenericUserPropertiesAction;
 import com.l7tech.console.action.UserPropertiesAction;
+import com.l7tech.console.util.Registry;
+import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
@@ -86,7 +89,14 @@ public class UserNode extends EntityHeaderNode {
      */
     public Assertion asAssertion() {
         ProviderNode parent = (ProviderNode)getParent();
-        return new SpecificUser(parent.getEntityHeader().getOid(), getEntityHeader().getName());
+        IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
+        User u = null;
+        try {
+            u = admin.findUserByPrimaryKey(parent.getEntityHeader().getOid(), getEntityHeader().getStrId());
+            return new SpecificUser(u.getProviderId(), u.getLogin(), u.getUniqueIdentifier(), u.getName());
+        } catch ( Exception e ) {
+            throw new RuntimeException("Couldn't retrieve user", e);
+        }
     }
 
     /**

@@ -11,7 +11,10 @@ import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.tree.UserNode;
 import com.l7tech.console.util.Registry;
-import com.l7tech.identity.*;
+import com.l7tech.identity.IdentityAdmin;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 
@@ -24,7 +27,6 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.*;
-import java.security.Principal;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
@@ -102,7 +104,7 @@ public class FindIdentitiesDialog extends JDialog {
      */
     private SearchInfo searchInfo = new SearchInfo();
     private DefaultComboBoxModel providersComboBoxModel;
-    Principal[] selections = new Principal[]{};
+    EntityHeader[] selections = new EntityHeader[]{};
 
     private Options options = new Options();
 
@@ -206,9 +208,20 @@ public class FindIdentitiesDialog extends JDialog {
      *
      * @return
      */
-    public Principal[] showDialog() {
+    public FindResult showDialog() {
         show();
-        return selections;
+        IdentityProviderConfig ipc = (IdentityProviderConfig)providersComboBoxModel.getSelectedItem();
+        return new FindResult(ipc.getOid(), selections);
+    }
+
+    public static class FindResult {
+        public FindResult(long ipc, EntityHeader[] headers) {
+            this.providerConfigOid = ipc;
+            this.entityHeaders = headers;
+        }
+
+        public long providerConfigOid;
+        public EntityHeader[] entityHeaders;
     }
 
     /**
@@ -623,10 +636,10 @@ public class FindIdentitiesDialog extends JDialog {
                 for (int i = 0; rows != null && i < rows.length; i++) {
                     int row = rows[i];
                     EntityHeader eh = (EntityHeader)searchResultTable.getModel().getValueAt(row, 0);
-                    principals.add(headerToPrincipal(eh));
+                    principals.add(eh);
                 }
                 if (options.disposeOnSelect) {
-                    selections = (Principal[])principals.toArray(new Principal[]{});
+                    selections = (EntityHeader[])principals.toArray(new EntityHeader[]{});
                     FindIdentitiesDialog.this.dispose();
                 } else {
                     int row = searchResultTable.getSelectedRow();
@@ -1037,25 +1050,6 @@ public class FindIdentitiesDialog extends JDialog {
 
         EntityType[] types;
         String name;
-    }
-
-    private Principal headerToPrincipal(EntityHeader eh) {
-        IdentityProviderConfig ipc = (IdentityProviderConfig)providersComboBoxModel.getSelectedItem();
-        if (eh.getType() == EntityType.USER) {
-            UserBean u = new UserBean();
-            u.setName(eh.getName());
-            u.setLogin(eh.getName());
-            u.setProviderId(ipc.getOid());
-            u.setUniqueIdentifier(eh.getStrId());
-            return u;
-        } else if (eh.getType() == EntityType.GROUP) {
-            GroupBean g = new GroupBean();
-            g.setName(eh.getName());
-            g.setProviderId(ipc.getOid());
-            g.setUniqueIdentifier(eh.getStrId());
-            return g;
-        }
-        throw new IllegalArgumentException("Don't know anything about " + eh.getType());
     }
 }
 

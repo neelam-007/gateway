@@ -47,7 +47,7 @@ public class IdentityPolicyTreeNode extends AssertionTreeNode {
             iconResource = "com/l7tech/console/resources/group16.png";
         } else if (principal instanceof User) {
             User u = (User)principal;
-            identityAssertion = new SpecificUser(u.getProviderId(), u.getLogin());
+            identityAssertion = new SpecificUser(u.getProviderId(), u.getLogin(), u.getUniqueIdentifier(), u.getName());
             iconResource = "com/l7tech/console/resources/user16.png";
         } else {
             throw new IllegalArgumentException("Unknown principal class " + principal.getClass());

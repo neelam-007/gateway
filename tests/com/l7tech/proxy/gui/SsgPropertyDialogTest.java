@@ -14,10 +14,10 @@ import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.proxy.ClientProxy;
-import com.l7tech.proxy.gui.dialogs.SsgPropertyDialog;
+import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgManagerStub;
-import com.l7tech.proxy.datamodel.Policy;
+import com.l7tech.proxy.gui.dialogs.SsgPropertyDialog;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -50,7 +50,7 @@ public class SsgPropertyDialogTest extends TestCase {
         Ssg ssg = new Ssg(1, "blah.bloof.com");
         ssg.attachPolicy("http://blah",  "http://gwerg.asd.gfa", new Policy(new AllAssertion(Arrays.asList(new Assertion[] {
             new HttpBasic(),
-            new SpecificUser(444, "blahuser"),
+            new SpecificUser(444, "blahuser", null, null),
         })), "testpolicy"));
         ssg.attachPolicy("http://HugeTree.com/Other",
                          "http://example.com/soapaction/other", new Policy(

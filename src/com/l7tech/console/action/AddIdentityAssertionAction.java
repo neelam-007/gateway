@@ -5,10 +5,13 @@ import com.l7tech.console.panels.FindIdentitiesDialog;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.AssertionTreeNodeFactory;
 import com.l7tech.console.tree.policy.PolicyTree;
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.Group;
+import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.User;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
@@ -16,7 +19,6 @@ import com.l7tech.policy.assertion.identity.SpecificUser;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
-import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.logging.Level;
@@ -77,19 +79,26 @@ public class AddIdentityAssertionAction extends BaseAction {
                 FindIdentitiesDialog fd = new FindIdentitiesDialog(f, true, options);
                 fd.pack();
                 Utilities.centerOnScreen(fd);
-                Principal[] principals = fd.showDialog();
+                FindIdentitiesDialog.FindResult result = fd.showDialog();
+                long providerId = result.providerConfigOid;
+                EntityHeader[] headers = result.entityHeaders;
                 java.util.List identityAssertions = new ArrayList();
+                IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
 
-                for (int i = 0; principals !=null && i < principals.length; i++) {
-                    Principal principal = principals[i];
-                      if (principal instanceof User) {
-                        User u = (User)principal;
-                        identityAssertions.add(new SpecificUser(u.getProviderId(), u.getLogin()));
-                    } else if (principal instanceof Group) {
-                        Group g = (Group)principal;
-                        MemberOfGroup ma = new MemberOfGroup(g.getProviderId(), g.getName(), g.getUniqueIdentifier());
-                        identityAssertions.add(ma);
+                try {
+                    for (int i = 0; headers !=null && i < headers.length; i++) {
+                        EntityHeader header = headers[i];
+                        if (header.getType() == EntityType.USER) {
+                            User u = admin.findUserByPrimaryKey(providerId, header.getStrId());
+                            identityAssertions.add(new SpecificUser(u.getProviderId(), u.getLogin(), u.getUniqueIdentifier(), u.getName()));
+                        } else if (header.getType() == EntityType.GROUP) {
+                            Group g = admin.findGroupByPrimaryKey(providerId, header.getStrId());
+                            MemberOfGroup ma = new MemberOfGroup(g.getProviderId(), g.getName(), g.getUniqueIdentifier());
+                            identityAssertions.add(ma);
+                        }
                     }
+                } catch (Exception e) {
+                    throw new RuntimeException("Couldn't retrieve user or group", e);
                 }
 
                 JTree tree = (JTree)TopComponents.getInstance().getComponent(PolicyTree.NAME);

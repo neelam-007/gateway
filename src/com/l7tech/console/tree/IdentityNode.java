@@ -2,16 +2,19 @@ package com.l7tech.console.tree;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.panels.FindIdentitiesDialog;
+import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.Group;
+import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.User;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 
 import javax.swing.*;
 import java.awt.*;
-import java.security.Principal;
 import java.util.ArrayList;
 
 
@@ -78,19 +81,24 @@ public class IdentityNode extends AbstractTreeNode {
         FindIdentitiesDialog fd = new FindIdentitiesDialog(f, true, options);
         fd.pack();
         Utilities.centerOnScreen(fd);
-        Principal[] principals = fd.showDialog();
+        FindIdentitiesDialog.FindResult result = fd.showDialog();
         java.util.List assertions = new ArrayList();
-        for (int i = 0; i < principals.length; i++) {
-            Principal principal = principals[i];
-            if (principal instanceof User) {
-                User u = (User)principal;
-                assertions.add(new SpecificUser(u.getProviderId(), u.getLogin()));
-            } else if (principal instanceof Group) {
-                Group g = (Group)principal;
-                assertions.add(new MemberOfGroup(g.getProviderId(), g.getName(), g.getUniqueIdentifier()));
+        IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
+        try {
+            for (int i = 0; i < result.entityHeaders.length; i++) {
+                EntityHeader header = result.entityHeaders[i];
+                if (header.getType() == EntityType.USER) {
+                    User u = admin.findUserByPrimaryKey(result.providerConfigOid, header.getStrId());
+                    assertions.add(new SpecificUser(u.getProviderId(), u.getLogin(), u.getUniqueIdentifier(), u.getName()));
+                } else if (header.getType() == EntityType.GROUP) {
+                    Group g = admin.findGroupByPrimaryKey(result.providerConfigOid, header.getStrId());
+                    assertions.add(new MemberOfGroup(g.getProviderId(), g.getName(), g.getUniqueIdentifier()));
+                }
             }
+            return (Assertion[])assertions.toArray(new Assertion[]{});
+        } catch (Exception e) {
+            throw new RuntimeException("Couldn't retrieve user or group", e);
         }
-        return (Assertion[])assertions.toArray(new Assertion[]{});
     }
 
     /**

@@ -8,14 +8,11 @@ import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
-import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.User;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
 import java.awt.*;
-import java.security.Principal;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -89,33 +86,21 @@ public class FindIdentityAction extends BaseAction {
         fd.pack();
         fd.getSearchResultTable().getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         Utilities.centerOnScreen(fd);
-        Principal[] principals = fd.showDialog();
-        if (principals != null && principals.length > 0) {
-            showEditDialog(principals[0]);
+        FindIdentitiesDialog.FindResult result = fd.showDialog();
+        if (result.entityHeaders != null && result.entityHeaders.length > 0) {
+            showEditDialog(result.providerConfigOid, result.entityHeaders[0]);
         }
     }
 
     /**
      * instantiate the dialog for given AbstractTreeNode
      * 
-     * @param principal the principal instance to edit
+     * @param header the principal instance to edit
      */
-    private void showEditDialog(Principal principal) {
+    private void showEditDialog(long providerId, EntityHeader header) {
         EntityEditorPanel panel = null;
-        EntityHeader eh = null;
-        long providerId = 0;
-        if (principal instanceof User) {
-            User u = (User)principal;
-            eh = EntityHeader.fromUser(u);
-            providerId = u.getProviderId();
-        } else if (principal instanceof Group) {
-            Group g = (Group)principal;
-            eh = EntityHeader.fromGroup(g);
-            providerId = g.getProviderId();
-        }
-        if (eh == null) return;
 
-        AbstractTreeNode an = TreeNodeFactory.asTreeNode(eh);
+        AbstractTreeNode an = TreeNodeFactory.asTreeNode(header);
         final BaseAction a = (BaseAction)an.getPreferredAction();
         if (a == null) return;
         IdentityProviderConfig config = null;
@@ -140,7 +125,7 @@ public class FindIdentityAction extends BaseAction {
         });
 
         if (panel == null) return;
-        panel.edit(principal);
+        panel.edit(header);
         JFrame f = TopComponents.getInstance().getMainWindow();
 
         EditorDialog dialog = new EditorDialog(f, panel);

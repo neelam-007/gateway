@@ -65,7 +65,7 @@ public class SamplePolicyTest extends TestCase {
             new HttpBasic(),
 
             // Authorize:
-            new SpecificUser(identityProvider, userAlice),
+            new SpecificUser(identityProvider, userAlice, null, null),
 
             // Route:
             new HttpRoutingAssertion()
@@ -79,7 +79,7 @@ public class SamplePolicyTest extends TestCase {
             new HttpDigest(),
 
             // Authorize:
-            new SpecificUser(identityProvider, userAlice),
+            new SpecificUser(identityProvider, userAlice, null, null),
 
             // Route:
             new HttpRoutingAssertion()
@@ -97,8 +97,8 @@ public class SamplePolicyTest extends TestCase {
 
             // Authorize:
             new ExactlyOneAssertion(Arrays.asList(new Assertion[]{
-                new SpecificUser(identityProvider, userAlice),
-                new SpecificUser(identityProvider, userBob)
+                new SpecificUser(identityProvider, userAlice, null, null),
+                new SpecificUser(identityProvider, userBob, null, null)
             })),
 
             // Route:
@@ -129,11 +129,11 @@ public class SamplePolicyTest extends TestCase {
             // Route:
             new ExactlyOneAssertion(Arrays.asList(new Assertion[]{
                 new AllAssertion(Arrays.asList(new Assertion[]{
-                    new SpecificUser(identityProvider, userAlice),
+                    new SpecificUser(identityProvider, userAlice, null, null),
                     new HttpRoutingAssertion("http://backend.example.com/service1/soap")
                 })),
                 new AllAssertion(Arrays.asList(new Assertion[]{
-                    new SpecificUser(identityProvider, userBob),
+                    new SpecificUser(identityProvider, userBob, null, null),
                     new HttpRoutingAssertion("http://backend.example.com/service2/soap")
                 })),
             })),

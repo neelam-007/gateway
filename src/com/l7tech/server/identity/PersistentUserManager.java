@@ -26,6 +26,12 @@ import java.util.logging.Level;
  * @version $Revision$
  */
 public abstract class PersistentUserManager extends HibernateEntityManager implements UserManager {
+    public abstract Class getImpClass();
+
+    public abstract Class getInterfaceClass();
+
+    public abstract String getTableName();
+
     public User findByPrimaryKey(String oid) throws FindException {
         try {
             if (oid == null) {
@@ -82,7 +88,7 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
         searchString = searchString.replace('?', '_');
         try {
             List results = PersistenceManager.find(getContext(),
-                                                   getAllHeadersQuery() + " where " + getTableName() + ".login like ?",
+                                                   getAllHeadersQuery() + " where " + getTableName() + "." + getNameFieldname() + " like ?",
                                                    searchString, String.class);
             List headers = new ArrayList();
             for (Iterator i = results.iterator(); i.hasNext();) {
@@ -102,9 +108,6 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
         }
     }
 
-    protected String getAllHeadersQuery() {
-        return allHeadersQuery;
-    }
 
     /** Must be called in a transaction! */
     public void delete(User user) throws DeleteException, ObjectNotFoundException {
@@ -165,7 +168,7 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
         PersistentUser imp = cast(user);
 
         try {
-            preSave( user );
+            preSave( imp );
 
             String oid = Long.toString( PersistenceManager.save( getContext(), imp ) );
 
@@ -187,8 +190,6 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
             throw new SaveException( se.toString(), se );
         }
     }
-
-    protected abstract void preSave( User user ) throws SaveException;
 
     public void update( User user ) throws UpdateException , ObjectNotFoundException{
         update( user, null );
@@ -215,17 +216,7 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
                 throw new StaleUpdateException(msg);
             }
 
-            // checks whether the user changed his password
-            String originalPasswd = originalUser.getPassword();
-            String newPasswd = user.getPassword();
-
-            // if password has changed, any cert should be revoked
-            if (!originalPasswd.equals(newPasswd)) {
-                logger.info("Revoking cert for user " + originalUser.getLogin() + " because he is changing his passwd.");
-                // must revoke the cert
-
-                revokeCert( originalUser );
-            }
+            checkUpdate( originalUser, imp );
 
             if ( groupHeaders != null )
                 provider.getGroupManager().setGroupHeaders( user.getUniqueIdentifier(), groupHeaders );
@@ -237,13 +228,35 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
         } catch ( SQLException se ) {
             logger.log(Level.SEVERE, null, se);
             throw new UpdateException( se.toString(), se );
-        } catch ( FindException e ) {
+        } catch ( ObjectModelException e ) {
             logger.log(Level.SEVERE, null, e);
             throw new UpdateException( e.toString(), e );
         }
     }
 
-    private void revokeCert( PersistentUser originalUser ) throws ObjectNotFoundException {
+    protected String getAllHeadersQuery() {
+        return allHeadersQuery;
+    }
+
+    /**
+     * Override this method to check something before a user is saved
+     * @throws SaveException to veto the save
+     */
+    protected void preSave( PersistentUser user ) throws SaveException { }
+
+    /**
+     * Override this method to verify changes to a user before it's updated
+     * @throws ObjectModelException to veto the update
+     */
+    protected void checkUpdate( PersistentUser originalUser, PersistentUser updatedUser ) throws ObjectModelException { }
+
+    /**
+     * Override this method to check whether a user can be deleted
+     * @throws DeleteException to veto the deletion
+     */
+    protected void preDelete( PersistentUser user ) throws DeleteException { }
+
+    protected void revokeCert( PersistentUser originalUser ) throws ObjectNotFoundException {
         ClientCertManager man = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
         try {
             man.revokeUserCert(originalUser);
@@ -253,36 +266,16 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
         }
     }
 
-    public EntityHeader userToHeader(User user) {
-        PersistentUser imp = (PersistentUser)user;
-        return new EntityHeader(imp.getUniqueIdentifier(), EntityType.USER, user.getName(), null);
-    }
-
-    public User headerToUser(EntityHeader header) {
-        try {
-            return findByPrimaryKey(header.getStrId());
-        } catch (FindException e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
-            throw new RuntimeException(e);
-        }
-    }
-
     protected abstract PersistentUser cast(User user);
 
-    protected abstract void preDelete( PersistentUser user ) throws FindException, DeleteException;
-
-    public abstract String getTableName();
-
-    public abstract Class getImpClass();
-
-    public abstract Class getInterfaceClass();
+    /**
+     * @return the name of the field to be used as the "name" in EntityHeaders
+     */
+    protected abstract String getNameFieldname();
 
     protected IdentityProvider provider;
 
     private final String allHeadersQuery = "select " + getTableName() + ".oid, " +
-                                           getTableName() + ".login from " + getTableName() +
+                                           getTableName() + "." + getNameFieldname() + " from " + getTableName() +
                                            " in class "+ getImpClass().getName();
-
-    public static final String F_LOGIN = "login";
-    public static final String F_NAME = "name";
 }

@@ -1,18 +1,18 @@
 package com.l7tech.console.tree.policy;
 
+import com.l7tech.identity.Group;
+import com.l7tech.identity.GroupBean;
+import com.l7tech.identity.User;
+import com.l7tech.identity.UserBean;
+import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.PolicyPathBuilder;
+import com.l7tech.policy.PolicyPathResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
-import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
-import com.l7tech.policy.AssertionPath;
-import com.l7tech.policy.PolicyPathBuilder;
-import com.l7tech.policy.PolicyPathResult;
-import com.l7tech.identity.User;
-import com.l7tech.identity.Group;
-import com.l7tech.identity.UserBean;
-import com.l7tech.identity.GroupBean;
+import com.l7tech.policy.assertion.identity.SpecificUser;
 
 import java.security.Principal;
 import java.util.*;
@@ -404,7 +404,9 @@ public class IdentityPath {
     private static int compareUsers(User u1, User u2) {
         int n = (int)(u1.getProviderId() - u2.getProviderId());
         if (n != 0) return n;
-        return u2.getLogin().compareTo(u1.getLogin());
+        if (u2.getLogin() != null) return u2.getLogin().compareTo(u1.getLogin());
+        if (u2.getName() != null) return u2.getName().compareTo(u1.getName());
+        return 0;
     }
 
 

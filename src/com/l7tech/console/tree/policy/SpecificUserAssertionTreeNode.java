@@ -64,23 +64,35 @@ public class SpecificUserAssertionTreeNode extends IdentityAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        String userLogin = ((SpecificUser)getUserObject()).getUserLogin();
+        String userName = getUserName();
+
         if (isAnonymous()) {
-            return userLogin;
+            return userName;
         } else if (isDelegated()) {
-            return userLogin;
+            return userName;
         }
-        return "User: " + userLogin + " [" + idProviderName() + "]";
+        return "User: " + userName + " [" + idProviderName() + "]";
+    }
+
+    private String getUserName() {
+        SpecificUser specificUser = (SpecificUser)getUserObject();
+        String userName = specificUser.getUserName();
+        if (userName == null) userName = specificUser.getUserLogin();
+        if (userName == null) userName = specificUser.getUserUid();
+        return userName;
     }
 
     private boolean isAnonymous() {
-        String userLogin = ((SpecificUser)getUserObject()).getUserLogin();
-        return IdentityPath.ANONYMOUS.equals(userLogin);
+        String userName = getUserName();
+        return IdentityPath.ANONYMOUS.equals(userName);
     }
 
     private boolean isDelegated() {
-        String userLogin = ((SpecificUser)getUserObject()).getUserLogin();
-        return userLogin.startsWith(IdentityPath.CUSTOM_ACCESS_CONTROL);
+        String userName = getUserName();
+        if (userName == null)
+            return false;
+        else
+            return userName.startsWith(IdentityPath.CUSTOM_ACCESS_CONTROL);
     }
 
 }

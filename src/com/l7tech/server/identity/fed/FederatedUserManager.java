@@ -11,11 +11,8 @@ import com.l7tech.identity.PersistentUser;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.identity.fed.FederatedUser;
-import com.l7tech.identity.internal.InternalUser;
-import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistenceManager;
-import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.identity.PersistentUserManager;
 
 import java.sql.SQLException;
@@ -29,10 +26,6 @@ public class FederatedUserManager extends PersistentUserManager {
     public FederatedUserManager( IdentityProvider provider ) {
         super();
         this.provider = provider;
-    }
-
-    protected void preDelete( InternalUser user ) throws FindException, DeleteException {
-        // No pre-processing required - don't call super
     }
 
     public Class getImpClass() {
@@ -53,8 +46,8 @@ public class FederatedUserManager extends PersistentUserManager {
         return imp;
     }
 
-    protected void preDelete( PersistentUser user ) throws FindException, DeleteException {
-        // Don't care, because there's no admin group
+    protected String getNameFieldname() {
+        return "name";
     }
 
     public String getTableName() {
@@ -81,10 +74,6 @@ public class FederatedUserManager extends PersistentUserManager {
         } catch ( SQLException e ) {
             throw new FindException("Couldn't find user", e);
         }
-    }
-
-    protected void preSave( User user ) throws SaveException {
-        // Don't care, duplicate logins are allowed
     }
 
     private final String FIND_BY_DN = "FROM " + getTableName() + " IN CLASS " + getImpClass() +

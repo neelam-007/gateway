@@ -20,7 +20,7 @@ import java.util.logging.Logger;
 public class ServerSpecificUser extends ServerIdentityAssertion implements ServerAssertion {
     public ServerSpecificUser( SpecificUser data ) {
         super( data );
-        _data = data;
+        specificUser = data;
     }
 
     /**
@@ -30,23 +30,29 @@ public class ServerSpecificUser extends ServerIdentityAssertion implements Serve
      * @return <code>AssertionStatus.NONE</code> if the <code>User</code> matches.
      */
     public AssertionStatus checkUser(User requestingUser) {
-        // avoid npe, we must have a login to compare to
-        if (_data == null || _data.getUserLogin() == null) {
-            String msg = "null assertion or SpecificUser has null login.";
+        String specifiedLogin = specificUser.getUserLogin();
+        String specifiedUid = specificUser.getUserUid();
+        if (specificUser == null || specifiedLogin == null || specifiedUid == null ) {
+            String msg = "null assertion or SpecificUser has null login and uid.";
             logger.warning(msg);
             return AssertionStatus.SERVER_ERROR;
         }
 
-        // check provider id and user login (start with provider as it's cheaper
-        if (requestingUser.getProviderId() == _data.getIdentityProviderOid()) {
-            if (_data.getUserLogin().equals(requestingUser.getLogin())) {
-                return AssertionStatus.NONE;
+        // check provider id and user login (start with provider as it's cheaper)
+        if (requestingUser.getProviderId() == specificUser.getIdentityProviderOid()) {
+            String requestingUserUid = requestingUser.getUniqueIdentifier();
+            // Check uid first if present
+            if ( specifiedUid == null || specifiedUid.equals(requestingUserUid) ) {
+                // They can't both be null (already checked) so this is safe
+                if ( specifiedLogin == null || specifiedLogin.equals(requestingUser.getLogin()) ) {
+                    return AssertionStatus.NONE;
+                }
             }
         }
         logger.fine("No credentials found");
         return AssertionStatus.AUTH_FAILED;
     }
 
-    protected SpecificUser _data;
+    protected SpecificUser specificUser;
     protected final Logger logger = Logger.getLogger(getClass().getName());
 }
