@@ -28,15 +28,19 @@ public class SecureSpanConstants {
     public static final String SSG_FILE = "/ssg/soap";
 
     /**
-     * The  filename portion of the URL of the policy servlet and the certificate discovery server on the Gateway.
+     * The filename portion of the URL of the policy servlet on the Gateway.
      * <p>
      * The policy servlet is the service that client can use to look up the policy that must be followed in order
      * to access a particular server.
+     */
+    public static final String POLICY_PATH = "/ssg/policy/disco.modulator";
+
+    /**
+     * The  filename portion of the URL of the certificate discovery server on the Gateway.
      * <p>
      * The certificate discovery servlet is the service that clients (Agent or Console) can use to download
      * the Gateway's CA cert over unencrypted HTTP, while remaining confident that it arrived unmodified and was
      * transmitted by someone able to prove that they know the client's password.
-     * TODO: This is a total mess; cert discovery should be a different servlet, not piggyback on policy servlet
      */
     public static final String CERT_PATH = "/ssg/policy/disco.modulator";
 
