@@ -7,6 +7,7 @@ import com.l7tech.objectmodel.Entity;
 import java.util.Collection;
 
 public interface User extends Entity {
+    long getProviderOid();
     String getLogin();
     String getPassword();
     String getFirstName();
@@ -25,6 +26,7 @@ public interface User extends Entity {
     void setGroups( Collection groups );
     void setGroupHeaders( Collection groupHeaders );
 
+    void setProviderOid( long oid );
     void setLogin( String login );
     void setPassword( String password );
     void setFirstName( String firstName );

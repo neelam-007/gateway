@@ -14,6 +14,10 @@ import com.l7tech.objectmodel.imp.EntityImp;
  * @author alex
  */
 public class UserImp extends EntityImp implements User {
+    public long getProviderOid() {
+        return _providerOid;
+    }
+
     public String getLogin() {
         return _login;
     }
@@ -76,6 +80,10 @@ public class UserImp extends EntityImp implements User {
         _groupHeaders = groupHeaders;
     }
 
+    public void setProviderOid( long oid ) {
+        _providerOid = oid;
+    }
+
     public void setLogin(String login) {
         _login = login;
     }
@@ -120,6 +128,7 @@ public class UserImp extends EntityImp implements User {
         _billingAddress = billingAddress;
     }
 
+    private long _providerOid;
     private String _login;
     private String _password;
     private String _firstName;

@@ -12,6 +12,10 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
  * @author alex
  */
 public class GroupImp extends NamedEntityImp implements Group {
+    public long getProviderOid() {
+        return _providerOid;
+    }
+
     public String getDescription() {
         return _description;
     }
@@ -34,10 +38,15 @@ public class GroupImp extends NamedEntityImp implements Group {
         _memberHeaders = memberHeaders;
     }
 
+    public void setProviderOid( long oid ) {
+        _providerOid = oid;
+    }
+
     public void setDescription(String description) {
         _description = description;
     }
 
+    private long _providerOid;
     private String _description;
     private Collection _members;
     private Collection _memberHeaders;
