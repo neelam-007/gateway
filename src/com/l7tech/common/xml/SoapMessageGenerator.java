@@ -21,6 +21,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * The class creates and array of <code>SoapRequest</code> instances
@@ -223,7 +224,17 @@ public class SoapMessageGenerator {
         SOAPBodyElement bodyElement = null;
 
         if ("rpc".equals(bindingStyle)) {
-            Name operationName = envelope.createName(bindingOperation.getName(), "ns1", targetNameSpace);
+            final Map namespaces = wsdl.getNamespaces();
+            Iterator it = namespaces.keySet().iterator();
+            String prefix = "ns1";
+            while (it.hasNext()) {
+                Object key = it.next();
+                if (targetNameSpace.equals(namespaces.get(key))) {
+                    prefix = key.toString();
+                    break;
+                }
+            }
+            Name operationName = envelope.createName(bindingOperation.getName(), prefix, targetNameSpace);
             bodyElement = body.addBodyElement(operationName);
         } else {
             Input input = bindingOperation.getOperation().getInput();
