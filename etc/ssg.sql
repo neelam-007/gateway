@@ -40,7 +40,8 @@ CREATE TABLE identity_provider (
   version int(11) default NULL,
   name varchar(128) NOT NULL default '',
   description mediumtext NOT NULL,
-  type bigint(20) NOT NULL default '0',
+  type int(11) NOT NULL default '0',
+  properties text default '',
   PRIMARY KEY  (oid)
 ) TYPE=InnoDB;
 
