@@ -2,6 +2,7 @@ package com.l7tech.proxy;
 
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.SsgFinderImpl;
+import com.l7tech.proxy.processor.MessageProcessor;
 import org.apache.log4j.Category;
 
 /**

@@ -379,9 +379,9 @@ public class SsgPropertyDialog extends PropertyDialog {
                                        ssg.getLocalEndpoint());
         fieldServerAddress.setText(ssg.getSsgAddress());
         fieldUsername.setText(ssg.getUsername());
-        editPassword = ssg.getPassword();
+        editPassword = ssg.password();
         fieldPassword.setText(passwordToString(editPassword));
-        cbPromptForPassword.setSelected(ssg.isPromptForUsernameAndPassword());
+        cbPromptForPassword.setSelected(ssg.promptForUsernameAndPassword());
         cbDefault.setSelected(ssg.isDefaultSsg());
         policyFlushRequested = false;
 
@@ -398,8 +398,8 @@ public class SsgPropertyDialog extends PropertyDialog {
             ssg.setName(fieldName.getText());
             ssg.setSsgAddress(fieldServerAddress.getText().trim().toLowerCase());
             ssg.setUsername(fieldUsername.getText().trim());
-            ssg.setPassword(editPassword);
-            ssg.setPromptForUsernameAndPassword(cbPromptForPassword.isSelected());
+            ssg.password(editPassword);
+            ssg.promptForUsernameAndPassword(cbPromptForPassword.isSelected());
             ssg.setDefaultSsg(cbDefault.isSelected());
             if (policyFlushRequested)
                 ssg.clearPolicies();

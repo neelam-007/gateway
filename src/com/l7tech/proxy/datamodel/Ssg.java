@@ -38,15 +38,17 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private String ssgFile = SSG_FILE;
     private int sslPort = SSG_SSL_PORT;
     private String username = null;
-    private transient char[] password = null;
     private boolean defaultSsg = false;
 
+    // These fields are transient.  To prevent the bean serializer from saving them anyway,
+    // they do not use the getFoo() / setFoo() naming convention in their accessors and mutators.
+    private transient char[] password = null;
     private transient HashMap policyMap = new HashMap(); /* Policy cache */
     private transient HashMap clientPolicyMap = new HashMap(); /* Client policy cache */
     private transient boolean promptForUsernameAndPassword = true;
-    private transient int numTimesLogonDialogCanceled = 0; /* Breaker to prevent spamming user with dialogs. */
     private transient KeyStore keyStore = null;
     private transient Boolean haveClientCert = null;
+    private transient int numTimesLogonDialogCanceled = 0;
 
     public int compareTo(final Object o) {
         long id0 = getId();
@@ -315,7 +317,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     }
 
     public boolean isCredentialsConfigured() {
-        return getUsername() != null && getPassword() != null && getUsername().length() > 0;
+        return getUsername() != null && password() != null && getUsername().length() > 0;
     }
 
     public String getSsgFile() {
@@ -342,16 +344,12 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         this.username = username;
     }
 
-    public char[] getPassword() {
+    public char[] password() {
         return password;
     }
 
-    public void setPassword(final char[] password) {
+    public void password(final char[] password) {
         this.password = password;
-    }
-
-    public void setPassword(final String password) {
-        this.password = password.toCharArray();
     }
 
     public int getSslPort() {
@@ -362,60 +360,12 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         this.sslPort = sslPort;
     }
 
-    /**
-     * @deprecated this is only here because the bean serializer needs it. use lookupPolicy() instead
-     * @return
-     */
-    public HashMap getPolicyMap() {
-        return policyMap;
-    }
-
-    /**
-     * @deprecated this is only here because the bean serializer needs it. use lookupPolicy() instead
-     * @return
-     */
-    public HashMap getClientPolicyMap() {
-        return clientPolicyMap;
-    }
-
-    /**
-     * @deprecated this is only here because the bean serialier needs it. use attachPolicy() instead
-     * @param policyMap
-     */
-    public void setPolicyMap(HashMap policyMap) {
-        if (policyMap == null || !(policyMap instanceof HashMap))
-            throw new IllegalArgumentException("The policy map must be a valid HashMap");
-        this.policyMap = policyMap;
-    }
-
-    /**
-     * @deprecated this is only here because the bean serialier needs it. use attachPolicy() instead
-     * @param clientPolicyMap
-     */
-    public void setClientPolicyMap(HashMap clientPolicyMap) {
-        if (clientPolicyMap == null || !(clientPolicyMap instanceof HashMap))
-            throw new IllegalArgumentException("The policy map must be a valid HashMap");
-        this.clientPolicyMap = clientPolicyMap;
-    }
-
-    public boolean isPromptForUsernameAndPassword() {
+    public boolean promptForUsernameAndPassword() {
         return promptForUsernameAndPassword;
     }
 
-    public void setPromptForUsernameAndPassword(boolean promptForUsernameAndPassword) {
+    public void promptForUsernameAndPassword(boolean promptForUsernameAndPassword) {
         this.promptForUsernameAndPassword = promptForUsernameAndPassword;
-    }
-
-    public int getNumTimesLogonDialogCanceled() {
-        return numTimesLogonDialogCanceled;
-    }
-
-    public void setNumTimesLogonDialogCanceled(int numTimesLogonDialogCanceled) {
-        this.numTimesLogonDialogCanceled = numTimesLogonDialogCanceled;
-    }
-
-    public synchronized int incrementNumTimesLogonDialogCanceled() {
-        return ++this.numTimesLogonDialogCanceled;
     }
 
     /**
@@ -437,12 +387,12 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     }
 
     /** Transient in-core cache of KeyStore.  Package private; used by SsgKeyStoreManager. */
-    KeyStore getKeyStore() {
+    KeyStore keyStore() {
         return keyStore;
     }
 
     /** Transient in-core cache of KeyStore.  Package private; used by SsgKeyStoreManager. */
-    void setKeyStore(KeyStore keyStore) {
+    void keyStore(KeyStore keyStore) {
         this.keyStore = keyStore;
     }
 
@@ -450,7 +400,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
      * Transient quick check of whether we have a client cert or not.
      * Package-private; used by SsgKeyStoreManager.
      */
-    Boolean getHaveClientCert() {
+    Boolean haveClientCert() {
         return haveClientCert;
     }
 
@@ -458,7 +408,11 @@ public class Ssg implements Serializable, Cloneable, Comparable {
      * Transient quick check of whether we have a client cert or not.
      * Package-private; used by SsgKeyStoreManager.
      */
-    void setHaveClientCert(Boolean haveClientCert) {
+    void haveClientCert(Boolean haveClientCert) {
         this.haveClientCert = haveClientCert;
+    }
+
+    public synchronized int incrementNumTimesLogonDialogCanceled() {
+        return numTimesLogonDialogCanceled++;
     }
 }

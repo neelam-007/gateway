@@ -8,7 +8,7 @@ package com.l7tech.proxy.ssl;
 
 /**
  * Exception used to report SSL problems from way down in the bowels of the engine.
- * Since the keymanager and trustmanager might need to call this, it's a subclass of
+ * Since the keymanager and trustmanager might need to throw this, it's a subclass of
  * RuntimeException instead of GeneralSecurityException.
  * User: mike
  * Date: Jul 31, 2003

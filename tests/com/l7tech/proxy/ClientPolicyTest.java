@@ -72,7 +72,7 @@ public class ClientPolicyTest extends TestCase {
         AssertionStatus result;
 
         ssg.setUsername(null);
-        ssg.setPassword("");
+        ssg.password("".toCharArray());
         result = policy.decorateRequest(req = new PendingRequest(env, ssg, NullRequestInterceptor.INSTANCE));
         assertTrue(!AssertionStatus.NONE.equals(result));
         assertFalse(req.isBasicAuthRequired());
@@ -91,7 +91,7 @@ public class ClientPolicyTest extends TestCase {
         assertTrue("".equals(new String(req.getHttpBasicPassword())));
 
         final String PASS = "s3cr3t";
-        ssg.setPassword(PASS);
+        ssg.password(PASS.toCharArray());
         result = policy.decorateRequest(req = new PendingRequest(env, ssg, NullRequestInterceptor.INSTANCE));
         assertTrue(AssertionStatus.NONE.equals(result));
         assertTrue(req.isBasicAuthRequired());
@@ -132,14 +132,14 @@ public class ClientPolicyTest extends TestCase {
             ClientAssertion clientPolicy = ClientPolicyFactory.getInstance().makeClientPolicy( policy );
 
             ssg.setUsername("");
-            ssg.setPassword("");
+            ssg.password("".toCharArray());
             result = clientPolicy.decorateRequest(req = new PendingRequest(env, ssg, NullRequestInterceptor.INSTANCE));
             assertFalse(AssertionStatus.NONE.equals(result));
 
             final String USER = "fbunky";
             final String PASS = "asdfjkal";
             ssg.setUsername(USER);
-            ssg.setPassword(PASS);
+            ssg.password(PASS.toCharArray());
             result = clientPolicy.decorateRequest(req = new PendingRequest(env, ssg, NullRequestInterceptor.INSTANCE));
             assertTrue(AssertionStatus.NONE.equals(result));
             assertTrue(req.isSslRequired());
@@ -162,14 +162,14 @@ public class ClientPolicyTest extends TestCase {
             ClientAssertion clientPolicy = ClientPolicyFactory.getInstance().makeClientPolicy( policy );
 
             ssg.setUsername("");
-            ssg.setPassword("");
+            ssg.password("".toCharArray());
             result = clientPolicy.decorateRequest(req = new PendingRequest(env, ssg, NullRequestInterceptor.INSTANCE));
             assertFalse(AssertionStatus.NONE.equals(result));
 
             final String USER = "fbunky";
             final String PASS = "asdfjkal";
             ssg.setUsername(USER);
-            ssg.setPassword(PASS);
+            ssg.password(PASS.toCharArray());
             result = clientPolicy.decorateRequest(req = new PendingRequest(env, ssg, NullRequestInterceptor.INSTANCE));
             assertTrue(AssertionStatus.NONE.equals(result));
             assertFalse(req.isSslRequired());

@@ -201,16 +201,16 @@ public class SsgManagerTest extends TestCase {
         assertTrue(loaded1 != null);
         assertTrue(loaded1.getName() != null);
         assertTrue(loaded1.getLocalEndpoint().equals(SSG1.getLocalEndpoint()));
-        assertTrue(loaded1.lookupPolicy(SSG1P1_URI, SSG1P1_SA) instanceof AllAssertion);
-        assertTrue(loaded1.lookupPolicy(SSG1P2_URI, SSG1P2_SA) instanceof ExactlyOneAssertion);
+        assertTrue(loaded1.lookupPolicy(SSG1P1_URI, SSG1P1_SA) == null); // policies not persisted
+        assertTrue(loaded1.lookupPolicy(SSG1P2_URI, SSG1P2_SA) == null);
         assertTrue(loaded1.lookupPolicy("asdfasdf", "argaerg") == null);
 
         Ssg loaded2 = sm.getSsgByEndpoint(SSG2.getLocalEndpoint());
         assertTrue(loaded2 != null);
         assertTrue(loaded2.getName() != null);
         assertTrue(loaded2.getName().equals(SSG2.getName()));
-        assertTrue(loaded2.lookupPolicy(SSG2P1_URI, SSG2P1_SA) instanceof AllAssertion);
-        assertTrue(loaded2.lookupPolicy(SSG2P2_URI, SSG2P2_SA) instanceof ExactlyOneAssertion);
+        assertTrue(loaded2.lookupPolicy(SSG2P1_URI, SSG2P1_SA) == null); // policies not persisted
+        assertTrue(loaded2.lookupPolicy(SSG2P2_URI, SSG2P2_SA) == null);
 
         // May not add two Ssgs with the same Id
         // (Actually you shouldn't even be instantiating two Ssgs with the same Id)

@@ -5,6 +5,7 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.proxy.datamodel.PolicyManagerStub;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgManagerStub;
+import com.l7tech.proxy.processor.MessageProcessor;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -168,7 +169,7 @@ public class FunctionalTest extends TestCase {
         ssgFake.setSsgPort(url.getPort());
         ssgFake.setSsgFile("/soap/ssg/basicauth");
         ssgFake.setUsername("testuser");
-        ssgFake.setPassword("testpassword");
+        ssgFake.password("testpassword".toCharArray());
 
         Call call = new Call(proxyUrl + ssg0ProxyEndpoint);
         SOAPEnvelope responseEnvelope = call.invoke(reqEnvelope);

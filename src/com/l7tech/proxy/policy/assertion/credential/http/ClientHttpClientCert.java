@@ -6,21 +6,20 @@
 
 package com.l7tech.proxy.policy.assertion.credential.http;
 
-import com.l7tech.proxy.policy.assertion.ClientAssertion;
-import com.l7tech.proxy.datamodel.PendingRequest;
-import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
-import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.logging.LogManager;
-
-import java.util.logging.Logger;
+import com.l7tech.policy.assertion.credential.http.HttpClientCert;
+import com.l7tech.proxy.datamodel.PendingRequest;
+import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
+import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import org.apache.log4j.Category;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public class ClientHttpClientCert implements ClientAssertion {
+    private static final Category log = Category.getInstance(ClientHttpClientCert.class);
     public ClientHttpClientCert( HttpClientCert data ) {
         this.data = data;
     }
@@ -38,7 +37,7 @@ public class ClientHttpClientCert implements ClientAssertion {
             return AssertionStatus.NONE;
         }
 
-        if (request.getSsg().getUsername() == null || request.getSsg().getPassword() == null ||
+        if (request.getSsg().getUsername() == null || request.getSsg().password() == null ||
                 request.getSsg().getUsername().length() < 1)
             request.setCredentialsWouldHaveHelped(true);
         request.setClientCertWouldHaveHelped(true);
@@ -47,5 +46,4 @@ public class ClientHttpClientCert implements ClientAssertion {
     }
 
     protected HttpClientCert data;
-    protected Logger log = LogManager.getInstance().getSystemLogger();
 }

@@ -4,6 +4,7 @@ import com.l7tech.proxy.datamodel.SsgFinder;
 import com.l7tech.proxy.ssl.ClientProxyKeyManager;
 import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
 import com.l7tech.proxy.ssl.ClientProxyTrustManager;
+import com.l7tech.proxy.processor.MessageProcessor;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.log4j.Category;
 import org.mortbay.http.HttpContext;

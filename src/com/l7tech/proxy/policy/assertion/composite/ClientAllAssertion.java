@@ -6,20 +6,20 @@
 
 package com.l7tech.proxy.policy.assertion.composite;
 
-import com.l7tech.logging.LogManager;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
-
-import java.util.logging.Logger;
+import org.apache.log4j.Category;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public class ClientAllAssertion extends ClientCompositeAssertion implements ClientAssertion {
+    private static final Category log = Category.getInstance(ClientAllAssertion.class);
+
     public ClientAllAssertion( AllAssertion data ) {
         super( data );
         this.data = data;
@@ -34,11 +34,9 @@ public class ClientAllAssertion extends ClientCompositeAssertion implements Clie
      */
     public AssertionStatus decorateRequest(PendingRequest req) throws PolicyAssertionException {
         data.mustHaveChildren();
-        log.info("AllAssertion: children found");
         AssertionStatus result = AssertionStatus.NONE;
         for ( int i = 0; i < children.length; i++ ) {
             ClientAssertion assertion = children[i];
-            log.info("AllAssertion: calling child " + assertion);
             result = assertion.decorateRequest(req);
             if (result != AssertionStatus.NONE)
                 return result;
@@ -47,5 +45,4 @@ public class ClientAllAssertion extends ClientCompositeAssertion implements Clie
     }
 
     protected AllAssertion data;
-    protected Logger log = LogManager.getInstance().getSystemLogger();
 }

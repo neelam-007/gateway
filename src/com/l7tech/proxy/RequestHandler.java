@@ -1,10 +1,10 @@
 package com.l7tech.proxy;
 
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgFinder;
 import com.l7tech.proxy.datamodel.SsgNotFoundException;
+import com.l7tech.proxy.processor.MessageProcessor;
 import org.apache.axis.message.SOAPEnvelope;
 import org.apache.log4j.Category;
 import org.mortbay.http.HttpException;
@@ -18,7 +18,6 @@ import javax.xml.soap.SOAPBody;
 import javax.xml.soap.SOAPElement;
 import javax.xml.soap.SOAPException;
 import java.io.IOException;
-import java.security.GeneralSecurityException;
 import java.util.Iterator;
 
 /**

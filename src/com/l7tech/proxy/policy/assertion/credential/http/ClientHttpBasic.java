@@ -15,11 +15,15 @@ import com.l7tech.logging.LogManager;
 
 import java.util.logging.Logger;
 
+import org.apache.log4j.Category;
+
 /**
  * @author alex
  * @version $Revision$
  */
 public class ClientHttpBasic implements ClientAssertion {
+    private static final Category log = Category.getInstance(ClientHttpBasic.class);
+
     public ClientHttpBasic( HttpBasic data ) {
         _data = data;
     }
@@ -32,7 +36,7 @@ public class ClientHttpBasic implements ClientAssertion {
      */
     public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
         String username = request.getSsg().getUsername();
-        char[] password = request.getSsg().getPassword();
+        char[] password = request.getSsg().password();
         if (username == null || password == null || username.length() < 1) {
             log.info("HttpBasic: no credentials configured for the SSG " + request.getSsg());
             request.setCredentialsWouldHaveHelped(true);
@@ -45,6 +49,5 @@ public class ClientHttpBasic implements ClientAssertion {
         return AssertionStatus.NONE;
     }
 
-    protected Logger log = LogManager.getInstance().getSystemLogger();
     protected HttpBasic _data;
 }

@@ -11,12 +11,15 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import org.apache.log4j.Category;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public class ClientExactlyOneAssertion extends ClientCompositeAssertion implements ClientAssertion {
+    private static final Category log = Category.getInstance(ClientExactlyOneAssertion.class);
+
     public ClientExactlyOneAssertion( ExactlyOneAssertion data ) {
         super( data );
         this.data = data;

@@ -40,7 +40,7 @@ public class GuiCredentialManager implements CredentialManager {
      */
     public void getCredentials(final Ssg ssg) {
         // If this SSG isn't suppose to be hassling us with dialog boxes, stop now
-        if (!ssg.isPromptForUsernameAndPassword())
+        if (!ssg.promptForUsernameAndPassword())
             return;
 
         try {
@@ -49,12 +49,12 @@ public class GuiCredentialManager implements CredentialManager {
                     PasswordAuthentication pw = LogonDialog.logon(Gui.getInstance().getFrame(), ssg.toString());
                     if (pw == null) {
                         if (ssg.incrementNumTimesLogonDialogCanceled() > 2) {
-                            ssg.setPromptForUsernameAndPassword(false);
+                            ssg.promptForUsernameAndPassword(false);
                             return;
                         }
                     }
                     ssg.setUsername(pw.getUserName());
-                    ssg.setPassword(new String(pw.getPassword())); // TODO: encoding?
+                    ssg.password(pw.getPassword()); // TODO: encoding?
                 }
             });
         } catch (InterruptedException e) {
@@ -70,14 +70,14 @@ public class GuiCredentialManager implements CredentialManager {
      */
     public void notifyInvalidCredentials(final Ssg ssg) {
         // If this SSG isn't suppose to be hassling us with dialog boxes, stop now
-        if (!ssg.isPromptForUsernameAndPassword())
+        if (!ssg.promptForUsernameAndPassword())
             return;
 
         // Don't hassle if the username is unset or empty, or if the password is unset.
         // (Configuring an empty password when the service requires a different one should cause notification)
         if (ssg.getUsername() == null || ssg.getUsername().length() < 1)
             return;
-        if (ssg.getPassword() == null)
+        if (ssg.password() == null)
             return;
 
         try {

@@ -65,7 +65,7 @@ public class ClientWssBasic extends ClientWssCredentialSource implements ClientA
 
         // get the username and passwords
         String username = request.getSsg().getUsername();
-        char[] password = request.getSsg().getPassword();
+        char[] password = request.getSsg().password();
         if (username == null || password == null || username.length() < 1) {
             request.setCredentialsWouldHaveHelped(true);
             return AssertionStatus.AUTH_REQUIRED;

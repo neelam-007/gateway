@@ -47,9 +47,9 @@ public class SsgKeyStoreManager {
     public static boolean isClientCertAvailabile(Ssg ssg) {
         if (!ssg.isCredentialsConfigured())
             return false;
-        if (ssg.getHaveClientCert() == null) {
+        if (ssg.haveClientCert() == null) {
             try {
-                ssg.setHaveClientCert(getClientCert(ssg) == null ? Boolean.FALSE : Boolean.TRUE);
+                ssg.haveClientCert(getClientCert(ssg) == null ? Boolean.FALSE : Boolean.TRUE);
             } catch (IOException e) {
                 log.error(e);
                 return false;
@@ -58,7 +58,7 @@ public class SsgKeyStoreManager {
                 return false;
             }
         }
-        return ssg.getHaveClientCert().booleanValue();
+        return ssg.haveClientCert().booleanValue();
     }
 
     public static X509Certificate getServerCert(Ssg ssg)
@@ -94,7 +94,7 @@ public class SsgKeyStoreManager {
     {
         if (!isClientCertAvailabile(ssg))
             return null;
-        return (PrivateKey) getKeyStore(ssg).getKey(ALIAS, ssg.getPassword());
+        return (PrivateKey) getKeyStore(ssg).getKey(ALIAS, ssg.password());
     }
 
     public static PublicKey getPublicKey(Ssg ssg)
@@ -109,7 +109,7 @@ public class SsgKeyStoreManager {
             throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException
     {
         synchronized (ssg) {
-            if (ssg.getKeyStore() == null) {
+            if (ssg.keyStore() == null) {
                 KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
                 FileInputStream fis = null;
                 try {
@@ -121,22 +121,22 @@ public class SsgKeyStoreManager {
                     if (fis != null)
                         fis.close();
                 }
-                ssg.setKeyStore(keyStore);
+                ssg.keyStore(keyStore);
             }
-            return ssg.getKeyStore();
+            return ssg.keyStore();
         }
     }
 
     public static void saveKeyStore(final Ssg ssg) throws IOException {
         synchronized (ssg) {
-            if (ssg.getKeyStore() == null)
+            if (ssg.keyStore() == null)
                 throw new IllegalStateException("SSG " + ssg + " hasn't yet loaded its keystore");
 
             FileUtils.saveFileSafely(ssg.getKeyStoreFile().getAbsolutePath(),
                                      new FileUtils.Saver() {
                                          public void doSave(FileOutputStream fos) throws IOException {
                                              try {
-                                                 ssg.getKeyStore().store(fos, ssg.getPassword());
+                                                 ssg.keyStore().store(fos, ssg.password());
                                                  fos.close();
                                              } catch (KeyStoreException e) {
                                                  throw new IOException("Unable to write KeyStore for SSG " + ssg + ": " + e);
@@ -166,11 +166,11 @@ public class SsgKeyStoreManager {
     {
         synchronized (ssg) {
             log.info("Saving client certificate to disk");
-            if (ssg.getPassword() == null)
+            if (ssg.password() == null)
                 throw new IllegalArgumentException("SSG " + ssg + " does not have a password set.");
-            getKeyStore(ssg).setKeyEntry(ALIAS, privateKey, ssg.getPassword(), new Certificate[] { cert });
+            getKeyStore(ssg).setKeyEntry(ALIAS, privateKey, ssg.password(), new Certificate[] { cert });
             saveKeyStore(ssg);
-            ssg.setHaveClientCert(Boolean.TRUE);
+            ssg.haveClientCert(Boolean.TRUE);
         }
     }
 

@@ -1,7 +1,7 @@
 package com.l7tech.proxy.gui;
 
 import com.l7tech.proxy.ClientProxy;
-import com.l7tech.proxy.MessageProcessor;
+import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.datamodel.SsgManagerImpl;

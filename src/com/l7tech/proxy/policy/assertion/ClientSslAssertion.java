@@ -10,12 +10,15 @@ import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.datamodel.PendingRequest;
+import org.apache.log4j.Category;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public class ClientSslAssertion implements ClientAssertion {
+    private static final Category log = Category.getInstance(ClientSslAssertion.class);
+
     public ClientSslAssertion( SslAssertion data ) {
         this.data = data;
     }

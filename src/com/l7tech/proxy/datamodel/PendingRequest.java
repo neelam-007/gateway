@@ -22,18 +22,13 @@ public class PendingRequest {
     private RequestInterceptor requestInterceptor = NullRequestInterceptor.INSTANCE;
     private String soapAction = "";
     private String uri = "";
+    private String lastErrorResponse = ""; // Last response received from SSG in the case of 401 or 500 status
     private boolean isPolicyUpdated = false;
 
     /** Number of times credentials have been updated while processing this request. */
     private int timesCredentialsUpdated = 0;
 
-    /**
-     * Number of attempts we have made to contact the SSG for this request.
-     * Breaker to prevent runaway repetition/recursion.
-     */
-    private int timesAttempted = 0;
-
-    // Policy settings, filled in by traversing poliy tree
+    // Policy settings, filled in by traversing policy tree
     private static class PolicySettings {
         private boolean isSslRequired = false;
         private boolean isClientCertRequired = false;
@@ -200,16 +195,11 @@ public class PendingRequest {
         this.policySettings.clientCertWouldHaveHelped = clientCertWouldHaveHelped;
     }
 
-    public int getTimesAttempted() {
-        return timesAttempted;
+    public String getLastErrorResponse() {
+        return lastErrorResponse;
     }
 
-    public void setTimesAttempted(int timesAttempted) {
-        this.timesAttempted = timesAttempted;
-    }
-
-    /** Record that a new attempt to call the SSG on behalf of this request has begun.  Returns the new counter value. */
-    public int incrementTimesAttempted() {
-        return ++timesAttempted;
+    public void setLastErrorResponse(String lastErrorResponse) {
+        this.lastErrorResponse = lastErrorResponse;
     }
 }

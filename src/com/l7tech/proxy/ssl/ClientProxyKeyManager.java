@@ -6,9 +6,9 @@
 
 package com.l7tech.proxy.ssl;
 
-import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgFinder;
+import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.SsgNotFoundException;
 import org.apache.log4j.Category;
 
@@ -20,8 +20,6 @@ import java.security.GeneralSecurityException;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.util.Iterator;
-import java.util.List;
 
 /**
  * Key manager that knows how to find our per-SSG KeyStores.
@@ -64,7 +62,11 @@ public class ClientProxyKeyManager implements X509KeyManager {
             Ssg ssg = ssgFinder.getSsgByHostname(s);
             log.info("Found ssg: " + ssg);
             X509Certificate[] certs = SsgKeyStoreManager.getClientCertificateChain(ssg);
-            log.info("Returning " + certs.length + " certificates");
+            log.info("Found " + certs.length + " client certificates with SSG " + ssg);
+            if (certs.length < 1) {
+                log.info("*** About to return NULL certificate array..");
+                return null;
+            }
             for (int i = 0; i < certs.length; i++) {
                 X509Certificate cert = certs[i];
                 log.info("Cert #" + i + " subject=" + cert.getSubjectDN());
@@ -72,8 +74,8 @@ public class ClientProxyKeyManager implements X509KeyManager {
             return certs;
         } catch (SsgNotFoundException e) {
             log.info(e);
-            log.info("*** About to return EMPTY certificate array..");
-            return new X509Certificate[0];
+            log.info("*** About to return NULL certificate array..");
+            return null;
         } catch (GeneralSecurityException e) {
             log.error(e);
             throw new ClientProxySslException(e);
@@ -85,6 +87,8 @@ public class ClientProxyKeyManager implements X509KeyManager {
 
     public String[] getClientAliases(String s, Principal[] principals) {
         log.info("ClientProxyKeyManager: getCurrentAliases for " + s);
+        return null;
+        /*
         List ssgs = ssgFinder.getSsgList();
         String[] aliases = new String[ssgs.size()];
         int idx = 0;
@@ -94,6 +98,7 @@ public class ClientProxyKeyManager implements X509KeyManager {
                 aliases[idx] = ssg.getSsgAddress();
         }
         return aliases;
+        */
     }
 
     public String[] getServerAliases(String s, Principal[] principals) {

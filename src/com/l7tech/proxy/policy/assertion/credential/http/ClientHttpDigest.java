@@ -30,13 +30,13 @@ public class ClientHttpDigest implements ClientAssertion {
      */
     public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
         Ssg ssg = request.getSsg();
-        if (ssg.getUsername() == null || ssg.getPassword() == null || ssg.getUsername().length() < 1) {
+        if (ssg.getUsername() == null || ssg.password() == null || ssg.getUsername().length() < 1) {
             request.setCredentialsWouldHaveHelped(true);
             return AssertionStatus.AUTH_REQUIRED;
         }
         request.setDigestAuthRequired(true);
         request.setHttpDigestUsername(ssg.getUsername());
-        request.setHttpDigestPassword(ssg.getPassword());
+        request.setHttpDigestPassword(ssg.password());
         return AssertionStatus.NONE;
     }
 
