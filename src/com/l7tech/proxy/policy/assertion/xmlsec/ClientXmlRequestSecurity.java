@@ -62,9 +62,7 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
         Ssg ssg = request.getSsg();
         PrivateKey userPrivateKey = null;
         X509Certificate userCert = null;
-        Session session;
         request.getCredentials();
-        session = request.getOrCreateSession();
 
         request.prepareClientCertificate();
 
@@ -73,11 +71,6 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
             userCert = SsgKeyStoreManager.getClientCert(ssg);
             X509Certificate ssgCert = SsgKeyStoreManager.getServerCert(ssg);
             final SignerInfo si = new SignerInfo(userPrivateKey, new X509Certificate[] { userCert, ssgCert });
-            // decorate request with session info and seq nr
-            request.setSession(session);
-            long sessId = session.getId();
-            long seqNr = session.nextSequenceNumber();
-            SecureConversationTokenHandler.appendSessIdAndSeqNrToDocument(soapmsg, sessId, seqNr);
             ElementSecurity[] elements = xmlRequestSecurity.getElements();
             SecurityProcessor signer = SecurityProcessor.createSenderSecurityProcessor(si, ssgCert, elements);
             signer.processInPlace(soapmsg);
@@ -85,10 +78,7 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
             throw new RuntimeException(e);
         } catch (SecurityProcessorException e) {
             throw new RuntimeException(e);
-        } catch ( MessageNotSoapException e ) {
-            throw new RuntimeException(e);
         }
-//        XmlUtil.nodeToOutputStream(soapmsg, System.out);
         request.setSoapEnvelope(soapmsg);
 
         if (!request.isSslRequired() || request.isSslForbidden()) {
