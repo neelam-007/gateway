@@ -12,6 +12,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.ClientProxy;
+import com.l7tech.proxy.ssl.ClientProxySslException;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.PolicyManager;
@@ -33,6 +34,7 @@ import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.bouncycastle.jce.provider.JDKKeyPairGenerator;
 
 import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.net.MalformedURLException;
@@ -43,6 +45,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.KeyStoreException;
 import java.security.NoSuchProviderException;
 import java.security.KeyManagementException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
 
@@ -97,14 +100,30 @@ public class MessageProcessor {
             throws ClientCertificateException, PolicyAssertionException, OperationCanceledException,
                    ConfigurationException, GeneralSecurityException, IOException
     {
+        Ssg ssg = req.getSsg();
+
         for (int attempts = 0; attempts < MAX_TRIES; ++attempts) {
             try {
-                enforcePolicy(req);
-                return obtainResponse(req);
-            } catch (ServerCertificateUntrustedException e) {
-                installSsgServerCertificate(req.getSsg());
-                // allow policy to reset and retry
+                try {
+                    enforcePolicy(req);
+                    return obtainResponse(req);
+                } catch (SSLException e) {
+                    if (e.getCause() instanceof ClientProxySslException &&
+                        e.getCause().getCause() instanceof UnrecoverableKeyException)
+                        // translate into something meaningful
+                        throw new BadCredentialsException(e);
+                    throw e;
+                } catch (ServerCertificateUntrustedException e) {
+                    installSsgServerCertificate(ssg); // might throw BadCredentialsException
+                    // allow policy to reset and retry
+                }
             } catch (PolicyRetryableException e) {
+                // allow policy to reset and retry
+            } catch (BadCredentialsException e) {
+                Managers.getCredentialManager().notifyInvalidCredentials(ssg);
+                if (SsgKeyStoreManager.isClientCertAvailabile(ssg))
+                    SsgKeyStoreManager.deleteClientCert(ssg);
+                Managers.getCredentialManager().getCredentials(ssg);
                 // allow policy to reset and retry
             }
             req.reset();
@@ -129,7 +148,7 @@ public class MessageProcessor {
      */
     private void enforcePolicy(PendingRequest req)
             throws PolicyAssertionException, PolicyRetryableException, OperationCanceledException,
-                   ClientCertificateException, ServerCertificateUntrustedException
+                   ClientCertificateException, ServerCertificateUntrustedException, BadCredentialsException
     {
         Ssg ssg = req.getSsg();
         ClientAssertion policy = policyManager.getClientPolicy(req);
@@ -150,8 +169,6 @@ public class MessageProcessor {
                     log.info("Policy failed, possibly due to lack of a client certificate.  Will request one, then try again.");
                     try {
                         obtainClientCertificate(ssg);
-                    } catch (ServerCertificateUntrustedException e) {
-                        throw e;
                     } catch (SSLHandshakeException e) {
                         if (e.getCause() instanceof ServerCertificateUntrustedException)
                             throw (ServerCertificateUntrustedException) e.getCause();
@@ -178,38 +195,49 @@ public class MessageProcessor {
      * @throws GeneralSecurityException   if we were unable to complete SSL handshake with the Ssg
      * @throws IOException                if there was a network problem
      * @throws IllegalArgumentException   if no credentials are configured for this Ssg
+     * @throws BadCredentialsException    if the SSG rejected the credentials we provided
      */
     private void obtainClientCertificate(Ssg ssg)
-            throws GeneralSecurityException, IOException, OperationCanceledException
+            throws GeneralSecurityException, IOException, OperationCanceledException, BadCredentialsException
     {
         if (!ssg.isCredentialsConfigured())
             throw new IllegalArgumentException("need credentials to apply for a certificate");
-        log.info("Generating new RSA key pair (could take several seconds)...");
+
+        KeyPair keyPair;
+        PKCS10CertificationRequest csr;
         try {
+            log.info("Generating new RSA key pair (could take several seconds)...");
             Managers.getCredentialManager().notifyLengthyOperationStarting(ssg, "Generating new client certificate...");
             JDKKeyPairGenerator.RSA kpg = new JDKKeyPairGenerator.RSA();
-            KeyPair keyPair = kpg.generateKeyPair();
-            PKCS10CertificationRequest csr = SslUtils.makeCsr(ssg.getUsername(),
-                                                              keyPair.getPublic(),
-                                                              keyPair.getPrivate());
-            for (int attempts = 0; attempts < 3; ++attempts) {
-                try {
-                    X509Certificate cert = SslUtils.obtainClientCertificate(ssg.getServerCertRequestUrl(),
-                                                                            ssg.getUsername(),
-                                                                            ssg.password(),
-                                                                            csr);
-                    // make sure private key is stored on disk encrypted with the password that was used to obtain it
-                    SsgKeyStoreManager.saveClientCertificate(ssg, keyPair.getPrivate(), cert);
-                    clientProxy.initializeSsl(); // reset global SSL state
-                    return;
-                } catch (SslUtils.BadCredentialsException e) {
-                    Managers.getCredentialManager().notifyInvalidCredentials(ssg);
-                    Managers.getCredentialManager().getCredentials(ssg);
-                    // retry with new password
-                }
-            }
+            keyPair = kpg.generateKeyPair();
+            csr = SslUtils.makeCsr(ssg.getUsername(), keyPair.getPublic(), keyPair.getPrivate());
         } finally {
             Managers.getCredentialManager().notifyLengthyOperationFinished(ssg);
+        }
+
+        // Since generating the RSA key takes so long, we do our own credential retry loop here
+        // rather than delegating to the main policy loop.
+        int attempts = 0;
+        for (;;) {
+            try {
+                X509Certificate cert = SslUtils.obtainClientCertificate(ssg.getServerCertRequestUrl(),
+                                                                        ssg.getUsername(),
+                                                                        ssg.password(),
+                                                                        csr);
+                // make sure private key is stored on disk encrypted with the password that was used to obtain it
+                SsgKeyStoreManager.saveClientCertificate(ssg, keyPair.getPrivate(), cert);
+                clientProxy.initializeSsl(); // reset global SSL state
+                return;
+            } catch (SslUtils.BadCredentialsException e) {  // note: not the same class BadCredentialsException
+                if (++attempts > 3)
+                    throw new BadCredentialsException(e);
+
+                Managers.getCredentialManager().notifyInvalidCredentials(ssg);
+                if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) // shouldn't be necessary, but just in case
+                    SsgKeyStoreManager.deleteClientCert(ssg);
+                Managers.getCredentialManager().getCredentials(ssg);
+                // retry with new password
+            }
         }
     }
 
@@ -253,20 +281,20 @@ public class MessageProcessor {
      * @throws ConfigurationException if the SSG sends us an invalid Policy URL
      * @throws ConfigurationException if the PendingRequest did not contain enough information to construct a
      *                                valid PolicyAttachmentKey
-     * @throws IOException            if there was a network problem communicating with the SSG
+     * @throws IOException            if there was a network problem getting the message response from the SSG
      * @throws IOException            if there was a network problem downloading a policy from the SSG
      * @throws PolicyRetryableException if a new policy was downloaded
-     * @throws PolicyRetryableException if new credentials were obtained from the user
      * @throws ServerCertificateUntrustedException if a policy couldn't be downloaded because the SSG SSL certificate
      *                                             was not recognized and needs to be (re)imported
      * @throws OperationCanceledException if credentials were needed to continue processing, but the user canceled
      *                                    the logon dialog (or we are running headless).
      * @throws ClientCertificateException if our client cert is no longer valid, but we couldn't delete it from
      *                                    the keystore.
+     * @throws BadCredentialsException if the SSG rejected our SSG username and/or password.
      */
     private SsgResponse obtainResponse(PendingRequest req)
             throws ConfigurationException, IOException, PolicyRetryableException, ServerCertificateUntrustedException,
-                   OperationCanceledException, ClientCertificateException
+                   OperationCanceledException, ClientCertificateException, BadCredentialsException
     {
         URL url = getUrl(req);
         Ssg ssg = req.getSsg();
@@ -336,24 +364,12 @@ public class MessageProcessor {
                     try {
                         SsgKeyStoreManager.deleteClientCert(ssg);
                         clientProxy.initializeSsl(); // flush all global SSL state
-                        throw new PolicyRetryableException();
-                    } catch (NoSuchAlgorithmException e) {
-                        // can't happen
+                    } catch (Exception e) {
                         throw new ClientCertificateException(e);
-                    } catch (KeyStoreException e) {
-                        throw new ClientCertificateException(e);
-                    } catch (CertificateException e) {
-                        throw new ClientCertificateException(e);
-                    } catch (NoSuchProviderException e) {
-                        throw new ClientCertificateException(e); // can't happen
-                    } catch (KeyManagementException e) {
-                        throw new ClientCertificateException(e); // can't happen
                     }
                 }
 
-                Managers.getCredentialManager().notifyInvalidCredentials(ssg);
-                Managers.getCredentialManager().getCredentials(req.getSsg());
-                throw new PolicyRetryableException();
+                throw new BadCredentialsException();
             }
 
             return response;
@@ -396,10 +412,14 @@ public class MessageProcessor {
      * Get credentials, and download and install the SSG certificate.  If this completes successfully, the
      * next attempt to connect to the SSG via SSL should at least get past the SSL handshake.
      *
-     * @throws java.security.KeyStoreException if the SSG key could not be stored in our trustStore
+     * @throws IOException if there was a network problem downloading the server cert
+     * @throws IOException if there was a problem reading or writing the keystore for this SSG
+     * @throws BadCredentialsException if the downloaded cert could not be verified with the SSG username and password
+     * @throws OperationCanceledException if credentials were needed but the user declined to enter them
+     * @throws GeneralSecurityException for miscellaneous and mostly unlikely certificate or key store problems
      */
     private void installSsgServerCertificate(Ssg ssg)
-            throws IOException, GeneralSecurityException, OperationCanceledException
+            throws IOException, BadCredentialsException, OperationCanceledException, GeneralSecurityException
     {
         if (!ssg.isCredentialsConfigured())
             Managers.getCredentialManager().getCredentials(ssg);
@@ -413,7 +433,6 @@ public class MessageProcessor {
             return; // Success.
         }
 
-        Managers.getCredentialManager().notifyInvalidCredentials(ssg);
-        Managers.getCredentialManager().getCredentials(ssg);
+        throw new BadCredentialsException("Unable to verify server certificate with the current username and password for SSG " + ssg);
     }
 }
