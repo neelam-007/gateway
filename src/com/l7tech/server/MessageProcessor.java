@@ -43,7 +43,7 @@ public class MessageProcessor implements ServiceListener {
 
             AssertionStatus status;
             if ( service == null ) {
-                logger.info( "Service not found" );
+                logger.warning( "Service not found" );
                 status = AssertionStatus.SERVICE_NOT_FOUND;
             } else if ( service.isDisabled() ) {
                 logger.warning( "Service disabled" );
@@ -64,14 +64,14 @@ public class MessageProcessor implements ServiceListener {
                         throw new PolicyAssertionException("Wrong policy version " + requestorVersion);
                     }
                 } else {
-                    logger.info("Requestor did not provide policy id.");
+                    logger.fine("Requestor did not provide policy id.");
                 }
 
                 // If an xml-enc session id is provided, make sure it's still valid
                 // (because we can't wait for the XmlResponseSecurity to fail because it happens after routing)
                 if (checkForInvalidXmlSessIdRef(request)) {
                     response.setParameter( Response.PARAM_HTTP_SESSION_STATUS, "invalid" );
-                    logger.info("Request refered to a session id that is not valid. Policy will not be executed.");
+                    logger.info("Request referred to an invalid session id. Policy will not be executed.");
                     return AssertionStatus.FALSIFIED;
                 }
 
@@ -94,14 +94,14 @@ public class MessageProcessor implements ServiceListener {
                 if ( status == AssertionStatus.NONE ) {
                     getServiceStatistics( service.getOid() ).authorizedRequest();
                     if ( request.isRouted() ) {
-                        logger.info( "Request was routed with status " + " " + status.getMessage() + "(" + status.getNumeric() + ")" );
+                        logger.fine( "Request was routed with status " + " " + status.getNumeric() + " (" + status.getMessage() + ")" );
                         getServiceStatistics( service.getOid() ).completedRequest();
                     } else {
-                        logger.warning( "Request was not routed!");
+                        logger.severe( "Request was not routed but status was " + status.getNumeric() + " (" + status.getMessage() + ")" );
                         status = AssertionStatus.FALSIFIED;
                     }
                 } else {
-                    logger.warning( status.getMessage() );
+                    logger.warning( "Policy evaluation resulted in status " + status.getNumeric() + " (" + status.getMessage() + ")" );
                 }
             }
 
@@ -173,12 +173,10 @@ public class MessageProcessor implements ServiceListener {
         try {
             xmlsession = SessionManager.getInstance().getSession(Long.parseLong(sessionIDHeaderValue));
         } catch (SessionNotFoundException e) {
-            String msg = "Exception finding session with id=" + sessionIDHeaderValue;
-            logger.log(Level.WARNING, msg, e);
+            logger.log(Level.WARNING, "Exception finding session with id=" + sessionIDHeaderValue, e);
             return true;
         } catch (NumberFormatException e) {
-            String msg = "Session id is not long value : " + sessionIDHeaderValue;
-            logger.log(Level.WARNING, msg, e);
+            logger.log(Level.WARNING, "Session id is not long value : " + sessionIDHeaderValue, e);
             return true;
         }
 
