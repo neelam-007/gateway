@@ -219,7 +219,7 @@
             <test name="com.l7tech.policy.AllTests" haltonfailure="no"/>
             <test name="com.l7tech.identity.StubDataStoreTest" haltonfailure="no"/>
             <test name="com.l7tech.common.security.KeysTest" haltonfailure="no"/>
-            <test name="com.l7tech.common.security.xml.XmlManglerTest" haltonfailure="no" fork="yes" />
+            <test name="com.l7tech.common.security.xml.XmlManglerTest" haltonfailure="no" fork="yes"/>
             <test name="com.l7tech.server.MockServletApiTest" haltonfailure="no"/>
             <test name="com.l7tech.common.xml.XpathEvaluatorTest" haltonfailure="no"/>
             <test name="com.l7tech.policy.assertion.xmlsec.ElementSecurityTest" haltonfailure="no" fork="yes"/>
@@ -294,7 +294,6 @@
                 <include name="jaxrpc.jar"/>
                 <include name="jini-core.jar"/>
                 <include name="jini-ext.jar"/>
-                <include name="jini-starter-ext.jar"/>
                 <include name="jms-1.1.jar"/>
                 <include name="jnlp.jar"/>
                 <include name="jnlp-servlet.jar"/>
@@ -319,13 +318,13 @@
                 <include name="xml-apis.jar"/>
                 <include name="xpp3-1.1.3.3.jar"/>
                 <include name="xss4j.jar"/>
-                
+
                 <include name="openjms-client-0.7.6.jar"/>
                 <include name="exolabcore-0.3.7.jar"/>
             </lib>
 
             <classes dir="${build.classes}">
-               <exclude name="com/l7tech/console/**/*"/>
+                <exclude name="com/l7tech/console/**/*"/>
             </classes>
 
             <zipfileset dir="${src.root}/etc" prefix="WEB-INF">
@@ -336,18 +335,19 @@
             <zipfileset dir="${src.root}/web" includes="index.html"/>
             <!-- Jini config -->
             <zipfileset dir="${src.root}/etc/jini" includes="start-services.config, services.config, services.policy" prefix="WEB-INF/classes"/>
+            <zipfileset dir="${src.root}/etc/jini" includes="PREFERRED.LIST" prefix="WEB-INF/classes/META-INF"/>
 
         </war>
         <!-- the client proxy jar -->
         <jar jarfile="${build.dir}/Agent.jar" manifest="${src.root}/etc/Agent.mf">
             <fileset dir="${build.dir}/classes">
                 <!-- Omit Phaos driver unless we need to ship it.  Including it causes testpackage to fail -->
-                <exclude name="com/l7tech/common/security/prov/phaos/**/*" />
-                <exclude name="com/l7tech/common/security/prov/rsa/**/*" />
+                <exclude name="com/l7tech/common/security/prov/phaos/**/*"/>
+                <exclude name="com/l7tech/common/security/prov/rsa/**/*"/>
 
-                <exclude name="com/l7tech/policy/server/**/*" />
-                <exclude name="com/l7tech/policy/validator/RequestXpathAssertionValidator.class" />
-                <exclude name="com/l7tech/policy/validator/ValidatorFactory.class" />
+                <exclude name="com/l7tech/policy/server/**/*"/>
+                <exclude name="com/l7tech/policy/validator/RequestXpathAssertionValidator.class"/>
+                <exclude name="com/l7tech/policy/validator/ValidatorFactory.class"/>
 
                 <include name="com/l7tech/proxy/**/*"/>
                 <exclude name="com/l7tech/common/transport/jms/*"/>
@@ -357,14 +357,14 @@
             </fileset>
         </jar>
 
-         <jar jarfile="${build.dir}/Manager.jar" manifest="${src.root}/etc/Manager.mf">
+        <jar jarfile="${build.dir}/Manager.jar" manifest="${src.root}/etc/Manager.mf">
             <fileset dir="${build.dir}/classes">
                 <exclude name="com/l7tech/common/security/**/*"/>
-                <exclude name="com/l7tech/logging/rmi/**/*" />
-                <exclude name="com/l7tech/policy/server/**/*" />
+                <exclude name="com/l7tech/logging/rmi/**/*"/>
+                <exclude name="com/l7tech/policy/server/**/*"/>
                 <include name="com/l7tech/identity/*Exception*"/>
-                <include name="com/l7tech/identity/cert/ClientCertManager.class" />
-                <include name="com/l7tech/identity/cert/ClientCertManagerRemote.class" />
+                <include name="com/l7tech/identity/cert/ClientCertManager.class"/>
+                <include name="com/l7tech/identity/cert/ClientCertManagerRemote.class"/>
                 <include name="com/l7tech/identity/*Client*"/>
                 <include name="com/l7tech/identity/Group*"/>
                 <include name="com/l7tech/identity/User*"/>
@@ -410,9 +410,9 @@
             </fileset>
         </jar>
 
-         <!--
-            ** Layer7 API jar, pack and sign
-          -->
+        <!--
+           ** Layer7 API jar, pack and sign
+         -->
         <jar jarfile="${build.dir}/layer7-api.jar" manifest="${src.root}/etc/layer7-api.mf">
             <fileset dir="${build.dir}/classes">
                 <include name="com/l7tech/policy/assertion/ext/Category.class"/>
@@ -425,14 +425,14 @@
             </fileset>
         </jar>
 
-        <signjar  keystore="${src.root}/etc/ssgKeyStore" alias="signer" storepass="password">
-              <fileset dir="${build.dir}" includes="layer7-api.jar"/>
+        <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer" storepass="password">
+            <fileset dir="${build.dir}" includes="layer7-api.jar"/>
         </signjar>
 
-        <exec executable="perl" failonerror="true" dir="installer" >
-            <env key="JAVA_HOME" value="${java.home}" />
-            <arg line="make_installers.pl" />
-            <arg line="-N" />
+        <exec executable="perl" failonerror="true" dir="installer">
+            <env key="JAVA_HOME" value="${java.home}"/>
+            <arg line="make_installers.pl"/>
+            <arg line="-N"/>
         </exec>
         <!-- invoke the dssm webstart target (conditional) -->
     </target>
@@ -444,18 +444,18 @@
       -->
     <target name="testpackage" depends="package">
         <javac srcdir="tools" destdir="tools" debug="on" optimize="off"
-            deprecation="on" depend="on" verbose="no" />
+            deprecation="on" depend="on" verbose="no"/>
         <exec executable="perl" failonerror="true">
-            <env key="JAVA_HOME" value="${java.home}" />
-            <arg line="tools/checkjar.pl" />
-            <arg line="build/Manager.jar" />
-            <arg line="etc/Manager.mf" />
+            <env key="JAVA_HOME" value="${java.home}"/>
+            <arg line="tools/checkjar.pl"/>
+            <arg line="build/Manager.jar"/>
+            <arg line="etc/Manager.mf"/>
         </exec>
         <exec executable="perl" failonerror="true">
-            <env key="JAVA_HOME" value="${java.home}" />
-            <arg line="tools/checkjar.pl" />
-            <arg line="build/Agent.jar" />
-            <arg line="etc/Agent.mf" />
+            <env key="JAVA_HOME" value="${java.home}"/>
+            <arg line="tools/checkjar.pl"/>
+            <arg line="build/Agent.jar"/>
+            <arg line="etc/Agent.mf"/>
         </exec>
     </target>
 
@@ -464,25 +464,25 @@
       ** The target is conditional, set the ssm.webstart property to enable it.
       -->
     <target name="ssm-webstart" if="ssm.webstart">
-      <!-- sign the ssm jar  -->
-      <signjar  keystore="${src.root}/etc/ssgKeyStore" alias="signer" storepass="password">
-        <fileset dir="${build.dir}/lib" includes= "jini-core.jar,jini-ext.jar,reggie-dl.jar,reggie.jar,jh.jar,kunststoff.jar,
-                                                   looks-1.1.3.jar,odmg.jar,hibernate2.jar,oswego-concurrent.jar,wsdl4j.jar,qname.jar, xercesImpl.jar,xml-apis.jar,
-                                                   axis.jar,commons-httpclient-2.0-rc2.jar,commons-lang.jar,commons-collections.jar, commons-logging.jar, forms_rt.jar,jedit-syntax.jar,
-                                                   jaxen-core.jar,jaxen-dom.jar,saxpath.jar,jaxrpc.jar,saaj.jar, dom4j.jar, commons-discovery.jar"/>
-      </signjar>
-      <signjar jar="${build.dir}/Manager.jar" keystore="${src.root}/etc/ssgKeyStore" alias="signer" storepass="password"/>
+        <!-- sign the ssm jar  -->
+        <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer" storepass="password">
+            <fileset dir="${build.dir}/lib" includes="jini-core.jar,jini-ext.jar,reggie-dl.jar,reggie.jar,jh.jar,kunststoff.jar,
+                                                       looks-1.1.3.jar,odmg.jar,hibernate2.jar,oswego-concurrent.jar,wsdl4j.jar,qname.jar, xercesImpl.jar,xml-apis.jar,
+                                                       axis.jar,commons-httpclient-2.0-rc2.jar,commons-lang.jar,commons-collections.jar, commons-logging.jar, forms_rt.jar,jedit-syntax.jar,
+                                                       jaxen-core.jar,jaxen-dom.jar,saxpath.jar,jaxrpc.jar,saaj.jar, dom4j.jar, commons-discovery.jar"/>
+        </signjar>
+        <signjar jar="${build.dir}/Manager.jar" keystore="${src.root}/etc/ssgKeyStore" alias="signer" storepass="password"/>
 
-      <war warfile="${build.dir}/${war}" update="true">
-        <!-- SSM webstart -->
-        <zipfileset dir="${src.root}/etc/jnlp" includes="ssm.jnlp" prefix="ssm"/>
-        <zipfileset dir="${src.root}/src/com/l7tech/console/resources" includes="layer7_logo_small_64x64.gif" prefix="ssm/images"/>
-        <zipfileset dir="${build.dir}/lib" includes="jini-core.jar,jini-ext.jar,reggie-dl.jar,reggie.jar,jh.jar,kunststoff.jar,
-                                                     looks-1.1.3.jar,odmg.jar,hibernate2.jar,oswego-concurrent.jar,wsdl4j.jar,qname.jar, xercesImpl.jar,xml-apis.jar,
-                                                     axis.jar,commons-httpclient-2.0-rc2.jar,commons-lang.jar,commons-collections.jar, commons-logging.jar, forms_rt.jar,jedit-syntax.jar,
-                                                     jaxen-core.jar,jaxen-dom.jar,saxpath.jar,jaxrpc.jar,saaj.jar, dom4j.jar,commons-discovery.jar" prefix="ssm/lib"/>
-        <zipfileset dir="${build.dir}" includes="Manager.jar" prefix="ssm"/>
-      </war>
+        <war warfile="${build.dir}/${war}" update="true">
+            <!-- SSM webstart -->
+            <zipfileset dir="${src.root}/etc/jnlp" includes="ssm.jnlp" prefix="ssm"/>
+            <zipfileset dir="${src.root}/src/com/l7tech/console/resources" includes="layer7_logo_small_64x64.gif" prefix="ssm/images"/>
+            <zipfileset dir="${build.dir}/lib" includes="jini-core.jar,jini-ext.jar,reggie-dl.jar,reggie.jar,jh.jar,kunststoff.jar,
+                                                         looks-1.1.3.jar,odmg.jar,hibernate2.jar,oswego-concurrent.jar,wsdl4j.jar,qname.jar, xercesImpl.jar,xml-apis.jar,
+                                                         axis.jar,commons-httpclient-2.0-rc2.jar,commons-lang.jar,commons-collections.jar, commons-logging.jar, forms_rt.jar,jedit-syntax.jar,
+                                                         jaxen-core.jar,jaxen-dom.jar,saxpath.jar,jaxrpc.jar,saaj.jar, dom4j.jar,commons-discovery.jar" prefix="ssm/lib"/>
+            <zipfileset dir="${build.dir}" includes="Manager.jar" prefix="ssm"/>
+        </war>
     </target>
 
 
@@ -538,7 +538,7 @@
 
             <fileset dir="${src.root}/src">
                 <include name="com/l7tech/console/**/*.properties"/>
- 		        <include name="com/l7tech/console/resources/helpset/**/*"/>
+                <include name="com/l7tech/console/resources/helpset/**/*"/>
             </fileset>
 
             <fileset dir="${src.root}/tests">
@@ -559,7 +559,7 @@
         <!-- make sure that the tomcat path is properly referenced in the keystore properties -->
         <propertyfile file="${build.classes}/keystore.properties">
             <entry key="keystoredir" value="${tomcat.home}/kstores"/>
-	    <entry key="rootcakspasswd" value="${ca.keystore.password}"/>
+            <entry key="rootcakspasswd" value="${ca.keystore.password}"/>
             <entry key="sslkspasswd" value="${ssl.keystore.password}"/>
         </propertyfile>
 
@@ -772,7 +772,7 @@
         <property name="install.src.keystore.properties" value="${install.src.conf}/keystore.properties"/>
         <property name="install.src.ssglog.properties" value="${install.src.conf}/ssglog.properties"/>
         <property name="install.src.server.xml" value="${install.src.tomcat}/conf/server.xml"/>
-	    <property name="install.src.logs" value="${install.src.base}/${install.rel.logs}"/>
+        <property name="install.src.logs" value="${install.src.base}/${install.rel.logs}"/>
         <property name="install.src.web-inf" value="${install.src.tomcat}/webapps/ROOT/WEB-INF"/>
 
         <!-- Absolute target paths -->
@@ -819,7 +819,7 @@ cakeys = '${install.pass.ca.keystore}'
 sslkeys = '${install.pass.ssl.keystore}'
 ssgadmin = '${install.pass.ssgadmin}'
 ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
-</echo>
+        </echo>
 
         <copy file="${src.root}/etc/keystore.properties" tofile="${install.src.keystore.properties}"/>
         <echo>Patching ${install.src.keystore.properties}...</echo>
@@ -830,7 +830,7 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         </replaceregexp>
         <replaceregexp file="${install.src.keystore.properties}">
             <regexp pattern="rootcakspasswd=.*"/>
-            <substitution expression="rootcakspasswd=${install.pass.ca.keystore}" />
+            <substitution expression="rootcakspasswd=${install.pass.ca.keystore}"/>
         </replaceregexp>
         <replaceregexp file="${install.src.keystore.properties}">
             <regexp pattern="sslkspasswd=.*"/>
@@ -840,12 +840,12 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         <copy file="${src.root}/etc/ssglog.properties" tofile="${install.src.ssglog.properties}"/>
         <echo>Patching ${install.src.ssglog.properties}...</echo>
         <replaceregexp file="${install.src.ssglog.properties}">
-	    <regexp pattern="com.l7tech.server.log.FileHandler.path=.*"/>
+            <regexp pattern="com.l7tech.server.log.FileHandler.path=.*"/>
             <substitution expression="com.l7tech.server.log.FileHandler.path=${install.target.logs}"/>
         </replaceregexp>
 
-	    <!-- Extract Tomcat & JDK tarballs -->
-        <untar src="${install.tomcat.tar.gz}" dest="${install.src.base}" compression="gzip" />
+        <!-- Extract Tomcat & JDK tarballs -->
+        <untar src="${install.tomcat.tar.gz}" dest="${install.src.base}" compression="gzip"/>
         <untar src="${install.jdk.tar.gz}" dest="${install.src.base}" compression="gzip"/>
 
         <!-- Copy WAR file into position -->
@@ -963,16 +963,16 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
             <substitution expression="hibernate.connection.password = ${install.pass.dbuser}"/>
         </replaceregexp>
 
-     	<!-- Hack server.xml -->
+        <!-- Hack server.xml -->
         <echo>Patching ${install.src.server.xml}...</echo>
         <replaceregexp file="${install.src.server.xml}">
-          <regexp pattern='keystoreFile\s*=\s*"[a-zA-Z0-9 \/\-\.\\]*"'/>
-          <substitution expression='keystoreFile="${install.target.ssl.keystore}"'/>
+            <regexp pattern='keystoreFile\s*=\s*"[a-zA-Z0-9 \/\-\.\\]*"'/>
+            <substitution expression='keystoreFile="${install.target.ssl.keystore}"'/>
         </replaceregexp>
 
         <replaceregexp file="${install.src.server.xml}">
-          <regexp pattern='keystorePass\s*=\s*"[a-zA-Z0-9 \/\-\.\\]*"'/>
-          <substitution expression='keystorePass="${install.pass.ssl.keystore}"'/>
+            <regexp pattern='keystorePass\s*=\s*"[a-zA-Z0-9 \/\-\.\\]*"'/>
+            <substitution expression='keystorePass="${install.pass.ssl.keystore}"'/>
         </replaceregexp>
 
         <!-- Copy misc. stuff -->
@@ -1017,7 +1017,7 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         <!-- Create tarball -->
         <property name="tarball" value="${build.dir}/ssg-${install.ssg.hostname}-b${install.build.number}.tar.gz"/>
         <echo>Creating ${tarball}...</echo>
-        <exec executable="tar" dir="${build.dir}/install" >
+        <exec executable="tar" dir="${build.dir}/install">
             <arg line="-czf ${tarball}"/>
             <arg line="."/>
         </exec>
@@ -1053,11 +1053,11 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         <antcall target="compile"/>
         <antcall target="compile-tests"/>
         <antcall target="test"/>
-        <antcall target="clean" />
-        <antcall target="package" />
-        <antcall target="ssm-webstart" />
+        <antcall target="clean"/>
+        <antcall target="package"/>
+        <antcall target="ssm-webstart"/>
         <antcall target="deploy"/>
-        <antcall target="testpackage" />
+        <antcall target="testpackage"/>
 
         <echo message="commit -m '[OFFICIAL-build] Incremented build number to ${build.number}' build.number"/>
         <cvs command="commit -m '[OFFICIAL-build] Incremented build number to ${build.number}' build.number"/>

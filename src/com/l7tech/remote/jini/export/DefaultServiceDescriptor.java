@@ -1,15 +1,17 @@
 package com.l7tech.remote.jini.export;
 
 import com.sun.jini.config.Config;
-import com.sun.jini.start.*;
-import com.sun.jini.start.ClassLoaderUtil;
+import com.sun.jini.start.AggregatePolicyProvider;
+import com.sun.jini.start.LifeCycle;
+import com.sun.jini.start.ServiceDescriptor;
+import com.sun.jini.start.ServiceProxyAccessor;
 import net.jini.config.Configuration;
 import net.jini.export.ProxyAccessor;
 import net.jini.loader.ClassAnnotation;
+import net.jini.loader.pref.PreferredClassLoader;
 import net.jini.security.BasicProxyPreparer;
 import net.jini.security.ProxyPreparer;
 
-import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -69,7 +71,9 @@ public class DefaultServiceDescriptor
     private static AggregatePolicyProvider globalPolicy = null;
     private static Policy initialGlobalPolicy = null;
     private static final Logger logger = Logger.getLogger(DefaultServiceDescriptor.class.getName());
-    /** Component name for service starter configuration entries */
+    /**
+     * Component name for service starter configuration entries
+     */
     private static final String START_PACKAGE = "com.sun.jini.start";
 
 
@@ -283,21 +287,13 @@ public class DefaultServiceDescriptor
         //Create custom class loader that preserves codebase annotations
         ClassLoader newClassLoader = null;
         Thread curThread = Thread.currentThread();
-        ClassLoader oldClassLoader = curThread.getContextClassLoader();
+        URLClassLoader oldClassLoader = (URLClassLoader)curThread.getContextClassLoader();
 
-        try {
-            String codeBase = getCodebase();
-            if (codeBase == null) codeBase = "";
-            String classPath = getClasspath();
-            if (classPath == null) classPath = "";
-            newClassLoader =
-              new ExportClassLoader(com.sun.jini.start.ClassLoaderUtil.getClasspathURLs(classPath),
-                ClassLoaderUtil.getCodebaseURLs(codeBase), oldClassLoader);
-        } catch (IOException ioe) {
-            logger.log(Level.SEVERE, "classloader.problem",
-              new Object[]{getClasspath(), getCodebase()});
-            throw ioe;
-        }
+        String codeBase = getCodebase();
+        if (codeBase == null) codeBase = "";
+        String classPath = getClasspath();
+        if (classPath == null) classPath = "";
+        newClassLoader = new PreferredClassLoader(oldClassLoader.getURLs(), oldClassLoader, codeBase, false);
 
 //        synchronized (DefaultServiceDescriptor.class) {
 //            // supplant global policy 1st time through
@@ -332,8 +328,7 @@ public class DefaultServiceDescriptor
 
         try {
             Class implClass = null;
-            implClass =
-              Class.forName(getImplClassName(), false, newClassLoader);
+            implClass = Class.forName(getImplClassName(), false, newClassLoader);
             logger.finest("Attempting to get implementation constructor");
             Constructor constructor =
               implClass.getDeclaredConstructor(actTypes);
