@@ -61,6 +61,10 @@ import java.util.logging.Logger;
 public class PolicyServlet extends HttpServlet {
     public static final String DEFAULT_CERT_PATH = "../../kstores/ssg.cer";
     public static final String PARAM_CERT_PATH = "CertPath";
+    public static final String PARAM_SERVICEOID = "serviceoid";
+    public static final String PARAM_GETCERT = "getcert";
+    public static final String PARAM_USERNAME = "username";
+    public static final String PARAM_NONCE = "nonce";
 
     public void init( ServletConfig config ) throws ServletException {
         logger = LogManager.getInstance().getSystemLogger();
@@ -364,10 +368,5 @@ public class PolicyServlet extends HttpServlet {
 
     private ServiceManager serviceManagerInstance = null;
     private Logger logger = null;
-
-    static final String PARAM_SERVICEOID = "serviceoid";
-    static final String PARAM_GETCERT = "getcert";
-    static final String PARAM_USERNAME = "username";
-    static final String PARAM_NONCE = "nonce";
 }
 
