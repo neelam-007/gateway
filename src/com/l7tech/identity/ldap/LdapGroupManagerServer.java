@@ -86,11 +86,11 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
     }
 
     public EntityHeader groupToHeader(Group group) {
-        return null;
+        return new EntityHeader(group.getName(), EntityType.GROUP, group.getName(), null);
     }
 
     public Group headerToGroup(EntityHeader header) throws FindException {
-        return null;
+        return findByPrimaryKey(header.getStrId());
     }
 
     public Collection findAllHeaders() throws FindException {
