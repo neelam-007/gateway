@@ -10,7 +10,6 @@ abstract class SamlStatementAssertion extends CredentialSourceAssertion implemen
     private String[] subjectConfirmations = new String[] {};
     private String nameQualifier  = null;
     private String[] nameFormats  = new String[] {};
-    private String targetRestriction;
     private String audienceRestriction;
     private XmlSecurityRecipientContext recipientContext = XmlSecurityRecipientContext.getLocalRecipient();
     private boolean requireProofOfPosession = true;
@@ -72,18 +71,6 @@ abstract class SamlStatementAssertion extends CredentialSourceAssertion implemen
      */
     public void setAudienceRestriction(String audienceRestriction) {
         this.audienceRestriction = audienceRestriction;
-    }
-
-    /**
-     * Get the target restriction
-     * @return the target restriction if set or <b>null</b> if not set
-     */
-    public String getTargetRestriction() {
-        return targetRestriction;
-    }
-
-    public void setTargetRestriction(String targetRestriction) {
-        this.targetRestriction = targetRestriction;
     }
 
     public XmlSecurityRecipientContext getRecipientContext() {

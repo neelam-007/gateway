@@ -175,12 +175,13 @@
                     <NameFormats stringArrayValue="included"/>
                     <RequireProofOfPosession booleanValue="true"/>
                     <CheckAssertionValidity booleanValue="true"/>
-                    <TargetRestriction stringValueNull="null"/>
                     <NameQualifier stringValueNull="null"/>
                     <AuthenticationMethods stringArrayValue="included"/>
                 </SamlAuthenticationStatement>
                 <SamlAuthorizationStatement>
                     <AudienceRestriction stringValueNull="null"/>
+                    <Action stringValueNull="null"/>
+                    <ActionNamespace stringValueNull="null"/>
                     <SubjectConfirmations stringArrayValue="included"/>
                     <RecipientContext xmlSecurityRecipientContext="included">
                         <Base64edX509Certificate stringValueNull="null"/>
@@ -189,7 +190,7 @@
                     <NameFormats stringArrayValue="included"/>
                     <RequireProofOfPosession booleanValue="true"/>
                     <CheckAssertionValidity booleanValue="true"/>
-                    <TargetRestriction stringValueNull="null"/>
+                    <Resource stringValueNull="null"/>
                     <NameQualifier stringValueNull="null"/>
                 </SamlAuthorizationStatement>
                 <SalmAttributeStatement>
@@ -202,7 +203,6 @@
                     <NameFormats stringArrayValue="included"/>
                     <RequireProofOfPosession booleanValue="true"/>
                     <CheckAssertionValidity booleanValue="true"/>
-                    <TargetRestriction stringValueNull="null"/>
                     <NameQualifier stringValueNull="null"/>
                 </SalmAttributeStatement>
                 <AuditAssertion>

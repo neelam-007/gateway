@@ -31,7 +31,11 @@ import java.util.logging.Logger;
  */
 public abstract class SamlStatementValidate {
 
+    /**
+     * Statement Assertion to xbean mapping
+     */
     private static Map statementMapping = new HashMap();
+
     static {
         statementMapping.put(SamlAuthenticationStatement.class, AuthenticationStatementType.class);
         statementMapping.put(SamlAuthorizationStatement.class, AuthorizationDecisionStatementType.class);
@@ -41,25 +45,43 @@ public abstract class SamlStatementValidate {
     protected final Logger logger = Logger.getLogger(getClass().getName());
     protected Collection errorCollector = new ArrayList();
     protected final SamlStatementAssertion statementAssertionConstraints;
-    protected final StatementAbstractType statementMapingType;
+    protected final Class statementMapingType;
 
     private ApplicationContext applicationContext;
 
+    /**
+     * Create the <code>SamlStatementValidate</code> for the given statement assertion
+     *
+     * @param sa                 the saml statement assertion that
+     * @param applicationContext the application context for accessing components
+     * @return the specific <code>SamlStatementValidate</code> for the <code>SamlStatementAssertion</code>
+     */
     public static SamlStatementValidate getValidate(SamlStatementAssertion sa, ApplicationContext applicationContext) {
         if (sa == null) {
             throw new IllegalArgumentException("Non Null Saml Statement Assertion is required");
         }
         if (sa instanceof SamlAuthenticationStatement) {
-           return null;
+            return new SamlAuthenticationStatementValidate(sa, applicationContext);
+        } else if (sa instanceof SamlAuthorizationStatement) {
+            return new SamlAuthenticationStatementValidate(sa, applicationContext);
+
+        } else if (sa instanceof SamlAttributeStatement) {
+
         }
         throw new IllegalArgumentException("Not supported statement thpe " + sa.getClass());
     }
 
-    protected SamlStatementValidate(SamlStatementAssertion statementAssertion, ApplicationContext applicationContext) {
+    /**
+     * Construct  the <code>SamlStatementValidate</code> for the statement assertion
+     *
+     * @param statementAssertion the saml statemenet assertion
+     * @param applicationContext the applicaiton context to allo access to components and services
+     */
+    SamlStatementValidate(SamlStatementAssertion statementAssertion, ApplicationContext applicationContext) {
         this.statementAssertionConstraints = statementAssertion;
-        statementMapingType = (StatementAbstractType)statementMapping.get(statementAssertion);
+        statementMapingType = (Class)statementMapping.get(statementAssertion.getClass());
         if (statementMapingType == null) {
-            throw new IllegalArgumentException("Could not determine mapping for "+statementAssertion.getClass());
+            throw new IllegalArgumentException("Could not determine mapping for " + statementAssertion.getClass());
         }
         this.applicationContext = applicationContext;
     }
@@ -70,9 +92,8 @@ public abstract class SamlStatementValidate {
      *
      * @param document
      */
-    public void validate(Document document, ProcessorResult wssResults) {
-        Collection results = new ArrayList();
-        validateCommonAssertionProperties(document, wssResults, results);
+    public void validate(Document document, ProcessorResult wssResults, Collection validationResults) {
+        validateCommonAssertionProperties(document, wssResults, validationResults);
 
 
     }
@@ -101,7 +122,7 @@ public abstract class SamlStatementValidate {
                         SubjectStatementAbstractType subjectStatementAbstractType = statementArray[j];
                         if (subjectStatementAbstractType.getClass().equals(statementMapingType)) { // bingo
                             validateSubjectConfirmation(subjectStatementAbstractType, validationResults);
-                            validateConditions(subjectStatementAbstractType, validationResults);
+                            validateConditions(assertionType, validationResults);
                             validateStatement(document, subjectStatementAbstractType, wssResults, validationResults);
                         }
                     }
@@ -131,10 +152,13 @@ public abstract class SamlStatementValidate {
 
     /**
      * Validate the SAML assertion conditions
-     * @param subjectStatementAbstractType
+     *
+     * @param assertionType
      * @param validationResults
      */
-    private void validateConditions(SubjectStatementAbstractType subjectStatementAbstractType, Collection validationResults) {
+    private void validateConditions(AssertionType assertionType, Collection validationResults) {
+        ConditionsType conditionsType = assertionType.getConditions();
+        conditionsType.getNotBefore();
 
     }
 
@@ -144,14 +168,24 @@ public abstract class SamlStatementValidate {
             validationResults.add(new Error("Subject Statement Required", subjectStatementAbstractType.toString(), null, null));
         }
         final String nameQualifier = statementAssertionConstraints.getNameQualifier();
-        if (nameQualifier !=null) {
+        if (nameQualifier != null) {
             NameIdentifierType nameIdentifierType = subject.getNameIdentifier();
             nameIdentifierType.getNameQualifier();
         }
     }
 
+    /**
+     * Validate the specific <code>SubjectStatementAbstractType</code> and collect eventual validation
+     * errors in the validationResults collection.
+     *
+     * @param document              the message document
+     * @param statementAbstractType the subject statement type, that may be authentication statement
+     *                              authorization statement or attribute statement
+     * @param wssResults            the wssresults collection
+     * @param validationResults     where the valida
+     */
     protected abstract void validateStatement(Document document,
-                                              StatementAbstractType statementAbstractType,
+                                              SubjectStatementAbstractType statementAbstractType,
                                               ProcessorResult wssResults, Collection validationResults);
 
     public static class Error {

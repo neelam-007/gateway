@@ -21,7 +21,7 @@
           <grid id="ccf3e" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <xy x="90" y="95" width="1335" height="25"/>
+              <xy x="90" y="65" width="1335" height="22"/>
               <grid row="3" column="3" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
             </constraints>
             <properties/>
@@ -29,7 +29,7 @@
             <children>
               <component id="48a2d" class="javax.swing.JCheckBox" binding="checkBoxCheckAssertionValidity">
                 <constraints>
-                  <xy x="0" y="0" width="210" height="25"/>
+                  <xy x="0" y="0" width="172" height="22"/>
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
                 </constraints>
                 <properties>
@@ -40,13 +40,13 @@
           </grid>
           <vspacer id="4f5e1">
             <constraints>
-              <xy x="752" y="176" width="11" height="310"/>
+              <xy x="752" y="112" width="11" height="374"/>
               <grid row="5" column="3" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
             </constraints>
           </vspacer>
           <vspacer id="df2d1">
             <constraints>
-              <xy x="752" y="45" width="11" height="50"/>
+              <xy x="752" y="45" width="11" height="20"/>
               <grid row="2" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
                 <minimum-size width="-1" height="20"/>
               </grid>
@@ -54,48 +54,26 @@
           </vspacer>
           <component id="6730a" class="javax.swing.JLabel" binding="titleLabel">
             <constraints>
-              <xy x="40" y="21" width="64" height="17"/>
+              <xy x="40" y="23" width="50" height="14"/>
               <grid row="1" column="2" row-span="1" col-span="2" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
               <text value="Conditions"/>
             </properties>
           </component>
-          <grid id="8a699" row-count="2" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+          <grid id="8a699" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <xy x="90" y="125" width="1335" height="51"/>
+              <xy x="90" y="92" width="1335" height="20"/>
               <grid row="4" column="3" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
             </constraints>
             <properties/>
             <border type="none"/>
             <children>
-              <hspacer id="e1267">
-                <constraints>
-                  <xy x="734" y="6" width="601" height="11"/>
-                  <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
-                </constraints>
-              </hspacer>
-              <component id="b9e61" class="javax.swing.JLabel">
-                <constraints>
-                  <xy x="0" y="3" width="108" height="17"/>
-                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
-                </constraints>
-                <properties>
-                  <text value="Target Restriction"/>
-                </properties>
-              </component>
-              <component id="ee124" class="javax.swing.JTextField" binding="textFieldTargetRestriction">
-                <constraints>
-                  <xy x="133" y="0" width="601" height="23"/>
-                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1"/>
-                </constraints>
-                <properties/>
-              </component>
               <component id="25803" class="javax.swing.JLabel">
                 <constraints>
-                  <xy x="0" y="31" width="123" height="17"/>
-                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+                  <xy x="0" y="3" width="98" height="14"/>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
                 </constraints>
                 <properties>
                   <text value="Audience Restriction"/>
@@ -103,16 +81,22 @@
               </component>
               <component id="88805" class="javax.swing.JTextField" binding="textFieldAudienceRestriction">
                 <constraints>
-                  <xy x="133" y="28" width="601" height="23"/>
-                  <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1"/>
+                  <xy x="108" y="0" width="614" height="20"/>
+                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1"/>
                 </constraints>
                 <properties/>
               </component>
+              <hspacer id="8b694">
+                <constraints>
+                  <xy x="722" y="4" width="613" height="11"/>
+                  <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
+                </constraints>
+              </hspacer>
             </children>
           </grid>
           <hspacer id="f0d56">
             <constraints>
-              <xy x="40" y="102" width="50" height="11"/>
+              <xy x="40" y="70" width="50" height="11"/>
               <grid row="3" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
                 <minimum-size width="50" height="-1"/>
               </grid>
