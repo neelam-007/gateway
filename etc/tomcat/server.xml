@@ -10,12 +10,12 @@
     <Service name="Tomcat-Standalone">
 
         <Connector className="org.apache.catalina.connector.http.HttpConnector"
-            port="8080" minProcessors="5" maxProcessors="75"
+            port="8080" minProcessors="5" maxProcessors="250"
             enableLookups="true" redirectPort="8443"
             acceptCount="10" debug="0" connectionTimeout="60000"/>
 
         <Connector className="org.apache.catalina.connector.http.HttpConnector"
-            port="8443" minProcessors="5" maxProcessors="75"
+            port="8443" minProcessors="5" maxProcessors="250"
             enableLookups="true"
             acceptCount="10" debug="0" scheme="https" secure="true">
 
