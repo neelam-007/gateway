@@ -34,6 +34,10 @@ public class SsgManagerTest extends TestCase {
       new Ssg(3, "bunky3.foo.bar");
     private static final Ssg SSG3_CLONE = SSG3.getCopy();
 
+    static {
+        SSG2.setTrustedGateway(SSG1);
+    }
+
     public SsgManagerTest(String name) {
         super(name);
     }
@@ -201,6 +205,8 @@ public class SsgManagerTest extends TestCase {
         assertTrue(loaded2.getSsgAddress().equals(SSG2.getSsgAddress()));
         assertTrue(loaded2.lookupPolicy(SSG2P1_URI, SSG2P1_SA) == null); // policies not persisted
         assertTrue(loaded2.lookupPolicy(SSG2P2_URI, SSG2P2_SA) == null);
+        assertTrue(loaded2.getTrustedGateway() != SSG1); // (this doesn't HAVE to fail, but it'd be amazing if it worked)
+        assertTrue(loaded2.getTrustedGateway() == sm.getSsgById(SSG1.getId()));
 
         // May not add two Ssgs with the same Id
         // (Actually you shouldn't even be instantiating two Ssgs with the same Id)

@@ -576,6 +576,7 @@ public class SsgKeyStoreManager {
         return;
     }
 
+    /** Caller passes an instance of this to importClientCertificate if they wish to present the user with a list of aliases in a file. */
     public interface AliasPicker {
         /** @return the preferred alias, or null if none look good. */
         String selectAlias(String[] options);

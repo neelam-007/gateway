@@ -60,7 +60,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     }
 
     private long id = 0;
-    private long trustedGatewayId = 0;
+    private Ssg trustedGateway = null;
     private String localEndpoint;
     private String ssgAddress = "";
     private int ssgPort = SSG_PORT;
@@ -331,13 +331,18 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         this.id = id;
     }
 
-    public long getTrustedGatewayId() {
-         return trustedGatewayId;
-     }
+    /**
+     * Get the "Trusted Gateway" for this Ssg.  The "Trusted Gateway" is used to obtain authentication information
+     * instead of getting it directly from this Ssg. 
+     * @return
+     */
+    public Ssg getTrustedGateway() {
+        return trustedGateway;
+    }
 
-     public void setTrustedGatewayId(long trustedGatewayId) {
-         this.trustedGatewayId = trustedGatewayId;
-     }
+    public void setTrustedGateway(Ssg trustedGateway) {
+        this.trustedGateway = trustedGateway;
+    }
 
     public String getLocalEndpoint() {
         if (localEndpoint == null)

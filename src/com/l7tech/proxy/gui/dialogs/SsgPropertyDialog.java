@@ -17,25 +17,22 @@ import com.l7tech.proxy.gui.policy.PolicyTreeModel;
 import com.l7tech.proxy.gui.util.IconManager;
 
 import javax.swing.*;
-import javax.swing.filechooser.FileFilter;
 import javax.swing.border.BevelBorder;
 import javax.swing.event.*;
+import javax.swing.filechooser.FileFilter;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.tree.TreeModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
-import java.util.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.File;
-import java.io.IOException;
 
 /**
  * Panel for editing properties of an SSG object.
@@ -700,7 +697,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         synchronized (ssg) {
 
             // override the default (trusted SSG) if the ssg is a federated SSG
-            if (ssg.getTrustedGatewayId() > 0) {
+            if (ssg.getTrustedGateway() != null) {
                 identityPane.getFederatedSSGRadioButton().setSelected(true);
                 identityPane.setTrustedSSGFormEnabled(false);
                 identityPane.setFederatedSSGFormEnabled(true);
@@ -709,7 +706,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
                 int index = 0;
                 for (; index < identityPane.getTrustedSSGComboBox().getItemCount(); index++) {
-                    if (((Ssg) identityPane.getTrustedSSGComboBox().getItemAt(index)).getId() == ssg.getTrustedGatewayId()) {
+                    if (((Ssg) identityPane.getTrustedSSGComboBox().getItemAt(index)) == ssg.getTrustedGateway()) {
                         identityPane.getTrustedSSGComboBox().setSelectedIndex(index);
                         break;
                     }
@@ -780,14 +777,14 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             if(identityPane.getFederatedSSGRadioButton().isSelected()) {
 
                 Ssg selectedSsg = (Ssg) identityPane.getTrustedSSGComboBox().getSelectedItem();
-                ssg.setTrustedGatewayId(selectedSsg.getId());
+                ssg.setTrustedGateway(selectedSsg);
 
                 // clear the old stuff in trusted SSG
                 ssg.setSavePasswordToDisk(false);
                 ssg.setChainCredentialsFromClient(false);
 
             } else {
-                ssg.setTrustedGatewayId(0);
+                ssg.setTrustedGateway(null);
 
                 ssg.setSsgAddress(fieldServerAddress.getText().trim().toLowerCase());
                 ssg.setUsername(identityPane.getUsernameTextField().getText().trim());
