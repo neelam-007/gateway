@@ -18,6 +18,8 @@ import java.io.IOException;
  * $Id$
  *
  * Encrypts the response
+ *
+ * todo, this should be removed because functionality has been moved to ServerXmlResponseSecurity
  */
 public class ServerXmlEncResAssertion implements ServerAssertion {
     public ServerXmlEncResAssertion(XmlEncResAssertion data) {

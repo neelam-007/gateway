@@ -36,6 +36,8 @@ import org.xml.sax.SAXException;
  *
  * On the server side, this decorates a response with an xml d-sig.
  * On the proxy side, this verifies that the Soap Response contains a valid xml d-sig for the entire envelope.
+ *
+ * todo, this should be removed because functionality has been moved to ServerXmlResponseSecurity
  */
 public class ServerXmlDsigResAssertion implements ServerAssertion {
 

@@ -18,6 +18,8 @@ import java.io.IOException;
  * $Id$
  *
  * Validates that the request's body is encrypted and decypher it
+ *
+ * todo, this should be removed because functionality has been moved to ServerXmlResponseSecurity
  */
 public class ServerXmlEncReqAssertion implements ServerAssertion {
     public ServerXmlEncReqAssertion(XmlEncReqAssertion data) {

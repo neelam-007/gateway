@@ -39,6 +39,8 @@ import sun.security.x509.X500Name;
  *
  * This extends ServerWssCredentialSource because once the validity of the signature if confirmed, the cert is used
  * as credentials.
+ *
+ * todo, this should be removed because functionality has been moved to ServerXmlRequestSecurity
  */
 public class ServerXmlDsigReqAssertion extends ServerWssCredentialSource implements ServerAssertion {
     public ServerXmlDsigReqAssertion( XmlDsigReqAssertion data ) {
