@@ -104,6 +104,7 @@ public class SoapUtil {
     public static final String MESSAGEID_EL_NAME = "MessageID";
     public static final String RELATESTO_EL_NAME = "RelatesTo";
     public static final String WSSC_ID_EL_NAME = "Identifier";
+    public static final String WSSC_DK_EL_NAME = "DerivedKeyToken";
 
     // Misc
     public static final String FC_CLIENT = "Client";
