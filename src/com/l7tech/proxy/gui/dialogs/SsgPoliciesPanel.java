@@ -138,11 +138,11 @@ class SsgPoliciesPanel extends JPanel {
         colMt.setHeaderValue("Match Type");
         colMt.setCellRenderer(new ComboBoxCellRenderer(MATCH_TYPES));
         colMt.setCellEditor(new ComboBoxCellEditor(MATCH_TYPES));
-        setColumnSize(colMt, "Match Type", new JComboBox(MATCH_TYPES));
+        setColumnSize(colMt, " Match Type ", new JComboBox(MATCH_TYPES));
         colLk.setHeaderValue("Lock");
         colLk.setCellRenderer(policyTable.getDefaultRenderer(Boolean.class));
         colLk.setCellEditor(policyTable.getDefaultEditor(Boolean.class));
-        setColumnSize(colLk, "Lock", new JCheckBox());
+        setColumnSize(colLk, " Lock ", new JCheckBox());
         policyTable.getTableHeader().setReorderingAllowed(false);
         JScrollPane policyTableSp = new JScrollPane(policyTable);
         policyTableSp.setPreferredSize(new Dimension(120, 120));
@@ -192,8 +192,8 @@ class SsgPoliciesPanel extends JPanel {
     }
 
     private void setColumnSize(TableColumn col, String columnTitle, JComponent cellComponent) {
-        int lockWidth = (int)(new JLabel(columnTitle).getPreferredSize().getWidth() + 4);
-        int matchWidth = (int)cellComponent.getPreferredSize().getWidth() + 4;
+        int lockWidth = (int)(new JLabel(columnTitle).getPreferredSize().getWidth() + 7);
+        int matchWidth = (int)cellComponent.getPreferredSize().getWidth() + 7;
         int width = Math.max(lockWidth, matchWidth);
         col.setMinWidth(width);
         col.setMaxWidth(width);
