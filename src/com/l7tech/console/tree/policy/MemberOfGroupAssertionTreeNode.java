@@ -9,7 +9,7 @@ import java.util.Iterator;
 
 /**
  * Class AssertionTreeNode.
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a> 
+ * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
 
 class MemberOfGroupAssertionTreeNode extends LeafAssertionTreeNode {

@@ -13,7 +13,7 @@ import java.util.Enumeration;
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.1
  */
-public class AdminFolderNode implements BasicTreeNode {
+public class AdminFolderNode extends AbstractTreeNode {
     /**
      * construct the <CODE>AdminFolderNode</CODE> instance for
      * a given entry.
@@ -26,6 +26,7 @@ public class AdminFolderNode implements BasicTreeNode {
      *                   Realm or Company Entry
      */
     public AdminFolderNode(EntityHeader entry) {
+        super(null);
         this.entry = entry;
     }
 
@@ -39,21 +40,16 @@ public class AdminFolderNode implements BasicTreeNode {
     }
 
     /**
-     * Returns the children of the reciever as an Enumeration.
-     *
-     * @return the Enumeration of the child nodes.
-     * @exception Exception thrown when an erro is encountered when
-     *                      retrieving child nodes.
-     */
-    public Enumeration children() throws Exception {
-        return Collections.enumeration(Collections.EMPTY_LIST);
-    }
-
-    /**
      * Returns true if the receiver allows children.
      */
     public boolean getAllowsChildren() {
-        return false;
+        return true;
+    }
+
+    /**
+     * subclasses override this method
+     */
+    protected void loadChildren() {
     }
 
     /**
@@ -62,6 +58,18 @@ public class AdminFolderNode implements BasicTreeNode {
      */
     public String getName() {
         return "Administrators";
+    }
+
+    /**
+     * subclasses override this method specifying the resource name
+     *
+     * @param open for nodes that can be opened, can have children
+     */
+    protected String iconResource(boolean open) {
+        if (open)
+            return "com/l7tech/console/resources/folderOpen.gif";
+
+        return "com/l7tech/console/resources/folder.gif";
     }
 
     private EntityHeader entry;

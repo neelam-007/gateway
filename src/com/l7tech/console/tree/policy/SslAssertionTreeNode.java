@@ -12,7 +12,7 @@ import java.awt.*;
 
 /**
  * Class SpecificUserAssertionTreeNode.
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a> 
+ * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
 class SslAssertionTreeNode extends LeafAssertionTreeNode {
 
@@ -26,6 +26,6 @@ class SslAssertionTreeNode extends LeafAssertionTreeNode {
      * @param open for nodes that can be opened, can have children
      */
     protected String iconResource(boolean open) {
-      return "com/l7tech/console/resources/encryption.gif";
+        return "com/l7tech/console/resources/encryption.gif";
     }
 }

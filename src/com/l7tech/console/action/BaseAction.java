@@ -1,6 +1,10 @@
 package com.l7tech.console.action;
 
+import com.l7tech.console.util.IconManager2;
+
 import javax.swing.*;
+import java.awt.*;
+import java.awt.event.ActionEvent;
 
 /**
  * This class provides default implementations for the application
@@ -16,37 +20,52 @@ import javax.swing.*;
  * @see AbstractAction
  */
 public abstract class BaseAction extends AbstractAction {
-    /* this class classloader */
-    final ClassLoader cl = getClass().getClassLoader();
-    /** the resource path for the actions */
-    public static final String RESOURCE_PATH = "com/l7tech/console/resources";
-
     public static final String LARGE_ICON = "LargeIcon";
 
     /**
-     * Defines an <code>Action</code> object with the specified
-     * description string and no icon.
+     * Default constructorr. Defines an <code>Action</code> object with
+     * action name, icon and description form subclasses.
      */
-    public BaseAction(String name) {
-        super(name);
+    public BaseAction() {
+        String name = getName();
+        if (name != null) {
+            putValue(Action.NAME, getName());
+        }
+        String desc = getDescription();
+        if (desc != null) {
+            putValue(Action.SHORT_DESCRIPTION, desc);
+        }
+        Image img = getIcon();
+        if (img != null) {
+            putValue(Action.SMALL_ICON, new ImageIcon(img));
+        }
     }
 
     /**
-     * Defines an <code>Action</code> object with the specified
-     * description string and a the specified icon.
+     * loads the icon specified by subclass iconResource()
+     * implementation.
+     *
+     * @return the <code>ImageIcon</code> or null if not found
      */
-    public BaseAction(String name, String icon) {
-        this(name);
-        putValue(Action.SMALL_ICON, new ImageIcon(cl.getResource(icon)));
+    public final Image getIcon() {
+        return IconManager2.getInstance().getIcon(iconResource());
+
     }
 
     /**
-     * Defines an <code>Action</code> object with the specified
-     * description string and a the specified icon.
+     * @return the action name
      */
-    public BaseAction(String name, Icon icon) {
-        super(name, icon);
-    }
+    public abstract String getName();
+
+    /**
+     * @return the aciton description
+     */
+    public abstract String getDescription();
+
+    /**
+     * subclasses override this method specifying the resource name
+     */
+    protected abstract String iconResource();
 
 
     /** Actually perform the action.
@@ -57,12 +76,13 @@ public abstract class BaseAction extends AbstractAction {
      */
     public abstract void performAction();
 
+
     /* Implementation of method of javax.swing.Action interface.
     * Delegates the execution to performAction method.
     *
     * @param ev ignored
     */
-    public void actionPerformed(java.awt.event.ActionEvent ev) {
+    public final void actionPerformed(ActionEvent ev) {
         performAction();
     }
 }

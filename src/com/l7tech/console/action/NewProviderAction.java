@@ -1,37 +1,40 @@
 package com.l7tech.console.action;
 
-
+import com.l7tech.console.panels.NewProviderDialog;
+import com.l7tech.console.tree.AbstractTreeNode;
 
 /**
- * The <code>DeleteAssertionAction</code> action deletes
- * the assertion from the target policy.
- * <p>
- * The developer need only subclass this abstract class and
- * define the <code>actionPerformed</code> method.
+ * The <code>NewProviderAction</code> action adds the new provider.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.0
  */
-public abstract class DeleteAssertionAction extends BaseAction {
+public class NewProviderAction extends NodeAction {
+
+    public NewProviderAction(AbstractTreeNode node) {
+        super(node);
+        this.node = node;
+    }
+
     /**
      * @return the action name
      */
     public String getName() {
-        return "Delete asserion";
+        return "New provider";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "Delete the assertion from the policy assertion tree";
+        return "Create new identioty provider";
     }
 
     /**
-     * subclasses override this method specifying the resource name
+     * specify the resource name for this action
      */
     protected String iconResource() {
-        return "com/l7tech/console/resources/delete.gif";
+        return "com/l7tech/console/resources/providers16.gif";
     }
 
     /** Actually perform the action.
@@ -41,5 +44,8 @@ public abstract class DeleteAssertionAction extends BaseAction {
      * without explicitly asking for the AWT event thread!
      */
     public void performAction() {
+        NewProviderDialog dialog = new NewProviderDialog(null);
+        dialog.setResizable(false);
+        dialog.show();
     }
 }

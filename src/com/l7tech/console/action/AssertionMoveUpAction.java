@@ -1,6 +1,6 @@
 package com.l7tech.console.action;
 
-import javax.swing.*;
+
 
 /**
  * The <code>AssertionMoveUpAction</code> is the action that moves
@@ -13,13 +13,33 @@ import javax.swing.*;
  * @version 1.0
  */
 public abstract class AssertionMoveUpAction extends BaseAction {
-    private final static String actionName = "AssertionDown";
+    /**
+     * @return the action name
+     */
+    public String getName() {
+        return "Move assertion up";
+    }
 
-    public AssertionMoveUpAction() {
-        super(actionName, RESOURCE_PATH + "/Up16.gif");
-        putValue(Action.SHORT_DESCRIPTION, actionName);
-        Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/Up16.gif"));
-        if (icon != null)
-            putValue(BaseAction.LARGE_ICON, icon);
+    /**
+     * @return the aciton description
+     */
+    public String getDescription() {
+        return "Move up the policy assertion tree";
+    }
+
+    /**
+     * subclasses override this method specifying the resource name
+     */
+    protected String iconResource() {
+        return "com/l7tech/console/resources/Up16.gif";
+    }
+
+    /** Actually perform the action.
+     * This is the method which should be called programmatically.
+
+     * note on threading usage: do not access GUI components
+     * without explicitly asking for the AWT event thread!
+     */
+    public void performAction() {
     }
 }

@@ -33,7 +33,7 @@ public class IconManager {
      * @param node   the BasicTreeNode instance
      * @return ImageIcon for the given node
      */
-    public ImageIcon getIcon(BasicTreeNode node) {
+    public ImageIcon getIcon(AbstractTreeNode node) {
         if (node == null) {
             throw new NullPointerException("node");
         }

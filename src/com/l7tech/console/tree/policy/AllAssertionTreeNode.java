@@ -6,7 +6,7 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 /**
  * Class AllAssertionTreeNode
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a> 
+ * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
 class AllAssertionTreeNode extends CompositeAssertionTreeNode {
     /**

@@ -47,10 +47,10 @@ public class FilteredTreeModel extends DirTreeModel {
     public Object getChild(Object parent, int index) {
         if (filter != null) {
             if (parent instanceof EntityTreeNode) {
-                return ((EntityTreeNode)parent).getChildAt(index, filter);
+                return ((EntityTreeNode) parent).getChildAt(index, filter);
             }
         }
-        return ((TreeNode)parent).getChildAt(index);
+        return ((TreeNode) parent).getChildAt(index);
     }
 
     /**
@@ -66,10 +66,10 @@ public class FilteredTreeModel extends DirTreeModel {
     public int getChildCount(Object parent) {
         if (filter != null) {
             if (parent instanceof EntityTreeNode) {
-                return ((EntityTreeNode)parent).getChildCount(filter);
+                return ((EntityTreeNode) parent).getChildCount(filter);
             }
         }
-        return ((TreeNode)parent).getChildCount();
+        return ((TreeNode) parent).getChildCount();
     }
 
     private NodeFilter filter;

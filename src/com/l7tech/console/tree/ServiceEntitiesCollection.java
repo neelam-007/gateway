@@ -8,17 +8,18 @@ import java.util.Collections;
 
 /**
  * Class ServiceEntitiesCollection.
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a> 
+ * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
 public class ServiceEntitiesCollection implements EntitiesCollection {
     final ServiceManager manager;
     private boolean exhausted = false;
+
     /**
      *
      * @param sm the <code>ServiceManager</code>
      */
     ServiceEntitiesCollection(ServiceManager sm) {
-       manager = sm;
+        manager = sm;
     }
 
     /**
@@ -28,7 +29,7 @@ public class ServiceEntitiesCollection implements EntitiesCollection {
      */
     public Collection getNextBatch() throws RuntimeException {
         if (exhausted) {
-              return Collections.EMPTY_LIST;
+            return Collections.EMPTY_LIST;
         }
         try {
             exhausted = true;

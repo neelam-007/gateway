@@ -3,6 +3,7 @@ package com.l7tech.console.tree;
 import com.l7tech.console.util.IconManager2;
 
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.*;
 import java.awt.*;
 
 /**
@@ -11,7 +12,7 @@ import java.awt.*;
  * @version 1.0
  */
 public abstract class AbstractTreeNode
-  extends DefaultMutableTreeNode  implements BasicTreeNode {
+  extends DefaultMutableTreeNode implements BasicTreeNode {
     protected boolean hasLoadedChildren;
 
     public AbstractTreeNode(Object object) {
@@ -36,6 +37,66 @@ public abstract class AbstractTreeNode
     protected abstract void loadChildren();
 
     /**
+     * Get the set of actions associated with this node.
+     * This may be used e.g. in constructing a context menu.
+     *
+     * <P>
+     * By default returns the empty actions arrays.
+     *
+     * @return actions appropriate to the node
+     */
+    public Action[] getActions() {
+        return new Action[]{};
+    }
+
+    /**
+     * Make a popup menu for this node.
+     * The menu is constructed from the set of actions returned
+     * by {@link #getActions}.
+     *
+     * @return the popup menu
+     */
+    public final JPopupMenu getPopupMenu() {
+        Action[] actions = getActions();
+        if (actions == null || actions.length == 0)
+            return null;
+        JPopupMenu pm = new JPopupMenu();
+        for (int i = 0; i < actions.length; i++) {
+            pm.add(actions[i]);
+        }
+        return pm;
+    }
+
+    /**
+     * Return a panel for this node or <b>null</b> if there
+     * is no panel
+     *
+     * @return the popup menu
+     */
+    public final JPanel getPanel() {
+        return null;
+    }
+
+
+    /**
+     *Test if the node can be deleted. Default is <code>true</code>
+     *
+     * @return true if the node can be deleted, false otherwise
+     */
+    public boolean canDelete() {
+        return true;
+    }
+
+    /**
+     *Test whether the node has properties. Default is <code>true</code>
+     *
+     * @return true if the node has properties, false otherwise
+     */
+    public boolean hasProperties() {
+        return true;
+    }
+
+    /**
      * loads the icon specified by subclass iconResource()
      * implementation.
      *
@@ -53,7 +114,7 @@ public abstract class AbstractTreeNode
      * @return icon to use to represent the bean when opened
      */
     public Image getOpenedIcon() {
-       return IconManager2.getInstance().getIcon(iconResource(true));
+        return IconManager2.getInstance().getIcon(iconResource(true));
     }
 
     /**

@@ -45,7 +45,7 @@ public abstract class EntityHeaderNode extends AbstractTreeNode {
      * @return the <code>EntityHeader</code>
      */
     public EntityHeader getEntityHeader() {
-        return (EntityHeader)getUserObject();
+        return (EntityHeader) getUserObject();
     }
 
     /**
@@ -64,7 +64,7 @@ public abstract class EntityHeaderNode extends AbstractTreeNode {
     public String toString() {
         StringBuffer sb = new StringBuffer();
         sb.append(getClass().getName() + "\n").
-                append(super.toString());
+          append(super.toString());
         return sb.toString();
     }
 }

@@ -1,6 +1,6 @@
 package com.l7tech.console.action;
 
-import javax.swing.*;
+
 
 /**
  * The <code>AddAssertionAction</code> action assigns
@@ -12,14 +12,35 @@ import javax.swing.*;
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.0
  */
-public abstract class AddAssertionAction extends BaseAction {
-    private final static String actionName = "AssignAssertion";
+public class AddAssertionAction extends BaseAction {
+    /**
+     * @return the action name
+     */
+    public String getName() {
+        return "Add asserion";
+    }
 
-    public AddAssertionAction() {
-        super(actionName, RESOURCE_PATH + "/assign.gif");
-        putValue(Action.SHORT_DESCRIPTION, actionName);
-        Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/assign.gif"));
-        if (icon != null)
-            putValue(BaseAction.LARGE_ICON, icon);
+    /**
+     * @return the aciton description
+     */
+    public String getDescription() {
+        return "Add assertion to the policy assertion tree";
+    }
+
+    /**
+     * subclasses override this method specifying the resource name
+     */
+    protected String iconResource() {
+        return "com/l7tech/console/resources/assign.gif";
+    }
+
+    /** Actually perform the action.
+     * This is the method which should be called programmatically.
+
+     * note on threading usage: do not access GUI components
+     * without explicitly asking for the AWT event thread!
+     */
+    public void performAction() {
+
     }
 }

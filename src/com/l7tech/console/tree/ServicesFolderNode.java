@@ -48,14 +48,14 @@ public class ServicesFolderNode extends AbstractTreeNode {
      * load the service folder children
      */
     protected void loadChildren() {
-          Enumeration e =
-       TreeNodeFactory.
-         getTreeNodeEnumeration(
-           new EntitiesEnumeration(new ServiceEntitiesCollection(serviceManager)));
-       int index = 0;
-       for (; e.hasMoreElements();) {
-           insert((MutableTreeNode)e.nextElement(), index++);
-       }
+        Enumeration e =
+          TreeNodeFactory.
+          getTreeNodeEnumeration(
+            new EntitiesEnumeration(new ServiceEntitiesCollection(serviceManager)));
+        int index = 0;
+        for (; e.hasMoreElements();) {
+            insert((MutableTreeNode) e.nextElement(), index++);
+        }
     }
 
     /**
@@ -75,7 +75,7 @@ public class ServicesFolderNode extends AbstractTreeNode {
      * @param open for nodes that can be opened, can have children
      */
     protected String iconResource(boolean open) {
-            if (open)
+        if (open)
             return "com/l7tech/console/resources/folderOpen.gif";
 
         return "com/l7tech/console/resources/folder.gif";

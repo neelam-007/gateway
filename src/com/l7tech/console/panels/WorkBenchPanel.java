@@ -104,7 +104,7 @@ public class WorkBenchPanel extends JPanel {
 
             // toolbars (icon, text etc)
             pref.
-                    addPropertyChangeListener(Preferences.TOOLBARS_VIEW, l);
+                    addPropertyChangeListener(Preferences.STATUS_BAR_VISIBLE, l);
 
         } catch (IOException e) {
             log.warn("error instantiaitng preferences", e);

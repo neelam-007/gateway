@@ -11,7 +11,7 @@ import java.util.Iterator;
 /**
  * Class OneOrMoreAssertionTreeNode.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a> 
+ * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
 class OneOrMoreAssertionTreeNode extends CompositeAssertionTreeNode {
     /**

@@ -39,7 +39,7 @@ public class ProviderNode extends EntityHeaderNode {
      */
     public Enumeration children() {
         List list =
-                Arrays.asList(new BasicTreeNode[]{});
+          Arrays.asList(new AbstractTreeNode[]{});
         return Collections.enumeration(list);
     }
 

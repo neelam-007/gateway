@@ -1,8 +1,10 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.identity.UserManager;
+import com.l7tech.console.action.NewUserAction;
 
 import javax.swing.tree.MutableTreeNode;
+import javax.swing.*;
 import java.util.Enumeration;
 
 
@@ -43,17 +45,13 @@ public class UserFolderNode extends AbstractTreeNode {
     }
 
     /**
-     * subclasses override this method
+     * Get the set of actions associated with this node.
+     * This may be used e.g. in constructing a context menu.
+     *
+     * @return actions appropriate to the node
      */
-    protected void loadChildren() {
-         Enumeration e =
-       TreeNodeFactory.
-         getTreeNodeEnumeration(
-           new EntitiesEnumeration(new UserEntitiesCollection(userManager)));
-       int index = 0;
-       for (; e.hasMoreElements();) {
-           insert((MutableTreeNode)e.nextElement(), index++);
-       }
+    public Action[] getActions() {
+        return new Action[]{new NewUserAction(this)};
     }
 
     /**
@@ -65,13 +63,29 @@ public class UserFolderNode extends AbstractTreeNode {
         return "Users";
     }
 
+
+    /**
+     * subclasses override this method
+     */
+    protected void loadChildren() {
+        Enumeration e =
+          TreeNodeFactory.
+          getTreeNodeEnumeration(
+            new EntitiesEnumeration(new UserEntitiesCollection(userManager)));
+        int index = 0;
+        for (; e.hasMoreElements();) {
+            insert((MutableTreeNode) e.nextElement(), index++);
+        }
+    }
+
+
     /**
      * subclasses override this method specifying the resource name
      *
      * @param open for nodes that can be opened, can have children
      */
     protected String iconResource(boolean open) {
-         if (open)
+        if (open)
             return "com/l7tech/console/resources/folderOpen.gif";
 
         return "com/l7tech/console/resources/folder.gif";

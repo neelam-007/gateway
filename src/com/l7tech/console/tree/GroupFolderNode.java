@@ -2,8 +2,11 @@ package com.l7tech.console.tree;
 
 
 import com.l7tech.identity.GroupManager;
+import com.l7tech.console.action.NewUserAction;
+import com.l7tech.console.action.NewGroupAction;
 
 import javax.swing.tree.MutableTreeNode;
+import javax.swing.*;
 import java.util.Enumeration;
 
 
@@ -47,14 +50,24 @@ public class GroupFolderNode extends AbstractTreeNode {
      * subclasses override this method
      */
     protected void loadChildren() {
-       Enumeration e =
-       TreeNodeFactory.
-         getTreeNodeEnumeration(
-           new EntitiesEnumeration(new GroupEntitiesCollection(groupManager)));
-       int index = 0;
-       for (; e.hasMoreElements();) {
-           insert((MutableTreeNode)e.nextElement(), index++);
-       }
+        Enumeration e =
+          TreeNodeFactory.
+          getTreeNodeEnumeration(
+            new EntitiesEnumeration(new GroupEntitiesCollection(groupManager)));
+        int index = 0;
+        for (; e.hasMoreElements();) {
+            insert((MutableTreeNode) e.nextElement(), index++);
+        }
+    }
+
+    /**
+     * Get the set of actions associated with this node.
+     * This may be used e.g. in constructing a context menu.
+     *
+     * @return actions appropriate to the node
+     */
+    public Action[] getActions() {
+        return new Action[]{new NewGroupAction(this)};
     }
 
     /**

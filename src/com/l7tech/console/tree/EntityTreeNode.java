@@ -38,7 +38,7 @@ public class EntityTreeNode extends DefaultMutableTreeNode {
      *         by the user
      */
     public BasicTreeNode getBasicTreeNode() {
-        return (BasicTreeNode)getUserObject();
+        return (BasicTreeNode) getUserObject();
     }
 
     /**
@@ -119,9 +119,9 @@ public class EntityTreeNode extends DefaultMutableTreeNode {
             while (iterator.hasNext()) {
                 Object o = iterator.next();
                 if (o instanceof BasicTreeNode)
-                    insert(new EntityTreeNode((BasicTreeNode)o), index++);
+                    insert(new EntityTreeNode((BasicTreeNode) o), index++);
                 else if (o instanceof MutableTreeNode)
-                    insert((MutableTreeNode)o, index++);
+                    insert((MutableTreeNode) o, index++);
             }
             hasLoaded = true;
         } catch (Exception e) {
@@ -156,12 +156,12 @@ public class EntityTreeNode extends DefaultMutableTreeNode {
         int realIndex = -1;
         Enumeration enum = children.elements();
         while (enum.hasMoreElements()) {
-            if (filter.accept((TreeNode)enum.nextElement())) {
+            if (filter.accept((TreeNode) enum.nextElement())) {
                 visibleIndex++;
             }
             realIndex++;
             if (visibleIndex == index) {
-                return (TreeNode)children.elementAt(realIndex);
+                return (TreeNode) children.elementAt(realIndex);
             }
         }
         throw new ArrayIndexOutOfBoundsException("index unmatched");
@@ -184,7 +184,7 @@ public class EntityTreeNode extends DefaultMutableTreeNode {
         int count = 0;
         Enumeration enum = children.elements();
         while (enum.hasMoreElements()) {
-            if (filter.accept((TreeNode)enum.nextElement())) {
+            if (filter.accept((TreeNode) enum.nextElement())) {
                 count++;
             }
         }
@@ -215,26 +215,26 @@ public class EntityTreeNode extends DefaultMutableTreeNode {
      * @see String#compareTo()
      */
     public static final Comparator
-            DEFAULT_COMPARATOR = new Comparator() {
-                /**
-                 * @param o1 the first object to be compared.
-                 * @param o2 the second object to be compared.
-                 * @return a negative integer, zero, or a positive integer as the
-                 *         first argument is less than, equal to, or greater than the
-                 *         second.
-                 * @throws ClassCastException if the arguments' types prevent them from
-                 *         being compared by this Comparator.
-                 */
-                public int compare(Object o1, Object o2) {
-                    // Need to work with Entrys
-                    BasicTreeNode n1 = null;
-                    BasicTreeNode n2 = null;
-                    n1 = ((EntityTreeNode)o1).getBasicTreeNode();
-                    n2 = ((EntityTreeNode)o2).getBasicTreeNode();
-                    // need to add logic for folders
-                    return n1.getName().compareToIgnoreCase(n2.getName());
-                }
-            };
+      DEFAULT_COMPARATOR = new Comparator() {
+          /**
+           * @param o1 the first object to be compared.
+           * @param o2 the second object to be compared.
+           * @return a negative integer, zero, or a positive integer as the
+           *         first argument is less than, equal to, or greater than the
+           *         second.
+           * @throws ClassCastException if the arguments' types prevent them from
+           *         being compared by this Comparator.
+           */
+          public int compare(Object o1, Object o2) {
+              // Need to work with Entrys
+              BasicTreeNode n1 = null;
+              BasicTreeNode n2 = null;
+              n1 = ((EntityTreeNode) o1).getBasicTreeNode();
+              n2 = ((EntityTreeNode) o2).getBasicTreeNode();
+              // need to add logic for folders
+              return n1.getName().compareToIgnoreCase(n2.getName());
+          }
+      };
 
     boolean hasLoaded = false;
 }

@@ -1,37 +1,40 @@
 package com.l7tech.console.action;
 
-
+import com.l7tech.console.panels.NewGroupDialog;
+import com.l7tech.console.tree.AbstractTreeNode;
 
 /**
- * The <code>DeleteAssertionAction</code> action deletes
- * the assertion from the target policy.
- * <p>
- * The developer need only subclass this abstract class and
- * define the <code>actionPerformed</code> method.
+ * The <code>NewGroupAction</code> action adds the new group.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.0
  */
-public abstract class DeleteAssertionAction extends BaseAction {
+public class NewGroupAction extends NodeAction {
+
+    public NewGroupAction(AbstractTreeNode node) {
+        super(node);
+        this.node = node;
+    }
+
     /**
      * @return the action name
      */
     public String getName() {
-        return "Delete asserion";
+        return "Create new group";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "Delete the assertion from the policy assertion tree";
+        return "Create new group";
     }
 
     /**
-     * subclasses override this method specifying the resource name
+     * specify the resource name for this action
      */
     protected String iconResource() {
-        return "com/l7tech/console/resources/delete.gif";
+        return "com/l7tech/console/resources/group16.png";
     }
 
     /** Actually perform the action.
@@ -41,5 +44,8 @@ public abstract class DeleteAssertionAction extends BaseAction {
      * without explicitly asking for the AWT event thread!
      */
     public void performAction() {
+        NewGroupDialog dialog = new NewGroupDialog(null);
+        dialog.setResizable(false);
+        dialog.show();
     }
 }

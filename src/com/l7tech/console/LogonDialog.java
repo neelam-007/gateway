@@ -108,7 +108,7 @@ public class LogonDialog extends JDialog {
 
     companyLogoJLabel = new javax.swing.JLabel();
     companyLogoJLabel.setName("companyLogoJLabel");
-    companyLogoJLabel.setText("SSG Console");
+    companyLogoJLabel.setText("SSG Policy Editor");
     companyLogoJLabel.setFont(new Font("Dialog", Font.BOLD, 12));
     //companyLogoJLabel.setBorder(BorderFactory.createLoweredBevelBorder());
 

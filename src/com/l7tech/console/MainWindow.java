@@ -53,7 +53,7 @@ public class MainWindow extends JFrame {
     private JMenu editMenu = null;
     private JMenu viewMenu = null;
     private JMenu helpMenu = null;
-    private JMenu gotoMenu = null;
+
 
     private JMenuItem connectMenuItem = null;
     private JMenuItem disconnectMenuItem = null;
@@ -73,14 +73,8 @@ public class MainWindow extends JFrame {
     private Action removeNodeAction = null;
     private Action connectAction = null;
     private Action disconnectAction = null;
-    private Action gotoUsersAction = null;
-    private Action gotoGroupsAction = null;
-    private Action gotoPoliciesAction = null;
-    private Action gotoServicesAction = null;
-    private Action gotoProvidersAction = null;
 
-    private Action toggleShortcutBaAction = null;
-    private Action toggleTreeViewAction = null;
+    private Action toggleStatusBarAction = null;
 
     private JPanel frameContentPane = null;
     private JPanel mainPane = null;
@@ -297,7 +291,6 @@ public class MainWindow extends JFrame {
         viewMenu = new JMenu();
         viewMenu.setText(resapplication.getString("View"));
         // workaround to disable icon on the menu
-        viewMenu.add(getGotoSubmenu());
         JMenuItem item = new JMenuItem(getRefreshAction());
         // item.setIcon(null);
         item.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0));
@@ -306,55 +299,14 @@ public class MainWindow extends JFrame {
         viewMenu.setMnemonic(mnemonic);
         viewMenu.addSeparator();
 
-        JCheckBoxMenuItem jcm = new JCheckBoxMenuItem(getShortcutBarToggleAction());
+        JCheckBoxMenuItem jcm = new JCheckBoxMenuItem(getToggleStatusBarToggleAction());
         try {
-            jcm.setSelected(Preferences.getPreferences().isShortcutBarVisible());
+            jcm.setSelected(Preferences.getPreferences().isStatusBarBarVisible());
         } catch (IOException e) {
             log.error("preferences retrieve error :", e);
         }
         viewMenu.add(jcm);
-
-        jcm = new JCheckBoxMenuItem(getTreeViewToggleAction());
-        try {
-            jcm.setSelected(Preferences.getPreferences().isTreeViewVisible());
-        } catch (IOException e) {
-            log.error("preferences retrieve error :", e);
-        }
-
-        viewMenu.add(jcm);
-
         return viewMenu;
-    }
-
-    /**
-     * Return the newMenu property value.
-     * @return JMenuItem
-     */
-    private JMenu getGotoSubmenu() {
-        if (gotoMenu != null) return gotoMenu;
-
-        gotoMenu = new JMenu("Go To");
-        int mnemonic = gotoMenu.getText().toCharArray()[0];
-        gotoMenu.setMnemonic(mnemonic);
-
-        JMenuItem menuItem;
-
-        menuItem = new JMenuItem(getGotoUsersAction());
-        gotoMenu.add(menuItem);
-
-        menuItem = new JMenuItem(getGotoGroupsAction());
-        gotoMenu.add(menuItem);
-
-        menuItem = new JMenuItem(getGotoPoliciesAction());
-        gotoMenu.add(menuItem);
-
-        menuItem = new JMenuItem(getGotoServicesAction());
-        gotoMenu.add(menuItem);
-
-        menuItem = new JMenuItem(getGotoProvidersAction());
-        gotoMenu.add(menuItem);
-
-        return gotoMenu;
     }
 
     /**
@@ -425,106 +377,6 @@ public class MainWindow extends JFrame {
     /**
      * create the Action (the component that is used by several controls)
      *
-     * @return the connect <CODE>Action</CODE> implementation
-     */
-    private Action getGotoUsersAction() {
-        if (gotoUsersAction != null) return gotoUsersAction;
-
-        gotoUsersAction =
-          new GotoUsersAction() {
-              /**
-               * Invoked when an action occurs.
-               */
-              public void performAction() {
-                  selectNodeByName("Users");
-              }
-          };
-
-        return gotoUsersAction;
-    }
-
-
-    /**
-     * create the Action (the component that is used by several controls)
-     *
-     * @return the connect <CODE>Action</CODE> implementation
-     */
-    private Action getGotoGroupsAction() {
-        if (gotoGroupsAction != null) return gotoGroupsAction;
-        gotoGroupsAction =
-          new GotoGroupsAction() {
-              /**
-               * Invoked when an action occurs.
-               */
-              public void performAction() {
-                  selectNodeByName("Groups");
-              }
-          };
-        return gotoGroupsAction;
-    }
-
-
-    /**
-     * create the Action (the component that is used by several controls)
-     *
-     * @return the connect <CODE>Action</CODE> implementation
-     */
-    private Action getGotoPoliciesAction() {
-        if (gotoPoliciesAction != null) return gotoPoliciesAction;
-        gotoPoliciesAction =
-          new GotoPoliciesAction() {
-              /**
-               * Invoked when an action occurs.
-               */
-              public void performAction() {
-                  selectNodeByName("Policies");
-              }
-          };
-        return gotoPoliciesAction;
-    }
-
-    /**
-     * create the Action (the component that is used by several controls)
-     *
-     * @return the connect <CODE>Action</CODE> implementation
-     */
-    private Action getGotoServicesAction() {
-        if (gotoServicesAction != null) return gotoServicesAction;
-        gotoServicesAction =
-          new GotoServicesAction() {
-              /**
-               * Invoked when an action occurs.
-               */
-              public void performAction() {
-                  selectNodeByName("Services");
-              }
-          };
-
-        return gotoServicesAction;
-    }
-
-    /**
-     * create the Action (the component that is used by several controls)
-     *
-     * @return the connect <CODE>Action</CODE> implementation
-     */
-    private Action getGotoProvidersAction() {
-        if (gotoProvidersAction != null) return gotoProvidersAction;
-        gotoProvidersAction =
-          new GotoProvidersAction() {
-              /**
-               * Invoked when an action occurs.
-               */
-              public void performAction() {
-                  selectNodeByName("Identity providers");
-              }
-          };
-        return gotoProvidersAction;
-    }
-
-    /**
-     * create the Action (the component that is used by several controls)
-     *
      * @return the <CODE>Action</CODE> implementation that refreshes the tree
      */
     private Action getRefreshAction() {
@@ -559,12 +411,12 @@ public class MainWindow extends JFrame {
      *
      * @return the <CODE>Action</CODE> implementation that toggles the shortcut bar
      */
-    private Action getShortcutBarToggleAction() {
-        if (toggleShortcutBaAction != null) return toggleShortcutBaAction;
+    private Action getToggleStatusBarToggleAction() {
+        if (toggleStatusBarAction != null) return toggleStatusBarAction;
 
-        String atext = resapplication.getString("toggle.shortcut.bar");
+        String atext = resapplication.getString("toggle.status.bar");
 
-        toggleShortcutBaAction =
+        toggleStatusBarAction =
           new AbstractAction(atext) {
               /**
                * Invoked when an action occurs.
@@ -584,44 +436,9 @@ public class MainWindow extends JFrame {
                   }
               }
           };
-        toggleShortcutBaAction.putValue(Action.SHORT_DESCRIPTION, atext);
-        return toggleShortcutBaAction;
+        toggleStatusBarAction.putValue(Action.SHORT_DESCRIPTION, atext);
+        return toggleStatusBarAction;
     }
-
-    /**
-     * create the Action (the component that is used by several controls)
-     *
-     * @return the <CODE>Action</CODE> implementation that toggles the shortcut bar
-     */
-    private Action getTreeViewToggleAction() {
-        if (toggleTreeViewAction != null) return toggleTreeViewAction;
-
-        String atext = resapplication.getString("toggle.tree.view");
-
-        toggleTreeViewAction =
-          new AbstractAction(atext) {
-              /**
-               * Invoked when an action occurs.
-               *
-               * @param event  the event that occured
-               * @see Action#removePropertyChangeListener
-               */
-              public void actionPerformed(ActionEvent event) {
-                  JCheckBoxMenuItem item = (JCheckBoxMenuItem)event.getSource();
-                  Component[] comps = getMainLeftJPanel().getComponents();
-                  for (int i = comps.length - 1; i >= 0; i--) {
-                      if (comps[i] instanceof JSplitPane) {
-                          JSplitPane p = (JSplitPane)comps[i];
-                          if (item.isSelected()) {
-                          }
-                      }
-                  }
-              }
-          };
-        toggleTreeViewAction.putValue(Action.SHORT_DESCRIPTION, atext);
-        return toggleTreeViewAction;
-    }
-
 
     /**
      * create the Action (the component that is used by several
@@ -643,12 +460,12 @@ public class MainWindow extends JFrame {
                * @see Action#removePropertyChangeListener
                */
               public void actionPerformed(ActionEvent event) {
-
-                  EntityTreeNode context =
-                    (EntityTreeNode)getPaletteJTreeView().getModel().getRoot();
-                  JDialog d = new FindDialog(MainWindow.this, true, context, listenerBroker);
-                  d.setLocation(MainWindow.this.getLocationOnScreen());
-                  d.show();
+//
+//                  EntityTreeNode context =
+//                    (EntityTreeNode)getPaletteJTreeView().getModel().getRoot();
+//                  JDialog d = new FindDialog(MainWindow.this, true, context, listenerBroker);
+//                  d.setLocation(MainWindow.this.getLocationOnScreen());
+//                  d.show();
               }
           };
         refreshAction.putValue(Action.SHORT_DESCRIPTION, atext);
@@ -716,11 +533,6 @@ public class MainWindow extends JFrame {
     private void toggleConnectedMenus(boolean connected) {
         getDisconnectAction().setEnabled(connected);
         getConnectAction().setEnabled(!connected);
-        getGotoGroupsAction().setEnabled(connected);
-        getGotoUsersAction().setEnabled(connected);
-        getGotoPoliciesAction().setEnabled(connected);
-        getGotoServicesAction().setEnabled(connected);
-        getGotoProvidersAction().setEnabled(connected);
     }
 
 
@@ -786,14 +598,7 @@ public class MainWindow extends JFrame {
         paletteTreeView.setLargeModel(true);
         paletteTreeView.setCellRenderer(new EntityTreeCellRenderer());
         paletteTreeView.putClientProperty("JTree.lineStyle", "Angled");
-
-        TreeNode node = new DefaultMutableTreeNode("Disconnected");
-
-        DefaultTreeModel treeModel =
-          new DefaultTreeModel(node);
-        getPaletteJTreeView().setModel(treeModel);
-        TreePath path = new TreePath(node);
-        paletteTreeView.setSelectionPath(path);
+        getPaletteJTreeView().setModel(null);
 
         return paletteTreeView;
     }
@@ -811,14 +616,7 @@ public class MainWindow extends JFrame {
         servicesTreeView.setLargeModel(true);
         servicesTreeView.setCellRenderer(new EntityTreeCellRenderer());
         servicesTreeView.putClientProperty("JTree.lineStyle", "Angled");
-
-        TreeNode node = new DefaultMutableTreeNode("Disconnected");
-
-        DefaultTreeModel treeModel =
-          new DefaultTreeModel(node);
-        servicesTreeView.setModel(treeModel);
-        TreePath path = new TreePath(node);
-        servicesTreeView.setSelectionPath(path);
+        servicesTreeView.setModel(null);
 
         return servicesTreeView;
     }
@@ -1158,70 +956,68 @@ public class MainWindow extends JFrame {
      * Return the TreeNodeJPopupMenu property value.
      * @return JPopupMenu
      */
-    private JPopupMenu getTreeNodeJPopupMenu(final TreeNode node) {
-        if (node == null || !(node instanceof EntityTreeNode)) {
-            return null;
-        }
-        ActionListener listener = new ActionListener() {
-            /** Invoked when an action occurs. */
-            public void actionPerformed(ActionEvent e) {
-                JPanel panel = null;
-                EntityTreeNode dNode = (EntityTreeNode)node;
-                Object object = dNode.getUserObject();
-                DefaultMutableTreeNode parent =
-                  (DefaultMutableTreeNode)node.getParent();
-
-                if (TreeNodeMenu.DELETE.equals(e.getActionCommand())) {
-                    removeNode(dNode);
-                } else if (TreeNodeMenu.NEW_ADMINISTRATOR.equals(e.getActionCommand())) {
-                    AdminFolderNode adminFolder = (AdminFolderNode)object;
-                    NewAdminDialog dialog = new NewAdminDialog(MainWindow.this, adminFolder);
-                    dialog.setResizable(false);
-                    dialog.setPanelListener(listenerBroker);
-                    dialog.show();
-                } else if (TreeNodeMenu.NEW_GROUP.equals(e.getActionCommand())) {
-                    NewGroupDialog dialog =
-                      new NewGroupDialog(MainWindow.this);
-                    dialog.setResizable(false);
-                    dialog.setPanelListener(listenerBroker);
-                    dialog.show();
-                } else if (TreeNodeMenu.NEW_USER.equals(e.getActionCommand())) {
-                    NewUserDialog dialog = new NewUserDialog(MainWindow.this);
-                    dialog.setResizable(false);
-                    dialog.setPanelListener(listenerBroker);
-                    dialog.show();
-                } else if (TreeNodeMenu.NEW_PROVIDER.equals(e.getActionCommand())) {
-                    NewProviderDialog dialog = new NewProviderDialog(MainWindow.this);
-                    dialog.setResizable(false);
-                    dialog.setPanelListener(listenerBroker);
-                    dialog.show();
-                } else if (TreeNodeMenu.NEW_SERVICE.equals(e.getActionCommand())) {
-                    PublishServiceWizard dialog = new PublishServiceWizard(MainWindow.this, true);
-                    dialog.setResizable(false);
-                    dialog.setPanelListener(listenerBroker);
-                    dialog.show();
-
-                } else if (TreeNodeMenu.PROPERTIES.equals(e.getActionCommand())) {
-                    panel = PanelFactory.getPanel(dNode, listenerBroker);
-                } else if (TreeNodeMenu.BROWSE.equals(e.getActionCommand())) {
-                    getPaletteJTreeView().expandPath(getPaletteJTreeView().getSelectionPath());
-                } else {
-                    JOptionPane.showMessageDialog(null,
-                      "Not yet implemented.",
-                      "Information",
-                      JOptionPane.INFORMATION_MESSAGE);
-                }
-                // only if something is returned
-                if (panel != null) {
-                    EditorDialog dialog = new EditorDialog(MainWindow.this, panel);
-
-                    dialog.pack();
-                    Utilities.centerOnScreen(dialog);
-                    dialog.show();
-                }
-            }
-        };
-        return TreeNodeMenu.forNode((EntityTreeNode)node, listener);
+    private JPopupMenu getTreeNodeJPopupMenu(final AbstractTreeNode node) {
+//
+//        ActionListener listener = new ActionListener() {
+//            /** Invoked when an action occurs. */
+//            public void actionPerformed(ActionEvent e) {
+//                JPanel panel = null;
+//                EntityTreeNode dNode = (EntityTreeNode)node;
+//                Object object = dNode.getUserObject();
+//                DefaultMutableTreeNode parent =
+//                  (DefaultMutableTreeNode)node.getParent();
+//
+//                if (TreeNodeMenu.DELETE.equals(e.getActionCommand())) {
+//                    removeNode(dNode);
+//                } else if (TreeNodeMenu.NEW_ADMINISTRATOR.equals(e.getActionCommand())) {
+//                    AdminFolderNode adminFolder = (AdminFolderNode)object;
+//                    NewAdminDialog dialog = new NewAdminDialog(MainWindow.this, adminFolder);
+//                    dialog.setResizable(false);
+//                    dialog.setPanelListener(listenerBroker);
+//                    dialog.show();
+//                } else if (TreeNodeMenu.NEW_GROUP.equals(e.getActionCommand())) {
+//                    NewGroupDialog dialog =
+//                      new NewGroupDialog(MainWindow.this);
+//                    dialog.setResizable(false);
+//                    dialog.setPanelListener(listenerBroker);
+//                    dialog.show();
+//                } else if (TreeNodeMenu.NEW_USER.equals(e.getActionCommand())) {
+//                    NewUserDialog dialog = new NewUserDialog(MainWindow.this);
+//                    dialog.setResizable(false);
+//                    dialog.setPanelListener(listenerBroker);
+//                    dialog.show();
+//                } else if (TreeNodeMenu.NEW_PROVIDER.equals(e.getActionCommand())) {
+//                    NewProviderDialog dialog = new NewProviderDialog(MainWindow.this);
+//                    dialog.setResizable(false);
+//                    dialog.setPanelListener(listenerBroker);
+//                    dialog.show();
+//                } else if (TreeNodeMenu.NEW_SERVICE.equals(e.getActionCommand())) {
+//                    PublishServiceWizard dialog = new PublishServiceWizard(MainWindow.this, true);
+//                    dialog.setResizable(false);
+//                    dialog.setPanelListener(listenerBroker);
+//                    dialog.show();
+//
+//                } else if (TreeNodeMenu.PROPERTIES.equals(e.getActionCommand())) {
+//                    panel = PanelFactory.getPanel(dNode, listenerBroker);
+//                } else if (TreeNodeMenu.BROWSE.equals(e.getActionCommand())) {
+//                    getPaletteJTreeView().expandPath(getPaletteJTreeView().getSelectionPath());
+//                } else {
+//                    JOptionPane.showMessageDialog(null,
+//                      "Not yet implemented.",
+//                      "Information",
+//                      JOptionPane.INFORMATION_MESSAGE);
+//                }
+//                // only if something is returned
+//                if (panel != null) {
+//                    EditorDialog dialog = new EditorDialog(MainWindow.this, panel);
+//
+//                    dialog.pack();
+//                    Utilities.centerOnScreen(dialog);
+//                    dialog.show();
+//                }
+//            }
+//        };
+        return node.getPopupMenu();
     }
 
 
@@ -1254,15 +1050,14 @@ public class MainWindow extends JFrame {
      */
     private void disconnectHandler(ActionEvent event) {
         LogonDialog.logoff();
-        DefaultTreeModel treeModel =
-          new DefaultTreeModel(new DefaultMutableTreeNode("Disconnected"));
         getStatusMsgLeft().setText("Disconnected");
         getStatusMsgRight().setText("");
 
-        getPaletteJTreeView().setModel(treeModel);
+        getPaletteJTreeView().setModel(null);
         getMainSplitPaneRight().removeAll();
         getMainSplitPaneRight().validate();
         getMainSplitPaneRight().repaint();
+        getServicesTreeView().setModel(null);
 
         updateActions(null);
         // if inactivityTimer is running stop
@@ -1397,8 +1192,8 @@ public class MainWindow extends JFrame {
         // get the node and call panel factory
         Object object = getServicesTreeView().getLastSelectedPathComponent();
         // if not EntityTreeNode silently return
-        if (object instanceof EntityTreeNode) {
-            EntityTreeNode node = (EntityTreeNode)object;
+        if (object instanceof AbstractTreeNode) {
+            AbstractTreeNode node = (AbstractTreeNode)object;
             // update actions for the node
             updateActions(node);
             object = node.getUserObject();
@@ -1458,7 +1253,7 @@ public class MainWindow extends JFrame {
      *
      * @param node   currently selected node
      */
-    private void updateActions(EntityTreeNode node) {
+    private void updateActions(AbstractTreeNode node) {
         JMenu nMenu = getNewMenu();
         nMenu.removeAll();
         nMenu.setEnabled(false);
@@ -1489,7 +1284,7 @@ public class MainWindow extends JFrame {
                 }
             }
         }
-        getRemoveNodeAction().setEnabled(TreeNodeAction.canDelete(node));
+        getRemoveNodeAction().setEnabled(node.canDelete());
         getFindAction().setEnabled(false);
         getRefreshAction().setEnabled(false);
     }
@@ -1528,7 +1323,7 @@ public class MainWindow extends JFrame {
                 if (!found) {
                     tree.setSelectionRow(closestRow);
                 }
-                TreeNode node = (TreeNode)tree.getLastSelectedPathComponent();
+                AbstractTreeNode node = (AbstractTreeNode)tree.getLastSelectedPathComponent();
 
                 JPopupMenu menu = getTreeNodeJPopupMenu(node);
                 if (menu != null) {

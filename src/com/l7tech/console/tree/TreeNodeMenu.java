@@ -37,26 +37,26 @@ public class TreeNodeMenu extends JPopupMenu {
      * @return JpopUpMenu for the node, or <CODE>null</code> if the menu
      *         cannot be created for the node.
      */
-    public static JPopupMenu forNode(EntityTreeNode node, ActionListener listener) {
+    public static JPopupMenu forNode(AbstractTreeNode node, ActionListener listener) {
 
         Object object = node.getUserObject();
 
         JPopupMenu retMenu = null;
 
         if (object instanceof ProvidersFolderNode) {
-            retMenu = forProvidersFolder((ProvidersFolderNode)object, listener);
+            retMenu = forProvidersFolder((ProvidersFolderNode) object, listener);
         } else if (object instanceof ProviderNode) {
-            retMenu = forProvider((ProviderNode)object, listener);
+            retMenu = forProvider((ProviderNode) object, listener);
         } else if (object instanceof AdminFolderNode) {
-            retMenu = forAdminFolder((AdminFolderNode)object, listener);
+            retMenu = forAdminFolder((AdminFolderNode) object, listener);
         } else if (object instanceof UserFolderNode) {
-            retMenu = forUserFolder((UserFolderNode)object, listener);
+            retMenu = forUserFolder((UserFolderNode) object, listener);
         } else if (object instanceof UserNode) {
-                 retMenu = forUser((UserNode)object, listener);
+            retMenu = forUser((UserNode) object, listener);
         } else if (object instanceof GroupFolderNode) {
-            retMenu = forGroupFolder((GroupFolderNode)object, listener);
+            retMenu = forGroupFolder((GroupFolderNode) object, listener);
         } else if (object instanceof ServicesFolderNode) {
-            retMenu = forServicesFolder((ServicesFolderNode)object, listener);
+            retMenu = forServicesFolder((ServicesFolderNode) object, listener);
         }
 
         // if there is no menu yet make one..

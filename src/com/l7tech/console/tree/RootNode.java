@@ -17,7 +17,7 @@ public class RootNode extends AbstractTreeNode {
      * construct the <CODE>RootNode</CODE> instance
      */
     public RootNode(String title)
-    throws IllegalArgumentException {
+      throws IllegalArgumentException {
         super(null);
         if (title == null)
             throw new IllegalArgumentException();
@@ -44,19 +44,19 @@ public class RootNode extends AbstractTreeNode {
      * subclasses override this method
      */
     protected void loadChildren() {
-      Registry r = Registry.getDefault();
+        Registry r = Registry.getDefault();
         List list =
-                Arrays.asList(
-                        new AbstractTreeNode[]{
-                            new UserFolderNode(r.getInternalUserManager()),
-                            new GroupFolderNode(r.getInternalGroupManager()),
-                            new ProvidersFolderNode(),
-                            new PoliciesFolderNode()
-                        });
-       int index = 0;
-       for (Iterator i = list.iterator(); i.hasNext();) {
-           insert((MutableTreeNode)i.next(), index++);
-       }
+          Arrays.asList(
+            new AbstractTreeNode[]{
+                new UserFolderNode(r.getInternalUserManager()),
+                new GroupFolderNode(r.getInternalGroupManager()),
+                new ProvidersFolderNode(),
+                new PoliciesFolderNode()
+            });
+        int index = 0;
+        for (Iterator i = list.iterator(); i.hasNext();) {
+            insert((MutableTreeNode) i.next(), index++);
+        }
     }
 
     /**

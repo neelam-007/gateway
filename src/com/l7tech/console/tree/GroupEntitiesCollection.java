@@ -8,7 +8,7 @@ import java.util.Collections;
 
 /**
  * Class UserEntitiesCollection.
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a> 
+ * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
 public class GroupEntitiesCollection implements EntitiesCollection {
     final GroupManager manager;
@@ -18,7 +18,7 @@ public class GroupEntitiesCollection implements EntitiesCollection {
      *
      */
     GroupEntitiesCollection(GroupManager um) {
-       manager = um;
+        manager = um;
     }
 
     /**
@@ -28,7 +28,7 @@ public class GroupEntitiesCollection implements EntitiesCollection {
      */
     public Collection getNextBatch() throws RuntimeException {
         if (exhausted) {
-              return Collections.EMPTY_LIST;
+            return Collections.EMPTY_LIST;
         }
         try {
             exhausted = true;

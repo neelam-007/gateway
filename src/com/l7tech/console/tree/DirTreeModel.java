@@ -31,7 +31,7 @@ public class DirTreeModel extends DefaultTreeModel {
      */
     public void reload(TreeNode node) {
         if (node != null) {
-            ((EntityTreeNode)node).loadChildren(true);
+            ((AbstractTreeNode) node).loadChildren();
             super.reload(node);
         }
     }

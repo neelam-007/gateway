@@ -41,10 +41,10 @@ public class ServiceNode extends AbstractTreeNode {
 
     public PublishedService getPublishedService() throws FindException {
         if (svc == null) {
-            EntityHeader eh = (EntityHeader)getUserObject();
-               svc = Registry.getDefault().
-                 getServiceManager().findByPrimaryKey(eh.getOid());
-           }
+            EntityHeader eh = (EntityHeader) getUserObject();
+            svc = Registry.getDefault().
+              getServiceManager().findByPrimaryKey(eh.getOid());
+        }
         return svc;
     }
 

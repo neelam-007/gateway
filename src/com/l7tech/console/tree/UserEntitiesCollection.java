@@ -8,16 +8,17 @@ import java.util.Collections;
 
 /**
  * Class UserEntitiesCollection.
- * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a> 
+ * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
 public class UserEntitiesCollection implements EntitiesCollection {
     final UserManager manager;
     private boolean exhausted = false;
+
     /**
      *
      */
     UserEntitiesCollection(UserManager um) {
-       manager = um;
+        manager = um;
     }
 
     /**
@@ -27,7 +28,7 @@ public class UserEntitiesCollection implements EntitiesCollection {
      */
     public Collection getNextBatch() throws RuntimeException {
         if (exhausted) {
-              return Collections.EMPTY_LIST;
+            return Collections.EMPTY_LIST;
         }
         try {
             exhausted = true;

@@ -36,14 +36,14 @@ public class TreeNodeFactory {
         if (EntityType.ID_PROVIDER_CONFIG.equals(entity.getType())) {
             return new ProviderNode(entity);
         } else if (EntityType.GROUP.equals(entity.getType())) {
-               return new GroupNode(entity);
+            return new GroupNode(entity);
         } else if (EntityType.USER.equals(entity.getType())) {
-             return new UserNode(entity);
+            return new UserNode(entity);
         } else if (EntityType.SERVICE.equals(entity.getType())) {
-             return new ServiceNode(entity);
+            return new ServiceNode(entity);
         }
 
-        throw new IllegalArgumentException("Unknown entity type "+entity.getType());
+        throw new IllegalArgumentException("Unknown entity type " + entity.getType());
     }
 
 
@@ -69,7 +69,7 @@ public class TreeNodeFactory {
      * of folders and actual entries while preserving the same interface.
      */
     private static final class
-            TreeNodeEnumeration implements Enumeration {
+      TreeNodeEnumeration implements Enumeration {
         private Enumeration nodes;
 
         /**
@@ -112,8 +112,8 @@ public class TreeNodeFactory {
          *         is an Entry, or the same element otherwise.
          */
         private Object getEnumerationElement(Object element) {
-            if (element instanceof EntityHeader)  {
-                return TreeNodeFactory.asTreeNode((EntityHeader)element);
+            if (element instanceof EntityHeader) {
+                return TreeNodeFactory.asTreeNode((EntityHeader) element);
             }
             return element;
         }

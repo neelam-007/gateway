@@ -52,7 +52,7 @@ class AssertionTreeNodeFactory {
             throw new IllegalArgumentException();
         }
 
-        Class classNode = (Class)assertionMap.get(assertion.getClass());
+        Class classNode = (Class) assertionMap.get(assertion.getClass());
         if (null == classNode) {
             return new UnknownAssertionTreeNode(assertion);
         }
@@ -69,7 +69,7 @@ class AssertionTreeNodeFactory {
 
         Constructor ctor = findMatchingConstructor(classNode, new Class[]{assertion.getClass()});
         if (ctor != null)
-            return (AssertionTreeNode)ctor.newInstance(new Object[]{assertion});
+            return (AssertionTreeNode) ctor.newInstance(new Object[]{assertion});
         throw new RuntimeException("Cannot locate expected he constructor in " + classNode);
 
     }

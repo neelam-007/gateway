@@ -502,36 +502,13 @@ public class Preferences extends PropertyChangeSupport {
      *
      * @return the shortcut bar visible value as boolean.
      */
-    public boolean isShortcutBarVisible() {
+    public boolean isStatusBarBarVisible() {
         // default set
-        if (props.getProperty(OUTLOOK_BAR) == null) {
+        if (props.getProperty(STATUS_BAR_VISIBLE) == null) {
             return true;
         }
         return Boolean.
-                valueOf(props.getProperty(OUTLOOK_BAR)).booleanValue();
-    }
-
-    /**
-     * Returns the tree view visible property value.
-     *
-     * @return the tree view bar visible value as boolean.
-     */
-    public boolean isTreeViewVisible() {
-        // default unset
-        if (props.getProperty(FOLDER_VIEW) == null) {
-            return false;
-        }
-        return Boolean.
-                valueOf(props.getProperty(FOLDER_VIEW)).booleanValue();
-    }
-
-    /**
-     * Set the tree view visible property value.
-     *
-     * @param b the tree view bar visible
-     */
-    public void setTreeViewVisible(boolean b) {
-        putProperty(FOLDER_VIEW, Boolean.toString(b));
+                valueOf(props.getProperty(STATUS_BAR_VISIBLE)).booleanValue();
     }
 
     /**
@@ -539,8 +516,8 @@ public class Preferences extends PropertyChangeSupport {
      *
      * @param b the shortcut bar visible
      */
-    public void seShortcutBarVisible(boolean b) {
-        putProperty(OUTLOOK_BAR, Boolean.toString(b));
+    public void seStatusBarVisible(boolean b) {
+        putProperty(STATUS_BAR_VISIBLE, Boolean.toString(b));
     }
 
     /**
@@ -626,18 +603,9 @@ public class Preferences extends PropertyChangeSupport {
     public static final String SAVE_LAST_LOGIN_ID = "last.login.id.save";
 
     /** toolbars property (icons, text, icons and text) */
-    public static final String TOOLBARS_VIEW = "toolbars.view";
+    public static final String STATUS_BAR_VISIBLE = "status.bar.enable";
 
-    /** outlook toolbar view */
-    public static final String OUTLOOK_BAR = "outlook.bar";
-
-    /** folder view */
-    public static final String FOLDER_VIEW = "folder.view";
-
-
-    /** both icons and text */
-    public static final Integer ICONS_AND_TEXT = new Integer(0);
-    /** text only */
+/** text only */
     public static final Integer TEXT = new Integer(1);
     /** icons only */
     public static final Integer ICONS = new Integer(2);

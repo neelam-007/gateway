@@ -137,7 +137,7 @@ class DefinitionsTreeNode extends WsdlTreeNode {
                   List list = new ArrayList();
                   Map bindings = definition.getBindings();
                   for (Iterator i = bindings.values().iterator(); i.hasNext();) {
-                      list.add(new BindingTreeNode((Binding)i.next()));
+                      list.add(new BindingTreeNode((Binding) i.next()));
                   }
                   return list;
               }
@@ -184,7 +184,7 @@ class FolderTreeNode extends WsdlTreeNode {
     protected void loadChildren() {
         int index = 0;
         for (Iterator i = lister.list().iterator(); i.hasNext();) {
-            insert((MutableTreeNode)i.next(), index++);
+            insert((MutableTreeNode) i.next(), index++);
         }
     }
 
