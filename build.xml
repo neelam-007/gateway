@@ -388,9 +388,9 @@
                 <include name="systinet-*.jar" if="include.systinet"/>
                 <include name="jaxrpc.jar" unless="include.systinet"/>
                 <include name="saaj.jar" unless="include.systinet"/>
+                <include name="wsdl4j.jar" unless="include.systinet"/>
 
                 <include name="saxpath.jar"/>
-                <include name="wsdl4j.jar"/>
                 <include name="xbean.jar"/>
                 <include name="xbean-common.jar"/>
                 <include name="xbean-saml.jar"/>
