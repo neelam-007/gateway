@@ -167,6 +167,8 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
                 if (checkRequestForCert(u, req)) {
                     users.add(u);
                 } else {
+                    logger.info("User " + creds.getLogin() + " has valid basic credentials but is " +
+                                "refused authentication because he did not prove possession of his client cert.");
                     userAuthenticatedButDidNotPresentHisCert = true;
                 }
             } catch (Exception e) {

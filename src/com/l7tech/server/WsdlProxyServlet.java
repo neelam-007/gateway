@@ -148,31 +148,48 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             outputServiceDescription(req, res, svc);
             logger.info("Returned description for service, " + svcId);
         } else { // HANDLE REQUEST FOR LIST OF SERVICES
-            Collection services = null;
+            ListResults listres;
+
             try {
                 if (users == null || users.isEmpty())
-                    services = listAnonymouslyViewableServices();
+                    listres = listAnonymouslyViewableServices();
                 else
-                    services = listAnonymouslyViewableAndProtectedServices(users);
+                    listres = listAnonymouslyViewableAndProtectedServices(users);
             } catch (FindException e) {
                 logger.log(Level.SEVERE, "cannot list services", e);
                 res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
                 return;
             }
             // Is there anything to show?
+            Collection services = listres.allowed();
             if (services.size() < 1) {
-                //res.sendError(HttpServletResponse.SC_NOT_FOUND, "no services or not authorized");
-                // return empty wsil
-                String emptywsil = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-                  "<?xml-stylesheet type=\"text/xsl\" href=\"" + styleURL(req) + "\"?>\n" +
-                  "<inspection xmlns=\"http://schemas.xmlsoap.org/ws/2001/10/inspection/\" />\n";
-                res.setContentType(XmlUtil.TEXT_XML + "; charset=utf-8");
-                res.getOutputStream().println(emptywsil);
+                if (users == null && listres.anyServices() && req.isSecure()) {
+                    sendAuthChallenge(res);
+                } else {
+                    //res.sendError(HttpServletResponse.SC_NOT_FOUND, "no services or not authorized");
+                    // return empty wsil
+                    String emptywsil = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                      "<?xml-stylesheet type=\"text/xsl\" href=\"" + styleURL(req) + "\"?>\n" +
+                      "<inspection xmlns=\"http://schemas.xmlsoap.org/ws/2001/10/inspection/\" />\n";
+                    res.setContentType(XmlUtil.TEXT_XML + "; charset=utf-8");
+                    res.getOutputStream().println(emptywsil);
+                }
                 return;
             }
             outputServiceDescriptions(req, res, services);
             logger.info("Returned list of service description targets");
         }
+    }
+
+    private void sendAuthChallenge(HttpServletResponse res) throws IOException {
+        // send error back with a hint that credentials should be provided
+        res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        logger.fine("sending back authentication challenge");
+        // in this case, send an authentication challenge
+        //res.setHeader("WWW-Authenticate", "Basic realm=\"" + ServerHttpBasic.REALM + "\"");
+        res.setHeader("WWW-Authenticate", "Basic realm=\"\"");
+        res.getOutputStream().close();
+        return;
     }
 
     /**
@@ -244,19 +261,23 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         os.close();
     }
 
-    private Collection listAnonymouslyViewableServices() throws IOException, FindException {
+    interface ListResults {
+        Collection allowed();
+        boolean anyServices();
+    }
+
+    private ListResults listAnonymouslyViewableServices() throws IOException, FindException {
         return listAnonymouslyViewableAndProtectedServices(null);
     }
 
-    private Collection listAnonymouslyViewableAndProtectedServices(List users) throws IOException, FindException {
+    private ListResults listAnonymouslyViewableAndProtectedServices(List users) throws IOException, FindException {
 
         ServiceManager manager = getServiceManager();
         // get all services
-        Collection allServices = null;
-        allServices = manager.findAll();
+        final Collection allServices = manager.findAll();
 
         // prepare output collection
-        Collection output = new ArrayList();
+        final Collection output = new ArrayList();
 
         // decide which ones make the cut
         for (Iterator i = allServices.iterator(); i.hasNext();) {
@@ -278,7 +299,15 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             }
         }
 
-        return output;
+        return new ListResults() {
+            public Collection allowed() {
+                return output;
+            }
+            public boolean anyServices() {
+                if (allServices.size() < 1) return false;
+                return true;
+            }
+        };
     }
 
     private boolean userCanSeeThisService(User requestor, PublishedService svc) throws IOException {
