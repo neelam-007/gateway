@@ -327,9 +327,9 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
     private URL getProtectedServiceUrl(PublishedService service, XmlRequest request) throws WSDLException, MalformedURLException {
         URL url;
-        URL wsdlUrl = service.serviceUrl(request);
         String psurl = httpRoutingAssertion.getProtectedServiceUrl();
         if (psurl == null) {
+            URL wsdlUrl = service.serviceUrl(request);
             url = wsdlUrl;
         } else {
             url = new URL(psurl);
