@@ -3,11 +3,9 @@ package com.l7tech.server.saml;
 import com.l7tech.common.security.saml.Constants;
 import org.apache.xmlbeans.XmlOptions;
 import x0Assertion.oasisNamesTcSAML1.*;
-import x0Protocol.oasisNamesTcSAML1.RequestDocument;
-import x0Protocol.oasisNamesTcSAML1.RequestType;
-import x0Protocol.oasisNamesTcSAML1.ResponseDocument;
-import x0Protocol.oasisNamesTcSAML1.ResponseType;
+import x0Protocol.oasisNamesTcSAML1.*;
 
+import javax.xml.namespace.QName;
 import java.util.Calendar;
 
 /**
@@ -50,14 +48,14 @@ public class AuthenticationQueryHandler implements SamlRequestHandler {
         if (response !=null) {
             return response;
         }
-        final XmlOptions xmlOptions = Responses.options();
-        response =  ResponseDocument.Factory.newInstance(xmlOptions);
-        ResponseType responseType = ResponseType.Factory.newInstance(xmlOptions);
-//        StatusType status = StatusType.Factory.newInstance(xmlOptions);
-//        StatusCodeType statusCode = StatusCodeType.Factory.newInstance(xmlOptions);
-//        statusCode.setValue(new QName(Constants.NS_SAMLP, Constants.STATUS_SUCCESS));
-//        status.setStatusCode(statusCode);
-//        responseType.setStatus(status);
+        final XmlOptions xmlOptions = Utilities.xmlOptions();
+        response =  ResponseDocument.Factory.newInstance();
+        ResponseType responseType = ResponseType.Factory.newInstance();
+        StatusType status = StatusType.Factory.newInstance();
+        StatusCodeType statusCode = StatusCodeType.Factory.newInstance(xmlOptions);
+        statusCode.setValue(new QName(Constants.NS_SAMLP, Constants.STATUS_SUCCESS));
+        status.setStatusCode(statusCode);
+        responseType.setStatus(status);
 
         AssertionType assertion = responseType.addNewAssertion();
         AuthenticationStatementType authStatement = assertion.addNewAuthenticationStatement();

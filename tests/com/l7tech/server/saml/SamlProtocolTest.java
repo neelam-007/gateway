@@ -1,6 +1,5 @@
 package com.l7tech.server.saml;
 
-import com.l7tech.common.security.Keys;
 import com.l7tech.common.security.saml.Constants;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.KeystoreUtils;
@@ -41,7 +40,7 @@ public class SamlProtocolTest extends TestCase {
         TestSetup wrapper = new TestSetup(suite) {
             protected void setUp() throws Exception {
                 System.setProperty("com.l7tech.common.locator.properties", "/com/l7tech/common/locator/test.properties");
-                Keys.createTestSsgKeystoreProperties();
+                //Keys.createTestSsgKeystoreProperties();
             }
         };
 
@@ -49,7 +48,6 @@ public class SamlProtocolTest extends TestCase {
     }
 
     /**
-     *
      * @throws Exception
      */
     public void xtestAuthenticationQueryHandler() throws Exception {
@@ -65,31 +63,25 @@ public class SamlProtocolTest extends TestCase {
         subjectConfirmation.setConfirmationMethodArray(new String[]{Constants.CONFIRMATION_HOLDER_OF_KEY});
 
         XmlOptions options = new XmlOptions();
-        // options.setSavePrettyPrint();
-        //options.setSavePrettyPrintIndent(2);
+        // xmlOptions.setSavePrettyPrint();
+        //xmlOptions.setSavePrettyPrintIndent(2);
         Map prefixes = new HashMap();
         prefixes.put(Constants.NS_SAMLP, Constants.NS_SAMLP_PREFIX);
         prefixes.put(Constants.NS_SAML, Constants.NS_SAML_PREFIX);
 
         options.setSaveSuggestedPrefixes(prefixes);
-        Document doc = (Document)rdoc.newDomNode(options);
-        System.out.println(XmlUtil.nodeToString(doc));
-        //rdoc.save(System.out, options);
+        //Document doc = (Document)rdoc.newDomNode(xmlOptions);
+        //System.out.println(XmlUtil.nodeToString(doc));
+        rdoc.save(System.out, options);
     }
 
 
+
     /**
-     *
      * @throws Exception
      */
     public void testAuthenticationQueryHandlerInSoap() throws Exception {
-        XmlOptions options = new XmlOptions();
-        Map prefixes = new HashMap();
-        prefixes.put(Constants.NS_SAMLP, Constants.NS_SAMLP_PREFIX);
-        prefixes.put(Constants.NS_SAML, Constants.NS_SAML_PREFIX);
-        options.setSaveSuggestedPrefixes(prefixes);
-
-        RequestDocument rdoc = RequestDocument.Factory.newInstance(options);
+        RequestDocument rdoc = RequestDocument.Factory.newInstance();
         RequestType rt = rdoc.addNewRequest();
         AuthenticationQueryType at = rt.addNewAuthenticationQuery();
         at.setAuthenticationMethod(Constants.PASSWORD_AUTHENTICATION);
@@ -102,17 +94,16 @@ public class SamlProtocolTest extends TestCase {
 
         SOAPMessage sm = MessageFactory.newInstance().createMessage();
         SOAPBody body = sm.getSOAPPart().getEnvelope().getBody();
-        //rdoc.save(System.out, options);
-        final Element documentElement = ((Document)rdoc.newDomNode(options)).getDocumentElement();
+        // rdoc.save(System.out, xmlOptions);
+        final Element documentElement = ((Document)rdoc.newDomNode(Utilities.xmlOptions())).getDocumentElement();
         SoapUtil.domToSOAPElement(body, documentElement);
-        sm.writeTo(System.out);
+        //sm.writeTo(System.out);
 
         ResponseDocument response = new AuthenticationQueryHandler(rdoc).getResponse();
         final SignerInfo signerInfo = KeystoreUtils.getInstance().getSignerInfo();
         Document msgOut = Responses.asSoapMessage(response, signerInfo);
         XmlUtil.nodeToOutputStream(msgOut, System.out);
     }
-
 
     /**
      * Test <code>ServerPolicyFactoryTest</code> main.

@@ -10,7 +10,7 @@ import x0Protocol.oasisNamesTcSAML1.ResponseDocument;
  * @author emil
  * @version 28-Jul-2004
  */
-public class RequestResolver {
+class RequestResolver {
 
     /** cannot instantiate this class */
     private RequestResolver() {

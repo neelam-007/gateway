@@ -39,7 +39,7 @@ public class SamlAssertionGenerator {
      * @param document the soap message as a org.w3c.dom document
      * @param u the user the assertion is vouching for
      * @param signer the signer info that is vouching for the user
-     * @param options the sender voucher options
+     * @param options the sender voucher xmlOptions
      * @throws IOException on io error
      * @throws SignatureException on signature related error
      * @throws SAXException on xml parsing error
@@ -58,7 +58,7 @@ public class SamlAssertionGenerator {
     }
 
     /**
-     * the class with options that may be passed to the saml assertion
+     * the class with xmlOptions that may be passed to the saml assertion
      * generator.
      */
     public static class Options {

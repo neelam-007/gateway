@@ -5,29 +5,26 @@
 package com.l7tech.server.saml;
 
 import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
+import org.apache.xmlbeans.XmlException;
 import org.xml.sax.SAXException;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.soap.MessageFactory;
 import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPMessage;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import x0Protocol.oasisNamesTcSAML1.RequestDocument;
+import x0Protocol.oasisNamesTcSAML1.ResponseDocument;
 
 
 /**
@@ -37,19 +34,32 @@ import x0Protocol.oasisNamesTcSAML1.RequestDocument;
  */
 public class SamlProtocolServlet extends HttpServlet {
     private final Logger logger = Logger.getLogger(getClass().getName());
-    private MessageFactory msgFactory;
+    private SoapRequestGenerator soapRequestGenerator = new SoapRequestGenerator();
+    private SoapResponseGenerator soapResponseGenerator = new SoapResponseGenerator();
+    private Authority authority = new AuthorityImpl();
 
     public void init(ServletConfig servletConfig) throws ServletException {
         super.init(servletConfig);
         logger.info("saml protocol servlet initialized");
+    }
+
+    protected void doPost(HttpServletRequest req, HttpServletResponse res)
+      throws ServletException, IOException {
+        ServletOutputStream os = res.getOutputStream();
         try {
-            msgFactory = MessageFactory.newInstance();
-        } catch (SOAPException e) {
-            throw new ServletException(e);
+            ResponseDocument response = authority.process(soapRequestGenerator.fromSoapInputStream(req.getInputStream()));
+            // soapResponseGenerator.asSoapMessage(
+        } catch (SAXException e) {
+            soapResponseGenerator.streamFault(e, os);
+        } catch (InvalidDocumentFormatException e) {
+            soapResponseGenerator.streamFault(e, os);
+        } catch (XmlException e) {
+            soapResponseGenerator.streamFault(e, os);
         }
     }
 
-    public void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
+
+    protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
         res.setContentType("text/html");
         res.setStatus(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
         PrintWriter out = res.getWriter();
@@ -59,47 +69,5 @@ public class SamlProtocolServlet extends HttpServlet {
         out.close();
     }
 
-    protected void doPost(HttpServletRequest req, HttpServletResponse res)
-      throws ServletException, IOException {
-        Document document = null;
-        try {
-            document = XmlUtil.parse(req.getInputStream());
-
-        } catch (SAXException e) {
-            res.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-        }
-        Document docOut = onMessage(document);
-    }
-
-    private Document onMessage(Document message) {
-        try {
-            Element bodyElement = SoapUtil.getBodyElement(message);
-            if (bodyElement == null) {
-                throw new MessageNotSoapException();
-            }
-            Node firstChild = bodyElement.getFirstChild();
-            if (firstChild == null) {
-                throw new InvalidDocumentFormatException("Empty Body element");
-            }
-            RequestDocument rdoc = RequestDocument.Factory.parse(firstChild);
-            return (Document)RequestResolver.resolve(rdoc).getResponse().newDomNode();
-        } catch (Exception e) {
-            return asFaultCode(e);
-        }
-    }
-
-    private Document asFaultCode(Exception e) {
-        logger.log(Level.WARNING, "Returning SOAP fault for ",e);
-        try {
-            SOAPMessage msg = msgFactory.createMessage();
-            SoapUtil.addFaultTo(msg, SoapUtil.FC_SERVER, e.getMessage(), null);
-            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            msg.writeTo(bos);
-            return XmlUtil.stringToDocument(bos.toString());
-        } catch (Exception se) {
-            se.printStackTrace();
-            throw new RuntimeException(se);
-        }
-    }
 }
 
