@@ -7,11 +7,12 @@
 package com.l7tech.server;
 
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.util.Locator;
+import com.l7tech.logging.LogManager;
+import com.l7tech.objectmodel.HibernatePersistenceManager;
 import com.l7tech.remote.jini.Services;
 import com.l7tech.remote.jini.export.RemoteService;
-import com.l7tech.objectmodel.HibernatePersistenceManager;
-import com.l7tech.logging.LogManager;
-import com.l7tech.service.ServiceCache;
+import com.l7tech.service.ServiceManager;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -38,8 +39,10 @@ public class BootServlet extends HttpServlet {
         try {
             initializeAdminServices();
             HibernatePersistenceManager.initialize();
-            // this will indirectly initialize the cache
-            ServiceCache.initialize();
+            // make sure the ServiceManager is available
+            if (Locator.getDefault().lookup(ServiceManager.class) == null) {
+                logger.severe("Could not instantiate the ServiceManager");
+            }
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "SQL ERROR IN BOOT SERVLET", e);
             throw new ServletException(e);
