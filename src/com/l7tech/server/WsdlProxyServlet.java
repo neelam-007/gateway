@@ -15,6 +15,7 @@ import javax.servlet.ServletConfig;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.logging.Level;
 import java.sql.SQLException;
 
@@ -101,17 +102,33 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             // make sure this service is indeed anonymously accessible
             if (requestor == null) {
                 if (!policyAllowAnonymous(svc)) {
+                    logger.info("user denied access to service description");
                     res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "you need to provide valid credentials to see this service's description");
                     return;
                 }
             } else { // otherwise make sure the requestor is authorized for this policy
-
+                if (!userCanSeeThisService(requestor, svc)) {
+                    logger.info("user denied access to service description");
+                    res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "these credentials do not grant you access to this service description.");
+                    return;
+                }
             }
             outputServiceDescription(res, svc);
+            endTransaction();
         } else { // HANDLE REQUEST FOR LIST OF SERVICES
             Collection services = null;
-            if (requestor == null) services = listAnonymouslyViewableServices();
-            else services = listAnonymouslyViewableAndProtectedServices(requestor);
+            try {
+                if (requestor == null) services = listAnonymouslyViewableServices();
+                else services = listAnonymouslyViewableAndProtectedServices(requestor);
+            } catch (TransactionException e) {
+                logger.log(Level.SEVERE, "cannot list services", e);
+                res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+                return;
+            } catch (FindException e) {
+                logger.log(Level.SEVERE, "cannot list services", e);
+                res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+                return;
+            }
             // Is there anything to show?
             if (services.size() < 1) {
                 res.sendError(HttpServletResponse.SC_NOT_FOUND, "no services or not authorized");
@@ -121,24 +138,54 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         }
     }
 
-    private void outputServiceDescription(HttpServletResponse res, PublishedService svc) {
-        // todo
+    private void outputServiceDescription(HttpServletResponse res, PublishedService svc) throws IOException {
+        // first, apply the necessary modifications to the wsdl before sending it back
+        String output = svc.getWsdlXml();
+        // todo, plug in mangler
+        res.setContentType("text/xml; charset=utf-8");
+        res.getOutputStream().println(output);
     }
 
     private void outputServiceDescriptions(HttpServletResponse res, Collection services) {
         // todo
     }
 
-    private Collection listAnonymouslyViewableServices() {
+    private Collection listAnonymouslyViewableServices() throws TransactionException, IOException, FindException {
+        return listAnonymouslyViewableAndProtectedServices(null);
+    }
+
+    private Collection listAnonymouslyViewableAndProtectedServices(User requestor) throws TransactionException, IOException, FindException {
+
+        ServiceManager manager = getServiceManager();
+        beginTransaction();
+        // get all services
+        Collection allServices = null;
+        allServices = manager.findAll();
+
+        // prepare output collection
         Collection output = new ArrayList();
-        // todo, make list for public services only
+
+        // decide which ones make the cut
+        for (Iterator i = allServices.iterator(); i.hasNext();) {
+            PublishedService svc = (PublishedService)i.next();
+            if (requestor == null) {
+                if (policyAllowAnonymous(svc)) {
+                    output.add(svc);
+                }
+            } else {
+                if (userCanSeeThisService(requestor, svc)) {
+                    output.add(svc);
+                }
+            }
+        }
+
+        endTransaction();
         return output;
     }
 
-    private Collection listAnonymouslyViewableAndProtectedServices(User requestor) {
-        Collection output = new ArrayList(listAnonymouslyViewableServices());
-        // todo, add "protected" services
-        return output;
+    private boolean userCanSeeThisService(User requestor, PublishedService svc) {
+        // todo
+        return true;
     }
 
     private ServiceManager getServiceManager() {
