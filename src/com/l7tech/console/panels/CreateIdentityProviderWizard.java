@@ -2,13 +2,13 @@ package com.l7tech.console.panels;
 
 
 import com.l7tech.console.action.Actions;
-import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 /*
  * This class provides a wizard for users to add a new identity provider.
@@ -23,19 +23,19 @@ public class CreateIdentityProviderWizard extends IdentityProviderWizard {
     /**
      * Constructor
      *
-     * @param parent  The parent frame object reference.
-     * @param panel   The panel attached to this wizard. This is the panel to be displayed when the wizard is shown.
+     * @param parent The parent frame object reference.
+     * @param panel  The panel attached to this wizard. This is the panel to be displayed when the wizard is shown.
      */
     public CreateIdentityProviderWizard(Frame parent, final WizardStepPanel panel) {
         super(parent, panel);
         setResizable(true);
         setTitle("New Identity Provider Wizard");
         setShowDescription(false);
-
+        Actions.setEscKeyStrokeDisposes(this);
         // create a holder for the new identity provider
         // NOTE: we only support creating LDAP provider
         wizardInput = new LdapIdentityProviderConfig();
-        ((IdentityProviderConfig) wizardInput).setTypeVal(IdentityProviderType.LDAP.toVal());
+        ((IdentityProviderConfig)wizardInput).setTypeVal(IdentityProviderType.LDAP.toVal());
 
         pack();
 

@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
@@ -16,7 +17,6 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
-import com.l7tech.common.xml.Wsdl;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
@@ -28,12 +28,7 @@ import javax.swing.event.ChangeListener;
 import javax.swing.event.EventListenerList;
 import javax.wsdl.WSDLException;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.HierarchyEvent;
-import java.awt.event.HierarchyListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.EventListener;
@@ -47,9 +42,13 @@ import java.util.Iterator;
  * @version 1.0
  */
 public class PublishServiceWizard extends JDialog {
-    /** the bag of service and assertions that his wizard collects */
+    /**
+     * the bag of service and assertions that his wizard collects
+     */
     static class ServiceAndAssertion {
-        /** @return the service */
+        /**
+         * @return the service
+         */
         public PublishedService getService() {
             return service;
         }
@@ -106,7 +105,9 @@ public class PublishServiceWizard extends JDialog {
     private EventListenerList listenerList = new EventListenerList();
 
 
-    /** Creates new form PublishServiceWizard */
+    /**
+     * Creates new form PublishServiceWizard
+     */
     public PublishServiceWizard(Frame parent, boolean modal) {
         super(parent, modal);
         initComponents();
@@ -165,7 +166,7 @@ public class PublishServiceWizard extends JDialog {
                 closeDialog(evt);
             }
         });
-
+        Actions.setEscKeyStrokeDisposes(this);
         mainjPanel.setLayout(new BorderLayout());
 
         mainjPanel.setBorder(new EtchedBorder());
@@ -173,9 +174,8 @@ public class PublishServiceWizard extends JDialog {
         titlePanel.setLayout(new BorderLayout());
         titlePanel.setBorder(new EmptyBorder(new Insets(5, 10, 5, 10)));
 
-        titleLabel.setBorder(
-          new CompoundBorder(new MatteBorder(new Insets(0, 0, 1, 0), new Color(0, 0, 0)),
-            new EmptyBorder(new Insets(5, 5, 5, 5))));
+        titleLabel.setBorder(new CompoundBorder(new MatteBorder(new Insets(0, 0, 1, 0), new Color(0, 0, 0)),
+          new EmptyBorder(new Insets(5, 5, 5, 5))));
 
         titleLabel.setHorizontalAlignment(SwingConstants.TRAILING);
         titleLabel.setText("Publish Service wizard");
@@ -234,8 +234,7 @@ public class PublishServiceWizard extends JDialog {
                             }
                         }
                     }
-                    saBundle.setAssertion(
-                      pruneEmptyCompositeAssertions(saBundle.getAssertion()));
+                    saBundle.setAssertion(pruneEmptyCompositeAssertions(saBundle.getAssertion()));
                     if (saBundle.getAssertion() != null) {
                         ByteArrayOutputStream bo = new ByteArrayOutputStream();
                         WspWriter.writePolicy(saBundle.getAssertion(), bo);
@@ -254,17 +253,17 @@ public class PublishServiceWizard extends JDialog {
                 } catch (Exception e) {
                     if (ExceptionUtils.causedBy(e, DuplicateObjectException.class)) {
                         JOptionPane.showMessageDialog(null,
-                                                      "Unable to save the service '" + saBundle.service.getName() + "'\n" +
-                                                      "because an existing service is already using that namespace URI\n" +
-                                                      "and SOAPAction combination.",
-                                                      "Service already exists",
-                                                      JOptionPane.ERROR_MESSAGE);
+                          "Unable to save the service '" + saBundle.service.getName() + "'\n" +
+                          "because an existing service is already using that namespace URI\n" +
+                          "and SOAPAction combination.",
+                          "Service already exists",
+                          JOptionPane.ERROR_MESSAGE);
                     } else {
                         e.printStackTrace();
                         JOptionPane.showMessageDialog(null,
-                                                      "Unable to save the service '" + saBundle.service.getName() + "'\n",
-                                                      "Error",
-                                                      JOptionPane.ERROR_MESSAGE);
+                          "Unable to save the service '" + saBundle.service.getName() + "'\n",
+                          "Error",
+                          JOptionPane.ERROR_MESSAGE);
                     }
                     return;
                 }
@@ -284,9 +283,9 @@ public class PublishServiceWizard extends JDialog {
         panelButtons.add(cancelButton);
 
         buttonHelp.setText("Help");
-        buttonHelp.addActionListener( new ActionListener() {
+        buttonHelp.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-               Actions.invokeHelp(PublishServiceWizard.this);
+                Actions.invokeHelp(PublishServiceWizard.this);
             }
         });
         panelButtons.add(buttonHelp);
@@ -349,7 +348,7 @@ public class PublishServiceWizard extends JDialog {
      *
      * @param oom the input composite assertion
      * @return trhe composite assertion with pruned children
-     * or null
+     *         or null
      */
     private CompositeAssertion
       pruneEmptyCompositeAssertions(CompositeAssertion oom) {
@@ -369,6 +368,7 @@ public class PublishServiceWizard extends JDialog {
 
     /**
      * notfy the listeners
+     *
      * @param header
      */
     private void notify(EntityHeader header) {
@@ -433,7 +433,9 @@ public class PublishServiceWizard extends JDialog {
     }
 
 
-    /** Closes the dialog */
+    /**
+     * Closes the dialog
+     */
     private void closeDialog(WindowEvent evt) {
         setVisible(false);
         dispose();
@@ -470,7 +472,7 @@ public class PublishServiceWizard extends JDialog {
         /**
          * Invoked when the target of the listener has changed its state.
          *
-         * @param e  a ChangeEvent object
+         * @param e a ChangeEvent object
          */
         public void stateChanged(ChangeEvent e) {
             updateWizardUiState();
@@ -492,7 +494,9 @@ public class PublishServiceWizard extends JDialog {
 
     private JLabel[] stepLabels = new JLabel[0];
 
-    /** @deprecated do not use -- this is here only for the benefit of the PublishServiceWizardTest */
+    /**
+     * @deprecated do not use -- this is here only for the benefit of the PublishServiceWizardTest
+     */
     public void setWsdlUrl(String newUrl) {
         ((ServicePanel)panels[0]).setWsdlUrl(newUrl);
     }
