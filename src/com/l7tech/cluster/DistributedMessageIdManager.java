@@ -9,7 +9,6 @@ package com.l7tech.cluster;
 import com.l7tech.common.util.Background;
 import com.l7tech.server.util.MessageId;
 import com.l7tech.server.util.MessageIdManager;
-import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Session;
 import org.jboss.cache.PropertyConfigurator;
 import org.jboss.cache.TreeCache;
@@ -64,7 +63,7 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
         tree.setClusterProperties(props);
         // if we're the first, load old message ids from database
         getHibernateTemplate().execute(new HibernateCallback() {
-            public Object doInHibernate(Session session) throws HibernateException, SQLException {
+            public Object doInHibernate(Session session) {
                 try {
                     start(session);
                     return null;
@@ -82,7 +81,7 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
     private class GarbageCollectionTask extends TimerTask {
         public void run() {
           getHibernateTemplate().execute(new HibernateCallback() {
-              public Object doInHibernate(Session session) throws HibernateException, SQLException {
+              public Object doInHibernate(Session session) {
                   doRun(session);
                   return null;
               }
@@ -207,7 +206,7 @@ public class DistributedMessageIdManager extends HibernateDaoSupport implements 
      */
     public void close() throws Exception {
         getHibernateTemplate().execute(new HibernateCallback() {
-            public Object doInHibernate(Session session) throws HibernateException, SQLException {
+            public Object doInHibernate(Session session) {
                 try {
                     flush(session);
                     return null;
