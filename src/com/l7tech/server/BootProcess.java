@@ -38,7 +38,7 @@ public class BootProcess implements ServerComponentLifecycle {
     private final ServerLogManager serverLogManager = ServerLogManager.getInstance();
     private final Logger logger = Logger.getLogger(getClass().getName());
     private List _components = new ArrayList();
-
+                                          
     public void init(ComponentConfig config) throws LifecycleException {
         PersistenceContext context = null;
         try {
