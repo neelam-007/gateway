@@ -208,8 +208,10 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
                     _log.log( Level.WARNING, cfe.toString(), cfe );
                     throw cfe;
                 }
+
                 if ( !scheme().equals(scheme) ) {
-                    throwError( Level.FINE, "Invalid scheme '" + scheme + "' in WWW-Authorize: Digest header" );
+                    _log.log( Level.INFO, "Invalid scheme '" + scheme + "' in WWW-Authorize header" );
+                    return null;
                 }
             }
         }
