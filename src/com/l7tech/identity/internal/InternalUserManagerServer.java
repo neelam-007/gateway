@@ -384,5 +384,7 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
     // it is used.
     private static final int CERTRESETCOUNTER_MAX = 10;
     public static final String F_CERT = "cert";
+    public static final String F_LOGIN = "login";
+    public static final String F_NAME = "name";
     private Logger logger = null;
 }
