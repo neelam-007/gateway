@@ -113,7 +113,7 @@ public class IdentityProviderConfig extends NamedEntityImp {
     // ************************************************
     // PRIVATES
     // ************************************************
-    private String description;
-    private IdentityProviderType type;
-    private HashMap props;
+    protected String description;
+    protected IdentityProviderType type;
+    protected HashMap props;
 }
