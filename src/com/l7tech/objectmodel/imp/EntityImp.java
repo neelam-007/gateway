@@ -11,7 +11,7 @@ import java.io.Serializable;
 /**
  * @author alex
  */
-public class EntityImp implements Entity, Lifecycle, Validatable {
+public class EntityImp implements Entity {
     public long getOid() { return _oid; }
 
 	public void setOid( long oid ) { _oid = oid; }
@@ -21,22 +21,4 @@ public class EntityImp implements Entity, Lifecycle, Validatable {
     }
 
 	protected long _oid;
-
-    public boolean onSave(Session session) throws CallbackException {
-        return false;
-    }
-
-    public boolean onUpdate(Session session) throws CallbackException {
-        return false;
-    }
-
-    public boolean onDelete(Session session) throws CallbackException {
-        return false;
-    }
-
-    public void onLoad(Session session, Serializable serializable) {
-    }
-
-    public void validate() throws ValidationFailure {
-    }
 }
