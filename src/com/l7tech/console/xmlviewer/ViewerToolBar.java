@@ -118,8 +118,9 @@ public class ViewerToolBar extends JToolBar {
      * @return the currently selected xpath or <b>null</b> if none selected
      */
     public String getXPath() {
-        if (xpath.getSelectedItem() == null) return null;
-        return xpath.getSelectedItem().toString();
+        final Object item = xpath.getEditor().getItem();
+        if (item == null) return null;
+        return item.toString();
     }
 
 
