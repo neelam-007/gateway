@@ -13,6 +13,7 @@ import com.l7tech.message.Request;
 import com.l7tech.service.resolution.UrnResolver;
 import com.l7tech.service.resolution.SoapActionResolver;
 import com.l7tech.service.resolution.ServiceResolutionException;
+import com.l7tech.service.resolution.NameValueServiceResolver;
 
 /**
  * LAYER 7 TECHNOLOGIES, INC
@@ -81,22 +82,28 @@ public class ServiceCache {
         } catch (InterruptedException e) {
             throw new ServiceResolutionException(e.getMessage(), e);
         }
-        if ( services == null || services.isEmpty() ) return null;
-        Set resolvedServices = null;
-        // resolve with soapaction first
-        resolvedServices = soapResolver.resolve(req, services);
-        if (resolvedServices == null || resolvedServices.isEmpty()) return null;
-        if (resolvedServices.size() == 1) {
-            return (PublishedService)resolvedServices.iterator().next();
+
+        if ( services == null || services.isEmpty() ) {
+            logger.finest("resolution failed because no services in the cache");
+            return null;
         }
-        // if necessary, try to resolve with urn
-        resolvedServices = urnResolver.resolve(req, services);
-        if (resolvedServices == null || resolvedServices.isEmpty()) return null;
-        if (resolvedServices.size() == 1) {
-            return (PublishedService)resolvedServices.iterator().next();
+
+        for (int i = 0; i < resolvers.length; i++) {
+            Set resolvedServices = resolvers[i].resolve(req, services);
+            if (resolvedServices == null || resolvedServices.isEmpty()) return null;
+            if (resolvedServices.size() == 1) {
+                logger.finest("service resolved by " + resolvers[i].getClass().getName());
+                return (PublishedService)resolvedServices.iterator().next();
+            }
+            services = resolvedServices;
+        }
+
+        if (services == null || services.isEmpty()) {
+            logger.fine("resolvers find no match for request");
         } else {
             logger.severe("cache integrity error or resolver bug. this request resolves to more than one service.");
         }
+
         return null;
     }
 
@@ -113,11 +120,15 @@ public class ServiceCache {
             if (services.get(key) != null) update = true;
             services.put(key, service);
             if (update) {
-                soapResolver.serviceUpdated(service);
-                urnResolver.serviceUpdated(service);
+                for (int i = 0; i < resolvers.length; i++) {
+                    resolvers[i].serviceUpdated(service);
+                }
+                logger.finest("updated service in cache. oid=" + service.getOid());
             } else {
-                soapResolver.serviceCreated(service);
-                urnResolver.serviceCreated(service);
+                for (int i = 0; i < resolvers.length; i++) {
+                    resolvers[i].serviceCreated(service);
+                }
+                logger.finest("added service in cache. oid=" + service.getOid());
             }
         } catch (InterruptedException e) {
             logger.log(Level.WARNING, "interruption in service cache", e);
@@ -137,8 +148,10 @@ public class ServiceCache {
         try {
             write.acquire();
             services.remove(new Long(service.getOid()));
-            soapResolver.serviceDeleted(service);
-            urnResolver.serviceDeleted(service);
+            for (int i = 0; i < resolvers.length; i++) {
+                resolvers[i].serviceDeleted(service);
+            }
+            logger.finest("removed service from cache. oid=" + service.getOid());
         } catch (InterruptedException e) {
             logger.log(Level.WARNING, "interruption in service cache", e);
             Thread.currentThread().interrupt();
@@ -199,8 +212,9 @@ public class ServiceCache {
             services = newCache;
             HashSet set = new HashSet();
             set.addAll(services.values());
-            soapResolver.setServices(set);
-            urnResolver.setServices(set);
+            for (int i = 0; i < resolvers.length; i++) {
+                resolvers[i].setServices(set);
+            }
         } catch (InterruptedException e) {
             logger.log(Level.WARNING, "interruption in service cache", e);
             Thread.currentThread().interrupt();
@@ -213,8 +227,7 @@ public class ServiceCache {
     private Map services = new HashMap();
     private ReadWriteLock rwlock = new WriterPreferenceReadWriteLock();
     private final Logger logger = LogManager.getInstance().getSystemLogger();
-    private final SoapActionResolver soapResolver = new SoapActionResolver();
-    private final UrnResolver urnResolver = new UrnResolver();
+    private final NameValueServiceResolver[] resolvers = {new SoapActionResolver(), new UrnResolver()};
 
     private static class SingletonHolder {
         private static ServiceCache singleton = new ServiceCache();
