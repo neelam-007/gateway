@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.console.panels.XmlSecurityPropertiesDialog">
+  <grid id="24f2b" binding="mainPanel" row-count="5" column-count="1" hgap="-1" vgap="-1">
+    <margin top="0" left="10" bottom="0" right="10"/>
+    <constraints>
+      <xy x="40" y="19" width="558" height="340"/>
+      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+    </constraints>
+    <properties/>
+    <border type="none"/>
+    <children>
+      <component id="6384d" class="javax.swing.JLabel">
+        <constraints>
+          <xy x="10" y="1" width="220" height="17"/>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+        </constraints>
+        <properties>
+          <text value="Signature and encryption properties"/>
+        </properties>
+      </component>
+      <grid id="e0cce" row-count="4" column-count="2" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <xy x="10" y="25" width="538" height="100"/>
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <component id="99958" class="javax.swing.JRadioButton" binding="entireMessage">
+            <constraints>
+              <xy x="0" y="25" width="117" height="25"/>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text value="Entire message"/>
+            </properties>
+          </component>
+          <component id="a3cfc" class="javax.swing.JRadioButton" binding="messageParts">
+            <constraints>
+              <xy x="0" y="55" width="111" height="25"/>
+              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text value="Message parts"/>
+            </properties>
+          </component>
+          <component id="c5e8b" class="javax.swing.JLabel">
+            <constraints>
+              <xy x="0" y="1" width="187" height="17"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+            </constraints>
+            <properties>
+              <text value="Signature and ecryption scope"/>
+            </properties>
+          </component>
+          <vspacer id="dd6d3">
+            <constraints>
+              <xy x="253" y="80" width="11" height="20"/>
+              <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
+            </constraints>
+          </vspacer>
+        </children>
+      </grid>
+      <grid id="6726c" row-count="1" column-count="2" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <xy x="10" y="150" width="538" height="91"/>
+          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <component id="d9511" class="javax.swing.JTable" binding="securedItemsTable">
+            <constraints>
+              <xy x="274" y="0" width="264" height="91"/>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="6" hsize-policy="6" anchor="0" fill="3">
+                <preferred-size width="150" height="50"/>
+              </grid>
+            </constraints>
+            <properties/>
+          </component>
+          <component id="3e511" class="javax.swing.JTree" binding="wsdlMessagesTree">
+            <constraints>
+              <xy x="0" y="0" width="264" height="91"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="6" anchor="0" fill="3">
+                <preferred-size width="150" height="50"/>
+              </grid>
+            </constraints>
+            <properties>
+              <showsRootHandles value="false"/>
+            </properties>
+          </component>
+        </children>
+      </grid>
+      <grid id="8bfc0" row-count="2" column-count="4" hgap="-1" vgap="-1">
+        <margin top="5" left="0" bottom="5" right="0"/>
+        <constraints>
+          <xy x="10" y="246" width="538" height="94"/>
+          <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <component id="44632" class="javax.swing.JButton" binding="okButton">
+            <constraints>
+              <xy x="332" y="62" width="52" height="27"/>
+              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
+            </constraints>
+            <properties>
+              <text value="OK"/>
+            </properties>
+          </component>
+          <hspacer id="44b42">
+            <constraints>
+              <xy x="0" y="70" width="332" height="11"/>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
+            </constraints>
+          </hspacer>
+          <component id="322c3" class="javax.swing.JButton" binding="helpButton">
+            <constraints>
+              <xy x="478" y="62" width="60" height="27"/>
+              <grid row="1" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
+            </constraints>
+            <properties>
+              <text value="Help"/>
+            </properties>
+          </component>
+          <component id="5c53" class="javax.swing.JButton" binding="cancelButton">
+            <constraints>
+              <xy x="394" y="62" width="74" height="27"/>
+              <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
+            </constraints>
+            <properties>
+              <text value="Cancel"/>
+            </properties>
+          </component>
+          <vspacer id="ce7b6">
+            <constraints>
+              <xy x="160" y="5" width="11" height="57"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
+            </constraints>
+          </vspacer>
+        </children>
+      </grid>
+    </children>
+  </grid>
+</form>
