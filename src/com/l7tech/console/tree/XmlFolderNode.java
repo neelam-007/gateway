@@ -32,6 +32,7 @@ public class XmlFolderNode extends AbstractTreeNode {
         int index = 0;
         children = null;
         insert( new RequestXpathPaletteNode(), index++ );
+        insert(new SchemaValidationPaletteNode(), index++);
     }
 
     /**
