@@ -111,9 +111,11 @@ public class LdapIdentityProviderServer implements IdentityProvider {
 
             User authUser = pc.getUser();
             if ( response.equals( expectedResponse ) ) {
+                logger.info("User " + authUser.getLogin() + " authenticated successfully with digest credentials.");
                 authUser.copyFrom( realUser );
                 return true;
             } else {
+                logger.warning("User " + authUser.getLogin() + " failed to match.");
                 return false;
             }
         } else {
