@@ -10,7 +10,6 @@ import com.l7tech.credential.*;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.util.Locator;
 import org.apache.log4j.Category;
 
 import java.util.HashMap;
