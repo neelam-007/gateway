@@ -100,6 +100,17 @@ public class WssDecoratorImpl implements WssDecorator {
             addSignature(c, senderCertificate, senderPrivateKey, elementsToSign, securityHeader, bst);
     }
 
+    private boolean isWrappingOrSame(Element potentialParent, Element element) {
+        if (potentialParent == element) return true;
+        Element parent = (Element)element.getParentNode();
+        while (parent != null) {
+            if (potentialParent == parent) return true;
+            if (!(parent.getParentNode() instanceof Element)) break;
+            else parent = (Element)parent.getParentNode();
+        }
+        return false;
+    }
+
     private Element addSignature(Context c, X509Certificate senderCertificate, PrivateKey senderPrivateKey,
                                  Element[] elementsToSign, Element securityHeader,
                                  Element binarySecurityToken) throws DecoratorException {
@@ -127,7 +138,9 @@ public class WssDecoratorImpl implements WssDecorator {
         template.setPrefix("ds");
         for (int i = 0; i < elementsToSign.length; i++) {
             Reference ref = template.createReference("#" + sigedIds[i]);
-            // todo, add ref.addTransform(Transform.ENVELOPED); only when necessary
+            if (isWrappingOrSame(elementsToSign[i], securityHeader)) {
+                ref.addTransform(Transform.ENVELOPED);
+            }
             ref.addTransform(Transform.W3CC14N2);
             template.addReference(ref);
         }
