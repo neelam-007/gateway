@@ -7,7 +7,7 @@ import java.util.logging.Logger;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 
 /**
- * Message invocation. Hooks into message chain invocatoin via
+ * Message invocation. Hooks into message chain invocation via
  * <code>MessageInvocation.invokeNext()</code> method.
  *
  * @author emil

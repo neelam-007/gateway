@@ -35,7 +35,6 @@ public class CredentialsFinder implements Handler {
         i.invokeNext();
     }
 
-
     /**
      * Find the credentials using http basic method.
      *

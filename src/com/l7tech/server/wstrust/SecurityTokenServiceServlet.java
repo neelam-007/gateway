@@ -43,7 +43,7 @@ public class SecurityTokenServiceServlet extends AuthenticatableHttpServlet {
         try {
             MessageContext ctx = getServletContext(req, res);
             res.setContentType("text/xml");
-            MessageInvocation mi = getInvocation(req, ctx);
+            MessageInvocation mi = new MessageInvocation(SoapUtil.parseSoapMessage(req.getInputStream()), ctx, getHandlers());
             Document response = mi.getResponseDocument();
             XmlUtil.nodeToOutputStream(response, os);
         } catch (MessageNotSoapException e) {
@@ -66,11 +66,6 @@ public class SecurityTokenServiceServlet extends AuthenticatableHttpServlet {
         return ctx;
     }
 
-    private MessageInvocation getInvocation(HttpServletRequest req, MessageContext ctx)
-      throws IOException, MessageNotSoapException, SAXException {
-        MessageInvocation mi = new MessageInvocation(SoapUtil.parseSoapMessage(req.getInputStream()), ctx, getHandlers());
-        return mi;
-    }
 
     private Handler[] getHandlers() {
         return new Handler[] {new CredentialsFinder()};
