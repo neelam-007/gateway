@@ -59,8 +59,8 @@ public class Client {
     public long saveIdentityProviderConfig(com.l7tech.identity.IdentityProviderConfig identityProviderConfig) throws java.rmi.RemoteException {
         Call call = createStubCall();
         call.setOperationName(new QName(IDENTITY_URN, "saveIdentityProviderConfig"));
-        call.setReturnClass(Long.class);
-        call.addParameter(new javax.xml.namespace.QName("", "identityProviderConfig"), new javax.xml.namespace.QName(IDENTITY_URN, "IdentityProviderConfig"), com.l7tech.identity.imp.IdentityProviderConfigImp.class, javax.xml.rpc.ParameterMode.IN);
+        //call.setReturnClass(Long.class);
+        //call.addParameter(new javax.xml.namespace.QName("", "identityProviderConfig"), new javax.xml.namespace.QName(IDENTITY_URN, "IdentityProviderConfig"), com.l7tech.identity.imp.IdentityProviderConfigImp.class, javax.xml.rpc.ParameterMode.IN);
         Long res = (Long)call.invoke(new Object[]{identityProviderConfig});
         return res.longValue();
 
