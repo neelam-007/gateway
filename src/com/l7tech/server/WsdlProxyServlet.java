@@ -19,6 +19,7 @@ import java.util.Iterator;
 import java.util.logging.Level;
 import java.sql.SQLException;
 
+
 /**
  * LAYER 7 TECHNOLOGIES, INC
  *
@@ -134,7 +135,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 res.sendError(HttpServletResponse.SC_NOT_FOUND, "no services or not authorized");
                 return;
             }
-            outputServiceDescriptions(res, services);
+            outputServiceDescriptions(req, res, services);
         }
     }
 
@@ -146,8 +147,8 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         res.getOutputStream().println(output);
     }
 
-    private void outputServiceDescriptions(HttpServletResponse res, Collection services) {
-        // todo
+    private void outputServiceDescriptions(HttpServletRequest req, HttpServletResponse res, Collection services) {
+        String output = createWSILDoc(services, req.getServerName(), req.getProtocol(), Integer.toString(req.getServerPort()), req.getRequestURI());
     }
 
     private Collection listAnonymouslyViewableServices() throws TransactionException, IOException, FindException {
@@ -209,6 +210,31 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "error closing transaction", e);
         }
+    }
+
+
+    private String createWSILDoc(Collection services, String host, String protocol, String port, String uri) {
+        /*  Format of document:
+            <?xml version="1.0"?>
+            <inspection xmlns="http://schemas.xmlsoap.org/ws/2001/10/inspection/">
+              <service>
+                <description referencedNamespace="http://schemas.xmlsoap.org/wsdl/"
+                             location="http://example.com/stockquote.wsdl" />
+              </service>
+            </inspection>
+        */
+        StringBuffer outDoc = new StringBuffer("<?xml version=\"1.0\"?>\n" +
+                        "<inspection xmlns=\"http://schemas.xmlsoap.org/ws/2001/10/inspection/\">\n");
+        // for each service
+        for (Iterator i = services.iterator(); i.hasNext();) {
+            PublishedService svc = (PublishedService)i.next();
+            outDoc.append("\t<description referencedNamespace=\"http://schemas.xmlsoap.org/wsdl/\" ");
+            outDoc.append("location=\"");
+            outDoc.append(protocol + "://" + host + ":" + port + uri + "?" + PARAM_SERVICEOID + "=" + Long.toString(svc.getOid()));
+            outDoc.append("\"/>\n");
+        }
+        outDoc.append("</inspection>");
+        return outDoc.toString();
     }
 
     private static final String PARAM_SERVICEOID = "serviceoid";
