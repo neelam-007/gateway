@@ -16,10 +16,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 import javax.wsdl.Port;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
-import java.io.PushbackInputStream;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
@@ -43,6 +40,7 @@ public class RequestHandler extends AbstractHttpHandler {
     private MessageProcessor messageProcessor;
     private RequestInterceptor interceptor = NullRequestInterceptor.INSTANCE;
     private int bindPort;
+    public static final String STYLESHEET_SUFFIX = "/ssg/wsil2xhtml.xml";
 
     /**
      * Client proxy HTTP handler.  Proxies all incoming SOAP calls to the given
@@ -139,6 +137,11 @@ public class RequestHandler extends AbstractHttpHandler {
             throws HttpException, IOException
     {
         log.info("Incoming request: " + request.getURI().getPath());
+
+        if (request.getURI().getPath().equalsIgnoreCase(STYLESHEET_SUFFIX)) {
+            handleStylesheet(request, response);
+            return;
+        }
 
         // Find endpoint, and see if this is a WSDL request
         String endpoint = request.getURI().getPath().substring(1); // skip leading slash
@@ -248,6 +251,29 @@ public class RequestHandler extends AbstractHttpHandler {
         }
 
         transmitResponse(200, response, responseMessage);
+    }
+
+    /** Handle a request for the WSIL stylesheet. */
+    private void handleStylesheet(HttpRequest request, HttpResponse response) throws HttpException {
+        if (!HttpRequest.__GET.equals(request.getMethod()))
+            throw new HttpException(405); // method not allowed
+        InputStream ss = getClass().getClassLoader().getResourceAsStream("com/l7tech/common/resources/wsil2xhtml.xml");
+        if (ss == null) throw new HttpException(404);
+        response.setContentType("text/xml");
+        OutputStream os = response.getOutputStream();
+        byte[] chunk = new byte[8192];
+        try {
+            while (ss.read(chunk) > 0)
+                os.write(chunk);
+            return;
+        } catch (IOException e) {
+            final String msg = "Unable to read WSIL style sheet: " + e.getMessage();
+            log.log(Level.SEVERE, msg, e);
+            throw new HttpException(500, msg);
+        } finally {
+            if (ss != null) try { ss.close(); } catch (IOException e) { /* can't happen */ }
+            if (os != null) try { os.close(); } catch (IOException e) { log.log(Level.WARNING, "Unable to close connection to client: " + e.getMessage(), e); }
+        }
     }
 
     private void sendChallenge(HttpResponse response) throws IOException {
