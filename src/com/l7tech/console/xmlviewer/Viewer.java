@@ -25,8 +25,6 @@ import com.l7tech.console.xmlviewer.properties.ViewerProperties;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 
 /**
  * The viewer for a eXchaNGeR document. This gives a tree view of an
@@ -45,11 +43,24 @@ public class Viewer extends JPanel implements XDocumentListener {
     private ViewerProperties properties = null;
 
     /**
-     * Constructs an explorer view with the ExplorerProperties supplied.
+     * Constructs an viewer view with the ViewerProperties supplied.
      *
-     * @param props the explorer properties.
+     * @param props    the viewer properties.
+     * @param document the exchanger document
      */
     public Viewer(ViewerProperties props, ExchangerDocument document) {
+        this(props, document, true);
+
+    }
+
+    /**
+     * Constructs an viewer view with the ViewerProperties supplied.
+     *
+     * @param props      the viewer properties.
+     * @param document   the exchanger document
+     * @param scrollpane whether to use scrollpane
+     */
+    public Viewer(ViewerProperties props, ExchangerDocument document, boolean scrollpane) {
         this.document = document;
         this.properties = props;
 
@@ -62,27 +73,17 @@ public class Viewer extends JPanel implements XDocumentListener {
             // should not happen
         }
         document.addListener(this);
-        scrollPane = new JScrollPane(tree,
-          JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-          JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-
-        /**
-         * Work around to make sure the scroll pane shows the vertical
-         * scrollbar for the first time when resized to a size small enough.
-         * JDK 1.3.0-C
-         *
-         * Got work around from Bug ID: 4243631 (It should be fixed...)
-         *
-         * ED: Check with JDK1.4
-         */
-        scrollPane.getViewport().addComponentListener(new ComponentAdapter() {
-            public void componentResized(ComponentEvent e) {
-                scrollPane.doLayout();
-            }
-        });
+        JComponent c = tree;
+        
+        if (scrollpane) {
+            scrollPane = new JScrollPane(tree,
+              JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+              JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+            c = scrollPane;
+        }
 
         setBorder(new EmptyBorder(0, 0, 0, 0));
-        add(scrollPane, BorderLayout.CENTER);
+        add(c, BorderLayout.CENTER);
     }
 
 
