@@ -512,6 +512,30 @@ public class Preferences extends PropertyChangeSupport {
     }
 
     /**
+       * Returns the policy messages visible property value.
+       *
+       * @return the policy messages visible value as boolean.
+       */
+      public boolean isPolicyMessageAreaVisible() {
+          // default set
+          if (props.getProperty(POLICY_MSG_AREA_VISIBLE) == null) {
+              return true;
+          }
+          return Boolean.
+            valueOf(props.getProperty(POLICY_MSG_AREA_VISIBLE)).booleanValue();
+      }
+
+      /**
+       * Set the policy messages visible property value.
+       *
+       * @param b the shortcut bar visible
+       */
+      public void setPolicyMessageAreaVisible(boolean b) {
+          putProperty(POLICY_MSG_AREA_VISIBLE, Boolean.toString(b));
+      }
+
+
+    /**
      * prints this property list out to the specified output
      * stream.
      * 
@@ -673,6 +697,9 @@ public class Preferences extends PropertyChangeSupport {
 
     /** toolbars property (icons, text, icons and text) */
     public static final String STATUS_BAR_VISIBLE = "status.bar.enable";
+
+    /** toolbars property (icons, text, icons and text) */
+    public static final String POLICY_MSG_AREA_VISIBLE = "policy.msg.area.visible";
 
     // Screen size last time the app was started up
     public static final String LAST_SCREEN_SIZE_WIDTH = "last.screen.size.width";
