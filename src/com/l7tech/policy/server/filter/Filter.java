@@ -49,17 +49,24 @@ public abstract class Filter {
             logger.warning("Filter action resulted in removing all assertions from policy.");
             return;
         }
-        List newKids = new LinkedList();
-        Iterator i = parent.getChildren().iterator();
-        boolean pastSelf = false;
-        while (i.hasNext()) {
-            Assertion kid = (Assertion)i.next();
-            if (kid == arg) {
-                pastSelf = true;
-            } else if (!pastSelf) newKids.add(kid);
-            else if (!removeAlsoNextSiblings ) newKids.add(kid);
+        if (!parent.getChildren().contains(arg)) {
+            throw new RuntimeException("Removing assertion that does not belong to parent"); // this cannot happen
         }
-        parent.setChildren(newKids);
+        if (!removeAlsoNextSiblings) {
+            parent.getChildren().remove(arg);
+        } else {
+            List newKids = new LinkedList();
+            Iterator i = parent.getChildren().iterator();
+            boolean pastSelf = false;
+            while (i.hasNext()) {
+                Assertion kid = (Assertion)i.next();
+                if (kid == arg) {
+                    pastSelf = true;
+                } else if (!pastSelf) newKids.add(kid);
+                else if (!removeAlsoNextSiblings ) newKids.add(kid);
+            }
+            parent.setChildren(newKids);
+        }
     }
 
     /**
