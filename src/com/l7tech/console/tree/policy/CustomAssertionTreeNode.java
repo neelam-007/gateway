@@ -7,6 +7,7 @@ import com.l7tech.policy.assertion.ext.CustomAssertion;
 
 import javax.swing.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Class <code>CustomAssertionTreeNode</code> contains the custom
@@ -62,6 +63,7 @@ public class CustomAssertionTreeNode extends LeafAssertionTreeNode {
         java.util.List list = new ArrayList();
         Action a = new CustomAssertionPropertiesAction(this);
         list.add(a);
+        list.addAll(Arrays.asList(super.getActions()));
         return (Action[])list.toArray(new Action[]{});
     }
 
