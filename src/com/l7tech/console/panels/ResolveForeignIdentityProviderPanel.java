@@ -228,8 +228,8 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
         final JTable _8;
         _8 = new JTable();
         providerPropsTable = _8;
-        _8.setPreferredScrollableViewportSize(new Dimension(450, 150));
         _8.setAutoResizeMode(4);
+        _8.setPreferredScrollableViewportSize(new Dimension(450, 150));
         _7.setViewportView(_8);
         final JPanel _9;
         _9 = new JPanel();
@@ -244,15 +244,15 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
         final JRadioButton _11;
         _11 = new JRadioButton();
         removeRadio = _11;
-        _11.setText("Remove assertions that refer to the missing identity provider");
         _11.setLabel("Remove assertions that refer to the missing identity provider");
+        _11.setText("Remove assertions that refer to the missing identity provider");
         _9.add(_11, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JRadioButton _12;
         _12 = new JRadioButton();
         ignoreRadio = _12;
-        _12.setText("Import erroneous assertions as-is");
         _12.setRequestFocusEnabled(false);
         _12.setLabel("Import erroneous assertions as-is");
+        _12.setText("Import erroneous assertions as-is");
         _12.setFocusPainted(false);
         _9.add(_12, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JComboBox _13;
