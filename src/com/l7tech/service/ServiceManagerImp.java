@@ -6,23 +6,22 @@
 
 package com.l7tech.service;
 
+import cirrus.hibernate.HibernateException;
+import cirrus.hibernate.Session;
 import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.objectmodel.*;
-import com.l7tech.service.resolution.*;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.service.resolution.ServiceResolutionException;
+import com.l7tech.service.resolution.ServiceResolver;
 
-import javax.naming.InitialContext;
-import javax.naming.NamingException;
 import javax.wsdl.WSDLException;
+import java.io.IOException;
 import java.rmi.RemoteException;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.IOException;
-
-import cirrus.hibernate.Session;
-import cirrus.hibernate.HibernateException;
 
 /**
  * Manages PublishedService instances.  Note that this object has state, so it should be effectively a Singleton--only get one from the Locator!
@@ -120,23 +119,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
                 putService( service );
             }
 
-            String serviceResolvers = null;
-            try {
-                InitialContext ic = new InitialContext();
-                serviceResolvers = (String)ic.lookup( "java:comp/env/ServiceResolvers" );
-            } catch ( NamingException ne ) {
-                _log.log( Level.INFO, ne.toString(), ne );
-            }
-
-            if ( serviceResolvers == null ) {
-                StringBuffer classnames = new StringBuffer();
-                classnames.append( UrnResolver.class.getName() );
-                classnames.append( " " );
-                classnames.append( SoapActionResolver.class.getName() );
-                classnames.append( " " );
-                classnames.append( HttpUriResolver.class.getName() );
-                serviceResolvers = classnames.toString();
-            }
+            String serviceResolvers = ServerConfig.getInstance().getServiceResolvers();
 
             _resolvers = new TreeSet();
             StringTokenizer stok = new StringTokenizer( serviceResolvers );
