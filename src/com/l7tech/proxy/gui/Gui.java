@@ -1,3 +1,4 @@
+/* $Id$ */
 package com.l7tech.proxy.gui;
 
 import com.l7tech.proxy.RequestInterceptor;
@@ -12,7 +13,6 @@ import java.awt.event.*;
  * User: mike
  * Date: May 22, 2003
  * Time: 1:47:04 PM
- * Revision: $Revision$
  */
 public class Gui {
     private static final Category log = Category.getInstance(Gui.class.getName());
