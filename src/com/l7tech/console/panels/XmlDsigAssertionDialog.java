@@ -20,6 +20,8 @@ import java.util.logging.Logger;
  * <code>XmlDsigAssertionDialog</code> is the XML digital signature
  * assertion edit dialog.
  *
+ * todo, delete this class once the dsig redesign is complete
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */

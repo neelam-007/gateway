@@ -10,6 +10,8 @@ import javax.swing.*;
  * The class represents a node element in the TreeModel.
  * It represents the XML encryption node.
  *
+ * todo, delete this class once the dsig redesign is complete
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
