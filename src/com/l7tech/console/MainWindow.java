@@ -1108,6 +1108,7 @@ public class MainWindow extends JFrame {
         toggleGatewayLogWindowAction = new AbstractAction(actionName, icon) {
             public void actionPerformed(ActionEvent event) {
                 getGatewayLogWindow().show();
+                getGatewayLogWindow().setState(Frame.NORMAL);
             }
         };
         toggleGatewayLogWindowAction.putValue(Action.SHORT_DESCRIPTION, actionDesc);
@@ -1151,6 +1152,7 @@ public class MainWindow extends JFrame {
              */
             public void actionPerformed(ActionEvent event) {
                 getClusterStatusWindow().show();
+                getClusterStatusWindow().setState(Frame.NORMAL);
             }
 
             ConnectionListener listener = new ConnectionListener() {
