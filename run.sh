@@ -81,7 +81,7 @@ case "$1" in
 		exec $JAVA_HOME/bin/java ${target}
 		;;
 	proxy)
-		target="com.l7tech.proxy.Main";
+		target="com.l7tech.proxy.gui.Main";
 		exec $JAVA_HOME/bin/java ${target}
 		;;
 esac 
