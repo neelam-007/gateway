@@ -175,7 +175,7 @@ public class StatisticsPanel extends JPanel {
             return statTableSorter;
         }
 
-        String[] cols = {"Service Name", "Requests Attempted", "Authorized", "Completed", "Completed (last min.)"};
+        String[] cols = {"Service Name", "Requests Attempted", "Authorized", "Routed", "Routed (last min.)"};
         String[][] rows = new String[][]{};
 
         LogTableModel tableModel = new LogTableModel(rows, cols);
@@ -199,7 +199,7 @@ public class StatisticsPanel extends JPanel {
             return statTotalTableModel;
         }
 
-        String[] cols = {"Total", "Attempted Total", "Authorized", "Completed", "Completed (last min.)", "dummy"};
+        String[] cols = {"Total", "Attempted Total", "Authorized", "Routed", "Routed (last min.)", "dummy"};
         String[][] rows = new String[][]{
             {"TOTAL", null, null, null},
         };
