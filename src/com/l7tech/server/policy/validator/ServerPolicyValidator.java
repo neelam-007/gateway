@@ -50,7 +50,9 @@ public class ServerPolicyValidator extends PolicyValidator {
         if (a instanceof IdentityAssertion) {
             int idStatus = getIdStatus((IdentityAssertion)a);
             if (idStatus == 0) {
-                r.addError(new PolicyValidatorResult.Error(a, ap, "The corresponding identity no longer exists.", null));
+                r.addError(new PolicyValidatorResult.Error(a, ap, "The corresponding identity cannot be found. " +
+                                                                  "Please remove the assertion from the policy.",
+                                                                  null));
             } else if (idStatus == 2) {
                 if (pathContext.seenCredCredAssertionOtherThanSaml) {
                     r.addError(new PolicyValidatorResult.Error(a, ap, "This identity can only authenticate with a SAML " +
