@@ -23,12 +23,14 @@ public class SoapRequest extends XmlMessageAdapter implements SoapMessage, XmlRe
      * @throws IOException
      */
     public synchronized Document getDocument() throws SAXException, IOException {
-        if ( _document == null )
-            if ( _requestStream == null )
+        if ( _document == null ) {
+            InputStream requestStream = getRequestStream();
+            if ( requestStream == null )
                 throw new IllegalStateException( "No Document or Reader yet!" );
-            else {
-                parse( _requestStream );
-            }
+            else
+                parse( requestStream );
+
+        }
 
         return _document;
     }
