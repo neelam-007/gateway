@@ -8,7 +8,7 @@ import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.AssertionsTree;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.WindowManager;
+import com.l7tech.console.util.ComponentManager;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
@@ -81,7 +81,7 @@ public class NewGroupAction extends NodeAction {
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     EntityHeader eh = (EntityHeader)ev.getEntity();
-                    JTree tree = (JTree)WindowManager.getInstance().getComponent(AssertionsTree.NAME);
+                    JTree tree = (JTree)ComponentManager.getInstance().getComponent(AssertionsTree.NAME);
                     if (tree != null) {
                         TreeNode[] nodes = node.getPath();
                         TreePath nPath = new TreePath(nodes);

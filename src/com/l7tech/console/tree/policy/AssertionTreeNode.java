@@ -3,7 +3,7 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.console.action.*;
 import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.util.WindowManager;
+import com.l7tech.console.util.ComponentManager;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
@@ -97,7 +97,7 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
      * node.
      */
     public void swap(AssertionTreeNode target) {
-        JTree tree = WindowManager.getInstance().getPolicyTree();
+        JTree tree = ComponentManager.getInstance().getPolicyTree();
         DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
         DefaultMutableTreeNode parent = (DefaultMutableTreeNode)this.getParent();
         int indexThis = parent.getIndex(this);

@@ -12,25 +12,24 @@ import java.awt.*;
 import java.io.IOException;
 
 /**
- * Central manager of windows in the Policy editor.
- *
- * Handles the work with workspaces, trees amd other reusable top
- * level components.
+ * Central UI component manager/registry in the Policy editor.
+ * Provides component unregister/register and access to the top
+ * level components such as workspace, top level trees etc.
  *
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version
+ * @version 1.0
  */
-public class WindowManager {
-    protected static WindowManager instance = new WindowManager();
+public class ComponentRegistry {
+    protected static ComponentRegistry instance = new ComponentRegistry();
 
     /**
      * protected constructor, this class cannot be instantiated
      */
-    protected WindowManager() {
+    protected ComponentRegistry() {
     }
 
-    public static WindowManager getInstance() {
+    public static ComponentRegistry getInstance() {
         return instance;
     }
 

@@ -568,7 +568,7 @@ public class MainWindow extends JFrame {
     }
 
     private WorkSpacePanel getWorkSpacePanel() {
-        return WindowManager.getInstance().getCurrentWorkspace();
+        return ComponentRegistry.getInstance().getCurrentWorkspace();
     }
 
     /**
@@ -577,12 +577,12 @@ public class MainWindow extends JFrame {
      */
     private JTree getAssertionPaletteTree() {
         JTree tree =
-          (JTree)WindowManager.getInstance().getComponent(AssertionsTree.NAME);
+          (JTree)ComponentRegistry.getInstance().getComponent(AssertionsTree.NAME);
         if (tree != null)
             return tree;
         tree = new AssertionsTree();
         tree.setDragEnabled(true);
-        WindowManager.getInstance().registerComponent(AssertionsTree.NAME, tree);
+        ComponentRegistry.getInstance().registerComponent(AssertionsTree.NAME, tree);
         return tree;
     }
 
@@ -592,12 +592,12 @@ public class MainWindow extends JFrame {
      */
     private JTree getServicesTree() {
         JTree tree =
-          (JTree)WindowManager.getInstance().getComponent(ServicesTree.NAME);
+          (JTree)ComponentRegistry.getInstance().getComponent(ServicesTree.NAME);
         if (tree != null)
             return tree;
 
         tree = new ServicesTree();
-        WindowManager.getInstance().registerComponent(ServicesTree.NAME, tree);
+        ComponentRegistry.getInstance().registerComponent(ServicesTree.NAME, tree);
         return tree;
     }
 
@@ -749,10 +749,10 @@ public class MainWindow extends JFrame {
             getStatusMsgRight().setBorder(border);
             rightPanel.add(getStatusMsgRight(), BorderLayout.WEST);
             progressBar =
-              (ProgressBar)WindowManager.getInstance().getComponent(ProgressBar.NAME);
+              (ProgressBar)ComponentRegistry.getInstance().getComponent(ProgressBar.NAME);
             if (progressBar == null) {
                 progressBar = new ProgressBar(0, 100, 20);
-                WindowManager.getInstance().registerComponent(ProgressBar.NAME, progressBar);
+                ComponentRegistry.getInstance().registerComponent(ProgressBar.NAME, progressBar);
             }
 
             // a bit of a hack here , set the size to the size of "disconnected" label

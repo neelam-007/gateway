@@ -7,7 +7,7 @@ import com.l7tech.console.panels.RoutingAssertionDialog;
 import com.l7tech.console.panels.Utilities;
 import com.l7tech.console.tree.policy.RoutingAssertionTreeNode;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.WindowManager;
+import com.l7tech.console.util.ComponentManager;
 import com.l7tech.policy.assertion.RoutingAssertion;
 
 import javax.swing.*;
@@ -76,7 +76,7 @@ public class RoutingAssertionPropertiesAction extends NodeAction {
     private final PolicyListener listener = new PolicyListenerAdapter() {
         public void assertionsChanged(PolicyEvent e) {
             JTree tree =
-                  (JTree)WindowManager.getInstance().getPolicyTree();
+                  (JTree)ComponentManager.getInstance().getPolicyTree();
                 if (tree != null) {
                     TreeNode[] nodes = node.getPath();
                     TreePath nPath = new TreePath(nodes);

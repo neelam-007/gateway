@@ -9,7 +9,7 @@ import com.l7tech.console.tree.NodeFilter;
 import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.WindowManager;
+import com.l7tech.console.util.ComponentManager;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
@@ -61,7 +61,7 @@ public class PolicyEditorPanel extends JPanel {
 
     private void layoutComponents() {
         setLayout(new BorderLayout());
-        WindowManager windowManager =
+        ComponentManager windowManager =
           Registry.getDefault().getWindowManager();
 
         JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
@@ -75,7 +75,7 @@ public class PolicyEditorPanel extends JPanel {
     }
 
 
-    private JComponent getPolicyTreePane(WindowManager windowManager) {
+    private JComponent getPolicyTreePane(ComponentManager windowManager) {
         policyTree = windowManager.getPolicyTree();
         policyTree.putClientProperty("service", service);
         PolicyTreeModel model = PolicyTreeModel.make(service);

@@ -1,7 +1,7 @@
 package com.l7tech.console.logging;
 
 import com.l7tech.util.Locator;
-import com.l7tech.console.util.WindowManager;
+import com.l7tech.console.util.ComponentManager;
 import com.l7tech.console.panels.Utilities;
 
 import javax.swing.*;
@@ -12,7 +12,7 @@ import java.util.logging.Logger;
  * Class ErrorManager is the console error handler. It handles user notifying
  * anbd error logging.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a> 
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class DefaultErrorManager extends ErrorManager {
     static final Logger log = Logger.getLogger(DefaultErrorManager.class.getName());
@@ -36,7 +36,7 @@ public class DefaultErrorManager extends ErrorManager {
     private JFrame getMainWindow() {
         if (mainFrame != null) return mainFrame;
 
-        WindowManager instance = WindowManager.getInstance();
+        ComponentManager instance = ComponentManager.getInstance();
         if (instance.hasMainWindow()) {
             mainFrame = instance.getMainWindow();
         }

@@ -7,7 +7,7 @@ import com.l7tech.console.panels.Utilities;
 import com.l7tech.console.panels.XmlEncAssertionDialog;
 import com.l7tech.console.tree.policy.XmlEncAssertionTreeNode;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.WindowManager;
+import com.l7tech.console.util.ComponentManager;
 import com.l7tech.policy.assertion.xmlsec.XmlEncAssertion;
 
 import javax.swing.*;
@@ -74,7 +74,7 @@ public class XmlEncPropertiesAction extends NodeAction {
     private final PolicyListener listener = new PolicyListenerAdapter() {
         public void assertionsChanged(PolicyEvent e) {
             JTree tree =
-                  (JTree)WindowManager.getInstance().getPolicyTree();
+                  (JTree)ComponentManager.getInstance().getPolicyTree();
                 if (tree != null) {
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                     model.nodeChanged(node);

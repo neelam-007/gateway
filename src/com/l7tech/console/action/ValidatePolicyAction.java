@@ -3,7 +3,7 @@ package com.l7tech.console.action;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTree;
 import com.l7tech.console.tree.ServiceNode;
-import com.l7tech.console.util.WindowManager;
+import com.l7tech.console.util.ComponentManager;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.service.PublishedService;
