@@ -26,7 +26,7 @@ public class NewGroupAction extends NodeAction {
      * @return the action name
      */
     public String getName() {
-        return "Create Internal Group";
+        return "Create Group";
     }
 
     /**
