@@ -114,7 +114,7 @@ public class SecureConversationKeyDeriver {
         } catch (IOException e) {
             throw new InvalidDocumentFormatException(e);
         }
-        // todo handle generation? -- fla
+        
         byte[] seed = new byte[label.length() + nonceA.length];
         System.arraycopy(label.getBytes(), 0, seed, 0, label.length());
         System.arraycopy(nonceA, 0, seed, label.length(), nonceA.length);
