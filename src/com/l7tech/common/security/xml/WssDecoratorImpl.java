@@ -23,6 +23,7 @@ import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.credential.CredentialFormat;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -100,6 +101,10 @@ public class WssDecoratorImpl implements WssDecorator {
             List signList = new ArrayList(Arrays.asList(elementsToSign));
             signList.add(0, timestamp);
             elementsToSign = (Element[])signList.toArray(new Element[0]);
+        }
+
+        if (usernameTokenCredentials != null && usernameTokenCredentials.getFormat() == CredentialFormat.CLEARTEXT) {
+            Element usernameToken = createUsernameToken(securityHeader);
         }
 
         Element bst = null;
@@ -218,6 +223,26 @@ public class WssDecoratorImpl implements WssDecorator {
         signatureElement.appendChild(keyInfoEl);
 
         return signatureElement;
+    }
+
+    private Element createUsernameToken(Element securityHeader) {
+        // What this element looks like:
+        // <wsse:UsernameToken>
+        //    <wsse:Username>username</wsse:Username>
+        //    <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">password</wsse:Password>
+        // </wsse:UsernameToken>
+        Document doc = securityHeader.getOwnerDocument();
+        Element untokEl = doc.createElementNS(securityHeader.getNamespaceURI(), "UsernameToken");
+        untokEl.setPrefix(securityHeader.getPrefix());
+        Element usernameEl = doc.createElementNS(securityHeader.getNamespaceURI(), "Username");
+        usernameEl.setPrefix(untokEl.getPrefix());
+        Element passwdEl = doc.createElementNS(securityHeader.getNamespaceURI(), "Password");
+        passwdEl.setPrefix(untokEl.getPrefix());
+
+
+
+        // todo
+        return null;
     }
 
     private Element addEncryptedKey(Context c,
