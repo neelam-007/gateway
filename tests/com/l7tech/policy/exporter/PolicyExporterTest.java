@@ -13,6 +13,7 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 /**
  * Test class for the policy exporter.
@@ -25,13 +26,26 @@ import org.w3c.dom.Document;
  */
 public class PolicyExporterTest extends TestCase {
 
-    public void testExportToDocument() throws Exception  {
+    public Document testExportToDocument() throws Exception  {
         System.setProperty("com.l7tech.common.locator", "com.l7tech.common.locator.StubModeLocator");
         PolicyExporter exporter = new PolicyExporter();
         Assertion testPolicy = createTestPolicy();
         Document resultingExport = exporter.exportToDocument(testPolicy);
         // visual inspection for now:
         System.out.println(XmlUtil.nodeToFormattedString(resultingExport));
+        return resultingExport;
+    }
+
+    public void testParseReferences() throws Exception {
+        Document exportedPolicy = testExportToDocument();
+        Element referencesEl = XmlUtil.findOnlyOneChildElementByName(exportedPolicy.getDocumentElement(),
+                                                                     ExporterConstants.EXPORTED_POL_NS,
+                                                                     ExporterConstants.EXPORTED_REFERENCES_ELNAME);
+        ExternalReference[] refs = ExternalReference.parseReferences(referencesEl);
+        for (int i = 0; i < refs.length; i++) {
+            ExternalReference ref = refs[i];
+            System.out.println("Found ref of type " + ref.getClass().getName());
+        }
     }
 
     private Assertion createTestPolicy() {
