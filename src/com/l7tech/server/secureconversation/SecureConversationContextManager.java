@@ -79,6 +79,12 @@ public class SecureConversationContextManager implements WssProcessor.SecurityCo
         } catch (FindException e) {
             logger.log(Level.SEVERE, "Cannot set fake session", e);
         }
+        try {
+            saveSession(fakesession);
+        } catch (DuplicateSessionException e) {
+            logger.log(Level.SEVERE, "could not save session", e);
+        }
+        logger.fine("\n\n\n\nfake session loaded\n\n\n\n");
     }
 
     private SecureConversationContextManager() {
