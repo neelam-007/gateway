@@ -19,7 +19,6 @@
     <property file="${src.root}/etc/default_build.properties"/>
 
     <!-- where the builds go -->
-    <property name="dist.build.home" value="${src.root}/dist"/>
     <property name="dev.build.home" value="${src.root}/build"/>
 
     <!-- distribution archive names -->
@@ -92,24 +91,6 @@
         </condition>
     </target>
 
-
-    <!--
-      ** config dist target. The "dist" target depends on this target.
-      -->
-    <target name="init-dist">
-        <property name="dist.build" value="true"/>
-        <property name="build.dir" value="${dist.build.home}"/>
-
-        <property name="build.classes" value="${build.dir}/classes"/>
-        <property name="doc.root" value="${build.dir}/htdocs"/>
-        <property name="build.lib" value="${build.dir}/lib"/>
-        <property name="build.etc" value="${build.dir}/etc"/>
-
-        <!-- javadoc home -->
-        <property name="javadoc.home" value="${doc.root}/javadoc"/>
-    </target>
-
-
     <target name="cleandev" depends="clean, dev"/>
     <target name="redeploy" depends="undeploy, deploy"/>
 
@@ -117,6 +98,7 @@
       ** configure and invoke developer's build
       -->
     <target name="dev" depends="init-dev">
+        <property name="dev.build" value="true"/>
         <property file="build.number"/>
         <property name="build.version" value="HEAD"/>
 
@@ -156,6 +138,7 @@
       ** Then deploy a package into the ${tomcat.home}/webapps ($TOMCAT_HOME/webapps)
       -->
     <target name="deploy" depends="init-dev">
+        <property name="dev.build" value="true"/>
         <antcall target="package"/>
         <antcall target="ssm-webstart"/>
 
@@ -324,8 +307,16 @@
                 <include name="xpp3-1.1.3.3.jar"/>
                 <include name="xss4j.jar"/>
 
-                <include name="openjms-client-0.7.6.jar"/>
-                <include name="exolabcore-0.3.7.jar"/>
+                <!-- Include OpenJMS on dev builds -->
+                <include name="openjms-client-0.7.6.jar" if="dev.build"/>
+                <include name="exolabcore-0.3.7.jar" if="dev.build"/>
+
+                <!-- Include MQSeries on dev builds -->
+                <include name="com.ibm.mqbind.jar" if="dev.build"/>
+                <include name="com.ibm.mq.jar" if="dev.build"/>
+                <include name="com.ibm.mqjms.jar" if="dev.build"/>
+                <include name="connector.jar" if="dev.build"/>
+
             </lib>
 
             <classes dir="${build.classes}">
@@ -514,7 +505,10 @@
                 <exclude name="**/jsdk23.jar"/>
             </fileset>
             <fileset dir="${src.root}/lib/gateway/jms/openjms">
-                <include name="**/*.jar"/>
+                <include name="**/*.jar" if="dev.build"/>
+            </fileset>
+            <fileset dir="${src.root}/lib/gateway/jms/mqseries">
+                <include name="**/*.jar" if="dev.build"/>
             </fileset>
         </copy>
 
@@ -527,12 +521,12 @@
         <copy todir="${build.classes}">
             <fileset dir="${src.root}/etc/db/${database.type}">
                 <!-- <include name="hibernate.cfg.xml"/> -->
-                <include name="hibernate.properties"/>
+                <include name="hibernate.properties" if="dev.build"/>
                 <include name="SSG.hbm.xml"/>
             </fileset>
 
             <fileset dir="${src.root}/etc">
-                <include name="keystore.properties"/>
+                <include name="keystore.properties" if="dev.build"/>
                 <include name="ssglog.properties"/>
             </fileset>
 
@@ -546,8 +540,8 @@
             </fileset>
 
             <fileset dir="${src.root}/tests">
-                <include name="com/l7tech/**/*.properties"/>
-                <include name="com/l7tech/common/security/xml/test_*"/>
+                <include name="com/l7tech/**/*.properties" if="dev.build"/>
+                <include name="com/l7tech/common/security/xml/test_*" if="dev.build"/>
             </fileset>
 
 
@@ -561,11 +555,8 @@
         </copy>
 
         <!-- make sure that the tomcat path is properly referenced in the keystore properties -->
-        <propertyfile file="${build.classes}/keystore.properties">
-            <entry key="keystoredir" value="${tomcat.home}/kstores"/>
-            <entry key="rootcakspasswd" value="${ca.keystore.password}"/>
-            <entry key="sslkspasswd" value="${ssl.keystore.password}"/>
-        </propertyfile>
+        <antcall target="keystore.properties"/>
+
 
         <propertyfile file="${build.classes}/ssglog.properties">
             <entry key="com.l7tech.server.log.FileHandler.path" value="${tomcat.home}/logs"/>
@@ -578,6 +569,14 @@
         </copy>
 
         <mkdir dir="${javadoc.home}"/>
+    </target>
+
+    <target name="keystore.properties" if="dev.build">
+        <propertyfile file="${build.classes}/keystore.properties">
+            <entry key="keystoredir" value="${tomcat.home}/kstores"/>
+            <entry key="rootcakspasswd" value="${ca.keystore.password}"/>
+            <entry key="sslkspasswd" value="${ssl.keystore.password}"/>
+        </propertyfile>
     </target>
 
     <!--
@@ -621,7 +620,7 @@
      ** token replacement target.
      ** This should be done ONLY for non distribution builds.
      -->
-    <target name="configure_properties" unless="dist.build" depends="db.properties">
+    <target name="configure_properties" if="dev.build" depends="db.properties">
 
         <!--
         <echo message="The database url is '${database.url}'"/>
@@ -744,6 +743,7 @@
         <property name="install.rel.etc" value="etc"/>
         <property name="install.rel.bin" value="bin"/>
         <property name="install.rel.logs" value="logs"/>
+        <property name="install.rel.ldap" value="${install.rel.etc}/ldapTemplates"/>
         <property name="install.rel.conf" value="${install.rel.etc}/conf"/>
         <property name="install.rel.keys" value="${install.rel.etc}/keys"/>
         <property name="install.rel.sql" value="${install.rel.etc}/sql"/>
@@ -778,10 +778,12 @@
         <property name="install.src.server.xml" value="${install.src.tomcat}/conf/server.xml"/>
         <property name="install.src.logs" value="${install.src.base}/${install.rel.logs}"/>
         <property name="install.src.web-inf" value="${install.src.tomcat}/webapps/ROOT/WEB-INF"/>
+        <property name="install.src.ldap" value="${install.src.base}/${install.rel.ldap}"/>
 
         <!-- Absolute target paths -->
         <property name="install.target.base" value="/ssg"/>
         <property name="install.target.keys" value="${install.target.base}/${install.rel.keys}"/>
+        <property name="install.target.ldap" value="${install.target.base}/${install.rel.ldap}"/>
         <property name="install.target.tomcat" value="${install.target.base}/${install.rel.tomcat}"/>
         <property name="install.target.jdk" value="${install.target.base}/${install.rel.jdk}"/>
         <property name="install.target.ssl.keystore" value="${install.target.keys}/${install.rel.ssl.keystore}"/>
@@ -797,6 +799,7 @@
         <mkdir dir="${install.src.doc}"/>
         <mkdir dir="${install.src.etc}"/>
         <mkdir dir="${install.src.sql}"/>
+        <mkdir dir="${install.src.ldap}"/>
         <mkdir dir="${install.src.bin}"/>
         <mkdir dir="${install.src.keys}"/>
         <mkdir dir="${install.src.conf}"/>
@@ -857,6 +860,11 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         <!-- Copy server.xml & catalina.policy -->
         <copy todir="${install.src.tomcat}/conf">
             <fileset dir="${src.root}/etc" includes="server.xml, catalina.policy"/>
+        </copy>
+
+        <!-- Copy LDAP templates -->
+        <copy todir="${install.src.ldap}">
+            <fileset dir="${src.root}/etc/ldapTemplates" includes="**/*.xml"/>
         </copy>
 
         <!-- Create CA keystore -->
