@@ -6,15 +6,16 @@
 
 package com.l7tech.server.transport.jms;
 
-import com.l7tech.objectmodel.*;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.logging.LogManager;
+import com.l7tech.objectmodel.*;
 
 import java.sql.SQLException;
-import java.util.Collection;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -97,30 +98,35 @@ public class JmsEndpointManager extends HibernateEntityManager {
         }
     }
 
-    public void update( final JmsEndpoint endpoint ) throws UpdateException {
-        _logger.info( "Saving JmsEndpoint " + endpoint );
-        try {
-            PersistenceManager.update( getContext(), endpoint );
-        } catch (SQLException e) {
-            throw new UpdateException(e.toString(), e);
-        }
-    }
+    public void update( final JmsEndpoint endpoint ) throws VersionException, UpdateException {
+        _logger.info( "Updating JmsEndpoint" + endpoint );
 
-    public void delete( final JmsEndpoint endpoint ) throws DeleteException {
-        _logger.info( "Deleting JmsEndpoint " + endpoint );
+        JmsEndpoint original = null;
+        // check for original endpoint
         try {
-            PersistenceManager.delete( getContext(), endpoint );
-        } catch ( SQLException e ) {
-            throw new DeleteException( e.toString(), e );
+            original = findByPrimaryKey(endpoint.getOid());
+        } catch (FindException e) {
+            throw new UpdateException("could not get original endpoint", e);
         }
-    }
 
-    public void delete( final long oid ) throws DeleteException {
-        _logger.info( "Deleting JmsEndpoint " + oid );
+        // check version
+        if (original.getVersion() != endpoint.getVersion()) {
+            logger.severe("db endpoint has version: " + original.getVersion() + ". requestor endpoint has version: "
+                          + endpoint.getVersion());
+            throw new VersionException("the endpoint you are trying to update is no longer valid.");
+        }
+
+        // update
+        PersistenceContext context = null;
         try {
-            PersistenceManager.delete( getContext(), JmsEndpoint.class, oid );
-        } catch ( SQLException e ) {
-            throw new DeleteException( e.toString(), e );
+            original.copyFrom(endpoint);
+
+            context = getContext();
+            PersistenceManager.update(context, original);
+            logger.info( "Updated JmsEndpoint #" + endpoint.getOid() );
+        } catch ( SQLException se ) {
+            logger.log( Level.SEVERE, se.toString(), se );
+            throw new UpdateException( se.toString(), se );
         }
     }
 
