@@ -32,7 +32,7 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
     }
 
     protected abstract String getParameterName();
-    protected abstract Object getTargetValue( PublishedService service );
+    protected abstract Object[] getTargetValues( PublishedService service );
     protected abstract Object getRequestValue( Request request ) throws ServiceResolutionException;
 
     protected Set getServiceSet( Object value ) {
@@ -52,14 +52,18 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
         Iterator i = serviceSet.iterator();
         PublishedService service;
         Set resultSet = null;
-        Object targetValue;
+        Object[] targetValues;
 
         while ( i.hasNext() ) {
             service = (PublishedService)i.next();
-            targetValue = getTargetValue(service);
-            if ( targetValue.equals(value) ) {
-                if ( resultSet == null ) resultSet = new HashSet();
-                resultSet.add(service);
+            targetValues = getTargetValues(service);
+            Object targetValue;
+            for ( int j = 0; j < targetValues.length; j++ ) {
+                targetValue = targetValues[j];
+                if ( targetValue.equals(value) ) {
+                    if ( resultSet == null ) resultSet = new HashSet();
+                    resultSet.add(service);
+                }
             }
         }
 
