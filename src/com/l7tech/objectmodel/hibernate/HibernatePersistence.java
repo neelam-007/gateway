@@ -10,8 +10,13 @@ import java.sql.SQLException;
 /**
  * @author alex
  */
-public class HibernatePersistence implements Persistence {
-    public void init() throws SQLException {
+public class HibernatePersistence extends PersistenceManager {
+    public static void initialize() throws SQLException {
+        HibernatePersistence me = new HibernatePersistence();
+        PersistenceManager.setInstance( me );
+    }
+
+    private HibernatePersistence() throws SQLException {
         Properties props = new Properties();
         // TODO: Load properties from file
 
