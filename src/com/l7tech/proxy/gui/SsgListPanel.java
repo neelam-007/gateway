@@ -2,6 +2,7 @@ package com.l7tech.proxy.gui;
 
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgManager;
+import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.gui.util.IconManager;
 import com.l7tech.proxy.ClientProxy;
 import org.apache.log4j.Category;
@@ -25,6 +26,7 @@ public class SsgListPanel extends JPanel {
     private JList ssgList;
     private Action actionNewSsg;
     private Action actionEditSsg;
+    private Action actionSetDefaultSsg;
     private Action actionDeleteSsg;
     private ClientProxy clientProxy;
 
@@ -71,6 +73,7 @@ public class SsgListPanel extends JPanel {
 
         toolBar.add(new JButton(getActionNewSsg()));
         toolBar.add(new JButton(getActionEditSsg()));
+        toolBar.add(new JButton(getActionSetDefaultSsg()));
         toolBar.add(new JButton(getActionDeleteSsg()));
     }
 
@@ -88,23 +91,41 @@ public class SsgListPanel extends JPanel {
             actionDeleteSsg = new AbstractAction("Delete", IconManager.getRemove()) {
                 public void actionPerformed(final ActionEvent e) {
                     final Ssg ssg = (Ssg)ssgList.getSelectedValue();
-                    log.info("Removing SSG " + ssg);
+                    log.info("Removing Gateway " + ssg);
                     if (ssg == null)
                         return;
 
                     Object[] options = { "Delete", "Cancel" };
                     int result = JOptionPane.showOptionDialog(null,
                                                               "Are you sure you want to remove the " +
-                                                              "registration for the SSG " + ssg + "?\n" +
+                                                              "registration for the Gateway " + ssg + "?\n" +
                                                               "This action cannot be undone.",
-                                                              "Delete SSG?",
+                                                              "Delete Gateway?",
                                                               0, JOptionPane.WARNING_MESSAGE,
                                                               null, options, options[1]);
-                    if (result == 0)
+                    if (result == 0) {
+                        if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
+                            Object[] certoptions = { "Destroy Certificate", "Cancel" };
+                            int res2 = JOptionPane.showOptionDialog(null,
+                                                                    "You have a Client Certificate assigned from this Gateway. \n" +
+                                                                    "If you delete it, you will not be able to get another one \n" +
+                                                                    "for your account until a Gateway administrator revokes your \n" +
+                                                                    "old one and changes your password.  Are you sure you want to \n" +
+                                                                    "delete your Client Certificate?\n\n" +
+                                                                    "This action cannot be undone.",
+                                                                    "Delete Client Certificate Forever?",
+                                                                    0, JOptionPane.WARNING_MESSAGE,
+                                                                    null, certoptions, certoptions[1]);
+                            if (res2 != 0)
+                                return;
+                        }
+
                         ssgListModel.removeSsg(ssg);
+                        SsgKeyStoreManager.deleteKeyStore(ssg);
+                    }
                 }
             };
-            actionDeleteSsg.putValue(Action.SHORT_DESCRIPTION, "Remove this SSG registration");
+            actionDeleteSsg.putValue(Action.SHORT_DESCRIPTION, "Remove this Gateway registration");
         }
         return actionDeleteSsg;
     }
@@ -124,7 +145,7 @@ public class SsgListPanel extends JPanel {
                     }
                 }
             };
-            actionEditSsg.putValue(Action.SHORT_DESCRIPTION, "View or change properties associated with this SSG");
+            actionEditSsg.putValue(Action.SHORT_DESCRIPTION, "View or change properties associated with this Gateway");
         }
         return actionEditSsg;
     }
@@ -141,9 +162,25 @@ public class SsgListPanel extends JPanel {
                             ssgListModel.addSsg(newSsg);
                 }
             };
-            actionNewSsg.putValue(Action.SHORT_DESCRIPTION, "Register a new SSG with this Client Proxy");
+            actionNewSsg.putValue(Action.SHORT_DESCRIPTION, "Register a new Gateway with this Agent");
         }
         return actionNewSsg;
+    }
+
+    public Action getActionSetDefaultSsg() {
+        if (actionSetDefaultSsg == null) {
+            actionSetDefaultSsg = new AbstractAction("Set Default", IconManager.getDefault()) {
+                public void actionPerformed(final ActionEvent e) {
+                    final Ssg ssg = (Ssg)ssgList.getSelectedValue();
+                    log.info("Setting default ssg to " + ssg);
+                    if (ssg != null)
+                        ssgListModel.setDefaultSsg(ssg);
+                    ssgListModel.editedSsg();
+                }
+            };
+            actionNewSsg.putValue(Action.SHORT_DESCRIPTION, "Set this Gateway as the default");
+        }
+        return actionSetDefaultSsg;
     }
 
     /**

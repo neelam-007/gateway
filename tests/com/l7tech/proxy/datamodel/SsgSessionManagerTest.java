@@ -176,6 +176,9 @@ public class SsgSessionManagerTest extends TestCase {
 
             public void notifyKeyStoreCorrupt(Ssg ssg) throws OperationCanceledException {
             }
+
+            public void notifyCertificateAlreadyIssued(Ssg ssg) {
+            }
         });
 
         Ssg ssg = new Ssg();

@@ -58,4 +58,15 @@ public class CredentialManagerImpl implements CredentialManager {
         log.error("Key store for Ssg " + ssg + " has been damaged -- aborting");
         throw new OperationCanceledException("Unable to authorize deletion of corrupt keystore");
     }
+
+    /**
+     * Notify the user that a client certificate has already been issued for his account.
+     * At this point there is nothing the user can do except try a different account, or contact
+     * his Gateway administrator and beg to have the lost certificate revoked from the database.
+     *
+     * @param ssg
+     */
+    public void notifyCertificateAlreadyIssued(Ssg ssg) {
+        log.error("Certificate has already been issued for this account on Ssg " + ssg + "; the server refuses to give us a new one until the Ssg admin revokes our old one");
+    }
 }

@@ -19,7 +19,13 @@ import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URL;
-import java.security.*;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.Security;
+import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -68,6 +74,7 @@ public class SslUtils {
         return certReq;
     }
 
+    /** Thrown when the Certificate Signer doesn't like our username or password. */
     public static class BadCredentialsException extends Exception {
         public BadCredentialsException() {
         }
@@ -81,6 +88,24 @@ public class SslUtils {
         }
 
         public BadCredentialsException(Throwable cause) {
+            super(cause);
+        }
+    }
+
+    /** Thrown when the Certificate Signer says it gave us a certificate already. */
+    public static class CertificateAlreadyIssuedException extends Exception {
+        public CertificateAlreadyIssuedException() {
+        }
+
+        public CertificateAlreadyIssuedException(String message) {
+            super(message);
+        }
+
+        public CertificateAlreadyIssuedException(String message, Throwable cause) {
+            super(message, cause);
+        }
+
+        public CertificateAlreadyIssuedException(Throwable cause) {
             super(cause);
         }
     }
@@ -108,7 +133,7 @@ public class SslUtils {
                                                           X509Certificate caCert)
             throws IOException, CertificateException, NoSuchAlgorithmException,
                    InvalidKeyException, NoSuchProviderException, SslUtils.BadCredentialsException,
-                   SignatureException
+                   SignatureException, CertificateAlreadyIssuedException
     {
         X500Principal csrName = new X500Principal(csr.getCertificationRequestInfo().getSubject().toString());
         String csrNameString = csrName.getName(X500Principal.CANONICAL);
@@ -129,6 +154,7 @@ public class SslUtils {
             int result = hc.executeMethod(post);
             log.info("Post of CSR completed with status " + result);
             if ( result == 401 ) throw new BadCredentialsException("HTTP POST to certificate signer returned status " + result );
+            if ( result == 403 ) throw new CertificateAlreadyIssuedException("HTTP POST to certificate signer returned status " + result);
             if ( result != 200 ) throw new CertificateException( "HTTP POST to certificate signer generated status " + result );
             X509Certificate cert = (X509Certificate) CertificateFactory.getInstance("X.509").generateCertificate(post.getResponseBodyAsStream());
             post.releaseConnection();

@@ -222,6 +222,7 @@ public class Gui {
 
         fileMenu.add(new JMenuItem(getSsgListPanel().getActionNewSsg()));
         fileMenu.add(new JMenuItem(getSsgListPanel().getActionEditSsg()));
+        fileMenu.add(new JMenuItem(getSsgListPanel().getActionSetDefaultSsg()));
         fileMenu.add(new JMenuItem(getSsgListPanel().getActionDeleteSsg()));
         fileMenu.add(new JSeparator());
 

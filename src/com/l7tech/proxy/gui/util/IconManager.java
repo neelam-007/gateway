@@ -19,8 +19,9 @@ public class IconManager {
     private static ImageIcon iconAdd;
     private static ImageIcon iconEdit;
     private static ImageIcon iconRemove;
-    private static Image iconAppIcon;
+    private static ImageIcon iconDefault;
     private static ImageIcon splashImage;
+    private static Image iconAppIcon;
 
     private static ImageIcon loadImageIcon(String path) {
         URL url = cl.getResource(path);
@@ -49,6 +50,13 @@ public class IconManager {
         if (iconRemove == null)
             iconRemove = loadImageIcon(Gui.RESOURCE_PATH + "/Delete16.gif");
         return iconRemove;
+    }
+
+    public static ImageIcon getDefault() {
+        if (iconDefault == null) {
+            iconDefault = loadImageIcon(Gui.RESOURCE_PATH + "/Default16.gif");
+        }
+        return iconDefault;
     }
 
     public static Image getAppImage() {

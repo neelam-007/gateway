@@ -285,6 +285,9 @@ public class ClientProxy {
                     SsgKeyStoreManager.deleteClientCert(ssg);
                 Managers.getCredentialManager().getCredentials(ssg);
                 // retry with new password
+            } catch (SslUtils.CertificateAlreadyIssuedException e) {
+                Managers.getCredentialManager().notifyCertificateAlreadyIssued(ssg);
+                throw new OperationCanceledException();
             }
         }
     }

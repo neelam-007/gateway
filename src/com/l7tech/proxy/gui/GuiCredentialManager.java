@@ -188,6 +188,43 @@ public class GuiCredentialManager implements CredentialManager {
         }
     }
 
+    /**
+     * Notify the user that a client certificate has already been issued for his account.
+     * At this point there is nothing the user can do except try a different account, or contact
+     * his Gateway administrator and beg to have the lost certificate revoked from the database.
+     *
+     * @param ssg
+     */
+    public void notifyCertificateAlreadyIssued(final Ssg ssg) {
+       // If this SSG isn't suppose to be hassling us with dialog boxes, stop now
+        if (!ssg.promptForUsernameAndPassword())
+            return;
+
+        long now = System.currentTimeMillis();
+        synchronized(this) {
+
+            // Avoid spamming the user with reports
+            if (System.currentTimeMillis() > now + 1000)
+                return;
+
+            try {
+                SwingUtilities.invokeAndWait(new Runnable() {
+                    public void run() {
+                        Gui.getInstance().errorMessage("You need a client certificate to communicate with the Gateway " + ssg + ", \n" +
+                                                       "but it has already issed a client certificate to this account and cannot issue\n" +
+                                                       "a second one.  If you have lost your client certificate, you will need to\n" +
+                                                       "contact your Gateway administrator and have them revoke your old one before\n" +
+                                                       "you can obtain a new one.");
+                    }
+                });
+            } catch (InterruptedException e) {
+                log.error(e);
+            } catch (InvocationTargetException e) {
+                log.error(e);
+            }
+        }
+    }
+
     private PleaseWaitDialog getPleaseWaitDialog() {
         if (pleaseWaitDialog == null) {
             pleaseWaitDialog = new PleaseWaitDialog();

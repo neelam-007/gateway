@@ -287,6 +287,22 @@ public class SsgKeyStoreManager {
     }
 
     /**
+     * Delete any keystore that might exist for this Ssg.
+     *
+     * @param ssg The SSG whose keystore is to be deleted.
+     */
+    public static void deleteKeyStore(Ssg ssg) {
+        synchronized (ssg) {
+            FileUtils.deleteFileSafely(ssg.getKeyStoreFile().getAbsolutePath());
+            ssg.keyStore(null);
+            ssg.privateKey(null);
+            ssg.passwordWorkedForPrivateKey(false);
+            ssg.haveClientCert(null);
+        }
+
+    }
+
+    /**
      * Set the Ssg certificate for this Ssg.
      *
      * @param ssg  the SSG whose keystore to save

@@ -58,4 +58,13 @@ public interface CredentialManager {
      * @throws OperationCanceledException if the user does not wish to delete the invalid keystore
      */
     void notifyKeyStoreCorrupt(Ssg ssg) throws OperationCanceledException;
+
+    /**
+     * Notify the user that a client certificate has already been issued for his account.
+     * At this point there is nothing the user can do except try a different account, or contact
+     * his Gateway administrator and beg to have the lost certificate revoked from the database.
+     *
+     * @param ssg
+     */
+    void notifyCertificateAlreadyIssued(Ssg ssg);
 }
