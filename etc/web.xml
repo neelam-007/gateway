@@ -21,6 +21,19 @@
     </servlet>
 
     <servlet>
+        <servlet-name>CSRServlet</servlet-name>
+        <servlet-class>com.l7tech.identity.cert.CSRHandler</servlet-class>
+        <init-param>
+            <param-name>RootKeyStore</param-name>
+            <param-value>../../kstores/ssgroot</param-value>
+        </init-param>
+        <init-param>
+            <param-name>RootKeyStorePasswd</param-name>
+            <param-value>password</param-value>
+        </init-param>
+    </servlet>
+
+    <servlet>
         <servlet-name>SoapMessageProcessingServlet</servlet-name>
         <servlet-class>com.l7tech.server.SoapMessageProcessingServlet</servlet-class>
 
@@ -84,6 +97,13 @@
         -->
         <url-pattern>/ssg/policy/disco.modulator/*</url-pattern>
     </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>CSRServlet</servlet-name>
+        <url-pattern>/csr/*</url-pattern>
+    </servlet-mapping>
+
+
 
     <servlet-mapping>
         <servlet-name>AxisServlet</servlet-name>
