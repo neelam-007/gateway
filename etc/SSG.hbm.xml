@@ -47,7 +47,8 @@
         <id name="oid" column="oid" type="long">
             <generator class="hilo.long"/>
         </id>
-        <property name="login" type="string"/>
+        <property name="name" type="string" column="login" />
+        <property name="login" type="string" column="login" />
         <property name="password" type="string"/>
         <property name="firstName" column="first_name"  type="string"/>
         <property name="lastName" column="last_name" type="string"/>
