@@ -5,7 +5,7 @@ import com.l7tech.objectmodel.PersistenceManager;
 
 /**
  * Layer 7 Technologies, inc.
- * User: flascelles
+ * User: alex, flascell
  * Date: May 14, 2003
  *
  */
