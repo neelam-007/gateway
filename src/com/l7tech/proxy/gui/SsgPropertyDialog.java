@@ -131,15 +131,16 @@ public class SsgPropertyDialog extends PropertyDialog {
             int y = 0;
             JPanel pane = new JPanel(new GridBagLayout());
             policiesPane = new JScrollPane(pane);
+            policiesPane.setBorder(BorderFactory.createEmptyBorder());
 
             pane.add(new JLabel("SSG policies being cached by this client"),
-                     new GridBagConstraints(0, y++, 1, 1, 1.0, 1.0,
+                     new GridBagConstraints(0, y++, 1, 1, 0.0, 0.0,
                                             GridBagConstraints.CENTER,
                                             GridBagConstraints.BOTH,
                                             new Insets(6, 6, 6, 6), 3, 3));
 
             pane.add(new JLabel("Attachments:"),
-                     new GridBagConstraints(0, y++, 2, 1, 1.0, 1.0,
+                     new GridBagConstraints(0, y++, 2, 1, 0.0, 0.0,
                                             GridBagConstraints.CENTER,
                                             GridBagConstraints.BOTH,
                                             new Insets(6, 6, 6, 6), 3, 3));
@@ -152,7 +153,7 @@ public class SsgPropertyDialog extends PropertyDialog {
                 }
             });
             pane.add(buttonFlushPolicies,
-                     new GridBagConstraints(1, 0, 1, 1, 1.0, 1.0,
+                     new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
                                             GridBagConstraints.EAST,
                                             GridBagConstraints.NONE,
                                             new Insets(0, 0, 0, 0), 0, 0));
@@ -164,13 +165,12 @@ public class SsgPropertyDialog extends PropertyDialog {
             policyTable.setCellSelectionEnabled(false);
             policyTable.setRowSelectionAllowed(true);
             policyTable.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-            policyTable.setPreferredScrollableViewportSize(new Dimension(300, 100));
-            policyTable.setPreferredSize(new Dimension(300, 100));
             policyTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
             policyTable.setAutoCreateColumnsFromModel(true);
             policyTable.getColumnModel().getColumn(0).setHeaderValue("Body URI");
             policyTable.getColumnModel().getColumn(1).setHeaderValue("SOAPAction");
             JScrollPane policyTableSp = new JScrollPane(policyTable);
+            policyTableSp.setPreferredSize(new Dimension(120, 120));
             pane.add(policyTableSp,
                      new GridBagConstraints(0, y++, 2, 1, 1.0, 1.0,
                                             GridBagConstraints.CENTER,
@@ -178,18 +178,18 @@ public class SsgPropertyDialog extends PropertyDialog {
                                             new Insets(6, 6, 6, 6), 3, 3));
 
             pane.add(new JLabel("Associated policy:"),
-                     new GridBagConstraints(0, y++, 2, 1, 1.0, 1.0,
+                     new GridBagConstraints(0, y++, 2, 1, 0.0, 0.0,
                                             GridBagConstraints.CENTER,
                                             GridBagConstraints.BOTH,
                                             new Insets(4, 6, 0, 6), 3, 3));
 
             policyTree = new JTree((TreeModel)null);
             policyTree.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-            policyTree.setPreferredSize(new Dimension(300, 200));
             policyTree.setCellRenderer(new EntityTreeCellRenderer());
             JScrollPane policyTreeSp = new JScrollPane(policyTree);
+            policyTreeSp.setPreferredSize(new Dimension(120, 120));
             pane.add(policyTreeSp,
-                     new GridBagConstraints(0, y++, 2, 1, 1.0, 1.0,
+                     new GridBagConstraints(0, y++, 2, 1, 100.0, 100.0,
                                             GridBagConstraints.CENTER,
                                             GridBagConstraints.BOTH,
                                             new Insets(2, 6, 6, 6), 3, 3));
@@ -348,25 +348,5 @@ public class SsgPropertyDialog extends PropertyDialog {
                 ssg.clearPolicies();
         }
         setSsg(ssg);
-    }
-
-    public static void main(String[] argv) {
-        Ssg ssg = new Ssg(1, "Test SSG", "http://blah.bloof.com");
-        log.info("SSG prompt bit: " + ssg.isPromptForUsernameAndPassword());
-        ssg.attachPolicy("http://example.com/Quoter", null, new TrueAssertion());
-        ssg.attachPolicy("http://blah", null, new AllAssertion(Arrays.asList(new Assertion[] {
-            new HttpBasic(),
-            new SpecificUser(444, "blahuser"),
-        })));
-        ssg.attachPolicy("http://example.com/Other", "http://example.com/soapaction/other",
-                         new AllAssertion(Arrays.asList(new Assertion[] {
-                             new TrueAssertion(),
-                             new OneOrMoreAssertion(Arrays.asList(new Assertion[] {
-                                 new TrueAssertion(),
-                                 new FalseAssertion()
-                             })),
-                         })));
-        SsgPropertyDialog.getPropertyDialogForObject(ssg).show();
-        System.exit(0);
     }
 }
