@@ -22,6 +22,8 @@ import java.net.UnknownHostException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 
+import sun.security.x509.X500Name;
+
 /**
  * New socket factory for SSL with the Jakarta Commons HTTP client.
  * User: mike
@@ -51,9 +53,15 @@ public class ClientProxySecureProtocolSocketFactory implements SecureProtocolSoc
                 if (!(certs[0] instanceof X509Certificate))
                     throw new RuntimeException("Server certificate was in the wrong format");
                 X509Certificate cert = (X509Certificate) certs[0];
-                String dn = cert.getSubjectX500Principal().getName(X500Principal.CANONICAL);
-                if (!dn.equals("cn=" + expectedHostname))
-                    throw new RuntimeException("Server certificate name (" + dn +
+                String cn = null;
+                try {
+                    cn = new X500Name(cert.getSubjectX500Principal().toString()).getCommonName();
+                } catch (IOException e) {
+                    log.error(e);
+                    // can't happen
+                }
+                if (!cn.equals(expectedHostname))
+                    throw new RuntimeException("Server certificate name (" + cn +
                                                ") did not match the hostname we connected to (" +
                                                expectedHostname + ")");
                 log.info("Server hostname verified successfully");
