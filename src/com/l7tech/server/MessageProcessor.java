@@ -164,9 +164,10 @@ public class MessageProcessor {
     }
 
     public static MessageProcessor getInstance() {
-        if ( _instance == null )
+        /*if ( _instance == null )
             _instance = new MessageProcessor();
-        return _instance;
+        return _instance;*/
+        return SingletonHolder.singleton;
     }
 
     public DocumentBuilder getDomParser() throws ParserConfigurationException {
@@ -239,7 +240,12 @@ public class MessageProcessor {
         return false;
     }
 
-    private static MessageProcessor _instance = null;
+
+    private static class SingletonHolder {
+        private static MessageProcessor singleton = new MessageProcessor();
+    }
+
+    //private static MessageProcessor _instance = null;
     private static ThreadLocal _currentRequest = new ThreadLocal();
     private static ThreadLocal _currentResponse = new ThreadLocal();
 
