@@ -28,6 +28,10 @@ public class TimeOfDay implements Comparable {
         _secondsSinceMidnight = ( hour * 60 * 60 ) + ( minute * 60 ) + second;
     }
 
+    public int getHour() {return _hour;}
+    public int getMinute() {return _minute;}
+    public int getSecond() {return _second;}
+
     public boolean before( TimeOfDay other ) {
         return _secondsSinceMidnight < other._secondsSinceMidnight;
     }
