@@ -7,6 +7,7 @@
 package com.l7tech.policy.assertion.credential.wss;
 
 /**
+ * @deprecated this was never supported and probably never will be
  * @author alex
  * @version $Revision$
  */

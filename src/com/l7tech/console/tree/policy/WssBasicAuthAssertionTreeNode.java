@@ -2,6 +2,11 @@ package com.l7tech.console.tree.policy;
 
 
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
+import com.l7tech.console.action.EditXmlSecurityRecipientContextAction;
+
+import javax.swing.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Class HttpBasicAuthAssertionTreeNode is a tree node that correspinds
@@ -10,7 +15,6 @@ import com.l7tech.policy.assertion.credential.wss.WssBasic;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class WssBasicAuthAssertionTreeNode extends LeafAssertionTreeNode {
-
     public WssBasicAuthAssertionTreeNode(WssBasic assertion) {
         super(assertion);
     }
@@ -19,7 +23,14 @@ public class WssBasicAuthAssertionTreeNode extends LeafAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Require WS Token Basic Authentication";
+        return "Require WS UsernameToken Basic Authentication";
+    }
+
+    public Action[] getActions() {
+        java.util.List list = new ArrayList();
+        list.add(new EditXmlSecurityRecipientContextAction(this));
+        list.addAll(Arrays.asList(super.getActions()));
+        return (Action[]) list.toArray(new Action[]{});
     }
 
     /**

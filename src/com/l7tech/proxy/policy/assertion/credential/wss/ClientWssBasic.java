@@ -8,6 +8,7 @@ package com.l7tech.proxy.policy.assertion.credential.wss;
 
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
@@ -18,6 +19,7 @@ import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.security.cert.CertificateException;
 
 /**
  * decorates a request with a header that looks like that:
@@ -56,11 +58,20 @@ public class ClientWssBasic extends ClientWssCredentialSource {
         final char[] password = context.getPassword();
 
         context.getPendingDecorations().put(this, new ClientDecorator() {
-            public AssertionStatus decorateRequest(PolicyApplicationContext context) {
-                // todo fla, look at the recipient information of the assertion before assuming it's for default
-                // recipient
-                DecorationRequirements wssReq = context.getDefaultWssRequirements();
-                wssReq.setUsernameTokenCredentials(new LoginCredentials(username, password, WssBasic.class));
+            public AssertionStatus decorateRequest(PolicyApplicationContext context)
+                                                        throws PolicyAssertionException, IOException {
+                DecorationRequirements wssReqs;
+                if (data.getRecipientContext().localRecipient()) {
+                    wssReqs = context.getDefaultWssRequirements();
+                } else {
+                    try {
+                        wssReqs = context.getAlternateWssRequirements(data.getRecipientContext());
+                    } catch (CertificateException e) {
+                        throw new PolicyAssertionException("cannot initialize recipient", e);
+                    }
+                }
+
+                wssReqs.setUsernameTokenCredentials(new LoginCredentials(username, password, WssBasic.class));
                 if (!context.getClientSidePolicy().isPlaintextAuthAllowed())
                     context.setSslRequired(true); // force SSL when using WSS basic
                 return AssertionStatus.NONE;

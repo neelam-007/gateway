@@ -27,11 +27,16 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class ServerWssBasic implements ServerAssertion {
+    private WssBasic data;
     public ServerWssBasic(WssBasic data) {
-        // nothing interesting in here
+        this.data = data;
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        if (!data.getRecipientContext().localRecipient()) {
+            logger.fine("This is intended for another recipient, nothing to validate.");
+            return AssertionStatus.NONE;
+        }
         ProcessorResult wssResults;
         try {
             if (!context.getRequest().isSoap()) {
