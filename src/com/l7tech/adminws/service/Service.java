@@ -140,7 +140,9 @@ public class Service {
 
     private void endTransaction() throws java.rmi.RemoteException {
         try {
-            PersistenceContext.getCurrent().commitTransaction();
+            PersistenceContext context = PersistenceContext.getCurrent();
+            context.commitTransaction();
+            context.close();
         } catch (java.sql.SQLException e) {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
             throw new java.rmi.RemoteException("Exception commiting", e);
