@@ -53,7 +53,9 @@ public abstract class HibernateEntityManager implements EntityManager {
         sqlBuffer.append( alias );
         sqlBuffer.append( "." );
         sqlBuffer.append( F_OID );
-        sqlBuffer.append( " = :value:" );
+        sqlBuffer.append( " = '" );
+        sqlBuffer.append( oid );
+        sqlBuffer.append( "'" );
         return sqlBuffer.toString();
     }
 
