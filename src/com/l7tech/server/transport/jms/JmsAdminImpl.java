@@ -13,16 +13,15 @@ import com.l7tech.common.transport.jms.JmsProvider;
 import com.l7tech.common.util.Locator;
 import com.l7tech.objectmodel.*;
 import com.l7tech.remote.jini.export.RemoteService;
+import com.l7tech.logging.LogManager;
 import com.sun.jini.start.LifeCycle;
 import net.jini.config.ConfigurationException;
 
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * @author alex
@@ -59,29 +58,51 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
         return (EntityHeader[])list.toArray( new EntityHeader[0] );
     }
 
-    public void saveAllMonitoredEndpoints( long[] oids ) throws RemoteException, FindException, UpdateException {
+    public void saveAllMonitoredEndpoints( long[] newSourceOids ) throws RemoteException, FindException, UpdateException {
+        _logger.info( "Saving monitored endpoint list" );
         HibernatePersistenceContext context = null;
         try {
-            JmsManager manager = getJmsManager();
+            final JmsManager manager = getJmsManager();
             context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
             context.beginTransaction();
 
-            Collection sourceEnds = manager.findMessageSourceEndpoints();
-            for ( Iterator i = sourceEnds.iterator(); i.hasNext(); ) {
-                JmsEndpoint endpoint = (JmsEndpoint) i.next();
-                boolean found = false;
-                for ( int j = 0; j < oids.length; j++ ) {
-                    long oid = oids[j];
-                    if ( oid == endpoint.getOid() ) found = true;
+            // TODO make us smart! This algorithm is slow!
+
+            // Stop all endpoints that were previously message sources that are no longer
+            Collection oldSourceEnds = manager.findMessageSourceEndpoints();
+            for ( Iterator i = oldSourceEnds.iterator(); i.hasNext(); ) {
+                final JmsEndpoint oldSourceEndpoint = (JmsEndpoint) i.next();
+                boolean wasMessageSource = false;
+                for ( int j = 0; j < newSourceOids.length; j++ ) {
+                    long oid = newSourceOids[j];
+                    if ( oid == oldSourceEndpoint.getOid() ) wasMessageSource = true;
                 }
-                if ( !found ) endpoint.setMessageSource( false );
+                if ( !wasMessageSource ) {
+                    oldSourceEndpoint.setMessageSource( false );
+                    context.registerTransactionListener( new TransactionListener() {
+                        public void postCommit() {
+                            manager.fireChanged(oldSourceEndpoint, false);
+                        }
+
+                        public void postRollback() { }
+                    });
+                }
             }
 
-            for ( int i = 0; i < oids.length; i++ ) {
-                long oid = oids[i];
-                JmsEndpoint end = manager.findEndpointByPrimaryKey( oid );
-                if ( end != null )
-                    end.setMessageSource(true);
+            // Start all endpoints that are newly message sources
+            for ( int i = 0; i < newSourceOids.length; i++ ) {
+                long oid = newSourceOids[i];
+                final JmsEndpoint oldEndpoint = manager.findEndpointByPrimaryKey( oid );
+                if ( oldEndpoint != null && !oldEndpoint.isMessageSource() ) {
+                    oldEndpoint.setMessageSource(true);
+                    context.registerTransactionListener( new TransactionListener() {
+                        public void postCommit() {
+                            manager.fireChanged(oldEndpoint, false);
+                        }
+
+                        public void postRollback() { }
+                    });
+                }
             }
 
             context.commitTransaction();
@@ -94,7 +115,8 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
         }
     }
 
-    public long saveConnection( JmsConnection connection ) throws RemoteException, UpdateException, SaveException, VersionException {
+    public long saveConnection( JmsConnection connection ) throws RemoteException, UpdateException,
+                                                                  SaveException, VersionException {
         HibernatePersistenceContext context = null;
         try {
             JmsManager manager = getJmsManager();
@@ -118,7 +140,8 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
         }
     }
 
-    public long saveEndpoint( JmsEndpoint endpoint ) throws RemoteException, UpdateException, SaveException, VersionException {
+    public long saveEndpoint( JmsEndpoint endpoint ) throws RemoteException, UpdateException,
+                                                            SaveException, VersionException {
                 HibernatePersistenceContext context = null;
         try {
             JmsManager manager = getJmsManager();
@@ -187,4 +210,6 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
     private JmsManager getJmsManager() {
         return (JmsManager)Locator.getDefault().lookup(JmsManager.class);
     }
+
+    private Logger _logger = LogManager.getInstance().getSystemLogger();
 }
