@@ -78,7 +78,8 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                     respWriter.write( protRespXml );
                 } else if ( sresp.isAuthenticationMissing() ||
                             status == AssertionStatus.AUTH_REQUIRED ||
-                            status == AssertionStatus.AUTH_FAILED ) {
+                            status == AssertionStatus.AUTH_FAILED ||
+                            status == AssertionStatus.UNAUTHORIZED ) {
                     sendChallenge( sreq, sresp, hrequest, hresponse );
                 } else {
                     sendFault( sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, status.getSoapFaultCode(), status.getMessage() );
