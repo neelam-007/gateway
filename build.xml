@@ -61,8 +61,7 @@
        * build.xml for examples)
     -->
     <property name="common.lib.jars"
-              value="saaj.jar,
-                     jaxrpc.jar"/>
+              value="saaj.jar, jaxrpc.jar"/>
 
     <!--
       ** init dev target The "dev" target depends on this target.
@@ -302,7 +301,7 @@
         <!-- the ssg war -->
         <war warfile="${build.dir}/${war}" webxml="${build.etc}/web.xml">
             <lib dir="${build.dir}/lib"
-                 excludes="${common.lib.jars}, jh.jar, kunststoff.jar">
+                 excludes="${common.lib.jars}, jh.jar, kunststoff.jar, servlet.jar">
             </lib>
             <classes dir="${build.classes}"/>
             <zipfileset dir="${src.root}/etc" includes="server-config.wsdd" prefix="WEB-INF"/>
