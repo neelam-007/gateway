@@ -29,6 +29,7 @@ KEYTOOL="$JAVA_HOME/bin/keytool"
 KEYSTORE_DIR="$TOMCAT_HOME/kstores"
 KEYSTORE_DIR_OSPATH="$TOMCAT_HOME_OSPATH/kstores"
 KEYSTORE_FILE="$KEYSTORE_DIR/ssgroot"
+WEB_XML_FILE="$TOMCAT_HOME/webapps/ROOT/WEB-INF/web.xml"
 KEYSTORE_FILE_OSPATH="$KEYSTORE_DIR_OSPATH/ssgroot"
 CERTIFICATE_FILE="$TOMCAT_HOME/kstores/ssgroot.cer"
 CERTIFICATE_FILE_OSPATH="$TOMCAT_HOME_OSPATH/kstores/ssgroot.cer"
@@ -58,7 +59,7 @@ fi
 mkdir "$KEYSTORE_DIR"
 
 # GET A KEYSTORE PASSWORD FROM CALLER
-echo "Please provide an keystore password"
+echo "Please provide a keystore password"
 read -s KEYSTORE_PASSWORD
 echo "Please repeat"
 read -s KEYSTORE_PASSWORD_REPEAT
@@ -95,4 +96,17 @@ else
         echo "ERROR: The keystore file was not generated"
         echo
         exit 255
+fi
+
+# REMEMBER THE KEYSTORE PASSWORD IN THE WEB.XML FILE
+if [ -e "$WEB_XML_FILE" ]; then
+        echo "recording the keystore password in web.xml"
+#  todo, make this substitution work
+#        perl -pi.bak -e s/'RootKeyStorePasswd\<\/param-name\>\<param-value\>.*\<\/param-value\>'/'RootKeyStorePasswd\<\/param-name\>\<param-value\>${KEYSTORE_PASSWORD}\<\/param-value\>'/ "$WEB_XML_FILE"
+
+
+else
+# INFORM THE USER OF THE FAILURE
+        echo "The root keystore password was not recorded in web.xml because the file was not found."
+        echo "This should be done manually"
 fi
