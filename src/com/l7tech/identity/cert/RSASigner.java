@@ -534,8 +534,12 @@ public class RSASigner {
         // collisions (which are seriously BAD), well anyhow sufficien for pretty large scale installations.
         // Design criteria: 1. No counter to keep track on. 2. Multiple thereads can generate numbers at once, in
         // a clustered environment etc.
+
+        // mike: "We are not concerned about the security of the random bits"??
+        // TODO: Comment out these two lines before shipping the code!
         long seed = (new Date().getTime()) + this.hashCode();
         random.setSeed(seed);
+
         /*
          *  Another possibility is to use SecureRandom's default seeding which is designed to be secure:
          *  <p>The seed is produced by counting the number of times the VM

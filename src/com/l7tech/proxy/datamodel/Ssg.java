@@ -26,6 +26,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private static final int SSG_SSL_PORT = 8443;
     private static final int SSG_PORT = 8080;
     private static final String KEY_FILE = ClientProxy.PROXY_CONFIG + File.separator + "keyStore";
+    private static final String CERT_REQUEST_FILE = "/ssg/csr";
 
     private long id = 0;
     private String name = "";
@@ -264,6 +265,22 @@ public class Ssg implements Serializable, Cloneable, Comparable {
             } catch (MalformedURLException e1) {
                 log.error("This can't have happened", e);
                 return null; // totally can't happen
+            }
+        }
+        return url;
+    }
+
+    public URL getServerCertRequestUrl() {
+        URL url = null;
+        try {
+            url = new URL("https", getSsgAddress(), getSslPort(), CERT_REQUEST_FILE);
+        } catch (MalformedURLException e) {
+            log.error(e);
+            try {
+                return new URL("");
+            } catch (MalformedURLException e1) {
+                log.error("This can't have happened", e1);
+                return null;
             }
         }
         return url;

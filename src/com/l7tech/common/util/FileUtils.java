@@ -76,6 +76,7 @@ public class FileUtils {
             // Do the actual updating the file contents.
             out = new FileOutputStream(newFile);
             saver.doSave(out);
+            out.close();
             out = null;
 
             // If interrupted here, we end up in State 4 (or State 2 if no existing file)

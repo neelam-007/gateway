@@ -392,7 +392,7 @@ public class SsgPropertyDialog extends PropertyDialog {
     protected void commitChanges() {
         synchronized (ssg) {
             ssg.setName(fieldName.getText());
-            ssg.setSsgAddress(fieldServerAddress.getText().trim());
+            ssg.setSsgAddress(fieldServerAddress.getText().trim().toLowerCase());
             ssg.setUsername(fieldUsername.getText().trim());
             ssg.setPassword(editPassword);
             ssg.setPromptForUsernameAndPassword(cbPromptForPassword.isSelected());
