@@ -477,6 +477,9 @@ public class LdapIdentityProvider implements IdentityProvider {
             } catch (CommunicationException e) {
                 logger.log(Level.INFO, "Could not establish context using LDAP URL " + ldapurl, e);
                 ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
+            } catch (RuntimeException e) {
+                logger.log(Level.INFO, "Could not establish context using LDAP URL " + ldapurl, e);
+                ldapurl = markCurrentUrlFailureAndGetFirstAvailableOne(ldapurl);
             }
         }
         throw new CommunicationException("Could not establish context on any of the ldap urls.");
