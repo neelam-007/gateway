@@ -23,11 +23,16 @@ import java.util.logging.Logger;
  */
 public class JceSignaturePlayground {
     public static void main( String[] args ) throws Exception {
-        if ( args.length < 3 ) throw new Exception("args: keystore storepass keypass [kstype]");
+        if ( args.length < 3 ) throw new Exception("args: keystore storepass keypass count threads [kstype]");
         String keystore = args[0];
         String storepass = args[1];
         String keypass = args[2];
-        String kstype = args.length >= 4 ? args[3] : "JKS";
+        String scount = args[3];
+        String sthreads = args[4];
+        String kstype = args.length >= 6 ? args[5] : "JKS";
+
+        int count = Integer.valueOf(scount).intValue();
+        int threads = Integer.valueOf(sthreads).intValue();
 
         FileInputStream fis = null;
         KeyStore ks;
@@ -109,18 +114,18 @@ public class JceSignaturePlayground {
         BenchmarkRunner runner;
 
         log.info( "\nSIGN" );
-        runner = new BenchmarkRunner(sign,500);
-        runner.setThreadCount(4);
+        runner = new BenchmarkRunner(sign,count);
+        runner.setThreadCount(threads);
         runner.run();
 
         log.info( "\nVERIFY" );
-        runner = new BenchmarkRunner(verify,500);
-        runner.setThreadCount(4);
+        runner = new BenchmarkRunner(verify,count);
+        runner.setThreadCount(threads);
         runner.run();
 
         log.info( "\nVERIFY 2" );
-        runner = new BenchmarkRunner(verify2,500);
-        runner.setThreadCount(4);
+        runner = new BenchmarkRunner(verify2,count);
+        runner.setThreadCount(threads);
         runner.run();
     }
 
