@@ -6,6 +6,8 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.security.xml.WssProcessor;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.User;
+import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.AuthenticationException;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.identity.IdentityProviderFactory;
@@ -24,6 +26,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.security.GeneralSecurityException;
@@ -98,12 +101,26 @@ public class TokenServiceServlet extends HttpServlet {
                                                         lookup(IdentityProviderConfigManager.class);
                 Collection providers = null;
                 try {
+                    // go through providers and try to authenticate the cert
                     providers = IdentityProviderFactory.findAllIdentityProviders(idpcm);
-                    // todo go through providers and try to authenticate the cert
+                    for (Iterator iterator = providers.iterator(); iterator.hasNext();) {
+                        IdentityProvider provider = (IdentityProvider) iterator.next();
+                        try {
+                            User authenticatedUser = provider.authenticate(creds);
+                            if (authenticatedUser != null) return authenticatedUser;
+                        } catch (AuthenticationException e) {
+                            logger.log(Level.INFO, "excetion trying to authenticate credentials against " +
+                                                   provider.getConfig().getName(), e);
+                        } catch (IOException e) {
+                            logger.log(Level.INFO, "excetion trying to authenticate credentials against " +
+                                                   provider.getConfig().getName(), e);
+                        }
+                    }
                 } catch (FindException e) {
-                    // todo, something
+                    logger.log(Level.WARNING, "could not get id provider from factory", e);
+                    return null;
                 }
-                // todo, go through providers, find user matching this cert
+                logger.fine("Credentials did not authenticate against any provider.");
                 return null;
             }
         };
