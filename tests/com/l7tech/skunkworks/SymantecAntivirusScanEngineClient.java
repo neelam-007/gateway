@@ -42,7 +42,7 @@ public class SymantecAntivirusScanEngineClient {
         String hdr;
         if (headers == null || headers.length < 1) {
             // we need some generic header
-            hdr = "Content-Type: text/plain\r\n\r\n";
+            hdr = DEF_HEADER;
         } else {
             String tmp = new String(headers);
             if (tmp.endsWith("\r\n\r\n")) {
