@@ -24,7 +24,10 @@ public class EntityImp implements Entity, Serializable {
         return _loadTime;
     }
 
-	protected long _oid;
+    public int getVersion() { return _version; }
+    public void setVersion(int version) { _version = version; }
 
+    protected int _version;
+	protected long _oid;
     protected transient long _loadTime;
 }
