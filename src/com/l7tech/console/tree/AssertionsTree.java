@@ -151,7 +151,7 @@ public class AssertionsTree extends JTree implements DragGestureListener {
             if (path == null) return;
             AbstractTreeNode node =
               (AbstractTreeNode)path.getLastPathComponent();
-            if (node == null) return;
+            if (node == null || !node.isLeaf()) return;
 
             Action a = node.getPreferredAction();
             if (a != null) {
