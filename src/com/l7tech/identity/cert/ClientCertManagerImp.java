@@ -134,6 +134,8 @@ public class ClientCertManagerImp implements ClientCertManager {
                 logger.log(Level.WARNING, msg, e);
                 throw new FindException(msg, e);
             }
+        } else {
+            logger.finest("no entry for " + user.getLogin() + " in provider " + user.getProviderId());
         }
         return null;
     }
