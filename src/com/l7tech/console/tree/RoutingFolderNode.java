@@ -39,7 +39,7 @@ public class RoutingFolderNode extends AbstractTreeNode {
     protected void loadChildren() {
         int index = 0;
         insert(new HttpRoutingNode(), index++);
-        insert(new SmtpRoutingNode(), index++);
+        // insert(new SmtpRoutingNode(), index++);
     }
 
     /**
