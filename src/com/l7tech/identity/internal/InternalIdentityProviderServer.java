@@ -3,6 +3,8 @@ package com.l7tech.identity.internal;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.logging.LogManager;
+import com.l7tech.credential.PrincipalCredentials;
+import com.l7tech.credential.CredentialFormat;
 
 import java.io.UnsupportedEncodingException;
 import java.util.logging.Level;
@@ -33,7 +35,10 @@ public class InternalIdentityProviderServer implements IdentityProvider {
         return groupManager;
     }
 
-    public boolean authenticate( User authUser, byte[] credentials) {
+    public boolean authenticate( PrincipalCredentials pc ) {
+        User authUser = pc.getUser();
+        byte[] credentials = pc.getCredentials();
+
         String login = authUser.getLogin();
         try {
             User dbUser = userManager.findByLogin( login );
@@ -42,11 +47,18 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                 return false;
             } else {
                 String dbPassHash = dbUser.getPassword();
-                String authPassHash = User.encodePasswd( login, new String( credentials, ENCODING ) );
+                String authPassHash;
+
+                if ( pc.getFormat() == CredentialFormat.CLEARTEXT )
+                    authPassHash = User.encodePasswd( login, new String( credentials, ENCODING ) );
+                else
+                    authPassHash = new String( credentials, ENCODING );
+
                 if ( dbPassHash.equals( authPassHash ) ) {
                     authUser.setProviderId( cfg.getOid() );
                     return true;
                 }
+
                 LogManager.getInstance().getSystemLogger().log(Level.INFO, "Incorrect password for login " + login);
                 return false;
             }
