@@ -31,7 +31,10 @@ public class IdentityPolicyView extends JDialog { /* this class classloader */ p
         initialize();
     }
 
-    /** * Return the JScrollPane property value. * @return javax.swing.JScrollPane */
+    /**
+     * Return the JScrollPane property value.
+     * @return javax.swing.JScrollPane
+     */
     private JScrollPane getScrollPane() {
         if (scrollPane != null) return scrollPane;
         scrollPane = new JScrollPane(getPolicyTree());
@@ -106,7 +109,10 @@ public class IdentityPolicyView extends JDialog { /* this class classloader */ p
     }
 
     private static class IdentityNodeFilter implements NodeFilter {
-        /** * @param node the TreeNode to examine * @return true if filter accepts the node, false otherwise */
+        /**
+         * @param node the TreeNode to examine
+         * @return true if filter accepts the node, false otherwise
+         */
         public boolean accept(TreeNode node) {
             if (node instanceof SpecificUserAssertionTreeNode || node instanceof MemberOfGroupAssertionTreeNode) return false;
             if (node instanceof CompositeAssertionTreeNode) {
