@@ -171,7 +171,7 @@ public class UserPanel extends EntityEditorPanel {
             initialize();
             setData(user);
         } catch (FindException e) {
-            ErrorManager.getDefault().notify(Level.SEVERE, e, "Error whilee editing user " + userHeader.getName());
+            ErrorManager.getDefault().notify(Level.SEVERE, e, "Error while editing user " + userHeader.getName());
         }
     }
 

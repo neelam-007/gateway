@@ -158,7 +158,7 @@ public class GroupPanel extends EntityEditorPanel {
             // Populate the form for insert/update
             setData(group);
         } catch (FindException e) {
-            ErrorManager.getDefault().notify(Level.SEVERE, e, "Error whilee editing user " + groupHeader.getName());
+            ErrorManager.getDefault().notify(Level.SEVERE, e, "Error while editing user " + groupHeader.getName());
 
         }
     }
