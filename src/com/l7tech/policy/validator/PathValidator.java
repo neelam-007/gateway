@@ -139,6 +139,10 @@ class PathValidator {
     private boolean referredIdentityExists(IdentityAssertion a) {
         long providerId = a.getIdentityProviderOid();
         IdentityAdmin idAdmin = Registry.getDefault().getIdentityAdmin();
+        if (idAdmin == null) {
+            logger.warning("cannot test this because the identity admin is not available");
+            return true;
+        }
         try {
             if (a instanceof SpecificUser) {
                 SpecificUser su = (SpecificUser)a;
