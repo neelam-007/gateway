@@ -403,10 +403,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                 }
             });
 
-            buttonSaveTemplate = new JButton(new SavePolicyTemplateAction() {
-                /**
-                 * Actually perform the action.
-                 */
+            buttonSaveTemplate = new JButton(new ExportPolicyToFileAction() {
                 public void performAction() {
                     this.node = rootAssertion;
                     super.performAction();
