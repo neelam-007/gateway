@@ -115,6 +115,7 @@ public class IdentityProviderConfig extends NamedEntityImp {
         setName(objToCopy.getName());
         type = objToCopy.type();
         props = objToCopy.props;
+        propsXml = null;
     }
 
     protected boolean getBooleanProperty(String prop, boolean dflt) {
