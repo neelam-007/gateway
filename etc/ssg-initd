@@ -1,0 +1,52 @@
+#!/bin/bash
+#
+# Startup script for the Secure Span Gateway Server
+#
+# chkconfig: - 95 05
+# description: Layer7's Secure Span Gateway Daemon \
+#	       secures and provides access for SOAP services
+# processname: tomcat
+# pidfile: /var/run/ssg.pid
+# config: /opt/jakarta/
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+ssg="/opt/jakarta-tomcat-4.1.24/bin/catalina.sh"
+ssguser="jay"
+
+# The semantics of these two functions differ from the way apachectl does
+# things -- attempting to start while running is a failure, and shutdown
+# when not running is also a failure.  So we just do it the way init scripts
+# are expected to behave here.
+start() {
+        echo -n $"Starting $prog: "
+        su - $ssguser -c "$ssg start"
+        RETVAL=$?
+        echo
+        [ $RETVAL = 0 ] && touch /var/lock/subsys/ssg
+        return $RETVAL
+}
+stop() {
+	echo -n $"Stopping $prog: "
+	su - $ssguser -c "$ssg stop "
+	RETVAL=$?
+	echo
+	[ $RETVAL = 0 ] && rm -f /var/lock/subsys/ssg /var/run/ssg.pid
+}
+
+# See how we were called.
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  restart)
+	stop
+	start
+	;;
+esac
+
+exit $RETVAL
