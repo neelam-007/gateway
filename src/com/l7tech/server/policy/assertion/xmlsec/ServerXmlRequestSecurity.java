@@ -161,7 +161,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
                 // but user has not yet been authenticated
 
                 X509Certificate rootCert = getRootCertificate();
-                CertUtils.verifyCertificateChain( xmlCertChain, rootCert );
+                CertUtils.verifyCertificateChain( xmlCertChain, rootCert, 1 );
             }
         } catch (SecurityProcessorException e) {
             // bad signature !

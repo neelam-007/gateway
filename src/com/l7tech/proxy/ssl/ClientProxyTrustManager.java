@@ -89,7 +89,7 @@ public class ClientProxyTrustManager implements X509TrustManager {
             throw new ServerCertificateUntrustedException("We have not yet discovered this Gateway's server certificate");
 
         try {
-            CertUtils.verifyCertificateChain( x509Certificates, trustedCert );
+            CertUtils.verifyCertificateChain( x509Certificates, trustedCert, 1 );
             log.info("Peer certificate was signed by a trusted Gateway.");
         } catch (CertUtils.CertificateUntrustedException e) {
             log.warn(e.getMessage());

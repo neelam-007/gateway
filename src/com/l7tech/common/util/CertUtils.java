@@ -142,9 +142,11 @@ public class CertUtils {
     /**
      * Verifies that each cert in the specified certificate chain is signed by the next certificate
      * in the chain, and that at least one is <em>signed by or identical to</em> trustedCert.
-     * 
+     *
      * @param chain An array of one or more {@link X509Certificate}s to check
      * @param trustedCert A trusted {@link X509Certificate} to check the chain against
+     * @param maxDepth How many levels deep to search for trust.  A recommended value for this is 1, otherwise
+     *                 certain attacks may become possible.
      * @throws CertUtils.CertificateUntrustedException if the chain could not be validated with the specified
      *                                                       trusted certificate, but the chain otherwise appears to
      *                                                       be internally consistent and might validate later if a
@@ -153,13 +155,14 @@ public class CertUtils {
      * @throws CertificateException if the chain is seriously invalid and cannot be trusted
      */
     public static void verifyCertificateChain( X509Certificate[] chain,
-                                               X509Certificate trustedCert )
+                                               X509Certificate trustedCert,
+                                               int maxDepth )
             throws CertificateException, CertificateExpiredException, CertificateUntrustedException
     {
 
         Principal trustedDN = trustedCert.getSubjectDN();
 
-        for (int i = 0; i < chain.length; i++) {
+        for (int i = 0; i < maxDepth; i++) {
             X509Certificate cert = chain[i];
             cert.checkValidity(); // will abort if this throws
             if (i + 1 < chain.length) {
