@@ -291,6 +291,7 @@
             <test name="com.l7tech.common.io.failover.FailoverStrategyTest" haltonfailure="no"/>
             <test name="com.l7tech.service.WsdlTest" haltonfailure="no"/>
             <test name="com.l7tech.common.xml.tarari.util.TarariXpathConverterTest" haltonfailure="no"/>
+            <test name="com.l7tech.policy.assertion.EchoAssertionTest" haltonfailure="no" fork="yes"/>
 
             <!--
               ** add possibly-slow intensive nightly tests here **

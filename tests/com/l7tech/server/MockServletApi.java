@@ -13,11 +13,8 @@ import org.springframework.web.context.support.WebApplicationContextUtils;
 
 import javax.xml.soap.SOAPException;
 import javax.xml.soap.SOAPMessage;
-import javax.servlet.ServletContext;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.Enumeration;
-import java.util.Collections;
 
 /**
  * Class <code>MockServletApi</code> creates the mock servlet API
@@ -44,7 +41,7 @@ public class MockServletApi {
     }
 
     public void reset() {
-        servletRequestMock = new MockHttpServletRequest24(servletContextMock);
+        servletRequestMock = new MockHttpServletRequest(servletContextMock);
         servletResponseMock = new MockHttpServletResponse();
         servletRequestMock.addHeader("Authorization", new String[] {});
         servletRequestMock.addHeader(SecureSpanConstants.HttpHeaders.ORIGINAL_URL, new String[] {});
@@ -90,7 +87,7 @@ public class MockServletApi {
         soapMessage.writeTo(bo);
         servletRequestMock.setContent(bo.toByteArray());
         servletRequestMock.addHeader(SecureSpanConstants.HttpHeaders.ORIGINAL_URL, "http://localhost/whatever");
-        servletRequestMock.addHeader(SoapUtil.SOAPACTION, "urn:soapaction.com:whoopee");
+        servletRequestMock.addHeader(SoapUtil.SOAPACTION, soapAction);
     }
 
     /**
@@ -127,36 +124,5 @@ public class MockServletApi {
      */
     public MockServletConfig getServletConfig() {
         return servletConfigMock;
-    }
-
-    public static class MockHttpServletRequest24 extends MockHttpServletRequest {
-        
-        public MockHttpServletRequest24(ServletContext servletContext) {
-            super(servletContext);
-        }
-
-        public Enumeration getHeaders(String string) {
-            try {
-                return super.getHeaders(string);
-            } catch (NullPointerException e) { // bug workaround
-                return Collections.enumeration(Collections.EMPTY_LIST);
-            }
-        }
-
-        public String getLocalAddr() {
-            return DEFAULT_REMOTE_ADDR;
-        }
-
-        public String getLocalName() {
-            return DEFAULT_SERVER_NAME;
-        }
-
-        public int getLocalPort() {
-            return DEFAULT_SERVER_PORT;
-        }
-
-        public int getRemotePort() {
-            return 1212;
-        }
     }
 }

@@ -26,5 +26,6 @@ public class RegexAssertionTest extends TestCase {
         junit.textui.TestRunner.run(suite());
     }
 
-    
+    public void testBackReference() throws Exception {
+    }
 }
