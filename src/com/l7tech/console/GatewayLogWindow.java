@@ -232,4 +232,9 @@ public class GatewayLogWindow extends JFrame implements ConnectionListener {
         getLogPane().onDisconnect();
     }
 
+    public void dispose() {
+        getLogPane().getLogsRefreshTimer().stop();
+        super.dispose();
+    }
+
 }
