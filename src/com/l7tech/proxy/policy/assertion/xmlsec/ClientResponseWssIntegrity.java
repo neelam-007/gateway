@@ -2,6 +2,7 @@ package com.l7tech.proxy.policy.assertion.xmlsec;
 
 import com.l7tech.common.security.xml.WssProcessor;
 import com.l7tech.common.xml.XpathEvaluator;
+import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 import com.l7tech.proxy.datamodel.PendingRequest;
@@ -33,7 +34,7 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
     private static final Logger log = Logger.getLogger(ClientHttpClientCert.class.getName());
 
     public ClientResponseWssIntegrity(ResponseWssIntegrity data) {
-        xmlResponseSecurity = data;
+        responseWssIntegrity = data;
         if (data == null) {
             throw new IllegalArgumentException("security elements is null");
         }
@@ -69,10 +70,10 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
             throw new IOException("This response was not processed for WSS level security.");
         }
 
-        XpathEvaluator evaluator = XpathEvaluator.newEvaluator(soapmsg, xmlResponseSecurity.getXpathExpression().getNamespaces());
+        XpathEvaluator evaluator = XpathEvaluator.newEvaluator(soapmsg, responseWssIntegrity.getXpathExpression().getNamespaces());
         List selectedNodes = null;
         try {
-            selectedNodes = evaluator.select(xmlResponseSecurity.getXpathExpression().getExpression());
+            selectedNodes = evaluator.select(responseWssIntegrity.getXpathExpression().getExpression());
         } catch (JaxenException e) {
             // this is thrown when there is an error in the expression
             // this is therefore a bad policy
@@ -81,7 +82,7 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
 
         // the element is not there so there is nothing to check
         if (selectedNodes.isEmpty()) {
-            log.info("The element " + xmlResponseSecurity.getXpathExpression().getExpression() + " is not present in this response. " +
+            log.info("The element " + responseWssIntegrity.getXpathExpression().getExpression() + " is not present in this response. " +
                      "the assertion therefore succeeds.");
             return AssertionStatus.NONE;
         }
@@ -94,7 +95,7 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
             for (int j = 0; j < toto.length; j++) {
                 if (toto[j].asElement() == node) {
                     // we got the bugger!
-                    log.info("The element " + xmlResponseSecurity.getXpathExpression().getExpression() + " was found in this " +
+                    log.info("The element " + responseWssIntegrity.getXpathExpression().getExpression() + " was found in this " +
                             "response. and is part of the elements that were signed as per the wss processor.");
                     return AssertionStatus.NONE;
                 }
@@ -105,7 +106,11 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
     }
 
     public String getName() {
-        return "XML Response Security - sign";
+        String str = "";
+        XpathExpression xpe = responseWssIntegrity.getXpathExpression();
+        if (xpe != null)
+            str = " matching xpath \"" + xpe.getExpression() + "\"";
+        return "Response WS-Security: sign elements" + str;
     }
 
     public String iconResource(boolean open) {
@@ -113,5 +118,5 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
     }
 
 
-    private ResponseWssIntegrity xmlResponseSecurity;
+    private ResponseWssIntegrity responseWssIntegrity;
 }

@@ -2,6 +2,7 @@ package com.l7tech.proxy.policy.assertion.xmlsec;
 
 import com.l7tech.common.security.xml.WssProcessor;
 import com.l7tech.common.xml.XpathEvaluator;
+import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
 import com.l7tech.proxy.datamodel.PendingRequest;
@@ -71,7 +72,7 @@ public class ClientResponseWssConfidentiality extends ClientAssertion {
 
         // the element is not there so there is nothing to check
         if (selectedNodes.isEmpty()) {
-            log.info("The element " + responseWssConfidentiality.getXpathExpression().getExpression() + " is not present in this response. " +
+            log.fine("The element " + responseWssConfidentiality.getXpathExpression().getExpression() + " is not present in this response. " +
                         "the assertion therefore succeeds.");
             return AssertionStatus.NONE;
         }
@@ -84,7 +85,7 @@ public class ClientResponseWssConfidentiality extends ClientAssertion {
             for (int j = 0; j < toto.length; j++) {
                 if (toto[j] == node) {
                     // we got the bugger!
-                    log.info("The element " + responseWssConfidentiality.getXpathExpression().getExpression() + " was found in this " +
+                    log.fine("The element " + responseWssConfidentiality.getXpathExpression().getExpression() + " was found in this " +
                             "response. and is part of the elements that were encrypted as per the wss processor.");
                     return AssertionStatus.NONE;
                 }
@@ -95,7 +96,11 @@ public class ClientResponseWssConfidentiality extends ClientAssertion {
     }
 
     public String getName() {
-        return "XML Response Security - encrypt";
+        String str = "";
+        XpathExpression xpe = responseWssConfidentiality.getXpathExpression();
+        if (xpe != null)
+            str = " matching xpath \"" + xpe.getExpression() + "\"";
+        return "Response WS-Security: encrypt elements" + str;
     }
 
     public String iconResource(boolean open) {
