@@ -114,17 +114,17 @@ public class JceSignaturePlayground {
         BenchmarkRunner runner;
 
         log.info( "\nSIGN" );
-        runner = new BenchmarkRunner(sign,count, "sign");
+        runner = new BenchmarkRunner(sign,count, "sign("+ threads+")");
         runner.setThreadCount(threads);
         runner.run();
 
         log.info( "\nVERIFY" );
-        runner = new BenchmarkRunner(verify,count, "verify 1");
+        runner = new BenchmarkRunner(verify,count, "verify 1("+threads+")");
         runner.setThreadCount(threads);
         runner.run();
 
         log.info( "\nVERIFY 2" );
-        runner = new BenchmarkRunner(verify2,count, "verify 2");
+        runner = new BenchmarkRunner(verify2,count, "verify 2("+threads+")");
         runner.setThreadCount(threads);
         runner.run();
     }
