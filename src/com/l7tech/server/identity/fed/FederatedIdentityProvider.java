@@ -18,6 +18,7 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 
 import java.security.cert.X509Certificate;
 import java.util.Collection;
+import java.util.Collections;
 
 /**
  * @author alex
@@ -62,7 +63,8 @@ public class FederatedIdentityProvider implements IdentityProvider {
     }
 
     public Collection search( EntityType[] types, String searchString ) throws FindException {
-        return null;
+        // TODO
+        return Collections.EMPTY_LIST;
     }
 
     /**
@@ -73,6 +75,7 @@ public class FederatedIdentityProvider implements IdentityProvider {
     }
 
     public void test() {
+        // TODO
     }
 
     private final FederatedIdentityProviderConfig config;
