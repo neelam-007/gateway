@@ -341,6 +341,11 @@ public class IdentityAdminImpl implements IdentityAdmin {
         if (cert == null) return null;
         sun.misc.BASE64Encoder encoder = new sun.misc.BASE64Encoder();
         String encodedcert = encoder.encode(cert.getEncoded());
+        try {
+            PersistenceContext.getCurrent().close();
+        } catch (SQLException e) {
+            logger.log(Level.WARNING, "exception flushing context", e);
+        }
         return encodedcert;
     }
 
