@@ -233,7 +233,7 @@ public class MessageProcessor {
 
             SsgResponse response = new SsgResponse(postMethod.getResponseBodyAsString());
             log.info("Got response from SSG: " + response);
-            if (status == 401 || status == 500) {
+            if (status == 401) {
                 req.setLastErrorResponse(response);
                 Managers.getCredentialManager().notifyInvalidCredentials(ssg);
                 if (!Managers.getCredentialManager().getCredentials(req.getSsg()))
