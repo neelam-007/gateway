@@ -9,9 +9,7 @@ package com.l7tech.proxy.policy.assertion.credential.wss;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.PendingRequest;
-import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import org.w3c.dom.Document;
@@ -22,8 +20,8 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.StringReader;
 import java.io.IOException;
+import java.io.StringReader;
 
 /**
  * decorates a request with a header that looks like that:
@@ -54,11 +52,8 @@ public class ClientWssBasic extends ClientWssCredentialSource {
         Element headerel = SoapUtil.getOrMakeHeader(soapmsg);
 
         // get the username and passwords
-        Ssg ssg = request.getSsg();
-        if (!ssg.isCredentialsConfigured())
-            Managers.getCredentialManager().getCredentials(ssg);
-        String username = ssg.getUsername();
-        char[] password = ssg.password();
+        String username = request.getUsername();
+        char[] password = request.getPassword();
 
         Element secElement = null;
         // todo, handle case where the security element is already present in the header

@@ -9,10 +9,12 @@ package com.l7tech.proxy.gui;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.proxy.datamodel.CredentialManager;
 import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.PasswordAuthentication;
 
@@ -23,19 +25,17 @@ import java.net.PasswordAuthentication;
  * Date: Jun 27, 2003
  * Time: 10:36:01 AM
  */
-public class GuiCredentialManager implements CredentialManager {
+public class GuiCredentialManager extends CredentialManager {
     private static final Category log = Category.getInstance(GuiCredentialManager.class);
-    private static GuiCredentialManager INSTANCE = new GuiCredentialManager();
     private PleaseWaitDialog pleaseWaitDialog;
+    private SsgManager ssgManager;
 
-    private GuiCredentialManager() {}
-
-    public static GuiCredentialManager getInstance() {
-        return INSTANCE;
+    private GuiCredentialManager(SsgManager ssgManager) {
+        this.ssgManager = ssgManager;
     }
 
-    private static class PromptState {
-        public boolean credentialsObtained = false;
+    public static GuiCredentialManager createGuiCredentialManager(SsgManager ssgManager) {
+        return new GuiCredentialManager(ssgManager);
     }
 
     /**
@@ -58,13 +58,25 @@ public class GuiCredentialManager implements CredentialManager {
         }
     }
 
-    /**
-     * Load credentials for this SSG.  If the SSG already contains credentials they will be
-     * overwritten with new ones.  For the GUI, we'll pop up a login window on the main Swing thread
-     * and hold here until it finishes.
-     * @param ssg
-     */
-    public void getCredentials(final Ssg ssg) throws OperationCanceledException {
+    private static class CredHolder {
+        private PasswordAuthentication pw = null;
+    }
+
+    public PasswordAuthentication getCredentials(final Ssg ssg) throws OperationCanceledException {
+        return getCredentials(ssg, false);
+    }
+
+    public PasswordAuthentication getNewCredentials(final Ssg ssg) throws OperationCanceledException {
+        return getCredentials(ssg, true);
+    }
+
+    private PasswordAuthentication getCredentials(final Ssg ssg, final boolean oldOnesWereBad)
+            throws OperationCanceledException
+    {
+        PasswordAuthentication pw = ssg.getCredentials();
+        if (!oldOnesWereBad && pw != null)
+            return pw;
+
         // If this SSG isn't supposed to be hassling us with dialog boxes, stop now
         if (!ssg.promptForUsernameAndPassword()) {
             log.info("Logon prompts disabled for SSG " + ssg);
@@ -74,16 +86,18 @@ public class GuiCredentialManager implements CredentialManager {
         long now = System.currentTimeMillis();
         synchronized(this) {
             // If another instance already updated the credentials while we were waiting, we've done our job
-            if (ssg.credentialsUpdatedTime() > now)
-                return;
+            synchronized (ssg) {
+                pw = ssg.getCredentials();
+                if (ssg.credentialsUpdatedTime() > now && pw != null)
+                    return pw;
+            }
 
-            final PromptState promptState = new PromptState();
+            final CredHolder holder = new CredHolder();
             log.info("Displaying logon prompt for SSG " + ssg);
             invokeDialog(new Runnable() {
                 public void run() {
-                    PasswordAuthentication pw = LogonDialog.logon(Gui.getInstance().getFrame(), ssg.toString(), ssg.getUsername());
+                    PasswordAuthentication pw = LogonDialog.logon(Gui.getInstance().getFrame(), ssg.toString(), ssg.getUsername(), oldOnesWereBad);
                     if (pw == null) {
-                        promptState.credentialsObtained = false;
                         if (ssg.incrementNumTimesLogonDialogCanceled() > 2) {
                             // This is the second time we've popped up a logon dialog and the user has impatiently
                             // canceled it.  We can take a hint -- we'll turn off logon prompts until the proxy is
@@ -93,50 +107,29 @@ public class GuiCredentialManager implements CredentialManager {
                         }
                     }
                     ssg.setUsername(pw.getUserName());
-                    ssg.password(pw.getPassword()); // TODO: encoding?
+                    ssg.cmPassword(pw.getPassword()); // TODO: encoding?
                     ssg.onCredentialsUpdated();
                     ssg.promptForUsernameAndPassword(true);
-                    promptState.credentialsObtained = true;
+                    holder.pw = pw;
+
+                    try {
+                        ssgManager.save();
+                    } catch (IOException e) {
+                        log.error("Unable to save Gateway configuration: ", e);
+                        Gui.errorMessage("Unable to save Gateway configuration",
+                                         "An error was encountered while writing your Gateway configuration to disk.",
+                                         e);
+                    }
                 }
             });
 
-            if (promptState.credentialsObtained)
-                log.info("New credentials noted for SSG " + ssg);
-            else{
+            if (holder.pw == null) {
                 log.info("User canceled logon dialog for SSG " + ssg);
                 throw new OperationCanceledException("User canceled logon dialog");
             }
-        }
-    }
 
-    /**
-     * Notify that the credentials for this SSG have been tried and found to be no good.
-     * In the GUI, for now we'll just pop up an error dialog (yuck).
-     */
-    public void notifyInvalidCredentials(final Ssg ssg) {
-        // If this SSG isn't suppose to be hassling us with dialog boxes, stop now
-        if (!ssg.promptForUsernameAndPassword())
-            return;
-
-        // Don't hassle if the username is unset or empty, or if the password is unset.
-        // (Configuring an empty password when the service requires a different one should cause notification)
-        if (ssg.getUsername() == null || ssg.getUsername().length() < 1)
-            return;
-        if (ssg.password() == null)
-            return;
-
-        long now = System.currentTimeMillis();
-        synchronized(this) {
-
-            // Avoid spamming the user with reports
-            if (System.currentTimeMillis() > now + 1000)
-                return;
-
-            invokeDialog(new Runnable() {
-                public void run() {
-                    Gui.errorMessage("Invalid username or password for SSG " + ssg);
-                }
-            });
+            log.info("New credentials noted for SSG " + ssg);
+            return holder.pw;
         }
     }
 

@@ -180,7 +180,7 @@ public class FunctionalTest extends TestCase {
         ssgFake.setSsgPort(url.getPort());
         ssgFake.setSsgFile("/soap/ssg/basicauth");
         ssgFake.setUsername("testuser");
-        ssgFake.password("testpassword".toCharArray());
+        ssgFake.cmPassword("testpassword".toCharArray());
 
         Call call = new Call(proxyUrl + ssg0ProxyEndpoint);
         SOAPEnvelope responseEnvelope = call.invoke(reqEnvelope);

@@ -37,7 +37,7 @@ public class LogonDialogTest {
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.pack();
             frame.setVisible(true);
-            PasswordAuthentication pw = LogonDialog.logon(Gui.getInstance().getFrame(), "Testing123Ssg", "Testuser");
+            PasswordAuthentication pw = LogonDialog.logon(Gui.getInstance().getFrame(), "Testing123Ssg", "Testuser", true);
             if (pw != null) {
                 log.info("Got username=" + pw.getUserName());
                 log.info("Got password=" + new String(pw.getPassword()));

@@ -6,13 +6,15 @@
 
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.common.security.xml.Session;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.NullRequestInterceptor;
 import com.l7tech.proxy.RequestInterceptor;
-import com.l7tech.common.security.xml.Session;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import org.w3c.dom.Document;
 
 import java.net.URL;
+import java.net.PasswordAuthentication;
 import java.security.SecureRandom;
 
 /**
@@ -23,6 +25,7 @@ import java.security.SecureRandom;
  */
 public class PendingRequest {
     private ClientProxy clientProxy;
+    private CredentialManager credentialManager = Managers.getCredentialManager();
     private Document soapEnvelope;
     private Document initialEnvelope;
     private Ssg ssg;
@@ -34,6 +37,7 @@ public class PendingRequest {
     private URL originalUrl = null;
     private Long nonce = null; // nonce.  set on-demand, and only set once
     private HttpHeaders headers = null;
+    private PasswordAuthentication pw = null;
 
     // Policy settings, filled in by traversing policy tree
     private static class PolicySettings {
@@ -68,6 +72,42 @@ public class PendingRequest {
         policySettings = new PolicySettings();
         soapEnvelope = initialEnvelope;
     }
+
+    /**
+     * Assert that credentials must be available to continue processing this request,
+     * but that the existing ones were found to be no good.  Other than first throwing out
+     * any existing configured credentials and displaying an error message,
+     * this behaves like gatherCredentials().
+     */
+    public PasswordAuthentication getNewCredentials() throws OperationCanceledException {
+        return this.pw = credentialManager.getNewCredentials(ssg);
+    }
+
+    /**
+     * Assert that credentials must be available to continue processing this request.
+     * The password will be loaded from the keystore if necessary.
+     * The user will be prompted for credentials if necessary.
+     * If this method returns, getUsername() and getPassword() are guaranteed to return non-null
+     * values for the rest of the lifetime of this request.
+     *
+     * @throws OperationCanceledException if credentials are not available, and the CredentialManager
+     *                                    was unable to get some, possibly because the user canceled
+     *                                    the logon dialog.
+     */
+    public PasswordAuthentication getCredentials() throws OperationCanceledException {
+        if (pw == null || pw.getUserName() == null || pw.getUserName().length() < 1 || pw.getPassword() == null)
+            pw = credentialManager.getCredentials(ssg);
+        return pw;
+    }
+
+    public String getUsername() throws OperationCanceledException {
+        return getCredentials().getUserName();
+    }
+
+    public char[] getPassword() throws OperationCanceledException {
+        return getCredentials().getPassword();
+    }
+
 
     public long getNonce() {
         if (nonce == null)

@@ -72,7 +72,7 @@ public class ClientPolicyTest extends TestCase {
         AssertionStatus result;
 
         ssg.setUsername(null);
-        ssg.password("".toCharArray());
+        ssg.cmPassword("".toCharArray());
         try {
             result = policy.decorateRequest(req = new PendingRequest(null, env, ssg, NullRequestInterceptor.INSTANCE));
             fail("HttpBasic was provided null username, and didn't throw");
@@ -95,7 +95,7 @@ public class ClientPolicyTest extends TestCase {
         assertTrue(req.isBasicAuthRequired());
 
         final String PASS = "s3cr3t";
-        ssg.password(PASS.toCharArray());
+        ssg.cmPassword(PASS.toCharArray());
         result = policy.decorateRequest(req = new PendingRequest(null, env, ssg, NullRequestInterceptor.INSTANCE));
         assertTrue(AssertionStatus.NONE.equals(result));
         assertTrue(req.isBasicAuthRequired());
@@ -134,7 +134,7 @@ public class ClientPolicyTest extends TestCase {
             ClientAssertion clientPolicy = ClientPolicyFactory.getInstance().makeClientPolicy( policy );
 
             ssg.setUsername("");
-            ssg.password("".toCharArray());
+            ssg.cmPassword("".toCharArray());
             try {
                 result = clientPolicy.decorateRequest(req = new PendingRequest(null, env, ssg, NullRequestInterceptor.INSTANCE));
                 fail("Policy was given empty username, but failed to throw");
@@ -145,7 +145,7 @@ public class ClientPolicyTest extends TestCase {
             final String USER = "fbunky";
             final String PASS = "asdfjkal";
             ssg.setUsername(USER);
-            ssg.password(PASS.toCharArray());
+            ssg.cmPassword(PASS.toCharArray());
             result = clientPolicy.decorateRequest(req = new PendingRequest(null, env, ssg, NullRequestInterceptor.INSTANCE));
             assertTrue(AssertionStatus.NONE.equals(result));
             assertTrue(req.isSslRequired());
@@ -166,7 +166,7 @@ public class ClientPolicyTest extends TestCase {
             ClientAssertion clientPolicy = ClientPolicyFactory.getInstance().makeClientPolicy( policy );
 
             ssg.setUsername("");
-            ssg.password("".toCharArray());
+            ssg.cmPassword("".toCharArray());
             try {
                 result = clientPolicy.decorateRequest(req = new PendingRequest(null, env, ssg, NullRequestInterceptor.INSTANCE));
                 fail("Policy was given empty username, and failed to throw");
@@ -177,7 +177,7 @@ public class ClientPolicyTest extends TestCase {
             final String USER = "fbunky";
             final String PASS = "asdfjkal";
             ssg.setUsername(USER);
-            ssg.password(PASS.toCharArray());
+            ssg.cmPassword(PASS.toCharArray());
             result = clientPolicy.decorateRequest(req = new PendingRequest(null, env, ssg, NullRequestInterceptor.INSTANCE));
             assertTrue(AssertionStatus.NONE.equals(result));
             assertFalse(req.isSslRequired());

@@ -1,24 +1,28 @@
 package com.l7tech.proxy.datamodel;
 
-import com.l7tech.proxy.ClientProxy;
-import com.l7tech.common.security.xml.Session;
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.security.xml.Session;
+import com.l7tech.proxy.ClientProxy;
 import org.apache.log4j.Category;
+import sun.misc.BASE64Decoder;
+import sun.misc.BASE64Encoder;
 
 import javax.swing.*;
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
+import java.lang.ref.WeakReference;
 import java.net.MalformedURLException;
+import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.security.KeyStore;
 import java.security.PrivateKey;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.lang.ref.WeakReference;
 
 /**
  * In-core representation of an SSG.
@@ -41,6 +45,8 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private int sslPort = SSG_SSL_PORT;
     private String username = null;
     private boolean defaultSsg = false;
+    private boolean savePasswordToDisk = false;
+    private byte[] persistPassword = null;
 
     // These fields are transient.  To prevent the bean serializer from saving them anyway,
     // they do not use the getFoo() / setFoo() naming convention in their accessors and mutators.
@@ -345,9 +351,9 @@ public class Ssg implements Serializable, Cloneable, Comparable {
      * Check if a non-null and non-empty username, and a non-null password, are configured for this SSG.
      * @return
      */
-    public boolean isCredentialsConfigured() {
+    /*public boolean isCredentialsConfigured() {
         return getUsername() != null && password() != null && getUsername().length() > 0;
-    }
+    }*/
 
     public String getSsgFile() {
         return ssgFile;
@@ -373,16 +379,67 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         this.username = username;
     }
 
-    public char[] password() {
+    /** Obfuscate the password for storage to disk in plaintext. */
+    private byte[] obfuscatePassword(char[] password) {
+        if (password == null)
+            return null;
+        BASE64Encoder be = new BASE64Encoder();
+        String obfuscated = be.encode(new String(password).getBytes());
+        return obfuscated.getBytes();
+    }
+
+    /** De-obfuscate a password that was stored to disk in plaintext. */
+    private char[] deobfuscatePassword(byte[] persistPassword) {
+        if (persistPassword == null)
+            return null;
+        BASE64Decoder bd = new BASE64Decoder();
+        try {
+            return new String(bd.decodeBuffer(new String(persistPassword))).toCharArray();
+        } catch (IOException e) {
+            log.error("Unable to recover persisted password", e);
+            return null;
+        }
+    }
+
+    /**
+     * Read the in-memory cached password for this SSG. Should be used only by a CredentialManager
+     * or the SsgPropertiesDialog.
+     * Others should use the CredentialManager's getCredentials() method instead.
+     *
+     * @return the password, or null if we don't have one in memory for this SSG
+     */
+    public char[] cmPassword() {
+        if (password == null)
+            password = deobfuscatePassword(getPersistPassword());
         return password;
     }
 
-    public void password(final char[] password) {
+    /**
+     * Set the in-memory cached password for this SSG.  Should be used only by a CredentialManager
+     * or the SsgPropertyDialog.
+     * Others should use the CredentialManager's getNewCredentials() method instead.
+     *
+     * @param password
+     */
+    public void cmPassword(final char[] password) {
         if (this.password != password) {
             this.passwordWorkedForPrivateKey = false;
             this.passwordWorkedWithSsg = false;
         }
         this.password = password;
+        if (isSavePasswordToDisk())
+            setPersistPassword(obfuscatePassword(password));
+        else
+            setPersistPassword(null);
+    }
+
+    public boolean isSavePasswordToDisk() {
+        return savePasswordToDisk;
+    }
+
+    public void setSavePasswordToDisk(boolean savePasswordToDisk) {
+        this.savePasswordToDisk = savePasswordToDisk;
+        cmPassword(cmPassword());
     }
 
     /** Check if the currently-configured password is known to have worked with the SSG. */
@@ -494,5 +551,25 @@ public class Ssg implements Serializable, Cloneable, Comparable {
 
     public long credentialsUpdatedTime() {
         return credentialsUpdatedTimeMillis;
+    }
+
+    public byte[] getPersistPassword() {
+        return persistPassword;
+    }
+
+    public void setPersistPassword(byte[] persistPassword) {
+        this.persistPassword = persistPassword;
+    }
+
+    /**
+     * Get the configured credentials for this Ssg, if any.
+     * @return The configuration credentials, or null if there aren't any yet.
+     */
+    public PasswordAuthentication getCredentials() {
+        String username = getUsername();
+        char[] password = cmPassword();
+        if (username != null && username.length() > 0 && password != null)
+            return new PasswordAuthentication(username, password);
+        return null;
     }
 }

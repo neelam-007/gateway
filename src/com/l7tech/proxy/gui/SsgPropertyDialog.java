@@ -1,30 +1,29 @@
 package com.l7tech.proxy.gui;
 
+import com.l7tech.common.gui.IntegerField;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.CertificatePanel;
 import com.l7tech.common.gui.widgets.WrappingLabel;
-import com.l7tech.common.gui.IntegerField;
-import com.l7tech.common.gui.ExceptionDialog;
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.tree.EntityTreeCellRenderer;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.proxy.ClientProxy;
-import com.l7tech.proxy.gui.util.IconManager;
 import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgEvent;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.SsgListener;
+import com.l7tech.proxy.gui.util.IconManager;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
 import javax.swing.border.BevelBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.event.DocumentListener;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.ChangeListener;
-import javax.swing.event.ChangeEvent;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.tree.TreeModel;
 import java.awt.*;
@@ -34,7 +33,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.logging.Level;
 
 /**
  * Panel for editing properties of an SSG object.
@@ -63,6 +61,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     private JPasswordField fieldPassword;
     private JButton clientCertButton;
     private JButton serverCertButton;
+    private JCheckBox cbSavePassword;
 
     //   View for Network pane
     private JComponent networkPane;
@@ -259,6 +258,13 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                              GridBagConstraints.WEST,
                                              GridBagConstraints.HORIZONTAL,
                                              new Insets(5, 5, 5, 5), 0, 0));
+
+            cbSavePassword = new JCheckBox("Save this password to your hard disk");
+            authp.add(cbSavePassword,
+                      new GridBagConstraints(1, gridY++, 1, 1, 0.0, 0.0,
+                                             GridBagConstraints.WEST,
+                                             GridBagConstraints.NONE,
+                                             new Insets(5, 5, 5, 0), 0, 0));
 
             gridY = oy;
 
@@ -644,24 +650,28 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     /** Set the Ssg object being edited by this panel. */
     public void setSsg(final Ssg ssg) {
         this.ssg = ssg;
+        synchronized (ssg) {
 
-        fieldLocalEndpoint.setText("http://localhost:" + clientProxy.getBindPort() + "/" +
-                                   ssg.getLocalEndpoint());
-        fieldWsdlEndpoint.setText("http://localhost:" + clientProxy.getBindPort() + "/" +
-                                  ssg.getLocalEndpoint() + ClientProxy.WSDL_SUFFIX);
-        fieldServerAddress.setText(ssg.getSsgAddress());
-        fieldUsername.setText(ssg.getUsername());
-        boolean hasPassword = ssg.password() != null;
-        fieldPassword.setText(new String(hasPassword ? ssg.password() : "".toCharArray()));
-        policyFlushRequested = false;
-        fieldSsgPort.setText(Integer.toString(ssg.getSsgPort()));
-        fieldSslPort.setText(Integer.toString(ssg.getSslPort()));
-        boolean customPorts = isPortsCustom(ssg);
-        radioStandardPorts.setSelected(!customPorts);
-        radioNonstandardPorts.setSelected(customPorts);
-        updateCustomPortsEnableState();
+            fieldLocalEndpoint.setText("http://localhost:" + clientProxy.getBindPort() + "/" +
+                                       ssg.getLocalEndpoint());
+            fieldWsdlEndpoint.setText("http://localhost:" + clientProxy.getBindPort() + "/" +
+                                      ssg.getLocalEndpoint() + ClientProxy.WSDL_SUFFIX);
+            fieldServerAddress.setText(ssg.getSsgAddress());
+            fieldUsername.setText(ssg.getUsername());
+            char[] pass = ssg.cmPassword();
+            boolean hasPassword = pass != null;
+            fieldPassword.setText(new String(hasPassword ? pass : "".toCharArray()));
+            policyFlushRequested = false;
+            fieldSsgPort.setText(Integer.toString(ssg.getSsgPort()));
+            fieldSslPort.setText(Integer.toString(ssg.getSslPort()));
+            boolean customPorts = isPortsCustom(ssg);
+            radioStandardPorts.setSelected(!customPorts);
+            radioNonstandardPorts.setSelected(customPorts);
+            cbSavePassword.setSelected(ssg.isSavePasswordToDisk());
+            updateCustomPortsEnableState();
 
-        updatePolicyPanel();
+            updatePolicyPanel();
+        }
         checkOk();
     }
 
@@ -674,6 +684,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         synchronized (ssg) {
             ssg.setSsgAddress(fieldServerAddress.getText().trim().toLowerCase());
             ssg.setUsername(fieldUsername.getText().trim());
+            ssg.setSavePasswordToDisk(cbSavePassword.isSelected());
 
             // We'll treat a blank password as though it's unconfigured.  If the user really needs to use
             // a blank password to access a service, he can leave the password field blank in the logon
@@ -681,10 +692,10 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             char[] pass = fieldPassword.getPassword();
 
             // If it's been changed, make sure prompting is enabled
-            if ((pass == null) != (ssg.password() == null) ||
-                    (ssg.password() != null && !new String(ssg.password()).equals(new String(pass))))
+            if ((pass == null) != (ssg.cmPassword() == null) ||
+                    (ssg.cmPassword() != null && !new String(ssg.cmPassword()).equals(new String(pass))))
                 ssg.promptForUsernameAndPassword(true);
-            ssg.password(pass.length > 0 ? fieldPassword.getPassword() : null);
+            ssg.cmPassword(pass.length > 0 ? fieldPassword.getPassword() : null);
 
             if (radioNonstandardPorts.isSelected()) {
                 ssg.setSsgPort(Integer.parseInt(fieldSsgPort.getText()));
@@ -693,7 +704,6 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 ssg.setSsgPort(referenceSsg.getSsgPort());
                 ssg.setSslPort(referenceSsg.getSslPort());
             }
-
 
             if (policyFlushRequested)
                 ssg.clearPolicies();

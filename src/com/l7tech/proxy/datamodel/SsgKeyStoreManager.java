@@ -7,14 +7,15 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.util.FileUtils;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import org.apache.log4j.Category;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.net.PasswordAuthentication;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -36,6 +37,11 @@ public class SsgKeyStoreManager {
     private static final Category log = Category.getInstance(SsgKeyStoreManager.class);
     private static final String ALIAS = "clientProxy";
     private static final String SSG_ALIAS = "ssgCa";
+
+    /**
+     * This is the password that will be used for obfuscating the keystore, and checking it for
+     * corruption when it is reloaded.
+     */
     private static final char[] KEYSTORE_PASSWORD = "lwbnasudg".toCharArray();
 
     /**
@@ -137,8 +143,8 @@ public class SsgKeyStoreManager {
      * @param ssg   the SSG whose KeyStore to examine
      * @return      The PrivateKey, or null if we haven't yet applied for a client certificate with this SSG.
      * @throws NoSuchAlgorithmException   if the VM is misconfigured, or the keystore was tampered with
-     * @throws com.l7tech.proxy.datamodel.exceptions.BadCredentialsException    if the SSG password does not match the password used to encrypt the key.
-     * @throws com.l7tech.proxy.datamodel.exceptions.OperationCanceledException if the user canceled the password prompt
+     * @throws BadCredentialsException    if the SSG password does not match the password used to encrypt the key.
+     * @throws OperationCanceledException if the user canceled the password prompt
      */
     public static PrivateKey getClientCertPrivateKey(Ssg ssg)
             throws NoSuchAlgorithmException, BadCredentialsException, OperationCanceledException
@@ -148,10 +154,9 @@ public class SsgKeyStoreManager {
                 return null;
             if (ssg.privateKey() != null)
                 return ssg.privateKey();
-            if (!ssg.isCredentialsConfigured())
-                Managers.getCredentialManager().getCredentials(ssg);
+            PasswordAuthentication pw = Managers.getCredentialManager().getCredentials(ssg);
             try {
-                PrivateKey gotKey = (PrivateKey) getKeyStore(ssg).getKey(ALIAS, ssg.password());
+                PrivateKey gotKey = (PrivateKey) getKeyStore(ssg).getKey(ALIAS, pw.getPassword());
                 ssg.privateKey(gotKey);
                 ssg.passwordWorkedForPrivateKey(true);
                 return gotKey;
@@ -338,9 +343,14 @@ public class SsgKeyStoreManager {
     {
         synchronized (ssg) {
             log.info("Saving client certificate to disk");
-            if (ssg.password() == null)
-                throw new IllegalArgumentException("SSG " + ssg + " does not have a password set.");
-            getKeyStore(ssg).setKeyEntry(ALIAS, privateKey, ssg.password(), new Certificate[] { cert });
+            PasswordAuthentication pw = null;
+            try {
+                pw = Managers.getCredentialManager().getCredentials(ssg);
+            } catch (OperationCanceledException e) {
+                throw new IllegalArgumentException("Ssg " + ssg + " does not yet have credentials configured");
+            }
+            char[] password = pw.getPassword();
+            getKeyStore(ssg).setKeyEntry(ALIAS, privateKey, password, new Certificate[] { cert });
             saveKeyStore(ssg);
             ssg.haveClientCert(Boolean.TRUE);
             ssg.privateKey(privateKey);

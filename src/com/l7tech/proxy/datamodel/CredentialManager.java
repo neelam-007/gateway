@@ -8,6 +8,8 @@ package com.l7tech.proxy.datamodel;
 
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 
+import java.net.PasswordAuthentication;
+
 /**
  * Get usernames and passwords from somewhere.  The caller of the manager interface will then
  * typically stuff them into an Ssg object for safe keeping.
@@ -18,32 +20,40 @@ import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
  * Date: Jun 27, 2003
  * Time: 10:31:45 AM
  */
-public interface CredentialManager {
+public abstract class CredentialManager {
     /**
-     * Load credentials for this SSG.  If the SSG already contains credentials they will be
-     * overwritten with new ones.  Where the credentials actually come from is up to the CredentialManager
-     * implementation; in the GUI environment, it will pop up a login window.
-     * @param ssg  the Ssg whose username and password are to be updated
+     * Get the credentials for this SSG.  If they aren't already loaded, this may involve reading
+     * them from the keystore or prompting the user for them.  No new credentials will be obtained
+     * if this SSG already has existing credentials configured.  To indicate that the existing
+     * credentials are no good and that you need new ones, call getNewCredentials() instead.
+     * @param ssg  the Ssg whose credentials you want
+     * @return the credentials for this Ssg
+     * @throws OperationCanceledException if we prompted the user, but he clicked cancel
      */
-    void getCredentials(Ssg ssg) throws OperationCanceledException;
+    public abstract PasswordAuthentication getCredentials(Ssg ssg) throws OperationCanceledException;
 
     /**
-     * Notify that the credentials for this SSG have been tried and found to be no good.
+     * Get replacement credentials for this SSG.  This method will always prompt the user for
+     * new credentials to replace the current ones.
+     *
+     * @param ssg the Ssg whose credentials you want to update
+     * @return the new credentials for this Ssg
+     * @throws OperationCanceledException if we prompted the user, but he clicked cancel
      */
-    void notifyInvalidCredentials(Ssg ssg);
+    public abstract PasswordAuthentication getNewCredentials(Ssg ssg) throws OperationCanceledException;
 
     /**
      * Unobtrusively notify that a lengthy operation is now in progress.
      * In the GUI environment, this will put up a "Please wait..." dialog.
      * Only one "Please wait..." dialog will be active for a given Ssg.
      */
-    void notifyLengthyOperationStarting(Ssg ssg, String message);
+    public abstract void notifyLengthyOperationStarting(Ssg ssg, String message);
 
     /**
      * Unobtrusively notify that a lengthy operation has completed.
      * Tears down any "Please wait..." dialog.
      */
-    void notifyLengthyOperationFinished(Ssg ssg);
+    public abstract void notifyLengthyOperationFinished(Ssg ssg);
 
     /**
      * Notify the user that the key store for the given Ssg has been damaged.
@@ -57,7 +67,7 @@ public interface CredentialManager {
      * @param ssg
      * @throws OperationCanceledException if the user does not wish to delete the invalid keystore
      */
-    void notifyKeyStoreCorrupt(Ssg ssg) throws OperationCanceledException;
+    public abstract void notifyKeyStoreCorrupt(Ssg ssg) throws OperationCanceledException;
 
     /**
      * Notify the user that a client certificate has already been issued for his account.
@@ -66,7 +76,7 @@ public interface CredentialManager {
      *
      * @param ssg
      */
-    void notifyCertificateAlreadyIssued(Ssg ssg);
+    public abstract void notifyCertificateAlreadyIssued(Ssg ssg);
 
     /**
      * Notify the user that an SSL connection to the SSG could not be established because the hostname did not match
@@ -76,5 +86,5 @@ public interface CredentialManager {
      * @param whatWeWanted  the expected hostname, equal to ssg.getSsgAddress()
      * @param whatWeGotInstead  the hostname in the peer's certificate
      */
-    void notifySsgHostnameMismatch(Ssg ssg, String whatWeWanted, String whatWeGotInstead);
+    public abstract void notifySsgHostnameMismatch(Ssg ssg, String whatWeWanted, String whatWeGotInstead);
 }

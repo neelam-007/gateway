@@ -8,6 +8,8 @@ package com.l7tech.proxy.datamodel;
 
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 
+import java.net.PasswordAuthentication;
+
 /**
  * A dummy credential manager that obtains no credentials and presents no notifications to the user.
  *
@@ -15,14 +17,22 @@ import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
  * Date: Sep 15, 2003
  * Time: 4:08:24 PM
  */
-public class CredentialManagerAdapter implements CredentialManager {
+public class CredentialManagerAdapter extends CredentialManager {
     /**
      * Load credentials for this SSG.  If the SSG already contains credentials they will be
      * overwritten with new ones.  Where the credentials actually come from is up to the CredentialManager
      * implementation; in the GUI environment, it will pop up a login window.
      * @param ssg  the Ssg whose username and password are to be updated
      */
-    public void getCredentials(Ssg ssg) throws OperationCanceledException {
+    public PasswordAuthentication getCredentials(Ssg ssg) throws OperationCanceledException {
+        PasswordAuthentication pw = ssg.getCredentials();
+        if (pw != null)
+            return pw;
+        throw new OperationCanceledException("No credentials configured");
+    }
+
+    public PasswordAuthentication getNewCredentials(Ssg ssg) throws OperationCanceledException {
+        throw new OperationCanceledException("No credentials configured");
     }
 
     /**
@@ -59,6 +69,7 @@ public class CredentialManagerAdapter implements CredentialManager {
      * @throws OperationCanceledException if the user does not wish to delete the invalid keystore
      */
     public void notifyKeyStoreCorrupt(Ssg ssg) throws OperationCanceledException {
+        throw new OperationCanceledException("Unable to authorize keystore deletion");
     }
 
     /**

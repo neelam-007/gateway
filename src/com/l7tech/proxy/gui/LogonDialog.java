@@ -46,17 +46,19 @@ public class LogonDialog extends JDialog {
     private JPasswordField passwordField = null;
 
     private static JFrame frame;
+    private boolean badPasswordMessage;
 
     /**
      * Create a new LogonDialog
      */
-    public LogonDialog(JFrame parent, String title, String defaultUsername) {
-        super(parent, true);
+    public LogonDialog(JFrame parent, String title, String defaultUsername, boolean badPasswordMessage) {
+        super(parent, title, true);
+        this.badPasswordMessage = badPasswordMessage;
+        this.frame = parent;
         setTitle("Log on to Gateway " + title);
         initComponents();
         if (defaultUsername != null)
             userNameTextField.setText(defaultUsername);
-        this.frame = parent;
     }
 
     /**
@@ -67,9 +69,8 @@ public class LogonDialog extends JDialog {
 
         GridBagConstraints constraints = null;
 
-        Container contents = getContentPane();
+        Container contents = this.getRootPane().getContentPane();
         contents.setLayout(new GridBagLayout());
-        //setTitle (resources.getString("dialog.title"));
 
         addWindowListener(new WindowAdapter() {
             public void windowClosing(WindowEvent event) {
@@ -80,6 +81,31 @@ public class LogonDialog extends JDialog {
 
         constraints = new GridBagConstraints();
 
+        if (badPasswordMessage) {
+            log.info("displaying bad password dialog");
+
+            JLabel icon = new JLabel(UIManager.getLookAndFeelDefaults().getIcon("OptionPane.warningIcon"));
+            constraints.gridx = 0;
+            constraints.gridy = 0;
+            constraints.gridwidth = 1;
+            constraints.gridheight = GridBagConstraints.REMAINDER;
+            constraints.anchor = GridBagConstraints.NORTHWEST;
+            constraints.insets = new Insets(15, 15, 5, 15);
+            contents.add(icon, constraints);
+
+            JLabel badPasswordMessage = new JLabel("Your username or password was incorrect.");
+            constraints.gridx = 1;
+            constraints.gridy = 0;
+            constraints.gridwidth = 3;
+            constraints.gridheight = 1;
+            constraints.anchor = GridBagConstraints.WEST;
+            constraints.insets = new Insets(10, 5, 15, 15);
+            contents.add(badPasswordMessage, constraints);
+
+            constraints.gridwidth = 1;
+            constraints.gridheight = 1;
+        }
+
         userNameTextField = new JTextField(); //needed below
 
         // user name label
@@ -88,17 +114,16 @@ public class LogonDialog extends JDialog {
         userNameLabel.setLabelFor(userNameTextField);
         userNameLabel.setText("Username:");
 
-        constraints.gridx = 0;
+        constraints.gridx = 1;
         constraints.gridy = 1;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(5, 5, 0, 0);
         contents.add(userNameLabel, constraints);
 
         // user name text field
-        constraints.gridx = 1;
+        constraints.gridx = 2;
         constraints.gridy = 1;
         constraints.weightx = 1.0;
-        constraints.gridwidth = 2;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.insets = new Insets(5, 5, 0, 10);
@@ -112,7 +137,7 @@ public class LogonDialog extends JDialog {
         passwordLabel.setText("Password:");
         passwordLabel.setLabelFor(passwordField);
         constraints = new GridBagConstraints();
-        constraints.gridx = 0;
+        constraints.gridx = 1;
         constraints.gridy = 2;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.fill = GridBagConstraints.HORIZONTAL;
@@ -123,7 +148,7 @@ public class LogonDialog extends JDialog {
         // password field
 
         constraints = new GridBagConstraints();
-        constraints.gridx = 1;
+        constraints.gridx = 2;
         constraints.gridy = 2;
         constraints.fill = GridBagConstraints.HORIZONTAL;
         constraints.weightx = 1.0;
@@ -132,7 +157,7 @@ public class LogonDialog extends JDialog {
         contents.add(passwordField, constraints);
 
         constraints = new GridBagConstraints();
-        constraints.gridx = 1;
+        constraints.gridx = 2;
         constraints.gridy = 3;
         constraints.gridwidth = 2;
         constraints.fill = GridBagConstraints.NONE;
@@ -186,7 +211,8 @@ public class LogonDialog extends JDialog {
         Utilities.
           equalizeButtonSizes(new JButton[]{cancelButton, loginButton});
         return panel;
-    } // createButtonPanel()
+    }
+
 
     /**
      * The user has selected an option. Here we close and dispose
@@ -232,8 +258,12 @@ public class LogonDialog extends JDialog {
      * @param defaultUsername what to fill in the Username field with by default.
      * @return PasswordAuthentication containing the username and password, or NULL if the dialog was canceled.
      */
-    public static PasswordAuthentication logon(JFrame parent, String ssgName, String defaultUsername) {
-        final LogonDialog dialog = new LogonDialog(parent, ssgName, defaultUsername);
+    public static PasswordAuthentication logon(JFrame parent,
+                                               String ssgName,
+                                               String defaultUsername,
+                                               boolean badPasswordMessage)
+    {
+        final LogonDialog dialog = new LogonDialog(parent, ssgName, defaultUsername, badPasswordMessage);
         dialog.setResizable(false);
         dialog.setSize(300, 275);
 
@@ -251,6 +281,7 @@ public class LogonDialog extends JDialog {
     public void show() {
         userNameTextField.requestFocus();
         userNameTextField.selectAll();
+
         addWindowListener(new WindowAdapter() {
             boolean didOpen = false;
 

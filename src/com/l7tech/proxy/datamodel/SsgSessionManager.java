@@ -24,6 +24,7 @@ import org.apache.axis.encoding.Base64;
 
 import java.net.URL;
 import java.net.MalformedURLException;
+import java.net.PasswordAuthentication;
 import java.io.IOException;
 
 /**
@@ -89,14 +90,11 @@ public class SsgSessionManager {
             ServerCertificateUntrustedException, BadCredentialsException
     {
         HttpClient client = new HttpClient();
-        if (!ssg.isCredentialsConfigured())
-            Managers.getCredentialManager().getCredentials(ssg);
-
+        PasswordAuthentication pw = Managers.getCredentialManager().getCredentials(ssg);
         client.getState().setAuthenticationPreemptive(true);
-
-        String username = ssg.getUsername();
-        char[] password = ssg.password();
-        client.getState().setCredentials(null, null, new UsernamePasswordCredentials(username, new String(password)));
+        client.getState().setCredentials(null, null,
+                                         new UsernamePasswordCredentials(pw.getUserName(),
+                                                                         new String(pw.getPassword())));
         HttpMethod getMethod = new GetMethod(new URL("https",
                                                      ssg.getSsgAddress(),
                                                      ssg.getSslPort(),

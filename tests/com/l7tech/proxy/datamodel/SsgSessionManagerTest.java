@@ -25,6 +25,7 @@ import java.net.MalformedURLException;
 import java.net.Socket;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.net.PasswordAuthentication;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Principal;
@@ -153,19 +154,16 @@ public class SsgSessionManagerTest extends TestCase {
         configureSslToTrustEveryone();
 
         Managers.setCredentialManager(new CredentialManagerAdapter() {
-            private boolean badCredentials = false;
-
-            public void getCredentials(Ssg ssg) throws OperationCanceledException {
-                if (badCredentials)
-                    throw new OperationCanceledException("Configured credentials were bad, and have no new ones to offer");
+            public PasswordAuthentication getCredentials(Ssg ssg) throws OperationCanceledException {
                 log.info("Using SSG test username: " + TEST_USERNAME);
                 ssg.setUsername(TEST_USERNAME);
                 log.info("Using SSG test password: " + TEST_PASSWORD);
-                ssg.password(TEST_PASSWORD);
+                ssg.cmPassword(TEST_PASSWORD);
+                return new PasswordAuthentication(ssg.getUsername(), ssg.cmPassword());
             }
 
-            public void notifyInvalidCredentials(Ssg ssg) {
-                badCredentials = true;
+            public PasswordAuthentication getNewCredentials(Ssg ssg) throws OperationCanceledException {
+                throw new OperationCanceledException("Old credentials failed, and we have no others to try");
             }
         });
 

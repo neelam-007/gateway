@@ -8,9 +8,7 @@ package com.l7tech.proxy.policy.assertion.credential.http;
 
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.PendingRequest;
-import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
@@ -35,9 +33,7 @@ public class ClientHttpBasic extends ClientAssertion {
     public AssertionStatus decorateRequest(PendingRequest request)
             throws OperationCanceledException
     {
-        Ssg ssg = request.getSsg();
-        if (!ssg.isCredentialsConfigured())
-            Managers.getCredentialManager().getCredentials(ssg);
+        request.getCredentials();
         request.setBasicAuthRequired(true);
         request.setSslRequired(true); // force SSL when using HTTP Basic
         log.info("HttpBasic: will use HTTP basic (and SSL) on this request to " + request.getSsg());

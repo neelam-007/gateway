@@ -8,7 +8,6 @@ import com.l7tech.common.security.xml.SoapMsgSigner;
 import com.l7tech.common.security.xml.XmlMangler;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
-import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
@@ -70,14 +69,12 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
         X509Certificate userCert = null;
         Session session;
         synchronized (ssg) {
-            if (!ssg.isCredentialsConfigured())
-                Managers.getCredentialManager().getCredentials(ssg);
-
-                session = SsgSessionManager.getOrCreateSession(ssg);
+            request.getCredentials();
+            session = SsgSessionManager.getOrCreateSession(ssg);
 
             if (!SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
                 try {
-                    request.getClientProxy().obtainClientCertificate(ssg);
+                    request.getClientProxy().obtainClientCertificate(request);
                 } catch (ServerCertificateUntrustedException e) {
                     throw e;
                 }

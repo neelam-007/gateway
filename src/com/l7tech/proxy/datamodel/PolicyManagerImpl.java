@@ -101,16 +101,13 @@ public class PolicyManagerImpl implements PolicyManager {
                 log.info("Policy download unauthorized, trying again with credentials at " + safeUrl);
 
                 // Make sure we actually have the credentials
-                Ssg ssg = request.getSsg();
-                if (!ssg.isCredentialsConfigured())
-                    Managers.getCredentialManager().getCredentials(ssg);
-
+                request.getCredentials();
                 state.setAuthenticationPreemptive(true);
 
                 int attempts = 0;
                 for (;;) {
-                    String username = ssg.getUsername();
-                    char[] password = ssg.password();
+                    String username = request.getUsername();
+                    char[] password = request.getPassword();
                     state.setCredentials(null, null, new UsernamePasswordCredentials(username, new String(password)));
                     getMethod = new GetMethod(safeUrl.toString());
                     getMethod.setDoAuthentication(true);
@@ -118,11 +115,10 @@ public class PolicyManagerImpl implements PolicyManager {
                         status = client.executeMethod(getMethod);
                         if ((status == 401 || status == 404) && ++attempts < 10) {
                             log.info("Got " + status + " status downloading policy; will get new credentials and try download again");
-                            Managers.getCredentialManager().notifyInvalidCredentials(ssg);
-                            Managers.getCredentialManager().getCredentials(ssg);
+                            request.getNewCredentials();
                             continue;
                         }
-			if (status == 200)
+                        if (status == 200)
                             break;
                         throw new IOException("Got back unexpected HTTP status " + status + " from the policy server");
                     } catch (SSLHandshakeException e) {

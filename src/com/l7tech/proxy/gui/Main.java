@@ -83,7 +83,7 @@ public class Main {
             }
         });
 
-        Managers.setCredentialManager(GuiCredentialManager.getInstance());
+        Managers.setCredentialManager(GuiCredentialManager.createGuiCredentialManager(ssgManager));
 
         Gui.getInstance().start();
 

@@ -141,7 +141,7 @@ public class MessageProcessor {
                 // If we have a client cert, and the current password worked to decrypt it's private key, but something
                 // has rejected the password anyway, we need to reestablish the validity of this account with the SSG.
                 if (SsgKeyStoreManager.isClientCertAvailabile(ssg) && SsgKeyStoreManager.isPasswordWorkedForPrivateKey(ssg)) {
-                    if (securePasswordPing(ssg)) {
+                    if (securePasswordPing(req)) {
                         // password works with our keystore, and with the SSG, so why did it fail just now?
                         String message = "Recieved password failure, but it worked with our keystore and the SSG liked it when we double-checked it.  " +
                                   "Could be an internal error, or an attack, or the SSG admin toggling your account on and off.";
@@ -154,8 +154,7 @@ public class MessageProcessor {
                     }
                 }
 
-                Managers.getCredentialManager().notifyInvalidCredentials(ssg);
-                Managers.getCredentialManager().getCredentials(ssg);
+                req.getNewCredentials();
                 // FALLTHROUGH allow policy to reset and retry
             }
             req.reset();
@@ -170,15 +169,20 @@ public class MessageProcessor {
     /**
      * Contact the SSG and determine whether this SSG password is still valid.
      *
-     * @param ssg  the SSG to contact.  must be configured with the credentials you wish to validate
+     * @param req request we are processing.  must be configured with the credentials you wish to validate
      * @return  true if these credentials appear to be valid on this SSG; false otherwise
      * @throws IOException if we were unable to validate this password either way
+     * @throws OperationCanceledException if a logon dialog appeared and the user canceled it;
+     *                                    this shouldn't happen unless the user clears the credentials
      */
-    private boolean securePasswordPing(Ssg ssg) throws IOException {
+    private boolean securePasswordPing(PendingRequest req)
+            throws IOException, OperationCanceledException
+    {
+        Ssg ssg = req.getSsg();
         // We'll just use the CertificateDownloader for this.
         CertificateDownloader cd = new CertificateDownloader(ssg.getServerUrl(),
-                                                             ssg.getUsername(),
-                                                             ssg.password());
+                                                             req.getUsername(),
+                                                             req.getPassword());
         try {
             boolean worked = cd.downloadCertificate();
             ssg.passwordWorkedWithSsg(worked);
@@ -333,7 +337,7 @@ public class MessageProcessor {
                 log.info("SSG response contained a certficate status:invalid header.  Will get new client cert.");
                 // Try to get a new client cert; if this succeeds, it'll replace the old one
                 try {
-                    req.getClientProxy().obtainClientCertificate(ssg);
+                    req.getClientProxy().obtainClientCertificate(req);
                     throw new PolicyRetryableException(); // try again with the new cert
                 } catch (GeneralSecurityException e) {
                     throw new ClientCertificateException("Unable to obtain new client certificate", e);
@@ -412,22 +416,14 @@ public class MessageProcessor {
             return;
         }
 
-        Ssg ssg = req.getSsg();
-        String username;
-        String password;
-        synchronized (ssg) {
-            if (!ssg.isCredentialsConfigured())
-                Managers.getCredentialManager().getCredentials(ssg);
-            username = ssg.getUsername();
-            password = new String(ssg.password());
-        }
-
+        String username = req.getUsername();
+        char[] password = req.getPassword();
         if (req.isBasicAuthRequired() || req.isDigestAuthRequired()) {
             log.info("Enabling HTTP Basic or Digest auth with username=" + username);
             postMethod.setDoAuthentication(true);
             state.setAuthenticationPreemptive(req.isBasicAuthRequired());
             state.setCredentials(null, null,
-                                 new UsernamePasswordCredentials(username, password));
+                                 new UsernamePasswordCredentials(username, new String(password)));
         }
     }
 }

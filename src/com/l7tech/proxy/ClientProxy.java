@@ -1,27 +1,28 @@
 package com.l7tech.proxy;
 
-import com.l7tech.proxy.datamodel.SsgFinder;
-import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.util.CertificateDownloader;
+import com.l7tech.common.util.SslUtils;
 import com.l7tech.proxy.datamodel.Managers;
+import com.l7tech.proxy.datamodel.PendingRequest;
+import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.SsgFinder;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
+import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.proxy.ssl.ClientProxyKeyManager;
 import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
 import com.l7tech.proxy.ssl.ClientProxyTrustManager;
-import com.l7tech.proxy.processor.MessageProcessor;
-import com.l7tech.common.util.SslUtils;
-import com.l7tech.common.util.CertificateDownloader;
-import com.l7tech.common.protocol.SecureSpanConstants;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.log4j.Category;
+import org.bouncycastle.jce.PKCS10CertificationRequest;
+import org.bouncycastle.jce.provider.JDKKeyPairGenerator;
 import org.mortbay.http.HttpContext;
 import org.mortbay.http.HttpServer;
 import org.mortbay.http.SocketListener;
 import org.mortbay.util.MultiException;
-import org.bouncycastle.jce.PKCS10CertificationRequest;
-import org.bouncycastle.jce.provider.JDKKeyPairGenerator;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509KeyManager;
@@ -29,13 +30,14 @@ import javax.net.ssl.X509TrustManager;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
+import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.GeneralSecurityException;
-import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 
 /**
@@ -76,8 +78,12 @@ public class ClientProxy {
      * Create a ClientProxy with the specified settings.
      * @param ssgFinder provides the list of SSGs to which we are proxying.
      */
-    public ClientProxy(final SsgFinder ssgFinder, final MessageProcessor messageProcessor,
-                final int bindPort, final int minThreads, final int maxThreads) {
+    public ClientProxy(final SsgFinder ssgFinder,
+                       final MessageProcessor messageProcessor,
+                       final int bindPort,
+                       final int minThreads,
+                       final int maxThreads)
+    {
         this.ssgFinder = ssgFinder;
         this.messageProcessor = messageProcessor;
         this.bindPort = bindPort;
@@ -270,7 +276,7 @@ public class ClientProxy {
      * current user.  If this method returns, the certificate will have been downloaded and saved
      * locally, and the SSL context for this Client Proxy will have been reinitialized.
      *
-     * @param ssg   the Ssg to which we are sending our application
+     * @param request   the request we are working on to which we are sending our application
      * @throws ServerCertificateUntrustedException if we haven't yet discovered the Ssg server cert
      * @throws GeneralSecurityException   if there was a problem making the CSR
      * @throws GeneralSecurityException   if we were unable to complete SSL handshake with the Ssg
@@ -278,13 +284,11 @@ public class ClientProxy {
      * @throws BadCredentialsException    if the SSG rejected the credentials we provided
      * @throws OperationCanceledException if the user cancels the logon prompt
      */
-    public void obtainClientCertificate(Ssg ssg)
+    public void obtainClientCertificate(PendingRequest request)
             throws  ServerCertificateUntrustedException, GeneralSecurityException, IOException,
                     OperationCanceledException, BadCredentialsException
     {
-        if (!ssg.isCredentialsConfigured())
-            Managers.getCredentialManager().getCredentials(ssg);
-
+        Ssg ssg = request.getSsg();
         KeyPair keyPair;
         PKCS10CertificationRequest csr;
         try {
@@ -306,8 +310,8 @@ public class ClientProxy {
                 if (caCert == null)
                     throw new ServerCertificateUntrustedException(); // fault in the SSG cert
                 X509Certificate cert = SslUtils.obtainClientCertificate(ssg.getServerCertRequestUrl(),
-                                                                        ssg.getUsername(),
-                                                                        ssg.password(),
+                                                                        request.getUsername(),
+                                                                        request.getPassword(),
                                                                         csr,
                                                                         caCert);
                 // make sure private key is stored on disk encrypted with the password that was used to obtain it
@@ -318,10 +322,9 @@ public class ClientProxy {
                 if (++attempts > 3)
                     throw new BadCredentialsException(e);
 
-                Managers.getCredentialManager().notifyInvalidCredentials(ssg);
                 if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) // shouldn't be necessary, but just in case
                     SsgKeyStoreManager.deleteClientCert(ssg);
-                Managers.getCredentialManager().getCredentials(ssg);
+                request.getNewCredentials();
                 // retry with new password
             } catch (SslUtils.CertificateAlreadyIssuedException e) {
                 Managers.getCredentialManager().notifyCertificateAlreadyIssued(ssg);
@@ -343,12 +346,10 @@ public class ClientProxy {
     public static void installSsgServerCertificate(Ssg ssg)
             throws IOException, BadCredentialsException, OperationCanceledException, GeneralSecurityException
     {
-        if (!ssg.isCredentialsConfigured())
-            Managers.getCredentialManager().getCredentials(ssg);
-
+        PasswordAuthentication pw = Managers.getCredentialManager().getCredentials(ssg);
         CertificateDownloader cd = new CertificateDownloader(ssg.getServerUrl(),
-                                                             ssg.getUsername(),
-                                                             ssg.password());
+                                                             pw.getUserName(),
+                                                             pw.getPassword());
 
         if (cd.downloadCertificate()) {
             SsgKeyStoreManager.saveSsgCertificate(ssg, (X509Certificate) cd.getCertificate());

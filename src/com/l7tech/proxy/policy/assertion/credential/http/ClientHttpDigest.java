@@ -8,9 +8,7 @@ package com.l7tech.proxy.policy.assertion.credential.http;
 
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
-import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.PendingRequest;
-import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
@@ -32,9 +30,7 @@ public class ClientHttpDigest extends ClientAssertion {
     public AssertionStatus decorateRequest(PendingRequest request)
             throws OperationCanceledException
     {
-        Ssg ssg = request.getSsg();
-        if (!ssg.isCredentialsConfigured())
-            Managers.getCredentialManager().getCredentials(ssg);
+        request.getCredentials();
         request.setDigestAuthRequired(true);
         return AssertionStatus.NONE;
     }

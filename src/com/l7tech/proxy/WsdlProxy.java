@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
+import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.security.GeneralSecurityException;
 
@@ -136,16 +137,16 @@ public class WsdlProxy {
         int status = 0;
 
         // Password retries for WSDL download
+        PasswordAuthentication pw;
         for (int retries = 0; retries < 3; ++retries) {
             GetMethod getMethod = null;
             try {
-                if (!ssg.isCredentialsConfigured())
-                    Managers.getCredentialManager().getCredentials(ssg);
+                pw = Managers.getCredentialManager().getCredentials(ssg);
                 getMethod = new GetMethod(url.toString());
                 httpClient.getState().setCredentials(null,
                                                      null,
-                                                     new UsernamePasswordCredentials(ssg.getUsername(),
-                                                                                     new String(ssg.password())));
+                                                     new UsernamePasswordCredentials(pw.getUserName(),
+                                                                                     new String(pw.getPassword())));
                 log.info("WsdlProxy: Attempting download from SSG from URL: " + url);
                 try {
                     status = httpClient.executeMethod(getMethod);
@@ -169,8 +170,7 @@ public class WsdlProxy {
                 } else if (status == 404) {
                     throw new ServiceNotFoundException("No service was found on Ssg " + ssg + " with serviceoid " + serviceoid);
                 } else if (status == 401) {
-                    Managers.getCredentialManager().notifyInvalidCredentials(ssg);
-                    Managers.getCredentialManager().getCredentials(ssg);
+                    pw = Managers.getCredentialManager().getNewCredentials(ssg);
                     // FALLTHROUGH - continue and try again with new password
                 } else
                     break;

@@ -8,20 +8,19 @@ package com.l7tech.proxy.policy.assertion.credential.http;
 
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
-import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
-import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import org.apache.log4j.Category;
 
+import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
-import java.io.IOException;
 
 /**
  * @author alex
@@ -42,12 +41,11 @@ public class ClientHttpClientCert extends ClientAssertion {
             throws OperationCanceledException, BadCredentialsException, GeneralSecurityException, ClientCertificateException
     {
         Ssg ssg = request.getSsg();
-        if (!ssg.isCredentialsConfigured())
-            Managers.getCredentialManager().getCredentials(ssg);
+        request.getCredentials();
         if (!SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
             log.info("ClientHttpClientCert: applying for client certificate");
             try {
-                request.getClientProxy().obtainClientCertificate(ssg);
+                request.getClientProxy().obtainClientCertificate(request);
             } catch (IOException e) {
                 throw new ClientCertificateException("Unable to obtain a client certificate: " + e, e);
             }
