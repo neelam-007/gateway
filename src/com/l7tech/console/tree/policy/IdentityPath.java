@@ -39,7 +39,9 @@ public class IdentityPath {
                 User u2 = (User)p2;
                 long ret = u1.getProviderId() - u2.getProviderId();
                 if (ret != 0) return (int)ret;
-                return u2.getLogin().compareTo(u1.getLogin());
+                if ( u2.getLogin() != null ) return u2.getLogin().compareTo(u1.getLogin());
+                if ( u2.getName() != null ) return u2.getName().compareTo(u1.getName());
+                return 0;
             } else if (p1 instanceof Group && p2 instanceof Group) {
                 Group g1 = (Group)p1;
                 Group g2 = (Group)p2;
@@ -351,16 +353,17 @@ public class IdentityPath {
         if (assertion instanceof SpecificUser) {
             SpecificUser su = ((SpecificUser)assertion);
             UserBean u = new UserBean();
-            u.setLogin(su.getUserLogin());
-            u.setName(su.getUserLogin());
+            u.setUniqueIdentifier(su.getUserUid());
             u.setProviderId(su.getIdentityProviderOid());
+            u.setLogin(su.getUserLogin());
+            u.setName(su.getUserName());
             return u;
         } else if (assertion instanceof MemberOfGroup) {
             MemberOfGroup mog = ((MemberOfGroup)assertion);
             GroupBean g = new GroupBean();
-            g.setName(mog.getGroupName());
+            g.setUniqueIdentifier(mog.getGroupId());
             g.setProviderId(mog.getIdentityProviderOid());
-            g.setUniqueIdentifier(g.getName());
+            g.setName(mog.getGroupName());
             return g;
         }
         throw new IllegalArgumentException("Unknown assertion type " + assertion);
