@@ -11,10 +11,10 @@ import com.l7tech.common.audit.MessageProcessingMessages;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.security.xml.SecurityActor;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.processor.*;
-import com.l7tech.common.security.xml.SecurityActor;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
@@ -142,7 +142,7 @@ public class MessageProcessor extends ApplicationObjectSupport {
             WssProcessor trogdor = new WssProcessorImpl(); // no need for locator
             try {
                 final XmlKnob reqXml = request.getXmlKnob();
-                wssOutput = trogdor.undecorateMessage(reqXml.getDocumentWritable(),
+                wssOutput = trogdor.undecorateMessage(request,
                                                       serverCertificate,
                                                       serverPrivateKey,
                                                       SecureConversationContextManager.getInstance());

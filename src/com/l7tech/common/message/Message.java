@@ -162,7 +162,7 @@ public final class Message {
      * @return the XmlKnob for this Message.  Never null.
      * @throws SAXException if the first part's content type is not text/xml.
      * @throws IllegalStateException if this Message has not yet been attached to an InputStream.
-     */ 
+     */
     public XmlKnob getXmlKnob() throws SAXException {
         XmlKnob xmlKnob = (XmlKnob)getKnob(XmlKnob.class);
         if (xmlKnob == null) {

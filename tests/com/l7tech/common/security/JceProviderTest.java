@@ -6,6 +6,7 @@
 
 package com.l7tech.common.security;
 
+import com.l7tech.common.message.Message;
 import com.l7tech.common.security.prov.bc.BouncyCastleCertificateRequest;
 import com.l7tech.common.security.xml.WssDecoratorTest;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
@@ -175,7 +176,7 @@ public class JceProviderTest {
             new WssDecoratorImpl().decorateMessage(td.c.message, wssDecoratorTest.makeDecorationRequirements(td));
 
             log.info("pretest: checking XML message signature");
-            ProcessorResult processorResult = new WssProcessorImpl().undecorateMessage(td.c.message,
+            ProcessorResult processorResult = new WssProcessorImpl().undecorateMessage(new Message(td.c.message),
                     TestDocuments.getDotNetServerCertificate(),
                     TestDocuments.getDotNetServerPrivateKey(),
                     null);
@@ -239,7 +240,7 @@ public class JceProviderTest {
         reportTime("Decrypt document and check signature", 200 * scale, concur, new Testable() {
             public void run() throws Throwable {
                 Document blah = XmlUtil.stringToDocument(encryptedXml);
-                new WssProcessorImpl().undecorateMessage(blah,
+                new WssProcessorImpl().undecorateMessage(new Message(blah),
                         TestDocuments.getDotNetServerCertificate(),
                         TestDocuments.getDotNetServerPrivateKey(),
                         null);

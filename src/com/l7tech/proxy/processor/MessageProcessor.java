@@ -15,12 +15,12 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.token.SecurityTokenType;
+import com.l7tech.common.security.xml.SecurityActor;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.security.xml.processor.*;
-import com.l7tech.common.security.xml.SecurityActor;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
@@ -788,7 +788,7 @@ public class MessageProcessor {
             try {
                 boolean haveKey = ssg.getRuntime().getSsgKeyStoreManager().isClientCertUnlocked();
                 final ProcessorResult processorResultRaw =
-                  wssProcessor.undecorateMessage(responseDocument,
+                  wssProcessor.undecorateMessage(response,
                     haveKey ? ssg.getClientCertificate() : null,
                     haveKey ? ssg.getClientCertificatePrivateKey() : null,
                     scf);

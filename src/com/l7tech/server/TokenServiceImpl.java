@@ -28,7 +28,10 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.policy.assertion.xmlsec.*;
+import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
@@ -100,7 +103,7 @@ public class TokenServiceImpl implements TokenService {
             final XmlKnob reqXml = context.getRequest().getXmlKnob();
             X509Certificate serverSSLcert = getServerCert();
             PrivateKey sslPrivateKey = getServerKey();
-            ProcessorResult wssOutput = trogdor.undecorateMessage(reqXml.getDocumentWritable(),
+            ProcessorResult wssOutput = trogdor.undecorateMessage(context.getRequest(),
                                                                   serverSSLcert,
                                                                   sslPrivateKey,
                                                                   SecureConversationContextManager.getInstance());

@@ -6,6 +6,7 @@
 
 package com.l7tech.common.security.xml;
 
+import com.l7tech.common.message.Message;
 import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
@@ -233,7 +234,7 @@ public class WssRoundTripTest extends TestCase {
         assertTrue("Serialization did not affect the integrity of the XML message",
                    XmlUtil.nodeToString(message).equals(XmlUtil.nodeToString(incomingMessage)));
 
-        ProcessorResult r = trogdor.undecorateMessage(incomingMessage,
+        ProcessorResult r = trogdor.undecorateMessage(new Message(incomingMessage),
                                                                    td.recipientCert,
                                                                    td.recipientKey,
                                                                    makeSecurityContextFinder(td.secureConversationKey));

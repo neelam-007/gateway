@@ -20,8 +20,17 @@ import java.security.cert.CertificateException;
  */
 public interface XmlKnob extends MessageKnob {
     /**
-     * Get a read-only view of the current working Document.  There is currently no way to enforce
-     * that the returned Document is not modified; callers are expected to keep their word.
+     * Get a read-only reference to the current working Document.  There is currently no way to enforce
+     * that the returned Document is not modified; callers are expected to keep their word and avoid changing
+     * the document in any way.
+     * <p>
+     * The actual Document instance returned by this method is guaranteed to refer to the same underlying
+     * object as would be returned by a later call to {@link #getDocumentWritable}, assuming no other major changes
+     * have been made to the content of the Message in the meantime (ie, a call to @{link #setDocument}).
+     * <p>
+     * Thus, a caller can initially call {@link #getDocumentReadOnly} to get a read-only document,
+     * but then upgrade their returned Document reference to be writable
+     * simply by calling getDocumentWritable() in void context.
      *
      * @see #getDocumentWritable for the method to use if you have any chance of modifying the Document
      * @return the current working Document.  Caller must not modify this in any way.
@@ -32,9 +41,17 @@ public interface XmlKnob extends MessageKnob {
     Document getDocumentReadOnly() throws SAXException, IOException;
 
     /**
-     * Get a read-write copy of the current working Document.  If the original Document has not been saved yet,
+     * Get the writable instance of the current working Document.  If the original Document has not been saved yet,
      * a clone of the working Document will be saved at this point.  Also, the underlying MIME bytestream will be marked
      * as dirty.
+     * <p>
+     * The actual Document instance returned by this method is guaranteed to refer to the same underlying
+     * object as would have been returned by an earlier call to {@link #getDocumentReadOnly}, assuming no other
+     * major changes have been made to the content of the Message in the meantime (ie, a call to {@link #setDocument}).
+     * <p>
+     * Thus, a caller can initially call {@link #getDocumentReadOnly} to get a read-only document,
+     * but then upgrade their returned Document reference to be writable
+     * simply by calling getDocumentWritable() in void context.
      *
      * @see #getDocumentReadOnly for the read-only, faster version of this call
      * @return the current working Document.  Caller may modify this.

@@ -6,14 +6,15 @@ import com.ibm.xml.enc.DecryptionContext;
 import com.ibm.xml.enc.KeyInfoResolvingException;
 import com.ibm.xml.enc.StructureException;
 import com.ibm.xml.enc.type.EncryptedData;
+import com.l7tech.common.message.Message;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.saml.SamlException;
 import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.SecureConversationKeyDeriver;
-import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.security.xml.SecurityActor;
+import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
@@ -50,30 +51,15 @@ public class WssProcessorImpl implements WssProcessor {
         JceProvider.init();
     }
 
-    /**
-     * This processes a soap message in-place.
-     * That is, the contents of the Header/Security are processed as per the WSS rules.
-     *
-     * @param soapMsg the xml document containing the soap message. this document may be modified on exit.
-     *                It is the caller's responsiblity to defensively clone the document first if an unmodified
-     *                copy will be needed.
-     * @param recipientCert the recipient's cert to which encrypted keys may be encoded for
-     * @param recipientKey the private key corresponding to the recipientCertificate used to decypher the encrypted keys
-     * @return a ProcessorResult object reffering to all the WSS related processing that happened.
-     * @throws InvalidDocumentFormatException if there is a problem with the document format that can't be ignored
-     * @throws GeneralSecurityException if there is a problem with a key or certificate
-     * @throws com.l7tech.common.security.xml.processor.ProcessorException in case of some other problem
-     * @throws BadSecurityContextException if the message contains a WS-SecureConversation SecurityContextToken, but the securityContextFinder has no record of that session.
-     */
-    public ProcessorResult undecorateMessage(Document soapMsg,
+    public ProcessorResult undecorateMessage(Message message,
                                              X509Certificate recipientCert,
                                              PrivateKey recipientKey,
                                              SecurityContextFinder securityContextFinder)
-            throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, BadSecurityContextException
+            throws ProcessorException, InvalidDocumentFormatException, GeneralSecurityException, BadSecurityContextException, SAXException, IOException
     {
         // Reset all potential outputs
-        ProcessingStatusHolder cntx = new ProcessingStatusHolder();
-        cntx.processedDocument = soapMsg;
+        Document soapMsg = message.getXmlKnob().getDocumentReadOnly();
+        ProcessingStatusHolder cntx = new ProcessingStatusHolder(message, soapMsg);
         cntx.elementsThatWereSigned.clear();
         cntx.elementsThatWereEncrypted.clear();
         cntx.securityTokens.clear();
@@ -206,7 +192,7 @@ public class WssProcessorImpl implements WssProcessor {
                 String mu = securityChildToProcess.getAttributeNS(currentSoapNamespace,
                                                                   SoapUtil.MUSTUNDERSTAND_ATTR_NAME).trim();
                 if ("1".equals(mu) || "true".equalsIgnoreCase(mu)) {
-                    String msg = "Unrecognized element in default Security header: " +
+                    String msg = "Unrecognized element in Security header: " +
                                  securityChildToProcess.getNodeName() +
                                  " with mustUnderstand=\"" + mu + "\"; rejecting message";
                     logger.warning(msg);
@@ -217,6 +203,7 @@ public class WssProcessorImpl implements WssProcessor {
             }
             Node nextSibling = securityChildToProcess.getNextSibling();
             if (removeProcessedElement) {
+                cntx.setDocumentModified();
                 securityChildToProcess.getParentNode().removeChild(securityChildToProcess);
             }
             while (nextSibling != null && nextSibling.getNodeType() != Node.ELEMENT_NODE) {
@@ -239,15 +226,15 @@ public class WssProcessorImpl implements WssProcessor {
         }
 
         // NOTE fla, we used to remove the Security header altogether but we now leave this up to the policy
-        // instead we just remove the must-understand attribute
-        SoapUtil.removeSoapAttr(cntx.releventSecurityHeader, SoapUtil.MUSTUNDERSTAND_ATTR_NAME);
-        //Element soapHeader = (Element) cntx.releventSecurityHeader.getParentNode();
-        //soapHeader.removeChild(cntx.releventSecurityHeader);
+        // NOTE lyonsm we don't remove the mustUnderstand attr here anymore either, since it changes the request
+        // possibly-needlessly
 
         // If our work has left behind an empty SOAP Header, remove it too
         Element soapHeader = (Element) cntx.releventSecurityHeader.getParentNode();
-        if (XmlUtil.elementIsEmpty(soapHeader))
+        if (XmlUtil.elementIsEmpty(soapHeader)) {
+            cntx.setDocumentModified(); // no worries -- empty sec header can only mean we made at least 1 change already
             soapHeader.getParentNode().removeChild(soapHeader);
+        }
 
         return produceResult(cntx);
     }
@@ -507,6 +494,7 @@ public class WssProcessorImpl implements WssProcessor {
         // See if the parent element contains nothing else except attributes and this EncryptedData element
         // (and possibly a whitespace node before and after it)
         // TODO trim() throws out all CTRL characters along with whitespace.  Need to think about this.
+        cntx.setDocumentModified();
         Node nextWhitespace = null;
         Node nextSib = encryptedDataElement.getNextSibling();
         if (nextSib != null && nextSib.getNodeType() == Node.TEXT_NODE && nextSib.getNodeValue().trim().length() < 1)
@@ -1011,7 +999,8 @@ public class WssProcessorImpl implements WssProcessor {
     private static final Logger logger = Logger.getLogger(WssProcessorImpl.class.getName());
 
     private class ProcessingStatusHolder {
-        Document processedDocument = null;
+        final Message message;
+        final Document processedDocument;
         final Collection elementsThatWereSigned = new ArrayList();
         final Collection elementsThatWereEncrypted = new ArrayList();
         final Collection securityTokens = new ArrayList();
@@ -1022,6 +1011,31 @@ public class WssProcessorImpl implements WssProcessor {
         Map x509TokensById = new HashMap();
         Map securityTokenReferenceElementToTargetElement = new HashMap();
         SecurityActor secHeaderActor;
+        boolean documentModified = false;
+
+        public ProcessingStatusHolder(Message message, Document processedDocument) {
+            this.message = message;
+            this.processedDocument = processedDocument;
+        }
+
+        /**
+         * Call this before modifying processedDocument in any way.  This will upgrade the document to writable,
+         * which will set various flags inside the Message
+         * (for reserializing the document later, and possibly building a new TarariMessageContext), and will
+         * possibly cause a copy of the current document to be cloned and saved.
+         */
+        void setDocumentModified() {
+            if (documentModified)
+                return;
+            documentModified = true;
+            try {
+                message.getXmlKnob().getDocumentWritable();
+            } catch (SAXException e) {
+                throw new CausedIllegalStateException(e); // can't happen anymore
+            } catch (IOException e) {
+                throw new CausedIllegalStateException(e); // can't happen anymore
+            }
+        }
     }
 
     private static class X509SecurityTokenImpl extends MutableX509SigningSecurityToken implements X509SecurityToken {

@@ -9,6 +9,7 @@ package com.l7tech.proxy.util;
 import com.l7tech.common.http.GenericHttpClient;
 import com.l7tech.common.http.GenericHttpRequestParamsImpl;
 import com.l7tech.common.http.SimpleHttpClient;
+import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.token.ParsedElement;
@@ -173,8 +174,12 @@ public class PolicyServiceClient {
         WssProcessor wssProcessor = new WssProcessorImpl();
         ProcessorResult result;
         try {
-            result = wssProcessor.undecorateMessage(response, clientCert, clientKey, null);
+            result = wssProcessor.undecorateMessage(new Message(response), clientCert, clientKey, null);
         } catch (BadSecurityContextException e) {
+            throw new ProcessorException(e); // can't happen
+        } catch (IOException e) {
+            throw new ProcessorException(e); // can't happen
+        } catch (SAXException e) {
             throw new ProcessorException(e); // can't happen
         }
 

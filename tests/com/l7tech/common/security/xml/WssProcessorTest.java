@@ -6,6 +6,7 @@
 
 package com.l7tech.common.security.xml;
 
+import com.l7tech.common.message.Message;
 import com.l7tech.common.security.saml.SignedSamlTest;
 import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.processor.*;
@@ -50,7 +51,7 @@ public class WssProcessorTest extends TestCase {
 
         log.info("Testing document: " + testDocument.name);
         log.info("Original decorated message (reformatted): " + XmlUtil.nodeToFormattedString(request));
-        ProcessorResult result = wssProcessor.undecorateMessage(request,
+        ProcessorResult result = wssProcessor.undecorateMessage(new Message(request),
                                                                              recipientCertificate,
                                                                              recipientPrivateKey,
                                                                              testDocument.securityContextFinder);

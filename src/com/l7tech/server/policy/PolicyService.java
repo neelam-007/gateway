@@ -5,7 +5,9 @@ import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
-import com.l7tech.common.security.xml.processor.*;
+import com.l7tech.common.security.xml.processor.ProcessorResult;
+import com.l7tech.common.security.xml.processor.WssProcessor;
+import com.l7tech.common.security.xml.processor.WssProcessorImpl;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
@@ -27,9 +29,8 @@ import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
-import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.audit.AuditContext;
@@ -179,7 +180,11 @@ public class PolicyService extends ApplicationObjectSupport {
         // Process request for message level security stuff
         ProcessorResult wssOutput = null;
         try {
-            wssOutput = processMessageLevelSecurity(requestDoc);
+            WssProcessor trogdor = new WssProcessorImpl();
+            wssOutput = trogdor.undecorateMessage(context.getRequest(),
+                                                  serverCert,
+                                                  privateServerKey,
+                                                  SecureConversationContextManager.getInstance());
             reqXml.setProcessorResult(wssOutput);
         } catch (Exception e) {
             response.initialize(exceptionToFault(e));
@@ -393,16 +398,6 @@ public class PolicyService extends ApplicationObjectSupport {
         } catch (SAXException e1) {
             throw new RuntimeException(e1); // can't happen
         }
-    }
-
-    private ProcessorResult processMessageLevelSecurity(Document request)
-                                            throws ProcessorException, InvalidDocumentFormatException,
-                                                   GeneralSecurityException, BadSecurityContextException {
-        WssProcessor trogdor = new WssProcessorImpl();
-        return trogdor.undecorateMessage(request,
-                                         serverCert,
-                                         privateServerKey,
-                                         SecureConversationContextManager.getInstance());
     }
 
     /**

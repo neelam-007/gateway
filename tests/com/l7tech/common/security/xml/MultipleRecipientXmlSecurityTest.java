@@ -6,6 +6,7 @@
  */
 package com.l7tech.common.security.xml;
 
+import com.l7tech.common.message.Message;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.token.ParsedElement;
 import com.l7tech.common.security.token.SignedElement;
@@ -286,7 +287,7 @@ public class MultipleRecipientXmlSecurityTest extends TestCase {
     }
 
     private ProcessorResult process(Document doc) throws Exception {
-        return processor.undecorateMessage(doc,
+        return processor.undecorateMessage(new Message(doc),
                                           TestDocuments.getDotNetServerCertificate(),
                                           TestDocuments.getDotNetServerPrivateKey(),
                                           null);

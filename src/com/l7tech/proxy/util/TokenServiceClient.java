@@ -7,6 +7,7 @@
 package com.l7tech.proxy.util;
 
 import com.l7tech.common.http.*;
+import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.saml.SamlConstants;
@@ -458,12 +459,16 @@ public class TokenServiceClient {
         ProcessorResult result = null;
         try {
             WssProcessor wssProcessor = new WssProcessorImpl();
-            result = wssProcessor.undecorateMessage(response,
+            result = wssProcessor.undecorateMessage(new Message(response),
                                                     clientCertificate,
                                                     clientPrivateKey,
                                                     null);
         } catch (BadSecurityContextException e) {
             throw new InvalidDocumentFormatException("Response attempted to use a WS-SecureConversation SecurityContextToken, which we don't support when talking to the token server itself", e);
+        } catch (IOException e) {
+            throw new ProcessorException(e); // probably can't happen here
+        } catch (SAXException e) {
+            throw new InvalidDocumentFormatException(e);
         }
 
         SignedElement[] signedElements = result.getElementsThatWereSigned();
