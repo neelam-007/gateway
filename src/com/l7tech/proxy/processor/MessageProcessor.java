@@ -314,7 +314,8 @@ public class MessageProcessor {
                 postMethod.addRequestHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION, policy.getVersion());
 
             String postBody = XmlUtil.documentToString(req.getSoapEnvelopeDirectly());
-            //log.info("Posting to SSG: " + postBody);
+            if (logPosts())
+                log.info("Posting to SSG: " + postBody);
             postMethod.setRequestBody(postBody);
 
             log.info("Posting request to SSG " + ssg + ", url " + url);
@@ -378,7 +379,8 @@ public class MessageProcessor {
                 return new SsgResponse(CannedSoapFaults.RESPONSE_NOT_XML, null);
 
             SsgResponse response = new SsgResponse(postMethod.getResponseBodyAsString(), headers);
-            //log.info("Got response from SSG: " + response);
+            if (logResponse())
+                log.info("Got response from SSG: " + response);
             if (status == 401) {
                 req.setLastErrorResponse(response);
                 Header authHeader = postMethod.getResponseHeader("WWW-Authenticate");
@@ -396,6 +398,21 @@ public class MessageProcessor {
             if (postMethod != null)
                 postMethod.releaseConnection();
         }
+    }
+
+    private static class LogFlags {
+        public static final String PROPERTY_LOGPOSTS    = "com.l7tech.proxy.processor.logPosts";
+        public static final String PROPERTY_LOGRESPONSE = "com.l7tech.proxy.processor.logResponses";
+        private static boolean logPosts = Boolean.getBoolean(PROPERTY_LOGPOSTS);
+        private static boolean logResponse = Boolean.getBoolean(PROPERTY_LOGRESPONSE);
+    }
+
+    private boolean logPosts() {
+        return LogFlags.logPosts;
+    }
+
+    private boolean logResponse() {
+        return LogFlags.logResponse;
     }
 
     /**
