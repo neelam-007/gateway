@@ -170,7 +170,7 @@ public class StubDataStore {
 
     private void initialServices(XMLEncoder encoder, IdentityProviderConfig pc)
       throws IOException, WSDLException, MalformedURLException {
-        Wsdl wsdl = Wsdl.newInstance(null, WsdlTest.getWsdlReader());
+        Wsdl wsdl = Wsdl.newInstance(null, WsdlTest.getWsdlReader(null));
 
         PublishedService service = new PublishedService();
         service.setName(wsdl.getDefinition().getTargetNamespace());
