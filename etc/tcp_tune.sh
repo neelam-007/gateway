@@ -15,10 +15,12 @@
 # when not running is also a failure.  So we just do it the way init scripts
 # are expected to behave here.
 start() {
+	echo "Setting wide local port range for more outbound connections"
+	echo "1024 65530" > /proc/sys/net/ipv4/ip_local_port_range
 	echo "Setting Low latency TCP"
 	echo 1> /proc/sys/net/ipv4/tcp_low_latency
 	echo "Lowering keepalive time"
-	echo 1800 >/proc/sys/net/ipv4/tcp_keepalive_time
+	echo 1200 >/proc/sys/net/ipv4/tcp_keepalive_time
 	echo 5 > /proc/sys/net/ipv4/tcp_keepalive_intvl
 	echo "Lowering FIN timeout"
 	echo 10 > /proc/sys/net/ipv4/tcp_fin_timeout
@@ -27,6 +29,8 @@ start() {
 	echo "Turning On Window scaling"
 	echo 1 > /proc/sys/net/ipv4/tcp_window_scaling
 	echo 1 > /proc/sys/net/ipv4/tcp_sack
+	echo "Increasing SYN packet Backlog"
+	echo 4096 > /proc/sys/net/ipv4/tcp_max_syn_backlog
 	echo "Setting higher tcp memory limits"
 	echo 8388608 > /proc/sys/net/core/wmem_max
 	echo 8388608 > /proc/sys/net/core/rmem_max
@@ -35,6 +39,8 @@ start() {
 	echo "Turning on TIME_WAIT recyle and reuse"
 	echo 1> /proc/sys/net/ipv4/tcp_tw_recycle
 	echo 1> /proc/sys/net/ipv4/tcp_tw_reuse
+	echo "Increasing number of TIME_WAIT buckets"
+	echo 360000 > /proc/sys/net/ipv4/tcp_max_tw_buckets
 	echo "Disabling Route Triangulation"
 	echo 1 > /proc/sys/net/ipv4/conf/all/rp_filter
 	echo "Disable logging of packets with malformed IP addresses"
@@ -49,7 +55,7 @@ start() {
 	echo 1 > /proc/sys/net/ipv4/tcp_syncookies
 	echo "Disable responding to ping broadcasts"
 	echo 1 > /proc/sys/net/ipv4/icmp_echo_ignore_broadcasts
-        echo
+        echo "Done"
         return 0
 }
 stop() {
