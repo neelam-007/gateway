@@ -16,6 +16,7 @@ import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
 import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
+import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
@@ -45,6 +46,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(HttpDigest.class, HttpDigestAuthAssertionTreeNode.class);
         assertionMap.put(WssBasic.class, WssBasicAuthAssertionTreeNode.class);
         assertionMap.put(WssDigest.class, WssDigestAuthAssertionTreeNode.class);
+        assertionMap.put(RequestWssX509Cert.class, RequestWssX509CertTreeNode.class);
 
         assertionMap.put(HttpClientCert.class, HttpClientCertAssertionTreeNode.class);
         assertionMap.put(RoutingAssertion.class, HttpRoutingAssertionTreeNode.class);

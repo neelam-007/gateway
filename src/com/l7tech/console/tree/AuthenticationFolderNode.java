@@ -57,7 +57,8 @@ public class AuthenticationFolderNode extends AbstractTreeNode {
         insert(new HttpClientCertificateAuthNode(), index++);
         insert(new WsTokenBasicAuthNode(), index++);
         // insert(new WsTokenDigestAuthNode(), index++);
-        insert(new XmlRequestSecurityNode("XML Digital Signature"), index++);
+        //insert(new XmlRequestSecurityNode("XML Digital Signature"), index++);
+        insert(new RequestWssX509Node(), index++);
 
         final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
         try {
