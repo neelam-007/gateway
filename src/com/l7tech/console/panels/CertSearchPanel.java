@@ -79,6 +79,7 @@ public class CertSearchPanel extends JDialog {
         p.add(mainPanel, BorderLayout.CENTER);
         stopButton.setEnabled(false);
         viewButton.setEnabled(false);
+        selectButton.setEnabled(false);
 
         subjectSearchComboBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { STARTS_WITH, EQUALS }));
         issuerSearchComboBox.setModel(new javax.swing.DefaultComboBoxModel(new String[] { STARTS_WITH, EQUALS }));
@@ -181,10 +182,12 @@ public class CertSearchPanel extends JDialog {
 
         if (trustedCertTable.getSelectedRowCount() == 1) {
             viewEnabled = true;
-            selectEnabled = true;
-        } else if (trustedCertTable.getSelectedRowCount() > 1) {
+        }
+
+        if (trustedCertTable.getSelectedRowCount() > 0) {
             selectEnabled = true;
         }
+
         viewButton.setEnabled(viewEnabled);
         selectButton.setEnabled(selectEnabled);
     }
