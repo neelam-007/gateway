@@ -133,7 +133,7 @@ public class MultipartMessageTest extends TestCase {
 
     }
 
-    public void testStreamAllWith() throws Exception {
+    public void testStreamAllWithNoPreamble() throws Exception {
         MultipartMessage mm = makeMessage(MESS2, CT2);
 
         InputStream bodyStream = mm.getEntireMessageBodyAsInputStream(true);
@@ -144,7 +144,7 @@ public class MultipartMessageTest extends TestCase {
         assertEquals(MESS2.substring(MESS2.indexOf("<?xml ")), bodyStr.substring(bodyStart));
     }
 
-    public void testStreamAllNoPreamble() throws Exception {
+    public void testStreamAllWithPreamble() throws Exception {
         MultipartMessage mm = makeMessage(MESS, CT);
 
         InputStream bodyStream = mm.getEntireMessageBodyAsInputStream(true);
@@ -155,8 +155,8 @@ public class MultipartMessageTest extends TestCase {
         assertEquals(MESS.substring(MESS.indexOf("<?xml ")), bodyStr.substring(bodyStart));
 
         try {
-            mm.getEntireMessageBodyLength();
-            fail("Failed to get expected exception trying to compute body length with part bodies missing");
+            long len = mm.getEntireMessageBodyLength();
+            fail("Failed to get expected exception trying to compute body length with part bodies missing (got len=" + len + ")");
         } catch (NoSuchPartException e) {
             log.info("Got expected exception: " + e.getMessage());
         }
@@ -183,11 +183,14 @@ public class MultipartMessageTest extends TestCase {
 
         InputStream bodyStream = mm.getEntireMessageBodyAsInputStream(true);
         byte[] body = HexUtils.slurpStream(bodyStream);
-        final String bodyStr = new String(body);
         assertEquals(body.length, mm.getEntireMessageBodyLength());
+
+        // strip added content-length for the comparison
+        String bodyStr = new String(body).replaceAll("Content-Length:\\s*\\d+\r\n", "");
+
+        // Skip over the HTTP headers for the comparison
         int bodyStart = bodyStr.indexOf("<?xml ");
 
-        // TODO less sensitive comparision that will not give false negative here (due to reordered headers)
         assertEquals(MESS.substring(MESS.indexOf("<?xml ")), bodyStr.substring(bodyStart));
     }
 
@@ -294,6 +297,35 @@ public class MultipartMessageTest extends TestCase {
         }
 
         assertEquals(22, parts.size());
+    }
+
+    public void testContentLengthThatLies() throws Exception {
+        final ContentTypeHeader ct = ContentTypeHeader.parseValue("multipart/related; boundary=blah");
+        final String mess = "--blah\r\nContent-Length: 10\r\n\r\n\r\n--blah\r\n\r\n--blah--";
+        try {
+            // Test fail on getActualContentLength
+            MultipartMessage mm = new MultipartMessage(mess.getBytes(), ct);
+            long len = mm.getPart(0).getActualContentLength();
+            fail("Failed to throw expected exception on Content-Length: header that lies (got len=" + len + ")");
+        } catch (IOException e) {
+            // ok
+            log.info("Correct exception thrown on Content-Length: header discovered to be lying: " + e.getMessage());
+        }
+
+        try {
+            // Test fail during iteration
+            int num = 0;
+            MultipartMessage mm = new MultipartMessage(mess.getBytes(), ct);
+            for (PartIterator i = mm.iterator(); i.hasNext(); ) {
+                PartInfo partInfo = i.next();
+                partInfo.getInputStream(false).close();
+                num++;
+            }
+            fail("Failed to throw expected exception on Content-Length: header that lies (saw " + num + " parts)");
+        } catch (IOException e) {
+            // ok
+            log.info("Correct exception thrown on Content-Length: header discovered to be lying: " + e.getMessage());
+        }
     }
 
     public final String MESS_SOAPCID = "-76394136.15558";

@@ -220,7 +220,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                                     return AssertionStatus.FALSIFIED;
                                 }
 
-                                totalLen += mimepartRequest.getContentLength();
+                                totalLen += mimepartRequest.getActualContentLength();
 
                                 // check the max. length allowed
                                 if (totalLen > part.getMaxLength() * 1000) {

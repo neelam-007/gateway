@@ -40,7 +40,7 @@ public class MultipartMessage {
     private final ContentTypeHeader outerContentType;
 
     private final List partInfos = new ArrayList(); // our PartInfo instances.  current part is (partInfos.size() - 1)
-    private final PartInfo firstPart; // equivalent to (PartInfo)partInfos.get(0)
+    private final PartInfoImpl firstPart; // equivalent to (PartInfo)partInfos.get(0)
     private final Map partInfosByCid = new HashMap(); // our PartInfo-by-cid lookup.
 
     private final String boundaryStr; // multpart boundary not including initial dashses or any CRLFs; or null if singlepart
@@ -94,7 +94,7 @@ public class MultipartMessage {
             this.mainInputStream = new PushbackInputStream(mainInputStream, pushbackSize);
             readInitialBoundary();
             readNextPartHeaders();
-            firstPart = (PartInfo)partInfos.get(0);
+            firstPart = (PartInfoImpl)partInfos.get(0);
         } else {
             // Single-part message.  Configure first and only part accordingly.
             boundaryStr = null;
@@ -111,45 +111,23 @@ public class MultipartMessage {
                 }
 
                 public InputStream getInputStream(boolean destroyAsRead) throws IOException, NoSuchPartException {
-                    // See if we have one stashed already
-                    InputStream is = null;
-                    if (MultipartMessage.this.stashManager.peek(ordinal)) {
-                        try {
-                            is =  MultipartMessage.this.stashManager.recall(ordinal);
-                        } catch (NoSuchPartException e) {
-                            throw new RuntimeException(e); // can't happen, illegal state
-                        }
-                    }
-                    if (is != null)
-                        return is;
+                    InputStream stashedStream = preparePartInputStream();
+                    if (stashedStream != null)
+                        return stashedStream;
 
-                    // Guarantee: if this PartInfo exists, its headers have been read.
-                    // So, either our mainInputStream is already positioned right at this Part's body content,
-                    // or someone has already destructively read this Part's body content.
-
-                    // Are we the current Part?
-                    if (partInfos.size() != ordinal + 1 || !moreParts)
-                        throw new NoSuchPartException("This MIME multipart part's body content has already been destructively read.");
-
-                    is = MultipartMessage.this.mainInputStream;
+                    InputStream is = MultipartMessage.this.mainInputStream;
                     moreParts = false;
+                    onBodyRead();
 
-                    // We are ready to return an InputStream.  Do we need to stash the data first?
+                    // We are ready to return an InputStream.
+                    // Do we need to stash the data first?
                     if (destroyAsRead) {
                         // No -- allow caller to consume it.
                         return is;
                     }
 
                     // Yes -- stash it first, then recall it.
-                    MultipartMessage.this.stashManager.stash(ordinal, is);
-                    try {
-                        is = MultipartMessage.this.stashManager.recall(ordinal);
-                    } catch (NoSuchPartException e) {
-                        throw new RuntimeException(e); // can't happen, illegal state
-                    }
-                    if (is == null) throw new IllegalStateException(); // can't happen
-                    return is;
-
+                    return stashAndRecall(is);
                 }
             };
             partInfos.add(mainPartInfo);
@@ -411,6 +389,7 @@ public class MultipartMessage {
                                 sentNextPartBody = false;
 
                                 sentAllStashedParts = true;
+                                ((PartInfoImpl)partInfos.get(nextPart)).onBodyRead(); // tell this part that it's body is gone
 
                                 // FALLTHROUGH and return main input stream
                             }
@@ -460,8 +439,9 @@ public class MultipartMessage {
      * their bodies stashed.
      *
      * @throws NoSuchPartException if one or more part bodies have already been read destructively
+     * @throws IOException if there is an IOException reading from the StashManager
      */
-    private void assertNoPartBodiesDestroyed() throws NoSuchPartException {
+    private void assertNoPartBodiesDestroyed() throws NoSuchPartException, IOException {
         checkErrorNoPart();
 
         for (Iterator i = partInfos.iterator(); i.hasNext();) {
@@ -490,7 +470,7 @@ public class MultipartMessage {
 
         if (boundary == null) {
             // singlepart.  Nice and easy :)
-            return firstPart.getContentLength();
+            return firstPart.getActualContentLength();
         }
 
         long len = 0;
@@ -499,7 +479,7 @@ public class MultipartMessage {
             // Opening delimiter: CRLF + boundary (which includes initial 2 dashes) + CRLF
             len += 2 + boundary.length + 2;
             len += partInfo.getHeaders().getSerializedLength();
-            long bodylen = partInfo.getContentLength();
+            long bodylen = partInfo.getActualContentLength();
             if (bodylen < 0)
                 return bodylen;
             len += bodylen;
@@ -519,9 +499,10 @@ public class MultipartMessage {
     private void stashCurrentPartBody() throws IOException {
         checkErrorIO();
 
-        int currentOrdinal = partInfos.size() - 1;
+        PartInfoImpl currentPart = (PartInfoImpl)partInfos.get(partInfos.size() - 1);
         final MimeBoundaryTerminatedInputStream in = new MimeBoundaryTerminatedInputStream(boundary, mainInputStream, pushbackSize);
-        stashManager.stash(currentOrdinal, in);
+        currentPart.stashAndCheckContentLength(in);
+        currentPart.onBodyRead();
         if (in.isLastPartProcessed())
             moreParts = false;
     }
@@ -590,6 +571,7 @@ public class MultipartMessage {
         if (boundary == null) {
             // singlepart
             firstPart.getInputStream(false).close();
+            firstPart.onBodyRead();
             return;
         }
 
@@ -694,6 +676,8 @@ public class MultipartMessage {
     private class PartInfoImpl implements PartInfo {
         protected final int ordinal;
         protected final MimeHeaders headers;
+        private boolean bodyRead = false;   // if true, body has been read from main input stream.
+                                            // body may still be available if it was stashed
         private boolean validated = false;  // slightly painful design here
 
         private PartInfoImpl(int ordinal, MimeHeaders headers) {
@@ -709,31 +693,27 @@ public class MultipartMessage {
             return ordinal;
         }
 
+        boolean isBodyRead() {
+            return bodyRead;
+        }
+
+        void onBodyRead() {
+            this.bodyRead = true;
+        }
+
         /**
          * See if it will be possible to call getInputStream() on this PartInfo and get back a non-null InputStream.
          *
          * @return true if this Part's body has been stashed, or is currently waiting to be read; false if it
          *         has already been read destructively.
+         * @throws IOException if there is an IOException reading from the StashManager
          */
-        boolean bodyAvailable() {
+        boolean bodyAvailable() throws IOException {
+            if (!bodyRead)
+                return true;
+
             // See if we have one stashed already
-            try {
-                if (stashManager.peek(ordinal))
-                    return true;
-            } catch (IOException e) {
-                logger.log(Level.SEVERE, "Unable to peek ordinal in StashManager; ignoring", e);
-            }
-
-            // Guarantee: if this PartInfo exists, its headers have been read.
-            // So, either our mainInputStream is already positioned right at this Part's body content,
-            // or someone has already destructively read this Part's body content.
-
-            // Are we the current Part?
-            if (partInfos.size() != ordinal + 1 || !moreParts)
-                return false;  // we've been consumed
-
-            // looks like we are ready to go
-            return true;
+            return stashManager.peek(ordinal);
         }
 
         public void setContentType(ContentTypeHeader newContentType) {
@@ -760,32 +740,17 @@ public class MultipartMessage {
         }
 
         public InputStream getInputStream(boolean destroyAsRead) throws IOException, NoSuchPartException {
-            checkErrorIO();
+            InputStream is = preparePartInputStream();
 
-            // See if we have one stashed already
-            InputStream is = null;
-            if (stashManager.peek(ordinal))
-                try {
-                    is = stashManager.recall(ordinal);
-                } catch (NoSuchPartException e) {
-                    throw new CausedIllegalStateException("Peek succeeds but recall fails", e);
-                }
             if (is != null)
                 return is;
-
-            // Guarantee: if this PartInfo exists, its headers have been read.
-            // So, either our mainInputStream is already positioned right at this Part's body content,
-            // or someone has already destructively read this Part's body content.
-
-            // Are we the current Part?
-            if (partInfos.size() != ordinal + 1 || !moreParts)
-                throw new NoSuchPartException("This MIME multipart part's body content has already been destructively read.");
 
             // Prepare to read this Part's body
             is = new MimeBoundaryTerminatedInputStream(boundary, mainInputStream, pushbackSize);
             ((MimeBoundaryTerminatedInputStream)is).setEndOfStreamHook(new Runnable() {
                 public void run() {
                     try {
+                        bodyRead = true;
                         readNextPartHeaders();
                     } catch (IOException e) {
                         // No way to report this error directly.  Remember it for next call
@@ -798,6 +763,7 @@ public class MultipartMessage {
             });
             ((MimeBoundaryTerminatedInputStream)is).setFinalBoundaryHook(new Runnable() {
                 public void run() {
+                    bodyRead = true;
                     moreParts = false;
                 }
             });
@@ -809,14 +775,58 @@ public class MultipartMessage {
             }
 
             // Yes -- stash it first, then recall it.
-            stashManager.stash(ordinal, is);
-            try {
-                is = stashManager.recall(ordinal);
-            } catch (NoSuchPartException e) {
-                throw new CausedIllegalStateException("Peek succeeds but recall fails", e);
+            return stashAndRecall(is);
+        }
+
+        /**
+         * Get a previously stashed InputStream or, if there isn't one, ensure that the main input stream
+         * is positioned to read this part's body.
+         *
+         * @return A previously-stashed InputStream, if there was one; or,
+         *         null if and only if the main input stream is positioned to read this Part's body.
+         * @throws IOException if there is a pending IOException from a previous operation on this
+         *                     MultipartMessage or one of its parts
+         * @throws IOException if there is a problem stashing or recalling from the StashManager
+         * @throws NoSuchPartException if this Part's body has already been destructively read
+         * @throws NoSuchPartException if there is a pending NoSuchPartException from a previous operation on this
+         *                             MultipartMessage or one of its parts
+         * @throws IllegalStateException if the part was not stashed or consumed, but the main inputstream does not
+         *                               appear to be positioned to read this part's body.
+         *
+         */
+        protected InputStream preparePartInputStream() throws IOException, NoSuchPartException {
+            checkErrorBoth();
+
+            // See if we have one stashed already
+            InputStream is = null;
+            if (stashManager.peek(ordinal)) {
+                try {
+                    is = stashManager.recall(ordinal);
+                    if (is == null)
+                        throw new IllegalStateException("StashManager.recall() returned null");
+                } catch (NoSuchPartException e) {
+                    throw new CausedIllegalStateException("Peek succeeds but recall fails", e);
+                }
+
+                // Fall through and use this input stream
+
+            } else {
+                if (isBodyRead())
+                    throw new NoSuchPartException("MIME multipart body has already been read, and was not saved");
+
+                if (!moreParts)
+                    throw new IllegalStateException("No more parts left in this stream"); // shouldn't happen here
+
+                // Guarantee: if this PartInfo exists, its headers have been read.
+                // So, either our mainInputStream is already positioned right at this Part's body content,
+                // or someone has already destructively read this Part's body content.
+
+                // Are we the current Part?
+                if (partInfos.size() != ordinal + 1)
+                    throw new IllegalStateException("Stream not positioned to read this part's body"); // shouldn't happen
+
+                // Fall through and read next part from main input stream
             }
-            if (is == null)
-                throw new IllegalStateException("Stash succeeds but recall fails"); // StashManager contract violation
             return is;
         }
 
@@ -852,6 +862,14 @@ public class MultipartMessage {
             return -1;
         }
 
+        public long getActualContentLength() throws IOException, NoSuchPartException {
+            getInputStream(false).close(); // force stash
+            long size = stashManager.getSize(ordinal);
+            if (size < 0)
+                throw new IllegalStateException("Unable to determine length of stashed body");
+            return size;
+        }
+
         public ContentTypeHeader getContentType() {
             return headers.getContentType();
         }
@@ -866,6 +884,58 @@ public class MultipartMessage {
 
         public void setValidated(boolean validated) {
             this.validated = validated;
+        }
+
+        /**
+         * Stash the current part body from the specified input stream (assuming that everything read until EOF
+         * is the part body), enforce that the declared content length was correct, and return the stashed
+         * InputStream.
+         *
+         * @param is an InputStream that will return this part's body when read to EOF.
+         * @throws IOException if the content-length header contains anything other than a decimal number
+         * @throws IOException if the part had a content-length header that disagreed with what it's actual length turned out to be
+         * @throws IOException if the stashmanager throws IOExceptiona
+         */
+        void stashAndCheckContentLength(InputStream is) throws IOException {
+            if (is == null) throw new NullPointerException();
+            stashManager.stash(ordinal, is);
+            // Replace content length with up-to-date version
+            final long actualLength = MultipartMessage.this.stashManager.getSize(ordinal);
+            final String clen = Long.toString(actualLength);
+            if (headers.hasContentLength()) {
+                // Make sure the declared content length is accurate
+                long declaredLength = headers.getContentLength();
+                if (declaredLength != actualLength) {
+                    String part = isMultipart() ? "MIME multipart message part #" + ordinal : "message";
+                    throw new IOException(part + " declared in Content-Length header that size was " + declaredLength +
+                                          " bytes, but actual size was " + actualLength + " bytes");
+                }
+            }
+            headers.replace(new MimeHeader(MimeUtil.CONTENT_LENGTH, clen, null));
+        }
+
+        /**
+         * Stash the current part body from the specified input stream (assuming that everything read until EOF
+         * is the part body), enforce that the declared content length was correct, and return the stashed
+         * InputStream.
+         *
+         * @param is an InputStream that will return this part's body when read to EOF.
+         * @return the stashed and recalled InputStream for this part body, ready to read.  Never null.
+         * @throws IOException if the content-length header contains anything other than a decimal number
+         * @throws IOException if the part had a content-length header that disagreed with what it's actual length turned out to be
+         * @throws IOException if the stashmanager throws IOExceptiona
+         */
+        protected InputStream stashAndRecall(InputStream is) throws IOException {
+            if (is == null) throw new NullPointerException();
+            stashAndCheckContentLength(is);
+            InputStream got = null;
+            try {
+                got = stashManager.recall(ordinal);
+            } catch (NoSuchPartException e) {
+                throw new RuntimeException(e); // can't happen, illegal state
+            }
+            if (got == null) throw new IllegalStateException(); // can't happen
+            return got;
         }
     }
 }

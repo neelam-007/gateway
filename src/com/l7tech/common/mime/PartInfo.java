@@ -78,11 +78,25 @@ public interface PartInfo {
     /**
      * Get the content-length of this Part, if known.  If the Part has already been read and its actual size is
      * known, that will be returned; otherwise, if there's a Content-Length: header, its value will be returned;
-     * otherwize, -1 will be returned.
+     * otherwize, if the Part's body has not yet been read, -1 will be returned.
+     * <p>
+     * To force the body to be read if it hasn't been already, use {@link #getActualContentLength} instead.
      *
      * @return the content length known or declared for this Part, or -1 if this information is not available.
      */
     public long getContentLength();
+
+    /**
+     * Get the actual length of this Part's body in bytes.  Any length declared in a Content-Length: header will
+     * be ignored.  This will read and stash the entire body, if necessary, in order to obtain an accurate answer.
+     * The Content-Length header will be updated with the new, accurate information.
+     *
+     * @return The length of this part in bytes.  Always nonnegative, and always accurate.
+     * @throws IOException  if the main InputStream could not be read
+     * @throws IOException  if there was a problem recalling from the stash
+     * @throws NoSuchPartException if this part's body has already been destructively read
+     */
+    public long getActualContentLength() throws IOException, NoSuchPartException;
 
     /** @return the ContentTypeHeader, or a default value.  Never null. */
     public ContentTypeHeader getContentType();
