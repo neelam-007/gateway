@@ -15,7 +15,7 @@ import java.util.Collection;
  * @author alex
  * @version $Revision$
  */
-public class HibernateEntityManager implements EntityManager {
+public abstract class HibernateEntityManager implements EntityManager {
     public void setPersistenceManager( PersistenceManager persistenceManager ) {
         if ( persistenceManager instanceof HibernatePersistenceManager )
             _persistenceManager = (HibernatePersistenceManager)persistenceManager;
@@ -23,22 +23,18 @@ public class HibernateEntityManager implements EntityManager {
             throw new IllegalArgumentException( "HibernateEntityManager can only be initialized with a HibernatePersistenceManager!");
     }
 
-    public Collection findAll() {
+    public abstract Collection findAll() throws FindException;
+    public abstract Collection findAll(int offset, int windowSize) throws FindException;
+
+    public Collection findAllHeaders() throws FindException {
+        // TODO
         return null;
     }
 
-    public Collection findAll(int offset, int windowSize) {
+    public Collection findAllHeaders(int offset, int windowSize) throws FindException {
+        // TODO
         return null;
     }
-
-    public Collection findAllHeaders() {
-        return null;
-    }
-
-    public Collection findAllHeaders(int offset, int windowSize) {
-        return null;
-    }
-
 
     private HibernatePersistenceManager _persistenceManager;
 }

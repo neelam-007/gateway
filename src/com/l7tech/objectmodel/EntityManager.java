@@ -12,23 +12,23 @@ public interface EntityManager {
      * Returns an unmodifiable collection of <code>EntityHeader</code> objects for all instances of the entity class corresponding to this Manager.
      * @return A <code>Collection</code> of EntityHeader objects.
      */
-    public Collection findAllHeaders();
+    public Collection findAllHeaders() throws FindException;
 
     /**
      * Returns an unmodifiable collection of <code>EntityHeader</code> objects for instances of this entity class from a list sorted by <code>oid</code>, selecting only a specific subset of the list.
      * @return A <code>Collection</code> of EntityHeader objects.
      */
-    public Collection findAllHeaders( int offset, int windowSize );
+    public Collection findAllHeaders( int offset, int windowSize ) throws FindException;
 
     /**
      * Returns an unmodifiable collection of <code>Entity</code> objects for all instances of the entity class corresponding to this Manager.
      * @return A <code>Collection</code> of Entity objects.
      */
-    public Collection findAll();
+    public Collection findAll() throws FindException;
 
     /**
      * Returns an unmodifiable collection of <code>Entity</code> objects for instances of this entity class from a list sorted by <code>oid</code>, selecting only a specific subset of the list.
      * @return A <code>Collection</code> of EntityHeader objects.
      */
-    public Collection findAll( int offset, int windowSize );
+    public Collection findAll( int offset, int windowSize ) throws FindException;
 }

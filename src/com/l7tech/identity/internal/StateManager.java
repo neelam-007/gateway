@@ -1,12 +1,12 @@
 package com.l7tech.identity.internal;
 
-import com.l7tech.objectmodel.EntityManager;
+import com.l7tech.objectmodel.*;
 
 /**
  * @author alex
  */
 public interface StateManager extends EntityManager {
-    public State findByPrimaryKey( long oid );
-    public void delete( State state );
-    public long save( State state );
+    public State findByPrimaryKey( long oid ) throws FindException;
+    public void delete( State state ) throws DeleteException;
+    public long save( State state ) throws SaveException;
 }
