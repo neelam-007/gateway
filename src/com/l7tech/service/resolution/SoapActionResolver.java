@@ -41,10 +41,11 @@ public class SoapActionResolver extends WsdlOperationServiceResolver {
     }
 
     protected Object getRequestValue( Request request ) {
-        String soapAction = (String)request.getParameter( request.PARAM_HTTP_SOAPACTION );
+        String soapAction = (String)request.getParameter( Request.PARAM_HTTP_SOAPACTION );
         if (soapAction == null) return null;
         // Strip leading and trailing quotes
-        if ( soapAction.startsWith("\"") && soapAction.endsWith("\"") ) {
+        if (    ( soapAction.startsWith("\"") && soapAction.endsWith("\"") )
+             || ( soapAction.startsWith("'") && soapAction.endsWith( "'" ) ) ) {
             return soapAction.substring( 1, soapAction.length()-1 );
         } else {
             return soapAction;
