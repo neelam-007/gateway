@@ -346,6 +346,7 @@ CREATE TABLE audit_main (
   time number(38,0) NOT NULL,
   audit_level varchar(12) NOT NULL,
   message varchar(255) NOT NULL,
+  name varchar(255),
   ip_address varchar(32) NOT NULL,
   PRIMARY KEY  (objectid)
 );

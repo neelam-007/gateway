@@ -19,8 +19,9 @@ public abstract class AuditRecord extends SSGLogRecord {
     protected AuditRecord() {
     }
 
-    public AuditRecord(Level level, String nodeId, String ipAddress, String message) {
+    public AuditRecord(Level level, String nodeId, String ipAddress, String name, String message) {
         super(level, nodeId, message);
+        this.name = name;
         this.ipAddress = ipAddress;
     }
 
@@ -33,5 +34,15 @@ public abstract class AuditRecord extends SSGLogRecord {
         this.ipAddress = ipAddress;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    /** @deprecated to be called only for serialization and persistence purposes! */
+    public void setName( String name ) {
+        this.name = name;
+    }
+
     protected String ipAddress;
+    protected String name;
 }

@@ -30,11 +30,13 @@ public class AdminAuditRecord extends AuditRecord {
     public static final char ACTION_DELETED = 'D';
 
     public AdminAuditRecord(Level level, String nodeId, PersistenceEvent event, String adminLogin, String ip) {
-        super(level, nodeId, ip, null);
+        super(level, nodeId, ip, null, null);
         if (adminLogin == null) throw new IllegalStateException("Couldn't determine current administrator login");
         this.adminLogin = adminLogin;
 
         final Entity entity = event.getEntity();
+        if (entity instanceof NamedEntity) this.name = ((NamedEntity)entity).getName();
+        
         this.entityClassname = entity.getClass().getName();
         this.entityOid = entity.getOid();
         int ppos = entityClassname.lastIndexOf(".");

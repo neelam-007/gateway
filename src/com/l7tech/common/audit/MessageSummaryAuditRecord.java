@@ -31,7 +31,7 @@ public class MessageSummaryAuditRecord extends AuditRecord {
                                      long serviceOid, String serviceName,
                                      boolean authenticated, long identityProviderOid, String userName, String userId)
     {
-        super(level, nodeId, clientAddr, null);
+        super(level, nodeId, clientAddr, null, null);
         StringBuffer msg = new StringBuffer("Message ");
         if (status == AssertionStatus.NONE) {
             msg.append("processed successfully");
@@ -40,6 +40,7 @@ public class MessageSummaryAuditRecord extends AuditRecord {
             msg.append(status.getMessage());
             msg.append(" (").append(status.getNumeric()).append(")");
         }
+        this.name = serviceName;
         this.requestId = requestId;
         this.setMessage(msg.toString());
         this.status = status.getNumeric();
@@ -48,7 +49,6 @@ public class MessageSummaryAuditRecord extends AuditRecord {
         this.responseXml = responseXml;
         this.responseContentLength = responseContentLength;
         this.serviceOid = serviceOid;
-        this.serviceName = serviceName;
         this.authenticated = authenticated;
         this.identityProviderOid = identityProviderOid;
         this.userName = userName;

@@ -20,7 +20,7 @@ public class SystemAuditRecord extends AuditRecord {
     }
 
     public SystemAuditRecord(Level level, String nodeId, Component component, String action, String ip) {
-        super(level, nodeId, ip, component.getName() + " " + action);
+        super(level, nodeId, ip, component.getName(), component.getName() + " " + action);
         this.component = component.getCode();
         this.action = action;
     }
