@@ -6,6 +6,7 @@
 package com.l7tech.admin.rmi;
 
 import com.l7tech.admin.AdminContext;
+import com.l7tech.admin.AdminAction;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.TrustedCertAdmin;
@@ -93,6 +94,13 @@ public class AdminContextImpl
 
     public ClusterStatusAdmin getClusterStatusAdmin() throws RemoteException, SecurityException {
         return clusterStatusAdmin;
+    }
+
+    public Object[] invoke(AdminAction[] actions) throws RemoteException, SecurityException {
+        if (actions == null) {
+            throw new IllegalArgumentException();
+        }
+        return new Object[0];
     }
 
     public void afterPropertiesSet() throws Exception {

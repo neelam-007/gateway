@@ -33,62 +33,71 @@ public interface AdminContext {
     /**
      * @return the {@link com.l7tech.identity.IdentityAdmin} implementation
      * @throws SecurityException on security error accessing the interface
-     * @throws RemoteException   on remote communicatiOn error
+     * @throws RemoteException   on remote communication error
      */
     IdentityAdmin getIdentityAdmin() throws RemoteException, SecurityException;
 
     /**
      * @return the {@link com.l7tech.identity.IdentityProviderConfig} object for the internal identity provider
      * @throws SecurityException on security error accessing the interface
-     * @throws RemoteException   on remote communicatiOn error
+     * @throws RemoteException   on remote communication error
      */
     IdentityProviderConfig getInternalProviderConfig() throws RemoteException, SecurityException, FindException;
 
     /**
      * @return the service managerr
      * @throws SecurityException on security error accessing the interface
-     * @throws RemoteException   on remote communicatiOn error
+     * @throws RemoteException   on remote communication error
      */
     ServiceAdmin getServiceAdmin() throws RemoteException, SecurityException;
 
     /**
      * @return the jms provider manager
      * @throws SecurityException on security error accessing the interface
-     * @throws RemoteException   on remote communicatiOn error
+     * @throws RemoteException   on remote communication error
      */
     JmsAdmin getJmsAdmin() throws RemoteException, SecurityException;;
 
     /**
      * @return the trusted certificates manager
      * @throws SecurityException on security error accessing the interface
-     * @throws RemoteException   on remote communicatiOn error
+     * @throws RemoteException   on remote communication error
      */
     TrustedCertAdmin getTrustedCertAdmin() throws RemoteException, SecurityException;;
     /**
      * @return the custome assertions registrar
      * @throws SecurityException on security error accessing the interface
-     * @throws RemoteException   on remote communicatiOn error
+     * @throws RemoteException   on remote communication error
      */
     CustomAssertionsRegistrar getCustomAssertionsRegistrar() throws RemoteException, SecurityException;;
 
     /**
      * @return the audit admin interface implementation.
      * @throws SecurityException on security error accessing the interface
-     * @throws RemoteException   on remote communicatiOn error
+     * @throws RemoteException   on remote communication error
      */
     AuditAdmin getAuditAdmin() throws RemoteException, SecurityException;;
 
     /**
      * @return the log admin interface implementation.
      * @throws SecurityException on security error accessing the interface
-     * @throws RemoteException   on remote communicatiOn error
+     * @throws RemoteException   on remote communication error
      */
     LogAdmin getLogAdmin() throws RemoteException, SecurityException;
 
     /**
      * @return the cluster status admin interface implementation.
      * @throws SecurityException on security error accessing the interface
-     * @throws RemoteException   on remote communicatiOn error
+     * @throws RemoteException   on remote communication error
      */
     ClusterStatusAdmin getClusterStatusAdmin() throws RemoteException, SecurityException;
+
+    /**
+     * Invoke admin actions with admin privileges associated with this <code>AdminCntext</code>
+     * reference.
+     *
+     * @param actions the set of actions to execute
+     * @return the action results corresponding to the actions. <b>null</b> is returned
+     */
+    Object[] invoke(AdminAction[] actions) throws RemoteException, SecurityException;
 }
