@@ -87,6 +87,9 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
 
                 public GenericHttpResponse getResponse() throws GenericHttpException {
                     try {
+                        if (requestInputStream != null)
+                            HexUtils.copyStream(requestInputStream, conn.getOutputStream());
+
                         final ContentTypeHeader contentTypeHeader = ContentTypeHeader.parseValue(conn.getContentType());
                         final int status = httpConn.getResponseCode();
                         final List headers = new ArrayList();
@@ -100,12 +103,8 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
                             n++;
                         } while (value != null);
 
-
                         completedRequest = true;
-
-                        if (requestInputStream != null)
-                            HexUtils.copyStream(requestInputStream, conn.getOutputStream());
-
+                        
                         return new GenericHttpResponse() {
                             public InputStream getInputStream() throws GenericHttpException {
                                 InputStream inputStream;
