@@ -67,7 +67,7 @@ public final class SoapMsgSigner {
      * the XML document.
      * 
      * @param document    the xml document containing the element to sign.
-     * @param elem        the document element
+     * @param messagePart        the document element
      * @param referenceId the signature reference ID attreibute value
      * @param privateKey  the private key of the signer if imlpements RSAPrivateKey signature method will be
      *                    http://www.w3.org/2000/09/xmldsig#rsa-sha1, if privateKey implements DSAPrivateKey, signature method will be
@@ -79,18 +79,18 @@ public final class SoapMsgSigner {
      *                                  
      * @throws IllegalArgumentException if any of the parameters i <b>null</b>
      */
-    public static void signElement(Document document, Element elem, String referenceId, PrivateKey privateKey, X509Certificate cert)
+    public static void signElement(Document document, final Element messagePart, String referenceId, PrivateKey privateKey, X509Certificate cert)
       throws SignatureStructureException, XSignatureException {
 
-        if (document == null || elem == null | referenceId == null ||
+        if (document == null || messagePart == null | referenceId == null ||
           privateKey == null || cert == null) {
             throw new IllegalArgumentException();
         }
 
-        String id = elem.getAttribute(referenceId);
+        String id = messagePart.getAttribute(referenceId);
         if (id == null || "".equals(id)) {
             id = referenceId;
-            elem.setAttribute(ID_ATTRIBUTE_NAME, referenceId);
+            messagePart.setAttribute(ID_ATTRIBUTE_NAME, referenceId);
         }
 
         // set the appropriate signature method
@@ -156,12 +156,12 @@ public final class SoapMsgSigner {
      * @throws com.l7tech.common.security.xml.InvalidSignatureException
      *          if the signature is invalid, not in an expected format or is missing information
      */
-    public static X509Certificate validateSignature(Document soapMsg, Element bodyElement)
+    public static X509Certificate validateSignature(Document soapMsg, final Element bodyElement)
       throws SignatureNotFoundException, InvalidSignatureException {
         normalizeDoc(soapMsg);
 
         // find signature bodyElement
-        Element sigElement = getSignatureHeaderElement(soapMsg, bodyElement);
+        final Element sigElement = getSignatureHeaderElement(soapMsg, bodyElement);
         if (sigElement == null) {
             throw new SignatureNotFoundException("No signature bodyElement in this document");
         }
@@ -170,7 +170,7 @@ public final class SoapMsgSigner {
         AdHocIDResolver idResolver = new AdHocIDResolver(soapMsg);
         sigContext.setIDResolver(idResolver);
 
-        // Find KeyInfo bodyElement, and extract certificate from this
+        // Find KeyInfo element, and extract certificate from this
         Element keyInfoElement = KeyInfo.searchForKeyInfo(sigElement);
         if (keyInfoElement == null) {
             throw new SignatureNotFoundException("KeyInfo bodyElement not found in " + sigElement.toString());
