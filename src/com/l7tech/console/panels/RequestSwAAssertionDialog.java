@@ -137,6 +137,7 @@ public class RequestSwAAssertionDialog extends JDialog {
         if (assertion.getBindings().size() == 0) {
             // this is the first time
             populateData(bindings);
+            assertion.setBindings(bindings);
         } else {
             // check if the WSDL changed
             populateData(assertion.getBindings());

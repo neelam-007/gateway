@@ -77,6 +77,7 @@ public class MimePartsTableSorter  extends FilteredDefaultTableModel {
      * @param aValue The new data to be stored.
      */
    public void setValueAt(Object aValue, int row, int col) {
+
        // only max length column can be modified
        if(col == MimePartsTableSorter.MIME_PART_TABLE_MAX_LENGTH_COLUMN_INDEX) {
 
@@ -91,8 +92,6 @@ public class MimePartsTableSorter  extends FilteredDefaultTableModel {
                        // replace the old one
                        if(aValue instanceof Integer) {
                            mimePart.setMaxLength(((Integer)aValue).intValue());
-                       } else if (aValue instanceof String) {
-                           mimePart.setMaxLength((new Integer(((String)aValue))).intValue());
                        }
                        break;
                    }
