@@ -6,10 +6,12 @@ import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyChangeVetoException;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.NodeFilter;
+import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.service.PublishedService;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.event.EventListenerList;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -20,6 +22,7 @@ import java.io.IOException;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.EventListener;
+import java.rmi.RemoteException;
 
 
 /**
@@ -93,7 +96,7 @@ public class PolicyTreeModel extends DefaultTreeModel {
      * @param listener the PolicyWillChangeListener
      */
     public void addPolicyListener(PolicyWillChangeListener listener) {
-        listenerList.add(PolicyWillChangeListener.class, listener);
+        eventListenerList.add(PolicyWillChangeListener.class, listener);
     }
 
     /**
@@ -102,12 +105,12 @@ public class PolicyTreeModel extends DefaultTreeModel {
      * @param listener the PolicyWillChangeListener
      */
     public void removePolicyListener(PolicyWillChangeListener listener) {
-        listenerList.remove(PolicyWillChangeListener.class, listener);
+        eventListenerList.remove(PolicyWillChangeListener.class, listener);
     }
 
     private void fireWillReceiveListeners(PolicyEvent event)
       throws PolicyChangeVetoException {
-        EventListener[] listeners = listenerList.getListeners(PolicyWillChangeListener.class);
+        EventListener[] listeners = eventListenerList.getListeners(PolicyWillChangeListener.class);
         for (int i = listeners.length - 1; i >= 0; i--) {
             ((PolicyWillChangeListener)listeners[i]).policyWillReceive(event);
         }
@@ -116,7 +119,7 @@ public class PolicyTreeModel extends DefaultTreeModel {
 
     private void fireWillRemoveListeners(PolicyEvent event)
       throws PolicyChangeVetoException {
-        EventListener[] listeners = listenerList.getListeners(PolicyWillChangeListener.class);
+        EventListener[] listeners = eventListenerList.getListeners(PolicyWillChangeListener.class);
         for (int i = listeners.length - 1; i >= 0; i--) {
             ((PolicyWillChangeListener)listeners[i]).policyWillRemove(event);
         }
@@ -168,9 +171,74 @@ public class PolicyTreeModel extends DefaultTreeModel {
 
         try {
             fireWillReceiveListeners(event);
-            super.insertNodeInto(newChild, parent, index);
+            AssertionTreeNode assertionTreeNode = (AssertionTreeNode)getRoot();
+            ServiceNode sn = assertionTreeNode.getServiceNodeCookie();
+            PublishedService service = null;
+            if (sn !=null) {
+                service = sn.getPublishedService();
+            }
+            Assertion policy = assertionTreeNode.asAssertion();
+            PolicyTreeModelChange pc = new PolicyTreeModelChange(policy,
+                                                                 event,
+                                                                 service,
+                                                                 this, (AssertionTreeNode)newChild,
+                                                                 (AssertionTreeNode)parent, index);
+            pc.proceed();
         } catch (PolicyChangeVetoException e) {
             // vetoed
+        } catch (PolicyException e) {
+            throw new RuntimeException(e);
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        } catch (FindException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Invoked this to insert newChild at location index in parents children with
+     * advice support.
+     */
+    private void insertNodeIntoAdvised(MutableTreeNode newChild, MutableTreeNode parent, int index) {
+        super.insertNodeInto(newChild, parent, index);
+    }
+
+
+    /**
+     * Advices invocation. Supports invoking the policy change advice chain.
+     */
+    private static class PolicyTreeModelChange extends PolicyChange {
+        private PolicyTreeModel treeModel = null;
+        private Advice[] advices = null;
+        private int adviceIndex = 0;
+        private AssertionTreeNode newChild;
+        private AssertionTreeNode parent;
+        private int childLocation;
+
+        /**
+         * Construct the policy change that will invoke advices for a given policy
+         * change.
+         * 
+         * @param policy  the policy that will be changed
+         * @param event   the policy event describing the change
+         * @param service the service this policy belongs to
+         */
+        public PolicyTreeModelChange(Assertion policy, PolicyEvent event, PublishedService service,
+                                     PolicyTreeModel treeModel, AssertionTreeNode newChild,
+                                     AssertionTreeNode parent, int childLocation) {
+            super(policy, event, service);
+            this.treeModel = treeModel;
+            this.newChild = newChild;
+            this.parent = parent;
+            this.childLocation = childLocation;
+        }
+
+        public void proceed() throws PolicyException {
+            advices = Advices.getAdvices(newChild.asAssertion());
+            if (advices == null || this.adviceIndex == advices.length) {
+                treeModel.insertNodeIntoAdvised(newChild, parent, childLocation);
+            } else
+                this.advices[this.adviceIndex++].proceed(this);
         }
     }
 
@@ -190,8 +258,8 @@ public class PolicyTreeModel extends DefaultTreeModel {
         Assertion p = parent.asAssertion();
         Assertion a = ((AssertionTreeNode)node).asAssertion();
         PolicyEvent event = new PolicyEvent(this,
-                                            new AssertionPath(p.getPath()),
-                                            childIndex, new Assertion[]{a});
+          new AssertionPath(p.getPath()),
+          childIndex, new Assertion[]{a});
         try {
             fireWillRemoveListeners(event);
             super.removeNodeFromParent(node);

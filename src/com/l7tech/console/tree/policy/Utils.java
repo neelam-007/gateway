@@ -7,12 +7,12 @@ import java.lang.reflect.Constructor;
  * <p>
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a> 
  */
-public class Assertions {
+public class Utils {
 
     /**
      * this class cannot be instantiated
      */
-    private Assertions() {
+    private Utils() {
     }
 
     /**

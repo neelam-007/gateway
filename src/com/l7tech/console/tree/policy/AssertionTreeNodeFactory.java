@@ -96,13 +96,13 @@ public class AssertionTreeNodeFactory {
      * @throws InvocationTargetException thrown on error invoking the constructor
      * @throws IllegalAccessException    thrown if there is no access to the desired
      *                                   constructor
-     * @see Assertions#findMatchingConstructor(Class, Class[])
+     * @see Utils#findMatchingConstructor(Class, Class[])
      */
     private static AssertionTreeNode makeAssertionNode(Class classNode, Assertion assertion)
       throws InstantiationException, InvocationTargetException, IllegalAccessException {
 
         Constructor ctor =
-          Assertions.findMatchingConstructor(classNode, new Class[]{assertion.getClass()});
+          Utils.findMatchingConstructor(classNode, new Class[]{assertion.getClass()});
         if (ctor != null)
             return (AssertionTreeNode)ctor.newInstance(new Object[]{assertion});
         throw new RuntimeException("Cannot locate expected he constructor in " + classNode);

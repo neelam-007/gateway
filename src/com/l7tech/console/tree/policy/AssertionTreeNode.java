@@ -219,7 +219,7 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
     /**
      * @return the published service cookie or null if not found
      */
-    private ServiceNode getServiceNodeCookie() {
+    protected ServiceNode getServiceNodeCookie() {
         for (Iterator i = ((AbstractTreeNode)getRoot()).cookies(); i.hasNext();) {
             Object value = ((Cookie)i.next()).getValue();
             if (value instanceof ServiceNode) return (ServiceNode)value;

@@ -56,7 +56,7 @@ public class Descriptions {
       throws InstantiationException, InvocationTargetException, IllegalAccessException {
 
         Constructor ctor =
-          Assertions.findMatchingConstructor(classNode, new Class[]{assertion.getClass()});
+          Utils.findMatchingConstructor(classNode, new Class[]{assertion.getClass()});
         if (ctor != null)
             return (AssertionDescription)ctor.newInstance(new Object[]{assertion});
         throw new RuntimeException("Cannot locate expected he constructor in " + classNode);

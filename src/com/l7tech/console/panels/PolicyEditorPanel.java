@@ -28,6 +28,7 @@ import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -149,14 +150,14 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         setName(service.getName());
         getSplitPane().setName(service.getName());
 
-        FilteredTreeModel filteredTreeModel;
+        TreeModel policyTreeModel;
         final PolicyToolBar pt = componentRegistry.getMainWindow().getPolicyToolBar();
 
 
         if (identityView) {
             PolicyTreeModel model = PolicyTreeModel.identitityModel(rootAssertion.asAssertion());
-            filteredTreeModel = new FilteredTreeModel((TreeNode)model.getRoot());
-            filteredTreeModel.setFilter(new PolicyTreeModel.IdentityNodeFilter());
+            policyTreeModel = new FilteredTreeModel((TreeNode)model.getRoot());
+            ((FilteredTreeModel)policyTreeModel).setFilter(new PolicyTreeModel.IdentityNodeFilter());
 
         } else {
             PolicyTreeModel model;
@@ -165,13 +166,13 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             } else {
                 model = PolicyTreeModel.make(service);
             }
-            filteredTreeModel = new FilteredTreeModel((TreeNode)model.getRoot());
+            policyTreeModel = model;
         }
 
-        rootAssertion = (AssertionTreeNode)filteredTreeModel.getRoot();
+        rootAssertion = (AssertionTreeNode)policyTreeModel.getRoot();
         rootAssertion.addCookie(new AbstractTreeNode.NodeCookie(serviceNode));
 
-        policyTree.setModel(filteredTreeModel);
+        policyTree.setModel(policyTreeModel);
         if (identityView) {
             pt.unregisterPolicyTree(policyTree);
         } else {
@@ -179,8 +180,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         }
 
 
-        filteredTreeModel.addTreeModelListener(policyTreeModellistener);
-        final TreeNode root = (TreeNode)filteredTreeModel.getRoot();
+        policyTreeModel.addTreeModelListener(policyTreeModellistener);
+        final TreeNode root = (TreeNode)policyTreeModel.getRoot();
         final TreePath rootPath = new TreePath(((DefaultMutableTreeNode)root).getPath());
         policyTree.expandPath(rootPath);
 
