@@ -29,7 +29,7 @@ public class UserManagerClient extends IdentityManagerClient implements UserMana
     public User findByPrimaryKey(String usrId) throws FindException {
         try {
             return getStub().findUserByPrimaryKey(config.getOid(), usrId);
-        } catch (java.rmi.RemoteException e) {
+        } catch (RemoteException e) {
             throw new FindException("RemoteException in findUserByPrimaryKey", e);
         }
     }
@@ -46,10 +46,12 @@ public class UserManagerClient extends IdentityManagerClient implements UserMana
 
     public void delete(User user) throws DeleteException {
         try {
-            if (userIsCurrentlyAdministrator(Long.toString(user.getOid()))) throw new CannotDeleteAdminAccountException();
+            if (userIsCurrentlyAdministrator(Long.toString(user.getOid()))) {
+                throw new CannotDeleteAdminAccountException();
+            }
             // todo, user must be refactored so that it's id is always a string
             getStub().deleteUser(config.getOid(), Long.toString(user.getOid()));
-        } catch (java.rmi.RemoteException e) {
+        } catch (RemoteException e) {
             throw new DeleteException(e.getMessage(), e);
         } catch (FindException e) {
             throw new DeleteException(e.getMessage(), e);
@@ -61,7 +63,7 @@ public class UserManagerClient extends IdentityManagerClient implements UserMana
             long res = getStub().saveUser(config.getOid(), user);
             if (res > 0) user.setOid(res);
             return res;
-        } catch (java.rmi.RemoteException e) {
+        } catch (RemoteException e) {
             throw new SaveException(e.getMessage(), e);
         }
     }
@@ -69,7 +71,7 @@ public class UserManagerClient extends IdentityManagerClient implements UserMana
     public void update(User user) throws UpdateException {
         try {
             getStub().saveUser(config.getOid(), user);
-        } catch (java.rmi.RemoteException e) {
+        } catch (RemoteException e) {
             throw new UpdateException(e.getMessage(), e);
         }
     }
@@ -83,10 +85,10 @@ public class UserManagerClient extends IdentityManagerClient implements UserMana
     }
 
     public Collection findAllHeaders() throws FindException {
-        com.l7tech.objectmodel.EntityHeader[] array = null;
+        EntityHeader[] array = null;
         try {
             array = getStub().findAllUsers(config.getOid());
-        } catch (java.rmi.RemoteException e) {
+        } catch (RemoteException e) {
             throw new FindException("RemoteException in findAllHeaders", e);
         }
         Collection output = new java.util.ArrayList();
@@ -95,10 +97,10 @@ public class UserManagerClient extends IdentityManagerClient implements UserMana
     }
 
     public Collection findAllHeaders(int offset, int windowSize) throws FindException {
-        com.l7tech.objectmodel.EntityHeader[] array = null;
+        EntityHeader[] array = null;
         try {
             array = getStub().findAllUsersByOffset(config.getOid(), offset, windowSize);
-        } catch (java.rmi.RemoteException e) {
+        } catch (RemoteException e) {
             throw new FindException("RemoteException in findAllHeaders", e);
         }
         Collection output = new java.util.ArrayList();
@@ -136,8 +138,8 @@ public class UserManagerClient extends IdentityManagerClient implements UserMana
             if (encodedCert == null) return null;
             sun.misc.BASE64Decoder base64decoder = new sun.misc.BASE64Decoder();
             byte[] certbytes = base64decoder.decodeBuffer(encodedCert);
-            return CertificateFactory.getInstance("X.509").generateCertificate(new ByteArrayInputStream(certbytes));
-
+            return CertificateFactory.getInstance("X.509").
+                    generateCertificate(new ByteArrayInputStream(certbytes));
         } catch (RemoteException e) {
             throw new FindException("RemoteException in retrieveUserCert", e);
         } catch (IOException e) {
@@ -165,7 +167,9 @@ public class UserManagerClient extends IdentityManagerClient implements UserMana
         Set groupMembershipHeaders = user.getGroupHeaders();
         for (Iterator i = groupMembershipHeaders.iterator(); i.hasNext();) {
             EntityHeader header = (EntityHeader)i.next();
-            if (header.getName() != null && header.getName().equals(Group.ADMIN_GROUP_NAME)) return true;
+            if (header.getName() != null && header.getName().equals(Group.ADMIN_GROUP_NAME)) {
+                return true;
+            }
         }
         return false;
     }

@@ -9,6 +9,7 @@ import com.l7tech.objectmodel.*;
 import java.util.Collection;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.rmi.RemoteException;
 
 /**
  * Layer 7 Technologies, inc.
@@ -25,7 +26,7 @@ public class GroupManagerClient extends IdentityManagerClient implements GroupMa
     public Group findByPrimaryKey(String oid) throws FindException {
         try {
             return getStub().findGroupByPrimaryKey(config.getOid(), oid);
-        } catch (java.rmi.RemoteException e) {
+        } catch (RemoteException e) {
             throw new FindException("RemoteException in findByPrimaryKey", e);
         }
     }
@@ -39,7 +40,7 @@ public class GroupManagerClient extends IdentityManagerClient implements GroupMa
             if (groupIsAdminGroup(group)) throw new CannotDeleteAdminAccountException();
             // todo, group must be refactored so that it's id is always a string
             getStub().deleteGroup(config.getOid(), Long.toString(group.getOid()));
-        } catch (java.rmi.RemoteException e) {
+        } catch (RemoteException e) {
             throw new DeleteException(e.getMessage(), e);
         }
     }
@@ -49,7 +50,7 @@ public class GroupManagerClient extends IdentityManagerClient implements GroupMa
             long res = getStub().saveGroup(config.getOid(), group);
             if (res > 0) group.setOid(res);
             return res;
-        } catch (java.rmi.RemoteException e) {
+        } catch (RemoteException e) {
             throw new SaveException(e.getMessage(), e);
         }
     }
@@ -57,7 +58,7 @@ public class GroupManagerClient extends IdentityManagerClient implements GroupMa
     public void update(Group group) throws UpdateException {
         try {
             getStub().saveGroup(config.getOid(), group);
-        } catch (java.rmi.RemoteException e) {
+        } catch (RemoteException e) {
             throw new UpdateException(e.getMessage(), e);
         }
     }
@@ -71,10 +72,10 @@ public class GroupManagerClient extends IdentityManagerClient implements GroupMa
     }
 
     public Collection findAllHeaders() throws FindException {
-        com.l7tech.objectmodel.EntityHeader[] array = null;
+        EntityHeader[] array = null;
         try {
             array = getStub().findAllGroups(config.getOid());
-        } catch (java.rmi.RemoteException e) {
+        } catch (RemoteException e) {
             throw new FindException("RemoteException in findAllHeaders", e);
         }
         Collection output = new java.util.ArrayList();
@@ -83,10 +84,10 @@ public class GroupManagerClient extends IdentityManagerClient implements GroupMa
     }
 
     public Collection findAllHeaders(int offset, int windowSize) throws FindException {
-        com.l7tech.objectmodel.EntityHeader[] array = null;
+        EntityHeader[] array = null;
         try {
             array = getStub().findAllGroupsByOffset(config.getOid(), offset, windowSize);
-        } catch (java.rmi.RemoteException e) {
+        } catch (RemoteException e) {
             throw new FindException("RemoteException in findAllHeaders", e);
         }
         Collection output = new java.util.ArrayList();
@@ -126,6 +127,7 @@ public class GroupManagerClient extends IdentityManagerClient implements GroupMa
             if ( Group.ADMIN_GROUP_NAME.equals( actualGroup.getName() ) ) return true;
         } catch (FindException e) {
             // it's valid that the group does not exist here
+            // todo, use client's error reporting mechanism
             e.printStackTrace(System.err);
             return false;
         }

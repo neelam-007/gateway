@@ -2,10 +2,7 @@ package com.l7tech.adminws.identity;
 
 import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
-import com.l7tech.identity.GroupManager;
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.UserManager;
-import com.l7tech.identity.AuthenticationException;
+import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityHeader;
@@ -20,7 +17,7 @@ import java.rmi.RemoteException;
  * Date: Jun 24, 2003
  *
  */
-public class IdentityProviderClient implements com.l7tech.identity.IdentityProvider {
+public class IdentityProviderClient implements IdentityProvider {
 
     public void initialize(IdentityProviderConfig config) {
         this.config = config;
