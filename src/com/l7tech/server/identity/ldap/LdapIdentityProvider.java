@@ -68,7 +68,6 @@ public class LdapIdentityProvider implements IdentityProvider {
     }
 
     public void initializeFallbackMechanism() {
-
         // configure timeout period
         String property = ServerConfig.getInstance().getProperty("ldap.reconnect.timeout");
         if (property == null || property.length() < 1) {
@@ -136,7 +135,7 @@ public class LdapIdentityProvider implements IdentityProvider {
                     if (ldapUrls[i] == urlThatFailed) {
                         failurePos = i;
                         urlStatus[i] = new Long(System.currentTimeMillis());
-                        logger.info("Will not try this url again for next " + (retryFailedConnectionTimeout/1000) +
+                        logger.info("Blacklisting url for next " + (retryFailedConnectionTimeout/1000) +
                                     " seconds : " + ldapUrls[i]);
                     }
                 }
@@ -149,13 +148,13 @@ public class LdapIdentityProvider implements IdentityProvider {
                 boolean thisoneok = false;
                 if (urlStatus[i] == null) {
                     thisoneok = true;
-                    logger.fine("Try url " + ldapUrls[i]);
+                    logger.fine("Try url not on blacklist yet " + ldapUrls[i]);
                 } else {
                     long howLong = System.currentTimeMillis() - ((Long)urlStatus[i]).longValue();
                     if (howLong > retryFailedConnectionTimeout) {
                         thisoneok = true;
                         urlStatus[i] = null;
-                        logger.fine("Ldap URL has been punished long enough. Trying it again: " + ldapUrls[i]);
+                        logger.fine("Ldap URL has been blacklisted long enough. Trying it again: " + ldapUrls[i]);
                     }
                 }
                 if (thisoneok) {
@@ -164,7 +163,7 @@ public class LdapIdentityProvider implements IdentityProvider {
                     return lastSuccessfulLdapUrl;
                 }
             }
-            logger.fine("All defined urls have not been responding");
+            logger.fine("All ldap urls are blacklisted.");
             lastSuccessfulLdapUrl = null;
             return null;
         } catch (InterruptedException e) {
