@@ -15,7 +15,6 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.xmlsec.*;
-import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
@@ -28,6 +27,7 @@ import java.util.logging.Logger;
  */
 public class WspTranslator21to30 implements WspTranslator {
     private static final Logger log = Logger.getLogger(WspTranslator21to30.class.getName());
+    static final WspTranslator21to30 INSTANCE = new WspTranslator21to30();
 
     private interface LookupEntry {
         Object getKey();
@@ -261,8 +261,8 @@ public class WspTranslator21to30 implements WspTranslator {
         }
     }
 
-    public Document translatePolicy(Document input) throws InvalidPolicyStreamException {
-        Assertion root = WspReader.parse(input.getDocumentElement(), new PermissiveWspVisitor() {
+    public Element translatePolicy(Element input) throws InvalidPolicyStreamException {
+        Assertion root = WspReader.parse(input, new PermissiveWspVisitor() {
             public void unknownProperty(Element originalObject,
                                         Element problematicParameter,
                                         Object deserializedObject,
@@ -296,7 +296,7 @@ public class WspTranslator21to30 implements WspTranslator {
             }
         });
         try {
-            return XmlUtil.stringToDocument(WspWriter.getPolicyXml(root));
+            return XmlUtil.stringToDocument(WspWriter.getPolicyXml(root)).getDocumentElement();
         } catch (IOException e) {
             throw new InvalidPolicyStreamException("Unable tp parse converted policy XML", e); // can't happen
         } catch (SAXException e) {

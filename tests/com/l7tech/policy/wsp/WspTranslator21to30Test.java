@@ -55,7 +55,7 @@ public class WspTranslator21to30Test extends TestCase {
         Document policy21 = XmlUtil.parse(policy21Stream);
         assertTrue(WspVersionImpl.VERSION_2_1 == (WspReader.getPolicyVersion(policy21.getDocumentElement())));
 
-        Document policy30 = new WspTranslator21to30().translatePolicy(policy21);
+        Document policy30 = WspTranslator21to30.INSTANCE.translatePolicy(policy21.getDocumentElement()).getOwnerDocument();
         assertTrue(WspVersionImpl.VERSION_3_0 == (WspReader.getPolicyVersion(policy30.getDocumentElement())));
 
         Assertion root = WspReader.parse(policy30.getDocumentElement());
@@ -89,7 +89,7 @@ public class WspTranslator21to30Test extends TestCase {
         Document policy21 = XmlUtil.parse(policy21Stream);
         assertTrue(WspVersionImpl.VERSION_2_1 == (WspReader.getPolicyVersion(policy21.getDocumentElement())));
 
-        Document policy30 = new WspTranslator21to30().translatePolicy(policy21);
+        Document policy30 = new WspTranslator21to30().translatePolicy(policy21.getDocumentElement()).getOwnerDocument();
         assertTrue(WspVersionImpl.VERSION_3_0 == (WspReader.getPolicyVersion(policy30.getDocumentElement())));
 
         Assertion root = WspReader.parse(policy30.getDocumentElement());
@@ -104,7 +104,7 @@ public class WspTranslator21to30Test extends TestCase {
         Document policy21 = XmlUtil.parse(policy21Stream);
         assertTrue(WspVersionImpl.VERSION_2_1 == (WspReader.getPolicyVersion(policy21.getDocumentElement())));
 
-        Document policy30 = new WspTranslator21to30().translatePolicy(policy21);
+        Document policy30 = new WspTranslator21to30().translatePolicy(policy21.getDocumentElement()).getOwnerDocument();
         assertTrue(WspVersionImpl.VERSION_3_0 == (WspReader.getPolicyVersion(policy30.getDocumentElement())));
 
         Assertion root = WspReader.parse(policy30.getDocumentElement());

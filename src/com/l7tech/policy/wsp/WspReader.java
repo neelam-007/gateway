@@ -9,6 +9,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * Build a policy tree from an XML document.
@@ -17,6 +18,7 @@ import java.util.List;
  * Time: 3:44:19 PM
  */
 public class WspReader {
+    private static final Logger log = Logger.getLogger(WspReader.class.getName());
 
     private WspReader() {
     }
@@ -55,6 +57,18 @@ public class WspReader {
     }
 
     static Assertion parse(Element policyElement, WspVisitor visitor) throws InvalidPolicyStreamException {
+        WspVersion policyVersion = getPolicyVersion(policyElement);
+        if (visitor == null || visitor == StrictWspVisitor.INSTANCE) {
+            if (WspVersionImpl.VERSION_2_1.equals(policyVersion)) {
+                log.info("Applying on-the-fly import filter to convert 2.1 policy to 3.0");
+                return parse(WspTranslator21to30.INSTANCE.translatePolicy(policyElement), visitor);
+            }
+            if (!(WspVersionImpl.VERSION_3_0.equals(policyVersion))) {
+                log.warning("Unable to read policy: unsupported policy version " + policyVersion);
+                throw new InvalidPolicyStreamException("Unsupported policy version " + policyVersion);
+            }
+        }
+
         List childElements = WspConstants.getChildElements(policyElement);
         if (childElements.isEmpty())
             return null; // Empty Policy tag explicitly means a null policy

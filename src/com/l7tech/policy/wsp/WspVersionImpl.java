@@ -20,4 +20,6 @@ class WspVersionImpl implements WspVersion {
     private WspVersionImpl(String representation) {
         this.representation = representation;
     }
+    
+    public String toString() { return "{Policy version " + representation + "}"; }
 }

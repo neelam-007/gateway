@@ -1,5 +1,6 @@
 package com.l7tech.policy;
 
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.wsdl.BindingInfo;
 import com.l7tech.common.wsdl.BindingOperationInfo;
 import com.l7tech.policy.assertion.Assertion;
@@ -11,6 +12,7 @@ import com.l7tech.policy.wsp.WspWriter;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.w3c.dom.Document;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,6 +30,7 @@ public class WspReaderTest extends TestCase {
     private static final ClassLoader cl = WspReaderTest.class.getClassLoader();
     private static String RESOURCE_PATH = "com/l7tech/policy/resources";
     private static String SIMPLE_POLICY = RESOURCE_PATH + "/simple_policy.xml";
+    private static final String POLICY_21 = RESOURCE_PATH + "/simple_policy_21.xml";
 
     public WspReaderTest(String name) {
         super(name);
@@ -116,6 +119,20 @@ public class WspReaderTest extends TestCase {
         String reserialized = WspWriter.getPolicyXml(parsedPolicy);
         assertEquals(reserialized.length(), serialized.length());
 
+    }
+
+    public void testSeamlessPolicyUpgrade() throws Exception {
+        InputStream policy21Stream = null;
+        try {
+            policy21Stream = cl.getResourceAsStream(POLICY_21);
+            
+            Document policy21 = XmlUtil.parse(policy21Stream);
+            Assertion root = WspReader.parse(policy21.getDocumentElement());
+            assertTrue(root != null);
+            assertTrue(root instanceof ExactlyOneAssertion);
+        } finally {
+            if (policy21Stream != null) policy21Stream.close();
+        }
     }
 
     public static void main(String[] args) {
