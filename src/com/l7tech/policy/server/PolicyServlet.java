@@ -3,20 +3,16 @@ package com.l7tech.policy.server;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.*;
-import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
-import com.l7tech.policy.assertion.credential.PrincipalCredentials;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.server.filter.FilterManager;
 import com.l7tech.policy.server.filter.FilteringException;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
+import com.l7tech.server.AuthenticatableHttpServlet;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceManager;
 import com.l7tech.common.util.KeystoreUtils;
@@ -24,7 +20,6 @@ import com.l7tech.common.util.Locator;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -35,7 +30,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 
 /**
@@ -55,7 +49,7 @@ import java.util.logging.Logger;
  * http://localhost:8080/ssg/policy/disco.modulator?serviceoid=666
  *
  */
-public class PolicyServlet extends HttpServlet {
+public class PolicyServlet extends AuthenticatableHttpServlet {
     public static final String PARAM_SERVICEOID = "serviceoid";
     public static final String PARAM_GETCERT = "getcert";
     public static final String PARAM_USERNAME = "username";
@@ -63,7 +57,6 @@ public class PolicyServlet extends HttpServlet {
     // format is policyId|policyVersion (seperated with char '|')
 
     public void init( ServletConfig config ) throws ServletException {
-        logger = LogManager.getInstance().getSystemLogger();
         super.init( config );
     }
 
@@ -122,7 +115,7 @@ public class PolicyServlet extends HttpServlet {
         // get credentials and check that they are valid for this policy
         User user = null;
         if (!anonymousok) {
-            user = authenticateRequest(httpServletRequest);
+            user = authenticateRequestBasic(httpServletRequest);
             if (user == null) {
                 // send error back with a hint that credentials should be provided
                 String newUrl = "https://"  + httpServletRequest.getServerName();
@@ -322,61 +315,7 @@ public class PolicyServlet extends HttpServlet {
         return null;
     }
 
-    /**
-     * look for basic creds in the request and authenticate them
-     */
-    private User authenticateRequest(HttpServletRequest req) throws IOException {
-        // get the credentials
-        String authorizationHeader = req.getHeader("Authorization");
-        if (authorizationHeader == null || authorizationHeader.length() < 1) {
-            logger.warning("No authorization header found.");
-            return null;
-        }
-
-        ServerHttpBasic httpBasic = new ServerHttpBasic( new HttpBasic() );
-        PrincipalCredentials creds = null;
-        try {
-            creds = httpBasic.findCredentials(authorizationHeader);
-        } catch (CredentialFinderException e) {
-            logger.log(Level.SEVERE, "Exception looking for exception.", e);
-            return null;
-        }
-        if (creds == null) {
-            logger.warning("No credentials found.");
-            return null;
-        }
-        // we have credentials, attempt to authenticate them
-        IdentityProviderConfigManager configManager = new IdProvConfManagerServer();
-        Collection providers = null;
-        try {
-            providers = configManager.findAllIdentityProviders();
-            for (Iterator i = providers.iterator(); i.hasNext();) {
-                IdentityProvider provider = (IdentityProvider) i.next();
-                try {
-                    provider.authenticate(creds);
-                } catch (AuthenticationException e) {
-                    logger.info("Authentication successful for user " + creds.getUser().getLogin() + " on identity provider: " + provider.getConfig().getName());
-                    continue;
-                }
-                return creds.getUser();
-            }
-        } catch (FindException e) {
-            logger.log(Level.SEVERE, "Exception getting id providers.", e);
-            return null;
-        } finally {
-            try {
-                endTransaction();
-            } catch ( SQLException se ) {
-                logger.log(Level.WARNING, null, se);
-            } catch ( TransactionException te ) {
-                logger.log(Level.WARNING, null, te);
-            }
-        }
-        logger.warning("Creds do not authenticate against any registered id provider.");
-        return null;
-    }
 
     private ServiceManager serviceManagerInstance = null;
-    private Logger logger = null;
 }
 
