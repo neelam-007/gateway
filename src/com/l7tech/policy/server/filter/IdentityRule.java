@@ -2,7 +2,6 @@ package com.l7tech.policy.server.filter;
 
 import com.l7tech.common.util.Locator;
 import com.l7tech.identity.*;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -12,7 +11,6 @@ import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 
 import java.util.Iterator;
-import java.util.Set;
 import java.util.logging.Level;
 
 /**
@@ -120,18 +118,9 @@ public class IdentityRule extends Filter {
             MemberOfGroup grpmemship = (MemberOfGroup)idassertion;
             long idprovider = grpmemship.getIdentityProviderOid();
             if (idprovider == user.getProviderId()) {
-                // try to match user to group
-                // try to match group to user
                 try {
                     IdentityProvider prov = getIdentityProviderConfigManager().getIdentityProvider(idprovider);
                     GroupManager gman = prov.getGroupManager();
-
-                    Iterator i = gman.getGroupHeaders(user).iterator();
-                    while (i.hasNext()) {
-                        EntityHeader grp = (EntityHeader)i.next();
-                        if (grp.getName().equals(grpmemship.getGroupName())) return true;
-                    }
-
                     Group grp = gman.findByPrimaryKey(grpmemship.getGroupId());
                     if (grp == null) {
                         logger.warning("The group " + grpmemship.getGroupId() + " does not exist.");
