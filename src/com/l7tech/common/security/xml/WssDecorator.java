@@ -7,6 +7,7 @@
 package com.l7tech.common.security.xml;
 
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -114,6 +115,20 @@ public interface WssDecorator {
             byte[] getSecretKey();
         }
 
+        public String getPreferredSecurityNamespace() {
+            return preferredSecurityNamespace;
+        }
+
+        /**
+         * If you dont set this, the default WSSE namespace will be used. You would
+         * want to specify this namespace for example when decorating a response to
+         * a request that already referred to a specific wsse namespace.
+         * @param preferredSecurityNamespace the wsse namespace.
+         */
+        public void setPreferredSecurityNamespace(String preferredSecurityNamespace) {
+            this.preferredSecurityNamespace = preferredSecurityNamespace;
+        }
+
         private X509Certificate recipientCertificate = null;
         private X509Certificate senderCertificate = null;
         private LoginCredentials usernameTokenCredentials = null;
@@ -123,6 +138,7 @@ public interface WssDecorator {
         private boolean signTimestamp;
         private Set elementsToEncrypt = new LinkedHashSet();
         private Set elementsToSign = new LinkedHashSet();
+        private String preferredSecurityNamespace = SoapUtil.SECURITY_NAMESPACE;
     }
 
     /**
