@@ -58,6 +58,11 @@
         <servlet-class>com.l7tech.server.WsdlProxyServlet</servlet-class>
     </servlet>
 
+    <servlet>
+        <servlet-name>PasswdService</servlet-name>
+        <servlet-class>com.l7tech.server.PasswdServlet</servlet-class>
+    </servlet>
+
     <!-- Axis servlet properties -->
     <servlet>
         <servlet-name>AxisServlet</servlet-name>
@@ -146,6 +151,11 @@
     <servlet-mapping>
         <servlet-name>WsdlProxy</servlet-name>
         <url-pattern>/ssg/wsdl</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>PasswdService</servlet-name>
+        <url-pattern>/ssg/passwd</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>
