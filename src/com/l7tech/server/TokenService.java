@@ -1,7 +1,6 @@
 package com.l7tech.server;
 
 import com.l7tech.common.security.saml.SamlConstants;
-import com.l7tech.common.security.xml.ProcessorException;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;

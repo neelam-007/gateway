@@ -6,7 +6,6 @@
 
 package com.l7tech.common.security.xml.processor;
 
-import com.l7tech.common.security.xml.ProcessorException;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.XpathEvaluator;
 import org.jaxen.JaxenException;
@@ -43,7 +42,7 @@ public class ProcessorResultUtil {
      * @param pastTenseOperationName A human-friendly past-tense name of the operation that was performed on
      *                               elementsFoundByProcessor, ie "signed" or "encrypted".
      * @return The result of the search.
-     * @throws com.l7tech.common.security.xml.ProcessorException if the xpath is invalid, or finds results other than Nodes.
+     * @throws com.l7tech.common.security.xml.processor.ProcessorException if the xpath is invalid, or finds results other than Nodes.
      */
     public static SearchResult searchInResult(Logger logger,
                                               Document doc,

@@ -6,7 +6,6 @@
 
 package com.l7tech.common.security.xml.processor;
 
-import com.l7tech.common.security.xml.ProcessorException;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import org.w3c.dom.Document;
 
@@ -30,7 +29,7 @@ public interface WssProcessor {
      * @param recipientPrivateKey the private key corresponding to the recipientCertificate used to decypher the encrypted keys
      * @return a ProcessorResult object reffering to all the WSS related processing that happened.
      * @throws InvalidDocumentFormatException if the message is not SOAP or has some other problem that can't be ignored
-     * @throws com.l7tech.common.security.xml.ProcessorException in case of some other problem
+     * @throws com.l7tech.common.security.xml.processor.ProcessorException in case of some other problem
      * @throws GeneralSecurityException in case of problems with a key or certificate
      * @throws BadSecurityContextException if the message contains a WS-SecureConversation SecurityContextToken, but the securityContextFinder has no record of that session.
      */

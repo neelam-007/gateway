@@ -8,7 +8,6 @@ package com.l7tech.proxy.processor;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.AesKey;
-import com.l7tech.common.security.xml.ProcessorException;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
@@ -108,7 +107,7 @@ public class MessageProcessor {
      * @throws HttpChallengeRequiredException if an HTTP 401 should be sent back to the client
      * @throws InvalidDocumentFormatException if the request or the response from the SSG had a problem with its
      *                                        format that was too serious to ignore
-     * @throws com.l7tech.common.security.xml.ProcessorException if there was a problem processing the wsse:Security header in the
+     * @throws com.l7tech.common.security.xml.processor.ProcessorException if there was a problem processing the wsse:Security header in the
      *                                         response from the SSG 
      */
     public SsgResponse processMessage(PendingRequest req)
@@ -458,7 +457,7 @@ public class MessageProcessor {
      * @throws BadCredentialsException if the SSG rejected our SSG username and/or password.
      * @throws NoSuchAlgorithmException if the client certificate key was not RSA
      * @throws InvalidDocumentFormatException if the response from the SSG was not a valid SOAP document
-     * @throws com.l7tech.common.security.xml.ProcessorException if the response from the SSG could not be undecorated
+     * @throws com.l7tech.common.security.xml.processor.ProcessorException if the response from the SSG could not be undecorated
      */
     private SsgResponse obtainResponse(final PendingRequest req)
             throws ConfigurationException, IOException, PolicyRetryableException, GeneralSecurityException,

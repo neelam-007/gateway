@@ -1,13 +1,9 @@
 package com.l7tech.server.policy;
 
-import com.l7tech.common.security.xml.ProcessorException;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
-import com.l7tech.common.security.xml.processor.BadSecurityContextException;
-import com.l7tech.common.security.xml.processor.ProcessorResult;
-import com.l7tech.common.security.xml.processor.WssProcessor;
-import com.l7tech.common.security.xml.processor.WssProcessorImpl;
+import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;

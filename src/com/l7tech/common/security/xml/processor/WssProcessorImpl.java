@@ -9,7 +9,6 @@ import com.ibm.xml.enc.type.EncryptedData;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.saml.SamlConstants;
-import com.l7tech.common.security.xml.ProcessorException;
 import com.l7tech.common.security.xml.SecureConversationKeyDeriver;
 import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.util.*;
@@ -71,7 +70,7 @@ public class WssProcessorImpl implements WssProcessor {
      * @return a ProcessorResult object reffering to all the WSS related processing that happened.
      * @throws InvalidDocumentFormatException if there is a problem with the document format that can't be ignored
      * @throws GeneralSecurityException if there is a problem with a key or certificate
-     * @throws com.l7tech.common.security.xml.ProcessorException in case of some other problem
+     * @throws com.l7tech.common.security.xml.processor.ProcessorException in case of some other problem
      * @throws BadSecurityContextException if the message contains a WS-SecureConversation SecurityContextToken, but the securityContextFinder has no record of that session.
      */
     public ProcessorResult undecorateMessage(Document soapMsg,

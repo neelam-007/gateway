@@ -4,7 +4,7 @@
  * $Id$
  */
 
-package com.l7tech.common.security.xml;
+package com.l7tech.common.security.xml.processor;
 
 /**
  * Exception thrown by WssProcessor or ProcessorResultUtil if a fatal error is encountered during processing.

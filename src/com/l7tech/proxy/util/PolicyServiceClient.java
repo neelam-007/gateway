@@ -7,7 +7,6 @@
 package com.l7tech.proxy.util;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.common.security.xml.ProcessorException;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
@@ -353,7 +352,7 @@ public class PolicyServiceClient {
             usingSsl = true;
         }
         if (httpBasicAuthorization != null)
-            conn.setRequestProperty("Authorization", httpBasicAuthorization); 
+            conn.setRequestProperty("Authorization", httpBasicAuthorization);
         conn.setDoOutput(true);
         conn.setAllowUserInteraction(false);
         conn.setRequestProperty(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);

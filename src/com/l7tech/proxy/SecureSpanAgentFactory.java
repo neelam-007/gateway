@@ -6,8 +6,8 @@
 
 package com.l7tech.proxy;
 
-import com.l7tech.common.security.xml.ProcessorException;
 import com.l7tech.common.security.xml.processor.BadSecurityContextException;
+import com.l7tech.common.security.xml.processor.ProcessorException;
 import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;

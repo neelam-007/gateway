@@ -8,7 +8,6 @@ package com.l7tech.proxy.util;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.saml.SamlConstants;
-import com.l7tech.common.security.xml.ProcessorException;
 import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
@@ -207,7 +206,7 @@ public class TokenServiceClient {
      *         HolderOfKeyAssertion or SecureConversationSession.  Never returns null; will either succeed or throw.
      * @throws InvalidDocumentFormatException  if there is a problem with the format of the response document
      * @throws GeneralSecurityException  if there is a problem with a certificate, key, or signature
-     * @throws com.l7tech.common.security.xml.ProcessorException   if there is a problem undecorating the signed message
+     * @throws com.l7tech.common.security.xml.processor.ProcessorException   if there is a problem undecorating the signed message
      */
     public static Object parseRequestSecurityTokenResponse(Document response,
                                                            X509Certificate clientCertificate,

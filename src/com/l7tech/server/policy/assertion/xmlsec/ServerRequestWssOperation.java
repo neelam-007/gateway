@@ -6,8 +6,8 @@
 
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import com.l7tech.common.security.xml.ProcessorException;
 import com.l7tech.common.security.xml.processor.ParsedElement;
+import com.l7tech.common.security.xml.processor.ProcessorException;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.ProcessorResultUtil;
 import com.l7tech.message.Request;
