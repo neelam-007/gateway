@@ -104,11 +104,16 @@ public class HomeAction extends BaseAction {
                         new NewInternalUserAction(null).actionPerformed(null);
                     } else if (ADD_GROUP.equals(url)) {
                         new NewGroupAction(null).actionPerformed(null);
-                    } else if (ADD_ID_PROVIDER.equals(url)) {
+                    } else if (ADD_LDAP_ID_PROVIDER.equals(url)) {
                         final DefaultMutableTreeNode root =
                                 (DefaultMutableTreeNode) getIdentitiesTree().getModel().getRoot();
                         AbstractTreeNode node = (AbstractTreeNode) root;
                         new NewLdapProviderAction(node).actionPerformed(null);
+                    } else if (ADD_FEDERATED_ID_PROVIDER.equals(url)) {
+                        final DefaultMutableTreeNode root =
+                                (DefaultMutableTreeNode) getIdentitiesTree().getModel().getRoot();
+                        AbstractTreeNode node = (AbstractTreeNode) root;
+                        new NewFederatedIdentityProviderAction(node).actionPerformed(null);
                     }
                 }
             }
@@ -135,5 +140,6 @@ public class HomeAction extends BaseAction {
     private static final String CREATE_DEFINITION = "file://create.definition";
     private static final String ADD_USER = "file://add.user";
     private static final String ADD_GROUP = "file://add.group";
-    private static final String ADD_ID_PROVIDER = "file://add.identity.provider";
+    private static final String ADD_LDAP_ID_PROVIDER = "file://add.ldap.identity.provider";
+    private static final String ADD_FEDERATED_ID_PROVIDER = "file://add.federated.identity.provider";
 }
