@@ -308,7 +308,7 @@ public class LdapIdentityProvider implements IdentityProvider {
     }
 
     // builds a search filter for all user object classes
-    private String userSearchFilterWithParam(String param) {
+    public String userSearchFilterWithParam(String param) {
         if (cfg == null) throw new IllegalStateException("this provider needs a config!");
         StringBuffer output = new StringBuffer("(|");
         UserMappingConfig[] userTypes = cfg.getUserMappings();
@@ -322,7 +322,7 @@ public class LdapIdentityProvider implements IdentityProvider {
         return output.toString();
     }
 
-    private String groupSearchFilterWithParam(String param) {
+    public String groupSearchFilterWithParam(String param) {
         if (cfg == null) throw new IllegalStateException("this provider needs a config!");
         StringBuffer output = new StringBuffer("(|");
         GroupMappingConfig[] groupTypes = cfg.getGroupMappings();
@@ -360,7 +360,7 @@ public class LdapIdentityProvider implements IdentityProvider {
      * @param sr
      * @return EntityType.USER, EntityType.GROUP, or EntityType.UNDEFINED
      */
-    private EntityHeader searchResultToHeader(SearchResult sr, String dn) {
+    public EntityHeader searchResultToHeader(SearchResult sr, String dn) {
         Attributes atts = sr.getAttributes();
         // is it user or group ?
         Attribute objectclasses = atts.get("objectclass");
