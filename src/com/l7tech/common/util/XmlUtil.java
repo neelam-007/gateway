@@ -289,5 +289,26 @@ public class XmlUtil {
         return true;
     }
 
+    /**
+     * Gets the child text node value for an element.
+     */
+    public static String getTextValue(Element node) {
+        StringBuffer output = new StringBuffer();
+        NodeList children = node.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node kid = children.item(i);
+            if (kid.getNodeType() == Node.TEXT_NODE) {
+                String thisTxt = kid.getNodeValue();
+                if (thisTxt != null) {
+                    thisTxt = thisTxt.trim();
+                    if (thisTxt != null && thisTxt.length() > 0) {
+                        output.append(thisTxt);
+                    }
+                }
+            }
+        }
+        return output.toString();
+    }
+
     private static final Logger logger = Logger.getLogger(XmlUtil.class.getName());
 }
