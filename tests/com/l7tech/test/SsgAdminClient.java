@@ -38,7 +38,7 @@ public class SsgAdminClient {
     static final String PROP_SSGADMIN_PASS      = "com.l7tech.test.SsgAdminClient.SSGAdminPass";
     static final String PROP_LOCATOR_PROPERTIES = "com.l7tech.util.locator.properties";
 
-    static final String DEFAULT_LDAP_PROVIDER_OID = "3735552";
+    static final String DEFAULT_LDAP_PROVIDER_OID = "4915203";
     static final String DEFAULT_SSGADMIN_LOGIN    = "ssgadmin";
     static final String DEFAULT_SSGADMIN_PASS     = "ssgadminpasswd";
 
