@@ -31,11 +31,6 @@ public class ServerHttpBasic extends ServerHttpCredentialSource implements Serve
     public static final String SCHEME = "Basic";
     public static final String REALM = "L7SSGBasicRealm";
 
-    public LoginCredentials doFindCredentials( Request request, Response response ) throws IOException, CredentialFinderException {
-        String wwwAuthorize = (String)request.getParameter( Request.PARAM_HTTP_AUTHORIZATION );
-        return findCredentials(wwwAuthorize);
-    }
-
     protected Map challengeParams(Request request, Response response) {
         return Collections.EMPTY_MAP;
     }
@@ -53,10 +48,17 @@ public class ServerHttpBasic extends ServerHttpCredentialSource implements Serve
         if ( wwwAuthorize == null || wwwAuthorize.length() == 0 ) return null;
 
         int spos = wwwAuthorize.indexOf(" ");
-        if ( spos < 0 ) throwError( "Invalid HTTP Basic header format" );
+        if ( spos < 0 ) {
+            logger.fine( "WWW-Authorize header contains no space; ignoring");
+            return null;
+        }
+
         String scheme = wwwAuthorize.substring( 0, spos );
         String base64 = wwwAuthorize.substring( spos + 1 );
-        if ( !scheme().equals(scheme) ) throwError( "Invalid HTTP Basic header scheme" );
+        if ( !scheme().equals(scheme) ) {
+            logger.fine( "WWW-Authorize scheme not Basic; ignoring");
+            return null;
+        }
 
         String userPassRealm = new String( Base64.decode( base64 ), ENCODING );
         String login = null;
@@ -72,9 +74,9 @@ public class ServerHttpBasic extends ServerHttpCredentialSource implements Serve
             return new LoginCredentials( login, pass.getBytes(ENCODING), CredentialFormat.CLEARTEXT, null );
         } else {
             // No colons
-            String err = "Invalid HTTP Basic format!";
+            String err = "Invalid HTTP Basic format (no colon(s))";
             logger.warning(err);
-            throw new CredentialFinderException( err );
+            return null;
         }
     }
 
