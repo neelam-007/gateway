@@ -84,8 +84,12 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
             List headers = new ArrayList();
             for (Iterator i = results.iterator(); i.hasNext();) {
                 Object[] row = (Object[])i.next();
-                final long id = ((Long)row[0]).longValue();
-                headers.add(new EntityHeader(id, EntityType.fromInterface(getInterfaceClass()), row[1].toString(), EMPTY_STRING));
+                Object oid = row[0];
+                Object name = row[1];
+                if ( oid != null && name != null ) {
+                    final long id = ((Long)oid).longValue();
+                    headers.add(new EntityHeader(id, EntityType.fromInterface(getInterfaceClass()), name.toString(), EMPTY_STRING));
+                }
             }
             return Collections.unmodifiableList(headers);
         } catch (SQLException e) {
@@ -265,6 +269,12 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
         }
         return false;
     }
+
+    private String alias = getTableName();
+
+    protected final String allHeadersQuery = "select " + alias + ".oid, " +
+                                             alias + ".login from " + alias + " in class "+
+                                             getImpClass().getName();
 
     public static final String F_LOGIN = "login";
     public static final String F_NAME = "name";
