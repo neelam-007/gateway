@@ -61,7 +61,7 @@ public class ClientHttpClientCert extends ClientAssertion {
      * @return the human-readable node name that is displayed.
      */
     public String getName() {
-        return "Require HTTP client certificate";
+        return "Require HTTP Client Certificate";
     }
 
     /**

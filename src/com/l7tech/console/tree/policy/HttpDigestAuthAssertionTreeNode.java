@@ -20,7 +20,7 @@ public class HttpDigestAuthAssertionTreeNode extends LeafAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Require HTTP DIGEST authentication";
+        return "Require HTTP Digest Authentication";
     }
 
     /**

@@ -24,7 +24,7 @@ public class SslAssertionTreeNode extends LeafAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        String ret = "Require SSL transport";
+        String ret = "Require SSL Transport";
         Object uo = getUserObject();
         if (uo instanceof SslAssertion) {
             SslAssertion sa = (SslAssertion) getUserObject();

@@ -45,7 +45,7 @@ public class ClientSslAssertion extends ClientAssertion {
      * @return the node name that is displayed
      */
     public String getName() {
-        String ret = "Require SSL transport";
+        String ret = "Require SSL Transport";
         if (SslAssertion.FORBIDDEN.equals(data.getOption()))
             ret = "Forbid SSL transport";
         else if (SslAssertion.OPTIONAL.equals(data.getOption()))

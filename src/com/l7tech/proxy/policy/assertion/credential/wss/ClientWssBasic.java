@@ -84,7 +84,7 @@ public class ClientWssBasic extends ClientWssCredentialSource {
      * @return the human-readable node name that is displayed.
      */
     public String getName() {
-        return "Require WS token - BASIC authentication";
+        return "Require WS Token Basic Authentication";
     }
 
     /**

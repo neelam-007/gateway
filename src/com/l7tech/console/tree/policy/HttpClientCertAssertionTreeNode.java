@@ -28,6 +28,6 @@ public class HttpClientCertAssertionTreeNode extends LeafAssertionTreeNode {
     }
 
     public String getName() {
-        return "Require HTTP client certificate";
+        return "Require HTTP Client Certificate";
     }
 }
