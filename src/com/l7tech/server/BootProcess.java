@@ -173,13 +173,18 @@ public class BootProcess implements ServerComponentLifecycle {
     }
 
     protected void initializeAdminServices() {
-        try {
-            Services.getInstance().start();
-        } catch (Exception e) {
-            logger.log(Level.WARNING,
-              "There was an error in initalizing admin services.\n" +
-              " The admin services may not be available.", e);
-        }
+        Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            public void run() {
+                try {
+                    Services.getInstance().start();
+                } catch (Exception e) {
+                    logger.log(Level.WARNING,
+                      "There was an error in initalizing admin services.\n" +
+                      " The admin services may not be available.", e);
+                }
+            }
+        }, 3000); 
     }
 
     protected void initializeClusterStatusUpdate() {
