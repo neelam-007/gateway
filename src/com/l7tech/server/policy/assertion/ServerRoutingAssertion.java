@@ -107,18 +107,10 @@ public class ServerRoutingAssertion implements ServerAssertion {
 
             if ( login != null && password != null) {
                 logger.fine( "Using login '" + login + "'" );
-                synchronized (this) {
-                    if (_httpCredentials == null)
-                        _httpCredentials = new UsernamePasswordCredentials( login, password );
-
-                    if (_httpState == null) {
-                        _httpState = new HttpState();
-                        String realm = _data.getRealm();
-                        if ( realm != null && realm.length() == 0 ) realm = null;
-                        _httpState.setCredentials( realm, _httpCredentials );
-                    }
-                    client.setState(_httpState);
-                }
+                HttpState state = client.getState();
+                postMethod.setDoAuthentication(true);
+                state.setAuthenticationPreemptive(true);
+                state.setCredentials(null, null, new UsernamePasswordCredentials(login, new String(password)));
             }
 
             String requestXml = request.getRequestXml();
