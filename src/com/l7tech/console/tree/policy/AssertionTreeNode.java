@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
+import java.text.MessageFormat;
 
 /**
  * Class <code>AssertionTreeNode</code> is the base superclass for the
@@ -37,6 +38,7 @@ import java.util.logging.Level;
  */
 public abstract class AssertionTreeNode extends AbstractTreeNode {
     private List validatorMessages = new ArrayList();
+
     /**
      * package private constructor accepting the asseriton
      * this node represents.
@@ -89,19 +91,33 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
             return super.getTooltipText();
         }
         StringBuffer sb = new StringBuffer();
-        sb.append("<html><strong>");
+        sb.append("<html><strong> There are {0}<br>");
         Iterator it = this.validatorMessages.iterator();
         boolean first = true;
+        boolean hasWarnings = false;
+        boolean hasErrors = false;
         for (;it.hasNext();) {
             if (!first) {
                 sb.append("<br>");
             }
             first = false;
             PolicyValidatorResult.Message pm = (PolicyValidatorResult.Message)it.next();
-            sb.append(pm.getMessage());
+            if (pm instanceof PolicyValidatorResult.Error) {
+                hasErrors = true;
+            } else if ((pm instanceof PolicyValidatorResult.Warning)) {
+                hasWarnings = true;
+            }
+            sb.append("<i>"+pm.getMessage()+"</i>");
         }
         sb.append("</strong></html>");
-        return sb.toString();
+        String format = sb.toString();
+        String msg = "warnings and errors, the policy might be invalid";
+        if (hasWarnings && !hasErrors) {
+           msg = "warnings, the policy might be invalid";
+        } else if (!hasWarnings && hasErrors) {
+            msg = "errors, the policy might be invalid";
+        }
+        return MessageFormat.format(format, new Object[] {msg});
     }
 
     /**

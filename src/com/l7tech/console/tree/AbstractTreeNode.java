@@ -25,6 +25,7 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     protected boolean hasLoadedChildren;
     protected WeakPropertyChangeSupport propChangeSupport = new WeakPropertyChangeSupport();
     private java.util.List cookies = new ArrayList();
+    protected String tooltip = null;
 
     /**
      * Instantiate the
@@ -284,11 +285,10 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     public abstract String getName();
 
     /**
-     * optional property. if not null, will be displayed as a tooltip
-     * @return
+     * @return the node tooltip
      */
     public String getTooltipText() {
-        return null;
+        return tooltip;
     }
 
     /**

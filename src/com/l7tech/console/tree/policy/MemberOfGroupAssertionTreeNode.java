@@ -83,10 +83,4 @@ public class MemberOfGroupAssertionTreeNode extends IdentityAssertionTreeNode {
         return "Group membership " + ((MemberOfGroup)getUserObject()).getGroupName() +
           " [" + idProviderName() + "]";
     }
-
-    public String getTooltipText() {
-        return tooltip;
-    }
-
-    private String tooltip = null;
 }
