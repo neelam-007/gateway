@@ -6,8 +6,15 @@
 
 package com.l7tech.credential.http;
 
+import com.l7tech.credential.PrincipalCredentials;
+import com.l7tech.credential.CredentialFinderException;
+import com.l7tech.message.Request;
+
 /**
  * @author alex
  */
 public class HttpClientCertCredentialFinder extends HttpCredentialFinder {
+    protected PrincipalCredentials doFindCredentials(Request request) throws CredentialFinderException {
+        return null;
+    }
 }

@@ -15,19 +15,29 @@ import java.security.Principal;
  * @author alex
  */
 public class PrincipalCredentials {
-    public PrincipalCredentials( Principal principal, byte[] credential ) {
+    public PrincipalCredentials( Principal principal, byte[] credentials, CredentialFinder finder ) {
         _principal = principal;
-        _credential = credential;
+        _credentials = credentials;
+        _finder = finder;
     }
 
     public Principal getPrincipal() {
         return _principal;
     }
 
-    byte[] getCredential() {
-        return _credential;
+    public byte[] getCredentials() {
+        return _credentials;
+    }
+
+    public CredentialFinder getFinder() {
+        return _finder;
+    }
+
+    public void setFinder( CredentialFinder finder ) {
+        _finder = finder;
     }
 
     private final Principal _principal;
-    private final byte[] _credential;
+    private final byte[] _credentials;
+    private CredentialFinder _finder;
 }

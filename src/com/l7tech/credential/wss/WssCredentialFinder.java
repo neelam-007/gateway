@@ -6,10 +6,10 @@
 
 package com.l7tech.credential.wss;
 
-import com.l7tech.credential.CredentialFinder;
+import com.l7tech.credential.*;
 
 /**
  * @author alex
  */
-public abstract class WssCredentialFinder implements CredentialFinder {
+public abstract class WssCredentialFinder extends AbstractCredentialFinder {
 }
