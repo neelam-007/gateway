@@ -16,7 +16,7 @@ import java.util.logging.Level;
  */
 public class AuditMessages extends Messages {
     public static final M INVALID_AGE =
-            m(10000, Level.INFO,
+            m(2000, Level.INFO,
               ServerConfig.PARAM_AUDIT_PURGE_MINIMUM_AGE +
               " value '{0}' is not a valid number. Using {1} instead.");
 }

@@ -16,6 +16,16 @@ import java.util.logging.Level;
  * @version $Revision$
  */
 public class Messages {
+    /**
+     * Reserved IDs:
+     *
+     * BootMessages:              1000 - 1999
+     * AuditMessages:             2000 - 2999
+     * MessageProcessingMessage:  3000 - 3999
+     *
+     *
+     */
+
     private static Map messagesById = new HashMap();
 
     protected Messages() { }

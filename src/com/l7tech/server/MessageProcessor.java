@@ -15,6 +15,8 @@ import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
+import com.l7tech.common.audit.AuditDetailMessage;
+import com.l7tech.common.audit.AuditDetail;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
@@ -27,6 +29,7 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
+import com.l7tech.server.audit.AuditContext;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
 import org.springframework.context.support.ApplicationObjectSupport;
@@ -43,6 +46,7 @@ import java.security.cert.X509Certificate;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.LogRecord;
 
 /**
  * @author alex
@@ -95,11 +99,14 @@ public class MessageProcessor extends ApplicationObjectSupport {
         }
         _xppf.setNamespaceAware( true );
         _xppf.setValidating( false );
+
     }
 
     public AssertionStatus processMessage( PolicyEnforcementContext context )
             throws IOException, PolicyAssertionException, PolicyVersionException
     {
+        audit = AuditContext.getCurrent(getApplicationContext());
+
         try {
             currentContext.set(context);
             return reallyProcessMessage(context);
@@ -124,10 +131,10 @@ public class MessageProcessor extends ApplicationObjectSupport {
             isSoap = context.getRequest().isSoap();
             hasSecurity = context.getRequest().getSoapKnob().isSecurityHeaderPresent();
         } catch (SAXException e) {
-            logger.log(Level.SEVERE, "Request XML is not well-formed", e);
+            logAndAudit(MessageProcessingMessages.REQUEST_INVALID_XML_FORMAT, null, e);
             return AssertionStatus.BAD_REQUEST;
         } catch (MessageNotSoapException e) {
-            logger.log(Level.INFO, "Message is not soap", e); // TODO remove this or downgrade to FINE
+            logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP, null, e); // TODO remove this or downgrade to FINE
         }
 
         if (isSoap && hasSecurity) {
@@ -140,23 +147,23 @@ public class MessageProcessor extends ApplicationObjectSupport {
                                                       SecureConversationContextManager.getInstance());
                 reqXml.setProcessorResult(wssOutput);
             } catch (MessageNotSoapException e) {
-                logger.log(Level.FINE, "Message is not SOAP; will not have any WSS results.");
+                logAndAudit(MessageProcessingMessages.MESSAGE_NOT_SOAP_NO_WSS, null, e);
                 // this shouldn't be possible now
                 // pass through, leaving wssOutput as null
             } catch (ProcessorException e) {
-                logger.log(Level.SEVERE, "Error in WSS processing of request", e);
+                logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
                 return AssertionStatus.SERVER_ERROR;
             } catch (InvalidDocumentFormatException e) {
-                logger.log(Level.SEVERE, "Error in WSS processing of request", e);
+                logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
                 return AssertionStatus.SERVER_ERROR;
             } catch (GeneralSecurityException e) {
-                logger.log(Level.SEVERE, "Error in WSS processing of request", e);
+                logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
                 return AssertionStatus.SERVER_ERROR;
             } catch (SAXException e) {
-                logger.log(Level.SEVERE, "Error getting xml document from request", e);
+                logAndAudit(MessageProcessingMessages.ERROR_RETRIEVE_XML, null, e);
                 return AssertionStatus.SERVER_ERROR;
             } catch (BadSecurityContextException e) {
-                logger.log(Level.SEVERE, "Error in WSS processing of request", e);
+                logAndAudit(MessageProcessingMessages.ERROR_WSS_PROCESSING, null, e);
                 context.setFaultDetail(e);
                 return AssertionStatus.FAILED;
             }
@@ -169,13 +176,13 @@ public class MessageProcessor extends ApplicationObjectSupport {
             PublishedService service = serviceManager.resolve(context.getRequest());
 
             if ( service == null ) {
-                logger.warning( "Service not found" );
+                logAndAudit(MessageProcessingMessages.SERVICE_NOT_FOUND);
                 status = AssertionStatus.SERVICE_NOT_FOUND;
             } else if ( service.isDisabled() ) {
-                logger.warning( "Service disabled" );
+                logAndAudit(MessageProcessingMessages.SERVICE_DISABLED);
                 status = AssertionStatus.SERVICE_DISABLED;
             } else {
-                logger.finer("Resolved service " + service.getName() + " #" + service.getOid());
+                logAndAudit(MessageProcessingMessages.RESOLVED_SERVICE, new String[] {service.getName(), String.valueOf(service.getOid())});
                 context.setService( service );
 
                 // skip the http request header version checking if it is not a Http request
@@ -194,13 +201,12 @@ public class MessageProcessor extends ApplicationObjectSupport {
                                 long reqPolicyId = Long.parseLong(requestorVersion.substring(0, indexofbar));
                                 long reqPolicyVer = Long.parseLong(requestorVersion.substring(indexofbar+1));
                                 if (reqPolicyVer != service.getVersion() || reqPolicyId != service.getOid()) {
-                                    logger.finest("policy version passed is invalid " + requestorVersion + " instead of "
-                                            + service.getOid() + "|" + service.getVersion());
+                                    logAndAudit(MessageProcessingMessages.POLICY_VERSION_INVALID, new String[] {requestorVersion, String.valueOf(service.getOid()), String.valueOf(service.getVersion())});
                                     wrongPolicyVersion = true;
                                 }
                             } catch (NumberFormatException e) {
                                 wrongPolicyVersion = true;
-                                logger.log(Level.FINE, "wrong format for policy version", e);
+                                logAndAudit(MessageProcessingMessages.POLICY_VERSION_WRONG_FORMAT, null, e);
                             }
                         }
                         if (wrongPolicyVersion) {
@@ -208,7 +214,7 @@ public class MessageProcessor extends ApplicationObjectSupport {
                             throw new PolicyVersionException();
                         }
                     } else {
-                        logger.fine("Requestor did not provide policy id.");
+                        logAndAudit(MessageProcessingMessages.POLICY_ID_NOT_PROVIDED);
                     }
                 }
 
@@ -217,7 +223,7 @@ public class MessageProcessor extends ApplicationObjectSupport {
                 try {
                     serverPolicy = serviceManager.getServerPolicy(service.getOid());
                 } catch (FindException e) {
-                    logger.log(Level.WARNING, "cannot get policy", e);
+                    logAndAudit(MessageProcessingMessages.CANNOT_GET_POLICY, null, e);
                     serverPolicy = null;
                 }
                 if (serverPolicy == null) {
@@ -225,12 +231,12 @@ public class MessageProcessor extends ApplicationObjectSupport {
                 }
 
                 // Run the policy
-                logger.finest("Run the server policy");
+                logAndAudit(MessageProcessingMessages.RUNNING_POLICY);
                 ServiceStatistics stats = null;
                 try {
                     stats = serviceManager.getServiceStatistics(service.getOid());
                 } catch (FindException e) {
-                    logger.log(Level.WARNING, "cannot get a stats object", e);
+                    logAndAudit(MessageProcessingMessages.CANNOT_GET_STATS_OBJECT, null, e);
                 }
                 if (stats != null) stats.attemptedRequest();
                 status = serverPolicy.checkRequest(context);
@@ -290,22 +296,22 @@ public class MessageProcessor extends ApplicationObjectSupport {
                     if ( rstat == RoutingStatus.ROUTED || rstat == RoutingStatus.NONE ) {
                         /* We include NONE because it's valid (albeit silly)
                         for a policy to contain no RoutingAssertion */
-                        logger.fine("Request was completed with status " + " " + status.getNumeric() + " (" + status.getMessage() + ")");
+                        logAndAudit(MessageProcessingMessages.COMPLETION_STATUS, new String[] {String.valueOf(status.getNumeric()), status.getMessage()});
                         if (stats != null) stats.completedRequest();
                     } else {
                         // This can only happen when a post-routing assertion fails
-                        logger.severe( "Policy status was NONE but routing was attempted anyway!" );
+                        logAndAudit(MessageProcessingMessages.SERVER_ERROR);
                         status = AssertionStatus.SERVER_ERROR;
                     }
                 } else {
                     // Policy execution concluded unsuccessfully
                     if (rstat == RoutingStatus.ATTEMPTED) {
                         // Most likely the failure was in the routing assertion
-                        logger.warning("Request routing failed with status " + status.getNumeric() + " (" + status.getMessage() + ")");
+                        logAndAudit(MessageProcessingMessages.ROUTING_FAILED, new String[] {String.valueOf(status.getNumeric()), status.getMessage()});
                         status = AssertionStatus.FAILED;
                     } else {
                         // Most likely the failure was in some other assertion
-                        logger.warning( "Policy evaluation resulted in status " + status.getNumeric() + " (" + status.getMessage() + ")" );
+                        logAndAudit(MessageProcessingMessages.POLICY_EVALUATION_RESULT, new String[] {String.valueOf(status.getNumeric()), status.getMessage()});
                     }
                 }
 
@@ -314,16 +320,16 @@ public class MessageProcessor extends ApplicationObjectSupport {
 
             return status;
         } catch ( ServiceResolutionException sre ) {
-            logger.log(Level.SEVERE, sre.getMessage(), sre);
+            logAndAudit(MessageProcessingMessages.EXCEPTION, new String[] {sre.getMessage()}, sre);
             return AssertionStatus.SERVER_ERROR;
         } catch (SAXException e) {
-            logger.log(Level.SEVERE, e.getMessage(), e);
+            logAndAudit(MessageProcessingMessages.EXCEPTION, new String[] {e.getMessage()}, e);
             return AssertionStatus.SERVER_ERROR;
         } finally {
             try {
                 eventManager.fire(new MessageProcessed(context, status, this));
             } catch (Throwable t) {
-                logger.log(Level.WARNING, "EventManager threw exception logging message processing result", t);
+                logAndAudit(MessageProcessingMessages.EVENT_MANAGER_EXCEPTION, null, t);
             }
         }
     }
@@ -341,6 +347,26 @@ public class MessageProcessor extends ApplicationObjectSupport {
         return status;
     }
 
+    private void logAndAudit(AuditDetailMessage msg, String[] params, Throwable e) {
+        audit.addDetail(new AuditDetail(msg,
+                params == null ? null : params,
+                e));
+
+        LogRecord rec = new LogRecord(msg.getLevel(), msg.getMessage());
+        rec.setLoggerName(logger.getName()); // Work around NPE in LoggerNameFilter
+        if (e != null) rec.setThrown(e);
+        if (params != null) rec.setParameters(params);
+        logger.log(rec);
+    }
+
+    private void logAndAudit(AuditDetailMessage msg, String[] params) {
+        logAndAudit(msg, params, null);
+    }
+
+    private void logAndAudit(AuditDetailMessage msg) {
+        logAndAudit(msg, null, null);
+    }
+
     public XmlPullParser getPullParser() throws XmlPullParserException {
         return _xppf.newPullParser();
     }
@@ -355,4 +381,6 @@ public class MessageProcessor extends ApplicationObjectSupport {
 
     private XmlPullParserFactory _xppf;
     private static final Level DEFAULT_MESSAGE_AUDIT_LEVEL = Level.INFO;
+    private AuditContext audit;
+
 }

@@ -1,6 +1,7 @@
 package com.l7tech.common;
 
 import com.l7tech.server.BootMessages;
+import com.l7tech.server.MessageProcessingMessages;
 import com.l7tech.common.audit.AuditMessages;
 
 import java.util.ArrayList;
@@ -20,6 +21,7 @@ public class MessageMap {
         // add all message categories here
         allMessages.add(new BootMessages());
         allMessages.add(new AuditMessages());
+        allMessages.add(new MessageProcessingMessages());
     }
 
     public static MessageMap getInstance() {
