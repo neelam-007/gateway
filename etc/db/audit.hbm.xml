@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC
+        "-//Hibernate/Hibernate Mapping DTD 2.0//EN"
+        "http://hibernate.sourceforge.net/hibernate-mapping-2.0.dtd">
+
+<!-- $Id$ -->
+
+<!--
+  This is the Hibernate mapping file for audit records.
+-->
+
+<hibernate-mapping>
+    <class name="com.l7tech.common.audit.AuditRecord" table="audit">
+        <id name="oid" column="objectid" type="long" unsaved-value="-1">
+            <generator class="hilo"/>
+        </id>
+
+        <version name="version" column="version" type="integer"/>
+        <property name="nodeId" column="nodeid" type="string"/>
+        <property name="time" column="time" type="long"/>
+        <property name="strLvl" column="level" type="string"/>
+        <property name="message" column="message" type="string"/>
+
+        <joined-subclass name="com.l7tech.common.audit.MessageSummaryAuditRecord" table="audit_message" >
+            <key column="objectid"/>
+            <property name="status" type="int"/>
+            <property name="requestId" column="request_id" type="string"/>
+            <property name="serviceOid" column="service_oid" type="long"/>
+            <property name="serviceName" column="service_name" type="string"/>
+            <property name="identityProviderOid" column="provider_oid" type="long"/>
+            <property name="userId" column="user_id" type="string"/>
+            <property name="userName" column="user_name" type="string"/>
+            <property name="authenticated" column="authenticated" type="boolean"/>
+            <property name="clientAddr" column="client_address" type="string"/>
+            <property name="requestXml" column="request_xml" type="text"/>
+            <property name="requestContentLength" column="request_length" type="int"/>
+            <property name="responseXml" column="response_xml" type="text"/>
+            <property name="responseContentLength" column="response_length" type="int"/>
+        </joined-subclass>
+
+        <joined-subclass name="com.l7tech.common.audit.AdminAuditRecord" table="audit_admin">
+            <key column="objectid"/>
+            <property name="adminLogin" column="admin_login" type="string"/>
+            <property name="entityClassname" column="entity_class" type="string"/>
+            <property name="entityOid" column="entity_id" type="long"/>
+        </joined-subclass>
+
+        <joined-subclass name="com.l7tech.common.audit.SystemAuditRecord" table="audit_system">
+            <key column="objectid"/>
+            <property name="component" type="string"/>
+            <property name="action" type="string"/>
+        </joined-subclass>
+    </class>
+</hibernate-mapping>

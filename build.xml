@@ -732,6 +732,8 @@
 
             <fileset dir="${src.root}/etc/db">
                 <include name="SSG.hbm.xml"/>
+                <include name="audit.hbm.xml"/>
+                <include name="c3p0.properties"/>
             </fileset>
 
             <fileset dir="${src.root}/etc">
@@ -812,7 +814,7 @@
     </target>
 
     <target name="compile.forms">
-        <javac2 srcdir="src" destdir="${build.classes}"
+        <javac2 srcdir="src" destdir="${build.classes}" debug="on"
             classpathref="project.classpath"/>
     </target>
 
