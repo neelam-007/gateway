@@ -201,6 +201,33 @@ public final class TestDocuments {
         return dotNetServerCertificate = CertUtils.decodeCert(certbytes);
     }
 
+    private static X509Certificate francoCertificate = null;
+    public static synchronized X509Certificate getFrancoCertificate() throws Exception {
+        if (francoCertificate != null) return francoCertificate;
+        InputStream fis = getInputStream(DIR + "franco.cer");
+        byte[] certbytes;
+        try {
+            certbytes = HexUtils.slurpStream(fis, 16384);
+        } finally {
+            fis.close();
+        }
+        // construct the x509 based on the bytes
+        return francoCertificate = CertUtils.decodeCert(certbytes);
+    }
+
+    private static PrivateKey francoPrivateKey = null;
+    public static synchronized PrivateKey getFrancoPrivateKey() throws Exception {
+        if (francoPrivateKey != null) return francoPrivateKey;
+        KeyStore keyStore = KeyStore.getInstance("BCPKCS12");
+        InputStream fis = getInputStream(DIR + "franco.ks");
+        final String passwd = "blahblah";
+        keyStore.load(fis, passwd.toCharArray());
+        fis.close();
+        //final String alias = "tomcat";
+        PrivateKey output = (PrivateKey)keyStore.getKey("tomcat", passwd.toCharArray());
+        return francoPrivateKey = output;
+    }
+
     /** @return the SecretKey used in the .NET WS-SC derived key token examples. */
     public static SecretKey getDotNetSecureConversationSharedSecret() {
         return new SecretKey() {
