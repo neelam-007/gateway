@@ -119,7 +119,8 @@ public class ServerSchemaValidation implements ServerAssertion {
             Collection errors = reporter.recordedErrors();
             if (!errors.isEmpty()) {
                 for (Iterator it = errors.iterator(); it.hasNext();) {
-                    logger.fine("assertion failure: " + it.next().toString());
+                    String msg = "assertion failure: " + it.next().toString();
+                    logger.fine(msg);
                 }
                 return AssertionStatus.FAILED;
             }
