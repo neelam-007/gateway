@@ -6,6 +6,7 @@
 
 package com.l7tech.proxy;
 
+import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.security.xml.processor.BadSecurityContextException;
 import com.l7tech.common.security.xml.processor.ProcessorException;
@@ -165,7 +166,12 @@ public class SecureSpanBridgeFactory {
                 final PolicyApplicationContext context1 = context;
                 return new Result() {
                     public int getHttpStatus() {
-                        return context1.getResponse().getHttpResponseKnob().getStatus();
+                        final Message response = context1.getResponse();
+                        HttpResponseKnob responseHttp = (HttpResponseKnob)response.getKnob(HttpResponseKnob.class);
+                        if (responseHttp != null)
+                            return responseHttp.getStatus();
+                        else
+                            return 500;
                     }
 
                     public Document getResponse() {
