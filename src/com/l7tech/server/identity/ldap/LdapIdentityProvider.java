@@ -682,19 +682,16 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
      * IF the attribute is present AND IF one of those attributes is set:
      * 0x00000002 	The user account is disabled.
      * 0x00000010 	The account is currently locked out.
+     * 0x00800000 	The user password has expired.
      * <p/>
      * Otherwise, will return true.
      * <p/>
-     * Note: not sure what to do about these flag:
-     * 0x00800000 	The user password has expired. This flag is created by the system using data from the
-     * Pwd-Last-Set attribute and the domain policy.
-     * 0x00040000 	The user must log on using a smart card.
-     * <p/>
-     * See bugzilla #1116 for the justification of this check.
+     * See bugzilla #1116, #1466 for the justification of this check.
      */
     boolean isValidEntryBasedOnUserAccountControlAttribute(Attributes attibutes) {
         final long DISABLED_FLAG = 0x00000002;
         final long LOCKED_FLAG = 0x00000010;
+        final long EXPIRED_FLAG = 0x00800000; // add a check for this flag in an attempt to fix 1466
         Attribute userAccountControlAttr = attibutes.get("userAccountControl");
         if (userAccountControlAttr != null && userAccountControlAttr.size() > 0) {
             Object found = null;
@@ -714,10 +711,13 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
             }
             if (value != null) {
                 if ((value.longValue() & DISABLED_FLAG) == DISABLED_FLAG) {
-                    logger.fine("Disabled flag encountered");
+                    logger.info("Disabled flag encountered. This account is disabled.");
                     return false;
                 } else if ((value.longValue() & LOCKED_FLAG) == LOCKED_FLAG) {
-                    logger.fine("Locked flag encountered");
+                    logger.info("Locked flag encountered. This account is locked.");
+                    return false;
+                }  else if ((value.longValue() & EXPIRED_FLAG) == EXPIRED_FLAG) {
+                    logger.info("Expired flag encountered. This account has expired.");
                     return false;
                 }
             }
