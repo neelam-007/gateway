@@ -2,6 +2,7 @@ package com.l7tech.message;
 
 import com.l7tech.policy.assertion.AssertionResult;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.server.MessageProcessor;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -22,6 +23,7 @@ public abstract class SoapResponse extends XmlMessageAdapter implements SoapMess
 
     public SoapResponse( TransportMetadata tm ) {
         super(tm);
+        MessageProcessor.setCurrentResponse( this );
     }
 
     public synchronized InputStream getProtectedResponseStream() {
@@ -111,6 +113,7 @@ public abstract class SoapResponse extends XmlMessageAdapter implements SoapMess
             runMe.run();
             i.remove();
         }
+        MessageProcessor.setCurrentResponse(null);
     }
 
     public void finalize() {
