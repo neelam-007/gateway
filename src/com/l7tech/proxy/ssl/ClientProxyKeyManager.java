@@ -40,6 +40,7 @@ public class ClientProxyKeyManager implements X509KeyManager {
 
     public PrivateKey getPrivateKey(String s) {
         try {
+            log.info("ClientProxyKeyManager: getPrivateKey for " + s);
             Ssg ssg = ssgFinder.getSsgByHostname(s);
             return ClientKeyManager.getPrivateKey(ssg);
         } catch (SsgNotFoundException e) {
@@ -56,6 +57,7 @@ public class ClientProxyKeyManager implements X509KeyManager {
 
     public X509Certificate[] getCertificateChain(String s) {
         try {
+            log.info("ClientProxyKeyManager: getCertificateChain for " + s);
             Ssg ssg = ssgFinder.getSsgByHostname(s);
             return ClientKeyManager.getClientCertificateChain(ssg);
         } catch (SsgNotFoundException e) {
@@ -71,6 +73,7 @@ public class ClientProxyKeyManager implements X509KeyManager {
     }
 
     public String[] getClientAliases(String s, Principal[] principals) {
+        log.info("ClientProxyKeyManager: getCurrentAliases for " + s);
         List ssgs = ssgFinder.getSsgList();
         String[] aliases = new String[ssgs.size()];
         int idx = 0;
@@ -90,6 +93,7 @@ public class ClientProxyKeyManager implements X509KeyManager {
     }
 
     public String chooseClientAlias(String[] strings, Principal[] principals, Socket socket) {
+        log.info("ClientProxyKeyManager: chooseClientAlias for " + strings[0]);
         InetAddress ia = socket.getInetAddress();
         String hostname = ia.getHostName();
         return hostname;
