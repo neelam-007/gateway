@@ -2,27 +2,24 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.table.TrustedCertsTable;
 import com.l7tech.console.table.TrustedCertTableSorter;
-import com.l7tech.console.event.CertListener;
-import com.l7tech.console.event.CertListenerAdapter;
-import com.l7tech.console.event.CertEvent;
+import com.l7tech.console.event.*;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.util.Locator;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.objectmodel.FindException;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.Spacer;
 
 import javax.swing.*;
-import javax.swing.event.EventListenerList;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
 import java.util.*;
 import java.util.logging.Logger;
 import java.awt.*;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
+import java.awt.event.*;
 import java.rmi.RemoteException;
 
 /**
@@ -36,10 +33,13 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
     private JButton addButton;
     private JButton removeButton;
     private JButton propertiesButton;
+    private boolean holderOfKeySelected = false;
+    private boolean x509CertSelected = false;
+    private boolean limitationsAccepted = true;
 
     private TrustedCertsTable trustedCertTable = null;
-    private EventListenerList listenerList = new EventListenerList();
 
+    public static final String RESOURCE_PATH = "com/l7tech/console/resources";
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.FederatedIdentityProviderDialog", Locale.getDefault());
     private static Logger logger = Logger.getLogger(FederatedIPTrustedCertsPanel.class.getName());
 
@@ -70,6 +70,9 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
             throw new IllegalArgumentException("The settings object must be FederatedIdentityProviderConfig");
 
         FederatedIdentityProviderConfig iProviderConfig = (FederatedIdentityProviderConfig) settings;
+
+        holderOfKeySelected = iProviderConfig.isSamlSupported() && iProviderConfig.getSamlConfig().isSubjConfHolderOfKey();
+        x509CertSelected = iProviderConfig.isX509Supported();
 
         long[] oids = iProviderConfig.getTrustedCertOids();
         Vector certs = new Vector();
@@ -143,6 +146,50 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
 
         iProviderConfig.setTrustedCertOids(oids);
 
+    }
+
+    public boolean onNextButton() {
+        final JDialog owner = getOwner();
+        if(trustedCertTable.getModel().getRowCount() == 0) {
+
+            FederatedIPWarningDialog d = new FederatedIPWarningDialog(owner, createMsgPanel());
+
+            d.setSize(620, 350);
+            d.addWizardListener(wizardListener);
+            Utilities.centerOnScreen(d);
+            d.setVisible(true);
+        }
+
+        return limitationsAccepted;
+    }
+
+    private JPanel createMsgPanel() {
+        Icon icon = new ImageIcon(getClass().getClassLoader().getResource(RESOURCE_PATH + "/check16g.gif"));
+
+        int position = 0;
+        final JPanel panel1 = new JPanel();
+        panel1.setLayout(new GridLayoutManager(5, 1, new Insets(15, 0, 0, 0), -1, -1));
+
+        final JLabel virtualGroupMsg = new JLabel();
+        virtualGroupMsg.setText(" Virtual Group not supported");
+        virtualGroupMsg.setIcon(icon);
+        panel1.add(virtualGroupMsg, new GridConstraints(position++, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
+
+        if(x509CertSelected) {
+            final JLabel x509Msg = new JLabel();
+            x509Msg.setText(" Every identity that you wish to authorize using X.509 credentials will need to have their certificate imported manually");
+            x509Msg.setIcon(icon);
+            panel1.add(x509Msg, new GridConstraints(position++, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
+        }
+
+        if(holderOfKeySelected) {
+            final JLabel holderOfKeyMsg = new JLabel();
+            holderOfKeyMsg.setText(" Holder-of-Key Subject Confirmation Method not supported");
+            holderOfKeyMsg.setIcon(icon);
+            panel1.add(holderOfKeyMsg, new GridConstraints(position++, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
+        }
+
+        return panel1;
     }
 
     private void initComponents() {
@@ -231,6 +278,26 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
 
     };
 
+    private WizardListener wizardListener = new WizardAdapter() {
+        /**
+         * Invoked when the dialog has finished.
+         *
+         * @param we the event describing the dialog finish
+         */
+        public void wizardFinished(WizardEvent we) {
+            limitationsAccepted = true;
+        }
+
+        /**
+         * Invoked when the wizard has cancelled.
+         *
+         * @param we the event describing the dialog cancelled
+         */
+        public void wizardCanceled(WizardEvent we) {
+            limitationsAccepted =false;
+        }
+
+    };
 
     {
 // GUI initializer generated by IntelliJ IDEA GUI Designer
