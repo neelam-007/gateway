@@ -1,5 +1,8 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.security.TrustedCert;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
@@ -7,13 +10,18 @@ import java.awt.event.ActionEvent;
 import java.util.ResourceBundle;
 import java.util.Locale;
 import java.util.logging.Logger;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
+import java.security.NoSuchAlgorithmException;
+import java.io.IOException;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
  * <p> @author fpang </p>
  * $Id$
  */
-public class CertPropertiesWindow extends JDialog{
+public class CertPropertiesWindow extends JDialog {
 
     private JPanel mainPanel;
     private JPanel certGeneralPane;
@@ -21,18 +29,25 @@ public class CertPropertiesWindow extends JDialog{
     private JPanel certUsagePane;
     private JTabbedPane certTabbedPane;
     private JScrollPane certDetailsScrollPane;
+    private JTextField certExpiredOnTextField;
+    private JTextField certIssuedToTextField;
+    private JTextField certIssuedByTextField;
+    private JTextField certNameTextField;
 
     private JButton saveButton;
     private JButton cancelButton;
+    private TrustedCert trustedCert = null;
 
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.EditCertsDialog", Locale.getDefault());
     private static Logger logger = Logger.getLogger(CertManagerWindow.class.getName());
 
 
-    public CertPropertiesWindow(Dialog owner) {
+    public CertPropertiesWindow(Dialog owner, TrustedCert tc) {
         super(owner, resources.getString("dialog.title"), true);
+        trustedCert = tc;
         initialize();
         pack();
+        Utilities.centerOnScreen(this);
     }
 
     private void initialize() {
@@ -44,12 +59,11 @@ public class CertPropertiesWindow extends JDialog{
         p.setLayout(new BorderLayout());
         p.add(mainPanel, BorderLayout.CENTER);
 
-        //certTableScrollPane.setViewportView(getTrustedCertTable());
-
+        populateData();
 
         saveButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-               //todo:
+                //todo:
             }
         });
 
@@ -59,6 +73,54 @@ public class CertPropertiesWindow extends JDialog{
                 dispose();
             }
         });
+    }
+
+    private void populateData() {
+        if (trustedCert == null) {
+            return;
+        }
+
+        X509Certificate cert = null;
+        try {
+            cert = trustedCert.getCertificate();
+        } catch (CertificateException e) {
+            //todo:
+        } catch (IOException e) {
+            //todo:
+        }
+
+        // populate the data to the general panel
+       //todo: certExpiredOnTextField.setText(cert.getNotAfter());
+        certIssuedToTextField.setText(cert.getSubjectDN().getName());
+        certIssuedByTextField.setText(cert.getIssuerDN().getName());
+        certNameTextField.setText(trustedCert.getName());
+
+        // populate the details to the details pane
+        JComponent certView = getCertView(cert);
+        if (certView == null) {
+            certView = new JLabel();
+        } else {
+            certDetailsScrollPane.setViewportView(certView);
+        }
+
+    }
+
+    /**
+     * Returns a properties instance filled out with info about the certificate.
+     */
+    private JComponent getCertView(X509Certificate cert) {
+
+        com.l7tech.common.gui.widgets.CertificatePanel certPanel = null;
+        try {
+            certPanel = new com.l7tech.common.gui.widgets.CertificatePanel(cert);
+            certPanel.setCertBorderEnabled(false);
+        } catch (CertificateEncodingException ee) {
+            logger.warning("Unable to decode the certificate: " + trustedCert.getName());
+        } catch (NoSuchAlgorithmException ae) {
+            logger.warning("Unable to decode the certificate: " + trustedCert.getName() + ", Algorithm is not supported:" + cert.getSigAlgName());
+        }
+
+        return certPanel;
     }
 
     {
@@ -102,15 +164,53 @@ public class CertPropertiesWindow extends JDialog{
         final JPanel _7;
         _7 = new JPanel();
         certGeneralPane = _7;
+        _7.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(5, 2, new Insets(20, 10, 10, 10), -1, -1));
         _6.addTab("General", _7);
-        final JScrollPane _8;
-        _8 = new JScrollPane();
-        certDetailsScrollPane = _8;
-        _6.addTab("Details", _8);
-        final JPanel _9;
-        _9 = new JPanel();
-        certUsagePane = _9;
-        _6.addTab("Usage", _9);
+        final JLabel _8;
+        _8 = new JLabel();
+        _8.setText("Certificate Name");
+        _7.add(_8, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
+        final JTextField _9;
+        _9 = new JTextField();
+        certNameTextField = _9;
+        _7.add(_9, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
+        final JLabel _10;
+        _10 = new JLabel();
+        _10.setText("Expired on");
+        _7.add(_10, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, 8, 0, 0, 0, null, null, null));
+        final JLabel _11;
+        _11 = new JLabel();
+        _11.setText("Issued by");
+        _7.add(_11, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 8, 0, 0, 0, null, null, null));
+        final JLabel _12;
+        _12 = new JLabel();
+        _12.setText("Issued to");
+        _7.add(_12, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 0, 0, null, null, null));
+        final com.intellij.uiDesigner.core.Spacer _13;
+        _13 = new com.intellij.uiDesigner.core.Spacer();
+        _7.add(_13, new com.intellij.uiDesigner.core.GridConstraints(4, 1, 1, 1, 0, 2, 1, 6, null, null, null));
+        final JTextField _14;
+        _14 = new JTextField();
+        certIssuedToTextField = _14;
+        _7.add(_14, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
+        final JTextField _15;
+        _15 = new JTextField();
+        certIssuedByTextField = _15;
+        _7.add(_15, new com.intellij.uiDesigner.core.GridConstraints(2, 1, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
+        final JTextField _16;
+        _16 = new JTextField();
+        certExpiredOnTextField = _16;
+        _16.setText("");
+        _7.add(_16, new com.intellij.uiDesigner.core.GridConstraints(3, 1, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
+        final JScrollPane _17;
+        _17 = new JScrollPane();
+        certDetailsScrollPane = _17;
+        _6.addTab("Details", _17);
+        final JPanel _18;
+        _18 = new JPanel();
+        certUsagePane = _18;
+        _6.addTab("Usage", _18);
     }
+
 
 }

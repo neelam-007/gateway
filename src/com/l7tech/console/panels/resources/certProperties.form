@@ -12,7 +12,7 @@
       <grid id="153db" row-count="1" column-count="3" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <xy x="10" y="256" width="531" height="64"/>
+          <xy x="10" y="296" width="531" height="24"/>
           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3"/>
         </constraints>
         <properties/>
@@ -20,7 +20,7 @@
         <children>
           <component id="28b46" class="javax.swing.JButton" binding="saveButton">
             <constraints>
-              <xy x="397" y="20" width="58" height="24"/>
+              <xy x="397" y="0" width="58" height="24"/>
               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
             </constraints>
             <properties>
@@ -29,7 +29,7 @@
           </component>
           <component id="af3d" class="javax.swing.JButton" binding="cancelButton">
             <constraints>
-              <xy x="465" y="20" width="66" height="24"/>
+              <xy x="465" y="0" width="66" height="24"/>
               <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
             </constraints>
             <properties>
@@ -38,7 +38,7 @@
           </component>
           <hspacer id="fc048">
             <constraints>
-              <xy x="0" y="26" width="397" height="11"/>
+              <xy x="0" y="6" width="397" height="11"/>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
             </constraints>
           </hspacer>
@@ -46,7 +46,7 @@
       </grid>
       <tabbedpane id="5f53c" binding="certTabbedPane">
         <constraints>
-          <xy x="10" y="10" width="531" height="241"/>
+          <xy x="10" y="10" width="531" height="281"/>
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3">
             <preferred-size width="200" height="200"/>
           </grid>
@@ -54,15 +54,96 @@
         <properties/>
         <border type="none"/>
         <children>
-          <xy id="445ea" binding="certGeneralPane" hgap="-1" vgap="-1">
-            <margin top="0" left="0" bottom="0" right="0"/>
+          <grid id="445ea" binding="certGeneralPane" row-count="5" column-count="2" hgap="-1" vgap="-1">
+            <margin top="20" left="10" bottom="10" right="10"/>
             <constraints>
               <tabbedpane title="General"/>
             </constraints>
             <properties/>
             <border type="none"/>
-            <children/>
-          </xy>
+            <children>
+              <component id="7c325" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="10" y="23" width="80" height="14"/>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="Certificate Name"/>
+                </properties>
+              </component>
+              <component id="9d683" class="javax.swing.JTextField" binding="certNameTextField">
+                <constraints>
+                  <xy x="100" y="20" width="416" height="21"/>
+                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
+                    <preferred-size width="150" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties/>
+              </component>
+              <component id="b7c6a" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="10" y="101" width="51" height="14"/>
+                  <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="Expired on"/>
+                </properties>
+              </component>
+              <component id="dfa6d" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="10" y="75" width="47" height="14"/>
+                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="Issued by"/>
+                </properties>
+              </component>
+              <component id="89e2" class="javax.swing.JLabel">
+                <constraints>
+                  <xy x="10" y="49" width="45" height="14"/>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="Issued to"/>
+                </properties>
+              </component>
+              <vspacer id="88aec">
+                <constraints>
+                  <xy x="302" y="119" width="11" height="125"/>
+                  <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
+                </constraints>
+              </vspacer>
+              <component id="4f32c" class="javax.swing.JTextField" binding="certIssuedToTextField">
+                <constraints>
+                  <xy x="100" y="46" width="416" height="21"/>
+                  <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
+                    <preferred-size width="150" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties/>
+              </component>
+              <component id="3fe6a" class="javax.swing.JTextField" binding="certIssuedByTextField">
+                <constraints>
+                  <xy x="100" y="72" width="416" height="21"/>
+                  <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
+                    <preferred-size width="150" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties/>
+              </component>
+              <component id="42b49" class="javax.swing.JTextField" binding="certExpiredOnTextField">
+                <constraints>
+                  <xy x="100" y="98" width="416" height="21"/>
+                  <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
+                    <preferred-size width="150" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <text value=""/>
+                </properties>
+              </component>
+            </children>
+          </grid>
           <scrollpane id="4eed8" binding="certDetailsScrollPane">
             <constraints>
               <tabbedpane title="Details"/>
