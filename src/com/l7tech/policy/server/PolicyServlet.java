@@ -146,6 +146,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             // (this may be everything, if the user has no business seeing this policy)
             try {
                 if ( !anonymousok ) {
+                    boolean someonecanseethis = false;
                     for (Iterator i = users.iterator(); i.hasNext();) {
                         User user = (User) i.next();
 
@@ -158,8 +159,13 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
                         if ( tempService != null ) {
                             targetService = tempService;
+                            someonecanseethis = true;
                             break;
                         }
+                    }
+
+                    if (!someonecanseethis) {
+                        targetService = null;
                     }
 
                     if (targetService == null) {
