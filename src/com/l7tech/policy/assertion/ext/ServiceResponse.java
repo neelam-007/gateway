@@ -24,7 +24,7 @@ public interface ServiceResponse {
      * @param document the DOM <code>Document</code> to attach to this service
      *                 response. The exisitng document will be replaced.
      */
-    void stDocument(Document document);
+    void setDocument(Document document);
 
     /**
      * Context is a <code>Map</code> of key/value properties that is associated
@@ -36,5 +36,4 @@ public interface ServiceResponse {
      * @return the map of key/value pairs represnting the invocation context.
      */
     Map getContext();
-
 }

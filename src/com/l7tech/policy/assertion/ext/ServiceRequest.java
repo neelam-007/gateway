@@ -24,7 +24,7 @@ public interface ServiceRequest {
      * @param document the DOM <code>Document</code> to attach to this service
      *                 request. The exisitng document will be replaced.
      */
-    void stDocument(Document document);
+    void setDocument(Document document);
 
     /**
      * Context is a <code>Map</code> of key/value properties that is associated
