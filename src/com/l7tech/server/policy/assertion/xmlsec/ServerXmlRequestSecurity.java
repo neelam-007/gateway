@@ -97,7 +97,25 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
         SecurityProcessor verifier = SecurityProcessor.getVerifier(xmlsecSession, key, data);
 
         try {
-            verifier.processInPlace(soapmsg);
+            SecurityProcessor.Result result = verifier.processInPlace(soapmsg);
+            boolean authenticated = false;
+            for (int i = 0; i < data.length; i++) {
+                ElementSecurity elementSecurity = data[i];
+                // authenticated if Xpath points to envelope
+                if (SoapUtil.SOAP_ENVELOPE_XPATH.equals(elementSecurity.getxPath().getExpression())) {
+                    authenticated = true;
+                    break;
+                }
+            }
+            // upload cert as credentials, if authenticated
+            if (authenticated) {
+                String certCN = null;
+                final X509Certificate cert = result.getCertificate();
+                X500Name x500name = new X500Name(cert.getSubjectX500Principal().getName());
+                certCN = x500name.getCommonName();
+                logger.finest("cert extracted from digital signature for user " + certCN);
+                request.setPrincipalCredentials(new LoginCredentials(certCN, null, CredentialFormat.CLIENTCERT, null, cert));
+            }
         } catch (SecurityProcessorException e) {
             // bad signature !
             logger.log(Level.SEVERE, e.getMessage(), e);
@@ -113,12 +131,15 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             // bad signature !
             logger.log(Level.SEVERE, e.getMessage(), e);
             return AssertionStatus.FALSIFIED;
-
         } catch (GeneralSecurityException e) {
             // bad signature !
             logger.log(Level.SEVERE, e.getMessage(), e);
             return AssertionStatus.FALSIFIED;
+        } catch (IOException e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            return AssertionStatus.FALSIFIED;
         }
+
 
 
         // so mark this sequence number as used up
