@@ -6,15 +6,15 @@
 
 package com.l7tech.common.xml.tarari;
 
-import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.SoftwareFallbackException;
 import com.l7tech.common.xml.TarariProber;
+import com.l7tech.common.util.SoapUtil;
 import com.tarari.xml.XMLDocumentException;
 import com.tarari.xml.XMLErrorCode;
-import com.tarari.xml.xpath.XPathCompiler;
 import com.tarari.xml.xpath.XPathCompilerException;
 import com.tarari.xml.xpath.XPathLoaderException;
 import com.tarari.xml.xpath.XPathProcessorException;
+import com.tarari.xml.xpath.XPathCompiler;
 import org.xml.sax.SAXException;
 
 import java.util.ArrayList;
@@ -85,7 +85,7 @@ public class TarariUtil {
         translateTarariErrorCode(e, e.getStatus());
     }
 
-    public static void setupIsSoap() throws XPathCompilerException {
+    public static int[] setupIsSoap(String[] moreXpaths) throws XPathCompilerException {
         if (!TarariProber.isTarariPresent()) throw new IllegalStateException("No Tarari card present");
 
         ArrayList xpaths0 = new ArrayList();
@@ -100,7 +100,22 @@ public class TarariUtil {
         }
         uriIndices[uriIndices.length-1] = 0;
 
+        int before = xpaths0.size();
+        int[] moreIndices = null;
+        if (moreXpaths != null && moreXpaths.length > 0) {
+            xpaths0.addAll(Arrays.asList(moreXpaths));
+            moreIndices = new int[moreXpaths.length];
+            for (int i = 0; i < moreIndices.length; i++) {
+                moreIndices[i] = ++before;
+            }
+        }
+
         XPathCompiler.compile(xpaths0, 0);
+        return moreIndices;
+    }
+
+    public static void setupIsSoap() throws XPathCompilerException {
+        setupIsSoap(null);
     }
 
 }
