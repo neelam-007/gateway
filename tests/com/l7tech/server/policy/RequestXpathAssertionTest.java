@@ -138,7 +138,6 @@ public class RequestXpathAssertionTest extends TestCase {
         namespaceMap.put( "ns1", XMETHODS_URN );
         namespaceMap.put( "soapenv", SOAPConstants.URI_NS_SOAP_ENVELOPE );
 
-
         for (int i = 0; i < requests.length; i++) {
             SoapRequestGenerator.SOAPRequest request = requests[i];
 
