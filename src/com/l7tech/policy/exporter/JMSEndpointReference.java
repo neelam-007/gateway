@@ -26,6 +26,7 @@ import org.w3c.dom.Text;
  */
 public class JMSEndpointReference extends ExternalReference {
     public JMSEndpointReference(long endpointOid) {
+        oid = endpointOid;
         JmsAdmin admin = Registry.getDefault().getJmsManager();
         JmsConnection jmsConnection = null;
         try {
@@ -50,9 +51,13 @@ public class JMSEndpointReference extends ExternalReference {
     }
 
     public void serializeToRefElement(Element referencesParentElement) {
-        Element refEl = referencesParentElement.getOwnerDocument().createElement("JMSConnectionProviderReference");
+        Element refEl = referencesParentElement.getOwnerDocument().createElement("JMSConnectionReference");
         refEl.setAttribute(ExporterConstants.REF_TYPE_ATTRNAME, JMSEndpointReference.class.getName());
         referencesParentElement.appendChild(refEl);
+        Element oidEl = referencesParentElement.getOwnerDocument().createElement("OID");
+        Text txt = referencesParentElement.getOwnerDocument().createTextNode(Long.toString(oid));
+        oidEl.appendChild(txt);
+        refEl.appendChild(oidEl);
         Element icfcEl = referencesParentElement.getOwnerDocument().createElement("InitialContextFactoryClassname");
         refEl.appendChild(icfcEl);
         Element jndiEl = referencesParentElement.getOwnerDocument().createElement("JndiUrl");
@@ -64,23 +69,23 @@ public class JMSEndpointReference extends ExternalReference {
         Element dfuEl = referencesParentElement.getOwnerDocument().createElement("DestinationFactoryUrl");
         refEl.appendChild(dfuEl);
         if (initialContextFactoryClassname != null) {
-            Text txt = referencesParentElement.getOwnerDocument().createTextNode(initialContextFactoryClassname);
+            txt = referencesParentElement.getOwnerDocument().createTextNode(initialContextFactoryClassname);
             icfcEl.appendChild(txt);
         }
         if (jndiUrl != null) {
-            Text txt = referencesParentElement.getOwnerDocument().createTextNode(jndiUrl);
+            txt = referencesParentElement.getOwnerDocument().createTextNode(jndiUrl);
             jndiEl.appendChild(txt);
         }
         if (queueFactoryUrl != null) {
-            Text txt = referencesParentElement.getOwnerDocument().createTextNode(queueFactoryUrl);
+            txt = referencesParentElement.getOwnerDocument().createTextNode(queueFactoryUrl);
             qfuEl.appendChild(txt);
         }
         if (topicFactoryUrl != null) {
-            Text txt = referencesParentElement.getOwnerDocument().createTextNode(topicFactoryUrl);
+            txt = referencesParentElement.getOwnerDocument().createTextNode(topicFactoryUrl);
             tfuEl.appendChild(txt);
         }
         if (destinationFactoryUrl != null) {
-            Text txt = referencesParentElement.getOwnerDocument().createTextNode(destinationFactoryUrl);
+            txt = referencesParentElement.getOwnerDocument().createTextNode(destinationFactoryUrl);
             dfuEl.appendChild(txt);
         }
     }
@@ -112,6 +117,7 @@ public class JMSEndpointReference extends ExternalReference {
 
     private final Logger logger = Logger.getLogger(IdProviderReference.class.getName());
 
+    private long oid;
     private String initialContextFactoryClassname;
     private String jndiUrl;
     private String queueFactoryUrl;
