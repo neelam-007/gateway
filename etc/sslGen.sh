@@ -42,6 +42,7 @@ KEYSTORE_FILE="$KEYSTORE_DIR/tomcatSsl"
 KEYSTORE_FILE_OSPATH="$KEYSTORE_DIR_OSPATH/tomcatSsl"
 CERTIFICATE_FILE="$TOMCAT_HOME/kstores/ssg.cer"
 CERTIFICATE_FILE_OSPATH="$TOMCAT_HOME_OSPATH/kstores/ssg.cer"
+CSR_FILE_OSPATH="$TOMCAT_HOME_OSPATH/kstores/tomcatSsl.csr"
 SERVER_XML_FILE="$TOMCAT_HOME/conf/server.xml"
 
 
@@ -102,6 +103,9 @@ if [ -e "$KEYSTORE_FILE" ]
 then
 # EXPORT THE SERVER CERTIFICATE
         $KEYTOOL -export -alias tomcat -storepass "$KEYSTORE_PASSWORD" -file "$CERTIFICATE_FILE_OSPATH" -keystore "$KEYSTORE_FILE_OSPATH"
+
+# GENERATE A LOCAL CERTIFICATE SIGNING REQUEST
+        $KEYTOOL -certreq -keyalg RSA -alias tomcat -file "$CSR_FILE_OSPATH" -keystore "$KEYSTORE_FILE_OSPATH" -storepass "$KEYSTORE_PASSWORD"
 
 # EDIT THE server.xml file so that the magic value "__FunkySsgMojo__" is replaced by the actual password
 perl -pi.bak -e s/keystorePass=\".*\"/keystorePass=\"$KEYSTORE_PASSWORD\"/ "$SERVER_XML_FILE"
