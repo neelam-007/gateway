@@ -460,6 +460,7 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
     }
 
     public void setGroupHeaders( String userId, Set groupHeaders ) throws FindException, UpdateException {
+        if (groupHeaders == null) return;
         HibernatePersistenceContext hpc = null;
         try {
             hpc = context();
