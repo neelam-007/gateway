@@ -531,6 +531,11 @@
                 <exclude name="**/*junit.jar"/>
                 <exclude name="**/jsdk23.jar"/>
             </fileset>
+
+            <!-- the default crypto provider -->
+            <fileset dir="${src.root}/lib/crypto/bc">
+                <include name="bcprov*.jar"/>
+            </fileset>
         </copy>
 
         <!-- the web.xml -->

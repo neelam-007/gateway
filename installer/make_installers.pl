@@ -10,6 +10,12 @@ my $MAKENSIS = "c:/NSIS/makensis.exe";
 my @BZIP = ("/XSetCompressor bzip2");
 my $BUILD_PATH = "../build";
 
+# Hack to help find jars that are kept in lib/ subdirectories rather than right up in lib/
+my %pathmap = (
+#  "bcprov-jdk14-119.jar" => "crypto/bc/bcprov-jdk14-119.jar",
+);
+
+# List of known NSI files
 my %nsis = (
   Agent => "proxy/win32/Agent",
   Manager => "console/win32/Manager"
@@ -169,6 +175,7 @@ sub make_tar_file {
 	docopy("$BUILD_PATH/$file.jar", $dir);
 
 	foreach my $jar (@$jars) {
+		$jar = $pathmap{$jar} if $pathmap{$jar};
 		docopy("$BUILD_PATH/lib/$jar", "./$dir/lib");
 	}
 
