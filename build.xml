@@ -59,7 +59,6 @@
     <property name="test.class.path" refid="project.classpath"/>
 
 
-
     <path id="uidesigner.classpath">
         <fileset dir="lib/tools">
             <include name="jdom.jar"/>
@@ -771,10 +770,9 @@
         <!-- make sure that the tomcat path is properly referenced in the keystore properties -->
         <antcall target="keystore.properties"/>
 
-
         <propertyfile file="${build.classes}/ssglog.properties">
-            <entry key="com.l7tech.server.log.FileHandler.path" value="${tomcat.home}/logs"/>
-        </propertyfile>
+                   <entry key="java.util.logging.FileHandler.pattern" value="${tomcat.home}/logs/ssg_%g_%u.log"/>
+         </propertyfile>
 
         <!-- html and other static web files -->
         <copy todir="${doc.root}">
@@ -1044,8 +1042,8 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         <copy file="${src.root}/etc/ssglog.properties" tofile="${install.src.ssglog.properties}"/>
         <echo>Patching ${install.src.ssglog.properties}...</echo>
         <replaceregexp file="${install.src.ssglog.properties}">
-            <regexp pattern="com.l7tech.server.log.FileHandler.path=.*"/>
-            <substitution expression="com.l7tech.server.log.FileHandler.path=${install.target.logs}"/>
+            <regexp pattern="java.util.logging.FileHandler.pattern=.*"/>
+            <substitution expression="java.util.logging.FileHandler.pattern=${install.target.logs}/ssg_%g_%u.log"/>
         </replaceregexp>
 
         <!-- Copy cluster_hostname -->
@@ -1070,8 +1068,8 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         <copy file="${src.root}/etc/ssglog.properties" tofile="${install.src.ssglog.properties}-dist"/>
         <echo>Patching ${install.src.ssglog.properties}-dist...</echo>
         <replaceregexp file="${install.src.ssglog.properties}-dist">
-            <regexp pattern="com.l7tech.server.log.FileHandler.path=.*"/>
-            <substitution expression="com.l7tech.server.log.FileHandler.path=${install.target.logs}"/>
+            <regexp pattern="java.util.logging.FileHandler.pattern=.*"/>
+            <substitution expression="java.util.logging.FileHandler.pattern=${install.target.logs}//ssg_%g_%u.log"/>
         </replaceregexp>
 
         <!-- Copy hibernate.properties -->
