@@ -7,10 +7,13 @@
 package com.l7tech.service.resolution;
 
 import com.l7tech.message.Request;
+import com.l7tech.message.SoapRequest;
 import com.l7tech.server.util.ServerSoapUtil;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserException;
 
 import javax.wsdl.BindingInput;
 import javax.wsdl.BindingOperation;
@@ -48,19 +51,42 @@ public class UrnResolver extends WsdlOperationServiceResolver {
 
     protected Object getRequestValue(Request request) throws ServiceResolutionException {
         try {
-            Element body = ServerSoapUtil.getBodyElement(request);
-            Node n = body.getFirstChild();
-            while (n != null) {
-                if (n.getNodeType() == Node.ELEMENT_NODE)
-                    return n.getNamespaceURI();
+            if ( request instanceof SoapRequest ) {
+                SoapRequest sreq = (SoapRequest)request;
+                XmlPullParser xpp = sreq.getPullParser();
+                String tag;
+                String ns;
+                boolean gotBody = false;
+                int eventType = xpp.getEventType();
+                while (eventType != xpp.END_DOCUMENT) {
+                    if( eventType == xpp.START_TAG ) {
+                        tag = xpp.getName();
+                        if ( gotBody ) {
+                            ns = xpp.getNamespace();
+                            return ns;
+                        } else if ( tag.equalsIgnoreCase("body") ) {
+                            gotBody = true;
+                        }
+                    }
+                    eventType = xpp.next();
+                }
+            } else {
+                Element body = ServerSoapUtil.getBodyElement(request);
+                Node n = body.getFirstChild();
+                while (n != null) {
+                    if (n.getNodeType() == Node.ELEMENT_NODE)
+                        return n.getNamespaceURI();
 
-                n = n.getNextSibling();
+                    n = n.getNextSibling();
+                }
             }
             return null;
         } catch (SAXException se) {
             throw new ServiceResolutionException(se.getMessage(), se);
         } catch (IOException ioe) {
             throw new ServiceResolutionException(ioe.getMessage(), ioe);
+        } catch ( XmlPullParserException xppe ) {
+            throw new ServiceResolutionException(xppe.getMessage(), xppe);
         }
     }
 
