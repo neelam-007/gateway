@@ -17,26 +17,11 @@ public class IdentityManagerClient {
     // ************************************************
     // PRIVATES
     // ************************************************
-    protected Client getStub() throws java.rmi.RemoteException {
+    protected Client getStub() {
         if (localStub == null) {
-            try {
-                localStub = new Client(getServiceURL()/*, getAdminUsername(), getAdminPassword()*/);
-            }
-            catch (Exception e) {
-                throw new java.rmi.RemoteException("cannot instantiate the admin service stub", e);
-            }
+            localStub = new Client();
         }
         return localStub;
-    }
-    protected String getServiceURL() throws IOException {
-        String prefUrl = com.l7tech.console.util.Preferences.getPreferences().getServiceUrl();
-        if (prefUrl == null || prefUrl.length() < 1 || prefUrl.equals("null/ssg")) {
-            throw new IOException("com.l7tech.console.util.Preferences.getPreferences does not resolve a server address");
-            // System.err.println("com.l7tech.console.util.Preferences.getPreferences does not resolve a server address");
-            // prefUrl = "http://localhost:8080/ssg";
-        }
-        prefUrl += Service.SERVICE_DEPENDENT_URL_PORTION;
-        return prefUrl;
     }
 
     protected Client localStub = null;
