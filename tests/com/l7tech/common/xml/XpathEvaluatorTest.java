@@ -15,10 +15,7 @@ import org.jaxen.NamespaceContext;
 import org.w3c.dom.Document;
 
 import javax.xml.soap.SOAPMessage;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Iterator;
+import java.util.*;
 
 /**
  * Test <code>XpathEvaluatorTest</code> test the various select/evaluate
@@ -199,6 +196,20 @@ public class XpathEvaluatorTest extends TestCase {
 
         list = xe.select("/SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastBid/ancestor::SOAP-ENV:Envelope");
         assertTrue("Size should have been == 0, returned "+list.size(), list.size() == 0);
+    }
+
+    public void testNonSoap() throws Exception {
+        Document doc = XmlUtil.stringToDocument("<s0:blah xmlns:s0=\"http://grrr.com/nsblah\"/>");
+        System.out.println(XmlUtil.nodeToFormattedString(doc));
+        HashMap namesapces = new HashMap();
+        namesapces.put("s0", "http://grrr.com/nsblah");
+        XpathEvaluator xe = XpathEvaluator.newEvaluator(doc, namesapces);
+        List nodes = xe.select("//*[local-name()='blah']");
+        assertTrue("Size should have been >0", nodes.size() > 0);
+        for (Iterator iterator = nodes.iterator(); iterator.hasNext();) {
+            Object obj = (Object)iterator.next();
+            System.out.println(obj);
+        }
     }
 
     public static void main(String[] args) {
