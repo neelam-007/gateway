@@ -56,7 +56,8 @@ public class TokenService {
      * @return
      */
     public Document respondToRequestSecurityToken(Document request, CredentialsAuthenticator authenticator)
-                                                    throws InvalidDocumentFormatException, TokenServiceException {
+                                                    throws InvalidDocumentFormatException, TokenServiceException,
+                                                           WssProcessor.ProcessorException, GeneralSecurityException {
         // Pass request to the trogdorminator!
         WssProcessor trogdor = new WssProcessorImpl();
         X509Certificate serverSSLcert = null;
@@ -65,32 +66,23 @@ public class TokenService {
             serverSSLcert = getServerCert();
             sslPrivateKey = getServerKey();
         } catch (CertificateException e) {
-            logger.log(Level.SEVERE, "Error getting server cert/private key", e);
-            // todo, some error
+            String msg = "Error getting server cert/private key";
+            logger.log(Level.SEVERE, msg, e);
+            throw new TokenServiceException(msg, e);
         } catch (KeyStoreException e) {
-            logger.log(Level.SEVERE, "Error getting server cert/private key", e);
-            // todo, some error
+            String msg = "Error getting server cert/private key";
+            logger.log(Level.SEVERE, msg, e);
+            throw new TokenServiceException(msg, e);
         } catch (IOException e){
-            logger.log(Level.SEVERE, "Error getting server cert/private key", e);
-            // todo, some error
+            String msg = "Error getting server cert/private key";
+            logger.log(Level.SEVERE, msg, e);
+            throw new TokenServiceException(msg, e);
         }
         // Authenticate the request, check who signed it
-        WssProcessor.ProcessorResult wssOutput = null;
-        try {
-            wssOutput = trogdor.undecorateMessage(request,
-                                                  serverSSLcert,
-                                                  sslPrivateKey,
-                                                  SecureConversationContextManager.getInstance());
-        } catch (WssProcessor.ProcessorException e) {
-            logger.log(Level.SEVERE, "Error in WSS processing of request", e);
-            // todo, some error
-        } catch (InvalidDocumentFormatException e) {
-            logger.log(Level.SEVERE, "Error in WSS processing of request", e);
-            // todo, some error
-        } catch (GeneralSecurityException e) {
-            logger.log(Level.SEVERE, "Error in WSS processing of request", e);
-            // todo, some error
-        }
+        WssProcessor.ProcessorResult wssOutput = trogdor.undecorateMessage(request,
+                                                                           serverSSLcert,
+                                                                           sslPrivateKey,
+                                                                           SecureConversationContextManager.getInstance());
         WssProcessor.SecurityToken[] tokens = wssOutput.getSecurityTokens();
         X509Certificate clientCert = null;
         for (int i = 0; i < tokens.length; i++) {
@@ -99,8 +91,10 @@ public class TokenService {
                 WssProcessor.X509SecurityToken x509token = (WssProcessor.X509SecurityToken)token;
                 if (x509token.isPossessionProved()) {
                     if (clientCert != null) {
-                        logger.log( Level.WARNING, "Request included more than one X509 security token whose key ownership was proven" );
-                        // todo, some error
+                        String msg = "Request included more than one X509 security token whose key ownership " +
+                                     "was proven";
+                        logger.log(Level.WARNING,  msg);
+                        throw new TokenServiceException(msg);
                     }
                     clientCert = x509token.asX509Certificate();
                 }
@@ -111,7 +105,7 @@ public class TokenService {
             X500Name x500name = new X500Name(clientCert.getSubjectX500Principal().getName());
             certCN = x500name.getCommonName();
         } catch (IOException e) {
-            // todo, some error
+            throw new TokenServiceException("cannot get cert subject", e);
         }
         User authenticatedUser = authenticator.authenticate(new LoginCredentials(certCN,
                                                                                  null,
@@ -119,16 +113,17 @@ public class TokenService {
                                                                                  null,
                                                                                  null,
                                                                                  clientCert));
-
+        // Actually handle the request
+        Document response = null;
         if (isValidRequestForSecureConversationContext(request, wssOutput)) {
-            Document response = handleSecureConversationContextRequest(authenticatedUser, clientCert);
+            response = handleSecureConversationContextRequest(authenticatedUser, clientCert);
         } else if (isValidRequestForSAMLToken(request, wssOutput)) {
             // todo, plug in your saml handling here alex --fla
         } else {
             throw new InvalidDocumentFormatException("This request cannot be recognized as a valid " +
                                                      "RequestSecurityToken");
         }
-        return null;
+        return response;
     }
 
     private Document handleSecureConversationContextRequest(User requestor, X509Certificate requestorCert) {

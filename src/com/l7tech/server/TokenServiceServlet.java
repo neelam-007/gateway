@@ -3,6 +3,7 @@ package com.l7tech.server;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.security.xml.WssProcessor;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
@@ -24,6 +25,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.logging.Logger;
+import java.security.GeneralSecurityException;
 
 /**
  * The servlet handling WS Trust RequestSecurityToken requests.
@@ -61,6 +63,10 @@ public class TokenServiceServlet extends HttpServlet {
         } catch (InvalidDocumentFormatException e) {
             // todo
         } catch (TokenService.TokenServiceException e) {
+            // todo
+        } catch (WssProcessor.ProcessorException e) {
+            // todo
+        } catch (GeneralSecurityException e) {
             // todo
         }
         outputRequestSecurityTokenResponse(response, res);
