@@ -39,29 +39,15 @@ public class JmsBootProcess implements ServerComponentLifecycle {
         return "JMS Boot Process";
     }
 
-    public void init(ComponentConfig config) throws LifecycleException {
+    public synchronized void init(ComponentConfig config) throws LifecycleException {
         if ( !_valid ) return;
         if (_booted) throw new LifecycleException("Can't boot JmsBootProcess twice!");
-
-        try {
-            Collection endpoints = _endpointManager.findMessageSourceEndpoints();
-            for (Iterator i = endpoints.iterator(); i.hasNext();) {
-                JmsEndpoint requestEnd = (JmsEndpoint)i.next();
-                JmsConnection conn = _connectionManager.findConnectionByPrimaryKey( requestEnd.getConnectionOid() );
-
-                _logger.info("Initializing JMS receiver for '" + conn.getName() + "/" + requestEnd.getName() + "'");
-                JmsReceiver receiver = makeReceiver(conn, requestEnd);
-
-                init(receiver);
-                _receivers.add(receiver);
-            }
-
-            _booted = true;
-        } catch (FindException e) {
-            throw new LifecycleException(e.toString(), e);
-        }
+        _booted = true;
     }
 
+    /**
+     * Periodically checks for new, updated or deleted JMS endpoints
+     */
     private class EndpointVersionChecker extends PeriodicVersionCheck {
         EndpointVersionChecker( JmsEndpointManager mgr ) {
             super( mgr );
@@ -78,6 +64,9 @@ public class JmsBootProcess implements ServerComponentLifecycle {
         }
     }
 
+    /**
+     * Periodically checks for new, updated or deleted JMS connections
+     */
     private class ConnectionVersionChecker extends PeriodicVersionCheck {
         ConnectionVersionChecker( JmsConnectionManager mgr ) {
             super(mgr);
@@ -101,13 +90,8 @@ public class JmsBootProcess implements ServerComponentLifecycle {
      * <p/>
      * Any exception that is thrown in a JmsReceiver's start() method will be logged but not propagated.
      */
-    public void start() {
+    public synchronized void start() {
         if ( !_valid ) return;
-        for (Iterator i = _receivers.iterator(); i.hasNext();) {
-            JmsReceiver receiver = (JmsReceiver)i.next();
-            _logger.info("Starting JMS receiver '" + receiver.toString() + "'...");
-            start(receiver);
-        }
 
         ConnectionVersionChecker connectionChecker = new ConnectionVersionChecker( _connectionManager );
         EndpointVersionChecker endpointChecker = new EndpointVersionChecker( _endpointManager );
@@ -122,7 +106,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
     /**
      * Attempts to stop all JMS receivers.
      */
-    public void stop() {
+    public synchronized void stop() {
         for (Iterator i = _receivers.iterator(); i.hasNext();) {
             JmsReceiver receiver = (JmsReceiver)i.next();
             _logger.info("Stopping JMS receiver '" + receiver.toString() + "'");
@@ -136,7 +120,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
     /**
      * Attempts to close all JMS receivers.
      */
-    public void close() {
+    public synchronized void close() {
         for (Iterator i = _receivers.iterator(); i.hasNext();) {
             JmsReceiver receiver = (JmsReceiver)i.next();
             _logger.info("Closing JMS receiver '" + receiver.toString() + "'");
@@ -165,29 +149,6 @@ public class JmsBootProcess implements ServerComponentLifecycle {
             _logger.warning("Exception while closing " + component);
         }
     }
-
-    /**
-     * Initializes a JmsReceiver. Logs but does not propagate any exception that might be thrown.
-     */
-    private void init(JmsReceiver component) {
-        try {
-            component.init(ServerConfig.getInstance());
-        } catch (LifecycleException e) {
-            _logger.warning("Exception while initializing " + component);
-        }
-    }
-
-    /**
-     * Starts a JmsReceiver. Logs but does not propagate any exception that might be thrown.
-     */
-    private void start(JmsReceiver component) {
-        try {
-            component.start();
-        } catch (LifecycleException e) {
-            _logger.warning("Exception while initializing " + component);
-        }
-    }
-
 
     /**
      * Handles the event fired by the deletion of a JmsConnection.
