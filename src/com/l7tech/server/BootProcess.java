@@ -40,6 +40,28 @@ public class BootProcess implements ServerComponentLifecycle {
     public void init() throws LifecycleException {
         try {
             setSystemProperties();
+
+            String[] componentClassnames = ServerConfig.getInstance().getProperty( ServerConfig.PARAM_SERVERCOMPONENTS ).split("\\s.*?");
+            ServerComponentLifecycle component = null;
+            for ( int i = 0; i < componentClassnames.length; i++ ) {
+                String classname = componentClassnames[i];
+                logger.info( "Initializing server component '" + classname + "'" );
+                try {
+                    Class clazz = Class.forName( classname );
+                    component = (ServerComponentLifecycle)clazz.newInstance();
+                } catch ( ClassNotFoundException cnfe ) {
+                    logger.log( Level.WARNING, "Couldn't initialize server component '" + classname + "'", cnfe );
+                } catch ( InstantiationException e ) {
+                    logger.log( Level.WARNING, "Couldn't initialize server component '" + classname + "'", e );
+                } catch ( IllegalAccessException e ) {
+                    logger.log( Level.WARNING, "Couldn't initialize server component '" + classname + "'", e );
+                }
+
+                if ( component != null ) {
+                    component.init();
+                    _components.add( component );
+                }
+            }
         } catch ( IOException e ) {
             throw new LifecycleException( e.toString(), e );
         }
@@ -67,27 +89,11 @@ public class BootProcess implements ServerComponentLifecycle {
 
             logger.info( BuildInfo.getLongBuildString() );
 
-            String[] componentClassnames = ServerConfig.getInstance().getProperty( ServerConfig.PARAM_SERVERCOMPONENTS ).split("\\s.*?");
-            ServerComponentLifecycle component = null;
-            for ( int i = 0; i < componentClassnames.length; i++ ) {
-                String classname = componentClassnames[i];
-                logger.info( "Loading server component '" + classname + "'" );
-                try {
-                    Class clazz = Class.forName( classname );
-                    component = (ServerComponentLifecycle)clazz.newInstance();
-                } catch ( ClassNotFoundException cnfe ) {
-                    logger.log( Level.WARNING, "Couldn't load server component '" + classname + "'", cnfe );
-                } catch ( InstantiationException e ) {
-                    logger.log( Level.WARNING, "Couldn't load server component '" + classname + "'", e );
-                } catch ( IllegalAccessException e ) {
-                    logger.log( Level.WARNING, "Couldn't load server component '" + classname + "'", e );
-                }
-
-                if ( component != null ) {
-                    component.init();
-                    _components.add( component );
-                    component.start();
-                }
+            logger.info( "Starting server components..." );
+            for ( Iterator i = _components.iterator(); i.hasNext(); ) {
+                ServerComponentLifecycle component = (ServerComponentLifecycle)i.next();
+                logger.info( "Starting component " + component );
+                component.start();
             }
 
             logger.info("Boot process complete.");
@@ -109,6 +115,7 @@ public class BootProcess implements ServerComponentLifecycle {
 
         for ( Iterator i = stnenopmoc.iterator(); i.hasNext(); ) {
             ServerComponentLifecycle component = (ServerComponentLifecycle)i.next();
+            logger.info( "Stopping component " + component );
             component.stop();
         }
     }
@@ -122,6 +129,7 @@ public class BootProcess implements ServerComponentLifecycle {
 
         for ( Iterator i = stnenopmoc.iterator(); i.hasNext(); ) {
             ServerComponentLifecycle component = (ServerComponentLifecycle)i.next();
+            logger.info( "Closing component " + component );
             component.close();
         }
 
