@@ -11,12 +11,16 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import java.util.logging.Logger;
+import java.util.Arrays;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.AssertionError;
 import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import org.apache.axis.message.SOAPEnvelope;
@@ -101,5 +105,69 @@ public class ClientPolicyTest extends TestCase {
         result = policy.decorateRequest(req = new PendingRequest(env, ssg));;
         assertTrue(AssertionError.NONE.equals(result));
         assertTrue(req.isSslRequired());
+    }
+
+    /** Test a composite policy. */
+    public void testCompositePolicy() throws Exception {
+        Ssg ssg = new Ssg(1, "Foo ssg", "/foo", "http://foo");
+        SOAPEnvelope env = new SOAPEnvelope();
+        PendingRequest req;
+        AssertionError result;
+
+        {
+            // Test (SSL + Basic) || Digest
+            Assertion policy = new ExactlyOneAssertion(Arrays.asList(new Assertion[] {
+                new AllAssertion(Arrays.asList(new Assertion[] {
+                    new SslAssertion(),
+                    new HttpBasic()
+                })),
+                new HttpDigest(),
+            }));
+
+            ssg.setUsername("");
+            ssg.setPassword("");
+            result = policy.decorateRequest(req = new PendingRequest(env, ssg));
+            assertFalse(AssertionError.NONE.equals(result));
+
+            final String USER = "fbunky";
+            final String PASS = "asdfjkal";
+            ssg.setUsername(USER);
+            ssg.setPassword(PASS);
+            result = policy.decorateRequest(req = new PendingRequest(env, ssg));
+            assertTrue(AssertionError.NONE.equals(result));
+            assertTrue(req.isSslRequired());
+            assertFalse(req.isDigestAuthRequired());
+            assertTrue(req.isBasicAuthRequired());
+            assertTrue(USER.equals(req.getHttpBasicUsername()));
+            assertTrue(PASS.equals(req.getHttpBasicPassword()));
+        }
+
+        {
+            // Test Digest || (SSL + Basic)
+            Assertion policy = new ExactlyOneAssertion(Arrays.asList(new Assertion[] {
+                new HttpDigest(),
+                new AllAssertion(Arrays.asList(new Assertion[] {
+                    new SslAssertion(),
+                    new HttpBasic()
+                })),
+            }));
+
+            ssg.setUsername("");
+            ssg.setPassword("");
+            result = policy.decorateRequest(req = new PendingRequest(env, ssg));
+            assertFalse(AssertionError.NONE.equals(result));
+
+            final String USER = "fbunky";
+            final String PASS = "asdfjkal";
+            ssg.setUsername(USER);
+            ssg.setPassword(PASS);
+            result = policy.decorateRequest(req = new PendingRequest(env, ssg));
+            assertTrue(AssertionError.NONE.equals(result));
+            assertFalse(req.isSslRequired());
+            assertFalse(req.isBasicAuthRequired());
+            assertTrue(req.isDigestAuthRequired());
+            assertTrue(USER.equals(req.getHttpDigestUsername()));
+            assertTrue(PASS.equals(req.getHttpDigestPassword()));
+        }
     }
 }
