@@ -10,6 +10,8 @@ import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.common.security.saml.SamlConstants;
 
 import javax.swing.*;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ChangeEvent;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -137,19 +139,28 @@ public class AuthenticationMethodsWizardStepPanel extends WizardStepPanel {
         buttonSelectAll.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 for (int i = 0; i < allMethods.length; i++) {
-                    JCheckBox allMethod = allMethods[i];
-                    allMethod.setSelected(true);
+                    JCheckBox method = allMethods[i];
+                    method.setSelected(true);
                 }
             }
         });
         buttonSelectNone.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 for (int i = 0; i < allMethods.length; i++) {
-                    JCheckBox allMethod = allMethods[i];
-                    allMethod.setSelected(false);
+                    JCheckBox method = allMethods[i];
+                    method.setSelected(false);
                 }
             }
         });
+
+        for (int i = 0; i < allMethods.length; i++) {
+            JCheckBox method = allMethods[i];
+            method.addChangeListener( new ChangeListener() {
+                public void stateChanged(ChangeEvent e) {
+                    notifyListeners();
+                }
+            });
+        }
     }
 
     /**
@@ -157,5 +168,26 @@ public class AuthenticationMethodsWizardStepPanel extends WizardStepPanel {
      */
     public String getStepLabel() {
         return "Authentication Methods";
+    }
+
+    /**
+     * Test whether the step is finished and it is safe to advance to the next one.
+     * A single authentication method must be specified.
+     *
+     * @return true if the panel is valid, false otherwis
+     */
+    public boolean canAdvance() {
+        for (int i = 0; i < allMethods.length; i++) {
+            JCheckBox method = allMethods[i];
+            if (method.isSelected()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public String getDescription() {
+        return
+          "<html>Specify one or more accepted authentication methods that the SAML statement must assert</html>";
     }
 }

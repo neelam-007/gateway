@@ -13,19 +13,20 @@ import java.util.logging.Logger;
 
 /**
  * The class represents a node element in the palette assertion tree.
- * It represents the folder with transport layer securitry.
+ * It represents the folder with authenticaiton and authorization
+ * access control.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
-public class AuthenticationFolderNode extends AbstractTreeNode {
-    static final Logger log = Logger.getLogger(AuthenticationFolderNode.class.getName());
+public class AccessControlFolderNode extends AbstractTreeNode {
+    static final Logger log = Logger.getLogger(AccessControlFolderNode.class.getName());
 
     /**
      * construct the <CODE>PoliciesFolderNode</CODE> instance for
      * a given entry.
      */
-    public AuthenticationFolderNode() {
+    public AccessControlFolderNode() {
         super(null);
     }
 
@@ -58,6 +59,9 @@ public class AuthenticationFolderNode extends AbstractTreeNode {
         insert(new WsTokenBasicAuthNode(), index++);
         insert(new RequestWssX509Node(), index++);
         insert(new SecureConversationNode(), index++);
+        insert(new SamlAuthenticationStatementNode(), index++);
+        insert(new SamlAuthorizationStatementNode(), index++);
+        // insert(new SamlAttributeStatementNode(), index++);
 
         final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
         try {
@@ -78,7 +82,7 @@ public class AuthenticationFolderNode extends AbstractTreeNode {
      * @return the name as a String
      */
     public String getName() {
-        return "Authentication";
+        return "Access Control";
     }
 
     /**

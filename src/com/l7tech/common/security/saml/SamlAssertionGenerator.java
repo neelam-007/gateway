@@ -1,7 +1,6 @@
-package com.l7tech.server.saml;
+package com.l7tech.common.security.saml;
 
 import com.ibm.xml.dsig.*;
-import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
@@ -17,7 +16,6 @@ import org.w3.x2000.x09.xmldsig.KeyInfoType;
 import org.w3.x2000.x09.xmldsig.X509DataType;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import x0Assertion.oasisNamesTcSAML1.*;
 

@@ -16,6 +16,7 @@ public class SamlConstants {
     /** confirmations */
     public static final String CONFIRMATION_SENDER_VOUCHES = "urn:oasis:names:tc:SAML:1.0:cm:sender-vouches";
     public static final String CONFIRMATION_HOLDER_OF_KEY = "urn:oasis:names:tc:SAML:1.0:cm:holder-of-key";
+    public static final String CONFIRMATION_BEARER = "urn:oasis:names:tc:SAML:1.0:cm:bearer";
 
     /** authentications */
     public static final String PASSWORD_AUTHENTICATION = "urn:oasis:names:tc:SAML:1.0:am:password";

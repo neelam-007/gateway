@@ -8,6 +8,7 @@ import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
  */
 public abstract class SamlStatementAssertion extends CredentialSourceAssertion implements SecurityHeaderAddressable {
     private String[] subjectConfirmations = new String[] {};
+    private boolean noSubjectConfirmation = false;
     private String nameQualifier  = null;
     private String[] nameFormats  = new String[] {};
     private String audienceRestriction;
@@ -107,5 +108,13 @@ public abstract class SamlStatementAssertion extends CredentialSourceAssertion i
         } else {
             this.nameFormats = nameFormats;
         }
+    }
+
+    public boolean isNoSubjectConfirmation() {
+        return noSubjectConfirmation;
+    }
+
+    public void setNoSubjectConfirmation(boolean noSubjectConfirmation) {
+        this.noSubjectConfirmation = noSubjectConfirmation;
     }
 }

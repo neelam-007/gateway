@@ -1,6 +1,8 @@
 package com.l7tech.server.saml;
 
 import com.l7tech.common.security.Keys;
+import com.l7tech.common.security.saml.SamlAssertionGenerator;
+import com.l7tech.common.security.saml.SubjectStatement;
 import com.l7tech.common.security.token.SamlSecurityToken;
 import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.xml.SignerInfo;

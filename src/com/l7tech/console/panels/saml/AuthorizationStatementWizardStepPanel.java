@@ -9,6 +9,8 @@ import com.l7tech.console.panels.WizardStepPanel;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthorizationStatement;
 
 import javax.swing.*;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.DocumentEvent;
 import java.awt.*;
 
 /**
@@ -72,6 +74,19 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
 
     private void initialize() {
         titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD));
+        textFieldResource.getDocument().addDocumentListener(new DocumentListener() {
+            public void changedUpdate(DocumentEvent e) {
+                notifyListeners();
+            }
+
+            public void insertUpdate(DocumentEvent e) {
+                notifyListeners();
+            }
+
+            public void removeUpdate(DocumentEvent e) {
+                notifyListeners();
+            }
+        });
     }
 
     /**
@@ -80,4 +95,24 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
     public String getStepLabel() {
         return "Authorization Statement";
     }
+
+
+    public String getDescription() {
+        return
+        "<html>Specify the Resource [required] that the SAML statement MUST describe; the<br>" +
+          "Resource Action [optional] and the Action Namespace [optional]<br>" +
+          "and whether the message signature is required as the proof material</html>";
+    }
+
+    /**
+     * Test whether the step is finished and it is safe to advance to the next one.
+     * The resource must be specified
+     *
+     * @return true if the panel is valid, false otherwis
+     */
+    public boolean canAdvance() {
+        String resource = textFieldResource.getText();
+        return (resource != null && !"".equals(resource));
+    }
+
 }

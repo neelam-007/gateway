@@ -3,9 +3,11 @@
  *
  * $Id$
  */
-package com.l7tech.server.saml;
+package com.l7tech.common.security.saml;
 
 import com.l7tech.common.security.saml.SamlConstants;
+import com.l7tech.common.security.saml.AuthenticationStatement;
+import com.l7tech.common.security.saml.AuthorizationStatement;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 
@@ -18,7 +20,7 @@ import java.security.cert.X509Certificate;
  *
  * @author emil
  * @version Jan 31, 2005
- * @see SamlAssertionGenerator
+ * @see com.l7tech.common.security.saml.SamlAssertionGenerator
  */
 public class SubjectStatement {
     /**

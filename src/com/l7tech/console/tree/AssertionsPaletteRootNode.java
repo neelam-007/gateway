@@ -49,7 +49,7 @@ public class AssertionsPaletteRootNode extends AbstractTreeNode {
         String homePath = null;
         homePath = Preferences.getPreferences().getHomePath();
         List nodeList = new ArrayList();
-        nodeList.add(new AuthenticationFolderNode());
+        nodeList.add(new AccessControlFolderNode());
         nodeList.add(new TransportLayerSecurityFolderNode());
         nodeList.add(new XmlSecurityFolderNode());
         nodeList.add(new XmlFolderNode());

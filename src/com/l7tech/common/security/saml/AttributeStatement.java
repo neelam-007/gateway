@@ -3,7 +3,7 @@
  *
  * $Id$
  */
-package com.l7tech.server.saml;
+package com.l7tech.common.security.saml;
 
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 

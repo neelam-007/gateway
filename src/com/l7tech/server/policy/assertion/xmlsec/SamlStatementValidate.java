@@ -66,9 +66,8 @@ public abstract class SamlStatementValidate {
             return new SamlAuthenticationStatementValidate(sa, applicationContext);
         } else if (sa instanceof SamlAuthorizationStatement) {
             return new SamlAuthenticationStatementValidate(sa, applicationContext);
-
         } else if (sa instanceof SamlAttributeStatement) {
-
+            return new SamlAttributeStatementValidate(sa, applicationContext);
         }
         throw new IllegalArgumentException("Not supported statement thpe " + sa.getClass());
     }
@@ -258,6 +257,13 @@ public abstract class SamlStatementValidate {
         }
         String[] confirmations = statementAssertionConstraints.getSubjectConfirmations();
         List presentedConfirmations = Arrays.asList(subject.getSubjectConfirmation().getConfirmationMethodArray());
+
+        // if no confirmations have been presented, and that is what corresponds to assertion requirements
+        // no confirmation check is performed
+        if (presentedConfirmations.isEmpty() && statementAssertionConstraints.isNoSubjectConfirmation()) {
+            logger.fine("Matched Subject Confirmation 'None'");
+            return;
+        }
 
         boolean confirmationMatch = false;
         for (int i = 0; i < confirmations.length; i++) {

@@ -10,11 +10,14 @@ import com.l7tech.policy.assertion.xmlsec.SamlStatementAssertion;
 import com.l7tech.common.security.saml.SamlConstants;
 
 import javax.swing.*;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ChangeEvent;
 import java.awt.*;
 import java.util.*;
 
 /**
  * The SAML Subject Confirmatioin selections <code>WizardStepPanel</code>
+ *
  * @author emil
  * @version Jan 20, 2005
  */
@@ -61,7 +64,7 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
             String format = formats[i];
             JCheckBox jc = (JCheckBox)nameFormatsMap.get(format);
             if (jc == null) {
-                throw new IllegalArgumentException("No widget corresponds to format "+format);
+                throw new IllegalArgumentException("No widget corresponds to format " + format);
             }
             jc.setSelected(true);
         }
@@ -90,7 +93,7 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
                 formats.add(entry.getKey().toString());
             }
         }
-        statement.setNameFormats((String[])formats.toArray(new String[] {}));
+        statement.setNameFormats((String[])formats.toArray(new String[]{}));
         statement.setNameQualifier(textFieldNameQualifier.getText());
     }
 
@@ -101,6 +104,16 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
         nameFormatsMap.put(SamlConstants.NAMEIDENTIFIER_EMAIL, checkBoxEmailAddress);
         nameFormatsMap.put(SamlConstants.NAMEIDENTIFIER_WINDOWS, checkBoxWindowsDomainQualifiedName);
         nameFormatsMap.put(SamlConstants.NAMEIDENTIFIER_UNSPECIFIED, checkBoxUnspecified);
+        for (Iterator iterator = nameFormatsMap.entrySet().iterator(); iterator.hasNext();) {
+            Map.Entry entry = (Map.Entry)iterator.next();
+            JCheckBox jc = (JCheckBox)entry.getValue();
+            jc.addChangeListener(new ChangeListener() {
+                public void stateChanged(ChangeEvent e) {
+                    notifyListeners();
+                }
+            });
+        }
+
     }
 
     /**
@@ -109,4 +122,28 @@ public class SubjectConfirmationNameIdentifierWizardStepPanel extends WizardStep
     public String getStepLabel() {
         return "Name Identifier";
     }
+
+    public String getDescription() {
+        return
+        "<html>Specify one or more name formats that will be accepted by the gateway<br>" +
+          "and the optional subject name qualifier</html>";
+    }
+
+    /**
+     * Test whether the step is finished and it is safe to advance to the next one. At
+     * least one name format must be selected
+     *
+     * @return true if the panel is valid, false otherwis
+     */
+    public boolean canAdvance() {
+        for (Iterator iterator = nameFormatsMap.entrySet().iterator(); iterator.hasNext();) {
+            Map.Entry entry = (Map.Entry)iterator.next();
+            JCheckBox jc = (JCheckBox)entry.getValue();
+            if (jc.isSelected()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

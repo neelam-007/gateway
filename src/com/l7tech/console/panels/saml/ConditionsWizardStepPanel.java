@@ -78,4 +78,11 @@ public class ConditionsWizardStepPanel extends WizardStepPanel {
     public String getStepLabel() {
         return "Conditions";
     }
+
+    public String getDescription() {
+        return
+          "<html>Specify SAML statement conditions such as Audience Restriction [optional]<br>" +
+            "and whether to check the assertion validity [optional]</html>";
+
+    }
 }
