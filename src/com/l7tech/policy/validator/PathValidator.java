@@ -12,13 +12,20 @@ import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
+import com.l7tech.identity.IdentityAdmin;
+import com.l7tech.console.util.Registry;
+import com.l7tech.objectmodel.FindException;
 
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
+import java.util.logging.Level;
+import java.rmi.RemoteException;
 
 /**
  * validate single path, and collect the validation results in the
@@ -31,6 +38,7 @@ class PathValidator {
     PolicyValidatorResult result;
     List deferredValidators = new ArrayList();
     private AssertionPath assertionPath;
+    private final Logger logger = Logger.getLogger(PathValidator.class.getName());
 
     PathValidator(AssertionPath ap, PolicyValidatorResult r) {
         result = r;
@@ -114,35 +122,44 @@ class PathValidator {
             result.addError(new PolicyValidatorResult.Error(a, assertionPath, "No user or group assertions is allowed when " +
               "a Custom Assertion is used.", null));
         }
-        // if we encountered an assertion that requires a client cert or digest, make sure the identity
-        // involved is from the internal id provider
-        if (seenCredAssertionThatRequiresClientCert || seenDigestAssertion) {
-            // check that this identity is member of internal id provider
-            /*IdentityAssertion idass = (IdentityAssertion)a;
-            try {
-                if (getProviderConfigManager().findByPrimaryKey(idass.getIdentityProviderOid()).type()
-                  != IdentityProviderType.INTERNAL) {
-                    if (seenCredAssertionThatRequiresClientCert) {
-                        result.addError(
-                          new PolicyValidatorResult.Error(a,
-                            "A credential assertion requires client certs. " +
-                          "Only internal identities support client certs.", null));
-                    } else if (seenDigestAssertion) {
-                        result.addError(
-                          new PolicyValidatorResult.Error(a,
-                            "A credential assertion requires digest authentication. " +
-                          "Only internal identities support digest authentication.", null));
-                    }
-                }
-            } catch (FindException e) {
-                result.addError(new PolicyValidatorResult.Error(a, "This identity might no longer be valid.", e));
-                log.log(Level.INFO, "could not retrieve IdentityProvider", e);
-            }*/
+
+        // new fla, verify that the identity referred to by this assertion still exists
+        // this was requested in bugzilla #1018
+        if (!referredIdentityExists(a)) {
+            result.addError(new PolicyValidatorResult.Error(a, assertionPath, "The identity does not exist in the " +
+                                                                              "identity provider", null));
         }
+
         seenAccessControl = true;
         if (isSpecificUser(a)) {
             seenSpecificUserAssertion = true;
         }
+    }
+
+    private boolean referredIdentityExists(IdentityAssertion a) {
+        long providerId = a.getIdentityProviderOid();
+        IdentityAdmin idAdmin = Registry.getDefault().getIdentityAdmin();
+        try {
+            if (a instanceof SpecificUser) {
+                SpecificUser su = (SpecificUser)a;
+                if (idAdmin.findUserByPrimaryKey(providerId, su.getUserUid()) != null) {
+                    return true;
+                }
+                if (idAdmin.findUserByLogin(providerId, su.getUserLogin()) != null) {
+                    return true;
+                }
+            } else if (a instanceof MemberOfGroup) {
+                MemberOfGroup mog = (MemberOfGroup)a;
+                if (idAdmin.findGroupByPrimaryKey(providerId, mog.getGroupId()) != null) {
+                    return true;
+                }
+            }
+        } catch (FindException e) {
+            logger.log(Level.WARNING, "problem getting identity", e);
+        } catch (RemoteException e) {
+            logger.log(Level.WARNING, "problem getting identity", e);
+        }
+        return false;
     }
 
     private void processCredentialSource(Assertion a) {
