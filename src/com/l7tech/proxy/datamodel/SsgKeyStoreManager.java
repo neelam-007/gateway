@@ -35,6 +35,7 @@ public class SsgKeyStoreManager {
     private static final Category log = Category.getInstance(SsgKeyStoreManager.class);
     private static final String ALIAS = "clientProxy";
     private static final String SSG_ALIAS = "ssgCa";
+    private static char[] KEYSTORE_PASSWORD = "password".toCharArray();
 
     /**
      * Very quickly check if a client certificate is available for the specified SSG.
@@ -44,6 +45,8 @@ public class SsgKeyStoreManager {
      * @return
      */
     public static boolean isClientCertAvailabile(Ssg ssg) {
+        if (!ssg.isCredentialsConfigured())
+            return false;
         if (ssg.getHaveClientCert() == null) {
             try {
                 ssg.setHaveClientCert(getClientCert(ssg) == null ? Boolean.FALSE : Boolean.TRUE);
@@ -73,19 +76,32 @@ public class SsgKeyStoreManager {
     public static X509Certificate[] getClientCertificateChain(Ssg ssg)
             throws NoSuchAlgorithmException, CertificateException, KeyStoreException, IOException
     {
-        return (X509Certificate[]) getKeyStore(ssg).getCertificateChain(ALIAS);
+        Certificate[] certs = getKeyStore(ssg).getCertificateChain(ALIAS);
+        X509Certificate[] x5certs = new X509Certificate[certs.length];
+        for (int i = 0; i < certs.length; i++) {
+            Certificate cert = certs[i];
+            if (cert instanceof X509Certificate)
+                x5certs[i] = (X509Certificate) cert;
+            else
+                log.warn("Stored client cert is not X509Certificate: " + cert);
+        }
+        return x5certs;
     }
 
     public static PrivateKey getPrivateKey(Ssg ssg)
             throws NoSuchAlgorithmException, IOException, CertificateException, KeyStoreException,
                    UnrecoverableKeyException
     {
+        if (!isClientCertAvailabile(ssg))
+            return null;
         return (PrivateKey) getKeyStore(ssg).getKey(ALIAS, ssg.getPassword());
     }
 
     public static PublicKey getPublicKey(Ssg ssg)
             throws NoSuchAlgorithmException, IOException, CertificateException, KeyStoreException
     {
+        if (!isClientCertAvailabile(ssg))
+            return null;
         return getClientCert(ssg).getPublicKey();
     }
 
@@ -98,9 +114,9 @@ public class SsgKeyStoreManager {
                 FileInputStream fis = null;
                 try {
                     fis = FileUtils.loadFileSafely(ssg.getKeyStoreFile().getAbsolutePath());
-                    keyStore.load(fis, ssg.getPassword());
+                    keyStore.load(fis, KEYSTORE_PASSWORD);
                 } catch (FileNotFoundException e) {
-                    keyStore.load(null, ssg.getPassword());
+                    keyStore.load(null, KEYSTORE_PASSWORD);
                 } finally {
                     if (fis != null)
                         fis.close();

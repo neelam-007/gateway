@@ -199,19 +199,9 @@ public class RequestHandler extends AbstractHttpHandler {
             interceptor.onReceiveReply(reply);
             log.info("Returning result");
             return reply;
-        } catch (IOException e) {
-            interceptor.onReplyError(e);
-            throw new HttpException(500, "Unable to obtain response from server: " + e.toString());
-        } catch (PolicyAssertionException e) {
-            interceptor.onReplyError(e);
-            throw new HttpException(500, "Unable to obtain response from server: " + e.toString());
-        } catch (SOAPException e) {
-            interceptor.onMessageError(e);
-            throw new HttpException(500, "Unable to find request body: " + e.toString());
-        } catch (ConfigurationException e) {
-            interceptor.onMessageError(e);
-            throw new HttpException(500, "Invalid SSG configuration: " + e.toString());
-        } catch (GeneralSecurityException e) {
+        } catch (Exception e) {
+            log.error(e);
+            e.printStackTrace(System.err);
             interceptor.onReplyError(e);
             throw new HttpException(500, e.toString());
         }

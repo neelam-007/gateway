@@ -44,8 +44,8 @@ public class ClientProxyKeyManager implements X509KeyManager {
             Ssg ssg = ssgFinder.getSsgByHostname(s);
             return SsgKeyStoreManager.getPrivateKey(ssg);
         } catch (SsgNotFoundException e) {
-            log.error(e);
-            throw new ClientProxySslException(e);
+            log.info(e);
+            return null;
         } catch (GeneralSecurityException e) {
             log.error(e);
             throw new ClientProxySslException(e);
@@ -59,10 +59,11 @@ public class ClientProxyKeyManager implements X509KeyManager {
         try {
             log.info("ClientProxyKeyManager: getCertificateChain for " + s);
             Ssg ssg = ssgFinder.getSsgByHostname(s);
+            log.info("Found ssg: " + ssg);
             return SsgKeyStoreManager.getClientCertificateChain(ssg);
         } catch (SsgNotFoundException e) {
-            log.error(e);
-            throw new ClientProxySslException(e);
+            log.info(e);
+            return new X509Certificate[0];
         } catch (GeneralSecurityException e) {
             log.error(e);
             throw new ClientProxySslException(e);
@@ -79,7 +80,8 @@ public class ClientProxyKeyManager implements X509KeyManager {
         int idx = 0;
         for (Iterator i = ssgs.iterator(); i.hasNext(); ++idx) {
             Ssg ssg = (Ssg) i.next();
-            aliases[idx] = ssg.getSsgAddress();
+            if (SsgKeyStoreManager.isClientCertAvailabile(ssg))
+                aliases[idx] = ssg.getSsgAddress();
         }
         return aliases;
     }
@@ -96,6 +98,15 @@ public class ClientProxyKeyManager implements X509KeyManager {
         log.info("ClientProxyKeyManager: chooseClientAlias for " + strings[0]);
         InetAddress ia = socket.getInetAddress();
         String hostname = ia.getHostName();
-        return hostname;
+        try {
+            Ssg ssg = ssgFinder.getSsgByHostname(hostname);
+            if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
+                log.info("Will present client cert for hostname " + hostname);
+                return hostname;
+            }
+        } catch (SsgNotFoundException e) {
+        }
+        log.info("No client cert found for this connection");
+        return null;
     }
 }
