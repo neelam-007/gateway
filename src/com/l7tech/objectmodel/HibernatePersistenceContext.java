@@ -94,7 +94,10 @@ public class HibernatePersistenceContext extends PersistenceContext {
                 _htxn.rollback();
                 _htxn = null;
             }
-            if (_session != null && _session.isOpen()) _session.close();
+            if (_session != null && _session.isOpen()) {
+                _session.clear();
+                _session.close();
+            }
             _session = null;
             super.releaseContext();
         } catch (HibernateException e) {
