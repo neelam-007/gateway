@@ -7,7 +7,7 @@
 package com.l7tech.skunkworks.message;
 
 /**
- * Tag interface representing a Message aspect.
+ * Tag interface representing a public Knob interface for manipulating a facet of a Message.
  */
 public interface Knob {
 }
