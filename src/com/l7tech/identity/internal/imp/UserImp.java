@@ -71,10 +71,12 @@ public class UserImp extends EntityImp implements User {
     }
 
     public Set getGroups() {
+        if (_groups == null) return new java.util.HashSet();
         return _groups;
     }
 
     public Set getGroupHeaders() {
+        if (_groupHeaders == null) return new java.util.HashSet();
         return _groupHeaders;
     }
 
