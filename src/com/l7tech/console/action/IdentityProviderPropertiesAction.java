@@ -77,23 +77,43 @@ public class IdentityProviderPropertiesAction extends NodeAction {
                           getProviderConfigManager().findByPrimaryKey(header.getOid());
 
                         WizardStepPanel configPanel = null;
+                        Wizard w = null;
 
-                        if (iProvider.type() == IdentityProviderType.INTERNAL) {
-                            configPanel = new InternalIdentityProviderConfigPanel(null, true);
+                        if (iProvider.type() == IdentityProviderType.INTERNAL || iProvider.type() == IdentityProviderType.LDAP) {
 
-                        } else if (iProvider.type() == IdentityProviderType.LDAP) {
+                            if (iProvider.type() == IdentityProviderType.LDAP) {
+                                configPanel = new LdapIdentityProviderConfigPanel(new LdapGroupMappingPanel(new LdapUserMappingPanel(null)), false);
+                            } else {
+                                configPanel = new InternalIdentityProviderConfigPanel(null, true);
+                            }
 
-                            configPanel = new LdapIdentityProviderConfigPanel(new LdapGroupMappingPanel(new LdapUserMappingPanel(null)), false);
+                            w = new EditIdentityProviderWizard(f, configPanel, iProvider);
+
+                        } else if (iProvider.type() == IdentityProviderType.FEDERATED) {
+                             configPanel = new FederatedIPGeneralPanel(
+                                               new FederatedIPX509CertPanel (
+                                               new FederatedIPSamlPanel(
+                                               new FederatedIPTrustedCertsPanel(null))));
+                             w = new EditFederatedIPWizard(f, configPanel);
+
+
+                        } else {
+                            throw new RuntimeException("Unsupported Identity Provider Type: " + iProvider.type().toString());
                         }
 
-                        Wizard w = new EditIdentityProviderWizard(f, configPanel, iProvider);
                         w.addWizardListener(wizardListener);
 
                         // register itself to listen to the updateEvent
                         addEntityListener(entityListener);
 
                         w.pack();
-                        w.setSize(780, 560);
+
+                        if (iProvider.type() == IdentityProviderType.FEDERATED) {
+                            w.setSize(820, 500);
+                        } else {
+                            w.setSize(780, 560);
+                        }
+
                         Utilities.centerOnScreen(w);
                         w.setVisible(true);
 
