@@ -46,7 +46,7 @@ public class ClientOneOrMoreAssertion extends ClientCompositeAssertion {
      * @return the AssertionStatus.NONE if at least one child succeeded; the rightmost-child error otherwise.
      */
     public AssertionStatus decorateRequest(PendingRequest req) throws OperationCanceledException, BadCredentialsException, GeneralSecurityException, IOException, ClientCertificateException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException, InvalidDocumentFormatException {
-        data.mustHaveChildren();
+        mustHaveChildren(data);
         AssertionStatus result = AssertionStatus.FAILED;
         for ( int i = 0; i < children.length; i++ ) {
             ClientAssertion assertion = children[i];
@@ -63,7 +63,7 @@ public class ClientOneOrMoreAssertion extends ClientCompositeAssertion {
             throws OperationCanceledException, BadCredentialsException, GeneralSecurityException, IOException,
             ResponseValidationException, SAXException, KeyStoreCorruptException, PolicyAssertionException, InvalidDocumentFormatException
     {
-        data.mustHaveChildren();
+        mustHaveChildren(data);
         AssertionStatus result = AssertionStatus.FAILED;
         for ( int i = 0; i < children.length; i++ ) {
             ClientAssertion assertion = children[i];

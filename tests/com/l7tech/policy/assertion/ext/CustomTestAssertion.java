@@ -16,10 +16,6 @@ public class CustomTestAssertion extends Assertion {
     public CustomTestAssertion() {
     }
 
-    public CustomTestAssertion(CompositeAssertion parent) {
-        super(parent);
-    }
-
     public String getProtectedResource() {
         return protectedResource;
     }

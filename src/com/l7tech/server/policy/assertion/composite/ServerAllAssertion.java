@@ -26,7 +26,7 @@ public class ServerAllAssertion extends ServerCompositeAssertion implements Serv
     }
 
     public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
-        data.mustHaveChildren();
+        mustHaveChildren(data);
         ServerAssertion[] kids = getChildren();
         ServerAssertion child;
         AssertionStatus result = null;

@@ -17,8 +17,4 @@ public class JmsTransportAssertion extends TransportAssertion {
     public JmsTransportAssertion() {
         super();
     }
-
-    public JmsTransportAssertion( CompositeAssertion parent ) {
-        super( parent );
-    }
 }

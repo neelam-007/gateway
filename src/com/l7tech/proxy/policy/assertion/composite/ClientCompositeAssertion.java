@@ -70,4 +70,9 @@ public abstract class ClientCompositeAssertion extends ClientAssertion {
 
         return "com/l7tech/proxy/resources/tree/folder.gif";
     }
+
+    protected void mustHaveChildren(CompositeAssertion data) throws PolicyAssertionException {
+        if (data.getChildren().isEmpty())
+            throw new PolicyAssertionException("CompositeAssertion has no children: " + this);
+    }
 }

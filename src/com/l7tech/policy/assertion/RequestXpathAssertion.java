@@ -28,18 +28,8 @@ public class RequestXpathAssertion extends XpathBasedAssertion {
         initDefaultXpath();
     }
 
-    public RequestXpathAssertion( CompositeAssertion parent ) {
-        super( parent );
-        initDefaultXpath();
-    }
-
     public RequestXpathAssertion( XpathExpression xpath ) {
         super();
-        setXpathExpression( xpath );
-    }
-
-    public RequestXpathAssertion( CompositeAssertion parent, XpathExpression xpath ) {
-        super( parent );
         setXpathExpression( xpath );
     }
 

@@ -19,16 +19,11 @@ import java.util.*;
  */
 public abstract class Assertion implements Cloneable, Serializable {
     protected transient CompositeAssertion parent;
-    private transient int ordinal = -1;
+    private transient int ordinal;
 
     public Assertion() {
         this.parent = null;
         this.ordinal = 1;
-    }
-
-    protected Assertion(CompositeAssertion parent) {
-        this.parent = parent;
-        checkParent();
     }
 
     public CompositeAssertion getParent() {
@@ -39,37 +34,26 @@ public abstract class Assertion implements Cloneable, Serializable {
      * Reparent this assertion.  In normal operation, this should only be called by CompositeAssertions.
      * @param parent
      */
-    public void setParent(CompositeAssertion parent) {
+    protected void setParent(CompositeAssertion parent) {
         this.parent = parent;
     }
 
     /**
-     * If our parent does not know about us, add ourselves to the end of it's list of children.
-     */
-    protected void checkParent() {
-        // TODO we can skip this check if we were called from setParent() which was called by our parent
-        if (parent != null && !parent.getChildren().contains(this)) {
-            parent.getChildren().add(this);
-            parent.treeChanged();
-        }
-    }
-
-    /**
-     * Notify this node that a child has been added, removed, or changed underneath it.
+     * Notify this node that a child has been added, removed, or changed underneath it.  This causes the
+     * entire policy tree to be traversed, renumbering all nodes and filling in any missing parent references.
      */
     public void treeChanged() {
-        if (getParent() == null)
+        final Assertion p = getParent();
+        if (p == null)
             renumber(1);
         else
-            getParent().treeChanged();
+            p.treeChanged();
     }
 
     /**
-     * Check the ordinal number of this assertion within the policy tree.  This number is only meaningful if:
-     * this assertion or a parent has had renumber() called upon it; and,
-     * this assertion's subtree has not had any children added, removed, or replaced since renumber() was last called.
+     * Check the ordinal number of this assertion within the policy tree.
      *
-     * @return The ordinal number of this assertion's position within the policy, counting from top to bottom, or -1 if not known.
+     * @return The ordinal number of this assertion's position within its policy, counting from top to bottom.
      */
     public int getOrdinal() {
         return ordinal;
@@ -87,6 +71,16 @@ public abstract class Assertion implements Cloneable, Serializable {
         return null;
     }
 
+    /** Renumber the target assertion and all its children. */
+    protected static final int renumber(Assertion target, int number) {
+        return target.renumber(number);
+    }
+
+    /** Set the target assertion's parent. */
+    protected static final void setParent(Assertion target, CompositeAssertion parent) {
+        target.setParent(parent);
+    }
+
     /**
      * Renumber this assertion (and its children, if any) starting from the specified number.  After calling this,
      * getOrdinal() on this assertion (or its children, if any) will return meaningful values.
@@ -98,7 +92,7 @@ public abstract class Assertion implements Cloneable, Serializable {
      *                           It's first child, if any, will be assigned the number (newStartingOrdinal + 1).
      * @return the lowest unused ordinal after this assertion and any children have been renumbered.
      */
-    public int renumber(int newStartingOrdinal) {
+    protected int renumber(int newStartingOrdinal) {
         this.ordinal = newStartingOrdinal;
         return newStartingOrdinal + 1;
     }
@@ -110,7 +104,7 @@ public abstract class Assertion implements Cloneable, Serializable {
         return clone;
     }
 
-    /** More user friendly version of clone */
+    /** More user friendly version of clone. */
     public Assertion getCopy() {
         try {
             return (Assertion) clone();
@@ -152,11 +146,11 @@ public abstract class Assertion implements Cloneable, Serializable {
 
     }
 
-    public String toIndentedString(int indentLevel) {
+    protected static final String toIndentedString(Assertion a, int indentLevel) {
         StringBuffer b = new StringBuffer();
         for (int i = 0; i < indentLevel; ++i)
             b.append("\t");
-        b.append(toString());
+        b.append(a.toString());
         b.append("\n");
         return b.toString();
     }

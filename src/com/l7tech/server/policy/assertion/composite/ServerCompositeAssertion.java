@@ -37,6 +37,11 @@ public abstract class ServerCompositeAssertion implements ServerAssertion {
             throw new PolicyAssertionException("CompositeAssertion has no children: " + this);
     }
 
+    protected final static void mustHaveChildren(CompositeAssertion ca) throws PolicyAssertionException {
+        if (ca.getChildren().isEmpty())
+            throw new PolicyAssertionException("CompositeAssertion has no children: " + ca);            
+    }
+
     public String toString() {
         return "<" + this.getClass().getName() + " children=" + children + ">";
     }

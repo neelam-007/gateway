@@ -46,7 +46,7 @@ public class ClientExactlyOneAssertion extends ClientCompositeAssertion {
      * @return AssertionStatus.NONE, or the rightmost-child's error if all children failed.
      */
     public AssertionStatus decorateRequest(PendingRequest req) throws OperationCanceledException, BadCredentialsException, GeneralSecurityException, IOException, ClientCertificateException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException, InvalidDocumentFormatException {
-        data.mustHaveChildren();
+        mustHaveChildren(data);
         AssertionStatus result = AssertionStatus.FALSIFIED;
         for ( int i = 0; i < children.length; i++ ) {
             ClientAssertion assertion = children[i];
@@ -64,7 +64,7 @@ public class ClientExactlyOneAssertion extends ClientCompositeAssertion {
             throws OperationCanceledException, BadCredentialsException, GeneralSecurityException,
             IOException, ResponseValidationException, SAXException, KeyStoreCorruptException, PolicyAssertionException, InvalidDocumentFormatException
     {
-        data.mustHaveChildren();
+        mustHaveChildren(data);
         AssertionStatus result = AssertionStatus.FALSIFIED;
         for ( int i = 0; i < children.length; i++ ) {
             ClientAssertion assertion = children[i];

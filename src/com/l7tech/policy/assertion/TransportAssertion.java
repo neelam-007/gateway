@@ -6,7 +6,7 @@
 
 package com.l7tech.policy.assertion;
 
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
+
 
 /**
  * @author alex
@@ -15,9 +15,5 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 public abstract class TransportAssertion extends Assertion {
     public TransportAssertion() {
         super();
-    }
-
-    public TransportAssertion( CompositeAssertion parent ) {
-        super( parent );
     }
 }

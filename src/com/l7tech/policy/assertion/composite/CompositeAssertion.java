@@ -53,24 +53,26 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
 
     public void setChildren(List children) {
         this.children = reparentedChildren(this, children);
-        treeChanged();
+        final CompositeAssertion parent = getParent();
+        super.treeChanged();
     }
 
     public void treeChanged() {
-        // TODO we can skip this scan if we were called from setChildren()
         for (Iterator i = children.iterator(); i.hasNext();) {
             Assertion kid = (Assertion)i.next();
             if (kid.getParent() != this)
-                kid.setParent(this);
+                setParent(kid, this);
         }
         super.treeChanged();
     }
 
-    public int renumber(int newStartingOrdinal) {
+    protected int renumber(int newStartingOrdinal) {
         int n = super.renumber(newStartingOrdinal);
         for (Iterator i = children.iterator(); i.hasNext();) {
             Assertion kid = (Assertion)i.next();
-            n = kid.renumber(n);
+            if (kid.getParent() != this)
+                setParent(kid, this);
+            n = renumber(kid, n);
         }
         return n;
     }
@@ -97,7 +99,7 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
         List newKids = new LinkedList();
         for (Iterator i = children.iterator(); i.hasNext(); ) {
             Assertion child = ((Assertion)i.next()).getCopy();
-            child.setParent(newParent);
+            setParent(child, newParent);
             newKids.add(child);
         }
         return newKids;
@@ -114,19 +116,10 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
         List newKids = new LinkedList();
         for (Iterator i = children.iterator(); i.hasNext(); ) {
             Assertion child = (Assertion)i.next();
-            child.setParent(newParent);
+            setParent(child, newParent);
             newKids.add(child);
         }
         return newKids;
-    }
-
-    /**
-     * Ensure that this CompositeAssertion has at least one child.
-     * @throws PolicyAssertionException if the children list is empty
-     */
-    public void mustHaveChildren() throws PolicyAssertionException {
-        if (children.isEmpty())
-            throw new PolicyAssertionException("CompositeAssertion has no children: " + this);
     }
 
     public String toIndentedString(int indentLevel) {
@@ -137,7 +130,7 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
         b.append(":\n");
         for (Iterator i = children.iterator(); i.hasNext();) {
             Assertion a = (Assertion) i.next();
-            b.append(a.toIndentedString(indentLevel + 1));
+            b.append(toIndentedString(a, indentLevel + 1));
         }
         return b.toString();
     }

@@ -15,8 +15,4 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 public class RequestWssReplayProtection extends Assertion {
     public RequestWssReplayProtection() {
     }
-
-    public RequestWssReplayProtection(CompositeAssertion parent) {
-        super(parent);
-    }
 }

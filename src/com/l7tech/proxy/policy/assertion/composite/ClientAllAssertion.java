@@ -9,6 +9,7 @@ package com.l7tech.proxy.policy.assertion.composite;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
@@ -46,7 +47,7 @@ public class ClientAllAssertion extends ClientCompositeAssertion {
      * @return the AssertionStatus.NONE if no child returned an error; the rightmost-child error otherwise.
      */
     public AssertionStatus decorateRequest(PendingRequest req) throws OperationCanceledException, BadCredentialsException, GeneralSecurityException, IOException, ClientCertificateException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException, InvalidDocumentFormatException {
-        data.mustHaveChildren();
+        mustHaveChildren(data);
         AssertionStatus result = AssertionStatus.NONE;
         for ( int i = 0; i < children.length; i++ ) {
             ClientAssertion assertion = children[i];
@@ -63,7 +64,7 @@ public class ClientAllAssertion extends ClientCompositeAssertion {
             throws OperationCanceledException, BadCredentialsException, GeneralSecurityException,
             IOException, ResponseValidationException, SAXException, KeyStoreCorruptException, PolicyAssertionException, InvalidDocumentFormatException
     {
-        data.mustHaveChildren();
+        mustHaveChildren(data);
         AssertionStatus result = AssertionStatus.NONE;
         for ( int i = 0; i < children.length; i++ ) {
             ClientAssertion assertion = children[i];

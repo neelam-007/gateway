@@ -17,8 +17,4 @@ public class HttpTransportAssertion extends TransportAssertion {
     public HttpTransportAssertion() {
         super();
     }
-    
-    public HttpTransportAssertion( CompositeAssertion parent ) {
-        super(parent);
-    }
 }

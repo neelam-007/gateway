@@ -23,10 +23,6 @@ public abstract class XpathBasedAssertion extends Assertion {
     protected XpathBasedAssertion() {
     }
 
-    protected XpathBasedAssertion(CompositeAssertion parent) {
-        super(parent);
-    }
-
     public XpathExpression getXpathExpression() {
         return xpathExpression;
     }
