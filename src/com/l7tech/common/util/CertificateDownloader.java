@@ -139,11 +139,13 @@ public class CertificateDownloader {
             } catch (NoSuchAlgorithmException e) {
                 throw new RuntimeException(e); // can't happen
             }
+            byte[] ha1 = getHa1(realm).getBytes();
             md5.reset();
+            md5.update(ha1);
             md5.update(nonce.getBytes());
             md5.update(oid.getBytes());
             md5.update(certBytes);
-            md5.update(getHa1(realm).getBytes());
+            md5.update(ha1);
             String desiredValue = HexUtils.encodeMd5Digest(md5.digest());
             return desiredValue.equals(digest);
         }

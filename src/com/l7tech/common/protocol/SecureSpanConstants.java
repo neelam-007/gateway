@@ -114,14 +114,12 @@ public class SecureSpanConstants {
          * <p>Here is a complete example:  <pre>L7-Cert-Check--1: de615f787075c54bd19ba64da4128553; myrealm</pre>
          *
          * <p>This means it's the cert check header for auth provider -1 (the builtin provider).  The large hex
-         * number is the MD5 of the example client-provided nonce value "484736327827227" +
-         * the identity provider ID "-1"  +
-         * the certificate bytes "TheseAreSomeCertificateBytes" +
-         * the H(A1) MD5("alice:myrealm:secret").
+         * number is the MD5 value of (H(A1) . nonce . objectId . certificate_bytes . H(A1)), where
+         * H(A1) is the MD5 of "alice:myrealm:secret".
          *
          * <p>The username was
          * provided to the certificate server with the request and is thus already known to the client.
-         * The realm is returned in plaintext since the client does not know it in advance.
+         * The realm is returned in the plaintext since the client does not necessarily know it yet.
          * "secret" is the password that the client is supposed to know already; if both client and server agree
          * about the value of the password, the client can trust that the certificate bytes were provided by someone
          * that knows the H(A1) of his password and that they haven't been tampered with in transit.
