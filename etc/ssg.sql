@@ -5,35 +5,6 @@
 -- Server version	3.23.56
 
 --
--- Table structure for table 'address'
---
-
-CREATE TABLE address (
-  oid bigint(20) NOT NULL default '0',
-  version int(11) NOT NULL default '0',
-  address varchar(128) NOT NULL default '',
-  address2 varchar(128) default NULL,
-  city varchar(64) default NULL,
-  state bigint(20) default NULL,
-  country bigint(20) default NULL,
-  postal_code varchar(64) default NULL,
-  PRIMARY KEY  (oid)
-) TYPE=InnoDB;
-
---
--- Table structure for table 'country'
---
-
-CREATE TABLE country (
-  oid bigint(20) NOT NULL default '0',
-  version int(11) NOT NULL default '0',
-  code char(2) NOT NULL default '',
-  name varchar(64) NOT NULL default '',
-  PRIMARY KEY  (oid)
-) TYPE=InnoDB;
-
-
---
 -- Table structure for table 'published_service'
 --
 
@@ -114,20 +85,6 @@ CREATE TABLE internal_group (
 ) TYPE=InnoDB;
 
 --
--- Table structure for table 'internal_organization'
---
-
-CREATE TABLE internal_organization (
-  oid bigint(20) NOT NULL default '0',
-  version int(11) NOT NULL default '0',
-  name varchar(128) NOT NULL default '',
-  address bigint(20) default '0',
-  billing_address bigint(20) default '0',
-  mailing_address bigint(20) default NULL,
-  PRIMARY KEY  (oid)
-) TYPE=InnoDB;
-
---
 -- Table structure for table 'internal_user'
 --
 
@@ -172,16 +129,3 @@ CREATE TABLE object_identity (
   key_batch_size int(11) NOT NULL default '0',
   PRIMARY KEY  (class_seed)
 ) TYPE=InnoDB;
-
---
--- Table structure for table 'state'
---
-
-CREATE TABLE state (
-  oid bigint(20) NOT NULL default '0',
-  country bigint(20) NOT NULL default '0',
-  code varchar(16) NOT NULL default '',
-  name varchar(64) NOT NULL default '',
-  PRIMARY KEY  (oid)
-) TYPE=InnoDB;
-
