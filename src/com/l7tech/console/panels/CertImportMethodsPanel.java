@@ -243,11 +243,11 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         final JPanel _1;
         _1 = new JPanel();
         mainPanel = _1;
-        _1.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
+        _1.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 1, new Insets(10, 10, 10, 10), -1, -1));
         final JPanel _2;
         _2 = new JPanel();
         certImportMethodsPane = _2;
-        _2.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(7, 3, new Insets(0, 0, 0, 0), -1, -1));
+        _2.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(4, 3, new Insets(0, 0, 0, 0), -1, -1));
         _1.add(_2, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 3, 3, 3, null, null, null));
         final JRadioButton _3;
         _3 = new JRadioButton();
@@ -259,8 +259,8 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         _4 = new JRadioButton();
         fileRadioButton = _4;
         _4.setText("Import from a File");
-        _4.setSelected(false);
         _4.setEnabled(true);
+        _4.setSelected(false);
         _2.add(_4, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JRadioButton _5;
         _5 = new JRadioButton();
@@ -282,7 +282,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         _2.add(_8, new com.intellij.uiDesigner.core.GridConstraints(1, 2, 1, 1, 0, 1, 3, 0, null, null, null));
         final JScrollPane _9;
         _9 = new JScrollPane();
-        _2.add(_9, new com.intellij.uiDesigner.core.GridConstraints(2, 1, 5, 1, 0, 3, 7, 7, null, null, null));
+        _2.add(_9, new com.intellij.uiDesigner.core.GridConstraints(2, 1, 2, 1, 0, 3, 7, 7, null, null, null));
         final JTextArea _10;
         _10 = new JTextArea();
         copyAndPasteTextArea = _10;
@@ -293,21 +293,12 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         _2.add(_11, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, 0, 2, 1, 6, null, null, null));
         final JPanel _12;
         _12 = new JPanel();
-        _12.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
-        _1.add(_12, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 3, null, null, null));
+        _12.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(10, 0, 10, 0), -1, -1));
+        _1.add(_12, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 0, null, null, null));
         final JLabel _13;
         _13 = new JLabel();
-        _13.setText("Select the method of obtaining a certificate");
-        _12.add(_13, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 0, 0, null, null, null));
-        final com.intellij.uiDesigner.core.Spacer _14;
-        _14 = new com.intellij.uiDesigner.core.Spacer();
-        _12.add(_14, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 2, 1, 6, new Dimension(-1, 10), new Dimension(-1, 10), null));
-        final com.intellij.uiDesigner.core.Spacer _15;
-        _15 = new com.intellij.uiDesigner.core.Spacer();
-        _12.add(_15, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 0, 2, 1, 6, new Dimension(-1, 10), new Dimension(-1, 10), null));
-        final com.intellij.uiDesigner.core.Spacer _16;
-        _16 = new com.intellij.uiDesigner.core.Spacer();
-        _1.add(_16, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 0, 2, 1, 6, null, null, null));
+        _13.setText("Select one of the following method for obtaining a certificate:");
+        _12.add(_13, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
     }
 
 }

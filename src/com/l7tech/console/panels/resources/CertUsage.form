@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.console.panels.CertUsagePanel">
   <grid id="be10d" binding="mainPanel" row-count="2" column-count="1" hgap="-1" vgap="-1">
-    <margin top="0" left="0" bottom="0" right="0"/>
+    <margin top="10" left="10" bottom="10" right="10"/>
     <constraints>
       <xy x="45" y="58" width="585" height="369"/>
       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
@@ -12,7 +12,7 @@
       <grid id="7f78e" binding="certUsagePane" row-count="5" column-count="1" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <xy x="0" y="0" width="585" height="168"/>
+          <xy x="10" y="10" width="565" height="148"/>
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
         </constraints>
         <properties/>
@@ -20,7 +20,7 @@
         <children>
           <component id="be6e5" class="javax.swing.JCheckBox" binding="outboundSSLConnCheckBox">
             <constraints>
-              <xy x="0" y="65" width="158" height="22"/>
+              <xy x="0" y="45" width="158" height="22"/>
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
             </constraints>
             <properties>
@@ -29,7 +29,7 @@
           </component>
           <component id="eb83c" class="javax.swing.JCheckBox" binding="signingClientCertCheckBox">
             <constraints>
-              <xy x="0" y="92" width="147" height="22"/>
+              <xy x="0" y="72" width="147" height="22"/>
               <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
             </constraints>
             <properties>
@@ -38,7 +38,7 @@
           </component>
           <component id="e7025" class="javax.swing.JCheckBox" binding="signingSAMLTokenCheckBox">
             <constraints>
-              <xy x="0" y="119" width="125" height="22"/>
+              <xy x="0" y="99" width="125" height="22"/>
               <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
             </constraints>
             <properties>
@@ -47,55 +47,38 @@
           </component>
           <component id="93f18" class="javax.swing.JCheckBox" binding="signingCertOutboundSSLConnCheckBox">
             <constraints>
-              <xy x="0" y="146" width="267" height="22"/>
+              <xy x="0" y="126" width="267" height="22"/>
               <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
             </constraints>
             <properties>
               <text value="Signing Certificates for Outbound SSL Connections"/>
             </properties>
           </component>
-          <grid id="31f18" row-count="3" column-count="1" hgap="-1" vgap="-1">
-            <margin top="0" left="0" bottom="0" right="0"/>
+          <grid id="31f18" row-count="1" column-count="1" hgap="-1" vgap="-1">
+            <margin top="10" left="0" bottom="10" right="0"/>
             <constraints>
-              <xy x="0" y="0" width="585" height="60"/>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+              <xy x="0" y="0" width="565" height="40"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="3"/>
             </constraints>
             <properties/>
             <border type="none"/>
             <children>
               <component id="8d0ea" class="javax.swing.JLabel">
                 <constraints>
-                  <xy x="0" y="23" width="143" height="14"/>
-                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+                  <xy x="0" y="13" width="143" height="14"/>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
                 </constraints>
                 <properties>
                   <text value="The certificate is intented for:"/>
                 </properties>
               </component>
-              <vspacer id="304a6">
-                <constraints>
-                  <xy x="287" y="40" width="11" height="20"/>
-                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2">
-                    <minimum-size width="-1" height="10"/>
-                    <preferred-size width="-1" height="10"/>
-                  </grid>
-                </constraints>
-              </vspacer>
-              <vspacer id="cd82c">
-                <constraints>
-                  <xy x="287" y="0" width="11" height="20"/>
-                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2">
-                    <minimum-size width="-1" height="10"/>
-                  </grid>
-                </constraints>
-              </vspacer>
             </children>
           </grid>
         </children>
       </grid>
       <vspacer id="6497c">
         <constraints>
-          <xy x="287" y="168" width="11" height="201"/>
+          <xy x="287" y="158" width="11" height="201"/>
           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
         </constraints>
       </vspacer>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.console.panels.CertImportMethodsPanel">
-  <grid id="4f3dd" binding="mainPanel" row-count="3" column-count="1" hgap="-1" vgap="-1">
-    <margin top="0" left="0" bottom="0" right="0"/>
+  <grid id="4f3dd" binding="mainPanel" row-count="2" column-count="1" hgap="-1" vgap="-1">
+    <margin top="10" left="10" bottom="10" right="10"/>
     <constraints>
       <xy x="37" y="87" width="591" height="319"/>
       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
@@ -9,10 +9,10 @@
     <properties/>
     <border type="none"/>
     <children>
-      <grid id="709b1" binding="certImportMethodsPane" row-count="7" column-count="3" hgap="-1" vgap="-1">
+      <grid id="709b1" binding="certImportMethodsPane" row-count="4" column-count="3" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <xy x="0" y="65" width="591" height="158"/>
+          <xy x="10" y="45" width="571" height="264"/>
           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
         </constraints>
         <properties/>
@@ -41,7 +41,7 @@
           </component>
           <component id="6c384" class="javax.swing.JRadioButton" binding="copyAndPasteRadioButton">
             <constraints>
-              <xy x="0" y="56" width="167" height="22"/>
+              <xy x="0" y="56" width="170" height="22"/>
               <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
             </constraints>
             <properties>
@@ -50,7 +50,7 @@
           </component>
           <component id="a273d" class="javax.swing.JTextField" binding="urlConnTextField">
             <constraints>
-              <xy x="177" y="0" width="335" height="21"/>
+              <xy x="180" y="0" width="312" height="21"/>
               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
                 <preferred-size width="150" height="-1"/>
               </grid>
@@ -59,7 +59,7 @@
           </component>
           <component id="c5113" class="javax.swing.JTextField" binding="certFileName">
             <constraints>
-              <xy x="177" y="28" width="335" height="21"/>
+              <xy x="180" y="28" width="312" height="21"/>
               <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
                 <preferred-size width="150" height="-1"/>
               </grid>
@@ -68,7 +68,7 @@
           </component>
           <component id="9079f" class="javax.swing.JButton" binding="browseButton">
             <constraints>
-              <xy x="522" y="27" width="69" height="24"/>
+              <xy x="502" y="27" width="69" height="24"/>
               <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
             </constraints>
             <properties>
@@ -77,8 +77,8 @@
           </component>
           <scrollpane id="a900b">
             <constraints>
-              <xy x="177" y="56" width="335" height="102"/>
-              <grid row="2" column="1" row-span="5" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3"/>
+              <xy x="180" y="56" width="312" height="208"/>
+              <grid row="2" column="1" row-span="2" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3"/>
             </constraints>
             <properties/>
             <border type="none"/>
@@ -93,56 +93,32 @@
           </scrollpane>
           <vspacer id="f58f3">
             <constraints>
-              <xy x="78" y="78" width="11" height="20"/>
+              <xy x="79" y="78" width="11" height="186"/>
               <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
             </constraints>
           </vspacer>
         </children>
       </grid>
-      <grid id="13c88" row-count="3" column-count="1" hgap="-1" vgap="-1">
-        <margin top="0" left="0" bottom="0" right="0"/>
+      <grid id="13c88" row-count="1" column-count="1" hgap="-1" vgap="-1">
+        <margin top="10" left="0" bottom="10" right="0"/>
         <constraints>
-          <xy x="0" y="0" width="591" height="60"/>
-          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+          <xy x="10" y="10" width="571" height="30"/>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="3"/>
         </constraints>
         <properties/>
         <border type="none"/>
         <children>
           <component id="e7138" class="javax.swing.JLabel">
             <constraints>
-              <xy x="0" y="23" width="207" height="14"/>
-              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+              <xy x="0" y="13" width="294" height="14"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
-              <text value="Select the method of obtaining a certificate"/>
+              <text value="Select one of the following method for obtaining a certificate:"/>
             </properties>
           </component>
-          <vspacer id="4f841">
-            <constraints>
-              <xy x="290" y="0" width="11" height="20"/>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2">
-                <minimum-size width="-1" height="10"/>
-                <preferred-size width="-1" height="10"/>
-              </grid>
-            </constraints>
-          </vspacer>
-          <vspacer id="23f2f">
-            <constraints>
-              <xy x="290" y="40" width="11" height="20"/>
-              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2">
-                <minimum-size width="-1" height="10"/>
-                <preferred-size width="-1" height="10"/>
-              </grid>
-            </constraints>
-          </vspacer>
         </children>
       </grid>
-      <vspacer id="955c1">
-        <constraints>
-          <xy x="290" y="223" width="11" height="96"/>
-          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
-        </constraints>
-      </vspacer>
     </children>
   </grid>
 </form>

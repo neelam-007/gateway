@@ -89,7 +89,7 @@ public class CertUsagePanel extends WizardStepPanel{
         final JPanel _1;
         _1 = new JPanel();
         mainPanel = _1;
-        _1.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        _1.setLayout(new GridLayoutManager(2, 1, new Insets(10, 10, 10, 10), -1, -1));
         final JPanel _2;
         _2 = new JPanel();
         certUsagePane = _2;
@@ -117,21 +117,15 @@ public class CertUsagePanel extends WizardStepPanel{
         _2.add(_6, new GridConstraints(4, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JPanel _7;
         _7 = new JPanel();
-        _7.setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
-        _2.add(_7, new GridConstraints(0, 0, 1, 1, 0, 3, 3, 3, null, null, null));
+        _7.setLayout(new GridLayoutManager(1, 1, new Insets(10, 0, 10, 0), -1, -1));
+        _2.add(_7, new GridConstraints(0, 0, 1, 1, 0, 3, 3, 0, null, null, null));
         final JLabel _8;
         _8 = new JLabel();
         _8.setText("The certificate is intented for:");
-        _7.add(_8, new GridConstraints(1, 0, 1, 1, 8, 0, 0, 0, null, null, null));
+        _7.add(_8, new GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
         final com.intellij.uiDesigner.core.Spacer _9;
         _9 = new com.intellij.uiDesigner.core.Spacer();
-        _7.add(_9, new GridConstraints(2, 0, 1, 1, 0, 2, 1, 6, new Dimension(-1, 10), new Dimension(-1, 10), null));
-        final com.intellij.uiDesigner.core.Spacer _10;
-        _10 = new com.intellij.uiDesigner.core.Spacer();
-        _7.add(_10, new GridConstraints(0, 0, 1, 1, 0, 2, 1, 6, new Dimension(-1, 10), null, null));
-        final com.intellij.uiDesigner.core.Spacer _11;
-        _11 = new com.intellij.uiDesigner.core.Spacer();
-        _1.add(_11, new GridConstraints(1, 0, 1, 1, 0, 2, 1, 6, null, null, null));
+        _1.add(_9, new GridConstraints(1, 0, 1, 1, 0, 2, 1, 6, null, null, null));
     }
 
 }
