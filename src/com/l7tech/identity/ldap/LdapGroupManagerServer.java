@@ -139,11 +139,8 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
             }
             if (answer != null) answer.close();
             context.close();
-        }
-        catch (NamingException e)
-        {
-            logger.log(Level.SEVERE, null, e);
-            throw new FindException(e.getMessage(), e);
+        } catch (NamingException e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
         }
         return output;
     }
@@ -189,11 +186,8 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
             }
             if (answer != null) answer.close();
             context.close();
-        }
-        catch (NamingException e)
-        {
+        } catch (NamingException e) {
             logger.log(Level.SEVERE, null, e);
-            throw new FindException(e.getMessage(), e);
         }
         return output;
     }

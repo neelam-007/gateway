@@ -175,11 +175,8 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
             }
             if (answer != null) answer.close();
             context.close();
-        }
-        catch (NamingException e)
-        {
-            logger.log(Level.SEVERE, null, e);
-            throw new FindException(e.getMessage(), e);
+        } catch (NamingException e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
         }
         return output;
     }
@@ -228,7 +225,7 @@ public class LdapUserManagerServer extends LdapManager implements UserManager {
             context.close();
         } catch (NamingException e) {
             // if nothing can be found, just trace this exception and return empty collection
-            logger.log(Level.SEVERE, null, e);
+            logger.log(Level.SEVERE, e.getMessage(), e);
         }
         return output;
     }
