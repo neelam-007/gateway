@@ -7,8 +7,7 @@
 !define COMPANY "Layer 7 Technologies"
 !define MUI_PRODUCT "SecureSpan Agent" ;Define your own software name here
 
-; Edit this to set the version number in the build
-;!define MUI_VERSION "HEAD-2003-Aug-26"
+; Edit this to set the version number in the build (is auto-edited by build.xml's OFFICIAL-build target)
 !define MUI_VERSION "HEAD"
 
 !define BUILD_DIR "..\..\..\build" ;UneasyRooster\build dir, root of jar files and things
@@ -137,6 +136,7 @@ Section "Uninstall"
   Delete "$INSTDIR\SecureSpan Agent.bat"
   Delete "$INSTDIR\SecureSpan Agent in Text Mode.bat"
   Delete "$INSTDIR\ClientProxy.jar"
+  Delete "$INSTDIR\systray4j.dll"
   RMDir /r "$INSTDIR\lib"
   RMDir /r "$INSTDIR\${J2RE}"
   Delete "$INSTDIR\Uninstall.exe"
