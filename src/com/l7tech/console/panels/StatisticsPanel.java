@@ -124,7 +124,6 @@ public class StatisticsPanel extends JPanel {
         }
 
         selectPane.setMinimumSize(new Dimension((int) selectPane.getSize().getWidth(), 35));
-        // selectPane.setLayout(new FlowLayout(FlowLayout.LEFT));
         selectPane.setLayout(new BorderLayout());
         selectPane.add(getServerLoadPane(), BorderLayout.EAST);
         selectPane.add(getControlPane(), BorderLayout.WEST);
@@ -239,13 +238,14 @@ public class StatisticsPanel extends JPanel {
 
                 }
 
-                getStatTableModel().fireTableDataChanged();
-
-                // also update the server load statistics
-                loadValues();
             }
         } catch (RemoteException e) {
         }
+
+        getStatTableModel().fireTableDataChanged();
+
+        // also update the server load statistics
+        loadValues();
 
         getStatRefreshTimer().start();
     }
@@ -262,22 +262,38 @@ public class StatisticsPanel extends JPanel {
             serverUpTime.setText(SERVER_UP_TIME_PREFIX + STATISTICS_UNAVAILABLE + MIDDLE_SPACE);
             lastMinuteServerLoad.setText(LAST_MINUTE_SERVER_LOAD_PREFIX + STATISTICS_UNAVAILABLE + END_SPACE);
 
-            //fiveminuteLoadText.setText("unavailable");
-            //fifteenminuteLoadText.setText("unavailable");
-
         } else {
-            int days = metrics.getDays();
-            int hrs = metrics.getHours();
-            int minutes = metrics.getMinutes();
-            String uptime = "";
-            if (days > 0) uptime += Integer.toString(days) + " days ";
-            if (hrs > 0) uptime += Integer.toString(hrs) + " hrs ";
-            if (minutes > 0) uptime += Integer.toString(minutes) + " minutes " + MIDDLE_SPACE;
-            serverUpTime.setText(SERVER_UP_TIME_PREFIX + uptime);
+
+            long uptime = (System.currentTimeMillis() - metrics.getServerBootTime()) / 1000;
+
+            long minutes_total = uptime/60;
+            long minutes_remain = minutes_total%60;
+            long hrs_total = minutes_total/60;
+            long hrs_remain = hrs_total%24;
+            long days = hrs_total/24;
+            String uptimeString = "";
+
+            if(days == 1){
+                uptimeString += Long.toString(days) + " day ";
+            }
+            else{
+                uptimeString += Long.toString(days) + " days ";
+            }
+            if(hrs_remain == 1){
+                uptimeString += Long.toString(hrs_remain) + " hour ";
+            }
+            else{
+                uptimeString += Long.toString(hrs_remain) + " hours ";
+            }
+            if(minutes_remain == 1){
+                uptimeString += Long.toString(minutes_remain) + " minute " + MIDDLE_SPACE;
+            }
+            else{
+                uptimeString += Long.toString(minutes_remain) + " minutes " + MIDDLE_SPACE;
+            }
+            serverUpTime.setText(SERVER_UP_TIME_PREFIX + uptimeString);
             lastMinuteServerLoad.setText(LAST_MINUTE_SERVER_LOAD_PREFIX + Double.toString(metrics.getLoad1()) + END_SPACE);
 
-            //fiveminuteLoadText.setText(Double.toString(metrics.getLoad2()));
-            //fifteenminuteLoadText.setText(Double.toString(metrics.getLoad3()));
         }
     }
 
