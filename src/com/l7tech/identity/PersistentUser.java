@@ -116,8 +116,8 @@ public abstract class PersistentUser extends NamedEntityImp implements User {
 
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof InternalUser)) return false;
-        final InternalUser userImp = (InternalUser) o;
+        if (!(o instanceof PersistentUser)) return false;
+        final PersistentUser userImp = (PersistentUser) o;
         if (bean.getProviderId() != DEFAULT_OID ? !( bean.getProviderId()== userImp.bean.getProviderId())
                 : userImp.bean.getProviderId() != DEFAULT_OID ) return false;
         String login = getLogin();
