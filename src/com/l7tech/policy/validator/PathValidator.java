@@ -285,6 +285,12 @@ class PathValidator {
                 result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                   "This assertion should be preceeded by an WSS Signature assertion, a Secure Conversation assertion, or a SAML Security assertion.", null));
             }
+        }  else if (a instanceof ResponseXpathAssertion) {
+            if (!seenRouting) {
+                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+                  "This assertion will never work because there is no response yet. This assertion should be moved " +
+                  "after the routing assertion.", null));
+            }
         }
         seenPreconditions = true;
     }
