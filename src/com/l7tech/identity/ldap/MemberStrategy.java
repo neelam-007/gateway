@@ -1,5 +1,7 @@
 package com.l7tech.identity.ldap;
 
+import java.io.Serializable;
+
 /**
  * [class_desc]
  *
@@ -10,7 +12,7 @@ package com.l7tech.identity.ldap;
  * $Id$<br/>
  *
  */
-public class MemberStrategy {
+public class MemberStrategy implements Serializable {
     public boolean equals(Object obj) {
         if (!(obj instanceof MemberStrategy)) return false;
         MemberStrategy otherone = (MemberStrategy)obj;
