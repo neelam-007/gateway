@@ -87,6 +87,11 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
             throw new PolicyAssertionException(e);
         }
 
+        // must we encrypt the body before signing the envelope?
+        if (data.isEncryption()) {
+            // todo, encryption of body
+        }
+
         SoapMsgSigner dsigHelper = new SoapMsgSigner();
         try {
             dsigHelper.signEnvelope(soapmsg, userPrivateKey, userCert);

@@ -54,9 +54,6 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
      * @throws PolicyAssertionException
      */
     public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws PolicyAssertionException {
-
-        // todo, xml-enc part
-
         SoapMsgSigner dsigHelper = new SoapMsgSigner();
         Document doc = null;
         //doc = response.getResponseAsSoapEnvelope();
@@ -72,6 +69,12 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
             // todo
         }
         // todo, verify that this cert is signed with the root cert of this ssg which we should have access to
+
+        // must we also decrypt the body?
+        if (data.isEncryption()) {
+            // todo, decrypt the body
+        }
+
         // return AssertionStatus.NONE;
         return AssertionStatus.NOT_YET_IMPLEMENTED;
     }
