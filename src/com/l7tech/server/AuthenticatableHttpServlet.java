@@ -2,6 +2,7 @@ package com.l7tech.server;
 
 import com.l7tech.common.util.Locator;
 import com.l7tech.identity.*;
+import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
@@ -17,11 +18,13 @@ import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceManager;
+import com.l7tech.message.Request;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
+import java.security.cert.X509Certificate;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -30,6 +33,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.security.cert.Certificate;
 
 /**
  * Base class for servlets that share the capability of authenticating requests against
@@ -72,6 +76,65 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         }
     }
 
+    /**
+     * @return false if the user has valid cert in our db and failed to present
+     * it to the ssl handshake. true otherwise
+     */
+    private boolean checkRequestForCert(User user, HttpServletRequest req) {
+        // this check only makes sense if the request comes over SSL
+        if (!req.isSecure()) return true;
+        // check if the user currently has a valid cert
+        ClientCertManager certman = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
+        Certificate certindb = null;
+        try {
+            certindb = certman.getUserCert(user);
+        } catch (FindException e) {
+            // that's ok if no cert is present
+            certindb = null;
+        }
+        // there is a valid cert. make sure it was presented
+        if (certindb != null) {
+            Object param = req.getAttribute(Request.PARAM_HTTP_X509CERT);
+            ArrayList presentedCerts = new ArrayList();
+            if (param == null) {
+                logger.warning("No client cert in that request.");
+            } else if (param instanceof Object[]) {
+                Object[] maybeCerts = (Object[])param;
+                for (int i = 0; i < maybeCerts.length; i++) {
+                    Object item = maybeCerts[i];
+                    if (item instanceof X509Certificate) {
+                        presentedCerts.add(item);
+                    } else {
+                        logger.warning("Object type not supported " + item.getClass().getName());
+                    }
+                }
+            } else if (param instanceof X509Certificate) {
+                presentedCerts.add(param);
+            } else {
+                logger.warning("Cert param present but type not suppoted " + param.getClass().getName());
+            }
+            if (presentedCerts.isEmpty()) {
+                logger.warning("the authenticated user has a valid cert but no certs were presented to the servlet");
+                return false;
+            } else {
+                for (Iterator i = presentedCerts.iterator(); i.hasNext();) {
+                    X509Certificate presentedCert = (X509Certificate)i.next();
+                    if (presentedCert.equals(certindb)) {
+                        logger.finest("Valid client cert presented as part of request.");
+                        return true;
+                    }
+                }
+                logger.warning("the authenticated user has a valid cert but he presented a different" +
+                               "cert to the servlet");
+                return false;
+            }
+
+        } else {
+            logger.finest("User " + user.getLogin() + " does not have a cert in database.");
+            return true;
+        }
+    }
+
     private List getUsers(HttpServletRequest req) throws FindException {
         List users = new ArrayList();
         IdentityProviderConfigManager configManager = new IdProvConfManagerServer();
@@ -81,18 +144,33 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         if (creds == null) {
             return users;
         }
+        boolean userAuthenticatedButDidNotPresentHisCert = false;
         for (Iterator i = providers.iterator(); i.hasNext();) {
             IdentityProvider provider = (IdentityProvider)i.next();
             try {
                 User u = provider.authenticate(creds);
                 logger.fine("Authentication success for user " + creds.getLogin() + " on identity provider: " +
                   provider.getConfig().getName());
-                users.add(u);
+
+                // if this request comes through SSL, and the authenticated client possess a valid
+                // client cert, then we enforce that he USES the client cert as part of the SSL
+                // handshake (this is to prevent dictionnary attacks against accounts that possess
+                // a valid client cert)
+                if (checkRequestForCert(u, req)) {
+                    users.add(u);
+                } else {
+                    userAuthenticatedButDidNotPresentHisCert = true;
+                }
             } catch (AuthenticationException e) {
                 logger.fine("Authentication failed for user " + creds.getLogin() +
                   " on identity provider: " + provider.getConfig().getName());
                 continue;
             }
+        }
+        if (users.isEmpty() && userAuthenticatedButDidNotPresentHisCert) {
+            String msg = "Basic credentials are valid but the client did not present " +
+                         "his client cert as part of the ssl handshake";
+            logger.warning("POTENTIAL DICTIONNARY ATTACK. " + msg);
         }
         return users;
     }
@@ -167,7 +245,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
      * @param req the servlet request
      * @return the <code>LoginCredentials</code> or null if not found
      */
-    protected LoginCredentials findCredentialsBasic(HttpServletRequest req) {
+    private LoginCredentials findCredentialsBasic(HttpServletRequest req) {
         String authorizationHeader = req.getHeader("Authorization");
         if (authorizationHeader == null || authorizationHeader.length() < 1) {
             logger.warning("No authorization header found.");
