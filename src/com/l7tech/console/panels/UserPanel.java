@@ -87,7 +87,7 @@ public class UserPanel extends EntityEditorPanel {
         try {
             // Initialize form components
             groupPanel = new UserGroupsPanel(this);
-            certPanel = new CertificatePanel(this);
+            certPanel = new CertificatePanel(this, passwordChangeListener);
             layoutComponents();
             this.addHierarchyListener(hierarchyListener);
         } catch (Exception e) {

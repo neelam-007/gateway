@@ -4,10 +4,14 @@ import com.l7tech.common.gui.util.TableUtil;
 import com.l7tech.common.util.Locator;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Preferences;
+import com.l7tech.console.event.EntityListener;
+import com.l7tech.console.event.EntityEvent;
 import com.l7tech.identity.UserBean;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
@@ -40,13 +44,15 @@ class CertificatePanel extends JPanel {
     private JTable certificateTable;
     private JScrollPane tableScrollPane;
     private JLabel certStatusLabel;
+    private EntityListener parentListener;
 
     /**
      * Create a new CertificatePanel
      */
-    public CertificatePanel(UserPanel userPanel) {
+    public CertificatePanel(UserPanel userPanel, EntityListener l) {
         this.userPanel = userPanel;
         this.addHierarchyListener(hierarchyListener);
+        parentListener = l;
         initComponents();
     }
 
@@ -195,6 +201,12 @@ class CertificatePanel extends JPanel {
                         try {
                             final ClientCertManager man = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
                             man.revokeUserCert(user);
+                            // must tell parent to update user because version might have changed
+                            EntityHeader eh = new EntityHeader();
+                            eh.setStrId(user.getUniqueIdentifier());
+                            eh.setName(user.getName());
+                            eh.setType(EntityType.USER);
+                            parentListener.entityUpdated(new EntityEvent(this, eh));
                         } catch (UpdateException e) {
                             log.log(Level.WARNING, "ERROR Revoking certificate", e);
                         }
