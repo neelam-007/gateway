@@ -1,10 +1,17 @@
 # FILE /etc/profile.d/ssgruntimedefs.sh
 # LAYER 7 TECHNOLOGIES
 # 07-07-2003, flascelles
+#
 # $Id$
+#
 # Defines JAVA_HOME, TOMCAT_HOME, etc
 # Edit at deployment time to ensure values are accurate
 #
+
+default_java_opts="-Xmx768m -Xss1m"
+export SSG_HOME=/ssg
+JAVA_HOME=/ssg/j2sdk1.4.2_04
+TOMCAT_HOME=/ssg/tomcat/
 
 # Under cygwin?.
 cygwin=false;
@@ -12,10 +19,7 @@ case "`uname`" in
   CYGWIN*) cygwin=true ;;
 esac
 
-export SSG_HOME=/ssg
-
 # define java home
-JAVA_HOME=/ssg/j2sdk1.4.2_04
 if $cygwin; then
     JAVA_HOME=`cygpath --path --unix "$JAVA_HOME"`
 fi
@@ -31,15 +35,20 @@ else
 fi
 export PATH
 
+
+if [ -z $JAVA_OPTS ]; then
+    JAVA_OPTS=$default_java_opts
+else
+    JAVA_OPTS="$JAVA_OPTS $default_java_opts"
+fi
+
 # Set Java system properties
 if  [ -e "/ssg/etc/conf/cluster_hostname" ];
 then
-	export JAVA_OPTS=-Djini.server.hostname=`cat /ssg/etc/conf/cluster_hostname`
+	JAVA_OPTS="$JAVA_OPTS -Djini.server.hostname=`cat /ssg/etc/conf/cluster_hostname`"
 else
-	export JAVA_OPTS=-Djini.server.hostname=`hostname`
+	JAVA_OPTS="$JAVA_OPTS -Djini.server.hostname=`hostname -f`"
 fi
-
-export JAVA_OPTS="$JAVA_OPTS -Xmx768m -Xss1m"
 
 if $cygwin; then
     mac=''
@@ -48,11 +57,13 @@ else
 fi
 
 if [ ! -z $mac ]; then
-        export JAVA_OPTS="$JAVA_OPTS -Dcom.l7tech.cluster.macAddress=$mac"
+        JAVA_OPTS="$JAVA_OPTS -Dcom.l7tech.cluster.macAddress=$mac"
 fi
 
+unset default_java_opts
+export JAVA_OPTS
+
 # define tomcat home
-TOMCAT_HOME=/ssg/tomcat/
 if $cygwin; then
     TOMCAT_HOME=`cygpath --path --unix "$TOMCAT_HOME"`
 fi
