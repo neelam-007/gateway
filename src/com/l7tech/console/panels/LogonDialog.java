@@ -515,7 +515,7 @@ public class LogonDialog extends JDialog {
                           preferences.updateSystemProperties();
                           // invoke the listener
                           if (logonListener != null) {
-                              logonListener.onAuthSuccess(authentication.getUserName());
+                              logonListener.onAuthSuccess(authentication.getUserName(), serverURL);
                           }
                       } else {
                           if (logonListener != null) {
@@ -920,7 +920,7 @@ public class LogonDialog extends JDialog {
          *
          * @param id the id of the authenticated user
          */
-        void onAuthSuccess(String id);
+        void onAuthSuccess(String id, String serverURL);
 
         /**
          * invoked on authentication failure
