@@ -40,7 +40,7 @@ public class FederatedIPX509CertPanel extends IdentityProviderStepPanel {
      * @return the wizard step label
      */
     public String getStepLabel() {
-        return "Configure X.509 Cert Credential Source";
+        return "Configure X.509 Credential Source";
     }
 
     /**
