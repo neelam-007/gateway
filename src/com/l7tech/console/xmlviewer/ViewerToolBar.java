@@ -28,7 +28,11 @@ public class ViewerToolBar extends JToolBar {
     private ExpandAllAction expand = null;
     private JButton selectXpath;
 
-    public ViewerToolBar(ViewerProperties props, Viewer v) {
+    public interface XPathSelectFeedback {
+        void selected(String xpathSelected);
+    }
+
+    public ViewerToolBar(ViewerProperties props, Viewer v, final XPathSelectFeedback selectionFeedback) {
         viewer = v;
         properties = props;
 
@@ -54,6 +58,9 @@ public class ViewerToolBar extends JToolBar {
                 String xpathString = (String)xpathComboBox.getEditor().getItem();
                 viewer.selectXpath(xpathString);
                 setXPaths();
+                if (selectionFeedback != null) {
+                    selectionFeedback.selected(xpathString);
+                }
             }
         });
 
