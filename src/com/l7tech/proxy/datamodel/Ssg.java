@@ -17,7 +17,7 @@ public class Ssg implements Cloneable, Comparable {
     private String name = "";
     private String localEndpoint = "";
     private String serverUrl = "";
-    private String username = null;
+    private String username = "";
     private String password = null;
 
     public int compareTo(Object o) {

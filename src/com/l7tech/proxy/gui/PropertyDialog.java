@@ -18,6 +18,7 @@ public abstract class PropertyDialog extends JDialog {
     protected JTabbedPane tabbedPane;
     protected JButton okButton;
     protected JButton cancelButton;
+    protected boolean userClickedOk = false;
 
     /**
      * Creates a new PropertyDialog.
@@ -45,6 +46,7 @@ public abstract class PropertyDialog extends JDialog {
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 commitChanges();
+                userClickedOk = true;
                 PropertyDialog.this.hide();
                 PropertyDialog.this.dispose();
             }
@@ -59,6 +61,7 @@ public abstract class PropertyDialog extends JDialog {
         cancelButton = new JButton("Cancel");
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
+                userClickedOk = false;
                 PropertyDialog.this.hide();
                 PropertyDialog.this.dispose();
             }
@@ -71,6 +74,15 @@ public abstract class PropertyDialog extends JDialog {
                                               0, 0));
 
         getContentPane().add(buttonPane, BorderLayout.SOUTH);
+    }
+
+    /**
+     * Show the dialog modally and return the result.
+     * @return True iff. the user closed the dialog by clicking the "Ok" button.
+     */
+    public boolean runDialog() {
+        show();
+        return userClickedOk;
     }
 
     /**

@@ -5,10 +5,7 @@ import org.apache.log4j.Category;
 
 import javax.swing.*;
 import javax.swing.plaf.metal.MetalTheme;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 
 /**
  * Encapsulates the Client Proxy's user interface.

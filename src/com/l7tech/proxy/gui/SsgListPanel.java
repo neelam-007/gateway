@@ -1,6 +1,8 @@
 package com.l7tech.proxy.gui;
 
 import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.Managers;
+import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.gui.util.IconManager;
 
 import javax.swing.*;
@@ -9,6 +11,7 @@ import javax.swing.event.ListSelectionEvent;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.io.IOException;
 
 import org.apache.log4j.Category;
 
@@ -21,7 +24,7 @@ import org.apache.log4j.Category;
  */
 public class SsgListPanel extends JPanel {
     private final Category log = Category.getInstance(SsgListPanel.class);
-    private DefaultListModel ssgListModel;
+    private SsgListModel ssgListModel;
     private JList ssgList;
 
     SsgListPanel() {
@@ -40,9 +43,7 @@ public class SsgListPanel extends JPanel {
         add(toolBar, BorderLayout.NORTH);
         add(ssgListPanel, BorderLayout.CENTER);
 
-        ssgListModel = new DefaultListModel();
-        ssgListModel.addElement(new Ssg("Main SSG", "SSG0", "http://localhost:9898/", "", ""));
-        ssgListModel.addElement(new Ssg("Alternate SSG", "SSG1", "http://localhost:9898/", "", ""));
+        ssgListModel = new SsgListModel();
         ssgList = new JList(ssgListModel);
         ssgList.setSelectedIndex(0);
         ssgList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -52,14 +53,28 @@ public class SsgListPanel extends JPanel {
 
         toolBar.add(new AbstractAction("New", IconManager.getAdd()) {
             public void actionPerformed(ActionEvent e) {
+                Ssg newSsg = new Ssg();
+                newSsg.setName("New SSG");
+                try {
+                    if (PropertyDialog.getPropertyDialogForObject(newSsg).runDialog())
+                        ssgListModel.addSsg(newSsg);
+                } catch (ClassNotFoundException e1) {
+                    // No property editor for Ssg objects.  this can't happen
+                    log.error(e1);
+                }
             }
         });
 
         toolBar.add(new AbstractAction("Edit", IconManager.getEdit()) {
             public void actionPerformed(ActionEvent e) {
                 try {
-                    PropertyDialog.getPropertyDialogForObject(ssgList.getSelectedValue()).show();
+                    Ssg ssg = (Ssg)ssgList.getSelectedValue();
+                    if (ssg != null) {
+                        if (PropertyDialog.getPropertyDialogForObject(ssgList.getSelectedValue()).runDialog())
+                            ssgListModel.editedSsg(ssg);
+                    }
                 } catch (ClassNotFoundException e1) {
+                    // can't happen
                     log.error(e1);
                 }
             }
@@ -67,7 +82,13 @@ public class SsgListPanel extends JPanel {
 
         toolBar.add(new AbstractAction("Delete", IconManager.getRemove()) {
             public void actionPerformed(ActionEvent e) {
+                Ssg ssg = (Ssg)ssgList.getSelectedValue();
+                if (ssg != null) {
+                    ssgListModel.removeSsg(ssg);
+                }
             }
         });
     }
+
+
 }
