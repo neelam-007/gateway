@@ -1,9 +1,17 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.table.WsdlOperationsTableModel;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.wsdl.Definition;
+import javax.wsdl.PortType;
+import javax.wsdl.Operation;
+import javax.xml.namespace.QName;
 import java.awt.*;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+import java.util.Map;
 
 /**
  *
@@ -15,7 +23,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
     private JTextField portTypeNameField;
     private JTable operationsTable;
     private JScrollPane operationsTableScrollPane;
-    private DefaultTableModel operationsModel;
+    private WsdlOperationsTableModel operationsModel;
     private JButton addOperationButton;
     private JButton removeOperatonButton;
     private Definition definition;
@@ -29,17 +37,9 @@ public class WsdlPortTypePanel extends WizardStepPanel {
     }
 
     private void initialize() {
-        operationsModel = new DefaultTableModel(
-          new String[]{
-              "Name",
-              "Request message",
-              "Response message"
-          },
-          0
-        );
         portTypeNameField.setText("NewPortType");
-        operationsTable.setModel(operationsModel);
         operationsTableScrollPane.getViewport().setBackground(operationsTable.getBackground());
+        addOperationButton.addActionListener(addOperationActionListener);
         removeOperatonButton.setEnabled(false);
     }
 
@@ -54,7 +54,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
      * @return the wizard step label
      */
     public String getStepLabel() {
-        return "Port Type/Operations";
+        return "Port Type and Operations";
     }
 
     /**
@@ -70,19 +70,30 @@ public class WsdlPortTypePanel extends WizardStepPanel {
 
     /**
      * Provides the wizard with the current data--either
-     * the default data or already-modified settings. This is a
-     * noop version that subclasses implement.
+     * the default data or already-modified settings.
      *
      * @param settings the object representing wizard panel state
      * @exception IllegalArgumentException if the the data provided
      * by the wizard are not valid.
      */
     public void readSettings(Object settings) throws IllegalArgumentException {
-            if (settings instanceof Definition) {
+        if (settings instanceof Definition) {
             definition = (Definition)settings;
         } else {
-            throw new IllegalArgumentException("Unexpected type "+settings.getClass());
+            throw new IllegalArgumentException("Unexpected type " + settings.getClass());
         }
+        PortType portType = null;
+        Map portTypes = definition.getPortTypes();
+        if (portTypes.isEmpty()) {
+            portType = definition.createPortType();
+            portType.setQName(new QName("NewPortType"));
+            portType.setUndefined(false);
+            definition.addPortType(portType);
+        } else {
+            portType = (PortType)portTypes.values().iterator().next();
+        }
+        operationsModel = new WsdlOperationsTableModel(definition, portType);
+        operationsTable.setModel(operationsModel);
     }
 
     /**
@@ -92,7 +103,6 @@ public class WsdlPortTypePanel extends WizardStepPanel {
      * it should collect them, and then only save them when requested to
      * by this method.
      *
-     * This is a noop version that subclasses implement.
      *
      * @exception IllegalArgumentException if the the data provided
      * by the wizard are not valid.
@@ -100,6 +110,35 @@ public class WsdlPortTypePanel extends WizardStepPanel {
      */
     public void storeSettings(Object settings) throws IllegalArgumentException {
     }
+
+    private ActionListener
+       addOperationActionListener = new ActionListener() {
+           /**
+            * Invoked when an action occurs.
+            */
+           public void actionPerformed(ActionEvent e) {
+               String newOperationName = null;
+               boolean found = false;
+               while (!found) {
+                   newOperationName = "NewOperation" + operationsModel.getRowCount();
+                   found = true;
+                   int rows = operationsModel.getRowCount();
+                   for (int i = 0; i < rows; i++) {
+                       String name =
+                         (String)operationsModel.getValueAt(i, 0);
+                       if (name.equals(newOperationName)) {
+                           found = false;
+                           break;
+                       }
+                   }
+                   if (found) {
+                       operationsModel.addOperation(newOperationName);
+                       break;
+                   }
+               }
+           }
+       };
+
 
     {
 // do not edit this generated initializer!!! do not add your code here!!!

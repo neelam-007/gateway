@@ -5,6 +5,7 @@ import javax.wsdl.Definition;
 import javax.wsdl.PortType;
 import javax.wsdl.Operation;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * Class <code>WsdlOperationsTableModel</code> represents the port
@@ -21,7 +22,7 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
      * @param def the port type these operations belong to
      */
     public WsdlOperationsTableModel(Definition def, PortType pt) {
-        if (def == null || pt == null){
+        if (def == null || pt == null) {
             throw new IllegalArgumentException();
         }
         definition = def;
@@ -37,7 +38,7 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
      * @see #getRowCount
      */
     public int getColumnCount() {
-        return 1;
+        return 3;
     }
 
     /**
@@ -54,6 +55,25 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
     }
 
     /**
+     *  Returns a the name for the columns. There is a part name and the
+     * type column
+     *
+     * @param column  the column being queried
+     * @return a string containing the default name of <code>column</code>
+     */
+    public String getColumnName(int column) {
+        if (column == 0) {
+            return "Name";
+        } else if (column == 1) {
+            return "Input Message";
+        } else if (column == 2) {
+            return "Output Message";
+        }
+        throw new IndexOutOfBoundsException("column may be 1 or 0. received " + column);
+    }
+
+
+    /**
      * Returns the value for the cell at <code>columnIndex</code> and
      * <code>rowIndex</code>.
      *
@@ -64,13 +84,16 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
      * @return	the value Object at the specified cell
      */
     public Object getValueAt(int rowIndex, int columnIndex) {
-        Iterator it = portType.getOperations().iterator();
-        int row = 0;
-        while (it.hasNext()) {
-            Object m = it.next();
-            if (row++ == rowIndex) return m;
+        Operation op = getOperationAt(rowIndex);
+        if (columnIndex == 0) {
+            return op.getName();
+        } else if (columnIndex == 1) {
+            return op.getInput();
+        } else if (columnIndex == 2) {
+            return op.getOutput();
+        } else {
+            throw new IndexOutOfBoundsException("" + rowIndex + " > " + portType.getOperations().size());
         }
-        throw new IndexOutOfBoundsException("" + rowIndex + " > " + portType.getOperations().size());
     }
 
     /**
@@ -82,7 +105,7 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
     public Operation addOperation(String name) {
         Operation op = definition.createOperation();
         op.setName(name);
-        portType.addOperation(op);
+        addOperation(op);
         return op;
     }
 
@@ -102,11 +125,12 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
      * @param name the message name local part
      */
     public void removeOperation(String name) {
-        portType.getOperations().iterator();
-        for (Iterator iterator = portType.getOperations().iterator(); iterator.hasNext();) {
+        List operations = portType.getOperations();
+        operations.iterator();
+        for (Iterator iterator = operations.iterator(); iterator.hasNext();) {
             Operation operation = (Operation)iterator.next();
             if (name.equals(operation.getName())) {
-                portType.getOperations().remove(operation);
+                operations.remove(operation);
                 this.fireTableStructureChanged();
                 break;
             }
@@ -118,17 +142,10 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
      * @param index the message index
      */
     public Operation removeOperation(int index) {
-        Iterator it = portType.getOperations().iterator();
-        int row = 0;
-        while (it.hasNext()) {
-            Operation op = (Operation)it.next();
-            if (row++ == index) {
-                portType.getOperations().remove(op);
-                this.fireTableStructureChanged();
-                return op;
-            }
-        }
-        throw new IndexOutOfBoundsException("" + index + " > " + portType.getOperations().size());
+        Operation op = getOperationAt(index);
+        portType.getOperations().remove(op);
+        this.fireTableStructureChanged();
+        return op;
     }
 
     /**
@@ -140,6 +157,26 @@ public class WsdlOperationsTableModel extends AbstractTableModel {
      */
     public boolean isCellEditable(int rowIndex, int columnIndex) {
         return true;
+    }
+
+    /**
+     * Returns the Operation at the  row <code>rowIndex</code>.
+     *
+     * @param	rowIndex	the row whose value is to be queried
+     *                      (1 based)
+     * @return	the Operation at the specified row
+     */
+    private Operation getOperationAt(int rowIndex) {
+        Iterator it = portType.getOperations().iterator();
+        int row = 0;
+        while (it.hasNext()) {
+            Object o = it.next();
+            if (row++ == rowIndex) {
+                Operation op = (Operation)o;
+                return op;
+            }
+        }
+        throw new IndexOutOfBoundsException("" + rowIndex + " > " + portType.getOperations().size());
     }
 
 }

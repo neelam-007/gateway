@@ -269,7 +269,8 @@ public class WsdlMessagesPanel extends WizardStepPanel {
       };
 
     private
-    DefaultTableCellRenderer partsTableCellRenderer = new DefaultTableCellRenderer() {
+    DefaultTableCellRenderer partsTableCellRenderer
+      = new DefaultTableCellRenderer() {
         /**
          *
          * Returns the default table cell renderer.

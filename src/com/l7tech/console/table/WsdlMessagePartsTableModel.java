@@ -194,7 +194,7 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
      *                      (1 based)
      * @return	the Part at the specified row
      */
-    public Part getPartAt(int rowIndex) {
+    private Part getPartAt(int rowIndex) {
         Iterator it = message.getParts().values().iterator();
         int row = 0;
         while (it.hasNext()) {
