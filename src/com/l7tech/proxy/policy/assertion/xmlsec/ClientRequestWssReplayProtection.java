@@ -53,8 +53,6 @@ public class ClientRequestWssReplayProtection extends ClientAssertion {
             {
                 // get the client cert and private key
                 // We must have credentials to get the private key
-                // todo fla, look at the recipient information of the assertion before assuming it's for default
-                // recipient
                 DecorationRequirements wssReqs = context.getDefaultWssRequirements();
                 wssReqs.setSignTimestamp(true);
 
