@@ -1,5 +1,7 @@
 package com.l7tech.logging;
 
+import com.l7tech.common.RequestId;
+
 import java.util.logging.LogRecord;
 import java.util.logging.Level;
 
@@ -29,29 +31,15 @@ public class SSGLogRecord extends LogRecord {
         setSourceMethodName(record.getSourceMethodName());
     }
 
-    public SSGLogRecord(LogRecord record, long reqId, String nodeId) {
+    public SSGLogRecord(LogRecord record, RequestId reqId, String nodeId) {
         super(record.getLevel(), record.getMessage());
         setLoggerName(record.getLoggerName());
         setMillis(record.getMillis());
         setSequenceNumber(record.getSequenceNumber());
         setSourceClassName(record.getSourceClassName());
         setSourceMethodName(record.getSourceMethodName());
-        setRequestId(reqId);
+        setReqId(reqId);
         setNodeId(nodeId);
-    }
-
-    /**
-     * the unique id of the request being processed when this log record was generated
-     */
-    public long getRequestId() {
-        return requestId;
-    }
-
-    /**
-     * the unique id of the request being processed when this log record was generated
-     */
-    public void setRequestId(long requestId) {
-        this.requestId = requestId;
     }
 
     /**
@@ -69,6 +57,21 @@ public class SSGLogRecord extends LogRecord {
     }
 
     /**
+     * the id of the request being processed when this log record was generated
+     */
+    public RequestId getReqId() {
+        if (requestId == null || requestId.length() <= 0) return null;
+        return new RequestId(requestId);
+    }
+
+    /**
+     * the id of the request being processed when this log record was generated
+     */
+    public void setReqId(RequestId arg) {
+        requestId = arg.toString();
+    }
+
+    /**
      * for serialization purposes only
      */
     public String getStrLvl() {
@@ -82,6 +85,20 @@ public class SSGLogRecord extends LogRecord {
         setLevel(Level.parse(arg));
     }
 
-    public long requestId;
+    /**
+     * for serialization purposes only
+     */
+    public String getStrRequestId() {
+        return requestId;
+    }
+
+    /**
+     * for serialization purposes only
+     */
+    public void setStrRequestId(String requestId) {
+        this.requestId = requestId;
+    }
+
+    public String requestId;
     public String nodeId;
 }
