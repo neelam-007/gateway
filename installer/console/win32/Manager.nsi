@@ -78,7 +78,6 @@ Section "Policy Editor" SecCopyUI
   File "${MUI_PRODUCT}.exe"
   File "${MUI_PRODUCT}.ini"
   File "${MUI_PRODUCT}.bat"
-  File "logging.properties"
   File "${BUILD_DIR}\Manager.jar"
   File /r "${J2RE_PATH}"
 
@@ -137,7 +136,6 @@ Section "Uninstall"
   Delete "$INSTDIR\${MUI_PRODUCT}.bat"
   Delete "$INSTDIR\${MUI_PRODUCT}.exe"
   Delete "$INSTDIR\${MUI_PRODUCT}.ini"
-  Delete "$INSTDIR\logging.properties"
   Delete "$INSTDIR\Manager.jar"
   ; DO NOT DELETE OR EDIT THIS LINE -- %%%JARFILE_DELETE_LINES%%%
   ; DO NOT DELETE OR EDIT THIS LINE -- %%%INCLUDE_DELETE_LINES%%%
