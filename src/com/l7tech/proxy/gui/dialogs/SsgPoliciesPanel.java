@@ -222,8 +222,9 @@ class SsgPoliciesPanel extends JPanel {
                             PolicyAttachmentKeyDialog pakDlg = new PolicyAttachmentKeyDialog(Gui.getInstance().getFrame(),
                                                                                              "Import Policy: Policy Attachment Key",
                                                                                              true);
-                            PolicyAttachmentKey oldPak = new PolicyAttachmentKey(getSelectedPolicy());
+                            PolicyAttachmentKey oldPak = getSelectedPolicy();
                             if (oldPak != null) {
+                                oldPak = new PolicyAttachmentKey(oldPak); // make copy first
                                 oldPak.setPersistent(true);
                                 oldPak.setBeginsWithMatch(true);
                             }
@@ -237,8 +238,14 @@ class SsgPoliciesPanel extends JPanel {
                                 policyCache.setPolicy(newPak, newPolicy);
                                 updatePolicyPanel();
                             }
+                            log.log(Level.INFO, "Policy import successful");
 
                         } catch (NullPointerException nfe) {
+                            log.log(Level.WARNING, "Error importing policy", nfe);
+                            JOptionPane.showMessageDialog(getRootPane(),
+                              "Unable to import the specified file: " + nfe.getMessage(),
+                              "Unable to read file",
+                              JOptionPane.ERROR_MESSAGE);
                         } catch (IOException e) {
                             log.log(Level.WARNING, "Error importing policy", e);
                             JOptionPane.showMessageDialog(getRootPane(),

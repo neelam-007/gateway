@@ -1,6 +1,7 @@
 package com.l7tech.policy.wsp;
 
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.TooManyChildElementsException;
 import com.l7tech.policy.assertion.Assertion;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -47,6 +48,31 @@ public class WspReader {
     }
 
     /**
+     * Attempt to locate the Policy element.  It may be the case that rootElement already _is_ the
+     * Policy element, or that the rootElement is exp:Export and it contains the Policy element.
+     * This does not actually check the version or namespace of the returned policy element.
+     *
+     * @param rootElement the root element to check
+     * @return a Policy element.  Never null.
+     * @throws InvalidPolicyStreamException if a Policy element cannot be located.
+     */
+    public static Element findPolicyElement(Element rootElement) throws InvalidPolicyStreamException {
+        if ("Policy".equals(rootElement.getLocalName()))
+            return rootElement;
+        try {
+            Element n = XmlUtil.findOnlyOneChildElementByName(rootElement, "http://schemas.xmlsoap.org/ws/2002/12/policy", "Policy");
+            if (n != null)
+                return n;
+            n = XmlUtil.findOnlyOneChildElementByName(rootElement, "http://www.layer7tech.com/ws/policy", "Policy");
+            if (n != null)
+                return n;
+        } catch (TooManyChildElementsException e1) {
+            throw new InvalidPolicyStreamException("More than one Policy element found", e1);
+        }
+        throw new InvalidPolicyStreamException("Unable to locate Policy element");
+    }
+
+    /**
      * Reads an XML-encoded policy document from the given element and
      * returns the corresponding policy tree.
      * @param policyElement an element of type WspConstants.L7_POLICY_NS:WspConstants.POLICY_ELNAME
@@ -55,7 +81,7 @@ public class WspReader {
      * @throws InvalidPolicyStreamException if the stream did not contain a valid policy
      */
     public static Assertion parse(Element policyElement) throws InvalidPolicyStreamException {
-        return parse(policyElement, StrictWspVisitor.INSTANCE);
+        return parse(findPolicyElement(policyElement), StrictWspVisitor.INSTANCE);
     }
 
     static Assertion parse(Element policyElement, WspVisitor visitor) throws InvalidPolicyStreamException {
@@ -88,7 +114,9 @@ public class WspReader {
 
     /**
      * Reads an XML-encoded policy document from the given input stream and
-     * returns the corresponding policy tree.
+     * returns the corresponding policy tree.  Supported formats are wsp:Policy and exp:Export.  For exp:Export,
+     * encoded external entity references are ignored by this parser.
+     *
      * @param wspStream the stream to read
      * @return the policy tree it contained.  A null return means a valid &lt;Policy/&gt; tag was present, but it was empty.
      * @throws IOException if the stream did not contain a valid policy
@@ -100,7 +128,7 @@ public class WspReader {
     static Assertion parse(InputStream wspStream, WspVisitor visitor) throws IOException {
         try {
             Document doc = XmlUtil.parse(wspStream);
-            Element root = doc.getDocumentElement();
+            Element root = findPolicyElement(doc.getDocumentElement());
             if (!WspConstants.POLICY_ELNAME.equals(root.getLocalName()))
                 throw new InvalidPolicyStreamException("Document element is not wsp:Policy");
             String rootNs = root.getNamespaceURI();
