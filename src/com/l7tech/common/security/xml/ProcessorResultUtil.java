@@ -87,18 +87,11 @@ public class ProcessorResultUtil {
             }
 
             foundany = true;
-            boolean found = false;
-            for (int j = 0; j < elementsFoundByProcessor.length; j++) {
-                if (elementsFoundByProcessor[j].asElement() == node) {
-                    // we got the bugger!
-                    logger.finest("An element " + xpath + " was found in this " +
-                            "message, and was properly "+pastTenseOperationName+".");
-                    found = true;
-                    break;
-                }
-            }
 
-            if (!found) {
+            if (nodeIsPresent(node, elementsFoundByProcessor)) {
+                logger.finest("An element " + xpath + " was found in this " +
+                        "message, and was properly "+pastTenseOperationName+".");
+            } else {
                 logger.info("An element " + xpath + " was found in this " +
                         "message, but was neither empty nor properly " + pastTenseOperationName + "; assertion therefore fails.");
                 return new SearchResult(FALSIFIED, true);
@@ -110,6 +103,28 @@ public class ProcessorResultUtil {
         else
             logger.fine("All matching elements were empty; assertion therefore succeeds.");
         return new SearchResult(NO_ERROR, false);
+    }
+
+    /**
+     * Check if a node is present in the list of elements found by the processor.  The node must be a reference
+     * to a node in the exact same document as the members of elementsFoundByProcessor.  A match is only
+     * detected if it is an exact match -- that is, this method will return false even if some parent element
+     * of node is present in the list of elements that were found.
+     *
+     * @param node the node to check
+     * @param elementsFoundByProcessor the list of ParsedElement to see if it is in
+     * @return true if node was found in the list.
+     */
+    public static boolean nodeIsPresent(Node node, final WssProcessor.ParsedElement[] elementsFoundByProcessor) {
+        boolean found = false;
+        for (int j = 0; j < elementsFoundByProcessor.length; j++) {
+            if (elementsFoundByProcessor[j].asElement() == node) {
+                // we got the bugger!
+                found = true;
+                break;
+            }
+        }
+        return found;
     }
 
 

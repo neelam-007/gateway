@@ -139,7 +139,7 @@ public class MessageProcessor {
                             // FALLTHROUGH -- retry with new server certificate
                         } catch (ServerCertificateUntrustedException e) {
                             if (req.getSsg().getTrustedGateway() != null) {
-                                Ssg peerSsg = e.getPeerSsg();
+                                Ssg peerSsg = CurrentRequest.getPeerSsg();
                                 if (peerSsg == req.getSsg())
                                     SsgKeyStoreManager.installSsgServerCertificate(ssg, null);
                                 else if (peerSsg == req.getSsg().getTrustedGateway())

@@ -75,7 +75,7 @@ public class TestIdentityProvider implements IdentityProvider {
     public TestIdentityProvider(IdentityProviderConfig cfg) {
     }
 
-    public void addUser(UserBean user, String username, char[] password) {
+    public static void addUser(UserBean user, String username, char[] password) {
         usernameMap.put(username, new MyUser(user, username, password));
     }
 

@@ -609,7 +609,7 @@ public class SsgKeyStoreManager {
         X509Certificate caCert = getServerCert(ssg);
         if (caCert == null) {
             CurrentRequest.setPeerSsg(ssg);
-            throw new ServerCertificateUntrustedException(ssg); // fault in the SSG cert
+            throw new ServerCertificateUntrustedException(); // fault in the SSG cert
         }
         X509Certificate cert = SslUtils.obtainClientCertificate(ssg,
                                                                 credentials.getUserName(),

@@ -17,8 +17,13 @@ import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.proxy.util.PolicyServiceClient;
+import com.l7tech.proxy.datamodel.Policy;
+import com.l7tech.identity.TestIdentityProvider;
+import com.l7tech.identity.UserBean;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -48,13 +53,16 @@ public class PolicyServiceTest extends TestCase {
         junit.textui.TestRunner.run(suite());
     }
 
-    private void testPolicy(final Assertion policyToTest) throws Exception {
+    private void testPolicy(final Assertion policyToTest, LoginCredentials loginCredentials) throws Exception {
         Document request = PolicyServiceClient.createGetPolicyRequest("123",
                                                                       TestDocuments.getEttkClientCertificate(),
                                                                       TestDocuments.getEttkClientPrivateKey());
+        assertNotNull(request);
         log.info("Request (pretty-printed): " + XmlUtil.nodeToFormattedString(request));
 
         SoapRequest soapReq = new TestSoapRequest(request);
+        if (loginCredentials != null)
+            soapReq.setPrincipalCredentials(loginCredentials);
         SoapResponse soapRes = new TestSoapResponse();
 
         PolicyService ps = new PolicyService(TestDocuments.getDotNetServerPrivateKey(),
@@ -67,19 +75,34 @@ public class PolicyServiceTest extends TestCase {
 
         ps.respondToPolicyDownloadRequest(soapReq, soapRes, policyGetter);
         Document response = soapRes.getDocument();
+        assertNotNull(response);
         log.info("Response (pretty-printed:" + XmlUtil.nodeToFormattedString(response));
+
+        Policy policy = PolicyServiceClient.parseGetPolicyResponse(response, TestDocuments.getDotNetServerCertificate());
+        assertNotNull(policy);
+
+        log.info("Returned policy version: " + policy.getVersion());
+        log.info("Returned policy: " + policy.getAssertion());
     }
 
     public void testSimplePolicyService() throws Exception {
-        testPolicy(new TrueAssertion());
+        testPolicy(new TrueAssertion(), null);
     }
 
     public void testWithIdentities() throws Exception {
+        UserBean francoBean = new UserBean();
+        francoBean.setName("franco");
+        francoBean.setLogin("franco");
+        TestIdentityProvider.addUser(francoBean, "franco", "password".toCharArray());
         AllAssertion root = new AllAssertion();
         root.getChildren().add(new HttpBasic());
         OneOrMoreAssertion or = new OneOrMoreAssertion();
         root.getChildren().add(or);
         or.getChildren().add(new SpecificUser(-2, "franco", "666", "franco"));
-        testPolicy(root);
+
+        LoginCredentials francoCreds = new LoginCredentials("franco", "password".toCharArray(),
+                                                            CredentialFormat.CLEARTEXT,
+                                                            HttpBasic.class);
+        testPolicy(root, francoCreds);
     }
 }
