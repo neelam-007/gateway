@@ -161,6 +161,7 @@ public class ClientProxy {
         }
 
         log.info("ClientProxy started; listening on " + url);
+        log.info("Using cryptography provider: " + JceProvider.getProvider().getName());
 
         return url;
     }
