@@ -264,6 +264,7 @@ public class RoutingAssertionDialog extends JDialog {
         passwordPanel.add(Box.createRigidArea(new Dimension(20, 10)));
 
         identityPasswordField = new JPasswordField();
+        identityPasswordField.setText(assertion.getPassword());
         identityPasswordField.setPreferredSize(new Dimension(50, 20));
         passwordPanel.add(identityPasswordField);
         passwordPanel.add(Box.createGlue());
