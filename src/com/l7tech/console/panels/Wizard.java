@@ -209,12 +209,12 @@ public class Wizard extends JDialog {
      */
     private void initialize() {
         // add stepStateListener to the startPanel
-        startPanel.addChangeListener(stepStateListener);
+       initializePanel(startPanel);
 
         // add stepStateListener to each subsequent panel
         for (Iterator it = new Wizard.Iterator(startPanel); it.hasNext();) {
             WizardStepPanel p = it.next();
-            p.addChangeListener(stepStateListener);
+            initializePanel(p);
         }
         SwingUtilities.invokeLater(
           new Runnable() {
@@ -222,6 +222,14 @@ public class Wizard extends JDialog {
                   selectWizardPanel(null, wizardIterator.current());
               }
           });
+    }
+
+    /**
+     * Initialize a panel
+     */
+    private void initializePanel(WizardStepPanel panel) {
+        panel.addChangeListener(stepStateListener);
+        panel.setOwner(this);
     }
 
     /**

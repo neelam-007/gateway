@@ -16,6 +16,8 @@ import java.util.EventListener;
  * @version 1.0
  */
 public abstract class WizardStepPanel extends JPanel {
+
+    private JDialog owner;
     private EventListenerList listenerList = new WeakEventListenerList();
     private WizardStepPanel nextPanel;
     private Object[] skippedPanels;
@@ -30,6 +32,14 @@ public abstract class WizardStepPanel extends JPanel {
         this.skipped = skipped;
     }
 
+    public JDialog getOwner() {
+        return owner;
+    }
+
+    public void setOwner(JDialog owner) {
+        this.owner = owner;
+    }
+
     public boolean skippedPanelsModified() {
         return skippedPanelsModified;
     }
@@ -37,7 +47,7 @@ public abstract class WizardStepPanel extends JPanel {
     public void resetSkippedPanelsModifiedFlag() {
         skippedPanelsModified = false;
     }
-    
+
     /** Creates new form WizardPanel */
     public WizardStepPanel(WizardStepPanel next) {
         this.nextPanel = next;
