@@ -160,6 +160,39 @@ public class XmlUtil {
     }
 
     /**
+     * Generates a Map of namespace URIs to prefixes.
+     * <p>
+     * URIs that were default namespaces will get a prefix starting with "default".
+     * @param n the node from which to gather namespaces
+     * @return a Map of namespace URIs to prefixes.
+     */
+    public static Map getAncestorNamespaces(Node n) {
+        Node current = n;
+        int dflt = 0;
+        Map namespaces = new HashMap();
+        while (current != null) {
+            if (current instanceof Element) {
+                Element el = (Element)current;
+                NamedNodeMap attributes = el.getAttributes();
+                for ( int i = 0; i < attributes.getLength(); i++ ) {
+                    Attr attr = (Attr)attributes.item(i);
+                    String name = attr.getName();
+                    String uri = attr.getValue();
+                    String prefix = null;
+                    if ("xmlns".equals(name)) {
+                        prefix = "default" + ++dflt;
+                    } else if (name.startsWith("xmlns:")) {
+                        prefix = name.substring(6);
+                    }
+                    if (prefix != null) namespaces.put(uri, prefix);
+                }
+            }
+            current = current.getParentNode();
+        }
+        return namespaces;
+    }
+
+    /**
      * Finds the first child {@link Element} of a parent {@link Element}
      * with the specified name that is in the specified namespace.
      *<p>
