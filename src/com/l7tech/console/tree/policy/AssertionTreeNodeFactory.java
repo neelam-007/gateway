@@ -45,6 +45,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(WssBasic.class, WssBasicAuthAssertionTreeNode.class);
         assertionMap.put(WssDigest.class, WssDigestAuthAssertionTreeNode.class);
         assertionMap.put(RequestWssX509Cert.class, RequestWssX509CertTreeNode.class);
+        assertionMap.put(SecureConversation.class, SecureConversationTreeNode.class);
         assertionMap.put(RequestWssReplayProtection.class, RequestWssReplayProtectionTreeNode.class);
 
         assertionMap.put(HttpClientCert.class, HttpClientCertAssertionTreeNode.class);
