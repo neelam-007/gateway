@@ -9,10 +9,10 @@ package com.l7tech.proxy.processor;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.CertificateDownloader;
 import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.ClientProxy;
-import com.l7tech.proxy.ssl.HostnameMismatchException;
+import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Policy;
@@ -21,14 +21,15 @@ import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.SsgSessionManager;
+import com.l7tech.proxy.datamodel.HttpHeaders;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.PolicyRetryableException;
-import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.datamodel.exceptions.ResponseValidationException;
+import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
+import com.l7tech.proxy.ssl.HostnameMismatchException;
 import com.l7tech.proxy.util.CannedSoapFaults;
-import com.l7tech.common.util.XmlUtil;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpState;
@@ -44,7 +45,6 @@ import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 
 /**
  * The core of the Client Proxy.
@@ -366,12 +366,14 @@ public class MessageProcessor {
                 log.info("Will use new policy for future requests.");
             }
 
+            HttpHeaders headers = new HttpHeaders(postMethod.getResponseHeaders());
+
             Header contentType = postMethod.getResponseHeader("Content-Type");
             log.info("Response Content-Type: " + contentType);
             if (contentType == null || contentType.getValue() == null || contentType.getValue().indexOf("text/xml") < 0)
-                return new SsgResponse(CannedSoapFaults.RESPONSE_NOT_XML);
+                return new SsgResponse(CannedSoapFaults.RESPONSE_NOT_XML, null);
 
-            SsgResponse response = new SsgResponse(postMethod.getResponseBodyAsString());
+            SsgResponse response = new SsgResponse(postMethod.getResponseBodyAsString(), headers);
             log.info("Got response from SSG: " + response);
             if (status == 401) {
                 req.setLastErrorResponse(response);

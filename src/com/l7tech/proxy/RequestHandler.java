@@ -3,6 +3,7 @@ package com.l7tech.proxy;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.proxy.datamodel.CurrentRequest;
+import com.l7tech.proxy.datamodel.HttpHeaders;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgFinder;
@@ -16,14 +17,13 @@ import org.mortbay.http.HttpRequest;
 import org.mortbay.http.HttpResponse;
 import org.mortbay.http.handler.AbstractHttpHandler;
 import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Node;
 import org.w3c.dom.NamedNodeMap;
-import org.xml.sax.SAXException;
-
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Enumeration;
 import java.util.regex.Pattern;
 
 /**
@@ -59,15 +59,31 @@ public class RequestHandler extends AbstractHttpHandler {
      * @param request
      * @return
      */
-    private PendingRequest gatherRequest(HttpRequest request,
+    private PendingRequest gatherRequest(final HttpRequest request,
                                          Document requestEnvelope,
                                          Ssg ssg)
     {
+        HttpHeaders headers = new HttpHeaders(request.getFieldNames(), new HttpHeaders.ValueProvider() {
+            public String getHeaderValue(String headerName) {
+                StringBuffer sb = new StringBuffer();
+                Enumeration values = request.getFieldValues(headerName);
+                boolean isFirst = true;
+                while (values.hasMoreElements()) {
+                    String value = (String) values.nextElement();
+                    if (!isFirst)
+                        sb.append("; ");
+                    sb.append(value);
+                    isFirst = false;
+                }
+                return sb.toString();
+            }
+        });
         PendingRequest pr = new PendingRequest(clientProxy,
                                                requestEnvelope,
                                                ssg,
                                                interceptor,
-                                               getOriginalUrl(request));
+                                               getOriginalUrl(request),
+                                               headers);
         String sa = request.getField("SOAPAction");
         if (sa != null)
             pr.setSoapAction(sa);
@@ -127,14 +143,17 @@ public class RequestHandler extends AbstractHttpHandler {
 
         requirePostMethod(request);
 
-        final Document requestEnvelope;
+        PendingRequest pendingRequest;
         try {
-            requestEnvelope = getRequestEnvelope(request);
+            Document envelope = XmlUtil.parse(request.getInputStream());
+            pendingRequest = gatherRequest(request, envelope, ssg);
+            interceptor.onReceiveMessage(pendingRequest);
         } catch (Exception e) {
+            interceptor.onMessageError(e);
             throw new HttpException(500, "Invalid SOAP envelope: " + e);
         }
 
-        SsgResponse responseString = getServerResponse(request, ssg, requestEnvelope);
+        SsgResponse responseString = getServerResponse(pendingRequest);
 
         transmitResponse(response, responseString);
     }
@@ -152,28 +171,6 @@ public class RequestHandler extends AbstractHttpHandler {
             response.commit();
         } catch (IOException e) {
             interceptor.onReplyError(e);
-            throw e;
-        }
-    }
-
-    /**
-     * Extract the SOAPEnvelope from this request.
-     * @param request   the Request to look at
-     * @return          the SOAPEnvelope it contained
-     */
-    private Document getRequestEnvelope(final HttpRequest request) throws IOException, SAXException {
-        try {
-            Document doc = XmlUtil.parse(request.getInputStream());
-            interceptor.onReceiveMessage(doc);
-            return doc;
-        } catch (RuntimeException e) {
-            interceptor.onMessageError(e);
-            throw e;
-        } catch (IOException e) {
-            interceptor.onMessageError(e);
-            throw e;
-        } catch (SAXException e) {
-            interceptor.onMessageError(e);
             throw e;
         }
     }
@@ -218,21 +215,17 @@ public class RequestHandler extends AbstractHttpHandler {
 
     /**
      * Send a request to an SSG and return its response.
-     * @param ssg               the SSG to bother
-     * @param requestEnvelope   the message to send it
+     * @param request           the request to send it
      * @return                  the response it sends back
      * @throws HttpException    if there was Trouble
      */
-    private SsgResponse getServerResponse(final HttpRequest request,
-                                          final Ssg ssg,
-                                          final Document requestEnvelope)
+    private SsgResponse getServerResponse(PendingRequest request)
             throws HttpException
     {
-        log.info("Processing message to SSG " + ssg);
+        log.info("Processing message to SSG " + request.getSsg());
 
         try {
-            PendingRequest pendingRequest = gatherRequest(request, requestEnvelope, ssg);
-            SsgResponse reply = messageProcessor.processMessage(pendingRequest);
+            SsgResponse reply = messageProcessor.processMessage(request);
             interceptor.onReceiveReply(reply);
             log.info("Returning result");
             return reply;

@@ -1,10 +1,10 @@
 package com.l7tech.proxy;
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgResponse;
-import org.w3c.dom.Document;
 
 /**
  * A RequestInterceptor that ignores all events.
@@ -21,17 +21,17 @@ public class NullRequestInterceptor implements RequestInterceptor {
     }
 
     /**
-     * Fired when a message is received from a client, but before it is parsed.
+     * Fired when a message is received from a client, after it is parsed.
      * @param message
      */
-    public void onReceiveMessage(final Document message) {
+    public void onReceiveMessage(PendingRequest message) {
     }
 
     /**
-     * Fired when a reply is read from the SSG, but before it is parsed.
+     * Fired when a reply is read from the SSG, after it is parsed.
      * @param reply
      */
-    public void onReceiveReply(final SsgResponse reply) {
+    public void onReceiveReply(SsgResponse reply) {
     }
 
     /**

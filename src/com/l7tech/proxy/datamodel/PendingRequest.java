@@ -33,6 +33,7 @@ public class PendingRequest {
     private boolean isPolicyUpdated = false;
     private URL originalUrl = null;
     private Long nonce = null; // nonce.  set on-demand, and only set once
+    private HttpHeaders headers = null;
 
     // Policy settings, filled in by traversing policy tree
     private static class PolicySettings {
@@ -54,9 +55,10 @@ public class PendingRequest {
         setRequestInterceptor(requestInterceptor);
     }
 
-    public PendingRequest(ClientProxy clientProxy, Document soapEnvelope, Ssg ssg, RequestInterceptor ri, URL origUrl) {
+    public PendingRequest(ClientProxy clientProxy, Document soapEnvelope, Ssg ssg, RequestInterceptor ri, URL origUrl, HttpHeaders headers) {
         this(clientProxy, soapEnvelope, ssg, ri);
         this.originalUrl = origUrl;
+        this.headers = headers;
     }
 
     /**
@@ -226,5 +228,9 @@ public class PendingRequest {
 
     public boolean isSslForbidden() {
         return this.policySettings.sslForbidden;
+    }
+
+    public HttpHeaders getHeaders() {
+        return headers;
     }
 }

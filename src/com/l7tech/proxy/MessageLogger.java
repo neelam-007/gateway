@@ -6,13 +6,13 @@
 
 package com.l7tech.proxy;
 
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgResponse;
-import com.l7tech.common.util.XmlUtil;
 import org.apache.log4j.Category;
-import org.w3c.dom.Document;
 
 import java.io.IOException;
 
@@ -32,9 +32,9 @@ public class MessageLogger implements RequestInterceptor {
      * Fired when a message is received from a client, after it is parsed.
      * @param message
      */
-    public void onReceiveMessage(Document message) {
+    public void onReceiveMessage(PendingRequest message) {
         try {
-            log.info("Received client request: " + XmlUtil.documentToString(message));
+            log.info("Received client request: " + XmlUtil.documentToString(message.getSoapEnvelopeDirectly()));
         } catch (IOException e) {
             log.error("Error examining client request", e);
         }

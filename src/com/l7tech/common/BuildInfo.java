@@ -13,13 +13,13 @@ package com.l7tech.common;
  */
 public class BuildInfo {
     // All these fields are replaced by the OFFICIAL-build target of the build script! Don't bother modifying them ever!
-    private static final String BUILD_NUMBER = "HEAD";      // ie, 1014
+    private static final String BUILD_NUMBER = "1020";      // ie, 1014
     private static final String PRODUCT_VERSION = "HEAD";   // ie, 0.98b
-    private static final String PRODUCT_NAME = "Layer7 SecureSpan Suite";
-    private static final String BUILD_DATE = "DATE";  // ie, 20030916
-    private static final String BUILD_TIME = "TIME";  // ie, 153238
-    private static final String BUILD_USER = "BUILD_USER";  // ie, alex
-    private static final String BUILD_MACHINE = "BUILD_MACHINE"; // ie, locutus.l7tech.com
+    private static final String PRODUCT_NAME = "Layer 7 SecureSpan Suite";
+    private static final String BUILD_DATE = "20030919";  // ie, 20030916
+    private static final String BUILD_TIME = "173517";  // ie, 153238
+    private static final String BUILD_USER = "mike";  // ie, alex
+    private static final String BUILD_MACHINE = "data.l7tech.com"; // ie, locutus.l7tech.com
 
     public static String getLongBuildString() {
         StringBuffer string = new StringBuffer();

@@ -23,13 +23,16 @@ public class SsgResponse {
     private static final Category log = Category.getInstance(SsgResponse.class);
     private String responseString = null;
     private Document responseDoc = null;
+    private HttpHeaders headers;
 
-    public SsgResponse(String response) {
+    public SsgResponse(String response, HttpHeaders headers) {
         this.responseString = response;
+        this.headers = headers;
     }
 
-    public SsgResponse(Document response) {
+    public SsgResponse(Document response, HttpHeaders headers) {
         this.responseDoc = response;
+        this.headers = headers;
     }
 
     public String getResponseAsString() throws IOException {
@@ -67,6 +70,10 @@ public class SsgResponse {
         if (responseDoc != null)
             return responseDoc;
         return responseString;
+    }
+
+    public HttpHeaders getResponseHeaders() {
+        return headers;
     }
 
     public String toString() {

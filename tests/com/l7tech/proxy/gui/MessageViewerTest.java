@@ -11,6 +11,7 @@ import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgResponse;
+import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.common.util.XmlUtil;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -43,8 +44,8 @@ public class MessageViewerTest extends TestCase {
         MessageViewer mv = new MessageViewer("Message viewer test");
         mv.show();
         RequestInterceptor ri = mv.getMessageViewerModel();
-        ri.onReceiveMessage(XmlUtil.stringToDocument("<foo><bar/><baz/></foo>"));
-        ri.onReceiveReply(new SsgResponse("<reply>blah blah blah, if this were an actual response, this would be a real SOAPEnvelope document.</reply>"));
+        ri.onReceiveMessage(new PendingRequest(null, XmlUtil.stringToDocument("<foo><bar/><baz/></foo>"), null, null));
+        ri.onReceiveReply(new SsgResponse("<reply>blah blah blah, if this were an actual response, this would be a real SOAPEnvelope document.</reply>", null));
         ri.onPolicyUpdated(new Ssg(22, "whatever"),
                            new PolicyAttachmentKey("http://example.com/schemas/wompfoo",
                                                    "http://example.com/schemas/wompfoo#WompSomeFoos"),

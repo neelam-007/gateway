@@ -1,5 +1,6 @@
 package com.l7tech.proxy.gui;
 
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.console.tree.EntityTreeCellRenderer;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.policy.assertion.Assertion;
@@ -7,7 +8,8 @@ import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgResponse;
-import com.l7tech.common.util.XmlUtil;
+import com.l7tech.proxy.datamodel.PendingRequest;
+import com.l7tech.proxy.datamodel.HttpHeaders;
 import org.apache.log4j.Category;
 import org.w3c.dom.Document;
 
@@ -22,6 +24,7 @@ import java.util.List;
 
 /**
  * Keep track of messages that have come and gone.
+ *
  * User: mike
  * Date: May 22, 2003
  * Time: 5:03:25 PM
@@ -82,6 +85,10 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
         }
     }
 
+    private static String headersToString(Object headers) {
+        return headers == null ? "" : headers.toString();
+    }
+
     /**
      * Represents a message in SOAPEnvelope form.
      * Used for SOAPEnvelope messages to avoid keeping lots of textual copies of
@@ -91,21 +98,40 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
      */
     private static class SavedXmlMessage extends SavedMessage {
         private String str;
+        private String unparsed;
         private Document message;
+        private HttpHeaders headers;
 
-        SavedXmlMessage(final String title, final Document msg) {
+        SavedXmlMessage(final String title, final Document msg, HttpHeaders headers) {
             super(title);
             this.message = msg;
+            this.headers = headers;
+        }
+
+        SavedXmlMessage(final String title, final String unparsed, HttpHeaders headers) {
+            super(title);
+            this.unparsed = unparsed;
+            this.headers = headers;
         }
 
         public String getMessageText() {
             if (str != null)
                 return str;
-            try {
-                str = XmlUtil.documentToString(message);
-            } catch (IOException e) {
-                str = "Unable to read message: " + e;
+            if (message == null) {
+                try {
+                    message = XmlUtil.stringToDocument(unparsed);
+                    unparsed = null;
+                } catch (Exception e) {
+                    log.error(e);
+                    return headersToString(headers) + "\n" + unparsed;
+                }
             }
+            try {
+                str = headersToString(headers) + "\n" + XmlUtil.documentToString(message);
+            } catch (IOException e) {
+                str = headersToString(headers) + "Unable to read message: " + e;
+            }
+            headers = null;
             message = null;
             return str;
         }
@@ -155,10 +181,11 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
     /**
      * Fired when a message is received from a client, after it is parsed.
      * Can be called from any thread.
-     * @param message
      */
-    public void onReceiveMessage(final Document message) {
-        appendMessage(new SavedXmlMessage("From Client", message));
+    public void onReceiveMessage(PendingRequest request) {
+        appendMessage(new SavedXmlMessage("From Client",
+                                          request.getSoapEnvelopeDirectly(),
+                                          request.getHeaders()));
     }
 
     /**
@@ -166,12 +193,12 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
      * Can be called from any thread.
      * @param reply
      */
-    public void onReceiveReply(final SsgResponse reply) {
+    public void onReceiveReply(SsgResponse reply) {
         Object r = reply.getResponseFast();
         if (r instanceof Document)
-            appendMessage(new SavedXmlMessage("From Server", (Document) r));
+            appendMessage(new SavedXmlMessage("From Server", (Document) r, reply.getResponseHeaders()));
         else
-            appendMessage(new SavedTextMessage("From Server", r.toString()));
+            appendMessage(new SavedXmlMessage("From Server", r.toString(), reply.getResponseHeaders()));
     }
 
     /**
