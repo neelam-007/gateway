@@ -8,19 +8,29 @@ package com.l7tech.proxy;
 
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.JdkLoggerConfigurator;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.security.JceProvider;
 
 import java.io.FileInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 /**
  * @author mike
  */
 public class AgentPerfClient {
+
     private static class Logger { void info(String msg) { System.out.println(msg); } }
     private static Logger logger = new Logger();
+
+    private static String postXml;
+    private static Document postDocument;
+    private static SecureSpanBridge ssb;
 
     /**
      * Initialize logging.  Attempts to mkdir ClientProxy.PROXY_CONFIG first, so the log file
@@ -39,17 +49,24 @@ public class AgentPerfClient {
 
     public static void main(String[] args) throws Exception {
         if (args.length < 6)
-            throw new IllegalArgumentException("Usage: AgentPerfClient gatewayHostname username password soapAction postFile iterationCount");
+            throw new IllegalArgumentException("Usage: AgentPerfClient gatewayHostname username password soapAction postFile iterationCount [preparseBoolean]");
         String gateway = args[0];
         String username = args[1];
         char[] password = args[2].toCharArray();
         String soapAction = args[3];
         String postfile = args[4];
         int iterationCount = Integer.parseInt(args[5]);
+        boolean preparse = false;
+        if (args.length > 6)
+            preparse = Boolean.valueOf(args[6]).booleanValue();
 
         initLogging();
 
-        String postXml = new String(HexUtils.slurpStream(new FileInputStream(postfile)));
+        postXml = new String(HexUtils.slurpStream(new FileInputStream(postfile)));
+        if (preparse) {
+            logger.info("Preparsing XML document");
+            postDocument = XmlUtil.stringToDocument(postXml);
+        }
 
         SecureSpanBridgeOptions options = new SecureSpanBridgeOptions(gateway, username, password);
 
@@ -63,11 +80,11 @@ public class AgentPerfClient {
         logger.info("Configuring test Agent to avoid SSL on initial request");
         options.setUseSslByDefault(Boolean.FALSE);
 
-        SecureSpanBridge ssb = SecureSpanBridgeFactory.createSecureSpanBridge(options);
+        ssb = SecureSpanBridgeFactory.createSecureSpanBridge(options);
 
         // Do an untimed initial request
         logger.info("Doing initial request...");
-        SecureSpanBridge.Result result = ssb.send(soapAction, postXml);
+        SecureSpanBridge.Result result = send(soapAction);
         logger.info("Initial result: response code " + result.getHttpStatus());
 
         int[] results = new int[1000];
@@ -76,7 +93,7 @@ public class AgentPerfClient {
         logger.info("Timing " + iterationCount + " requests with concurrency 1...");
         long before = System.currentTimeMillis();
         for (int i = 0; i < iterationCount; ++i) {
-            result = ssb.send(soapAction, postXml);
+            result = send(soapAction);
             results[result.getHttpStatus()]++; // allow IOOB exception for HTTP result code above 999
         }
         long after = System.currentTimeMillis();
@@ -88,5 +105,11 @@ public class AgentPerfClient {
             if (results[i] > 0)
                 logger.info("  " + i + ": " + results[i]);
         }
+    }
+
+    private static SecureSpanBridge.Result send(String soapAction) throws SAXException, SecureSpanBridge.SendException, IOException, SecureSpanBridge.BadCredentialsException, SecureSpanBridge.CertificateAlreadyIssuedException {
+        if (postDocument != null)
+            return ssb.send(soapAction, postDocument);
+        return ssb.send(soapAction, postXml);
     }
 }
