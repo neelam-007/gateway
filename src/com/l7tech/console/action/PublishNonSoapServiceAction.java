@@ -2,8 +2,22 @@ package com.l7tech.console.action;
 
 import com.l7tech.console.panels.PublishNonSoapServiceWizard;
 import com.l7tech.console.MainWindow;
+import com.l7tech.console.tree.ServicesTree;
+import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.TreeNodeFactory;
+import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.event.EntityListener;
+import com.l7tech.console.event.EntityListenerAdapter;
+import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.objectmodel.EntityHeader;
+
+import javax.swing.*;
+import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreePath;
+import javax.swing.tree.DefaultTreeModel;
+import java.util.logging.Level;
 
 /**
  * SSM action to publish a non-soap xml service.
@@ -33,7 +47,39 @@ public class PublishNonSoapServiceAction extends SecureAction {
         wiz.pack();
         wiz.setSize(800, 480);
         Utilities.centerOnScreen(wiz);
+        wiz.addEntityListener(listener);
         wiz.setModal(true);
         wiz.setVisible(true);
     }
+
+    private EntityListener listener = new EntityListenerAdapter() {
+        /**
+         * Fired when an new entity is added.
+         *
+         * @param ev event describing the action
+         */
+        public void entityAdded(final EntityEvent ev) {
+            EntityHeader eh = (EntityHeader)ev.getEntity();
+            JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesTree.NAME);
+            if (tree != null) {
+                AbstractTreeNode root = (AbstractTreeNode)tree.getModel().getRoot();
+                TreeNode[] nodes = root.getPath();
+                TreePath nPath = new TreePath(nodes);
+                if (tree.hasBeenExpanded(nPath)) {
+                    DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                    final AbstractTreeNode sn = TreeNodeFactory.asTreeNode(eh);
+                    model.insertNodeInto(sn, root, root.getInsertPosition(sn));
+
+                    tree.setSelectionPath(new TreePath(sn.getPath()));
+                    SwingUtilities.invokeLater(new Runnable() {
+                        public void run() {
+                            new EditServicePolicyAction((ServiceNode)sn).performAction();
+                        }
+                    });
+                }
+            } else {
+                log.log(Level.WARNING, "Service tree unreachable.");
+            }
+        }
+    };
 }

@@ -437,27 +437,21 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
      *                                  by the wizard are not valid.
      */
     public void readSettings(Object settings) throws IllegalArgumentException {
-        PublishServiceWizard.ServiceAndAssertion
-          collect = (PublishServiceWizard.ServiceAndAssertion)settings;
-        if (isSharedPolicy()) {
-            applySharedPolicySettings(collect);
-        } else {
-            applyIndividualPolicySettings(collect);
+        if (settings instanceof PublishServiceWizard.ServiceAndAssertion) {
+            PublishServiceWizard.ServiceAndAssertion
+              collect = (PublishServiceWizard.ServiceAndAssertion)settings;
+            if (isSharedPolicy()) {
+                applySharedPolicySettings(collect);
+            } else {
+                applyIndividualPolicySettings(collect);
+            }
+        } else if (settings instanceof ArrayList) {
+            populateAssertions((ArrayList)settings);
         }
-
     }
 
-    /**
-     * Provides the wizard with the current data as shared policy
-     * 
-     * @param pa the object representing wizard panel state
-     * @throws IllegalArgumentException if the the data provided
-     *                                  by the wizard are not valid.
-     */
-    private void applySharedPolicySettings(PublishServiceWizard.ServiceAndAssertion pa) {
-        java.util.List allAssertions = new ArrayList();
+    private void populateAssertions(ArrayList allAssertions) {
         java.util.List identityAssertions = new ArrayList();
-        pa.setSharedPolicy(true);
         if (sslCheckBox.isSelected()) {
             allAssertions.add(new SslAssertion());
         }
@@ -486,7 +480,22 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
 
         if (!allAssertions.isEmpty()) {
             allAssertions.add(new OneOrMoreAssertion(identityAssertions));
-            pa.setAssertion(new AllAssertion(allAssertions));
+        }
+    }
+
+    /**
+     * Provides the wizard with the current data as shared policy
+     * 
+     * @param pa the object representing wizard panel state
+     * @throws IllegalArgumentException if the the data provided
+     *                                  by the wizard are not valid.
+     */
+    private void applySharedPolicySettings(PublishServiceWizard.ServiceAndAssertion pa) {
+        java.util.ArrayList assertionList = new ArrayList();
+        populateAssertions(assertionList);
+        pa.setSharedPolicy(true);
+        if (!assertionList.isEmpty()) {
+            pa.setAssertion(new AllAssertion(assertionList));
         } else {
             pa.setAssertion(new AllAssertion());
         }

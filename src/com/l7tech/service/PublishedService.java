@@ -65,6 +65,7 @@ public class PublishedService extends NamedEntityImp {
     }
 
     public String getWsdlUrl() {
+        if (_wsdlUrl == null) _wsdlUrl = ""; // to satisfy the db
         return _wsdlUrl;
     }
 
