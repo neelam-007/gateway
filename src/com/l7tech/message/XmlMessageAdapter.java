@@ -72,7 +72,7 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
             String innerType = (String)contentTypeHeader.params.get(XmlUtil.MULTIPART_TYPE);
             if (innerType.startsWith(XmlUtil.TEXT_XML)) {
                 String firstBoundary = breader.readLine();
-                if (!firstBoundary.equals("--" + multipartBoundary)) throw new IOException("Initial multipart boundary not found");
+                if (!firstBoundary.equals(XmlUtil.MULTIPART_BOUNDARY_PREFIX + multipartBoundary)) throw new IOException("Initial multipart boundary not found");
                 Part part = parseMultipart(breader, 0);
                 if (!part.getHeader(XmlUtil.CONTENT_TYPE).value.equals(innerType)) throw new IOException("Content-Type of first part doesn't match type of Multipart header");
                 return part.content;
@@ -247,7 +247,7 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
         while ((line = breader.readLine()) != null) {
             part = new Part();
             boolean headers = true;
-            while ((line = breader.readLine()) != null) {
+            do {
                 if (headers) {
                     if (line.length() == 0) {
                         headers = false;
@@ -267,7 +267,8 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
                         xml.append("\n");
                     }
                 }
-            }
+            } while ((line = breader.readLine()) != null);
+
             part.content = xml.toString();
             part.setPostion(multipartParts.size());
             multipartParts.put(part.getHeader(XmlUtil.CONTENT_ID).value, part);
