@@ -13,7 +13,6 @@ import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 
-import java.util.Set;
 import java.util.logging.Level;
 
 /**
