@@ -47,31 +47,39 @@ public class GuiCredentialManager implements CredentialManager {
         if (!ssg.promptForUsernameAndPassword())
             return false;
 
-        final PromptState promptState = new PromptState();
+        long now = System.currentTimeMillis();
+        synchronized(this) {
+            // If another instance already updated the credentials while we were waiting, we've done our job
+            if (ssg.credentialsUpdatedTime() > now)
+                return true;
 
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                public void run() {
-                    PasswordAuthentication pw = LogonDialog.logon(Gui.getInstance().getFrame(), ssg.toString());
-                    if (pw == null) {
-                        promptState.credentialsObtained = false;
-                        if (ssg.incrementNumTimesLogonDialogCanceled() > 2) {
-                            ssg.promptForUsernameAndPassword(false);
-                            return;
+            final PromptState promptState = new PromptState();
+
+            try {
+                SwingUtilities.invokeAndWait(new Runnable() {
+                    public void run() {
+                        PasswordAuthentication pw = LogonDialog.logon(Gui.getInstance().getFrame(), ssg.toString());
+                        if (pw == null) {
+                            promptState.credentialsObtained = false;
+                            if (ssg.incrementNumTimesLogonDialogCanceled() > 2) {
+                                ssg.promptForUsernameAndPassword(false);
+                                return;
+                            }
                         }
+                        ssg.setUsername(pw.getUserName());
+                        ssg.password(pw.getPassword()); // TODO: encoding?
+                        ssg.onCredentialsUpdated();
+                        promptState.credentialsObtained = true;
                     }
-                    ssg.setUsername(pw.getUserName());
-                    ssg.password(pw.getPassword()); // TODO: encoding?
-                    promptState.credentialsObtained = true;
-                }
-            });
-        } catch (InterruptedException e) {
-            log.error(e);
-        } catch (InvocationTargetException e) {
-            log.error(e);
-        }
+                });
+            } catch (InterruptedException e) {
+                log.error(e);
+            } catch (InvocationTargetException e) {
+                log.error(e);
+            }
 
-        return promptState.credentialsObtained;
+            return promptState.credentialsObtained;
+        }
     }
 
     /**
@@ -90,16 +98,24 @@ public class GuiCredentialManager implements CredentialManager {
         if (ssg.password() == null)
             return;
 
-        try {
-            SwingUtilities.invokeAndWait(new Runnable() {
-                public void run() {
-                    Gui.getInstance().errorMessage("Invalid username or password for SSG " + ssg);
-                }
-            });
-        } catch (InterruptedException e) {
-            log.error(e);
-        } catch (InvocationTargetException e) {
-            log.error(e);
+        long now = System.currentTimeMillis();
+        synchronized(this) {
+
+            // Avoid spamming the user with reports
+            if (System.currentTimeMillis() > now + 1000)
+                return;
+
+            try {
+                SwingUtilities.invokeAndWait(new Runnable() {
+                    public void run() {
+                        Gui.getInstance().errorMessage("Invalid username or password for SSG " + ssg);
+                    }
+                });
+            } catch (InterruptedException e) {
+                log.error(e);
+            } catch (InvocationTargetException e) {
+                log.error(e);
+            }
         }
     }
 }
