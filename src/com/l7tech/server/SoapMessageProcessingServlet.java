@@ -61,7 +61,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         // TODO: SOAP-with-attachments!
 
         BufferedWriter respWriter = null;
-        OutputStream respStream = null;
         AssertionStatus status = AssertionStatus.UNDEFINED;
         try {
             try {
@@ -122,7 +121,6 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
             // RequestAuditRecord rec = new RequestAuditRecord( "HTTP(s) SOAP Request", status );
             try { if (respWriter != null) respWriter.close(); } catch (Throwable t) {}
-            try { if (respStream != null) respStream.close(); } catch (Throwable t) {}
             try { if (sreq != null) sreq.close(); } catch (Throwable t) {}
             try { if (sresp != null) sresp.close(); } catch (Throwable t) {}
         }
