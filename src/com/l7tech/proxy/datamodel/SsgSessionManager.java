@@ -1,0 +1,135 @@
+/*
+ * Copyright (C) 2003 Layer 7 Technologies Inc.
+ *
+ * $Id$
+ */
+
+package com.l7tech.proxy.datamodel;
+
+import com.l7tech.xmlenc.Session;
+import com.l7tech.proxy.processor.ServerCertificateUntrustedException;
+import com.l7tech.proxy.processor.OperationCanceledException;
+
+import javax.net.ssl.SSLHandshakeException;
+
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.UsernamePasswordCredentials;
+import org.apache.commons.httpclient.HttpMethod;
+import org.apache.commons.httpclient.Header;
+import org.apache.commons.httpclient.methods.GetMethod;
+import org.apache.log4j.Category;
+import org.apache.axis.encoding.Base64;
+
+import java.net.URL;
+import java.net.MalformedURLException;
+import java.io.IOException;
+
+/**
+ * Keep track of open security sessions with SSGs
+ * User: mike
+ * Date: Aug 28, 2003
+ * Time: 1:11:49 PM
+ */
+public class SsgSessionManager {
+    private static final Category log = Category.getInstance(SsgSessionManager.class);
+    private static final String SERVLET_FILE = "/ssg/xmlencsession";
+    private static final String HEADER_KEYREQ = "keyreq";
+    private static final String HEADER_KEYRES = "keyres";
+    private static final String HEADER_SESSION_ID = "sessionid";
+
+    private static class InvalidSessionIdException extends IOException {
+        public InvalidSessionIdException(String s, Throwable cause) {
+            super(s);
+            initCause(cause);
+        }
+    }
+
+    /**
+     * Get a session with the specified Ssg.  If no session currently exists, one will be created.
+     * @param ssg
+     * @return
+     */
+    public static Session getSession(Ssg ssg)
+            throws OperationCanceledException, IOException, MalformedURLException,
+                   ServerCertificateUntrustedException, BadCredentialsException
+    {
+        synchronized (ssg) {
+            Session session = ssg.session();
+            if (session != null)
+                return session;
+
+            session = establishNewSession(ssg);
+            ssg.session(session);
+            return session;
+        }
+    }
+
+    private static String header(HttpMethod method, String name) throws IOException {
+        Header header = method.getResponseHeader(name);
+        if (header == null)
+            throw new IOException("Required HTTP header " + name + " was missing from response");
+        return header.getValue();
+    }
+
+    /** Hack for now, until Sybok has new session servlet deployed.  TODO: remove */
+    private static String header(HttpMethod method, String name, String alternateName) throws IOException {
+        Header header = method.getResponseHeader(name);
+        if (header == null)
+            header = method.getResponseHeader(alternateName);
+        if (header == null)
+            throw new IOException("Required HTTP header " + name + " was missing from response (also checked for alternate name " + alternateName + ")");
+        return header.getValue();
+
+    }
+
+    private static Session establishNewSession(Ssg ssg)
+            throws OperationCanceledException, MalformedURLException, IOException,
+            ServerCertificateUntrustedException, BadCredentialsException
+    {
+        HttpClient client = new HttpClient();
+        if (!ssg.isCredentialsConfigured())
+            Managers.getCredentialManager().getCredentials(ssg);
+
+        client.getState().setAuthenticationPreemptive(true);
+
+        String username = ssg.getUsername();
+        char[] password = ssg.password();
+        client.getState().setCredentials(null, null, new UsernamePasswordCredentials(username, new String(password)));
+        HttpMethod getMethod = new GetMethod(new URL("https",
+                                                     ssg.getSsgAddress(),
+                                                     ssg.getSslPort(),
+                                                     SERVLET_FILE).toString());
+        getMethod.setDoAuthentication(true);
+        try {
+            int status = client.executeMethod(getMethod);
+            if (status == 401) {
+                log.info("Got 401 status establishing session");
+                throw new BadCredentialsException("Got 401 status while establishing session");
+            }
+            log.info("Session establishment completed with status " + status);
+
+            String idstr = header(getMethod, HEADER_SESSION_ID);
+            String b64keyreq = header(getMethod, HEADER_KEYREQ, "key1"); // todo: remove key1 alternate name
+            byte[] keyreq = Base64.decode(b64keyreq);
+            if (keyreq == null)
+                throw new IOException("SSG sent invalid request key in session: base64 keyreq=" + b64keyreq);
+            String b64keyres = header(getMethod, HEADER_KEYRES, "key2"); // todo: remove key2 alternate name
+            byte[] keyres = Base64.decode(b64keyres);
+            if (keyres == null)
+                throw new IOException("SSG sent invalid response key in session: base64 keyres=" + b64keyres);
+
+            return new Session(Long.parseLong(idstr), System.currentTimeMillis(), keyreq, keyres, 0);
+        } catch (SSLHandshakeException e) {
+            if (e.getCause() instanceof ServerCertificateUntrustedException)
+                throw (ServerCertificateUntrustedException) e.getCause();
+            throw e;
+        } catch (NumberFormatException e) {
+            throw new InvalidSessionIdException("SSG sent invalid session ID", e);
+        }
+    }
+
+    public static void invalidateSession(Ssg ssg) {
+        ssg.session(null);
+    }
+
+}
