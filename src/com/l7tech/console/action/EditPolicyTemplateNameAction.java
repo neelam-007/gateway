@@ -51,7 +51,7 @@ public class EditPolicyTemplateNameAction extends BaseAction {
      * @return the action description
      */
     public String getDescription() {
-        return "Edit the policy template name";
+        return "Edit the Policy Template Name";
     }
 
     /**
