@@ -22,10 +22,16 @@ public class RequestId implements Comparable, Serializable {
 
     /**
      * construct a ReqId from it's parsed form
-     * @param arg
+     * @param arg a string representing a RequestId as per RequestId.toString()
      */
     public RequestId(String arg) {
-        // todo
+        int separatorpos = arg.indexOf(PARSE_SEPARATOR);
+        if (separatorpos < 0) throw new IllegalArgumentException("the string " + arg +
+                                                                 " does not contain a RequestId");
+        String genpartstr = arg.substring(0, separatorpos);
+        String seqpartstr = arg.substring(separatorpos+1);
+        _generation = Long.parseLong(genpartstr, 16);
+        _sequence = Long.parseLong(seqpartstr, 16);
     }
 
     public long getGeneration() {
