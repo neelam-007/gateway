@@ -7,6 +7,7 @@
 package com.l7tech.common.gui.widgets;
 
 import javax.swing.JFrame;
+import java.awt.Color;
 
 /**
  * @author alex
@@ -17,7 +18,9 @@ public class TestSquiggly extends JFrame {
         super( "Test squiggly" );
         setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
         SquigglyTextField text = new SquigglyTextField(80);
-        text.setSquiggle(5, SquigglyTextField.ALL);
+        text.setRange(5, SquigglyTextField.ALL);
+        text.setColor( Color.BLUE );
+        text.setStraight();
         getContentPane().add(text);
         pack();
         show();
