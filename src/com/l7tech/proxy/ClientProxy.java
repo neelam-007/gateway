@@ -100,6 +100,16 @@ public class ClientProxy {
         isInitialized = true;
     }
 
+    /**
+     * Establish or reestablish the global SSL state.  Must be called after any change to client
+     * or server certificates used during any SSL handshake, otherwise the implementation may cache
+     * undesirable information.  (The cache is seperate from the session cache, too, so you can't just
+     * flush the sessions to fix it.)
+     *
+     * @throws NoSuchAlgorithmException
+     * @throws NoSuchProviderException
+     * @throws KeyManagementException
+     */
     public synchronized void initializeSsl()
             throws NoSuchAlgorithmException, NoSuchProviderException, KeyManagementException
     {
