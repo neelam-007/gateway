@@ -1,6 +1,8 @@
 package com.l7tech.identity.ldap;
 
-import com.l7tech.identity.*;
+import com.l7tech.identity.GroupManager;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
 
 /**
@@ -22,6 +24,10 @@ public class LdapGroupManagerServer extends AbstractLdapGroupManagerServer imple
         return member;
     }
 
+    protected String doGetGroupMembershipFilter( LdapUser user ) {
+        return "(" + _constants.groupMemberAttribute() + "=" + user.getCn() + ")";
+    }
+
     protected AbstractLdapConstants getConstants() {
         return _constants;
     }
@@ -29,6 +35,7 @@ public class LdapGroupManagerServer extends AbstractLdapGroupManagerServer imple
     protected User getUserFromGroupMember(String member) throws FindException {
         return getUserManager().findByLogin( member );
     }
+
 
     protected LdapConstants _constants = new LdapConstants();
 }
