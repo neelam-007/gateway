@@ -456,7 +456,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     }
 
     /**
-
      * @return the policy xml that was validated
      */
     private String fullValidate() {
@@ -481,6 +480,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             log.log(Level.WARNING, "Problem running server side validation", e);
         }
         displayPolicyValidateResult(pruneDuplicates(result));
+        ((DefaultTreeModel)policyTree.getModel()).nodeChanged(rootAssertion);
         return policyXml;
     }
 
