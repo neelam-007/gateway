@@ -95,6 +95,151 @@ public class SoapMsgSignerTest extends TestCase {
         System.out.println( bar.getCertificate() );
     }
 
+    public void testValidateElements_Sign() throws Exception {
+        Document testDoc = getCleartextDocument();
+        signAccountId( testDoc );
+        checkSignatureOnElement( testDoc, "accountid" );
+    }
+
+    public void testValidateElements_SignSign() throws Exception {
+        Document testDoc = getCleartextDocument();
+        signAccountId( testDoc );
+        signElement( testDoc, "price",  false, 2, 1 );
+        checkSignatureOnElement( testDoc, "accountid" );
+        checkSignatureOnElement( testDoc, "price" );
+    }
+
+    public void testValidateElements_SignSignSign() throws Exception {
+        Document testDoc = getCleartextDocument();
+        signAccountId( testDoc );
+        signElement( testDoc, "price",  false, 2, 1 );
+        signElement( testDoc, "amount", false, 3, 2 );
+        checkSignatureOnElement( testDoc, "accountid" );
+        checkSignatureOnElement( testDoc, "price" );
+        checkSignatureOnElement( testDoc, "amount" );
+    }
+
+    public void testValidateElements_Crypt() throws Exception {
+        Document testDoc = getCleartextDocument();
+        signElement( testDoc, "accountid", true, 1, 1 );
+        checkSignatureOnElement( testDoc, "accountid" );
+    }
+
+    public void testValidateElements_CryptCrypt() throws Exception {
+        Document testDoc = getCleartextDocument();
+        signElement( testDoc, "accountid", true, 1, 1 );
+        signElement( testDoc, "price",     true, 2, 2 );
+        checkSignatureOnElement( testDoc, "accountid" );
+        checkSignatureOnElement( testDoc, "price" );
+    }
+
+    public void testValidateElements_CryptCryptCrypt() throws Exception {
+        Document testDoc = getCleartextDocument();
+        signElement( testDoc, "accountid", true, 1, 1 );
+        signElement( testDoc, "price",     true, 2, 2 );
+        signElement( testDoc, "amount",    true, 3, 3 );
+        checkSignatureOnElement( testDoc, "accountid" );
+        checkSignatureOnElement( testDoc, "price" );
+        checkSignatureOnElement( testDoc, "amount" );
+    }
+
+    public void testValidateElements_SignCrypt() throws Exception {
+        Document testDoc = getCleartextDocument();
+        signAccountId( testDoc );
+        signAndEncryptPrice( testDoc );
+        checkSignatureOnElement( testDoc, "accountid" );
+        checkSignatureOnElement( testDoc, "price" );
+    }
+
+    public void testValidateElements_SignCryptCrypt() throws Exception {
+        Document testDoc = getCleartextDocument();
+        signAccountId( testDoc );
+        signAndEncryptPrice( testDoc );
+        signAndEncryptAmount( testDoc );
+        checkSignatureOnElement( testDoc, "accountid" );
+        checkSignatureOnElement( testDoc, "price" );
+        checkSignatureOnElement( testDoc, "amount" );
+    }
+
+    public void testValidateElements_SignCryptSign() throws Exception {
+        Document testDoc = getCleartextDocument();
+        signAccountId( testDoc );
+        signAndEncryptPrice( testDoc );
+        signElement( testDoc, "amount",    false, 3, 2 );
+        checkSignatureOnElement( testDoc, "accountid" );
+        checkSignatureOnElement( testDoc, "price" );
+        checkSignatureOnElement( testDoc, "amount" );
+    }
+
+    public void testValidateElements_SignSignCrypt() throws Exception {
+        Document testDoc = getCleartextDocument();
+        signElement( testDoc, "accountid", false, 1, 0 );
+        signElement( testDoc, "price",     false, 2, 0 );
+        signElement( testDoc, "amount",    true, 3, 1 );
+        checkSignatureOnElement( testDoc, "accountid" );
+        checkSignatureOnElement( testDoc, "price" );
+        checkSignatureOnElement( testDoc, "amount" );
+    }
+
+    public void testValidateElements_CryptSign() throws Exception {
+        Document testDoc = getCleartextDocument();
+        signElement( testDoc, "accountid", true, 1, 1 );
+        signElement( testDoc, "price",     false, 2, 2 );
+        checkSignatureOnElement( testDoc, "accountid" );
+        checkSignatureOnElement( testDoc, "price" );
+    }
+
+    public void testValidateElements_CryptSignCrypt() throws Exception {
+        Document testDoc = getCleartextDocument();
+        signElement( testDoc, "accountid", true, 1, 1 );
+        signElement( testDoc, "price",     false, 2, 0 );
+        signElement( testDoc, "amount",    true, 3, 2 );
+        checkSignatureOnElement( testDoc, "accountid" );
+        checkSignatureOnElement( testDoc, "price" );
+        checkSignatureOnElement( testDoc, "amount" );
+    }
+
+    public void testValidateElements_CryptSignCryptSign() throws Exception {
+        Document testDoc = getCleartextDocument();
+        signElement( testDoc, "accountid", true, 1, 1 );
+        signElement( testDoc, "price",     false, 2, 0 );
+        signElement( testDoc, "amount",    true, 3, 2 );
+        signElement( testDoc, "productid", false, 4, 0 );
+        checkSignatureOnElement( testDoc, "accountid" );
+        checkSignatureOnElement( testDoc, "price" );
+        checkSignatureOnElement( testDoc, "amount" );
+        checkSignatureOnElement( testDoc, "productid" );
+    }
+
+    public void testValidateElements_CryptSignCryptCrypt() throws Exception {
+        Document testDoc = getCleartextDocument();
+        signElement( testDoc, "accountid", true, 1, 1 );
+        signElement( testDoc, "price",     false, 2, 0 );
+        signElement( testDoc, "amount",    true, 3, 2 );
+        signElement( testDoc, "productid", true, 4, 3 );
+        checkSignatureOnElement( testDoc, "accountid" );
+        checkSignatureOnElement( testDoc, "price" );
+        checkSignatureOnElement( testDoc, "amount" );
+        checkSignatureOnElement( testDoc, "productid" );
+    }
+
+    public void testValidateElements_CryptSignSignCrypt() throws Exception {
+        Document testDoc = getCleartextDocument();
+        signElement( testDoc, "accountid", true, 1, 1 );
+        signElement( testDoc, "price",     false, 2, 0 );
+        signElement( testDoc, "amount",    false, 3, 0 );
+        signElement( testDoc, "productid", true, 4, 2 );
+        checkSignatureOnElement( testDoc, "accountid" );
+        checkSignatureOnElement( testDoc, "price" );
+        checkSignatureOnElement( testDoc, "amount" );
+        checkSignatureOnElement( testDoc, "productid" );
+    }
+
+    private void checkSignatureOnElement( Document d, String elementName ) throws Exception {
+        Element accountIdElement = (Element) d.getElementsByTagName( elementName ).item(0);
+        SoapMsgSigner.validateSignature( d, accountIdElement );
+    }
+
     private ElementSecurity[] getElementSecurity() {
         Map nm = new HashMap();
         nm.put( "soapenv", SOAPConstants.URI_NS_SOAP_ENVELOPE );
@@ -149,20 +294,22 @@ public class SoapMsgSignerTest extends TestCase {
     }
 
     private void signAccountId( Document d ) throws Exception {
-        Element accountIdElement = (Element) d.getElementsByTagName( "accountid" ).item(0);
-        SoapMsgSigner.signElement( d, accountIdElement, "signref1", getClientCertPrivateKey(), getClientCertificate() );
+        signElement( d, "accountid", false, 1, 0 );
     }
 
     private void signAndEncryptPrice( Document d ) throws Exception {
-        Element priceElement = (Element)d.getElementsByTagName( "price" ).item(0);
-        XmlMangler.encryptXml( priceElement, getKeyReq().getEncoded(), getSessionId(), "encref1" );
-        SoapMsgSigner.signElement( d, priceElement, "signref2", getClientCertPrivateKey(), getClientCertificate() );
+        signElement( d, "price", true, 2, 1 );
     }
 
     private void signAndEncryptAmount( Document d ) throws Exception {
-        Element amountElement = (Element)d.getElementsByTagName( "amount" ).item(0);
-        XmlMangler.encryptXml( amountElement, getKeyReq().getEncoded(), getSessionId(), "encref2" );
-        SoapMsgSigner.signElement( d, amountElement, "signref3", getClientCertPrivateKey(), getClientCertificate() );
+        signElement( d, "amount", true, 3, 2 );
+    }
+
+    private void signElement( Document d, String elementName, boolean encrypt, int signref, int encref ) throws Exception {
+        Element priceElement = (Element)d.getElementsByTagName( elementName ).item(0);
+        if (encrypt)
+            XmlMangler.encryptXml( priceElement, getKeyReq().getEncoded(), getSessionId(), "encref" + encref );
+        SoapMsgSigner.signElement( d, priceElement, "signref" + signref, getClientCertPrivateKey(), getClientCertificate() );
     }
 
     private Document getCleartextDocument() throws Exception {
@@ -173,11 +320,16 @@ public class SoapMsgSignerTest extends TestCase {
         return TestDocuments.getTestDocument( TestDocuments.PLACEORDER_WITH_MAJESTY );
     }
 
+    private RSAPublicKey clientCertPublicKey = null;
     private RSAPublicKey getClientCertPublicKey() throws Exception {
-        return (RSAPublicKey)getClientCertificate().getPublicKey();
+        if (clientCertPublicKey != null) return clientCertPublicKey;
+        return clientCertPublicKey = (RSAPublicKey)getClientCertificate().getPublicKey();
     }
 
+    private RSAPrivateKey clientCertPrivateKey = null;
     private RSAPrivateKey getClientCertPrivateKey() throws Exception {
+        if (clientCertPrivateKey != null)
+            return clientCertPrivateKey;
         final RSAPublicKey pubkey = getClientCertPublicKey();
         final BigInteger exp = getClientPrivateExponent();
         RSAPrivateKey privkey = new RSAPrivateKey() {
@@ -202,10 +354,13 @@ public class SoapMsgSignerTest extends TestCase {
             }
         };
 
-        return privkey;
+        return clientCertPrivateKey = privkey;
     }
 
+    private X509Certificate clientCertificate = null;
     private X509Certificate getClientCertificate() throws Exception {
+        if (clientCertificate != null)
+            return clientCertificate;
         Document d = getSignedDocument();
 
         // Find KeyInfo bodyElement, and extract certificate from this
@@ -225,30 +380,42 @@ public class SoapMsgSignerTest extends TestCase {
 
         X509Certificate cert = certs[0];
 
-        return cert;
+        return clientCertificate = cert;
     }
 
+    private Properties keyProperties = null;
     private Properties getKeyProperties() throws Exception {
+        if (keyProperties != null)
+            return keyProperties;
         Properties p = new Properties();
         p.load(TestDocuments.getInputStream(TestDocuments.PLACEORDER_KEYS));
-        return p;
+        return keyProperties = p;
     }
 
+    private BigInteger clientPrivateExponent = null;
     private BigInteger getClientPrivateExponent() throws Exception {
+        if (clientPrivateExponent != null)
+            return clientPrivateExponent;
         String keyHex = getKeyProperties().getProperty("privateExponent");
-        return new BigInteger(keyHex, 16);
+        return clientPrivateExponent = new BigInteger(keyHex, 16);
     }
 
+    private AesKey keyReq = null;
     private AesKey getKeyReq() throws Exception {
-        return getKey("keyReq");
+        if (keyReq != null) return keyReq;
+        return keyReq = getKey("keyReq");
     }
 
+    private AesKey keyRes = null;
     private AesKey getKeyRes() throws Exception {
-        return getKey("keyRes");
+        if (keyRes != null) return keyRes;
+        return keyRes = getKey("keyRes");
     }
 
+    private String sessionId = null;
     private String getSessionId() throws Exception {
-        return getKeyProperties().getProperty("sessionId");
+        if (sessionId != null) return sessionId;
+        return sessionId = getKeyProperties().getProperty("sessionId");
     }
 
     private AesKey getKey(String keyName) throws Exception {
