@@ -138,6 +138,6 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
 
     // saml (model as a different bean when serializer supports it)
     protected boolean attachSamlAssertion;
-    protected int samlAssertionExpiry;
+    protected int samlAssertionExpiry = 5;
     protected boolean groupMembershipStatement;
 }
