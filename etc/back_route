@@ -20,6 +20,8 @@ start() {
 	$route add -net 224.0.0.0 netmask 240.0.0.0 dev eth0
 }
 stop() {
+	$route del -net $BACK_NET netmask $NET_MASK gw $BACK_ROUTER
+	$route del -net 224.0.0.0 netmask 240.0.0.0 dev eth0
 }
 
 # See how we were called.
