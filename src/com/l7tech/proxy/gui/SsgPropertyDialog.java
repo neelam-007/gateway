@@ -4,12 +4,7 @@ import com.l7tech.proxy.datamodel.Ssg;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.lang.reflect.Method;
 
 /**
  * Panel for editing properties of an SSG object.
@@ -27,7 +22,7 @@ public class SsgPropertyDialog extends PropertyDialog {
     private JTextField fieldLocalEndpoint;
     private JPanel generalPane;
 
-    /** Create an SsgPropertyDialog ready to edit a new Ssg instance. */
+    /** Create an SsgPropertyDialog ready to edit an Ssg instance. */
     private SsgPropertyDialog(Ssg ssg) {
         super("SSG Properties");
         tabbedPane.add("General", getGeneralPane());
@@ -39,9 +34,8 @@ public class SsgPropertyDialog extends PropertyDialog {
      * Attempt to build an "edit properties" dialog box for the given Ssg.
      * @param ssg The ssg whose properties we intend to edit
      * @return The property dialog that will edit said properties.  Call show() on it to run it.
-     * @throws ClassNotFoundException if no proerty dialog could be found for the given object.
      */
-    public static PropertyDialog getPropertyDialogForObject(Ssg ssg) throws ClassNotFoundException {
+    public static PropertyDialog getPropertyDialogForObject(Ssg ssg) {
         return new SsgPropertyDialog(ssg);
     }
 
