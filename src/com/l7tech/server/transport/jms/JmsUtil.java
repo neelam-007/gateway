@@ -13,6 +13,7 @@ import javax.jms.*;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+import javax.naming.Reference;
 import java.util.Properties;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -83,7 +84,17 @@ public class JmsUtil {
             }
 
             _logger.finer( "Finding JMS connection factory" );
-            connFactory = (ConnectionFactory)jndiContext.lookup( cfUrl );
+
+            Object o = jndiContext.lookup( cfUrl );
+            if ( o instanceof Reference ) {
+                String msg = "The ConnectionFactory lookup returned a reference to the class\n"
+                             + ((Reference)o).getClassName() + ",  which cannot be loaded on the Gateway.\n" 
+                             + "Most likely the Gateway has not yet been configured for this JMS provider.";
+                _logger.warning( msg );
+                throw new JmsConfigException(msg);
+            }
+
+            connFactory = (ConnectionFactory)o;
             if ( username != null && password != null ) {
                 if ( connFactory instanceof QueueConnectionFactory ) {
                     conn = ((QueueConnectionFactory)connFactory).createQueueConnection(username, password);
@@ -115,6 +126,9 @@ public class JmsUtil {
             jndiContext = null;
 
             return result;
+        } catch ( RuntimeException rte ) {
+            _logger.log( Level.WARNING, "Caught RuntimeException while attempting to connect to JMS provider" );
+            throw new JmsConfigException(rte.toString());
         } finally {
             try { if ( sess != null ) sess.close(); } catch (Throwable t) { logit(t); }
             try { if ( conn != null ) conn.close(); } catch (Throwable t) { logit(t); }
