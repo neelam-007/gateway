@@ -43,6 +43,10 @@ public class AssertionError {
         _message = message;
     }
 
+    public String toString() {
+        return "<" + super.toString() + ": " + getNumeric() + "=" + getMessage() + ">";
+    }
+
     protected final int _numeric;
     protected final String _message;
 
