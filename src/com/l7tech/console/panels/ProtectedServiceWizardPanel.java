@@ -5,7 +5,6 @@ import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.service.PublishedService;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.util.FontUtil;
 import com.l7tech.common.gui.widgets.ContextMenuTextField;
 
 import javax.swing.*;
@@ -17,6 +16,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.MalformedURLException;
+import java.net.URL;
 
 
 /**
@@ -156,7 +156,9 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
         PublishServiceWizard.ServiceAndAssertion
           collect = (PublishServiceWizard.ServiceAndAssertion)settings;
         if (isAnonymous()) {
-            collect.setRoutingAssertion(new HttpRoutingAssertion(getServiceUrlTextField().getText()));
+            String url = getValidRoutingURL();
+            if (url == null) collect.setRoutingAssertion(new HttpRoutingAssertion());
+            else collect.setRoutingAssertion(new HttpRoutingAssertion(url));
             return;
         }
 
@@ -166,6 +168,28 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
             getIdentityTextField().getText(),
             new String(getCredentials()), getRealmTextField().getText());
         collect.setRoutingAssertion(ra);
+    }
+
+    private String getValidRoutingURL() {
+        String res = getServiceUrlTextField().getText();
+        boolean ok = true;
+        try {
+            new URL(res);
+        } catch (MalformedURLException e) {
+            ok = false;
+        }
+        while (!ok) {
+            res = JOptionPane.showInputDialog("The url " + res + " is not valid.\nPlease provide valid routing url.");
+            ok = true;
+            if (res != null && res.length() > 0)
+                try {
+                    new URL(res);
+                    getServiceUrlTextField().setText(res);
+                } catch (MalformedURLException e) {
+                    ok = false;
+                }
+        }
+        return res;
     }
 
     /**
