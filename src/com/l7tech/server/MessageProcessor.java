@@ -24,6 +24,7 @@ import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
+import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;
 import org.w3c.dom.Document;
@@ -73,8 +74,10 @@ public class MessageProcessor {
             }
             WssProcessor.ProcessorResult wssOutput = null;
             try {
-                // TODO ws-sc
-                wssOutput = trogdor.undecorateMessage(req.getDocument(), serverSSLcert, sslPrivateKey, null);
+                wssOutput = trogdor.undecorateMessage(req.getDocument(),
+                                                      serverSSLcert,
+                                                      sslPrivateKey,
+                                                      SecureConversationContextManager.getInstance());
             } catch (WssProcessor.ProcessorException e) {
                 logger.log(Level.SEVERE, "Error in WSS processing of request", e);
                 return AssertionStatus.SERVER_ERROR;
