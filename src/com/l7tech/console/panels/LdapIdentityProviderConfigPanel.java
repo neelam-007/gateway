@@ -73,6 +73,47 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         return providerNameTextField;
     }
 
+    /** enable when we support multiple url configuration
+    private JComponent getLdapHostList() {
+        if (ldapUrlList != null) return ldapUrlList;
+        DefaultComboBoxModel model = new DefaultComboBoxModel();
+        ldapUrlList = new JList(model);
+        JScrollPane panel = new JScrollPane(ldapUrlList);
+        panel.setMinimumSize(new Dimension(217, 40));
+        return panel;
+    }
+
+    private JButton getAddButton() {
+        if (addButt != null) return addButt;
+        addButt = new JButton("Add");
+        addButt.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                String newUrl = JOptionPane.showInputDialog("Enter new ldap URL");
+                DefaultComboBoxModel model = (DefaultComboBoxModel)ldapUrlList.getModel();
+                if (newUrl != null) {
+                    if (model.getIndexOf(newUrl) < 0) {
+                        model.addElement(newUrl);
+                    }
+                }
+            }
+        });
+        return addButt;
+    }
+
+    private JButton getRemoveButton() {
+        if (removeButt != null) return removeButt;
+        removeButt = new JButton("Remove");
+        removeButt.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                int selected = ldapUrlList.getSelectedIndex();
+                if (selected > -1) {
+                    ((DefaultComboBoxModel)ldapUrlList.getModel()).removeElementAt(selected);
+                }
+            }
+        });
+        return removeButt;
+    }*/
+
     private JTextField getLdapHostTextField() {
         if (ldapHostTextField != null) return ldapHostTextField;
 
@@ -224,7 +265,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.weightx = 0.0;
         constraints.gridwidth = 1;
         constraints.fill = GridBagConstraints.NONE;
-        constraints.anchor = GridBagConstraints.WEST;
+        constraints.anchor = GridBagConstraints.NORTHWEST;
         constraints.insets = new Insets(12, 12, 0, 0);
         configPanel.add(ldapHostLabel, constraints);
 
@@ -238,6 +279,41 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
         constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(12, 7, 0, 11);
         configPanel.add(getLdapHostTextField(), constraints);
+
+        /*// ldap host text field
+        constraints = new GridBagConstraints();
+        constraints.gridx = 1;
+        constraints.gridy = rowIndex;
+        constraints.weightx = 0.0;
+        constraints.gridwidth = 1;
+        constraints.fill = GridBagConstraints.NONE;
+        constraints.anchor = GridBagConstraints.WEST;
+        constraints.insets = new Insets(12, 7, 0, 11);
+        configPanel.add(getLdapHostList(), constraints);
+
+        // add button
+        constraints = new GridBagConstraints();
+        constraints.gridx = 2;
+        constraints.gridy = rowIndex;
+        constraints.weightx = 0.0;
+        constraints.gridwidth = 1;
+        constraints.fill = GridBagConstraints.NONE;
+        constraints.anchor = GridBagConstraints.SOUTHWEST;
+        constraints.insets = new Insets(12, 7, 0, 0);
+        configPanel.add(getAddButton(), constraints);
+
+        // remove button
+        constraints = new GridBagConstraints();
+        constraints.gridx = 3;
+        constraints.gridy = rowIndex;
+        constraints.weightx = 0.0;
+        constraints.gridwidth = 1;
+        constraints.fill = GridBagConstraints.NONE;
+        constraints.anchor = GridBagConstraints.SOUTHWEST;
+        constraints.insets = new Insets(12, 7, 0, 0);
+        configPanel.add(getRemoveButton(), constraints);
+
+        rowIndex++;*/
 
         // search base label
         JLabel ldapSearchBaseLabel = new JLabel();
@@ -409,8 +485,8 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
     private void updateControlButtonState() {
         if (getProviderNameTextField().getText().length() > 0 &&
                 getLdapHostTextField().getText().length() > 0 &&
+                //ldapUrlList.getModel().getSize() > 0 &&
                 getLdapSearchBaseTextField().getText().length() > 0) {
-
             // can advance to next panel only when the above three fields are not empty
             advanceAllowed = true;
             finishAllowed = true;
@@ -439,6 +515,8 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                     getLdapBindDNTextField().setText(iProviderConfig.getBindDN());
                     getLdapSearchBaseTextField().setText(iProviderConfig.getSearchBase());
                     getLdapHostTextField().setText(iProviderConfig.getLdapUrl());
+                    // todo, add all urls to list
+                    // ((DefaultComboBoxModel)ldapUrlList.getModel()).addElement(iProviderConfig.getLdapUrl());
                 }
                 for (int i = providerTypesCombo.getModel().getSize() - 1; i >= 0; i--) {
                     Object toto = providerTypesCombo.getModel().getElementAt(i);
@@ -483,6 +561,9 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
 
                 ((LdapIdentityProviderConfig) settings).setTemplateName(ldapType.getTemplateName());
                 ((LdapIdentityProviderConfig) settings).setLdapUrl(getLdapHostTextField().getText());
+                // todo, store all ldap url from list
+                //((LdapIdentityProviderConfig) settings).setLdapUrl(((DefaultComboBoxModel)ldapUrlList.getModel()).
+                //                                            getElementAt(0).toString());
                 ((LdapIdentityProviderConfig) settings).setName(getProviderNameTextField().getText());
                 ((LdapIdentityProviderConfig) settings).setSearchBase(getLdapSearchBaseTextField().getText());
                 ((LdapIdentityProviderConfig) settings).setBindDN(getLdapBindDNTextField().getText());
@@ -564,5 +645,8 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
     private boolean advanceAllowed = false;
     private JPanel configPanel = null;
     private JPanel typePanel = null;
-
+    /* re-enable to support multi url support
+    private JList ldapUrlList = null;
+    private JButton addButt;
+    private JButton removeButt;*/
 }
