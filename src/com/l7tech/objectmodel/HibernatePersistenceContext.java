@@ -7,9 +7,13 @@
 package com.l7tech.objectmodel;
 
 import cirrus.hibernate.Session;
+import cirrus.hibernate.HibernateException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.sql.SQLException;
+
+import org.apache.log4j.Category;
 
 /**
  * @author alex
@@ -36,12 +40,36 @@ public class HibernatePersistenceContext extends PersistenceContext {
             throw new TransactionException( e.toString(), e );
         } finally {
             try {
-                if ( _session != null ) _session.close();
-                _session = null;
+                //if ( _session != null ) _session.close();
+                //_session = null;
                 _htxn = null;
             } catch ( Exception e ) {
                 throw new TransactionException( e.toString(), e );
             }
+        }
+    }
+
+    public void finalize() {
+        try {
+            close();
+        } catch ( ObjectModelException ome ) {
+            _log.error(  "in finalize()", ome );
+        }
+    }
+
+    public void close() throws ObjectModelException {
+        try {
+            if ( _htxn != null ) {
+                _htxn.rollback();
+                _htxn = null;
+            }
+            if ( _session != null ) _session.close();
+        } catch ( HibernateException he ) {
+            _log.error( he );
+            throw new ObjectModelException( he.getMessage(), he );
+        } catch ( SQLException se ) {
+            _log.error( se );
+            throw new ObjectModelException( se.getMessage(), se );
         }
     }
 
@@ -62,8 +90,8 @@ public class HibernatePersistenceContext extends PersistenceContext {
             throw new TransactionException( e.toString(), e );
         } finally {
             try {
-                if ( _session != null ) _session.close();
-                _session = null;
+                //if ( _session != null ) _session.close();
+                //_session = null;
                 _htxn = null;
             } catch ( Exception e ) {
                 throw new TransactionException( e.toString(), e );
@@ -71,6 +99,7 @@ public class HibernatePersistenceContext extends PersistenceContext {
         }
     }
 
+    protected Category _log = Category.getInstance( getClass() );
     protected HibernatePersistenceManager _manager;
     protected Session _session;
     protected DataSource _dataSource;
