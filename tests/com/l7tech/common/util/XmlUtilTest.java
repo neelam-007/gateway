@@ -76,7 +76,7 @@ public class XmlUtilTest extends TestCase {
                                                               SoapUtil.HEADER_EL_NAME );
         assertNotNull(header);
 
-        Element security = XmlUtil.findOnlyOneChildElementByName( header, SoapUtil.SECURITY_NAMESPACE, SoapUtil.SECURITY_EL_NAME );
+        Element security = XmlUtil.findOnlyOneChildElementByName( header, SoapUtil.SECURITY_URIS_ARRAY, SoapUtil.SECURITY_EL_NAME );
         assertNotNull(security);
 
         try {
@@ -154,8 +154,8 @@ public class XmlUtilTest extends TestCase {
         Element sec1 = (Element)children.get(0);
         Element sec2 = (Element)children.get(1);
         Element sec3 = (Element)children.get(2);
-        assertTrue(SoapUtil.SECURITY_NAMESPACE.equals(sec1.getNamespaceURI()));
+        assertTrue(SoapUtil.SECURITY_NAMESPACE4.equals(sec1.getNamespaceURI()));
         assertTrue(SoapUtil.SECURITY_NAMESPACE2.equals(sec2.getNamespaceURI()));
-        assertTrue(SoapUtil.SECURITY_NAMESPACE3.equals(sec3.getNamespaceURI()));
+        assertTrue(SoapUtil.SECURITY_NAMESPACE.equals(sec3.getNamespaceURI()));
     }
 }
