@@ -159,7 +159,10 @@ public class MultipleRecipientXmlSecurityTest extends TestCase {
         // ACTOR PROMOTION
         Element alternateSecHeader = SoapUtil.getSecurityElement(doc, alternaterecipient);
         assertTrue("The security header for downstream actor is still present", alternateSecHeader != null);
-        Element currentSecHeader = SoapUtil.getSecurityElement(doc);
+        Element currentSecHeader = SoapUtil.getSecurityElement(doc, SecurityActor.L7ACTOR.getValue());
+        if (currentSecHeader == null) {
+            currentSecHeader = SoapUtil.getSecurityElement(doc);
+        }
         if (currentSecHeader != null) {
             currentSecHeader.getParentNode().removeChild(currentSecHeader);
         }
@@ -207,7 +210,10 @@ public class MultipleRecipientXmlSecurityTest extends TestCase {
         // ACTOR PROMOTION
         Element alternateSecHeader = SoapUtil.getSecurityElement(doc, alternaterecipient);
         assertTrue("The security header for downstream actor is still present", alternateSecHeader != null);
-        Element currentSecHeader = SoapUtil.getSecurityElement(doc);
+        Element currentSecHeader = SoapUtil.getSecurityElement(doc, SecurityActor.L7ACTOR.getValue());
+        if (currentSecHeader == null) {
+            currentSecHeader = SoapUtil.getSecurityElement(doc);
+        }
         if (currentSecHeader != null) {
             currentSecHeader.getParentNode().removeChild(currentSecHeader);
         }

@@ -593,7 +593,7 @@ public class SoapUtil {
         for (Iterator i = allofthem.iterator(); i.hasNext();) {
             Element element = (Element)i.next();
             String localactor = SoapUtil.getActorValue(element);
-            if (localactor != null && actor.equals(actor)) {
+            if (localactor != null && localactor.equals(actor)) {
                 return element;
             }
 
