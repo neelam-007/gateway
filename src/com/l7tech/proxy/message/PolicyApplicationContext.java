@@ -390,7 +390,7 @@ public class PolicyApplicationContext extends ProcessingContext {
       throws OperationCanceledException, GeneralSecurityException, ClientCertificateException,
             KeyStoreCorruptException, PolicyRetryableException, BadCredentialsException,
       IOException {
-        prepareClientCertificate();
+        prepareClientCertificate(); // todo fla, if the ssa can talk ssl to ssg, then a client cert is not necessary
         Ssg ssg = getSsg();
         logger.log(Level.INFO, "Establishing new WS-SecureConversation session with Gateway " + ssg.toString());
         TokenServiceClient.SecureConversationSession s =
