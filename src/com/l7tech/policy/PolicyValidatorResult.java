@@ -109,6 +109,9 @@ public class PolicyValidatorResult {
         private Throwable throwable;
 
         Message(Assertion erroAssertion, String message, Throwable throwable) {
+            if (message == null) {
+                throw new IllegalArgumentException();
+            }
             this.assertion = erroAssertion;
             this.message = message;
             this.throwable = throwable;
@@ -124,6 +127,27 @@ public class PolicyValidatorResult {
 
         public Throwable getThrowable() {
             return throwable;
+        }
+
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof Message)) return false;
+
+            final Message message1 = (Message)o;
+
+            if (assertion != null ? !assertion.equals(message1.assertion) : message1.assertion != null) return false;
+            if (!message.equals(message1.message)) return false;
+            if (throwable != null ? !throwable.equals(message1.throwable) : message1.throwable != null) return false;
+
+            return true;
+        }
+
+        public int hashCode() {
+            int result;
+            result = (assertion != null ? assertion.hashCode() : 0);
+            result = 29 * result + message.hashCode();
+            result = 29 * result + (throwable != null ? throwable.hashCode() : 0);
+            return result;
         }
 
     }
