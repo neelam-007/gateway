@@ -23,17 +23,19 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class SetKeys {
-    private static final String CA_KS = "ca.ks";
-    private static final String CA_CERT = "ca.cer";
-    private static final String CA_ALIAS = "ssgroot";
-    private static final String CA_DN_PREFIX = "cn=root.";
-    private static final int CA_VALIDITY_DAYS = 5 * 365;
+    public static final String PREFIX = "com.l7tech.server.util.SetKeys.";
 
-    private static final String SSL_KS = "ssl.ks";
-    private static final String SSL_CERT = "ssl.cer";
-    private static final String SSL_ALIAS = "tomcat";
-    private static final String SSL_DN_PREFIX = "cn=";
-    private static final int SSL_VALIDITY_DAYS = 730;
+    public static final String CA_KS = System.getProperty(PREFIX + "CA_KS", "ca.ks");
+    public static final String CA_CERT = System.getProperty(PREFIX + "CA_CERT", "ca.cer");
+    public static final String CA_ALIAS = System.getProperty(PREFIX + "CA_ALIAS", "ssgroot");
+    public static final String CA_DN_PREFIX = System.getProperty(PREFIX + "CA_DN_PREFIX", "cn=root.");
+    public static final int CA_VALIDITY_DAYS = Integer.getInteger(PREFIX + "CA_VALIDITY_DAYS", 5 * 365 ).intValue();
+
+    public static final String SSL_KS = System.getProperty(PREFIX + "SSL_KS", "ssl.ks");
+    public static final String SSL_CERT = System.getProperty(PREFIX + "SSL_CERT", "ssl.cer");
+    public static final String SSL_ALIAS = System.getProperty(PREFIX + "SSL_ALIAS", "tomcat");
+    public static final String SSL_DN_PREFIX = System.getProperty(PREFIX + "SSL_DN_PREFIX", "cn=");
+    public static final int SSL_VALIDITY_DAYS = Integer.getInteger(PREFIX + "SSL_VALIDITY_DAYS", 2 * 365 ).intValue();
 
     private static final Logger log = Logger.getLogger(SetKeys.class.getName());
 
