@@ -136,7 +136,7 @@ public class SoapRequestGenerator {
                     String uri = body.getNamespaceURI();
                     if (uri != null) ns = uri;
                     List encodingStyles = body.getEncodingStyles();
-                    if (!encodingStyles.isEmpty()) {
+                    if (encodingStyles != null && !encodingStyles.isEmpty()) {
                         envelope.setEncodingStyle(encodingStyles.get(0).toString());
                     }
                 }
@@ -161,9 +161,9 @@ public class SoapRequestGenerator {
             Name partName = envelope.createName(part.getName());
             SOAPElement partElement = bodyElement.addChildElement(partName);
             QName typeName = part.getTypeName();
-            String typeNameLocalPart = typeName.getLocalPart();
 
             if (typeName !=null) {
+                String typeNameLocalPart = typeName.getLocalPart();
                 String uri = typeName.getNamespaceURI();
                 if (uri !=null) {
                     Iterator prefixes = envelope.getNamespacePrefixes();
