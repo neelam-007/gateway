@@ -303,9 +303,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             style.addAttribute(StyleConstants.FontSize, new Integer(font.getSize()).toString());
 
         }
-        style = ss.getStyle("body");
-        System.out.println(style);
-
         messagesTextPane.setEditorKit(htmlEditorKit);
         // messagesTextPane.setText("");
         messagesTextPane.addHyperlinkListener(hlinkListener);
