@@ -13,6 +13,8 @@ import com.l7tech.message.SoapResponse;
 import com.l7tech.message.TestSoapRequest;
 import com.l7tech.message.TestSoapResponse;
 import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.proxy.util.PolicyServiceClient;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -51,8 +53,8 @@ public class PolicyServiceTest extends TestCase {
         PolicyService ps = new PolicyService(TestDocuments.getDotNetServerPrivateKey(),
                                              TestDocuments.getDotNetServerCertificate());
         PolicyService.PolicyGetter policyGetter = new PolicyService.PolicyGetter() {
-            public AllAssertion getPolicy(String serviceId) {
-                return null;
+            public Assertion getPolicy(String serviceId) {
+                return new TrueAssertion();
             }
         };
 

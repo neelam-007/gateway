@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Iterator;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.security.PrivateKey;
 import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
@@ -57,7 +58,7 @@ import java.io.IOException;
 public class PolicyService {
 
     interface PolicyGetter {
-        AllAssertion getPolicy(String serviceId);
+        Assertion getPolicy(String serviceId);
     }
 
     public PolicyService(PrivateKey privateServerKey, X509Certificate serverCert) {
@@ -140,7 +141,7 @@ public class PolicyService {
         logger.finest("Policy requested is " + policyId);
 
         // Run the policy-policy
-        AllAssertion targetPolicy = policyGetter.getPolicy(policyId);
+        Assertion targetPolicy = policyGetter.getPolicy(policyId);
         if (targetPolicy == null) {
             logger.info("cannot find target policy from id: " + policyId);
             Document fault = null;
@@ -246,6 +247,7 @@ public class PolicyService {
     }
 
     private void exceptionToFault(Exception e, SoapResponse response) {
+        logger.log(Level.INFO, e.getMessage(), e);
         try {
             Document fault;
             if (e instanceof SoapFaultDetail)
@@ -283,7 +285,8 @@ public class PolicyService {
         base.getChildren().add(new OneOrMoreAssertion(allCredentialAssertions));
         List allTargetIdentities = new ArrayList();
         addIdAssertionToList(targetPolicy, allTargetIdentities);
-        base.getChildren().add(new OneOrMoreAssertion(allTargetIdentities));
+        if (allTargetIdentities.size() > 0)
+            base.getChildren().add(new OneOrMoreAssertion(allTargetIdentities));
         return ServerPolicyFactory.getInstance().makeServerPolicy(base);
     }
 
