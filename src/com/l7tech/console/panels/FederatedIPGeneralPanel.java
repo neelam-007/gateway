@@ -14,6 +14,9 @@ import java.awt.*;
 public class FederatedIPGeneralPanel extends IdentityProviderStepPanel {
 
     private JTextField providerNameTextField;
+    private JCheckBox x509CertCheckbox;
+    private JCheckBox samlCheckbox;
+
     private JPanel mainPanel;
 
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.FederatedIdentityProviderDialog", Locale.getDefault());
@@ -38,6 +41,31 @@ public class FederatedIPGeneralPanel extends IdentityProviderStepPanel {
     /** @return the wizard step label    */
     public String getStepLabel() {
         return "Enter Provider Information";
+    }
+
+    /**
+     * Populate the configuration data from the wizard input object to the visual components of the panel.
+     *
+     * @param settings The current value of configuration items in the wizard input object.
+     * @throws IllegalArgumentException if the data provided by the wizard are not valid.
+     */
+    public void readSettings(Object settings) throws IllegalArgumentException {
+        //todo:
+        //providerNameTextField;
+        x509CertCheckbox.setSelected(true);
+        //samlCheckbox;
+    }
+
+
+    /**
+     * Store the values of all fields on the panel to the wizard object which is a used for
+     * keeping all the modified values. The wizard object will be used for providing the
+     * updated values when updating the server.
+     *
+     * @param settings the object representing wizard panel state
+     */
+    public void storeSettings(Object settings) {
+        //todo:
     }
 
     {
@@ -73,6 +101,8 @@ public class FederatedIPGeneralPanel extends IdentityProviderStepPanel {
         _4.add(_5, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
         final JTextField _6;
         _6 = new JTextField();
+        providerNameTextField = _6;
+        _6.setText("");
         _4.add(_6, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
         final JPanel _7;
         _7 = new JPanel();
@@ -91,10 +121,12 @@ public class FederatedIPGeneralPanel extends IdentityProviderStepPanel {
         _4.add(_10, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 0, 3, 3, 3, null, null, null));
         final JCheckBox _11;
         _11 = new JCheckBox();
+        x509CertCheckbox = _11;
         _11.setText("X.509 Certificate");
         _10.add(_11, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JCheckBox _12;
         _12 = new JCheckBox();
+        samlCheckbox = _12;
         _12.setText("SAML");
         _10.add(_12, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 3, 0, null, null, null));
     }

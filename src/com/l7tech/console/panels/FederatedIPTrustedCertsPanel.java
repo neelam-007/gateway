@@ -57,6 +57,28 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel{
         return "Select the Trusted Certificates";
     }
 
+    /**
+     * Populate the configuration data from the wizard input object to the visual components of the panel.
+     *
+     * @param settings The current value of configuration items in the wizard input object.
+     * @throws IllegalArgumentException if the data provided by the wizard are not valid.
+     */
+    public void readSettings(Object settings) throws IllegalArgumentException {
+        //todo:
+    }
+
+
+    /**
+     * Store the values of all fields on the panel to the wizard object which is a used for
+     * keeping all the modified values. The wizard object will be used for providing the
+     * updated values when updating the server.
+     *
+     * @param settings the object representing wizard panel state
+     */
+    public void storeSettings(Object settings) {
+        //todo:
+    }
+    
     private void initComponents() {
 
         setLayout(new BorderLayout());

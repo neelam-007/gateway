@@ -18,7 +18,7 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="2000d" class="javax.swing.JCheckBox">
+          <component id="2000d" class="javax.swing.JCheckBox" binding="wssBSTCheckbox">
             <constraints>
               <xy x="10" y="10" width="171" height="22"/>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
@@ -27,9 +27,9 @@
               <text value="WSS XML Digital Signature BST"/>
             </properties>
           </component>
-          <component id="67e39" class="javax.swing.JCheckBox">
+          <component id="67e39" class="javax.swing.JCheckBox" binding="sslCertCheckbox">
             <constraints>
-              <xy x="10" y="37" width="105" height="22"/>
+              <xy x="10" y="37" width="125" height="22"/>
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
             </constraints>
             <properties>

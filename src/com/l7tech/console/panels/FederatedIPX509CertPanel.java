@@ -14,6 +14,8 @@ import java.awt.*;
 public class FederatedIPX509CertPanel extends IdentityProviderStepPanel {
 
     private JPanel mainPanel;
+    private JCheckBox sslCertCheckbox;
+    private JCheckBox wssBSTCheckbox;
 
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.FederatedIdentityProviderDialog", Locale.getDefault());
     private static Logger logger = Logger.getLogger(FederatedIPX509CertPanel.class.getName());
@@ -35,6 +37,31 @@ public class FederatedIPX509CertPanel extends IdentityProviderStepPanel {
     /** @return the wizard step label    */
     public String getStepLabel() {
         return "Configure X.509 Cert Credential Source";
+    }
+
+    /**
+     * Populate the configuration data from the wizard input object to the visual components of the panel.
+     *
+     * @param settings The current value of configuration items in the wizard input object.
+     * @throws IllegalArgumentException if the data provided by the wizard are not valid.
+     */
+    public void readSettings(Object settings) throws IllegalArgumentException {
+        //todo:       
+        wssBSTCheckbox.setSelected(true);
+        sslCertCheckbox.setSelected(false);
+
+    }
+
+
+    /**
+     * Store the values of all fields on the panel to the wizard object which is a used for
+     * keeping all the modified values. The wizard object will be used for providing the
+     * updated values when updating the server.
+     *
+     * @param settings the object representing wizard panel state
+     */
+    public void storeSettings(Object settings) {
+        //todo:
     }
 
     {
@@ -60,10 +87,12 @@ public class FederatedIPX509CertPanel extends IdentityProviderStepPanel {
         _1.add(_2, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 3, 3, 3, null, null, null));
         final JCheckBox _3;
         _3 = new JCheckBox();
+        wssBSTCheckbox = _3;
         _3.setText("WSS XML Digital Signature BST");
         _2.add(_3, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JCheckBox _4;
         _4 = new JCheckBox();
+        sslCertCheckbox = _4;
         _4.setText("SSL Client Certificate");
         _2.add(_4, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final com.intellij.uiDesigner.core.Spacer _5;

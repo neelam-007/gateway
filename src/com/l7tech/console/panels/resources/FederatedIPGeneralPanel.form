@@ -43,19 +43,21 @@
               <text value="Provider Name:"/>
             </properties>
           </component>
-          <component id="d321" class="javax.swing.JTextField">
+          <component id="d321" class="javax.swing.JTextField" binding="providerNameTextField">
             <constraints>
-              <xy x="126" y="0" width="342" height="21"/>
+              <xy x="166" y="0" width="302" height="21"/>
               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
                 <preferred-size width="150" height="-1"/>
               </grid>
             </constraints>
-            <properties/>
+            <properties>
+              <text value=""/>
+            </properties>
           </component>
           <grid id="f651f" row-count="2" column-count="1" hgap="-1" vgap="-1">
             <margin top="10" left="0" bottom="0" right="0"/>
             <constraints>
-              <xy x="0" y="26" width="116" height="69"/>
+              <xy x="0" y="26" width="156" height="69"/>
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
             </constraints>
             <properties/>
@@ -63,7 +65,7 @@
             <children>
               <component id="6f776" class="javax.swing.JLabel">
                 <constraints>
-                  <xy x="0" y="13" width="116" height="14"/>
+                  <xy x="0" y="13" width="156" height="14"/>
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
                 </constraints>
                 <properties>
@@ -72,7 +74,7 @@
               </component>
               <vspacer id="db041">
                 <constraints>
-                  <xy x="52" y="30" width="11" height="39"/>
+                  <xy x="72" y="30" width="11" height="39"/>
                   <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
                 </constraints>
               </vspacer>
@@ -81,13 +83,13 @@
           <grid id="dff58" row-count="2" column-count="1" hgap="-1" vgap="-1">
             <margin top="10" left="0" bottom="10" right="10"/>
             <constraints>
-              <xy x="126" y="26" width="342" height="69"/>
+              <xy x="166" y="26" width="302" height="69"/>
               <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
             </constraints>
             <properties/>
             <border type="none"/>
             <children>
-              <component id="e97dd" class="javax.swing.JCheckBox">
+              <component id="e97dd" class="javax.swing.JCheckBox" binding="x509CertCheckbox">
                 <constraints>
                   <xy x="0" y="10" width="106" height="22"/>
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
@@ -96,7 +98,7 @@
                   <text value="X.509 Certificate"/>
                 </properties>
               </component>
-              <component id="dfd38" class="javax.swing.JCheckBox">
+              <component id="dfd38" class="javax.swing.JCheckBox" binding="samlCheckbox">
                 <constraints>
                   <xy x="0" y="37" width="51" height="22"/>
                   <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>

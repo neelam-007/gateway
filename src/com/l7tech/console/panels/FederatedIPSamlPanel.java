@@ -10,6 +10,12 @@ import java.awt.*;
  */
 public class FederatedIPSamlPanel extends IdentityProviderStepPanel {
     private JPanel mainPanel;
+    private JCheckBox emailCheckbox;
+    private JCheckBox x509SubjectNameCheckbox;
+    private JCheckBox domainNameCheckbox;
+    private JCheckBox senderVouchesCheckbox;
+    private JCheckBox holderOfKeyCheckbox;
+    private JTextField nameQualifierTextField;
 
     public FederatedIPSamlPanel(WizardStepPanel next) {
         super(next);
@@ -31,6 +37,34 @@ public class FederatedIPSamlPanel extends IdentityProviderStepPanel {
      */
     public String getStepLabel() {
         return "Configure SAML Credential Source";
+    }
+
+    /**
+     * Populate the configuration data from the wizard input object to the visual components of the panel.
+     *
+     * @param settings The current value of configuration items in the wizard input object.
+     * @throws IllegalArgumentException if the data provided by the wizard are not valid.
+     */
+    public void readSettings(Object settings) throws IllegalArgumentException {
+        //todo:
+        //emailCheckbox;
+        x509SubjectNameCheckbox.setSelected(true);
+        holderOfKeyCheckbox.setSelected(true);
+        //domainNameCheckbox;
+        //senderVouchesCheckbox;
+        //nameQualifierTextField;
+    }
+
+
+    /**
+     * Store the values of all fields on the panel to the wizard object which is a used for
+     * keeping all the modified values. The wizard object will be used for providing the
+     * updated values when updating the server.
+     *
+     * @param settings the object representing wizard panel state
+     */
+    public void storeSettings(Object settings) {
+        //todo:
     }
 
     {
@@ -69,6 +103,7 @@ public class FederatedIPSamlPanel extends IdentityProviderStepPanel {
         _4.add(_5, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 0, 3, 3, 3, null, null, null));
         final JTextField _6;
         _6 = new JTextField();
+        nameQualifierTextField = _6;
         _6.setToolTipText("The secuirity or administrative domain that qualifies the name of the subject");
         _5.add(_6, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
         final JLabel _7;
@@ -81,6 +116,7 @@ public class FederatedIPSamlPanel extends IdentityProviderStepPanel {
         _5.add(_8, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 0, 3, 3, 3, null, null, null));
         final JCheckBox _9;
         _9 = new JCheckBox();
+        emailCheckbox = _9;
         _9.setText("Email");
         _8.add(_9, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JPanel _10;
@@ -89,10 +125,12 @@ public class FederatedIPSamlPanel extends IdentityProviderStepPanel {
         _8.add(_10, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 0, 3, 3, 3, null, null, null));
         final JCheckBox _11;
         _11 = new JCheckBox();
+        domainNameCheckbox = _11;
         _11.setText("Windows Qualified Domain Name");
         _10.add(_11, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JCheckBox _12;
         _12 = new JCheckBox();
+        x509SubjectNameCheckbox = _12;
         _12.setText("X.509 Subject Name");
         _8.add(_12, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JPanel _13;
@@ -129,10 +167,12 @@ public class FederatedIPSamlPanel extends IdentityProviderStepPanel {
         _18.add(_20, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 3, 3, 3, null, null, null));
         final JCheckBox _21;
         _21 = new JCheckBox();
+        holderOfKeyCheckbox = _21;
         _21.setText("Holder of Key");
         _20.add(_21, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JCheckBox _22;
         _22 = new JCheckBox();
+        senderVouchesCheckbox = _22;
         _22.setText("Sender Vouches");
         _20.add(_22, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final com.intellij.uiDesigner.core.Spacer _23;

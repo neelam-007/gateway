@@ -20,6 +20,7 @@ public class CreateFederatedIPWizard extends IdentityProviderWizard {
 
     public CreateFederatedIPWizard(Frame parent, WizardStepPanel panel) {
         super(parent, panel);
+
         TopComponents.getInstance().registerComponent(CreateFederatedIPWizard.NAME, this);
         setResizable(true);
         setTitle("Create Federated Identity Provider Wizard");
@@ -29,7 +30,7 @@ public class CreateFederatedIPWizard extends IdentityProviderWizard {
         // NOTE: we only support creating LDAP provider
 
        //todo:
-        //  wizardInput = new LdapIdentityProviderConfig();
+        //wizardInput = new LdapIdentityProviderConfig();
 
        // ((IdentityProviderConfig)wizardInput).setTypeVal(IdentityProviderType.LDAP.toVal());
 
@@ -44,7 +45,11 @@ public class CreateFederatedIPWizard extends IdentityProviderWizard {
     }
 
     protected void finish(ActionEvent evt) {
-        TopComponents.getInstance().unregisterComponent(CreateFederatedIPWizard.NAME);
+        if( TopComponents.getInstance().unregisterComponent(CreateFederatedIPWizard.NAME) != null) {
+              System.out.println("Unregister CreateFederatedIPWizard component succeeded");
+        } else {
+            System.out.println("Unregister CreateFederatedIPWizard component failed.");
+        }
         super.finish(evt);
     }
 }
