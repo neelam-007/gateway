@@ -9,15 +9,12 @@ package com.l7tech.identity.internal.imp;
 import com.l7tech.identity.internal.*;
 import com.l7tech.objectmodel.*;
 
-import java.util.Collection;
 import java.sql.SQLException;
 
 /**
  * @author alex
  */
-public class OrganizationManagerImp extends HibernateEntityManager implements OrganizationManager {
-    public static final Class IMPCLASS = OrganizationImp.class;
-
+public class OrganizationManagerImp extends ProviderSpecificEntityManager implements OrganizationManager {
     public OrganizationManagerImp( PersistenceContext context ) {
         super( context );
     }
@@ -28,7 +25,7 @@ public class OrganizationManagerImp extends HibernateEntityManager implements Or
 
     public Organization findByPrimaryKey(long oid) throws FindException {
         try {
-            return (Organization)_manager.findByPrimaryKey( getContext(), IMPCLASS, oid );
+            return (Organization)_manager.findByPrimaryKey( getContext(), getImpClass(), oid );
         } catch ( SQLException se ) {
             throw new FindException( se.toString(), se );
         }
@@ -58,26 +55,16 @@ public class OrganizationManagerImp extends HibernateEntityManager implements Or
         }
     }
 
-    public void setIdentityProviderOid(long oid) {
-        _identityProviderOid = oid;
+    public String getTableName() {
+        return "organization";
     }
 
-    public Collection findAll() throws FindException {
-        String query ="from organization in class com.l7tech.identity.imp.OrganizationImp";
-        if ( _identityProviderOid == -1 )
-            throw new FindException( "Can't call findAll() without first calling setIdentityProviderOid!" );
-        else {
-            try {
-                return _manager.find( getContext(), query + " where provider = ?", new Long( _identityProviderOid ), Long.TYPE );
-            } catch ( SQLException se ) {
-                throw new FindException( se.toString(), se );
-            }
-        }
+    public Class getImpClass() {
+        return OrganizationImp.class;
     }
 
-    public Collection findAll(int offset, int windowSize) throws FindException {
-        throw new IllegalArgumentException( "Not yet implemented!" );
+    public Class getInterfaceClass() {
+        return Organization.class;
     }
 
-    public long _identityProviderOid = -1;
 }

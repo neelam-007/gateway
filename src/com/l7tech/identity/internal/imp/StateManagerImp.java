@@ -9,15 +9,12 @@ package com.l7tech.identity.internal.imp;
 import com.l7tech.identity.internal.*;
 import com.l7tech.objectmodel.*;
 
-import java.util.Collection;
 import java.sql.SQLException;
 
 /**
  * @author alex
  */
 public class StateManagerImp extends HibernateEntityManager implements StateManager {
-    public static final Class IMPCLASS = StateImp.class;
-
     public StateManagerImp( PersistenceContext context ) {
         super( context );
     }
@@ -28,7 +25,7 @@ public class StateManagerImp extends HibernateEntityManager implements StateMana
 
     public State findByPrimaryKey(long oid) throws FindException {
         try {
-            return (State)_manager.findByPrimaryKey( getContext(), IMPCLASS, oid );
+            return (State)_manager.findByPrimaryKey( getContext(), getImpClass(), oid );
         } catch ( SQLException se ) {
             throw new FindException( se.toString(), se );
         }
@@ -59,16 +56,16 @@ public class StateManagerImp extends HibernateEntityManager implements StateMana
         }
     }
 
-    public Collection findAll() throws FindException {
-        try {
-            return _manager.find( getContext(), "from state in class com.l7tech.identity.internal.imp.StateImp" );
-        } catch ( SQLException se ) {
-            throw new FindException( se.toString(), se );
-        }
+    public String getTableName() {
+        return "state";
     }
 
-    public Collection findAll(int offset, int windowSize) throws FindException {
-        throw new IllegalArgumentException( "Not yet implemented!" );
+    public Class getImpClass() {
+        return StateImp.class;
+    }
+
+    public Class getInterfaceClass() {
+        return State.class;
     }
 
 }

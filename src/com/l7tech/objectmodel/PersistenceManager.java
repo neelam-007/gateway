@@ -106,4 +106,5 @@ public abstract class PersistenceManager {
     abstract PersistenceContext doGetContext() throws SQLException;
 
     static PersistenceManager _instance;
+    static final List EMPTYLIST = Collections.unmodifiableList( new ArrayList() );
 }

@@ -3,15 +3,12 @@ package com.l7tech.identity.internal.imp;
 import com.l7tech.identity.internal.*;
 import com.l7tech.objectmodel.*;
 
-import java.util.Collection;
 import java.sql.SQLException;
 
 /**
  * @author alex
  */
-public class AddressManagerImp extends HibernateEntityManager implements AddressManager {
-    public static final Class IMPCLASS = AddressImp.class;
-
+public class AddressManagerImp extends ProviderSpecificEntityManager implements AddressManager {
     public AddressManagerImp( PersistenceContext context ) {
         super( context );
     }
@@ -22,7 +19,7 @@ public class AddressManagerImp extends HibernateEntityManager implements Address
 
     public Address findByPrimaryKey(long oid) throws FindException {
         try {
-            return (Address)_manager.findByPrimaryKey( getContext(), IMPCLASS, oid );
+            return (Address)_manager.findByPrimaryKey( getContext(), getImpClass(), oid );
         } catch ( SQLException se ) {
             throw new FindException( se.toString(), se );
         }
@@ -52,26 +49,16 @@ public class AddressManagerImp extends HibernateEntityManager implements Address
         }
     }
 
-    public void setIdentityProviderOid(long oid) {
-        _identityProviderOid = oid;
+    public Class getImpClass() {
+        return AddressImp.class;
     }
 
-    public Collection findAll() throws FindException {
-        String query ="from address in class com.l7tech.identity.imp.AddressImp";
-        if ( _identityProviderOid == -1 )
-            throw new FindException( "Can't call findAll() without first calling setIdentityProviderOid!" );
-        else {
-            try {
-                return _manager.find( getContext(), query + " where provider = ?", new Long( _identityProviderOid ), Long.TYPE );
-            } catch ( SQLException se ) {
-                throw new FindException( se.toString(), se );
-            }
-        }
+    public Class getInterfaceClass() {
+        return Address.class;
     }
 
-    public Collection findAll(int offset, int windowSize) throws FindException {
-        throw new IllegalArgumentException( "Not yet implemented!" );
+    public String getTableName() {
+        return "address";
     }
 
-    public long _identityProviderOid = -1;
 }

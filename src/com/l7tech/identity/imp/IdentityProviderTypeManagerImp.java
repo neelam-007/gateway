@@ -10,6 +10,18 @@ import java.sql.SQLException;
  * @author alex
  */
 public class IdentityProviderTypeManagerImp extends HibernateEntityManager implements IdentityProviderTypeManager {
+    public String getTableName() {
+        return "identity_provider_type";
+    }
+
+    public Class getImpClass() {
+        return IdentityProviderTypeImp.class;
+    }
+
+    public Class getInterfaceClass() {
+        return IdentityProviderType.class;
+    }
+
     public IdentityProviderTypeManagerImp( PersistenceContext context ) {
         super(context);
     }

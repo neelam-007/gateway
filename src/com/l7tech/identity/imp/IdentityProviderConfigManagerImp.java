@@ -10,8 +10,6 @@ import java.sql.SQLException;
  * @author alex
  */
 public class IdentityProviderConfigManagerImp extends HibernateEntityManager implements IdentityProviderConfigManager {
-    static final Class IMPCLASS = IdentityProviderConfigImp.class;
-
     public IdentityProviderConfigManagerImp( PersistenceContext context ) {
         super( context );
     }
@@ -34,7 +32,7 @@ public class IdentityProviderConfigManagerImp extends HibernateEntityManager imp
 
     public IdentityProviderConfig findByPrimaryKey( long oid ) throws FindException {
         try {
-            return (IdentityProviderConfig)_manager.findByPrimaryKey( getContext(), IMPCLASS, oid );
+            return (IdentityProviderConfig)_manager.findByPrimaryKey( getContext(), getImpClass(), oid );
         } catch ( SQLException se ) {
             throw new FindException( se.toString(), se );
         }
@@ -56,15 +54,21 @@ public class IdentityProviderConfigManagerImp extends HibernateEntityManager imp
         }
     }
 
-    public Collection findAll() throws FindException {
-        try {
-            return _manager.find( getContext(), "from identity_provider in class com.l7tech.identity.imp.IdentityProviderConfigImp" );
-        } catch ( SQLException se ) {
-            throw new FindException( se.toString(), se );
-        }
-    }
 
     public Collection findAll(int offset, int windowSize) throws FindException {
         throw new IllegalArgumentException( "Not yet implemented!" );
     }
+
+    public Class getImpClass() {
+        return IdentityProviderConfigImp.class;
+    }
+
+    public Class getInterfaceClass() {
+        return IdentityProviderConfig.class;
+    }
+
+    public String getTableName() {
+        return "identity_provider";
+    }
+
 }

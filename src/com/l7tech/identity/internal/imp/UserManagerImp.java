@@ -16,9 +16,7 @@ import java.sql.SQLException;
 /**
  * @author alex
  */
-public class UserManagerImp extends HibernateEntityManager implements UserManager {
-    public static final Class IMPCLASS = UserImp.class;
-
+public class UserManagerImp extends ProviderSpecificEntityManager implements UserManager {
     public UserManagerImp( PersistenceContext context ) {
         super( context );
     }
@@ -29,7 +27,7 @@ public class UserManagerImp extends HibernateEntityManager implements UserManage
 
     public User findByPrimaryKey(long oid) throws FindException {
         try {
-            return (User)_manager.findByPrimaryKey( getContext(), IMPCLASS, oid );
+            return (User)_manager.findByPrimaryKey( getContext(), getImpClass(), oid );
         } catch ( SQLException se ) {
             throw new FindException( se.toString(), se );
         }
@@ -59,26 +57,15 @@ public class UserManagerImp extends HibernateEntityManager implements UserManage
         }
     }
 
-    public void setIdentityProviderOid(long oid) {
-        _identityProviderOid = oid;
+    public String getTableName() {
+        return "user";
     }
 
-    public Collection findAll() throws FindException {
-        String query ="from user in class com.l7tech.identity.imp.UserImp";
-        if ( _identityProviderOid == -1 )
-            throw new FindException( "Can't call findAll() without first calling setIdentityProviderOid!" );
-        else {
-            try {
-                return _manager.find( getContext(), query + " where provider = ?", new Long( _identityProviderOid ), Long.TYPE );
-            } catch ( SQLException se ) {
-                throw new FindException( se.toString(), se );
-            }
-        }
+    public Class getImpClass() {
+        return UserImp.class;
     }
 
-    public Collection findAll(int offset, int windowSize) throws FindException {
-        throw new IllegalArgumentException( "Not yet implemented!" );
+    public Class getInterfaceClass() {
+        return User.class;
     }
-
-    public long _identityProviderOid = -1;
 }

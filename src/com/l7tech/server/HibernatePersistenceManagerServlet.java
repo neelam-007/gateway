@@ -18,6 +18,8 @@ import java.io.PrintWriter;
 import java.util.Iterator;
 import java.util.Random;
 
+import cirrus.hibernate.ObjectNotFoundException;
+
 /**
  * @author alex
  */
@@ -45,15 +47,16 @@ public class HibernatePersistenceManagerServlet extends HttpServlet {
 
             if ( "list".equals(op) ) {
                 Iterator i = ipcm.findAll().iterator();
-                if ( !i.hasNext() ) {
-                    out.println( "None!" );
-                } else {
+
+                if ( i.hasNext() ) {
                     IdentityProviderConfig config;
                     while ( i.hasNext() ) {
                         config = (IdentityProviderConfig)i.next();
                         out.println( config.getOid() );
                         out.println( config.getName() );
                     }
+                } else {
+                    out.println( "None!" );
                 }
             } else if ( "get".equals(op) ) {
                 String soid = request.getParameter("oid");

@@ -8,8 +8,10 @@ package com.l7tech.objectmodel;
 
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.HibernatePersistenceManager;
+import com.l7tech.objectmodel.imp.EntityHeaderImp;
+import com.l7tech.identity.IdentityProviderConfig;
 
-import java.util.Collection;
+import java.util.*;
 import java.sql.SQLException;
 
 /**
@@ -26,11 +28,9 @@ public abstract class HibernateEntityManager implements EntityManager {
         _manager = manager;
     }
 
-    protected PersistenceContext getContext() throws SQLException {
-        if ( _context == null )
-            _context = PersistenceContext.getCurrent();
-        return _context;
-    }
+    public abstract Class getImpClass();
+    public abstract Class getInterfaceClass();
+    public abstract String getTableName();
 
     /**
      * Constructs a new <code>HibernateEntityManager</code> with a specific context.
@@ -43,17 +43,47 @@ public abstract class HibernateEntityManager implements EntityManager {
         _context = context;
     }
 
-    public abstract Collection findAll() throws FindException;
-    public abstract Collection findAll(int offset, int windowSize) throws FindException;
-
     public Collection findAllHeaders() throws FindException {
-        // TODO
-        return null;
+        try {
+            Iterator i = _manager.find( getContext(), getAllQuery() ).iterator();
+            NamedEntity config;
+            EntityHeader header;
+            List headers = new ArrayList(5);
+            while ( i.hasNext() ) {
+                config = (IdentityProviderConfig)i.next();
+                header = new EntityHeaderImp( config.getOid(), getInterfaceClass(), config.getName() );
+                headers.add(header);
+            }
+            return Collections.unmodifiableList(headers);
+        } catch ( SQLException se ) {
+            throw new FindException( se.toString(), se );
+        }
     }
 
-    public Collection findAllHeaders(int offset, int windowSize) throws FindException {
-        // TODO
-        return null;
+    public Collection findAllHeaders( int offset, int windowSize ) throws FindException {
+        throw new UnsupportedOperationException( "Not yet implemented!" );
+    }
+
+    public Collection findAll() throws FindException {
+        try {
+            return _manager.find( getContext(), getAllQuery() );
+        } catch ( SQLException se ) {
+            throw new FindException( se.toString(), se );
+        }
+    }
+
+    public Collection findAll(int offset, int windowSize) throws FindException {
+        throw new UnsupportedOperationException( "Not yet implemented!" );
+    }
+
+    public String getAllQuery() {
+        return "from " + getTableName() + " in class " + getImpClass().getName();
+    }
+
+    protected PersistenceContext getContext() throws SQLException {
+        if ( _context == null )
+            _context = PersistenceContext.getCurrent();
+        return _context;
     }
 
     protected PersistenceManager _manager;

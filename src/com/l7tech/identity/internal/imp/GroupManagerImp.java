@@ -9,13 +9,12 @@ package com.l7tech.identity.internal.imp;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.*;
 
-import java.util.Collection;
 import java.sql.SQLException;
 
 /**
  * @author alex
  */
-public class GroupManagerImp extends HibernateEntityManager implements GroupManager {
+public class GroupManagerImp extends ProviderSpecificEntityManager implements GroupManager {
     public static final Class IMPCLASS = GroupImp.class;
 
     public GroupManagerImp( PersistenceContext context ) {
@@ -58,26 +57,16 @@ public class GroupManagerImp extends HibernateEntityManager implements GroupMana
         }
     }
 
-    public void setIdentityProviderOid(long oid) {
-        _identityProviderOid = oid;
+    public String getTableName() {
+        return "group";
     }
 
-    public Collection findAll() throws FindException {
-        String query ="from group in class com.l7tech.identity.imp.GroupImp";
-        if ( _identityProviderOid == -1 )
-            throw new FindException( "Can't call findAll() without first calling setIdentityProviderOid!" );
-        else {
-            try {
-                return _manager.find( getContext(), query + " where provider = ?", new Long( _identityProviderOid ), Long.TYPE );
-            } catch ( SQLException se ) {
-                throw new FindException( se.toString(), se );
-            }
-        }
+    public Class getImpClass() {
+        return GroupImp.class;
     }
 
-    public Collection findAll(int offset, int windowSize) throws FindException {
-        throw new IllegalArgumentException( "Not yet implemented!" );
+    public Class getInterfaceClass() {
+        return Group.class;
     }
 
-    public long _identityProviderOid = -1;
 }

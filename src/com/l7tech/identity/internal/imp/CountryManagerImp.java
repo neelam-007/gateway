@@ -10,7 +10,6 @@ import com.l7tech.identity.internal.Country;
 import com.l7tech.identity.internal.CountryManager;
 import com.l7tech.objectmodel.*;
 
-import java.util.Collection;
 import java.sql.SQLException;
 
 /**
@@ -30,7 +29,7 @@ public class CountryManagerImp extends HibernateEntityManager implements Country
 
     public Country findByPrimaryKey(long oid) throws FindException {
         try {
-            return (Country)_manager.findByPrimaryKey( getContext(), IMPCLASS, oid );
+            return (Country)_manager.findByPrimaryKey( getContext(), getImpClass(), oid );
         } catch (SQLException se) {
             throw new FindException( se.toString(), se );
         }
@@ -60,15 +59,16 @@ public class CountryManagerImp extends HibernateEntityManager implements Country
         }
     }
 
-    public Collection findAll() throws FindException {
-        try {
-            return _manager.find( getContext(), "from country in class com.l7tech.identity.imp.CountryImp" );
-        } catch ( SQLException se ) {
-            throw new FindException( se.toString(), se );
-        }
+    public Class getImpClass() {
+        return CountryImp.class;
     }
 
-    public Collection findAll(int offset, int windowSize) throws FindException {
-        throw new IllegalArgumentException( "Not yet implemented!" );
+    public Class getInterfaceClass() {
+        return Country.class;
     }
+
+    public String getTableName() {
+        return "country";
+    }
+
 }

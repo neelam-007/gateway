@@ -113,6 +113,8 @@ public class HibernatePersistenceManager extends PersistenceManager {
         Session s = h._session;
         try {
             return s.find( query );
+        } catch ( ObjectNotFoundException onfe ) {
+            return EMPTYLIST;
         } catch ( HibernateException he ) {
             throw new FindException( he.toString(), he );
         } catch ( SQLException se ) {
