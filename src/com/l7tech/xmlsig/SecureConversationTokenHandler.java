@@ -80,7 +80,7 @@ public class SecureConversationTokenHandler {
     public static final String IDENTIFIER_EL_NAME = "Identifier";
 
 
-    public void appendNonceToDocument(Document soapmsg, long nonce) {
+    public static void appendNonceToDocument(Document soapmsg, long nonce) {
         Element securityCtxTokEl = getOrMakeSecurityContextTokenElement(soapmsg);
         writeIdentifierElementToSecurityContextTokenElement(securityCtxTokEl, Long.toString(nonce));
     }
@@ -93,7 +93,7 @@ public class SecureConversationTokenHandler {
      * @return the nonce in the SecurityContextToken/Identifier element
      * @throws XMLSecurityElementNotFoundException if not present
      */
-    public long readNonceFromDocument(Document soapmsg) throws XMLSecurityElementNotFoundException {
+    public static long readNonceFromDocument(Document soapmsg) throws XMLSecurityElementNotFoundException {
         Element secContxTokEl = getSecurityContextTokenElement(soapmsg);
         if (secContxTokEl == null) {
             throw new XMLSecurityElementNotFoundException(SECURITY_CONTEXT_TOKEN_EL_NAME + " element not present.");
@@ -101,13 +101,13 @@ public class SecureConversationTokenHandler {
         return Long.parseLong(readIdentifierValueFromSecurityContextToken(secContxTokEl));
     }
 
-    public void appendSessIdAndSeqNrToDocument(Document soapmsg, long sessId, long seqNr) {
+    public static void appendSessIdAndSeqNrToDocument(Document soapmsg, long sessId, long seqNr) {
         Element securityCtxTokEl = getOrMakeSecurityContextTokenElement(soapmsg);
         writeIdentifierElementToSecurityContextTokenElement(securityCtxTokEl, Long.toString(sessId));
         writeL7SeqElementToSecurityContextTokenElement(securityCtxTokEl, Long.toString(seqNr));
     }
 
-    public long readSessIdFromDocument(Document soapmsg) throws XMLSecurityElementNotFoundException {
+    public static long readSessIdFromDocument(Document soapmsg) throws XMLSecurityElementNotFoundException {
         Element secContxTokEl = getSecurityContextTokenElement(soapmsg);
         if (secContxTokEl == null) {
             throw new XMLSecurityElementNotFoundException(SECURITY_CONTEXT_TOKEN_EL_NAME + " element not present.");
@@ -115,7 +115,7 @@ public class SecureConversationTokenHandler {
         return Long.parseLong(readIdentifierValueFromSecurityContextToken(secContxTokEl));
     }
 
-    public long readSeqNrFromDocument(Document soapmsg) throws XMLSecurityElementNotFoundException {
+    public static long readSeqNrFromDocument(Document soapmsg) throws XMLSecurityElementNotFoundException {
         Element secContxTokEl = getSecurityContextTokenElement(soapmsg);
         if (secContxTokEl == null) {
             throw new XMLSecurityElementNotFoundException(SECURITY_CONTEXT_TOKEN_EL_NAME + " element not present.");
@@ -123,7 +123,7 @@ public class SecureConversationTokenHandler {
         return Long.parseLong(readSeqNrValueFromSecurityContextToken(secContxTokEl));
     }
 
-    private String readSeqNrValueFromSecurityContextToken(Element securityContextTokenEl) throws XMLSecurityElementNotFoundException {
+    private static String readSeqNrValueFromSecurityContextToken(Element securityContextTokenEl) throws XMLSecurityElementNotFoundException {
         NodeList listIdentifierElements = securityContextTokenEl.getElementsByTagNameNS(L7_NAMESPACE, SEQ_EL_NAME);
         if (listIdentifierElements.getLength() < 1) {
             throw new XMLSecurityElementNotFoundException(SEQ_EL_NAME + " element not present.");
@@ -139,7 +139,7 @@ public class SecureConversationTokenHandler {
         throw new XMLSecurityElementNotFoundException(SEQ_EL_NAME + " element does not contain value.");
     }
 
-    private String readIdentifierValueFromSecurityContextToken(Element securityContextTokenEl) throws XMLSecurityElementNotFoundException {
+    private static String readIdentifierValueFromSecurityContextToken(Element securityContextTokenEl) throws XMLSecurityElementNotFoundException {
         NodeList listIdentifierElements = securityContextTokenEl.getElementsByTagNameNS(WSU_NAMESPACE, IDENTIFIER_EL_NAME);
         if (listIdentifierElements.getLength() < 1) {
             throw new XMLSecurityElementNotFoundException(IDENTIFIER_EL_NAME + " element not present.");
@@ -155,7 +155,7 @@ public class SecureConversationTokenHandler {
         throw new XMLSecurityElementNotFoundException(IDENTIFIER_EL_NAME + " element does not contain value.");
     }
 
-    private void writeIdentifierElementToSecurityContextTokenElement(Element securityContextTokenEl, String value) {
+    private static void writeIdentifierElementToSecurityContextTokenElement(Element securityContextTokenEl, String value) {
         Element idElement = securityContextTokenEl.getOwnerDocument().createElementNS(WSU_NAMESPACE, IDENTIFIER_EL_NAME);
         idElement.setPrefix(WSU_NAMESPACE_PREFIX);
         idElement.setAttribute("xmlns:" + WSU_NAMESPACE_PREFIX, WSU_NAMESPACE);
@@ -164,7 +164,7 @@ public class SecureConversationTokenHandler {
         securityContextTokenEl.insertBefore(idElement, null);
     }
 
-    private void writeL7SeqElementToSecurityContextTokenElement(Element securityContextTokenEl, String value) {
+    private static void writeL7SeqElementToSecurityContextTokenElement(Element securityContextTokenEl, String value) {
         Element idElement = securityContextTokenEl.getOwnerDocument().createElementNS(L7_NAMESPACE, SEQ_EL_NAME);
         idElement.setPrefix(L7_NAMESPACE_PREFIX);
         idElement.setAttribute("xmlns:" + L7_NAMESPACE_PREFIX, L7_NAMESPACE);
@@ -173,7 +173,7 @@ public class SecureConversationTokenHandler {
         securityContextTokenEl.insertBefore(idElement, null);
     }
 
-    private Element getSecurityContextTokenElement(Document soapMsg) {
+    private static Element getSecurityContextTokenElement(Document soapMsg) {
         NodeList listSecurityElements = soapMsg.getElementsByTagNameNS(SECURITY_NAMESPACE, SECURITY_CONTEXT_TOKEN_EL_NAME);
         if (listSecurityElements.getLength() < 1) {
             return null;
@@ -182,7 +182,7 @@ public class SecureConversationTokenHandler {
         }
     }
 
-    private Element getOrMakeSecurityContextTokenElement(Document soapMsg) {
+    private static Element getOrMakeSecurityContextTokenElement(Document soapMsg) {
         NodeList listSecurityElements = soapMsg.getElementsByTagNameNS(SECURITY_NAMESPACE, SECURITY_CONTEXT_TOKEN_EL_NAME);
         if (listSecurityElements.getLength() < 1) {
             // element does not exist
