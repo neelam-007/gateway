@@ -62,11 +62,16 @@ public class MessageProcessor implements ServiceListener {
                         logger.finest("policy version passed has incorrect format");
                         wrongPolicyVersion = true;
                     } else {
-                        long reqPolicyId = Long.parseLong(requestorVersion.substring(0, indexofbar));
-                        long reqPolicyVer = Long.parseLong(requestorVersion.substring(indexofbar+1));
-                        if (reqPolicyVer != service.getVersion() || reqPolicyId != service.getOid()) {
-                            logger.finest("policy version passed is invalid");
+                        try {
+                            long reqPolicyId = Long.parseLong(requestorVersion.substring(0, indexofbar));
+                            long reqPolicyVer = Long.parseLong(requestorVersion.substring(indexofbar+1));
+                            if (reqPolicyVer != service.getVersion() || reqPolicyId != service.getOid()) {
+                                logger.finest("policy version passed is invalid");
+                                wrongPolicyVersion = true;
+                            }
+                        } catch (NumberFormatException e) {
                             wrongPolicyVersion = true;
+                            logger.log(Level.FINE, "wrong format for policy version", e);
                         }
                     }
                     if (wrongPolicyVersion) {
