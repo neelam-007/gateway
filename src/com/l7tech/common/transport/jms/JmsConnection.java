@@ -85,7 +85,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
         _destinationFactoryUrl = destinationFactoryUrl;
     }
 
-    public Set getDestinations() {
+    public Set getEndpoints() {
         return _destinations;
     }
 

@@ -6,8 +6,8 @@
 
 package com.l7tech.server.transport.jms;
 
-import com.l7tech.common.transport.jms.JmsDestination;
-import com.l7tech.common.transport.jms.JmsProvider;
+import com.l7tech.common.transport.jms.JmsEndpoint;
+import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsReplyType;
 import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.FindException;
@@ -33,19 +33,19 @@ public class JmsBootProcess implements ServerComponentLifecycle {
         if ( _booted ) throw new LifecycleException( "Can't boot JmsBootProcess twice!" );
 
         try {
-            Collection providers = _manager.findAllHeaders();
-            for (Iterator i = providers.iterator(); i.hasNext();) {
-                JmsProvider provider = (JmsProvider)i.next();
-                _logger.info( "Initializing JMS receiver '" + provider.getName() + "'..." );
-                Set destinations = provider.getDestinations();
-                for (Iterator j = destinations.iterator(); j.hasNext();) {
-                    JmsDestination requestDest = (JmsDestination) j.next();
-                    JmsDestination replyToDest = requestDest.getReplyDestination();
-                    JmsDestination failureDest = requestDest.getFailureDestination();
+            Collection connections = _manager.findAllHeaders();
+            for (Iterator i = connections.iterator(); i.hasNext();) {
+                JmsConnection conn = (JmsConnection)i.next();
+                _logger.info( "Initializing JMS receiver '" + conn.getName() + "'..." );
+                Set endpoints = conn.getEndpoints();
+                for (Iterator j = endpoints.iterator(); j.hasNext();) {
+                    JmsEndpoint requestEnd = (JmsEndpoint) j.next();
+                    JmsEndpoint replyToEnd = requestEnd.getReplyEndpoint();
+                    JmsEndpoint failureEnd = requestEnd.getFailureEndpoint();
                     JmsReceiver receiver = new JmsReceiver(
-                            provider,
+                            conn,
                             JmsReplyType.AUTOMATIC, // TODO Hardcoded
-                            requestDest, replyToDest, failureDest );
+                            requestEnd, replyToEnd, failureEnd );
                     _receivers.add( receiver );
                 }
             }
@@ -58,7 +58,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
     public void start() throws LifecycleException {
         for (Iterator i = _receivers.iterator(); i.hasNext();) {
             JmsReceiver receiver = (JmsReceiver) i.next();
-            _logger.info( "Starting JMS receiver '" + receiver.getProvider().getName() + "'" );
+            _logger.info( "Starting JMS receiver '" + receiver.toString() + "'..." );
             receiver.start();
         }
     }
@@ -66,7 +66,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
     public void stop() throws LifecycleException {
         for (Iterator i = _receivers.iterator(); i.hasNext();) {
             JmsReceiver receiver = (JmsReceiver) i.next();
-            _logger.info( "Stopping JMS receiver '" + receiver.getProvider().getName() + "'" );
+            _logger.info( "Stopping JMS receiver '" + receiver.toString() + "'" );
             receiver.stop();
         }
     }
@@ -74,7 +74,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
     public void close() throws LifecycleException {
         for (Iterator i = _receivers.iterator(); i.hasNext();) {
             JmsReceiver receiver = (JmsReceiver) i.next();
-            _logger.info( "Closing JMS receiver '" + receiver.getProvider().getName() + "'" );
+            _logger.info( "Closing JMS receiver '" + receiver.toString() + "'" );
             receiver.close();
         }
     }

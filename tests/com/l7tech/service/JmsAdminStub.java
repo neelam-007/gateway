@@ -27,43 +27,43 @@ import java.util.Iterator;
  * Stub-mode JMS admin interface.
  */
 public class JmsAdminStub implements JmsAdmin {
-    private Map providers;
+    private Map connections;
 
     public JmsAdminStub() {
-        providers = StubDataStore.defaultStore().getJmsProviders();
+        connections = StubDataStore.defaultStore().getJmsConnections();
     }
 
-    public EntityHeader[] findAllProviders() throws RemoteException, FindException {
+    public EntityHeader[] findAllConnections() throws RemoteException, FindException {
         Collection list = new ArrayList();
-        for (Iterator i = providers.keySet().iterator(); i.hasNext();) {
+        for (Iterator i = connections.keySet().iterator(); i.hasNext();) {
             Long key = (Long) i.next();
-            list.add(fromProvider((JmsConnection) providers.get(key)));
+            list.add(fromConnection((JmsConnection) connections.get(key)));
         }
         return (EntityHeader[]) list.toArray(new EntityHeader[] {});
     }
 
-    private EntityHeader fromProvider(JmsConnection p) {
-        return new EntityHeader(p.getOid(), EntityType.JMS_PROVIDER, p.getName(), null);
+    private EntityHeader fromConnection(JmsConnection p) {
+        return new EntityHeader(p.getOid(), EntityType.JMS_CONNECTION, p.getName(), null);
     }
 
-    public JmsConnection findProviderByPrimaryKey(long oid) throws RemoteException, FindException {
-        return (JmsConnection) providers.get(new Long(oid));
+    public JmsConnection findConnectionByPrimaryKey(long oid) throws RemoteException, FindException {
+        return (JmsConnection) connections.get(new Long(oid));
     }
 
-    public long saveProvider(JmsConnection provider) throws RemoteException, UpdateException, SaveException, VersionException {
-        long oid = provider.getOid();
+    public long saveConnection(JmsConnection connection) throws RemoteException, UpdateException, SaveException, VersionException {
+        long oid = connection.getOid();
         if (oid == 0) {
             oid = StubDataStore.defaultStore().nextObjectId();
         }
-        provider.setOid(oid);
+        connection.setOid(oid);
         Long key = new Long(oid);
-        providers.put(key, provider);
+        connections.put(key, connection);
         return oid;
     }
 
-    public void deleteProvider(long id) throws RemoteException, DeleteException {
-        if (providers.remove(new Long(id)) == null) {
-            throw new RemoteException("Could not find jms provider oid= " + id);
+    public void deleteConnection(long id) throws RemoteException, DeleteException {
+        if (connections.remove(new Long(id)) == null) {
+            throw new RemoteException("Could not find jms connection oid= " + id);
         }
     }
 }
