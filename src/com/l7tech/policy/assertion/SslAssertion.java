@@ -11,28 +11,93 @@ import com.l7tech.message.Response;
 import com.l7tech.message.TransportMetadata;
 import com.l7tech.message.TransportProtocol;
 import com.l7tech.proxy.datamodel.PendingRequest;
+import com.l7tech.logging.LogManager;
 
 import java.util.Collections;
 import java.util.Set;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public class SslAssertion extends ConfidentialityAssertion {
+    public static final Option OPTIONAL = new Option( 0, "SSL Optional" );
+    public static final Option REQUIRED = new Option( 1, "SSL Required" );
+    public static final Option FORBIDDEN = new Option( 2, "SSL Forbidden" );
+
+    public static class Option {
+        Option( int numeric, String name ) {
+            _numeric = numeric;
+            _name = name;
+        }
+
+        protected int _numeric;
+        protected String _name;
+    }
+
     /**
-     * default constructor, required by XML serializers
+     * Constructs an SslAssertion with option = REQUIRED.
      */
-    public SslAssertion() {}
+    public SslAssertion() {
+        this( REQUIRED );
+    }
+
+    /**
+     * Constructs an SslAssertion with a specific option.
+     * @param option
+     */
+    public SslAssertion( Option option ) {
+        _option = option;
+    }
 
     public AssertionStatus checkRequest(Request request, Response response) throws PolicyAssertionException {
         TransportMetadata tm = request.getTransportMetadata();
-        if ( tm.getProtocol() == TransportProtocol.HTTPS )
-            return AssertionStatus.NONE;
-        else {
-            response.setPolicyViolated(true);
-            return AssertionStatus.FALSIFIED;
+        boolean ssl = ( tm.getProtocol() == TransportProtocol.HTTPS );
+        AssertionStatus status;
+
+        String message;
+        Level level;
+        if ( _option == REQUIRED ) {
+            if ( ssl ) {
+                status = AssertionStatus.NONE;
+                message= "SSL required and present";
+                level = Level.FINE;
+            } else {
+                status = AssertionStatus.FALSIFIED;
+                message= "SSL required but not present";
+                level = Level.INFO;
+            }
+        } else if ( _option == FORBIDDEN ) {
+            if ( ssl ) {
+                status = AssertionStatus.FALSIFIED;
+                message = "SSL forbidden but present";
+                level = Level.INFO;
+            } else {
+                status = AssertionStatus.NONE;
+                message = "SSL forbidden and not present";
+                level = Level.FINE;
+            }
+        } else {
+            level = Level.FINE;
+            status = AssertionStatus.NONE;
+            message = ssl ? "SSL optional and present" : "SSL optional and not present";
         }
+
+        _log.log( level, message );
+
+        if ( status == AssertionStatus.FALSIFIED ) response.setPolicyViolated(true);
+
+        return status;
+    }
+
+    public void setOption( Option option ) {
+        _option = option;
+    }
+
+    public Option getOption() {
+        return _option;
     }
 
     /**
@@ -47,4 +112,7 @@ public class SslAssertion extends ConfidentialityAssertion {
     }
 
     protected Set _cipherSuites = Collections.EMPTY_SET;
+    protected Option _option = REQUIRED;
+
+    protected transient Logger _log = LogManager.getInstance().getSystemLogger();
 }
