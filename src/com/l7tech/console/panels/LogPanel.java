@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.adminws.logging.Log;
 import com.l7tech.common.util.Locator;
 import com.l7tech.logging.LogMessage;
+import com.l7tech.console.table.LogTableModel;
 import com.ibm.xml.policy.xacl.builtIn.provisional_action.log;
 
 import javax.swing.*;
@@ -26,7 +27,7 @@ import java.rmi.RemoteException;
  * Time: 4:12:07 PM
  * To change this template use Options | File Templates.
  */
-public class LogPanel {
+public class LogPanel extends JPanel {
 
     private static final int MAX_MESSAGE_BLOCK_SIZE = 100;
     private JPanel selectPane = null;
@@ -45,98 +46,88 @@ public class LogPanel {
     private JScrollPane jScrollPane2 = new JScrollPane();
     private JTextArea msgDetails = new JTextArea();
 
-    public static LogPanel          logPane = null;
     private JPanel jLogPane = new JPanel();
     private AbstractTableModel logTableModel = null;
 
-    public static LogPanel   instance() {
-        if(logPane == null) {
-           logPane = new LogPanel ();
-        }
 
-        return logPane;
-    }
-
-    public JPanel getPane()
-    {
-         return jLogPane;
+    public JPanel getPane() {
+        return jLogPane;
     }
 
 
-    private LogPanel()
-    {
-           jLogPane.setLayout(new BoxLayout(jLogPane, BoxLayout.Y_AXIS));
+    public LogPanel() {
+        jLogPane.setLayout(new BoxLayout(jLogPane, BoxLayout.Y_AXIS));
 
-           jLogPane.setBorder(new javax.swing.border.LineBorder(new java.awt.Color(0, 0, 0)));
-           jLogPane.setMinimumSize(new Dimension(100,150));
+        jLogPane.setBorder(new javax.swing.border.LineBorder(new java.awt.Color(0, 0, 0)));
+        jLogPane.setMinimumSize(new Dimension(100, 150));
 
-           selectPane = new JPanel();
-           selectPane.setLayout(new FlowLayout(FlowLayout.LEFT));
+        selectPane = new JPanel();
+        selectPane.setLayout(new FlowLayout(FlowLayout.LEFT));
 
-            filter.setLayout(new BorderLayout());
-                  JSlider slider = new JSlider(0, 160);
-                  slider.setMajorTickSpacing(40);
+        filter.setLayout(new BorderLayout());
+        JSlider slider = new JSlider(0, 160);
+        slider.setMajorTickSpacing(40);
 
-                  Dictionary table = new Hashtable();
-                  JLabel aLabel = new JLabel("finest");
+        Dictionary table = new Hashtable();
+        JLabel aLabel = new JLabel("finest");
 
-                  aLabel.setFont(new java.awt.Font("Dialog", 0, 11));
-                  table.put(new Integer(0), aLabel);
+        aLabel.setFont(new java.awt.Font("Dialog", 0, 11));
+        table.put(new Integer(0), aLabel);
 
-                  aLabel = new JLabel("info");
-                  aLabel.setFont(new java.awt.Font("Dialog", 0, 11));
-                  table.put(new Integer(40), aLabel);
+        aLabel = new JLabel("info");
+        aLabel.setFont(new java.awt.Font("Dialog", 0, 11));
+        table.put(new Integer(40), aLabel);
 
-                  aLabel = new JLabel("warning");
-                  aLabel.setFont(new java.awt.Font("Dialog", 0, 11));
-                  table.put(new Integer(80), aLabel);
+        aLabel = new JLabel("warning");
+        aLabel.setFont(new java.awt.Font("Dialog", 0, 11));
+        table.put(new Integer(80), aLabel);
 
-                  aLabel = new JLabel("severe");
-                  aLabel.setFont(new java.awt.Font("Dialog", 0, 11));
-                  table.put(new Integer(120), aLabel);
+        aLabel = new JLabel("severe");
+        aLabel.setFont(new java.awt.Font("Dialog", 0, 11));
+        table.put(new Integer(120), aLabel);
 
-                  aLabel = new JLabel("off");
-                  aLabel.setFont(new java.awt.Font("Dialog", 0, 11));
-                  table.put(new Integer(160), aLabel);
+        aLabel = new JLabel("off");
+        aLabel.setFont(new java.awt.Font("Dialog", 0, 11));
+        table.put(new Integer(160), aLabel);
 
-                  slider.setPaintLabels(true);
-                  slider.setLabelTable(table);
-                  slider.setSnapToTicks(true);
-                  slider.addChangeListener(new ChangeListener() {
-                      public void stateChanged(ChangeEvent e) {
-                          JSlider source = (JSlider)e.getSource();
-                          if (!source.getValueIsAdjusting()) {
-                              int value = source.getValue();
-                              switch (value) {
-                                  case 0:
-                                      //adjustHandlerLevel(Level.FINEST);
-                                      simpleTest("Finest");
-                                      break;
-                                  case 40:
-                                      //adjustHandlerLevel(Level.INFO);
-                                      simpleTest("Info");
-                                      break;
-                                  case 80:
-                                      //adjustHandlerLevel(Level.WARNING);
-                                      simpleTest("Warning");
-                                      break;
-                                  case 120:
-                                      //adjustHandlerLevel(Level.SEVERE);
-                                      simpleTest("Severe");
-                                      break;
-                                  case 160:
-                                      //adjustHandlerLevel(Level.OFF);
-                                      simpleTest("Off");
-                                      break;
-                                  default:
-                                      System.err.println("Unhandled value " + value);
-                              }
-                          }
-                      }
-                  });
+        slider.setPaintLabels(true);
+        slider.setLabelTable(table);
+        slider.setSnapToTicks(true);
+        slider.addChangeListener(new ChangeListener() {
+            public void stateChanged(ChangeEvent e) {
+                JSlider source = (JSlider) e.getSource();
+                if (!source.getValueIsAdjusting()) {
+                    int value = source.getValue();
+                    switch (value) {
+                        case 0:
+                            //adjustHandlerLevel(Level.FINEST);
+                            simpleTest("Finest");
+                            break;
+                        case 40:
+                            //adjustHandlerLevel(Level.INFO);
+                            simpleTest("Info");
+                            break;
+                        case 80:
+                            //adjustHandlerLevel(Level.WARNING);
+                            simpleTest("Warning");
+                            break;
+                        case 120:
+                            //adjustHandlerLevel(Level.SEVERE);
+                            simpleTest("Severe");
+                            break;
+                        case 160:
+                            //adjustHandlerLevel(Level.OFF);
+                            simpleTest("Off");
+                            break;
+                        default:
+                            System.err.println("Unhandled value " + value);
+                    }
+                }
+            }
+        });
 
-         filter.add(slider);
-         control.setLayout(new FlowLayout());
+        filter.add(slider);
+        control.setLayout(new FlowLayout());
         details.setFont(new java.awt.Font("Dialog", 0, 11));
         details.setText("Details");
         details.setSelected(true);
@@ -171,11 +162,11 @@ public class LogPanel {
 
         msgDetails.setEditable(false);
         jScrollPane2.setViewportView(msgDetails);
-        msgDetails.setMinimumSize(new Dimension(0,0));
+        msgDetails.setMinimumSize(new Dimension(0, 0));
 
         jSplitPane1.setRightComponent(jScrollPane2);
         jSplitPane1.setResizeWeight(0.5);
-        jScrollPane2.setMinimumSize(new Dimension(0,0));
+        jScrollPane2.setMinimumSize(new Dimension(0, 0));
 
         msgPane = new JPanel();
         msgPane.setLayout(new BorderLayout());
@@ -188,120 +179,116 @@ public class LogPanel {
         jLogPane.setVisible(false);
 
         msgTable.getSelectionModel().
-           addListSelectionListener(new ListSelectionListener() {
-              /**
-               * Called whenever the value of the selection changes.
-               * @param e the event that characterizes the change.
-               */
-              public void valueChanged(ListSelectionEvent e) {
-                  int row = msgTable.getSelectedRow();
-                  String msg;
+                addListSelectionListener(new ListSelectionListener() {
+                    /**
+                     * Called whenever the value of the selection changes.
+                     * @param e the event that characterizes the change.
+                     */
+                    public void valueChanged(ListSelectionEvent e) {
+                        int row = msgTable.getSelectedRow();
+                        String msg;
 
-                  if (row == -1) return;
+                        if (row == -1) return;
 
-                 //msg = "The selected row is: " + row + "\n";
-                  msg = "";
+                        //msg = "The selected row is: " + row + "\n";
+                        msg = "";
 
-                  if(msgTable.getModel().getValueAt(row, 0) != null)
-                      msg = msg + "Time    : " + msgTable.getModel().getValueAt(row, 0).toString() + "\n";
-                  if(msgTable.getModel().getValueAt(row, 1) != null)
-                      msg = msg + "Severity: " + msgTable.getModel().getValueAt(row, 1).toString() + "\n";
-                  if( msgTable.getModel().getValueAt(row, 2) != null)
-                      msg = msg + "Message : " + msgTable.getModel().getValueAt(row, 2).toString() + "\n";
-                  if( msgTable.getModel().getValueAt(row, 3) != null)
-                      msg = msg + "Class   : " + msgTable.getModel().getValueAt(row, 3).toString() + "\n";
-                  if( msgTable.getModel().getValueAt(row, 4) != null)
-                      msg = msg + "Method  :" + msgTable.getModel().getValueAt(row, 4).toString() + "\n";
-                  msgDetails.setText(msg);
+                        if (msgTable.getModel().getValueAt(row, 0) != null)
+                            msg = msg + "Time    : " + msgTable.getModel().getValueAt(row, 0).toString() + "\n";
+                        if (msgTable.getModel().getValueAt(row, 1) != null)
+                            msg = msg + "Severity: " + msgTable.getModel().getValueAt(row, 1).toString() + "\n";
+                        if (msgTable.getModel().getValueAt(row, 2) != null)
+                            msg = msg + "Message : " + msgTable.getModel().getValueAt(row, 2).toString() + "\n";
+                        if (msgTable.getModel().getValueAt(row, 3) != null)
+                            msg = msg + "Class   : " + msgTable.getModel().getValueAt(row, 3).toString() + "\n";
+                        if (msgTable.getModel().getValueAt(row, 4) != null)
+                            msg = msg + "Method  :" + msgTable.getModel().getValueAt(row, 4).toString() + "\n";
+                        msgDetails.setText(msg);
 
-              }
-          });
+                    }
+                });
     }
 
 
     private DefaultTableColumnModel getLogColumnModel() {
-       DefaultTableColumnModel columnModel = new DefaultTableColumnModel();
+        DefaultTableColumnModel columnModel = new DefaultTableColumnModel();
 
-       columnModel.addColumn(new TableColumn(0, 60));
-       columnModel.addColumn(new TableColumn(1, 15));
-       columnModel.addColumn(new TableColumn(2, 200));
-       columnModel.addColumn(new TableColumn(3, 100));
-       columnModel.addColumn(new TableColumn(4, 30));
-       columnModel.getColumn(0).setHeaderValue(logTableModel.getColumnName(0));
-       columnModel.getColumn(1).setHeaderValue(logTableModel.getColumnName(1));
-       columnModel.getColumn(2).setHeaderValue(logTableModel.getColumnName(2));
-       columnModel.getColumn(3).setHeaderValue(logTableModel.getColumnName(3));
-       columnModel.getColumn(4).setHeaderValue(logTableModel.getColumnName(4));
+        columnModel.addColumn(new TableColumn(0, 60));
+        columnModel.addColumn(new TableColumn(1, 15));
+        columnModel.addColumn(new TableColumn(2, 200));
+        columnModel.addColumn(new TableColumn(3, 100));
+        columnModel.addColumn(new TableColumn(4, 30));
+        columnModel.getColumn(0).setHeaderValue(logTableModel.getColumnName(0));
+        columnModel.getColumn(1).setHeaderValue(logTableModel.getColumnName(1));
+        columnModel.getColumn(2).setHeaderValue(logTableModel.getColumnName(2));
+        columnModel.getColumn(3).setHeaderValue(logTableModel.getColumnName(3));
+        columnModel.getColumn(4).setHeaderValue(logTableModel.getColumnName(4));
 
         return columnModel;
-}
+    }
 
     /**
-       * create the table model with log fields
-       *
-       * @return the <code>AbstractTableModel</code> for the
-       * log pane
-       */
-      private AbstractTableModel getLogTableModel() {
-          if (logTableModel != null) {
-              return logTableModel;
-          }
+     * create the table model with log fields
+     *
+     * @return the <code>AbstractTableModel</code> for the
+     * log pane
+     */
+    private AbstractTableModel getLogTableModel() {
+        if (logTableModel != null) {
+            return logTableModel;
+        }
 
+        String[] cols = {"Time", "Severity", "Message", "Class", "Method"};
+        String[][] rows = new String[][]{};
 
-       String[] cols = {"Time", "Severity", "Message", "Class", "Method"};
-       String[][] rows = new String [][] {};
+        logTableModel = new LogTableModel(rows, cols);
 
-        logTableModel = new DefaultTableModel(rows, cols);
-
-          return logTableModel;
-      }
+        return logTableModel;
+    }
 
     public void getLogs() {
 
         Log log = (Log) Locator.getDefault().lookup(Log.class);
         if (log == null) throw new IllegalStateException("cannot obtain log remote reference");
 
-        String[] rawLogs = new String[] {};
+        String[] rawLogs = new String[]{};
         int numOfMsgReceived = 0;
         boolean cleanUp = true;
-        do
-        {
+        do {
             try {
-                    rawLogs = log.getSystemLog(numOfMsgReceived, MAX_MESSAGE_BLOCK_SIZE);
+                rawLogs = log.getSystemLog(numOfMsgReceived, MAX_MESSAGE_BLOCK_SIZE);
 
-                    numOfMsgReceived += rawLogs.length;
+                numOfMsgReceived += rawLogs.length;
 
-                    if(cleanUp)
-                    {
-                        while(msgTable.getRowCount() > 0){
-                             System.out.println("Number of row left is: " + msgTable.getRowCount() + "\n");
-                            ((DefaultTableModel)(msgTable.getModel())).removeRow(0);
-                        }
-                         cleanUp = false;
+                if (cleanUp) {
+                    while (msgTable.getRowCount() > 0) {
+                        System.out.println("Number of row left is: " + msgTable.getRowCount() + "\n");
+                        ((DefaultTableModel) (msgTable.getModel())).removeRow(0);
                     }
-         //           ((DefaultTableModel)msgTable.getModel()).rowsRemoved(new TableModelEvent(msgTable.getModel()));
-                     for (int i = 0; i < rawLogs.length; i++) {
-                     //msgTable.setValueAt(rawLogs[i], i, 0);
-                        Vector newRow = new Vector();
+                    cleanUp = false;
+                }
+                //           ((DefaultTableModel)msgTable.getModel()).rowsRemoved(new TableModelEvent(msgTable.getModel()));
+                for (int i = 0; i < rawLogs.length; i++) {
+                    //msgTable.setValueAt(rawLogs[i], i, 0);
+                    Vector newRow = new Vector();
 
-                        LogMessage logMsg = new LogMessage(rawLogs[i]);
-                        newRow.add(logMsg.getTime());
-                        newRow.add(logMsg.getSeverity());
-                        newRow.add(logMsg.getMessageDetail());
-                        newRow.add(logMsg.getMessageClass());
-                        newRow.add(logMsg.getMessageMethod());
-                        ((DefaultTableModel)msgTable.getModel()).addRow(newRow);
-                        System.out.println("adding a new row (" + i + ") .....\n");
-                        System.out.println(rawLogs[i]);
-                    }
+                    LogMessage logMsg = new LogMessage(rawLogs[i]);
+                    newRow.add(logMsg.getTime());
+                    newRow.add(logMsg.getSeverity());
+                    newRow.add(logMsg.getMessageDetail());
+                    newRow.add(logMsg.getMessageClass());
+                    newRow.add(logMsg.getMessageMethod());
+                    ((DefaultTableModel) msgTable.getModel()).addRow(newRow);
+                    System.out.println("adding a new row (" + i + ") .....\n");
+                    System.out.println(rawLogs[i]);
+                }
 
-                ((AbstractTableModel)(msgTable.getModel())).fireTableDataChanged();
+                ((AbstractTableModel) (msgTable.getModel())).fireTableDataChanged();
 
-            }
-            catch (RemoteException e) {
+            } catch (RemoteException e) {
                 System.err.println("Unable to retrieve logs from server");
             }
-        }  while(rawLogs.length == MAX_MESSAGE_BLOCK_SIZE);    // may be more messages for retrieval
+        } while (rawLogs.length == MAX_MESSAGE_BLOCK_SIZE);    // may be more messages for retrieval
     }
 
     private void RefreshActionPerformed(java.awt.event.ActionEvent evt) {
@@ -309,13 +296,10 @@ public class LogPanel {
     }
 
     private void detailsActionPerformed(java.awt.event.ActionEvent evt) {
-        if(details.isSelected())
-        {
+        if (details.isSelected()) {
             jSplitPane1.setDividerLocation(0.7);
             msgDetails.setVisible(true);
-         }
-        else
-        {
+        } else {
             hideMsgDetails();
         }
     }
@@ -338,9 +322,9 @@ public class LogPanel {
 
     private void hideMsgDetails() {
 
-         jSplitPane1.setDividerLocation(jSplitPane1.getMaximumDividerLocation());
-         msgDetails.setVisible(false);
-     }
+        jSplitPane1.setDividerLocation(jSplitPane1.getMaximumDividerLocation());
+        msgDetails.setVisible(false);
+    }
 
     private void simpleTest(String severity) {
 
@@ -348,22 +332,22 @@ public class LogPanel {
     }
 
 
- /*
-     private Action getLogRefreshAction() {
-        if (logRefreshAction != null) return logRefreshAction;
-        String atext = resapplication.getString("Refresh_MenuItem_text");
-        Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/Refresh16.gif"));
-        logRefreshAction =
-          new AbstractAction(atext, icon) {
+    /*
+        private Action getLogRefreshAction() {
+           if (logRefreshAction != null) return logRefreshAction;
+           String atext = resapplication.getString("Refresh_MenuItem_text");
+           Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/Refresh16.gif"));
+           logRefreshAction =
+             new AbstractAction(atext, icon) {
 
-              public void actionPerformed(ActionEvent event) {
-                  // todo: retrieve the logs from ssg
-              }
-          };
-        logRefreshAction.setEnabled(false);
-        logRefreshAction.putValue(Action.SHORT_DESCRIPTION, atext);
-        return logRefreshAction;
-    }
+                 public void actionPerformed(ActionEvent event) {
+                     // todo: retrieve the logs from ssg
+                 }
+             };
+           logRefreshAction.setEnabled(false);
+           logRefreshAction.putValue(Action.SHORT_DESCRIPTION, atext);
+           return logRefreshAction;
+       }
 
-*/
+   */
 }
