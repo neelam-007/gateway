@@ -65,7 +65,7 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
     {
         Auditor auditor = new Auditor(context.getAuditContext(), _logger);
         if (context.getRequest().getKnob(XmlKnob.class) == null) {
-            auditor.logAndAudit(AssertionMessages.REQUEST_XPATH_ONLY);
+            auditor.logAndAudit(AssertionMessages.XPATH_REQUEST_NOT_XML);
             return AssertionStatus.BAD_REQUEST;
         }
 
@@ -73,7 +73,7 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
                 String pattern = _data.pattern();
 
                 if ( pattern == null || pattern.length() == 0 ) {
-                    auditor.logAndAudit(AssertionMessages.REQUEST_XPATH_PATTERN_INVALID);
+                    auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_INVALID);
                     return AssertionStatus.FALSIFIED;
                 }
 
@@ -90,16 +90,16 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
                 }
 
                 if ( result == null || result.size() == 0 ) {
-                    auditor.logAndAudit(AssertionMessages.REQUEST_XPATH_PATTERN_NOT_MATCHED, new String[] {pattern});
+                    auditor.logAndAudit(AssertionMessages.XPATH_PATTERN_NOT_MATCHED_REQUEST, new String[] {pattern});
                     return AssertionStatus.FALSIFIED;
                 } else {
                     Object o = result.get(0);
                     if ( o instanceof Boolean ) {
                         if ( ((Boolean)o).booleanValue() ) {
-                            auditor.logAndAudit(AssertionMessages.REQUEST_XPATH_RESULT_TRUE, new String[] {pattern});
+                            auditor.logAndAudit(AssertionMessages.XPATH_RESULT_TRUE, new String[] {pattern});
                             return AssertionStatus.NONE;
                         } else {
-                            auditor.logAndAudit(AssertionMessages.REQUEST_XPATH_RESULT_FALSE, new String[] {pattern});
+                            auditor.logAndAudit(AssertionMessages.XPATH_RESULT_FALSE, new String[] {pattern});
                             return AssertionStatus.FALSIFIED;
                         }
                     } else if ( o instanceof Node ) {
@@ -107,17 +107,17 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
                         int type = n.getNodeType();
                         switch( type ) {
                             case Node.TEXT_NODE:
-                                auditor.logAndAudit(AssertionMessages.REQUEST_XPATH_TEXT_NODE_FOUND, new String[] {pattern, n.getNodeValue()});
+                                auditor.logAndAudit(AssertionMessages.XPATH_TEXT_NODE_FOUND, new String[] {pattern, n.getNodeValue()});
                                 return AssertionStatus.NONE;
                             case Node.ELEMENT_NODE:
-                                auditor.logAndAudit(AssertionMessages.REQUEST_XPATH_ELEMENT_FOUND, new String[] {pattern, n.getNodeName()});
+                                auditor.logAndAudit(AssertionMessages.XPATH_ELEMENT_FOUND, new String[] {pattern, n.getNodeName()});
                                 return AssertionStatus.NONE;
                             default:
-                                auditor.logAndAudit(AssertionMessages.REQUEST_XPATH_OTHER_NODE_FOUND, new String[] {pattern, n.toString()});
+                                auditor.logAndAudit(AssertionMessages.XPATH_OTHER_NODE_FOUND, new String[] {pattern, n.toString()});
                                 return AssertionStatus.NONE;
                         }
                     } else {
-                        auditor.logAndAudit(AssertionMessages.REQUEST_XPATH_SUCCEED, new String[] {pattern});
+                        auditor.logAndAudit(AssertionMessages.XPATH_SUCCEED_REQUEST, new String[] {pattern});
                         return AssertionStatus.NONE;
                     }
                 }

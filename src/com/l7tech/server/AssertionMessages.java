@@ -92,16 +92,19 @@ public class AssertionMessages extends Messages {
     public static final M SC_REQUEST_NOT_REFER_TO_SC_TOKEN        = m(4605, Level.INFO, "This request did not seem to refer to a Secure Conversation token.");
     public static final M SC_UNABLE_TO_ATTACH_SC_TOKEN            = m(4606, Level.WARNING, "Response not SOAP; unable to attach WS-SecureConversation token");
 
-    // ServerRequestXpathAssertion messages
-    public static final M REQUEST_XPATH_ONLY                      = m(4700, Level.WARNING, "RequestXPathAssertion only works on XML requests; assertion therefore fails.");
-    public static final M REQUEST_XPATH_PATTERN_INVALID           = m(4701, Level.WARNING, "XPath pattern is null or empty; assertion therefore fails.");
-    public static final M REQUEST_XPATH_PATTERN_NOT_MATCHED       = m(4702, Level.INFO, "XPath pattern {0} didn't match request; assertion therefore fails." );
-    public static final M REQUEST_XPATH_RESULT_TRUE               = m(4703, Level.FINE, "XPath pattern {0} returned true");
-    public static final M REQUEST_XPATH_RESULT_FALSE              = m(4704, Level.INFO, "XPath pattern {0} returned false");
-    public static final M REQUEST_XPATH_TEXT_NODE_FOUND           = m(4705, Level.FINE, "XPath pattern {0} found a text node {1}");
-    public static final M REQUEST_XPATH_ELEMENT_FOUND             = m(4706, Level.FINE, "XPath pattern {0} found an element {1}");
-    public static final M REQUEST_XPATH_OTHER_NODE_FOUND          = m(4707, Level.FINE,  "XPath pattern {0} found some other node {1}");
-    public static final M REQUEST_XPATH_SUCCEED                   = m(4708, Level.FINE, "XPath pattern {0} matched request; assertion therefore succeeds.");
+    // ServerRequestXpathAssertion & ServerResponseXpathAssertion messages
+    public static final M XPATH_REQUEST_NOT_XML                   = m(4700, Level.WARNING, "Request not XML; cannot evaluate XPath expression");
+    public static final M XPATH_RESPONSE_NOT_XML                  = m(4701, Level.WARNING, "Response not XML; cannot evaluate XPath expression");
+    public static final M XPATH_PATTERN_INVALID                   = m(4702, Level.WARNING, "XPath pattern is null or empty; assertion therefore fails.");
+    public static final M XPATH_PATTERN_NOT_MATCHED_REQUEST       = m(4703, Level.INFO, "XPath pattern {0} didn't match request; assertion therefore fails." );
+    public static final M XPATH_PATTERN_NOT_MATCHED_RESPONSE      = m(4704, Level.INFO, "XPath pattern {0} didn't match response; assertion therefore fails." );
+    public static final M XPATH_RESULT_TRUE                       = m(4705, Level.FINE, "XPath pattern {0} returned true");
+    public static final M XPATH_RESULT_FALSE                      = m(4706, Level.INFO, "XPath pattern {0} returned false");
+    public static final M XPATH_TEXT_NODE_FOUND                   = m(4707, Level.FINE, "XPath pattern {0} found a text node {1}");
+    public static final M XPATH_ELEMENT_FOUND                     = m(4708, Level.FINE, "XPath pattern {0} found an element {1}");
+    public static final M XPATH_OTHER_NODE_FOUND                  = m(4709, Level.FINE,  "XPath pattern {0} found some other node {1}");
+    public static final M XPATH_SUCCEED_REQUEST                   = m(4710, Level.FINE, "XPath pattern {0} matched request; assertion therefore succeeds.");
+    public static final M XPATH_SUCCEED_RESPONSE                  = m(4711, Level.FINE, "XPath pattern {0} matched response; assertion therefore succeeds.");
 
     // ServerRequestWssX509Cert messages
     public static final M REQUEST_WSS_X509_FOR_ANOTHER_USER       = m(4800, Level.FINE, "This is intended for another recipient, there is nothing to validate here.");
