@@ -2,6 +2,12 @@ package com.l7tech.identity;
 
 import java.security.Principal;
 
+/**
+ * Represents a set of {@link User}s.
+ *
+ * Memberships are queried and managed using the {@link IdentityAdmin} API rather than through properties of 
+ * the Group objects themselves.
+ */
 public interface Group extends Principal {
     /**
      * Name of the admin group. those admins can do anything.
@@ -22,10 +28,31 @@ public interface Group extends Principal {
      */
     String getUniqueIdentifier();
 
+    /**
+     * Gets the OID of the {@link IdentityProviderConfig} to which this Group belongs.
+     * @return the OID of the {@link IdentityProviderConfig} to which this Group belongs.
+     *
+     * @see IdentityProviderConfigManager#INTERNALPROVIDER_SPECIAL_OID
+     */
     long getProviderId();
+
+    /**
+     * Sets the OID of the {@link IdentityProviderConfig} to which this Group belongs.
+     * @param providerId the OID of the {@link IdentityProviderConfig} to which this Group belongs.
+     *
+     * @see IdentityProviderConfigManager#INTERNALPROVIDER_SPECIAL_OID
+     */
     void setProviderId(long providerId);
-    
+
+    /**
+     * Gets a human-readable description for this Group
+     * @return a human-readable description for this Group
+     */
     String getDescription();
 
+    /**
+     * Gets the mutable {@link GroupBean} for this Group.
+     * @return the mutable {@link GroupBean} for this Group.
+     */
     GroupBean getGroupBean();
 }

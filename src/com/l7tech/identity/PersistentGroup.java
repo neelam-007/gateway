@@ -16,6 +16,8 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
+ * Abstract superclass of {@link Group}s that are stored in the database, as opposed to in external directories.
+ *
  * @author alex
  * @version $Revision$
  */
