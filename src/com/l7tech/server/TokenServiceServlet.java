@@ -110,9 +110,10 @@ public class TokenServiceServlet extends HttpServlet {
 
     private final TokenService.CredentialsAuthenticator authenticator() {
         return new TokenService.CredentialsAuthenticator() {
-            public User authenticate(LoginCredentials creds) {
+            public User authenticate(LoginCredentials creds) throws AuthenticationException {
                 IdentityProviderConfigManager idpcm = (IdentityProviderConfigManager)Locator.getDefault().
                                                         lookup(IdentityProviderConfigManager.class);
+                User authenticatedUser = null;
                 Collection providers = null;
                 try {
                     // go through providers and try to authenticate the cert
@@ -120,8 +121,17 @@ public class TokenServiceServlet extends HttpServlet {
                     for (Iterator iterator = providers.iterator(); iterator.hasNext();) {
                         IdentityProvider provider = (IdentityProvider) iterator.next();
                         try {
-                            User authenticatedUser = provider.authenticate(creds);
-                            if (authenticatedUser != null) return authenticatedUser;
+                            User dude = provider.authenticate(creds);
+                            if (dude != null) {
+                                if (authenticatedUser != null) {
+                                    throw new AuthenticationException("The cert used to sign this request is valid " +
+                                                                      "on more than one provider. Secure conversation " +
+                                                                      "contexts must be associated unambigously to one " +
+                                                                      "user.");
+                                } else {
+                                authenticatedUser = dude;
+                                }
+                            }
                         } catch (AuthenticationException e) {
                             logger.log(Level.INFO, "exception trying to authenticate credentials against " +
                                                    provider.getConfig().getName(), e);
@@ -135,7 +145,7 @@ public class TokenServiceServlet extends HttpServlet {
                     return null;
                 }
                 logger.fine("Credentials did not authenticate against any provider.");
-                return null;
+                return authenticatedUser;
             }
         };
     }
