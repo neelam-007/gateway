@@ -39,9 +39,8 @@ public class GroupPanel extends EntityEditorPanel {
     // Apply/Revert buttons
     private JButton okButton;
     private JButton cancelButton;
-    private JButton applyButton;
 
-    private boolean formDirty;  // group has been changed
+    private boolean formModified;  // group has been changed
 
 
     // group
@@ -73,17 +72,15 @@ public class GroupPanel extends EntityEditorPanel {
     }
 
     /**
-     * Enables or disables the apply and revert button based
+     * Enables or disables the buttons based
      * on whether or not data on the form has been changed
      */
-    public void setDirty() {
+    void setModified(boolean b) {
         // If entity not already changed
-        if (!formDirty) {
-            // Enable buttons
-            getOKButton().setEnabled(true);
-            getApplyButton().setEnabled(true);
-            formDirty = true;
-        }
+        formModified = b;
+        getOKButton().setEnabled(b);
+        formModified = true;
+
     }
 
 
@@ -143,10 +140,8 @@ public class GroupPanel extends EntityEditorPanel {
 
     /**
      * Initialize all form panel components
-     *
-     * @exception Exception
      */
-    private void layoutComponents() throws Exception {
+    private void layoutComponents() {
         // Set layout
         this.setName("Group");
         this.setLayout(new GridBagLayout());
@@ -304,8 +299,6 @@ public class GroupPanel extends EntityEditorPanel {
             descriptionTextField.setPreferredSize(new Dimension(200, 20));
             descriptionTextField.setEditable(true);
             descriptionTextField.setDocument(new MaxLengthDocument(50));
-
-
             // Register listeners
             descriptionTextField.getDocument().addDocumentListener(documentListener);
         }
@@ -341,17 +334,10 @@ public class GroupPanel extends EntityEditorPanel {
                             GridBagConstraints.NONE,
                             new Insets(5, 5, 5, 5), 0, 0));
 
-            buttonPanel.add(getApplyButton(),
-                    new GridBagConstraints(3, 0, 1, 1, 0.0, 0.0,
-                            GridBagConstraints.CENTER,
-                            GridBagConstraints.NONE,
-                            new Insets(5, 5, 5, 0), 0, 0));
-
             JButton buttons[] = new JButton[]
             {
                 getOKButton(),
-                getCancelButton(),
-                getApplyButton()
+                getCancelButton()
             };
             Utilities.equalizeButtonSizes(buttons);
         }
@@ -409,32 +395,6 @@ public class GroupPanel extends EntityEditorPanel {
         return cancelButton;
     }
 
-    /**
-     * Apply the changes but do not close the panel
-     *
-     * @return JButton
-     */
-    private JButton getApplyButton() {
-        if (applyButton == null) {
-            applyButton = new JButton(APPLY_BUTTON);
-            applyButton.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    try {
-                        // Apply changes if possible
-                        if (!collectAndSaveChanges()) {
-                            // Error - just return
-                            return;
-                        }
-                    } catch (Exception ex) {
-                        // Popup dialog with error
-                        log.error("Error updating Group: " + groupHeader.getName(), ex);
-                    }
-                }
-            });
-        }
-        return applyButton;
-    }
-
 
     /**
      * Populates the form from the group bean
@@ -444,8 +404,8 @@ public class GroupPanel extends EntityEditorPanel {
     private void setData(Group group) throws Exception {
         // Set tabbed panels (add/remove extranet tab)
         nameLabel.setText(group.getName());
-        // Cleanup
-        getApplyButton().setEnabled(false);
+        getDescriptionTextField().setText(group.getDescription());
+        setModified(false);
     }
 
 
@@ -455,7 +415,8 @@ public class GroupPanel extends EntityEditorPanel {
      * @return Group   a clone of the Group, up-to-date with form changes
      */
     private Group collectChanges() {
-        return null;
+        group.setDescription(this.getDescriptionTextField().getText());
+        return group;
     }
 
 
@@ -478,6 +439,13 @@ public class GroupPanel extends EntityEditorPanel {
 
         // Try adding/updating the Group
         try {
+            if (groupHeader.getOid() !=0) {
+                Registry.getDefault().getInternalGroupManager().update(group);
+            } else {
+                long id =
+                        Registry.getDefault().getInternalGroupManager().save(group);
+                groupHeader.setOid(id);
+            }
 
             // Notify listener of this insert/update
             if (null != panelListener) {
@@ -485,11 +453,8 @@ public class GroupPanel extends EntityEditorPanel {
             }
 
             // Cleanup
-            formDirty = false;
-
-
-            getApplyButton().setEnabled(false);
-        } catch (Exception e) {
+            formModified = false;
+   } catch (Exception e) {
             StringBuffer msg = new StringBuffer();
             msg.append("There was an error updating ");
             msg.append("Group ").append(groupHeader.getName()).append(".\n");
@@ -540,14 +505,17 @@ public class GroupPanel extends EntityEditorPanel {
     private final DocumentListener documentListener = new DocumentListener() {
         /** Gives notification that there was an insert into the document.*/
         public void insertUpdate(DocumentEvent e) {
+            setModified(true);
         }
 
         /** Gives notification that a portion of the document has been */
         public void removeUpdate(DocumentEvent e) {
+            setModified(true);
         }
 
         /** Gives notification that an attribute or set of attributes changed. */
         public void changedUpdate(DocumentEvent e) {
+            setModified(true);
         }
     };
 

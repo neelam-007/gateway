@@ -8,6 +8,8 @@ import org.apache.log4j.Category;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.event.ListDataListener;
+import javax.swing.event.ListDataEvent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -15,6 +17,8 @@ import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.ArrayList;
+import java.util.Set;
 
 /**
  * GroupUsersPanel is the panel for administering the
@@ -31,7 +35,8 @@ class GroupUsersPanel extends JPanel {
 
     private JPanel mainPanel = null;
     private JPanel groupMemberPanel = null;
-    private JPanel groupButtonPanel = null;
+
+    private JPanel buttonsPanel = null;
     private JLabel groupMemberLabel = null;
 
     private JScrollPane groupInListJScrollPane;
@@ -42,9 +47,7 @@ class GroupUsersPanel extends JPanel {
 
     private JButton groupAdd = null;
     private JButton groupRemove = null;
-
-    private boolean dirty = false;
-
+    private boolean isLoading = false;
 
     private final static String USER_GROUP_MEMBER_LABEL = "Group memberships:";
 
@@ -83,33 +86,30 @@ class GroupUsersPanel extends JPanel {
                         new Insets(8, 8, 8, 8), 0, 0));
     }
 
-    /** is the panel dirty */
-    public boolean isDirty() {
-        return dirty;
-    }
 
     /** layout the components */
     private JPanel getMainPanel() {
         // main anel
-        if (mainPanel == null) {
-            mainPanel = new JPanel();
-            mainPanel.setLayout(new GridBagLayout());
-            Component hStrut = Box.createHorizontalStrut(8);
+        if (mainPanel != null)
+            return mainPanel;
+        mainPanel = new JPanel();
+        mainPanel.setLayout(new GridBagLayout());
+        Component hStrut = Box.createHorizontalStrut(8);
 
-            // add components
-            mainPanel.add(hStrut,
-                    new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
-                            GridBagConstraints.CENTER,
-                            GridBagConstraints.BOTH,
-                            new Insets(0, 0, 0, 0), 0, 0));
+        // add components
+        mainPanel.add(hStrut,
+                new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
+                        GridBagConstraints.CENTER,
+                        GridBagConstraints.BOTH,
+                        new Insets(0, 0, 0, 0), 0, 0));
 
-            mainPanel.add(getGroupMemberPanel(),
-                    new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
-                            GridBagConstraints.WEST,
-                            GridBagConstraints.BOTH,
-                            new Insets(5, 0, 0, 0), 0, 0));
+        mainPanel.add(getGroupMemberPanel(),
+                new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
+                        GridBagConstraints.WEST,
+                        GridBagConstraints.BOTH,
+                        new Insets(5, 0, 0, 0), 0, 0));
 
-        }
+
         return mainPanel;
     }
 
@@ -120,27 +120,61 @@ class GroupUsersPanel extends JPanel {
      * @return SortedListModel
      */
     private SortedListModel getListInModel() {
-        if (listInModel == null) {
-            listInModel =
-                    new SortedListModel(new Comparator() {
-                        /**
-                         * Compares group users by login alphabetically.
-                         * @param o1 the first object to be compared.
-                         * @param o2 the second object to be compared.
-                         * @return a negative integer, zero, or a positive integer as the
-                         * 	       first argument is less than, equal to, or greater than the
-                         *	       second.
-                         * @throws ClassCastException if the arguments' types prevent them from
-                         * 	       being compared by this Comparator.
-                         */
-                        public int compare(Object o1, Object o2) {
-                            User u1 = (User)o1;
-                            User u2 = (User)o2;
+        if (listInModel != null) return listInModel;
 
-                            return u1.getLogin().compareTo(u2.getLogin());
-                        }
-            });
-        }
+        listInModel =
+                new SortedListModel(new Comparator() {
+                    /**
+                     * Compares group users by login alphabetically.
+                     * @param o1 the first object to be compared.
+                     * @param o2 the second object to be compared.
+                     * @return a negative integer, zero, or a positive integer as the
+                     * 	       first argument is less than, equal to, or greater than the
+                     *	       second.
+                     * @throws ClassCastException if the arguments' types prevent them from
+                     * 	       being compared by this Comparator.
+                     */
+                    public int compare(Object o1, Object o2) {
+                        User u1 = (User) o1;
+                        User u2 = (User) o2;
+
+                        return u1.getLogin().compareTo(u2.getLogin());
+                    }
+                });
+
+        listInModel.addListDataListener(new ListDataListener() {
+            /**
+             * @param e  a <code>ListDataEvent</code> encapsulating the
+             *    event information
+             */
+            public void intervalAdded(ListDataEvent e) {
+                if (!isLoading) {
+                    groupPanel.setModified(true);
+                }
+            }
+
+            /**
+             * @param e  a <code>ListDataEvent</code> encapsulating the
+             *    event information
+             */
+            public void intervalRemoved(ListDataEvent e) {
+                if (!isLoading) {
+                    groupPanel.setModified(true);
+
+                }
+            }
+
+            /**
+             * @param e  a <code>ListDataEvent</code> encapsulating the
+             *    event information
+             */
+            public void contentsChanged(ListDataEvent e) {
+                if (!isLoading) {
+                    groupPanel.setModified(true);
+                }
+            }
+
+        });
 
         return listInModel;
     }
@@ -152,28 +186,29 @@ class GroupUsersPanel extends JPanel {
      * @return JPanel
      */
     private JPanel getGroupMemberPanel() {
-        if (groupMemberPanel == null) {
-            groupMemberPanel = new JPanel();
-            groupMemberPanel.setLayout(new GridBagLayout());
+        if (groupMemberPanel != null)
+            return groupMemberPanel;
 
-            groupMemberPanel.add(getGroupMemberLabel(),
-                    new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
-                            GridBagConstraints.WEST,
-                            GridBagConstraints.BOTH,
-                            new Insets(0, 0, 0, 0), 0, 0));
+        groupMemberPanel = new JPanel();
+        groupMemberPanel.setLayout(new GridBagLayout());
 
-            groupMemberPanel.add(getGroupInListJScrollPane(),
-                    new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
-                            GridBagConstraints.WEST,
-                            GridBagConstraints.BOTH,
-                            new Insets(0, 0, 0, 0), 0, 0));
+        groupMemberPanel.add(getGroupMemberLabel(),
+                new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
+                        GridBagConstraints.WEST,
+                        GridBagConstraints.BOTH,
+                        new Insets(0, 0, 0, 0), 0, 0));
 
-            groupMemberPanel.add(getGroupButtonPanel(),
-                    new GridBagConstraints(0, 2, 1, 1, 1.0, 1.0,
-                            GridBagConstraints.EAST,
-                            GridBagConstraints.BOTH,
-                            new Insets(8, 0, 0, 0), 0, 0));
-        }
+        groupMemberPanel.add(getGroupInListJScrollPane(),
+                new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
+                        GridBagConstraints.WEST,
+                        GridBagConstraints.BOTH,
+                        new Insets(0, 0, 0, 0), 0, 0));
+
+        groupMemberPanel.add(getButtonsPanel(),
+                new GridBagConstraints(0, 2, 1, 1, 1.0, 1.0,
+                        GridBagConstraints.EAST,
+                        GridBagConstraints.BOTH,
+                        new Insets(8, 0, 0, 0), 0, 0));
         return groupMemberPanel;
     }
 
@@ -227,7 +262,7 @@ class GroupUsersPanel extends JPanel {
      * enable/disable add/remove buttons
      */
     private void setAddRemoveButtons() {
-      getGroupRemove().setEnabled(listInModel.getSize() >0);
+        getGroupRemove().setEnabled(listInModel.getSize() > 0);
 
     }
 
@@ -236,41 +271,43 @@ class GroupUsersPanel extends JPanel {
      *
      * @return JPanel
      */
-    private JPanel getGroupButtonPanel() {
-        if (groupButtonPanel == null) {
-            groupButtonPanel = new JPanel();
-            groupButtonPanel.setLayout(new GridBagLayout());
+    private JPanel getButtonsPanel() {
+        if (buttonsPanel != null)
+            return buttonsPanel;
 
-            Component hStrut = Box.createHorizontalStrut(8);
+        buttonsPanel = new JPanel();
+        buttonsPanel.setLayout(new GridBagLayout());
 
-            // add components
-            groupButtonPanel.add(hStrut,
-                    new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
-                            GridBagConstraints.CENTER,
-                            GridBagConstraints.BOTH,
-                            new Insets(0, 0, 0, 0), 0, 0));
+        Component hStrut = Box.createHorizontalStrut(8);
 
-            groupButtonPanel.add(getGroupAdd(),
-                    new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
-                            GridBagConstraints.EAST,
-                            GridBagConstraints.NONE,
-                            new Insets(0, 0, 0, 0), 0, 0));
+        // add components
+        buttonsPanel.add(hStrut,
+                new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
+                        GridBagConstraints.CENTER,
+                        GridBagConstraints.BOTH,
+                        new Insets(0, 0, 0, 0), 0, 0));
 
-            groupButtonPanel.add(getGroupRemove(),
-                    new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
-                            GridBagConstraints.EAST,
-                            GridBagConstraints.NONE,
-                            new Insets(0, 8, 0, 0), 0, 0));
+        buttonsPanel.add(getGroupAdd(),
+                new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
+                        GridBagConstraints.EAST,
+                        GridBagConstraints.NONE,
+                        new Insets(0, 0, 0, 0), 0, 0));
 
-            JButton buttons1[] = new JButton[]
-            {
-                getGroupAdd(),
-                getGroupRemove()
-            };
-            Utilities.equalizeButtonSizes(buttons1);
-        }
+        buttonsPanel.add(getGroupRemove(),
+                new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
+                        GridBagConstraints.EAST,
+                        GridBagConstraints.NONE,
+                        new Insets(0, 8, 0, 0), 0, 0));
 
-        return groupButtonPanel;
+        JButton buttons1[] = new JButton[]
+        {
+            getGroupAdd(),
+            getGroupRemove()
+        };
+        Utilities.equalizeButtonSizes(buttons1);
+
+
+        return buttonsPanel;
     }
 
     /**
@@ -285,6 +322,11 @@ class GroupUsersPanel extends JPanel {
 
             groupAdd.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
+                    JDialog d = (JDialog) SwingUtilities.windowForComponent(GroupUsersPanel.this);
+                    JDialog dialog = new NewGroupMemberDialog(d, groupPanel);
+                    dialog.setResizable(false);
+                    dialog.show();
+
                     // Perform necessary post-updates
                     setAddRemoveButtons();
                 }
@@ -307,9 +349,11 @@ class GroupUsersPanel extends JPanel {
             groupRemove.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     Object[] removals = groupMemberList.getSelectedValues();
+                    Set members = groupPanel.getGroup().getMembers();
 
-                    for (int i =0; removals !=null && i < removals.length;i++) {
+                    for (int i = 0; removals != null && i < removals.length; i++) {
                         listInModel.removeElement(removals[i]);
+                        members.remove(removals[i]);
                     }
                     setAddRemoveButtons();
                 }
@@ -346,17 +390,22 @@ class GroupUsersPanel extends JPanel {
     };
 
     private void loadGroupUsers() {
-        Collection members = groupPanel.getGroup().getMembers();
-        if (members !=null) {
-            listInModel.addAll(members);
+        try {
+            isLoading = true;
+            Collection members = groupPanel.getGroup().getMembers();
+            if (members != null) {
+                listInModel.addAll(members);
+            }
+        } finally {
+            isLoading = false;
         }
 
     }
 
-
     private final ListCellRenderer renderer = new DefaultListCellRenderer() {
         public Component getListCellRendererComponent(JList list, Object value,
-                                                      int index, boolean isSelected, boolean cellHasFocus) {
+                                                      int index, boolean isSelected,
+                                                      boolean cellHasFocus) {
             if (isSelected) {
                 this.setBackground(list.getSelectionBackground());
                 this.setForeground(list.getSelectionForeground());
@@ -368,8 +417,8 @@ class GroupUsersPanel extends JPanel {
 
             // Based on value type, determine cell contents
             setIcon(IconManager.getIcon(User.class));
-            User u = (User)value;
-            setText(u.getLogin() + " - " + u.getFirstName() + " " +u.getFirstName());
+            User u = (User) value;
+            setText(u.getLogin() + " - " + u.getFirstName() + " " + u.getFirstName());
 
             return this;
         }
