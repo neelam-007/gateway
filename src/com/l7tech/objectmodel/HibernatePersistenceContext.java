@@ -116,23 +116,46 @@ public class HibernatePersistenceContext extends PersistenceContext {
     public synchronized Session getSession() throws SQLException, HibernateException {
         Exception lastException = null;
 
+        // Test underlying connection before returning the session
+        // if the connection does not seem to be working, this will try to recover up to MAXRETRIES times.
         for ( int i = 0; i < MAXRETRIES; i++ ) {
             Connection conn = null;
             ResultSet rs = null;
             Statement pingStmt = null;
             try {
-                if ( _session == null || !_session.isOpen() || !_session.isConnected() )
+                // is the session created and ready ?
+                if ( _session == null || !_session.isOpen() || !_session.isConnected() ) {
+                    logger.info("Session broken - will try to make new one.");
+
+                    // If the session could not be restored on first try. we might need to wait a little to
+                    // allow for something like a database restart ot another node to take over.
+                    if (i > 1) {
+                        try {
+                            wait(1500);
+                        } catch (InterruptedException e) {
+                            logger.fine("could not wait to make new session " + e.getMessage());
+                        }
+                    }
+
+                    // Try to get new session
+                    if (_session != null) _session.close();
                     _session = _manager.makeSession();
+                }
+
+                // test the connection and return the session
                 conn = _session.connection();
                 pingStmt = conn.createStatement();
                 rs = pingStmt.executeQuery( PINGSQL );
                 return _session;
-            } catch ( SQLException se ) {
-                logger.log( Level.WARNING, "Try #" + (i+1) + " caught SQLException", se );
-                lastException = se;
-            } catch ( HibernateException he ) {
-                logger.log( Level.WARNING, "Try #" + (i+1) + " caught HibernateException", he );
-                lastException = he;
+
+            } catch (SQLException e) {
+                String msg = "Try #" + (i+1) + " caught SQLException";
+                logger.log(Level.WARNING, msg, e);
+                lastException = e;
+            } catch (HibernateException e) {
+                String msg = "Try #" + (i+1) + " caught HibernateException";
+                logger.log(Level.WARNING, msg, e);
+                lastException = e;
             } finally {
                 // clean stuff
                 try {
@@ -159,12 +182,11 @@ public class HibernatePersistenceContext extends PersistenceContext {
                     logger.fine("can't call REALLY close, type not handled: " + theConnection.getClass().getName());
                     theConnection.close();
                 }
-
-                if (_session.isOpen()) _session.close();
             } catch ( HibernateException he ) {
                 logger.log( Level.WARNING, "exception closing session", he );
                 lastException = he;
             }
+            if (_session.isOpen()) _session.close();
             _session = null;
         }
 
