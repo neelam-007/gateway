@@ -4,9 +4,10 @@ require 5.005;
 use strict;
 
 use File::Copy;
+use Getopt::Std;
 
 my $MAKENSIS = "c:/NSIS/makensis.exe";
-my $BZIP = "/XSetCompressor bzip2";
+my @BZIP = ("/XSetCompressor bzip2");
 my $BUILD_PATH = "../build";
 
 my %nsis = (
@@ -17,6 +18,8 @@ my @FILES = keys %nsis;
 my %fileversions = ();
 my $MANIFEST_PATH = "../etc/";
 my $MANIFEST_EXT = ".mf";
+
+my %opt = ();
 
 # Returns a list of jar files from the class path in the manifest.
 # Example:  a manifest containing a line 
@@ -92,8 +95,17 @@ sub build_installer {
 	print "chdir $dir\n";
 	chdir($dir) or die "unable to chdir $dir: $!";
 
-	print "$MAKENSIS $nsi\n";
-	dosystem $MAKENSIS, $nsi;
+	if ($opt{N}) {
+		print "SKIPPING $MAKENSIS $nsi\n";
+	} else {
+		if ($opt{b}) {
+			print "$MAKENSIS ", join(" ", @BZIP), " $nsi\n";
+			dosystem $MAKENSIS, @BZIP, $nsi;
+		} else {
+			print "$MAKENSIS $nsi\n";
+			dosystem $MAKENSIS, $nsi;
+		}
+	}
 
 	print "chdir $here\n";
 	chdir($here) or die "unable to chdir back to $here: $!";
@@ -133,6 +145,10 @@ EOM
 	unlink("$dir.tar.gz");
 	dosystem "tar", "cvzf", "$dir.tar.gz", $dir;
 }
+
+# -b   use bzip2
+# -N   skip Nullsoft installer step
+getopts('bN', \%opt);
 
 foreach my $file (@FILES) {
 	my @jars = get_jarlist_from_manifest("$MANIFEST_PATH/$file$MANIFEST_EXT");
