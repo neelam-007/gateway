@@ -6,9 +6,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.*;
 
 /**
  * Dialog to view or edit the properties of a TimeRange assertion.
@@ -70,7 +68,10 @@ public class TimeRangePropertiesDialog extends JDialog {
      * create controls and layout
      */
     private void initialize() {
+        initResources();
+
         itemsToToggleForTimeOfDay.clear();
+        itemsToToggleForDayOfWeek.clear();
 
         setTitle("Time Range Assertion Properties");
         Container contents = getContentPane();
@@ -106,6 +107,12 @@ public class TimeRangePropertiesDialog extends JDialog {
                 toggleDayOfWeek();
             }
         });
+    }
+
+    private void initResources() {
+        Locale locale = Locale.getDefault();
+        // todo, plug in resources
+        // resources = ResourceBundle.getBundle("com.l7tech.console.resources.TimeRangePropertiesDialog", locale);
     }
 
     private JComponent makeGlobalPanel() {
@@ -310,6 +317,8 @@ public class TimeRangePropertiesDialog extends JDialog {
                                                        "Saturday"};
     private final Collection itemsToToggleForTimeOfDay = new ArrayList();
     private final Collection itemsToToggleForDayOfWeek = new ArrayList();
+
+    private ResourceBundle resources;
 
     private final static int BORDER_PADDING = 20;
     private final static int CONTROL_SPACING = 5;
