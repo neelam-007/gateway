@@ -332,7 +332,7 @@ public class PendingRequest {
         }
     }
 
-    private void establishSecureConversationSession()
+    private String establishSecureConversationSession()
             throws OperationCanceledException, GeneralSecurityException, ClientCertificateException,
             KeyStoreCorruptException, PolicyRetryableException, BadCredentialsException,
             IOException
@@ -349,9 +349,10 @@ public class PendingRequest {
                                                                    SsgKeyStoreManager.getServerCert(ssg));
         log.log(Level.INFO, "WS-SecureConversation session established with Gateway " + ssg.toString() + "; session ID=" + s.getSessionId());
         ssg.secureConversationId(s.getSessionId());
-        ssg.secureConversationSharedSecret(s.getSharedSecret());
         secureConversationId = s.getSessionId();
+        ssg.secureConversationSharedSecret(s.getSharedSecret());
         secureConversationSharedSecret = s.getSharedSecret();
+        return secureConversationId;
         // TODO support session expiry
     }
 
@@ -376,11 +377,8 @@ public class PendingRequest {
     {
         if (secureConversationId != null)
             return secureConversationId;
-        synchronized (ssg) {
-            if (ssg.secureConversationId() == null)
-                establishSecureConversationSession();
-            return secureConversationId;
-        }
+        String ssgscid = ssg.secureConversationId();
+        return secureConversationId = ssgscid != null ? ssgscid : establishSecureConversationSession();
     }
 
     /**
