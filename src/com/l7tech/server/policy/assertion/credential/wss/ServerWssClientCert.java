@@ -80,10 +80,12 @@ public class ServerWssClientCert extends ServerWssCredentialSource implements Se
         } catch (SignatureNotFoundException e) {
             // no digital signature, return null
             logger.log(Level.WARNING, e.getMessage(), e);
+            logger.info(((SoapRequest)request).getRequestXml());
             throw new CredentialFinderException(e.getMessage(), e, AssertionStatus.AUTH_REQUIRED);
         } catch (InvalidSignatureException e) {
             // bad signature !
             logger.log(Level.SEVERE, e.getMessage(), e);
+            logger.info(((SoapRequest)request).getRequestXml());
             throw new CredentialFinderException(e.getMessage(), e, AssertionStatus.AUTH_FAILED);
         } catch (XSignatureException e) {
             throw new CredentialFinderException(e.getMessage(), e, AssertionStatus.AUTH_FAILED);
