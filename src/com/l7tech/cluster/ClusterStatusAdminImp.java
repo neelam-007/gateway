@@ -144,6 +144,15 @@ public class ClusterStatusAdminImp extends RemoteService implements ClusterStatu
         return Calendar.getInstance().getTime();
     }
 
+    /**
+     * gets the name of node that handles the admin request.
+     *
+     * @return String  The node name
+     */
+    public String getSelfNodeName() throws RemoteException {
+        return ciman.getSelfNodeInf().getName();
+    }
+
     private final ClusterInfoManager ciman = ClusterInfoManager.getInstance();
     private final ServiceUsageManager suman = new ServiceUsageManager();
     private final Logger logger = LogManager.getInstance().getSystemLogger();

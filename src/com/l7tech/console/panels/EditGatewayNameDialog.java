@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.event.EntityListener;
+import com.l7tech.console.util.Registry;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.cluster.ClusterStatusAdmin;
@@ -255,6 +256,8 @@ public class EditGatewayNameDialog extends JDialog {
                     clusterStatusAdmin.changeNodeName(nodeId, newName);
                     logger.info("Gateway name changed. Old name: " + oldGatewayName + " , New name: " + newName);
 
+                    // update the status message on the Main Window
+                    Registry.getDefault().getComponentRegistry().getMainWindow().updateNodeNameInStatusMessage(newName);
                     dispose();
 
                 } catch (UpdateException e) {

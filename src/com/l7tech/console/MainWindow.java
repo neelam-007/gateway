@@ -17,6 +17,7 @@ import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.ProgressBar;
 import com.l7tech.console.util.Registry;
+import com.l7tech.cluster.ClusterStatusAdmin;
 
 import javax.help.HelpBroker;
 import javax.help.HelpSet;
@@ -41,6 +42,7 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.rmi.RemoteException;
 
 
 /**
@@ -129,6 +131,7 @@ public class MainWindow extends JFrame {
     private ClusterStatusWindow clusterStatusWindow = null;
     private GatewayLogWindow gatewayLogWindow = null;
     private Action manageJmsEndpointsAction = null;
+    private String connectionContext = "";
 
     /**
      * MainWindow constructor comment.
@@ -1874,18 +1877,32 @@ public class MainWindow extends JFrame {
         return statMenuItem;
     }
 
+    public void updateNodeNameInStatusMessage(String nodeName) {
+        getStatusMsgLeft().setText(connectionContext + getNodeNameMsg(nodeName));        
+    }
+
+    private String getNodeNameMsg(String nodeName) {
+
+        String nodeNameMsg = "";
+        if(nodeName != null) {
+            nodeNameMsg = " [connected to node: " + nodeName + "]";
+        }
+        return nodeNameMsg;
+    }
+
     private
     LogonDialog.LogonListener logonListenr =
       new LogonDialog.LogonListener() {
           /* invoked on authentication success */
           public void onAuthSuccess(String id) {
-              String s = "";
+
               String statusMessage = id;
+              connectionContext = "";
 
               /* set the preferences */
               try {
                   Preferences prefs = Preferences.getPreferences();
-                  s = " @ " + prefs.getString(Preferences.SERVICE_URL);
+                  connectionContext = " @ " + prefs.getString(Preferences.SERVICE_URL);
                   if (prefs.rememberLoginId()) {
                       prefs.putProperty(Preferences.LAST_LOGIN_ID, id);
                       prefs.store();
@@ -1893,7 +1910,20 @@ public class MainWindow extends JFrame {
               } catch (IOException e) {
                   log.log(Level.WARNING, "onAuthSuccess()", e);
               }
-              statusMessage += s;
+
+              ClusterStatusAdmin clusterStatusAdmin = (ClusterStatusAdmin) Locator.getDefault().lookup(ClusterStatusAdmin.class);
+              if (clusterStatusAdmin == null) throw new RuntimeException("Cannot obtain ClusterStatusAdmin remote reference");
+
+              String nodeName = "";
+              try {
+                   nodeName = clusterStatusAdmin.getSelfNodeName();
+              } catch (RemoteException e) {
+                  log.log(Level.WARNING, "Cannot get the node name", e);
+              }
+
+              statusMessage += connectionContext;
+              statusMessage += getNodeNameMsg(nodeName);
+
               getStatusMsgLeft().setText(statusMessage);
               initalizeWorkspace();
               int timeout = 0;

@@ -54,4 +54,11 @@ public interface ClusterStatusAdmin extends Remote {
      * @return java.util.Date  The current system time
      */
     java.util.Date getCurrentClusterSystemTime() throws RemoteException;
+
+    /**
+     * gets the name of node that handles the admin request.
+     *
+     * @return String  The node name
+     */
+     String getSelfNodeName() throws RemoteException;
 }

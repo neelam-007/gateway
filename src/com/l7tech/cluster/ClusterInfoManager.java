@@ -199,7 +199,7 @@ public class ClusterInfoManager {
     /**
      * determines this node's nodeid value
      */
-    private synchronized ClusterNodeInfo getSelfNodeInf() {
+    public synchronized ClusterNodeInfo getSelfNodeInf() {
         if (selfId != null) {
             return getNodeStatusFromDB(selfId);
         } else {

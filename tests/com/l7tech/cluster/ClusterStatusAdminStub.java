@@ -96,4 +96,8 @@ public class ClusterStatusAdminStub implements ClusterStatusAdmin{
     public java.util.Date getCurrentClusterSystemTime() throws RemoteException {
         return Calendar.getInstance().getTime();
     }
+
+    public String getSelfNodeName() throws RemoteException {
+        return "No name from test stub";
+    }
 }
