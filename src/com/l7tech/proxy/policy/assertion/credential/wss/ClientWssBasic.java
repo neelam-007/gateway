@@ -6,21 +6,17 @@
 
 package com.l7tech.proxy.policy.assertion.credential.wss;
 
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.security.xml.WssDecorator;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.xml.sax.InputSource;
+import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import org.xml.sax.SAXException;
 
-import javax.xml.parsers.DocumentBuilder;
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.logging.Logger;
 
 /**
@@ -50,32 +46,20 @@ public class ClientWssBasic extends ClientWssCredentialSource {
     public AssertionStatus decorateRequest(PendingRequest request)
             throws OperationCanceledException, IOException, SAXException
     {
-        // TODO needs rewrite for TROGDOR!!
-
-        Document soapmsg = request.getDecoratedSoapEnvelope();
-        Element headerel = SoapUtil.getOrMakeHeader(soapmsg);
-        if ( headerel == null ) {
-            log.warning("Unable to attach WSS UsernameToken to non-SOAP message");
-            return AssertionStatus.FAILED;
-        }
-
         // get the username and passwords
-        String username = request.getUsername();
-        char[] password = request.getPassword();
+        final String username = request.getUsername();
+        final byte[] password = new String(request.getPassword()).getBytes();
 
-        Element secElement = null;
-        // todo, handle case where the security element is already present in the header
-        DocumentBuilder builder = XmlUtil.getDocumentBuilder();
-        String secElStr = "<wsse:Security xmlns:wsse=\"" + SECURITY_NAMESPACE + "\">\n<wsse:UsernameToken Id=\"MyID\">\n<wsse:Username>" + username + "</wsse:Username>\n<Password>" + new String(password) + "</Password>\n</wsse:UsernameToken>\n</wsse:Security>";
-        Document doc2 = builder.parse(new InputSource(new StringReader(secElStr)));
-        secElement = doc2.getDocumentElement();
+        request.getPendingDecorations().put(this, new ClientDecorator() {
+            public AssertionStatus decorateRequest(PendingRequest request) {
+                WssDecorator.DecorationRequirements wssReq = request.getWssRequirements();
+                wssReq.setUsernameTokenCredentials(new LoginCredentials(username, password));
+                if (!request.getClientSidePolicy().isPlaintextAuthAllowed())
+                    request.setSslRequired(true); // force SSL when using WSS basic
+                return AssertionStatus.NONE;
+            }
+        });
 
-        secElement = (Element)soapmsg.importNode(secElement, true);
-        headerel.appendChild(secElement);
-
-        request.setSoapEnvelope(soapmsg);
-        if (!request.getClientSidePolicy().isPlaintextAuthAllowed())
-            request.setSslRequired(true); // force SSL when using WSS basic
         return AssertionStatus.NONE;
     }
 
@@ -102,6 +86,5 @@ public class ClientWssBasic extends ClientWssCredentialSource {
         return "com/l7tech/proxy/resources/tree/authentication.gif";
     }
 
-    protected static final String USERNAME_TOKEN_ELEMENT_NAME = "UsernameToken";
     protected WssBasic data;
 }
