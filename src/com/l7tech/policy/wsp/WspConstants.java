@@ -685,6 +685,7 @@ class WspConstants {
         new AssertionMapping(new RequestWssX509Cert(), "RequestWssX509Cert"),
         new AssertionMapping(new SamlSecurity(), "SamlSecurity"),
         new AssertionMapping(new RequestXpathAssertion(), "RequestXpathAssertion"),
+        new AssertionMapping(new ResponseXpathAssertion(), "ResponseXpathAssertion"),
         new AssertionMapping(new SchemaValidation(), "SchemaValidation"),
         new AssertionMapping(new XslTransformation(), "XslTransformation"),
         new AssertionMapping(new TimeRange(), "TimeRange"),
