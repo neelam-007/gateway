@@ -33,7 +33,9 @@
   <parameter name="allowedMethods" value="getVersion"/>
   <parameter name="className" value="org.apache.axis.Version"/>
  </service>
+
  <service name="identityAdmin" provider="java:RPC">
+
   <operation name="echoVersion" qname="ns1:echoVersion" returnQName="echoVersionReturn" returnType="xsd:string" xmlns:ns1="http://www.layer7-tech.com/identity" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
   <operation name="findAllIdentityProviderConfig" qname="ns2:findAllIdentityProviderConfig" returnQName="findAllIdentityProviderConfigReturn" returnType="ns2:ArrayOfHeaders" xmlns:ns2="http://www.layer7-tech.com/identity"/>
   <operation name="findAllIdentityProviderConfigByOffset" qname="ns3:findAllIdentityProviderConfigByOffset" returnQName="findAllIdentityProviderConfigByOffsetReturn" returnType="ns3:ArrayOfHeaders" xmlns:ns3="http://www.layer7-tech.com/identity">
@@ -61,6 +63,11 @@
    <parameter name="windowSize" type="xsd:int" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
   </operation>
 
+  <operation name="searchUsers" qname="ns8:searchUsers" returnQName="searchUsersReturn" returnType="ns8:ArrayOfHeaders" xmlns:ns8="http://www.layer7-tech.com/identity">
+   <parameter name="identityProviderConfigId" type="xsd:long" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
+   <parameter name="pattern" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
+  </operation>
+
   <!-- <operation name="findUserByPrimaryKey" qname="ns9:findUserByPrimaryKey" returnQName="findUserByPrimaryKeyReturn" returnType="ns9:User" xmlns:ns9="http://www.layer7-tech.com/identity"> -->
   <operation name="findUserByPrimaryKey" qname="ns9:findUserByPrimaryKey" returnQName="findUserByPrimaryKeyReturn" xmlns:ns9="http://www.layer7-tech.com/identity">
    <parameter name="identityProviderConfigId" type="xsd:long" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
@@ -84,7 +91,11 @@
    <parameter name="windowSize" type="xsd:int" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
   </operation>
 
-  <!-- <operation name="findGroupByPrimaryKey" qname="ns14:findGroupByPrimaryKey" returnQName="findGroupByPrimaryKeyReturn" returnType="ns14:Group" xmlns:ns14="http://www.layer7-tech.com/identity"> -->
+  <operation name="searchGroups" qname="ns8:searchGroups" returnQName="searchGroupsReturn" returnType="ns8:ArrayOfHeaders" xmlns:ns8="http://www.layer7-tech.com/identity">
+   <parameter name="identityProviderConfigId" type="xsd:long" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
+   <parameter name="pattern" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
+  </operation>
+
   <operation name="findGroupByPrimaryKey" qname="ns14:findGroupByPrimaryKey" returnQName="findGroupByPrimaryKeyReturn" xmlns:ns14="http://www.layer7-tech.com/identity">
    <parameter name="identityProviderConfigId" type="xsd:long" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
    <parameter name="groupId" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
@@ -94,23 +105,27 @@
    <parameter name="identityProviderConfigId" type="xsd:long" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
    <parameter name="groupId" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
   </operation>
+
   <operation name="saveGroup" qname="ns16:saveGroup" returnQName="saveGroupReturn" returnType="xsd:long" xmlns:ns16="http://www.layer7-tech.com/identity" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
    <parameter name="identityProviderConfigId" type="xsd:long"/>
    <parameter name="group" type="ns16:Group"/>
   </operation>
-  <parameter name="allowedMethods" value="echoVersion findAllIdentityProviderConfig findAllIdentityProviderConfigByOffset findIdentityProviderConfigByPrimaryKey saveIdentityProviderConfig deleteIdentityProviderConfig findAllUsers findAllUsersByOffset findUserByPrimaryKey deleteUser saveUser findAllGroups findAllGroupsByOffset findGroupByPrimaryKey deleteGroup saveGroup"/>
+
+  <parameter name="allowedMethods" value="echoVersion findAllIdentityProviderConfig findAllIdentityProviderConfigByOffset findIdentityProviderConfigByPrimaryKey saveIdentityProviderConfig deleteIdentityProviderConfig findAllUsers findAllUsersByOffset findUserByPrimaryKey deleteUser saveUser findAllGroups findAllGroupsByOffset findGroupByPrimaryKey deleteGroup saveGroup searchUsers searchGroups"/>
   <parameter name="wsdlPortType" value="identityPortType"/>
   <parameter name="scope" value="Application"/>
   <parameter name="className" value="com.l7tech.adminws.identity.Service"/>
   <parameter name="wsdlServicePort" value="identityPort"/>
   <parameter name="wsdlTargetNamespace" value="http://www.layer7-tech.com/identity"/>
   <parameter name="wsdlServiceElement" value="identityService"/>
+
   <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns17:Group" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:com.l7tech.identity.Group" xmlns:ns17="http://www.layer7-tech.com/identity"/>
   <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns18:User" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:com.l7tech.identity.User" xmlns:ns18="http://www.layer7-tech.com/identity"/>
   <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns19:IdentityProviderConfig" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:com.l7tech.identity.IdentityProviderConfig" xmlns:ns19="http://www.layer7-tech.com/identity"/>
   <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns21:EntityHeader" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:com.l7tech.objectmodel.EntityHeader" xmlns:ns21="http://www.layer7-tech.com/identity"/>
   <typeMapping deserializer="org.apache.axis.encoding.ser.BeanDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns22:EntityType" serializer="org.apache.axis.encoding.ser.BeanSerializerFactory" type="java:com.l7tech.objectmodel.EntityType" xmlns:ns22="http://www.layer7-tech.com/identity"/>
   <typeMapping deserializer="org.apache.axis.encoding.ser.ArrayDeserializerFactory" encodingStyle="http://schemas.xmlsoap.org/soap/encoding/" qname="ns23:ArrayOfHeaders" serializer="org.apache.axis.encoding.ser.ArraySerializerFactory" type="java:com.l7tech.objectmodel.EntityHeader[]" xmlns:ns23="http://www.layer7-tech.com/identity"/>
+     
  </service>
 
 
