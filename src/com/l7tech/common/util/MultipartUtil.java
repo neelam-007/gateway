@@ -110,6 +110,9 @@ public class MultipartUtil {
     }
 
     static public String unquote( String value ) throws IOException {
+
+        if(value == null) return value;
+
         if (value.startsWith("\"")) {
             if (value.endsWith("\"")) {
                 value = value.substring(1,value.length()-1);
