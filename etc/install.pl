@@ -491,7 +491,7 @@ EOF
 		print NTP_CONF_FILE <<EOF;
 server 127.127.1.0 # local clock
 fudge 127.127.1.0 stratum 10 
-driftfile /etc/ntp/drift
+driftfile /var/lib/ntp/drift
 restrict default ignore
 restrict 127.0.0.0 mask 255.0.0.0
 authenticate no
