@@ -339,20 +339,20 @@ CREATE INDEX i_fgv_saml_email_pattern ON fed_group_virtual (saml_email_pattern);
 -- Table structure for table `audit`
 --
 
-DROP TABLE audit;
-CREATE TABLE audit (
+DROP TABLE audit_main;
+CREATE TABLE audit_main (
   objectid number(38,0) NOT NULL,
   nodeid varchar(18) NOT NULL,
   time number(38,0) NOT NULL,
-  level varchar(12) NOT NULL,
+  audit_level varchar(12) NOT NULL,
   message varchar(255) NOT NULL,
   ip_address varchar(32) NOT NULL,
   PRIMARY KEY  (objectid)
 );
-CREATE INDEX i_audit_nodeid ON audit (nodeid);
-CREATE INDEX i_audit_time ON audit (time);
-CREATE INDEX i_audit_level ON audit (level);
-CREATE INDEX i_audit_ip_address ON audit (ip_address);
+CREATE INDEX i_am_nodeid ON audit_main (nodeid);
+CREATE INDEX i_am_time ON audit_main (time);
+CREATE INDEX i_am_level ON audit_main (audit_level);
+CREATE INDEX i_am_ip_address ON audit_main (ip_address);
 
 --
 -- Table structure for table `audit_admin`
@@ -399,7 +399,7 @@ CREATE INDEX i_audit_message_user_id ON audit_message (user_id);
 
 DROP TABLE audit_system;
 CREATE TABLE audit_system (
-  objectid number(38,0) NOT NULL default '0',
+  objectid number(38,0) NOT NULL,
   component varchar(32) NOT NULL,
   action varchar(32) NOT NULL,
   PRIMARY KEY (objectid)

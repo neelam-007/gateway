@@ -34,11 +34,11 @@ INSERT INTO hibernate_unique_key VALUES (70);
 
 DROP TABLE IF EXISTS identity_provider;
 CREATE TABLE identity_provider (
-  objectid bigint(20) NOT NULL default '0',
+  objectid bigint(20) NOT NULL,
   version int(11) default NULL,
-  name varchar(128) NOT NULL default '',
+  name varchar(128) NOT NULL,
   description text default '',
-  type bigint(20) NOT NULL default '0',
+  type bigint(20) NOT NULL,
   properties text,
   PRIMARY KEY  (objectid),
   UNIQUE KEY ipnm_idx (name)
@@ -56,9 +56,9 @@ CREATE TABLE identity_provider (
 
 DROP TABLE IF EXISTS internal_group;
 CREATE TABLE internal_group (
-  objectid bigint(20) NOT NULL default '0',
-  version int(11) NOT NULL default '0',
-  name varchar(128) NOT NULL default '',
+  objectid bigint(20) NOT NULL,
+  version int(11) NOT NULL,
+  name varchar(128) NOT NULL,
   description text,
   PRIMARY KEY  (objectid),
   UNIQUE KEY g_idx (name)
@@ -78,11 +78,11 @@ INSERT INTO internal_group VALUES (4,0,'Gateway Operators','Admin console users 
 
 DROP TABLE IF EXISTS internal_user;
 CREATE TABLE internal_user (
-  objectid bigint(20) NOT NULL default '0',
-  version int(11) NOT NULL default '0',
+  objectid bigint(20) NOT NULL,
+  version int(11) NOT NULL,
   name varchar(128) default NULL,
-  login varchar(32) NOT NULL default '',
-  password varchar(32) NOT NULL default '',
+  login varchar(32) NOT NULL,
+  password varchar(32) NOT NULL,
   first_name varchar(32) default NULL,
   last_name varchar(32) default NULL,
   email varchar(128) default NULL,
@@ -103,8 +103,8 @@ INSERT INTO internal_user VALUES (3,0,'admin','admin','a41306e4b1b5858d3e3d705dd
 
 DROP TABLE IF EXISTS internal_user_group;
 CREATE TABLE internal_user_group (
-  internal_user bigint(20) NOT NULL default '0',
-  internal_group bigint(20) NOT NULL default '0',
+  internal_user bigint(20) NOT NULL,
+  internal_group bigint(20) NOT NULL,
   PRIMARY KEY  (internal_user,internal_group),
   UNIQUE KEY  (internal_user,internal_group)
 ) TYPE=InnoDB;
@@ -122,14 +122,14 @@ INSERT INTO internal_user_group VALUES (3,2);
 
 DROP TABLE IF EXISTS published_service;
 CREATE TABLE published_service (
-  objectid bigint(20) NOT NULL default '0',
-  version int(11) NOT NULL default '0',
-  name varchar(255) NOT NULL default '',
+  objectid bigint(20) NOT NULL,
+  version int(11) NOT NULL,
+  name varchar(255) NOT NULL,
   policy_xml text,
-  wsdl_url varchar(255) NOT NULL default '',
+  wsdl_url varchar(255) NOT NULL,
   wsdl_xml text,
-  disabled TINYINT(1) NOT NULL default '0',
-  soap TINYINT(1) NOT NULL default '1',
+  disabled TINYINT(1) NOT NULL,
+  soap TINYINT(1) NOT NULL,
   routing_uri varchar(128),
   PRIMARY KEY  (objectid)
 ) TYPE=InnoDB;
@@ -144,12 +144,12 @@ CREATE TABLE published_service (
 
 DROP TABLE IF EXISTS client_cert;
 CREATE TABLE client_cert (
-  objectid bigint NOT NULL default '0',
-  provider bigint NOT NULL default '0',
+  objectid bigint NOT NULL,
+  provider bigint NOT NULL,
   user_id varchar(255),
-  login varchar(255) NOT NULL default '',
+  login varchar(255) NOT NULL,
   cert text DEFAULT NULL,
-  reset_counter int NOT NULL default '0',
+  reset_counter int NOT NULL,
   PRIMARY KEY  (objectid)
 ) TYPE=InnoDB;
 
@@ -163,7 +163,7 @@ CREATE TABLE client_cert (
 
 DROP TABLE IF EXISTS service_resolution;
 CREATE TABLE service_resolution (
-  objectid bigint(20) NOT NULL default '0',
+  objectid bigint(20) NOT NULL,
   serviceid bigint NOT NULL,
   soapaction varchar(255) default '',
   urn varchar(255) default '',
@@ -183,14 +183,14 @@ CREATE TABLE service_resolution (
 DROP TABLE IF EXISTS cluster_info;
 
 CREATE TABLE cluster_info (
-  mac varchar(18) NOT NULL default '',
-  name varchar(128) NOT NULL default '',
-  address varchar(16) NOT NULL default '',
+  mac varchar(18) NOT NULL,
+  name varchar(128) NOT NULL,
+  address varchar(16) NOT NULL,
   multicast_address varchar(16),
-  ismaster TINYINT(1) NOT NULL default '0',
-  uptime bigint NOT NULL default '0',
-  avgload double NOT NULL default '0',
-  statustimestamp bigint NOT NULL default '0',
+  ismaster TINYINT(1) NOT NULL,
+  uptime bigint NOT NULL,
+  avgload double NOT NULL,
+  statustimestamp bigint NOT NULL,
   PRIMARY KEY(mac)
 )  TYPE=InnoDB;
 
@@ -204,11 +204,11 @@ CREATE TABLE cluster_info (
 
 DROP TABLE IF EXISTS service_usage;
 CREATE TABLE service_usage (
-  serviceid bigint NOT NULL default '0',
-  nodeid varchar(18) NOT NULL default '',
-  requestnr bigint NOT NULL default '0',
-  authorizedreqnr bigint NOT NULL default '0',
-  completedreqnr bigint NOT NULL default '0',
+  serviceid bigint NOT NULL,
+  nodeid varchar(18) NOT NULL,
+  requestnr bigint NOT NULL,
+  authorizedreqnr bigint NOT NULL,
+  completedreqnr bigint NOT NULL,
   primary key(serviceid, nodeid)
 ) TYPE=InnoDB;
 
@@ -222,8 +222,8 @@ CREATE TABLE service_usage (
 
 DROP TABLE IF EXISTS ssg_logs;
 CREATE TABLE ssg_logs (
-  objectid bigint NOT NULL default '0',
-  nodeid varchar(18) NOT NULL default '',
+  objectid bigint NOT NULL,
+  nodeid varchar(18) NOT NULL,
   message text,
   strlvl varchar(12),
   loggername varchar(128),
@@ -246,11 +246,11 @@ CREATE TABLE ssg_logs (
 
 DROP TABLE IF EXISTS jms_connection;
 CREATE TABLE jms_connection (
-  objectid bigint NOT NULL default '0',
-  version integer NOT NULL default '0',
-  name varchar(128) NOT NULL default '',
-  jndi_url varchar(255) NOT NULL default '',
-  factory_classname varchar(255) NOT NULL default '',
+  objectid bigint NOT NULL,
+  version integer NOT NULL,
+  name varchar(128) NOT NULL,
+  jndi_url varchar(255) NOT NULL,
+  factory_classname varchar(255) NOT NULL,
   destination_factory_url varchar(255) default '',
   queue_factory_url varchar(255) default '',
   topic_factory_url varchar(255) default '',
@@ -265,11 +265,11 @@ CREATE TABLE jms_connection (
 
 DROP TABLE IF EXISTS jms_endpoint;
 CREATE TABLE jms_endpoint(
-  objectid bigint NOT NULL default '0',
-  version integer NOT NULL default '0',
-  connection_oid bigint NOT NULL default '0',
-  name varchar(128) NOT NULL default '',
-  destination_name varchar(128) NOT NULL default '',
+  objectid bigint NOT NULL,
+  version integer NOT NULL,
+  connection_oid bigint NOT NULL,
+  name varchar(128) NOT NULL,
+  destination_name varchar(128) NOT NULL,
   reply_type integer default '0',
   username varchar(32) default '',
   password varchar(32) default '',
@@ -358,19 +358,19 @@ CREATE TABLE fed_group_virtual (
 -- Table structure for table `audit`
 --
 
-DROP TABLE IF EXISTS audit;
-CREATE TABLE audit (
+DROP TABLE IF EXISTS audit_main;
+CREATE TABLE audit_main (
   objectid bigint(20) NOT NULL,
   nodeid varchar(18) NOT NULL,
   time bigint(20) NOT NULL,
-  level varchar(12) NOT NULL,
+  audit_level varchar(12) NOT NULL,
   message varchar(255) NOT NULL,
   ip_address varchar(32) NOT NULL,
   PRIMARY KEY  (objectid),
   KEY idx_nodeid (nodeid),
   KEY idx_time (time),
   KEY idx_ip_address (ip_address),
-  KEY idx_level (level)
+  KEY idx_level (audit_level)
 ) TYPE=InnoDB;
 
 --
@@ -395,7 +395,7 @@ CREATE TABLE audit_admin (
 
 DROP TABLE IF EXISTS audit_message;
 CREATE TABLE audit_message (
-  objectid bigint(20) NOT NULL default '0',
+  objectid bigint(20) NOT NULL,
   status varchar(32) NOT NULL,
   request_id varchar(40) NOT NULL,
   service_oid bigint(20),
@@ -418,7 +418,7 @@ CREATE TABLE audit_message (
 
 DROP TABLE IF EXISTS audit_system;
 CREATE TABLE audit_system (
-  objectid bigint(20) NOT NULL default '0',
+  objectid bigint(20) NOT NULL,
   component varchar(32) NOT NULL,
   action varchar(32) NOT NULL,
   PRIMARY KEY (objectid),

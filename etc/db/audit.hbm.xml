@@ -10,7 +10,7 @@
 -->
 
 <hibernate-mapping>
-    <class name="com.l7tech.common.audit.AuditRecord" table="audit">
+    <class name="com.l7tech.common.audit.AuditRecord" table="audit_main">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo"/>
         </id>
@@ -18,7 +18,7 @@
         <!-- No version column required, since these never get modified -->
         <property name="nodeId" column="nodeid" type="string"/>
         <property name="millis" column="time" type="long"/>
-        <property name="strLvl" column="level" type="string"/>
+        <property name="strLvl" column="audit_level" type="string"/>
         <property name="message" column="message" type="string"/>
         <property name="ipAddress" column="ip_address" type="string"/>
 

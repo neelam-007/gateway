@@ -29,9 +29,9 @@ DROP TABLE identity_provider;
 CREATE TABLE identity_provider (
   objectid bigint NOT NULL PRIMARY KEY default '0',
   version int default NULL,
-  name varchar(128) NOT NULL default '',
+  name varchar(128) NOT NULL,
   description text default '',
-  type bigint NOT NULL default '0',
+  type bigint NOT NULL,
   properties text,
   UNIQUE (name)
 );
@@ -49,8 +49,8 @@ CREATE TABLE identity_provider (
 DROP TABLE internal_group;
 CREATE TABLE internal_group (
   objectid bigint NOT NULL primary key default '0',
-  version int NOT NULL default '0',
-  name varchar(128) NOT NULL default '',
+  version int NOT NULL,
+  name varchar(128) NOT NULL,
   description text
 );
 
@@ -72,10 +72,10 @@ INSERT INTO internal_group VALUES (4,0,'Gateway Operators','Admin console users 
 DROP TABLE internal_user;
 CREATE TABLE internal_user (
   objectid bigint NOT NULL primary key default '0',
-  version int NOT NULL default '0',
+  version int NOT NULL,
   name varchar(128) default NULL,
-  login varchar(32) NOT NULL default '',
-  password varchar(32) NOT NULL default '',
+  login varchar(32) NOT NULL,
+  password varchar(32) NOT NULL,
   first_name varchar(32) default NULL,
   last_name varchar(32) default NULL,
   email varchar(128) default NULL
@@ -97,8 +97,8 @@ INSERT INTO internal_user VALUES (3,0,'admin','admin','a41306e4b1b5858d3e3d705dd
 
 DROP TABLE internal_user_group;
 CREATE TABLE internal_user_group (
-  internal_user bigint NOT NULL default '0',
-  internal_group bigint NOT NULL default '0',
+  internal_user bigint NOT NULL,
+  internal_group bigint NOT NULL,
   PRIMARY KEY  (internal_user,internal_group)
 );
 
@@ -115,14 +115,14 @@ INSERT INTO internal_user_group VALUES (3,2);
 
 DROP TABLE published_service;
 CREATE TABLE published_service (
-  objectid bigint NOT NULL primary key default '0',
-  version int NOT NULL default '0',
-  name varchar(255) NOT NULL default '',
-  policy_xml text NOT NULL default '',
-  wsdl_url varchar(255) NOT NULL default '',
-  wsdl_xml text NOT NULL default '',
-  disabled boolean NOT NULL default 'f',
-  soap boolean NOT NULL default 't',
+  objectid bigint NOT NULL primary key,
+  version int NOT NULL,
+  name varchar(255) NOT NULL,
+  policy_xml text NOT NULL,
+  wsdl_url varchar(255) NOT NULL,
+  wsdl_xml text NOT NULL,
+  disabled boolean NOT NULL,
+  soap boolean NOT NULL,
   routing_uri varchar(128)
 );
 
@@ -137,11 +137,11 @@ CREATE TABLE published_service (
 DROP TABLE client_cert;
 CREATE TABLE client_cert (
   objectid bigint NOT NULL primary key default '0',
-  provider bigint NOT NULL default '0',
+  provider bigint NOT NULL,
   user_id varchar(255),
-  login varchar(255) NOT NULL default '',
+  login varchar(255) NOT NULL,
   cert text DEFAULT NULL,
-  reset_counter int NOT NULL default '0'
+  reset_counter int NOT NULL
 );
 
 --
@@ -155,10 +155,10 @@ CREATE TABLE client_cert (
 DROP TABLE service_resolution;
 CREATE TABLE service_resolution (
   objectid bigint NOT NULL PRIMARY KEY,
-  serviceid bigint NOT NULL default '0',
-  soapaction varchar(255) default '',
-  urn varchar(255) default '',
-  uri varchar(255) default '',
+  serviceid bigint NOT NULL,
+  soapaction varchar(255),
+  urn varchar(255),
+  uri varchar(255),
   unique(soapaction, urn, uri)
 );
 
@@ -181,14 +181,14 @@ CREATE TABLE service_resolution (
 
 DROP TABLE cluster_info;
 CREATE TABLE cluster_info (
-  mac varchar(18) NOT NULL default '',
-  name varchar(128) NOT NULL default '',
-  address varchar(16) NOT NULL default '',
+  mac varchar(18) NOT NULL,
+  name varchar(128) NOT NULL,
+  address varchar(16) NOT NULL,
   multicast_address varchar(16),
-  ismaster boolean NOT NULL default 'f',
-  uptime bigint NOT NULL default '0',
-  avgload float8 NOT NULL default '0',
-  statustimestamp bigint NOT NULL default '0',
+  ismaster boolean NOT NULL,
+  uptime bigint NOT NULL,
+  avgload float8 NOT NULL,
+  statustimestamp bigint NOT NULL,
   PRIMARY KEY(mac)
 );
 
@@ -202,11 +202,11 @@ CREATE TABLE cluster_info (
 
 DROP TABLE service_usage;
 CREATE TABLE service_usage (
-  serviceid bigint NOT NULL default '0',
-  nodeid varchar(18) NOT NULL default '',
-  requestnr bigint NOT NULL default '0',
-  authorizedreqnr bigint NOT NULL default '0',
-  completedreqnr bigint NOT NULL default '0',
+  serviceid bigint NOT NULL,
+  nodeid varchar(18) NOT NULL,
+  requestnr bigint NOT NULL,
+  authorizedreqnr bigint NOT NULL,
+  completedreqnr bigint NOT NULL,
   primary key(serviceid, nodeid)
 );
 
@@ -220,8 +220,8 @@ CREATE TABLE service_usage (
 
 DROP TABLE ssg_logs;
 CREATE TABLE ssg_logs (
-  objectid bigint NOT NULL default '0',
-  nodeid varchar(18) NOT NULL default '',
+  objectid bigint NOT NULL,
+  nodeid varchar(18) NOT NULL,
   message text,
   strlvl varchar(12),
   loggername varchar(128),
@@ -244,11 +244,11 @@ CREATE INDEX idx_millis ON ssg_logs (millis);
 
 DROP TABLE jms_connection;
 CREATE TABLE jms_connection (
-  objectid bigint NOT NULL default '0',
-  version integer NOT NULL default '0',
-  name varchar(128) NOT NULL default '',
-  jndi_url varchar(255) NOT NULL default '',
-  factory_classname varchar(255) NOT NULL default '',
+  objectid bigint NOT NULL,
+  version integer NOT NULL,
+  name varchar(128) NOT NULL,
+  jndi_url varchar(255) NOT NULL,
+  factory_classname varchar(255) NOT NULL,
   destination_factory_url varchar(255) default '',
   queue_factory_url varchar(255) default '',
   topic_factory_url varchar(255) default '',
@@ -263,11 +263,11 @@ CREATE TABLE jms_connection (
 
 DROP TABLE jms_endpoint;
 CREATE TABLE jms_endpoint (
-  objectid bigint NOT NULL default '0',
-  version integer NOT NULL default '0',
-  connection_oid bigint NOT NULL default '0',
-  name varchar(128) NOT NULL default '',
-  destination_name varchar(128) NOT NULL default '',
+  objectid bigint NOT NULL,
+  version integer NOT NULL,
+  connection_oid bigint NOT NULL,
+  name varchar(128) NOT NULL,
+  destination_name varchar(128) NOT NULL,
   reply_type integer default '0',
   username varchar(32) default '',
   password varchar(32) default '',
@@ -361,18 +361,18 @@ CREATE TABLE fed_group_virtual (
 -- Table structure for table `audit`
 --
 
-DROP TABLE audit;
-CREATE TABLE audit (
+DROP TABLE audit_main;
+CREATE TABLE audit_main (
   objectid bigint NOT NULL,
   nodeid varchar(18) NOT NULL,
   time bigint NOT NULL,
-  level varchar(12) NOT NULL,
+  audit_level varchar(12) NOT NULL,
   message varchar(255) NOT NULL,
   ip_address varchar(32) NOT NULL,
   PRIMARY KEY  (objectid),
   INDEX idx_nodeid (nodeid),
   INDEX idx_time (time),
-  INDEX idx_level (level),
+  INDEX idx_level (audit_level),
   INDEX idx_ip_address (ip_address)
 );
 
