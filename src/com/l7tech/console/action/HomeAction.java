@@ -108,7 +108,7 @@ public class HomeAction extends BaseAction {
                         final DefaultMutableTreeNode root =
                                 (DefaultMutableTreeNode) getIdentitiesTree().getModel().getRoot();
                         AbstractTreeNode node = (AbstractTreeNode) root;
-                        new NewProviderAction(node).actionPerformed(null);
+                        new NewLdapProviderAction(node).actionPerformed(null);
                     }
                 }
             }

@@ -678,7 +678,7 @@ public class MainWindow extends JFrame {
 
     private Action getNewProviderAction() {
         if (newLDAPProviderAction != null) return newLDAPProviderAction;
-        newLDAPProviderAction = new NewProviderAction(null) {
+        newLDAPProviderAction = new NewLdapProviderAction(null) {
             /**
              * specify the resource name for this action
              */
