@@ -109,9 +109,9 @@ public class LdapUserManager implements UserManager {
                 if (answer.hasMore()) {
                     SearchResult sr = (SearchResult)answer.next();
                     dn = sr.getName() + "," + cfg.getSearchBase();
-                    logger.finer(cfg.getName() + "found dn:" + dn + " for login: " + login);
+                    logger.finer(cfg.getName() + " found dn:" + dn + " for login: " + login);
                 } else {
-                    logger.info(cfg.getName() + "cannot find cn=" + login);
+                    logger.info(cfg.getName() + " cannot find cn=" + login);
                     return null;
                 }
             } finally {
