@@ -310,22 +310,36 @@ public class UserCertPanel extends JPanel {
 
                     SwingUtilities.invokeLater(new Runnable() {
                         public void run() {
+                            boolean certImported = false;
 
                             try {
-                                saveUserCert(tc);
 
-                                // reset values and redisplay
-                                cert = null;
+                                String subjectDNFromCert = tc.getCertificate().getSubjectDN().getName();
 
-                                getUserCert();
-                                
-                                loadCertificateInfo();
-
-                            } catch (UpdateException e) {
-                                log.log(Level.WARNING, "There was an error saving the certificate", e);
-                                JOptionPane.showMessageDialog(UserCertPanel.this, resources.getString("cert.save.error"),
-                                        resources.getString("save.error.title"),
-                                        JOptionPane.ERROR_MESSAGE);
+                                if (userPanel instanceof FederatedUserPanel) {
+                                    FederatedUserPanel fup = (FederatedUserPanel) userPanel;
+                                    if (userPanel.getUser().getSubjectDn().length() > 0) {
+                                        //prompt you if he wants to replace the subject DN name
+                                        Object[] options = {"Replace", "Cancel"};
+                                        int result = JOptionPane.showOptionDialog(null,
+                                                "<html>The User's Subject DN is different from the one appearing in certificate being imported." +
+                                                "Do you want to replace the Subject DN with the one from the certificate" +
+                                                "?<br>" +
+                                                "<center>The certificate will not be added if this operation is cancelled." +
+                                                "</center></html>",
+                                                "Replace the Subject DN?",
+                                                0, JOptionPane.WARNING_MESSAGE,
+                                                null, options, options[1]);
+                                        if (result == 0) {
+                                            fup.getX509SubjectNameTextField().setText(subjectDNFromCert);
+                                            certImported = true;
+                                        }
+                                    } else {
+                                        // simply copy the dn to the user panel
+                                        fup.getX509SubjectNameTextField().setText(subjectDNFromCert);
+                                        certImported = true;
+                                    }
+                                }
                             } catch (IOException e) {
                                 log.log(Level.WARNING, "There was an error saving the certificate", e);
                                 JOptionPane.showMessageDialog(UserCertPanel.this, resources.getString("cert.save.error"),
@@ -336,6 +350,35 @@ public class UserCertPanel extends JPanel {
                                 JOptionPane.showMessageDialog(UserCertPanel.this, resources.getString("cert.save.error"),
                                         resources.getString("save.error.title"),
                                         JOptionPane.ERROR_MESSAGE);
+                            }
+
+                            if(certImported) {
+                                try {
+                                    saveUserCert(tc);
+
+                                    // reset values and redisplay
+                                    cert = null;
+
+                                    getUserCert();
+
+                                    loadCertificateInfo();
+
+                                } catch (UpdateException e) {
+                                    log.log(Level.WARNING, "There was an error saving the certificate", e);
+                                    JOptionPane.showMessageDialog(UserCertPanel.this, resources.getString("cert.save.error"),
+                                            resources.getString("save.error.title"),
+                                            JOptionPane.ERROR_MESSAGE);
+                                } catch (IOException e) {
+                                    log.log(Level.WARNING, "There was an error saving the certificate", e);
+                                    JOptionPane.showMessageDialog(UserCertPanel.this, resources.getString("cert.save.error"),
+                                            resources.getString("save.error.title"),
+                                            JOptionPane.ERROR_MESSAGE);
+                                } catch (CertificateException e) {
+                                    log.log(Level.WARNING, "There was an error saving the certificate", e);
+                                    JOptionPane.showMessageDialog(UserCertPanel.this, resources.getString("cert.save.error"),
+                                            resources.getString("save.error.title"),
+                                            JOptionPane.ERROR_MESSAGE);
+                                }
                             }
 
                         }

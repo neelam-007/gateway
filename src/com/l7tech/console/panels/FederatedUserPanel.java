@@ -474,7 +474,7 @@ public class FederatedUserPanel extends UserPanel {
     /**
      * Returns x509SubjectNameTextField
      */
-    private JTextField getX509SubjectNameTextField() {
+    public JTextField getX509SubjectNameTextField() {
         // If text field not already created
         if (x509SubjectNameTextField == null) {
             // Create text field
