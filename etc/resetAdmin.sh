@@ -6,6 +6,9 @@
 #
 # THIS SCRIPT RESETS THE ROOT ADMIN ACCOUNT FOR THE SSG ADMIN SERVICE
 #
+# PREREQUISITES
+# 1. THE DATABASE IS UP AND RUNNING
+#
 # This script asks for a username and password and adds an entry in the
 # database.
 # The database username/passwd must be provided as arguments
@@ -27,13 +30,6 @@ fi
 if [ ! $2 ]; then
     echo "please provide database account passwd"
 	echo "USAGE resetAdmin.sh dbusername dbpasswd"
-	echo
-	exit -1
-fi
-
-# VERIFY THAT THE TOMCAT_HOME VARIABLE IS SET
-if [ ! $SSG_HOME ]; then
-	echo "ERROR: SSG_HOME not set"
 	echo
 	exit -1
 fi
@@ -61,16 +57,14 @@ if [ "$PASSWORD_LENGTH" -lt 6 ]; then
 	exit -1
 fi
 
+# ENCODE PASSWORD
+ENCODED_ADMIN_PASSWD=`perl perlmd5passwd.pl $ACCOUNT_NAME:$ADMIN_PASSWORD`
+
 #
-# TODO
+# TODO SQL UPDATE OF ADMIN USER
 #
-# 1. encode the password like this :
-#   toEncode=$ACCOUNT_NAME:$ADMIN_PASSWORD (that is $ACCOUNT_NAME + ":" + $ADMIN_PASSWORD)
-#   do a md5 digest of that value and hex encode it.
-#   for more details, check out source code of method com.l7tech.identity.User.encodePasswd()
-#
-# 2. sql update internal_user set password=encodedpasswd where oid=3;
+# 1. sql update internal_user set password=$ENCODED_ADMIN_PASSWD where oid=3;
 #   note: this assumes that the ssgadmin oid=3
 #
-# 3. sql update internal_user set login=$ACCOUNT_NAME where oid=3;
+# 2. sql update internal_user set login=$ACCOUNT_NAME where oid=3;
 #
