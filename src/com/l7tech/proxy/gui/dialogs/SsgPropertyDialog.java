@@ -479,7 +479,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                            GridBagConstraints.NONE,
                                            new Insets(0, 5, 5, 0), 0, 0));
 
-            gpp.add(new JLabel("Web Service port:"),
+            gpp.add(new JLabel("Web service port:"),
                     new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
                                            GridBagConstraints.WEST,
                                            GridBagConstraints.NONE,

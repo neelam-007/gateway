@@ -304,7 +304,7 @@ public class LogonDialog extends JDialog {
                 // This shouldn't be possible -- ok button should have been greyed -- but just in case
                 JOptionPane.
                         showMessageDialog(this,
-                                          "Please enter your user name to connect to the Web Service.",
+                                          "Please enter your user name to connect to the Web service.",
                                           "User name is required",
                                           JOptionPane.ERROR_MESSAGE);
                 return;

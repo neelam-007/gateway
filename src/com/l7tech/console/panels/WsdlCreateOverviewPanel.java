@@ -91,7 +91,7 @@ public class WsdlCreateOverviewPanel extends WizardStepPanel {
         _2.add(_5, new com.intellij.uiDesigner.core.GridConstraints(4, 2, 1, 1, 8, 0, 0, 0, null, null, null));
         final JLabel _6;
         _6 = new JLabel();
-        _6.setText("This WSDL creation wizard will guide you through the steps required to create the Web Service.");
+        _6.setText("This WSDL creation wizard will guide you through the steps required to create the Web service.");
         _2.add(_6, new com.intellij.uiDesigner.core.GridConstraints(2, 2, 1, 1, 8, 1, 0, 0, null, null, null));
         final JLabel _7;
         _7 = new JLabel();
