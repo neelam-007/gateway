@@ -29,6 +29,11 @@ public class UserManagerClient extends IdentityManagerClient implements UserMana
         }
     }
 
+    public User findByLogin(String login) throws FindException {
+        //todo
+        return null;
+    }
+
     public void delete(User user) throws DeleteException {
         throw new DeleteException("Not supported in UserManagerClient");
     }

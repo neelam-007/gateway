@@ -24,6 +24,10 @@ public class UserManagerStub implements UserManager {
         return (User)dataStore.getUsers().get(new Long(oid));
     }
 
+    public User findByLogin(String login) throws FindException {
+        return null;
+    }
+
     public void delete(User user) throws DeleteException {
         if (dataStore.getUsers().remove(new Long(user.getOid())) == null) {
             throw new DeleteException("Could not find user oid= " + user.getOid());
