@@ -6,26 +6,26 @@
 
 package com.l7tech.server.policy.assertion.credential.wss;
 
-import com.l7tech.policy.assertion.credential.PrincipalCredentials;
-import com.l7tech.policy.assertion.credential.CredentialFinderException;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
+import com.l7tech.identity.User;
+import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
+import com.l7tech.message.XmlRequest;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.credential.CredentialFinderException;
+import com.l7tech.policy.assertion.credential.CredentialFormat;
+import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.logging.LogManager;
 import com.l7tech.util.SAXParsingCompleteException;
-import com.l7tech.identity.User;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
+import org.xml.sax.helpers.XMLReaderFactory;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.logging.Level;
-
-import org.xml.sax.XMLReader;
-import org.xml.sax.SAXException;
-import org.xml.sax.InputSource;
-import org.xml.sax.helpers.XMLReaderFactory;
 
 /**
  * @author alex
@@ -37,7 +37,13 @@ public class ServerWssBasic extends ServerWssCredentialSource implements ServerA
         _data = data;
     }
 
-    public PrincipalCredentials findCredentials( Request request, Response response ) throws IOException, CredentialFinderException {
+    public PrincipalCredentials findCredentials( Request grequest, Response gresponse ) throws IOException, CredentialFinderException {
+        XmlRequest request;
+        if ( grequest instanceof XmlRequest )
+            request = (XmlRequest)grequest;
+        else
+            throw new CredentialFinderException( "Only XML requests and responses are supported!", AssertionStatus.FALSIFIED );
+
         String xmlreq = null;
         try {
             xmlreq = request.getRequestXml();

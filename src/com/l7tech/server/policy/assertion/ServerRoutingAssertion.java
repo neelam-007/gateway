@@ -11,6 +11,8 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
+import com.l7tech.message.XmlRequest;
+import com.l7tech.message.XmlResponse;
 import com.l7tech.service.PublishedService;
 import com.l7tech.logging.LogManager;
 import org.apache.commons.httpclient.*;
@@ -46,12 +48,20 @@ public class ServerRoutingAssertion implements ServerAssertion {
 
     /**
      * Forwards the request along to a ProtectedService at the configured URL.
-     * @param request The request to be forwarded.
-     * @param response The response that was received from the ProtectedService.
+     * @param grequest The request to be forwarded.
+     * @param gresponse The response that was received from the ProtectedService.
      * @return an AssertionStatus indicating the success or failure of the request.
      * @throws com.l7tech.policy.assertion.PolicyAssertionException if some error preventing the execution of the PolicyAssertion has occurred.
      */
-    public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
+    public AssertionStatus checkRequest( Request grequest, Response gresponse ) throws IOException, PolicyAssertionException {
+        XmlRequest request;
+        XmlResponse response;
+        if ( grequest instanceof XmlRequest && gresponse instanceof XmlResponse ) {
+            request = (XmlRequest)grequest;
+            response = (XmlResponse)gresponse;
+        } else
+            throw new PolicyAssertionException( "Only XML Requests are supported by ServerRoutingAssertion!" );
+
         HttpClient client = new HttpClient(_connectionManager);
 
         PostMethod postMethod = null;
