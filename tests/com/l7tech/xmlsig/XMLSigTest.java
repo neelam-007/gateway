@@ -31,13 +31,6 @@ import junit.framework.TestCase;
  * The tests director must be in the classpath for this to work
  */
 public class XMLSigTest extends TestCase {
-
-    public static void main(String[] args) throws Exception {
-        XMLSigTest tester = new XMLSigTest();
-        tester.testAndValidateDSig();
-
-    }
-
     public XMLSigTest() throws Exception {
         // load private key and certificate
         privateKey = getTestKey();
@@ -92,6 +85,31 @@ public class XMLSigTest extends TestCase {
         }
 
         assertTrue("SIGNATURE SHOULD NOT VALIDATE", !signaturevalid);
+    }
+
+    /**
+     * make sure signature is still validable after being serialized and parsed again
+     * @throws Exception
+     */
+    public void testValidateDSigFromSerializedDocument() throws Exception {
+        // get document
+        Document doc = readDocFromString(simpleDoc);
+
+        // append SecureConversationToken
+        SecureConversationTokenHandler.appendSessIdAndSeqNrToDocument(doc, 666, 777);
+
+        // sign it
+        SoapMsgSigner signer = new SoapMsgSigner();
+        signer.signEnvelope(doc, privateKey, cert);
+
+        // serialize and reparse
+        Document doc2 = readDocFromString(serializeDoc(doc));
+
+        // validate the signature (will throw if doesn't validate)
+        X509Certificate cert2 = signer.validateSignature(doc2);
+
+        // can still get the cert out of it
+        assertTrue("OUTPUT CERT SAME AS INPUT ONE", cert.equals(cert2));
     }
 
     private Document readDocFromString(String docStr)  throws Exception {
