@@ -1,7 +1,5 @@
 package com.l7tech.identity;
 
-import com.l7tech.identity.internal.Address;
-import com.l7tech.identity.internal.Organization;
 import com.l7tech.objectmodel.NamedEntity;
 
 import java.util.Set;
@@ -15,11 +13,7 @@ public interface User extends NamedEntity, Principal {
     String getLastName();
     String getEmail();
     String getTitle();
-    Organization getOrganization();
     String getDepartment();
-    Address getAddress();
-    Address getMailingAddress();
-    Address getBillingAddress();
 
     Set getGroups();
     Set getGroupHeaders();
@@ -34,9 +28,5 @@ public interface User extends NamedEntity, Principal {
     void setLastName( String lastName );
     void setEmail( String email );
     void setTitle( String title );
-    void setOrganization( Organization organization );
     void setDepartment( String department );
-    void setAddress( Address address );
-    void setMailingAddress( Address mailingAddress );
-    void setBillingAddress( Address billingAddress );
 }
