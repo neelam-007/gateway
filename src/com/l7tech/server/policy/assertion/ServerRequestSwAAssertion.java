@@ -130,11 +130,13 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                                                 if(mimepart != null) {
                                                     // validate the content type
                                                     if(mimepart.getHeader(XmlUtil.CONTENT_TYPE).equals(part.getContentType())) {
+                                                        logger.info("The content type of the attachment must be: " + part.getContentType());
                                                         return AssertionStatus.NONE;
                                                     }
 
                                                     // check the max. length allowed
-                                                    if(mimepart.getContent().length() <= part.getMaxLength()) {
+                                                    if(mimepart.getContent().length() <= part.getMaxLength() * 1000) {
+                                                        logger.info("The length of the attachment exceeds the limit: " + part.getMaxLength());
                                                         return AssertionStatus.NONE;
                                                     }
                                                 }
