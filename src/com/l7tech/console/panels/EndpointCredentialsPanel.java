@@ -1,25 +1,23 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.credential.CredentialFormat;
+import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.credential.http.HttpClientCert;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.policy.assertion.credential.wss.WssBasic;
+import com.l7tech.policy.assertion.credential.wss.WssClientCert;
+import com.l7tech.policy.assertion.credential.wss.WssDigest;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.Wsdl;
-import com.l7tech.credential.PrincipalCredentials;
-import com.l7tech.credential.CredentialFormat;
-import com.l7tech.identity.User;
-import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
-import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.policy.assertion.credential.wss.WssDigest;
-import com.l7tech.policy.assertion.credential.wss.WssClientCert;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
-import com.l7tech.policy.assertion.credential.http.HttpClientCert;
-import com.l7tech.policy.assertion.RoutingAssertion;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.wsdl.WSDLException;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.net.MalformedURLException;
 
 
@@ -110,19 +108,13 @@ public class EndpointCredentialsPanel extends WizardStepPanel {
         if (!anonymousAccessCheckBox.isSelected()) {
             collect.setRoutingAssertion(null);
         }
-        User us = new User(); // why is this User?
-        us.setLogin(identityTextField.getText());
 
-        PrincipalCredentials pc =
-          new PrincipalCredentials(us,
-            getCredentials(),
-            getCredentialFormat(),
-            realmTextField.getText());
-
-        // TODO: Fixme Emil!
-        //RoutingAssertion ra =
-        //  new RoutingAssertion(serviceUrlTextField.getText(), pc);
-        //collect.setRoutingAssertion(ra);
+        RoutingAssertion ra =
+          new RoutingAssertion(
+            serviceUrlTextField.getText(),
+            identityTextField.getText(),
+            new String(getCredentials()), realmTextField.getText());
+        collect.setRoutingAssertion(ra);
     }
 
     /**
