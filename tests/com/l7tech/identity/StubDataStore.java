@@ -172,14 +172,17 @@ public class StubDataStore {
 
     private void initialServices(XMLEncoder encoder, IdentityProviderConfig pc)
       throws IOException, WSDLException, MalformedURLException {
-        Wsdl wsdl = Wsdl.newInstance(null, new WsdlTest("blah").getWsdlReader(null));
+        Wsdl wsdl = Wsdl.newInstance(null, new WsdlTest("blah").getWsdlReader(WsdlTest.WSDL));
+
+        ClassLoader cl = getClass().getClassLoader();
+        String wsdlUrl = cl.getResource(WsdlTest.WSDL).toString();
 
         PublishedService service = new PublishedService();
         service.setName(wsdl.getDefinition().getTargetNamespace());
         StringWriter sw = new StringWriter();
         wsdl.toWriter(sw);
         service.setWsdlXml(sw.toString());
-        service.setWsdlUrl("http://www.tempuri.org/service");
+        service.setWsdlUrl(wsdlUrl);
         service.setOid(nextObjectId());
         Assertion assertion = sampleAssertion(pc);
         ByteArrayOutputStream bo = new ByteArrayOutputStream();
