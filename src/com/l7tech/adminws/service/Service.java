@@ -47,6 +47,22 @@ public class Service {
         return createTestHeaders();
     }
 
+    /**
+     * this save method handles both save and updates.
+     * the distinction happens on the server side by inspecting the oid of the object
+     * if the oid appears to be "virgin" a save is invoked, otherwise an update call is made.
+     * @param service the object to be saved or upodated
+     * @throws java.rmi.RemoteException
+     */
+    public long savePublishedService(PublishedService service) throws java.rmi.RemoteException {
+        // todo
+        return 69;
+    }
+
+    public void deletePublishedService(long oid) throws java.rmi.RemoteException {
+        // todo
+    }
+
     // ************************************************
     // PRIVATES
     // ************************************************

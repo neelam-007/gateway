@@ -13,6 +13,7 @@ import com.l7tech.service.PublishedService;
  * User: flascelles
  * Date: Jun 6, 2003
  *
+ * This is the admin ws client for the service ws. It is used by the ServiceManagerClientImp class.
  */
 public class Client {
     public Client(String targetURL, String username, String password) {
@@ -57,10 +58,36 @@ public class Client {
         return output;
     }
 
+    /**
+     * this save method handles both save and updates.
+     * the distinction happens on the server side by inspecting the oid of the object
+     * if the oid appears to be "virgin" a save is invoked, otherwise an update call is made.
+     * @param service the object to be saved or updated
+     * @throws java.rmi.RemoteException
+     */
+    public long savePublishedService(PublishedService service) throws java.rmi.RemoteException {
+        Call call = createStubCall();
+        call.setOperationName(new QName(SERVICE_URN, "savePublishedService"));
+        call.addParameter(new javax.xml.namespace.QName("", "service"), new javax.xml.namespace.QName(SERVICE_URN, "PublishedService"), com.l7tech.service.PublishedService.class, javax.xml.rpc.ParameterMode.IN);
+        call.setReturnClass(Long.class);
+        Long res = (Long)call.invoke(new Object[]{service});
+        return res.longValue();
+    }
+
+    public void deletePublishedService(long oid) throws java.rmi.RemoteException {
+        Call call = createStubCall();
+        call.setOperationName(new QName(SERVICE_URN, "deletePublishedService"));
+        call.addParameter(new javax.xml.namespace.QName("", "oid"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "long"), long.class, javax.xml.rpc.ParameterMode.IN);
+        call.setReturnType(org.apache.axis.encoding.XMLType.AXIS_VOID);
+        call.invoke(new Object[]{new java.lang.Long(oid)});
+        return;
+    }
+
     // ************************************************
     // PRIVATES
     // ************************************************
 
+    /*
     public static void main(String[] args) throws Exception {
         Client me = new Client("http://localhost:8080/ssg/services/serviceAdmin", "ssgadmin", "ssgadminpasswd");
         if (me == null) System.err.println("!!!!!!!");
@@ -70,7 +97,11 @@ public class Client {
         for (int i = 0; i < res.length; i++) System.out.println(res[i].toString());
         res = me.findAllPublishedServicesByOffset(231,5466);
         for (int i = 0; i < res.length; i++) System.out.println(res[i].toString());
+        me.savePublishedService(me.findServiceByPrimaryKey(654));
+        me.deletePublishedService(654);
+        System.out.println("done");
     }
+    */
 
     private Call createStubCall() throws java.rmi.RemoteException {
         // create service, call
