@@ -256,6 +256,6 @@ public class DefaultPolicyPathBuilder extends PolicyPathBuilder {
               .append("\n");
         }
         sb.append(end);
-        log.fine(sb.toString());
+        log.finest(sb.toString());
     }
 }

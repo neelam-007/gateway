@@ -94,7 +94,7 @@ public class RegistrarLookupServlet extends HttpServlet {
             }
 
             LookupLocator ll = getLookupLocator();
-            logger.fine("Obtained locator");
+            logger.finest("Obtained locator");
             ServiceRegistrar sr = ll.getRegistrar(5000);
             if (sr == null) {
                 response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
