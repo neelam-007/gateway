@@ -33,14 +33,15 @@ public class MessageProcessor {
             PublishedService service = _serviceManager.resolveService( request );
             AssertionStatus status;
             if ( service == null || service.isDisabled() ) {
-                if ( service == null )
-                    _log.log(Level.INFO, "Service not found" );
-                else
-                    _log.log( Level.WARNING, "Service disabled" );
-
-                status = AssertionStatus.SERVICE_NOT_FOUND;
+                if ( service == null ) {
+                    _log.info( "Service not found" );
+                    status = AssertionStatus.SERVICE_NOT_FOUND;
+                } else {
+                    _log.warning( "Service disabled" );
+                    status = AssertionStatus.SERVICE_DISABLED;
+                }
             } else {
-                _log.log(Level.FINER, "Service resolved" );
+                _log.finer( "Resolved service #" + service.getOid() );
                 request.setParameter( Request.PARAM_SERVICE, service );
 
                 // check if requestor provided a version number for published service
@@ -65,13 +66,13 @@ public class MessageProcessor {
                 if ( status == AssertionStatus.NONE ) {
                     service.incrementRequestCount();
                     if ( request.isRouted() ) {
-                        _log.log(Level.INFO, "Request was routed with status " + " " + status.getMessage() + "(" + status.getNumeric() + ")" );
+                        _log.info( "Request was routed with status " + " " + status.getMessage() + "(" + status.getNumeric() + ")" );
                     } else {
-                        _log.log(Level.WARNING, "Request was not routed!");
+                        _log.warning( "Request was not routed!");
                         status = AssertionStatus.FALSIFIED;
                     }
                 } else {
-                    _log.log( Level.WARNING, status.getMessage() );
+                    _log.warning( status.getMessage() );
                 }
             }
 
