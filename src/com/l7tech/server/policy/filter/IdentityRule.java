@@ -49,6 +49,7 @@ public class IdentityRule extends Filter {
     private static final int NOTHING_WAS_DELETED = 0;
     private static final int SOMETHING_WAS_DELETED = 1;
     private static final int ALL_SIBLINGS_SHOULD_BE_DELETED = 2;
+    private static final int AN_ID_WAS_PASSED = 3;
     /**
      * @return see NOTHING_WAS_DELETED, SOMETHING_WAS_DELETED, or ALL_SIBLINGS_SHOULD_BE_DELETED
      */
@@ -65,33 +66,50 @@ public class IdentityRule extends Filter {
                     throw new RuntimeException("Invalid policy, all policies must have a composite assertion at the root");
                 }
                 parentIterator.remove();
+                return AN_ID_WAS_PASSED;
             } else {
                 if (parent instanceof AllAssertion) {
                     return ALL_SIBLINGS_SHOULD_BE_DELETED;
                 } else {
                     parentIterator.remove();
                 }
+                return SOMETHING_WAS_DELETED;
             }
-            return SOMETHING_WAS_DELETED;
         } else if (arg instanceof CompositeAssertion) {
             // apply rules to children
             CompositeAssertion root = (CompositeAssertion)arg;
             Iterator i = root.getChildren().iterator();
             boolean shouldClearTheAll = false;
+            boolean somethingWasDeleted = false;
+            boolean andIdAssertionWasPassed = false;
             while (i.hasNext()) {
                 Assertion kid = (Assertion)i.next();
-                if (applyRules(kid, i, root) == ALL_SIBLINGS_SHOULD_BE_DELETED) {
+                int kidres = applyRules(kid, i, root);
+                if (kidres == ALL_SIBLINGS_SHOULD_BE_DELETED) {
                     shouldClearTheAll = true;
+                    somethingWasDeleted = true;
                     break;
+                } else if (kidres == SOMETHING_WAS_DELETED) {
+                    somethingWasDeleted = true;
+                } else if (kidres == AN_ID_WAS_PASSED) {
+                    andIdAssertionWasPassed = true;
                 }
             }
             if (shouldClearTheAll) {
                 root.getChildren().clear();
             }
+            // if this composite is the child of an ALL and something was deleted in it and it is now empty, it
+            // means all siblings should be nuked
+            if (parent instanceof AllAssertion && somethingWasDeleted && root.getChildren().isEmpty()) {
+                if (!andIdAssertionWasPassed) {
+                    return ALL_SIBLINGS_SHOULD_BE_DELETED;
+                }
+            }
             // if all children of this composite were removed, we have to remove it from it's parent
             if (root.getChildren().isEmpty() && parentIterator != null) {
                 parentIterator.remove();
-                return SOMETHING_WAS_DELETED;
+                if (andIdAssertionWasPassed) return AN_ID_WAS_PASSED;
+                else return SOMETHING_WAS_DELETED;
             }
         }
         return NOTHING_WAS_DELETED;
