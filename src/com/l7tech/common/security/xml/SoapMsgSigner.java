@@ -168,6 +168,49 @@ public final class SoapMsgSigner {
     }
 
     /**
+     * Will extract the X509 certificates from the KeyInfo element.
+     */
+    private static X509Certificate[] getCertFromKeyInfo(Element keyInfoElement) throws InvalidSignatureException{
+        KeyInfo keyInfo = null;
+        try {
+            keyInfo = new KeyInfo(keyInfoElement);
+        } catch (XSignatureException e) {
+            throw new InvalidSignatureException("Unable to extract KeyInfo from signature", e);
+        }
+
+        // Assume a single X509 certificate
+        KeyInfo.X509Data[] x509DataArray = keyInfo.getX509Data();
+        // according to javadoc, this can be null
+        if (x509DataArray == null || x509DataArray.length < 1) {
+            logger.fine("No x509 data found in KeyInfo bodyElement, will look for reference instead.");
+            // this may contain instead a wsse:SecurityTokenReference pointing to
+            // a wsse:BinarySecurityToken. we should support getting the cert from
+            // that location too.
+
+            // 1. look for a wsse:SecurityTokenReference element
+            List references = XmlUtil.findChildElementsByName(keyInfoElement,
+                                                              new String[] {SoapUtil.SECURITY_NAMESPACE,
+                                                                            SoapUtil.SECURITY_NAMESPACE2,
+                                                                            SoapUtil.SECURITY_NAMESPACE3},
+                                                              "SecurityTokenReference");
+            if (references.size() > 0) {
+                logger.warning("reference found but not yet supported");
+                // todo, continue
+                throw new InvalidSignatureException("Not yet supported.");
+            }
+        } else {
+            KeyInfo.X509Data x509Data = x509DataArray[0];
+            X509Certificate[] certs = x509Data.getCertificates();
+            // according to javadoc, this can be null
+            if (certs == null || certs.length < 1) {
+                throw new InvalidSignatureException("Could not get X509 cert");
+            }
+            return certs;
+        }
+        throw new InvalidSignatureException("No cert found in key info.");
+    }
+
+    /**
      * Verify that a valid signature is included and that the bodyElement is signed.
      * The validity of the signer's cert is NOT verified against the local root authority.
      * Caller is expected to have already called {@link #normalizeDoc(org.w3c.dom.Document)}.
@@ -194,31 +237,7 @@ public final class SoapMsgSigner {
         if (keyInfoElement == null) {
             throw new SignatureNotFoundException("KeyInfo bodyElement not found in " + sigElement.toString());
         }
-        KeyInfo keyInfo = null;
-        try {
-            keyInfo = new KeyInfo(keyInfoElement);
-        } catch (XSignatureException e) {
-            throw new InvalidSignatureException("Unable to extract KeyInfo from signature", e);
-        }
-
-        // Assume a single X509 certificate
-        KeyInfo.X509Data[] x509DataArray = keyInfo.getX509Data();
-        // according to javadoc, this can be null
-        if (x509DataArray == null || x509DataArray.length < 1) {
-            throw new InvalidSignatureException("No x509 data found in KeyInfo bodyElement");
-        }
-        KeyInfo.X509Data x509Data = x509DataArray[0];
-        X509Certificate[] certs = x509Data.getCertificates();
-        // according to javadoc, this can be null
-        if (certs == null || certs.length < 1) {
-            throw new InvalidSignatureException("Could not get X509 cert");
-        }
-
-        // todo
-        // this may contain instead a wsse:SecurityTokenReference pointing to
-        // a wsse:BinarySecurityToken. we should support getting the cert from
-        // that location too.
-
+        X509Certificate[] certs = getCertFromKeyInfo(keyInfoElement);
         // validate signature
         PublicKey pubKey = certs[0].getPublicKey();
         Validity validity = sigContext.verify(sigElement, pubKey);
