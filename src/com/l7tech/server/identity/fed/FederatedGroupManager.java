@@ -18,6 +18,7 @@ import net.sf.hibernate.Criteria;
 import net.sf.hibernate.expression.Expression;
 
 import java.sql.SQLException;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -34,6 +35,7 @@ import java.util.regex.PatternSyntaxException;
 public class FederatedGroupManager extends PersistentGroupManager {
     public FederatedGroupManager( IdentityProvider provider ) {
         super( provider );
+        this.federatedProvider = (FederatedIdentityProvider)provider;
         this.providerConfig = (FederatedIdentityProviderConfig)provider.getConfig();
     }
 
@@ -75,8 +77,8 @@ public class FederatedGroupManager extends PersistentGroupManager {
         PersistentGroup group = cast(genericGroup);
         if ( group instanceof VirtualGroup ) {
             // fix for bugzilla 1101 virtual group membership enforces trusted fip cert
-            long[] provCerts = providerConfig.getTrustedCertOids();
-            if (provCerts == null || provCerts.length < 1) {
+            Set provCerts = federatedProvider.getValidTrustedCertOids();
+            if (provCerts == null || provCerts.size() < 1) {
                 logger.warning("The virtual group " + group.getUniqueIdentifier() + " is itself invalid because " +
                                "the parent provider has no trusted certs declared (virtual group must rely on fip " +
                                "trusted cert). Returning false.");
@@ -145,4 +147,5 @@ public class FederatedGroupManager extends PersistentGroupManager {
 
     private final Logger logger = Logger.getLogger(getClass().getName());
     private FederatedIdentityProviderConfig providerConfig;
+    private FederatedIdentityProvider federatedProvider;
 }

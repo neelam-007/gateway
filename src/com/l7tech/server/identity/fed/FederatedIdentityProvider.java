@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.logging.Level;
@@ -83,6 +84,10 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
 
     public GroupManager getGroupManager() {
         return groupManager;
+    }
+
+    public Set getValidTrustedCertOids() {
+        return Collections.unmodifiableSet(certOidSet);
     }
 
     public User authenticate(LoginCredentials pc) throws AuthenticationException, FindException, IOException {
