@@ -45,16 +45,8 @@
                     <UserLogin stringValueNull="null"/>
                     <IdentityProviderOid longValue="-1"/>
                 </SpecificUser>
-                <XmlResponseSecurity>
-                    <Cipher stringValue="AES"/>
-                    <KeyLength intValue="128"/>
-                    <Encryption booleanValue="false"/>
-                </XmlResponseSecurity>
-                <XmlRequestSecurity>
-                    <Cipher stringValue="AES"/>
-                    <KeyLength intValue="128"/>
-                    <Encryption booleanValue="false"/>
-                </XmlRequestSecurity>
+                <XmlResponseSecurity/>
+                <XmlRequestSecurity/>
                 <RequestXpathAssertion>
                     <NamespaceMap mapValueNull="null"/>
                     <Pattern stringValueNull="null"/>
