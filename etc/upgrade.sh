@@ -1,12 +1,25 @@
 #bin/sh
 
+option="$1"
+
+# verify number of parameter
 if [ ! $# = 1 ]; then
+  echo "ERROR: Missing/Too many parameter"
   echo "ERROR: Usage - $0 [getFromRelease|getToRelease|doUpgrade]"
-  echo "ERROR: $0 exits"
+  echo "ERROR: <$0 $option> exits"
   exit 1
 fi
 
-option="$1"
+# verify parameter validity
+if [ "$option" = "getFromRelease" -o "$option" = "getToRelease" -o "$option" = "doUpgrade" ]; then
+  echo "INFO: Running script <$0 $option>"
+else
+  echo "ERROR: Invalid parameters <$option>"
+  echo "ERROR: Usage - $0 [getFromRelease|getToRelease|doUpgrade]"
+  echo "ERROR: <$0 $option> exits"
+  exit 1
+fi
+
 ssgDir="/ssg/bin"
 ssgDBDir="/ssg/etc/sql"
 
@@ -26,14 +39,14 @@ if [ "$option" = "getFromRelease" -o "$option" = "getToRelease" ]; then
   mapFile="/ssg/bin/buildVersion.txt"
   if [ ! -e $mapFile -o -d $mapFile ]; then
     echo "ERROR: Missing <$mapFile> - unable to derive the installed SSG version number"
-    echo "ERROR: $0 exits"
+    echo "ERROR: <$0 $option> exits"
     exit 1
   fi
 
   # verify existence for /ssg/dist/ROOT-b<buildNumber>.war
   if [ ! -e /ssg/dist/ROOT-b*.war -o -d /ssg/dist/ROOT-b*.war ]; then
     echo "ERROR: Missing WAR distribution </ssg/dist/ROOT-b*.war> - unable to derive the installed SSG build number"
-    echo "ERROR: $0 exits"
+    echo "ERROR: <$0 $option> exits"
     exit 1
   fi
 
@@ -45,7 +58,7 @@ if [ "$option" = "getFromRelease" -o "$option" = "getToRelease" ]; then
   if [ ! "$grepCount" = 1 ]; then 
     echo "ERROR: <$mapFile> contains more than one record (total of <$grepCount>) for buildNumber <$buildNumber>"
     echo `grep ^.*$buildNumber.*= $mapFile`
-    echo "ERROR: $0 exits"
+    echo "ERROR: <$0 $option> exits"
     exit 1
   fi
   # get version number base on build number from $mapFile
@@ -60,7 +73,7 @@ if [ "$option" = "getFromRelease" -o "$option" = "getToRelease" ]; then
     fi
   else
     echo "ERROR: <$mapFile> missing map record for buildNumber <$buildNumber>"
-    echo "ERROR: $0 exits"
+    echo "ERROR: <$0 $option> exits"
     exit 1
   fi
 fi
@@ -72,7 +85,7 @@ if [ "$option" = "doUpgrade" ]; then
   # verify the existence of $releaseFromFile and $releaseToFile
   if [ ! -e $releaseFromFile -o -d $releaseFromFile -o ! -e $releaseToFile -o -d $releaseToFile ]; then
     echo "ERROR: Missing <$releaseFromFile> or/and <$releaseToFile> - unable to derive the SSG fromVersion and toVeresion number"
-    echo "ERROR: $0 exits"
+    echo "ERROR: <$0 $option> exits"
     exit 1
   fi
   releaseFromVersion=`cat $releaseFromFile`
