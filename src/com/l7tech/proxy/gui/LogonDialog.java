@@ -47,21 +47,30 @@ public class LogonDialog extends JDialog {
 
     private static JFrame frame;
     private boolean badPasswordMessage;
+    private boolean lockUsername;
 
     /**
      * Create a new LogonDialog
      */
-    public LogonDialog(JFrame parent, String title, String defaultUsername, boolean badPasswordMessage) {
+    public LogonDialog(JFrame parent, String title, String defaultUsername, boolean lockUsername, boolean badPasswordMessage) {
         super(parent, title, true);
+        this.frame = parent;   // XXX using a static for this is admittedly fugly
         this.badPasswordMessage = badPasswordMessage;
-        this.frame = parent;
+
+        // Mustn't lock an empty username
+        this.lockUsername = defaultUsername != null && defaultUsername.length() > 0 ? lockUsername : false;
+
         setTitle("Log on to Gateway " + title);
         initComponents();
-        if (defaultUsername != null) {
+
+        if (defaultUsername != null)
             userNameTextField.setText(defaultUsername);
+
+        if (defaultUsername == null)
             userNameTextField.requestFocus();
-        } else
+        else
             passwordField.requestFocus();
+
         updateOkButton();
     }
 
@@ -116,6 +125,7 @@ public class LogonDialog extends JDialog {
             public void removeUpdate(DocumentEvent e) { updateOkButton(); }
             public void changedUpdate(DocumentEvent e) { updateOkButton(); }
         });
+        userNameTextField.setEditable(!lockUsername);
 
         // user name label
         JLabel userNameLabel = new JLabel();
@@ -274,9 +284,10 @@ public class LogonDialog extends JDialog {
     public static PasswordAuthentication logon(JFrame parent,
                                                String ssgName,
                                                String defaultUsername,
+                                               boolean lockUsername,
                                                boolean badPasswordMessage)
     {
-        final LogonDialog dialog = new LogonDialog(parent, ssgName, defaultUsername, badPasswordMessage);
+        final LogonDialog dialog = new LogonDialog(parent, ssgName, defaultUsername, lockUsername, badPasswordMessage);
         dialog.setResizable(false);
         dialog.setSize(300, 275);
 

@@ -10,13 +10,16 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.proxy.datamodel.CredentialManager;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgManager;
+import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
+import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.PasswordAuthentication;
+import java.security.cert.X509Certificate;
 
 /**
  * GUI implementation of the CredentialManager.
@@ -60,6 +63,8 @@ public class GuiCredentialManager extends CredentialManager {
 
     private static class CredHolder {
         private PasswordAuthentication pw = null;
+        private String showUsername = null;
+        private boolean lockUsername = false;
     }
 
     public PasswordAuthentication getCredentials(final Ssg ssg) throws OperationCanceledException {
@@ -86,17 +91,32 @@ public class GuiCredentialManager extends CredentialManager {
         long now = System.currentTimeMillis();
         synchronized(this) {
             // If another instance already updated the credentials while we were waiting, we've done our job
+            final CredHolder holder = new CredHolder();
             synchronized (ssg) {
                 pw = ssg.getCredentials();
                 if (ssg.credentialsUpdatedTime() > now && pw != null)
                     return pw;
+
+                // Check if username is locked into a client certificate
+                holder.showUsername = ssg.getUsername();
+                if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
+                    X509Certificate cert = SsgKeyStoreManager.getClientCert(ssg);
+                    X500Principal certName = new X500Principal(cert.getSubjectDN().toString());
+                    String certNameString = certName.getName(X500Principal.CANONICAL);
+                    holder.showUsername = certNameString.substring(3);
+                    ssg.setUsername(holder.showUsername);
+                    holder.lockUsername = true;
+                }
             }
 
-            final CredHolder holder = new CredHolder();
             log.info("Displaying logon prompt for SSG " + ssg);
             invokeDialog(new Runnable() {
                 public void run() {
-                    PasswordAuthentication pw = LogonDialog.logon(Gui.getInstance().getFrame(), ssg.toString(), ssg.getUsername(), oldOnesWereBad);
+                    PasswordAuthentication pw = LogonDialog.logon(Gui.getInstance().getFrame(),
+                                                                  ssg.toString(),
+                                                                  holder.showUsername,
+                                                                  holder.lockUsername,
+                                                                  oldOnesWereBad);
                     if (pw == null) {
                         if (ssg.incrementNumTimesLogonDialogCanceled() > 2) {
                             // This is the second time we've popped up a logon dialog and the user has impatiently
