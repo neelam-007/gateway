@@ -38,6 +38,7 @@ public interface Request extends Message {
     public static final String PARAM_HTTP_ACCEPT_CHARSET    = PREFIX_HTTP_HEADER + ".accept-charset";
     public static final String PARAM_HTTP_ACCEPT_ENCODING   = PREFIX_HTTP_HEADER + ".accept-encoding";
     public static final String PARAM_HTTP_DATE              = PREFIX_HTTP_HEADER + ".date";
+    public static final String PARAM_HTTP_X509CERT          = "javax.servlet.request.X509Certificate";
 
     public static final String PARAM_HTTP_REQUEST_URI       = PREFIX_HTTP + ".request-uri";
     public static final String PARAM_HTTP_AUTH_TYPE         = PREFIX_HTTP + ".auth-type";
