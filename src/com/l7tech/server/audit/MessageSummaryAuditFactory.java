@@ -10,6 +10,7 @@ import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.MimeKnob;
+import com.l7tech.common.message.TcpKnob;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -87,7 +88,9 @@ public class MessageSummaryAuditFactory {
 
         if ( requestContentLength == -1 && requestXml != null ) requestContentLength = requestXml.length();
 
-        clientAddr = (String)request.getTcpKnob().getRemoteAddress();
+        TcpKnob reqTcp = (TcpKnob)request.getKnob(TcpKnob.class);
+        if (reqTcp != null)
+            clientAddr = reqTcp.getRemoteAddress();
 
         // Response info
         Message response = context.getResponse();
