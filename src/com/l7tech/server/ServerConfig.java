@@ -6,17 +6,16 @@
 
 package com.l7tech.server;
 
-import com.l7tech.service.resolution.UrnResolver;
-import com.l7tech.service.resolution.SoapActionResolver;
-import com.l7tech.service.resolution.HttpUriResolver;
 import com.l7tech.logging.LogManager;
+import com.l7tech.service.resolution.HttpUriResolver;
+import com.l7tech.service.resolution.SoapActionResolver;
+import com.l7tech.service.resolution.UrnResolver;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.logging.Level;
 
 /**
  * @author alex
@@ -41,14 +40,13 @@ public class ServerConfig {
 
         try {
             InitialContext ic = new InitialContext();
+            _logLevel = (String)(ic.lookup( JNDI_LOG_LEVEL ));
             _serviceResolvers = (String)ic.lookup( JNDI_SERVICE_RESOLVERS );
             _serverId = new Byte( (String)ic.lookup( JNDI_SERVER_ID ) ).byteValue();
-            _logLevel = (String)(ic.lookup( JNDI_LOG_LEVEL ));
-
         } catch ( NamingException ne ) {
-            _log.log( Level.WARNING, ne.getMessage(), ne );
+            LogManager.getInstance().getSystemLogger().log( Level.WARNING, ne.getMessage(), ne );
         } catch ( NumberFormatException nfe ) {
-            _log.log( Level.WARNING, nfe.getMessage(), nfe );
+            LogManager.getInstance().getSystemLogger().log( Level.WARNING, nfe.getMessage(), nfe );
         }
 
         if ( _serviceResolvers == null ) {
@@ -66,11 +64,11 @@ public class ServerConfig {
                 InetAddress localhost = InetAddress.getLocalHost();
                 byte[] ip = localhost.getAddress();
                 _serverId = ip[3];
-                _log.warning( "ServerId parameter not set, assigning server ID " + _serverId +
+                LogManager.getInstance().getSystemLogger().warning( "ServerId parameter not set, assigning server ID " + _serverId +
                               " from server's IP address");
             } catch ( UnknownHostException e ) {
                 _serverId = 1;
-                _log.severe( "Couldn't get server's local host!  Using server ID " + _serverId );
+                LogManager.getInstance().getSystemLogger().severe( "Couldn't get server's local host!  Using server ID " + _serverId );
             }
         }
     }
@@ -97,6 +95,4 @@ public class ServerConfig {
     protected String _logLevel;
 
     protected static ServerConfig _instance;
-
-    protected Logger _log = LogManager.getInstance().getSystemLogger();
 }
