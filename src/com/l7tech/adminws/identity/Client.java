@@ -159,7 +159,6 @@ public class Client {
         }
         // create service, call
         org.apache.axis.client.Service service = new org.apache.axis.client.Service();
-        // todo, should i reuse this object instead of re-instantiating every call?
         Call call = null;
         try {
             call = (Call)service.createCall();
