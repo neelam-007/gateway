@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.security.xml.processor.ProcessorException;
 import com.l7tech.common.security.xml.processor.BadSecurityContextException;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import org.w3c.dom.Document;
 
 import java.security.GeneralSecurityException;
@@ -22,6 +23,18 @@ import java.security.GeneralSecurityException;
  * @see TokenServiceImpl
  */
 public interface TokenService {
+
+    /**
+     * Handles token service requests using a PolicyEnforcementContext. The TokenService implementation is responsible
+     * for enforcing a policy that makes sense.
+     *
+     * @param context must contain the request at entry and will be populated with a response document if everything
+     * goes well.
+     */
+    void respondToSecurityTokenRequest(PolicyEnforcementContext context) throws InvalidDocumentFormatException,
+                                                                                TokenServiceImpl.TokenServiceException,
+                                                                                ProcessorException;
+
     /**
      * Handles the request for a security token (either secure conversation context or saml thing).
      * @param request the request for the secure conversation context

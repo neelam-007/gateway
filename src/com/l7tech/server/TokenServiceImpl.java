@@ -19,6 +19,7 @@ import com.l7tech.server.saml.SamlAssertionGenerator;
 import com.l7tech.server.secureconversation.DuplicateSessionException;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -59,6 +60,22 @@ public class TokenServiceImpl implements TokenService {
         public TokenServiceException(String msg, Throwable cause) {
             super(msg, cause);
         }
+    }
+
+    /**
+     * Handles token service requests using a PolicyEnforcementContext. The policy enforced allows for requests
+     * secured in the message or secured in the transport layer. If the response contains a secret, it will be
+     * secured as part of the message layer if the request was secured that same way. This allows for such
+     * requests to occur over SSL without the need for client certs.
+     *
+     * @param context contains the request at entry and contains a response document if everything goes well.
+     */
+    public void respondToSecurityTokenRequest(PolicyEnforcementContext context) throws InvalidDocumentFormatException,
+                                                                                TokenServiceImpl.TokenServiceException,
+                                                                                ProcessorException {
+        throw new UnsupportedOperationException("TODO!");
+        // todo, run a policy that allows for WSS signature, SAML auth, and transport level authentication
+        // if the request is signed, then the response's secret will contain a response
     }
 
     /**
