@@ -62,7 +62,7 @@ public abstract class RemoteService implements Remote, ProxyAccessor {
         config = ConfigurationProvider.getInstance(configOptions);
         init();
         serverImpls.put(this.getClass(), this);
-        logger.info("The Service '" + getClass().getName() + "' is ready");
+        logger.fine("The Service '" + getClass().getName() + "' is ready");
     }
 
     public static void unexportAll() {
