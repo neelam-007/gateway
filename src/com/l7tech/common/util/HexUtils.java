@@ -10,6 +10,7 @@ import java.io.InputStream;
 import java.io.IOException;
 import java.net.URLConnection;
 import java.net.URL;
+import java.util.Map;
 
 /**
  * Utility for hex encoding.
@@ -44,28 +45,49 @@ public class HexUtils {
     }
 
     /**
-     * Slurp a stream into a byte array and return it.  The stream will be read until EOF or until the maximum
-     * specified number of bytes have been read.
-     * @param stream the stream to read
-     * @param maxSize maximum size to read in bytes
-     * @return a byte array no larger than maxSize; the actual size will depend on the number of bytes read.
-     *         If the returned array is exactly maxSize bytes the stream may have unread data remaining on it.
+     * Slurp a stream into a byte array and return an array of the appropriate size.
+     *
+     * @param stream  the stream to read
+     * @param maxLength  the maximum number of bytes you are willing to recieve
+     * @return the newly read array
+     * @throws IOException if there was a problem reading the stream
      */
-    public static byte[] slurpStream(InputStream stream, int maxSize) throws IOException {
-        byte[] bb = new byte[maxSize];
+    public static byte[] slurpStream(InputStream stream, int maxLength) throws IOException {
+        byte[] buffer = new byte[maxLength];
+        int got = slurpStream(stream, buffer);
+        byte[] ret = new byte[got];
+        System.arraycopy(buffer, 0, ret, 0, got);
+        return ret;
+    }
+
+    /**
+     * Slurp a stream into a byte array and return the number of bytes that were in the stream.
+     * The stream will be read until EOF or until the maximum specified number of bytes have been read.
+     *
+     * @param stream the stream to read
+     * @param bb the array of bytes in which to read it
+     * @return the number of bytes read from the stream.
+     */
+    public static int slurpStream(InputStream stream, byte[] bb) throws IOException {
+        int maxSize = bb.length;
         int remaining = maxSize;
         int offset = 0;
         for (;;) {
             int n = stream.read(bb, offset, remaining);
             offset += n;
             remaining -= n;
-            if (n < 1 || remaining < 1) {
-                byte[] ret = new byte[maxSize - remaining + 1];
-                System.arraycopy(bb, 0, ret, 0, offset + 1);
-                return ret;
-            }
+            if (n < 1 || remaining < 1)
+                return offset;
         }
         /* NOTREACHED */
+    }
+
+    /** Holds the result of a slurpUrl() call. */
+    public static class Slurpage {
+        public final Map headers;
+        public final byte[] bytes;
+
+        private Slurpage(byte[] bytes, Map headers) { this.bytes = bytes; this.headers = headers; }
     }
 
     /**
@@ -74,13 +96,24 @@ public class HexUtils {
      * @return
      * @throws java.io.IOException If any connection problems arise, or if number of bytes read does not equal expected number of bytes in HTTP header.
      */
-    public static byte[] slurpUrl(URL url) throws IOException {
+    public static Slurpage slurpUrl(URL url) throws IOException {
         URLConnection urlConnection = url.openConnection();
+        urlConnection.setAllowUserInteraction(false);
         int len = urlConnection.getContentLength();
-        if (len < 0) throw new IOException("HTTP header byte count mismatch at URL: " + url.toString());
+        if (len < 0)
+            throw new IOException("HTTP header does not include a Content-Length header (status = " + urlConnection.getHeaderField(null)
+                                  + "): " + url.toString());
         byte[] byteArray = new byte[len];
-        InputStream bin = urlConnection.getInputStream();
-        if (bin.read(byteArray, 0, len) != len) throw new IOException("Could not load bytes at URL: " + url.toString());
-        return byteArray;
+        InputStream bin = null;
+        try {
+            bin = urlConnection.getInputStream();
+            int got = slurpStream(bin, byteArray);
+            if (got != len)
+                throw new IOException("Did not receive the correct number of bytes: " + url.toString());
+            return new Slurpage(byteArray, urlConnection.getHeaderFields());
+        } finally {
+            if (bin != null)
+                bin.close();
+        }
     }
 }
