@@ -465,7 +465,7 @@ public class ClusterStatusWindow extends JFrame {
         Object[][] rows = new Object[][]{};
 
         String[] cols = new String[]{
-            "Status", "Gateway", "Load Sharing %", "Request Routed %", "Load Avg", "Uptime", "IP Address", "Node Id"
+            "Status", "Gateway Node", "Load Sharing %", "Request Routed %", "Load Avg", "Uptime", "IP Address", "Node Id"
         };
 
         clusterStatusTableSorter = new ClusterStatusTableSorter(new LogTableModel(rows, cols)) {
