@@ -44,10 +44,10 @@ public class SamlSecurityPropertiesAction extends SecureAction {
     protected void performAction() {
         Frame f = TopComponents.getInstance().getMainWindow();
         SamlSecurityPropertiesPanel dlg = new SamlSecurityPropertiesPanel(f, (SamlSecurity)node.asAssertion());
+        dlg.addPolicyListener(listener);
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         dlg.show();
-        // todo, update the tree
     }
 
     private final PolicyListener listener = new PolicyListenerAdapter() {
