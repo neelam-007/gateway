@@ -13,15 +13,13 @@ import com.l7tech.common.util.FileUtils;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.util.SslUtils;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.PasswordAuthentication;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateFactory;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -63,6 +61,20 @@ public class SsgKeyStoreManager {
     }
 
     /**
+     * Convert a generic certificate, which may be a BouncyCastle implementation, into a standard Sun
+     * implementation.
+     * @param generic  the certificate to convert, which may be null.
+     * @return a new instance from the default X.509 CertificateFactory, or null if generic was null.
+     * @throws CertificateException if the generic certificate could not be processed
+     */
+    private static X509Certificate convertToSunCertificate(X509Certificate generic) throws CertificateException {
+        if (generic == null) return null;
+        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        final byte[] encoded = generic.getEncoded();
+        return (X509Certificate)cf.generateCertificate(new ByteArrayInputStream(encoded));
+    }
+
+    /**
      * Look up the server certificate for this SSG.
      *
      * @param ssg  the Ssg whose KeyStore to examine
@@ -70,10 +82,17 @@ public class SsgKeyStoreManager {
      */
     public static X509Certificate getServerCert(Ssg ssg) throws KeyStoreCorruptException {
         try {
-            return (X509Certificate) getTrustStore(ssg).getCertificate(SERVER_CERT_ALIAS);
+            X509Certificate cert = ssg.serverCert();
+            if (cert != null) return cert;
+            cert = (X509Certificate) getTrustStore(ssg).getCertificate(SERVER_CERT_ALIAS);
+            cert = convertToSunCertificate(cert);
+            ssg.serverCert(cert);
+            return cert;
         } catch (KeyStoreException e) {
             log.log(Level.SEVERE, "impossible exception", e);  // can't happen; keystore is initialized by getKeyStore()
             throw new RuntimeException("impossible exception", e);
+        } catch (CertificateException e) {
+            throw new RuntimeException("impossible exception", e); // can't happen
         }
     }
 
@@ -85,10 +104,17 @@ public class SsgKeyStoreManager {
      */
     public static X509Certificate getClientCert(Ssg ssg) throws KeyStoreCorruptException {
         try {
-            return (X509Certificate) getTrustStore(ssg).getCertificate(CLIENT_CERT_ALIAS);
+            X509Certificate cert = ssg.clientCert();
+            if (cert != null) return cert;
+            cert = (X509Certificate) getTrustStore(ssg).getCertificate(CLIENT_CERT_ALIAS);
+            cert = convertToSunCertificate(cert);
+            ssg.clientCert(cert);
+            return cert;
         } catch (KeyStoreException e) {
             log.log(Level.SEVERE, "impossible exception", e);  // can't happen; keystore is initialized by getKeyStore()
             throw new RuntimeException("impossible exception", e);
+        } catch (CertificateException e) {
+            throw new RuntimeException("impossible exception", e); // can't happen
         }
     }
 
@@ -387,15 +413,18 @@ public class SsgKeyStoreManager {
      * @throws IOException       if there was a problem writing the keystore to disk
      */
     public static void saveSsgCertificate(final Ssg ssg, X509Certificate cert)
-            throws KeyStoreException, IOException, KeyStoreCorruptException
+            throws KeyStoreException, IOException, KeyStoreCorruptException, CertificateException
     {
         synchronized (ssg) {
             log.info("Saving Gateway server certificate to disk");
+            ssg.serverCert(null);
+            cert = convertToSunCertificate(cert);
             KeyStore trustStore = getTrustStore(ssg);
             if (trustStore.containsAlias(SERVER_CERT_ALIAS))
                 trustStore.deleteEntry(SERVER_CERT_ALIAS);
             trustStore.setCertificateEntry(SERVER_CERT_ALIAS, cert);
             saveTrustStore(ssg);
+            ssg.serverCert(cert);
         }
     }
 
@@ -415,10 +444,12 @@ public class SsgKeyStoreManager {
      */
     public static void saveClientCertificate(final Ssg ssg, PrivateKey privateKey, X509Certificate cert,
                                              char[] privateKeyPassword)
-            throws KeyStoreException, IOException, KeyStoreCorruptException
+            throws KeyStoreException, IOException, KeyStoreCorruptException, CertificateException
     {
         log.info("Saving client certificate to disk");
         synchronized (ssg) {
+            ssg.clientCert(null);
+            cert = convertToSunCertificate(cert);
             KeyStore trustStore = getTrustStore(ssg);
             if (trustStore.containsAlias(CLIENT_CERT_ALIAS))
                 trustStore.deleteEntry(CLIENT_CERT_ALIAS);
@@ -433,6 +464,7 @@ public class SsgKeyStoreManager {
             saveTrustStore(ssg);
             ssg.haveClientCert(Boolean.TRUE);
             ssg.privateKey(privateKey);
+            ssg.clientCert(cert);
         }
     }
 

@@ -26,6 +26,7 @@ import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -90,6 +91,8 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private transient SSLContext sslContext = null;
     private transient ClientProxyTrustManager trustManager = null;
     private transient Cookie[] sessionCookies = null;
+    private transient X509Certificate serverCert = null;
+    private transient X509Certificate clientCert = null;
 
     public int compareTo(final Object o) {
         long id0 = getId();
@@ -789,10 +792,33 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         return sslContext;
     }
 
+    /** Flush SSL context and cached certificates. */
     public synchronized void resetSslContext()
             throws NoSuchProviderException, NoSuchAlgorithmException, KeyManagementException
     {
         sslContext = createSslContext();
+        serverCert = null;
+        clientCert = null;
+    }
+
+    /** Transient cached certificate for quicker access; only for use by SsgKeystoreManager. */
+    public synchronized void serverCert(X509Certificate cert) {
+        this.serverCert = cert;
+    }
+
+    /** Transient cached certificate for quicker access; only for use by SsgKeystoreManager. */
+    public synchronized void clientCert(X509Certificate cert) {
+        this.clientCert = cert;
+    }
+
+    /** Transient cached certificate for quicker access; only for use by SsgKeystoreManager. */
+    public synchronized X509Certificate clientCert() {
+        return clientCert;
+    }
+
+    /** Transient cached certificate for quicker access; only for use by SsgKeystoreManager. */
+    public synchronized X509Certificate serverCert() {
+        return serverCert;
     }
 
     /**
