@@ -74,6 +74,7 @@ public class Main {
                   public void windowOpened(WindowEvent e) {
                       if (mainSplashScreen != null) {
                           mainSplashScreen.dispose();
+                          mainSplashScreen = null;
                       }
                       SwingUtilities.invokeLater(new Runnable() {
                           public void run() {
@@ -88,6 +89,7 @@ public class Main {
                   }
               });
             main.setVisible(true);
+            main.toFront();
         } catch (HeadlessException e) {
             log.log(Level.SEVERE, "SSM Error", e);
         } catch (PolicyInitializationException e) {
