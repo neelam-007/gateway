@@ -5,14 +5,19 @@ import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.JmsUtilities;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.JmsRoutingAssertion;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 
 import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * A reference to a JMSConnection used by an assertion of type JmsRoutingAssertion
@@ -143,17 +148,42 @@ public class JMSEndpointReference extends ExternalReference {
      * system without administrator interaction.
      */
     boolean verifyReference() {
-        // todo
-        return true;
+        List jmsQueues = JmsUtilities.loadJmsQueues(false);
+        for (Iterator iterator = jmsQueues.iterator(); iterator.hasNext();) {
+            JmsAdmin.JmsTuple jmsTuple = (JmsAdmin.JmsTuple) iterator.next();
+            // what makes a jms queue the same?
+            // let's say a combination of JndiUrl, CONTEXT_EL_NAME, QUEUE_EL_NAME and TOPIC_EL_NAME
+            if (!jmsTuple.getConnection().getJndiUrl().equals(jndiUrl)) {
+                continue;
+            } else if (!jmsTuple.getConnection().getInitialContextFactoryClassname().equals(initialContextFactoryClassname)) {
+                continue;
+            } else if (!jmsTuple.getConnection().getQueueFactoryUrl().equals(queueFactoryUrl)) {
+                continue;
+            }
+            // WE HAVE A MATCH!
+            logger.fine("The local JMS endpoint was resolved from oid " + oid + " to " + localEndpointId);
+            localEndpointId = jmsTuple.getEndpoint().getOid();
+            return true;
+        }
+        logger.warning("The JMS endpoint cannot be resolved.");
+        return false;
     }
 
     void localizeAssertion(Assertion assertionToLocalize) {
-        // todo
+        if (assertionToLocalize instanceof JmsRoutingAssertion) {
+            JmsRoutingAssertion jmsRoutingAssertion = (JmsRoutingAssertion) assertionToLocalize;
+            if (jmsRoutingAssertion.getEndpointOid() != null &&
+                jmsRoutingAssertion.getEndpointOid().longValue() == oid) {
+                jmsRoutingAssertion.setEndpointOid(new Long(localEndpointId));
+                logger.fine("Endpoint id was replaced from " + oid + " to localEndpointId");
+            }
+        }
     }
 
     private final Logger logger = Logger.getLogger(JMSEndpointReference.class.getName());
 
     private long oid;
+    private long localEndpointId;
     private String initialContextFactoryClassname;
     private String jndiUrl;
     private String queueFactoryUrl;
