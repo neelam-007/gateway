@@ -132,6 +132,8 @@ public class SecureSpanAgentFactory {
                     throw new CausedSendException(e);
                 } catch (WssProcessor.ProcessorException e) {
                     throw new CausedSendException(e);
+                } catch (WssProcessor.BadContextException e) {
+                    throw new CausedSendException(e);
                 }
             }
 

@@ -80,7 +80,7 @@ public class TokenService {
     public Document respondToRequestSecurityToken(Document request, CredentialsAuthenticator authenticator, String clientAddress)
                                                     throws InvalidDocumentFormatException, TokenServiceException,
                                                            WssProcessor.ProcessorException, GeneralSecurityException,
-                                                           AuthenticationException {
+                                                           AuthenticationException, WssProcessor.BadContextException {
         // Pass request to the trogdorminator!
         WssProcessor trogdor = new WssProcessorImpl();
         X509Certificate serverSSLcert = null;

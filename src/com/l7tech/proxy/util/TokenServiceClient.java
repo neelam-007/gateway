@@ -139,6 +139,8 @@ public class TokenServiceClient {
             throw new CausedIOException("Unable to process response from token server", e);
         } catch (WssProcessor.ProcessorException e) {
             throw new CausedIOException("Unable to obtain token from token server", e);
+        } catch (WssProcessor.BadContextException e) {
+            throw new CausedIOException("Unable to obtain token from token server", e);
         }
         if (!(result instanceof SecureConversationSession))
             throw new IOException("Token server returned unwanted token type " + result.getClass());
@@ -150,7 +152,8 @@ public class TokenServiceClient {
                                                     X509Certificate clientCertificate,
                                                     PrivateKey clientPrivateKey,
                                                     X509Certificate serverCertificate)
-            throws InvalidDocumentFormatException, GeneralSecurityException, WssProcessor.ProcessorException
+            throws InvalidDocumentFormatException, GeneralSecurityException, WssProcessor.ProcessorException,
+                   WssProcessor.BadContextException
     {
         WssProcessor wssProcessor = new WssProcessorImpl();
         WssProcessor.ProcessorResult result = wssProcessor.undecorateMessage(response,

@@ -87,6 +87,11 @@ public class TokenServiceServlet extends HttpServlet {
             logger.log(Level.SEVERE, msg, e);
             res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
             return;
+        } catch (WssProcessor.BadContextException e) {
+            String msg = "Could not respond to RequestSecurityToken. " + e.getMessage();
+            logger.log(Level.SEVERE, msg, e);
+            res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
+            return;
         } catch (GeneralSecurityException e) {
             String msg = "Could not respond to RequestSecurityToken. " + e.getMessage();
             logger.log(Level.SEVERE, msg, e);

@@ -88,6 +88,10 @@ public class MessageProcessor {
             } catch (SAXException e) {
                 logger.log(Level.SEVERE, "Error getting xml document from request", e);
                 return AssertionStatus.SERVER_ERROR;
+            } catch (WssProcessor.BadContextException e) {
+                logger.log(Level.SEVERE, "Error in WSS processing of request", e);
+                // todo, push soapfaultdetails to response
+                return AssertionStatus.FAILED;
             }
             // todo, refactor SoapRequest so that it keeps a hold on the original message
             if (wssOutput.getUndecoratedMessage() != null) {

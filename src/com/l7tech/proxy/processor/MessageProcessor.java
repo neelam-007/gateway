@@ -112,7 +112,7 @@ public class MessageProcessor {
             throws ClientCertificateException, OperationCanceledException,
             ConfigurationException, GeneralSecurityException, IOException, SAXException,
             ResponseValidationException, HttpChallengeRequiredException, PolicyAssertionException,
-            InvalidDocumentFormatException, WssProcessor.ProcessorException
+            InvalidDocumentFormatException, WssProcessor.ProcessorException, WssProcessor.BadContextException
     {
         boolean succeeded = false;
         try {
@@ -455,7 +455,7 @@ public class MessageProcessor {
             throws ConfigurationException, IOException, PolicyRetryableException, GeneralSecurityException,
             OperationCanceledException, ClientCertificateException, BadCredentialsException,
             KeyStoreCorruptException, HttpChallengeRequiredException, SAXException, NoSuchAlgorithmException,
-            InvalidDocumentFormatException, WssProcessor.ProcessorException
+            InvalidDocumentFormatException, WssProcessor.ProcessorException, WssProcessor.BadContextException
     {
         URL url = getUrl(req);
         Ssg ssg = req.getSsg();
