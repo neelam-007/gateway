@@ -180,6 +180,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
                 }
             }
             Collection searchResults = provider.search(types, pattern);
+            if (searchResults == null) return new EntityHeader[0];
             return (EntityHeader[])searchResults.toArray(new EntityHeader[]{});
         } finally {
             closeContext();
