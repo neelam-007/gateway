@@ -33,6 +33,7 @@ public class WspTranslator21to30Test extends TestCase {
     private static final ClassLoader cl = WspTranslator21to30Test.class.getClassLoader();
     private static final String RESOURCE_PATH = "com/l7tech/policy/resources";
     private static final String POLICY_21 = RESOURCE_PATH + "/simple_policy_21.xml";
+    private static final String POLICY_21_BADPROPERTYNAME = RESOURCE_PATH + "/simple_policy_21_badpropertyname.xml";
     private static final String POLICY_21_REQRESPARTIAL = RESOURCE_PATH + "/policy_21_xmlReqResPartial.xml";
     private static final String POLICY_21_REQRESPFULL = RESOURCE_PATH + "/policy_21_xmlReqRespEncrypSignEntire.xml";
     private static final String POLICY_30 = RESOURCE_PATH + "/simple_policy_30.xml";
@@ -81,6 +82,21 @@ public class WspTranslator21to30Test extends TestCase {
         }
 
         log.info("Upgraded polciy XML: " + WspWriter.getPolicyXml(root));
+    }
+
+    public void testTranslate21BadPropertyName() throws Exception {
+        InputStream policy21Stream = cl.getResourceAsStream(POLICY_21_BADPROPERTYNAME);
+
+        Document policy21 = XmlUtil.parse(policy21Stream);
+        assertTrue(WspVersionImpl.VERSION_2_1 == (WspReader.getPolicyVersion(policy21.getDocumentElement())));
+
+        Document policy30 = WspTranslator21to30.INSTANCE.translatePolicy(policy21.getDocumentElement()).getOwnerDocument();
+        assertTrue(WspVersionImpl.VERSION_3_0 == (WspReader.getPolicyVersion(policy30.getDocumentElement())));
+
+        Assertion root = WspReader.parse(policy30.getDocumentElement());
+        assertNotNull(root);
+
+        log.info("Upgraded policy: " + root);
     }
 
     public void testTranslate21PartialEncryptionPolicy() throws Exception {

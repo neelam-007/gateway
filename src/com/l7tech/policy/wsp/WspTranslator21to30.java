@@ -278,13 +278,15 @@ public class WspTranslator21to30 implements WspTranslator {
                     return;
                 }
 
-                log.severe("Unable to interpret unknown property " + parameterName + " of " + deserializedObject.getClass());
-                super.unknownProperty(originalObject,
+                final String msg = "Unable to interpret unknown property " + parameterName + " of " + deserializedObject.getClass();
+                log.severe(msg);
+                throw new InvalidPolicyStreamException(msg, problemEncountered);
+                /*super.unknownProperty(originalObject,
                                       problematicParameter,
                                       deserializedObject,
                                       parameterName,
                                       parameterValue,
-                                      problemEncountered);
+                                      problemEncountered);*/
             }
 
             public Element invalidElement(Element problematicElement, Exception problemEncountered) throws InvalidPolicyStreamException {
