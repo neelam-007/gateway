@@ -169,7 +169,7 @@ public class ServerSchemaValidation implements ServerAssertion {
         String[] output = new String[children.size()];
         int cnt = 0;
         for (Iterator i = children.iterator(); i.hasNext(); cnt++) {
-            output[cnt] = SchemaValidation.elementToXml((Element)i.next());
+            output[cnt] = XmlUtil.elementToXml((Element)i.next());
         }
         return output;
     }

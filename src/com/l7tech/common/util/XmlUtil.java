@@ -74,7 +74,7 @@ public class XmlUtil {
         }
     };
 
-    public static DocumentBuilder getDocumentBuilder() {
+    private static DocumentBuilder getDocumentBuilder() {
         return (DocumentBuilder)documentBuilder.get();
     }
 
@@ -609,6 +609,45 @@ public class XmlUtil {
         if (factory.getNodeType() == Node.DOCUMENT_NODE)
             return ((Document)factory).createTextNode(nodeValue);
         return factory.getOwnerDocument().createTextNode(nodeValue);
+    }
+
+    /**
+     * Create a document with an element of another document while maintaining the
+     * namespace declarations of the parent elements.
+     * @param schema the Element on which to base the new XML.
+     * @return the new XML as a String.  Never null.
+     * @throws IOException if the serializer has a problem reading the source DOM.
+     */
+    public static String elementToXml(Element schema) throws IOException {
+        DocumentBuilder builder = getDocumentBuilder();
+        Document schemadoc = builder.newDocument();
+        Element newRootNode = (Element)schemadoc.importNode(schema, true);
+        schemadoc.appendChild(newRootNode);
+        // remember all namespace declarations of parent elements
+        Node node = schema.getParentNode();
+        while (node != null) {
+            if (node instanceof Element) {
+                Element el = (Element)node;
+                NamedNodeMap attrsmap = el.getAttributes();
+                for (int i = 0; i < attrsmap.getLength(); i++) {
+                    Attr attrnode = (Attr)attrsmap.item(i);
+                    if (attrnode.getName().startsWith("xmlns:")) {
+                        newRootNode.setAttribute(attrnode.getName(), attrnode.getValue());
+                    }
+                }
+
+            }
+            node = node.getParentNode();
+        }
+        // output to string
+        final StringWriter sw = new StringWriter(512);
+        XMLSerializer xmlSerializer = new XMLSerializer();
+        xmlSerializer.setOutputCharStream(sw);
+        OutputFormat of = new OutputFormat();
+        of.setIndent(4);
+        xmlSerializer.setOutputFormat(of);
+        xmlSerializer.serialize(schemadoc);
+        return sw.toString();
     }
 
     private static final Logger logger = Logger.getLogger(XmlUtil.class.getName());

@@ -2,14 +2,12 @@ package com.l7tech.policy.assertion.xml;
 
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.Assertion;
-import org.apache.xml.serialize.OutputFormat;
-import org.apache.xml.serialize.XMLSerializer;
-import org.w3c.dom.*;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
-import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
-import java.io.StringWriter;
 
 /**
  * Contains the xml schema for which requests and/or responses need to be validated against.
@@ -49,7 +47,7 @@ public class SchemaValidation extends Assertion {
         if (schemaEl == null) throw new IllegalArgumentException("this wsdl document does not contain a" +
                                                                  "schema to validate against");
         try {
-            schema = elementToXml(schemaEl);
+            schema = XmlUtil.elementToXml(schemaEl);
         } catch (ParserConfigurationException e) {
             throw new IOException("could not serialize the schema in the wsdl " + e.getMessage());
         }
@@ -94,45 +92,6 @@ public class SchemaValidation extends Assertion {
         }
         return schemael;
     }
-
-    /**
-     * utility method that creates a document with an element of another document while maintaining the
-     * namespace declarations of the parent elements.
-     *
-     * todo: move this to some xml util class
-     */
-    public static String elementToXml(Element schema) throws IOException, ParserConfigurationException {
-        DocumentBuilder builder = XmlUtil.getDocumentBuilder();
-        Document schemadoc = builder.newDocument();
-        Element newRootNode = (Element)schemadoc.importNode(schema, true);
-        schemadoc.appendChild(newRootNode);
-        // remember all namespace declarations of parent elements
-        Node node = schema.getParentNode();
-        while (node != null) {
-            if (node instanceof Element) {
-                Element el = (Element)node;
-                NamedNodeMap attrsmap = el.getAttributes();
-                for (int i = 0; i < attrsmap.getLength(); i++) {
-                    Attr attrnode = (Attr)attrsmap.item(i);
-                    if (attrnode.getName().startsWith("xmlns:")) {
-                        newRootNode.setAttribute(attrnode.getName(), attrnode.getValue());
-                    }
-                }
-
-            }
-            node = node.getParentNode();
-        }
-        // output to string
-        final StringWriter sw = new StringWriter(512);
-        XMLSerializer xmlSerializer = new XMLSerializer();
-        xmlSerializer.setOutputCharStream(sw);
-        OutputFormat of = new OutputFormat();
-        of.setIndent(4);
-        xmlSerializer.setOutputFormat(of);
-        xmlSerializer.serialize(schemadoc);
-        return sw.toString();
-    }
-
 
     public static final String JAXP_SCHEMA_LANGUAGE = "http://java.sun.com/xml/jaxp/properties/schemaLanguage";
     public static final String W3C_XML_SCHEMA = "http://www.w3.org/2001/XMLSchema";
