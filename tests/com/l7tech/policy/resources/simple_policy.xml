@@ -26,6 +26,7 @@
                 </SslAssertion>
                 <HttpRoutingAssertion>
                     <AttachSamlSenderVouches booleanValue="false"/>
+                    <TaiCredentialChaining booleanValue="false"/>
                     <UserAgent stringValueNull="null"/>
                     <ProtectedServiceUrl stringValueNull="null"/>
                     <Login stringValueNull="null"/>
@@ -36,9 +37,10 @@
                     <SamlAssertionExpiry intValue="5"/>
                 </HttpRoutingAssertion>
                 <JmsRoutingAssertion>
-                    <GroupMembershipStatement booleanValue="false"/>
                     <AttachSamlSenderVouches booleanValue="false"/>
                     <EndpointName stringValueNull="null"/>
+                    <TaiCredentialChaining booleanValue="false"/>
+                    <GroupMembershipStatement booleanValue="false"/>
                     <EndpointOid boxedLongValueNull="null"/>
                     <ResponseTimeout intValue="10000"/>
                     <SamlAssertionExpiry intValue="5"/>
@@ -126,7 +128,7 @@
                 <RequestWssReplayProtection/>
                 <SamlSecurity/>
                 <CustomAssertion>
-                    <base64SerializedValue>rO0ABXNyADFjb20ubDd0ZWNoLnBvbGljeS5hc3NlcnRpb24uQ3VzdG9tQXNzZXJ0aW9uSG9sZGVyZtcreFwddTICAAJMAAhjYXRlZ29yeXQAKkxjb20vbDd0ZWNoL3BvbGljeS9hc3NlcnRpb24vZXh0L0NhdGVnb3J5O0wAD2N1c3RvbUFzc2VydGlvbnQAMUxjb20vbDd0ZWNoL3BvbGljeS9hc3NlcnRpb24vZXh0L0N1c3RvbUFzc2VydGlvbjt4cgAlY29tLmw3dGVjaC5wb2xpY3kuYXNzZXJ0aW9uLkFzc2VydGlvbs44HOjnWefdAgAAeHBwcA==</base64SerializedValue>
+                    <base64SerializedValue>rO0ABXNyADFjb20ubDd0ZWNoLnBvbGljeS5hc3NlcnRpb24uQ3VzdG9tQXNzZXJ0aW9uSG9sZGVyZtcreFwddTICAAJMAAhjYXRlZ29yeXQAKkxjb20vbDd0ZWNoL3BvbGljeS9hc3NlcnRpb24vZXh0L0NhdGVnb3J5O0wAD2N1c3RvbUFzc2VydGlvbnQAMUxjb20vbDd0ZWNoL3BvbGljeS9hc3NlcnRpb24vZXh0L0N1c3RvbUFzc2VydGlvbjt4cgAlY29tLmw3dGVjaC5wb2xpY3kuYXNzZXJ0aW9uLkFzc2VydGlvbtO+ZTr2kOFNAgAAeHBwcA==</base64SerializedValue>
                 </CustomAssertion>
                 <UnknownAssertion>
                     <DetailMessage stringValueNull="null"/>
@@ -138,6 +140,7 @@
             <FalseAssertion/>
             <HttpRoutingAssertion>
                 <AttachSamlSenderVouches booleanValue="false"/>
+                <TaiCredentialChaining booleanValue="false"/>
                 <UserAgent stringValueNull="null"/>
                 <ProtectedServiceUrl stringValue="http://floomp.boomp.foomp/"/>
                 <Login stringValue="bob&amp;joe"/>
