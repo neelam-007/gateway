@@ -57,6 +57,7 @@ public class InternalIdentityProviderServer implements IdentityProvider {
 
                 if ( format == CredentialFormat.CLIENTCERT ) {
                     Certificate dbCert = null;
+                    X509Certificate dbCertX509 = null;
                     Object maybeCert = pc.getPayload();
 
                     if ( maybeCert == null ) {
@@ -67,14 +68,25 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                         if ( dbCert == null ) {
                             _log.log( Level.WARNING, "No certificate found for user " + login );
                             return false;
+                        } else if ( dbCert instanceof X509Certificate ) {
+                            dbCertX509 = (X509Certificate)dbCert;
+                            _log.log( Level.FINE, "Stored cert serial# is " + dbCertX509.getSerialNumber().toString() );
+                        } else {
+                            _log.log( Level.SEVERE, "Stored cert is not an X509Certificate!" );
+                            return false;
                         }
                     }
 
                     if ( maybeCert instanceof X509Certificate ) {
                         X509Certificate pcCert = (X509Certificate)maybeCert;
-                        _log.log( Level.INFO, "Authenticated user " + login + " using an SSL client certificate" );
-
-                        return ( pcCert.equals( dbCert ) );
+                        _log.log( Level.FINE, "Request cert serial# is " + pcCert.getSerialNumber().toString() );
+                        if ( pcCert.equals( dbCertX509 ) ) {
+                            _log.log( Level.INFO, "Authenticated user " + login + " using an SSL client certificate" );
+                            return true;
+                        } else {
+                            _log.log( Level.WARNING, "Failed to authenticate user " + login + " using an SSL client certificate (request certificate doesn't match database)" );
+                            return false;
+                        }
                     } else {
                         _log.log( Level.WARNING, "Certificate for " + login + " is not an X509Certificate" );
                         return false;
