@@ -16,8 +16,6 @@ import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.wss.WssDigest;
-import com.l7tech.policy.assertion.identity.MemberOfGroup;
-import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 import com.l7tech.proxy.policy.assertion.*;
@@ -29,8 +27,6 @@ import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpClientCert;
 import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpDigest;
 import com.l7tech.proxy.policy.assertion.credential.wss.ClientWssBasic;
 import com.l7tech.proxy.policy.assertion.credential.wss.ClientWssDigest;
-import com.l7tech.proxy.policy.assertion.identity.ClientMemberOfGroup;
-import com.l7tech.proxy.policy.assertion.identity.ClientSpecificUser;
 import com.l7tech.proxy.policy.assertion.xmlsec.ClientRequestWssIntegrity;
 import com.l7tech.proxy.policy.assertion.xmlsec.ClientResponseWssIntegrity;
 
@@ -75,11 +71,7 @@ public class ClientPolicyFactory extends PolicyFactory {
         new ClientOneOrMoreAssertion(new OneOrMoreAssertion()),
         new ClientFalseAssertion(new FalseAssertion()),
         new ClientSslAssertion(new SslAssertion()),
-        new ClientRoutingAssertion(new HttpRoutingAssertion()),
-        new ClientRoutingAssertion(new JmsRoutingAssertion()),
         new ClientTrueAssertion(new TrueAssertion()),
-        new ClientMemberOfGroup(new MemberOfGroup()),
-        new ClientSpecificUser(new SpecificUser()),
         new ClientResponseWssIntegrity(new ResponseWssIntegrity()),
         new ClientRequestWssIntegrity(new RequestWssIntegrity()),
         new ClientRequestXpathAssertion(new RequestXpathAssertion())
