@@ -81,7 +81,7 @@ public class PolicyServlet extends HttpServlet {
         if (getCert != null) {
             if (nonce == null)
                 throw new ServletException("Unable to fulfil cert request: a nonce is required");
-            if (username != null)
+            if (username == null)
                 throw new ServletException("Unable to fulfil cert request: a username is required");
             try {
                 doCertDownload(httpServletResponse, username, nonce);
