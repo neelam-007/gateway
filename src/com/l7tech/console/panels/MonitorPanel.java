@@ -60,9 +60,12 @@ public class MonitorPanel extends JTabbedPane {
     public void connectHandler(ConnectionEvent e) {
 
         if (componentRegistry.getMainWindow().getLogMenuItem().isSelected()) {
+            getLogPane().initConnect();
             restoreLogPane();
+
         }
         if (componentRegistry.getMainWindow().getStatMenuItem().isSelected()) {
+            getStatisticsPane().initConnect();
             restoreStatPane();
         }
 

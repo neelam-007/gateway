@@ -40,8 +40,8 @@ public class StatisticsPanel extends JPanel {
     private static final String LAST_MINUTE_SERVER_LOAD_PREFIX = "Avg load (1 min): ";
     private static final String MIDDLE_SPACE = "     ";
     private static final String END_SPACE    = "   ";
-    static Logger logger = Logger.getLogger(StatisticsPanel.class.getName());
-    static LogAdmin logstub = (LogAdmin) Locator.getDefault().lookup(LogAdmin.class);
+    Logger logger = null;
+    LogAdmin logService = null;
     private ServiceAdmin serviceManager = null;
 
     // IMPORTANT NOTE:
@@ -83,6 +83,20 @@ public class StatisticsPanel extends JPanel {
         add(getSelectPane());
 
         setVisible(false);
+
+    }
+
+    /**
+     * This function is called when a connection to the server is established.
+     */
+    public void initConnect(){
+        logger = Logger.getLogger(StatisticsPanel.class.getName());
+
+        logService = (LogAdmin) Locator.getDefault().lookup(LogAdmin.class);
+        if (logService == null) throw new IllegalStateException("Cannot obtain LogAdmin remote reference");
+
+        serviceManager = (ServiceAdmin) Locator.getDefault().lookup(ServiceAdmin.class);
+        if (serviceManager == null) throw new RuntimeException("Cannot obtain ServiceManager remote reference");
 
     }
 
@@ -325,13 +339,8 @@ public class StatisticsPanel extends JPanel {
 
         getStatRefreshTimer().stop();
 
-        if (serviceManager == null) {
-            serviceManager = (ServiceAdmin) Locator.getDefault().lookup(ServiceAdmin.class);
-            if (serviceManager == null) throw new RuntimeException("Cannot instantiate the ServiceManager");
-        }
-
         // create a worker thread to retrieve the Service statistics
-        final StatisticsWorker statsWorker = new StatisticsWorker(serviceManager, logstub) {
+        final StatisticsWorker statsWorker = new StatisticsWorker(serviceManager, logService) {
             public void finished(){
                 updateServerMetricsFields(getMetrics());
                 updateStatisticsTable(getStatsList());

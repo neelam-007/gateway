@@ -20,8 +20,8 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel{
 
      public static final int MAX_MESSAGE_BLOCK_SIZE = 100;
      public static final int MAX_NUMBER_OF_LOG_MESSGAES = 4096;
-     private LogAdmin log = null;
-      static Logger logger = Logger.getLogger(FilteredLogTableModel.class.getName());
+     private LogAdmin logService = null;
+     private Logger logger = null;
 
      private Vector logsCache = new Vector();
 
@@ -46,12 +46,14 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel{
          logsCache.removeAllElements();
      }
 
-     public void refreshLogs(final int msgFilterLevel, final LogPanel logPane, final String msgNumSelected, final boolean restartTimer){
+    public void initConnect() {
+        logger = Logger.getLogger(FilteredLogTableModel.class.getName());
 
-         if (log == null) {
-             log = (LogAdmin) Locator.getDefault().lookup(LogAdmin.class);
-             if (log == null) throw new IllegalStateException("cannot obtain log remote reference");
-         }
+        logService = (LogAdmin) Locator.getDefault().lookup(LogAdmin.class);
+        if (logService == null) throw new IllegalStateException("cannot obtain LogAdmin remote reference");
+    }
+
+     public void refreshLogs(final int msgFilterLevel, final LogPanel logPane, final String msgNumSelected, final boolean restartTimer){
 
          long startMsgNumber = -1;
          long endMsgNumber = -1;
@@ -61,7 +63,7 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel{
          }
 
          // create a worker thread to retrieve the Service statistics
-        final LogsWorker logsWorker = new LogsWorker(log, startMsgNumber, endMsgNumber) {
+        final LogsWorker logsWorker = new LogsWorker(logService, startMsgNumber, endMsgNumber) {
             public void finished(){
                 updateLogsTable(getNewLogs(), msgFilterLevel);
                 logPane.updateMsgTotal();
