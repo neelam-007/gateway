@@ -20,8 +20,16 @@ public class RequestWssIntegrityTreeNode extends XpathBasedAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getBaseName() {
-        if (data.getXpathExpression() == null) return "Sign request element " + "[XPath expression not set]";
-        return "Sign request element " + data.getXpathExpression().getExpression();
+        StringBuffer name;
+        if (data.getXpathExpression() == null) {
+            name = new StringBuffer("Sign request element " + "[XPath expression not set]");
+        } else {
+            name = new StringBuffer("Sign request element " + data.getXpathExpression().getExpression());
+        }
+        if (!data.getRecipientContext().localRecipient()) {
+            name.append(" [\'" + data.getRecipientContext().getActor() + "\' actor]");
+        }
+        return name.toString();
     }
     private RequestWssIntegrity data;
 }

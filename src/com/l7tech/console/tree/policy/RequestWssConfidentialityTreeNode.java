@@ -20,8 +20,16 @@ public class RequestWssConfidentialityTreeNode extends XpathBasedAssertionTreeNo
      * @return the node name that is displayed
      */
     public String getBaseName() {
-        if (data.getXpathExpression() == null) return "Encrypt request element " + "[XPath expression not set]";
-        return "Encrypt request element " + data.getXpathExpression().getExpression();
+        StringBuffer name;
+        if (data.getXpathExpression() == null) {
+            name = new StringBuffer("Encrypt request element " + "[XPath expression not set]");
+        } else {
+            name = new StringBuffer("Encrypt request element " + data.getXpathExpression().getExpression());
+        }
+        if (!data.getRecipientContext().localRecipient()) {
+            name.append(" [\'" + data.getRecipientContext().getActor() + "\' actor]");
+        }
+        return name.toString();
     }
     private RequestWssConfidentiality data;
 }
