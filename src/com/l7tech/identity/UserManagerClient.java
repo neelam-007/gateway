@@ -51,11 +51,11 @@ public class UserManagerClient extends IdentityManagerClient implements UserMana
     }
 
     public String save(User user) throws SaveException {
-        throw new UnsupportedOperationException();
+        return save(user, null);
     }
 
     public void update(User user) throws UpdateException {
-        throw new UnsupportedOperationException();
+        update(user, null);
     }
 
     public String save(User user, Set groupHeaders) throws SaveException {
