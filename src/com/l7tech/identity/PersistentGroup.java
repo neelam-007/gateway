@@ -101,8 +101,6 @@ public abstract class PersistentGroup extends NamedEntityImp implements Group {
         bean.setVersion(version);
     }
 
-    public abstract String toString();
-
     public abstract void copyFrom( Group objToCopy);
 
     public GroupBean getGroupBean() {

@@ -19,6 +19,8 @@ import java.util.Map;
  * @version $Revision$
  */
 public class EntityChangeSet {
+    public static final EntityChangeSet NONE = new EntityChangeSet(new Object[0], new Object[0], new Object[0]);
+
     public EntityChangeSet(Object[] propertyNames, Object[] oldValues, Object[] newValues) {
         map = new HashMap();
         for ( int i = 0; i < propertyNames.length; i++ ) {

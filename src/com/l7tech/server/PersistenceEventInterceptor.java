@@ -10,6 +10,7 @@ import com.l7tech.cluster.ClusterNodeInfo;
 import com.l7tech.common.audit.AdminAuditRecord;
 import com.l7tech.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.common.audit.SystemAuditRecord;
+import com.l7tech.identity.internal.GroupMembership;
 import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.HibernatePersistenceContext;
@@ -17,6 +18,9 @@ import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.objectmodel.TransactionListener;
 import com.l7tech.server.event.EntityChangeSet;
 import com.l7tech.server.event.EventManager;
+import com.l7tech.server.event.GroupMembershipEvent;
+import com.l7tech.server.event.GroupMembershipEventInfo;
+import com.l7tech.server.event.admin.AdminEvent;
 import com.l7tech.server.event.admin.Created;
 import com.l7tech.server.event.admin.Deleted;
 import com.l7tech.server.event.admin.Updated;
@@ -35,8 +39,8 @@ import java.util.logging.Logger;
 
 /**
  * Notices when any persistent {@link Entity} is saved, updated or deleted, and creates and fires
- * corresponding {@link Updated}, {@link Deleted} and {@link com.l7tech.server.event.admin.Created} events if and when the
- * current transaction commits.
+ * corresponding {@link Updated}, {@link Deleted} and {@link Created} events,
+ * if and when the current transaction commits.
  *
  * @see HibernatePersistenceContext#registerTransactionListener(com.l7tech.objectmodel.TransactionListener)
  * @author alex
@@ -55,9 +59,9 @@ public class PersistenceEventInterceptor implements Interceptor {
 
     private final Set ignoredClassNames;
 
-    /** Ignored */
-    public boolean onLoad( Object entity, Serializable id, Object[] state, String[] propertyNames, Type[] types ) throws CallbackException {
-        return false;
+    private boolean ignored( Object entity ) {
+        if (!(entity instanceof Entity || entity instanceof GroupMembership)) return true;
+        return ignoredClassNames.contains(entity.getClass().getName());
     }
 
     /**
@@ -71,7 +75,7 @@ public class PersistenceEventInterceptor implements Interceptor {
                         logger.log(Level.FINE, "Updated " + entity.getClass().getName() + " " + id );
                         EntityChangeSet changes = new EntityChangeSet(propertyNames, previousState, currentState);
                         try {
-                            EventManager.fireInNewTransaction(new Updated((Entity)entity, changes));
+                            EventManager.fireInNewTransaction(updatedEvent(entity, changes));
                         } catch (TransactionException e) {
                             logger.log(Level.SEVERE, "Couldn't commit audit transaction", e);
                         }
@@ -88,11 +92,6 @@ public class PersistenceEventInterceptor implements Interceptor {
         return false;
     }
 
-    private boolean ignored( Object entity ) {
-        if (!(entity instanceof Entity)) return true;
-        return ignoredClassNames.contains(entity.getClass().getName());
-    }
-
     /**
      * Detects saves and fires a {@link com.l7tech.server.event.admin.Created} event if the entity isn't {@link #ignored} and the save is committed
      */
@@ -103,7 +102,7 @@ public class PersistenceEventInterceptor implements Interceptor {
                     public void postCommit() {
                         logger.log(Level.FINE, "Created " + entity.getClass().getName() + " " + id );
                         try {
-                            EventManager.fireInNewTransaction(new Created((Entity)entity));
+                            EventManager.fireInNewTransaction(createdEvent(entity));
                         } catch (TransactionException e) {
                             logger.log(Level.SEVERE, "Couldn't commit audit transaction", e);
                         }
@@ -130,7 +129,7 @@ public class PersistenceEventInterceptor implements Interceptor {
                     public void postCommit() {
                         logger.log(Level.FINE, "Deleted " + entity.getClass().getName() + " " + id );
                         try {
-                            EventManager.fireInNewTransaction(new Deleted((Entity)entity));
+                            EventManager.fireInNewTransaction(deletedEvent(entity));
                         } catch (TransactionException e) {
                             logger.log(Level.SEVERE, "Couldn't commit audit transaction");
                         }
@@ -144,6 +143,36 @@ public class PersistenceEventInterceptor implements Interceptor {
                 logger.log( Level.WARNING, e.getMessage(), e );
             }
         }
+    }
+
+    AdminEvent deletedEvent(Object obj) {
+        if (obj instanceof Entity) {
+            return new Deleted((Entity)obj);
+        } else if (obj instanceof GroupMembership) {
+            return new GroupMembershipEvent(new GroupMembershipEventInfo((GroupMembership)obj, "removed"));
+        } else throw new IllegalStateException("Can't make a Deleted event for a " + obj.getClass().getName());
+    }
+
+    AdminEvent createdEvent(Object obj) {
+        if (obj instanceof Entity) {
+            return new Created((Entity)obj);
+        } else if (obj instanceof GroupMembership) {
+            return new GroupMembershipEvent(new GroupMembershipEventInfo((GroupMembership)obj, "added"));
+        } else throw new IllegalStateException("Can't make a Created event for a " + obj.getClass().getName());
+    }
+
+    AdminEvent updatedEvent(Object obj, EntityChangeSet changes) {
+        if (obj instanceof Entity) {
+            return new Updated((Entity)obj, changes);
+        } else if (obj instanceof GroupMembership) {
+            return new GroupMembershipEvent(new GroupMembershipEventInfo((GroupMembership)obj, "updated"));
+        } else throw new IllegalStateException("Can't make an Updated event for a " + obj.getClass().getName());
+    }
+
+
+    /** Ignored */
+    public boolean onLoad( Object entity, Serializable id, Object[] state, String[] propertyNames, Type[] types ) throws CallbackException {
+        return false;
     }
 
     /** Ignored */
