@@ -774,7 +774,7 @@ public class MessageProcessor {
 
             ProcessorResult processorResult = null;
             try {
-                boolean haveKey = ssg.getRuntime().getSsgKeyStoreManager().isClientCertUnlocked();
+                final boolean haveKey = ssg.getRuntime().getSsgKeyStoreManager().isClientCertUnlocked();
                 final ProcessorResult processorResultRaw =
                   wssProcessor.undecorateMessage(response,
                     haveKey ? ssg.getClientCertificate() : null,
