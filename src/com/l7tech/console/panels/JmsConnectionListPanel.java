@@ -42,11 +42,6 @@ public class JmsConnectionListPanel extends JPanel {
         }
     }
 
-    public JmsConnectionListPanel(Frame owner) {
-        this.owner = owner;
-        init();
-    }
-
     public JmsConnectionListPanel(Window owner) {
         this.owner = owner;
         init();
