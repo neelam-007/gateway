@@ -71,7 +71,8 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             HttpTransportMetadata metadata = (HttpTransportMetadata)response.getTransportMetadata();
             metadata.getResponse().addHeader(XmlRequestSecurity.SESSION_STATUS_HTTP_HEADER, "invalid");
             // todo, control what the soap fault look like
-            response.setPolicyViolated(true);
+            // in this case the policy is not violated
+            // response.setPolicyViolated(true);
             return AssertionStatus.FALSIFIED;
         }
 
@@ -82,10 +83,16 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
         X509Certificate cert;
         try {
             cert = validateSignature(soapmsg);
-        } catch (PolicyAssertionException e) {
+        } catch (SignatureNotFoundException e) {
+            // no digital signature, return null
             response.setAuthenticationMissing(true);
             response.setPolicyViolated(true);
-            throw e;
+            logger.log(Level.WARNING, e.getMessage(), e);
+            throw new PolicyAssertionException(e.getMessage(), e);
+        } catch (InvalidSignatureException e) {
+            // bad signature !
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            throw new PolicyAssertionException(e.getMessage(), e);
         }
 
         // upload cert as credentials
@@ -95,7 +102,6 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             certCN = x500name.getCommonName();
         } catch (IOException e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
-            response.setAuthenticationMissing(true);
             throw new PolicyAssertionException("cannot extract name from cert", e);
         }
         logger.log(Level.INFO, "cert extracted from digital signature for user " + certCN);
@@ -139,20 +145,10 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
         return AssertionStatus.NONE;
     }
 
-    private X509Certificate validateSignature(Document soapmsg) throws PolicyAssertionException {
+    private X509Certificate validateSignature(Document soapmsg) throws SignatureNotFoundException, InvalidSignatureException {
         SoapMsgSigner dsigHelper = new SoapMsgSigner();
         X509Certificate clientCert = null;
-        try {
-            clientCert = dsigHelper.validateSignature(soapmsg);
-        } catch (SignatureNotFoundException e) {
-            // no digital signature, return null
-            logger.log(Level.WARNING, e.getMessage(), e);
-            throw new PolicyAssertionException(e.getMessage(), e);
-        } catch (InvalidSignatureException e) {
-            // bad signature !
-            logger.log(Level.SEVERE, e.getMessage(), e);
-            throw new PolicyAssertionException(e.getMessage(), e);
-        }
+        clientCert = dsigHelper.validateSignature(soapmsg);
         return clientCert;
     }
 
