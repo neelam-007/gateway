@@ -132,8 +132,24 @@ public class CertManagerWindow extends JDialog {
             public void actionPerformed(ActionEvent event) {
                 int sr = getTrustedCertTable().getSelectedRow();
                 TrustedCert tc = (TrustedCert) getTrustedCertTableModel().getData(sr);
+                TrustedCert updatedTrustedCert = null;
 
-                CertPropertiesWindow cpw = new CertPropertiesWindow(instance, tc);
+                // retrieve the latest version
+                try {
+                    updatedTrustedCert = getTrustedCertAdmin().findCertByPrimaryKey(tc.getOid());
+                } catch (FindException e) {
+                    JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.find.error"),
+                            resources.getString("view.error.title"),
+                            JOptionPane.ERROR_MESSAGE);
+                } catch (RemoteException e) {
+                    JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.remote.exception"),
+                            resources.getString("view.error.title"),
+                            JOptionPane.ERROR_MESSAGE);
+                }
+
+                getTrustedCertTableModel().updateData(sr, updatedTrustedCert);
+                CertPropertiesWindow cpw = new CertPropertiesWindow(instance, updatedTrustedCert);
+
                 cpw.show();
             }
         });
