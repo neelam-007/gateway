@@ -8,18 +8,17 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * The class represents an entry gui node element that
- * corresponds to the Root data element.
+ * The class represents an <code>AbstractTreeNode</code>
+ * node element that represents the assertions palette root.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
-public class RootNode extends AbstractTreeNode {
-
+public class AssertionsPaletteRootNode extends AbstractTreeNode {
     /**
-     * construct the <CODE>RootNode</CODE> instance
+     * construct the <CODE>AssertionsPaletteRootNode</CODE> instance
      */
-    public RootNode(String title)
+    public AssertionsPaletteRootNode(String title)
       throws IllegalArgumentException {
         super(null);
         if (title == null)

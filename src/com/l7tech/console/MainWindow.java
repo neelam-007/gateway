@@ -635,7 +635,7 @@ public class MainWindow extends JFrame {
 
         DefaultTreeModel treeModel = new FilteredTreeModel(null);
         final AbstractTreeNode paletteRootNode =
-          new RootNode("Policy Assertions");
+          new AssertionsPaletteRootNode("Policy Assertions");
         treeModel.setRoot(paletteRootNode);
         getAssertionPaletteTree().setRootVisible(true);
         getAssertionPaletteTree().setModel(treeModel);
