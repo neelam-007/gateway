@@ -10,6 +10,7 @@ import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.xml.SoapFaultDetailImpl;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.User;
@@ -76,8 +77,10 @@ public class TokenServiceImpl implements TokenService {
      * requests to occur over SSL without the need for client certs.
      *
      * @param context contains the request at entry and contains a response document if everything goes well.
+     * @return AssertionStatus.NONE if all is good, other return values indicate an error in which case
+     * context.getFaultDetail() is to contain an error to return to the requestor.
      */
-    public void respondToSecurityTokenRequest(PolicyEnforcementContext context) throws InvalidDocumentFormatException,
+    public AssertionStatus respondToSecurityTokenRequest(PolicyEnforcementContext context) throws InvalidDocumentFormatException,
                                                                                 TokenServiceImpl.TokenServiceException,
                                                                                 ProcessorException, 
                                                                                 BadSecurityContextException,
@@ -109,16 +112,25 @@ public class TokenServiceImpl implements TokenService {
             throw new ProcessorException(e);
         }
 
-        // todo, something about the status
-
         User authenticatedUser = null;
         if (context.isAuthenticated()) {
                 authenticatedUser = context.getAuthenticatedUser();
         }
+
         if (authenticatedUser == null) {
             String msg = "The request for a token was not authenticated";
             logger.info(msg);
-            throw new AuthenticationException(msg);
+            context.setFaultDetail(new SoapFaultDetailImpl("l7:noauthentication", msg, null));
+            return AssertionStatus.AUTH_FAILED;
+        }
+
+        if (status != AssertionStatus.NONE) {
+            String msg = "The internal policy was not respected " + status;
+            logger.info(msg);
+            if (context.getFaultDetail() == null) {
+                context.setFaultDetail(new SoapFaultDetailImpl("l7:" + status.getMessage(), msg, null));
+            }
+            return status;
         }
 
         // todo

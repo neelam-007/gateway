@@ -8,6 +8,7 @@ package com.l7tech.server;
 import com.l7tech.identity.User;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.security.xml.processor.ProcessorException;
 import com.l7tech.common.security.xml.processor.BadSecurityContextException;
@@ -30,8 +31,10 @@ public interface TokenService {
      *
      * @param context must contain the request at entry and will be populated with a response document if everything
      * goes well.
+     * @return AssertionStatus.NONE if all is good, other return values indicate an error in which case
+     * context.getFaultDetail() is to contain an error to return to the requestor
      */
-    void respondToSecurityTokenRequest(PolicyEnforcementContext context) throws InvalidDocumentFormatException,
+    AssertionStatus respondToSecurityTokenRequest(PolicyEnforcementContext context) throws InvalidDocumentFormatException,
                                                                                 TokenServiceImpl.TokenServiceException,
                                                                                 ProcessorException,
                                                                                 BadSecurityContextException,
