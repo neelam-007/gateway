@@ -222,8 +222,10 @@ class PathValidator {
                   "This assertion requires a WSS Signature authentication.", null));
             }
             if (a instanceof ResponseWssIntegrity || a instanceof ResponseWssConfidentiality) {
-                result.addError(new PolicyValidatorResult.Error(a, assertionPath,
-                  "This can only occur after routing.", null));
+                if (!seenRouting) {
+                    result.addError(new PolicyValidatorResult.Error(a, assertionPath,
+                      "This can only occur after routing.", null));
+                }
             }
         } else if (a instanceof HttpClientCert) {
             DefaultPolicyValidator.DeferredValidate dv = new DefaultPolicyValidator.DeferredValidate() {
