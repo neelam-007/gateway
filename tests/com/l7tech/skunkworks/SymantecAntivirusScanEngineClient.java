@@ -1,3 +1,9 @@
+/**
+ * LAYER 7 TECHNOLOGIES, INC<br/>
+ *
+ * User: flascell<br/>
+ * Date: Feb 16, 2005<br/>
+ */
 package com.l7tech.skunkworks;
 
 import com.l7tech.common.message.Message;
@@ -20,12 +26,7 @@ import java.text.MessageFormat;
 /**
  * Sends ICAP requests to Symantec Antivirus Scan Engine to scan content.
  *
- * <p/>
- * <br/><br/>
- * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: Feb 16, 2005<br/>
- * $Id$
+ * @author flascell<br/>
  */
 public class SymantecAntivirusScanEngineClient {
     private static final Logger logger =  Logger.getLogger(SymantecAntivirusScanEngineClient.class.getName());
