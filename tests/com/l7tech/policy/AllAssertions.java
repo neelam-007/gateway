@@ -7,6 +7,8 @@
 package com.l7tech.policy;
 
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
+import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
@@ -38,6 +40,8 @@ public class AllAssertions {
         new TrueAssertion(),
         new MemberOfGroup(),
         new SpecificUser(),
+        new XmlResponseSecurity(),
+        new XmlRequestSecurity(),
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),
         // TODO new DayOfWeekAssertion(),
