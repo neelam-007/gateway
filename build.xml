@@ -389,7 +389,6 @@
                 <include name="xbean.jar"/>
                 <include name="xbean-common.jar"/>
                 <include name="xbean-saml.jar"/>
-                <include name="xbean-wstrust.jar"/>
                 <include name="xercesImpl.jar"/>
                 <include name="xml-apis.jar"/>
                 <include name="xpp3-1.1.3.3.jar"/>
@@ -416,7 +415,6 @@
             <classes dir="${build.classes}">
                 <exclude name="com/l7tech/console/**/*"/>
                 <exclude name="com/l7tech/test/**/*"/>
-                <exclude name="com/l7tech/remote/jini/export/WebAppAnnotationClassProvider.class"/>
                 <exclude name="com/l7tech/server/jms/**/*" unless="include.jms"/>
             </classes>
 
