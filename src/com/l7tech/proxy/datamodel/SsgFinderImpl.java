@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import com.l7tech.common.util.FileUtils;
+
 /**
  * Provides read-only access to the ssgs.xml file.
  *
@@ -33,8 +35,6 @@ public class SsgFinderImpl implements SsgFinder {
 
     protected static final String STORE_DIR = System.getProperty("user.home") + File.separator + ".l7tech";
     protected static final String STORE_FILE = STORE_DIR + File.separator + "ssgs.xml";
-    protected static final String STORE_FILE_NEW = STORE_DIR + File.separator + "ssgs_xml.OLD";
-    protected static final String STORE_FILE_OLD = STORE_DIR + File.separator + "ssgs_xml.NEW";
 
     protected SortedSet ssgs = new TreeSet();
     protected boolean init = false; // should be private; relaxed for performace
@@ -70,12 +70,7 @@ public class SsgFinderImpl implements SsgFinder {
         FileInputStream in = null;
         XMLDecoder decoder = null;
         try {
-            try {
-                in = new FileInputStream(STORE_FILE);
-            } catch (FileNotFoundException e) {
-                // Check for an interrupted update operation
-                in = new FileInputStream(STORE_FILE_OLD);
-            }
+            in = FileUtils.loadFileSafely(STORE_FILE);
             decoder = new XMLDecoder(in);
             final Collection newssgs = (Collection)decoder.readObject();
             if (newssgs != null) {
