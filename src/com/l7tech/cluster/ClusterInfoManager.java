@@ -18,6 +18,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 /**
  * Hibernate layer over the cluster_info table.
@@ -142,19 +144,53 @@ public class ClusterInfoManager {
             // (cache return value as this will not change while the server is up)
             if (selfId == null) {
                 Iterator macs = getMacs().iterator();
+                String anymac = null;
                 // find out which mac works for us
                 while (macs.hasNext()) {
                     String mac = (String)macs.next();
+                    anymac = mac;
                     ClusterInfo output = getNodeStatusFromDB(mac);
                     if (output != null) {
                         selfId = mac;
                         return output;
                     }
                 }
+
+                // no existing row for us. create one
+                if (anymac != null) {
+                    ClusterInfo newClusterInfo = new ClusterInfo();
+                    String add = null;
+                    try {
+                        add = InetAddress.getLocalHost().getHostAddress();
+                    } catch (UnknownHostException e) {
+                        logger.warning("cannot get localhost address: " + e.getMessage());
+                    }
+                    newClusterInfo.setAddress(add);
+                    newClusterInfo.setIsMaster(true);
+                    newClusterInfo.setMac(anymac);
+                    newClusterInfo.setName("SSG1");
+                    selfId = anymac;
+                    try {
+                        recordNodeInDB(newClusterInfo);
+                    } catch (SQLException e) {
+                        String msg = "cannot record new cluster node";
+                        logger.log(Level.SEVERE, msg, e);
+                    } catch (HibernateException e) {
+                        String msg = "cannot record new cluster node";
+                        logger.log(Level.SEVERE, msg, e);
+                    }
+                    return newClusterInfo;
+                }
             }
         }
         if (selfId != null) return getNodeStatusFromDB(selfId);
         else return null;
+    }
+
+    private void recordNodeInDB(ClusterInfo node) throws SQLException, HibernateException {
+        HibernatePersistenceContext context = null;
+        context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
+        context.getSession().save(node);
     }
 
     private ClusterInfo getNodeStatusFromDB(String mac) {
