@@ -185,7 +185,7 @@ sub make_tar_file {
 
 	my $extra;
 	if ($file eq "Agent") {
-	    $extra = "-server -Dcom.l7tech.proxy.listener.maxthreads=250 ";
+	    $extra = "-server -Dcom.l7tech.proxy.listener.maxthreads=300 ";
     } else {
         $extra = "";
     }
