@@ -26,7 +26,6 @@
       <property name="ear"        value="${app.name}.ear"/>
     -->
 
-    <taskdef name="xmltask" classname="com.oopsconsultancy.xmltask.ant.XmlTask"/>
 
 
     <!-- project classpath -->
@@ -117,15 +116,6 @@
     <target name="deploy" depends="init-dev">
         <antcall target="package">
         </antcall>
-
-        <!--
-        <move file="${tomcat.home}/conf/server.xml" tofile="${tomcat.home}/conf/server.xml_old"/>
-        <xmltask source="${tomcat.home}/conf/server.xml_old" dest="${tomcat.home}/conf/server.xml">
-            <remove path="//Context[@path='/${app.name}']"/>
-            <remove path="//Context[@path='/${app.name}.war']"/>
-            <insert path="Server/Service[@name='Tomcat-Standalone']/Engine/Host" file="${src.root}/etc/tomcat-serverxml-fragment-mysql.xml"/>
-        </xmltask>
-            configure the server.xml file to include the datasource -->
 
         <!--
         <delete dir="${tomcat.home}/webapps/${app.name}"/>
@@ -230,7 +220,7 @@
         <copy todir="${build.lib}">
             <fileset dir="${src.root}/lib"
                 excludes="**/CVS/*,**/**ant*,**/optional.jar,**/*xml-apis.jar,
-                          **/*junit.jar, **/*xercesImpl.jar, **/*xmltask.jar"/>
+                          **/*junit.jar, **/*xercesImpl.jar"/>
         </copy>
 
         <!-- the web.xml -->

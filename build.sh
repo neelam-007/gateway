@@ -60,7 +60,7 @@ if [ ! -e $SRC_ROOT/build.sh ]; then
     exit 1
 fi
 
-ANT_JARS="$SRC_ROOT/lib/ant.jar:$SRC_ROOT/lib/optional.jar:$SRC_ROOT/lib/xercesImpl.jar:$SRC_ROOT/lib/xml-apis.jar:$SRC_ROOT/lib/junit.jar:$SRC_ROOT/lib/xmltask.jar"
+ANT_JARS="$SRC_ROOT/lib/ant.jar:$SRC_ROOT/lib/optional.jar:$SRC_ROOT/lib/xercesImpl.jar:$SRC_ROOT/lib/xml-apis.jar:$SRC_ROOT/lib/junit.jar"
 CLASSPATH="${JDK_CLASSES}:${ANT_JARS}"
 # For Cygwin, switch paths to Windows format before running java
 if $cygwin; then
