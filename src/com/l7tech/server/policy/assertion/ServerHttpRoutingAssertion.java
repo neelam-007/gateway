@@ -291,6 +291,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                     Document document = context.getRequest().getXmlKnob().getDocumentWritable();
                     SamlAssertionGenerator ag = new SamlAssertionGenerator(senderVouchesSignerInfo);
                     SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
+                    samlOptions.setAttestingEntity(senderVouchesSignerInfo);
                     TcpKnob requestTcp = (TcpKnob)context.getRequest().getKnob(TcpKnob.class);
                     if (requestTcp != null) {
                         try {
