@@ -206,12 +206,14 @@ public class ServicePanel extends WizardStepPanel {
             publishedService.setWsdlXml(service.getWsdlXml());
             publishedService.setWsdlUrl(service.getWsdlUrl());
 
-            Port port = wsdl.getSoapPort();
-            sa.setRoutingAssertion(new RoutingAssertion());
-            if (port != null) {
-                URL url = wsdl.getUrlFromPort(port);
-                if (url != null)
-                    sa.setRoutingAssertion(new RoutingAssertion(url.toString()));
+            if (sa.getRoutingAssertion() == null) {
+                Port port = wsdl.getSoapPort();
+                sa.setRoutingAssertion(new RoutingAssertion());
+                if (port != null) {
+                    URL url = wsdl.getUrlFromPort(port);
+                    if (url != null)
+                        sa.setRoutingAssertion(new RoutingAssertion(url.toString()));
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();

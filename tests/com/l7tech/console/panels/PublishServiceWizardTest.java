@@ -19,9 +19,14 @@ import com.l7tech.identity.IdentityProviderStub;
 import com.l7tech.identity.StubDataStore;
 import com.l7tech.identity.UserManager;
 import com.l7tech.identity.UserManagerStub;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.service.PublishedService;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -41,30 +46,31 @@ public class PublishServiceWizardTest extends Locator {
     }
 
     private static class TestRegistry extends Registry {
-        private StubDataStore myStubDataStore;
+        public static final StubDataStore STUB_DATA_STORE = StubDataStore.defaultStore();
+        public static final UserManagerStub USER_MANAGER_STUB = new UserManagerStub(STUB_DATA_STORE);
+        public static final GroupManagerStub GROUP_MANAGER_STUB = new GroupManagerStub(STUB_DATA_STORE);
+        public static final IdentityProviderConfigManagerStub IDENTITY_PROVIDER_CONFIG_MANAGER_STUB = new IdentityProviderConfigManagerStub();
+        public static final IdentityProviderStub IDENTITY_PROVIDER_STUB = new IdentityProviderStub();
+        public static final ServiceManagerStub SERVICE_MANAGER_STUB = new ServiceManagerStub();
 
         public IdentityProviderConfigManager getProviderConfigManager() {
-            return new IdentityProviderConfigManagerStub();
+            return IDENTITY_PROVIDER_CONFIG_MANAGER_STUB;
         }
 
         public IdentityProvider getInternalProvider() {
-            return new IdentityProviderStub();
+            return IDENTITY_PROVIDER_STUB;
         }
 
         public UserManager getInternalUserManager() {
-            return new UserManagerStub(getMyStubDataStore());
+            return USER_MANAGER_STUB;
         }
 
         public GroupManager getInternalGroupManager() {
-            return new GroupManagerStub(getMyStubDataStore());
-        }
-
-        private StubDataStore getMyStubDataStore() {
-            return StubDataStore.defaultStore();
+            return GROUP_MANAGER_STUB;
         }
 
         public ServiceManager getServiceManager() {
-            return new ServiceManagerStub();
+            return SERVICE_MANAGER_STUB;
         }
     }
 
@@ -91,7 +97,7 @@ public class PublishServiceWizardTest extends Locator {
         };
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         System.setProperty("com.l7tech.common.locator", "com.l7tech.console.panels.PublishServiceWizardTest");
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -102,6 +108,18 @@ public class PublishServiceWizardTest extends Locator {
         PublishServiceWizard w = new PublishServiceWizard(new JFrame(), true);
         w.setWsdlUrl("http://192.168.1.118/ACMEWarehouseWS/Service1.asmx?WSDL");
         w.show();
+
+        EntityHeader[] services = TestRegistry.SERVICE_MANAGER_STUB.findAllPublishedServices();
+        for (int i = 0; i < services.length; i++) {
+            EntityHeader serviceHeader = services[i];
+            PublishedService service = TestRegistry.SERVICE_MANAGER_STUB.findServiceByPrimaryKey(serviceHeader.getOid());
+            String policyXml = service.getPolicyXml();
+            Assertion assertion = WspReader.parse(policyXml);
+            log.info("--------------------------------\nService: " + service.getName() + "\n------------\n");
+            log.info(assertion);
+            log.info("--------------------------------\n");
+        }
+
         System.exit(0);
     }
 }
