@@ -69,8 +69,8 @@ public abstract class SecurityProcessor {
      *                 rules.
      * @return the signer security processor
      */
-    public static SecurityProcessor getVerifier(Session session, Key key, ElementSecurity[] elements) {
-        return new ReceiverXmlSecurityProcessor(session, key, elements);
+    public static SecurityProcessor getVerifier(Session session, Key key, long keyName, ElementSecurity[] elements) {
+        return new ReceiverXmlSecurityProcessor(session, key, keyName, elements);
     }
 
 

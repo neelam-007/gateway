@@ -88,7 +88,7 @@ public class SoapMsgSignerTest extends TestCase {
 
         ElementSecurity[] esecs = getElementSecurity();
 
-        ReceiverXmlSecurityProcessor foo = new ReceiverXmlSecurityProcessor(s, getKeyReq(), esecs );
+        ReceiverXmlSecurityProcessor foo = new ReceiverXmlSecurityProcessor(s, getKeyReq(), s.getId(), esecs );
         SecurityProcessor.Result bar = foo.processInPlace( testDoc ); // todo OMGWTFBBQ
         XmlUtil.documentToOutputStream( testDoc, System.out );
         System.out.println( bar.getCertificateChain() );

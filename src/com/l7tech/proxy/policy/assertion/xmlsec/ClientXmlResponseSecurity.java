@@ -101,7 +101,8 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
         if (session != null)
             decryptionKey = new AesKey(session.getKeyRes(), 128);
         ElementSecurity[] elements = xmlResponseSecurity.getElements();
-        SecurityProcessor verifier = SecurityProcessor.getVerifier(request.getSession(), decryptionKey, elements);
+        SecurityProcessor verifier = SecurityProcessor.getVerifier(request.getSession(), decryptionKey,
+                                                                   request.getSession().getId(), elements);
         try {
             X509Certificate caCert = SsgKeyStoreManager.getServerCert(request.getSsg());
             SecurityProcessor.Result result = verifier.processInPlace(doc);

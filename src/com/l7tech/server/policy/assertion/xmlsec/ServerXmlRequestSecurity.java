@@ -89,7 +89,8 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
         }
         Key key = xmlsecSession.getKeyReq() != null ? new AesKey(xmlsecSession.getKeyReq(), 128) : null;
         ElementSecurity[] elements = xmlRequestSecurity.getElements();
-        SecurityProcessor verifier = SecurityProcessor.getVerifier(xmlsecSession, key, elements);
+        SecurityProcessor verifier = SecurityProcessor.getVerifier(xmlsecSession, key,
+                                                                   xmlsecSession.getId(), elements);
 
         try {
             // TODO clean up sender xml security processor to behave like receiver (throwless return)
