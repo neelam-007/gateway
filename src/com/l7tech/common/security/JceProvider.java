@@ -61,10 +61,10 @@ public abstract class JceProvider {
     public static Cipher getRSANoPaddingCipher() throws NoSuchAlgorithmException, NoSuchProviderException, NoSuchPaddingException {
         String provider = getAsymmetricJceProvider().getName();
         if (provider == "BC") {
-            return Cipher.getInstance("RSA/NONE/NoPadding", getAsymmetricJceProvider().getName());
+            return Cipher.getInstance("RSA/NONE/NoPadding", provider);
         } else { // todo, add cases for both SUN and IBM 
             // try this default value
-            return Cipher.getInstance("RSA/NONE/NoPadding", getAsymmetricJceProvider().getName());
+            return Cipher.getInstance("RSA/NONE/NoPadding", provider);
         }
 
     }
