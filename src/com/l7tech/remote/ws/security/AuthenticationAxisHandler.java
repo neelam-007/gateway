@@ -1,10 +1,7 @@
 package com.l7tech.remote.ws.security;
 
 import com.l7tech.common.util.Locator;
-import com.l7tech.identity.AuthenticationException;
-import com.l7tech.identity.Group;
-import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.identity.User;
+import com.l7tech.identity.*;
 import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectModelException;
@@ -19,6 +16,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.sql.SQLException;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -121,12 +119,19 @@ public class AuthenticationAxisHandler extends org.apache.axis.handlers.BasicHan
 
     private boolean authorizeAdminMembership(User adminUser) {
         //return userIsMemberOfGroup(adminUser.getOid(), Group.ADMIN_GROUP_NAME);
-        if (adminUser == null || adminUser.getGroups() == null) return false;
-        for (Iterator i = adminUser.getGroups().iterator(); i.hasNext();) {
-            Group grp = (Group)i.next();
-            if (grp.getName() != null && grp.getName().equals(Group.ADMIN_GROUP_NAME)) return true;
+        GroupManager gman = identityProviderConfigManager.getInternalIdentityProvider().getGroupManager();
+        try {
+            if (adminUser == null ) return false;
+            Set groupHeaders = gman.getGroupHeaders( adminUser );
+            for (Iterator i = groupHeaders.iterator(); i.hasNext();) {
+                Group grp = (Group)i.next();
+                if (grp.getName() != null && grp.getName().equals(Group.ADMIN_GROUP_NAME)) return true;
+            }
+            return false;
+        } catch ( FindException fe ) {
+            logger.log( Level.SEVERE, fe.getMessage(), fe );
+            return false;
         }
-        return false;
     }
 
     private User authenticateBasicToken(String value) throws AxisFault {

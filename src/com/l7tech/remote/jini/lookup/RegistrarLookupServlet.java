@@ -9,6 +9,7 @@ package com.l7tech.remote.jini.lookup;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.common.util.Locator;
 import net.jini.config.*;
@@ -132,11 +133,18 @@ public class RegistrarLookupServlet extends HttpServlet {
     }
 
     private boolean hasPermission(User user) {
-        for (Iterator i = user.getGroupHeaders().iterator(); i.hasNext();) {
-            EntityHeader grp = (EntityHeader)i.next();
-            if (Group.ADMIN_GROUP_NAME.equals(grp.getName() )) return true;
+        IdentityProvider provider = getConfigManager().getInternalIdentityProvider();
+        GroupManager gman = provider.getGroupManager();
+        try {
+            for (Iterator i = gman.getGroupHeaders( user ).iterator(); i.hasNext();) {
+                EntityHeader grp = (EntityHeader)i.next();
+                if (Group.ADMIN_GROUP_NAME.equals(grp.getName() )) return true;
+            }
+            return false;
+        } catch ( FindException fe ) {
+            logger.log( Level.SEVERE, fe.getMessage(), fe );
+            return false;
         }
-        return false;
     }
 
     /**
