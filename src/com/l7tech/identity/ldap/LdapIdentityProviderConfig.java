@@ -2,8 +2,6 @@ package com.l7tech.identity.ldap;
 
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.IdentityProviderType;
-import com.l7tech.identity.imp.IdentityProviderTypeImp;
 
 /**
  * Layer 7 Technologies, inc.

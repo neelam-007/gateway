@@ -6,7 +6,6 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.identity.imp.IdentityProviderTypeImp;
 import com.l7tech.util.Locator;
 import org.apache.log4j.Category;
 

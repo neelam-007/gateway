@@ -1,7 +1,6 @@
 package com.l7tech.identity;
 
 import com.l7tech.identity.imp.IdentityProviderConfigImp;
-import com.l7tech.identity.imp.IdentityProviderTypeImp;
 import com.l7tech.identity.internal.imp.GroupImp;
 import com.l7tech.identity.internal.imp.UserImp;
 import com.l7tech.objectmodel.EntityHeader;
