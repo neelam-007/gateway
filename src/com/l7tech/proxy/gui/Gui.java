@@ -1,18 +1,14 @@
 package com.l7tech.proxy.gui;
 
+import com.l7tech.proxy.RequestInterceptor;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionListener;
-import javax.swing.event.ListSelectionEvent;
-import java.awt.*;
+import javax.swing.plaf.metal.MetalTheme;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-
-import com.l7tech.proxy.RequestInterceptor;
-import com.l7tech.proxy.datamodel.Ssg;
 
 /**
  * Encapsulates the Client Proxy's user interface.
@@ -23,22 +19,23 @@ import com.l7tech.proxy.datamodel.Ssg;
  */
 public class Gui {
     private static final Category log = Category.getInstance(Gui.class.getName());
+    public static final String RESOURCE_PATH = "com/l7tech/proxy/resources";
+    public static final String HELP_PATH = "com/l7tech/proxy/resources/helpset/proxy.hs";
+
+    private static final String KUNSTSTOFF_CLASSNAME = "com.incors.plaf.kunststoff.KunststoffLookAndFeel";
+    private static final String KUNSTSTOFF_THEME_CLASSNAME = "com.incors.plaf.kunststoff.KunststoffTheme";
 
     private static Gui instance;
+    private boolean started = false;
 
     private JFrame frame;
-    private boolean started = false;
     private MessageViewer messageViewer;
 
     private static final String MENU_FILE = "File";
     private static final String MENU_FILE_QUIT = "Quit";
     private static final String MENU_SHOW = "Show";
     private static final String MENU_SHOW_MESSAGES = "Show Messages";
-
     private JCheckBoxMenuItem showMessages;
-    private SsgPanel ssgPanel;
-    private DefaultListModel ssgListModel;
-    private JList ssgList;
 
     /** Get the singleton Gui. */
     public static Gui getInstance() {
@@ -47,7 +44,26 @@ public class Gui {
         return instance;
     }
 
+    /**
+     * Initialize the Gui.
+     */
     private Gui() {
+        // Try to set up enhanced look and feel
+        try {
+            Class kunststoffClass = Class.forName(KUNSTSTOFF_CLASSNAME);
+            Object kunststoffLnF = kunststoffClass.newInstance();
+            Class themeClass = Class.forName(KUNSTSTOFF_THEME_CLASSNAME);
+            Object theme = themeClass.newInstance();
+            kunststoffClass.getMethod("setCurrentTheme", new Class[] {MetalTheme.class}).invoke(kunststoffLnF,
+                                                                                                new Object[] {theme});
+            UIManager.setLookAndFeel((LookAndFeel)kunststoffLnF);
+        } catch (Exception e) {
+            log.warn(e);
+            // fall back to default look and feel
+        }
+
+        // incors.org Kunststoff faq says we need the following line if we want to use Java Web Start:
+        UIManager.getLookAndFeelDefaults().put("ClassLoader", getClass().getClassLoader());
     }
 
     /**
@@ -98,59 +114,21 @@ public class Gui {
     }
 
     /** Create the GUI frame. */
-    private JFrame makeFrame() {
-        frame = new JFrame("Client Proxy");
-        frame.addWindowListener(new WindowAdapter() {
-            public void windowClosing(WindowEvent e) {
-                closeFrame();
-            }
-        });
+    private JFrame getFrame() {
+        if (frame == null) {
+            frame = new JFrame("Client Proxy");
+            frame.addWindowListener(new WindowAdapter() {
+                public void windowClosing(WindowEvent e) {
+                    closeFrame();
+                }
+            });
 
-        JMenuBar menus = makeMenus();
-        frame.setJMenuBar(menus);
-
-        frame.getContentPane().setLayout(new BorderLayout());
-        JPanel ssgListPanel = new JPanel();
-        ssgList = new JList();
-        ssgList.setPreferredSize(new Dimension(180, 300));
-        ssgListPanel.add(ssgList);
-        JPanel buttonPanel = new JPanel();
-        frame.getContentPane().add(ssgListPanel, BorderLayout.WEST);
-        frame.getContentPane().add(buttonPanel, BorderLayout.SOUTH);
-        ssgListModel = new DefaultListModel();
-        ssgList.setModel(ssgListModel);
-        ssgListModel.addElement(new Ssg("Main SSG", "SSG0", "http://localhost:9898/", "", ""));
-        ssgListModel.addElement(new Ssg("Alternate SSG", "SSG1", "http://localhost:9898/", "", ""));
-        ssgPanel = new SsgPanel((Ssg)ssgListModel.get(0));
-        ssgList.setSelectedIndex(0);
-        ssgList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        frame.getContentPane().add(ssgPanel, BorderLayout.EAST);
-        ssgList.addListSelectionListener(new ListSelectionListener() {
-            public void valueChanged(ListSelectionEvent e) {
-                selectSsg(ssgList.getSelectedIndex());
-            }
-        });
-
-        JButton newSsgButton = new JButton("New SSG");
-        buttonPanel.add(newSsgButton);
-        JButton deleteSsgButton = new JButton("Delete SSG");
-        buttonPanel.add(deleteSsgButton);
-        JButton quitButton = new JButton("Quit");
-        quitButton.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                closeFrame();
-            }
-        });
-        buttonPanel.add(quitButton);
-
-        frame.pack();
-
+            JMenuBar menus = makeMenus();
+            frame.setJMenuBar(menus);
+            frame.setContentPane(new SsgListPanel());
+            frame.pack();
+        }
         return frame;
-    }
-
-    /** Change the currently selected SSG to the given index. */
-    private void selectSsg(int index) {
-        ssgPanel.setSsg((Ssg)ssgListModel.get(index));
     }
 
     /** Build the menu bar. */
@@ -207,6 +185,6 @@ public class Gui {
         if (started)
             throw new IllegalStateException("Gui has already been started");
 
-        makeFrame().show();
+        getFrame().show();
     }
 }
