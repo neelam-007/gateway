@@ -3,8 +3,9 @@ package com.l7tech.identity;
 import com.l7tech.objectmodel.NamedEntity;
 
 import java.util.Set;
+import java.security.Principal;
 
-public interface Group extends NamedEntity {
+public interface Group extends NamedEntity, Principal {
     long getProviderOid();
     String getDescription();
 

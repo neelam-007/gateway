@@ -5,8 +5,9 @@ import com.l7tech.identity.internal.Organization;
 import com.l7tech.objectmodel.NamedEntity;
 
 import java.util.Set;
+import java.security.Principal;
 
-public interface User extends NamedEntity {
+public interface User extends NamedEntity, Principal {
     long getProviderOid();
     String getLogin();
     String getPassword();
