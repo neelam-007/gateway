@@ -1,21 +1,26 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.event.EntityEvent;
-import com.l7tech.console.event.EntityListener;
-import com.l7tech.console.event.EntityListenerAdapter;
-import com.l7tech.console.panels.IdentityProviderDialog;
+import com.l7tech.console.event.*;
+import com.l7tech.console.panels.*;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.ProviderNode;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.util.Locator;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.UpdateException;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.IdentityProviderType;
 
 import javax.swing.*;
+import javax.swing.event.EventListenerList;
 import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.MutableTreeNode;
-import java.util.Enumeration;
-import java.util.Collections;
-import java.util.List;
-import java.util.Iterator;
+import java.util.*;
+import java.util.logging.Level;
 import java.awt.*;
 
 /**
@@ -26,6 +31,7 @@ import java.awt.*;
  * @version 1.0
  */
 public class IdentityProviderPropertiesAction extends NodeAction {
+    private EventListenerList listenerList = new EventListenerList();
 
     public IdentityProviderPropertiesAction(ProviderNode node) {
         super(node);
@@ -62,15 +68,124 @@ public class IdentityProviderPropertiesAction extends NodeAction {
         SwingUtilities.invokeLater(
           new Runnable() {
             public void run() {
+
                 JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
-                IdentityProviderDialog d =
-                  new IdentityProviderDialog(f, ((EntityHeaderNode)node).getEntityHeader());
-                d.addEntityListener(entityListener);
-                d.setResizable(false);
-                d.show();
+                EntityHeader header = ((EntityHeaderNode) node).getEntityHeader();
+                IdentityProviderConfig iProvider = null;
+                if (header.getOid() != -1) {
+
+                    try {
+                        iProvider =
+                                getProviderConfigManager().findByPrimaryKey(header.getOid());
+
+                        WizardStepPanel configPanel = null;
+
+                        if (iProvider.type() == IdentityProviderType.INTERNAL) {
+                            configPanel = new InternalIdentityProviderConfigPanel(null, true);
+
+                        } else if (iProvider.type() == IdentityProviderType.LDAP) {
+
+                            configPanel = new LdapIdentityProviderConfigPanel(
+                                              new LdapGroupMappingPanel(
+                                                  new LdapUserMappingPanel(null)
+                                            ), true);
+                        }
+
+                        Wizard w = new EditIdentityProviderWizard(f, configPanel, iProvider);
+                        w.addWizardListener(wizardListener);
+
+                        // register itself to listen to the updateEvent
+                        addEntityListener(entityListener);
+
+                        w.pack();
+                        w.setSize(780, 560);
+                        Utilities.centerOnScreen(w);
+                        w.setVisible(true);
+
+                    } catch (Exception e1) {
+                        ErrorManager.getDefault().
+                                notify(Level.WARNING, e1, "Error retrieving provider.");
+                    }
+                }
             }
         });
     }
+
+    /**
+     * notfy the listeners that the entity has been updated
+     * @param header
+     */
+    private void fireEventProviderUpdated(EntityHeader header) {
+        EntityEvent event = new EntityEvent(this, header);
+        EventListener[] listeners = listenerList.getListeners(EntityListener.class);
+        for (int i = 0; i < listeners.length; i++) {
+            ((EntityListener)listeners[i]).entityUpdated(event);
+        }
+    }
+
+    /**
+      * add the EntityListener
+      *
+      * @param listener the EntityListener
+      */
+     public void addEntityListener(EntityListener listener) {
+         listenerList.add(EntityListener.class, listener);
+     }
+
+     /**
+      * remove the the EntityListener
+      *
+      * @param listener the EntityListener
+      */
+     public void removeEntityListener(EntityListener listener) {
+         listenerList.remove(EntityListener.class, listener);
+     }
+
+    private IdentityProviderConfigManager getProviderConfigManager()
+      throws RuntimeException {
+        IdentityProviderConfigManager ipc =
+          (IdentityProviderConfigManager)Locator.
+          getDefault().lookup(IdentityProviderConfigManager.class);
+        if (ipc == null) {
+            throw new RuntimeException("Could not find registered " + IdentityProviderConfigManager.class);
+        }
+
+        return ipc;
+    }
+
+    private WizardListener wizardListener = new WizardAdapter() {
+        /**
+         * Invoked when the wizard has finished.
+         *
+         * @param we the event describing the wizard finish
+         */
+        public void wizardFinished(WizardEvent we) {
+
+            // update the provider
+            Wizard w = (Wizard) we.getSource();
+            final IdentityProviderConfig iProvider = (IdentityProviderConfig) w.getCollectedInformation();
+
+            if (iProvider != null) {
+
+                SwingUtilities.invokeLater(
+                        new Runnable() {
+                            public void run() {
+                                EntityHeader header = ((EntityHeaderNode) node).getEntityHeader();
+                                header.setName(iProvider.getName());
+                                header.setType(EntityType.ID_PROVIDER_CONFIG);
+                                try {
+                                    getProviderConfigManager().update(iProvider);
+                                    fireEventProviderUpdated(header);
+
+                                } catch (UpdateException e) {
+                                    ErrorManager.getDefault().notify(Level.WARNING, e, "Error updating the identity provider.");
+                                }
+                            }
+                        });
+            }
+        }
+
+    };
 
     EntityListener entityListener = new EntityListenerAdapter() {
         public void entityUpdated(EntityEvent ev) {

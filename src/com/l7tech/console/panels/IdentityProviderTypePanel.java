@@ -1,19 +1,14 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.common.util.Locator;
 
 import javax.swing.*;
-import javax.swing.event.DocumentListener;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.EventListenerList;
 import java.util.Locale;
 import java.util.ResourceBundle;
+
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.awt.*;
@@ -190,12 +185,17 @@ public class IdentityProviderTypePanel extends WizardStepPanel {
             providerTypesCombo.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     Object o = providerTypesCombo.getSelectedItem();
-                    LdapIdentityProviderConfig ipt = null;
+
                     if (o instanceof LdapIdentityProviderConfig) {
-                        ipt = (LdapIdentityProviderConfig)o;
+                        // a type is selected, can advance to next panel
+                        advanceAllowed = true;
+                    } else {
+                        advanceAllowed = false;
                     }
-                    // todo: set the provider type selected
-                    //selectProvidersPanel(ipt);
+
+                    // notify the wizard to update the state of the control buttons
+                    notifyListeners();
+
                 }
             });
         }
@@ -215,47 +215,35 @@ public class IdentityProviderTypePanel extends WizardStepPanel {
     }
 
     /**
-     * return the provider details
-     *
-     * @return the panel for the selected provide
-     */
-    private JPanel getProvidersPanel() {
-        if (providersPanel != null) return providersPanel;
-        providersPanel = new JPanel();
-        return providersPanel;
-    }
-
-    /**
-     * select the provider panel for the provider type, if null
-     * reset the form
-     */
-/*    private void selectProvidersPanel(LdapIdentityProviderConfig ip) {
-        providersPanel.removeAll();
-        providersPanel.setLayout(new BorderLayout());
-        boolean found = false;
-        providerSettingsPanel = null;
-        if (ip != null) {
-            //todo: go to next step in the wizard
-            //providerSettingsPanel = getLdapPanel(iProvider);
-            //providersPanel.add(providerSettingsPanel);
-            //found = true;
-        }
-
-        //todo: enable the finish button
-        //saveButton.setEnabled(providerSettingsPanel != null && providerNameTextField.getText().length() > 0);
-        Dimension size = origDimension;
-        // todo: fix the hardcoded multiply
-//        setSize((int)size.getWidth(), (int)(size.getHeight() * (found ? 2.0 : 1.0)));
-        validate();
-        repaint();
-
-    }*/
-
-    /**
      * This method is called from within the constructor to
      * initialize the dialog.
      */
+    public void storeSettings(Object settings) {
 
+        if (settings != null) {
+            LdapIdentityProviderConfig ldapType = (LdapIdentityProviderConfig )providerTypesCombo.getSelectedItem();
+            ((LdapIdentityProviderConfig) settings).setTemplateName(ldapType.getTemplateName());
+        }
+    }
+
+    /**
+     * Indicate this panel is not the last one. The user must go to the panel.
+     *
+     * @return false
+     */
+    public boolean canFinish() {
+        return false;
+    }
+
+    /**
+     * Test whether the step is finished and it is safe to advance to the next one.  This method
+     * should return quickly.
+     *
+     * @return true if the panel is valid, false otherwis
+     */
+    public boolean canAdvance() {
+        return advanceAllowed;
+    }
 
     private ListCellRenderer
       providerTypeRenderer = new DefaultListCellRenderer() {
@@ -291,26 +279,10 @@ public class IdentityProviderTypePanel extends WizardStepPanel {
 
       };
 
-    /** Resource bundle with default locale */
     private ResourceBundle resources = null;
-
-    private String CMD_CANCEL = "cmd.cancel";
-
-    private String CMD_OK = "cmd.ok";
-    private String CMD_TEST = "cmd.test";
-
-    private JButton saveButton = null;
-    private EntityHeader header = new EntityHeader();
-    private IdentityProviderConfig iProvider;
-    private EventListenerList listenerList = new EventListenerList();
-    private JPanel providersPanel;
-   // private IdentityProviderTypePanel.ProviderSettingsPanel providerSettingsPanel;
-    private Dimension origDimension;
-
-    /** provider ID text field */
-    private JTextField providerNameTextField = null;
     private JComboBox providerTypesCombo = null;
     private LdapIdentityProviderConfig[] templates = null;
     static final Logger log = Logger.getLogger(IdentityProviderTypePanel.class.getName());
+    boolean advanceAllowed = false;
 
 }

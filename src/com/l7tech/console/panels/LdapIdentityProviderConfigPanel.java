@@ -140,7 +140,7 @@ public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
         GridBagConstraints constraints;
 
         int rowIndex = 0;
-        if(showProviderType) {
+
             // provider types
             JLabel providerTypesLabel = new JLabel();
             providerTypesLabel.setToolTipText(resources.getString("providerTypeTextField.tooltip"));
@@ -164,7 +164,11 @@ public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
             constraints.weightx = 0.0;
             constraints.insets = new Insets(12, 7, 0, 0);
             panel.add(getProviderTypes(), constraints);
-        }
+
+         if(!showProviderType) {
+             providerTypesLabel.setVisible(false);
+             getProviderTypes().setVisible(false);
+         }
 
         // Provider ID label
         JLabel providerNameLabel = new JLabel();
@@ -393,7 +397,7 @@ public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
         getNewSettings(tmp);
         String errorMsg = null;
         try {
-            getProviderConfigManager().test(iProviderConfig);
+            getProviderConfigManager().test(tmp);
         } catch (InvalidIdProviderCfgException e) {
             errorMsg = e.getMessage();
         } catch (RuntimeException e) {
@@ -452,20 +456,21 @@ public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
 
     /** populate the form from the provider beans */
     public void readSettings(Object settings) throws IllegalArgumentException {
+        if (settings != null) {
 
-        if (settings instanceof LdapIdentityProviderConfig) {
+            if (settings instanceof LdapIdentityProviderConfig) {
 
-            iProviderConfig = (LdapIdentityProviderConfig) settings;
+                LdapIdentityProviderConfig iProviderConfig = (LdapIdentityProviderConfig) settings;
 
-            if (iProviderConfig.getOid() != -1) {
+                if (iProviderConfig.getOid() != -1) {
 
-                getProviderNameTextField().setText(iProviderConfig.getName());
+                    getProviderNameTextField().setText(iProviderConfig.getName());
 
-                getLdapBindPassTextField().setText(iProviderConfig.getBindPasswd());
-                getLdapBindDNTextField().setText(iProviderConfig.getBindDN());
-                getLdapSearchBaseTextField().setText(iProviderConfig.getSearchBase());
-                getLdapHostTextField().setText(iProviderConfig.getLdapUrl());
-
+                    getLdapBindPassTextField().setText(iProviderConfig.getBindPasswd());
+                    getLdapBindDNTextField().setText(iProviderConfig.getBindDN());
+                    getLdapSearchBaseTextField().setText(iProviderConfig.getSearchBase());
+                    getLdapHostTextField().setText(iProviderConfig.getLdapUrl());
+                }
                 for (int i = providerTypesCombo.getModel().getSize() - 1; i >= 0; i--) {
                     Object toto = providerTypesCombo.getModel().getElementAt(i);
                     if (toto instanceof LdapIdentityProviderConfig) {
@@ -477,6 +482,9 @@ public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
                 }
 
                 providerTypesCombo.setEnabled(false);
+
+            } else {
+
             }
         }
     }
@@ -497,7 +505,7 @@ public class LdapIdentityProviderConfigPanel extends WizardStepPanel {
     /** Resource bundle with default locale */
     private ResourceBundle resources = null;
     private String CMD_TEST = "cmd.test";
-    private LdapIdentityProviderConfig iProviderConfig;
+//    private LdapIdentityProviderConfig iProviderConfig = null;
 
 
     /** provider ID text field */

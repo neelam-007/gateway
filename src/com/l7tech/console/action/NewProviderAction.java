@@ -1,33 +1,42 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.event.EntityEvent;
-import com.l7tech.console.event.EntityListener;
-import com.l7tech.console.event.EntityListenerAdapter;
-import com.l7tech.console.panels.IdentityProviderDialog;
+
+import com.l7tech.console.event.*;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.ProviderNode;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.console.panels.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.util.Locator;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.IdentityProviderConfigManager;
 
 import javax.swing.*;
+import javax.swing.event.EventListenerList;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.EventListener;
+
 
 /**
  * The <code>NewProviderAction</code> action adds the new provider.
- * 
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
 public class NewProviderAction extends NodeAction {
     static final Logger log = Logger.getLogger(NewUserAction.class.getName());
+    private EventListenerList listenerList = new EventListenerList();
 
     public NewProviderAction(AbstractTreeNode node) {
         super(node);
@@ -62,25 +71,116 @@ public class NewProviderAction extends NodeAction {
      * without explicitly asking for the AWT event thread!
      */
     public void performAction() {
+
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                EntityHeader header = new EntityHeader();
-                header.setType(EntityType.ID_PROVIDER_CONFIG);
-                IdentityProviderDialog dialog =
-                  new IdentityProviderDialog(Registry.getDefault().
-                  getComponentRegistry().getMainWindow(), header);
-                dialog.addEntityListener(listener);
 
-                dialog.setResizable(false);
-                dialog.show();
+                IdentityProviderTypePanel typePanel = (
+                        new IdentityProviderTypePanel (
+                            new LdapIdentityProviderConfigPanel (
+                                new LdapGroupMappingPanel (
+                                    new LdapUserMappingPanel(null)
+                ), false)));
+
+
+                JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
+                Wizard w = new CreateIdentityProviderWizard(f, typePanel);
+                w.addWizardListener(wizardListener);
+
+                // register itself to listen to the addEvent
+                addEntityListener(listener);
+
+                w.pack();
+                w.setSize(780, 560);
+                Utilities.centerOnScreen(w);
+                w.setVisible(true);
+
             }
         });
+
+    }
+
+    private WizardListener wizardListener = new WizardAdapter() {
+        /**
+         * Invoked when the wizard has finished.
+         *
+         * @param we the event describing the wizard finish
+         */
+        public void wizardFinished(WizardEvent we) {
+
+            // update the provider
+            Wizard w = (Wizard) we.getSource();
+            final IdentityProviderConfig iProvider = (IdentityProviderConfig) w.getCollectedInformation();
+
+            if (iProvider != null) {
+
+                SwingUtilities.invokeLater(
+                        new Runnable() {
+                            public void run() {
+                                EntityHeader header = new EntityHeader();
+                                header.setName(iProvider.getName());
+                                header.setType(EntityType.ID_PROVIDER_CONFIG);
+                                try {
+                                    header.setOid(getProviderConfigManager().save(iProvider));
+                                    fireEventProviderAdded(header);
+
+                                } catch (SaveException e) {
+                                    ErrorManager.getDefault().notify(Level.WARNING, e, "Error saving the new identity provider: " + header.getName());
+                                }
+                            }
+                        });
+            }
+        }
+
+    };
+
+    /**
+     * notfy the listeners that the entity has been added
+     * @param header
+     */
+    private void fireEventProviderAdded(EntityHeader header) {
+        EntityEvent event = new EntityEvent(this, header);
+        EventListener[] listeners = listenerList.getListeners(EntityListener.class);
+        for (int i = 0; i < listeners.length; i++) {
+            ((EntityListener) listeners[i]).entityAdded(event);
+        }
+    }
+
+    /**
+      * add the EntityListener
+      *
+      * @param listener the EntityListener
+      */
+     public void addEntityListener(EntityListener listener) {
+         listenerList.add(EntityListener.class, listener);
+     }
+
+     /**
+      * remove the the EntityListener
+      *
+      * @param listener the EntityListener
+      */
+     public void removeEntityListener(EntityListener listener) {
+         listenerList.remove(EntityListener.class, listener);
+     }
+
+
+    private IdentityProviderConfigManager getProviderConfigManager()
+            throws RuntimeException {
+        IdentityProviderConfigManager ipc =
+                (IdentityProviderConfigManager) Locator.
+                getDefault().lookup(IdentityProviderConfigManager.class);
+        if (ipc == null) {
+            throw new RuntimeException("Could not find registered " + IdentityProviderConfigManager.class);
+        }
+
+        return ipc;
     }
 
     private EntityListener listener = new EntityListenerAdapter() {
         /**
          * Fired when an new entity is added.
-         * 
+         *
          * @param ev event describing the action
          */
         public void entityAdded(final EntityEvent ev) {

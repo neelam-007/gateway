@@ -13,8 +13,9 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.KeyEvent;
-import java.util.Vector;
 import java.util.Comparator;
+import java.util.Locale;
+import java.util.ResourceBundle;
 
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
@@ -27,9 +28,18 @@ public class LdapUserMappingPanel extends WizardStepPanel {
     /** Creates new form ServicePanel */
     public LdapUserMappingPanel(WizardStepPanel next) {
         super(next);
-
+        initResources();
         initComponents();
 
+    }
+
+    /**
+     * Loads locale-specific resources: strings  etc
+     */
+    private void initResources() {
+        Locale locale = Locale.getDefault();
+        //todo: change the property file from IdentityProviderDialog to LdapIdentityProviderConfigPanel
+        resources = ResourceBundle.getBundle("com.l7tech.console.resources.IdentityProviderDialog", locale);
     }
 
     /** @return the wizard step label    */
@@ -166,6 +176,7 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         objectClass = new JTextField();
         objectClass.setPreferredSize(new java.awt.Dimension(150, 20));
 
+        final JPanel thisPanel = this;
         objectClass.addKeyListener(new KeyListener() {
             public void keyPressed(KeyEvent ke) {
                 // don't care
@@ -174,14 +185,21 @@ public class LdapUserMappingPanel extends WizardStepPanel {
             public void keyReleased(KeyEvent ke) {
                 UserMappingConfig currentEntry = (UserMappingConfig) getUserList().getSelectedValue();
 
+                if (currentEntry == null) {
+                    // tell user to press the addButton first to add an entry
+                    JOptionPane.showMessageDialog(thisPanel, resources.getString("add.entry.required"),
+                            resources.getString("add.error.title"),
+                            JOptionPane.ERROR_MESSAGE);
 
-                if (objectClass.getText().length() == 0) {
-                    currentEntry.setObjClass(originalObjectClass);
-                    objectClass.setText(originalObjectClass);
                 } else {
-                    currentEntry.setObjClass(objectClass.getText());
+                    if (objectClass.getText().length() == 0) {
+                        currentEntry.setObjClass(originalObjectClass);
+                        objectClass.setText(originalObjectClass);
+                    } else {
+                        currentEntry.setObjClass(objectClass.getText());
+                    }
+                    getUserList().setSelectedValue(currentEntry, false);
                 }
-                getUserList().setSelectedValue(currentEntry, false);
             }
 
             public void keyTyped(KeyEvent ke) {
@@ -590,11 +608,11 @@ public class LdapUserMappingPanel extends WizardStepPanel {
 
 
     private LdapIdentityProviderConfig iProviderConfig = null;
-    private Vector users = new Vector();
     private SortedListModel userListModel = null;
     private static int nameIndex = 0;
     private String originalObjectClass = "";
 
+    private ResourceBundle resources = null;
     private UserMappingConfig lastSelectedUser = null;
 }
 

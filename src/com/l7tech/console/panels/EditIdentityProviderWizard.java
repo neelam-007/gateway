@@ -1,10 +1,6 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.action.Actions;
-import com.l7tech.console.event.WizardListener;
-import com.l7tech.console.event.WizardAdapter;
-import com.l7tech.console.event.WizardEvent;
-import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.identity.IdentityProviderConfig;
 
 import javax.swing.*;
@@ -22,7 +18,6 @@ import java.awt.event.ActionEvent;
 
 public class EditIdentityProviderWizard extends Wizard {
     static final Logger log = Logger.getLogger(EditIdentityProviderWizard.class.getName());
-    private EntityHeader header = new EntityHeader();
 
     public EditIdentityProviderWizard(Frame parent, WizardStepPanel panel, IdentityProviderConfig iProvider) {
         super(parent, panel);
@@ -59,22 +54,4 @@ public class EditIdentityProviderWizard extends Wizard {
         return buttonPanel;
     }
 
-    private final WizardListener wizardListener = new WizardAdapter() {
-        /**
-         * Invoked when the wizard page has been changed.
-         *
-         * @param e the event describing the selection change
-         */
-        public void wizardSelectionChanged(WizardEvent e) {
-            WizardStepPanel p = (WizardStepPanel) e.getSource();
-
-            //todo: enable/disable buttons when page is changed.
-            /*boolean enable =
-              (!((p instanceof WsdlCreateOverviewPanel) ||
-              (p instanceof WsdlDefinitionPanel)));
-
-            getButtonPreview().setEnabled(enable);*/
-        }
-
-    };
 }
