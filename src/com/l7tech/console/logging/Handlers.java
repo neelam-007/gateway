@@ -1,7 +1,7 @@
 package com.l7tech.console.logging;
 
 /**
- * The error handlers utility class.
+ * The error handlers package private utility class.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
@@ -20,6 +20,7 @@ class Handlers {
      */
     static ErrorHandler[] defaultHandlers() {
         return new ErrorHandler[]{
+            new VersionMismatchErrorHandler(),
             new PersistenceErrorHandler(),
             new RmiErrorHandler(),
             new DefaultErrorHandler()
