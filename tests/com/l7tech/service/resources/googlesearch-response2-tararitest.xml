@@ -1,0 +1,46 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<SOAP-ENV:Envelope xmlns:SOAP-ENV="http://schemas.xmlsoap.org/soap/envelope/"
+                   xmlns:xsi="http://www.w3.org/1999/XMLSchema-instance" xmlns:xsd="http://www.w3.org/1999/XMLSchema">
+    <SOAP-ENV:Body>
+        <ns1:doGoogleSearchResponse xmlns:ns1="urn:GoogleSearch"
+                                    SOAP-ENV:encodingStyle="http://schemas.xmlsoap.org/soap/encoding/">
+            <return xsi:type="ns1:GoogleSearchResult">
+                <directoryCategories xmlns:ns2="http://schemas.xmlsoap.org/soap/encoding/" xsi:type="ns2:Array"
+                                     ns2:arrayType="ns1:DirectoryCategory[1]">
+                    <item xsi:type="ns1:DirectoryCategory">
+                        <fullViewableName xsi:type="xsd:string">
+                            Top/Business/Industries/Publishing/Services/Writing/Speechwriting</fullViewableName>
+                        <specialEncoding xsi:type="xsd:string"></specialEncoding>
+                    </item>
+                </directoryCategories>
+                <documentFiltering xsi:type="xsd:boolean">false</documentFiltering>
+                <endIndex xsi:type="xsd:int">1</endIndex>
+                <estimateIsExact xsi:type="xsd:boolean">false</estimateIsExact>
+                <estimatedTotalResultsCount xsi:type="xsd:int">1280000</estimatedTotalResultsCount>
+                <resultElements xmlns:ns3="http://schemas.xmlsoap.org/soap/encoding/" xsi:type="ns3:Array"
+                                ns3:arrayType="ns1:ResultElement[1]">
+                    <item xsi:type="ns1:ResultElement">
+                        <URL xsi:type="xsd:string">http://www.blah.com/</URL>
+                        <cachedSize xsi:type="xsd:string">3k</cachedSize>
+                        <directoryCategory xsi:type="ns1:DirectoryCategory">
+                            <fullViewableName xsi:type="xsd:string"></fullViewableName>
+                            <specialEncoding xsi:type="xsd:string"></specialEncoding>
+                        </directoryCategory>
+                        <directoryTitle xsi:type="xsd:string"></directoryTitle>
+                        <hostName xsi:type="xsd:string"></hostName>
+                        <relatedInformationPresent xsi:type="xsd:boolean">true</relatedInformationPresent>
+                        <snippet xsi:type="xsd:string">about &lt;b&gt;blah&lt;/b&gt;!</snippet>
+                        <summary xsi:type="xsd:string"></summary>
+                        <title xsi:type="xsd:string">&lt;b&gt;blah&lt;/b&gt;!</title>
+                    </item>
+                </resultElements>
+                <searchComments xsi:type="xsd:string"></searchComments>
+                <searchQuery xsi:type="xsd:string">blah</searchQuery>
+                <searchTime xsi:type="xsd:double">0.156945</searchTime>
+                <searchTips xsi:type="xsd:string"></searchTips>
+                <startIndex xsi:type="xsd:int">1</startIndex>
+            </return>
+        </ns1:doGoogleSearchResponse>
+
+    </SOAP-ENV:Body>
+</SOAP-ENV:Envelope>
