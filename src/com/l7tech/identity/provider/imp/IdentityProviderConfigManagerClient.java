@@ -1,6 +1,6 @@
 package com.l7tech.identity.provider.imp;
 
-import com.l7tech.identity.provider.IdentityProviderConfig;
+import com.l7tech.identity.IdentityProviderConfig;
 
 import java.util.Collection;
 
@@ -10,7 +10,7 @@ import java.util.Collection;
  * Date: May 9, 2003
  *
  */
-public class IdentityProviderConfigManagerClient implements com.l7tech.identity.provider.IdentityProviderConfigManager {
+public class IdentityProviderConfigManagerClient implements com.l7tech.identity.IdentityProviderConfigManager {
     public void delete(IdentityProviderConfig identityProviderConfig) {
         // todo (fla) implementation
     }
@@ -20,9 +20,14 @@ public class IdentityProviderConfigManagerClient implements com.l7tech.identity.
         return null;
     }
 
-    public Collection findByPrimaryKey(long oid) {
+    public IdentityProviderConfig findByPrimaryKey(long oid) {
         // todo (fla) implementation
         return null;
+    }
+
+    public long save(IdentityProviderConfig identityProviderConfig) {
+        // todo (fla) implementation
+        return 0;
     }
 
     public Collection findAll() {
