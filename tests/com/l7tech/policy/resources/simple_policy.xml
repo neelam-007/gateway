@@ -135,6 +135,7 @@
                 </CustomAssertion>
                 <UnknownAssertion>
                     <DetailMessage stringValueNull="null"/>
+                    <OriginalXml stringValueNull="null"/>
                 </UnknownAssertion>
             </OneOrMore>
         </All>
