@@ -1,0 +1,15 @@
+# Purpose: 
+#  mapping build number to version number
+#  used by rpm (ssg.spec) during upgrade to look up installed SSG version at %pre stage of ssg.spec
+#  base on <buildNumber> extracted from filename "/ssg/dist/ROOT-b<buildNumber>.war" to look up its versionNumber accordingly
+#
+# Format: 
+#  (<one or many buildNumber(s)>-to-<one versionNumber> reference)
+#    buildNumber=versionNumber
+#    buildNumber1,buildNumber2,buildNumberN=versionNumber
+#  A versionNumber may have multiple buildNumbers
+#  Of course, a buildNumber cannot belong to multiple versionNumbers
+
+# buildNumber=versionNumber
+3079=3.0
+3087=3.0.1
