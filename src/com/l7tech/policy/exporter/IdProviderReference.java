@@ -34,7 +34,7 @@ public class IdProviderReference extends ExternalReference {
         IdentityProviderConfig config = null;
         if (manager != null) {
             try {
-                manager.findByPrimaryKey(providerId);
+                config = manager.findByPrimaryKey(providerId);
             } catch (FindException e) {
                 logger.log(Level.WARNING, "error finding id provider config", e);
             }
