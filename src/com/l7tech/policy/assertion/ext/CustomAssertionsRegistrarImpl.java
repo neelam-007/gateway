@@ -1,10 +1,19 @@
 package com.l7tech.policy.assertion.ext;
 
 import com.l7tech.policy.assertion.CustomAssertionHolder;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.remote.jini.export.RemoteService;
 import com.l7tech.server.ComponentConfig;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerConfig;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.service.PublishedService;
+import com.l7tech.service.ServiceManager;
+import com.l7tech.common.util.Locator;
 import com.sun.jini.start.LifeCycle;
 import net.jini.config.ConfigurationException;
 
@@ -13,6 +22,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.rmi.RemoteException;
+import java.rmi.ServerException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -54,6 +64,42 @@ public class CustomAssertionsRegistrarImpl extends RemoteService implements Cust
     public Collection getAssertions(Category c) throws RemoteException {
         final Set customAssertionDescriptors = CustomAssertions.getAssertions(c);
         return asCustomAssertionHolders(customAssertionDescriptors);
+    }
+
+    /**
+     * Resolve the policy with the custom assertions support for a
+     * given service. The server is asked will resolve registered
+     * custom elements.
+     *
+     * @param eh the netity header representing the service
+     * @return the policy tree
+     * @throws RemoteException         on remote invocation error
+     * @throws ObjectNotFoundException if the service cannot be found
+     */
+    public Assertion resolvePolicy(EntityHeader eh)
+      throws RemoteException, ObjectNotFoundException {
+        if (!EntityType.SERVICE.equals(eh.getType())) {
+            throw new IllegalArgumentException("type "+eh.getType());
+        }
+        ServiceManager sm = (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
+        if (sm == null) {
+            throw new IllegalStateException("Cannot get service manager");
+        }
+        try {
+            PublishedService svc = sm.findByPrimaryKey(eh.getOid());
+            if (svc == null) {
+                throw new ObjectNotFoundException("service not found, "+eh); 
+            }
+            return WspReader.parse(svc.getPolicyXml());
+        } catch (FindException e) {
+            ServerException se = new  ServerException("Internal server error "+e.getMessage());
+            se.initCause(e);
+            throw se;
+        } catch (IOException e) {
+            ServerException se = new  ServerException("Internal server error "+e.getMessage());
+            se.initCause(e);
+            throw se;
+        }
     }
 
     private Collection asCustomAssertionHolders(final Set customAssertionDescriptors) {

@@ -10,6 +10,7 @@ import junit.framework.TestSuite;
 
 import javax.security.auth.Subject;
 import java.rmi.RMISecurityManager;
+import java.rmi.server.RMIClassLoader;
 import java.security.Permission;
 import java.security.Principal;
 import java.security.PrivilegedExceptionAction;
@@ -67,17 +68,21 @@ public class CustomAssertionsRegistrarClientTest extends TestCase {
         // put tear down code here
     }
 
-    public void testInvokeCustomRegstrarInvoke() throws Exception {
+    public void testVerifyClassAnnotation() throws Exception {
         Collection collection =
           (Collection)Subject.doAs(getSubject(), new PrivilegedExceptionAction() {
               public Object run() throws Exception {
                   CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
+                  System.out.println(cr.getClass());
+                  System.out.println(cr.getClass().getClassLoader());
+                  System.out.println(RMIClassLoader.getClassAnnotation(cr.getClass()));
                   return cr.getAssertions(Category.IDENTITY);
               }
           });
         for (Iterator iterator = collection.iterator(); iterator.hasNext();) {
             CustomAssertionHolder ch = (CustomAssertionHolder)iterator.next();
             System.out.println(ch);
+            System.out.println(RMIClassLoader.getClassAnnotation(ch.getCustomAssertion().getClass()));
         }
     }
 

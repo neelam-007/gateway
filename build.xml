@@ -166,6 +166,10 @@
         <copy todir="${tomcat.home}/webapps">
             <fileset dir="${build.dir}" includes="*.war"/>
         </copy>
+        <mkdir dir="${tomcat.home}/classpath"/>
+        <copy todir="${tomcat.home}/classpath">
+              <fileset dir="${src.root}/lib" includes="jsk-*.jar"/>
+        </copy>
 
         <!--
           ** Java 1.4 changed the rules as to to how packages beginning in java.* and javax.*
@@ -186,6 +190,10 @@
         <copy todir="${tomcat.home}/conf">
             <fileset dir="${src.root}/etc" includes="server.xml, catalina.policy"/>
         </copy>
+        <copy todir="${tomcat.home}/bin">
+              <fileset dir="${src.root}/etc/tomcat" includes="setclasspath.*"/>
+        </copy>
+
     </target>
 
     <!--
@@ -297,9 +305,6 @@
                 <include name="jms-1.1.jar"/>
                 <include name="jnlp.jar"/>
                 <include name="jnlp-servlet.jar"/>
-                <include name="jsk-platform.jar"/>
-                <include name="jsk-policy.jar"/>
-                <include name="jsk-resources.jar"/>
                 <include name="mysql-connector-java-3.0.8-stable-bin.jar"/> <!-- TODO GPL -->
                 <include name="odmg.jar"/>
                 <include name="oswego-concurrent.jar"/>

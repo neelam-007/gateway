@@ -10,10 +10,13 @@ import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.advice.Advice;
 import com.l7tech.console.tree.policy.advice.Advices;
 import com.l7tech.console.tree.policy.advice.PolicyValidatorAdvice;
+import com.l7tech.console.util.Registry;
+import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.event.EventListenerList;
@@ -21,7 +24,6 @@ import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
-import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.EventListener;
 import java.util.Iterator;
@@ -54,10 +56,30 @@ public class PolicyTreeModel extends DefaultTreeModel {
      */
     public static PolicyTreeModel make(PublishedService service) {
         try {
-            PolicyTreeModel model = new PolicyTreeModel(WspReader.parse(service.getPolicyXml()));
+            final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
+            Assertion policy = cr.resolvePolicy(EntityHeader.fromService(service));
+            validatePolicyTree(policy);
+            PolicyTreeModel model = new PolicyTreeModel(policy);
             return model;
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new RuntimeException("Error while parsing the service policy - service " + service.getName(), e);
+        }
+    }
+
+    private static void validatePolicyTree(Assertion policy) {
+        Iterator it = policy.preorderIterator();
+        while(it.hasNext()) {
+            Assertion a = (Assertion)it.next();
+            if (a instanceof CompositeAssertion) {
+                final CompositeAssertion compositeAssertion = (CompositeAssertion)a;
+                Iterator children = compositeAssertion.children();
+                while(children.hasNext()) {
+                    Assertion ass = (Assertion)children.next();
+                    if (ass.getParent() != a) {
+                        ass.setParent(compositeAssertion);
+                    }
+                }
+            }
         }
     }
 

@@ -1,22 +1,22 @@
 package com.l7tech.remote.jini.export;
 
 import com.sun.jini.config.Config;
-import com.sun.jini.start.AggregatePolicyProvider;
-import com.sun.jini.start.LifeCycle;
-import com.sun.jini.start.ServiceDescriptor;
-import com.sun.jini.start.ServiceProxyAccessor;
+import com.sun.jini.start.*;
 import net.jini.config.Configuration;
 import net.jini.export.ProxyAccessor;
-import net.jini.loader.ClassAnnotation;
 import net.jini.loader.pref.PreferredClassLoader;
 import net.jini.security.BasicProxyPreparer;
 import net.jini.security.ProxyPreparer;
+import net.jini.security.policy.DynamicPolicyProvider;
+import net.jini.security.policy.PolicyFileProvider;
 
 import java.lang.reflect.Constructor;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.rmi.MarshalledObject;
 import java.rmi.RMISecurityManager;
+import java.security.AllPermission;
+import java.security.Permission;
 import java.security.Policy;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -295,34 +295,33 @@ public class DefaultServiceDescriptor
         if (classPath == null) classPath = "";
         newClassLoader = new PreferredClassLoader(oldClassLoader.getURLs(), oldClassLoader, codeBase, false);
 
-//        synchronized (DefaultServiceDescriptor.class) {
-//            // supplant global policy 1st time through
-//            if (globalPolicy == null) {
-//                initialGlobalPolicy = Policy.getPolicy();
-//                globalPolicy =
-//                  new AggregatePolicyProvider(initialGlobalPolicy);
-//                Policy.setPolicy(globalPolicy);
-//                logger.log(Level.FINEST,
-//                           "Global policy set: {0}", globalPolicy);
-//            }
-//            DynamicPolicyProvider service_policy =
-//              new DynamicPolicyProvider(
-//                new PolicyFileProvider(getPolicy()));
-//            LoaderSplitPolicyProvider split_service_policy =
-//              new LoaderSplitPolicyProvider(
-//                newClassLoader, service_policy,
-//                new DynamicPolicyProvider(initialGlobalPolicy));
-//            /* Grant "this" code enough permission to do its work
-//             * under the service policy, which takes effect (below)
-//             * after the context loader is (re)set.
-//             */
-//            split_service_policy.grant(
-//              this.getClass(),
-//              null, /* Principal[] */
-//              new Permission[]{new AllPermission()});
-//            globalPolicy.setPolicy(newClassLoader, split_service_policy);
-//        }
-
+        synchronized (DefaultServiceDescriptor.class) {
+            // supplant global policy 1st time through
+            if (globalPolicy == null) {
+                initialGlobalPolicy = Policy.getPolicy();
+                globalPolicy =
+                  new AggregatePolicyProvider(initialGlobalPolicy);
+                Policy.setPolicy(globalPolicy);
+                logger.log(Level.FINEST,
+                           "Global policy set: {0}", globalPolicy);
+            }
+            DynamicPolicyProvider service_policy =
+              new DynamicPolicyProvider(
+                new PolicyFileProvider(getPolicy()));
+            LoaderSplitPolicyProvider split_service_policy =
+              new LoaderSplitPolicyProvider(
+                newClassLoader, service_policy,
+                new DynamicPolicyProvider(initialGlobalPolicy));
+            /* Grant "this" code enough permission to do its work
+             * under the service policy, which takes effect (below)
+             * after the context loader is (re)set.
+             */
+            split_service_policy.grant(
+              this.getClass(),
+              null, /* Principal[] */
+              new Permission[]{new AllPermission()});
+            globalPolicy.setPolicy(newClassLoader, split_service_policy);
+        }
 
         curThread.setContextClassLoader(newClassLoader);
 
@@ -372,48 +371,6 @@ public class DefaultServiceDescriptor
     private void ensureSecurityManager() {
         if (System.getSecurityManager() == null) {
             System.setSecurityManager(new RMISecurityManager());
-        }
-    }
-
-    /**
-     * A simple subclass of <code>URLClassLoader</code> that overrides
-     * <code>getURLs()</code> to
-     * return the <code>URL</code>s of the provided export codebase.
-     * <code>getURLs()</code>
-     * is called by the RMI subsystem in order to annotate objects
-     * leaving the virtual machine.
-     */
-    static class ExportClassLoader extends URLClassLoader
-      implements ClassAnnotation {
-        /**
-         * Cached value of the provided export codebase <code>URL</code>s
-         */
-        private final URL[] exportURLs;
-
-        /**
-         * Cached codebase annotation for this classloader
-         */
-        private String exportAnnotation;
-
-        /**
-         * Trivial constructor that passes <code>importURLs</code>
-         * to its superclass constructor and assigns
-         * <code>exportURLs</code> to an internal field.
-         */
-        public ExportClassLoader(URL[] importURLs, URL[] exportURLs, ClassLoader classLoader) {
-            super(importURLs, classLoader);
-            this.exportURLs = exportURLs;
-            this.exportAnnotation = urlsToPath(exportURLs);
-        }
-
-        //Javadoc inherited from super type
-        public URL[] getURLs() {
-            return (URL[])exportURLs.clone();
-        }
-
-        //Javadoc inherited from super type
-        public String getClassAnnotation() {
-            return exportAnnotation;
         }
     }
 

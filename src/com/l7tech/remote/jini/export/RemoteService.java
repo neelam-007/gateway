@@ -10,6 +10,7 @@ import net.jini.core.lookup.ServiceID;
 import net.jini.discovery.DiscoveryManagement;
 import net.jini.discovery.LookupDiscovery;
 import net.jini.export.Exporter;
+import net.jini.export.ProxyAccessor;
 import net.jini.id.Uuid;
 import net.jini.id.UuidFactory;
 import net.jini.jeri.BasicILFactory;
@@ -33,7 +34,7 @@ import java.util.logging.Logger;
  * @author  <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public abstract class RemoteService implements Remote {
+public abstract class RemoteService implements Remote, ProxyAccessor {
     private String[] configOptions;
     private final LifeCycle lifeCycle;
     //private static final Logger logger = Logger.getLogger(RemoteService.class.getName());
@@ -151,6 +152,10 @@ public abstract class RemoteService implements Remote {
             new BasicILFactory());
         logger.warning("No exporter configured, (will use anonymous TCP port) "+ exporter);
         return exporter;
+    }
+
+    public Object getProxy() {
+        return serverProxy;
     }
 
     /** Returns the service ID for this server. */
