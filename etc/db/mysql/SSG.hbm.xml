@@ -103,4 +103,16 @@
         <property name="resetCounter" column="reset_counter" type="int"/>
     </class>
 
+    <class name="com.l7tech.server.UrlCacheEntry" table="urlcache">
+        <id name="oid" column="oid" type="long" unsaved-value="-1">
+            <generator class="hilo.long"/>
+        </id>
+
+        <timestamp name="timestamp"/>
+
+        <property name="url" column="url" type="string"/>
+        <property name="content" column="content" type="string"/>
+        <property name="size" column="size" type="int"/>
+    </class>
+
 </hibernate-mapping>
