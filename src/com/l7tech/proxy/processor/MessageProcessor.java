@@ -661,8 +661,19 @@ public class MessageProcessor {
             if (contentType == null || contentType.getValue() == null)
                 throw new IOException("Response from Gateway did not include a Content-Type");
             final ContentTypeHeader outerContentType = ContentTypeHeader.parseValue(contentType.getValue());
-            if (!(outerContentType.isXml() || outerContentType.isMultipart()))
+            if (!(outerContentType.isXml() || outerContentType.isMultipart())) {
+                InputStream rStream = postMethod.getResponseBodyAsStream();
+                byte[] output = null;
+                if (rStream != null) {
+                    output = HexUtils.slurpStream(rStream);
+                }
+                if (output != null) {
+                    log.warning("Server returned unsupported Content-Type (" + outerContentType.getFullValue() +
+                                ") with content\n" + new String(output));
+                }
                 throw new IOException("Response from Gateway was unsupported Content-Type " + outerContentType.getFullValue());
+            }
+
 
             InputStream responseBodyAsStream = postMethod.getResponseBodyAsStream();
             //responseBodyAsStream = new TeeInputStream(responseBodyAsStream, System.err);

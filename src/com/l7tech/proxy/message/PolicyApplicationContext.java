@@ -231,6 +231,7 @@ public class PolicyApplicationContext extends ProcessingContext {
             X509Certificate cert = null;
             cert = CertUtils.decodeCert(HexUtils.decodeBase64(recipient.getBase64edX509Certificate(), true));
             output.setRecipientCertificate(cert);
+            output.setSecurityHeaderActor(actor);
             policySettings.downstreamRecipientWSSRequirements.put(actor, output);
         }
         return output;
