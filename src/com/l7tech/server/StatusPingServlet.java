@@ -73,14 +73,14 @@ public class StatusPingServlet extends HttpServlet {
         for (Iterator i = statuses.iterator(); i.hasNext();) {
             ClusterNodeInfo nodeInfo = (ClusterNodeInfo)i.next();
             out.println("\t<server>");
-            out.println("\t\t<name>" + nodeInfo.getName() + "</name>");
-            out.println("\t\t<id>" + nodeInfo.getMac() + "</id>");
-            out.println("\t\t<address>" + nodeInfo.getAddress() + "</address>");
-            out.println("\t\t<uptime>" + humanReadableTime(nodeInfo.getUptime()) + "</uptime>");
-            out.println("\t\t<avgload>" + nodeInfo.getAvgLoad() + "</avgload>");
-            out.println("\t\t<lastUpdated>" +
-                              humanReadableTime(nodeInfo.getLastUpdateTimeStamp()) +
-                            "</lastUpdated>");
+                out.println("\t\t<name>" + nodeInfo.getName() + "</name>");
+                out.println("\t\t<id>" + nodeInfo.getMac() + "</id>");
+                out.println("\t\t<address>" + nodeInfo.getAddress() + "</address>");
+                out.println("\t\t<uptime>" + humanReadableTime(nodeInfo.getUptime()) + "</uptime>");
+                out.println("\t\t<avgload>" + nodeInfo.getAvgLoad() + "</avgload>");
+                out.println("\t\t<lastUpdated>" +
+                                  humanReadableTime(nodeInfo.getLastUpdateTimeStamp()) +
+                                "</lastUpdated>");
             out.println("\t</server>");
         }
         out.println("</status>");
@@ -93,7 +93,7 @@ public class StatusPingServlet extends HttpServlet {
         PrintWriter out = res.getWriter();
         out.println("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
         out.println("<status>");
-        out.println("\t" + error);
+            out.println("\t" + error);
         out.println("</status>");
         out.close();
     }
@@ -101,9 +101,12 @@ public class StatusPingServlet extends HttpServlet {
     private String humanReadableTime(long longtime) {
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(longtime);
-        String output = "" + cal.get(Calendar.YEAR) + "/" + twoDigInt(cal.get(Calendar.MONTH)+1) +
-                        "/" + twoDigInt(cal.get(Calendar.DATE)) + " - " + twoDigInt(cal.get(Calendar.HOUR_OF_DAY)) +
-                        ":" + twoDigInt(cal.get(Calendar.MINUTE)) + ":" + twoDigInt(cal.get(Calendar.SECOND));
+        String output = "" + cal.get(Calendar.YEAR) +
+                        "/" + twoDigInt(cal.get(Calendar.MONTH)+1) +
+                        "/" + twoDigInt(cal.get(Calendar.DATE)) +
+                        " - " + twoDigInt(cal.get(Calendar.HOUR_OF_DAY)) +
+                        ":" + twoDigInt(cal.get(Calendar.MINUTE)) +
+                        ":" + twoDigInt(cal.get(Calendar.SECOND));
         return output;
     }
 
