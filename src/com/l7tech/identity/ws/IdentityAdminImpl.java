@@ -334,20 +334,20 @@ public class IdentityAdminImpl implements IdentityAdmin {
         }
     }
 
-    public Set getGroupHeaders( long providerId, String userId) throws RemoteException, FindException {
-        return retrieveGroupManager( providerId ).getGroupHeaders( userId );
+    public Set getGroupHeaders(long providerId, String userId) throws RemoteException, FindException {
+        return retrieveGroupManager(providerId).getGroupHeaders(userId);
     }
 
-    public void setGroupHeaders( long providerId, String userId, Set groupHeaders) throws RemoteException, FindException, UpdateException {
-        retrieveGroupManager( providerId ).setGroupHeaders( userId, groupHeaders );
+    public void setGroupHeaders(long providerId, String userId, Set groupHeaders) throws RemoteException, FindException, UpdateException {
+        retrieveGroupManager(providerId).setGroupHeaders(userId, groupHeaders);
     }
 
-    public Set getUserHeaders( long providerId, String groupId ) throws RemoteException, FindException {
-        return retrieveGroupManager( providerId ).getUserHeaders( groupId );
+    public Set getUserHeaders(long providerId, String groupId) throws RemoteException, FindException {
+        return retrieveGroupManager(providerId).getUserHeaders(groupId);
     }
 
-    public void setUserHeaders( long providerId, String groupId, Set groupHeaders) throws RemoteException, FindException, UpdateException {
-        retrieveGroupManager( providerId ).setUserHeaders( groupId, groupHeaders );
+    public void setUserHeaders(long providerId, String groupId, Set groupHeaders) throws RemoteException, FindException, UpdateException {
+        retrieveGroupManager(providerId).setUserHeaders(groupId, groupHeaders);
     }
 
     // ************************************************
