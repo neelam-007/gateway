@@ -1,6 +1,6 @@
 package com.l7tech.console.tree;
 
-import com.l7tech.console.tree.policy.RequestSwAAssertionPolicyTreeNode;
+
 
 
 /**
@@ -45,7 +45,6 @@ public class XmlSecurityFolderNode extends AbstractTreeNode {
         insert(new RequestWssConfidentialityNode(), index++);
         insert(new ResponseWssIntegrityNode(), index++);
         insert(new ResponseWssConfidentialityNode(), index++);
-        insert(new SamlSecurityNode(), index++);
         insert(new RequestWssReplayProtectionNode(), index++);
     }
 
