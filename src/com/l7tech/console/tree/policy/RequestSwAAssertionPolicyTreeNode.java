@@ -19,7 +19,7 @@ public class RequestSwAAssertionPolicyTreeNode extends LeafAssertionTreeNode {
     }
 
     public String getName() {
-        return "SOAP with Attachment";
+        return "SOAP Request with Attachment";
     }
 
     protected String iconResource(boolean open) {

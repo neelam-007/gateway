@@ -25,7 +25,7 @@ public class RequestSwAAssertionPaletteNode extends AbstractTreeNode {
     protected void loadChildren() {}
 
     public String getName() {
-        return "SOAP with Attachment";
+        return "SOAP Request with Attachment";
     }
 
     protected String iconResource(boolean open) {
