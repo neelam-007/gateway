@@ -14,6 +14,7 @@ import org.bouncycastle.asn1.*;
 import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
 import java.util.Properties;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.l7tech.logging.LogManager;
 import com.l7tech.common.util.HexUtils;
@@ -127,7 +128,7 @@ public class RSASigner {
         try {
             initClass();
         } catch (Exception e) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, e.getMessage(), e);
+            logger.log(Level.SEVERE, e.getMessage(), e);
             throw new IllegalArgumentException(e.getMessage());
         }
     }
@@ -180,7 +181,6 @@ public class RSASigner {
      *@exception  Exception  Description of the Exception
      */
     public Certificate createCertificate(String dn, PublicKey pk) throws Exception {
-        LogManager.getInstance().getSystemLogger().log(Level.FINE, ">createCertificate(pk)");
         // Standard key usages for end users are: digitalSignature | keyEncipherment or nonRepudiation
         // Default key usage is digitalSignature | keyEncipherment
 
@@ -191,7 +191,6 @@ public class RSASigner {
         keyusage[0] = true;
         // keyEncipherment
         keyusage[2] = true;
-        LogManager.getInstance().getSystemLogger().log(Level.FINE, "<createCertificate(pk)");
         return createCertificate(dn, pk, keyusage);
     }
     // createCertificate
@@ -221,17 +220,10 @@ public class RSASigner {
      *@exception  Exception  Description of the Exception
      */
     public Certificate createCertificate(String dn, PublicKey pk, int keyusage) throws Exception {
-        LogManager.getInstance().getSystemLogger().log(Level.FINE, ">createCertificate(pk, ku)");
         if (false) {
             // If this is a CA, only allow CA-type keyUsage
             keyusage = X509KeyUsage.keyCertSign + X509KeyUsage.cRLSign;
         }
-        LogManager.getInstance().getSystemLogger().log(Level.FINE, "dn" + dn);
-        LogManager.getInstance().getSystemLogger().log(Level.FINE, "caSubjectName" + caSubjectName);
-        LogManager.getInstance().getSystemLogger().log(Level.FINE, "validity" + validity);
-        LogManager.getInstance().getSystemLogger().log(Level.FINE, "keyusage" + pk);
-        LogManager.getInstance().getSystemLogger().log(Level.FINE, "keyusage" + keyusage);
-
         X509Certificate cert = makeBCCertificate(dn, caSubjectName, validity.longValue(), pk, keyusage);
         // Verify before returning
         cert.verify(caCert.getPublicKey());
@@ -249,17 +241,15 @@ public class RSASigner {
      *@exception  Exception  Description of the Exception
      */
     public Certificate createCertificate(String dn, Certificate incert) throws Exception {
-        LogManager.getInstance().getSystemLogger().log(Level.FINE, ">createCertificate(cert)");
         X509Certificate cert = (X509Certificate) incert;
         try {
             cert.verify(cert.getPublicKey());
         } catch (Exception e) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "POPO verification failed for " + dn);
+            logger.severe("POPO verification failed for " + dn);
             throw new Exception("Verification of signature (popo) on certificate failed.");
         }
         // TODO: extract more extensions than just KeyUsage
         Certificate ret = createCertificate(dn, cert.getPublicKey(), cert.getKeyUsage());
-        LogManager.getInstance().getSystemLogger().log(Level.FINE, "<createCertificate(cert)");
         return ret;
     }
     // createCertificate
@@ -286,14 +276,12 @@ public class RSASigner {
      *@exception  Exception  Description of the Exception
      */
     public Certificate createCertificate(byte[] pkcs10req, int keyUsage) throws Exception {
-        LogManager.getInstance().getSystemLogger().log(Level.FINE, ">createCertificate(pkcs10)");
-        LogManager.getInstance().getSystemLogger().log(Level.FINE, "Request: " + new String(pkcs10req));
         PKCS10CertificationRequest pkcs10 = new PKCS10CertificationRequest(pkcs10req);
         CertificationRequestInfo certReqInfo = pkcs10.getCertificationRequestInfo();
         String dn= certReqInfo.getSubject().toString();
-        LogManager.getInstance().getSystemLogger().log(Level.INFO, "Signing cert for subject DN = " + dn);
+        logger.info("Signing cert for subject DN = " + dn);
         if (pkcs10.verify() == false) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "POPO verification failed for " + dn);
+            logger.severe("POPO verification failed for " + dn);
             throw new Exception("Verification of signature (popo) on PKCS10 request failed.");
         }
         Certificate ret = null;
@@ -303,7 +291,6 @@ public class RSASigner {
         } else {
             ret = createCertificate(dn, pkcs10.getPublicKey(), keyUsage);
         }
-        LogManager.getInstance().getSystemLogger().log(Level.FINE, "<createCertificate(pkcs10)");
         return ret;
     }
 
@@ -458,7 +445,6 @@ public class RSASigner {
             certgen.addExtension(X509Extensions.CRLDistributionPoints.getId(), crldistcritical, ext);
         }*/
         X509Certificate cert = certgen.generateX509Certificate(privateKey);
-        LogManager.getInstance().getSystemLogger().log(Level.FINE, "<makeBCCertificate()");
         return cert;
     }
     // makeBCCertificate
@@ -468,7 +454,6 @@ public class RSASigner {
         Provider BCJce = new org.bouncycastle.jce.provider.BouncyCastleProvider();
 
         int result = Security.addProvider(BCJce);
-        LogManager.getInstance().getSystemLogger().log(Level.FINE, "loaded provider at position " + result);
 
         // Get env variables and read in nessecary data
         //KeyStore keyStore = KeyStore.getInstance("PKCS12", "BC");
@@ -478,38 +463,31 @@ public class RSASigner {
 
         char[] keyStorePass = getPassword(storePass, "Please enter your keystore password: ");
         keyStore.load(is, keyStorePass);
-        LogManager.getInstance().getSystemLogger().log(Level.FINE, "privateKeyAlias: " + privateKeyAlias);
         char[] privateKeyPass = getPassword(privateKeyPassString, "Please enter your private key password (may be blank depending on your keystore implementation)");
         if ((new String(privateKeyPass)).equals("null")) {
             privateKeyPass = null;
         }
-        LogManager.getInstance().getSystemLogger().log(Level.FINE, "about to get private key from keystore");
         privateKey = (PrivateKey) keyStore.getKey(privateKeyAlias, privateKeyPass);
         if (privateKey == null) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Cannot load key with alias '" + privateKeyAlias + "' from keystore '" + keyStorePath + "'");
+            logger.severe("Cannot load key with alias '" + privateKeyAlias + "' from keystore '" + keyStorePath + "'");
             throw new Exception("Cannot load key with alias '" + privateKeyAlias + "' from keystore '" + keyStorePath + "'");
         }
         Certificate[] certchain = keyStore.getCertificateChain(privateKeyAlias); // KeyTools.getCertChain(keyStore, privateKeyAlias);
         if (certchain.length < 1) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Cannot load certificate chain with alias '" + privateKeyAlias + "' from keystore '" + keyStorePath + "'");
+            logger.severe("Cannot load certificate chain with alias '" + privateKeyAlias + "' from keystore '" + keyStorePath + "'");
             throw new Exception("Cannot load certificate chain with alias '" + privateKeyAlias + "' from keystore '" + keyStorePath + "'");
         }
         // We only support a ca hierarchy with depth 2.
         caCert = (X509Certificate) certchain[0];
-        LogManager.getInstance().getSystemLogger().log(Level.FINE, "cacertIssuer: " + caCert.getIssuerDN().toString());
-        LogManager.getInstance().getSystemLogger().log(Level.FINE, "cacertSubject: " + caCert.getSubjectDN().toString());
 
         // We must keep the same order in the DN in the issuer field in created certificates as there
         // is in the subject field of the CA-certificate.
         // mikel: turned off reverse, since the CSR generated by the client proxy has the correct DN order (cn=..., ou=...)
         caSubjectName = new X509Name(false, caCert.getSubjectDN().toString());
-        LogManager.getInstance().getSystemLogger().log(Level.FINE, "caSubjectName: " + caSubjectName.toString());
         //caSubjectName = CertTools.stringToBcX509Name(caCert.getSubjectDN().toString());
 
         // root cert is last cert in chain
         rootCert = (X509Certificate) certchain[certchain.length - 1];
-        LogManager.getInstance().getSystemLogger().log(Level.FINE, "rootcertIssuer: " + rootCert.getIssuerDN().toString());
-        LogManager.getInstance().getSystemLogger().log(Level.FINE, "rootcertSubject: " + rootCert.getSubjectDN().toString());
 
         // Should extensions be used? Critical or not?
         if ((usebc = basicConstraints) == true) {
@@ -632,4 +610,6 @@ public class RSASigner {
         cRLNumberCritical = false;
         defaultProperties.setProperty("cRLNumberCritical", Boolean.toString(cRLNumberCritical));
     }
+
+    private Logger logger = LogManager.getInstance().getSystemLogger();
 }

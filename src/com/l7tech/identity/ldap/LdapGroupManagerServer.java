@@ -12,6 +12,7 @@ import javax.naming.NamingException;
 import javax.naming.NamingEnumeration;
 import java.util.*;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Layer 7 Technologies, inc.
@@ -31,7 +32,7 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
 
     public Group findByPrimaryKey(String dn) throws FindException {
         if (!valid) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "invalid group manager");
+            logger.severe("invalid group manager");
             throw new FindException("invalid manager");
         }
         try {
@@ -73,7 +74,7 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
             context.close();
             return out;
         } catch (NamingException e) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
+            logger.log(Level.SEVERE, null, e);
             throw new FindException(e.getMessage(), e);
         }
     }
@@ -108,7 +109,7 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
 
     public Collection findAllHeaders() throws FindException {
         if (!valid) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "invalid group manager");
+            logger.severe("invalid group manager");
             throw new FindException("invalid manager");
         }
         Collection output = new ArrayList();
@@ -141,7 +142,7 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
         }
         catch (NamingException e)
         {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
+            logger.log(Level.SEVERE, null, e);
             throw new FindException(e.getMessage(), e);
         }
         return output;
@@ -149,7 +150,7 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
 
     public Collection findAllHeaders(int offset, int windowSize) throws FindException {
         if (!valid) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "invalid group manager");
+            logger.severe("invalid group manager");
             throw new FindException("invalid manager");
         }
         Collection output = new ArrayList();
@@ -191,7 +192,7 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
         }
         catch (NamingException e)
         {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
+            logger.log(Level.SEVERE, null, e);
             throw new FindException(e.getMessage(), e);
         }
         return output;
@@ -199,7 +200,7 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
 
     public Collection findAll() throws FindException {
         if (!valid) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "invalid group manager");
+            logger.severe("invalid group manager");
             throw new FindException("invalid manager");
         }
         Collection headers = findAllHeaders();
@@ -214,7 +215,7 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
 
     public Collection findAll(int offset, int windowSize) throws FindException {
         if (!valid) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "invalid group manager");
+            logger.severe("invalid group manager");
             throw new FindException("invalid manager");
         }
         Collection headers = findAllHeaders(offset, windowSize);
@@ -265,4 +266,5 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
 
     static final String GROUP_OBJCLASS = "posixGroup";
     private volatile boolean valid = true;
+    private Logger logger = LogManager.getInstance().getSystemLogger();
 }

@@ -12,6 +12,7 @@ import cirrus.hibernate.HibernateException;
 import javax.sql.DataSource;
 import java.sql.*;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.l7tech.logging.LogManager;
 
@@ -38,11 +39,11 @@ public class HibernatePersistenceContext extends PersistenceContext {
 
             if ( _htxn != null ) _htxn.commit();
         } catch ( SQLException se ) {
-            LogManager.getInstance().getSystemLogger().throwing( getClass().getName(), "commitTransaction", se );
+            logger.throwing( getClass().getName(), "commitTransaction", se );
             close();
             throw new TransactionException( se.toString(), se );
         } catch ( HibernateException he ) {
-            LogManager.getInstance().getSystemLogger().throwing( getClass().getName(), "commitTransaction", he );
+            logger.throwing( getClass().getName(), "commitTransaction", he );
             throw new TransactionException( he.toString(), he );
         } finally {
             try {
@@ -67,11 +68,11 @@ public class HibernatePersistenceContext extends PersistenceContext {
             }
             if ( _session != null ) _session.flush();
         } catch ( SQLException se ) {
-            LogManager.getInstance().getSystemLogger().log( Level.SEVERE, "in flush()", se );
+            logger.log( Level.SEVERE, "in flush()", se );
             close();
             throw new ObjectModelException( se.getMessage(), se );
         } catch ( HibernateException he ) {
-            LogManager.getInstance().getSystemLogger().log( Level.SEVERE, "in flush()", he );
+            logger.log( Level.SEVERE, "in flush()", he );
             throw new ObjectModelException( he.getMessage(), he );
         }
     }
@@ -85,9 +86,9 @@ public class HibernatePersistenceContext extends PersistenceContext {
             if ( _session != null ) _session.close();
             _session = null;
         } catch ( HibernateException he ) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, he);
+            logger.log(Level.SEVERE, null, he);
         } catch ( SQLException se ) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, se);
+            logger.log(Level.SEVERE, null, se);
         }
     }
 
@@ -116,11 +117,11 @@ public class HibernatePersistenceContext extends PersistenceContext {
                     rs = pingStmt.executeQuery( PINGSQL );
                     return _session;
                 } catch ( SQLException se ) {
-                    LogManager.getInstance().getSystemLogger().log( Level.WARNING, "Try #" + (i+1) + " caught SQLException", se );
+                    logger.log( Level.WARNING, "Try #" + (i+1) + " caught SQLException", se );
                     _session = null;
                     sqlException = se;
                 } catch ( HibernateException he ) {
-                    LogManager.getInstance().getSystemLogger().log( Level.WARNING, "Try #" + (i+1) + " caught HibernateException", he );
+                    logger.log( Level.WARNING, "Try #" + (i+1) + " caught HibernateException", he );
                     _session = null;
                     hibernateException = he;
                 }
@@ -129,13 +130,13 @@ public class HibernatePersistenceContext extends PersistenceContext {
             try {
                 if ( pingStmt != null ) pingStmt.close();
             } catch ( SQLException se ) {
-                LogManager.getInstance().getSystemLogger().log( Level.WARNING, "SQLException closing pingStmt", se );
+                logger.log( Level.WARNING, "SQLException closing pingStmt", se );
             }
 
             try {
                 if ( rs != null ) rs.close();
             } catch ( SQLException se ) {
-                LogManager.getInstance().getSystemLogger().log( Level.WARNING, "SQLException closing rs", se );
+                logger.log( Level.WARNING, "SQLException closing rs", se );
             }
         }
 
@@ -146,7 +147,7 @@ public class HibernatePersistenceContext extends PersistenceContext {
             e = sqlException;
 
         String err = "Tried " + MAXRETRIES + " times to obtain a valid Session and failed with exception " + e;
-        LogManager.getInstance().getSystemLogger().log( Level.SEVERE, err, e );
+        logger.log( Level.SEVERE, err, e );
 
         if ( sqlException != null )
             throw sqlException;
@@ -154,7 +155,7 @@ public class HibernatePersistenceContext extends PersistenceContext {
             throw hibernateException;
         else {
             err = "Some other failure has occurred!";
-            LogManager.getInstance().getSystemLogger().log( Level.SEVERE, err, e );
+            logger.log( Level.SEVERE, err, e );
             throw new RuntimeException( err );
         }
     }
@@ -163,11 +164,11 @@ public class HibernatePersistenceContext extends PersistenceContext {
         try {
             _htxn = getSession().beginTransaction();
         } catch ( SQLException se ) {
-            LogManager.getInstance().getSystemLogger().throwing( getClass().getName(), "beginTransaction", se );
+            logger.throwing( getClass().getName(), "beginTransaction", se );
             close();
             throw new TransactionException( se.toString(), se );
         } catch ( HibernateException he ) {
-            LogManager.getInstance().getSystemLogger().throwing( getClass().getName(), "beginTransaction", he );
+            logger.throwing( getClass().getName(), "beginTransaction", he );
             throw new TransactionException( he.toString(), he );
         }
     }
@@ -176,7 +177,7 @@ public class HibernatePersistenceContext extends PersistenceContext {
         try {
             if ( _htxn != null ) _htxn.rollback();
         } catch ( HibernateException he ) {
-            LogManager.getInstance().getSystemLogger().throwing( getClass().getName(), "rollbackTransaction", he );
+            logger.throwing( getClass().getName(), "rollbackTransaction", he );
             throw new TransactionException( he.toString(), he );
         } finally {
             _htxn = null;
@@ -188,4 +189,5 @@ public class HibernatePersistenceContext extends PersistenceContext {
     protected DataSource _dataSource;
     protected Connection _conn;
     protected cirrus.hibernate.Transaction _htxn;
+    private Logger logger = LogManager.getInstance().getSystemLogger();
 }

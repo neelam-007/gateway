@@ -7,6 +7,7 @@ import com.l7tech.logging.LogManager;
 
 import java.util.Collection;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.rmi.RemoteException;
 
 /**
@@ -20,6 +21,7 @@ public class Service implements ServiceManager {
     public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/serviceAdmin";
 
     public Service() {
+        logger = LogManager.getInstance().getSystemLogger();
     }
 
     public String resolveWsdlTarget(String url) throws java.rmi.RemoteException {
@@ -36,7 +38,7 @@ public class Service implements ServiceManager {
             }
             return out.toString();
         } catch (java.io.IOException e) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
+            logger.log(Level.SEVERE, null, e);
             throw new java.rmi.RemoteException("com.l7tech.adminws.service.Service cannot resolve WSDL " + e.getMessage(), e);
         }
     }
@@ -90,7 +92,7 @@ public class Service implements ServiceManager {
             }
             // ... or is it a new object
             else {
-                LogManager.getInstance().getSystemLogger().log(Level.INFO, "Saving PublishedService: " + service.getOid());
+                logger.info("Saving PublishedService: " + service.getOid());
                 return getServiceManagerAndBeginTransaction().save(service);
             }
         } catch (UpdateException e) {
@@ -109,7 +111,7 @@ public class Service implements ServiceManager {
             com.l7tech.service.ServiceManager theManagerDude = getServiceManagerAndBeginTransaction();
             PublishedService theExecutionee = theManagerDude.findByPrimaryKey(oid);
             theManagerDude.delete(theExecutionee);
-            LogManager.getInstance().getSystemLogger().log(Level.INFO, "Deleted PublishedService: " + oid);
+            logger.info("Deleted PublishedService: " + oid);
         } catch (FindException e) {
             throw new java.rmi.RemoteException(e.getMessage(), e);
         } catch (DeleteException e) {
@@ -130,7 +132,7 @@ public class Service implements ServiceManager {
                 initialiseServiceManager();
             }
         } catch (Throwable e) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Exception in initialiseServiceManager", e);
+            logger.log(Level.SEVERE, "Exception in initialiseServiceManager", e);
             throw new java.rmi.RemoteException("Exception in ServiceManager.getServiceManagerAndBeginTransaction : "+ e.getMessage(), e);
         }
         return serviceManagerInstance;
@@ -142,10 +144,10 @@ public class Service implements ServiceManager {
             context.commitTransaction();
             context.close();
         } catch (java.sql.SQLException e) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
+            logger.log(Level.SEVERE, null, e);
             throw new java.rmi.RemoteException("Exception commiting", e);
         } catch (TransactionException e) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
+            logger.log(Level.SEVERE, null, e);
             throw new java.rmi.RemoteException("Exception commiting", e);
         }
     }
@@ -159,7 +161,7 @@ public class Service implements ServiceManager {
             try {
                 output[count] = (com.l7tech.objectmodel.EntityHeader)i.next();
             } catch (ClassCastException e) {
-                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, e);
+                logger.log(Level.SEVERE, null, e);
                 throw new java.rmi.RemoteException("Collection contained something other than a com.l7tech.objectmodel.EntityHeader", e);
             }
             ++count;
@@ -172,10 +174,11 @@ public class Service implements ServiceManager {
             serviceManagerInstance = (com.l7tech.service.ServiceManager)Locator.getDefault().lookup(com.l7tech.service.ServiceManager.class);
             if (serviceManagerInstance == null) throw new java.rmi.RemoteException("Cannot instantiate the ServiceManager");
         } catch (Throwable e) {
-            LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Exception in Locator.getDefault().lookup(com.l7tech.service.ServiceManager.class)" + e.getMessage(), e);
+            logger.log(Level.SEVERE, "Exception in Locator.getDefault().lookup(com.l7tech.service.ServiceManager.class)" + e.getMessage(), e);
             throw new java.rmi.RemoteException("Exception in Locator.getDefault().lookup: "+ e.getMessage(), e);
         }
     }
 
     private com.l7tech.service.ServiceManager serviceManagerInstance = null;
+    private Logger logger = null;
 }

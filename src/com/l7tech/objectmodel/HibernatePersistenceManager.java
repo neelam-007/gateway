@@ -12,6 +12,7 @@ import com.l7tech.logging.LogManager;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * @author alex
@@ -36,7 +37,7 @@ public class HibernatePersistenceManager extends PersistenceManager {
             ds.storeResource( hibernateXmlResourcePath, getClass().getClassLoader() );
             _sessionFactory = ds.buildSessionFactory();
         } catch ( HibernateException he ) {
-            LogManager.getInstance().getSystemLogger().throwing( getClass().getName(), "<init>", he );
+            logger.throwing( getClass().getName(), "<init>", he );
             throw new SQLException( he.toString() );
         }
     }
@@ -82,10 +83,10 @@ public class HibernatePersistenceManager extends PersistenceManager {
         } catch ( ObjectNotFoundException onfe ) {
             return EMPTYLIST;
         } catch ( HibernateException he ) {
-            LogManager.getInstance().getSystemLogger().throwing( getClass().getName(), "doFind", he );
+            logger.throwing( getClass().getName(), "doFind", he );
             throw new FindException( he.toString(), he );
         } catch ( SQLException se ) {
-            LogManager.getInstance().getSystemLogger().throwing( getClass().getName(), "doFind", se );
+            logger.throwing( getClass().getName(), "doFind", se );
             close( context );
             throw new FindException( se.toString(), se );
         }
@@ -106,7 +107,7 @@ public class HibernatePersistenceManager extends PersistenceManager {
         try {
             context.close();
         } catch ( Exception e ) {
-            LogManager.getInstance().getSystemLogger().throwing( getClass().getName(), "Session.close()", e );
+            logger.throwing( getClass().getName(), "Session.close()", e );
         }
     }
 
@@ -116,10 +117,10 @@ public class HibernatePersistenceManager extends PersistenceManager {
             Session s = h._session;
             return s.find( query, param, getHibernateType(param) );
         } catch ( HibernateException he ) {
-            LogManager.getInstance().getSystemLogger().throwing( getClass().getName(), "doFind", he );
+            logger.throwing( getClass().getName(), "doFind", he );
             throw new FindException( he.toString(), he );
         } catch ( SQLException se ) {
-            LogManager.getInstance().getSystemLogger().throwing( getClass().getName(), "doFind", se );
+            logger.throwing( getClass().getName(), "doFind", se );
             close( context );
             throw new FindException( se.toString(), se );
         }
@@ -134,10 +135,10 @@ public class HibernatePersistenceManager extends PersistenceManager {
                 types[i] = getHibernateType(params[i]);
             return s.find( query, params, types );
         } catch ( HibernateException he ) {
-            LogManager.getInstance().getSystemLogger().throwing( getClass().getName(), "doFind", he );
+            logger.throwing( getClass().getName(), "doFind", he );
             throw new FindException( he.toString(), he );
         } catch ( SQLException se ) {
-            LogManager.getInstance().getSystemLogger().throwing( getClass().getName(), "doFind", se );
+            logger.throwing( getClass().getName(), "doFind", se );
             close( context );
             throw new FindException( se.toString(), se );
         }
@@ -154,11 +155,11 @@ public class HibernatePersistenceManager extends PersistenceManager {
             Object o = s.load( clazz, new Long(oid), forUpdate ? LockMode.WRITE : LockMode.READ );
             return (Entity)o;
         } catch ( SQLException se ) {
-            LogManager.getInstance().getSystemLogger().throwing( getClass().getName(), "doFindByPrimaryKey", se );
+            logger.throwing( getClass().getName(), "doFindByPrimaryKey", se );
             close( context );
             throw new FindException( se.toString(), se );
         } catch ( HibernateException he ) {
-            LogManager.getInstance().getSystemLogger().throwing( getClass().getName(), "doFindByPrimaryKey", he );
+            logger.throwing( getClass().getName(), "doFindByPrimaryKey", he );
             throw new FindException( he.toString(), he );
         }
     }
@@ -170,10 +171,10 @@ public class HibernatePersistenceManager extends PersistenceManager {
 
             s.update( obj );
         } catch ( HibernateException he ) {
-            LogManager.getInstance().getSystemLogger().throwing( getClass().getName(), "doUpdate", he );
+            logger.throwing( getClass().getName(), "doUpdate", he );
             throw new UpdateException( he.toString(), he );
         } catch ( SQLException se ) {
-            LogManager.getInstance().getSystemLogger().throwing( getClass().getName(), "doUpdate", se );
+            logger.throwing( getClass().getName(), "doUpdate", se );
             close( context );
             throw new UpdateException( se.toString(), se );
         }
@@ -191,10 +192,10 @@ public class HibernatePersistenceManager extends PersistenceManager {
                 throw new RuntimeException( "Generated primary key is not a long!");
             }
         } catch ( HibernateException he ) {
-            LogManager.getInstance().getSystemLogger().throwing( getClass().getName(), "doSave", he );
+            logger.throwing( getClass().getName(), "doSave", he );
             throw new SaveException( he.toString(), he );
         } catch ( SQLException se ) {
-            LogManager.getInstance().getSystemLogger().throwing( getClass().getName(), "doSave", se );
+            logger.throwing( getClass().getName(), "doSave", se );
             close( context );
             throw new SaveException( se.toString(), se );
         }
@@ -207,9 +208,11 @@ public class HibernatePersistenceManager extends PersistenceManager {
         } catch ( HibernateException he ) {
             throw new DeleteException( he.toString(), he );
         } catch ( SQLException se ) {
-            LogManager.getInstance().getSystemLogger().throwing( getClass().getName(), "doDelete", se );
+            logger.throwing( getClass().getName(), "doDelete", se );
             close( context );
             throw new DeleteException( se.toString(), se );
         }
     }
+
+    private Logger logger = LogManager.getInstance().getSystemLogger();
 }

@@ -42,7 +42,7 @@ public class InternalIdentityProviderServer implements IdentityProvider {
         try {
             _md5 = MessageDigest.getInstance( "MD5" );
         } catch (NoSuchAlgorithmException e) {
-            _log.log( Level.SEVERE, e.getMessage(), e );
+            logger.log( Level.SEVERE, e.getMessage(), e );
             throw new RuntimeException( e );
         }
     }
@@ -69,12 +69,12 @@ public class InternalIdentityProviderServer implements IdentityProvider {
             try {
                 dbUser = userManager.findByLogin( login );
             } catch (FindException e) {
-                _log.log(Level.SEVERE, "exception looking for user", e);
+                logger.log(Level.SEVERE, "exception looking for user", e);
                 dbUser = null;
             }
             if ( dbUser == null ) {
                 String err = "Couldn't find user with login " + login;
-                LogManager.getInstance().getSystemLogger().log(Level.INFO, err );
+                logger.info(err);
                 throw new AuthenticationException( err );
             } else {
                 CredentialFormat format = pc.getFormat();
@@ -88,13 +88,13 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                     Certificate maybeCert = (Certificate)pc.getPayload();
                     if ( maybeCert == null ) {
                         String err = "Request was supposed to contain a certificate, but does not";
-                        _log.log( Level.SEVERE, err );
+                        logger.severe(err);
                         throw new MissingCredentialsException( err );
                     }
 
                     // Check whether the client cert is valid (according to our root cert)
                     // (get the root cert)
-                    _log.log(Level.INFO, "Verifying client cert against current root cert...");
+                    logger.info("Verifying client cert against current root cert...");
                     Certificate rootcacert = null;
                     try {
                         String rootCertLoc = KeystoreUtils.getInstance().getRootCertPath();
@@ -105,11 +105,11 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                         rootcacert = CertificateFactory.getInstance("X.509").generateCertificate(bais);
                     } catch (IOException e) {
                         String err = "Exception retrieving root cert " + e.getMessage();
-                        LogManager.getInstance().getSystemLogger().log(Level.SEVERE, err, e);
+                        logger.log(Level.SEVERE, err, e);
                         throw new AuthenticationException( err, e );
                     } catch (CertificateException e) {
                         String err = "Exception retrieving root cert " + e.getMessage();
-                        LogManager.getInstance().getSystemLogger().log(Level.SEVERE, err, e);
+                        logger.log(Level.SEVERE, err, e);
                         throw new AuthenticationException( err, e );
                     }
                     // (we have the root cert, verify client cert with it)
@@ -117,53 +117,53 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                         maybeCert.verify(rootcacert.getPublicKey());
                     } catch (SignatureException e) {
                         String err = "client cert does not verify against current root ca cert. maybe our root cert changed since this cert was created.";
-                        LogManager.getInstance().getSystemLogger().log(Level.WARNING, err, e);
+                        logger.log(Level.WARNING, err, e);
                         throw new BadCredentialsException( err, e );
                     } catch (GeneralSecurityException e) {
                         String err = "Exception verifying client cert " + e.getMessage();
-                        LogManager.getInstance().getSystemLogger().log(Level.SEVERE, err, e);
+                        logger.log(Level.SEVERE, err, e);
                         throw new BadCredentialsException( err, e );
                     }
-                    _log.log(Level.INFO, "Verification OK - client cert is valid.");
+                    logger.info("Verification OK - client cert is valid.");
                     // End of Check
 
                     try {
                         dbCert = userManager.retrieveUserCert(Long.toString(dbUser.getOid()));
                     } catch (FindException e) {
-                        _log.log(Level.SEVERE, "FindException exception looking for user cert", e);
+                        logger.log(Level.SEVERE, "FindException exception looking for user cert", e);
                         dbCert = null;
                     }
                     if ( dbCert == null ) {
                         String err = "No certificate found for user " + login;
-                        _log.log( Level.WARNING, err );
+                        logger.warning(err);
                         throw new InvalidClientCertificateException( err );
                     } else if ( dbCert instanceof X509Certificate ) {
                         dbCertX509 = (X509Certificate)dbCert;
-                        _log.log( Level.FINE, "Stored cert serial# is " + dbCertX509.getSerialNumber().toString() );
+                        logger.fine("Stored cert serial# is " + dbCertX509.getSerialNumber().toString());
                     } else {
                         String err = "Stored cert is not an X509Certificate!";
-                        _log.log( Level.SEVERE, err );
+                        logger.severe(err);
                         throw new AuthenticationException( err );
                     }
 
 
                     if ( maybeCert instanceof X509Certificate ) {
                         X509Certificate pcCert = (X509Certificate)maybeCert;
-                        _log.log( Level.FINE, "Request cert serial# is " + pcCert.getSerialNumber().toString() );
+                        logger.fine("Request cert serial# is " + pcCert.getSerialNumber().toString());
                         if ( pcCert.equals( dbCertX509 ) ) {
-                            _log.log( Level.INFO, "Authenticated user " + login + " using a client certificate" );
+                            logger.info("Authenticated user " + login + " using a client certificate" );
                             pc.getUser().copyFrom( dbUser );
                             // remember that this cert was used at least once successfully
                             userManager.setCertWasUsed(Long.toString(dbUser.getOid()));
                             return;
                         } else {
                             String err = "Failed to authenticate user " + login + " using an SSL client certificate (request certificate doesn't match database)";
-                            _log.log( Level.WARNING, err );
+                            logger.warning(err);
                             throw new InvalidClientCertificateException( err );
                         }
                     } else {
                         String err = "Certificate for " + login + " is not an X509Certificate";
-                        _log.log( Level.WARNING, err );
+                        logger.warning(err);
                         throw new InvalidClientCertificateException( err );
                     }
                 } else {
@@ -176,7 +176,7 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                         Map authParams = (Map)pc.getPayload();
                         if ( authParams == null ) {
                             String err = "No Digest authentication parameters found in PrincipalCredentials payload!";
-                            _log.log( Level.SEVERE, err );
+                            logger.severe(err);
                             throw new MissingCredentialsException( err );
                         }
 
@@ -217,23 +217,23 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                         return;
                     }
 
-                    LogManager.getInstance().getSystemLogger().log(Level.INFO, "Incorrect password for login " + login);
+                    logger.info("Incorrect password for login " + login);
 
                     throw new BadCredentialsException();
                 }
             }
         } catch (UpdateException e ) {
-            _log.log(Level.SEVERE, null, e);
+            logger.log(Level.SEVERE, null, e);
             throw new AuthenticationException( e.getMessage(), e );
         } catch ( UnsupportedEncodingException uee ) {
-            _log.log(Level.SEVERE, null, uee);
+            logger.log(Level.SEVERE, null, uee);
             throw new AuthenticationException( uee.getMessage(), uee );
         }
     }
 
     private void throwUnsupportedCredentialFormat(CredentialFormat format) {
         IllegalArgumentException iae = new IllegalArgumentException( "Unsupported credential format: " + format.toString() );
-        _log.log( Level.WARNING, iae.toString(), iae );
+        logger.log( Level.WARNING, iae.toString(), iae );
         throw iae;
     }
 
@@ -274,6 +274,6 @@ public class InternalIdentityProviderServer implements IdentityProvider {
     private InternalUserManagerServer userManager;
     private InternalGroupManagerServer groupManager;
 
-    private Logger _log = LogManager.getInstance().getSystemLogger();
+    private Logger logger = LogManager.getInstance().getSystemLogger();
     private MessageDigest _md5;
 }
