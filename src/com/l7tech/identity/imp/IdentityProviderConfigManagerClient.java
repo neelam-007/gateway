@@ -1,6 +1,7 @@
 package com.l7tech.identity.imp;
 
 import com.l7tech.identity.*;
+import com.l7tech.identity.internal.imp.InternalIdentityProviderClient;
 import com.l7tech.adminws.identity.Identity;
 import com.l7tech.adminws.identity.IdentityService;
 import com.l7tech.adminws.identity.IdentityServiceLocator;
@@ -12,6 +13,7 @@ import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.DeleteException;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.rmi.RemoteException;
 import java.io.IOException;
 
@@ -37,7 +39,18 @@ public class IdentityProviderConfigManagerClient implements IdentityProviderConf
     }
 
     public Collection findAllIdentityProviders() throws FindException {
-        return IdentityProviderFactory.findAllIdentityProviders(this);
+        Collection headers = findAllHeaders();
+        Collection output = new java.util.ArrayList(headers.size());
+        Iterator iter = headers.iterator();
+        while (iter.hasNext()) {
+            EntityHeader thisHeader = (EntityHeader)iter.next();
+            IdentityProviderConfig conf = findByPrimaryKey(thisHeader.getOid());
+            InternalIdentityProviderClient provider = new InternalIdentityProviderClient();
+            provider.initialize(conf);
+            output.add(provider);
+        }
+        return output;
+        //return IdentityProviderFactory.findAllIdentityProviders(this);
     }
 
     public long save(IdentityProviderConfig identityProviderConfig) throws SaveException {
