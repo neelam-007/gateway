@@ -11,6 +11,7 @@ import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
+import com.l7tech.util.SoapUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -47,7 +48,7 @@ public class ClientWssBasic extends ClientWssCredentialSource implements ClientA
      */
     public AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException {
         Document soapmsg = request.getSoapEnvelope();
-        Element headerel = getOrMakeHeader(soapmsg);
+        Element headerel = SoapUtil.getOrMakeHeader(soapmsg);
 
         // get the username and passwords
         String username = request.getSsg().getUsername();

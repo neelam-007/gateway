@@ -4,19 +4,14 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Node;
-
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.cert.X509Certificate;
-import java.io.ByteArrayOutputStream;
-import java.io.Writer;
-import java.io.OutputStreamWriter;
-
 import com.ibm.xml.dsig.util.AdHocIDResolver;
 import com.ibm.xml.dsig.*;
-import com.ibm.dom.util.XPathCanonicalizer;
+import com.l7tech.util.SoapUtil;
 
 /**
  * User: flascell
@@ -73,7 +68,7 @@ public class SoapMsgSigner {
         Element sigEl = template.getSignatureElement();
 
         // Signature is applied in header, as per WS-S
-        Element headerEl = getOrMakeHeader(soapMsg);
+        Element headerEl = SoapUtil.getOrMakeHeader(soapMsg);
         Element envelopedSigEl = (Element) headerEl.appendChild(sigEl);
 
         // Include KeyInfo element in signature and embed cert into subordinate X509Data element
@@ -172,37 +167,6 @@ public class SoapMsgSigner {
             return null;
         }
         return (Element)tmpNodeList.item(0);
-    }
-
-    // todo, move this to util class
-    private Element getOrMakeHeader(Document soapMsg) {
-        // use the soap flavor of this document
-        String soapEnvNS = soapMsg.getDocumentElement().getNamespaceURI();
-        NodeList list = soapMsg.getElementsByTagNameNS(soapEnvNS, HEADER_EL_NAME);
-        if (list.getLength() < 1) {
-            String soapEnvNamespacePrefix = soapMsg.getDocumentElement().getPrefix();
-            Element header = soapMsg.createElementNS(soapEnvNS, HEADER_EL_NAME);
-            Element body = getOrMakeBody(soapMsg);
-            header.setPrefix(soapEnvNamespacePrefix);
-            soapMsg.getDocumentElement().insertBefore(header, body);
-            return header;
-        }
-        else return (Element)list.item(0);
-    }
-
-    // todo, move this to util class
-    private Element getOrMakeBody(Document soapMsg) {
-        // use the soap flavor of this document
-        String soapEnvNS = soapMsg.getDocumentElement().getNamespaceURI();
-        NodeList list = soapMsg.getElementsByTagNameNS(soapEnvNS, BODY_EL_NAME);
-        if (list.getLength() < 1) {
-            String soapEnvNamespacePrefix = soapMsg.getDocumentElement().getPrefix();
-            Element body = soapMsg.createElementNS(soapEnvNS, BODY_EL_NAME);
-            body.setPrefix(soapEnvNamespacePrefix);
-            soapMsg.getDocumentElement().appendChild(body);
-            return body;
-        }
-        else return (Element)list.item(0);
     }
 
     private void filterOutEmptyTextNodes(Element el) {
