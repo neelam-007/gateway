@@ -30,6 +30,15 @@ public class ResolutionParameters {
         this.urn = urn;
     }
 
+    public long getServiceid() {
+        return serviceid;
+    }
+
+    public void setServiceid(long serviceid) {
+        this.serviceid = serviceid;
+    }
+
     private String soapaction;
     private String urn;
+    private long serviceid;
 }
