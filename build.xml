@@ -37,7 +37,7 @@
     <path id="project.class.path">
         <pathelement location="src"/>
         <fileset dir="lib">
-            <include name="*.jar"/>
+            <include name="**/*.jar"/>
             <!--
                * Issue with multiple parsers.
                * JDK 1.4 ships it's own parses and contributes to the
@@ -321,6 +321,7 @@
 
             <classes dir="${build.classes}">
                 <exclude name="com/l7tech/console/**/*"/>
+                <exclude name="com/l7tech/server/jms/**/*" unless="include.jms"/>
             </classes>
 
             <zipfileset dir="${src.root}/etc" prefix="WEB-INF">

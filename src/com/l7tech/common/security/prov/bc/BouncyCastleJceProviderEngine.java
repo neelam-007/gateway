@@ -32,7 +32,7 @@ import org.bouncycastle.asn1.ASN1Set;
  * @version 1.0
  */
 public class BouncyCastleJceProviderEngine implements JceProviderEngine {
-    private static final Provider PROVIDER = new BouncyCastleProvider();
+    private final Provider PROVIDER = new BouncyCastleProvider();
 
     public BouncyCastleJceProviderEngine() {
         Security.addProvider(PROVIDER);
@@ -78,7 +78,18 @@ public class BouncyCastleJceProviderEngine implements JceProviderEngine {
      * @param keyPair the public and private keys
      * @return
      */
-    public CertificateRequest makeCsr(String username, KeyPair keyPair) throws InvalidKeyException, SignatureException {
+    public CertificateRequest makeCsr( String username, KeyPair keyPair ) throws SignatureException, InvalidKeyException {
+        return staticMakeCsr( username, keyPair );
+    }
+
+    /**
+     * Generate a CertificateRequest using the current Crypto provider.
+     *
+     * @param username  the username to put in the cert
+     * @param keyPair the public and private keys
+     * @return
+     */
+    public static CertificateRequest staticMakeCsr(String username, KeyPair keyPair) throws InvalidKeyException, SignatureException {
         X509Name subject = new X509Name("cn=" + username);
         ASN1Set attrs = null;
         PublicKey publicKey = keyPair.getPublic();

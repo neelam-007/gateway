@@ -32,11 +32,12 @@ public class JceProviderTest {
     private static final Logger log = Logger.getLogger(JceProviderTest.class.getName());
     //$ ls c:/cygwin/kstores
     //ca.cer  ca.ks  ssl.csr  ssl.ks  ssl_self.cer
-    private static final String DIR = "c:/cygwin/kstores/";
+    private static final String DIR = "/opt/java/tomcat/kstores/";
     private static String KEY_STORE = DIR + "ca.ks";
-    private static String PK_PASS = "secret";
+    private static String PK_PASS = "tralala";
     private static String ALIAS = "ssgroot";
-    private static String STORE_PASS = "secret";
+    private static String STORE_PASS = "tralala";
+    public static final String USAGE = "Usage: JceProviderTest [phaos|bc|rsa|ncipher] scale";
 
     public static interface Testable {
         void run() throws Throwable;
@@ -44,7 +45,7 @@ public class JceProviderTest {
 
     public static void main(String[] args) throws Throwable {
         if (args.length < 2 || args[0].length() < 1 || args[1].length() < 1)
-            throw new IllegalArgumentException("Usage: JceProviderTest [phaos|bc|rsa] scale");
+            throw new IllegalArgumentException(USAGE);
         String prov = args[0].trim();
         int scale = Integer.parseInt(args[1]);
         String driver;
@@ -54,8 +55,10 @@ public class JceProviderTest {
             driver = "com.l7tech.common.security.prov.rsa.RsaJceProviderEngine";
         } else if ("bc".equalsIgnoreCase(prov)) {
             driver = "com.l7tech.common.security.prov.bc.BouncyCastleJceProviderEngine";
+        } else if ("ncipher".equalsIgnoreCase(prov)) {
+            driver = "com.l7tech.common.security.prov.ncipher.NcipherJceProviderEngine";
         } else
-            throw new IllegalArgumentException("Usage: JceProviderTest [phaos|bc|rsa]");
+            throw new IllegalArgumentException(USAGE);
         System.setProperty(JceProvider.ENGINE_PROPERTY, driver);
 
         final byte[] keyBytes = new byte[]{
