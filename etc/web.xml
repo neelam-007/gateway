@@ -13,6 +13,11 @@
         <load-on-startup>1</load-on-startup>
     </servlet>
 
+    <servlet>
+        <servlet-name>PolicyServlet</servlet-name>
+        <servlet-class>com.l7tech.policy.server.PolicyServlet</servlet-class>
+    </servlet>
+
     <!-- Axis servlet properties -->
     <servlet>
         <servlet-name>AxisServlet</servlet-name>
@@ -57,6 +62,11 @@
     <servlet-mapping>
         <servlet-name>AxisServlet</servlet-name>
         <url-pattern>/servlet/AxisServlet</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>PolicyServlet</servlet-name>
+        <url-pattern>/policy/disco.modulator/*</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>
