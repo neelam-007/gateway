@@ -7,7 +7,9 @@
 package com.l7tech.message;
 
 import com.l7tech.policy.assertion.AssertionResult;
+import com.l7tech.policy.assertion.AssertionStatus;
 
+import javax.xml.soap.SOAPFault;
 import java.io.*;
 import java.util.Iterator;
 
@@ -15,7 +17,14 @@ import java.util.Iterator;
  * @author alex
  */
 public interface Response extends Message {
-    Reader getResponseReader() throws IOException;
+    void setProtectedResponseReader( Reader reader );
+    Reader getProtectedResponseReader();
+
     void addResult( AssertionResult result );
     Iterator results();
+    Iterator resultsWithStatus( AssertionStatus status );
+    Iterator resultsWithStatus( AssertionStatus[] statuses );
+
+    boolean isAuthenticationMissing();
+    void setAuthenticationMissing( boolean authMissing );
 }
