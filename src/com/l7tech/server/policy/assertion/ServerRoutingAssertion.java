@@ -153,7 +153,7 @@ public class ServerRoutingAssertion implements ServerAssertion {
         }
     }
 
-    private class MethodCloser implements Runnable {
+    private static class MethodCloser implements Runnable {
         MethodCloser(HttpMethod method) {
             _method = method;
         }
