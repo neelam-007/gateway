@@ -47,9 +47,7 @@ public class PolicyManagerImpl implements PolicyManager {
     public Assertion getPolicy(PendingRequest request) {
         Assertion policy = null;
         if (policy == null && request.getSoapAction().length() > 0)
-            policy = request.getSsg().getPolicyBySoapAction(request.getSoapAction());
-        if (policy == null && request.getUri().length() > 0)
-            policy = request.getSsg().getPolicyByUri(request.getUri());
+            policy = request.getSsg().lookupPolicy(request.getUri(), request.getSoapAction());
         log.info(policy != null ? "Located policy for this request" : "No policy found for this request");
         return policy == null ? nullPolicy : policy;
     }
