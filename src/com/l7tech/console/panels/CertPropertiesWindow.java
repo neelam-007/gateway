@@ -32,6 +32,8 @@ import java.rmi.RemoteException;
 public class CertPropertiesWindow extends JDialog {
 
     private JPanel mainPanel;
+    private JPanel certMainPanel;
+    private JPanel certPanel;
     private JScrollPane certDetailsScrollPane;
     private JTextField certExpiredOnTextField;
     private JTextField certIssuedToTextField;
@@ -61,11 +63,14 @@ public class CertPropertiesWindow extends JDialog {
     private void initialize() {
 
         JRootPane rp = this.getRootPane();
-        rp.setPreferredSize(new Dimension(550, 400));
+        rp.setPreferredSize(new Dimension(580, 350));
 
         Container p = getContentPane();
         p.setLayout(new BorderLayout());
         p.add(mainPanel, BorderLayout.CENTER);
+        certMainPanel.setBackground(Color.white);
+        certPanel.setLayout(new FlowLayout());
+        certPanel.setBackground(Color.white);
 
         populateData();
 
@@ -163,11 +168,12 @@ public class CertPropertiesWindow extends JDialog {
 
         // populate the details
         JComponent certView = getCertView(cert);
+
         if (certView == null) {
             certView = new JLabel();
-        } else {
-            certDetailsScrollPane.setViewportView(certView);
         }
+
+        certPanel.add(certView);
 
         // populate the usage
         if (trustedCert.isTrustedForSigningClientCerts()) {
@@ -303,8 +309,8 @@ public class CertPropertiesWindow extends JDialog {
         final JTextField _16;
         _16 = new JTextField();
         certExpiredOnTextField = _16;
-        _16.setText("");
         _16.setEditable(false);
+        _16.setText("");
         _7.add(_16, new com.intellij.uiDesigner.core.GridConstraints(3, 1, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
         final JScrollPane _17;
         _17 = new JScrollPane();
@@ -312,43 +318,56 @@ public class CertPropertiesWindow extends JDialog {
         _6.addTab("Details", _17);
         final JPanel _18;
         _18 = new JPanel();
-        _18.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
-        _6.addTab("Usage", _18);
+        certMainPanel = _18;
+        _18.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 2, new Insets(5, 5, 5, 5), -1, -1));
+        _17.setViewportView(_18);
         final JPanel _19;
         _19 = new JPanel();
-        _19.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(5, 1, new Insets(10, 10, 10, 10), -1, -1));
+        certPanel = _19;
+        _19.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         _18.add(_19, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 3, null, null, null));
-        final JCheckBox _20;
-        _20 = new JCheckBox();
-        outboundSSLConnCheckBox = _20;
-        _20.setText("Outbound SSL Connections ");
-        _19.add(_20, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 3, 0, null, null, null));
-        final JCheckBox _21;
-        _21 = new JCheckBox();
-        signingClientCertCheckBox = _21;
-        _21.setText("Signing Client Certificates");
-        _19.add(_21, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 8, 0, 3, 0, null, null, null));
-        final JCheckBox _22;
-        _22 = new JCheckBox();
-        signingSAMLTokenCheckBox = _22;
-        _22.setText("Signing SAML Tokens");
-        _19.add(_22, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, 8, 0, 3, 0, null, null, null));
+        final com.intellij.uiDesigner.core.Spacer _20;
+        _20 = new com.intellij.uiDesigner.core.Spacer();
+        _18.add(_20, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 0, 1, 6, 1, null, null, null));
+        final JPanel _21;
+        _21 = new JPanel();
+        _21.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        _6.addTab("Usage", _21);
+        final JPanel _22;
+        _22 = new JPanel();
+        _22.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(5, 1, new Insets(10, 10, 10, 10), -1, -1));
+        _21.add(_22, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 3, null, null, null));
         final JCheckBox _23;
         _23 = new JCheckBox();
-        signingServerCertCheckBox = _23;
-        _23.setText("Signing Certificates for Outbound SSL Connections");
-        _19.add(_23, new com.intellij.uiDesigner.core.GridConstraints(4, 0, 1, 1, 8, 0, 3, 0, null, null, null));
-        final JPanel _24;
-        _24 = new JPanel();
-        _24.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(10, 0, 10, 0), -1, -1));
-        _19.add(_24, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 0, null, null, null));
-        final JLabel _25;
-        _25 = new JLabel();
-        _25.setText("The certificate is intented for:");
-        _24.add(_25, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
-        final com.intellij.uiDesigner.core.Spacer _26;
-        _26 = new com.intellij.uiDesigner.core.Spacer();
-        _18.add(_26, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 2, 1, 6, null, null, null));
+        outboundSSLConnCheckBox = _23;
+        _23.setText("Outbound SSL Connections ");
+        _22.add(_23, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 3, 0, null, null, null));
+        final JCheckBox _24;
+        _24 = new JCheckBox();
+        signingClientCertCheckBox = _24;
+        _24.setText("Signing Client Certificates");
+        _22.add(_24, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 8, 0, 3, 0, null, null, null));
+        final JCheckBox _25;
+        _25 = new JCheckBox();
+        signingSAMLTokenCheckBox = _25;
+        _25.setText("Signing SAML Tokens");
+        _22.add(_25, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, 8, 0, 3, 0, null, null, null));
+        final JCheckBox _26;
+        _26 = new JCheckBox();
+        signingServerCertCheckBox = _26;
+        _26.setText("Signing Certificates for Outbound SSL Connections");
+        _22.add(_26, new com.intellij.uiDesigner.core.GridConstraints(4, 0, 1, 1, 8, 0, 3, 0, null, null, null));
+        final JPanel _27;
+        _27 = new JPanel();
+        _27.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(10, 0, 10, 0), -1, -1));
+        _22.add(_27, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 0, null, null, null));
+        final JLabel _28;
+        _28 = new JLabel();
+        _28.setText("The certificate is intented for:");
+        _27.add(_28, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
+        final com.intellij.uiDesigner.core.Spacer _29;
+        _29 = new com.intellij.uiDesigner.core.Spacer();
+        _21.add(_29, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 2, 1, 6, null, null, null));
     }
 
 

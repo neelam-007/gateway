@@ -24,6 +24,9 @@ public class CertDetailsPanel extends WizardStepPanel {
     private JPanel mainPanel;
     private JScrollPane certScrollPane;
     private X509Certificate cert;
+    private JPanel certPanel;
+    private JPanel certMainPanel;
+    JComponent certView = null;
     private JTextField certNameTextField;
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
     private static Logger logger = Logger.getLogger(CertDetailsPanel.class.getName());
@@ -36,6 +39,9 @@ public class CertDetailsPanel extends WizardStepPanel {
     private void initialize() {
         setLayout(new BorderLayout());
         add(mainPanel);
+        certMainPanel.setBackground(Color.white);
+        certPanel.setLayout(new FlowLayout());
+        certPanel.setBackground(Color.white);
     }
 
     /**
@@ -68,13 +74,18 @@ public class CertDetailsPanel extends WizardStepPanel {
                         e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
                     }
 
+
+                    // remove the old view
+                    if(certView != null) {
+                        certPanel.remove(certView);
+                    }
                     try {
-                        JComponent certView = getCertView();
+                        certView = getCertView();
                         if (certView == null) {
                             certView = new JLabel();
-                        } else {
-                            certScrollPane.setViewportView(certView);
                         }
+
+                        certPanel.add(certView);
 
                         revalidate();
                         repaint();
@@ -156,31 +167,47 @@ public class CertDetailsPanel extends WizardStepPanel {
         final JPanel _1;
         _1 = new JPanel();
         mainPanel = _1;
-        _1.setLayout(new GridLayoutManager(3, 3, new Insets(10, 10, 10, 10), -1, -1));
+        _1.setLayout(new GridLayoutManager(4, 3, new Insets(10, 10, 10, 10), -1, -1));
         final JPanel _2;
         _2 = new JPanel();
-        _2.setLayout(new GridLayoutManager(1, 1, new Insets(10, 0, 0, 0), -1, -1));
-        _1.add(_2, new GridConstraints(1, 1, 1, 2, 0, 3, 3, 0, null, null, null));
+        _2.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
+        _1.add(_2, new GridConstraints(0, 1, 1, 1, 0, 3, 3, 0, null, null, null));
         final JLabel _3;
         _3 = new JLabel();
-        _3.setText("Details:");
+        _3.setText("Certificate Name");
         _2.add(_3, new GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
-        final JScrollPane _4;
-        _4 = new JScrollPane();
-        certScrollPane = _4;
-        _1.add(_4, new GridConstraints(2, 1, 1, 1, 0, 3, 7, 7, null, null, null));
+        final JTextField _4;
+        _4 = new JTextField();
+        certNameTextField = _4;
+        _2.add(_4, new GridConstraints(0, 1, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
         final JPanel _5;
         _5 = new JPanel();
-        _5.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
-        _1.add(_5, new GridConstraints(0, 1, 1, 1, 0, 3, 3, 0, null, null, null));
+        _5.setLayout(new GridLayoutManager(1, 1, new Insets(10, 0, 0, 0), -1, -1));
+        _1.add(_5, new GridConstraints(1, 1, 1, 1, 0, 3, 3, 0, null, null, null));
         final JLabel _6;
         _6 = new JLabel();
-        _6.setText("Certificate Name");
+        _6.setText("Details:");
         _5.add(_6, new GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
-        final JTextField _7;
-        _7 = new JTextField();
-        certNameTextField = _7;
-        _5.add(_7, new GridConstraints(0, 1, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
+        final JPanel _7;
+        _7 = new JPanel();
+        _7.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        _1.add(_7, new GridConstraints(2, 1, 1, 1, 0, 3, 3, 3, null, null, null));
+        final JScrollPane _8;
+        _8 = new JScrollPane();
+        certScrollPane = _8;
+        _7.add(_8, new GridConstraints(0, 0, 1, 1, 0, 3, 7, 7, null, null, null));
+        final JPanel _9;
+        _9 = new JPanel();
+        certMainPanel = _9;
+        _9.setLayout(new GridLayoutManager(1, 2, new Insets(5, 5, 5, 5), -1, -1));
+        _8.setViewportView(_9);
+        final JPanel _10;
+        _10 = new JPanel();
+        certPanel = _10;
+        _9.add(_10, new GridConstraints(0, 0, 1, 1, 0, 3, 3, 3, null, null, null));
+        final Spacer _11;
+        _11 = new Spacer();
+        _9.add(_11, new GridConstraints(0, 1, 1, 1, 0, 1, 6, 1, null, null, null));
     }
 
 }
