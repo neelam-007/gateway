@@ -45,6 +45,7 @@ import java.io.IOException;
  * comparing them with the identity resuling from the authentication of the policy download request.
  *
  * Todo, special case for TAM
+ * Todo, special case for policies that have a path without id assertions
  *
  * <p/>
  * <br/><br/>
