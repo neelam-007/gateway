@@ -4,7 +4,7 @@ import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.GroupMappingConfig;
 import com.l7tech.identity.ldap.MemberStrategy;
 import com.l7tech.console.util.SortedListModel;
-import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.TopComponents;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -344,7 +344,7 @@ public class LdapGroupMappingPanel extends IdentityProviderStepPanel {
                         objectClass.setText(currentEntry.getObjClass());
 
                         // create a dialog
-                        EditLdapObjectClassNameDialog d = new EditLdapObjectClassNameDialog(ComponentRegistry.getInstance().getMainWindow(), objectClassNameChangeListener, objectClass.getText());
+                        EditLdapObjectClassNameDialog d = new EditLdapObjectClassNameDialog(TopComponents.getInstance().getMainWindow(), objectClassNameChangeListener, objectClass.getText());
 
                         // show the dialog
                         d.show();

@@ -8,7 +8,7 @@ import com.l7tech.console.event.*;
 import com.l7tech.console.panels.*;
 import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.tree.TreeNodeFactory;
-import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.EntityHeader;
@@ -185,7 +185,7 @@ public class CreateServiceWsdlAction extends BaseAction implements ConnectionLis
         public void serviceAdded(final EntityHeader eh) {
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
-                    JTree tree = (JTree)ComponentRegistry.getInstance().getComponent(ServicesTree.NAME);
+                    JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesTree.NAME);
                     if (tree != null) {
                         DefaultMutableTreeNode root = (DefaultMutableTreeNode)tree.getModel().getRoot();
                         TreeNode[] nodes = root.getPath();

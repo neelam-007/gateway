@@ -4,7 +4,7 @@ import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.panels.PolicyEditorPanel;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.tree.ServiceNode;
-import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
 
@@ -73,7 +73,7 @@ public class EditServicePolicyAction extends NodeAction {
     public void performAction() {
         final ServiceNode serviceNode = (ServiceNode)node;
         try {
-            ComponentRegistry windowManager =
+            TopComponents windowManager =
               Registry.getDefault().getComponentRegistry();
             WorkSpacePanel wpanel = windowManager.getCurrentWorkspace();
 

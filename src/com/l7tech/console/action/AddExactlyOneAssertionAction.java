@@ -3,7 +3,7 @@ package com.l7tech.console.action;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.AssertionTreeNodeFactory;
 import com.l7tech.console.tree.policy.PolicyTree;
-import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 
@@ -65,7 +65,7 @@ public class AddExactlyOneAssertionAction extends BaseAction {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 JTree tree =
-                  (JTree)ComponentRegistry.
+                  (JTree)TopComponents.
                   getInstance().getComponent(PolicyTree.NAME);
                 if (tree != null) {
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();

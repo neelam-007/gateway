@@ -6,7 +6,7 @@ import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.tree.TreeNodeFactory;
-import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.EntityHeader;
 
@@ -75,7 +75,7 @@ public class PublishServiceAction extends BaseAction implements ConnectionListen
          */
         public void entityAdded(final EntityEvent ev) {
             EntityHeader eh = (EntityHeader)ev.getEntity();
-            JTree tree = (JTree)ComponentRegistry.getInstance().getComponent(ServicesTree.NAME);
+            JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesTree.NAME);
             if (tree != null) {
                 DefaultMutableTreeNode root = (DefaultMutableTreeNode)tree.getModel().getRoot();
                 TreeNode[] nodes = root.getPath();

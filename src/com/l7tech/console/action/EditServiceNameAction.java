@@ -6,7 +6,7 @@ import com.l7tech.console.event.EntityListenerAdapter;
 import com.l7tech.console.panels.EditServiceNameDialog;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesTree;
-import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.PublishedService;
@@ -63,7 +63,7 @@ public class EditServiceNameAction extends NodeAction {
           new Runnable() {
               public void run() {
                   try {
-                      ComponentRegistry wm =
+                      TopComponents wm =
                         Registry.getDefault().getComponentRegistry();
                       PublishedService svc = ((ServiceNode)node).getPublishedService();
                       lastServiceName = svc.getName();
@@ -91,7 +91,7 @@ public class EditServiceNameAction extends NodeAction {
                       ServiceNode n = ((ServiceNode)node);
                       n.clearServiceHolder();
                       JTree tree =
-                        (JTree)ComponentRegistry.getInstance().getComponent(ServicesTree.NAME);
+                        (JTree)TopComponents.getInstance().getComponent(ServicesTree.NAME);
                       if (tree != null) {
                           DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                           model.nodeChanged(node);

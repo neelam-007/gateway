@@ -1,6 +1,6 @@
 package com.l7tech.console.logging;
 
-import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.MainWindow;
 import com.l7tech.common.gui.ExceptionDialog;
 import com.l7tech.common.gui.util.Utilities;
@@ -45,7 +45,7 @@ public class RmiErrorHandler implements ErrorHandler {
     private JFrame getMainWindow() {
         if (mainFrame != null) return mainFrame;
 
-        ComponentRegistry instance = ComponentRegistry.getInstance();
+        TopComponents instance = TopComponents.getInstance();
         if (instance.hasMainWindow()) {
             mainFrame = instance.getMainWindow();
         }

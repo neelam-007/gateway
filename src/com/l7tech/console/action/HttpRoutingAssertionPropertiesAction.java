@@ -8,7 +8,7 @@ import com.l7tech.console.panels.HttpRoutingAssertionDialog;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.HttpRoutingAssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
-import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 
@@ -74,7 +74,7 @@ public class HttpRoutingAssertionPropertiesAction extends NodeAction {
 
     private final PolicyListener listener = new PolicyListenerAdapter() {
         public void assertionsChanged(PolicyEvent e) {
-            JTree tree = ComponentRegistry.getInstance().getPolicyTree();
+            JTree tree = TopComponents.getInstance().getPolicyTree();
             if (tree != null) {
                 PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
                 model.assertionTreeNodeChanged((AssertionTreeNode)node);

@@ -3,7 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.common.util.Locator;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
-import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.identity.UserBean;
 import com.l7tech.identity.cert.ClientCertManager;
@@ -113,7 +113,7 @@ class CertificatePanel extends JPanel {
                               "for user '" + user.getLogin() + "'<br>This will also" +
                               " revoke the user's password.</b></center></html>";
                     }
-                    int answer = (JOptionPane.showConfirmDialog(ComponentRegistry.getInstance().getMainWindow(),
+                    int answer = (JOptionPane.showConfirmDialog(TopComponents.getInstance().getMainWindow(),
                                                                 msg, "Revoke User Certificate",
                                                                 JOptionPane.YES_NO_OPTION));
                     if (answer == JOptionPane.YES_OPTION) {

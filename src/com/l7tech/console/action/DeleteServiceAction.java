@@ -3,7 +3,7 @@ package com.l7tech.console.action;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.tree.policy.PolicyTree;
-import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.panels.PolicyEditorPanel;
 import com.l7tech.service.PublishedService;
@@ -64,7 +64,7 @@ public class DeleteServiceAction extends BaseAction {
 
         Runnable runnable = new Runnable() {
             public void run() {
-                final ComponentRegistry creg = ComponentRegistry.getInstance();
+                final TopComponents creg = TopComponents.getInstance();
                 JTree tree = (JTree)creg.getComponent(ServicesTree.NAME);
                 DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                 model.removeNodeFromParent(node);

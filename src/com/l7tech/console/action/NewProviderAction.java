@@ -6,7 +6,7 @@ import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.ProviderNode;
 import com.l7tech.console.tree.TreeNodeFactory;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
-import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.panels.*;
@@ -190,7 +190,7 @@ public class NewProviderAction extends NodeAction {
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     EntityHeader eh = (EntityHeader)ev.getEntity();
-                    JTree tree = (JTree)ComponentRegistry.getInstance().getComponent(IdentityProvidersTree.NAME);
+                    JTree tree = (JTree)TopComponents.getInstance().getComponent(IdentityProvidersTree.NAME);
                     if (tree == null) {
                         log.log(Level.WARNING, "Unable to reach the identity tree.");
                         return;

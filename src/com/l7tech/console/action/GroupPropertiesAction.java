@@ -6,7 +6,7 @@ import com.l7tech.console.panels.GroupPanel;
 import com.l7tech.console.tree.AssertionsTree;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.GroupNode;
-import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.EntityHeader;
@@ -82,7 +82,7 @@ public class GroupPropertiesAction extends NodeAction {
     }
 
     private void removeGroupTreeNode(EntityHeader header) {
-        JTree tree = (JTree)ComponentRegistry.getInstance().getComponent(AssertionsTree.NAME);
+        JTree tree = (JTree)TopComponents.getInstance().getComponent(AssertionsTree.NAME);
         DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
         model.removeNodeFromParent(node);
     }

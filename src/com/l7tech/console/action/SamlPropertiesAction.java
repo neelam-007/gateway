@@ -4,7 +4,7 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.panels.SamlPropertiesDialog;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.SamlTreeNode;
-import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
 
 import javax.swing.*;
@@ -66,7 +66,7 @@ public class SamlPropertiesAction extends BaseAction {
 
     public void assertionChanged() {
         JTree tree =
-          (JTree)ComponentRegistry.getInstance().getPolicyTree();
+          (JTree)TopComponents.getInstance().getPolicyTree();
         if (tree != null) {
             PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
             model.nodeChanged(assertion);

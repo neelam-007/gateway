@@ -1,7 +1,7 @@
 package com.l7tech.console.tree.policy;
 
 import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
@@ -45,7 +45,7 @@ public abstract class CompositeAssertionTreeNode extends AssertionTreeNode {
         if (true == super.receive(node)) {
             return true;
         }
-        JTree tree = (JTree)ComponentRegistry.getInstance().getComponent(PolicyTree.NAME);
+        JTree tree = (JTree)TopComponents.getInstance().getComponent(PolicyTree.NAME);
         if (tree != null) {
             DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
             Assertion[] nass = node.asAssertions();

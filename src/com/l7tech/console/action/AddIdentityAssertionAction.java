@@ -5,7 +5,7 @@ import com.l7tech.console.panels.FindIdentitiesDialog;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.AssertionTreeNodeFactory;
 import com.l7tech.console.tree.policy.PolicyTree;
-import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.User;
@@ -89,7 +89,7 @@ public class AddIdentityAssertionAction extends BaseAction {
                     }
                 }
 
-                JTree tree = (JTree)ComponentRegistry.getInstance().getComponent(PolicyTree.NAME);
+                JTree tree = (JTree)TopComponents.getInstance().getComponent(PolicyTree.NAME);
                 if (tree != null) {
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                     for (Iterator idit = identityAssertions.iterator(); idit.hasNext();) {

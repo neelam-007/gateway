@@ -4,7 +4,7 @@ import com.l7tech.console.panels.PolicyEditorPanel;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.console.tree.policy.PolicyException;
-import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.TopComponents;
 
 import javax.swing.*;
 
@@ -19,7 +19,7 @@ public class PolicyValidatorAdvice implements Advice {
      */
     public void proceed(PolicyChange pc) throws PolicyException {
         pc.proceed();
-        final ComponentRegistry creg = ComponentRegistry.getInstance();
+        final TopComponents creg = TopComponents.getInstance();
         final WorkSpacePanel cws = creg.getCurrentWorkspace();
         JComponent jc = cws.getComponent();
         if (jc == null || !(jc instanceof PolicyEditorPanel)) {

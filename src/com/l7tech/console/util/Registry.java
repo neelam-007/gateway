@@ -52,8 +52,8 @@ public abstract class Registry {
     /**
      * @return the current window manager
      */
-    public ComponentRegistry getComponentRegistry() {
-        return ComponentRegistry.getInstance();
+    public TopComponents getComponentRegistry() {
+        return TopComponents.getInstance();
     }
 
     /**

@@ -6,7 +6,7 @@ import com.l7tech.console.beaneditor.BeanEditor;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.CustomAssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
-import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
@@ -78,7 +78,7 @@ public class CustomAssertionPropertiesAction extends NodeAction {
     }
 
     public void assertionChanged() {
-        JTree tree = (JTree)ComponentRegistry.getInstance().getPolicyTree();
+        JTree tree = (JTree)TopComponents.getInstance().getPolicyTree();
         if (tree != null) {
             PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
             model.assertionTreeNodeChanged((AssertionTreeNode)node);

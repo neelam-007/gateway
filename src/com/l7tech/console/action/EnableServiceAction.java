@@ -3,7 +3,7 @@ package com.l7tech.console.action;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesTree;
-import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
 import com.l7tech.service.PublishedService;
 
@@ -64,7 +64,7 @@ public class EnableServiceAction extends BaseAction {
             Registry.getDefault().getServiceManager().savePublishedService(publishedService);
             node.clearServiceHolder();
             JTree tree =
-              (JTree)ComponentRegistry.getInstance().getComponent(ServicesTree.NAME);
+              (JTree)TopComponents.getInstance().getComponent(ServicesTree.NAME);
             DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
             model.nodeChanged(node);
         } catch (Exception e) {

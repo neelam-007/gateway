@@ -8,7 +8,7 @@ import com.l7tech.console.tree.FilteredTreeModel;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.tree.policy.*;
-import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
@@ -58,7 +58,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     private PolicyTree policyTree;
     private PolicyEditToolBar policyEditorToolbar;
     private JSplitPane splitPane;
-    private final ComponentRegistry componentRegistry = Registry.getDefault().getComponentRegistry();
+    private final TopComponents componentRegistry = Registry.getDefault().getComponentRegistry();
     private JScrollPane policyTreePane;
     private ServiceNode serviceNode;
     private boolean initialValidate = false;
@@ -698,7 +698,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
       throws ContainerVetoException {
         if (e.getChild() == this) {
             if (policyEditorToolbar.buttonSave.isEnabled()) {
-                int answer = (JOptionPane.showConfirmDialog(ComponentRegistry.getInstance().getMainWindow(),
+                int answer = (JOptionPane.showConfirmDialog(TopComponents.getInstance().getMainWindow(),
                   "<html><center><b>Do you want to save changes to service policy " +
                   "for<br> '" + serviceNode.getName() + "' ?</b></center></html>",
                   "Save Service policy",

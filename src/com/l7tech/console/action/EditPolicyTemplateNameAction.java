@@ -4,7 +4,7 @@ package com.l7tech.console.action;
 import com.l7tech.console.tree.PoliciesFolderNode;
 import com.l7tech.console.tree.PolicyTemplateNode;
 import com.l7tech.console.tree.AssertionsTree;
-import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.Preferences;
 
@@ -72,7 +72,7 @@ public class EditPolicyTemplateNameAction extends BaseAction {
         SwingUtilities.invokeLater(
           new Runnable() {
               public void run() {
-                  ComponentRegistry wm =
+                  TopComponents wm =
                     Registry.getDefault().getComponentRegistry();
 
                   EditPolicyTemplateNameDialog d =
@@ -106,7 +106,7 @@ public class EditPolicyTemplateNameAction extends BaseAction {
                       }
                       node.setUserObject(newName);
                       JTree tree =
-                        (JTree)ComponentRegistry.getInstance().getComponent(AssertionsTree.NAME);
+                        (JTree)TopComponents.getInstance().getComponent(AssertionsTree.NAME);
                       if (tree != null) {
                           DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                           model.nodeChanged(node);

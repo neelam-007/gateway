@@ -7,7 +7,7 @@ import com.l7tech.console.event.PolicyListenerAdapter;
 import com.l7tech.console.panels.TimeRangePropertiesDialog;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.TimeRangeTreeNode;
-import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
 
 import javax.swing.*;
@@ -51,7 +51,7 @@ public class TimeRangePropertiesAction extends BaseAction {
 
     private final PolicyListener listener = new PolicyListenerAdapter() {
         public void assertionsChanged(PolicyEvent e) {
-            JTree tree = ComponentRegistry.getInstance().getPolicyTree();
+            JTree tree = TopComponents.getInstance().getPolicyTree();
             if (tree != null) {
                 PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
                 model.assertionTreeNodeChanged(subject);

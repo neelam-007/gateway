@@ -13,7 +13,7 @@ import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.identity.IdentitiesRootNode;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
 import com.l7tech.console.tree.policy.PolicyToolBar;
-import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.ProgressBar;
 import com.l7tech.console.util.Registry;
@@ -845,7 +845,7 @@ public class MainWindow extends JFrame {
     }
 
     private WorkSpacePanel getWorkSpacePanel() {
-        return ComponentRegistry.getInstance().getCurrentWorkspace();
+        return TopComponents.getInstance().getCurrentWorkspace();
     }
 
     /**
@@ -854,13 +854,13 @@ public class MainWindow extends JFrame {
      * @return JTree
      */
     private JTree getAssertionPaletteTree() {
-        JTree tree = (JTree)ComponentRegistry.getInstance().getComponent(AssertionsTree.NAME);
+        JTree tree = (JTree)TopComponents.getInstance().getComponent(AssertionsTree.NAME);
         if (tree != null)
             return tree;
         tree = new AssertionsTree();
         tree.setShowsRootHandles(true);
         tree.setBorder(null);
-        ComponentRegistry.getInstance().registerComponent(AssertionsTree.NAME, tree);
+        TopComponents.getInstance().registerComponent(AssertionsTree.NAME, tree);
         return tree;
     }
 
@@ -870,12 +870,12 @@ public class MainWindow extends JFrame {
      * @return JTree
      */
     private JTree getIdentitiesTree() {
-        JTree tree = (JTree)ComponentRegistry.getInstance().getComponent(IdentityProvidersTree.NAME);
+        JTree tree = (JTree)TopComponents.getInstance().getComponent(IdentityProvidersTree.NAME);
         if (tree != null) return tree;
         tree = new IdentityProvidersTree();
         tree.setShowsRootHandles(true);
         tree.setBorder(null);
-        ComponentRegistry.getInstance().registerComponent(IdentityProvidersTree.NAME, tree);
+        TopComponents.getInstance().registerComponent(IdentityProvidersTree.NAME, tree);
         return tree;
     }
 
@@ -885,13 +885,13 @@ public class MainWindow extends JFrame {
      * @return JTree
      */
     private JTree getServicesTree() {
-        JTree tree = (JTree)ComponentRegistry.getInstance().getComponent(ServicesTree.NAME);
+        JTree tree = (JTree)TopComponents.getInstance().getComponent(ServicesTree.NAME);
         if (tree != null)
             return tree;
 
         tree = new ServicesTree();
         tree.setShowsRootHandles(true);
-        ComponentRegistry.getInstance().registerComponent(ServicesTree.NAME, tree);
+        TopComponents.getInstance().registerComponent(ServicesTree.NAME, tree);
         return tree;
     }
 
@@ -1262,10 +1262,10 @@ public class MainWindow extends JFrame {
             getStatusMsgRight().setBorder(border);
             rightPanel.add(getStatusMsgRight(), BorderLayout.WEST);
             progressBar =
-              (ProgressBar)ComponentRegistry.getInstance().getComponent(ProgressBar.NAME);
+              (ProgressBar)TopComponents.getInstance().getComponent(ProgressBar.NAME);
             if (progressBar == null) {
                 progressBar = new ProgressBar(0, 100, 20);
-                ComponentRegistry.getInstance().registerComponent(ProgressBar.NAME, progressBar);
+                TopComponents.getInstance().registerComponent(ProgressBar.NAME, progressBar);
             }
 
             // a bit of a hack here , set the size to the size of "disconnected" label

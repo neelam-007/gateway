@@ -5,7 +5,7 @@ import com.l7tech.console.action.*;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.PolicyTemplateNode;
 import com.l7tech.console.tree.ServiceNode;
-import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Cookie;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
@@ -188,7 +188,7 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
      * node.
      */
     public void swap(AssertionTreeNode target) {
-        final JTree tree = ComponentRegistry.getInstance().getPolicyTree();
+        final JTree tree = TopComponents.getInstance().getPolicyTree();
         final PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
         final DefaultMutableTreeNode parent = (DefaultMutableTreeNode)this.getParent();
 

@@ -6,7 +6,7 @@ import com.l7tech.console.panels.XmlSecurityPropertiesDialog;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.XmlSecurityTreeNode;
-import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
 
 import javax.swing.*;
@@ -67,7 +67,7 @@ public class XmlSecurityPropertiesAction extends NodeAction {
         public void actionPerformed(ActionEvent e) {
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
-                    JTree tree = ComponentRegistry.getInstance().getPolicyTree();
+                    JTree tree = TopComponents.getInstance().getPolicyTree();
                     if (tree != null) {
                         PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
                         model.assertionTreeNodeChanged((AssertionTreeNode)node);

@@ -6,7 +6,7 @@ import com.l7tech.console.event.WeakEventListenerList;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.ProviderNode;
 import com.l7tech.console.tree.identity.IdentityProvidersTree;
-import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 
@@ -92,7 +92,7 @@ public class DeleteEntityAction extends BaseAction {
         try {
             deleted = Actions.deleteEntity(node, provider);
         } catch (ObjectNotFoundException e) {
-            JOptionPane.showMessageDialog(ComponentRegistry.getInstance().getMainWindow(),
+            JOptionPane.showMessageDialog(TopComponents.getInstance().getMainWindow(),
               "The '" + node.getEntityHeader().getName() + "' no longer exists",
               "Warning", JOptionPane.WARNING_MESSAGE);
             deleted = true;
@@ -100,7 +100,7 @@ public class DeleteEntityAction extends BaseAction {
         if (deleted) {
             JTree tree = null;
             if (node instanceof ProviderNode) {
-                tree = (JTree)ComponentRegistry.getInstance().getComponent(IdentityProvidersTree.NAME);
+                tree = (JTree)TopComponents.getInstance().getComponent(IdentityProvidersTree.NAME);
                 DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                 model.removeNodeFromParent(node);
             }

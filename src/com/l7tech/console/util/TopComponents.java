@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Central UI component manager/registry in the Policy editor.
+ * The class is Central UI component registry in the SSM.
  * Provides component unregister/register and access to the top
  * level components such as workspace, top level trees etc.
  *
@@ -19,16 +19,15 @@ import java.util.Map;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class ComponentRegistry {
-    protected static ComponentRegistry instance = new ComponentRegistry();
+public class TopComponents {
+    protected static TopComponents instance = new TopComponents();
 
     /**
      * protected constructor, this class cannot be instantiated
      */
-    protected ComponentRegistry() {
-    }
+    protected TopComponents() {}
 
-    public static ComponentRegistry getInstance() {
+    public static TopComponents getInstance() {
         return instance;
     }
 

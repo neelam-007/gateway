@@ -3,7 +3,7 @@ package com.l7tech.console.tree.policy;
 import com.l7tech.console.panels.IdentityPolicyPanel;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.ServiceNode;
-import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Cookie;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
@@ -72,7 +72,7 @@ public class IdentityPolicyView extends JDialog {
             return idPanel;
         }
         JTree tree =
-          (JTree)ComponentRegistry.
+          (JTree)TopComponents.
           getInstance().getComponent(PolicyTree.NAME);
         if (tree != null) {
             DefaultTreeModel model = (DefaultTreeModel)tree.getModel();

@@ -5,7 +5,7 @@ import com.l7tech.common.gui.widgets.ContextMenuTextField;
 import com.l7tech.console.event.ConnectionEvent;
 import com.l7tech.console.event.ConnectionListener;
 import com.l7tech.console.tree.ServiceNode;
-import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.PublishedService;
 import org.syntax.jedit.JEditTextArea;
@@ -88,7 +88,7 @@ public class ViewServiceWsdlAction extends BaseAction implements ConnectionListe
 
         private WsdlViewDialog(PublishedService ps) throws IOException {
             super(ps.getName());
-            setIconImage(ComponentRegistry.getInstance().getMainWindow().getIconImage());
+            setIconImage(TopComponents.getInstance().getMainWindow().getIconImage());
             wsdlTextArea = new JEditTextArea();
             wsdlTextArea.setDocument(new SyntaxDocument());
             wsdlTextArea.setEditable(false);

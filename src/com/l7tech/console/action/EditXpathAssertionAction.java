@@ -11,7 +11,7 @@ import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.RequestXpathPolicyTreeNode;
-import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Cookie;
 import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
@@ -125,7 +125,7 @@ public class EditXpathAssertionAction extends BaseAction {
 
     public void assertionChanged() {
         JTree tree =
-          ComponentRegistry.getInstance().getPolicyTree();
+          TopComponents.getInstance().getPolicyTree();
         if (tree != null) {
             PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
             model.assertionTreeNodeChanged(_node);
