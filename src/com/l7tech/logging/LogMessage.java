@@ -3,14 +3,14 @@ package com.l7tech.logging;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 
-/*
- * This class encapsulates the log message.
+/**
+ * This class encapsulates an SSGLogRecord and contains further information for displaying it in a UI in a
+ * friendly way.
  *
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
  * $Id$
  */
-
 public class LogMessage {
     private final SSGLogRecord log;
     private final String time;
@@ -33,8 +33,8 @@ public class LogMessage {
         // Strip redundant info from detail message (Bug #1281)
         String stripex = "^.*?\\s+\\d\\d\\d\\d\\d?\\s+\\d\\d?\\:\\d\\d?\\:\\d\\d?\\s+[AP]M\\s+";
         String severity = log.getLevel().toString() + ":\\s+";
-        stripex += msgClass + "\\s+";
-        stripex += msgMethod + "\\s+" + severity;
+        stripex += msgClass.replace('$', '.') + "\\s+";
+        stripex += msgMethod.replace('$', '.') + "\\s+" + severity;
         msgDetails = log.getMessage().replaceFirst(stripex, "");
     }
 
