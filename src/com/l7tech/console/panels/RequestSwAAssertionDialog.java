@@ -52,7 +52,7 @@ public class RequestSwAAssertionDialog extends JDialog {
     private JScrollPane multipartScrollPane;
     private ServiceNode serviceNode;
     private EventListenerList listenerList = new EventListenerList();
-    private com.l7tech.common.wsdl.BindingInfo bindingInfo;
+    private BindingInfo bindingInfo = new BindingInfo();
 
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.RequestSwAPropertiesDialog", Locale.getDefault());
     private static Logger logger = Logger.getLogger(RequestSwAAssertionDialog.class.getName());
@@ -77,6 +77,7 @@ public class RequestSwAAssertionDialog extends JDialog {
         okButton.addActionListener(new ActionListener() {
 
             public void actionPerformed(ActionEvent e) {
+                fireEventAssertionChanged(assertion);
                 dispose();
             }
         });
@@ -102,7 +103,7 @@ public class RequestSwAAssertionDialog extends JDialog {
         // get the MIMEParts Info from WSDL
         loadMIMEPartsInfoFromWSDL();
 
-        if (assertion.getBindingInfo().getBindingName() == null) {
+        if (assertion.getBindingInfo().getBindingName().equals("")) {
             // this is the first time
             populateDataFromWSDL();
         } else {
@@ -116,7 +117,7 @@ public class RequestSwAAssertionDialog extends JDialog {
     }
 
     private void populateDataFromWSDL() {
-
+        assertion.setBindingInfo(bindingInfo);
     }
 
     private void loadMIMEPartsInfoFromWSDL() {

@@ -17,7 +17,7 @@ public class BindingInfo implements Serializable {
     public BindingInfo() {
     }
 
-    public BindingInfo(String bindingName, HashMap bindingOperations) {
+    public BindingInfo(String bindingName, Map bindingOperations) {
         this.bindingName = bindingName;
         this.bindingOperations = bindingOperations;
     }

@@ -1,5 +1,6 @@
 package com.l7tech.common.wsdl;
 
+import java.util.Map;
 import java.util.HashMap;
 import java.io.Serializable;
 
@@ -10,9 +11,9 @@ import java.io.Serializable;
  */
 public class BindingOperationInfo implements Serializable {
     protected String name;
-    protected HashMap multipart;    // list of MimePartInfo
+    protected Map multipart = new HashMap();    // list of MimePartInfo
 
-    public BindingOperationInfo(String name, HashMap multipart) {
+    public BindingOperationInfo(String name, Map multipart) {
         this.name = name;
         this.multipart = multipart;
     }
@@ -25,11 +26,11 @@ public class BindingOperationInfo implements Serializable {
         this.name = name;
     }
 
-    public HashMap getMultipart() {
+    public Map getMultipart() {
         return multipart;
     }
 
-    public void setMultipart(HashMap multipart) {
+    public void setMultipart(Map multipart) {
         this.multipart = multipart;
     }
 
