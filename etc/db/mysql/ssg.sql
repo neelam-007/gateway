@@ -161,7 +161,7 @@ CREATE TABLE published_service (
 -- Table structure for table 'client_cert'
 --
 
-DROP TABLE client_cert;
+DROP TABLE IF EXIST client_cert;
 CREATE TABLE client_cert (
   objectid bigint NOT NULL default '0',
   provider bigint NOT NULL default '0',
