@@ -342,6 +342,7 @@
 
             <fileset dir="${src.root}/etc">
                 <include name="keystore.properties"/>
+                <include name="ssglog.properties"/>
             </fileset>
 
             <fileset dir="${src.root}/src">
@@ -370,6 +371,10 @@
         <!-- make sure that the tomcat path is properly referenced in the keystore properties -->
         <propertyfile file="${build.classes}/keystore.properties">
             <entry key="keystoredir" value="${tomcat.home}/kstores"/>
+        </propertyfile>
+
+        <propertyfile file="${build.classes}/ssglog.properties">
+            <entry key="com.l7tech.server.log.FileHandler.path" value="${tomcat.home}/logs"/>
         </propertyfile>
 
         <!-- html and other static web files -->
@@ -506,7 +511,7 @@
         <property name="install.rel.dist" value="dist"/>
         <property name="install.rel.doc" value="doc"/>
         <property name="install.rel.etc" value="etc"/>
-	<property name="install.rel.bin" value="bin"/>
+        <property name="install.rel.bin" value="bin"/>
         <property name="install.rel.logs" value="logs"/>
         <property name="install.rel.conf" value="${install.rel.etc}/conf"/>
         <property name="install.rel.keys" value="${install.rel.etc}/keys"/>
@@ -521,7 +526,7 @@
 
         <!-- Absolute source paths -->
         <property name="install.src.base" value="${build.dir}/install/ssg"/>
-	<property name="install.src.bin" value="${install.src.base}/${install.rel.bin}"/>
+        <property name="install.src.bin" value="${install.src.base}/${install.rel.bin}"/>
         <property name="install.src.dist" value="${install.src.base}/${install.rel.dist}"/>
         <property name="install.src.doc" value="${install.src.base}/${install.rel.doc}"/>
         <property name="install.src.jdk" value="${install.src.base}/${install.rel.jdk}"/>
@@ -538,15 +543,16 @@
         <property name="install.src.conf" value="${install.src.base}/${install.rel.conf}"/>
         <property name="install.src.passwords.txt" value="${install.src.base}/passwords.txt"/>
         <property name="install.src.keystore.properties" value="${install.src.conf}/keystore.properties"/>
-	<property name="install.src.ssglog.properties" value="${install.src.conf}/ssglog.properties"/>
+        <property name="install.src.ssglog.properties" value="${install.src.conf}/ssglog.properties"/>
         <property name="install.src.server.xml" value="${install.src.tomcat}/conf/server.xml"/>
+	<property name="install.src.logs" value="${install.src.base}/${install.rel.logs}"/>
 
         <!-- Absolute target paths -->
         <property name="install.target.base" value="/ssg"/>
         <property name="install.target.keys" value="${install.target.base}/${install.rel.keys}"/>
         <property name="install.target.tomcat" value="${install.target.base}/${install.rel.tomcat}"/>
         <property name="install.target.ssl.keystore" value="${install.target.keys}/${install.rel.ssl.keystore}"/>
-	<property name="install.target.logs" value="${install.target.base}/${install.rel.logs}"/>
+        <property name="install.target.logs" value="${install.target.base}/${install.rel.logs}"/>
 
         <property name="install.alias.ca.keystore" value="ssgroot"/>
         <property name="install.alias.ssl.keystore" value="tomcat"/>
@@ -558,7 +564,7 @@
         <mkdir dir="${install.src.doc}"/>
         <mkdir dir="${install.src.etc}"/>
         <mkdir dir="${install.src.sql}"/>
-	<mkdir dir="${install.src.bin}"/>
+        <mkdir dir="${install.src.bin}"/>
         <mkdir dir="${install.src.keys}"/>
         <mkdir dir="${install.src.conf}"/>
         <mkdir dir="${install.src.logs}"/>
@@ -603,19 +609,19 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
             <substitution expression="sslkspasswd=${install.pass.ssl.keystore}"/>
         </replaceregexp>
 
- 	<copy file="${src.root}/etc/ssglog.properties" tofile="${install.src.ssglog.properties}"/>
+        <copy file="${src.root}/etc/ssglog.properties" tofile="${install.src.ssglog.properties}"/>
         <echo>Patching ${install.src.ssglog.properties}...</echo>
         <replaceregexp file="${install.src.ssglog.properties}">
 	    <regexp pattern="com.l7tech.server.log.FileHandler.path=.*"/>
             <substitution expression="com.l7tech.server.log.FileHandler.path=${install.target.logs}"/>
         </replaceregexp>
 
-	<!-- Extract Tomcat & JDK tarballs -->
+	    <!-- Extract Tomcat & JDK tarballs -->
         <untar src="${install.tomcat.tar.gz}" dest="${install.src.base}" compression="gzip"/>
         <untar src="${install.jdk.tar.gz}" dest="${install.src.base}" compression="gzip"/>
 
         <!-- Copy WAR file into position -->
-	<copy file="${build.dir}/${war}" tofile="${install.src.war}"/>
+        <copy file="${build.dir}/${war}" tofile="${install.src.war}"/>
         <!-- Copy server.xml & catalina.policy -->
         <copy todir="${install.src.tomcat}/conf">
             <fileset dir="${src.root}/etc" includes="server.xml, catalina.policy"/>
@@ -685,7 +691,7 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
             <arg line="${install.src.tomcat}/webapps/ROOT.war"/>
         </exec>
 
- 	<!-- Hack server.xml -->
+     	<!-- Hack server.xml -->
         <echo>Patching ${install.src.server.xml}...</echo>
 
         <replaceregexp file="${install.src.server.xml}">
@@ -701,10 +707,10 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         <!-- Copy misc. stuff -->
         <copy todir="${install.src.sql}" file="${src.root}/etc/db/${database.type}/ssg.sql"/>
         <copy todir="${install.src.bin}">
-          <fileset dir="${src.root}/etc">
- 	    <include name="*.sh"/>
-	    <include name="*.pl"/>
- 	  </fileset>
+            <fileset dir="${src.root}/etc">
+                <include name="*.sh"/>
+                <include name="*.pl"/>
+            </fileset>
         </copy>
 
     </target>
