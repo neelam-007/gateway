@@ -105,13 +105,23 @@ public class WssDecoratorTest extends TestCase {
     private void runTest(TestDocument d) throws Exception {
         WssDecorator decorator = new WssDecoratorImpl();
         log.info("Before decoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(d.c.message));
-        decorator.decorateMessage(d.c.message,
-                                  d.recipientCert,
-                                  d.senderCert,
-                                  d.senderKey,
-                                  d.signTimestamp,
-                                  d.elementsToEncrypt,
-                                  d.elementsToSign, null);
+        WssDecorator.DecorationRequirements reqs = new WssDecorator.DecorationRequirements();
+        reqs.setRecipientCertificate(d.recipientCert);
+        reqs.setSenderCertificate(d.senderCert);
+        reqs.setSenderPrivateKey(d.senderKey);
+        reqs.setSignTimestamp(d.signTimestamp);
+        reqs.setUsernameTokenCredentials(null);
+        if (d.elementsToEncrypt != null)
+            for (int i = 0; i < d.elementsToEncrypt.length; i++) {
+                reqs.getElementsToEncrypt().add(d.elementsToEncrypt[i]);
+            }
+        if (d.elementsToSign != null)
+            for (int i = 0; i < d.elementsToSign.length; i++) {
+                reqs.getElementsToSign().add(d.elementsToSign[i]);
+            }
+
+        decorator.decorateMessage(d.c.message,reqs);
+
         log.info("Decorated message (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(d.c.message));
     }
 
@@ -123,14 +133,10 @@ public class WssDecoratorTest extends TestCase {
         WssDecorator decorator = new WssDecoratorImpl();
         Document doc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
         log.info("Before decoration:" + XmlUtil.nodeToFormattedString(doc));
-        decorator.decorateMessage(doc,
-                                  null,
-                                  null,
-                                  null,
-                                  false,
-                                  new Element[0],
-                                  new Element[0],
-                                  new LoginCredentials("franco", "blahblah".getBytes()));
+        WssDecorator.DecorationRequirements reqs = new WssDecorator.DecorationRequirements();
+        reqs.setUsernameTokenCredentials(new LoginCredentials("franco", "blahblah".getBytes()));
+
+        decorator.decorateMessage(doc, reqs);
         log.info("Decorated message:" + XmlUtil.nodeToFormattedString(doc));
     }
 

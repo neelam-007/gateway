@@ -142,15 +142,22 @@ public class WssRoundTripTest extends TestCase {
         }
 
         log.info("Message before decoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(message));
+        WssDecorator.DecorationRequirements reqs = new WssDecorator.DecorationRequirements();
+        reqs.setRecipientCertificate(td.recipientCert);
+        reqs.setSenderCertificate(td.senderCert);
+        reqs.setSenderPrivateKey(td.senderKey);
+        reqs.setSignTimestamp(td.signTimestamp);
+        reqs.setUsernameTokenCredentials(null);
+        if (td.elementsToEncrypt != null)
+            for (int i = 0; i < td.elementsToEncrypt.length; i++) {
+                reqs.getElementsToEncrypt().add(td.elementsToEncrypt[i]);
+            }
+        if (td.elementsToSign != null)
+            for (int i = 0; i < td.elementsToSign.length; i++) {
+                reqs.getElementsToSign().add(td.elementsToSign[i]);
+            }
 
-        martha.decorateMessage(message,
-                               td.recipientCert,
-                               td.senderCert,
-                               td.senderKey,
-                               td.signTimestamp,
-                               td.elementsToEncrypt,
-                               td.elementsToSign,
-                               null);
+        martha.decorateMessage(message, reqs);
 
         log.info("Decorated message (*note: pretty-printed):\n\n" + XmlUtil.nodeToFormattedString(message));
 

@@ -75,22 +75,8 @@ public class WssDecoratorImpl implements WssDecorator {
     /**
      * Decorate a soap message with WSS style security.
      * @param message the soap message to decorate
-     * @param recipientCertificate todo
-     * @param senderCertificate todo
-     * @param senderPrivateKey todo
-     * @param signTimestamp todo
-     * @param elementsToEncrypt todo
-     * @param elementsToSign todo
-     * @param usernameTokenCredentials optional provide cleartext credentials here to be included in a usernametoken
      */
-    public void decorateMessage(Document message,
-                                X509Certificate recipientCertificate,
-                                X509Certificate senderCertificate,
-                                PrivateKey senderPrivateKey,
-                                boolean signTimestamp,
-                                Element[] elementsToEncrypt,
-                                Element[] elementsToSign,
-                                LoginCredentials usernameTokenCredentials)
+    public void decorateMessage(Document message, DecorationRequirements decorationRequirements)
             throws InvalidDocumentFormatException, GeneralSecurityException, DecoratorException
     {
         Context c = new Context();
@@ -98,33 +84,40 @@ public class WssDecoratorImpl implements WssDecorator {
         Element securityHeader = createSecurityHeader(message);
 
         Element timestamp = addTimestamp(securityHeader);
-        if (signTimestamp) {
-            List signList = new ArrayList(Arrays.asList(elementsToSign));
+        if (decorationRequirements.isSignTimestamp()) {
+            List signList = decorationRequirements.getElementsToSign();
             signList.add(0, timestamp);
-            elementsToSign = (Element[])signList.toArray(new Element[0]);
         }
 
-        if (usernameTokenCredentials != null && usernameTokenCredentials.getFormat() == CredentialFormat.CLEARTEXT) {
-            Element usernameToken = createUsernameToken(securityHeader, usernameTokenCredentials);
+        if (decorationRequirements.getUsernameTokenCredentials() != null && decorationRequirements.getUsernameTokenCredentials().getFormat() == CredentialFormat.CLEARTEXT) {
+            Element usernameToken = createUsernameToken(securityHeader, decorationRequirements.getUsernameTokenCredentials());
         }
 
         Element bst = null;
-        if (senderCertificate != null)
-            bst = addX509BinarySecurityToken(securityHeader, senderCertificate);
+        if (decorationRequirements.getSenderCertificate() != null)
+            bst = addX509BinarySecurityToken(securityHeader, decorationRequirements.getSenderCertificate());
 
         Element signature = null;
-        if (elementsToSign.length > 0) {
-            if (senderPrivateKey == null)
+        if (decorationRequirements.getElementsToSign().size() > 0) {
+            if (decorationRequirements.getSenderPrivateKey() == null)
                 throw new IllegalArgumentException("Signing is requested, but senderPrivateKey is null");
             if (bst == null)
                 throw new IllegalArgumentException("Signing is requested, but no senderCertificate was supplied");            
-            signature = addSignature(c, senderPrivateKey, elementsToSign, securityHeader, bst);
+            signature = addSignature(c,
+                                     decorationRequirements.getSenderPrivateKey(),
+                                     (Element[])(decorationRequirements.getElementsToSign().toArray(new Element[0])),
+                                     securityHeader,
+                                     bst);
         }
         
-        if (elementsToEncrypt.length > 0) {
-            if (recipientCertificate == null)
+        if (decorationRequirements.getElementsToEncrypt().size() > 0) {
+            if (decorationRequirements.getRecipientCertificate() == null)
                 throw new IllegalArgumentException("Encryption is requested, but recipientCertificate is null");
-            addEncryptedKey(c, securityHeader, recipientCertificate, elementsToEncrypt, signature);
+            addEncryptedKey(c,
+                            securityHeader,
+                            decorationRequirements.getRecipientCertificate(),
+                            (Element[])(decorationRequirements.getElementsToEncrypt().toArray(new Element[0])),
+                            signature);
         }
 
     }
