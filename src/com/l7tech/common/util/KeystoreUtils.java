@@ -131,6 +131,31 @@ public class KeystoreUtils {
      * Load the <code>KeyStore</code> from a given keystore file that is protected with a specified
      * password.
      *
+     * @param path     the keystore file path
+     * @param password the keystore password
+     * @param keystoreType the keystore type
+     * @return
+     * @throws KeyStoreException        if the requested store (default type) is not available
+     * @throws IOException              if there is an I/O error or file does not exist
+     * @throws NoSuchAlgorithmException if the keystore integrity check algorithm is not available
+     * @throws CertificateException     if there is an certificate while loading the certificate(s)
+     */
+    public static KeyStore getKeyStore(String path, char[] password, String keystoreType)
+      throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
+        KeyStore keyStore = KeyStore.getInstance(keystoreType);
+        FileInputStream fis = new FileInputStream(path);
+        try {
+            keyStore.load(fis, password);
+        } finally {
+            fis.close();
+        }
+        return keyStore;
+    }
+
+    /**
+     * Load the <code>KeyStore</code> from a given keystore file that is protected with a specified
+     * password.
+     *
      * <b>Note:</b> Assumes that the keystore is of the default type!  Do not use in Agent or Gateway!
      *
      * @param path     the keystore file path
@@ -143,15 +168,9 @@ public class KeystoreUtils {
      */
     public static KeyStore getKeyStore(String path, char[] password)
       throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
-        KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
-        FileInputStream fis = new FileInputStream(path);
-        try {
-            keyStore.load(fis, password);
-        } finally {
-            fis.close();
-        }
-        return keyStore;
+        return getKeyStore(path, password, KeyStore.getDefaultType());
     }
+
 
 
     /**
