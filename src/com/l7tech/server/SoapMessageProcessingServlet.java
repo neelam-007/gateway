@@ -56,6 +56,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 } else if ( stat != AssertionStatus.NONE ) {
                     sendFault( sreq, hresponse, stat.getSoapFaultCode(), stat.getMessage() );
                 } else {
+                    hresponse.setContentType( "text/xml; charset=utf-8" );
                     protRespStream = new BufferedInputStream( sresp.getProtectedResponseStream() );
                     respStream = hresponse.getOutputStream();
 
@@ -78,6 +79,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         } finally {
             if ( protRespStream != null ) protRespStream.close();
             if ( respStream != null ) respStream.close();
+            if ( sresp != null ) sresp.close();
         }
     }
 
