@@ -583,15 +583,18 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                 if (iProviderConfig.getOid() != -1) {
 
                     getProviderNameTextField().setText(iProviderConfig.getName());
-
                     getLdapBindPassTextField().setText(iProviderConfig.getBindPasswd());
                     getLdapBindDNTextField().setText(iProviderConfig.getBindDN());
                     getLdapSearchBaseTextField().setText(iProviderConfig.getSearchBase());
+
+                    // populate host list based on what is in the iProviderConfig
+                    ((DefaultComboBoxModel)getLdapHostList().getModel()).removeAllElements();
                     String[] listdata = iProviderConfig.getLdapUrl();
                     for (int i = 0; i < listdata.length; i++) {
                         String s = listdata[i];
                         ((DefaultComboBoxModel)getLdapHostList().getModel()).addElement(s);
                     }
+
                 }
                 for (int i = providerTypesCombo.getModel().getSize() - 1; i >= 0; i--) {
                     Object toto = providerTypesCombo.getModel().getElementAt(i);
