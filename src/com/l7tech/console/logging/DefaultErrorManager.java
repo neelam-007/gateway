@@ -27,7 +27,7 @@ public class DefaultErrorManager extends ErrorManager {
      */
     public void notify(Level level, Throwable t, String message) {
         log.log(level, message, t);
-        ExceptionDialog d = new ExceptionDialog(getMainWindow(), "Policy Editor - message", message, t, level);
+        ExceptionDialog d = new ExceptionDialog(getMainWindow(), "Securespan Manager - message", message, t, level);
         d.pack();
         Utilities.centerOnScreen(d);
         d.show();
