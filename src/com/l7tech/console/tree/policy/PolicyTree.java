@@ -416,9 +416,12 @@ public class PolicyTree extends JTree implements DragSourceListener,
             raGhost = raGhost.createUnion(raCueLine);
 
             // Do this if you want to prohibit dropping onto the drag source
-            if (path.equals(pathSource))
+            if (path.equals(pathSource)) {
                 e.rejectDrag();
-            else
+            } else if (pathSource.isDescendant(path) &&
+              ((TreeNode)pathSource.getLastPathComponent()).getAllowsChildren()) {
+                e.rejectDrag();
+            } else
                 e.acceptDrag(e.getDropAction());
         }
 
@@ -466,15 +469,16 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 AbstractTreeNode node = (AbstractTreeNode)transferData;
 
                 TreePath path = getSelectionPath();
-                if (path != null) {
-                    AssertionTreeNode target = (AssertionTreeNode)path.getLastPathComponent();
-                    if (target.accept(node)) {
-                        e.acceptDrop(e.getDropAction());
-                        target.receive(node);
-                        e.dropComplete(true);
-                    } else {
-                        e.rejectDrop();
-                    }
+                if (path == null) {
+                    path = new TreePath(getModel().getRoot());
+                }
+                AssertionTreeNode target = (AssertionTreeNode)path.getLastPathComponent();
+                if (target.accept(node)) {
+                    e.acceptDrop(e.getDropAction());
+                    target.receive(node);
+                    e.dropComplete(true);
+                } else {
+                    e.rejectDrop();
                 }
                 return;
             } catch (UnsupportedFlavorException e1) {
@@ -516,9 +520,11 @@ public class PolicyTree extends JTree implements DragSourceListener,
                         // todo: look into this!
                         DefaultMutableTreeNode targetTreeNode =
                           ((DefaultMutableTreeNode)pathTarget.getLastPathComponent());
+                        DefaultMutableTreeNode sourceTreeNode =
+                          ((DefaultMutableTreeNode)pathSource.getLastPathComponent());
+
                         if (targetTreeNode.getAllowsChildren()) {
-                            MutableTreeNode node = (MutableTreeNode)pathTarget.getLastPathComponent();
-                            model.insertNodeInto(assertionTreeNodeCopy, node, 0);
+                            model.insertNodeInto(assertionTreeNodeCopy, targetTreeNode, 0);
                         } else {
                             final DefaultMutableTreeNode parent = (DefaultMutableTreeNode)targetTreeNode.getParent();
 
