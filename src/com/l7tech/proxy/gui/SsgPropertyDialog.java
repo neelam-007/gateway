@@ -1,10 +1,12 @@
 package com.l7tech.proxy.gui;
 
 import com.l7tech.common.gui.CertificatePanel;
+import com.l7tech.common.gui.WrappingLabel;
 import com.l7tech.console.panels.Utilities;
 import com.l7tech.console.tree.EntityTreeCellRenderer;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.proxy.ClientProxy;
+import com.l7tech.proxy.gui.util.IconManager;
 import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
@@ -14,6 +16,7 @@ import com.l7tech.proxy.datamodel.SsgListener;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
+import javax.swing.border.BevelBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.AbstractTableModel;
@@ -52,8 +55,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
     //   View for Network pane
     private JComponent networkPane;
-    private JLabel fieldLocalEndpoint;
-    private JCheckBox cbDefault;
+    private WrappingLabel fieldLocalEndpoint;
 
     //   View for Policy pane
     private JComponent policiesPane;
@@ -123,11 +125,11 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             policiesPane = new JScrollPane(pane);
             policiesPane.setBorder(BorderFactory.createEmptyBorder());
 
-            pane.add(new JLabel("Policies being cached by this client"),
+            pane.add(new JLabel("<HTML><h4>Policies being cached by this client</h4></HTML>"),
                      new GridBagConstraints(0, y++, 1, 1, 0.0, 0.0,
-                                            GridBagConstraints.CENTER,
+                                            GridBagConstraints.NORTHWEST,
                                             GridBagConstraints.BOTH,
-                                            new Insets(6, 6, 6, 6), 3, 3));
+                                            new Insets(14, 6, 6, 6), 3, 3));
 
             pane.add(new JLabel("Web services with cached policies:"),
                      new GridBagConstraints(0, y++, 2, 1, 0.0, 0.0,
@@ -146,7 +148,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                      new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
                                             GridBagConstraints.EAST,
                                             GridBagConstraints.NONE,
-                                            new Insets(6, 6, 0, 6), 0, 0));
+                                            new Insets(14, 6, 0, 6), 0, 0));
 
             displayPolicies = new ArrayList();
             displayPolicyTableModel = new DisplayPolicyTableModel();
@@ -210,7 +212,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             // Authentication panel
 
             JPanel authp = new JPanel(new GridBagLayout());
-            authp.setBorder(BorderFactory.createTitledBorder("Username and password"));
+            authp.setBorder(BorderFactory.createTitledBorder(" Your username and password "));
             pane.add(authp,
                      new GridBagConstraints(0, gridY++, 2, 1, 1000.0, 0.0,
                                             GridBagConstraints.WEST,
@@ -233,31 +235,24 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                              GridBagConstraints.HORIZONTAL,
                                              new Insets(5, 5, 0, 5), 0, 0));
 
-            JPanel passwordStuff = new JPanel();
-            passwordStuff.setLayout(new GridBagLayout());
-
             fieldPassword = new JPasswordField();
+            fieldPassword.setPreferredSize(new Dimension(200, 20));
             authp.add(new JLabel("Password:"),
                       new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
                                              GridBagConstraints.EAST,
                                              GridBagConstraints.NONE,
-                                             new Insets(5, 5, 0, 0), 0, 0));
-            passwordStuff.add(fieldPassword,
-                              new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
+                                             new Insets(5, 5, 5, 0), 0, 0));
+            authp.add(fieldPassword,
+                              new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
                                                      GridBagConstraints.WEST,
-                                                     GridBagConstraints.BOTH,
-                                                     new Insets(0, 0, 0, 0), 0, 0));
-
-            authp.add(passwordStuff, new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
-                                                              GridBagConstraints.WEST,
-                                                              GridBagConstraints.HORIZONTAL,
-                                                              new Insets(5, 5, 0, 5), 0, 0));
+                                                     GridBagConstraints.HORIZONTAL,
+                                                     new Insets(5, 5, 5, 5), 0, 0));
             gridY = oy;
 
             // Certificate buttons
 
             JPanel cpan = new JPanel(new GridBagLayout());
-            cpan.setBorder(BorderFactory.createTitledBorder("Certificates"));
+            cpan.setBorder(BorderFactory.createTitledBorder(" Certificates "));
             pane.add(cpan,
                      new GridBagConstraints(0, gridY++, 2, 1, 1000.0, 0.0,
                                             GridBagConstraints.WEST,
@@ -300,7 +295,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             // Endpoint panel
 
             JPanel epp = new JPanel(new GridBagLayout());
-            epp.setBorder(BorderFactory.createTitledBorder("Local endpoint binding"));
+            epp.setBorder(BorderFactory.createTitledBorder(" Our proxy URL "));
             pane.add(epp, new GridBagConstraints(0, gridY++, 2, 1, 1000.0, 0.0,
                                                               GridBagConstraints.WEST,
                                                               GridBagConstraints.HORIZONTAL,
@@ -308,23 +303,25 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
             int oy = gridY;
             gridY = 0;
-            fieldLocalEndpoint = new JLabel("");
-            fieldLocalEndpoint.setPreferredSize(new Dimension(120, 20));
-            epp.add(new JLabel("Endpoint:"), new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
+
+            WrappingLabel splain01 = new WrappingLabel("The Agent will listen for incoming messages at this local " +
+                                                       "URL, and route any such messages to this Gateway.", 2);
+            epp.add(splain01,
+                    new GridBagConstraints(0, gridY++, 2, 1, 0.0, 0.0,
+                                           GridBagConstraints.WEST,
+                                           GridBagConstraints.HORIZONTAL,
+                                           new Insets(0, 5, 0, 0), 0, 0));
+
+            fieldLocalEndpoint = new WrappingLabel("");
+            epp.add(new JLabel("Proxy URL:"), new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
                                                               GridBagConstraints.EAST,
                                                               GridBagConstraints.NONE,
-                                                              new Insets(5, 5, 0, 0), 0, 0));
+                                                              new Insets(5, 5, 5, 0), 0, 0));
             epp.add(fieldLocalEndpoint, new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
                                                               GridBagConstraints.WEST,
                                                               GridBagConstraints.HORIZONTAL,
-                                                              new Insets(5, 5, 0, 5), 0, 0));
+                                                              new Insets(5, 5, 5, 5), 0, 0));
 
-            cbDefault = new JCheckBox("Route unknown endpoints to this SSG");
-            cbDefault.setPreferredSize(new Dimension(120, 20));
-            epp.add(cbDefault, new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
-                                                              GridBagConstraints.WEST,
-                                                              GridBagConstraints.HORIZONTAL,
-                                                              new Insets(5, 5, 0, 5), 0, 0));
             gridY = oy;
 
             // Have a spacer eat any leftover space
@@ -345,23 +342,30 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             generalPane = new JScrollPane(pane);
             generalPane.setBorder(BorderFactory.createEmptyBorder());
 
-            getFieldServerAddress();
+            JLabel image = new JLabel(IconManager.getSplashImageIcon());
+            image.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
+            pane.add(image,
+                     new GridBagConstraints(0, gridY++, 2, 1, 0.0, 0.0,
+                                            GridBagConstraints.CENTER,
+                                            GridBagConstraints.NONE,
+                                            new Insets(14, 5, 0, 0), 0, 0));
+
             pane.add(new JLabel("Gateway Hostname:"),
                      new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
                                             GridBagConstraints.EAST,
                                             GridBagConstraints.NONE,
-                                            new Insets(10, 5, 0, 0), 0, 0));
-            pane.add(fieldServerAddress,
+                                            new Insets(14, 5, 0, 0), 0, 0));
+            pane.add(getFieldServerAddress(),
                      new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
                                             GridBagConstraints.WEST,
                                             GridBagConstraints.HORIZONTAL,
-                                            new Insets(10, 5, 0, 5), 0, 0));
+                                            new Insets(14, 5, 0, 5), 0, 0));
 
 
 
             // Have a spacer eat any leftover space
             pane.add(new JPanel(),
-                     new GridBagConstraints(0, gridY++, 1, 1, 1.0, 1.0,
+                     new GridBagConstraints(0, gridY++, 2, 1, 1.0, 1.0,
                                             GridBagConstraints.CENTER,
                                             GridBagConstraints.BOTH,
                                             new Insets(0, 0, 0, 0), 0, 0));
@@ -496,7 +500,6 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         fieldUsername.setText(ssg.getUsername());
         boolean hasPassword = ssg.password() != null;
         fieldPassword.setText(new String(hasPassword ? ssg.password() : "".toCharArray()));
-        cbDefault.setSelected(ssg.isDefaultSsg());
         policyFlushRequested = false;
 
         updatePolicyPanel();
@@ -523,7 +526,6 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 ssg.promptForUsernameAndPassword(true);
             ssg.password(pass.length > 0 ? fieldPassword.getPassword() : null);
 
-            ssg.setDefaultSsg(cbDefault.isSelected());
             if (policyFlushRequested)
                 ssg.clearPolicies();
         }
