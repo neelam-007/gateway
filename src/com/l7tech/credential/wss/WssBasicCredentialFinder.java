@@ -7,8 +7,8 @@
 package com.l7tech.credential.wss;
 
 import com.l7tech.credential.PrincipalCredentials;
-import com.l7tech.credential.CredentialFinderException;
 import com.l7tech.credential.CredentialFormat;
+import com.l7tech.credential.CredentialFinderException;
 import com.l7tech.message.Request;
 import com.l7tech.util.SAXParsingCompleteException;
 import com.l7tech.logging.LogManager;

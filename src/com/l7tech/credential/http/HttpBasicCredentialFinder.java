@@ -6,9 +6,9 @@
 
 package com.l7tech.credential.http;
 
-import com.l7tech.credential.CredentialFinderException;
 import com.l7tech.credential.CredentialFormat;
 import com.l7tech.credential.PrincipalCredentials;
+import com.l7tech.credential.CredentialFinderException;
 import com.l7tech.identity.User;
 import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
