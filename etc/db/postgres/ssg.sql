@@ -288,3 +288,68 @@ CREATE TABLE trusted_cert (
   primary key(objectid),
   unique(subject_dn)
 );
+
+DROP TABLE fed_user;
+CREATE TABLE fed_user (
+  objectid bigint NOT NULL,
+  version integer NOT NULL,
+  name varchar(128) NOT NULL,
+
+  provider_oid bigint NOT NULL,
+  subject_dn varchar(255),
+  email varchar(128),
+  login varchar(32),
+
+  first_name varchar(32) default NULL,
+  last_name varchar(32) default NULL,
+  title varchar(64) default NULL,
+
+  PRIMARY KEY (objectid),
+  INDEX i_provider_oid (provider_oid),
+  INDEX i_email (email),
+  INDEX i_login (login),
+  INDEX i_subject_dn (subject_dn),
+  UNIQUE KEY i_name (provider_oid, name)
+);
+
+DROP TABLE IF EXISTS fed_group;
+CREATE TABLE fed_group (
+  objectid bigint NOT NULL,
+  version integer NOT NULL,
+  provider_oid bigint NOT NULL,
+  name varchar(128) NOT NULL,
+  description mediumtext,
+
+  PRIMARY KEY  (objectid),
+  INDEX i_provider_oid (provider_oid),
+  UNIQUE KEY i_name (provider_oid, name)
+);
+
+DROP TABLE IF EXISTS fed_user_group;
+CREATE TABLE fed_user_group (
+  provider_oid bigint NOT NULL,
+  fed_user_oid bigint NOT NULL,
+  fed_group_oid bigint NOT NULL,
+  PRIMARY KEY (provider_oid,fed_user_oid,fed_group_oid)
+);
+
+DROP TABLE IF EXISTS fed_group_virtual;
+CREATE TABLE fed_group_virtual (
+  objectid bigint NOT NULL,
+  version integer NOT NULL,
+  provider_oid bigint NOT NULL,
+  name varchar(128) NOT NULL,
+  description mediumtext,
+
+  x509_subject_dn_pattern varchar(255),
+  saml_email_pattern varchar(128),
+  properties text,
+
+  PRIMARY KEY  (objectid),
+  INDEX i_provider_oid (provider_oid),
+  INDEX i_x509_subject_dn_pattern (x509_subject_dn_pattern),
+  INDEX i_saml_email_pattern (saml_email_pattern),
+  UNIQUE KEY i_name (provider_oid, name)
+);
+
+
