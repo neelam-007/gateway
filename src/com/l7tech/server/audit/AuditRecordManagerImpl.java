@@ -73,7 +73,7 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
             query.add(Expression.le(PROP_TIME, new Long(toTime.getTime())));
 
             Level fromLevel = criteria.fromLevel;
-            if (fromLevel == null) fromLevel = Level.INFO;
+            if (fromLevel == null) fromLevel = Level.FINEST;
             Level toLevel = criteria.toLevel;
             if (toLevel == null) toLevel = Level.SEVERE;
 
