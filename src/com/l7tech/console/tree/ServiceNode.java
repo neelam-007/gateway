@@ -102,7 +102,9 @@ public class ServiceNode extends EntityHeaderNode {
                 }
             }
         } catch (Exception e) {
-            // todo: log here, error manager or something
+            ErrorManager.getDefault().
+              notify(Level.WARNING, e,
+              "Error loading service elements"+getEntityHeader().getOid());
         }
     }
 
