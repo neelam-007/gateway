@@ -1,5 +1,7 @@
 package com.l7tech.console.tree;
 
+import com.l7tech.service.ServiceManager;
+
 import java.util.Collections;
 import java.util.Enumeration;
 
@@ -12,11 +14,14 @@ import java.util.Enumeration;
  * @version 1.1
  */
 public class ServicesFolderNode implements BasicTreeNode {
+    private ServiceManager serviceManager;
+
     /**
      * construct the <CODE>ServicesFolderNode</CODE> instance for
      * a given entry.
      */
-    public ServicesFolderNode() {
+    public ServicesFolderNode(ServiceManager sm) {
+        serviceManager = sm;
 
     }
 
@@ -37,7 +42,8 @@ public class ServicesFolderNode implements BasicTreeNode {
      *                      retrieving child nodes.
      */
     public Enumeration children() throws Exception {
-        return Collections.enumeration(Collections.EMPTY_LIST);
+        Enumeration e = new EntitiesEnumeration(new ServiceEntitiesCollection(serviceManager));
+        return TreeNodeFactory.getTreeNodeEnumeration(e);
     }
 
     /**

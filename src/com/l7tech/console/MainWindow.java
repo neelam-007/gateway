@@ -1109,6 +1109,7 @@ public class MainWindow extends JFrame {
                 } else if (TreeNodeMenu.NEW_SERVICE.equals(e.getActionCommand())) {
                     PublishServiceWizard dialog = new PublishServiceWizard(MainWindow.this, true);
                     dialog.setResizable(false);
+                    dialog.setPanelListener(listenerBroker);
                     dialog.show();
 
                 } else if (TreeNodeMenu.PROPERTIES.equals(e.getActionCommand())) {

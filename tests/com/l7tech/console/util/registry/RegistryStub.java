@@ -55,15 +55,9 @@ public class RegistryStub extends Registry {
         return (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
     }
 
-    StubDataStore dataStore = null;
-    {
-        try {
-          dataStore = new StubDataStore(StubDataStore.DEFAULT_STORE_PATH);
-        } catch(FileNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-    }
-    private IdentityProviderConfigManager cm = new IdentityProviderConfigManagerStub(dataStore);
+    StubDataStore dataStore = StubDataStore.defaultStore();
+
+    private IdentityProviderConfigManager cm = new IdentityProviderConfigManagerStub();
     private UserManager um = new UserManagerStub(dataStore);
     private GroupManager gm = new GroupManagerStub(dataStore);
 

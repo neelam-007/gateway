@@ -8,21 +8,21 @@ import java.util.Enumeration;
 
 /**
  * The class represents a node element in the TreeModel.
- * It represents the user.
+ * It represents the published service.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
- * @version 1.2
+ * @version 1.0
  */
-public class UserNode extends EntityHeaderNode {
+public class ServiceNode extends EntityHeaderNode {
     /**
-     * construct the <CODE>UserNode</CODE> instance for
-     * a given e.
+     * construct the <CODE>ServiceNode</CODE> instance for
+     * a given entity header.
      *
-     * @param e  the EntityHeader instance, must represent user
+     * @param e  the EntityHeader instance, must represent published service
      * @exception IllegalArgumentException
      *                   thrown if unexpected type
      */
-    public UserNode(EntityHeader e)
+    public ServiceNode(EntityHeader e)
       throws IllegalArgumentException {
         super(e);
     }

@@ -6,6 +6,7 @@ import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -31,9 +32,11 @@ import java.util.Iterator;
  */
 public class IdentityProviderPanel extends WizardStepPanel {
     private DefaultComboBoxModel providersComboBoxModel;
+    private PublishedService service;
 
     /** Creates new form IdentityProviderPanel */
-    public IdentityProviderPanel() {
+    public IdentityProviderPanel(PublishedService service) {
+        this.service = service;
         initComponents();
         equalizeButtons();
     }

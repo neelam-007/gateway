@@ -4,6 +4,7 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.IconManager;
 import com.l7tech.console.tree.WsdlTreeNode;
 import com.l7tech.service.Wsdl;
+import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
 import javax.swing.tree.*;
@@ -17,6 +18,7 @@ import java.rmi.RemoteException;
 import java.io.StringReader;
 import java.util.Iterator;
 import java.util.ArrayList;
+import java.net.MalformedURLException;
 
 /**
  *
@@ -25,9 +27,11 @@ import java.util.ArrayList;
 
  */
 public class ServicePanel extends WizardStepPanel {
+    private PublishedService service;
 
     /** Creates new form ServicePanel */
-    public ServicePanel() {
+    public ServicePanel(PublishedService service) {
+        this.service = service;
         initComponents();
     }
 
@@ -73,6 +77,10 @@ public class ServicePanel extends WizardStepPanel {
                             Registry.getDefault().getServiceManager().resolveWsdlTarget(wsdlUrljTextField.getText());
                     Wsdl wsdl = Wsdl.newInstance(null, new StringReader(sw));
                     TreeNode node = WsdlTreeNode.newInstance(wsdl);
+                    service.setName(wsdl.getDefinition().getTargetNamespace());
+                    service.setUrn(wsdl.getDefinition().getTargetNamespace());
+                    service.setWsdlXml(wsdl.toString());
+                    service.setWsdlUrl(wsdlUrljTextField.getText());
                     wsdlJTree.setModel(new DefaultTreeModel(node));
                     wsdlJTree.setCellRenderer(wsdlTreeRenderer);
                 } catch (RemoteException e1) {
@@ -81,11 +89,16 @@ public class ServicePanel extends WizardStepPanel {
                             "Unable to resolve the WSDL at location '" + wsdlUrljTextField.getText() + "'\n",
                             "Error",
                             JOptionPane.ERROR_MESSAGE);
-
                 } catch (WSDLException e1) {
                     e1.printStackTrace();
                     JOptionPane.showMessageDialog(null,
                             "Unable to parse the WSDL at location '" + wsdlUrljTextField.getText() + "'\n",
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE);
+                } catch (MalformedURLException e1) {
+                    e1.printStackTrace();
+                    JOptionPane.showMessageDialog(null,
+                            "Illegal URL string '" + wsdlUrljTextField.getText() + "'\n",
                             "Error",
                             JOptionPane.ERROR_MESSAGE);
                 }

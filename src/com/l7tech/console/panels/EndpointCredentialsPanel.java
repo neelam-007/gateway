@@ -1,5 +1,7 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.service.PublishedService;
+
 import javax.swing.*;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ChangeEvent;
@@ -17,9 +19,10 @@ import java.awt.*;
  * @version 1.0
  */
 public class EndpointCredentialsPanel extends WizardStepPanel {
-    
+    PublishedService service;
     /** Creates new form ServicePanel */
-    public EndpointCredentialsPanel() {
+    public EndpointCredentialsPanel(PublishedService service) {
+        service = service;
         initComponents();
     }
     

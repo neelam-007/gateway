@@ -43,6 +43,8 @@ public class TreeNodeFactory {
                return new GroupNode(entity);
         } else if (EntityType.USER.equals(entity.getType())) {
              return new UserNode(entity);
+        } else if (EntityType.SERVICE.equals(entity.getType())) {
+             return new ServiceNode(entity);
         }
 
         throw new IllegalArgumentException("Unknown entity type "+entity.getType());

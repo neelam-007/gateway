@@ -1,5 +1,11 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.service.PublishedService;
+import com.l7tech.console.util.Registry;
+import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.EmptyBorder;
@@ -17,14 +23,18 @@ import java.awt.event.*;
 
  */
 public class PublishServiceWizard extends JDialog {
+
+    PublishedService service = new PublishedService();
+
     private WizardStepPanel[] panels =
             new WizardStepPanel[]{
-                new ServicePanel(),
-                new EndpointCredentialsPanel(),
-                new IdentityProviderPanel()
+                new ServicePanel(service),
+                new EndpointCredentialsPanel(service),
+                new IdentityProviderPanel(service)
             };
 
     private int currentPanel = 0;
+    private PanelListener panelListener;
 
 
     /** Creates new form PublishServiceWizard */
@@ -32,6 +42,15 @@ public class PublishServiceWizard extends JDialog {
         super(parent, modal);
         initComponents();
         stepjPanel.add(panels[0], BorderLayout.CENTER);
+    }
+
+    /**
+     * set the PanelListener
+     *
+     * @param listener the PanelListener
+     */
+    public void setPanelListener(PanelListener listener) {
+        this.panelListener = listener;
     }
 
     /**
@@ -103,6 +122,28 @@ public class PublishServiceWizard extends JDialog {
         panelButtons.add(buttonNext);
 
         buttonFinish.setText("Finish");
+        buttonFinish.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent evt) {
+                try {
+                    Registry.getDefault().getServiceManager().save(service);
+                    EntityHeader header = new EntityHeader();
+                    header.setType(EntityType.SERVICE);
+                    header.setName(service.getName());
+                    if (panelListener !=null) {
+                        panelListener.onInsert(header);
+                    }
+                } catch (SaveException e) {
+                    e.printStackTrace();
+                    JOptionPane.showMessageDialog(null,
+                            "Unable to save the service '" + service.getName() + "'\n",
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE);
+                }
+
+                setVisible(false);
+                dispose();
+            }
+        });
         panelButtons.add(buttonFinish);
 
         cancelButton.setText("Cancel");
@@ -131,7 +172,7 @@ public class PublishServiceWizard extends JDialog {
         stepsTitlejPanel.setBackground(new java.awt.Color(213, 222, 222));
         stepsTitlejPanel.
                 setBorder(new CompoundBorder(new EmptyBorder(new java.awt.Insets(5, 5, 5, 5)),
-                          new MatteBorder(new Insets(0, 0, 1, 0), new Color(0, 0, 0))));
+                        new MatteBorder(new Insets(0, 0, 1, 0), new Color(0, 0, 0))));
 
         stepsjLabel.setFont(new java.awt.Font("Dialog", 1, 14));
         stepsjLabel.setText("Steps");

@@ -50,7 +50,7 @@ public class RootNode implements BasicTreeNode {
                             new GroupFolderNode(r.getInternalGroupManager()),
                             new ProvidersFolderNode(),
                             new PoliciesFolderNode(),
-                            new ServicesFolderNode()
+                            new ServicesFolderNode(r.getServiceManager())
                         });
         return Collections.enumeration(list);
     }

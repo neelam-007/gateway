@@ -1,15 +1,16 @@
 package com.l7tech.service;
 
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.DeleteException;
+import com.l7tech.objectmodel.*;
 import com.l7tech.message.Request;
 import com.l7tech.service.resolution.ServiceResolutionException;
+import com.l7tech.identity.StubDataStore;
 
 import javax.wsdl.WSDLException;
 import java.rmi.RemoteException;
 import java.util.Collection;
+import java.util.Map;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
 import java.net.URL;
@@ -19,6 +20,11 @@ import java.net.URL;
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a> 
  */
 public class ServiceManagerStub implements ServiceManager {
+    private Map services;
+
+    public ServiceManagerStub() {
+        services = StubDataStore.defaultStore().getPublishedServices();
+    }
     /**
      * Retreive the actual PublishedService object from it's oid.
      *
@@ -27,7 +33,8 @@ public class ServiceManagerStub implements ServiceManager {
      * @throws FindException
      */
     public PublishedService findByPrimaryKey(long oid) throws FindException {
-        return null;
+        return
+          (PublishedService)services.get(new Long(oid));
     }
 
     /**
@@ -58,7 +65,14 @@ public class ServiceManagerStub implements ServiceManager {
      * @throws SaveException
      */
     public long save(PublishedService service) throws SaveException {
-        return 0;
+        long oid = StubDataStore.defaultStore().nextObjectId();
+        service.setOid(oid);
+        Long key = new Long(oid);
+        if (services.get(key) != null) {
+            throw new SaveException("Record exists, service oid= " + service.getOid());
+        }
+        services.put(key, service);
+        return oid;
     }
 
     /**
@@ -71,6 +85,12 @@ public class ServiceManagerStub implements ServiceManager {
      * @throws UpdateException
      */
     public void update(PublishedService service) throws UpdateException {
+            Long key = new Long(service.getOid());
+        if (services.get(key) == null) {
+            throw new UpdateException("Record missing, service oid= " + service.getOid());
+        }
+        services.remove(key);
+        services.put(key, service);
 
     }
 
@@ -80,6 +100,9 @@ public class ServiceManagerStub implements ServiceManager {
      * @throws DeleteException
      */
     public void delete(PublishedService service) throws DeleteException {
+          if (services.remove(new Long(service.getOid())) == null) {
+            throw new DeleteException("Could not find service oid= " + service.getOid());
+        }
 
     }
 
@@ -101,7 +124,13 @@ public class ServiceManagerStub implements ServiceManager {
      * @return A <code>Collection</code> of EntityHeader objects.
      */
     public Collection findAllHeaders() throws FindException {
-        return null;
+          Collection list = new ArrayList();
+        for (Iterator i =
+                services.keySet().iterator(); i.hasNext();) {
+            Long key = (Long) i.next();
+            list.add(fromService((PublishedService) services.get(key)));
+        }
+        return list;
     }
 
     /**
@@ -112,7 +141,19 @@ public class ServiceManagerStub implements ServiceManager {
      * @return A <code>Collection</code> of EntityHeader objects.
      */
     public Collection findAllHeaders(int offset, int windowSize) throws FindException {
-        return null;
+         Collection list = new ArrayList();
+        int index = 0;
+        int count = 0;
+        for (Iterator i =
+                services.keySet().iterator(); i.hasNext(); index++) {
+            Long key = (Long) i.next();
+
+            if (index >= offset && count <= windowSize) {
+                list.add(fromService((PublishedService) services.get(key)));
+                count++;
+            }
+        }
+        return list;
     }
 
     /**
@@ -123,7 +164,13 @@ public class ServiceManagerStub implements ServiceManager {
      * @return A <code>Collection</code> of Entity objects.
      */
     public Collection findAll() throws FindException {
-        return null;
+        Collection list = new ArrayList();
+        for (Iterator i =
+                services.keySet().iterator(); i.hasNext();) {
+            Long key = (Long) i.next();
+            list.add(services.get(key));
+        }
+        return list;
     }
 
     /**
@@ -135,6 +182,26 @@ public class ServiceManagerStub implements ServiceManager {
      * @return A <code>Collection</code> of EntityHeader objects.
      */
     public Collection findAll(int offset, int windowSize) throws FindException {
-        return null;
+        Collection list = new ArrayList();
+        int index = 0;
+        int count = 0;
+        for (Iterator i =
+                services.keySet().iterator(); i.hasNext(); index++) {
+            Long key = (Long) i.next();
+
+            if (index >= offset && count <= windowSize) {
+                list.add(services.get(key));
+                count++;
+            }
+        }
+        return list;
+    }
+
+
+
+
+    private EntityHeader fromService(PublishedService s) {
+        return
+                new EntityHeader(s.getOid(), EntityType.SERVICE, s.getName(), null);
     }
 }
