@@ -6,7 +6,6 @@
 
 package com.l7tech.server.transport.jms;
 
-import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
@@ -14,7 +13,6 @@ import com.l7tech.server.policy.PolicyVersionException;
 
 import javax.jms.*;
 import javax.xml.soap.SOAPException;
-import javax.xml.soap.SOAPMessage;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -84,9 +82,8 @@ class JmsRequestHandler {
             String responseXml = soapResponse.getResponseXml();
             if ( responseXml == null || responseXml.length() == 0 ) {
                 if ( faultMessage == null ) faultMessage = status.getMessage();
-                SOAPMessage msg = SoapUtil.makeFaultMessage( faultCode == null ? SoapFaultUtils.FC_SERVER : faultCode,
-                                                             faultMessage, null ); // TODO use SSG URL as faultActor
-                responseXml = SoapUtil.soapMessageToString( msg, JmsUtil.DEFAULT_ENCODING ); // TODO ENCODING @)$(*)!!
+                responseXml = SoapFaultUtils.generateRawSoapFault(faultCode == null ? SoapFaultUtils.FC_SERVER : faultCode,
+                                                                  faultMessage, "", "");
             }
 
             if ( jmsResponse instanceof TextMessage ) {
@@ -105,8 +102,6 @@ class JmsRequestHandler {
             _logger.log( Level.WARNING, e.toString(), e );
         } catch (JMSException e) {
             _logger.log( Level.WARNING, "Couldn't acknowledge message!", e );
-        } catch ( SOAPException e ) {
-            _logger.log( Level.WARNING, "Caught SOAPException during message processing", e );
         }
     }
 

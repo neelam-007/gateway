@@ -6,19 +6,16 @@
 
 package com.l7tech.proxy.datamodel;
 
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.security.xml.WssProcessor;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-
+import com.l7tech.common.util.SoapFaultUtils;
+import com.l7tech.common.util.XmlUtil;
+import org.apache.commons.httpclient.Header;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
-import org.apache.commons.httpclient.Header;
 
-import javax.xml.soap.SOAPException;
-import javax.xml.soap.SOAPMessage;
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Class encapsulating the response from the Ssg to a given request.  Does parsing on-demand.
@@ -45,16 +42,16 @@ public class SsgResponse {
     }
 
     public static SsgResponse makeFaultResponse(String faultCode, String faultString, String faultActor) {
-        SOAPMessage faultMessage = SoapUtil.makeFaultMessage(faultCode, faultString, faultActor);
         try {
-            String responseString = new String(SoapUtil.soapMessageToByteArray(faultMessage));
+            String responseString = SoapFaultUtils.generateRawSoapFault(faultCode,
+                                                                        faultString,
+                                                                        "",
+                                                                        SoapFaultUtils.FC_SERVER);
             HttpHeaders headers = new HttpHeaders(new Header[0]);
             return new SsgResponse(XmlUtil.stringToDocument(responseString), null, 500, headers);
         } catch (IOException e) {
             throw new RuntimeException(e); // can't happen
-        } catch (SOAPException e) {
-            throw new RuntimeException(e); // can't happen
-        } catch (SAXException e) {
+        }  catch (SAXException e) {
             throw new RuntimeException(e); // can't happen
         }
     }
