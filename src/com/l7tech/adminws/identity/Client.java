@@ -137,21 +137,21 @@ public class Client {
         if (output == null) return new com.l7tech.objectmodel.EntityHeader[0];
         return output;
     }
-    public com.l7tech.identity.Group findGroupByPrimaryKey(long identityProviderConfigId, long groupId) throws java.rmi.RemoteException {
+    public com.l7tech.identity.Group findGroupByPrimaryKey(long identityProviderConfigId, String groupId) throws java.rmi.RemoteException {
         Call call = createStubCall();
         call.setOperationName(new QName(IDENTITY_URN, "findGroupByPrimaryKey"));
         call.addParameter(new javax.xml.namespace.QName("", "identityProviderConfigId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "long"), long.class, javax.xml.rpc.ParameterMode.IN);
-        call.addParameter(new javax.xml.namespace.QName("", "groupId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "long"), long.class, javax.xml.rpc.ParameterMode.IN);
+        call.addParameter(new javax.xml.namespace.QName("", "groupId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"), String.class, javax.xml.rpc.ParameterMode.IN);
         call.setReturnClass(com.l7tech.identity.internal.imp.GroupImp.class);
-        return (com.l7tech.identity.internal.imp.GroupImp)call.invoke(new Object[]{new java.lang.Long(identityProviderConfigId), new java.lang.Long(groupId)});
+        return (com.l7tech.identity.internal.imp.GroupImp)call.invoke(new Object[]{new java.lang.Long(identityProviderConfigId), groupId});
     }
-    public void deleteGroup(long identityProviderConfigId, long groupId) throws java.rmi.RemoteException {
+    public void deleteGroup(long identityProviderConfigId, String groupId) throws java.rmi.RemoteException {
         Call call = createStubCall();
         call.setOperationName(new QName(IDENTITY_URN, "deleteGroup"));
         call.addParameter(new javax.xml.namespace.QName("", "identityProviderConfigId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "long"), long.class, javax.xml.rpc.ParameterMode.IN);
-        call.addParameter(new javax.xml.namespace.QName("", "groupId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "long"), long.class, javax.xml.rpc.ParameterMode.IN);
+        call.addParameter(new javax.xml.namespace.QName("", "groupId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"), String.class, javax.xml.rpc.ParameterMode.IN);
         call.setReturnType(org.apache.axis.encoding.XMLType.AXIS_VOID);
-        call.invoke(new Object[]{new java.lang.Long(identityProviderConfigId), new java.lang.Long(groupId)});
+        call.invoke(new Object[]{new java.lang.Long(identityProviderConfigId), groupId});
     }
     public long saveGroup(long identityProviderConfigId, com.l7tech.identity.Group group) throws java.rmi.RemoteException {
         Call call = createStubCall();
