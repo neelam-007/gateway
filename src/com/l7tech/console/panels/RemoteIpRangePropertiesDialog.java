@@ -72,18 +72,20 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
             bark("not valid mask");
             return;
         }
-        // all is good. record values and get out o here
-        switch (index) {
-            case 0:
-                subject.setAllowRange(true);
-                break;
-            case 1:
-                subject.setAllowRange(false);
-                break;
+        if (subject != null) {
+            // all is good. record values and get out o here
+            switch (index) {
+                case 0:
+                    subject.setAllowRange(true);
+                    break;
+                case 1:
+                    subject.setAllowRange(false);
+                    break;
+            }
+            subject.setStartIp(newaddress);
+            subject.setNetworkMask(Integer.parseInt(suffixStr));
         }
-        subject.setStartIp(newaddress);
-        subject.setNetworkMask(Integer.parseInt(suffixStr));
-        cancel();
+        RemoteIpRangePropertiesDialog.this.dispose();
     }
 
     private void bark(String woof) {
@@ -93,15 +95,17 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
     private void setInitialValues() {
         add1.setText("8888");
         Dimension preferredSize = add1.getPreferredSize();
-        // get values to populate with
-        int index = subject.isAllowRange() ? 0 : 1;
-        includeExcludeCombo.setSelectedIndex(index);
-        int[] address = decomposeAddress(subject.getStartIp());
-        add1.setText("" + address[0]);
-        add2.setText("" + address[1]);
-        add3.setText("" + address[2]);
-        add4.setText("" + address[3]);
-        suffix.setText("" + subject.getNetworkMask());
+        if (subject != null) {
+            // get values to populate with
+            int index = subject.isAllowRange() ? 0 : 1;
+            includeExcludeCombo.setSelectedIndex(index);
+            int[] address = decomposeAddress(subject.getStartIp());
+            add1.setText("" + address[0]);
+            add2.setText("" + address[1]);
+            add3.setText("" + address[2]);
+            add4.setText("" + address[3]);
+            suffix.setText("" + subject.getNetworkMask());
+        }
         // resize equally
         add1.setPreferredSize(preferredSize);
         add2.setPreferredSize(preferredSize);
