@@ -50,6 +50,7 @@ public class IdProviderReference extends ExternalReference {
             try {
                 setIdProviderConfProps(config.getSerializedProps());
                 setProviderName(config.getName());
+                setIdProviderTypeVal(config.getTypeVal());
             } catch (IOException e) {
                 logger.log(Level.WARNING, "Error getting properties from id provider", e);
             }
@@ -76,6 +77,10 @@ public class IdProviderReference extends ExternalReference {
                 throw new InvalidDocumentFormatException("could not un-b64 the provider props");
             }
         } else output.idProviderConfProps = null;
+        val = getParamFromEl(el, TYPEVAL_EL_NAME);
+        if (val != null) {
+            output.idProviderTypeVal = Integer.parseInt(val);
+        }
         return output;
     }
 
@@ -103,6 +108,10 @@ public class IdProviderReference extends ExternalReference {
             propsEl.appendChild(txt);
         }
         refEl.appendChild(propsEl);
+        Element typeEl = referencesParentElement.getOwnerDocument().createElement(TYPEVAL_EL_NAME);
+        txt = referencesParentElement.getOwnerDocument().createTextNode(Integer.toString(idProviderTypeVal));
+        typeEl.appendChild(txt);
+        refEl.appendChild(typeEl);
     }
 
     /**
@@ -217,8 +226,17 @@ public class IdProviderReference extends ExternalReference {
         return locallyMatchingProviderId;
     }
 
+    public int getIdProviderTypeVal() {
+        return idProviderTypeVal;
+    }
+
+    public void setIdProviderTypeVal(int idProviderTypeVal) {
+        this.idProviderTypeVal = idProviderTypeVal;
+    }
+
     private long providerId;
     private long locallyMatchingProviderId;
+    private int idProviderTypeVal;
     private String providerName;
     private String idProviderConfProps;
     private final Logger logger = Logger.getLogger(IdProviderReference.class.getName());
@@ -227,4 +245,5 @@ public class IdProviderReference extends ExternalReference {
     public static final String PROPS_EL_NAME = "Props";
     public static final String OID_EL_NAME = "OID";
     public static final String NAME_EL_NAME = "Name";
+    public static final String TYPEVAL_EL_NAME = "TypeVal";
 }
