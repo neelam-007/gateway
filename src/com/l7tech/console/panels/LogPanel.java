@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.table.LogTableModel;
 import com.l7tech.console.table.FilteredLogTableModel;
+import com.l7tech.console.MainWindow;
 
 import javax.swing.*;
 import javax.swing.table.*;
@@ -9,6 +10,7 @@ import javax.swing.event.*;
 import java.awt.*;
 import java.util.Dictionary;
 import java.util.Hashtable;
+import java.util.ResourceBundle;
 
 
 /**
@@ -27,6 +29,9 @@ public class LogPanel extends JPanel {
     public static final int MSG_FILTER_LEVEL_WARNING = 2;
     public static final int MSG_FILTER_LEVEL_SEVERE = 1;
     public static final int MSG_FILTER_LEVEL_NONE = 0;
+
+    private static ResourceBundle resapplication = java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
+    private final ClassLoader cl = getClass().getClassLoader();
 
     private int msgFilterLevel = MSG_FILTER_LEVEL_WARNING;
     private JPanel selectPane = null;
@@ -204,13 +209,30 @@ public class LogPanel extends JPanel {
 
         JButton Refresh = new JButton();
         Refresh.setFont(new java.awt.Font("Dialog", 0, 11));
-        Refresh.setText("Refresh");
+        String atext = resapplication.getString("Refresh_MenuItem_text");
+        Refresh.setText(atext);
+        Refresh.setBorder(null);
+        Icon icon = new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/Refresh16.gif"));
+        Refresh.setIcon(icon);
         Refresh.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 RefreshActionPerformed(evt);
             }
         });
         controlPane.add(Refresh);
+
+/*
+          logRefreshAction =
+          new AbstractAction(atext, icon) {
+
+              public void actionPerformed(ActionEvent event) {
+                  // todo: retrieve the logs from ssg
+              }
+          };
+        logRefreshAction.setEnabled(false);
+        logRefreshAction.putValue(Action.SHORT_DESCRIPTION, atext);
+ */
+
 
         return controlPane;
     }
@@ -396,22 +418,6 @@ public class LogPanel extends JPanel {
      }
  */
 
-    /*
-        private Action getLogRefreshAction() {
-           if (logRefreshAction != null) return logRefreshAction;
-           String atext = resapplication.getString("Refresh_MenuItem_text");
-           Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/Refresh16.gif"));
-           logRefreshAction =
-             new AbstractAction(atext, icon) {
 
-                 public void actionPerformed(ActionEvent event) {
-                     // todo: retrieve the logs from ssg
-                 }
-             };
-           logRefreshAction.setEnabled(false);
-           logRefreshAction.putValue(Action.SHORT_DESCRIPTION, atext);
-           return logRefreshAction;
-       }
 
-   */
 }
