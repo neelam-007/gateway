@@ -23,7 +23,7 @@ import java.security.cert.CertificateEncodingException;
  */
 public class IdentityAdminImpl implements IdentityAdmin {
 
-    public static final String VERSION = "20031007";
+    public static final String VERSION = "20031017";
     public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/identityAdmin";
 
     public IdentityAdminImpl() {
