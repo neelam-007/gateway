@@ -39,6 +39,8 @@ else
 	export JAVA_OPTS=-Djini.server.hostname=`hostname`
 fi
 
+export JAVA_OPTS="$JAVA_OPTS -Xmx768m -Xss1m"
+
 # define tomcat home
 TOMCAT_HOME=/ssg/tomcat/
 if $cygwin; then
