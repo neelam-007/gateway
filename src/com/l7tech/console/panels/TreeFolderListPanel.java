@@ -161,7 +161,7 @@ public class TreeFolderListPanel extends EntityEditorPanel {
                         BasicTreeNode dobj = (BasicTreeNode) o;
                         int keyCode = e.getKeyCode();
                         if (keyCode == KeyEvent.VK_DELETE) {
-                            handleDeleteRequest(dobj, row, true);
+                            handleDeleteRequest(dobj, row);
                         } else if (keyCode == KeyEvent.VK_BACK_SPACE) {
                             browseUpRequest(parentNode);
                         } else if (keyCode == KeyEvent.VK_ENTER) {
@@ -318,14 +318,14 @@ public class TreeFolderListPanel extends EntityEditorPanel {
      *
      * @param bn   node the node to delete
      * @param  row  the BasicTreeNode instnce row
-     * @param askQuestion - the flag indicating if the "Are you sure..."
-     *                      question should be asked
      */
-    private void handleDeleteRequest(BasicTreeNode bn, int row, boolean askQuestion) {
+    private void handleDeleteRequest(BasicTreeNode bn, int row) {
         if (!TableRowAction.canDelete(bn)) {
             return;
         }
-        if (TableRowAction.delete(bn, askQuestion)) {
+
+        if (EntityHeaderNode.class.isAssignableFrom(bn.getClass())
+            && confirmDelete((EntityHeaderNode)bn)) {
             tableModel.removeRow(row);
             if (panelListener != null) {
                 panelListener.onDelete(bn);
@@ -559,7 +559,7 @@ public class TreeFolderListPanel extends EntityEditorPanel {
                     } else if (TableRowMenu.PROPERTIES.equals(e.getActionCommand())) {
                         showEntityDialog((BasicTreeNode) object);
                     } else if (TableRowMenu.DELETE.equals(e.getActionCommand())) {
-                        handleDeleteRequest(bn, row, true);
+                        handleDeleteRequest(bn, row);
                     } else {
                         JOptionPane.showMessageDialog(null,
                                 "Not yet implemented.",
@@ -748,7 +748,7 @@ public class TreeFolderListPanel extends EntityEditorPanel {
                             Object o = jTable.getModel().getValueAt(row, 0);
                             if (o == null) return;
                             BasicTreeNode n = (BasicTreeNode) o;
-                            handleDeleteRequest(n, row, true);
+                            handleDeleteRequest(n, row);
                         }
                     });
             buttonDelete.setEnabled(false);
@@ -783,6 +783,17 @@ public class TreeFolderListPanel extends EntityEditorPanel {
             buttonOpen.setEnabled(TableRowAction.isBrowseable(o));
 
         }
+    }
+
+
+    // Deletes the given entity
+    private boolean confirmDelete(EntityHeaderNode entity) {
+        // Make sure
+        return JOptionPane.showConfirmDialog(null,
+                "Are you sure you wish to delete " +
+                entity.getName() + "?",
+                "Delete",
+                JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION;
     }
 
     // hierarchy listener

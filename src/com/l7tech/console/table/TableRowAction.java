@@ -27,22 +27,6 @@ public class TableRowAction {
     /**
      * Deletes the given EntityTreeNode
      *
-     * @param node - the node to be deleted
-     * @return true if deleted, false otherwise
-     */
-    public static boolean deleteNode(EntityTreeNode node, boolean askQuestion) {
-        boolean rb = false;
-        // Dispatch deletion based on the actual node type
-        Object object = node.getUserObject();
-        if (object instanceof BasicTreeNode) {
-            rb = delete((BasicTreeNode) object, askQuestion);
-        }
-        return rb;
-    }
-
-    /**
-     * Deletes the given EntityTreeNode
-     *
      * @param dobj - the node to be deleted
      * @param askQuestion - the flag indicating if the "Are you sure..."
      *                      question should be asked
@@ -50,10 +34,8 @@ public class TableRowAction {
      */
     public static boolean delete(BasicTreeNode dobj, boolean askQuestion) {
         boolean rb = false;
-        if (dobj instanceof ProviderNode) {
-            rb = delete((ProviderNode) dobj, askQuestion);
-        } else if (dobj instanceof EntityHeaderNode) {
-            rb = delete(dobj, askQuestion);
+        if (dobj instanceof EntityHeaderNode) {
+            rb = deleteNode((EntityHeaderNode)dobj, askQuestion);
         } else {
             // Unknown node type .. do nothing
             rb = false;
@@ -156,16 +138,16 @@ public class TableRowAction {
     }
 
 
-    // Deletes the given provider
-    private static boolean delete(ProviderNode provider,
+    // Deletes the given entity
+    private static boolean deleteNode(EntityHeaderNode entity,
                                   boolean askQuestion) {
         // Make sure
         if (askQuestion && ((JOptionPane.showConfirmDialog(null,
                 "Are you sure you wish to delete " +
-                provider.getName() + "?",
-                "Delete Provider",
-                JOptionPane.YES_NO_OPTION)) == 1)) {
-            return false;
+                entity.getName() + "?",
+                "Delete",
+                JOptionPane.YES_NO_OPTION)) == JOptionPane.YES_OPTION)) {
+            return true;
         }
         return false;
     }

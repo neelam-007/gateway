@@ -1242,14 +1242,9 @@ public class MainWindow extends JFrame {
                  * @param object an arbitrary object set by the Panel
                  */
                 public void onDelete(Object object) {
-                    BasicTreeNode newNode =
-                            TreeNodeFactory.getTreeNode((EntityHeader) object);
+                    if (!(object instanceof EntityHeaderNode)) return;
 
-                    if (newNode.isLeaf() ||
-                            !(newNode instanceof EntityHeader))
-                        return;
-
-                    EntityHeader en = (EntityHeader) newNode;
+                    EntityHeaderNode eh = (EntityHeaderNode)object;
 
                     JTree tree = getJTreeView();
                     TreePath path = tree.getSelectionPath().getParentPath();
@@ -1257,11 +1252,11 @@ public class MainWindow extends JFrame {
                     if (tree.hasBeenExpanded(path)) {
                         DefaultMutableTreeNode node =
                                 (DefaultMutableTreeNode) TreeNodeAction.
-                                nodeByName(en.getName(), (DefaultMutableTreeNode) path.getLastPathComponent());
+                                nodeByName(eh.getName(), (DefaultMutableTreeNode) path.getLastPathComponent());
 
                         if (node == null) {
                             throw new
-                                    IllegalStateException("Update of node that isn't in tree ( " + en.getName() + " )");
+                                    IllegalStateException("Update of node that isn't in tree ( " + eh.getName() + " )");
                         }
                         ((DefaultTreeModel) tree.getModel()).removeNodeFromParent(node);
                     }
