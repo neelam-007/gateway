@@ -40,7 +40,7 @@ public class UserNode extends EntityHeaderNode {
     public Action[] getActions() {
         java.util.List list = new ArrayList();
         final UserPropertiesAction userPropertiesAction = new UserPropertiesAction(this);
-        userPropertiesAction.setEnabled(canDelete());
+        //userPropertiesAction.setEnabled(canDelete());
         list.add(userPropertiesAction);
         list.addAll(Arrays.asList(super.getActions()));
 
