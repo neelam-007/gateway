@@ -26,7 +26,7 @@ import java.security.cert.X509Certificate;
  * @author alex
  * @version $Revision$
  */
-public class TrustedCert extends NamedEntityImp implements Serializable {
+public class TrustedCert extends NamedEntityImp implements Cloneable, Serializable {
     public static final String CERT_FACTORY_ALGORITHM = "X.509";
 
     /**
@@ -55,6 +55,17 @@ public class TrustedCert extends NamedEntityImp implements Serializable {
             buf.append(s);
         }
     }
+
+    /**
+     * Clone a trusted certificate
+     * @return  Object  - The instance of the cloned object
+     * @throws CloneNotSupportedException  If the object cannot be cloned.
+     */
+    public Object clone() throws CloneNotSupportedException {
+        TrustedCert tc = (TrustedCert)super.clone();
+        return tc;
+    }
+
 
     /**
      * Gets the {@link X509Certificate} based on the saved {@link #certBase64}
