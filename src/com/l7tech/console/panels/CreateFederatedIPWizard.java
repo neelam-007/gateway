@@ -15,7 +15,7 @@ import java.awt.event.ActionListener;
  * <p> @author fpang </p>
  * $Id$
  */
-public class CreateFederatedIPWizard extends IdentityProviderWizard {
+public class CreateFederatedIPWizard extends Wizard {
 
     public CreateFederatedIPWizard(Frame parent, WizardStepPanel panel) {
         super(parent, panel);
