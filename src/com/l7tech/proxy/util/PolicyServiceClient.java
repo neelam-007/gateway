@@ -90,9 +90,11 @@ public class PolicyServiceClient {
         DecorationRequirements req = new DecorationRequirements();
         if (samlAss != null)
             req.setSenderSamlToken(samlAss.asElement());
-        req.setSenderCertificate(clientCert);
-        req.setSenderPrivateKey(clientKey);
-        req.setSignTimestamp(true);
+        if (clientCert != null && clientKey != null) {
+            req.setSenderCertificate(clientCert);
+            req.setSenderPrivateKey(clientKey);
+            req.setSignTimestamp(true);
+        }
         try {
             Element header = SoapUtil.getHeaderElement(msg);
             if (header == null) throw new IllegalStateException("missing header"); // can't happen
@@ -103,10 +105,12 @@ public class PolicyServiceClient {
             if (sid == null) throw new IllegalStateException("missing sid"); // can't happen
             Element mid = SoapUtil.getL7aMessageIdElement(msg); // correlation ID
             if (mid == null) throw new IllegalStateException("missing mid"); // can't happen
-            req.getElementsToSign().add(sid);
-            req.getElementsToSign().add(body);
-            req.getElementsToSign().add(mid);
-            req.setTimestampCreatedDate(timestampCreatedDate);
+            if (clientCert != null && clientKey != null) {
+                req.getElementsToSign().add(sid);
+                req.getElementsToSign().add(body);
+                req.getElementsToSign().add(mid);
+                req.setTimestampCreatedDate(timestampCreatedDate);
+            }
             decorator.decorateMessage(msg, req);
         } catch (InvalidDocumentFormatException e) {
             throw new RuntimeException(e); // can't happen
