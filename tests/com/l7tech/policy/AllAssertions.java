@@ -125,6 +125,7 @@ public class AllAssertions {
         new MemberOfGroup(),
         new SpecificUser(),
         new RequestWssX509Cert(),
+        new SecureConversation(),
         new RequestWssIntegrity(),
         new RequestWssConfidentiality(),
         new ResponseWssIntegrity(),
