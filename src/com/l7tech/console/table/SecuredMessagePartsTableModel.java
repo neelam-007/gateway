@@ -60,6 +60,28 @@ public class SecuredMessagePartsTableModel extends AbstractTableModel {
         private String algorithm;
         private int keyLength;
 
+        /**
+         * Tests whether this message part implies the part specified by the
+         * parameter p.
+         *
+         * @param p the part to test agains
+         * @return true if the part is implied, false otherwise
+         */
+        public boolean implies(SecuredMessagePart p) {
+            if(equals(p))  return true;
+            if (operation != null && p.operation !=null) {
+                if (operation.equals(p.getOperation())) {
+                    return true;
+                }
+            } else if(operation == null && p.operation == null) {
+                if (messageAndPart != null && p.messageAndPart != null) {
+                    return messageAndPart.startsWith(p.messageAndPart);
+                }
+            }
+
+            return false;
+        }
+
         public boolean equals(Object o) {
             if (this == o) return true;
             if (!(o instanceof SecuredMessagePart)) return false;
