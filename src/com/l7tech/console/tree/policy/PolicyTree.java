@@ -53,6 +53,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
     public PolicyTree(PolicyTreeModel newModel) {
         super(newModel);
         initialize();
+        getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
     }
 
     /**
