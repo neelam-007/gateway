@@ -1,4 +1,6 @@
-package com.l7tech.util;
+package com.l7tech.common.util;
+
+import com.l7tech.common.util.NoThreadException;
 
 import java.util.*;
 
@@ -278,7 +280,7 @@ public class ThreadPool extends ThreadGroup {
    *
    * @param target The Runnable instance that gets started by the returned
    * thread.
-   * @exception NoThreadException If no thread could be obtained.
+   * @exception com.l7tech.common.util.NoThreadException If no thread could be obtained.
    * @exception InterruptedException If interrupted while waiting for a
    * thread to become available.
    * @return A Thread that has been started on the given Runnable.

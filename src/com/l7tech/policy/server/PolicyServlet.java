@@ -19,8 +19,8 @@ import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.policy.assertion.credential.http.ServerHttpBasic;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceManager;
-import com.l7tech.util.KeystoreUtils;
-import com.l7tech.util.Locator;
+import com.l7tech.common.util.KeystoreUtils;
+import com.l7tech.common.util.Locator;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;

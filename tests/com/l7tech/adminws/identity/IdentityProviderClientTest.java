@@ -2,7 +2,7 @@ package com.l7tech.adminws.identity;
 
 import com.l7tech.identity.*;
 import com.l7tech.adminws.ClientCredentialManager;
-import com.l7tech.util.Locator;
+import com.l7tech.common.util.Locator;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;

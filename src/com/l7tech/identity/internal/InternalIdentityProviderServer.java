@@ -10,7 +10,7 @@ import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
-import com.l7tech.util.KeystoreUtils;
+import com.l7tech.common.util.KeystoreUtils;
 
 import java.io.*;
 import java.security.GeneralSecurityException;

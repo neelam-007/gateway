@@ -1,6 +1,6 @@
 package com.l7tech.console.logging;
 
-import com.l7tech.util.Locator;
+import com.l7tech.common.util.Locator;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;

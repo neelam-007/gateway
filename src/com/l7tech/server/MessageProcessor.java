@@ -15,7 +15,7 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceManager;
 import com.l7tech.service.resolution.ServiceResolutionException;
-import com.l7tech.util.Locator;
+import com.l7tech.common.util.Locator;
 
 import java.io.IOException;
 import java.util.logging.Level;

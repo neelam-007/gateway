@@ -1,6 +1,6 @@
 package com.l7tech.policy.assertion;
 
-import com.l7tech.util.SoapUtil;
+import com.l7tech.common.util.SoapUtil;
 
 /**
  * Typesafe enum with values for lots of conceivable error conditions (including NONE)

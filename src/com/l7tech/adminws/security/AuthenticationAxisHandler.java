@@ -15,7 +15,7 @@ import com.l7tech.logging.LogManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.ObjectModelException;
-import com.l7tech.util.Locator;
+import com.l7tech.common.util.Locator;
 import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 
 import java.util.logging.Level;

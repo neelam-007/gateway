@@ -1,7 +1,7 @@
 package com.l7tech.adminws.identity;
 
 import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.util.Locator;
+import com.l7tech.common.util.Locator;
 
 import java.rmi.RemoteException;
 

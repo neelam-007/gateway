@@ -6,7 +6,7 @@
 
 package com.l7tech.server.util;
 
-import com.l7tech.util.SoapUtil;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.message.Message;
 import com.l7tech.message.XmlMessage;
 import com.l7tech.message.Request;

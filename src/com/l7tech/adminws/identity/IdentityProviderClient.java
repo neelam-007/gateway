@@ -9,7 +9,7 @@ import com.l7tech.identity.AuthenticationException;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.util.Locator;
+import com.l7tech.common.util.Locator;
 
 import java.util.Collection;
 import java.rmi.RemoteException;

@@ -2,7 +2,7 @@ package com.l7tech.adminws.service;
 
 import com.l7tech.service.PublishedService;
 import com.l7tech.objectmodel.*;
-import com.l7tech.util.Locator;
+import com.l7tech.common.util.Locator;
 import com.l7tech.logging.LogManager;
 import com.l7tech.jini.export.RemoteService;
 import com.sun.jini.start.LifeCycle;

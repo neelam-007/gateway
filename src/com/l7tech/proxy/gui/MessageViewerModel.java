@@ -7,7 +7,7 @@ import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgResponse;
-import com.l7tech.util.XmlUtil;
+import com.l7tech.common.util.XmlUtil;
 import org.apache.log4j.Category;
 import org.w3c.dom.Document;
 

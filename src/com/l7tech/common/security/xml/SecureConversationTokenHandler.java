@@ -1,7 +1,7 @@
 package com.l7tech.common.security.xml;
 
 import org.w3c.dom.*;
-import com.l7tech.util.SoapUtil;
+import com.l7tech.common.util.SoapUtil;
 
 /**
  * LAYER 7 TECHNOLOGIES, INC

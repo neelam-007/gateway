@@ -4,6 +4,10 @@ import junit.framework.*;
 
 import java.util.logging.Logger;
 
+import com.l7tech.common.util.ThreadPool;
+import com.l7tech.common.util.ThreadPoolEvent;
+import com.l7tech.common.util.ThreadPoolListener;
+
 
 /**
  * Thread pool tests.

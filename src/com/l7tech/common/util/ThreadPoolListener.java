@@ -1,9 +1,11 @@
-package com.l7tech.util;
+package com.l7tech.common.util;
+
+import com.l7tech.common.util.ThreadPoolEvent;
 
 import java.util.EventListener;
 
 /**
- * Interface used to receive events from a {@link ThreadPool}.
+ * Interface used to receive events from a {@link com.l7tech.common.util.ThreadPool}.
  * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * 

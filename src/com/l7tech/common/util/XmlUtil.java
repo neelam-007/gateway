@@ -4,7 +4,7 @@
  * $Id$
  */
 
-package com.l7tech.util;
+package com.l7tech.common.util;
 
 import org.apache.log4j.Category;
 import org.apache.xml.serialize.XMLSerializer;

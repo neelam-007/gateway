@@ -12,7 +12,7 @@ import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.policy.assertion.credential.PrincipalCredentials;
-import com.l7tech.util.Locator;
+import com.l7tech.common.util.Locator;
 import net.jini.config.*;
 import net.jini.core.discovery.LookupLocator;
 import net.jini.core.lookup.ServiceRegistrar;

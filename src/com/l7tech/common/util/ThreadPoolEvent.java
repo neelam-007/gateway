@@ -1,9 +1,11 @@
-package com.l7tech.util;
+package com.l7tech.common.util;
+
+import com.l7tech.common.util.ThreadPool;
 
 import java.util.EventObject;
 
 /**
- * An event that contains information from a {@link ThreadPool}.
+ * An event that contains information from a {@link com.l7tech.common.util.ThreadPool}.
  * ThreadPoolEvents can be received by implementing a
  * {@link ThreadPoolListener}.
  * 

@@ -1,6 +1,6 @@
 package com.l7tech.util.locator;
 
-import com.l7tech.util.Locator;
+import com.l7tech.common.util.Locator;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.StubDataStore;
 import junit.framework.Test;

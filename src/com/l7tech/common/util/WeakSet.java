@@ -11,7 +11,7 @@
  * Microsystems, Inc. All Rights Reserved.
  */
 
-package com.l7tech.util;
+package com.l7tech.common.util;
 
 import java.util.AbstractSet;
 import java.util.Iterator;

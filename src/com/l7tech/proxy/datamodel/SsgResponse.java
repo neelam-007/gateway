@@ -6,7 +6,7 @@
 
 package com.l7tech.proxy.datamodel;
 
-import com.l7tech.util.XmlUtil;
+import com.l7tech.common.util.XmlUtil;
 import org.apache.log4j.Category;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;

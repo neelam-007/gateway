@@ -2,7 +2,7 @@ package com.l7tech.adminws;
 
 import com.l7tech.adminws.logging.Log;
 import com.l7tech.identity.StubDataStore;
-import com.l7tech.util.Locator;
+import com.l7tech.common.util.Locator;
 import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;

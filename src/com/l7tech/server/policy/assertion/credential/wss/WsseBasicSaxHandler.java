@@ -1,7 +1,7 @@
 package com.l7tech.server.policy.assertion.credential.wss;
 
 import org.xml.sax.*;
-import com.l7tech.util.SAXParsingCompleteException;
+import com.l7tech.common.util.SAXParsingCompleteException;
 
 /**
  * User: flascell

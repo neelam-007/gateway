@@ -2,7 +2,7 @@ package com.l7tech.policy.wsp;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.util.XmlUtil;
+import com.l7tech.common.util.XmlUtil;
 import org.apache.log4j.Category;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;

@@ -5,7 +5,7 @@ import com.l7tech.adminws.VersionException;
 import com.l7tech.console.text.FilterDocument;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.action.ImportCertificateAction;
-import com.l7tech.util.Locator;
+import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.CertificateDownloader;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.gui.util.Utilities;

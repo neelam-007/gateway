@@ -3,7 +3,7 @@ package com.l7tech.identity;
 import com.l7tech.objectmodel.*;
 import com.l7tech.adminws.identity.IdentityProviderClient;
 import com.l7tech.adminws.identity.IdentityService;
-import com.l7tech.util.Locator;
+import com.l7tech.common.util.Locator;
 
 import java.util.Collection;
 import java.util.Iterator;

@@ -14,7 +14,7 @@ import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.util.SoapUtil;
+import com.l7tech.common.util.SoapUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.InputSource;

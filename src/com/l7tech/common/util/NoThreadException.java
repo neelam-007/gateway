@@ -1,4 +1,4 @@
-package com.l7tech.util;
+package com.l7tech.common.util;
 
 /**
  * This exception is thrown by a {@link ThreadPool} when no thread is

@@ -1,7 +1,7 @@
 package com.l7tech.console.util.registry;
 
 import com.l7tech.identity.*;
-import com.l7tech.util.Locator;
+import com.l7tech.common.util.Locator;
 import com.l7tech.console.util.Registry;
 import com.l7tech.adminws.service.ServiceManager;
 

@@ -4,7 +4,7 @@
  * $Id$
  */
 
-package com.l7tech.util;
+package com.l7tech.common.util;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;

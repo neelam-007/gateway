@@ -3,7 +3,7 @@ package com.l7tech.credential.wss;
 import org.xml.sax.XMLReader;
 import org.xml.sax.InputSource;
 import org.xml.sax.helpers.XMLReaderFactory;
-import com.l7tech.util.SAXParsingCompleteException;
+import com.l7tech.common.util.SAXParsingCompleteException;
 import com.l7tech.server.policy.assertion.credential.wss.WsseBasicSaxHandler;
 
 /**

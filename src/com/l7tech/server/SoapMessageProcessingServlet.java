@@ -12,7 +12,7 @@ import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.service.PublishedService;
-import com.l7tech.util.SoapUtil;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.protocol.SecureSpanConstants;
 
 import javax.servlet.ServletConfig;

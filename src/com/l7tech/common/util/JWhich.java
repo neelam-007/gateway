@@ -1,4 +1,4 @@
-package com.l7tech.util;
+package com.l7tech.common.util;
 
 import java.net.URL;
 

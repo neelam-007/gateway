@@ -1,6 +1,6 @@
 package com.l7tech.logging;
 
-import com.l7tech.util.Locator;
+import com.l7tech.common.util.Locator;
 
 import java.util.logging.Logger;
 import java.util.logging.LogRecord;

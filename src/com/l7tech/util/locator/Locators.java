@@ -1,6 +1,6 @@
 package com.l7tech.util.locator;
 
-import com.l7tech.util.Locator;
+import com.l7tech.common.util.Locator;
 
 /**
  * A convinience class with couple of static factory methods. This class cannot

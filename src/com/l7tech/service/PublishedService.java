@@ -15,7 +15,7 @@ import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.assertion.ServerFalseAssertion;
-import com.l7tech.util.SoapUtil;
+import com.l7tech.common.util.SoapUtil;
 import org.xml.sax.InputSource;
 
 import javax.wsdl.Port;

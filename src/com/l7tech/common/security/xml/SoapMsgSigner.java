@@ -11,7 +11,7 @@ import java.security.interfaces.DSAPrivateKey;
 import java.security.cert.X509Certificate;
 import com.ibm.xml.dsig.util.AdHocIDResolver;
 import com.ibm.xml.dsig.*;
-import com.l7tech.util.SoapUtil;
+import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.security.xml.InvalidSignatureException;
 import com.l7tech.common.security.xml.SignatureNotFoundException;
 

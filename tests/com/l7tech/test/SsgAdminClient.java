@@ -11,7 +11,7 @@ import com.l7tech.adminws.VersionException;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.ServiceManager;
-import com.l7tech.util.Locator;
+import com.l7tech.common.util.Locator;
 
 import javax.security.auth.login.LoginException;
 import java.io.FileInputStream;

@@ -10,7 +10,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.util.ServerSoapUtil;
-import com.l7tech.util.KeystoreUtils;
+import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.security.xml.Session;
 import com.l7tech.server.SessionManager;
 import com.l7tech.common.security.xml.SessionNotFoundException;
