@@ -303,8 +303,14 @@ public class XmlMangler {
         decryptElement(soapMsg.getDocumentElement(), key);
     }
 
-    public static void getEncryptedKeyFromMessage(Document soapMsg, PrivateKey recipientPrivateKey) {
+    /**
+     * Decrypts all EncryptedKey elements contained in this message. That is, all EncryptedKey elements
+     * that can be cedrypted with the passed recipientPrivateKey.
+     * @return never null;
+     */
+    public static Key[] getEncryptedKeyFromMessage(Document soapMsg, PrivateKey recipientPrivateKey) {
         // todo
+        return new Key[0];
     }
 
     // Use a logger that will work inside either the Agent or the Gateway.
