@@ -153,8 +153,8 @@ public class User extends NamedEntityImp implements Principal {
         char[] buffer = new char[32];
 
         for (int i = 0; i < 16; i++) {
-            int low = (int) (digest[i] & 0x0f);
-            int high = (int) ((digest[i] & 0xf0) >> 4);
+            int low = (digest[i] & 0x0f);
+            int high = ((digest[i] & 0xf0) >> 4);
             buffer[i*2] = hexadecimal[high];
             buffer[i*2 + 1] = hexadecimal[low];
         }
