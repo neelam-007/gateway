@@ -182,6 +182,7 @@ CREATE TABLE cluster_info (
   mac varchar(18) NOT NULL default '',
   name varchar(128) NOT NULL default '',
   address varchar(16) NOT NULL default '',
+  multicast_address varchar(16),
   ismaster TINYINT(1) NOT NULL default '0',
   uptime bigint NOT NULL default '0',
   avgload double NOT NULL default '0',

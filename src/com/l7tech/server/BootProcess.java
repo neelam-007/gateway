@@ -6,8 +6,6 @@
 
 package com.l7tech.server;
 
-import com.l7tech.cluster.ClusterInfoManager;
-import com.l7tech.cluster.StatusUpdater;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.Locator;
@@ -15,7 +13,6 @@ import com.l7tech.logging.ServerLogManager;
 import com.l7tech.objectmodel.HibernatePersistenceManager;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
-import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.remote.jini.Services;
 import com.l7tech.remote.jini.export.RemoteService;
 import com.l7tech.server.service.ServiceManager;
@@ -39,7 +36,12 @@ public class BootProcess implements ServerComponentLifecycle {
     private List _components = new ArrayList();
 
     public void init(ComponentConfig config) throws LifecycleException {
+        PersistenceContext context = null;
         try {
+            // Initialize database stuff
+            HibernatePersistenceManager.initialize();
+
+            context = PersistenceContext.getCurrent();
             logger.info( "Initializing server" );
 
             setSystemProperties(config);
@@ -49,8 +51,6 @@ public class BootProcess implements ServerComponentLifecycle {
             logger.info("Using asymmetric cryptography provider: " + JceProvider.getAsymmetricJceProvider().getName());
             logger.info("Using symmetric cryptography provider: " + JceProvider.getSymmetricJceProvider().getName());
 
-            // Initialize database stuff
-            HibernatePersistenceManager.initialize();
 
             String classnameString = config.getProperty(ServerConfig.PARAM_SERVERCOMPONENTS);
             String[] componentClassnames = classnameString.split("\\s.*?");
@@ -63,19 +63,23 @@ public class BootProcess implements ServerComponentLifecycle {
                     Class clazz = Class.forName(classname);
                     component = (ServerComponentLifecycle)clazz.newInstance();
                 } catch (ClassNotFoundException cnfe) {
-                    logger.log(Level.WARNING, "Couldn't initialize server component '" + classname + "'", cnfe);
+                    logger.log(Level.SEVERE, "Couldn't initialize server component '" + classname + "'", cnfe);
                 } catch (InstantiationException e) {
-                    logger.log(Level.WARNING, "Couldn't initialize server component '" + classname + "'", e);
+                    logger.log(Level.SEVERE, "Couldn't initialize server component '" + classname + "'", e);
                 } catch (IllegalAccessException e) {
-                    logger.log(Level.WARNING, "Couldn't initialize server component '" + classname + "'", e);
+                    logger.log(Level.SEVERE, "Couldn't initialize server component '" + classname + "'", e);
                 }
 
                 if (component != null) {
                     try {
+                        if ( component instanceof TransactionalComponent ) context.beginTransaction();
                         component.init(config);
                         _components.add(component);
+                        if ( component instanceof TransactionalComponent ) context.commitTransaction();
                     } catch (LifecycleException e) {
-                        logger.log(Level.WARNING, "Component " + component + " failed to initialize!", e);
+                        logger.log(Level.SEVERE, "Component " + component + " failed to initialize", e);
+                    } catch ( TransactionException e ) {
+                        logger.log(Level.SEVERE, "Component " + component + " could not commit its initialization process", e );
                     }
                 }
             }
@@ -85,11 +89,15 @@ public class BootProcess implements ServerComponentLifecycle {
             throw new LifecycleException(e.toString(), e);
         } catch (SQLException e) {
             throw new LifecycleException(e.toString(), e);
+        } finally {
+            if ( context != null ) context.close();
         }
     }
 
     public void start() throws LifecycleException {
+        PersistenceContext context = null;
         try {
+            context = PersistenceContext.getCurrent();
             logger.info( "Starting server" );
 
             initializeAdminServices();
@@ -98,19 +106,27 @@ public class BootProcess implements ServerComponentLifecycle {
                 logger.severe("Could not instantiate the ServiceManager");
             }
 
-            PersistenceContext.getCurrent().beginTransaction();
-            // initialize the log dumper
-            serverLogManager.suscribeDBHandler();
-            // initialize the process that updates the cluster status info
-            initializeClusterStatusUpdate();
-            PersistenceContext.getCurrent().commitTransaction();
-            PersistenceContext.getCurrent().close();
+            try {
+                context.beginTransaction();
+                // initialize the log dumper
+                serverLogManager.suscribeDBHandler();
+                // initialize the process that updates the cluster status clusterInfo
+                context.commitTransaction();
+            } catch ( TransactionException e ) {
+                logger.log(Level.SEVERE, "The Server Log Manager could not be started", e );
+            }
 
             logger.info("Starting server components...");
             for (Iterator i = _components.iterator(); i.hasNext();) {
                 ServerComponentLifecycle component = (ServerComponentLifecycle)i.next();
                 logger.info("Starting component " + component);
-                component.start();
+                try {
+                    if ( component instanceof TransactionalComponent ) context.beginTransaction();
+                    component.start();
+                    if ( component instanceof TransactionalComponent ) context.commitTransaction();
+                } catch ( TransactionException e ) {
+                    logger.log(Level.SEVERE, "Component " + component + " could not commit its startup process", e );
+                }
             }
 
             logger.info(BuildInfo.getLongBuildString());
@@ -118,8 +134,8 @@ public class BootProcess implements ServerComponentLifecycle {
             logger.info("Boot process complete.");
         } catch (SQLException se) {
             throw new LifecycleException(se.toString(), se);
-        } catch (TransactionException te) {
-            throw new LifecycleException(te.toString(), te);
+        } finally {
+            if (context != null) context.close();
         }
     }
 
@@ -160,8 +176,6 @@ public class BootProcess implements ServerComponentLifecycle {
         if (serviceManager != null && serviceManager instanceof ServiceManagerImp) {
             ((ServiceManagerImp)serviceManager).destroy();
         }
-        // if we were updating cluster status, stop doing it
-        StatusUpdater.stopUpdater();
         logger.info("Closed.");
     }
 
@@ -186,7 +200,7 @@ public class BootProcess implements ServerComponentLifecycle {
         }
     }
 
-    protected void initializeAdminServices() {
+    private void initializeAdminServices() {
         Timer timer = new Timer();
         timer.schedule(new TimerTask() {
             public void run() {
@@ -200,16 +214,5 @@ public class BootProcess implements ServerComponentLifecycle {
             }
         }, 3000); 
     }
-
-    protected void initializeClusterStatusUpdate() {
-        ClusterInfoManager man = ClusterInfoManager.getInstance();
-        try {
-            man.updateSelfUptime();
-        } catch (UpdateException e) {
-            logger.log(Level.WARNING, "error updating boot time of node.", e);
-        }
-        StatusUpdater.initialize();
-    }
-
 
 }

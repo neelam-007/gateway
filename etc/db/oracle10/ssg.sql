@@ -164,6 +164,7 @@ CREATE TABLE cluster_info (
   mac varchar(18) NOT NULL ,
   name varchar(128) NOT NULL ,
   address varchar(16) NOT NULL ,
+  multicast_address varchar(16),
   ismaster char(1) NOT NULL ,
   uptime number(38,0) NOT NULL ,
   avgload number(8,2) NOT NULL ,

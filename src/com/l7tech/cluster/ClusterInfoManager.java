@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.security.SecureRandom;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
@@ -77,20 +78,27 @@ public class ClusterInfoManager {
             selfCI.setLastUpdateTimeStamp(now);
             boolean isMaster = isMasterMode();
             selfCI.setIsMaster(isMaster);
-            try {
-                HibernatePersistenceContext pc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-                Session session = pc.getSession();
-                // update existing data
-                session.update(selfCI);
-            } catch (SQLException e) {
-                String msg = "error updating db";
-                logger.log(Level.WARNING, msg, e);
-                throw new UpdateException(msg, e);
-            } catch (HibernateException e) {
-                String msg = "error updating db";
-                logger.log(Level.WARNING, msg, e);
-                throw new UpdateException(msg, e);
-            }
+            updateSelfStatus( selfCI );
+        }
+    }
+
+    /**
+     * Updates the specified {@link ClusterNodeInfo} to the database.
+     */
+    public void updateSelfStatus( ClusterNodeInfo selfCI ) throws UpdateException {
+        try {
+            HibernatePersistenceContext pc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
+            Session session = pc.getSession();
+            // update existing data
+            session.update(selfCI);
+        } catch (SQLException e) {
+            String msg = "error updating db";
+            logger.log(Level.WARNING, msg, e);
+            throw new UpdateException(msg, e);
+        } catch (HibernateException e) {
+            String msg = "error updating db";
+            logger.log(Level.WARNING, msg, e);
+            throw new UpdateException(msg, e);
         }
     }
 
@@ -157,20 +165,7 @@ public class ClusterInfoManager {
             selfCI.setLastUpdateTimeStamp(newboottimevalue);
             String add = getIPAddress();
             selfCI.setAddress(add);
-            try {
-                HibernatePersistenceContext pc = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-                Session session = pc.getSession();
-                // update existing data
-                session.update(selfCI);
-            } catch (SQLException e) {
-                String msg = "error updating db";
-                logger.log(Level.WARNING, msg, e);
-                throw new UpdateException(msg, e);
-            } catch (HibernateException e) {
-                String msg = "error updating db";
-                logger.log(Level.WARNING, msg, e);
-                throw new UpdateException(msg, e);
-            }
+            updateSelfStatus( selfCI );
             rememberedBootTime = newboottimevalue;
         } else {
             logger.warning("cannot retrieve db entry for this node.");
@@ -536,6 +531,12 @@ public class ClusterInfoManager {
         System.out.println("IP Parsed:" + tested);
     }
 
+    public static String generateMulticastAddress() {
+        StringBuffer addr = new StringBuffer("224.0.7.");
+        addr.append(Math.abs(random.nextInt() % 256));
+        return addr.toString();
+    }
+
     private static final String TABLE_NAME = "cluster_info";
     private static final String MAC_COLUMN_NAME = "mac";
     private static final String NAME_COLUMN_NAME = "name";
@@ -561,4 +562,5 @@ public class ClusterInfoManager {
     private String thisNodeIPAddress = null;
 
 
+    private static Random random = new SecureRandom();
 }

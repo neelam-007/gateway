@@ -317,6 +317,7 @@
                 <include name="jta.jar"/>
                 <include name="jaxen-1.1-beta-2-l7.jar"/>
                 <include name="jaxrpc.jar"/>
+                <include name="jgroups-all.jar"/>
                 <include name="jini-core.jar"/>
                 <include name="jini-ext.jar"/>
                 <include name="jms-1.1.jar"/>

@@ -132,9 +132,18 @@ public class ClusterNodeInfo implements Serializable {
         this.name = name;
     }
 
+    public String getMulticastAddress() {
+        return multicastAddress;
+    }
+
+    public void setMulticastAddress(String multicastAddress) {
+        this.multicastAddress = multicastAddress;
+    }
+
     private String mac;
     private String address;
     private String name;
+    private String multicastAddress;
     private boolean isMaster;
     private long boottime;
     private long uptime;

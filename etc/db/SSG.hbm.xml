@@ -126,6 +126,7 @@
         </id>
         <property name="name" column="name" type="string"/>
         <property name="address" column="address" type="string"/>
+        <property name="multicastAddress" column="multicast_address" type="string"/>
         <property name="isMaster" column="ismaster" type="boolean"/>
         <property name="bootTime" column="uptime" type="long"/>
         <property name="avgLoad" column="avgload" type="double"/>
