@@ -9,7 +9,7 @@ import java.util.ArrayList;
 
 /**
  * The class represents a node element in the TreeModel.
- * It represents the folder with agents for a company.
+ * It represents the folder with users.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.1

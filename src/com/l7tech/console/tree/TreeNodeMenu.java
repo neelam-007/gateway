@@ -154,13 +154,13 @@ public class TreeNodeMenu extends JPopupMenu {
    * create the popup menu <CODE>JpopUpMenu</CODE> for the Agent Folder
    * node passed.
    * 
-   * @param agent    the agent folder node
+   * @param user    the user folder node
    * @param listener the <CODE>ActionListener</CODE> where the
    *                 events will be sent.
    * @return JpopUpMenu for the node
    */
-  private static JPopupMenu forUserFolder(UserFolderTreeNode agent, ActionListener listener) {
-    TreeNodeMenu treeMenu = new TreeNodeMenu(agent, listener);
+  private static JPopupMenu forUserFolder(UserFolderTreeNode user, ActionListener listener) {
+    TreeNodeMenu treeMenu = new TreeNodeMenu(user, listener);
     
     JMenu menu = new JMenu(NEW);
     menu.add(NEW_USER).addActionListener(listener);

@@ -8,7 +8,7 @@ import java.util.Enumeration;
 
 /**
  * The class represents a node element in the TreeModel.
- * It represents the folder with agents for a company.
+ * It represents the user.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.2

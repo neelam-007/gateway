@@ -369,7 +369,7 @@ public class ContainerListPanel extends EditorPanel {
             dialog.setResizable(false);
             dlg = dialog;
         } else if (parentBasicTreeNode instanceof UserFolderTreeNode) {
-            UserFolderTreeNode agentFolder =
+            UserFolderTreeNode userFolder =
                     (UserFolderTreeNode) parentBasicTreeNode;
             NewUserDialog dialog = new NewUserDialog(f, null);
             dialog.setPanelListener(panelListener);

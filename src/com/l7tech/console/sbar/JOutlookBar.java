@@ -2,9 +2,10 @@
  */
 package com.l7tech.console.sbar;
 
-import java.awt.*;
+
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.*;
 import java.util.Vector;
 
 import javax.swing.*;
@@ -37,6 +38,7 @@ public class JOutlookBar extends JPanel implements ActionListener {
             view = (JToolBar) views.elementAt(index);
         } else {
             view = new JToolBar(JToolBar.HORIZONTAL);
+            view.putClientProperty("JToolBar.isRollover", Boolean.TRUE);
             view.setFloatable(false);
             view.setLayout(new VerticalFlowLayout());
             names.addElement(context);

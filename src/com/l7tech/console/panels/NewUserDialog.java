@@ -28,7 +28,7 @@ public class NewUserDialog extends JDialog {
 
     private JButton createButton = null;
 
-    /** agent ID text field */
+    /** ID text field */
     private JTextField idTextField = null;
     private JPasswordField passwordField = null;
     private JPasswordField passwordConfirmField = null;
@@ -41,7 +41,7 @@ public class NewUserDialog extends JDialog {
     /* new Agent Password */
     private char[] newPassword;
 
-    /* the company agent is added to */
+    /* the provider user is added to */
     private EntityHeader cEntry;
 
     /* the panel listener */
@@ -106,9 +106,9 @@ public class NewUserDialog extends JDialog {
 
 
         // user name label
-        JLabel agentIdLabel = new JLabel();
-        agentIdLabel.setToolTipText(resources.getString("idTextField.tooltip"));
-        agentIdLabel.setText(resources.getString("idTextField.label"));
+        JLabel userIdLabel = new JLabel();
+        userIdLabel.setToolTipText(resources.getString("idTextField.tooltip"));
+        userIdLabel.setText(resources.getString("idTextField.label"));
 
         constraints = new GridBagConstraints();
         constraints.gridx = 0;
@@ -118,7 +118,7 @@ public class NewUserDialog extends JDialog {
         constraints.fill = GridBagConstraints.NONE;
         constraints.anchor = GridBagConstraints.WEST;
         constraints.insets = new Insets(12, 12, 0, 0);
-        panel.add(agentIdLabel, constraints);
+        panel.add(userIdLabel, constraints);
 
         // user name text field
         constraints = new GridBagConstraints();
@@ -236,9 +236,9 @@ public class NewUserDialog extends JDialog {
     } // initComponents()
 
     /**
-     * A method that returns a JTextField containing agentId information
+     * A method that returns a JTextField containing userId information
      *
-     * @return the agent ID textfield
+     * @return the user ID textfield
      */
     private JTextField getAgentIdTextField() {
         if (idTextField != null) return idTextField;

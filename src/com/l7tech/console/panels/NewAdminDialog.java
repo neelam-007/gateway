@@ -242,7 +242,7 @@ public class NewAdminDialog extends JDialog {
   /**
    * A method that returns a JTextField containing adminId information
    *
-   * @return the agent ID textfield
+   * @return the ID textfield
    */
   private JTextField getidTextField() {
     if (idTextField != null)  return idTextField;
