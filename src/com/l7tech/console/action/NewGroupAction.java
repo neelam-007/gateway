@@ -61,14 +61,14 @@ public class NewGroupAction extends NodeAction {
     public void performAction() {
         SwingUtilities.invokeLater(
           new Runnable() {
-            public void run() {
-                JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
-                NewGroupDialog dialog = new NewGroupDialog(f);
-                dialog.addEntityListener(listener);
-                dialog.setResizable(false);
-                dialog.show();
-            }
-        });
+              public void run() {
+                  JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
+                  NewGroupDialog dialog = new NewGroupDialog(f);
+                  dialog.addEntityListener(listener);
+                  dialog.setResizable(false);
+                  dialog.show();
+              }
+          });
     }
 
     private EntityListener listener = new EntityListenerAdapter() {
@@ -77,12 +77,12 @@ public class NewGroupAction extends NodeAction {
          * @param ev event describing the action
          */
         public void entityAdded(final EntityEvent ev) {
-            if (node == null) {
-                log.fine("Parent node has not been set - skipping notificaiton.");
-                return;
-            }
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
+                    if (node == null) {
+                        log.fine("Parent node has not been set - skipping notificaiton.");
+                        return;
+                    }
                     EntityHeader eh = (EntityHeader)ev.getEntity();
                     JTree tree = (JTree)ComponentRegistry.getInstance().getComponent(AssertionsTree.NAME);
                     if (tree != null) {

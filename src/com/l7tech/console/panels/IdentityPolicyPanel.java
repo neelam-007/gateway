@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.tree.policy.IdentityPath;
+import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
@@ -45,6 +46,7 @@ public class IdentityPolicyPanel extends JPanel {
     private Set otherPaths;
     private Assertion rootAssertion;
     private PublishedService service;
+    private AssertionTreeNode assertionRootNode;
 
     /**
      * Create the identity policy panel for a given principal and serviec
@@ -53,15 +55,16 @@ public class IdentityPolicyPanel extends JPanel {
      * @param principal the principal that the identity policy panel is
      *        created for
      */
-    public IdentityPolicyPanel(PublishedService service, Assertion rootAssertion, Principal principal) {
+    public IdentityPolicyPanel(PublishedService service, AssertionTreeNode assertionRootNode, Principal principal) {
         super();
         if (service == null || principal == null) {
             throw new IllegalArgumentException();
         }
         this.service = service;
         this.principal = principal;
-        this.rootAssertion = rootAssertion;
-        initialize();
+        this.assertionRootNode = assertionRootNode;
+        this.rootAssertion = assertionRootNode.asAssertion();
+        this.initialize();
         setLayout(new BorderLayout());
         /** Set content pane */
         add(mainPanel, BorderLayout.CENTER);

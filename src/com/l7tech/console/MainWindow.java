@@ -440,17 +440,17 @@ public class MainWindow extends JFrame {
 
 
     /**
-       * @return the <code>Action</code> for the create service
-       */
-      private Action getCreateServiceAction() {
-          if (createServiceAction != null) {
-              return createServiceAction;
-          }
-          createServiceAction = new CreateServiceWsdlAction();
-          createServiceAction.setEnabled(false);
-          this.addConnectionListener((CreateServiceWsdlAction)createServiceAction);
-          return createServiceAction;
-      }
+     * @return the <code>Action</code> for the create service
+     */
+    private Action getCreateServiceAction() {
+        if (createServiceAction != null) {
+            return createServiceAction;
+        }
+        createServiceAction = new CreateServiceWsdlAction();
+        createServiceAction.setEnabled(false);
+        this.addConnectionListener((CreateServiceWsdlAction)createServiceAction);
+        return createServiceAction;
+    }
 
 
     private Action getNewInternalUserAction() {
@@ -464,15 +464,6 @@ public class MainWindow extends JFrame {
             ConnectionListener listener = new ConnectionListener() {
                 public void onConnect(ConnectionEvent e) {
                     setEnabled(true);
-                    final DefaultMutableTreeNode root =
-                      (DefaultMutableTreeNode)getAssertionPaletteTree().getModel().getRoot();
-                    AbstractTreeNode parent =
-                      (AbstractTreeNode)TreeNodeActions.nodeByName(
-                        UserFolderNode.INTERNAL_USERS_NAME,
-                        root
-                      );
-                    node = parent;
-
                 }
 
                 public void onDisconnect(ConnectionEvent e) {
@@ -482,6 +473,18 @@ public class MainWindow extends JFrame {
 
             {
                 MainWindow.this.addConnectionListener(listener);
+                // listen for own actions to add the tree elements
+                this.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        final DefaultMutableTreeNode root =
+                          (DefaultMutableTreeNode)getAssertionPaletteTree().getModel().getRoot();
+                        AbstractTreeNode parent =
+                          (AbstractTreeNode)TreeNodeActions.
+                          nodeByNamePath(new String[]{"Internal Identity Provider", "Users"},
+                            root);
+                        node = parent;
+                    }
+                });
             }
         };
         newInernalUserAction.setEnabled(false);
@@ -499,14 +502,6 @@ public class MainWindow extends JFrame {
             ConnectionListener listener = new ConnectionListener() {
                 public void onConnect(ConnectionEvent e) {
                     setEnabled(true);
-                    final DefaultMutableTreeNode root =
-                      (DefaultMutableTreeNode)getAssertionPaletteTree().getModel().getRoot();
-                    AbstractTreeNode parent =
-                      (AbstractTreeNode)TreeNodeActions.nodeByName(
-                        GroupFolderNode.INTERNAL_GROUPS_NAME,
-                        root
-                      );
-                    node = parent;
                 }
 
                 public void onDisconnect(ConnectionEvent e) {
@@ -516,6 +511,18 @@ public class MainWindow extends JFrame {
 
             {
                 MainWindow.this.addConnectionListener(listener);
+                // listen for own actions to add the tree elements
+                this.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        final DefaultMutableTreeNode root =
+                          (DefaultMutableTreeNode)getAssertionPaletteTree().getModel().getRoot();
+                        AbstractTreeNode parent =
+                          (AbstractTreeNode)TreeNodeActions.
+                          nodeByNamePath(new String[]{"Internal Identity Provider", "Groups"},
+                            root);
+                        node = parent;
+                    }
+                });
             }
         };
         newInernalGroupAction.setEnabled(false);
@@ -910,31 +917,31 @@ public class MainWindow extends JFrame {
         mainBottomTabbedPane = new MonitorPanel();
 
         monitorAction =
-                new AbstractAction("Monitor") {
-                    /**
-                     * Invoked when an action occurs.
-                     *
-                     * @param event  the event that occured
-                     * @see Action#removePropertyChangeListener
-                     */
-                    public void actionPerformed(ActionEvent event) {
-                        //do nothing
-                    }
+          new AbstractAction("Monitor") {
+              /**
+               * Invoked when an action occurs.
+               *
+               * @param event  the event that occured
+               * @see Action#removePropertyChangeListener
+               */
+              public void actionPerformed(ActionEvent event) {
+                  //do nothing
+              }
 
-                    ConnectionListener listener = new ConnectionListener() {
-                        public void onConnect(ConnectionEvent e) {
-                            mainBottomTabbedPane.connectHandler(e);
-                        }
+              ConnectionListener listener = new ConnectionListener() {
+                  public void onConnect(ConnectionEvent e) {
+                      mainBottomTabbedPane.connectHandler(e);
+                  }
 
-                        public void onDisconnect(ConnectionEvent e) {
-                            mainBottomTabbedPane.disconnectHandler(e);
-                        }
-                    };
+                  public void onDisconnect(ConnectionEvent e) {
+                      mainBottomTabbedPane.disconnectHandler(e);
+                  }
+              };
 
-                    {
-                        MainWindow.this.addConnectionListener(listener);
-                    }
-                };
+              {
+                  MainWindow.this.addConnectionListener(listener);
+              }
+          };
         return mainBottomTabbedPane;
     }
 
@@ -1567,7 +1574,7 @@ public class MainWindow extends JFrame {
         return getDisconnectMenuItem().isEnabled();
     }
 
-    public void updateMainSplitPaneDividerLocation(){
+    public void updateMainSplitPaneDividerLocation() {
 
         // set the divider size to zero only when there is nothihng in the pane
         if (getMainBottomTabbedPane().getTabCount() <= 0) {
@@ -1577,7 +1584,7 @@ public class MainWindow extends JFrame {
             getMainJSplitPane().setDividerSize(MAIN_SPLIT_PANE_DIVIDER_SIZE);
 
             // No need to change the divider location if there is one tab being diplayed
-            if(getMainBottomTabbedPane().getTabCount() < 2){
+            if (getMainBottomTabbedPane().getTabCount() < 2) {
                 try {
                     Preferences prefs = Preferences.getPreferences();
                     String s = prefs.getString("main.split.pane.divider.location");
@@ -1596,7 +1603,7 @@ public class MainWindow extends JFrame {
         }
     }
 
-    public void storeMainSplitPaneDividerLocation(){
+    public void storeMainSplitPaneDividerLocation() {
         // store the current divider location
         try {
             Preferences prefs = Preferences.getPreferences();
@@ -1686,7 +1693,7 @@ public class MainWindow extends JFrame {
               /* set the preferences */
               try {
                   Preferences prefs = Preferences.getPreferences();
-                  s =  " @ " +prefs.getString(Preferences.SERVICE_URL);
+                  s = " @ " + prefs.getString(Preferences.SERVICE_URL);
                   if (prefs.rememberLoginId()) {
                       prefs.putProperty(Preferences.LAST_LOGIN_ID, id);
                       prefs.store();

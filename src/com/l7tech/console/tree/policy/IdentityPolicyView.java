@@ -13,10 +13,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.geom.Rectangle2D;
-import java.rmi.RemoteException;
-import java.util.Iterator;
 import java.io.IOException;
+import java.util.Iterator;
 
 /**
  * The identities policy view
@@ -32,7 +30,7 @@ public class IdentityPolicyView extends JDialog {
 
     public IdentityPolicyView(Frame owner, IdentityAssertionTreeNode ida)
       throws FindException, IOException {
-        super(owner, true);
+        super(owner, false);
         idAssertion = ida;
         serviceNode = getServiceNodeCookie();
         if (serviceNode == null) {
@@ -73,7 +71,7 @@ public class IdentityPolicyView extends JDialog {
         }
         IdentityAssertion ia = (IdentityAssertion)idAssertion.asAssertion();
         idPanel = new IdentityPolicyPanel(serviceNode.getPublishedService(),
-                                          ((AssertionTreeNode)(idAssertion.getRoot())).asAssertion(),
+                                          (AssertionTreeNode)idAssertion.getRoot(),
                                           IdentityPath.extractIdentity(ia));
         return idPanel;
     }

@@ -61,15 +61,15 @@ public class NewUserAction extends NodeAction {
     public void performAction() {
         SwingUtilities.invokeLater(
           new Runnable() {
-            public void run() {
-                JFrame f =
-                  Registry.getDefault().getComponentRegistry().getMainWindow();
-                NewUserDialog dialog = new NewUserDialog(f);
-                dialog.addEntityListener(listener);
-                dialog.setResizable(false);
-                dialog.show();
-            }
-        });
+              public void run() {
+                  JFrame f =
+                    Registry.getDefault().getComponentRegistry().getMainWindow();
+                  NewUserDialog dialog = new NewUserDialog(f);
+                  dialog.addEntityListener(listener);
+                  dialog.setResizable(false);
+                  dialog.show();
+              }
+          });
     }
 
 
@@ -79,12 +79,13 @@ public class NewUserAction extends NodeAction {
          * @param ev event describing the action
          */
         public void entityAdded(final EntityEvent ev) {
-            if (node == null) {
-                log.fine("The parent node is null");
-                return;
-            }
+
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
+                    if (node == null) {
+                        log.fine("The parent node is null");
+                        return;
+                    }
                     EntityHeader eh = (EntityHeader)ev.getEntity();
                     JTree tree =
                       (JTree)ComponentRegistry.
@@ -96,7 +97,7 @@ public class NewUserAction extends NodeAction {
                             DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                             model.
                               insertNodeInto(TreeNodeFactory.asTreeNode(eh),
-                                                    node, node.getChildCount());
+                                node, node.getChildCount());
                         }
                     } else {
                         log.log(Level.WARNING, "Unable to reach the palette tree.");
