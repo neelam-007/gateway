@@ -63,7 +63,7 @@ public class RequestWssSamlNode extends AbstractTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "SAML Authentication Statement";
+        return "SAML Assertion";
 
     }
 
@@ -73,6 +73,6 @@ public class RequestWssSamlNode extends AbstractTreeNode {
      * @param open for nodes that can be opened, can have children
      */
     protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/SAMLAuthentication.gif";
+        return "com/l7tech/console/resources/xmlWithCert16.gif";
     }
 }

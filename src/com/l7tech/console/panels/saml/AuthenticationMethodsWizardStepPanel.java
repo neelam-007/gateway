@@ -72,7 +72,8 @@ public class AuthenticationMethodsWizardStepPanel extends WizardStepPanel {
         RequestWssSaml assertion = (RequestWssSaml)settings;
         SamlAuthenticationStatement statement = assertion.getAuthenticationStatement();
         if (statement == null) {
-            throw new IllegalArgumentException();
+            setSkipped(true);
+            return;
         }
 
         for (int i = 0; i < allMethods.length; i++) {

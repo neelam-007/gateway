@@ -14,15 +14,15 @@ import java.awt.event.WindowEvent;
  * @version 1.0
  */
 public class RequestWssSamlWizardTest extends JFrame {
-
     public static void main(String[] args) {
-       RequestWssSamlWizardTest frame = new RequestWssSamlWizardTest();
+        RequestWssSamlWizardTest frame = new RequestWssSamlWizardTest();
         IntroductionWizardStepPanel p =
           new IntroductionWizardStepPanel(
-            new AuthenticationMethodsWizardStepPanel(
-              new SubjectConfirmationWizardStepPanel(
-                new SubjectConfirmationNameIdentifierWizardStepPanel(
-                new ConditionsWizardStepPanel(null)))));
+            new SelectStatementWizardStepPanel(
+              new AuthenticationMethodsWizardStepPanel(
+                new SubjectConfirmationWizardStepPanel(
+                  new SubjectConfirmationNameIdentifierWizardStepPanel(
+                    new ConditionsWizardStepPanel(null))))));
         RequestWssSaml assertion;
         assertion = new RequestWssSaml();
         Wizard w = new RequestWssSamlStatementWizard(assertion, frame, p);
@@ -30,10 +30,10 @@ public class RequestWssSamlWizardTest extends JFrame {
         w.show();
         w.addWindowListener(
           new WindowAdapter() {
-              public void windowClosing(WindowEvent e) {
-                  System.exit(0);
-              }
-          }
+            public void windowClosing(WindowEvent e) {
+                System.exit(0);
+            }
+        }
         );
     }
 }

@@ -1,22 +1,16 @@
 package com.l7tech.console.tree.policy.advice;
 
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.console.action.Actions;
+import com.l7tech.console.event.WizardAdapter;
+import com.l7tech.console.event.WizardEvent;
+import com.l7tech.console.panels.Wizard;
+import com.l7tech.console.panels.saml.*;
 import com.l7tech.console.tree.policy.PolicyChange;
 import com.l7tech.console.tree.policy.PolicyException;
-import com.l7tech.console.panels.TimeRangePropertiesDialog;
-import com.l7tech.console.panels.Wizard;
-import com.l7tech.console.panels.WsdlCreateWizard;
-import com.l7tech.console.panels.saml.*;
-import com.l7tech.console.MainWindow;
-import com.l7tech.console.event.WizardListener;
-import com.l7tech.console.event.WizardEvent;
-import com.l7tech.console.event.WizardAdapter;
-import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.TimeRange;
-import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
-import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 
@@ -37,11 +31,14 @@ public class AddRequestWssSamlAdvice implements Advice {
         JFrame f = TopComponents.getInstance().getMainWindow();
 
         IntroductionWizardStepPanel p =
-          new IntroductionWizardStepPanel(new
-            AuthenticationMethodsWizardStepPanel(
-              new SubjectConfirmationWizardStepPanel(
-                new SubjectConfirmationNameIdentifierWizardStepPanel(
-                new ConditionsWizardStepPanel(null)))));
+          new IntroductionWizardStepPanel(
+            new SelectStatementWizardStepPanel(
+              new AuthenticationMethodsWizardStepPanel(
+                new AuthorizationStatementWizardStepPanel(
+                  new AttributeStatementWizardStepPanel(
+                    new SubjectConfirmationWizardStepPanel(
+                      new SubjectConfirmationNameIdentifierWizardStepPanel(
+                        new ConditionsWizardStepPanel(null))))))));
 
         final Wizard w = new RequestWssSamlStatementWizard(assertion, f, p);
         w.addWizardListener(new WizardAdapter() {

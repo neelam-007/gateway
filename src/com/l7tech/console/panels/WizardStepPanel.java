@@ -16,13 +16,11 @@ import java.util.EventListener;
  * @version 1.0
  */
 public abstract class WizardStepPanel extends JPanel {
-    protected JDialog owner;
+    protected Wizard owner;
     private EventListenerList listenerList = new WeakEventListenerList();
     private WizardStepPanel nextPanel;
-    private Object[] skippedPanels;
     private boolean showDescriptionPanel = true;
     private boolean skipped = false;
-    private boolean skippedPanelsModified = false;
 
     public boolean isSkipped() {
         return skipped;
@@ -36,16 +34,8 @@ public abstract class WizardStepPanel extends JPanel {
         return owner;
     }
 
-    protected void setOwner(JDialog owner) {
+    protected void setOwner(Wizard owner) {
         this.owner = owner;
-    }
-
-    public boolean skippedPanelsModified() {
-        return skippedPanelsModified;
-    }
-
-    public void resetSkippedPanelsModifiedFlag() {
-        skippedPanelsModified = false;
     }
 
     /**
@@ -53,7 +43,6 @@ public abstract class WizardStepPanel extends JPanel {
      */
     public WizardStepPanel(WizardStepPanel next) {
         this.nextPanel = next;
-        skippedPanels = new String[0];
     }
 
     public void setNextPanel(WizardStepPanel next) {
@@ -68,15 +57,6 @@ public abstract class WizardStepPanel extends JPanel {
         return nextPanel;
     }
 
-    public Object[] getSkippedPanels() {
-        return skippedPanels;
-    }
-
-    protected void setSkippedPanels(Object[] skippedPanels) {
-        this.skippedPanels = skippedPanels;
-        skippedPanelsModified = true;
-    }
-
     /**
      * @return whether to show description panel
      */
@@ -85,9 +65,10 @@ public abstract class WizardStepPanel extends JPanel {
     }
 
     /**
-     * The sublass step panels use this to set the step panel
-     * @param showDescriptionPanel true show the dscri[ption panel, false otherwise
-     */
+         * The sublass step panels use this to set the step panel
+         *
+         * @param showDescriptionPanel true show the dscri[ption panel, false otherwise
+         */
     protected void setShowDescriptionPanel(boolean showDescriptionPanel) {
         this.showDescriptionPanel = showDescriptionPanel;
     }

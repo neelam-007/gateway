@@ -109,10 +109,6 @@ public class FederatedIPGeneralPanel extends IdentityProviderStepPanel {
 
             return false;
         }
-
-        java.util.ArrayList skippedPanels = new java.util.ArrayList();
-
-        setSkippedPanels(skippedPanels.toArray());
         return true;
     }
 

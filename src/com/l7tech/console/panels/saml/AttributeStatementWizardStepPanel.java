@@ -97,9 +97,10 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
     public void readSettings(Object settings) throws IllegalArgumentException {
         RequestWssSaml assertion = (RequestWssSaml)settings;
         SamlAttributeStatement statement = assertion.getAttributeStatement();
-         if (statement == null) {
-             throw new IllegalArgumentException();
-         }
+        if (statement == null) {
+            setSkipped(true);
+            return;
+        }
 
         // put in table
         attributesTableModel.setRowCount(0);

@@ -79,10 +79,11 @@ public class AuthorizationStatementWizardStepPanel extends WizardStepPanel {
     public void readSettings(Object settings) throws IllegalArgumentException {
         RequestWssSaml assertion = (RequestWssSaml)settings;
         SamlAuthorizationStatement statement = assertion.getAuthorizationStatement();
-         if (statement == null) {
-             throw new IllegalArgumentException();
-         }
-
+        if (statement == null) {
+            setSkipped(true);
+            return;
+        }
+  
         textFieldAction.setText(statement.getAction());
         textFieldActionNamespace.setText(statement.getActionNamespace());
         textFieldResource.setText(statement.getResource());

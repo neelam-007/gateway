@@ -1,11 +1,10 @@
 package com.l7tech.console.tree.policy;
 
 
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
-import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
-import com.l7tech.console.action.EditXmlSecurityRecipientContextAction;
 import com.l7tech.console.action.EditRequestWssSamlAction;
+import com.l7tech.console.action.EditXmlSecurityRecipientContextAction;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -26,10 +25,18 @@ public class RequestWssSamlTreeNode extends LeafAssertionTreeNode {
     }
 
     public String getName() {
+        String st = "Unknown Statement";
+        if (data.getAuthenticationStatement() != null) {
+            st = "Authentication Statement";
+        } else if (data.getAttributeStatement() !=null) {
+            st = "Attribute Statement";
+        } else if (data.getAuthorizationStatement() !=null) {
+            st = "Authorization Decision Statement";
+        }
         if (!data.getRecipientContext().localRecipient()) {
-            return "SAML Constraints [\'" + data.getRecipientContext().getActor() + "\' actor]";
+            return "SAML "+st+" [\'" + data.getRecipientContext().getActor() + "\' actor]";
         } else {
-            return "SAML Constriants";
+            return "SAML "+st;
         }
     }
 
@@ -71,6 +78,6 @@ public class RequestWssSamlTreeNode extends LeafAssertionTreeNode {
      * @param open for nodes that can be opened, can have children
      */
     protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/SAMLAuthentication.gif";
+        return "com/l7tech/console/resources/xmlWithCert16.gif";
     }
 }
