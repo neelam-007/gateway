@@ -70,7 +70,7 @@ public class AboutBox extends JDialog implements ActionListener {
         Insets ins = new Insets(1, 1, 1, 1);
         JScrollPane jsp = new JScrollPane(systemProperties);
 
-        this.setTitle("About " + product + " " + "Version" + " " + version);
+        this.setTitle("About the" + product /*+ " " + "Version" + " " + version*/);
         this.getContentPane().add(tabPanel, BorderLayout.CENTER);
         infoPanel.add(new JLabel("Product: " + product),
           new GridBagConstraints(0, 1, 1, 1, 0d, 0d,
