@@ -14,11 +14,8 @@ import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.History;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.event.ConnectionEvent;
-import com.sun.net.ssl.HostnameVerifier;
-import com.sun.net.ssl.HttpsURLConnection;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.*;
 import javax.security.auth.login.LoginException;
 import javax.swing.*;
 import javax.swing.event.DocumentListener;
@@ -54,14 +51,18 @@ public class LogonDialog extends JDialog {
     /* was the dialog aborted */
     private boolean aborted = false;
 
-    /** True if "remember id" pref is enabled and a remembered ID was found. */
+    /**
+     * True if "remember id" pref is enabled and a remembered ID was found.
+     */
     private boolean rememberUser = false;
 
     /* was the error handled (to avoid double exception messages) */
     private boolean sslHostNameMismatchUserNotified = false;
 
 
-    /** Resource bundle with default locale */
+    /**
+     * Resource bundle with default locale
+     */
     private ResourceBundle resources = null;
 
     /* Command string for a cancel action (e.g.,a button or menu item). */
@@ -74,17 +75,27 @@ public class LogonDialog extends JDialog {
 
     private JButton loginButton = null;
 
-    /** the logo above the Login Dialogue * */
+    /**
+     * the logo above the Login Dialogue *
+     */
     private JLabel companyLogoJLabel = null;
 
-    /** username text field */
+    /**
+     * username text field
+     */
     private JTextField userNameTextField = null;
-    /** password text field */
+    /**
+     * password text field
+     */
     private JPasswordField passwordField = null;
-    /** the server combo box * */
+    /**
+     * the server combo box *
+     */
     private JComboBox serverComboBox = null;
 
-    /** VM property (-D) that triggers off the server check */
+    /**
+     * VM property (-D) that triggers off the server check
+     */
     private static final String DISABLE_SERVER_CHECK = "disable.server.check";
     private Frame parentFrame;
     private History serverUrlHistory;
@@ -172,24 +183,23 @@ public class LogonDialog extends JDialog {
 
         DocumentListener inputValidDocumentListener = new DocumentListener() {
             public void insertUpdate(DocumentEvent e) {
-                if (loginButton !=null)
+                if (loginButton != null)
                     loginButton.setEnabled(isInputValid());
             }
 
             public void removeUpdate(DocumentEvent e) {
-                if (loginButton !=null)
+                if (loginButton != null)
                     loginButton.setEnabled(isInputValid());
             }
 
             public void changedUpdate(DocumentEvent e) {
-                if (loginButton !=null)
+                if (loginButton != null)
                     loginButton.setEnabled(isInputValid());
             }
         };
 
         userNameTextField.getDocument().addDocumentListener(inputValidDocumentListener);
-        userNameLabel.setDisplayedMnemonic(
-          resources.getString("userNameTextField.label").charAt(0));
+        userNameLabel.setDisplayedMnemonic(resources.getString("userNameTextField.label").charAt(0));
         userNameLabel.setLabelFor(userNameTextField);
         userNameLabel.setText(resources.getString("userNameTextField.label"));
 
@@ -256,8 +266,7 @@ public class LogonDialog extends JDialog {
         // password label
         JLabel passwordLabel = new JLabel();
         passwordLabel.setToolTipText(resources.getString("passwordField.tooltip"));
-        passwordLabel.setDisplayedMnemonic(
-          resources.getString("passwordField.mnemonic").charAt(0));
+        passwordLabel.setDisplayedMnemonic(resources.getString("passwordField.mnemonic").charAt(0));
         passwordLabel.setText(resources.getString("passwordField.label"));
         passwordLabel.setLabelFor(passwordField);
         constraints = new GridBagConstraints();
@@ -295,8 +304,7 @@ public class LogonDialog extends JDialog {
 
         //url label
         JLabel serverLabel = new JLabel();
-        serverLabel.setDisplayedMnemonic(
-          resources.getString("serverField.mnemonic").charAt(0));
+        serverLabel.setDisplayedMnemonic(resources.getString("serverField.mnemonic").charAt(0));
         serverLabel.setToolTipText(resources.getString("serverField.tooltip"));
         serverLabel.setText(resources.getString("serverField.label"));
         serverLabel.setLabelFor(passwordField);
@@ -464,8 +472,7 @@ public class LogonDialog extends JDialog {
 
                 // if the service is not avail, format the message and show to te client
                 if (!dialog.isServiceAvailable(serviceURL) && !dialog.sslHostNameMismatchUserNotified) {
-                    String msg = MessageFormat.format(
-                      dialog.resources.getString("logon.connect.error"),
+                    String msg = MessageFormat.format(dialog.resources.getString("logon.connect.error"),
                       new Object[]{getHostPart(serviceURL)});
                     JOptionPane.showMessageDialog(dialog, msg, "Error", JOptionPane.ERROR_MESSAGE);
                     break;
@@ -607,20 +614,28 @@ public class LogonDialog extends JDialog {
     }
 
     private void addSslHostNameVerifier(HttpURLConnection conn) {
+        // support host name verifier from both com.sun.net.ssl. and
+        // javax.net.ssl.
+        class SsgHostnameVerifier implements HostnameVerifier, com.sun.net.ssl.HostnameVerifier {
+            public boolean verify(String host, SSLSession session) {
+                String peerHost = session.getPeerHost();
+                return verify(host, peerHost);
+            }
+
+            public boolean verify(String host, String peerHost) {
+                if (host.equals(peerHost)) return true;
+                String msg = MessageFormat.format(resources.getString("logon.hostname.mismatch"),
+                  new Object[]{host, peerHost});
+                sslHostNameMismatchUserNotified = true;
+                JOptionPane.showMessageDialog(LogonDialog.this, msg, "Error", JOptionPane.ERROR_MESSAGE);
+                return false;
+            }
+        };
+        final SsgHostnameVerifier hostnameVerifier = new SsgHostnameVerifier();
         if (conn instanceof HttpsURLConnection) {
-            ((HttpsURLConnection)conn).setHostnameVerifier(
-              new HostnameVerifier() {
-                  public boolean verify(String host, String peerHost) {
-                      if (host.equals(peerHost)) return true;
-                      String msg = MessageFormat.format(
-                        resources.getString("logon.hostname.mismatch"),
-                        new Object[]{host, peerHost});
-                      sslHostNameMismatchUserNotified = true;
-                      JOptionPane.
-                        showMessageDialog(LogonDialog.this, msg, "Error", JOptionPane.ERROR_MESSAGE);
-                      return false;
-                  }
-              });
+            ((HttpsURLConnection)conn).setHostnameVerifier(hostnameVerifier);
+        } else if (conn instanceof com.sun.net.ssl.HttpsURLConnection) {
+            ((com.sun.net.ssl.HttpsURLConnection)conn).setHostnameVerifier(hostnameVerifier);
         }
     }
 
@@ -700,7 +715,7 @@ public class LogonDialog extends JDialog {
             }
             URL url = new URL(surl);
             String host = url.getHost();
-            return host !=null && !"".equals(host);
+            return host != null && !"".equals(host);
         } catch (MalformedURLException e) {
         }
         return false;
@@ -718,11 +733,11 @@ public class LogonDialog extends JDialog {
         if (cause instanceof VersionException) {
             log.log(Level.WARNING, "logon()", e);
             String msg = MessageFormat.format(dialog.resources.getString("logon.version.mismatch"),
-                new Object[]{BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber()});
+              new Object[]{BuildInfo.getProductVersion() + " build " + BuildInfo.getBuildNumber()});
             JOptionPane.showMessageDialog(dialog, msg, "Warning", JOptionPane.ERROR_MESSAGE);
         } else if (cause instanceof ConnectException ||
-                   cause instanceof UnknownHostException ||
-                   cause instanceof FileNotFoundException) {
+          cause instanceof UnknownHostException ||
+          cause instanceof FileNotFoundException) {
             log.log(Level.WARNING, "logon()", e);
             String msg =
               MessageFormat.format(dialog.resources.getString("logon.connect.error"), new Object[]{getHostPart(serviceUrl)});
