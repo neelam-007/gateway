@@ -12,7 +12,9 @@ import javax.jms.BytesMessage;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.TextMessage;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -33,7 +35,7 @@ public class JmsSoapRequest extends SoapRequest {
         if ( request instanceof TextMessage ) {
             TextMessage treq = (TextMessage)request;
             try {
-                return new ByteArrayInputStream( treq.getText().getBytes() );
+                return new ByteArrayInputStream( treq.getText().getBytes(JmsUtil.DEFAULT_ENCODING) );
             } catch (JMSException e) {
                 throw new IOException( e.toString() );
             }
@@ -43,9 +45,11 @@ public class JmsSoapRequest extends SoapRequest {
             final BytesMessage breq = (BytesMessage)request;
 
             return new BytesMessageInputStream( breq );
+            //return new InputStreamReader( is, JmsUtil.DEFAULT_ENCODING );     // todo sane encoding
         } else {
             _logger.warning( "Can't get a reader for a non-text message! Returning a reader on an empty String!" );
-            return new ByteArrayInputStream( new String("").getBytes() );
+            return new ByteArrayInputStream( new String("").getBytes(JmsUtil.DEFAULT_ENCODING) );
+            //return new StringReader("");
         }
     }
 
