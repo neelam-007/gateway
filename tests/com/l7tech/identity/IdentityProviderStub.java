@@ -37,8 +37,8 @@ public class IdentityProviderStub implements IdentityProvider {
         return Registry.getDefault().getInternalGroupManager();
     }
 
-    public boolean authenticate( PrincipalCredentials pc ) {
-        return false;
+    public void authenticate( PrincipalCredentials pc ) throws AuthenticationException {
+        return;
     }
 
 
