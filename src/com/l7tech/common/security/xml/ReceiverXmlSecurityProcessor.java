@@ -179,6 +179,11 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                                 Element bodyElement = XmlUtil.findOnlyOneChildElementByName( messagePartElement,
                                                                                              messagePartElement.getNamespaceURI(),
                                                                                              SoapUtil.BODY_EL_NAME );
+                                if ( bodyElement == null ) {
+                                    String msg = "No SOAP:Body element found";
+                                    logger.warning(msg);
+                                    throw new SecurityProcessorException(msg);
+                                }
                                 XmlMangler.decryptElement(bodyElement, decryptionKey);
                             } catch ( XmlUtil.MultipleChildElementsException e ) {
                                 String msg = "Message contained multiple SOAP:Body elements";
@@ -189,10 +194,12 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                             XmlMangler.decryptElement(messagePartElement, decryptionKey);
                         }
                     } else {
-                        logger.warning("Encrypt requested XPath '" + preconditionXpath.getExpression() + "'" + " but no child nodes exist, skipping encryption");
+                        logger.warning("Encrypt requested XPath '" + elementXpath.getExpression() + "'" + " but no child nodes exist, skipping encryption");
                     }
 
-                    if (!preconditionMatched) {
+                    if ( envelopeProcessed ) {
+                        preconditionMatched = true;
+                    } else if (!preconditionMatched) {
                         // Retry the precondition check now that we've decrypted
                         List nodes = XpathEvaluator.newEvaluator(document, preconditionXpath.getNamespaces()).select(preconditionXpath.getExpression());
                         if (!nodes.isEmpty())
