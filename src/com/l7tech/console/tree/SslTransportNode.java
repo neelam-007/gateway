@@ -8,6 +8,8 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.Wsdl;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.SslAssertion;
 
 import javax.swing.*;
 import javax.swing.tree.MutableTreeNode;
@@ -40,6 +42,16 @@ public class SslTransportNode extends AbstractTreeNode {
         return new Action[]{};
     }
 
+    /**
+     * Return assertion representation of the node
+     * or <b>null</b> if the node cannot be an assertion
+     *
+     * @return the popup menu
+     */
+    public Assertion asAssertion() {
+        return new SslAssertion();
+
+    }
     /**
      * Returns true if the receiver is a leaf.
      *

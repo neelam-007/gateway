@@ -1,5 +1,19 @@
 package com.l7tech.console.action;
 
+import com.l7tech.console.util.WindowManager;
+import com.l7tech.console.tree.TreeNodeFactory;
+import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.policy.PolicyTree;
+import com.l7tech.console.tree.policy.AssertionTreeNode;
+import com.l7tech.console.tree.policy.AssertionTreeNodeFactory;
+import com.l7tech.policy.assertion.Assertion;
+
+import javax.swing.*;
+import javax.swing.tree.TreeNode;
+import javax.swing.tree.TreePath;
+import javax.swing.tree.DefaultTreeModel;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 
 /**
@@ -10,6 +24,10 @@ package com.l7tech.console.action;
  * @version 1.0
  */
 public class AddAssertionAction extends BaseAction {
+    protected AbstractTreeNode paletteNode;
+    protected AssertionTreeNode assertionNode;
+    private static final Logger log = Logger.getLogger(AddAssertionAction.class.getName());
+
     /**
      * @return the action name
      */
@@ -38,5 +56,25 @@ public class AddAssertionAction extends BaseAction {
      * without explicitly asking for the AWT event thread!
      */
     public void performAction() {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                JTree tree =
+                  (JTree)WindowManager.
+                  getInstance().getComponent(PolicyTree.NAME);
+                if (tree != null) {
+                    DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                    Assertion nass = paletteNode.asAssertion();
+                    if (nass !=null) {
+                        model.
+                            insertNodeInto(AssertionTreeNodeFactory.asTreeNode(nass),
+                            assertionNode, assertionNode.getChildCount());
+                    }else {
+                        log.log(Level.WARNING, "The node has no associated assertion "+paletteNode);
+                    }
+                } else {
+                    log.log(Level.WARNING, "Unable to reach the palette tree.");
+                }
+            }
+        });
     }
 }

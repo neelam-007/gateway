@@ -1,6 +1,7 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.console.util.IconManager2;
+import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.*;
@@ -66,12 +67,12 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
     }
 
     /**
-     * Return a panel for this node or <b>null</b> if there
-     * is no panel
+     * Return assertion representation of the node
+     * or <b>null</b> if the node cannot be an assertion
      *
      * @return the popup menu
      */
-    public final JPanel getPanel() {
+    public Assertion asAssertion() {
         return null;
     }
 

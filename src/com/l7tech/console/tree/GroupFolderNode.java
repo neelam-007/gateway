@@ -20,14 +20,16 @@ import java.util.Enumeration;
  */
 public class GroupFolderNode extends AbstractTreeNode {
     private final GroupManager groupManager;
+    private long providerId;
 
     /**
      * construct the <CODE>GroupFolderNode</CODE> instance for
      * a given entry.
      */
-    public GroupFolderNode(GroupManager gm) {
+    public GroupFolderNode(GroupManager gm, long providerId) {
         super(null);
         groupManager = gm;
+        this.providerId = providerId;
     }
 
     /**
@@ -68,6 +70,15 @@ public class GroupFolderNode extends AbstractTreeNode {
      */
     public Action[] getActions() {
         return new Action[]{new NewGroupAction(this)};
+    }
+
+    /**
+     * Returns the provider id for the users.
+     *
+     * @return the provider id
+     */
+    public long getProviderId() {
+        return providerId;
     }
 
     /**

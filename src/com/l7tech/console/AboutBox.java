@@ -1,6 +1,7 @@
 package com.l7tech.console;
 
 import com.l7tech.console.table.MapBackedTableModel;
+import com.l7tech.adminws.identity.Service;
 
 import javax.swing.*;
 import java.awt.*;
@@ -18,7 +19,7 @@ import java.util.TreeMap;
  * @version 1.2
  */
 public class AboutBox extends JDialog implements ActionListener {
-    private static final String LOGO_IMAGE = "rooster.gif";
+    private static final String LOGO_IMAGE = "help-panel.png";
     /* this class classloader */
     private final ClassLoader cl = getClass().getClassLoader();
 
@@ -30,7 +31,7 @@ public class AboutBox extends JDialog implements ActionListener {
 
     JPanel infoPanel = new JPanel(new GridBagLayout());
     String product = "SSG - Policy Editor";
-    String version = "NA";
+    String version = Service.VERSION;
     ResourceThread rThread = new ResourceThread();
     JProgressBar resourceMeter = new JProgressBar();
     JTable systemProperties = new
@@ -80,7 +81,7 @@ public class AboutBox extends JDialog implements ActionListener {
                         GridBagConstraints.CENTER,
                         GridBagConstraints.HORIZONTAL, ins, 0, 0));
 
-        infoPanel.add(new JLabel("Version:" + version),
+        infoPanel.add(new JLabel("Version: " + version),
                 new GridBagConstraints(0, 2, 1, 1, 0d, 0d,
                         GridBagConstraints.WEST,
                         GridBagConstraints.NONE, ins, 0, 0));
@@ -181,10 +182,11 @@ public class AboutBox extends JDialog implements ActionListener {
             System.runFinalization();
             try {
                 while (!stop) {
+                    Runtime runtime = Runtime.getRuntime();
                     long UsedMemory =
-                            Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
-                    if (resourceMeter.getMaximum() != (int) Runtime.getRuntime().totalMemory())
-                        resourceMeter.setMaximum((int) Runtime.getRuntime().totalMemory());
+                            runtime.totalMemory() - runtime.freeMemory();
+                    if (resourceMeter.getMaximum() != (int) runtime.totalMemory())
+                        resourceMeter.setMaximum((int) runtime.totalMemory());
                     if (resourceMeter.getValue() != (int) UsedMemory) {
                         resourceMeter.setValue((int) UsedMemory);
                         resourceMeter.setString(Nf.format(UsedMemory / MB) + " " + "MB");

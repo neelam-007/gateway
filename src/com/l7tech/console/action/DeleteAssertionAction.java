@@ -16,7 +16,7 @@ import javax.swing.tree.DefaultTreeModel;
  * @version 1.0
  */
 public class DeleteAssertionAction extends BaseAction {
-    AssertionTreeNode node;
+    protected AssertionTreeNode node;
 
     public DeleteAssertionAction() {
     }

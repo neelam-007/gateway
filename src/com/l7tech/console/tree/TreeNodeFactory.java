@@ -2,6 +2,7 @@ package com.l7tech.console.tree;
 
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.console.tree.policy.AssertionTreeNode;
 
 import java.util.Enumeration;
 
@@ -45,7 +46,6 @@ public class TreeNodeFactory {
 
         throw new IllegalArgumentException("Unknown entity type " + entity.getType());
     }
-
 
     /**
      * returns an TreeNodeEnumeration for a given Enumeration

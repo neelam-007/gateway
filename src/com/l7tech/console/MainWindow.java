@@ -1370,7 +1370,7 @@ public class MainWindow extends JFrame {
         setName("MainWindow");
         setJMenuBar(getMainJMenuBar());
         setTitle(resapplication.getString("SSG"));
-        ImageIcon imageIcon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/rooster.gif"));
+        ImageIcon imageIcon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/layer7_logo_small_32x32.png"));
         setIconImage(imageIcon.getImage());
         getContentPane().setLayout(new BorderLayout());
         getContentPane().add(getJFrameContentPane(), BorderLayout.CENTER);

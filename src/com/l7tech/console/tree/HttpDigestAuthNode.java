@@ -1,6 +1,7 @@
 package com.l7tech.console.tree;
 
-
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 
 
 /**
@@ -32,6 +33,16 @@ public class HttpDigestAuthNode extends AbstractTreeNode {
      */
     public boolean getAllowsChildren() {
         return false;
+    }
+
+    /**
+     * Return assertion representation of the node
+     * or <b>null</b> if the node cannot be an assertion
+     *
+     * @return the popup menu
+     */
+    public Assertion asAssertion() {
+        return new HttpDigest();
     }
 
     /**

@@ -3,6 +3,8 @@ package com.l7tech.console.tree;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.console.action.NewUserAction;
 import com.l7tech.console.action.UserPropertiesAction;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.identity.SpecificUser;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -42,6 +44,18 @@ public class UserNode extends EntityHeaderNode {
         list.addAll(Arrays.asList(super.getActions()));
 
         return (Action[]) list.toArray(new Action[]{});
+    }
+
+    /**
+     * Return assertion representation of the node
+     * or <b>null</b> if the node cannot be an assertion
+     *
+     * @return the popup menu
+     */
+    public Assertion asAssertion() {
+        UserFolderNode parent = (UserFolderNode)getParent();
+        EntityHeader e = (EntityHeader)getUserObject();
+        return new SpecificUser(parent.getProviderId(), e.getName());
     }
 
     /**

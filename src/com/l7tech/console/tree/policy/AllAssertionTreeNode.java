@@ -3,6 +3,7 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.console.action.AddIdentityAssertionAction;
+import com.l7tech.console.tree.AbstractTreeNode;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -51,6 +52,15 @@ class AllAssertionTreeNode extends CompositeAssertionTreeNode {
         return getParent() !=null;
     }
 
+    /**
+     * By default, this node accepts leaf nodes.
+     *
+     * @param node the node to accept
+     * @return true if sending node is leaf
+     */
+    public boolean accept(AbstractTreeNode node) {
+        return node.isLeaf();
+    }
 
     /**
      * specify this node image resource

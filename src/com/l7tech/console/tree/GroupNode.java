@@ -2,6 +2,8 @@ package com.l7tech.console.tree;
 
 import com.l7tech.console.action.GroupPropertiesAction;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.identity.MemberOfGroup;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -42,6 +44,18 @@ public class GroupNode extends EntityHeaderNode {
         list.addAll(Arrays.asList(super.getActions()));
 
         return (Action[]) list.toArray(new Action[]{});
+    }
+
+    /**
+     * Return assertion representation of the node
+     * or <b>null</b> if the node cannot be an assertion
+     *
+     * @return the popup menu
+     */
+    public Assertion asAssertion() {
+        GroupFolderNode parent = (GroupFolderNode)getParent();
+        EntityHeader e = (EntityHeader)getUserObject();
+        return new MemberOfGroup(parent.getProviderId(), e.getName());
     }
 
     /**

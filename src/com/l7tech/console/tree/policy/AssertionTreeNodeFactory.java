@@ -26,7 +26,7 @@ import java.util.Map;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
-class AssertionTreeNodeFactory {
+public class AssertionTreeNodeFactory {
     static Map assertionMap = new HashMap();
 
     // maping assertion to tree nodes to
@@ -54,7 +54,7 @@ class AssertionTreeNodeFactory {
      *
      * @return the TreeNode for a given Entry
      */
-    static AssertionTreeNode asTreeNode(Assertion assertion) {
+    public static AssertionTreeNode asTreeNode(Assertion assertion) {
         if (assertion == null) {
             throw new IllegalArgumentException();
         }

@@ -29,7 +29,7 @@ public class ServicePolicyPropertiesAction extends NodeAction {
      * @return the action name
      */
     public String getName() {
-        return "Policy properties";
+        return "Service policy";
     }
 
     /**

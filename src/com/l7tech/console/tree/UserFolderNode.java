@@ -17,15 +17,17 @@ import java.util.Enumeration;
  */
 public class UserFolderNode extends AbstractTreeNode {
     private UserManager userManager;
+    private long providerId;
 
     /**
      * construct the <CODE>UserFolderNode</CODE> instance
      *
      * @param um the children enumeration
      */
-    public UserFolderNode(UserManager um) {
+    public UserFolderNode(UserManager um, long providerId) {
         super(null);
         userManager = um;
+        this.providerId = providerId;
     }
 
     /**
@@ -52,6 +54,15 @@ public class UserFolderNode extends AbstractTreeNode {
      */
     public Action[] getActions() {
         return new Action[]{new NewUserAction(this)};
+    }
+
+    /**
+     * Returns the provider id for the users.
+     *
+     * @return the provider id
+     */
+    public long getProviderId() {
+        return providerId;
     }
 
     /**

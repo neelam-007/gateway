@@ -117,6 +117,11 @@ public class PolicyToolBar extends JToolBar {
              * Invoked when an action occurs.
              */
             public void performAction() {
+                this.paletteNode = lastPaletteNode;
+                this.assertionNode = lastAssertionNode;
+                super.performAction();
+                lastAssertionNode = null;
+                updateActions();
             }
         };
         return addAssertionAction;
@@ -131,6 +136,10 @@ public class PolicyToolBar extends JToolBar {
              * Invoked when an action occurs.
              */
             public void performAction() {
+               this.node = lastAssertionNode;
+                super.performAction();
+                this.node = null;
+                updateActions();
             }
         };
         return deleteAssertionAction;
@@ -141,8 +150,12 @@ public class PolicyToolBar extends JToolBar {
             disableAll();
             return;
         }
-        getAddAssertionAction().setEnabled(lastAssertionNode.accept(lastPaletteNode));
-        getDeleteAssertionAction().setEnabled(lastAssertionNode.canDelete());
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                getAddAssertionAction().setEnabled(lastAssertionNode.accept(lastPaletteNode));
+                getDeleteAssertionAction().setEnabled(lastAssertionNode.canDelete());
+            }
+        });
     }
 
     private void disableAll() {

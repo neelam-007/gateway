@@ -9,7 +9,7 @@ package com.l7tech.console.action;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public abstract class AssertionMoveUpAction extends BaseAction {
+public class AssertionMoveUpAction extends BaseAction {
     /**
      * @return the action name
      */
