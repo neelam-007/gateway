@@ -238,7 +238,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                                          "wssc");
         String wssc = dkt.getPrefix() == null ? "" : dkt.getPrefix() + ":";
         dkt.setAttributeNS(SoapUtil.WSSC_NAMESPACE, wssc + "Algorithm", SoapUtil.ALGORITHM_PSHA);
-        Element str = XmlUtil.createAndAppendElementNS(dkt, "SecurityTokenReference", wsseNs, wsse);
+        Element str = XmlUtil.createAndAppendElementNS(dkt, SoapUtil.SECURITYTOKENREFERENCE_EL_NAME, wsseNs, wsse);
         Element ref = XmlUtil.createAndAppendElementNS(str, "Reference", wsseNs, wsse);
         ref.setAttribute("URI", getOrCreateWsuId(c, sct, null));
         ref.setAttribute("ValueType", SoapUtil.VALUETYPE_SECURECONV);
@@ -348,7 +348,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                                                               "KeyInfo");
         keyInfoEl.setPrefix("ds");
         Element secTokRefEl = securityHeader.getOwnerDocument().createElementNS(securityHeader.getNamespaceURI(),
-                                                                                "SecurityTokenReference");
+                                                                                SoapUtil.SECURITYTOKENREFERENCE_EL_NAME);
         secTokRefEl.setPrefix(wssePrefix);
         Element refEl = securityHeader.getOwnerDocument().createElementNS(securityHeader.getNamespaceURI(),
                                                                           "Reference");
@@ -435,7 +435,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                                            SoapUtil.DIGSIG_URI,
                                                            "dsig");
         Element str = XmlUtil.createAndAppendElementNS(keyInfo,
-                                                       "SecurityTokenReference",
+                                                       SoapUtil.SECURITYTOKENREFERENCE_EL_NAME,
                                                        securityHeader.getNamespaceURI(),
                                                        "wsse");
         Element ref = XmlUtil.createAndAppendElementNS(str,
