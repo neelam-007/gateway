@@ -9,6 +9,7 @@ package com.l7tech.console.panels;
 import com.l7tech.service.ServiceAdminStub;
 import com.l7tech.common.util.Locator;
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.GroupManagerStub;
 import com.l7tech.identity.IdentityProvider;
@@ -72,6 +73,10 @@ public class PublishServiceWizardTest extends Locator {
 
         public ServiceAdmin getServiceManager() {
             return SERVICE_MANAGER_STUB;
+        }
+
+        public IdentityProvider getIdentityProvider(EntityHeaderNode node) {
+            return IDENTITY_PROVIDER_STUB;
         }
     }
 

@@ -6,6 +6,7 @@ import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.common.util.Locator;
 import com.l7tech.service.ServiceAdmin;
+import com.l7tech.console.tree.EntityHeaderNode;
 
 
 /**
@@ -60,6 +61,11 @@ public abstract class Registry {
     abstract public IdentityProvider getInternalProvider();
 
     /**
+     * @return the identity provider to which this node belongs to
+     */
+    abstract public IdentityProvider getIdentityProvider(EntityHeaderNode node);
+
+    /**
      * @return the internal user manager
      */
     abstract public UserManager getInternalUserManager();
@@ -86,6 +92,10 @@ public abstract class Registry {
          * @return the identity provider config manager
          */
         public IdentityProviderConfigManager getProviderConfigManager() {
+            return null;
+        }
+
+        public IdentityProvider getIdentityProvider(EntityHeaderNode node) {
             return null;
         }
 

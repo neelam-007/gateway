@@ -1,6 +1,7 @@
 package com.l7tech.console.util.registry;
 
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.identity.*;
 import com.l7tech.common.util.Locator;
 import com.l7tech.service.ServiceAdmin;
@@ -29,6 +30,14 @@ public class RegistryStub extends Registry {
      * @return the internal identity provider
      */
     public IdentityProvider getInternalProvider() {
+        return cm.getInternalIdentityProvider();
+    }
+
+    /**
+     * @return the identity provider to which this node belongs to
+     */
+    public IdentityProvider getIdentityProvider(EntityHeaderNode node) {
+        // todo, does the stub mode support anything other than the internal id provider?
         return cm.getInternalIdentityProvider();
     }
 
