@@ -132,8 +132,6 @@ public class UserManagerClient extends IdentityManagerClient implements UserMana
         for (Iterator i = groupMembershipHeaders.iterator(); i.hasNext();) {
             EntityHeader header = (EntityHeader)i.next();
             if (header.getName() != null && header.getName().equals(Group.ADMIN_GROUP_NAME)) return true;
-
-            System.out.println(header.getName());
         }
         return false;
     }
