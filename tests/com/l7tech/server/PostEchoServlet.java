@@ -18,9 +18,12 @@ import java.io.OutputStream;
  * Echoes anything posted back to the response
  */
 public class PostEchoServlet extends HttpServlet {
-    protected void doPost(HttpServletRequest servletRequest, HttpServletResponse servletResponse) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest servletRequest, HttpServletResponse servletResponse)
+            throws ServletException, IOException 
+    {
         servletResponse.setContentType(servletRequest.getContentType());
         servletResponse.setStatus(HttpServletResponse.SC_OK);
+        servletResponse.setBufferSize(0);
         InputStream in = servletRequest.getInputStream();
         OutputStream out = servletResponse.getOutputStream();
         byte[] buf = new byte[8192];
