@@ -100,27 +100,62 @@ public class ServerLogHandler extends Handler {
         }
         String reqnode = nodeId;
         if (reqnode == null) reqnode = nodeid;
-        // add order by something and limit
-        String selStatement = "from " + TABLE_NAME + " in class " + SSGLogRecord.class.getName() +
-                                        " where " + TABLE_NAME + "." + NODEID_COLNAME + " = \'" +
+
+        // build the "where" part of the request
+        String whereStatement = "where " + TABLE_NAME + "." + NODEID_COLNAME + " = \'" +
                                         reqnode + "\'";
         if (lowMsgNumber < 0 && highMsgNumber >= 0) {
-            selStatement += " and " + TABLE_NAME + "." + OID_COLNAME + " < " + highMsgNumber;
+            whereStatement += " and " + TABLE_NAME + "." + OID_COLNAME + " < " + highMsgNumber;
         } else if (lowMsgNumber >= 0 && highMsgNumber < 0) {
-            selStatement += " and " + TABLE_NAME + "." + OID_COLNAME + " > " + lowMsgNumber;
+            whereStatement += " and " + TABLE_NAME + "." + OID_COLNAME + " > " + lowMsgNumber;
         } else if (lowMsgNumber >= 0 && highMsgNumber >= 0) {
-            selStatement += " and " + TABLE_NAME + "." + OID_COLNAME + " > " + lowMsgNumber +
-                            " and " + TABLE_NAME + "." + OID_COLNAME + " < " + highMsgNumber;
+            whereStatement += " and " + TABLE_NAME + "." + OID_COLNAME + " > " + lowMsgNumber +
+                              " and " + TABLE_NAME + "." + OID_COLNAME + " < " + highMsgNumber;
         }
-        selStatement += " order by " + TABLE_NAME + "." + OID_COLNAME + " desc limit " + size;
+
+        // first thing, see how many records in the table
+        // "select count(*) from " + TABLE_NAME + " in class " + SSGLogRecord.class.getName()
+        int counted = -1;
+        String countselstatement = "select count(*) from " + TABLE_NAME + " in class " +
+                                   SSGLogRecord.class.getName() + " " + whereStatement;
+        Iterator i = null;
+        try {
+            i = context.getSession().iterate(countselstatement);
+        } catch (HibernateException e) {
+            reportException("Could not count from table", e);
+            return Collections.EMPTY_LIST;
+        } catch (SQLException e) {
+            reportException("Could not count from table", e);
+            return Collections.EMPTY_LIST;
+        }
+        if (i == null || !i.hasNext()) {
+            reportException("count did not work - no result given", null);
+            return Collections.EMPTY_LIST;
+        } else {
+            Integer toto = (Integer)i.next();
+            counted = toto.intValue();
+        }
+
+        // obviously, if count was 0, no need to go further
+        if (counted == 0) return Collections.EMPTY_LIST;
+
+        // get the records using limit and offset statements
+        String selStatement = "select from " + TABLE_NAME + " in class " + SSGLogRecord.class.getName() +
+                              " " + whereStatement;
+        if (counted > size) {
+            //int offsetvalue = counted - size;
+            //selStatement += " limit " + size + "," + offsetvalue;
+            //selStatement += " limit " + size + " offset " + offsetvalue;
+            selStatement += " order by " + TABLE_NAME + "." + OID_COLNAME + " desc limit " + size;
+        }
 
         List res = null;
         try {
             res = context.getSession().find(selStatement);
         } catch (HibernateException e) {
-            reportException("Exception getting records", e);
+            reportException("Exception getting records with " + selStatement, e);
         } catch (SQLException e) {
-            reportException("Exception getting records", e);
+            reportException("Exception getting records with " + selStatement, e);
         }
         if (res == null) return Collections.EMPTY_LIST;
         return res;
