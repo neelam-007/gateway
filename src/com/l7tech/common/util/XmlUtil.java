@@ -129,7 +129,7 @@ public class XmlUtil {
     /**
      * Finds the first child {@link Element} of a parent {@link Element}
      * with the specified name that is in the specified namespace.
-     *
+     *<p>
      * The parent must belong to a DOM produced by a namespace-aware parser,
      * and the name must be undecorated.
      *
@@ -151,6 +151,34 @@ public class XmlUtil {
         return null;
     }
 
+    /**
+     * Finds the first child {@link Element} of a parent {@link Element}
+     * with the specified name that is in one of the specified namespaces.
+     *<p>
+     * The parent must belong to a DOM produced by a namespace-aware parser,
+     * and the name must be undecorated.
+     *
+     * @param parent the {@link Element} in which to search for children. Must be non-null.
+     * @param nsuris the URIs of the namespaces to which the child must belong, NOT THE PREFIX!  Must be non-null and non-empty.
+     * @param name the name of the element to find. Must be non-null.
+     * @return First matching child {@link Element} or null if the specified parent contains no matching elements
+     */
+    public static Element findFirstChildElementByName( Element parent, String[] nsuris, String name ) {
+        if ( nsuris == null || nsuris.length < 1 || name == null )
+            throw new IllegalArgumentException( "nsuris and name must be non-null and non-empty" );
+        NodeList children = parent.getChildNodes();
+        for ( int i = 0; i < children.getLength(); i++ ) {
+            Node n = children.item(i);
+            if ( n.getNodeType() == Node.ELEMENT_NODE &&
+                 name.equals( n.getLocalName()) ) {
+                for ( int j = 0; j < nsuris.length; j++) {
+                    if (nsuris[j].equals(n.getNamespaceURI()))
+                        return (Element)n;
+                }
+            }
+        }
+        return null;
+    }
     /**
      * Finds one and only one child {@link Element} of a parent {@link Element}
      * with the specified name that is in the specified namespace.
