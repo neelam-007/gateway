@@ -44,7 +44,10 @@ public class ServerHttpBasic extends ServerHttpCredentialSource implements Serve
     }
 
     public LoginCredentials findCredentials( String wwwAuthorize ) throws IOException, CredentialFinderException {
-        if ( wwwAuthorize == null || wwwAuthorize.length() == 0 ) return null;
+        if ( wwwAuthorize == null || wwwAuthorize.length() == 0 ) {
+            logger.fine("No wwwAuthorize");
+            return null;
+        }
 
         int spos = wwwAuthorize.indexOf(" ");
         if ( spos < 0 ) {
