@@ -2,13 +2,6 @@ package com.l7tech.console.tree.policy;
 
 
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.console.util.IconManager2;
-
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.*;
-import java.util.Iterator;
-import java.awt.*;
 
 /**
  * Class SpecificUserAssertionTreeNode.
@@ -42,6 +35,6 @@ class SslAssertionTreeNode extends LeafAssertionTreeNode {
      * @param open for nodes that can be opened, can have children
      */
     protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/encryption.gif";
+        return "com/l7tech/console/resources/ssl.gif";
     }
 }
