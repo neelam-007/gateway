@@ -175,6 +175,8 @@
         <property name="destinationFactoryUrl" column="destination_factory_url" type="string"/>
         <property name="queueFactoryUrl" column="queue_factory_url" type="string"/>
         <property name="topicFactoryUrl" column="topic_factory_url" type="string"/>
+        <property name="username" column="username" type="string"/>
+        <property name="password" column="password" type="string"/>
 
         <set name="destinations" table="jms_destinations">
             <one-to-many class="com.l7tech.common.transport.jms.JmsDestination"/>
@@ -192,6 +194,8 @@
         <property name="name" column="name" type="string"/>
         <property name="destinationName" column="destination_name" type="string"/>
         <property name="replyType" column="reply_type" type="int"/>
+        <property name="username" column="username" type="string"/>
+        <property name="password" column="password" type="string"/>
     </class>
 
 </hibernate-mapping>

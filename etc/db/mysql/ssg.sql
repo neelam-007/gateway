@@ -277,6 +277,8 @@ CREATE TABLE jms_provider (
   destination_factory_url varchar(255) NOT NULL default '',
   queue_factory_url varchar(255) NOT NULL default '',
   topic_factory_url varchar(255) NOT NULL default '',
+  username varchar(32) default '',
+  password varchar(32) default '',
   primary key(oid)
 ) TYPE=InnoDB;
 
@@ -292,5 +294,7 @@ CREATE TABLE jms_destination (
   name varchar(128) NOT NULL default '',
   destination_name varchar(128) NOT NULL default '',
   reply_type integer default '0',
+  username varchar(32) default '',
+  password varchar(32) default '',
   primary key(oid)
 ) TYPE=InnoDB;
