@@ -101,8 +101,8 @@ public class TypeTranslator {
         ret.setEmail(svcUser.getEmail());
         ret.setFirstName(svcUser.getFirstName());
         Collection groups = headerArrayToCollection(svcUser.getGroups());
-        ret.setGroups(groups);
-        ret.setGroupHeaders(groups);
+        ret.setGroups(new java.util.HashSet(groups));
+        ret.setGroupHeaders(new java.util.HashSet(groups));
         ret.setLastName(svcUser.getLastName());
         ret.setLogin(svcUser.getLogin());
         ret.setOid(svcUser.getOid());
@@ -127,10 +127,10 @@ public class TypeTranslator {
         ret.setDescription(svcGroup.getDescription());
         Collection col = headerArrayToCollection(svcGroup.getMembers());
         // add it both places (just in case)
-        ret.setMembers(col);
-        ret.setMemberHeaders(col);
+        ret.setMembers(new java.util.HashSet(col));
+        ret.setMemberHeaders(new java.util.HashSet(col));
         ret.setName(svcGroup.getName());
         ret.setOid(svcGroup.getOid());
-        return ret;
+        return ret; 
     }
 }
