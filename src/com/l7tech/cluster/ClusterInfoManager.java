@@ -63,7 +63,17 @@ public class ClusterInfoManager {
     public void updateSelfStatus(double avgLoad) throws UpdateException {
         long now = System.currentTimeMillis();
         ClusterNodeInfo selfCI = getSelfNodeInf();
-        if (selfCI != null) {
+
+        // recover from a table purge while a node is running (bugzilla #860)
+        if (selfCI == null) {
+            logger.warning("cannot retrieve record for this node. perhaps the table was cleared since last update." +
+                           " attempting to recreate row");
+            selfCI = recreateRow();
+        }
+
+        if (selfCI == null) {
+            logger.warning("record for this node is not accessible and attempt to recreate it failed");
+        } else {
             selfCI.setAvgLoad(avgLoad);
             selfCI.setLastUpdateTimeStamp(now);
             boolean isMaster = isMasterMode();
@@ -82,8 +92,6 @@ public class ClusterInfoManager {
                 logger.log(Level.WARNING, msg, e);
                 throw new UpdateException(msg, e);
             }
-        } else {
-            logger.warning("cannot retrieve db entry for this node.");
         }
     }
 
@@ -169,6 +177,7 @@ public class ClusterInfoManager {
                 logger.log(Level.WARNING, msg, e);
                 throw new UpdateException(msg, e);
             }
+            rememberedBootTime = newboottimevalue;
         } else {
             logger.warning("cannot retrieve db entry for this node.");
         }
@@ -226,6 +235,19 @@ public class ClusterInfoManager {
 
             logger.severe("should not get here. this server has no mac?");
             return null;
+        }
+    }
+
+    private ClusterNodeInfo recreateRow() {
+        ClusterNodeInfo recreatedNodeInfo = selfPopulateClusterDB(selfId);
+        if (recreatedNodeInfo == null) {
+            logger.warning("failed to recreated node info row in table.");
+            return null;
+        } else {
+            if (rememberedBootTime > -1) {
+                recreatedNodeInfo.setBootTime(rememberedBootTime);
+            }
+            return recreatedNodeInfo;
         }
     }
 
@@ -475,6 +497,7 @@ public class ClusterInfoManager {
                                                                 "\\w\\w.\\w\\w.\\w\\w).*", Pattern.DOTALL);
     private final Logger logger = LogManager.getInstance().getSystemLogger();
     private String selfId = null;
+    private long rememberedBootTime = -1;
 
 
 }
