@@ -20,6 +20,7 @@ import com.l7tech.console.xmlviewer.Viewer;
 import com.l7tech.console.xmlviewer.ViewerToolBar;
 import com.l7tech.console.xmlviewer.properties.ConfigurationProperties;
 import com.l7tech.console.xmlviewer.util.DocumentUtilities;
+import com.l7tech.console.action.Actions;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.xmlsec.ElementSecurity;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertion;
@@ -60,7 +61,9 @@ import java.util.*;
  */
 public class XmlSecurityPropertiesDialog extends JDialog {
     private JPanel mainPanel;
-    private JPanel soapMessagePanel;
+    private JPanel messageViewerPanel;
+    private JPanel messageViewerToolbarPanel;
+    private JLabel operationsLabel;
     private JRadioButton entireMessage;
     private JRadioButton messageParts;
     private JTable securedItemsTable;
@@ -76,6 +79,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
     private Wsdl serviceWsdl;
     private JScrollPane tableScrollPane;
     private JScrollPane treeScrollPane;
+    private JScrollPane messageViewerScrollPane;
     private SecuredMessagePartsTableModel securedMessagePartsTableModel;
     private SecuredMessagePartsTableModel memoTableModelEntireMessage;
     private SecuredMessagePartsTableModel memoTableModelMessageParts;
@@ -118,7 +122,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                 namespaces.putAll(XpathEvaluator.getNamespaces(soapRequest.getSOAPMessage()));
             }
         } catch (Exception e) {
-            throw new RuntimeException("Unable to parse the service WSDL " + serviceNode.getName());
+            throw new RuntimeException("Unable to parse the service WSDL " + serviceNode.getName(), e);
         }
 
         initialize();
@@ -209,7 +213,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                         if (ns != null) {
                             nameSpacePrefix = ns.m_prefix + ":";
                         }
-                        xpathExpression += ("/" + nameSpacePrefix + bn.getName());
+                        xpathExpression = messageToolbar.getXPath();
                         SecuredMessagePart p = new SecuredMessagePart();
                         p.setOperation(bn.getName());
                         p.setXpathExpression(xpathExpression);
@@ -229,6 +233,11 @@ public class XmlSecurityPropertiesDialog extends JDialog {
             }
         });
 
+        helpButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                Actions.invokeHelp(XmlSecurityPropertiesDialog.this);
+            }
+        });
         try {
             final Wsdl wsdl = serviceNode.getPublishedService().parsedWsdl();
             final MutableTreeNode root = new DefaultMutableTreeNode();
@@ -267,7 +276,9 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                 ElementSecurity elementSecurity = elements[i];
                 securedMessagePartsTableModel.addPart(toSecureMessagePart(elementSecurity));
             }
-            setContentPane(mainPanel);
+            getContentPane().setLayout(new BorderLayout());
+            mainPanel.setSize(800, 600);
+            getContentPane().add(mainPanel);
         } catch (WSDLException e) {
             throw new RuntimeException(e);
         } catch (FindException e) {
@@ -286,10 +297,12 @@ public class XmlSecurityPropertiesDialog extends JDialog {
     private void initializeSoapMessageViewer() throws IOException, SAXParseException, DocumentException {
         ConfigurationProperties cp = new ConfigurationProperties();
         exchangerDocument = asExchangerDocument("<empty/>");
-        messageViewer = new Viewer(cp.getViewer(), exchangerDocument);
+        messageViewer = new Viewer(cp.getViewer(), exchangerDocument, false);
         messageToolbar = new ViewerToolBar(cp.getViewer(), messageViewer);
-        soapMessagePanel.add(messageToolbar, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 1, 7, 7, null, null, null));
-        soapMessagePanel.add(messageViewer, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 1, 7, 7, null, null, null));
+        com.intellij.uiDesigner.core.GridConstraints gridConstraints = new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 7, 7, null, null, null);
+        messageViewerToolbarPanel.add(messageToolbar, gridConstraints);
+        com.intellij.uiDesigner.core.GridConstraints gridConstraints2 = new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 7, 7, null, null, null);
+        messageViewerPanel.add(messageViewer, gridConstraints2);
     }
 
     private static ExchangerDocument asExchangerDocument(String content)
@@ -345,13 +358,13 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         }
         if (alreadySelected) {
             JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
-            final String msg = "<html><center>The message/part <i><b>{0}</b></i><br>" +
-              "for operation <i><b>{1}</i></b> has already been selected or<br>" +
-              "overlaps with another selection.</center></html>";
+            final String msg = "<html><center>The element <i><b>{0}</b></i><br>" +
+              "for operation <i><b>{1}</i></b> has already been included in previous selection.<br>" +
+              "Overlapping elements in signatures and encryptions are currently not supported.</center></html>";
             final Object[] params = new Object[]{p.getXpathExpression() == null ? "" : p.getXpathExpression(),
                                                  p.getOperation() == null ? "" : p.getOperation()};
             JOptionPane.showMessageDialog(f, MessageFormat.format(msg, params),
-              "Element already exists",
+              "Element already selected",
               JOptionPane.WARNING_MESSAGE);
             return;
         }
@@ -472,7 +485,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         final JPanel _2;
         _2 = new JPanel();
         _2.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(4, 2, new Insets(5, 0, 0, 0), -1, -1));
-        _1.add(_2, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 3, 3, 3, null, null, null));
+        _1.add(_2, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 1, 7, 1, null, null, null));
         final JRadioButton _3;
         _3 = new JRadioButton();
         entireMessage = _3;
@@ -492,93 +505,132 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         _2.add(_6, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, 0, 2, 1, 6, null, null, null));
         final JPanel _7;
         _7 = new JPanel();
-        _7.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 5, new Insets(10, 0, 0, 0), -1, -1));
-        _1.add(_7, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, 0, 3, 3, 3, null, null, null));
-        final JScrollPane _8;
-        _8 = new JScrollPane();
-        tableScrollPane = _8;
-        _7.add(_8, new com.intellij.uiDesigner.core.GridConstraints(0, 4, 1, 1, 0, 3, 3, 7, null, null, null));
-        final JTable _9;
-        _9 = new JTable();
-        securedItemsTable = _9;
-        _9.setPreferredScrollableViewportSize(new Dimension(350, 400));
-        _8.setViewportView(_9);
-        final JPanel _10;
-        _10 = new JPanel();
-        _10.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(4, 1, new Insets(0, 0, 0, 0), -1, -1));
-        _7.add(_10, new com.intellij.uiDesigner.core.GridConstraints(0, 3, 1, 1, 0, 3, 3, 3, null, null, null));
-        final JButton _11;
-        _11 = new JButton();
-        removeButton = _11;
-        _11.setText("Remove");
-        _10.add(_11, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 0, 1, 3, 0, null, null, null));
-        final JButton _12;
-        _12 = new JButton();
-        addButton = _12;
-        _12.setText("Add");
-        _10.add(_12, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 1, 3, 0, null, null, null));
-        final com.intellij.uiDesigner.core.Spacer _13;
-        _13 = new com.intellij.uiDesigner.core.Spacer();
-        _10.add(_13, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, 0, 2, 1, 6, null, null, null));
-        final com.intellij.uiDesigner.core.Spacer _14;
-        _14 = new com.intellij.uiDesigner.core.Spacer();
-        _10.add(_14, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 2, 1, 6, new Dimension(-1, 20), new Dimension(-1, 20), null));
-        final JPanel _15;
-        _15 = new JPanel();
-        soapMessagePanel = _15;
-        _15.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
-        _7.add(_15, new com.intellij.uiDesigner.core.GridConstraints(0, 2, 1, 1, 0, 3, 7, 7, null, new Dimension(300, -1), null));
-        final JPanel _16;
-        _16 = new JPanel();
-        _16.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
-        _7.add(_16, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 3, null, null, null));
-        final JScrollPane _17;
-        _17 = new JScrollPane();
-        treeScrollPane = _17;
-        _16.add(_17, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 3, 1, 7, new Dimension(120, -1), new Dimension(120, -1), new Dimension(120, -1)));
-        final JTree _18;
-        _18 = new JTree();
-        wsdlMessagesTree = _18;
-        _18.setShowsRootHandles(false);
-        _17.setViewportView(_18);
-        final JLabel _19;
-        _19 = new JLabel();
-        _19.setText("Operations");
-        _16.add(_19, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 6, null, null, null));
+        _7.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 2, new Insets(10, 0, 0, 0), -1, -1));
+        _1.add(_7, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, 0, 3, 7, 7, null, null, null));
+        final JSplitPane _8;
+        _8 = new JSplitPane();
+        _8.setDividerSize(4);
+        _8.setDividerLocation(350);
+        _7.add(_8, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 0, 3, 7, 7, null, null, null));
+        final JPanel _9;
+        _9 = new JPanel();
+        _9.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
+        _8.setRightComponent(_9);
+        final JScrollPane _10;
+        _10 = new JScrollPane();
+        tableScrollPane = _10;
+        _9.add(_10, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 0, 3, 3, 7, null, null, null));
+        final JTable _11;
+        _11 = new JTable();
+        securedItemsTable = _11;
+        _11.setAutoResizeMode(2);
+        _11.setPreferredScrollableViewportSize(new Dimension(-1, -1));
+        _10.setViewportView(_11);
+        final JPanel _12;
+        _12 = new JPanel();
+        _12.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(4, 2, new Insets(0, 0, 0, 0), -1, -1));
+        _9.add(_12, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 1, 7, null, null, null));
+        final JButton _13;
+        _13 = new JButton();
+        removeButton = _13;
+        _13.setText("Remove");
+        _12.add(_13, new com.intellij.uiDesigner.core.GridConstraints(2, 1, 1, 1, 0, 1, 3, 0, null, null, null));
+        final JButton _14;
+        _14 = new JButton();
+        addButton = _14;
+        _14.setText("Add");
+        _12.add(_14, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 0, 1, 3, 0, null, null, null));
+        final com.intellij.uiDesigner.core.Spacer _15;
+        _15 = new com.intellij.uiDesigner.core.Spacer();
+        _12.add(_15, new com.intellij.uiDesigner.core.GridConstraints(3, 1, 1, 1, 0, 2, 1, 6, null, null, null));
+        final com.intellij.uiDesigner.core.Spacer _16;
+        _16 = new com.intellij.uiDesigner.core.Spacer();
+        _12.add(_16, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 0, 2, 1, 6, new Dimension(-1, 20), new Dimension(-1, 20), null));
+        final com.intellij.uiDesigner.core.Spacer _17;
+        _17 = new com.intellij.uiDesigner.core.Spacer();
+        _12.add(_17, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 1, 6, 1, new Dimension(10, -1), null, null));
+        final JPanel _18;
+        _18 = new JPanel();
+        _18.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
+        _8.setLeftComponent(_18);
+        final JSplitPane _19;
+        _19 = new JSplitPane();
+        _19.setDividerSize(4);
+        _18.add(_19, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 7, 3, null, new Dimension(200, 200), null));
         final JPanel _20;
         _20 = new JPanel();
-        _20.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 4, new Insets(5, 0, 5, 0), -1, -1));
-        _1.add(_20, new com.intellij.uiDesigner.core.GridConstraints(4, 0, 1, 1, 0, 3, 3, 3, null, null, null));
-        final JButton _21;
-        _21 = new JButton();
-        okButton = _21;
-        _21.setText("OK");
-        _20.add(_21, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 0, 1, 3, 0, null, null, null));
-        final com.intellij.uiDesigner.core.Spacer _22;
-        _22 = new com.intellij.uiDesigner.core.Spacer();
-        _20.add(_22, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 1, 6, 1, null, null, null));
-        final JButton _23;
-        _23 = new JButton();
-        helpButton = _23;
-        _23.setText("Help");
-        _20.add(_23, new com.intellij.uiDesigner.core.GridConstraints(1, 3, 1, 1, 0, 1, 3, 0, null, null, null));
-        final JButton _24;
-        _24 = new JButton();
-        cancelButton = _24;
-        _24.setText("Cancel");
-        _20.add(_24, new com.intellij.uiDesigner.core.GridConstraints(1, 2, 1, 1, 0, 1, 3, 0, null, null, null));
-        final com.intellij.uiDesigner.core.Spacer _25;
-        _25 = new com.intellij.uiDesigner.core.Spacer();
-        _20.add(_25, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 2, 1, 6, null, null, null));
+        _20.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        _19.setLeftComponent(_20);
+        final JLabel _21;
+        _21 = new JLabel();
+        operationsLabel = _21;
+        _21.setText("Operations");
+        _20.add(_21, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 1, 7, 0, null, null, null));
+        final JScrollPane _22;
+        _22 = new JScrollPane();
+        treeScrollPane = _22;
+        _22.setAutoscrolls(false);
+        _20.add(_22, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 3, 7, 7, null, null, null));
+        final JTree _23;
+        _23 = new JTree();
+        wsdlMessagesTree = _23;
+        _23.setShowsRootHandles(false);
+        _23.setRootVisible(false);
+        _22.setViewportView(_23);
+        final JScrollPane _24;
+        _24 = new JScrollPane();
+        _19.setRightComponent(_24);
+        final JPanel _25;
+        _25 = new JPanel();
+        _25.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        _24.setViewportView(_25);
         final JPanel _26;
         _26 = new JPanel();
-        _26.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(0, 5, 0, 0), -1, -1));
-        _1.add(_26, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 3, null, null, null));
-        _26.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), null));
-        final JLabel _27;
-        _27 = new JLabel();
-        _27.setText("Signature and encryption properties");
-        _26.add(_27, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
+        messageViewerToolbarPanel = _26;
+        _26.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
+        _25.add(_26, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 1, 7, 1, null, null, null));
+        final com.intellij.uiDesigner.core.Spacer _27;
+        _27 = new com.intellij.uiDesigner.core.Spacer();
+        _26.add(_27, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 0, 1, 6, 1, null, null, null));
+        final JPanel _28;
+        _28 = new JPanel();
+        messageViewerPanel = _28;
+        _28.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        _25.add(_28, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 3, 7, 7, null, null, null));
+        final JPanel _29;
+        _29 = new JPanel();
+        _29.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 4, new Insets(5, 0, 5, 0), -1, -1));
+        _1.add(_29, new com.intellij.uiDesigner.core.GridConstraints(4, 0, 1, 1, 0, 3, 7, 3, null, null, null));
+        final JButton _30;
+        _30 = new JButton();
+        okButton = _30;
+        _30.setText("OK");
+        _29.add(_30, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 0, 1, 3, 0, null, null, null));
+        final com.intellij.uiDesigner.core.Spacer _31;
+        _31 = new com.intellij.uiDesigner.core.Spacer();
+        _29.add(_31, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 1, 6, 1, null, null, null));
+        final JButton _32;
+        _32 = new JButton();
+        helpButton = _32;
+        _32.setText("Help");
+        _29.add(_32, new com.intellij.uiDesigner.core.GridConstraints(1, 3, 1, 1, 0, 1, 3, 0, null, null, null));
+        final JButton _33;
+        _33 = new JButton();
+        cancelButton = _33;
+        _33.setText("Cancel");
+        _29.add(_33, new com.intellij.uiDesigner.core.GridConstraints(1, 2, 1, 1, 0, 1, 3, 0, null, null, null));
+        final com.intellij.uiDesigner.core.Spacer _34;
+        _34 = new com.intellij.uiDesigner.core.Spacer();
+        _29.add(_34, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 2, 1, 6, null, null, null));
+        final JPanel _35;
+        _35 = new JPanel();
+        _35.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(0, 5, 0, 0), -1, -1));
+        _1.add(_35, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 1, 7, 1, null, null, null));
+        _35.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), null));
+        final JLabel _36;
+        _36 = new JLabel();
+        _36.setText("Signature and encryption properties");
+        _35.add(_36, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
     }
 
 
