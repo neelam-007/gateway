@@ -199,7 +199,7 @@ public class MessageProcessor implements ServiceListener {
         } catch ( InterruptedException ie ) {
             logger.fine( "Interrupted while acquiring statistics lock!" );
             Thread.currentThread().interrupt();
-            return null;
+            throw new RuntimeException(ie);
         } finally {
             if (read != null) {
                 read.release();
