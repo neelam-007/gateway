@@ -1,7 +1,23 @@
 package com.l7tech.console.action;
 
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.console.tree.PoliciesFolderNode;
+import com.l7tech.console.util.Preferences;
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.policy.exporter.ExporterConstants;
+import com.l7tech.policy.wsp.WspConstants;
 import com.l7tech.service.PublishedService;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
+import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 
@@ -59,6 +75,69 @@ public class ImportPolicyFromFileAction extends BaseAction {
         if (pubService == null) {
             throw new IllegalStateException("no service specified");
         }
-        // todo
+        // get file from user
+        File templateDir = null;
+        try {
+            templateDir = new File(Preferences.getPreferences().getHomePath() +
+                                   File.separator + PoliciesFolderNode.TEMPLATES_DIR);
+            if (!templateDir.exists()) {
+                if (!templateDir.mkdir()) {
+                    throw new IOException("Cannot create " + templateDir.getPath());
+                }
+            }
+        } catch (IOException e) {
+            ErrorManager.getDefault().notify(Level.WARNING,
+                                             e,
+                                             "The system reported problem in accessing or creating" +
+                                             "the policy template directory " + templateDir.getPath() + "\n" +
+                                             "The policy template is not saved.");
+            return;
+        }
+
+        JFileChooser chooser = new JFileChooser(templateDir);
+        chooser.setDialogTitle("Import from ...");
+        chooser.setMultiSelectionEnabled(false);
+        chooser.setFileFilter(new FileFilter() {
+            public boolean accept(File f) {
+                if (f.getAbsolutePath().endsWith(".xml") || f.getAbsolutePath().endsWith(".XML")) {
+                    return true;
+                }
+                if (f.isDirectory()) return true;
+                return false;
+            }
+            public String getDescription() {
+                return "XML Files";
+            }
+        });
+        int ret = chooser.showOpenDialog(TopComponents.getInstance().getMainWindow());
+        if (JFileChooser.APPROVE_OPTION != ret) return;
+        String name = chooser.getSelectedFile().getPath();
+        // Read XML document from this
+        Document readDoc = null;
+        try {
+            readDoc = XmlUtil.parse(new FileInputStream(chooser.getSelectedFile()));
+        } catch (IOException e) {
+            log.log(Level.WARNING, "Could not read xml document from " + name, e);
+        } catch (SAXException e) {
+            log.log(Level.WARNING, "Could not read xml document from " + name, e);
+        }
+        // Import policy references first
+        Element references = XmlUtil.findFirstChildElementByName(readDoc.getDocumentElement(),
+                                                                 ExporterConstants.EXPORTED_POL_NS,
+                                                                 ExporterConstants.EXPORTED_REFERENCES_ELNAME);
+        if (references != null) {
+            System.out.println("\n\n\nTODO HERE!!\n\n\n");
+            // todo, check those references
+            // if not resolveable, interact with administrator to fix the problem
+        }
+        Element policy = XmlUtil.findFirstChildElementByName(readDoc.getDocumentElement(),
+                                                             WspConstants.POLICY_NS,
+                                                             WspConstants.POLICY_ELNAME);
+
+        try {
+            pubService.setPolicyXml(XmlUtil.nodeToString(policy));
+        } catch (IOException e) {
+            log.log(Level.WARNING, "could not read policy from " + name, e);
+        }
     }
 }
