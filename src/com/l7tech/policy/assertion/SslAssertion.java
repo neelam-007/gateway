@@ -17,6 +17,11 @@ import java.util.Collections;
  * @version $Revision$
  */
 public class SslAssertion extends ConfidentialityAssertion {
+    /**
+     * default constructor, required by XML serializers
+     */
+    public SslAssertion() {}
+
     public AssertionError checkRequest(Request request, Response response) throws PolicyAssertionException {
         TransportMetadata tm = request.getTransportMetadata();
         if ( tm.getProtocol() == TransportProtocol.HTTPS )
