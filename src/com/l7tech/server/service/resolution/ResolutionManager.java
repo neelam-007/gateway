@@ -13,38 +13,36 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- *
  * The ResolutionManager (actually its corresponding table) enforces the uniqueness of resolution
  * parameters across all services.
- *
+ * <p/>
  * This is used by the ServiceManager when updating and saving services to ensure that resolution
  * parameters do not conflict.
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
- *
+ * <p/>
  * User: flascell<br/>
  * Date: Nov 25, 2003<br/>
  * $Id$
- *
  */
 public class ResolutionManager {
 
     /**
      * Records resolution parameters for the passed service.
-     *
+     * <p/>
      * If those resolution parameters conflict with resolution parameters of another service, this
      * will throw a DuplicateObjectException exception.
-     *
+     * <p/>
      * This sould be called by service manager when saving and updating services. If this throws, a rollback
      * should occur.
      *
      * @param service the service whose resolution parameters should be recorded
      * @throws DuplicateObjectException this is thrown when there is a conflict between the resolution parameters of
-     * the passed service and the ones of another service. should rollback at that point.
-     * @throws UpdateException something went wrong, should rollback at that point
+     *                                  the passed service and the ones of another service. should rollback at that point.
+     * @throws UpdateException          something went wrong, should rollback at that point
      */
     public void recordResolutionParameters(PublishedService service) throws DuplicateObjectException, UpdateException,
-                                                                            ResolutionParameterTooLongException {
+      ResolutionParameterTooLongException {
         Collection distinctItemsToSave = getDistinct(service);
         Collection existingParameters = existingResolutionParameters(service.getOid());
 
@@ -88,19 +86,19 @@ public class ResolutionManager {
             }
             logger.fine("saved " + distinctItemsToSave.size() + " parameters for service " + service.getOid());
         } catch (HibernateException e) {
-            String msg = "error adding resolution parameters. throwing duplicate exception";
-            logger.log(Level.WARNING, msg, e);
+            String msg = "error adding resolution parameters.";
             throw new DuplicateObjectException(msg, e);
         }
     }
 
     /**
      * deletes all resolution parameters previously recorded for a particular service
+     *
      * @param serviceOid id of the service for which recorded resolution parameters will be recorded
      */
     public void deleteResolutionParameters(long serviceOid) throws DeleteException {
         String query = "from " + TABLE_NAME + " in class " + ResolutionParameters.class.getName() +
-                       " where " + TABLE_NAME + "." + SVCID_COLUMN + " = " + serviceOid;
+          " where " + TABLE_NAME + "." + SVCID_COLUMN + " = " + serviceOid;
         HibernatePersistenceContext context = null;
         Session session = null;
         try {
@@ -149,7 +147,7 @@ public class ResolutionManager {
 
     private Collection existingResolutionParameters(long serviceid) {
         String query = "from " + TABLE_NAME + " in class " + ResolutionParameters.class.getName() +
-                       " where " + TABLE_NAME + "." + SVCID_COLUMN + " = ?";
+          " where " + TABLE_NAME + "." + SVCID_COLUMN + " = ?";
 
         List hibResults = null;
         HibernatePersistenceContext context = null;
@@ -161,7 +159,7 @@ public class ResolutionManager {
         } catch (SQLException e) {
             hibResults = Collections.EMPTY_LIST;
             logger.log(Level.WARNING, "hibernate error finding resolution parameters for " + serviceid, e);
-        }  catch (HibernateException e) {
+        } catch (HibernateException e) {
             hibResults = Collections.EMPTY_LIST;
             logger.log(Level.WARNING, "hibernate error finding resolution parameters for " + serviceid, e);
         }

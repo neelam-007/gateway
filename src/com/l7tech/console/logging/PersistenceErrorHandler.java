@@ -24,19 +24,15 @@ public class PersistenceErrorHandler implements ErrorHandler {
 
     /**
      * handle the error event
-     * 
+     *
      * @param e the error event
      */
     public void handle(ErrorEvent e) {
         final Throwable throwable = ExceptionUtils.unnestToRoot(e.getThrowable());
         if (throwable instanceof ObjectModelException) {
             final Throwable t = e.getThrowable();
-            Level level = e.getLevel();
-            if (level != Level.SEVERE) { // bump if necessary
-                level = Level.SEVERE;
-            }
-            e.getLogger().log(level, ERROR_MESSAGE, t);
-            ExceptionDialog d = new ExceptionDialog(getMainWindow(), "SecureSpan Manager - Gateway Error", ERROR_MESSAGE, t, level);
+            e.getLogger().log(Level.WARNING, ERROR_MESSAGE, t);
+            ExceptionDialog d = new ExceptionDialog(getMainWindow(), "SecureSpan Manager - Warning", ERROR_MESSAGE, t, Level.WARNING);
             d.pack();
             Utilities.centerOnScreen(d);
             d.show();

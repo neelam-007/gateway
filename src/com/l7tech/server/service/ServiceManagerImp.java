@@ -12,8 +12,8 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.service.resolution.ResolutionManager;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.service.PublishedService;
-import com.l7tech.service.ServiceStatistics;
 import com.l7tech.service.ResolutionParameterTooLongException;
+import com.l7tech.service.ServiceStatistics;
 import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Session;
 
@@ -61,9 +61,9 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
 
     public PublishedService findByPrimaryKey(long oid) throws FindException {
         try {
-            return (PublishedService)PersistenceManager.findByPrimaryKey( getContext(), getImpClass(), oid );
-        } catch ( SQLException se ) {
-            throw new FindException( se.toString(), se );
+            return (PublishedService)PersistenceManager.findByPrimaryKey(getContext(), getImpClass(), oid);
+        } catch (SQLException se) {
+            throw new FindException(se.toString(), se);
         }
     }
 
@@ -72,12 +72,12 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         PersistenceContext context = null;
         try {
             context = getContext();
-            long oid = PersistenceManager.save(context, service );
-            logger.info( "Saved service #" + oid );
+            long oid = PersistenceManager.save(context, service);
+            logger.info("Saved service #" + oid);
             service.setOid(oid);
-        } catch ( SQLException se ) {
-            logger.log( Level.SEVERE, se.toString(), se );
-            throw new SaveException( se.toString(), se );
+        } catch (SQLException se) {
+            logger.log(Level.SEVERE, se.toString(), se);
+            throw new SaveException(se.toString(), se);
         }
         // 2. record resolution parameters
         ResolutionManager resolutionManager = new ResolutionManager();
@@ -86,7 +86,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         } catch (DuplicateObjectException e) {
             String msg = "cannot save service. duplicate resolution parameters";
             logger.log(Level.WARNING, msg, e);
-            throw new SaveException(msg, e);
+            throw e;
         } catch (UpdateException e) {
             String msg = "cannot save service's resolution parameters.";
             logger.log(Level.WARNING, msg, e);
@@ -115,6 +115,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
                         }
                     }
                 }
+
                 public void postRollback() {
                     // nothing
                 }
@@ -134,7 +135,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         try {
             context = getContext();
             Session s = context.getSession();
-            List results = s.find( getFieldQuery( new Long( policyId ).toString(), F_VERSION) );
+            List results = s.find(getFieldQuery(new Long(policyId).toString(), F_VERSION));
             if (results == null || results.isEmpty()) {
                 throw new FindException("cannot get version for service " + Long.toString(policyId));
             }
@@ -149,13 +150,13 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
     }
 
     public void update(PublishedService service) throws UpdateException, VersionException,
-                                                        ResolutionParameterTooLongException {
+      ResolutionParameterTooLongException {
         PublishedService original = null;
         // check for original service
         try {
             original = findByPrimaryKey(service.getOid());
             if (original == null) {
-                throw new UpdateException("Could not retrieve the service "+service.getName()+ ".\n" +
+                throw new UpdateException("Could not retrieve the service " + service.getName() + ".\n" +
                   "The service has been removed in the meantime.");
             }
         } catch (FindException e) {
@@ -165,8 +166,8 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         // check version
         if (original.getVersion() != service.getVersion()) {
             logger.severe("db service has version: " + original.getVersion() + ". requestor service has version: "
-                          + service.getVersion());
-            throw new VersionException("The service '"+service.getName()+"' has been changed in the meantime by another user.");
+              + service.getVersion());
+            throw new VersionException("The service '" + service.getName() + "' has been changed in the meantime by another user.");
         }
 
         // try recording resolution parameters
@@ -189,11 +190,11 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
             }
             context = getContext();
             PersistenceManager.update(context, original);
-            logger.info( "Updated service " + service.getName() + "  #" + service.getOid() );
+            logger.info("Updated service " + service.getName() + "  #" + service.getOid());
 
-        } catch ( SQLException se ) {
-            logger.log( Level.SEVERE, se.toString(), se );
-            throw new UpdateException( se.toString(), se );
+        } catch (SQLException se) {
+            logger.log(Level.SEVERE, se.toString(), se);
+            throw new UpdateException(se.toString(), se);
         }
 
         // update cache after commit
@@ -217,6 +218,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
                         }
                     }
                 }
+
                 public void postRollback() {
                     // nothing
                 }
@@ -229,16 +231,16 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         }
     }
 
-    public void delete( PublishedService service ) throws DeleteException {
+    public void delete(PublishedService service) throws DeleteException {
         ResolutionManager resolutionManager = new ResolutionManager();
         PersistenceContext context = null;
         try {
             context = getContext();
-            PersistenceManager.delete(context, service );
+            PersistenceManager.delete(context, service);
             resolutionManager.deleteResolutionParameters(service.getOid());
             logger.info("Deleted service " + service.getName() + " #" + service.getOid());
-        } catch ( SQLException se ) {
-            throw new DeleteException( se.toString(), se );
+        } catch (SQLException se) {
+            throw new DeleteException(se.toString(), se);
         }
 
         try {
@@ -251,6 +253,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
                         logger.log(Level.WARNING, "could not update cache", e);
                     }
                 }
+
                 public void postRollback() {
                     // nothing
                 }
@@ -293,12 +296,13 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
 
     /**
      * get the service versions as currently recorded in database
+     *
      * @return a map whose keys is a Long with service id and values is an Integer with the service version
      * @throws FindException if the query fails for some reason
      */
     public Map getServiceVersions() throws FindException {
         String query = "SELECT " + getTableName() + "." + F_OID + ", " + getTableName() + "." + F_VERSION +
-                       " FROM " + getTableName() + " in class " + getImpClass().getName();
+          " FROM " + getTableName() + " in class " + getImpClass().getName();
         Map output = new HashMap();
 
         try {

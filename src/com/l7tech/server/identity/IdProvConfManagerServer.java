@@ -15,12 +15,11 @@ import java.util.logging.Level;
 /**
  * This IdentityProviderConfigManager is the server side manager who manages the one and only
  * internal identity provider as well as the other providers (ldap & federated) configured by the administrator.
- *
+ * <p/>
  * <br/><br/>
  * Layer 7 Technologies, inc.<br/>
  * User: flascelles<br/>
  * Date: Jun 20, 2003
- *
  */
 public class IdProvConfManagerServer extends HibernateEntityManager implements IdentityProviderConfigManager {
 
@@ -52,21 +51,21 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
     /**
      * @param oid the identity provider id to look for
      * @return the identoty provider for a given id, or <code>null</code>
-     * @throws FindException if there was an persistence error 
+     * @throws FindException if there was an persistence error
      */
     public IdentityProvider getIdentityProvider(long oid) throws FindException {
         return IdentityProviderFactory.getProvider(oid);
     }
 
     public void test(IdentityProviderConfig identityProviderConfig)
-                                throws InvalidIdProviderCfgException {
+      throws InvalidIdProviderCfgException {
         IdentityProvider provider = IdentityProviderFactory.makeProvider(identityProviderConfig);
         provider.test();
     }
 
     public long save(IdentityProviderConfig identityProviderConfig) throws SaveException {
         // we should not accept saving an internal type
-        if (identityProviderConfig.type() == IdentityProviderType.INTERNAL ) {
+        if (identityProviderConfig.type() == IdentityProviderType.INTERNAL) {
             logger.warning("Attempt to save internal id provider");
             throw new SaveException("this type of config cannot be saved");
         }
@@ -89,22 +88,22 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
         // first, check that there isn't an existing provider with same name
         try {
             List existingProvidersWithSameName =
-                    PersistenceManager.find( getContext(),
-                                             "from " + getTableName() + " in class " + getImpClass().getName() +
-                                             " where " + getTableName() + ".name = ?",
-                                             identityProviderConfig.getName(), String.class);
+              PersistenceManager.find(getContext(),
+                "from " + getTableName() + " in class " + getImpClass().getName() +
+              " where " + getTableName() + ".name = ?",
+                identityProviderConfig.getName(), String.class);
 
             if (existingProvidersWithSameName != null && !(existingProvidersWithSameName.isEmpty())) {
                 logger.fine("sending error back to requestor because existing provider with same name exists");
-                throw new SaveException("The name " + identityProviderConfig.getName() + " is already used by " +
-                                        "another id provider.");
+                throw new DuplicateObjectException("The name " + identityProviderConfig.getName() + " is already used by " +
+                  "another id provider.");
             }
         } catch (SQLException e) {
             logger.log(Level.INFO, "problem trying to check for provider with same name as " +
-                                    identityProviderConfig.getName(), e);
+              identityProviderConfig.getName(), e);
         } catch (FindException e) {
             logger.log(Level.INFO, "problem trying to check for provider with same name as " +
-                                    identityProviderConfig.getName(), e);
+              identityProviderConfig.getName(), e);
         }
 
         // then, try to save it

@@ -34,43 +34,43 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
                 logger.fine("findByPrimaryKey called with null arg.");
                 return null;
             }
-            PersistentUser out = (PersistentUser)PersistenceManager.findByPrimaryKey( getContext(), getImpClass(), Long.parseLong(oid));
+            PersistentUser out = (PersistentUser)PersistenceManager.findByPrimaryKey(getContext(), getImpClass(), Long.parseLong(oid));
             if (out == null) return null;
             out.setProviderId(provider.getConfig().getOid());
             return out;
-        } catch ( SQLException se ) {
+        } catch (SQLException se) {
             logger.log(Level.SEVERE, null, se);
-            throw new FindException( se.toString(), se );
-        } catch ( NumberFormatException nfe ) {
+            throw new FindException(se.toString(), se);
+        } catch (NumberFormatException nfe) {
             logger.log(Level.SEVERE, null, nfe);
-            throw new FindException( nfe.toString(), nfe );
+            throw new FindException(nfe.toString(), nfe);
         }
     }
 
-    public User findByLogin( String login ) throws FindException {
+    public User findByLogin(String login) throws FindException {
         try {
             Criteria findByLogin = getContext().getSession().createCriteria(getImpClass());
             findByLogin.add(Expression.eq("login", login));
             addFindAllCriteria(findByLogin);
             List users = findByLogin.list();
-            switch ( users.size() ) {
-            case 0:
-                return null;
-            case 1:
-                PersistentUser u = (PersistentUser)users.get(0);
-                u.setProviderId(provider.getConfig().getOid());
-                return u;
-            default:
-                String err = "Found more than one user with the login " + login;
-                logger.log(Level.SEVERE, err);
-                throw new FindException( err );
+            switch (users.size()) {
+                case 0:
+                    return null;
+                case 1:
+                    PersistentUser u = (PersistentUser)users.get(0);
+                    u.setProviderId(provider.getConfig().getOid());
+                    return u;
+                default:
+                    String err = "Found more than one user with the login " + login;
+                    logger.log(Level.SEVERE, err);
+                    throw new FindException(err);
             }
-        } catch ( SQLException se ) {
+        } catch (SQLException se) {
             logger.log(Level.SEVERE, null, se);
-            throw new FindException( se.toString(), se );
-        } catch ( HibernateException e ) {
+            throw new FindException(se.toString(), se);
+        } catch (HibernateException e) {
             logger.log(Level.SEVERE, null, e);
-            throw new FindException( e.toString(), e );
+            throw new FindException(e.toString(), e);
         }
     }
 
@@ -79,7 +79,8 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
      *
      * @param searchString the search string (supports '*' wildcards)
      * @return the never <b>null</b> collection of entitites
-     * @throws com.l7tech.objectmodel.FindException thrown if an SQL error is encountered
+     * @throws com.l7tech.objectmodel.FindException
+     *          thrown if an SQL error is encountered
      * @see com.l7tech.server.identity.PersistentGroupManager
      */
     public Collection search(String searchString) throws FindException {
@@ -100,11 +101,11 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
             }
             return Collections.unmodifiableList(headers);
         } catch (SQLException e) {
-            final String msg = "Error while searching for "+getInterfaceClass() + " instances.";
+            final String msg = "Error while searching for " + getInterfaceClass() + " instances.";
             logger.log(Level.SEVERE, msg, e);
             throw new FindException(msg, e);
-        } catch ( HibernateException e ) {
-            final String msg = "Error while searching for "+getInterfaceClass() + " instances.";
+        } catch (HibernateException e) {
+            final String msg = "Error while searching for " + getInterfaceClass() + " instances.";
             logger.log(Level.SEVERE, msg, e);
             throw new FindException(msg, e);
         }
@@ -114,47 +115,49 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
         return provider.getConfig().getOid();
     }
 
-    /** Must be called in a transaction! */
+    /**
+     * Must be called in a transaction!
+     */
     public void delete(User user) throws DeleteException, ObjectNotFoundException {
         PersistentUser userImp = cast(user);
         HibernatePersistenceContext context = null;
         try {
             context = (HibernatePersistenceContext)getContext();
-            PersistentUser originalUser = (PersistentUser)findByPrimaryKey( userImp.getUniqueIdentifier() );
+            PersistentUser originalUser = (PersistentUser)findByPrimaryKey(userImp.getUniqueIdentifier());
 
             if (originalUser == null) {
-                throw new ObjectNotFoundException("User "+user.getName());
+                throw new ObjectNotFoundException("User " + user.getName());
             }
 
-            preDelete( originalUser );
+            preDelete(originalUser);
 
             Session s = context.getSession();
             PersistentGroupManager groupManager = (PersistentGroupManager)provider.getGroupManager();
             Set groupHeaders = groupManager.getGroupHeaders(userImp);
-            for ( Iterator i = groupHeaders.iterator(); i.hasNext(); ) {
-                EntityHeader groupHeader = (EntityHeader) i.next();
+            for (Iterator i = groupHeaders.iterator(); i.hasNext();) {
+                EntityHeader groupHeader = (EntityHeader)i.next();
                 s.delete(groupManager.newMembership(userImp.getOid(), groupHeader.getOid()));
             }
-            s.delete( userImp );
-            revokeCert( userImp );
-        } catch ( SQLException se ) {
+            s.delete(userImp);
+            revokeCert(userImp);
+        } catch (SQLException se) {
             logger.log(Level.SEVERE, null, se);
-            throw new DeleteException( se.toString(), se );
-        } catch ( FindException e ) {
+            throw new DeleteException(se.toString(), se);
+        } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
-            throw new DeleteException( e.toString(), e );
-        } catch ( HibernateException e ) {
-            logger.log( Level.SEVERE, e.getMessage(), e );
-            throw new DeleteException( e.toString(), e );
+            throw new DeleteException(e.toString(), e);
+        } catch (HibernateException e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            throw new DeleteException(e.toString(), e);
         }
     }
 
     /**
      * Delete all users of the identity provider given the identity provider Id
-     *
+     * <p/>
      * Must be called in a transaction!
-     * 
-     * @param ipoid  The identity provider id
+     *
+     * @param ipoid The identity provider id
      * @throws DeleteException
      * @throws ObjectNotFoundException
      */
@@ -165,11 +168,11 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
 
         try {
             getContext().getSession().delete(hql.toString(), new Long(ipoid), Hibernate.LONG);
-        } catch ( SQLException e ) {
-            logger.log( Level.SEVERE, e.getMessage(), e );
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
             throw new DeleteException(e.getMessage(), e);
-        } catch ( HibernateException e ) {
-            logger.log( Level.SEVERE, e.getMessage(), e );
+        } catch (HibernateException e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
             throw new DeleteException(e.getMessage(), e);
         }
     }
@@ -181,63 +184,64 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
 
         try {
             getContext().getSession().delete(hql.toString(), identifier, Hibernate.STRING);
-        } catch ( SQLException e ) {
-            logger.log( Level.SEVERE, e.getMessage(), e );
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
             throw new DeleteException(e.getMessage(), e);
-        } catch ( HibernateException e ) {
-            logger.log( Level.SEVERE, e.getMessage(), e );
+        } catch (HibernateException e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
             throw new DeleteException(e.getMessage(), e);
         }
     }
 
-    public String save( User user ) throws SaveException {
-        return save( user, null );
+    public String save(User user) throws SaveException {
+        return save(user, null);
     }
 
-    public String save(User user, Set groupHeaders ) throws SaveException {
+    public String save(User user, Set groupHeaders) throws SaveException {
         PersistentUser imp = cast(user);
 
         try {
-            preSave( imp );
+            preSave(imp);
 
-            String oid = Long.toString( PersistenceManager.save( getContext(), imp ) );
+            String oid = Long.toString(PersistenceManager.save(getContext(), imp));
 
-            if ( groupHeaders != null ) {
+            if (groupHeaders != null) {
                 try {
                     provider.getGroupManager().setGroupHeaders(user, groupHeaders);
                 } catch (FindException e) {
-                    logger.log( Level.SEVERE, e.getMessage(), e );
-                    throw new SaveException( e.getMessage(), e );
+                    logger.log(Level.SEVERE, e.getMessage(), e);
+                    throw new SaveException(e.getMessage(), e);
                 } catch (UpdateException e) {
-                    logger.log( Level.SEVERE, e.getMessage(), e );
-                    throw new SaveException( e.getMessage(), e );
+                    logger.log(Level.SEVERE, e.getMessage(), e);
+                    throw new SaveException(e.getMessage(), e);
                 }
             }
 
             return oid;
-        } catch ( SQLException se ) {
+        } catch (SQLException se) {
             logger.log(Level.SEVERE, null, se);
-            throw new SaveException( se.toString(), se );
+            throw new SaveException(se.toString(), se);
         }
     }
 
-    public void update( User user ) throws UpdateException , ObjectNotFoundException{
-        update( user, null );
+    public void update(User user) throws UpdateException, ObjectNotFoundException {
+        update(user, null);
     }
 
     /**
      * checks that passwd was changed. if so, also revokes the existing cert
      * checks if the user is the last standing admin account, throws if so
+     *
      * @param user existing user
      */
-    public void update( User user, Set groupHeaders ) throws UpdateException , ObjectNotFoundException {
-        PersistentUser imp = cast( user );
+    public void update(User user, Set groupHeaders) throws UpdateException, ObjectNotFoundException {
+        PersistentUser imp = cast(user);
 
         try {
             PersistentUser originalUser = (PersistentUser)findByPrimaryKey(user.getUniqueIdentifier());
             if (originalUser == null) {
                 logger.warning("The user " + user.getName() + " is not found.");
-                throw new ObjectNotFoundException("User "+user.getName());
+                throw new ObjectNotFoundException("User " + user.getName());
             }
 
             // check for version conflict
@@ -247,49 +251,53 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
                 throw new StaleUpdateException(msg);
             }
 
-            checkUpdate( originalUser, imp );
+            checkUpdate(originalUser, imp);
 
-            if ( groupHeaders != null )
-                provider.getGroupManager().setGroupHeaders( user.getUniqueIdentifier(), groupHeaders );
+            if (groupHeaders != null)
+                provider.getGroupManager().setGroupHeaders(user.getUniqueIdentifier(), groupHeaders);
 
             // update user
             originalUser.copyFrom(imp);
             // update from existing user
-            PersistenceManager.update( getContext(), originalUser );
-        } catch ( SQLException se ) {
+            PersistenceManager.update(getContext(), originalUser);
+        } catch (SQLException se) {
             logger.log(Level.SEVERE, null, se);
-            throw new UpdateException( se.toString(), se );
-        } catch ( ObjectModelException e ) {
+            throw new UpdateException(se.toString(), se);
+        } catch (ObjectModelException e) {
             logger.log(Level.SEVERE, null, e);
-            throw new UpdateException( e.toString(), e );
+            throw new UpdateException(e.toString(), e);
         }
     }
 
     /**
      * Override this method to check something before a user is saved
+     *
      * @throws SaveException to veto the save
      */
-    protected void preSave( PersistentUser user ) throws SaveException { }
+    protected void preSave(PersistentUser user) throws SaveException { }
 
     /**
      * Override this method to verify changes to a user before it's updated
+     *
      * @throws ObjectModelException to veto the update
      */
-    protected void checkUpdate( PersistentUser originalUser, PersistentUser updatedUser ) throws ObjectModelException { }
+    protected void checkUpdate(PersistentUser originalUser, PersistentUser updatedUser) throws ObjectModelException {
+    }
 
     /**
      * Override this method to check whether a user can be deleted
+     *
      * @throws DeleteException to veto the deletion
      */
-    protected void preDelete( PersistentUser user ) throws DeleteException { }
+    protected void preDelete(PersistentUser user) throws DeleteException { }
 
-    protected void revokeCert( PersistentUser originalUser ) throws ObjectNotFoundException {
+    protected void revokeCert(PersistentUser originalUser) throws ObjectNotFoundException {
         ClientCertManager man = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
         try {
             man.revokeUserCert(originalUser);
         } catch (UpdateException e) {
             logger.log(Level.FINE, "could not revoke cert for user " + originalUser.getLogin() +
-                    " perhaps this user had no existing cert", e);
+              " perhaps this user had no existing cert", e);
         }
     }
 

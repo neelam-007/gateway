@@ -11,14 +11,13 @@ import java.util.logging.Logger;
 
 /**
  * SSG-side implementation of the UserManager for the internal identity provider.
- * 
+ * <p/>
  * <br/><br/>
  * Layer 7 Technologies, inc.<br/>
  * User: flascelles<br/>
  * Date: Jun 24, 2003<br/>
  *
  * @version $Revision$
- *
  */
 public class InternalUserManagerServer extends PersistentUserManager {
     public InternalUserManagerServer(IdentityProvider provider) {
@@ -29,7 +28,7 @@ public class InternalUserManagerServer extends PersistentUserManager {
         return "internal_user";
     }
 
-    public EntityHeader userToHeader( User user ) {
+    public EntityHeader userToHeader(User user) {
         InternalUser imp = (InternalUser)cast(user);
         return new EntityHeader(imp.getUniqueIdentifier(), EntityType.USER, imp.getLogin(), null);
     }
@@ -51,13 +50,13 @@ public class InternalUserManagerServer extends PersistentUserManager {
             existingDude = null;
         }
         if (existingDude != null) {
-            throw new SaveException("Cannot save this user. Existing user with login \'"
-                                    + user.getLogin() + "\' present.");
+            throw new DuplicateObjectException("Cannot save this user. Existing user with login \'"
+              + user.getLogin() + "\' present.");
         }
     }
 
-    protected void checkUpdate( PersistentUser originalUser,
-                                PersistentUser updatedUser ) throws ObjectModelException {
+    protected void checkUpdate(PersistentUser originalUser,
+                               PersistentUser updatedUser) throws ObjectModelException {
         // checks whether the updatedUser changed his password
         String originalPasswd = originalUser.getPassword();
         String newPasswd = updatedUser.getPassword();
@@ -67,16 +66,17 @@ public class InternalUserManagerServer extends PersistentUserManager {
             logger.info("Revoking cert for updatedUser " + originalUser.getLogin() + " because he is changing his passwd.");
             // must revoke the cert
 
-            revokeCert( originalUser );
+            revokeCert(originalUser);
         }
     }
 
     /**
      * Checks whether this user is the last member of the "Gateway Administrators" group.
      * Prevents the administrator from removing his own admin accout membership
+     *
      * @throws DeleteException if the proposed deletion would remove the last member of the "Gateway Administrators" group.
      */
-    protected void preDelete( PersistentUser user ) throws DeleteException {
+    protected void preDelete(PersistentUser user) throws DeleteException {
         try {
             InternalUser imp = (InternalUser)user;
             GroupManager gman = provider.getGroupManager();
@@ -86,15 +86,15 @@ public class InternalUserManagerServer extends PersistentUserManager {
                 // is he an administrator?
                 if (Group.ADMIN_GROUP_NAME.equals(grp.getName())) {
                     // is he the last one ?
-                    Set adminUserHeaders = gman.getUserHeaders( grp.getStrId() );
-                    if ( adminUserHeaders.size() <= 1 ) {
+                    Set adminUserHeaders = gman.getUserHeaders(grp.getStrId());
+                    if (adminUserHeaders.size() <= 1) {
                         String msg = "An attempt was made to nuke the last standing adminstrator";
                         logger.severe(msg);
                         throw new DeleteException(msg);
                     }
                 }
             }
-        } catch ( FindException e ) {
+        } catch (FindException e) {
             throw new DeleteException("Couldn't find out if user is the last administrator", e);
         }
     }
@@ -103,10 +103,10 @@ public class InternalUserManagerServer extends PersistentUserManager {
         return "login";
     }
 
-    protected PersistentUser cast( User user ) {
+    protected PersistentUser cast(User user) {
         InternalUser imp;
-        if ( user instanceof UserBean ) {
-            imp = new InternalUser( (UserBean)user );
+        if (user instanceof UserBean) {
+            imp = new InternalUser((UserBean)user);
         } else {
             imp = (InternalUser)user;
         }
