@@ -206,6 +206,9 @@ public class XmlSecurityPropertiesDialog extends JDialog {
 
         // display the existing xpath expression
         xPathExpressionTxtField.setText(xmlSecAssertion.getXpathExpression().getExpression());
+
+        // ok button is disabled until a change is made
+        okButton.setEnabled(false);
     }
 
 
@@ -364,6 +367,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                                                  new ViewerToolBar.XPathSelectFeedback() {
                                                     public void selected(String xpathSelected) {
                                                         xPathExpressionTxtField.setText(xpathSelected);
+                                                        okButton.setEnabled(true);
                                                     }
                                                  });
         com.intellij.uiDesigner.core.GridConstraints gridConstraints = new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 7, 7, null, null, null);
