@@ -33,15 +33,17 @@ import java.util.logging.Logger;
 public class XmlUtil {
     private static final EntityResolver SAFE_ENTITY_RESOLVER = new EntityResolver() {
         public InputSource resolveEntity( String publicId, String systemId ) throws SAXException, IOException {
-            logger.warning( "Document referred to an external entity with system id '" + systemId + "'. Ignoring." );
-            return new InputSource(new StringReader(""));
+            String msg = "Document referred to an external entity with system id '" + systemId + "'";
+            logger.warning( msg );
+            throw new SAXException(msg);
         }
     };
 
     /**
-     * Returns a stateless, thread-safe {@link EntityResolver} that ignores external entity references
-     * but otherwise works as expected.  This EntityResolver should be used in ALL XML parsing to avoid
-     * DOS attacks.
+     * Returns a stateless, thread-safe {@link EntityResolver} that throws a SAXException upon encountering
+     * external entity references but otherwise works as expected.  
+     *
+     * This EntityResolver should be used in ALL XML parsing to avoid DOS attacks.
      * @return a safe {@link EntityResolver} instance.
      */
     public static EntityResolver getSafeEntityResolver() {
