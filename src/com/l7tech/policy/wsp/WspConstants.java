@@ -536,6 +536,8 @@ public class WspConstants {
         "Class", // getClass() is a method of Object; not a property
         "Instance", // getInstance() is used by singleton assertions; not a property
         "Path", // getPath() is a utility method of Assertion; not a property
+        "AssertionWithOrdinal", // getAssertionWithOrdinal() is a utility lookup method of Assertion; not a property
+        "Ordinal", // ordinal is transient and is recomputed when policy is deserialized
     };
 
     static boolean isIgnorableProperty(String parm) {

@@ -14,9 +14,8 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.policy.assertion.ext.Category;
+import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.event.EventListenerList;
@@ -27,7 +26,9 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeNode;
 import java.rmi.RemoteException;
-import java.util.*;
+import java.util.EventListener;
+import java.util.Iterator;
+import java.util.Set;
 
 
 /**
@@ -58,28 +59,11 @@ public class PolicyTreeModel extends DefaultTreeModel {
         try {
             final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
             Assertion policy = cr.resolvePolicy(service.getPolicyXml());
-            validatePolicyTree(policy);
+            policy.treeChanged(); // preen policy, ensure everything is reparented and properly numbered
             PolicyTreeModel model = new PolicyTreeModel(policy);
             return model;
         } catch (Exception e) {
             throw new RuntimeException("Error while parsing the service policy - service " + service.getName(), e);
-        }
-    }
-
-    private static void validatePolicyTree(Assertion policy) {
-        Iterator it = policy.preorderIterator();
-        while (it.hasNext()) {
-            Assertion a = (Assertion)it.next();
-            if (a instanceof CompositeAssertion) {
-                final CompositeAssertion compositeAssertion = (CompositeAssertion)a;
-                Iterator children = compositeAssertion.children();
-                while (children.hasNext()) {
-                    Assertion ass = (Assertion)children.next();
-                    if (ass.getParent() != a) {
-                        ass.setParent(compositeAssertion);
-                    }
-                }
-            }
         }
     }
 

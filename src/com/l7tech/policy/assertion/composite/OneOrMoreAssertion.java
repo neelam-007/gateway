@@ -23,8 +23,4 @@ public class OneOrMoreAssertion extends CompositeAssertion {
     public OneOrMoreAssertion(List children) {
         super(children);
     }
-
-    public OneOrMoreAssertion(CompositeAssertion parent, List children) {
-        super(parent, children);
-    }
 }

@@ -40,7 +40,10 @@ public class WspReader {
         Object target = WspConstants.thawElement((Element) childElements.get(0)).target;
         if (!(target instanceof Assertion))
             throw new InvalidPolicyStreamException("Policy does not have an assertion as its immediate child");
-        return (Assertion) target;
+        Assertion root = (Assertion) target;
+        if (root != null)
+            root.treeChanged();        
+        return root;
     }
 
     /**

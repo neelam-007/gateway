@@ -35,6 +35,7 @@ public class CustomAssertionHolder extends Assertion {
 
     public CustomAssertionHolder(CompositeAssertion parent) {
         this.parent = parent;
+        checkParent();
     }
 
     public CompositeAssertion getParent() {
@@ -43,6 +44,7 @@ public class CustomAssertionHolder extends Assertion {
 
     public void setParent(CompositeAssertion parent) {
         this.parent = parent;
+        checkParent();
     }
 
     /**

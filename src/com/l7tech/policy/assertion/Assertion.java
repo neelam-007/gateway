@@ -18,24 +18,90 @@ import java.util.*;
  * @version $Revision$
  */
 public abstract class Assertion implements Cloneable, Serializable {
-    protected CompositeAssertion parent;
+    protected transient CompositeAssertion parent;
+    private transient int ordinal = -1;
 
     public Assertion() {
         this.parent = null;
+        this.ordinal = 1;
     }
 
-    public Assertion(CompositeAssertion parent) {
+    protected Assertion(CompositeAssertion parent) {
         this.parent = parent;
+        checkParent();
     }
 
     public CompositeAssertion getParent() {
         return parent;
     }
 
+    /**
+     * Reparent this assertion.  In normal operation, this should only be called by CompositeAssertions.
+     * @param parent
+     */
     public void setParent(CompositeAssertion parent) {
         this.parent = parent;
     }
 
+    /**
+     * If our parent does not know about us, add ourselves to the end of it's list of children.
+     */
+    protected void checkParent() {
+        // TODO we can skip this check if we were called from setParent() which was called by our parent
+        if (parent != null && !parent.getChildren().contains(this)) {
+            parent.getChildren().add(this);
+            parent.treeChanged();
+        }
+    }
+
+    /**
+     * Notify this node that a child has been added, removed, or changed underneath it.
+     */
+    public void treeChanged() {
+        if (getParent() == null)
+            renumber(1);
+        else
+            getParent().treeChanged();
+    }
+
+    /**
+     * Check the ordinal number of this assertion within the policy tree.  This number is only meaningful if:
+     * this assertion or a parent has had renumber() called upon it; and,
+     * this assertion's subtree has not had any children added, removed, or replaced since renumber() was last called.
+     *
+     * @return The ordinal number of this assertion's position within the policy, counting from top to bottom, or -1 if not known.
+     */
+    public int getOrdinal() {
+        return ordinal;
+    }
+
+    /**
+     * Look up the assertion in this subtree with the given ordinal.  Requires that this tree have up-to-date
+     * numbering.  To ensure up-to-date numbering, call treeChanged() on an assertion within the tree.
+     * @param ordinal the ordinal number of the assertion to check.
+     * @return the Assertion with a matching ordinal, or null if one was not found.
+     */
+    public Assertion getAssertionWithOrdinal(int ordinal) {
+        if (getOrdinal() == ordinal)
+            return this;
+        return null;
+    }
+
+    /**
+     * Renumber this assertion (and its children, if any) starting from the specified number.  After calling this,
+     * getOrdinal() on this assertion (or its children, if any) will return meaningful values.
+     * <p>
+     * In normal operation this method should only be called by CompositeAssertions.  Normally, users should
+     * call treeChanged() to request a policy tree to renumber itself.
+     *
+     * @param newStartingOrdinal the number to assign to this assertion.  Must be non-negative.
+     *                           It's first child, if any, will be assigned the number (newStartingOrdinal + 1).
+     * @return the lowest unused ordinal after this assertion and any children have been renumbered.
+     */
+    public int renumber(int newStartingOrdinal) {
+        this.ordinal = newStartingOrdinal;
+        return newStartingOrdinal + 1;
+    }
 
     /** Properly clone this Assertion.  The clone will have its parent set to null. */
     public Object clone() throws CloneNotSupportedException {

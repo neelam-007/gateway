@@ -23,11 +23,6 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
         super();
     }
 
-    public CompositeAssertion( CompositeAssertion parent, List children ) {
-        super(parent);
-        setChildren(children);
-    }
-
     /**
      * Create a new CompositeAssertion with no parent and the specified children.
      * The children will be copied, and each of their parents reset to point to us.
@@ -58,6 +53,38 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
 
     public void setChildren(List children) {
         this.children = reparentedChildren(this, children);
+        treeChanged();
+    }
+
+    public void treeChanged() {
+        // TODO we can skip this scan if we were called from setChildren()
+        for (Iterator i = children.iterator(); i.hasNext();) {
+            Assertion kid = (Assertion)i.next();
+            if (kid.getParent() != this)
+                kid.setParent(this);
+        }
+        super.treeChanged();
+    }
+
+    public int renumber(int newStartingOrdinal) {
+        int n = super.renumber(newStartingOrdinal);
+        for (Iterator i = children.iterator(); i.hasNext();) {
+            Assertion kid = (Assertion)i.next();
+            n = kid.renumber(n);
+        }
+        return n;
+    }
+
+    public Assertion getAssertionWithOrdinal(int ordinal) {
+        if (getOrdinal() == ordinal)
+            return this;
+        for (Iterator i = children.iterator(); i.hasNext();) {
+            Assertion kid = (Assertion)i.next();
+            Assertion kidResult = kid.getAssertionWithOrdinal(ordinal);
+            if (kidResult != null)
+                return kidResult;
+        }
+        return null;
     }
 
     /**

@@ -25,8 +25,4 @@ public class ExactlyOneAssertion extends CompositeAssertion implements Serializa
     public ExactlyOneAssertion( List children ) {
         super( children );
     }
-
-    public ExactlyOneAssertion( CompositeAssertion parent, List children ) {
-        super( parent, children );
-    }
 }

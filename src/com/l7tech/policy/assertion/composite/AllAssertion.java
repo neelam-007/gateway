@@ -23,8 +23,4 @@ public class AllAssertion extends CompositeAssertion {
     public AllAssertion( List children ) {
         super( children );
     }
-
-    public AllAssertion( CompositeAssertion parent, List children ) {
-        super( parent, children );
-    }
 }

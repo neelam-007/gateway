@@ -4,6 +4,7 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import com.l7tech.policy.validator.DefaultPolicyValidatorTest;
+import com.l7tech.policy.assertion.AssertionTest;
 
 /**
  * Class <code>AllTests</code> defines all tests to be run for the policy
@@ -28,6 +29,7 @@ public class AllTests extends TestCase {
      */
     public static Test suite() {
         TestSuite suite = new TestSuite();
+        suite.addTest(new TestSuite(AssertionTest.class));
     	suite.addTest(new TestSuite(SamplePolicyTest.class));
         suite.addTest(new TestSuite(WspReaderTest.class));
         suite.addTest(new TestSuite(WspWriterTest.class));
