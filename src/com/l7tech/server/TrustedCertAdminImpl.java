@@ -152,13 +152,23 @@ public class TrustedCertAdminImpl extends RemoteService implements TrustedCertAd
 
             try {
                 conn.connect();
-            } catch ( IOException e ) {
+            } catch (IOException e) {
+                logger.log(Level.INFO, "Unable to connect to: " + purl);
+
+                // rethrow it
+                throw e;
+            }
+
+            X509Certificate cert = null;
+            try {          
+                cert = (X509Certificate) conn.getServerCertificates()[0];
+            } catch (IOException e) {
                 logger.log(Level.WARNING, "SSL server hostname didn't match cert", e);
-                X509Certificate cert = (X509Certificate)conn.getServerCertificates()[0];
-                if ( e.getMessage().startsWith("HTTPS hostname wrong") ) {
+                if (e.getMessage().startsWith("HTTPS hostname wrong")) {
                     throw new HostnameMismatchException(cert.getSubjectDN().getName(), url.getHost());
                 }
             }
+
 
             return (X509Certificate[])conn.getServerCertificates();
         } else throw new IOException("URL resulted in a non-HTTPS connection");
