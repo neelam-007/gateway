@@ -85,7 +85,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                         initialValidate = true;
                         validatePolicy();
                     } finally {
-                        initialValidate = true;
+                        initialValidate = false;
                     }
                 }
             });
