@@ -6,7 +6,6 @@
  */
 package com.l7tech.console.action;
 
-import com.l7tech.console.tree.policy.XpathBasedAssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.panels.XmlSecurityRecipientContextEditor;
@@ -27,7 +26,7 @@ import java.util.logging.Level;
 public class EditXmlSecurityRecipientContextAction extends NodeAction {
     private SecurityHeaderAddressable assertion;
 
-    public EditXmlSecurityRecipientContextAction(XpathBasedAssertionTreeNode node) {
+    public EditXmlSecurityRecipientContextAction(AssertionTreeNode node) {
         super(node);
         assertion = (SecurityHeaderAddressable)node.asAssertion();
     }

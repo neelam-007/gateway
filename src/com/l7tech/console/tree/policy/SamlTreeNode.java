@@ -4,6 +4,7 @@ package com.l7tech.console.tree.policy;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 import com.l7tech.console.action.SamlSecurityPropertiesAction;
+import com.l7tech.console.action.EditXmlSecurityRecipientContextAction;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -15,23 +16,30 @@ import java.util.Arrays;
  * <p/>
  */
 public class SamlTreeNode extends LeafAssertionTreeNode {
+    private SamlSecurity data;
 
     public SamlTreeNode(Assertion assertion) {
         super(assertion);
+        data = (SamlSecurity)assertion;
     }
 
     public String getName() {
+        StringBuffer name = new StringBuffer();
         SamlSecurity ss = (SamlSecurity)asAssertion();
         if (ss.getConfirmationMethodType() == SamlSecurity.CONFIRMATION_METHOD_HOLDER_OF_KEY) {
-            return "SAML holder-of-key authentication";
+            name.append("SAML holder-of-key authentication");
         } else if (ss.getConfirmationMethodType() == SamlSecurity.CONFIRMATION_METHOD_SENDER_VOUCHES) {
-            return "SAML sender-vouches authentication";
+            name.append("SAML sender-vouches authentication");
         } else if (ss.getConfirmationMethodType() == SamlSecurity.CONFIRMATION_METHOD_WHATEVER) {
-            return "SAML holder-of-key or sender-vouches authentication";
+            name.append("SAML holder-of-key or sender-vouches authentication");
         } else {
             logger.warning("The SAML Security assertion is not configured properly.");
-            return "SAML authentication (confirmation not specified)";
+            name.append("SAML authentication (confirmation not specified)");
         }
+        if (!data.getRecipientContext().localRecipient()) {
+            name.append(" [\'" + data.getRecipientContext().getActor() + "\' actor]");
+        }
+        return name.toString();
     }
 
     /**
@@ -43,6 +51,7 @@ public class SamlTreeNode extends LeafAssertionTreeNode {
     public Action[] getActions() {
         java.util.List list = new ArrayList();
         list.add(new SamlSecurityPropertiesAction(this));
+        list.add(new EditXmlSecurityRecipientContextAction(this));
         list.addAll(Arrays.asList(super.getActions()));
         return (Action[])list.toArray(new Action[]{});
     }
