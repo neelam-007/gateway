@@ -36,17 +36,15 @@ public class GroupManagerClient extends GroupManagerAdapter {
         try {
             if (groupIsAdminGroup(group)) throw new CannotDeleteAdminAccountException();
             // todo, group must be refactored so that it's id is always a string
-            manager.getStub().deleteGroup(config.getOid(), Long.toString(group.getOid()));
+            manager.getStub().deleteGroup(config.getOid(), group.getUniqueIdentifier() );
         } catch (RemoteException e) {
             throw new DeleteException(e.getMessage(), e);
         }
     }
 
-    public long save(Group group) throws SaveException {
+    public String save(Group group) throws SaveException {
         try {
-            long res = manager.getStub().saveGroup(config.getOid(), group);
-            if (res > 0) group.setOid(res);
-            return res;
+            return manager.getStub().saveGroup(config.getOid(), group);
         } catch (UpdateException e) {
             throw new SaveException(e.getMessage(), e);
         } catch (RemoteException e) {
@@ -124,7 +122,7 @@ public class GroupManagerClient extends GroupManagerAdapter {
     private boolean groupIsAdminGroup(Group group) {
         // i actually dont get the group, the console only constructs a new group and sets the oid
         try {
-            Group actualGroup = findByPrimaryKey(Long.toString(group.getOid()));
+            Group actualGroup = findByPrimaryKey( group.getUniqueIdentifier() );
             if ( Group.ADMIN_GROUP_NAME.equals( actualGroup.getName() ) ) return true;
         } catch (FindException e) {
             // it's valid that the group does not exist here
