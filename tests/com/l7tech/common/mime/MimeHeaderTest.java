@@ -69,4 +69,27 @@ public class MimeHeaderTest extends TestCase {
         MimeHeader h = MimeHeader.parseValue("Content-Length", "2893472");
     }
 
+    public void testContentTypePatternMatching() throws Exception {
+        ContentTypeHeader textXml     = ContentTypeHeader.parseValue("text/xml; charset=utf8");
+        ContentTypeHeader textPlain   = ContentTypeHeader.parseValue("text/plain; charset=us-ascii");
+        ContentTypeHeader textEnriched= ContentTypeHeader.parseValue("text/enriched");
+        ContentTypeHeader textHtml    = ContentTypeHeader.parseValue("text/html; charset=latin1");
+        ContentTypeHeader octetstream = ContentTypeHeader.parseValue("application/octet-stream");
+        ContentTypeHeader imageGif    = ContentTypeHeader.parseValue("image/gif");
+        ContentTypeHeader imageJpeg   = ContentTypeHeader.parseValue("image/jpeg");
+
+        assertTrue(imageGif.matches("*", "*"));
+        assertTrue(octetstream.matches("*", "*"));
+        assertTrue(octetstream.matches("*", "octet-stream"));  // debatable if this is a good idea
+        assertTrue(imageGif.matches("image", "*"));
+        assertTrue(imageJpeg.matches("image", "*"));
+        assertFalse(textXml.matches("image", "*"));
+        assertTrue(imageGif.matches("image", "gif"));
+        assertFalse(imageJpeg.matches("image", "gif"));
+        assertTrue(textHtml.matches("text", "*"));
+        assertTrue(textPlain.matches("text", "enriched"));
+        assertTrue(textEnriched.matches("text", "enriched"));
+        assertFalse(textXml.matches("text", "enriched"));
+    }
+
 }
