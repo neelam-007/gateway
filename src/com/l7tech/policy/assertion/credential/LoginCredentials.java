@@ -7,8 +7,7 @@
 package com.l7tech.policy.assertion.credential;
 
 import com.l7tech.common.util.CertUtils;
-import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
-import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
+import com.l7tech.common.xml.saml.SamlAssertion;
 
 import java.security.cert.X509Certificate;
 import java.util.List;
@@ -133,7 +132,7 @@ public class LoginCredentials {
         if (format == CredentialFormat.CLIENTCERT) {
             return (X509Certificate)payload;
         } else if (format == CredentialFormat.SAML) {
-            SamlHolderOfKeyAssertion hok = (SamlHolderOfKeyAssertion)payload;
+            SamlAssertion hok = (SamlAssertion)payload;
             return hok.getSubjectCertificate();
         }
         return null;
