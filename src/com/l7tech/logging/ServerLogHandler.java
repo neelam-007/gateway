@@ -122,6 +122,7 @@ public class ServerLogHandler extends Handler {
         String reqnode = nodeId;
         if (reqnode == null) reqnode = nodeid;
         // todo optimize the sql so that only size records get returned by select
+        // add order by something and limit
         String selStatement = "from " + TABLE_NAME + " in class " + SSGLogRecord.class.getName() +
                                         " where " + TABLE_NAME + "." + NODEID_COLNAME + " = \'" +
                                         reqnode + "\'";
@@ -133,6 +134,10 @@ public class ServerLogHandler extends Handler {
             selStatement += " and " + TABLE_NAME + "." + SEQ_COLNAME + " >= " + startMsgNumber +
                             " and " + TABLE_NAME + "." + SEQ_COLNAME + " <= " + endMsgNumber;
         }
+        selStatement += " order by " + TABLE_NAME + "." + SEQ_COLNAME + " limit " + size;
+
+        System.out.println("################################\n\n\n" + selStatement);
+
         List res = null;
         try {
             res = context.getSession().find(selStatement);
@@ -236,6 +241,9 @@ public class ServerLogHandler extends Handler {
                 deadline -= HOW_LONG_WE_KEEP_LOGS;
                 deleteSQLStatement += " where " + TABLE_NAME + "." + TIMESTAMP_COLNAME +
                                       " < " + deadline;
+            } else {
+                deleteSQLStatement += " where " + TABLE_NAME + "." + NODEID_COLNAME +
+                                      " = \'" + nodeid + "\'";
             }
             context.getSession().delete(deleteSQLStatement);
             if (fullClean) {
