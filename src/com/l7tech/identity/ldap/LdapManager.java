@@ -34,7 +34,8 @@ public class LdapManager {
         java.util.Hashtable env = new java.util.Hashtable();
         env.put( "java.naming.ldap.version", "3" );
         env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-        env.put(Context.PROVIDER_URL, config.getProperty(LdapConfigSettings.LDAP_HOST_URL));
+        Object temp = config.getProperty( LdapConfigSettings.LDAP_HOST_URL );
+        if ( temp != null ) env.put(Context.PROVIDER_URL, temp );
 
         String dn = config.getProperty( LdapConfigSettings.LDAP_BIND_DN );
         if ( dn != null && dn.length() > 0 ) {
