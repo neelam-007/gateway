@@ -363,16 +363,11 @@ public class HttpRoutingAssertionDialog extends JDialog {
 
         JPanel taiPanel = new JPanel();
         taiPanel.setLayout(new BoxLayout(taiPanel, BoxLayout.X_AXIS));
-        JLabel taiLabel = new JLabel();
-        taiLabel.setText("");
-        taiPanel.add(taiLabel);
-
-        taiPanel.add(Box.createRigidArea(new Dimension(20, 10)));
 
         taiCredentialChaining = new JCheckBox("TAI Identity Pass");
         taiCredentialChaining.setPreferredSize(new Dimension(50, 20));
         taiPanel.add(taiCredentialChaining);
-        taiPanel.add(Box.createGlue());
+        taiPanel.add(Box.createHorizontalGlue());
 
         credentialsPanel.add(Box.createVerticalStrut(20));
         credentialsPanel.add(taiPanel);
@@ -380,8 +375,8 @@ public class HttpRoutingAssertionDialog extends JDialog {
         Utilities.equalizeComponentSizes(
           new JComponent[]{realmLabel,
                            identityLabel,
-                           passwordLabel,
-                           taiLabel});
+                           passwordLabel
+          });
 
 
         Utilities.equalizeComponentWidth(
