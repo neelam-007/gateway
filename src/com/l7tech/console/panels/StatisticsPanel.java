@@ -344,7 +344,7 @@ public class StatisticsPanel extends JPanel {
         }
 
         //for debug purpose
-        if (lastMinuteCompletedCount < 0) {
+/*        if (lastMinuteCompletedCount < 0) {
             // dump the counter
             System.out.println("Service Name: " + serviceName +  ", count = " + lastMinuteCompletedCount);
             if (lastMinuteCounts != null) {
@@ -355,7 +355,7 @@ public class StatisticsPanel extends JPanel {
                 }
             }
 
-        }
+        }*/
 
         return lastMinuteCompletedCount;
     }
