@@ -13,7 +13,7 @@ import java.io.IOException;
  * @version $Revision$
  */
 public class CausedIOException extends IOException {
-    CausedIOException(Throwable cause) {
+    public CausedIOException(Throwable cause) {
         super();
         initCause(cause);
     }
