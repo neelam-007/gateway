@@ -52,7 +52,9 @@ public class HibernatePersistenceManager extends PersistenceManager {
                 logger.info("Loading database configuration from system classpath");
             }
             _sessionFactory = cfg.buildSessionFactory();
-            pingStatement = cfg.getProperty("hibernate.dbcp.validationQuery");
+
+            String temp = cfg.getProperty("hibernate.dbcp.validationQuery");
+            if ( temp != null && temp.length() > 0 ) pingStatement = temp;
         } catch (HibernateException he) {
             logger.throwing(getClass().getName(), "<init>", he);
             throw new SQLException(he.toString());
