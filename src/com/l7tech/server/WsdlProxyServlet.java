@@ -1,59 +1,64 @@
 package com.l7tech.server;
 
-import com.l7tech.identity.*;
-import com.l7tech.service.PublishedService;
-import com.l7tech.service.ServiceManager;
-import com.l7tech.common.xml.Wsdl;
-import com.l7tech.common.util.Locator;
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.util.Locator;
+import com.l7tech.common.xml.Wsdl;
+import com.l7tech.identity.BadCredentialsException;
+import com.l7tech.identity.User;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.ext.Category;
+import com.l7tech.policy.assertion.ext.CustomAssertionDescriptor;
+import com.l7tech.policy.assertion.ext.CustomAssertions;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
-import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.server.filter.FilteringException;
 import com.l7tech.policy.server.filter.IdentityRule;
+import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.service.PublishedService;
+import com.l7tech.service.ServiceManager;
 
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.ServletException;
-import javax.servlet.ServletConfig;
 import javax.wsdl.WSDLException;
 import java.io.IOException;
-import java.util.Collection;
+import java.net.URL;
+import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
-import java.sql.SQLException;
-import java.net.URL;
 
 
 /**
  * Provides access to WSDL for published services of this SSG.
- *
+ * <p/>
  * When calling this without specifying a reference to a service, this servlet
  * will return a WSIL document containing URLs to actual WSDL resources.
- *
+ * <p/>
  * When providing a reference to a service, this servlet will return an actual WSDL
  * document. This document is based on the WSDL of the protected service. This base
  * document is filtered so that the service endpoints point to this ssg's MessageProcessor
  * URL.
- *
+ * <p/>
  * Requests to this servlet can provide credentials or not. If valid credentials are
  * provided, the requestor will receive service information based on what his credentials
  * allow him to consume at run time. Anonymous requestors will only see service descriptions
  * for published services that allow anonymous access on this ssg.
- *
+ * <p/>
  * Authenticated requests must secured.
- *
+ * <p/>
  * For URL pattern, consult web.xml
- *
+ * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
- *
+ * <p/>
  * User: flascell<br/>
  * Date: Sep 15, 2003<br/>
  * $Id$
@@ -62,8 +67,8 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
 
     public static final String SOAP_PROCESSING_SERVLET_URI = SecureSpanConstants.SSG_FILE;
 
-    public void init( ServletConfig config ) throws ServletException {
-        super.init( config );
+    public void init(ServletConfig config) throws ServletException {
+        super.init(config);
     }
 
     protected void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
@@ -72,7 +77,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         // let's see if we can get credentials...
         List users;
         try {
-            users = authenticateRequestBasic(req);
+            users = authenticateRequestBasic(req, resolveService(Long.parseLong(serviceId)));
         } catch (BadCredentialsException e) {
             logger.log(Level.SEVERE, "returning 401 to requestor because invalid creds were provided", e);
             res.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
@@ -82,8 +87,8 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         // NOTE: sending credentials over insecure channel is treated as an anonymous request
         // (i dont care if you send me credentials in non secure manner, that is your problem
         // however, i will not send sensitive information unless the channel is secure)
-        if ( users != null && !users.isEmpty() && req.isSecure()) {
-            doAuthenticated(req, res, serviceId, users );
+        if (users != null && !users.isEmpty() && req.isSecure()) {
+            doAuthenticated(req, res, serviceId, users);
         } else {
             doAnonymous(req, res, serviceId);
         }
@@ -93,7 +98,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         doAuthenticated(req, res, svcId, null);
     }
 
-    private void doAuthenticated(HttpServletRequest req, HttpServletResponse res, String svcId, List users ) throws IOException {
+    private void doAuthenticated(HttpServletRequest req, HttpServletResponse res, String svcId, List users) throws IOException {
         // HANDLE REQUEST FOR ONE SERVICE DESCRIPTION
         if (svcId != null && svcId.length() > 0) {
             // get this service
@@ -121,7 +126,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 return;
             }
             // make sure this service is indeed anonymously accessible
-            if ( users == null || users.isEmpty() ) {
+            if (users == null || users.isEmpty()) {
                 if (!policyAllowAnonymous(svc)) {
                     logger.info("user denied access to service description");
                     res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "you need to provide valid credentials to see this service's description");
@@ -129,13 +134,13 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 }
             } else { // otherwise make sure the requestor is authorized for this policy
                 boolean ok = false;
-                if ( !policyAllowAnonymous( svc ) ) {
+                if (!policyAllowAnonymous(svc)) {
                     User requestor = null;
                     for (Iterator i = users.iterator(); i.hasNext();) {
-                        requestor = (User) i.next();
-                        if ( userCanSeeThisService( requestor, svc ) ) ok = true;
+                        requestor = (User)i.next();
+                        if (userCanSeeThisService(requestor, svc)) ok = true;
                     }
-                    if ( !ok ) {
+                    if (!ok) {
                         logger.info("user denied access to service description " + requestor + " " + svc.getPolicyXml());
                         res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "these credentials do not grant you access to this service description.");
                         return;
@@ -148,7 +153,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         } else { // HANDLE REQUEST FOR LIST OF SERVICES
             Collection services = null;
             try {
-                if ( users == null || users.isEmpty() )
+                if (users == null || users.isEmpty())
                     services = listAnonymouslyViewableServices();
                 else
                     services = listAnonymouslyViewableAndProtectedServices(users);
@@ -166,7 +171,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 //res.sendError(HttpServletResponse.SC_NOT_FOUND, "no services or not authorized");
                 // return empty wsil
                 String emptywsil = "<?xml version=\"1.0\"?>\n" +
-                                   "<inspection xmlns=\"http://schemas.xmlsoap.org/ws/2001/10/inspection/\" />\n";
+                  "<inspection xmlns=\"http://schemas.xmlsoap.org/ws/2001/10/inspection/\" />\n";
                 res.setContentType("text/xml; charset=utf-8");
                 res.getOutputStream().println(emptywsil);
                 return;
@@ -189,7 +194,8 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         // change url of the wsdl
         // direct to http by default. choose http port based on port used for this request.
         int port = req.getServerPort();
-        if (port == 8443) port = 8080;
+        if (port == 8443)
+            port = 8080;
         else if (port == 443) port = 80;
         URL ssgurl = new URL("http" + "://" + req.getServerName() + ":" + port + SOAP_PROCESSING_SERVLET_URI + "?" + SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + "=" + Long.toString(svc.getOid()));
         output.setPortUrl(output.getSoapPort(), ssgurl);
@@ -219,7 +225,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         return listAnonymouslyViewableAndProtectedServices(null);
     }
 
-    private Collection listAnonymouslyViewableAndProtectedServices( List users ) throws TransactionException, IOException, FindException {
+    private Collection listAnonymouslyViewableAndProtectedServices(List users) throws TransactionException, IOException, FindException {
 
         ServiceManager manager = getServiceManager();
         beginTransaction();
@@ -233,7 +239,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         // decide which ones make the cut
         for (Iterator i = allServices.iterator(); i.hasNext();) {
             PublishedService svc = (PublishedService)i.next();
-            if ( users == null || users.isEmpty() ) {
+            if (users == null || users.isEmpty()) {
                 if (policyAllowAnonymous(svc)) {
                     output.add(svc);
                 }
@@ -271,7 +277,18 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                     return true;
                 }
             } catch (FilteringException e) {
-                logger.log(Level.SEVERE,  "cannot check for id assertion", e);
+                logger.log(Level.SEVERE, "cannot check for id assertion", e);
+            }
+            return false;
+        } else if (assertion instanceof CustomAssertionHolder) {
+            CustomAssertionHolder ch = (CustomAssertionHolder)assertion;
+            CustomAssertionDescriptor cdesc = CustomAssertions.getDescriptor(ch);
+            if (cdesc == null) {
+                logger.warning("Unable to resolve the custom assertion " + ch);
+                return false;
+            }
+            if (Category.IDENTITY.equals(cdesc.getCategory())) { // bingo
+                return true;
             }
             return false;
         } else if (assertion instanceof CompositeAssertion) {
@@ -283,7 +300,8 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 if (checkForIdPotential(kid, requestor)) return true;
             }
             return false;
-        } else return false;
+        } else
+            return false;
     }
 
     private ServiceManager getServiceManager() {
@@ -301,14 +319,6 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         }
     }
 
-    private void endTransaction() {
-        try {
-            PersistenceContext.getCurrent().close();
-        } catch (SQLException e) {
-            logger.log(Level.SEVERE, "error closing transaction", e);
-        }
-    }
-
 
     private String createWSILDoc(Collection services, String host, String port, String uri) {
         /*  Format of document:
@@ -323,7 +333,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         String protocol = "http";
         if (port.equals("8443") || port.equals("443")) protocol = "https";
         StringBuffer outDoc = new StringBuffer("<?xml version=\"1.0\"?>\n" +
-                        "<inspection xmlns=\"http://schemas.xmlsoap.org/ws/2001/10/inspection/\">\n");
+          "<inspection xmlns=\"http://schemas.xmlsoap.org/ws/2001/10/inspection/\">\n");
         // for each service
         for (Iterator i = services.iterator(); i.hasNext();) {
             PublishedService svc = (PublishedService)i.next();

@@ -3,23 +3,16 @@ package com.l7tech.policy.server;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.KeystoreUtils;
-import com.l7tech.common.util.Locator;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistenceContext;
-import com.l7tech.objectmodel.TransactionException;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.CustomAssertionHolder;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.ext.Category;
-import com.l7tech.policy.assertion.ext.CustomAssertionDescriptor;
 import com.l7tech.policy.assertion.ext.CustomAssertions;
 import com.l7tech.policy.server.filter.FilterManager;
 import com.l7tech.policy.server.filter.FilteringException;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.AuthenticatableHttpServlet;
 import com.l7tech.service.PublishedService;
-import com.l7tech.service.ServiceManager;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -129,7 +122,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             // get credentials and check that they are valid for this policy
             List users;
             try {
-                users = authenticateRequestBasic(httpServletRequest, serviceid);
+                users = authenticateRequestBasic(httpServletRequest, targetService);
             } catch (BadCredentialsException e) {
                 logger.log(Level.SEVERE, "returning 401 to requestor because invalid creds were provided", e);
                 httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
@@ -200,70 +193,6 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     }
 
     /**
-     * Overriden method to support additional user resolution for custom
-     * assertions that provide cusotm identity authentication.
-     * <p/>
-     * First do the the standard user check, and if the list of users is
-     * empty, retrieve custom assertions. If hte user list is still empty
-     * then check if there is a custom assertion in the policy. If true,
-     * and the assertion is registered as <code>Category</code> {@link Category#IDENTITY}
-     * then we let that user through, since the custom assertion is
-     * responsible for validating the credentials. Custom identity authentication
-     * assertions may not provide user management API (list users etc.) therefore
-     * we just do this check and delegate. This is how Netegrity Siteminder works
-     * for exmaple.
-     *
-     * @param req       the servlet request
-     * @param serviceId the service oid
-     * @return the list of users
-     * @throws IOException             on io error
-     * @throws BadCredentialsException on vad credentials
-     */
-    protected List authenticateRequestBasic(HttpServletRequest req, long serviceId)
-      throws IOException, BadCredentialsException {
-        List users = super.authenticateRequestBasic(req);
-        if (!users.isEmpty()) {
-            return users;
-        }
-        LoginCredentials creds = findCredentialsBasic(req);
-        if (creds == null) {
-            return users;
-        }
-        PublishedService svc = resolveService(serviceId);
-        if (svc == null) {
-            throw new IOException("Service not found id '" + serviceId + "'");
-        }
-
-        Iterator it = svc.rootAssertion().preorderIterator();
-        while (it.hasNext()) {
-            Assertion ass = (Assertion)it.next();
-            if (ass instanceof CustomAssertionHolder) {
-                CustomAssertionHolder ch = (CustomAssertionHolder)ass;
-                CustomAssertionDescriptor cdesc = CustomAssertions.getDescriptor(ch);
-                if (cdesc == null) {
-                    logger.warning("Unable to resolve the custom assertion " + ch);
-                    continue;
-                }
-                if (Category.IDENTITY.equals(cdesc.getCategory())) { // bingo
-                    UserBean user = new UserBean();
-                    user.setProviderId(Long.MAX_VALUE);
-                    user.setLogin(creds.getLogin());
-                    user.setPassword(new String(creds.getCredentials()));
-                    users.add(user);
-                    break; // enough
-                }
-            }
-        }
-
-        if (users.isEmpty()) {
-            String msg = "Creds do not authenticate against any registered id provider.";
-            logger.warning(msg);
-            throw new BadCredentialsException(msg);
-        }
-        return users;
-    }
-
-    /**
      * Look up our certificate and transmit it to the client in PKCS#7 format.
      * If a username is given, we'll include a "Cert-Check-provId: " header containing
      * MD5(H(A1) . nonce . provId . cert . H(A1)), where H(A1) is the MD5 of "username:realm:password"
@@ -309,23 +238,6 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         response.setContentLength(cert.length);
         response.getOutputStream().write(cert);
         response.flushBuffer();
-    }
-
-    private PublishedService resolveService(long oid) {
-        try {
-            return getServiceManagerAndBeginTransaction().findByPrimaryKey(oid);
-        } catch (Exception e) {
-            e.printStackTrace(System.err);
-            return null;
-        } finally {
-            try {
-                endTransaction();
-            } catch (SQLException se) {
-                logger.log(Level.WARNING, null, se);
-            } catch (TransactionException te) {
-                logger.log(Level.WARNING, null, te);
-            }
-        }
     }
 
     private void outputEmptyPolicy(HttpServletResponse res, long serviceid, int serviceversion) throws IOException {
@@ -388,13 +300,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                 }
             }
         } finally {
-            try {
-                endTransaction();
-            } catch (SQLException se) {
-                logger.log(Level.WARNING, null, se);
-            } catch (TransactionException te) {
-                logger.log(Level.WARNING, null, te);
-            }
+            endTransaction();
         }
         // we smelt something (maybe netegrity?)
         if (!CustomAssertions.getAssertions(Category.IDENTITY).isEmpty()) {
@@ -403,30 +309,5 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
         return checkInfos;
     }
-
-    private com.l7tech.service.ServiceManager getServiceManagerAndBeginTransaction()
-      throws SQLException, TransactionException {
-        if (serviceManagerInstance == null) {
-            initialiseServiceManager();
-        }
-        PersistenceContext.getCurrent().beginTransaction();
-        return serviceManagerInstance;
-    }
-
-    private void endTransaction() throws SQLException, TransactionException {
-        PersistenceContext context = PersistenceContext.getCurrent();
-        context.commitTransaction();
-        context.close();
-    }
-
-    private synchronized void initialiseServiceManager() throws ClassCastException, RuntimeException {
-        serviceManagerInstance = (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
-        if (serviceManagerInstance == null) {
-            throw new RuntimeException("Cannot instantiate the ServiceManager");
-        }
-    }
-
-
-    private ServiceManager serviceManagerInstance = null;
 }
 

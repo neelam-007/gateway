@@ -64,12 +64,20 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
                 throw new PolicyAssertionException("Custom assertion is misconfigured, service '" + service.getName() + "'");
             }
             Subject subject = new Subject();
-            String principalName = getPrincipalName(request);
-            logger.fine("Service '" + service.getName() + "\n" +
-              "custom assertion ' " + descriptor.getServerAssertion().getName() + "\n" +
-              "principal '" + principalName + "'");
-            if (principalName != null) {
-                subject.getPrincipals().add(new CustomAssertionPrincipal(principalName));
+            LoginCredentials principalCredentials = request.getPrincipalCredentials();
+            if (principalCredentials != null) {
+                String principalName = principalCredentials.getLogin();
+                logger.fine("Service '" + service.getName() + "\n" +
+                  "custom assertion ' " + descriptor.getServerAssertion().getName() + "\n" +
+                  "principal '" + principalName + "'");
+
+                if (principalName != null) {
+                    subject.getPrincipals().add(new CustomAssertionPrincipal(principalName));
+                }
+                final byte[] credentials = principalCredentials.getCredentials();
+                if (credentials != null) {
+                    subject.getPrivateCredentials().add(new String(credentials));
+                }
             }
             subject.setReadOnly();
             Subject.doAs(subject, new PrivilegedExceptionAction() {
@@ -99,15 +107,6 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
         } finally {
             logger.exiting(ServerCustomAssertionHolder.class.getName(), "checkRequest");
         }
-    }
-
-    private String getPrincipalName(Request request) {
-        String principal = "";
-        LoginCredentials principalCredentials = request.getPrincipalCredentials();
-        if (principalCredentials != null) {
-            principal = principalCredentials.getLogin();
-        }
-        return principal;
     }
 
     private boolean isPostRouting(Request request) {
