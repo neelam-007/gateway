@@ -19,6 +19,7 @@ import com.l7tech.policy.assertion.AssertionError;
  */
 public class WssClientCert extends WssCredentialSourceAssertion {
     public AssertionError doCheckRequest(Request request, Response response) throws CredentialFinderException {
+        // TODO
         return AssertionError.NOT_YET_IMPLEMENTED;
     }
 
