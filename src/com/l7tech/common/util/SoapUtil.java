@@ -212,6 +212,22 @@ public class SoapUtil {
     }
 
     /**
+     * Resolves the element in the passed document that has the id passed in elementId.
+     * The id attributes can be of any supported WSU namespaces.
+     * @return the leement or null if no such element exists
+     */
+    public static Element getElementById(Document doc, String elementId) {
+        NodeList elements = doc.getElementsByTagName("*");
+        for (int i = 0; i < elements.getLength(); i++) {
+            Element element = (Element)elements.item(i);
+            if (elementId.equals(getElementId(element))) {
+                return element;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Gets the WSU:Id attribute of the passed element using all supported WSU namespaces.
      * @return the string value of the attribute or null if the attribute is not present
      */
