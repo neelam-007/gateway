@@ -39,9 +39,8 @@ public class SsgFaker {
     private int minThreads = 1;
     private int localPort = 7566;
     private int sslPort = 443;
-    private String localEndpoint = "soap/ssg";
-    private String ssgUrl = "http://localhost:" + localPort + "/" + localEndpoint;
-    private String sslUrl = "https://localhost:" + sslPort + "/" + localEndpoint;
+    private String ssgUrl = "http://localhost:" + localPort;
+    private String sslUrl = "https://localhost:" + sslPort;
     private boolean destroyed = false;
     //private static final String KEYSTORE = "com/l7tech/proxy/resources/ssgfaker-sv.keystore";
 
@@ -162,6 +161,7 @@ public class SsgFaker {
                 log.info("Request header: " + s + ": " + request.getField(s));
             }
 
+            log.info("SsgFaker: request to path: " + pathInContext);
             if ("/soap/ssg".equalsIgnoreCase(pathInContext)) {
                 handlerPing(requestEnvelope, response);
             } else if ("/soap/ssg/basicauth".equalsIgnoreCase(pathInContext)) {
@@ -200,7 +200,7 @@ public class SsgFaker {
 
             SOAPEnvelope responseEnvelope = new SOAPEnvelope();
             responseEnvelope.setHeader(new SOAPHeader(namespace,
-                                                      localEndpoint,
+                                                      "",
                                                       requestEnvelope.getPrefix(),
                                                       new AttributesImpl(),
                                                       new DeserializationContextImpl(AxisEngine.getCurrentMessageContext(),

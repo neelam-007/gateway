@@ -7,6 +7,8 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.TreeSet;
+import java.net.URL;
+import java.net.MalformedURLException;
 
 /**
  * In-core representation of an SSG.
@@ -16,12 +18,18 @@ import java.util.TreeSet;
  */
 public class Ssg implements Serializable, Cloneable, Comparable {
     private static final Category log = Category.getInstance(Ssg.class);
+    private static final String SSG_PROTOCOL = "http";
+    private static final String SSG_FILE = "/ssg/servlet/soap";
+    private static final int SSG_SSL_PORT = 8443;
+    private static final int SSG_PORT = 8080;
 
     private long id = 0;
     private String name = "";
     private String localEndpoint = null;
-    private String serverUrl = "";
-    private int sslPort = 8443;
+    private String ssgAddress = "";
+    private int ssgPort = SSG_PORT;
+    private String ssgFile = SSG_FILE;
+    private int sslPort = SSG_SSL_PORT;
     private String username = null;
     private transient char[] password = null;
     private HashMap policyMap = new HashMap();
@@ -66,13 +74,13 @@ public class Ssg implements Serializable, Cloneable, Comparable {
      * Create a new Ssg instance with the given field contents.
      * @param id        assigned by the SsgManager.  Unique number for identifying this Ssg instance.
      * @param name      human-readable name of the Ssg.
-     * @param serverUrl URL of the associated SSG.
+     * @param serverAddress hostname or address of the associated SSG.
      */
-    public Ssg(long id, final String name, final String serverUrl) {
+    public Ssg(long id, final String name, final String serverAddress) {
         this(id);
         this.name = name;
         this.localEndpoint = null;
-        this.serverUrl = serverUrl;
+        this.ssgAddress = serverAddress;
     }
 
     public Object clone() throws CloneNotSupportedException {
@@ -208,12 +216,47 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         this.localEndpoint = localEndpoint;
     }
 
-    public String getServerUrl() {
-        return serverUrl;
+    public String getSsgAddress() {
+        return ssgAddress;
     }
 
-    public void setServerUrl(final String serverUrl) {
-        this.serverUrl = serverUrl;
+    public void setSsgAddress(final String ssgAddress) {
+        this.ssgAddress = ssgAddress;
+    }
+
+    public int getSsgPort() {
+        return ssgPort;
+    }
+
+    public void setSsgPort(int ssgPort) {
+        this.ssgPort = ssgPort;
+    }
+
+    public String getServerUrl() {
+        URL url = null;
+        try {
+            url = new URL(SSG_PROTOCOL, getSsgAddress(), getSsgPort(), getSsgFile());
+        } catch (MalformedURLException e) {
+            log.error(e);
+            return "";
+        }
+        return url.toString();
+    }
+
+    public String getSsgFile() {
+        return ssgFile;
+    }
+
+    public void setSsgFile(String ssgFile) {
+        this.ssgFile = ssgFile;
+    }
+
+    /**
+     * Get the protocol used to talk to the SSG.
+     * @return Returns "http".
+     */
+    public String getSsgProtocol() {
+        return SSG_PROTOCOL;
     }
 
     public String getUsername() {

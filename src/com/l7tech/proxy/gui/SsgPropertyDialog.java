@@ -11,8 +11,6 @@ import org.apache.log4j.Category;
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.event.DocumentListener;
-import javax.swing.event.DocumentEvent;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.tree.TreeModel;
 import java.awt.*;
@@ -20,8 +18,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.net.MalformedURLException;
-import java.net.URL;
 
 /**
  * Panel for editing properties of an SSG object.
@@ -32,7 +28,6 @@ import java.net.URL;
  */
 public class SsgPropertyDialog extends PropertyDialog {
     private static final Category log = Category.getInstance(SsgPropertyDialog.class);
-    private static final String SSG_URI = "/ssg/servlet/soap";
 
     // Model
     private Ssg ssg; // The real Ssg instance, to which changes may be committed.
@@ -44,7 +39,7 @@ public class SsgPropertyDialog extends PropertyDialog {
     private JComponent generalPane;
     private JTextField fieldName;
     private JLabel fieldLocalEndpoint;
-    private JTextField fieldServerUrl;
+    private JTextField fieldServerAddress;
     private JCheckBox cbDefault;
     private JTextField fieldUsername;
     private JButton buttonClearPassword;
@@ -52,7 +47,6 @@ public class SsgPropertyDialog extends PropertyDialog {
     private JCheckBox cbPromptForPassword;
     private JLabel fieldPassword;
     private char[] editPassword;
-    private DocumentListener serverUrlListener;
 
     //   View for Policy pane
     private JComponent policiesPane;
@@ -208,56 +202,64 @@ public class SsgPropertyDialog extends PropertyDialog {
             generalPane.setBorder(BorderFactory.createEmptyBorder());
 
             fieldName = new JTextField();
-            pane.add(new JLabel("Name:"), new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
-                                                              GridBagConstraints.EAST,
-                                                              GridBagConstraints.NONE,
-                                                              new Insets(15, 5, 0, 0), 0, 0));
-            pane.add(fieldName, new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
-                                                              GridBagConstraints.WEST,
-                                                              GridBagConstraints.HORIZONTAL,
-                                                              new Insets(15, 5, 0, 5), 0, 0));
+            pane.add(new JLabel("Name:"),
+                     new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
+                                            GridBagConstraints.EAST,
+                                            GridBagConstraints.NONE,
+                                            new Insets(15, 5, 0, 0), 0, 0));
+            pane.add(fieldName,
+                     new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
+                                            GridBagConstraints.WEST,
+                                            GridBagConstraints.HORIZONTAL,
+                                            new Insets(15, 5, 0, 5), 0, 0));
 
-            getFieldServerUrl();
-            pane.add(new JLabel("SSG URL:"), new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
-                                                              GridBagConstraints.EAST,
-                                                              GridBagConstraints.NONE,
-                                                              new Insets(5, 5, 0, 0), 0, 0));
-            pane.add(fieldServerUrl, new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
-                                                              GridBagConstraints.WEST,
-                                                              GridBagConstraints.HORIZONTAL,
-                                                              new Insets(5, 5, 0, 5), 0, 0));
+            getFieldServerAddress();
+            pane.add(new JLabel("SSG Hostname:"),
+                     new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
+                                            GridBagConstraints.EAST,
+                                            GridBagConstraints.NONE,
+                                            new Insets(5, 5, 0, 0), 0, 0));
+            pane.add(fieldServerAddress,
+                     new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
+                                            GridBagConstraints.WEST,
+                                            GridBagConstraints.HORIZONTAL,
+                                            new Insets(5, 5, 0, 5), 0, 0));
 
             // Authentication panel
 
             JPanel authp = new JPanel(new GridBagLayout());
             authp.setBorder(BorderFactory.createTitledBorder("Username and password"));
-            pane.add(authp, new GridBagConstraints(0, gridY++, 2, 1, 1000.0, 0.0,
-                                                              GridBagConstraints.WEST,
-                                                              GridBagConstraints.HORIZONTAL,
-                                                              new Insets(15, 5, 5, 5), 0, 0));
+            pane.add(authp,
+                     new GridBagConstraints(0, gridY++, 2, 1, 1000.0, 0.0,
+                                            GridBagConstraints.WEST,
+                                            GridBagConstraints.HORIZONTAL,
+                                            new Insets(15, 5, 5, 5), 0, 0));
 
             int oy = gridY;
             gridY = 0;
 
             fieldUsername = new JTextField();
             fieldUsername.setPreferredSize(new Dimension(200, 20));
-            authp.add(new JLabel("Username:"), new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
-                                                              GridBagConstraints.EAST,
-                                                              GridBagConstraints.NONE,
-                                                              new Insets(5, 5, 0, 0), 0, 0));
-            authp.add(fieldUsername, new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
-                                                              GridBagConstraints.WEST,
-                                                              GridBagConstraints.HORIZONTAL,
-                                                              new Insets(5, 5, 0, 5), 0, 0));
+            authp.add(new JLabel("Username:"),
+                      new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
+                                             GridBagConstraints.EAST,
+                                             GridBagConstraints.NONE,
+                                             new Insets(5, 5, 0, 0), 0, 0));
+            authp.add(fieldUsername,
+                      new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
+                                             GridBagConstraints.WEST,
+                                             GridBagConstraints.HORIZONTAL,
+                                             new Insets(5, 5, 0, 5), 0, 0));
 
             JPanel passwordStuff = new JPanel();
             passwordStuff.setLayout(new GridBagLayout());
 
             fieldPassword = new JLabel();
-            authp.add(new JLabel("Password:"), new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
-                                                              GridBagConstraints.EAST,
-                                                              GridBagConstraints.NONE,
-                                                              new Insets(5, 5, 0, 0), 0, 0));
+            authp.add(new JLabel("Password:"),
+                      new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
+                                             GridBagConstraints.EAST,
+                                             GridBagConstraints.NONE,
+                                             new Insets(5, 5, 0, 0), 0, 0));
             passwordStuff.add(fieldPassword,
                               new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
                                                      GridBagConstraints.WEST,
@@ -348,66 +350,12 @@ public class SsgPropertyDialog extends PropertyDialog {
     }
 
     /** Get the Server URL text field. */
-    private JTextField getFieldServerUrl() {
-        if (fieldServerUrl == null) {
-            fieldServerUrl = new JTextField();
-            fieldServerUrl.setPreferredSize(new Dimension(250, 20));
-            fieldServerUrl.getDocument().addDocumentListener(getServerUrlListener());
+    private JTextField getFieldServerAddress() {
+        if (fieldServerAddress == null) {
+            fieldServerAddress = new JTextField();
+            fieldServerAddress.setPreferredSize(new Dimension(250, 20));
         }
-        return fieldServerUrl;
-    }
-
-    private DocumentListener getServerUrlListener() {
-        if (serverUrlListener == null) {
-            serverUrlListener = new DocumentListener() {
-                public void insertUpdate(DocumentEvent e) {
-                    validateData();
-                }
-
-                public void removeUpdate(DocumentEvent e) {
-                    validateData();
-                }
-
-                public void changedUpdate(DocumentEvent e) {
-                    validateData();
-                }
-            };
-        }
-        return serverUrlListener;
-    }
-
-    /** Check if the Server URL is a valid URL. */
-    private boolean checkServerUrlValid() {
-        String text = fieldServerUrl.getText().trim();
-
-        // Null URL is Ok
-        if (text.length() < 1)
-            return true;
-
-        try {
-            new URL(text);
-        } catch (MalformedURLException e) {
-            fieldServerUrl.setToolTipText(e.getMessage());
-            return false;
-        }
-        fieldServerUrl.setToolTipText(null);
-        return true;
-    }
-
-    /** Validate the data in the view, and enable the Ok button only if the data is valid. */
-    private void validateData() {
-        boolean valid = true;
-
-        if (!checkServerUrlValid())
-            valid = false;
-
-        if (valid) {
-            getFieldServerUrl().setForeground(Color.BLUE);
-            enableOk();
-        } else {
-            getFieldServerUrl().setForeground(Color.RED);
-            disableOk();
-        }
+        return fieldServerAddress;
     }
 
     /** Update the policy display panel with information from the Ssg bean. */
@@ -425,7 +373,7 @@ public class SsgPropertyDialog extends PropertyDialog {
 
         fieldName.setText(ssg.getName());
         fieldLocalEndpoint.setText("http://localhost:5555/" + ssg.getLocalEndpoint());
-        fieldServerUrl.setText(ssg.getServerUrl() != null ? ssg.getServerUrl().toString() : "");
+        fieldServerAddress.setText(ssg.getSsgAddress());
         fieldUsername.setText(ssg.getUsername());
         editPassword = ssg.getPassword();
         fieldPassword.setText(passwordToString(editPassword));
@@ -436,18 +384,6 @@ public class SsgPropertyDialog extends PropertyDialog {
         updatePolicyPanel();
     }
 
-    /** Get the URL from the view, fixing it up with our hardcoded URI. */
-    private String getViewServerUrl() {
-        String urlString = fieldServerUrl.getText().trim();
-        URL url = null;
-        try {
-            URL turl = new URL(urlString);
-            url = new URL(turl.getProtocol(), turl.getHost(), turl.getPort(), SSG_URI);
-        } catch (MalformedURLException e) {
-        }
-        return url == null ? "" : url.toString();
-    }
-
     /**
      * Called when the Ok button is pressed.
      * Should copy any updated properties into the target object and return normally.
@@ -456,9 +392,8 @@ public class SsgPropertyDialog extends PropertyDialog {
     protected void commitChanges() {
         synchronized (ssg) {
             ssg.setName(fieldName.getText());
-            //ssg.setLocalEndpoint(fieldLocalEndpoint.getText());  // need to strip http://localhost:5555
-            ssg.setServerUrl(getViewServerUrl());
-            ssg.setUsername(fieldUsername.getText());
+            ssg.setSsgAddress(fieldServerAddress.getText().trim());
+            ssg.setUsername(fieldUsername.getText().trim());
             ssg.setPassword(editPassword);
             ssg.setPromptForUsernameAndPassword(cbPromptForPassword.isSelected());
             ssg.setDefaultSsg(cbDefault.isSelected());

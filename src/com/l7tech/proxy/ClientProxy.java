@@ -8,6 +8,10 @@ import org.mortbay.http.HttpServer;
 import org.mortbay.http.SocketListener;
 import org.mortbay.util.MultiException;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.X509KeyManager;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -16,11 +20,18 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.net.Socket;
+import java.net.InetAddress;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
+import java.security.Principal;
+import java.security.KeyManagementException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.Properties;
 
 /**
@@ -74,7 +85,56 @@ public class ClientProxy {
             throw new IllegalStateException("ClientProxy is currently running");
     }
 
-    public synchronized void init() {
+    private class ClientProxyKeyManager implements X509KeyManager {
+        X509KeyManager defaultKeyManager = null;
+
+        X509KeyManager getDefaultKeyManager() {
+            try {
+                return defaultKeyManager = (X509KeyManager) KeyManagerFactory.getInstance("SunX509", "SunJSSE").getKeyManagers()[0];
+            } catch (NoSuchAlgorithmException e) {
+                log.error(e);
+                return null;
+            } catch (NoSuchProviderException e) {
+                log.error(e);
+                return null;
+            }
+        }
+
+        public PrivateKey getPrivateKey(String s) {
+            log.info("ClientProxyKeyManager: getPrivateKey: s=" + s);
+            return getDefaultKeyManager().getPrivateKey(s);
+        }
+
+        public X509Certificate[] getCertificateChain(String s) {
+            log.info("ClientProxyKeyManager: getCertificateChain: s=" + s);
+            return getDefaultKeyManager().getCertificateChain(s);
+        }
+
+        public String[] getClientAliases(String s, Principal[] principals) {
+            log.info("ClientProxyKeyManager: getClientAliases");
+            return getDefaultKeyManager().getClientAliases(s, principals);
+        }
+
+        public String[] getServerAliases(String s, Principal[] principals) {
+            log.info("ClientProxyKeyManager: getServerAliases");
+            return getDefaultKeyManager().getServerAliases(s, principals);
+        }
+
+        public String chooseServerAlias(String s, Principal[] principals, Socket socket) {
+            log.info("ClientProxyKeyManager: chooseServerAlias: s=" + s + "  principals=" + principals + "  socket=" + socket);
+            return getDefaultKeyManager().chooseServerAlias(s, principals, socket);
+        }
+
+        public String chooseClientAlias(String[] strings, Principal[] principals, Socket socket) {
+            InetAddress ia = socket.getInetAddress();
+            String hostname = ia.getHostName();
+            log.info("ClientProxyKeyManager: chooseClientAlias: ia=" + ia + "  hostname=" + hostname);
+
+            return getDefaultKeyManager().chooseClientAlias(strings, principals, socket);
+        }
+    }
+
+    public synchronized void init() throws NoSuchAlgorithmException, NoSuchProviderException, KeyManagementException {
         if (isInitialized)
             return;
 
@@ -84,7 +144,8 @@ public class ClientProxy {
         props.put("java.protocol.handler.pkgs", "com.sun.net.ssl.internal.www.protocol");
         props.put("javax.net.ssl.trustStore", TRUST_STORE_FILE.getAbsolutePath());
         props.put("javax.net.ssl.trustStorePassword", TRUST_STORE_PASSWORD);
-
+        ClientProxyKeyManager keyManager = new ClientProxyKeyManager();
+        SSLContext.getInstance("SSL", "SunJSSE").init(new KeyManager[] {keyManager}, null, null);
         isInitialized = true;
     }
 
@@ -126,7 +187,7 @@ public class ClientProxy {
      * @return the client proxy's base URL.
      * @throws MultiException if the proxy could not be started
      */
-    public synchronized URL start() throws MultiException {
+    public synchronized URL start() throws MultiException, KeyManagementException, NoSuchAlgorithmException, NoSuchProviderException {
         mustNotBeRunning();
         if (!isInitialized)
             init();

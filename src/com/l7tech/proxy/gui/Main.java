@@ -9,6 +9,9 @@ import org.mortbay.util.MultiException;
 import org.apache.log4j.Category;
 
 import java.net.BindException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 
 /**
  * Begin execution of client proxy along with an attached GUI.
@@ -44,9 +47,11 @@ public class Main {
 
         try {
             clientProxy.start();
-        } catch (MultiException e) {
+        } catch (Exception e) {
             String message = "Unable to start the Client Proxy: " + e;
-            if (e.getException(0) instanceof BindException) {
+            if (e instanceof BindException ||
+                    (e instanceof MultiException && ((MultiException)e).getException(0) instanceof BindException))
+            {
                 message = "The Layer7 Client Proxy is already running.  \nPlease shut down the existing " +
                         "Layer7 Client Proxy and try again.";
             }

@@ -25,7 +25,11 @@ import org.xml.sax.helpers.AttributesImpl;
 import javax.xml.soap.SOAPException;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.rmi.RemoteException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 
 /**
  * Test message processing.
@@ -79,7 +83,7 @@ public class FunctionalTest extends TestCase {
     }
 
     /** Starts up the SSG Faker and the Client Proxy. */
-    protected void setUp() throws MultiException, IOException {
+    protected void setUp() throws MultiException, IOException, KeyManagementException, NoSuchAlgorithmException, NoSuchProviderException {
         destroyFaker();
         destroyProxy();
 
@@ -93,7 +97,8 @@ public class FunctionalTest extends TestCase {
         ssgFake = ssgManager.createSsg();
         ssgFake.setName("SSG Faker");
         ssgFake.setLocalEndpoint(ssg0ProxyEndpoint);
-        ssgFake.setServerUrl(ssgUrl);
+        ssgFake.setSsgAddress(new URL(ssgUrl).getHost());
+        ssgFake.setSsgPort(new URL(ssgUrl).getPort());
         ssgManager.add(ssgFake);
 
         // Make a do-nothing PolicyManager
@@ -141,6 +146,7 @@ public class FunctionalTest extends TestCase {
         SOAPEnvelope reqEnvelope = makePingRequest(payload);
 
         policyManager.setPolicy(new TrueAssertion());
+        ssgFake.setSsgFile("/soap/ssg");
 
         Call call = new Call(proxyUrl + ssg0ProxyEndpoint);
         SOAPEnvelope responseEnvelope = call.invoke(reqEnvelope);
@@ -157,7 +163,10 @@ public class FunctionalTest extends TestCase {
         SOAPEnvelope reqEnvelope = makePingRequest(payload);
 
         policyManager.setPolicy(new HttpBasic());
-        ssgFake.setServerUrl(ssgUrl + "/basicauth");
+        URL url = new URL(ssgUrl);
+        ssgFake.setSsgAddress(url.getHost());
+        ssgFake.setSsgPort(url.getPort());
+        ssgFake.setSsgFile("/soap/ssg/basicauth");
         ssgFake.setUsername("testuser");
         ssgFake.setPassword("testpassword");
 
@@ -175,7 +184,10 @@ public class FunctionalTest extends TestCase {
         String payload = "ping 1 2 3";
         SOAPEnvelope reqEnvelope = makePingRequest(payload);
 
-        ssgFake.setServerUrl(ssgUrl + "/throwfault");
+        URL url = new URL(ssgUrl);
+        ssgFake.setSsgAddress(url.getHost());
+        ssgFake.setSsgPort(url.getPort());
+        ssgFake.setSsgFile("/soap/ssg/throwfault");
 
         boolean threwAxisFault = false;
         try {

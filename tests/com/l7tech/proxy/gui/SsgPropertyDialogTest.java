@@ -14,6 +14,8 @@ import java.util.logging.Logger;
 import java.util.Arrays;
 
 import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.Managers;
+import com.l7tech.proxy.datamodel.SsgManagerStub;
 import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.FalseAssertion;
@@ -44,7 +46,7 @@ public class SsgPropertyDialogTest extends TestCase {
     }
 
     public void testSomeStuff() throws Exception {
-        Ssg ssg = new Ssg(1, "Test SSG", "http://blah.bloof.com");
+        Ssg ssg = new Ssg(1, "Test SSG", "blah.bloof.com");
         ssg.attachPolicy("http://blah",  "http://gwerg.asd.gfa", new AllAssertion(Arrays.asList(new Assertion[] {
             new HttpBasic(),
             new SpecificUser(444, "blahuser"),
@@ -136,6 +138,8 @@ public class SsgPropertyDialogTest extends TestCase {
         ssg.attachPolicy("http://exampale.cosm/Quzopter", "http://gwergs.asd.gfa", new TrueAssertion());
         ssg.attachPolicy("http://exampdles.com/Quzoter", "http://gwerfg.asdf.gfa", new TrueAssertion());
         ssg.attachPolicy("http://exsample.com/Quoater", "http://gwserg.asd.gfs", new TrueAssertion());
+
+        Gui.setInstance(Gui.createGui(new SsgManagerStub()));
         SsgPropertyDialog.getPropertyDialogForObject(ssg).show();
         System.exit(0);
     }

@@ -34,7 +34,7 @@ public class Main {
 
         try {
             clientProxy.start();
-        } catch (MultiException e) {
+        } catch (Exception e) {
             log.error("Unable to start Layer7 Client Proxy: " + e);
             log.error(e);
             System.exit(2);
