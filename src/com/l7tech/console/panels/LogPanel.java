@@ -38,7 +38,7 @@ public class LogPanel extends JPanel {
 
     public static final String MSG_TOTAL_PREFIX = "Total: ";
 
-    private final static int TWO_SECONDS = 2000;
+    private final static int ONE_SECOND = 1000;
     private javax.swing.Timer logsRefreshTimer = null;
 
     private static ResourceBundle resapplication = java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
@@ -555,7 +555,7 @@ public class LogPanel extends JPanel {
         if (logsRefreshTimer != null) return logsRefreshTimer;
 
         //Create a refresh logs timer.
-        logsRefreshTimer = new javax.swing.Timer(TWO_SECONDS, new ActionListener() {
+        logsRefreshTimer = new javax.swing.Timer(3 * ONE_SECOND, new ActionListener() {
             public void actionPerformed(ActionEvent evt) {
                 refreshLogs();
             }
