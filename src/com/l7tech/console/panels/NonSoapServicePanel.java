@@ -41,23 +41,33 @@ public class NonSoapServicePanel extends WizardStepPanel {
         prefixURL.setText(mw.ssgURL() + "/ssg/xml/");
     }
 
+    private void bark(Component control, String msg) {
+        JOptionPane.showMessageDialog(control, msg);
+    }
+
     public boolean onNextButton() {
         // make sure a name is provided
         publishedServiceName = serviceName.getText();
         if (publishedServiceName == null || publishedServiceName.length() < 1) {
-            logger.info("published service name not set");
+            String msg = "published service name not set";
+            logger.info(msg);
+            bark(serviceName, msg);
             return false;
         }
         routingURI = null;
         String tmp = ssgURLSuffix.getText();
         if (tmp == null || tmp.length() < 1) {
-            logger.info("must complete the routing URI");
+            String msg = "must complete the routing URI";
+            logger.info(msg);
+            bark(ssgURLSuffix, msg);
             return false;
         }
         if (tmp.startsWith("/")) tmp = tmp.substring(1);
         ssgURLSuffix.setText(tmp);
         if (tmp == null || tmp.length() < 1) {
-            logger.info("must complete the routing URI");
+            String msg = "must complete the routing URI";
+            logger.info(msg);
+            bark(ssgURLSuffix, msg);
             return false;
         } else {
             routingURI = "/ssg/xml/" + tmp;
@@ -66,19 +76,25 @@ public class NonSoapServicePanel extends WizardStepPanel {
         try {
             new URL(prefixURL.getText() + tmp);
         } catch (MalformedURLException e) {
-            logger.info(prefixURL.getText() + tmp + " is not a valid url. " + e.getMessage());
+            String msg = prefixURL.getText() + tmp + " is not a valid url. " + e.getMessage();
+            logger.info(msg);
+            bark(ssgURLSuffix, msg);
             return false;
         }
         downstreamURL = targetURL.getText();
         if (downstreamURL == null || downstreamURL.length() < 1) {
-            logger.info("must provide a downstream url");
+            String msg = "must provide a downstream url";
+            logger.info(msg);
+            bark(targetURL, msg);
             return false;
         }
         // check that this is a valid url
         try {
             new URL(downstreamURL);
         } catch (MalformedURLException e) {
-            logger.info(downstreamURL + " is not a valid url. " + e.getMessage());
+            String msg = downstreamURL + " is not a valid url. " + e.getMessage();
+            logger.info(msg);
+            bark(targetURL, msg);
             return false;
         }
         return true;
