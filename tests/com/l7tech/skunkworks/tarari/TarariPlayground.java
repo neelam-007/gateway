@@ -5,6 +5,7 @@ package com.l7tech.skunkworks.tarari;
 
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.TestDocuments;
+import com.l7tech.common.xml.TarariUtil;
 import com.tarari.xml.Node;
 import com.tarari.xml.NodeSet;
 import com.tarari.xml.XMLDocument;
@@ -45,6 +46,8 @@ public class TarariPlayground {
     };
 
     public static void main(String[] args) throws Exception {
+        if (!TarariUtil.isTarariPresent()) throw new IllegalStateException("No Tarari card present");
+
         ArrayList xpaths0 = new ArrayList();
         xpaths0.addAll(Arrays.asList(ISSOAP_XPATHS));
         int ursStart = xpaths0.size() + 1; // 1-based arrays
