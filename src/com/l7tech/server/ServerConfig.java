@@ -46,7 +46,7 @@ public class ServerConfig {
             if ( sid != null && sid.length() > 0 )
                 _serverId = new Byte( sid ).byteValue();
         } catch ( NamingException ne ) {
-            LogManager.getInstance().getSystemLogger().log( Level.WARNING, ne.getMessage(), ne );
+            LogManager.getInstance().getSystemLogger().log( Level.WARNING, "Parameter " + ne.getRemainingName() + " could not be read." );
         } catch ( NumberFormatException nfe ) {
         }
 
