@@ -20,6 +20,8 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import javax.wsdl.Port;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -312,7 +314,9 @@ public class RequestHandler extends AbstractHttpHandler {
             int port = clientProxy.getBindPort();
             URL newUrl = new URL("http", request.getHost(), port,
                                  "/" + ssg.getLocalEndpoint() + "/service/" + oid);
-            wsdl.setPortUrl(wsdl.getSoapPort(), newUrl);
+            Port soapPort = wsdl.getSoapPort();
+            if (soapPort != null)
+                wsdl.setPortUrl(soapPort, newUrl);
 
             response.addField("Content-Type", "text/xml");
             wsdl.toOutputStream(response.getOutputStream());
