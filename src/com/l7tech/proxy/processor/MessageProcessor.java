@@ -639,7 +639,7 @@ public class MessageProcessor {
                 String innerType = MultipartUtil.unquote((String)contentTypeHeader.getParam(XmlUtil.MULTIPART_TYPE));
                 if (innerType.startsWith(XmlUtil.TEXT_XML)) {
 
-                    InputStream is = postMethod.getRequestBody();
+                    InputStream is = postMethod.getResponseBodyAsStream();
                     multipartReader = new MultipartMessageReader(is, multipartBoundary);
 
                     MultipartUtil.Part part = multipartReader.getSoapPart();
