@@ -122,7 +122,7 @@ public class SsgPropertyDialog extends PropertyDialog {
                                             GridBagConstraints.BOTH,
                                             new Insets(6, 6, 6, 6), 3, 3));
 
-            pane.add(new JLabel("Attachments:"),
+            pane.add(new JLabel("Web services with cached policies:"),
                      new GridBagConstraints(0, y++, 2, 1, 0.0, 0.0,
                                             GridBagConstraints.CENTER,
                                             GridBagConstraints.BOTH,
@@ -149,7 +149,7 @@ public class SsgPropertyDialog extends PropertyDialog {
             policyTable.setRowSelectionAllowed(true);
             policyTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
             policyTable.setAutoCreateColumnsFromModel(true);
-            policyTable.getColumnModel().getColumn(0).setHeaderValue("Body URI");
+            policyTable.getColumnModel().getColumn(0).setHeaderValue("Body Namespace");
             policyTable.getColumnModel().getColumn(1).setHeaderValue("SOAPAction");
             JScrollPane policyTableSp = new JScrollPane(policyTable);
             policyTableSp.setPreferredSize(new Dimension(120, 120));
