@@ -1,6 +1,6 @@
 package com.l7tech.console.security;
 
-import com.l7tech.jini.lookup.ServiceLookup;
+import com.l7tech.remote.jini.lookup.ServiceLookup;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.VersionException;
 import com.l7tech.common.protocol.SecureSpanConstants;

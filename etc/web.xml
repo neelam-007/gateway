@@ -38,7 +38,7 @@
 
     <servlet>
            <servlet-name>RegistrarServlet</servlet-name>
-           <servlet-class>com.l7tech.jini.lookup.RegistrarLookupServlet</servlet-class>
+           <servlet-class>com.l7tech.remote.jini.lookup.RegistrarLookupServlet</servlet-class>
     </servlet>
 
     <servlet>

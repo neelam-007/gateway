@@ -1,4 +1,4 @@
-package com.l7tech.jini.export;
+package com.l7tech.remote.jini.export;
 
 import net.jini.config.Configuration;
 import net.jini.config.ConfigurationException;

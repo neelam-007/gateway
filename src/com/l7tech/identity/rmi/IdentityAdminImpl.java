@@ -2,7 +2,7 @@ package com.l7tech.identity.rmi;
 
 import com.l7tech.objectmodel.*;
 import com.l7tech.identity.*;
-import com.l7tech.jini.export.RemoteService;
+import com.l7tech.remote.jini.export.RemoteService;
 import com.sun.jini.start.LifeCycle;
 
 import java.rmi.RemoteException;

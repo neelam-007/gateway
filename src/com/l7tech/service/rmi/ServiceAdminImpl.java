@@ -1,6 +1,6 @@
 package com.l7tech.service.rmi;
 
-import com.l7tech.jini.export.RemoteService;
+import com.l7tech.remote.jini.export.RemoteService;
 import com.l7tech.objectmodel.*;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceStatistics;

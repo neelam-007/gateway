@@ -1,4 +1,4 @@
-package com.l7tech.jini.lookup;
+package com.l7tech.remote.jini.lookup;
 
 import com.l7tech.common.locator.ObjectFactory;
 import com.l7tech.common.util.Locator;

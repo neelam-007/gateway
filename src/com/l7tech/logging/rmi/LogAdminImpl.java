@@ -1,6 +1,6 @@
 package com.l7tech.logging.rmi;
 
-import com.l7tech.jini.export.RemoteService;
+import com.l7tech.remote.jini.export.RemoteService;
 import com.l7tech.common.util.UptimeMetrics;
 import com.l7tech.logging.LogAdmin;
 import com.sun.jini.start.LifeCycle;

@@ -1,4 +1,4 @@
-package com.l7tech.jini.security;
+package com.l7tech.remote.jini.security;
 
 import com.sun.jini.discovery.ClientSubjectChecker;
 

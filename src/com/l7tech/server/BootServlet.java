@@ -7,8 +7,8 @@
 package com.l7tech.server;
 
 import com.l7tech.common.BuildInfo;
-import com.l7tech.jini.Services;
-import com.l7tech.jini.export.RemoteService;
+import com.l7tech.remote.jini.Services;
+import com.l7tech.remote.jini.export.RemoteService;
 import com.l7tech.objectmodel.HibernatePersistenceManager;
 import com.l7tech.logging.LogManager;
 

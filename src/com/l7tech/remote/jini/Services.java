@@ -1,4 +1,4 @@
-package com.l7tech.jini;
+package com.l7tech.remote.jini;
 
 import com.sun.jini.start.ServiceStarter;
 

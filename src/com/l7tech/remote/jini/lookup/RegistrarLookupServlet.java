@@ -4,7 +4,7 @@
  * $Id$
  */
 
-package com.l7tech.jini.lookup;
+package com.l7tech.remote.jini.lookup;
 
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.PersistenceContext;
@@ -47,7 +47,7 @@ public class RegistrarLookupServlet extends HttpServlet {
     private static final Logger logger = Logger.getLogger(RegistrarLookupServlet.class.getName());
 
     private Configuration lookupConfig;
-    private static final String LOOKUP_CONFIG = "com/l7tech/jini/lookup/lookupservlet.config";
+    private static final String LOOKUP_CONFIG = "com/l7tech/remote/jini/lookup/lookupservlet.config";
     private IdentityProviderConfigManager identityProviderConfigManager;
 
     public void init(ServletConfig config) throws ServletException {

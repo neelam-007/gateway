@@ -1,4 +1,4 @@
-package com.l7tech.jini.lookup;
+package com.l7tech.remote.jini.lookup;
 
 import net.jini.config.*;
 import net.jini.core.discovery.LookupLocator;
