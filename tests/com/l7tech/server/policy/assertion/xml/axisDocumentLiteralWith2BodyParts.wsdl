@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions targetNamespace="http://DefaultNamespace" xmlns:impl="http://DefaultNamespace" xmlns:intf="http://DefaultNamespace" xmlns:apachesoap="http://xml.apache.org/xml-soap" xmlns:wsdlsoap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns="http://schemas.xmlsoap.org/wsdl/">
+ <wsdl:types>
+  <schema xmlns="http://www.w3.org/2001/XMLSchema" targetNamespace="http://DefaultNamespace">
+  
+   <complexType name="A">
+    <sequence>
+     <element name="aData" type="xsd:int"/>
+    </sequence>
+   </complexType>
+
+   <element name="in0" type="impl:A"/>
+   
+   <complexType name="B">
+    <sequence>
+     <element name="bData" nillable="true" type="xsd:string"/>
+    </sequence>
+   </complexType>
+
+   <element name="in1" type="impl:B"/>
+
+   <element name="barReturn" type="xsd:string"/>
+   <element name="simpleReturn" type="xsd:string"/>
+   
+  </schema>
+ </wsdl:types>
+
+   <wsdl:message name="mainResponse">
+
+   </wsdl:message>
+
+   <wsdl:message name="simpleRequest">
+
+      <wsdl:part name="in0" element="impl:in0"/>
+
+      <wsdl:part name="in1" element="impl:in1"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="barResponse">
+
+      <wsdl:part name="barReturn" element="impl:barReturn"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="mainRequest">
+
+      <wsdl:part name="in0" element="impl:in0"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="simpleResponse">
+
+      <wsdl:part name="simpleReturn" element="impl:simpleReturn"/>
+
+   </wsdl:message>
+
+   <wsdl:message name="barRequest">
+
+      <wsdl:part name="in0" element="impl:in0"/>
+
+      <wsdl:part name="in1" element="impl:in1"/>
+
+   </wsdl:message>
+
+   <wsdl:portType name="Foo">
+
+      <wsdl:operation name="main" parameterOrder="in0">
+
+         <wsdl:input name="mainRequest" message="impl:mainRequest"/>
+
+         <wsdl:output name="mainResponse" message="impl:mainResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="bar" parameterOrder="in0 in1">
+
+         <wsdl:input name="barRequest" message="impl:barRequest"/>
+
+         <wsdl:output name="barResponse" message="impl:barResponse"/>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="simple" parameterOrder="in0 in1">
+
+         <wsdl:input name="simpleRequest" message="impl:simpleRequest"/>
+
+         <wsdl:output name="simpleResponse" message="impl:simpleResponse"/>
+
+      </wsdl:operation>
+
+   </wsdl:portType>
+
+   <wsdl:binding name="AxisServletSoapBinding" type="impl:Foo">
+
+      <wsdlsoap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+
+      <wsdl:operation name="main">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="mainRequest">
+
+            <wsdlsoap:body use="literal" namespace="http://DefaultNamespace"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="mainResponse">
+
+            <wsdlsoap:body use="literal" namespace="http://DefaultNamespace"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="bar">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="barRequest">
+
+            <wsdlsoap:body use="literal" namespace="http://DefaultNamespace"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="barResponse">
+
+            <wsdlsoap:body use="literal" namespace="http://DefaultNamespace"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+      <wsdl:operation name="simple">
+
+         <wsdlsoap:operation soapAction=""/>
+
+         <wsdl:input name="simpleRequest">
+
+            <wsdlsoap:body use="literal" namespace="http://DefaultNamespace"/>
+
+         </wsdl:input>
+
+         <wsdl:output name="simpleResponse">
+
+            <wsdlsoap:body use="literal" namespace="http://DefaultNamespace"/>
+
+         </wsdl:output>
+
+      </wsdl:operation>
+
+   </wsdl:binding>
+
+   <wsdl:service name="FooService">
+
+      <wsdl:port name="AxisServlet" binding="impl:AxisServletSoapBinding">
+
+         <wsdlsoap:address location="http://localhost:8080/axis/servlet/AxisServlet"/>
+
+      </wsdl:port>
+
+   </wsdl:service>
+
+</wsdl:definitions>
