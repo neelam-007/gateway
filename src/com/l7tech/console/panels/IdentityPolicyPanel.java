@@ -263,10 +263,10 @@ public class IdentityPolicyPanel extends JPanel {
             List addAssertions = new ArrayList();
 
             collectCredentialsAssertion();
-            if (existingCredAssertion !=null) {
-                removeAssertions.add(existingCredAssertion);
-                if (newCredAssertion !=null) {
-                    addAssertions.add(newCredAssertion);
+            if (newCredAssertion !=null) {
+                addAssertions.add(newCredAssertion);
+                if (existingCredAssertion !=null) {
+                    removeAssertions.add(existingCredAssertion);
                 }
             }
 

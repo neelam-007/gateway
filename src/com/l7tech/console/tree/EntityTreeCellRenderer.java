@@ -1,5 +1,7 @@
 package com.l7tech.console.tree;
 
+import com.l7tech.console.tree.policy.RoutingAssertionTreeNode;
+
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import java.awt.*;
@@ -12,11 +14,16 @@ import java.awt.*;
  */
 public class EntityTreeCellRenderer
   extends DefaultTreeCellRenderer {
+    private final Font boldFont;
+    private final Font plainFont;
 
     /**
      * default constructor
      */
     public EntityTreeCellRenderer() {
+        JLabel l = new JLabel();
+        boldFont = l.getFont().deriveFont(Font.BOLD);
+        plainFont =  l.getFont().deriveFont(Font.PLAIN);
     }
 
     /**
@@ -28,10 +35,9 @@ public class EntityTreeCellRenderer
                                    boolean leaf, int row, boolean hasFocus) {
 
         super.getTreeCellRendererComponent(tree, value,
-          sel, expanded,
-          leaf, row, hasFocus);
+                                           sel, expanded, leaf, row, hasFocus);
 
-
+        setFont(plainFont);
         this.setBackgroundNonSelectionColor(tree.getBackground());
         Icon icon = null;
         if (!(value instanceof AbstractTreeNode)) return this;
@@ -44,6 +50,9 @@ public class EntityTreeCellRenderer
 
         if (icon != null) {
             setIcon(icon);
+        }
+        if (node instanceof RoutingAssertionTreeNode) {
+            setFont(boldFont);
         }
         return this;
     }
