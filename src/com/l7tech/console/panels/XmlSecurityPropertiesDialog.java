@@ -1,13 +1,12 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.gui.util.TableUtil;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.SoapMessageGenerator;
 import com.l7tech.common.xml.SoapMessageGenerator.Message;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
-import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.util.TableUtil;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.table.SecuredMessagePartsTableModel;
 import com.l7tech.console.table.SecuredMessagePartsTableModel.SecuredMessagePart;
@@ -279,7 +278,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                 securedMessagePartsTableModel.addPart(toSecureMessagePart(elementSecurity));
             }
             int width = TableUtil.getColumnWidth(securedItemsTable, 0);
-            TableUtil.adjustColumnWidth(securedItemsTable, 0, width*2);
+            TableUtil.adjustColumnWidth(securedItemsTable, 0, width * 2);
             width = TableUtil.getColumnWidth(securedItemsTable, 2);
             TableUtil.adjustColumnWidth(securedItemsTable, 2, width);
 
@@ -695,8 +694,8 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         final JTree _12;
         _12 = new JTree();
         operationsTree = _12;
-        _12.setRootVisible(false);
         _12.setShowsRootHandles(false);
+        _12.setRootVisible(false);
         _11.setViewportView(_12);
         final JScrollPane _13;
         _13 = new JScrollPane();
@@ -757,8 +756,8 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         final JTable _26;
         _26 = new JTable();
         securedItemsTable = _26;
-        _26.setPreferredScrollableViewportSize(new Dimension(-1, -1));
         _26.setAutoResizeMode(2);
+        _26.setPreferredScrollableViewportSize(new Dimension(-1, -1));
         _25.setViewportView(_26);
         final JPanel _27;
         _27 = new JPanel();

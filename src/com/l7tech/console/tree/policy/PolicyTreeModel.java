@@ -1,6 +1,9 @@
 package com.l7tech.console.tree.policy;
 
-import com.l7tech.console.event.*;
+import com.l7tech.console.event.PolicyChangeVetoException;
+import com.l7tech.console.event.PolicyEvent;
+import com.l7tech.console.event.PolicyWillChangeListener;
+import com.l7tech.console.event.WeakEventListenerList;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.NodeFilter;
 import com.l7tech.console.tree.ServiceNode;
@@ -133,25 +136,6 @@ public class PolicyTreeModel extends DefaultTreeModel {
     }
 
 
-    /**
-     * add the PolicyListener
-     *
-     * @param listener the PolicyListener
-     */
-    public void addPolicyListener(PolicyListener listener) {
-        eventListenerList.add(PolicyListener.class, listener);
-    }
-
-    /**
-     * remove the the PolicyListener
-     *
-     * @param listener the PolicyListener
-     */
-    public void removePolicyListener(PolicyListener listener) {
-        eventListenerList.remove(PolicyListener.class, listener);
-    }
-
-
     private void fireWillReceiveListeners(PolicyEvent event)
       throws PolicyChangeVetoException {
         EventListener[] listeners = eventListenerList.getListeners(PolicyWillChangeListener.class);
@@ -257,7 +241,7 @@ public class PolicyTreeModel extends DefaultTreeModel {
      * @see EventListenerList
      */
     protected void fireAssertionTreeNodesChanged(Object source, Object[] path, int[] childIndices, Object[] children) {
-        Object[] listeners = eventListenerList.getListenerList();
+        Object[] listeners = listenerList.getListenerList();
         TreeModelEvent e = null;
         // Process the listeners last to first, notifying
         // those that are interested in this event

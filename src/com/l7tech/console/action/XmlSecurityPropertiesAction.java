@@ -3,14 +3,11 @@ package com.l7tech.console.action;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.XmlSecurityPropertiesDialog;
-import com.l7tech.console.tree.XmlRequestSecurityNode;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.XmlSecurityTreeNode;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Registry;
-import com.l7tech.policy.assertion.xmlsec.ElementSecurity;
-import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertion;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -65,36 +62,6 @@ public class XmlSecurityPropertiesAction extends NodeAction {
         dialog.show();
     }
 
-    /**
-     * Actually perform the action.
-     * This is the method which should be called programmatically.
-     * note on threading usage: do not access GUI components
-     * without explicitly asking for the AWT event thread!
-     */
-    public void performActionOld() {
-        XmlSecurityTreeNode n = (XmlSecurityTreeNode)node;
-        XmlSecurityAssertion ass = (XmlSecurityAssertion)node.asAssertion();
-
-        String signOnly = "Sign only";
-        String encrypt = "Sign and encrypt";
-        ElementSecurity[] ese = ass.getElements();
-        if (ese == null || ese.length == 0) {
-            throw new IllegalArgumentException("empty elements");
-        }
-        ElementSecurity es = ese[0];
-        String s = (String)JOptionPane.showInputDialog(Registry.getDefault().
-          getComponentRegistry().getMainWindow(),
-          "Please select the " + n.getBaseName() + " options:\n",
-          n.getBaseName() + " assertion properties",
-          JOptionPane.PLAIN_MESSAGE,
-          new ImageIcon(new XmlRequestSecurityNode().getIcon()),
-          new Object[]{signOnly, encrypt},
-          es.isEncryption() ? encrypt : signOnly);
-
-        if ((s != null) && (s.length() > 0)) {
-            es.setEncryption(!s.equalsIgnoreCase(signOnly));
-        }
-    }
 
     public ActionListener okListener = new ActionListener() {
         public void actionPerformed(ActionEvent e) {
