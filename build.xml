@@ -220,10 +220,7 @@
             <test name="com.l7tech.policy.AllTests" haltonfailure="no"/>
             <test name="com.l7tech.identity.StubDataStoreTest" haltonfailure="no"/>
             <test name="com.l7tech.common.security.KeysTest" haltonfailure="no"/>
-            <!--
-            <test name="com.l7tech.common.security.xml.XmlManglerTest" haltonfailure="no"/>
-            -->
-
+            <test name="com.l7tech.common.security.xml.XmlManglerTest" haltonfailure="no" fork="yes" />
             <test name="com.l7tech.server.MockServletApiTest" haltonfailure="no"/>
             <!--
             ** TODO: make sure -security flag is added to the 'nightly' build/test
@@ -378,7 +375,7 @@
       ** The target is conditional, set the ssm.webstart property to enable it.
       -->
     <target name="ssm-webstart" if="ssm.webstart">
-      <!-- sign the ssm jar  -->  
+      <!-- sign the ssm jar  -->
       <signjar  keystore="${src.root}/etc/ssgKeyStore" alias="signer" storepass="password">
         <fileset dir="${build.dir}/lib" includes= "jini-core.jar,jini-ext.jar,reggie-dl.jar,reggie.jar,jh.jar,kunststoff.jar,
                                                    looks-1.1.3.jar,odmg.jar,hibernate2.jar,oswego-concurrent.jar,wsdl4j.jar,qname.jar, xercesImpl.jar,xml-apis.jar,
