@@ -38,15 +38,13 @@ if [ "$option" = "getFromRelease" -o "$option" = "getToRelease" ]; then
   # mapFile for storing buildNumber-versionNumber map
   mapFile="/ssg/bin/buildVersion.txt"
   if [ ! -e $mapFile -o -d $mapFile ]; then
-    echo "ERROR: Missing <$mapFile> - unable to derive the installed SSG version number"
-    echo "ERROR: <$0 $option> exits"
+    echo "WARNING: Missing <$mapFile> - unable to derive the installed SSG version number"
     exit 1
   fi
 
   # verify existence for /ssg/dist/ROOT-b<buildNumber>.war
   if [ ! -e /ssg/dist/ROOT-b*.war -o -d /ssg/dist/ROOT-b*.war ]; then
     echo "ERROR: Missing WAR distribution </ssg/dist/ROOT-b*.war> - unable to derive the installed SSG build number"
-    echo "ERROR: <$0 $option> exits"
     exit 1
   fi
 
