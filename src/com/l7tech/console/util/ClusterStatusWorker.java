@@ -101,6 +101,9 @@ public class ClusterStatusWorker extends SwingWorker {
                     // reset the flag
                     nodeStatus.resetCacheUpdateFlag();
 
+                    // copy the TimeStampUpdateFailureCount
+                    nodeStatus.setTimeStampUpdateFailureCount(((GatewayStatus) node).getTimeStampUpdateFailureCount());
+
                     // store the last update time
                     nodeStatus.setSecondLastUpdateTimeStamp(((GatewayStatus) node).getLastUpdateTimeStamp());
                 }

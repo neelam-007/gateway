@@ -17,6 +17,7 @@ public class GatewayStatus {
     public static final int REFRESH_INTERVAL = 5;
     public static final int STATUS_REFRESH_TIMER = 1000 * REFRESH_INTERVAL;
     public static final int NUMBER_OF_SAMPLE_PER_MINUTE = 60 / REFRESH_INTERVAL;
+    public static final int MAX_UPDATE_FAILURE_COUNT = 2;
 
     public GatewayStatus(ClusterNodeInfo clusterInfo) {
         this.clusterInfo = clusterInfo;
@@ -26,6 +27,7 @@ public class GatewayStatus {
 
         // the second last update time stamp is -1 to indicate this is the first time the node status is retrieved
         secondLastUpdateTimeStamp = -1;
+        timeStampUpdateFailureCount = 0;
     }
 
     /**
@@ -212,6 +214,24 @@ public class GatewayStatus {
         return clusterInfo.getMac();
     }
 
+    public void incrementTimeStampUpdateFailureCount(){
+        timeStampUpdateFailureCount++;
+        System.out.println("Node: " + getName() + ", Increment TimeStampUpdateFailureCount, New count = " + timeStampUpdateFailureCount);
+    }
+
+    public void resetTimeStampUpdateFailureCount(){
+        System.out.println("Node: " + getName() + ", Reset TimeStampUpdateFailureCount");
+        timeStampUpdateFailureCount = 0;
+    }
+
+    public int getTimeStampUpdateFailureCount(){
+        return timeStampUpdateFailureCount;
+    }
+
+     public int setTimeStampUpdateFailureCount(int count){
+        return timeStampUpdateFailureCount = count;
+    }
+
     private final ClusterNodeInfo clusterInfo;
     private int status;
     private int loadSharing;
@@ -220,5 +240,6 @@ public class GatewayStatus {
     private Vector requestCounterCache = new Vector();
     private Vector completedCounterCache = new Vector();
     long secondLastUpdateTimeStamp;
+    int timeStampUpdateFailureCount;
 
 }

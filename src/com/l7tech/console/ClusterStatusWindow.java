@@ -411,12 +411,24 @@ public class ClusterStatusWindow extends JFrame {
         for (Iterator i = currentNodeList.keySet().iterator(); i.hasNext();) {
             GatewayStatus su = (GatewayStatus) currentNodeList.get(i.next());
 
+            if(su.getLastUpdateTimeStamp() == su.getSecondLastUpdateTimeStamp()){
+                su.incrementTimeStampUpdateFailureCount();
+            }
             // the second last update time stamp is -1 the very first time when the node status is retrieved
             if (su.getSecondLastUpdateTimeStamp() == -1 ||
                     su.getLastUpdateTimeStamp() != su.getSecondLastUpdateTimeStamp()) {
                 su.setStatus(1);
+                su.resetTimeStampUpdateFailureCount();
             } else {
-                su.setStatus(0);
+                if(su.getTimeStampUpdateFailureCount() >= GatewayStatus.MAX_UPDATE_FAILURE_COUNT){
+                    su.setStatus(0);
+                    su.resetTimeStampUpdateFailureCount();
+                }
+                else{
+                    if(su.getLastUpdateTimeStamp() != su.getSecondLastUpdateTimeStamp()){
+                        su.setStatus(1);
+                    }
+                }
             }
 
             if (getClusterRequestCount() != 0) {
