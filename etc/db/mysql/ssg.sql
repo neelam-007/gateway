@@ -167,7 +167,7 @@ CREATE TABLE service_resolution (
   objectid bigint(20) NOT NULL default '0',
   serviceid bigint NOT NULL,
   soapaction varchar(128) default '',
-  urn varchar(255) default '',
+  urn varchar(128) default '',
   uri varchar(128) default '',
   unique(soapaction, urn, uri),
   PRIMARY KEY (objectid)
