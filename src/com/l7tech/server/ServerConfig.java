@@ -25,21 +25,17 @@ public class ServerConfig {
     private static final String PARAM_SERVICE_RESOLVERS = "ServiceResolvers";
     private static final String PARAM_SERVER_ID         = "ServerId";
     private static final String PARAM_KEYSTORE          = "KeystorePropertiesPath";
-    private static final String PARAM_LOGPROPERTIES     = "LogPropertiesPath";
     private static final String JNDI_PREFIX             = "java:comp/env/";
 
     private static final String JNDI_SERVICE_RESOLVERS  = JNDI_PREFIX + PARAM_SERVICE_RESOLVERS;
     private static final String JNDI_SERVER_ID          = JNDI_PREFIX + PARAM_SERVER_ID;
     private static final String JNDI_KEYSTORE           = JNDI_PREFIX + PARAM_KEYSTORE;
-    private static final String JNDI_LOGPROPERTIES      = JNDI_PREFIX + PARAM_LOGPROPERTIES;
 
     public static final String PROP_SERVER_ID = "com.l7tech.server.serverId";
     public static final String PROP_RESOLVERS = "com.l7tech.server.serviceResolvers";
     public static final String PROP_KEYSTORE_PROPS_PATH = "com.l7tech.server.keystorePropertiesPath";
-    public static final String PROP_LOGPROPERTIES = "com.l7tech.server.logPropertiesPath";
 
     public static final String DEFAULT_KEYSTORE_PROPS_PATH = "/ssg/etc/conf/keystore.properties";
-    public static final String DEFAULT_LOGPROPERTIES_PATH  = "/ssg/etc/conf/ssglog.properties";
     public static final String DEFAULT_SERVICE_RESOLVERS =
         UrnResolver.class.getName() + " " +
         SoapActionResolver.class.getName() + " " +
@@ -76,7 +72,6 @@ public class ServerConfig {
 
         _serviceResolvers = getProperty( PROP_RESOLVERS, JNDI_SERVICE_RESOLVERS, DEFAULT_SERVICE_RESOLVERS );
         _keystorePropertiesPath = getProperty( PROP_KEYSTORE_PROPS_PATH, JNDI_KEYSTORE, DEFAULT_KEYSTORE_PROPS_PATH );
-        _logPropertiesPath = getProperty( PROP_LOGPROPERTIES, JNDI_LOGPROPERTIES, DEFAULT_LOGPROPERTIES_PATH );
 
         try {
             String sid = getProperty( PROP_SERVER_ID, JNDI_SERVER_ID, null );
@@ -122,15 +117,10 @@ public class ServerConfig {
         return _keystorePropertiesPath;
     }
 
-    public String getLogPropertiesPath() {
-        return _logPropertiesPath;
-    }
-
     protected int _serverId;
     protected long _serverBootTime;
     protected String _serviceResolvers;
     protected String _keystorePropertiesPath;
-    protected String _logPropertiesPath;
 
     private static ServerConfig _instance;
     private Logger logger = LogManager.getInstance().getSystemLogger();
