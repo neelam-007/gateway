@@ -55,8 +55,11 @@ public class Xss4jWrapper {
         // encrypt & sign price
         signElement( doc, "price", true, 1, 1 );
 
+        // encrypt & sign amount
+        signElement( doc, "amount", true, 2, 2 );
+
         // sign account id
-        signElement( doc, "accountid", false, 2, 0 );
+        signElement( doc, "accountid", false, 3, 0 );
 
         return doc;
     }
@@ -64,8 +67,11 @@ public class Xss4jWrapper {
     public Document unmunge( Document doc ) throws Exception {
         checkSignatureOnElement( doc, "accountid" ); // *** boom ***
         checkSignatureOnElement( doc, "price" );
-        decryptXml( doc, getSecretKey() );
-        // todo someday if needed for repro - decrypt the encrypted bits
+        checkSignatureOnElement( doc, "amount" );
+
+        decryptXml( doc, "price", getSecretKey() );
+        decryptXml( doc, "amount", getSecretKey() );
+
         return doc;
     }
 
@@ -99,30 +105,42 @@ public class Xss4jWrapper {
         signXml( d, priceElement, "signref" + signref, getClientCertPrivateKey(), getClientCertificate() );
     }
 
-    private void decryptXml(Document soapMsg, Key key) throws Exception {
+    private boolean decryptXml(Document soapMsg, String elementName, Key key) throws Exception {
+        // Find message part
+        Element messagePartElement = (Element)soapMsg.getElementsByTagName(elementName).item(0);
+        Element encryptedDataElement = (Element)messagePartElement.getElementsByTagNameNS( XMLENC_NS, "EncryptedData" ).item(0);
+        if ( encryptedDataElement == null ) return false;
+        String messagePartId = encryptedDataElement.getAttribute( "Id" );
+
         // Locate EncryptedData element by its reference in the Security header
-        Element dataRefEl = (Element)soapMsg.getElementsByTagNameNS(XMLENC_NS, "DataReference").item(0);
-        if (dataRefEl == null)
+        NodeList dataRefEls = soapMsg.getElementsByTagNameNS(XMLENC_NS, "DataReference");
+        if ( dataRefEls == null || dataRefEls.getLength() == 0 )
             throw new Exception("no DataReference tag in the message");
-        AdHocIdResolver idResolver = new AdHocIdResolver();
-        Element encryptedDataEl = idResolver.resolveID(soapMsg, dataRefEl.getAttribute("URI"));
 
-        // Strip out processed DataReferece element
-        Element RefListEl = (Element)dataRefEl.getParentNode();
-        RefListEl.removeChild(dataRefEl);
+        for ( int i = 0; i < dataRefEls.getLength(); i++ ) {
+            Element dataRefEl = (Element)dataRefEls.item(i);
+            String dataRefUri = dataRefEl.getAttribute("URI");
+            if ( dataRefUri != null && dataRefUri.equals(messagePartId ) ) {
+                // Create decryption context and decrypt the EncryptedData subtree. Note that this effects the
+                // soapMsg document
+                DecryptionContext dc = new DecryptionContext();
+                AlgorithmFactoryExtn af = new AlgorithmFactoryExtn();
+                dc.setAlgorithmFactory(af);
+                dc.setEncryptedType(encryptedDataElement, EncryptedData.CONTENT, null, null);
+                dc.setKey(key);
 
-        // Create decryption context and decrypt the EncryptedData subtree. Note that this effects the
-        // soapMsg document
-        DecryptionContext dc = new DecryptionContext();
-        AlgorithmFactoryExtn af = new AlgorithmFactoryExtn();
-        dc.setAlgorithmFactory(af);
-        dc.setEncryptedType(encryptedDataEl, EncryptedData.CONTENT, null, null);
-        dc.setKey(key);
-
-        dc.decrypt();
-        dc.replace();
+                dc.decrypt();
+                dc.replace();
+                return true;
+            }
+        }
+        return false;
     }
 
+    private void cleanup( Document document ) {
+//        Element refListEl = (Element)dataRefEl.getParentNode();
+//        refListEl.removeChild(dataRefEl);
+    }
 
     private void signXml( Document document, Element messagePart, String referenceId, PrivateKey privateKey, X509Certificate cert ) throws Exception {
         if (document == null || messagePart == null | referenceId == null ||
@@ -218,7 +236,7 @@ public class Xss4jWrapper {
         addWssHeader(soapMsg.getDocumentElement(), ref);
     }
 
-        /**
+    /**
      * Update the document WSS header with the encrypted element reference info.
      *
      * @param element     the document element
@@ -233,15 +251,26 @@ public class Xss4jWrapper {
             rootElement.setAttributeNS(NS_ENC_URI, "xmlns:xenc", XMLENC_NS);
         }
 
+
+        Element securityEl = getOrMakeSecurityElement(document);
+
+        // Check if there's already a ReferenceList
+        NodeList refEls = securityEl.getElementsByTagNameNS( XMLENC_NS, "ReferenceList" );
+        Element refEl = null;
+        if ( refEls.getLength() == 0 ) {
+            refEl = document.createElementNS(XMLENC_NS, "xenc:ReferenceList");
+            securityEl.appendChild(refEl);
+        } else if ( refEls.getLength() > 1 ) {
+            throw new IllegalStateException( "Uh-oh! Multiple ReferenceList elements already!" );
+        } else {
+            refEl = (Element)refEls.item(0);
+        }
+
         // Add Security element to header, referencing the encrypted body
         Element dataRefEl = document.createElementNS(XMLENC_NS, "xenc:DataReference");
         dataRefEl.setAttribute("URI", referenceId);
 
-        Element refEl = document.createElementNS(XMLENC_NS, "xenc:ReferenceList");
         refEl.appendChild(dataRefEl);
-
-        Element securityEl = getOrMakeSecurityElement(document);
-        securityEl.appendChild(refEl);
     }
 
     public static Element getOrMakeSecurityElement(Document soapMsg) {
@@ -623,6 +652,4 @@ public class Xss4jWrapper {
     public static final String SIGNATURE_EL_NAME = "Signature";
     public static final String SIGNED_INFO_EL_NAME = "SignedInfo";
     public static final String REFERENCE_EL_NAME = "Reference";
-
-
 }
