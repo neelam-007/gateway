@@ -4,8 +4,8 @@
 
 !define J2RE "j2re1.4.2"  ;Name of directory containing JRE
 !define J2RE_PATH "C:\${J2RE}"   ;Full path to directory containing JRE (at .nsi compile-time)
-!define COMPANY "Layer7 Technologies"
-!define MUI_PRODUCT "Layer7  SecureSpan Manager" ;Define your own software name here
+!define COMPANY "Layer 7 Technologies"
+!define MUI_PRODUCT "SecureSpan Manager" ;Define your own software name here
 
 ; Edit this to set the version number in the build
 !define MUI_VERSION "HEAD"
@@ -89,9 +89,9 @@ Section "Policy Editor" SecCopyUI
     
     ;Create shortcuts
     CreateDirectory "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}"
-    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Layer7 Management Console.lnk" "$INSTDIR\Layer7 Management Console.exe" parameters "$INSTDIR\Layer7 Management Console.exe" 0
-    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Layer7 Management Console in Troubleshooting Mode.lnk" "$INSTDIR\Layer7 Management Console.bat" parameters "$INSTDIR\Layer7 Management Console.exe" 1
-    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Uninstall Layer7 Management Console.lnk" "$INSTDIR\Uninstall.exe"
+    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\${MUI_PRODUCT}.lnk" "$INSTDIR\Layer7 Management Console.exe" parameters "$INSTDIR\Layer7 Management Console.exe" 0
+    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\${MUI_PRODUCT} in Troubleshooting Mode.lnk" "$INSTDIR\Layer7 Management Console.bat" parameters "$INSTDIR\Layer7 Management Console.exe" 1
+    CreateShortCut "$SMPROGRAMS\${MUI_STARTMENUPAGE_VARIABLE}\Uninstall ${MUI_PRODUCT}.lnk" "$INSTDIR\Uninstall.exe"
   
   !insertmacro MUI_STARTMENU_WRITE_END
   
@@ -141,9 +141,9 @@ Section "Uninstall"
 
   StrCmp ${TEMP} "" noshortcuts
   
-    Delete "$SMPROGRAMS\${TEMP}\Layer7 Management Console.lnk"
-    Delete "$SMPROGRAMS\${TEMP}\Layer7 Management Console in Troubleshooting Mode.lnk"
-    Delete "$SMPROGRAMS\${TEMP}\Uninstall Layer7 Management Console.lnk"
+    Delete "$SMPROGRAMS\${TEMP}\${MUI_PRODUCT}.lnk"
+    Delete "$SMPROGRAMS\${TEMP}\${MUI_PRODUCT} in Troubleshooting Mode.lnk"
+    Delete "$SMPROGRAMS\${TEMP}\Uninstall ${MUI_PRODUCT}.lnk"
     RMDir "$SMPROGRAMS\${TEMP}" ;Only if empty, so it won't delete other shortcuts
     
   noshortcuts:
