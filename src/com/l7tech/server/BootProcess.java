@@ -3,7 +3,6 @@
  *
  * $Id$
  */
-
 package com.l7tech.server;
 
 import com.l7tech.common.BuildInfo;
@@ -15,12 +14,13 @@ import com.l7tech.common.xml.TarariProber;
 import com.l7tech.common.xml.tarari.TarariUtil;
 import com.l7tech.logging.ServerLogHandler;
 import com.l7tech.logging.ServerLogManager;
-import com.l7tech.server.audit.AuditContextImpl;
+import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.audit.SystemAuditListener;
 import com.l7tech.server.event.EventManager;
 import com.l7tech.server.event.system.*;
 import com.tarari.xml.xpath.XPathCompilerException;
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -34,13 +34,14 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class BootProcess extends ApplicationObjectSupport implements ServerComponentLifecycle, DisposableBean {
+public class BootProcess extends ApplicationObjectSupport
+  implements ServerComponentLifecycle, DisposableBean, InitializingBean {
     public static final String DEFAULT_LOGPROPERTIES_PATH = "/ssg/etc/conf/ssglog.properties";
 
     static {
         JdkLoggerConfigurator.configure("com.l7tech.logging",
           new File(DEFAULT_LOGPROPERTIES_PATH).exists() ?
-          DEFAULT_LOGPROPERTIES_PATH : "ssglog.properties", true);
+            DEFAULT_LOGPROPERTIES_PATH : "ssglog.properties", true);
     }
 
     private List _components = new ArrayList();
@@ -57,7 +58,6 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
 
     private void deleteOldAttachments(File attachmentDir) {
         File[] goners = attachmentDir.listFiles(new FileFilter() {
-
             public boolean accept(File pathname) {
                 String local = pathname.getName();
                 return local != null && local.startsWith("att") && local.endsWith(".part");
@@ -67,91 +67,14 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
         for (int i = 0; i < goners.length; i++) {
             File goner = goners[i];
             String filename = goner.toString();
-            auditor.logAndAudit(BootMessages.DELETING_ATTACHMENT, new String[] {filename});
+            auditor.logAndAudit(BootMessages.DELETING_ATTACHMENT, new String[]{filename});
             goner.delete();
         }
     }
 
     public void setServerConfig(ServerConfig config) throws LifecycleException {
         serverConfig = config;
-        auditor = new Auditor(AuditContextImpl.getCurrent(serverConfig.getSpringContext()), Logger.getLogger(getClass().getName()));
 
-        if (TarariProber.isTarariPresent()) {
-            auditor.logAndAudit(BootMessages.XMLHARDWARE_INIT);
-            try {
-                TarariUtil.setupIsSoap();
-            } catch (XPathCompilerException e) {
-                auditor.logAndAudit(BootMessages.XMLHARDWARE_ERROR);
-            }
-        } else {
-            auditor.logAndAudit(BootMessages.XMLHARDWARE_DISABLED);
-        }
-
-        try {
-            ipAddress = InetAddress.getLocalHost().getHostAddress();
-        } catch (UnknownHostException e) {
-            auditor.logAndAudit(BootMessages.NO_IP, null, e);
-            ipAddress = LOCALHOST_IP;
-        }
-
-        deleteOldAttachments(config.getAttachmentDirectory());
-        try {
-            // Initialize database stuff
-            final ApplicationContext springContext = config.getSpringContext();
-
-            // This needs to happen here, early enough that it will notice early events but after the database init
-            systemAuditListener = new SystemAuditListener(springContext);
-            eventManager.addListener(SystemEvent.class, systemAuditListener);
-
-            // add the server handler programatically after the hibernate is initialized.
-            // the handlers specified in the configuraiton get loaded by the system classloader and hibernate
-            // stuff lives in the web app classloader
-            JdkLoggerConfigurator.addHandler(new ServerLogHandler((ServerLogManager)springContext.getBean("serverLogManager")));
-
-            eventManager.fireInNewTransaction(new Initializing(this, Component.GW_SERVER, ipAddress));
-            logger.info("Initializing server");
-
-            setSystemProperties(config);
-
-            auditor.logAndAudit(BootMessages.CRYPTO_INIT);
-            JceProvider.init();
-            auditor.logAndAudit(BootMessages.CRYPTO_ASYMMETRIC, new String[] {JceProvider.getAsymmetricJceProvider().getName()});
-            auditor.logAndAudit(BootMessages.CRYPTO_SYMMETRIC, new String[] {JceProvider.getSymmetricJceProvider().getName()});
-
-            String classnameString = config.getProperty(ServerConfig.PARAM_SERVERCOMPONENTS);
-            String[] componentClassnames = classnameString.split("\\s.*?");
-
-            ServerComponentLifecycle component = null;
-            for (int i = 0; i < componentClassnames.length; i++) {
-                String classname = componentClassnames[i];
-                logger.info("Initializing server component '" + classname + "'");
-                try {
-                    Class clazz = Class.forName(classname);
-                    component = (ServerComponentLifecycle)clazz.newInstance();
-                } catch (ClassNotFoundException cnfe) {
-                    auditor.logAndAudit(BootMessages.COMPONENT_INIT_FAILED, new String[] {classname}, cnfe);
-                } catch (InstantiationException e) {
-                    auditor.logAndAudit(BootMessages.COMPONENT_INIT_FAILED, new String[] {classname}, e);
-                } catch (IllegalAccessException e) {
-                    auditor.logAndAudit(BootMessages.COMPONENT_INIT_FAILED, new String[] {classname}, e);
-                }
-
-                if (component != null) {
-                    try {
-                        component.setServerConfig(config);
-                        _components.add(component);
-                    } catch (LifecycleException e) {
-                        auditor.logAndAudit(BootMessages.COMPONENT_INIT_FAILED, new String[] {component.getClass().getName()}, e);
-                    }
-                }
-            }
-
-            eventManager.fireInNewTransaction(new Initialized(this, Component.GW_SERVER, ipAddress));
-
-            logger.info("Initialized server");
-        } catch (IOException e) {
-            throw new LifecycleException(e.toString(), e);
-        }
     }
 
     public void start() throws LifecycleException {
@@ -221,6 +144,98 @@ public class BootProcess extends ApplicationObjectSupport implements ServerCompo
             stop();
         } finally {
             close();
+        }
+    }
+
+
+    /**
+     * Invoked by a BeanFactory after it has set all bean properties supplied
+     * (and satisfied BeanFactoryAware and ApplicationContextAware).
+     * <p>This method allows the bean instance to perform initialization only
+     * possible when all bean properties have been set and to throw an
+     * exception in the event of misconfiguration.
+     *
+     * @throws Exception in the event of misconfiguration (such
+     *                   as failure to set an essential property) or if initialization fails.
+     */
+    public void afterPropertiesSet() throws Exception {
+        auditor = new Auditor((AuditContext)serverConfig.getSpringContext().getBean("auditContext"), Logger.getLogger(getClass().getName()));
+
+        if (TarariProber.isTarariPresent()) {
+            auditor.logAndAudit(BootMessages.XMLHARDWARE_INIT);
+            try {
+                TarariUtil.setupIsSoap();
+            } catch (XPathCompilerException e) {
+                auditor.logAndAudit(BootMessages.XMLHARDWARE_ERROR);
+            }
+        } else {
+            auditor.logAndAudit(BootMessages.XMLHARDWARE_DISABLED);
+        }
+
+        try {
+            ipAddress = InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException e) {
+            auditor.logAndAudit(BootMessages.NO_IP, null, e);
+            ipAddress = LOCALHOST_IP;
+        }
+
+        deleteOldAttachments(serverConfig.getAttachmentDirectory());
+        try {
+            // Initialize database stuff
+            final ApplicationContext springContext = serverConfig.getSpringContext();
+
+            // This needs to happen here, early enough that it will notice early events but after the database init
+            systemAuditListener = new SystemAuditListener(springContext);
+            eventManager.addListener(SystemEvent.class, systemAuditListener);
+
+            // add the server handler programatically after the hibernate is initialized.
+            // the handlers specified in the configuraiton get loaded by the system classloader and hibernate
+            // stuff lives in the web app classloader
+            JdkLoggerConfigurator.addHandler(new ServerLogHandler((ServerLogManager)springContext.getBean("serverLogManager")));
+
+            eventManager.fireInNewTransaction(new Initializing(this, Component.GW_SERVER, ipAddress));
+            logger.info("Initializing server");
+
+            setSystemProperties(serverConfig);
+
+            auditor.logAndAudit(BootMessages.CRYPTO_INIT);
+            JceProvider.init();
+            auditor.logAndAudit(BootMessages.CRYPTO_ASYMMETRIC, new String[]{JceProvider.getAsymmetricJceProvider().getName()});
+            auditor.logAndAudit(BootMessages.CRYPTO_SYMMETRIC, new String[]{JceProvider.getSymmetricJceProvider().getName()});
+
+            String classnameString = serverConfig.getProperty(ServerConfig.PARAM_SERVERCOMPONENTS);
+            String[] componentClassnames = classnameString.split("\\s.*?");
+
+            ServerComponentLifecycle component = null;
+            for (int i = 0; i < componentClassnames.length; i++) {
+                String classname = componentClassnames[i];
+                logger.info("Initializing server component '" + classname + "'");
+                try {
+                    Class clazz = Class.forName(classname);
+                    component = (ServerComponentLifecycle)clazz.newInstance();
+                } catch (ClassNotFoundException cnfe) {
+                    auditor.logAndAudit(BootMessages.COMPONENT_INIT_FAILED, new String[]{classname}, cnfe);
+                } catch (InstantiationException e) {
+                    auditor.logAndAudit(BootMessages.COMPONENT_INIT_FAILED, new String[]{classname}, e);
+                } catch (IllegalAccessException e) {
+                    auditor.logAndAudit(BootMessages.COMPONENT_INIT_FAILED, new String[]{classname}, e);
+                }
+
+                if (component != null) {
+                    try {
+                        component.setServerConfig(serverConfig);
+                        _components.add(component);
+                    } catch (LifecycleException e) {
+                        auditor.logAndAudit(BootMessages.COMPONENT_INIT_FAILED, new String[]{component.getClass().getName()}, e);
+                    }
+                }
+            }
+
+            eventManager.fireInNewTransaction(new Initialized(this, Component.GW_SERVER, ipAddress));
+
+            logger.info("Initialized server");
+        } catch (IOException e) {
+            throw new LifecycleException(e.toString(), e);
         }
     }
 

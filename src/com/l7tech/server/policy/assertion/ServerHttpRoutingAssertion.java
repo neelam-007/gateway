@@ -24,7 +24,7 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.server.AssertionMessages;
-import com.l7tech.server.audit.AuditContextImpl;
+import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.service.PublishedService;
@@ -71,7 +71,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         connectionManager.setMaxTotalConnections(max * 10);
         //connectionManager.setConnectionStaleCheckingEnabled( false );
 
-        Auditor auditor = new Auditor(AuditContextImpl.getCurrent(ctx), logger);
+        Auditor auditor = new Auditor((AuditContext)applicationContext.getBean("auditContext"), logger);
         try {
             sslContext = SSLContext.getInstance("SSL");
             final SslClientTrustManager trustManager = (SslClientTrustManager)applicationContext.getBean("httpRoutingAssertionTrustManager");

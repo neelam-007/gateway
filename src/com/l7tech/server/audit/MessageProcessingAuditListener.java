@@ -28,6 +28,7 @@ public class MessageProcessingAuditListener implements MessageProcessingEventLis
     }
 
     public void messageProcessed( PolicyEnforcementContext context, AssertionStatus status ) {
-        AuditContextImpl.getCurrent(applicationContext).setCurrentRecord(messageSummaryAuditFactory.makeEvent(context, status));
+        AuditContext auditContext = (AuditContext)applicationContext.getBean("auditContext");
+        auditContext.setCurrentRecord(messageSummaryAuditFactory.makeEvent(context, status));
     }
 }

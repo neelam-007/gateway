@@ -21,7 +21,6 @@ import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.audit.AuditContext;
-import com.l7tech.server.audit.AuditContextImpl;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.service.PublishedService;
@@ -199,8 +198,8 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 throw new ServletException(e);
             }
         } finally {
-            AuditContext auditContext = AuditContextImpl.peek();
-            if (auditContext != null && !auditContext.isClosed()) auditContext.close();
+            AuditContext auditContext = (AuditContext)applicationContext.getBean("auditContext");
+            if (!auditContext.isClosed()) auditContext.close();
         }
     }
 

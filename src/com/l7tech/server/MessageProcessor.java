@@ -20,7 +20,7 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
-import com.l7tech.server.audit.AuditContextImpl;
+import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.event.EventManager;
 import com.l7tech.server.event.MessageProcessed;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -103,8 +103,9 @@ public class MessageProcessor extends ApplicationObjectSupport {
     public AssertionStatus processMessage( PolicyEnforcementContext context )
             throws IOException, PolicyAssertionException, PolicyVersionException
     {
-        auditor = new Auditor(AuditContextImpl.getCurrent(getApplicationContext()), logger);
-        context.setAuditContext(AuditContextImpl.getCurrent(getApplicationContext()));
+        AuditContext auditContext = (AuditContext)getApplicationContext().getBean("auditContext");
+        auditor = new Auditor(auditContext, logger);
+        context.setAuditContext(auditContext);
         try {
             currentContext.set(context);
             return reallyProcessMessage(context);

@@ -40,9 +40,14 @@ public class AdminAuditListener implements GenericListener, CreateListener, Upda
     public void receive(Event event) {
         if (event instanceof PersistenceEvent) throw new IllegalArgumentException("PersistenceEvents should not be handled by receive()");
         if (!(event instanceof AdminEvent)) throw new IllegalArgumentException("Invalid event received--only AdminEvents should be handled here");
-        final AuditContext currentAuditContext = AuditContextImpl.getCurrent(applicationContext);
+        final AuditContext currentAuditContext = getThreadAuditContext();
         currentAuditContext.setCurrentRecord(makeAuditRecord((AdminEvent)event));
         currentAuditContext.flush();
+    }
+
+    /**@return the thread local audit context. Obey the TLS semantics */
+    private AuditContext getThreadAuditContext() {
+        return (AuditContext)applicationContext.getBean("auditContext");
     }
 
     public static final Level DEFAULT_LEVEL = Level.INFO;
@@ -196,19 +201,19 @@ public class AdminAuditListener implements GenericListener, CreateListener, Upda
     }
 
     public void entityCreated( Created created ) {
-        final AuditContext current = AuditContextImpl.getCurrent(applicationContext);
+        final AuditContext current = getThreadAuditContext();
         current.setCurrentRecord(makeAuditRecord(created));
         current.flush();
     }
 
     public void entityUpdated( Updated updated ) {
-        final AuditContext current = AuditContextImpl.getCurrent(applicationContext);
+        final AuditContext current = getThreadAuditContext();
         current.setCurrentRecord(makeAuditRecord(updated));
         current.flush();
     }
 
     public void entityDeleted( Deleted deleted ) {
-        final AuditContext current = AuditContextImpl.getCurrent(applicationContext);
+        final AuditContext current = getThreadAuditContext();
         current.setCurrentRecord(makeAuditRecord(deleted));
         current.flush();
     }

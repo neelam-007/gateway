@@ -379,6 +379,30 @@
             <ref bean="policyFactory"/>
         </constructor-arg>
     </bean>
+
+
+    <bean id="auditContext" class="org.springframework.aop.framework.ProxyFactoryBean">
+        <property name="proxyInterfaces"><value>com.l7tech.server.audit.AuditContext</value></property>
+        <property name="targetSource">
+            <ref local="auditContextTargetSource"/>
+        </property>
+    </bean>
+
+    <bean id="auditContextTarget" class="com.l7tech.server.audit.AuditContextImpl" singleton="false">
+        <constructor-arg>
+            <ref bean="serverConfig"/>
+        </constructor-arg>
+        <constructor-arg>
+            <ref bean="auditRecordManager"/>
+        </constructor-arg>
+    </bean>
+
+    <bean id="auditContextTargetSource" class="org.springframework.aop.target.ThreadLocalTargetSource">
+        <property name="targetBeanName">
+            <value>auditContextTarget</value>
+        </property>
+    </bean>
+
     <!-- server side Status Update Manager -->
     <bean id="statusUpdateManager" class="com.l7tech.cluster.StatusUpdateManagerImpl">
         <constructor-arg>

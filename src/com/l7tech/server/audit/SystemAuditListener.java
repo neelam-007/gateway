@@ -41,7 +41,7 @@ public class SystemAuditListener implements GenericListener {
             } if (se.getComponent() == Component.GW_AUDIT_SYSTEM) {
                 level = Level.SEVERE;
             }
-            AuditContext context = AuditContextImpl.getCurrent(applicationContext);
+            AuditContext context = (AuditContext)applicationContext.getBean("auditContext");
             context.setCurrentRecord(new SystemAuditRecord(level, nodeId, se.getComponent(), se.getAction(), se.getIpAddress()));
             context.flush();
         }

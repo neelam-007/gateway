@@ -26,7 +26,7 @@ import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.xmlsec.SamlStatementAssertion;
 import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.server.audit.AuditContextImpl;
+import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.policy.filter.FilterManager;
@@ -212,7 +212,7 @@ public class PolicyService extends ApplicationObjectSupport {
             logger.fine("Running meta-policy.");
             ServerAssertion policyPolicy = constructPolicyPolicy(targetPolicy);
             try {
-                context.setAuditContext(AuditContextImpl.getCurrent(getApplicationContext()));
+                context.setAuditContext((AuditContext)getApplicationContext().getBean("auditContext"));
                 status = policyPolicy.checkRequest(context);
             } catch (IOException e) {
                 response.initialize(exceptionToFault(e));
