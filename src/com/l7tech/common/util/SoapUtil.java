@@ -81,13 +81,12 @@ public class SoapUtil {
         if (!"Envelope".equals(envelope.getLocalName())) {
             throw new IllegalArgumentException("Invalid SOAP envelope: document element is not named 'Envelope'");
         }
-        String envelopeNs = envelope.getNamespaceURI();
-        if (!SoapUtil.ENVELOPE_URIS.contains(envelopeNs)) {
-            throw new IllegalArgumentException("Invalid SOAP message: unrecognized envelope namespace \"" + envelopeNs + "\"");
+        String soapnamespace = envelope.getNamespaceURI();
+        if (!SoapUtil.ENVELOPE_URIS.contains(soapnamespace)) {
+            throw new IllegalArgumentException("Invalid SOAP message: unrecognized envelope namespace \"" + soapnamespace + "\"");
         }
-        return XmlUtil.findFirstChildElementByName(envelope, envelopeNs, HEADER_EL_NAME);
+        return XmlUtil.findFirstChildElementByName(envelope, soapnamespace, HEADER_EL_NAME);
     }
-
 
     public static Element getBodyElement(Document request) {
         return getEnvelopePart(request, BODY_EL_NAME);
@@ -256,6 +255,17 @@ public class SoapUtil {
      * @return null if element not present, the security element if it's in the doc
      */
     public static Element getSecurityElement(Document soapMsg) {
+        Element[] allofthem = getSecurityElements(soapMsg);
+        if (allofthem.length <= 0) return null;
+        // todo, return only relevent one in this case
+        else return allofthem[0];
+    }
+
+    /**
+     * Returns all Security elements.
+     * @return never null
+     */
+    public static Element[] getSecurityElements(Document soapMsg) {
         // look for the element
         NodeList listSecurityElements = soapMsg.getElementsByTagNameNS(SECURITY_NAMESPACE, SECURITY_EL_NAME);
         if (listSecurityElements.getLength() < 1) {
@@ -265,9 +275,14 @@ public class SoapUtil {
             listSecurityElements = soapMsg.getElementsByTagNameNS(SECURITY_NAMESPACE3, SECURITY_EL_NAME);
         }
         // is it there ?
-        if (listSecurityElements.getLength() < 1) return null;
-        // we got it
-        return (Element)listSecurityElements.item(0);
+        if (listSecurityElements.getLength() < 1) return new Element[0];
+
+        // we got some
+        Element[] output = new Element[listSecurityElements.getLength()];
+        for (int i = 0; i < output.length; i++) {
+            output[i] = (Element)listSecurityElements.item(i);
+        }
+        return output;
     }
 
     /**
