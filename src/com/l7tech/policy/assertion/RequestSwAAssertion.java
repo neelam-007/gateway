@@ -10,7 +10,7 @@ import java.util.Map;
  */
 public class RequestSwAAssertion extends SwAAssertion {
     private Map bindings = new HashMap();
-    private Map namespaceMap;
+    private Map namespaceMap = new HashMap();
 
     public RequestSwAAssertion() {
     }
