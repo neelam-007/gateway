@@ -79,36 +79,6 @@ public class TestIdentity {
         //return identityProviderConfigManager;
     }
 
-    public static void testLocator2() throws Exception {
-        /*
-        com.l7tech.adminws.identity.IdentityProviderConfig svcConfig = new com.l7tech.adminws.identity.IdentityProviderConfig();
-        svcConfig.setDescription("description");
-        svcConfig.setName("name");
-        svcConfig.setOid(123);
-        svcConfig.setTypeClassName("type class name");
-        svcConfig.setTypeDescription("type description");
-        svcConfig.setTypeName("type name");
-        svcConfig.setTypeOid(456);
-        com.l7tech.adminws.identity.IdentitiesSoapBindingImpl service = new com.l7tech.adminws.identity.IdentitiesSoapBindingImpl();
-        service.saveIdentityProviderConfig(svcConfig);
-        */
-
-        IdentityProviderConfigManagerClient manager = new IdentityProviderConfigManagerClient();
-
-        com.l7tech.identity.IdentityProviderConfig genConfig = new com.l7tech.identity.imp.IdentityProviderConfigImp();
-        genConfig.setDescription("description");
-        genConfig.setName("name");
-        genConfig.setOid(123);
-        com.l7tech.identity.IdentityProviderType configType = new com.l7tech.identity.imp.IdentityProviderTypeImp();
-        configType.setClassName("blah");
-        configType.setDescription("description");
-        configType.setName("name");
-        configType.setOid(123);
-        genConfig.setType(configType);
-
-        manager.save(genConfig);
-    }
-
     public static void testGetProviders() throws Exception {
         IdentityProviderConfigManagerClient manager = new IdentityProviderConfigManagerClient();
         Collection res = manager.findAllIdentityProviders();
