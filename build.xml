@@ -380,7 +380,6 @@
                 <include name="jnlp.jar"/>
                 <include name="jnlp-servlet.jar"/>
                 <include name="jta.jar"/>
-                <include name="log4j-1.2.4.jar"/>
                 <include name="odmg.jar"/>
                 <include name="oswego-concurrent.jar"/>
                 <include name="qname.jar"/>
