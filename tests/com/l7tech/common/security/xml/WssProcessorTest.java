@@ -86,7 +86,7 @@ public class WssProcessorTest extends TestCase {
                 log.info("The following security tokens were found:");
                 for (int j = 0; j < tokens.length; j++) {
                     WssProcessor.SecurityToken token = tokens[j];
-                    log.info("  " + token.getClass());
+                    log.info("  " + token.asObject());
                 }
             } else
                 log.info("No security tokens were found.");
@@ -100,7 +100,7 @@ public class WssProcessorTest extends TestCase {
 
             Document undecorated = result.getUndecoratedMessage();
             assertTrue(undecorated != null);
-            log.info("Undecordated document:\n" + XmlUtil.documentToString(undecorated));
+            log.info("Undecorated document:\n" + XmlUtil.documentToString(undecorated));
         }
     }
 
