@@ -9,16 +9,6 @@ public abstract class NamedEntityImp extends EntityImp implements NamedEntity {
     public int getVersion() { return _version; }
     public void setVersion(int version) { _version = version; }
 
-    public long getLoadTime() {
-        return _loadTime;
-    }
-
-    public void setLoadTime(long loadTime) {
-        _loadTime = loadTime;
-    }
-
     protected String _name;
     protected int _version;
-
-    protected transient long _loadTime;
 }
