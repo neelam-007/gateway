@@ -9,6 +9,8 @@ import com.l7tech.console.action.BaseAction;
 import com.l7tech.console.action.UserPropertiesAction;
 import com.l7tech.console.action.GroupPropertiesAction;
 import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.UserBean;
+import com.l7tech.identity.GroupBean;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -24,7 +26,9 @@ import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
+import java.util.List;
 import java.util.logging.Level;
+import java.security.Principal;
 
 /**
  * Find Dialog
@@ -32,7 +36,7 @@ import java.util.logging.Level;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.2
  */
-public class FindDialog extends JDialog {
+public class FindIdentitiesDialog extends JDialog {
     static Map oTypes = new TreeMap(); // sorted
 
     static {
@@ -63,7 +67,7 @@ public class FindDialog extends JDialog {
     private JComboBox searchNameOptions = null;
     private JComboBox searchType = null;
 
-    private JTable jTable = new JTable();
+    private JTable searchResultTable = new JTable();
     private JPanel searchResultPanel = new JPanel();
 
     /** cancle search */
@@ -82,7 +86,7 @@ public class FindDialog extends JDialog {
     /** the search info with search expression and parameters */
     private SearchInfo searchInfo = new SearchInfo();
     private DefaultComboBoxModel providersComboBoxModel;
-
+    Principal[] selections = new Principal[] {};
     /**
      * Creates new FindDialog for a given context
      * 
@@ -92,10 +96,32 @@ public class FindDialog extends JDialog {
      *               same time
      * @see javax.swing.JDialog
      */
-    public FindDialog(Frame parent, boolean modal) {
+    public FindIdentitiesDialog(Frame parent, boolean modal) {
         super(parent, modal);
         initResources();
         initComponents();
+    }
+
+    /**
+     * bring up the find form and return the selected
+     *
+     * @return
+     */
+    public Principal[] showDialog() {
+        show();
+        return selections;
+    }
+
+    /**
+     * Get/access the search result table. This is to allow
+     * access to set certain table properties, such as single/mutliple
+     * selection model etc.
+     * <strong>note that the form table instance is accessed directly</strong>
+     *
+     * @return the search result yable
+     */
+    public JTable getSearchResultTable() {
+        return searchResultTable;
     }
 
     /**
@@ -125,7 +151,7 @@ public class FindDialog extends JDialog {
              * Invoked when the component has been made visible.
              */
             public void componentShown(ComponentEvent e) {
-                origDimension = FindDialog.this.getSize();
+                origDimension = FindIdentitiesDialog.this.getSize();
             }
         });
 
@@ -135,10 +161,9 @@ public class FindDialog extends JDialog {
           setAccessibleDescription(resources.getString("dialog.description"));
 
         // table properties
-        jTable.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        jTable.setDefaultRenderer(Object.class, tableRenderer);
-        jTable.setShowGrid(false);
-        jTable.sizeColumnsToFit(0);
+        searchResultTable.setDefaultRenderer(Object.class, tableRenderer);
+        searchResultTable.setShowGrid(false);
+        searchResultTable.sizeColumnsToFit(0);
         mainPanel = new JPanel();
         Container contents = mainPanel;
         contents.setLayout(new GridBagLayout());
@@ -188,8 +213,7 @@ public class FindDialog extends JDialog {
         constraints.anchor = GridBagConstraints.CENTER;
         constraints.insets = new Insets(12, 12, 5, 12);
 
-        JPanel p = getSearchResultTable();
-        p.setVisible(false);
+        JPanel p = getSearchResultPanel();
         contents.add(p, constraints);
         getContentPane().add(mainPanel);
     } // initComponents()
@@ -471,11 +495,11 @@ public class FindDialog extends JDialog {
      * display and layout the search result table.
      * The table is displayed after the first search.
      */
-    private JPanel getSearchResultTable() {
+    private JPanel getSearchResultPanel() {
         searchResultPanel.setLayout(new BorderLayout());
         searchResultPanel.add(new JLabel("Search results"), BorderLayout.NORTH);
-        JScrollPane scrollPane = new JScrollPane(jTable);
-        scrollPane.getViewport().setBackground(jTable.getBackground());
+        JScrollPane scrollPane = new JScrollPane(searchResultTable);
+        scrollPane.getViewport().setBackground(searchResultTable.getBackground());
 
         searchResultPanel.add(scrollPane, BorderLayout.CENTER);
 
@@ -489,22 +513,25 @@ public class FindDialog extends JDialog {
         buttonPanel.add(Box.createGlue());
 
         // edit button
-        final JButton editButton = new JButton();
-        editButton.setText(resources.getString("editButton.label"));
-        editButton.addActionListener(new ActionListener() {
+        final JButton selectButton = new JButton();
+        selectButton.setText(resources.getString("selectButton.label"));
+        selectButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                int row = jTable.getSelectedRow();
-                if (row == -1) return;
-                Object o =
-                  ((DynamicTableModel)jTable.getModel()).getValueAt(row);
-                if (o == null) return;
-                showEntityDialog(o);
+                int rows[] = searchResultTable.getSelectedRows();
+                List principals = new ArrayList();
+                for (int i = 0; rows !=null && i < rows.length; i++) {
+                    int row = rows[i];
+                    EntityHeader eh = (EntityHeader)searchResultTable.getModel().getValueAt(row, 0);
+                    principals.add(headerToPrincipal(eh));
+                }
+                selections = (Principal[])principals.toArray(new Principal[] {});
+                FindIdentitiesDialog.this.dispose();
             }
         });
-        buttonPanel.add(editButton);
-        editButton.setEnabled(false);
+        buttonPanel.add(selectButton);
+        selectButton.setEnabled(false);
 
-        jTable.getSelectionModel().
+        searchResultTable.getSelectionModel().
           addListSelectionListener(new ListSelectionListener() {
               /**
                * Called whenever the value of the selection changes.
@@ -512,37 +539,37 @@ public class FindDialog extends JDialog {
                * @param e the event that characterizes the change.
                */
               public void valueChanged(ListSelectionEvent e) {
-                  int row = jTable.getSelectedRow();
+                  int row = searchResultTable.getSelectedRow();
                   if (row == -1) {
-                      editButton.setEnabled(false);
+                      selectButton.setEnabled(false);
                   } else {
-                      editButton.setEnabled(!searchInfo.getProvider().isReadOnly());
+                      selectButton.setEnabled(!searchInfo.getProvider().isReadOnly());
                   }
               }
           });
 
-        jTable.
+        searchResultTable.
           addMouseListener(new MouseAdapter() {
               public void mouseClicked(MouseEvent e) {
                   if (e.getClickCount() == 2) {
-                      int row = jTable.getSelectedRow();
+                      int row = searchResultTable.getSelectedRow();
                       if (row == -1) return;
-                      Object o = jTable.getModel().getValueAt(row, 0);
+                      Object o = searchResultTable.getModel().getValueAt(row, 0);
                       if (o == null) return;
                       showEntityDialog(o);
                   }
               }
           });
 
-        jTable.
+        searchResultTable.
           addKeyListener(new KeyAdapter() {
               /**
                * Invoked when a key has been pressed.
                */
               public void keyPressed(KeyEvent e) {
-                  int row = jTable.getSelectedRow();
+                  int row = searchResultTable.getSelectedRow();
                   if (row == -1) return;
-                  Object o = jTable.getValueAt(row, 0);
+                  Object o = searchResultTable.getValueAt(row, 0);
 
                   int keyCode = e.getKeyCode();
                   if (keyCode == KeyEvent.VK_ENTER) {
@@ -559,7 +586,7 @@ public class FindDialog extends JDialog {
         newSearchButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
                 searchResultPanel.setVisible(false);
-                FindDialog.this.setSize(origDimension);
+                FindIdentitiesDialog.this.setSize(origDimension);
                 // reset search info
                 searchInfo = new SearchInfo();
                 resultCounter.setText("");
@@ -571,7 +598,7 @@ public class FindDialog extends JDialog {
         searchResultPanel.add(buttonPanel, BorderLayout.SOUTH);
 
         JButton[] buttons
-          = new JButton[]{newSearchButton, editButton};
+          = new JButton[]{newSearchButton, selectButton};
 
         Utilities.equalizeButtonSizes(buttons);
 
@@ -615,7 +642,7 @@ public class FindDialog extends JDialog {
 
         tableModel =
           new DynamicTableModel(enum, columns.length, columns, oa);
-        jTable.setModel(tableModel);
+        searchResultTable.setModel(tableModel);
 
         tableModel.
           addTableModelListener(
@@ -830,6 +857,25 @@ public class FindDialog extends JDialog {
 
         EntityType[] types;
         String name;
+    }
+
+    private Principal headerToPrincipal(EntityHeader eh) {
+        IdentityProvider ip = (IdentityProvider)providersComboBoxModel.getSelectedItem();
+        if (eh.getType() == EntityType.USER) {
+            UserBean u = new UserBean();
+            u.setName(eh.getName());
+            u.setLogin(eh.getName());
+            u.setProviderId(ip.getConfig().getOid());
+            u.setUniqueIdentifier(eh.getStrId());
+            return u;
+        } else if (eh.getType() == EntityType.GROUP) {
+            GroupBean g = new GroupBean();
+            g.setName(eh.getName());
+            g.setProviderId(ip.getConfig().getOid());
+            g.setUniqueIdentifier(eh.getStrId());
+            return g;
+        }
+        throw new IllegalArgumentException("Don't know anything about "+eh.getType());
     }
 }
 

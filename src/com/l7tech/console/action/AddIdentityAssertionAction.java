@@ -1,12 +1,25 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.panels.PolicyAddIdentitiesDialog;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.console.util.Registry;
+import com.l7tech.console.panels.FindIdentitiesDialog;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
+import com.l7tech.console.tree.policy.AssertionTreeNodeFactory;
+import com.l7tech.console.tree.policy.PolicyTree;
+import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.Registry;
+import com.l7tech.identity.Group;
+import com.l7tech.identity.User;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.identity.MemberOfGroup;
+import com.l7tech.policy.assertion.identity.SpecificUser;
 
 import javax.swing.*;
+import javax.swing.tree.DefaultTreeModel;
+import java.security.Principal;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.logging.Level;
 
 
 /**
@@ -57,12 +70,36 @@ public class AddIdentityAssertionAction extends BaseAction {
         SwingUtilities.invokeLater(
           new Runnable() {
             public void run() {
-                JFrame f =
-                          Registry.getDefault().getComponentRegistry().getMainWindow();
-                JDialog d = new PolicyAddIdentitiesDialog(f, node);
-                d.pack();
-                Utilities.centerOnScreen(d);
-                d.show();
+                JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
+                FindIdentitiesDialog fd = new FindIdentitiesDialog(f, true);
+                fd.pack();
+                Utilities.centerOnScreen(fd);
+                Principal[] principals = fd.showDialog();
+                java.util.List identityAssertions = new ArrayList();
+
+                for (int i = 0; principals !=null && i < principals.length; i++) {
+                    Principal principal = principals[i];
+                      if (principal instanceof User) {
+                        User u = (User)principal;
+                        identityAssertions.add(new SpecificUser(u.getProviderId(), u.getLogin()));
+                    } else if (principal instanceof Group) {
+                        Group g = (Group)principal;
+                        MemberOfGroup ma = new MemberOfGroup(g.getProviderId(), g.getName(), g.getUniqueIdentifier());
+                        identityAssertions.add(ma);
+                    }
+                }
+
+                JTree tree = (JTree)ComponentRegistry.getInstance().getComponent(PolicyTree.NAME);
+                if (tree != null) {
+                    DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+                    for (Iterator idit = identityAssertions.iterator(); idit.hasNext();) {
+                        Assertion ass = (Assertion)idit.next();
+                        AssertionTreeNode an = AssertionTreeNodeFactory.asTreeNode(ass);
+                        model.insertNodeInto(an, node, node.getChildCount());
+                    }
+                } else {
+                    log.log(Level.WARNING, "Unable to reach the policy tree.");
+                }
             }
         });
     }

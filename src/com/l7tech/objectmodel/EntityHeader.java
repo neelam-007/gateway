@@ -9,6 +9,9 @@
 package com.l7tech.objectmodel;
 
 
+import com.l7tech.identity.User;
+import com.l7tech.identity.Group;
+
 import java.io.Serializable;
 
 /**
@@ -32,6 +35,34 @@ public class EntityHeader implements Serializable {
         setType(type);
         setName(name);
         setDescription(description);
+    }
+
+    /**
+     * User to header
+     *
+     * @param u the user to get the header for
+     *
+     * @return the corresponding header
+     */
+    public static EntityHeader fromUser(User u) {
+        if (u == null) {
+            throw new IllegalArgumentException();
+        }
+        return new EntityHeader(u.getUniqueIdentifier(),EntityType.USER, u.getLogin(), u.getName());
+    }
+
+    /**
+     * Group to header
+     *
+     * @param g the group to get the header for
+     *
+     * @return the corresponding header
+     */
+    public static EntityHeader fromGroup(Group g) {
+        if (g == null) {
+            throw new IllegalArgumentException();
+        }
+        return new EntityHeader(g.getUniqueIdentifier(),EntityType.GROUP, g.getName(), g.getDescription());
     }
 
     public EntityHeader() {
