@@ -17,7 +17,7 @@ import java.awt.event.ActionEvent;
  *
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
- * $Id$
+ * $Id: CreateIdentityProviderWizard.java,v 1.5 2004/02/07 01:47:58 fpang Exp 
  */
 
 public class CreateIdentityProviderWizard extends Wizard {

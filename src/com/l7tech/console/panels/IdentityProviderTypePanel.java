@@ -47,7 +47,7 @@ public class IdentityProviderTypePanel extends WizardStepPanel {
     /**
      * Provide the description for the step being taken on this panel.
      *
-     * @return
+     * @return  String  The descritpion of the step.
      */
     public String getDescription() {
         return "Select the type of LDAP identity provider.";

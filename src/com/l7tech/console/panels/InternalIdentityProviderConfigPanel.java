@@ -9,6 +9,8 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 
 /*
+ * This class provides a panel for users to view the configuration data of the internal identity provider.
+ *
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
  * $Id$
@@ -16,6 +18,12 @@ import java.util.ResourceBundle;
 
 public class InternalIdentityProviderConfigPanel extends WizardStepPanel {
 
+    /**
+     * Constructor - create a new provider type panel.
+     *
+     * @param next  The panel for use in the next step.
+     * @param showProviderType  show/hide the provider type component on the panel.
+     */
     public InternalIdentityProviderConfigPanel(WizardStepPanel next, boolean showProviderType) {
         super(next);
         this.showProviderType = showProviderType;
@@ -23,7 +31,13 @@ public class InternalIdentityProviderConfigPanel extends WizardStepPanel {
         initComponents();
     }
 
-    /** populate the form from the provider beans */
+   /**
+     * Populate the configuration data from the wizard input object to the visual components of the panel.
+     *
+     * @param settings  The current value of configuration items in the wizard input object.
+     *
+     * @throws IllegalArgumentException   if the data provided by the wizard are not valid.
+     */
     public void readSettings(Object settings) throws IllegalArgumentException {
         if (settings != null) {
 
@@ -40,6 +54,13 @@ public class InternalIdentityProviderConfigPanel extends WizardStepPanel {
         providerTypesCombo.setEnabled(false);
     }
 
+    /**
+     * Store the values of all fields on the panel to the wizard object which is a used for
+     * keeping all the modified values. The wizard object will be used for providing the
+     * updated values when updating the server.
+     *
+     * @param settings the object representing wizard panel state
+     */
     public void storeSettings(Object settings) {
 
         if (settings instanceof IdentityProviderConfig) {
@@ -52,6 +73,11 @@ public class InternalIdentityProviderConfigPanel extends WizardStepPanel {
         return "Provider Configuration";
     }
 
+    /**
+     * Provide the description for the step being taken on this panel.
+     *
+     * @return  String  The descritpion of the step.
+     */
     public String getDescription() {
         return "Modification of the Internal Identity Provider properties is not allowed. The data shown above is for viewing purpose only.";
     }

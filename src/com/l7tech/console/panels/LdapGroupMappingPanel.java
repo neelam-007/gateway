@@ -16,6 +16,8 @@ import java.util.Locale;
 import java.util.ResourceBundle;
 
 /*
+ * This class provides a panel for users to add/delete/modify the LDAP attribute mapping of the group bjectclass.
+ *
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
  * $Id$
@@ -23,13 +25,16 @@ import java.util.ResourceBundle;
 
 public class LdapGroupMappingPanel extends WizardStepPanel {
 
-    /** Creates new form ServicePanel */
+    /**
+     * Constructor - create a new group attribute mapping panel.
+     *
+     * @param next  The panel for use in the next step.
+     */
     public LdapGroupMappingPanel(WizardStepPanel next) {
         super(next);
         initResources();
         initComponents();
     }
-
 
     /**
      * Loads locale-specific resources: strings  etc
@@ -40,6 +45,11 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
         resources = ResourceBundle.getBundle("com.l7tech.console.resources.IdentityProviderDialog", locale);
     }
 
+    /**
+     * Provide the description for the step being taken on this panel.
+     *
+     * @return  String  The descritpion of the step.
+     */
     public String getDescription() {
         return "The page shows the attribute mappings of the LDAP group object classes. You can add/delete/modify the attributes mappings on this page.";
     }
@@ -49,6 +59,11 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
         return "Group ObjectClass mappings";
     }
 
+    /**
+     * Update the visual components of the panel with the new values.
+     *
+     * @param groupMapping  The object contains the new values.
+     */
     public void updateListModel(GroupMappingConfig groupMapping) {
 
         if(groupMapping != null) {
@@ -62,6 +77,11 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
         }
     }
 
+    /**
+     * Validate the input data
+     *
+     * @return  boolean  true if the input data is valid, false otherwise.
+     */
     private boolean validateInput() {
 
         boolean rc = true;
@@ -84,6 +104,13 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
         return rc;
     }
 
+    /**
+     * Populate the configuration data from the wizard input object to the visual components of the panel.
+     *
+     * @param settings  The current value of configuration items in the wizard input object.
+     *
+     * @throws IllegalArgumentException   if the data provided by the wizard are not valid.
+     */
     public void readSettings(Object settings) throws IllegalArgumentException {
 
         if (settings instanceof LdapIdentityProviderConfig) {
@@ -128,6 +155,13 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
         }
     }
 
+    /**
+     * Store the values of all fields on the panel to the wizard object which is a used for
+     * keeping all the modified values. The wizard object will be used for providing the
+     * updated values when updating the server.
+     *
+     * @param settings the object representing wizard panel state
+     */
     public void storeSettings(Object settings) {
 
         Object groupMapping = null;
@@ -150,6 +184,11 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
         }
     }
 
+    /**
+     * Display the data of the selected group.
+     *
+     * @param settings   The data of the selected group.
+     */
     private void readSelectedGroupSettings(Object settings) {
 
         if (settings instanceof GroupMappingConfig) {
@@ -163,6 +202,11 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
         }
     }
 
+    /**
+     * The button for adding the attribute mapping of a new group objectclass.
+     *
+     * @return JButton  The button for the add operation.
+     */
     private JButton getAddButton() {
         if (addButton != null) return addButton;
 
@@ -190,6 +234,11 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
         return addButton;
     }
 
+    /**
+     * The button for deleting the attribute mapping of a new group objectclass.
+     *
+     * @return JButton  The button for the remove operation.
+     */
     private JButton getRemoveButton() {
         if (removeButton != null) return removeButton;
 
@@ -219,6 +268,11 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
         return removeButton;
     }
 
+    /**
+     * The objectclass field component.
+     *
+     * @return JTextField  The text field for the objectclass.
+     */
     private JTextField getObjectClassField() {
         if (objectClass != null) return objectClass;
 
@@ -269,6 +323,11 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
 
     }
 
+    /**
+     * A JList for the group objects.
+     *
+     * @return  JList   The list of group objects.
+     */
     private JList getGroupList() {
         if (groupList != null) return groupList;
 
@@ -304,9 +363,9 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
     }
 
     /**
-     * Create if needed a default list model
+     * The data model of the group objects.
      *
-     * @return SortedListModel
+     * @return SortedListModel  The data model for the group objects.
      */
     private SortedListModel getGroupListModel() {
         if (groupListModel != null) return groupListModel;
@@ -494,6 +553,10 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
         add(groupPanel);
     }
 
+    /**
+     *  A cell renderer for displaying the name of the group objectclass in JList component.
+     *
+     **/
     private final ListCellRenderer renderer = new DefaultListCellRenderer() {
         public Component getListCellRendererComponent(JList list, Object value,
                                                       int index, boolean isSelected,
@@ -515,7 +578,7 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
         }
     };
 
-    // Variables declaration - do not modify
+
     private javax.swing.JButton addButton;
     private javax.swing.JButton removeButton;
     private javax.swing.JLabel objectClassLabel;

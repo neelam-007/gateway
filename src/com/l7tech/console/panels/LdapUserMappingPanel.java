@@ -19,6 +19,8 @@ import java.util.ResourceBundle;
 import java.util.Iterator;
 
 /*
+ * This class provides a panel for users to add/delete/modify the LDAP attribute mapping of the user objectclass.
+ *
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
  * $Id$
@@ -26,7 +28,11 @@ import java.util.Iterator;
 
 public class LdapUserMappingPanel extends WizardStepPanel {
 
-    /** Creates new form ServicePanel */
+    /**
+     * Constructor - create a new user attribute mapping panel.
+     *
+     * @param next  The panel for use in the next step.
+     */
     public LdapUserMappingPanel(WizardStepPanel next) {
         super(next);
         initResources();
@@ -43,6 +49,11 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         resources = ResourceBundle.getBundle("com.l7tech.console.resources.IdentityProviderDialog", locale);
     }
 
+    /**
+     * Provide the description for the step being taken on this panel.
+     *
+     * @return  String  The descritpion of the step.
+     */
     public String getDescription() {
         return "The page shows the attribute mappings of the LDAP user object classes. You can add/delete/modify the attributes mappings on this page.";
     }
@@ -52,6 +63,11 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         return "User ObjectClass mappings";
     }
 
+    /**
+     * Update the visual components of the panel with the new values.
+     *
+     * @param userMapping  The object contains the new values.
+     */
     public void updateListModel(UserMappingConfig userMapping) {
 
         if(userMapping != null) {
@@ -69,6 +85,11 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         }
     }
 
+    /**
+     * Validate the input data
+     *
+     * @return  boolean  true if the input data is valid, false otherwise.
+     */
     private boolean validateInput() {
 
         boolean rc = true;
@@ -91,6 +112,13 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         return rc;
     }
 
+    /**
+     * Populate the configuration data from the wizard input object to the visual components of the panel.
+     *
+     * @param settings  The current value of configuration items in the wizard input object.
+     *
+     * @throws IllegalArgumentException   if the data provided by the wizard are not valid.
+     */
     public void readSettings(Object settings) throws IllegalArgumentException {
 
         if (settings instanceof LdapIdentityProviderConfig) {
@@ -134,6 +162,13 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         }
     }
 
+    /**
+     * Store the values of all fields on the panel to the wizard object which is a used for
+     * keeping all the modified values. The wizard object will be used for providing the
+     * updated values when updating the server.
+     *
+     * @param settings the object representing wizard panel state
+     */
     public void storeSettings(Object settings) {
 
         Object userMapping = null;
@@ -155,6 +190,11 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         }
     }
 
+    /**
+     * Display the data of the selected user.
+     *
+     * @param settings   The data of the selected user.
+     */
     private void readSelectedUserSettings(Object settings) {
 
         if (settings instanceof UserMappingConfig) {
@@ -173,6 +213,11 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         }
     }
 
+    /**
+     * The button for adding the attribute mapping of a new group objectclass.
+     *
+     * @return JButton  The button for the add operation.
+     */
     private JButton getAddButton() {
         if (addButton != null) return addButton;
 
@@ -199,6 +244,11 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         return addButton;
     }
 
+    /**
+     * The button for deleting the attribute mapping of a new group objectclass.
+     *
+     * @return JButton  The button for the remove operation.
+     */
     private JButton getRemoveButton() {
         if (removeButton != null) return removeButton;
 
@@ -227,6 +277,11 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         return removeButton;
     }
 
+    /**
+     * The objectclass field component.
+     *
+     * @return JTextField  The text field for the objectclass.
+     */
     private JTextField getObjectClassField() {
         if (objectClass != null) return objectClass;
 
@@ -275,6 +330,11 @@ public class LdapUserMappingPanel extends WizardStepPanel {
 
     }
 
+    /**
+     * A JList for the user objects.
+     *
+     * @return  JList   The list of user objects.
+     */
     private JList getUserList() {
         if (userList != null) return userList;
 
@@ -309,9 +369,9 @@ public class LdapUserMappingPanel extends WizardStepPanel {
     }
 
     /**
-     * Create if needed a default list model
+     * The data model of the userobjects.
      *
-     * @return SortedListModel
+     * @return SortedListModel  The data model for the user objects.
      */
     private SortedListModel getUserListModel() {
         if (userListModel != null) return userListModel;
@@ -577,7 +637,10 @@ public class LdapUserMappingPanel extends WizardStepPanel {
 
     }
 
-
+   /**
+     *  A cell renderer for displaying the name of the user objectclass in JList component.
+     *
+     **/
     private final ListCellRenderer renderer = new DefaultListCellRenderer() {
         public Component getListCellRendererComponent(JList list, Object value,
                                                       int index, boolean isSelected,
@@ -598,8 +661,6 @@ public class LdapUserMappingPanel extends WizardStepPanel {
             return this;
         }
     };
-
-    // Variables declaration - do not modify
 
     private javax.swing.JLabel attributeTitleLabel;
     private javax.swing.JLabel firstNameAttributeLabel;
@@ -631,9 +692,6 @@ public class LdapUserMappingPanel extends WizardStepPanel {
     private javax.swing.JScrollPane userListScrollPane;
     private javax.swing.JLabel userListTitleLabel;
     private javax.swing.JPanel userPanel;
-
-    // End of variables declaration
-
 
     private LdapIdentityProviderConfig iProviderConfig = null;
     private SortedListModel userListModel = null;
