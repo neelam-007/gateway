@@ -48,14 +48,13 @@ public class MonitorPanel extends JTabbedPane {
 
     public void removeComponent(JComponent component) {
 
+        this.remove(component);
+
         // select the first component in the tabbed pane
-        if (getTabCount() > 1) {
+        if (getTabCount() > 0) {
             getComponentAt(0).setVisible(true);
             setSelectedIndex(0);
         }
-
-        this.remove(component);
-
     }
 
     public void connectHandler(ConnectionEvent e) {
