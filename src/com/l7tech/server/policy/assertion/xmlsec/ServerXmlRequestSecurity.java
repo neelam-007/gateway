@@ -60,7 +60,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
         } catch (PolicyAssertionException e) {
             response.setAuthenticationMissing(true);
             response.setPolicyViolated(true);
-            throw e;
+            return AssertionStatus.FALSIFIED;
         } catch (SessionInvalidException e) {
             // when the session is no longer valid we must inform the client proxy so that he generates another session
             response.setParameter( Response.PARAM_HTTP_SESSION_STATUS, "invalid" );
@@ -89,11 +89,11 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             response.setAuthenticationMissing(true);
             response.setPolicyViolated(true);
             logger.log(Level.WARNING, e.getMessage(), e);
-            throw new PolicyAssertionException(e.getMessage(), e);
+            return AssertionStatus.FALSIFIED;
         } catch (InvalidSignatureException e) {
             // bad signature !
             logger.log(Level.SEVERE, e.getMessage(), e);
-            throw new PolicyAssertionException(e.getMessage(), e);
+            return AssertionStatus.FALSIFIED;
         }
 
         // Signature validated, so mark this sequence number as used up
@@ -109,7 +109,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             certCN = x500name.getCommonName();
         } catch (IOException e) {
             logger.log(Level.SEVERE, e.getMessage(), e);
-            throw new PolicyAssertionException("cannot extract name from cert", e);
+            return AssertionStatus.FALSIFIED;
         }
         logger.log(Level.INFO, "cert extracted from digital signature for user " + certCN);
         User u = new User();
@@ -123,7 +123,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             } catch (GeneralSecurityException e) {
                 String msg = "Error decrypting request";
                 logger.log(Level.SEVERE, msg, e);
-                throw new PolicyAssertionException(msg, e);
+                return AssertionStatus.FALSIFIED;
             } catch (ParserConfigurationException e) {
                 String msg = "Error decrypting request";
                 logger.log(Level.SEVERE, msg, e);
@@ -131,16 +131,16 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             } catch (IOException e) {
                 String msg = "Error decrypting request";
                 logger.log(Level.SEVERE, msg, e);
-                throw new PolicyAssertionException(msg, e);
+                return AssertionStatus.FALSIFIED;
             } catch (SAXException e) {
                 String msg = "Error decrypting request";
                 logger.log(Level.SEVERE, msg, e);
-                throw new PolicyAssertionException(msg, e);
+                return AssertionStatus.FALSIFIED;
             } catch (XMLSecurityElementNotFoundException e) {
                 String msg = "Request does not contain security element";
                 logger.log(Level.SEVERE, msg, e);
                 response.setPolicyViolated(true);
-                throw new PolicyAssertionException(msg, e);
+                return AssertionStatus.FALSIFIED;
             } catch (Throwable e) {
                 String msg = "Unhandled exception from mangler: ";
                 logger.log(Level.SEVERE, msg, e);

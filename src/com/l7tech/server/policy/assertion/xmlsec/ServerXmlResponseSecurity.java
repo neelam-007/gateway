@@ -60,12 +60,12 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
         } catch (SAXException e) {
             String msg = "cannot get an xml document from the response to sign";
             logger.severe(msg);
-            throw new PolicyAssertionException(msg, e);
+            return AssertionStatus.FALSIFIED;
         }
         if (soapmsg == null) {
             String msg = "cannot get an xml document from the response to sign";
             logger.severe(msg);
-            throw new PolicyAssertionException(msg);
+            return AssertionStatus.FALSIFIED;
         }
 
         // DECORATE WITH NONCE IN A WSSC TOKEN
@@ -84,7 +84,7 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
             if (sessionIDHeaderValue == null || sessionIDHeaderValue.length() < 1) {
                 String msg = "Could not encrypt response because xml session id was not provided by requestor.";
                 logger.severe(msg);
-                throw new PolicyAssertionException(msg);
+                return AssertionStatus.FALSIFIED;
             }
             // retrieve the session
             Session xmlsession = null;
@@ -93,11 +93,11 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
             } catch (SessionNotFoundException e) {
                 String msg = "Exception finding session with id=" + sessionIDHeaderValue;
                 logger.log(Level.SEVERE, msg, e);
-                throw new PolicyAssertionException(msg, e);
+                return AssertionStatus.FALSIFIED;
             } catch (NumberFormatException e) {
                 String msg = "Session id is not long value : " + sessionIDHeaderValue;
                 logger.log(Level.SEVERE, msg, e);
-                throw new PolicyAssertionException(msg, e);
+                return AssertionStatus.FALSIFIED;
             }
 
             // encrypt the message
@@ -106,15 +106,15 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
             } catch (GeneralSecurityException e) {
                 String msg = "Exception trying to encrypt response";
                 logger.log(Level.SEVERE, msg, e);
-                throw new PolicyAssertionException(msg, e);
+                return AssertionStatus.FALSIFIED;
             } catch (IOException e) {
                 String msg = "Exception trying to encrypt response";
                 logger.log(Level.SEVERE, msg, e);
-                throw new PolicyAssertionException(msg, e);
+                return AssertionStatus.FALSIFIED;
             } catch (IllegalArgumentException e) {
                 String msg = "Exception trying to encrypt response";
                 logger.log(Level.SEVERE, msg, e);
-                throw new PolicyAssertionException(msg, e);
+                return AssertionStatus.FALSIFIED;
             }
 
             logger.info("Response document was encrypted.");
@@ -129,7 +129,7 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
         } catch (CertificateException e) {
             String msg = "cannot generate cert from cert file";
             logger.severe(msg);
-            throw new PolicyAssertionException(msg);
+            throw new IOException(msg);
         }
 
         // GET THE SIGNING KEY
@@ -139,7 +139,7 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
         } catch (KeyStoreException e) {
             String msg = "cannot get ssl private key";
             logger.severe(msg);
-            throw new PolicyAssertionException(msg);
+            throw new IOException(msg);
         }
 
         // XML SIGNATURE
@@ -149,11 +149,11 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
         } catch (SignatureStructureException e) {
             String msg = "error signing response";
             logger.log(Level.SEVERE, msg, e);
-            throw new PolicyAssertionException(msg, e);
+            return AssertionStatus.FALSIFIED;
         } catch (XSignatureException e) {
             String msg = "error signing response";
             logger.log(Level.SEVERE, msg, e);
-            throw new PolicyAssertionException(msg, e);
+            return AssertionStatus.FALSIFIED;
         }
         logger.info("Response document signed successfully");
         return AssertionStatus.NONE;

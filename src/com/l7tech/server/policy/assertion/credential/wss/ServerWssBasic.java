@@ -45,7 +45,7 @@ public class ServerWssBasic implements ServerAssertion {
             creds = findCredentials(request, response);
         } catch (IOException e) {
             logger.log(Level.SEVERE, "cannot find credentials", e);
-            throw new PolicyAssertionException(e);
+            return AssertionStatus.FALSIFIED;
         } catch (CredentialFinderException e) {
             logger.log(Level.SEVERE, "cannot find credentials", e);
             return AssertionStatus.AUTH_REQUIRED;
