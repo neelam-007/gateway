@@ -904,6 +904,11 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
     </target>
 
     <target name="INTERNAL-ssg-install-properties-full" if="install.full">
+        <!-- Copy server.xml & catalina.policy -->
+        <copy todir="${install.src.tomcat}/conf">
+            <fileset dir="${src.root}/etc/tomcat" includes="server.xml, catalina.policy"/>
+        </copy>
+
         <copy file="${src.root}/etc/keystore.properties" tofile="${install.src.keystore.properties}"/>
         <echo>Patching ${install.src.keystore.properties}...</echo>
 
@@ -932,6 +937,12 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
     </target>
 
     <target name="INTERNAL-ssg-install-properties-upgrade" unless="install.full">
+        <!-- Delete stock server.xml & catalina.policy so as not to replace in-place ones -->
+        <delete file="${install.src.tomcat}/conf/server.xml"/> 
+        <delete file="${install.src.tomcat}/conf/catalina.policy"/>
+        <copy file="${src.root}/etc/tomcat/server.xml" tofile="${install.src.tomcat}/conf/server.xml-dist"/>
+        <copy file="${src.root}/etc/tomcat/catalina.policy" tofile="${install.src.tomcat}/conf/catalina.policy-dist"/>
+
         <copy file="${src.root}/etc/keystore.properties" tofile="${install.src.keystore.properties}-dist"/>
         <replaceregexp file="${install.src.keystore.properties}-dist">
             <regexp pattern="keystoredir=.*"/>
@@ -955,8 +966,8 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
 
     <target name="INTERNAL-ssg-install-keystores" if="install.full" depends="INTERNAL-ssg-install-genpass">
         <!-- Create CA keystore -->
-        
-	<delete file="${install.src.ca.keystore}"/>
+
+        <delete file="${install.src.ca.keystore}"/>
         <fail unless="install.ca.hostname" message="install.ca.hostname property not set! Check install.properties!"/>
         <java classname="sun.security.tools.KeyTool">
             <arg line="-keystore ${install.src.ca.keystore}"/>
@@ -1007,7 +1018,7 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
             <pathelement path="${src.root}/build/classes"/>
             <fileset dir="${src.root}/lib">
                 <include name="**/*.jar"/>
-		<include name="**/*.zip"/>
+                <include name="**/*.zip"/>
             </fileset>
         </path>
 
@@ -1155,10 +1166,6 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
 
         <!-- Copy WAR file into position -->
         <copy file="${build.dir}/${war}" tofile="${install.src.war}"/>
-        <!-- Copy server.xml & catalina.policy -->
-        <copy todir="${install.src.tomcat}/conf">
-            <fileset dir="${src.root}/etc/tomcat" includes="server.xml, catalina.policy"/>
-        </copy>
 
         <!-- Copy LDAP templates -->
         <copy todir="${install.src.ldap}">
@@ -1185,7 +1192,7 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         <!-- Hack ssgruntimedefs.sh -->
         <echo>Patching ${install.src.bin}/ssgruntimedefs.sh...</echo>
         <replaceregexp file="${install.src.bin}/ssgruntimedefs.sh">
-            <regexp pattern="TOMCAT_HOME\s*=\s*[a-zA-Z0-9 _\/\-\.\\\]*"/>
+            <regexp pattern="TOMCAT_HOME\s*=\s*[a-zA-Z0-9 _\/\-\.\\]*"/>
             <substitution expression="TOMCAT_HOME=${install.target.tomcat}"/>
         </replaceregexp>
         <replaceregexp file="${install.src.bin}/ssgruntimedefs.sh">
