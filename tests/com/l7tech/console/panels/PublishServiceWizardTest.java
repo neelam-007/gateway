@@ -6,19 +6,9 @@
 
 package com.l7tech.console.panels;
 
-import com.l7tech.service.ServiceAdminStub;
 import com.l7tech.common.util.Locator;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.tree.EntityHeaderNode;
-import com.l7tech.identity.GroupManager;
-import com.l7tech.identity.GroupManagerStub;
-import com.l7tech.identity.IdentityProvider;
-import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.identity.IdentityProviderConfigManagerStub;
-import com.l7tech.identity.IdentityProviderStub;
-import com.l7tech.identity.StubDataStore;
-import com.l7tech.identity.UserManager;
-import com.l7tech.identity.UserManagerStub;
+import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspReader;
@@ -73,10 +63,6 @@ public class PublishServiceWizardTest extends Locator {
 
         public ServiceAdmin getServiceManager() {
             return SERVICE_MANAGER_STUB;
-        }
-
-        public IdentityProvider getIdentityProvider(EntityHeaderNode node) {
-            return IDENTITY_PROVIDER_STUB;
         }
 
         public IdentityProvider getIdentityProvider(long idProviderOid) {

@@ -1,12 +1,11 @@
 package com.l7tech.console.util;
 
-import com.l7tech.identity.IdentityProvider;
-import com.l7tech.identity.UserManager;
-import com.l7tech.identity.GroupManager;
-import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.common.util.Locator;
+import com.l7tech.identity.GroupManager;
+import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.UserManager;
 import com.l7tech.service.ServiceAdmin;
-import com.l7tech.console.tree.EntityHeaderNode;
 
 
 /**
@@ -61,12 +60,6 @@ public abstract class Registry {
     abstract public IdentityProvider getInternalProvider();
 
     /**
-     * @return the identity provider to which this node belongs to
-     * @deprecated As of release 1.5, replaced by {@link #getIdentityProvider(long)}
-     */
-    abstract public IdentityProvider getIdentityProvider(EntityHeaderNode node);
-
-    /**
       * @return the identity provider given the oid of the identity provider
       */
     abstract public IdentityProvider getIdentityProvider(long idProviderOid);
@@ -98,10 +91,6 @@ public abstract class Registry {
          * @return the identity provider config manager
          */
         public IdentityProviderConfigManager getProviderConfigManager() {
-            return null;
-        }
-
-        public IdentityProvider getIdentityProvider(EntityHeaderNode node) {
             return null;
         }
 
