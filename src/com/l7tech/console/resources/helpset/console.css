@@ -26,3 +26,5 @@ p.procedure { font-weight:bold; font-style:normal; margin-bottom:3pt; font-size:
 li.kadov-p-cprocedure { font-weight:bold; font-style:normal; font-size:12pt;  }
 p.numbered { margin-bottom:0pt; list-style:decimal; margin-left:0pt;  }
 li.kadov-p-cnumbered { list-style:decimal;  }
+p.notenumbered { margin-left:54pt; margin-top:3pt; margin-bottom:3pt;  }
+li.kadov-p-cnotenumbered {  }

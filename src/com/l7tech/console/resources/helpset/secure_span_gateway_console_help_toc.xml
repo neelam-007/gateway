@@ -31,6 +31,7 @@
    <tocitem text="Publishing Services" target="services_and_policies_publishing_services_htm" />
    <tocitem text="Creating Services" target="services_and_policies_creating_services_htm" />
    <tocitem text="Creating Policies" target="services_and_policies_creating_policies_htm" />
+   <tocitem text="Policy Assertions" target="services_and_policies_policy_assertions_htm" />
    <tocitem text="Validating Policies" target="services_and_policies_validating_policies_htm" />
    </tocitem>
   <tocitem text="Gateway Management">
@@ -38,9 +39,9 @@
    <tocitem text="Logs" target="gateway_management_logs_htm" />
    <tocitem text="Statistics" target="gateway_management_statistics_htm" />
    </tocitem>
-  <tocitem text="Client Agent">
-   <tocitem text="Client Agent Overview" target="client_agent_client_agent_overview_htm" />
-   <tocitem text="Client User Interface" target="client_agent_client_user_interface_htm" />
+  <tocitem text="SecureSpan Agent">
+   <tocitem text="Agent Overview" target="client_agent_agent_overview_htm" />
+   <tocitem text="Agent User Interface" target="client_agent_agent_user_interface_htm" />
    </tocitem>
   <tocitem text="Troubleshooting">
    <tocitem text="FAQs and Error Messages" target="troubleshooting_faqs_htm" />

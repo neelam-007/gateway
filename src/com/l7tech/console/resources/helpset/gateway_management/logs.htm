@@ -18,8 +18,8 @@
 <meta name=filetype content=kadov>
 <meta name=filetype-version content=1>
 <meta name=page-count content=1>
-<meta name=layout-height content=802>
-<meta name=layout-width content=899>
+<meta name=layout-height content=827>
+<meta name=layout-width content=888>
 <meta name=x-ignored-words content="TLS;Uptime;uptime;Unix;SecureSpan;cert;francis">
 
 
@@ -49,10 +49,13 @@
 <p>The function of the Gateway log is to provide the administrator with 
  a view into the messages that are sent to and from the Gateway. The log 
  provides a tracking tool for administrators to troubleshoot any issues 
- with connectivity and communication. Administrators can use the sliding 
- scale to filter the messages according to their severity. The Details 
- option provides additional message details in the right-hand pane such 
- as the message class and method. </p>
+ with connectivity and communication. </p>
+
+<p>Administrators can use the sliding scale to filter the messages according 
+ to their <a href="#MessageSeverityLevels">severity</a>. When the &quot;all&quot; 
+ option is selected, the log displays every message from &quot;finest&quot; 
+ to &quot;severe.&quot; The Details option provides additional message 
+ details in the right-hand pane such as the message class and method. </p>
 
 <p class="note"><span style="font-style: italic;"><I>Note:</I></span> The HTTP Digest 
  authentication method requires two messages for every &quot;attempted 
@@ -79,7 +82,7 @@
  to view a separate pane with the complete message details.</p></li>
 </ol>
 
-<h3>Message Severity Levels</h3>
+<h3><a name=MessageSeverityLevels></a>Message Severity Levels</h3>
 
 <p>The messages are sorted in the Gateway log according to their severity. 
  The message severity levels and their meanings are:</p>

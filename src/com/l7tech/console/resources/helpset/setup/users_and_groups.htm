@@ -18,9 +18,8 @@
 <meta name=filetype content=kadov>
 <meta name=filetype-version content=1>
 <meta name=page-count content=1>
-<meta name=layout-height content=1832>
-<meta name=layout-width content=899>
-<meta name=x-ignored-words content="TLS;Uptime;uptime;Unix;SecureSpan;cert;francis;LDAP;firewall;policy.templates;admin;popup;user(s;CTRL">
+<meta name=layout-height content=1892>
+<meta name=layout-width content=900>
 
 
 
@@ -42,7 +41,7 @@
 <p>Administrators can use the Manager to add new users and groups to the 
  internal identity provider. Users are defined based on their name, authentication 
  credentials, group membership status, and certificate usage. Groups are 
- defined by their description and their user membership.</p>
+ defined by their description and their user membership.<br>&nbsp;</p>
 
 <p><a href="#CreatingUsersandGroups">Creating Users and Groups</a></p>
 
@@ -70,14 +69,20 @@
 	type=1>
 	
 	<li class="kadov-p"><p>Go to the <span style="font-weight: bold;"><B>Action</B></span> 
- menu and select <span style="font-weight: bold;"><B>Create new user</B></span>.</p></li>
+ menu and select <span style="font-weight: bold;"><B>Create new user</B></span>. 
+ The <span style="font-weight: bold;"><B>New User </B></span>dialog box appears.</p></li>
 	
-	<li class="kadov-p"><p>Type a user name in the <span style="font-weight: bold;"><B>User</B></span> 
- field and the password in both the <span style="font-weight: bold;"><B>Password</B></span> 
+	<li class="kadov-p"><p>Type a login identity in the <span style="font-weight: bold;"><B>Login 
+ </B></span>field. Type a password in both the <span style="font-weight: bold;"><B>Password</B></span> 
  and the <span style="font-weight: bold;"><B>Confirm</B></span> fields. Select 
  <span style="font-weight: bold;"><B>Define</B></span> <span style="font-weight: bold;"><B>Additional 
- Properties</B></span> if additional credentials, such as email and group membership 
+ Properties</B></span> if additional credentials, such as email and group membership, 
  are required. Click <span style="font-weight: bold;"><B>Create</B></span>. </p></li>
+</ol>
+
+<ol start=3
+	style="list-style: decimal;"
+	type=1>
 	
 	<li class="kadov-p"><p>If additional properties are required, the <span 
  style="font-weight: bold;"><B>Properties</B></span> dialog box appears. Define 
@@ -85,8 +90,14 @@
  (identification), <span style="font-weight: bold;"><B>Membership</B></span> (groups), 
  and <span style="font-weight: bold;"><B>Certificate</B></span> (added security) 
  tabs. Click <span style="font-weight: bold;"><B>OK</B></span>. The new user appears 
- under the Internal Identity Provider &gt; Users directory.</p></li>
+ under the Internal Identity Provider.</p></li>
 </ol>
+
+<p class="notenumbered"><span style="font-style: italic;"><I>Note</I></span>: If 
+ you select <span style="font-weight: bold;"><B>Cancel</B></span> in the <span 
+ style="font-weight: bold;"><B>Define Additional Properties</B></span> dialog 
+ box, the user is still created with the basic properties that were defined 
+ in the <span style="font-weight: bold;"><B>New User</B></span> dialog box.</p>
 
 <p class="procedure">To create a new group:</p>
 
@@ -97,17 +108,17 @@
  menu and select <span style="font-weight: bold;"><B>Create new group</B></span>. 
  The <span style="font-weight: bold;"><B>New Group</B></span> dialog box appears.</p></li>
 	
-	<li class="kadov-p"><p>Type a name in the Group field. Select <span style="font-weight: bold;"><B>Define</B></span> 
- <span style="font-weight: bold;"><B>Additional Properties</B></span> if additional 
- credentials, such as email and group membership are required. Click <span 
- style="font-weight: bold;"><B>Create</B></span>. </p></li>
+	<li class="kadov-p"><p>Type a name in the <span style="font-weight: bold;"><B>Group</B></span> 
+ field. Select <span style="font-weight: bold;"><B>Define</B></span> <span style="font-weight: bold;"><B>Additional 
+ Properties</B></span> if additional credentials, such as email and group membership, 
+ are required. Click <span style="font-weight: bold;"><B>Create</B></span>. </p></li>
 	
 	<li class="kadov-p"><p>If additional properties are required, the <span 
  style="font-weight: bold;"><B>Properties</B></span> dialog box appears. Define 
  the additional properties under the <span style="font-weight: bold;"><B>General</B></span> 
  (description) and the <span style="font-weight: bold;"><B>Membership</B></span> 
  (add users) tabs. Click <span style="font-weight: bold;"><B>OK</B></span>. The 
- new group appears under the Internal Identity Provider &gt; Users directory.</p></li>
+ new group appears under the Internal Identity Provider.</p></li>
 </ol>
 
 <h2><a name=User_GroupProperties></a>User/Group Properties</h2>
@@ -124,17 +135,16 @@
 
 <p>These tasks refer to changing user and group information in the internal 
  identity provider. Users and groups in the external identity providers 
- (LDAP or Active Directory) should be modified in their appropriate management 
- tools. </p>
+ (LDAP or MS Active Directory) should be modified in their appropriate 
+ management tools. </p>
 
 <p class="procedure">To add a user to a group:</p>
 
 <ol style="list-style: decimal;"
 	type=1>
 	
-	<li class="kadov-p"><p>Go to the <span style="font-weight: bold;"><B>Internal 
- Identity Provider</B></span> &gt; <span style="font-weight: bold;"><B>Group</B></span> 
- directory.</p></li>
+	<li class="kadov-p"><p>Expand the <span style="font-weight: bold;"><B>Internal 
+ Identity Provider </B></span><span>to display the group and user names</span>.</p></li>
 	
 	<li class="kadov-p"><p>Right-click on the appropriate group name and 
  select <span style="font-weight: bold;"><B>Group Properties</B></span> from the 
@@ -159,8 +169,8 @@
 <ol style="list-style: decimal;"
 	type=1>
 	
-	<li class="kadov-p"><p>Go to the <span style="font-weight: bold;"><B>Identity 
- Provider</B></span> &gt; <span style="font-weight: bold;"><B>Group</B></span> directory.</p></li>
+	<li class="kadov-p"><p>Expand the <span style="font-weight: bold;"><B>Internal 
+ Identity Provider </B></span>to display the group and user names.</p></li>
 	
 	<li class="kadov-p"><p>Right-click on the appropriate group name and 
  select <span style="font-weight: bold;"><B>Group Properties</B></span> from the 
@@ -179,10 +189,10 @@
 <h2><a name=FindingUsers></a>Finding Users</h2>
 
 <p>External identity providers may contain hundreds, if not thousands, 
- of identities. The Manger offers a simple search tool to find an identity 
- in any of their identity providers. Administrators can use this tool to 
- verify that a user or group resides in the identity provider and the exact 
- naming convention used. </p>
+ of identities. The Manager offers a simple search tool to find an identity 
+ in any identity providers. Administrators can use this tool to verify 
+ that a user or group resides in the identity provider and the exact naming 
+ convention used. </p>
 
 <p class="procedure">To find a user/group:</p>
 
@@ -226,11 +236,10 @@
 <ol style="list-style: decimal;"
 	type=1>
 	
-	<li class="kadov-p"><p>Go to the <span style="font-weight: bold;"><B>Internal</B></span> 
- <span style="font-weight: bold;"><B>Identity Provider</B></span> &gt; <span style="font-weight: bold;"><B>User</B></span> 
- (or <span style="font-weight: bold;"><B>Group</B></span>) directory.</p></li>
+	<li class="kadov-p"><p>Expand the <span style="font-weight: bold;"><B>Internal 
+ Identity Provider </B></span>to display the group and user names.</p></li>
 	
-	<li class="kadov-p"><p>Right-click on the user/group name and select 
+	<li class="kadov-p"><p>Right-click on the user or group name and select 
  <span style="font-weight: bold;"><B>Delete</B></span> from the pop-up menu. The 
  <span style="font-weight: bold;"><B>Delete User/Group</B></span> dialog box appears. 
  </p></li>

@@ -1,8 +1,7 @@
 |SourceProjectName:Secure Span Gateway Console Help.hpr
 |DestinationProjectName:secure_span_gateway_console_help.hs
-client_agent\client_agent_overview.htm
-client_agent\client_user_interface.htm
-client_agent\managing_clients.htm
+client_agent\agent_overview.htm
+client_agent\agent_user_interface.htm
 gateway_management\logs.htm
 gateway_management\performance_monitoring.htm
 gateway_management\statistics.htm
@@ -15,6 +14,7 @@ security_policy\key_concepts.htm
 security_policy\product_design_logic.htm
 services_and_policies\creating_policies.htm
 services_and_policies\creating_services.htm
+services_and_policies\policy_assertions.htm
 services_and_policies\publishing_services.htm
 services_and_policies\validating_policies.htm
 services_and_policies\web_services_overview.htm

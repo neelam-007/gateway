@@ -22,12 +22,15 @@
   <mapID target="services_and_policies_publishing_services_htm" url="services_and_policies/publishing_services.htm" />
   <mapID target="services_and_policies_creating_services_htm" url="services_and_policies/creating_services.htm" />
   <mapID target="services_and_policies_creating_policies_htm" url="services_and_policies/creating_policies.htm" />
+  <mapID target="services_and_policies_policy_assertions_htm" url="services_and_policies/policy_assertions.htm" />
   <mapID target="services_and_policies_validating_policies_htm" url="services_and_policies/validating_policies.htm" />
   <mapID target="gateway_management_performance_monitoring_htm" url="gateway_management/performance_monitoring.htm" />
   <mapID target="gateway_management_logs_htm" url="gateway_management/logs.htm" />
   <mapID target="gateway_management_statistics_htm" url="gateway_management/statistics.htm" />
-  <mapID target="client_agent_client_agent_overview_htm" url="client_agent/client_agent_overview.htm" />
-  <mapID target="client_agent_client_user_interface_htm" url="client_agent/client_user_interface.htm" />
+  <mapID target="client_agent_agent_overview_htm" url="client_agent/agent_overview.htm" />
+  <mapID target="client_agent_agent_user_interface_htm" url="client_agent/agent_user_interface.htm" />
   <mapID target="troubleshooting_faqs_htm" url="troubleshooting/faqs.htm" />
-  <mapID target="client_agent_managing_clients_htm" url="client_agent/managing_clients.htm" />
+  <mapID target="RemoteUrl13df9594" url="http://www.purpletech.com/xpe/index.jsp" />
+  <mapID target="RemoteUrl720c7be0" url="http://www.w3.org/TR/xpath" />
+  <mapID target="RemoteUrla00f87de" url="http://www.zvon.org/xxl/XPathTutorial/Output/" />
 </map>
