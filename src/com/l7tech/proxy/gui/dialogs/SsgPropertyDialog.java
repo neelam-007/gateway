@@ -399,7 +399,9 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                     // Federated ssg using third-party WS-Trust service
                     fp.getWspAppliesToField().setText(strat.getAppliesTo());
                     fp.getWstUsernameField().setText(strat.getUsername());
-                    fp.getWstPasswordField().setText(new String(strat.getPassword()));
+                    char[] pass = strat.getPassword();
+                    if (pass == null) pass = new char[0];
+                    fp.getWstPasswordField().setText(new String(pass));
                     fp.getWsTrustUrlTextField().setText(strat.getWsTrustUrl());
                     // TODO fp.getWstSavePasswordCheckBox();
                 }
