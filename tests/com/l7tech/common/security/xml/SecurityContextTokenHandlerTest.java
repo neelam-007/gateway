@@ -34,7 +34,12 @@ public class SecurityContextTokenHandlerTest extends TestCase {
         SecurityContextTokenHandler.appendSessionInfoToSoapMessage(doc, sessionid, 69);
         System.out.println("Modified doc");
         System.out.println(serializeDocWithXMLSerializer(doc));
-        // todo test that we can get sesionid out of this.
+        // test that we can get sesionid out of this.
+        byte[] session2 = SecurityContextTokenHandler.getSessionIdFromWSCToken(doc);
+        for (int i = 0; i < sessionid.length; i++) {
+            assertTrue(sessionid[i] == session2[i]);
+        }
+        System.out.println("sessionid match");
     }
 
     private Document readDocFromString(String docStr)  throws Exception {
