@@ -55,7 +55,45 @@ public class ButtonCellEditor extends JPanel implements TableCellEditor {
     protected JLabel textLabel = new JLabel();
     protected JButton button = new JButton("...");
     protected JTable table;
+    protected ButtonDisplayPolicy policy;
     private DefaultTableCellRenderer defaultRenderer = new DefaultTableCellRenderer();
+    
+    /**
+     *  Button display policy
+     */
+    private static class ButtonDisplayPolicy {
+        private String policy;
+
+        private ButtonDisplayPolicy(String policy) {
+            if (policy == null) {
+              throw new IllegalArgumentException("policy");
+            }
+
+            if (policy == null) {
+                throw new IllegalArgumentException();
+            }
+            this.policy = policy;
+        }
+
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof ButtonDisplayPolicy)) return false;
+
+            final ButtonDisplayPolicy buttonDisplayPolicy = (ButtonDisplayPolicy)o;
+
+            if (!policy.equals(buttonDisplayPolicy.policy)) return false;
+
+            return true;
+        }
+
+        public int hashCode() {
+            return policy.hashCode();
+        }
+    }
+
+    public static final ButtonDisplayPolicy AS_NEEDED = new ButtonDisplayPolicy("as.needed");
+    public static final ButtonDisplayPolicy ALWAYS = new ButtonDisplayPolicy("always");
+
 
     /**
      * Attach the <code>ButtonCellEditor</code> to the table column
@@ -66,15 +104,30 @@ public class ButtonCellEditor extends JPanel implements TableCellEditor {
      * @return the <code>ButtonCellEditor</code> attached
      */
     public static ButtonCellEditor attach(JTable table, int columnIndex) {
-        if (table == null || columnIndex < 0) {
+        return attach(table, columnIndex, ALWAYS);
+
+    }
+
+    /**
+     * Attach the <code>ButtonCellEditor</code> to the table column
+     * specified by column index with a given button display policy.
+     *
+     * @param table       the table that hosts the column
+     * @param columnIndex the column index
+     * @return the <code>ButtonCellEditor</code> attached
+     */
+    public static ButtonCellEditor attach(JTable table, int columnIndex, ButtonDisplayPolicy policy) {
+        if (table == null || columnIndex < 0 || policy == null) {
             throw new IllegalArgumentException();
         }
         TableColumn column = table.getColumnModel().getColumn(columnIndex);
         ButtonCellEditor cellEditor = new ButtonCellEditor(table);
+        cellEditor.policy = policy;
         column.setCellEditor(cellEditor);
         column.setCellRenderer(new ButtonEditorCellRender(table));
         return cellEditor;
     }
+
 
 
     public ButtonCellEditor(JTable table) {
@@ -208,6 +261,7 @@ public class ButtonCellEditor extends JPanel implements TableCellEditor {
                                                        boolean isSelected,
                                                        boolean hasFocus,
                                                        int row, int column) {
+
             Component c = defaultRenderer.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
             Dimension d = c.getPreferredSize();
