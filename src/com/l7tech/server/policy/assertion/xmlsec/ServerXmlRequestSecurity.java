@@ -115,20 +115,22 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
                     logger.log( Level.WARNING, result.getType().desc );
                 return AssertionStatus.FAILED;
             }
-
+            
             final X509Certificate[] xmlCertChain = result.getCertificateChain();
-            X500Name x500name = new X500Name(xmlCertChain[0].getSubjectX500Principal().getName());
-            String certCN = x500name.getCommonName();
-            logger.finest("cert extracted from digital signature for user " + certCN);
+            if (xmlCertChain != null) {
+                X500Name x500name = new X500Name(xmlCertChain[0].getSubjectX500Principal().getName());
+                String certCN = x500name.getCommonName();
+                logger.finest("cert extracted from digital signature for user " + certCN);
 
-            // Fix for Bug #723: Check that cert is valid and matches authenticated user
-            if (xmlRequestSecurity.hasAuthenticationElement() ) {
-                if ( request.isAuthenticated() ) {
-                    logger.fine( "Request was already authenticated but this XmlRequestSecurity is usable as a credential source" );
-                } else {
-                    // We don't care if there are previously-asserted credentials in the request
-                    logger.info( "Using credentials from certificate in signed XML request" );
-                    request.setPrincipalCredentials(new LoginCredentials(certCN, null, CredentialFormat.CLIENTCERT, null, xmlCertChain[0]));
+                // Fix for Bug #723: Check that cert is valid and matches authenticated user
+                if (xmlRequestSecurity.hasAuthenticationElement() ) {
+                    if ( request.isAuthenticated() ) {
+                        logger.fine( "Request was already authenticated but this XmlRequestSecurity is usable as a credential source" );
+                    } else {
+                        // We don't care if there are previously-asserted credentials in the request
+                        logger.info( "Using credentials from certificate in signed XML request" );
+                        request.setPrincipalCredentials(new LoginCredentials(certCN, null, CredentialFormat.CLIENTCERT, null, xmlCertChain[0]));
+                    }
                 }
             }
 
@@ -165,7 +167,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
                     }
                 }
 
-                if ( !knownCert.equals( xmlCertChain[0] ) ) {
+                if ( xmlCertChain != null && !knownCert.equals( xmlCertChain[0] ) ) { //todo non-envelope certs?
                     logger.log( Level.WARNING,
                                 "XmlRequestSecurity signing certificate did not match previously issued certificate" );
                     response.setParameter(Response.PARAM_HTTP_CERT_STATUS, SecureSpanConstants.INVALID);
@@ -177,15 +179,17 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
                 // Request has credentials (possibly because we found a signed envelope)
                 // but user has not yet been authenticated
 
-                X509Certificate rootCert = getRootCertificate();
-                CertUtils.verifyCertificateChain( xmlCertChain, rootCert, 1 );
+                if (xmlCertChain != null) {
+                    X509Certificate rootCert = getRootCertificate();
+                    CertUtils.verifyCertificateChain( xmlCertChain, rootCert, 1 );
+                }
             }
         } catch (SecurityProcessorException e) {
             // bad signature !
             logger.log(Level.SEVERE, e.getMessage(), e);
             return AssertionStatus.SERVER_ERROR;
         } catch (SignatureException e) {
-            if (ExceptionUtils.causedBy(e, SignatureNotFoundException.class)) {
+            if (ExceptionUtils.causedBy(e, SignatureNotFoundException.class)) { //todo probably can't happen anymore
                 // no digital signature
                 response.setAuthenticationMissing(true);
                 response.setPolicyViolated(true);
@@ -199,7 +203,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             // bad signature !            
             logger.log(Level.WARNING, e.getMessage(), e);
             return AssertionStatus.AUTH_FAILED;
-        } catch (GeneralSecurityException e) {
+        } catch (GeneralSecurityException e) { // todo unlikely to happen now, maybe even impossible
             // bad signature !
             logger.log(Level.SEVERE, e.getMessage(), e);
             return AssertionStatus.SERVER_ERROR;

@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.common.util.SoapUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -131,7 +132,7 @@ public class ServerSchemaValidation implements ServerAssertion {
 
     private String[] getRequestBodyChild(Document soapenvelope) throws IOException, ParserConfigurationException {
         NodeList bodylist = soapenvelope.getElementsByTagNameNS(soapenvelope.getDocumentElement().getNamespaceURI(),
-                                                                SOAP_BODY_ELNAME);
+                                                                SoapUtil.BODY_EL_NAME);
         Element bodyel = null;
         switch (bodylist.getLength()) {
             case 1:
@@ -191,8 +192,6 @@ public class ServerSchemaValidation implements ServerAssertion {
         }
         private final ArrayList errors = new ArrayList();
     }
-
-    public static final String SOAP_BODY_ELNAME = "Body";
 
     static final String JAXP_SCHEMA_LANGUAGE = "http://java.sun.com/xml/jaxp/properties/schemaLanguage";
     static final String W3C_XML_SCHEMA = "http://www.w3.org/2001/XMLSchema";

@@ -67,7 +67,7 @@ class SenderXmlSecurityProcessor extends SecurityProcessor {
      * @param document the document to sign
      * @return the security processor result {@link SecurityProcessor.Result}
      * @throws SecurityProcessorException
-     * @throws GeneralSecurityException
+     * @throws GeneralSecurityException if unsupported key length or algorithm, or miscellaneous DOM trouble
      * @throws IOException
      */
     public Result processInPlace(Document document)

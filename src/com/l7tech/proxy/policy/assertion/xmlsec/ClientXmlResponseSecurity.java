@@ -4,6 +4,7 @@ import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.xml.*;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -108,8 +109,13 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
             SecurityProcessor.Result result = verifier.processInPlace(doc);
 
             // If this assertion doesn't apply to this reply, we are done
-            if (result.getType() == SecurityProcessor.Result.Type.NOT_APPLICABLE)
+            if (result.getType() == SecurityProcessor.Result.Type.NOT_APPLICABLE) {
+                log.info("Response security does not apply to this request -- ignoring");
                 return AssertionStatus.NONE;
+            }
+
+            if (result.getType() != SecurityProcessor.Result.Type.OK)
+                throw new ResponseValidationException("Response from Gateway was not properly signed and/or encrypted according to policy");
 
             Long responsenonce = SecureConversationTokenHandler.takeNonceFromDocument(doc);
             if (responsenonce == null)
@@ -118,9 +124,11 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
                 throw new ResponseValidationException("Response from Gateway contained the wrong nonce value");
 
             X509Certificate[] certificate = result.getCertificateChain();
-            if (certificate == null || certificate[0] == null)
-                throw new ResponseValidationException("Response from gateway did not contain a certificate chain");
-            certificate[0].verify(caCert.getPublicKey());
+            if (certificate == null || certificate[0] == null) {
+                log.info("Response from gateway did not contain a signed envelope");
+            } else {
+                CertUtils.verifyCertificateChain(certificate, caCert, 1);
+            }
         } catch (Exception e) {
             handleResponseThrowable(e);
         }
@@ -150,7 +158,7 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
         } else if (cause instanceof NoSuchProviderException) {
             throw new RuntimeException("VM is misconfigured", e);
         }
-        throw new RuntimeException("Response processing error", e);
+        throw new ResponseValidationException(e);
     }
 
     public String getName() {
