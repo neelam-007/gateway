@@ -402,7 +402,7 @@ public class MessageProcessor {
                     throw new ClientCertificateException("Unable to obtain new client certificate", e);
                 } catch (IOException e) {
                     throw new ClientCertificateException("Unable to obtain new client certificate", e);
-                } catch (com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException e) {
+                } catch (CertificateAlreadyIssuedException e) {
                     // Bug #380 - if we haven't updated policy yet, try that first - mlyons
                     if (!req.isPolicyUpdated()) {
                         Managers.getPolicyManager().flushPolicy(req);
