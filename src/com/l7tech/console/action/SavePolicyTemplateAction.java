@@ -126,6 +126,10 @@ public class SavePolicyTemplateAction extends BaseAction {
             ErrorManager.getDefault().
               notify(Level.WARNING, e,
                 "Cannot save policy template " + name);
+        } catch (IOException e) {
+            ErrorManager.getDefault().
+              notify(Level.WARNING, e,
+                "Cannot save policy template " + name);
         } finally {
             if (fo != null) {
                 try {

@@ -16,21 +16,37 @@ import java.util.Set;
  * @version $Revision$
  */
 public class SslAssertion extends ConfidentialityAssertion {
-    public static final Option OPTIONAL = new Option(0, "SSL Optional");
-    public static final Option REQUIRED = new Option(1, "SSL Required");
-    public static final Option FORBIDDEN = new Option(2, "SSL Forbidden");
+    public static final Option OPTIONAL = new Option(0, "SSL Optional", "Optional");
+    public static final Option REQUIRED = new Option(1, "SSL Required", "Required");
+    public static final Option FORBIDDEN = new Option(2, "SSL Forbidden", "Forbidden");
 
     public static class Option {
         protected int _numeric;
         protected String _name;
+        protected String _keyName;
 
-        Option(int numeric, String name) {
+        Option(int numeric, String name, String keyName) {
             _numeric = numeric;
             _name = name;
+            _keyName = keyName;
+        }
+
+        public static Option forKeyName(String wantName) {
+            if (OPTIONAL.getKeyName().equals(wantName))
+                return OPTIONAL;
+            else if (REQUIRED.getKeyName().equals(wantName))
+                return REQUIRED;
+            else if (FORBIDDEN.getKeyName().equals(wantName))
+                return FORBIDDEN;
+            return null;
         }
 
         public String getName() {
             return _name;
+        }
+
+        public String getKeyName() {
+            return _keyName;
         }
 
         public boolean equals(Object o) {

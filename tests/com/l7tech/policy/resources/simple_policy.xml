@@ -1,98 +1,70 @@
-<?xml version="1.0" encoding="UTF-8"?> 
-<java version="1.4.1_02" class="java.beans.XMLDecoder"> 
- <object id="ExactlyOneAssertion0" class="com.l7tech.policy.assertion.composite.ExactlyOneAssertion"> 
-  <void property="children"> 
-   <object class="java.util.LinkedList"> 
-    <void method="add"> 
-     <object id="AllAssertion0" class="com.l7tech.policy.assertion.composite.AllAssertion"> 
-      <void property="children"> 
-       <object class="java.util.LinkedList"> 
-        <void method="add"> 
-         <object class="com.l7tech.policy.assertion.TrueAssertion"> 
-          <void property="parent"> 
-           <object idref="AllAssertion0"/> 
-          </void> 
-         </object> 
-        </void> 
-        <void method="add"> 
-         <object id="OneOrMoreAssertion0" class="com.l7tech.policy.assertion.composite.OneOrMoreAssertion"> 
-          <void property="children"> 
-           <object class="java.util.LinkedList"> 
-            <void method="add"> 
-             <object class="com.l7tech.policy.assertion.FalseAssertion"> 
-              <void property="parent"> 
-               <object idref="OneOrMoreAssertion0"/> 
-              </void> 
-             </object> 
-            </void> 
-            <void method="add"> 
-             <object class="com.l7tech.policy.assertion.TrueAssertion"> 
-              <void property="parent"> 
-               <object idref="OneOrMoreAssertion0"/> 
-              </void> 
-             </object> 
-            </void> 
-            <void method="add"> 
-             <object class="com.l7tech.policy.assertion.FalseAssertion"> 
-              <void property="parent"> 
-               <object idref="OneOrMoreAssertion0"/> 
-              </void> 
-             </object> 
-            </void> 
-           </object> 
-          </void> 
-          <void property="parent"> 
-           <object idref="AllAssertion0"/> 
-          </void> 
-         </object> 
-        </void> 
-       </object> 
-      </void> 
-      <void property="parent"> 
-       <object idref="ExactlyOneAssertion0"/> 
-      </void> 
-     </object> 
-    </void> 
-    <void method="add"> 
-     <object id="ExactlyOneAssertion1" class="com.l7tech.policy.assertion.composite.ExactlyOneAssertion"> 
-      <void property="children"> 
-       <object class="java.util.LinkedList"> 
-        <void method="add"> 
-         <object class="com.l7tech.policy.assertion.TrueAssertion"> 
-          <void property="parent"> 
-           <object idref="ExactlyOneAssertion1"/> 
-          </void> 
-         </object> 
-        </void> 
-        <void method="add"> 
-         <object class="com.l7tech.policy.assertion.FalseAssertion"> 
-          <void property="parent"> 
-           <object idref="ExactlyOneAssertion1"/> 
-          </void> 
-         </object> 
-        </void> 
-       </object> 
-      </void> 
-      <void property="parent"> 
-       <object idref="ExactlyOneAssertion0"/> 
-      </void> 
-     </object> 
-    </void> 
-    <void method="add"> 
-     <object class="com.l7tech.policy.assertion.TrueAssertion"> 
-      <void property="parent"> 
-       <object idref="ExactlyOneAssertion0"/> 
-      </void> 
-     </object> 
-    </void> 
-    <void method="add"> 
-     <object class="com.l7tech.policy.assertion.FalseAssertion"> 
-      <void property="parent"> 
-       <object idref="ExactlyOneAssertion0"/> 
-      </void> 
-     </object> 
-    </void> 
-   </object> 
-  </void> 
- </object> 
-</java> 
+<?xml version="1.0" encoding="UTF-8"?>
+<Policy xmlns="http://www.layer7tech.com/ws/policy">
+ <ExactlyOne>
+  <All>
+   <TrueAssertion>
+   </TrueAssertion>
+   <OneOrMore>
+    <HttpBasic>
+      <Realm stringValueNull="null"/>
+    </HttpBasic>
+    <HttpClientCert>
+      <Realm stringValueNull="null"/>
+    </HttpClientCert>
+    <HttpDigest>
+      <NonceTimeout intValue="1800000"/>
+      <Realm stringValueNull="null"/>
+      <MaxNonceCount intValue="30"/>
+    </HttpDigest>
+    <WssBasic>
+    </WssBasic>
+    <WssDigest>
+    </WssDigest>
+    <All>
+    </All>
+    <ExactlyOne>
+    </ExactlyOne>
+    <OneOrMore>
+    </OneOrMore>
+    <FalseAssertion>
+    </FalseAssertion>
+    <SslAssertion>
+      <Option optionValue="Required"/>
+    </SslAssertion>
+    <RoutingAssertion>
+      <Password stringValueNull="null"/>
+      <Realm stringValueNull="null"/>
+      <ProtectedServiceUrl stringValueNull="null"/>
+      <MaxConnections intValue="100"/>
+      <Login stringValueNull="null"/>
+    </RoutingAssertion>
+    <TrueAssertion>
+    </TrueAssertion>
+    <MemberOfGroup>
+      <GroupName stringValueNull="null"/>
+      <IdentityProviderOid longValue="-1"/>
+    </MemberOfGroup>
+    <SpecificUser>
+      <UserLogin stringValueNull="null"/>
+      <IdentityProviderOid longValue="-1"/>
+    </SpecificUser>
+    <XmlResponseSecurity>
+      <Encryption booleanValue="false"/>
+    </XmlResponseSecurity>
+    <XmlRequestSecurity>
+      <Encryption booleanValue="false"/>
+    </XmlRequestSecurity>
+   </OneOrMore>
+  </All>
+  <ExactlyOne>
+   <TrueAssertion>
+   </TrueAssertion>
+   <FalseAssertion>
+   </FalseAssertion>
+  </ExactlyOne>
+  <TrueAssertion>
+  </TrueAssertion>
+  <FalseAssertion>
+  </FalseAssertion>
+ </ExactlyOne>
+</Policy>

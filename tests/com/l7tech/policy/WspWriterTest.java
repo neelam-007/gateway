@@ -51,11 +51,7 @@ public class WspWriterTest extends TestCase {
         Assertion policy = new ExactlyOneAssertion(Arrays.asList(new Assertion[] {
             new AllAssertion(Arrays.asList(new Assertion[] {
                 new TrueAssertion(),
-                new OneOrMoreAssertion(Arrays.asList(new Assertion[] {
-                    new FalseAssertion(),
-                    new TrueAssertion(),
-                    new FalseAssertion()
-                }))
+                new OneOrMoreAssertion(Arrays.asList(AllAssertions.EVERYTHING)),
             })),
             new ExactlyOneAssertion(Arrays.asList(new Assertion[] {
                 new TrueAssertion(),

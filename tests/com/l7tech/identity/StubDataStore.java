@@ -56,7 +56,7 @@ public class StubDataStore {
      * @param storePath
      */
     protected StubDataStore(String storePath)
-      throws FileNotFoundException, WSDLException, MalformedURLException {
+      throws IOException, WSDLException, MalformedURLException {
         if (!new File(storePath).exists()) {
             initializeSeedData(storePath);
         }
@@ -170,7 +170,7 @@ public class StubDataStore {
     }
 
     private void initialServices(XMLEncoder encoder, IdentityProviderConfig pc)
-      throws FileNotFoundException, WSDLException, MalformedURLException {
+      throws IOException, WSDLException, MalformedURLException {
         String path = "tests/com/l7tech/service/StockQuoteService.wsdl";
         File file = new File(path);
         Wsdl wsdl = Wsdl.newInstance(null, new FileReader(file));
@@ -253,7 +253,7 @@ public class StubDataStore {
     }
 
     private void initializeSeedData(String storePath)
-      throws FileNotFoundException, MalformedURLException, WSDLException {
+      throws IOException, MalformedURLException, WSDLException {
         XMLEncoder encoder = null;
         try {
             File target = new File(storePath);
