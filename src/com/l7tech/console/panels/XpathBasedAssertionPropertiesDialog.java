@@ -231,22 +231,22 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         String description = null;
         String title = null;
         if (xmlSecAssertion instanceof RequestWssConfidentiality) {
-            description = "Select request element to encrypt.";
+            description = "Select a request element to encrypt:";
             title = "Encrypt Request Element Properties";
         } else if (xmlSecAssertion instanceof ResponseWssConfidentiality) {
-            description = "Select response element to encrypt.";
+            description = "Select a response element to encrypt:";
             title = "Encrypt Response Element Properties";
         } else if (xmlSecAssertion instanceof RequestWssIntegrity) {
-            description = "Select request element to sign.";
+            description = "Select a request element to sign:";
             title = "Sign Request Element Properties";
         } else if (xmlSecAssertion instanceof ResponseWssIntegrity) {
-            description = "Select response element to sign.";
+            description = "Select a response element to sign:";
             title = "Sign Response Element Properties";
         } else if (xmlSecAssertion instanceof ResponseXpathAssertion) {
-            description = "Select the response path to evaluate.";
+            description = "Select the response path to evaluate:";
             title = "Evaluate Response XPath Properties";
         } else if (xmlSecAssertion instanceof RequestXpathAssertion) {
-            description = "Select the request path to evaluate.";
+            description = "Select the request path to evaluate:";
             title = "Evaluate Request XPath Properties";
         }
         descriptionLabel.setText(description);
