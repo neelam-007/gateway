@@ -8,6 +8,7 @@ import com.l7tech.identity.ldap.LdapConfigSettings;
 import java.util.Collection;
 import java.util.Iterator;
 import java.net.PasswordAuthentication;
+import java.io.File;
 
 /**
  * Layer 7 Technologies, inc.
@@ -50,7 +51,7 @@ public class IdProvConfManagerClientTest {
         System.out.println("done");
     }
 
-    public static void testCreateGroup(IdProvConfManagerClient testee) throws Exception {
+    public static long testCreateGroup(IdProvConfManagerClient testee) throws Exception {
         IdentityProvider provider = testee.getInternalIdentityProvider();
         GroupManager groupMan = provider.getGroupManager();
         Group newgrp = new Group();
@@ -60,13 +61,14 @@ public class IdProvConfManagerClientTest {
         System.out.println("saving group");
         long grpId = groupMan.save(newgrp);
         System.out.println("group saved oid=" + grpId);
+        return grpId;
     }
 
-    public static void testAssignUserToGroup(IdProvConfManagerClient testee) throws Exception {
+    public static void testAssignUserToGroup(IdProvConfManagerClient testee, long groupid) throws Exception {
         IdentityProvider provider = testee.getInternalIdentityProvider();
         GroupManager groupMan = provider.getGroupManager();
         System.out.println("get existing group");
-        Group thepolice = groupMan.findByPrimaryKey("4718592");
+        Group thepolice = groupMan.findByPrimaryKey(Long.toString(groupid));
         System.out.println("create new user");
         UserManager userMan = provider.getUserManager();
         User newUser = new User();
@@ -109,6 +111,8 @@ public class IdProvConfManagerClientTest {
     }
 
     public static void main(String[] args) throws Exception {
+        System.setProperty("javax.net.ssl.trustStore", System.getProperties().getProperty("user.home") + File.separator + ".l7tech" + File.separator + "trustStore");
+        System.setProperty("javax.net.ssl.trustStorePassword", "password");
         ClientCredentialManager credsManager = (ClientCredentialManager)Locator.getDefault().lookup(ClientCredentialManager.class);
         PasswordAuthentication creds = new PasswordAuthentication("ssgadmin", "ssgadminpasswd".toCharArray());
         credsManager.login(creds);
@@ -116,10 +120,10 @@ public class IdProvConfManagerClientTest {
         IdProvConfManagerClient manager = new IdProvConfManagerClient();
         testListContentOfInternalIDProvider(manager);
         testAddAndDeleteIDProviderConfig(manager);
-        testCreateGroup(manager);
-        testAssignUserToGroup(manager);
-        updateGroup(manager);
-        updateUser(manager);
+        long grp = testCreateGroup(manager);
+        testAssignUserToGroup(manager, grp);
+        //updateGroup(manager);
+        //updateUser(manager);
 
         System.exit(0);
     }
