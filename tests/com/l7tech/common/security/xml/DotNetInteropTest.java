@@ -11,6 +11,7 @@ import junit.framework.TestSuite;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+import java.util.List;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.security.KeyStore;
@@ -19,6 +20,7 @@ import java.security.Key;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.HashMap;
 
 /**
  * Test xml digital signature and encryption interoperability with messages
@@ -75,24 +77,65 @@ public class DotNetInteropTest extends TestCase {
         return encryptionKeys[0];
     }
 
-    public void _testDecryptMessageWithDerivedKeyToken() throws Exception {
+    public void testDecryptMessageWithDerivedKeyToken() throws Exception {
         Document derivedKeyEncryptedDoc = getDerviedKeyEncryptedRequest();
         Element header = SoapUtil.getHeaderElement(derivedKeyEncryptedDoc);
 
         Element security = SoapUtil.getSecurityElement(header);
-        Element derivedKeyToken = (Element) ((XmlUtil.findChildElementsByName(security, "http://schemas.xmlsoap.org/ws/2004/04/sc", "DerivedKeyToken")).get(0));
-        byte[] secret = {5, 2, 4, 5, 8, 7, 9, 6, 32, 4, 1, 55, 8, 7, 77, 7};
 
+        byte[] secret = {5, 2, 4, 5, 8, 7, 9, 6, 32, 4, 1, 55, 8, 7, 77, 7};
         SecureConversationKeyDeriver sckd = new SecureConversationKeyDeriver();
-        Key key = sckd.derivedKeyTokenToKey(derivedKeyToken, secret);
+
+        Key key = null;
+        Element derivedKeyToken = null;
+
+        List tokens = XmlUtil.findChildElementsByName(security, WSSC_NS, "DerivedKeyToken");
+        HashMap tokenMap = new HashMap();
+        String id = null;
+
+        for (int i = 0; i < tokens.size(); i++) {
+            derivedKeyToken= (Element) tokens.get(i);
+            key = sckd.derivedKeyTokenToKey(derivedKeyToken, secret);
+            id = derivedKeyToken.getAttributeNS(WSU_NS, "Id");
+            tokenMap.put(id, key);
+        }
 
         Element bodyEl = SoapUtil.getBody(derivedKeyEncryptedDoc);
+        Element encryptedData = (Element) (XmlUtil.findChildElementsByName(bodyEl, XMLENC_NS, "EncryptedData")).get(0);
+        Element keyInfo = (Element) (XmlUtil.findChildElementsByName(encryptedData, XMLSIG_NS, "KeyInfo")).get(0);
 
-        SoapMsgSigner.validateSignature(derivedKeyEncryptedDoc, bodyEl, key);
+        Element securityTokenRef =  (Element) (XmlUtil.findChildElementsByName(keyInfo, WSSE_NS, "SecurityTokenReference")).get(0);
+        Element ref =  (Element) (XmlUtil.findChildElementsByName(securityTokenRef, WSSE_NS, "Reference")).get(0);
+
+        id = ref.getAttributeNS(null, "URI");
+
+        // trim the first character '#' in the id String
+        Key decryptKey = (Key)tokenMap.get(id.substring(1, id.length()));
+
+        // decrypt the body first
+        XmlMangler.decryptElement(bodyEl, decryptKey, null);
+
+        Element bodyChild = XmlUtil.findFirstChildElement(bodyEl);
+        assertTrue("listProducts".equals(bodyChild.getLocalName()));
         System.out.println("Message decrypted successfully with the derived key");
+
+        // validate the signature
+        Element signature = (Element) (XmlUtil.findChildElementsByName(security, XMLSIG_NS, "Signature")).get(0);
+        keyInfo = (Element) (XmlUtil.findChildElementsByName(signature, XMLSIG_NS, "KeyInfo")).get(0);
+        securityTokenRef =  (Element) (XmlUtil.findChildElementsByName(keyInfo, WSSE_NS, "SecurityTokenReference")).get(0);
+        ref =  (Element) (XmlUtil.findChildElementsByName(securityTokenRef, WSSE_NS, "Reference")).get(0);
+        id = ref.getAttributeNS(null, "URI");
+
+        // trim the first character '#' in the id String
+        Key signedKey = (Key)tokenMap.get(id.substring(1, id.length()));
+
+        // validate the signature
+        SoapMsgSigner.validateSignature(derivedKeyEncryptedDoc, bodyEl, signedKey);
+
+        System.out.println("Signature verified successfully with the derived key");
     }
 
-    public void testDerivedKeyToken() throws Exception {
+    public void testValidateSignatureWithDerivedKeyToken() throws Exception {
         Document derivedKeySignedDoc = getDerviedKeySignedRequest();
         Element header = SoapUtil.getHeaderElement(derivedKeySignedDoc);
 
@@ -163,4 +206,10 @@ public class DotNetInteropTest extends TestCase {
     }
 
     public static final byte[] DECRYPTED_KEY = {-54, 33,-19, 87, -46, 31, -86, 44, -10, 3, -37, 111, 125, -94, -64, 24};
+    public static final String WSSE_NS = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd";
+    public static final String WSU_NS = "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd";
+    public static final String WSSC_NS = "http://schemas.xmlsoap.org/ws/2004/04/sc";
+    public static final String XMLSIG_NS = "http://www.w3.org/2000/09/xmldsig#";
+    public static final String XMLENC_NS = "http://www.w3.org/2001/04/xmlenc#";
+
 }
