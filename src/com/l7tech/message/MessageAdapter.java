@@ -262,7 +262,6 @@ public abstract class MessageAdapter implements Message {
     protected abstract byte[] getUpToDateFirstPartBodyBytes() throws IOException;
 
     public PartInfo getFirstPart() throws IOException {
-        ensureFirstPartIsUpToDate();
         return getMultipartMessage().getFirstPart();
     }
 }
