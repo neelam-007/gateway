@@ -12,11 +12,7 @@ import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.xmlenc.AesKey;
-import com.l7tech.xmlenc.Session;
-import com.l7tech.xmlenc.SessionManager;
-import com.l7tech.xmlenc.SessionNotFoundException;
-import com.l7tech.xmlenc.XmlMangler;
+import com.l7tech.xmlenc.*;
 import com.l7tech.xmlsig.InvalidSignatureException;
 import com.l7tech.xmlsig.SecureConversationTokenHandler;
 import com.l7tech.xmlsig.SignatureNotFoundException;
@@ -69,6 +65,11 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             response.setAuthenticationMissing(true);
             response.setPolicyViolated(true);
             throw e;
+        } catch (SessionInvalidException e) {
+            // when the session is no longer valid we must inform the client proxy so that he generates another session
+            HttpTransportMetadata metadata = (HttpTransportMetadata)response.getTransportMetadata();
+            metadata.getResponse().addHeader(XmlRequestSecurity.SESSION_STATUS_HTTP_HEADER, "invalid");
+            return AssertionStatus.FALSIFIED;
         }
 
         // check validity of the session
@@ -173,7 +174,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
         return true;
     }
 
-    private Session getXmlSecSession(Document soapmsg) throws PolicyAssertionException {
+    private Session getXmlSecSession(Document soapmsg) throws PolicyAssertionException, SessionInvalidException {
         // get the session id from the security context
         long sessionID = 0;
         try {
@@ -191,11 +192,11 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
         } catch (SessionNotFoundException e) {
             String msg = "Exception finding session with id=" + sessionID + ". session could reside on other cluster member or is no longer valid.";
             logger.log(Level.SEVERE, msg, e);
-            throw new PolicyAssertionException(msg, e);
+            throw new SessionInvalidException(msg, e);
         } catch (NumberFormatException e) {
             String msg = "Session id is not long value : " + sessionID;
             logger.log(Level.SEVERE, msg, e);
-            throw new PolicyAssertionException(msg, e);
+            throw new SessionInvalidException(msg, e);
         }
 
         return xmlsession;
