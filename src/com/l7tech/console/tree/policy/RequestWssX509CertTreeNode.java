@@ -17,7 +17,7 @@ public class RequestWssX509CertTreeNode extends LeafAssertionTreeNode {
     }
 
     public String getName() {
-        return "WSS Sign SOAP request";
+        return "WSS Sign SOAP Request";
     }
 
     protected String iconResource(boolean open) {
