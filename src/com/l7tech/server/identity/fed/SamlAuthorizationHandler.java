@@ -51,16 +51,16 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
             final X509Certificate signerCertificate = assertion.getIssuerCertificate();
             String samlSignerDn = signerCertificate.getSubjectDN().getName();
 
-            TrustedCert issuerTrust = null;
+            TrustedCert samlSignerTrust = null;
             try {
-                issuerTrust = trustedCertManager.getCachedCertBySubjectDn(samlSignerDn, MAX_CACHE_AGE);
+                samlSignerTrust = trustedCertManager.getCachedCertBySubjectDn(samlSignerDn, MAX_CACHE_AGE);
                 final String untrusted = "Subject certificate '" + subjectDn + "' was signed by '" +
                                          samlSignerDn + "', which is not trusted";
-                if (issuerTrust == null) {
+                if (samlSignerTrust == null) {
                     throw new BadCredentialsException(untrusted);
-                } else if (!issuerTrust.isTrustedForSigningSamlTokens()) {
+                } else if (!samlSignerTrust.isTrustedForSigningSamlTokens()) {
                     throw new BadCredentialsException(untrusted + " for signing SAML tokens");
-                } else if (!certOidSet.contains(new Long(issuerTrust.getOid()))) {
+                } else if (!certOidSet.contains(new Long(samlSignerTrust.getOid()))) {
                     throw new BadCredentialsException(untrusted + " for this Federated Identity Provider");
                 }
             } catch ( FindException e ) {
@@ -71,16 +71,16 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
                 logger.log( Level.INFO, e.getMessage(), e );
             }
 
-            X509Certificate issuerCert = null;
+            X509Certificate samlSignerCert = null;
             try {
-                issuerCert = issuerTrust.getCertificate();
-                subjectCertificate.verify(issuerCert.getPublicKey());
+                samlSignerCert = samlSignerTrust.getCertificate();
+                subjectCertificate.verify(samlSignerCert.getPublicKey());
             } catch ( CertificateException e ) {
                 throw new AuthenticationException("Couldn't decode issuer certificate '" + samlSignerDn + "'", e);
             } catch ( IOException e ) {
                 throw new AuthenticationException("Couldn't decode issuer certificate '" + samlSignerDn + "'", e);
             } catch ( GeneralSecurityException e ) {
-                throw new AuthenticationException("Couldn't verify subject certificate '" + samlSignerDn + "'", e);
+                throw new AuthenticationException("Couldn't verify subject certificate '" + subjectDn + "': " + e.getMessage(), e);
             }
 
             final String niFormat = assertion.getNameIdentifierFormat();
