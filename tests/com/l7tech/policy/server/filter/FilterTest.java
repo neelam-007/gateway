@@ -50,19 +50,21 @@ public class FilterTest extends TestCase {
     }
 
     public void testSimpleFilter() throws Exception {
+        long providerid = 0;
         Assertion pol = new AllAssertion(Arrays.asList(new Assertion[] {
             new SslAssertion(),
             new HttpBasic(),
             new ExactlyOneAssertion(Arrays.asList(new Assertion[] {
-                new SpecificUser(0, "alice"),
-                new SpecificUser(0, "bob"),
-                new MemberOfGroup(0, "sales")
+                new SpecificUser(providerid, "alice"),
+                new SpecificUser(providerid, "bob"),
+                new MemberOfGroup(providerid, "sales")
             })),
             new RoutingAssertion()
         }));
 
         User alice = new User();
         alice.setLogin("alice");
+        alice.setProviderId(providerid);
 
         Assertion filtered = FilterManager.getInstance().applyAllFilters(alice, pol);
         //log.info("Policy filtered for alice: " + WspWriter.getPolicyXml(filtered));
@@ -76,19 +78,20 @@ public class FilterTest extends TestCase {
     }
 
     public void testUserSpecificFilter() throws Exception {
+        long providerid = 0;
         //URL policyUrl = getClass().getClassLoader().getResource(POLICY_USERSPECIFIC);
         //Assertion policy = WspReader.parse(policyUrl.openStream());
         Assertion policy = new AllAssertion(Arrays.asList(new Assertion[] {
             new ExactlyOneAssertion(Arrays.asList(new Assertion[] {
                 new AllAssertion(Arrays.asList(new Assertion[] {
                     new HttpDigest(),
-                    new SpecificUser(0, "bob"),
+                    new SpecificUser(providerid, "bob"),
                     new RoutingAssertion()
                 })),
                 new AllAssertion(Arrays.asList(new Assertion[] {
                     new SslAssertion(),
                     new HttpClientCert(),
-                    new SpecificUser(0, "alice"),
+                    new SpecificUser(providerid, "alice"),
                     new RoutingAssertion()
                 })),
             })),
@@ -102,14 +105,14 @@ public class FilterTest extends TestCase {
         assertTrue("Filtered policy for invalid user is null", forAnon == null);
 
         User alice = new User();
-        alice.setProviderId(0);
+        alice.setProviderId(providerid);
         alice.setLogin("alice");
         Assertion forAlice = FilterManager.getInstance().applyAllFilters(alice, policy.getCopy());
         log.info("Policy forAlice = " + forAlice);
         assertTrue("Filtered policy for valid user alice is not null", forAlice != null);
 
         User bob = new User();
-        bob.setProviderId(0);
+        bob.setProviderId(providerid);
         bob.setLogin("bob");
         Assertion forBob = FilterManager.getInstance().applyAllFilters(bob, policy.getCopy());
         log.info("Policy forBob = " + forBob);
