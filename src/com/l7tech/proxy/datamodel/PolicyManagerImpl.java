@@ -23,6 +23,7 @@ import org.apache.log4j.Category;
 import javax.net.ssl.SSLHandshakeException;
 import java.io.IOException;
 import java.net.URL;
+import java.net.MalformedURLException;
 
 /**
  * The ClientProxy's default PolicyManager.  Loads policies from the SSG on-demand
@@ -87,11 +88,18 @@ public class PolicyManagerImpl implements PolicyManager {
                 getMethod.releaseConnection();
                 // was a new url provided ?
                 Header newURLHeader = getMethod.getResponseHeader("PolicyUrl");
-                String newUrl = policyUrl.toString();
+                URL newUrl = policyUrl;
                 if (newURLHeader != null) {
-                    newUrl = newURLHeader.getValue();
+                    try {
+                        newUrl = new URL(newURLHeader.getValue());
+                    } catch (MalformedURLException e) {
+                        throw new ConfigurationException("Policy server sent us an invalid policy URL: " + newURLHeader.getValue());
+                    }
                 }
                 log.info("Policy download unauthorized, trying again with credentials at " + newUrl);
+                if (!newUrl.getProtocol().equalsIgnoreCase("https"))
+                    throw new ConfigurationException("Policy server sent us a 401 status with a non-https policy URL");
+                URL safeUrl = new URL("https", policyUrl.getHost(), newUrl.getPort(), newUrl.getPath());
 
                 // Make sure we actually have the credentials
                 Ssg ssg = request.getSsg();
@@ -105,7 +113,7 @@ public class PolicyManagerImpl implements PolicyManager {
                     String username = ssg.getUsername();
                     char[] password = ssg.password();
                     client.getState().setCredentials(null, null, new UsernamePasswordCredentials(username, new String(password)));
-                    getMethod = new GetMethod(newUrl);
+                    getMethod = new GetMethod(safeUrl.toString());
                     getMethod.setDoAuthentication(true);
                     try {
                         status = client.executeMethod(getMethod);
