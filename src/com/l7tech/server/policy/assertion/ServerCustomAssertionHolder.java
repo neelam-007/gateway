@@ -92,10 +92,10 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
             });
             return AssertionStatus.NONE;
         } catch (PrivilegedActionException e) {
-            if (ExceptionUtils.causedBy(e, FailedLoginException.class)) {
+            if (ExceptionUtils.causedBy(e.getException(), FailedLoginException.class)) {
                 logger.log(Level.WARNING, "Authentication (login)", e);
                 return AssertionStatus.AUTH_FAILED;
-            } else if (ExceptionUtils.causedBy(e, GeneralSecurityException.class)) {
+            } else if (ExceptionUtils.causedBy(e.getException(), GeneralSecurityException.class)) {
                 logger.log(Level.WARNING, "Authorization (access control) ", e);
                 return AssertionStatus.UNAUTHORIZED;
             }
