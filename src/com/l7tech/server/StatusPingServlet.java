@@ -56,8 +56,8 @@ public class StatusPingServlet extends HttpServlet {
         out.println("<status>");
         for (Iterator i = statuses.iterator(); i.hasNext();) {
             ClusterNodeInfo nodeInfo = (ClusterNodeInfo)i.next();
-            out.println("\t\t<name>" + nodeInfo.getName() + "</name>");
             out.println("\t<server>");
+            out.println("\t\t<name>" + nodeInfo.getName() + "</name>");
             out.println("\t\t<id>" + nodeInfo.getMac() + "</id>");
             out.println("\t\t<address>" + nodeInfo.getAddress() + "</address>");
             out.println("\t\t<uptime>" + humanReadableTime(nodeInfo.getUptime()) + "</uptime>");
