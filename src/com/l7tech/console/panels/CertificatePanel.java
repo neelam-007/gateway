@@ -2,15 +2,12 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.TableUtil;
 import com.l7tech.common.util.Locator;
-import com.l7tech.console.util.Preferences;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.ComponentRegistry;
-import com.l7tech.identity.User;
-import com.l7tech.identity.UserManager;
+import com.l7tech.console.util.Preferences;
+import com.l7tech.identity.UserBean;
+import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.identity.UserManagerClient;
-import com.l7tech.identity.cert.ClientCertManager;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
@@ -196,7 +193,7 @@ class CertificatePanel extends JPanel {
 
                         // revoke the user cert
                         try {
-                            ClientCertManager man = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
+                            final ClientCertManager man = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
                             man.revokeUserCert(user);
                         } catch (UpdateException e) {
                             log.log(Level.WARNING, "ERROR Revoking certificate", e);
@@ -348,7 +345,7 @@ class CertificatePanel extends JPanel {
     private JButton revokeCertButton;
 
     /** The agent whose certificate we are inspecting. */
-    private User user;
+    private UserBean user;
 
 }
 

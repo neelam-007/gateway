@@ -69,9 +69,7 @@ public class Actions {
         // Delete the  node and update the tree
         try {
             EntityHeader eh = node.getEntityHeader();
-            User u = new User();
-            u.setOid(eh.getOid());
-            Registry.getDefault().getInternalUserManager().delete(u);
+            Registry.getDefault().getInternalUserManager().delete(eh.getStrId());
             return true;
         } catch (CannotDeleteAdminAccountException e) {
             log.log(Level.SEVERE, "Error deleting user", e);
@@ -121,9 +119,7 @@ public class Actions {
         // Delete the  node and update the tree
         try {
             EntityHeader eh = node.getEntityHeader();
-            Group g = new Group();
-            g.setOid(eh.getOid());
-            Registry.getDefault().getInternalGroupManager().delete(g);
+            Registry.getDefault().getInternalGroupManager().delete(eh.getStrId());
             return true;
         } catch (Exception e) {
             log.log(Level.SEVERE, "Error deleting group", e);
