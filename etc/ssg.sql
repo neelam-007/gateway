@@ -97,7 +97,8 @@ DROP TABLE IF EXISTS internal_user_group;
 CREATE TABLE internal_user_group (
   internal_user bigint(20) NOT NULL default '0',
   internal_group bigint(20) NOT NULL default '0',
-  PRIMARY UNIQUE KEY  (internal_user,internal_group)
+  PRIMARY KEY  (internal_user,internal_group),
+  UNIQUE KEY  (internal_user,internal_group)
 ) TYPE=InnoDB;
 
 --
