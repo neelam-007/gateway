@@ -11,6 +11,7 @@ import com.l7tech.remote.jini.Services;
 import com.l7tech.remote.jini.export.RemoteService;
 import com.l7tech.objectmodel.HibernatePersistenceManager;
 import com.l7tech.logging.LogManager;
+import com.l7tech.service.ServiceCache;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -34,10 +35,11 @@ public class BootServlet extends HttpServlet {
     public void init( ServletConfig config ) throws ServletException {
         ServerConfig.getInstance();
         super.init( config );
-        // note fla, more exception catching => important to diagnose why server does not boot properly
         try {
             initializeAdminServices();
             HibernatePersistenceManager.initialize();
+            // this will indirectly initialize the cache
+            ServiceCache.initialize();
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "SQL ERROR IN BOOT SERVLET", e);
             throw new ServletException(e);
