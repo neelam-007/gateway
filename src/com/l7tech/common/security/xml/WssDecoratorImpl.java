@@ -89,8 +89,9 @@ public class WssDecoratorImpl implements WssDecorator {
             signList.add(0, timestamp);
         }
 
-        if (decorationRequirements.getUsernameTokenCredentials() != null && decorationRequirements.getUsernameTokenCredentials().getFormat() == CredentialFormat.CLEARTEXT) {
-            Element usernameToken = createUsernameToken(securityHeader, decorationRequirements.getUsernameTokenCredentials());
+        if (decorationRequirements.getUsernameTokenCredentials() != null &&
+            decorationRequirements.getUsernameTokenCredentials().getFormat() == CredentialFormat.CLEARTEXT) {
+            createUsernameToken(securityHeader, decorationRequirements.getUsernameTokenCredentials());
         }
 
         Element bst = null;
@@ -152,7 +153,8 @@ public class WssDecoratorImpl implements WssDecorator {
         else if (senderPrivateKey instanceof DSAPrivateKey)
             signaturemethod = SignatureMethod.DSA;
         else {
-            throw new CausedDecoratorException("Private Key type not supported " + senderPrivateKey.getClass().getName());
+            throw new CausedDecoratorException("Private Key type not supported " +
+                                               senderPrivateKey.getClass().getName());
         }
 
         // Create signature template and populate with appropriate transforms. Reference is to SOAP Envelope
