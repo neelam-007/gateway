@@ -4,6 +4,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Node;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.util.XmlUtil;
 
 import java.util.Collection;
 import java.util.ArrayList;
@@ -54,5 +55,15 @@ public abstract class ExternalReference {
             }
         }
         return (ExternalReference[])references.toArray(new ExternalReference[0]);
+    }
+
+    static String getParamFromEl(Element parent, String param) {
+        NodeList nodeList = parent.getElementsByTagName(param);
+        for (int i = 0; i < nodeList.getLength(); i++) {
+            Element node = (Element)nodeList.item(i);
+            String val = XmlUtil.getTextValue(node);
+            if (val != null && val.length() > 0) return val;
+        }
+        return null;
     }
 }
