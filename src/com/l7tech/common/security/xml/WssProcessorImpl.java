@@ -12,6 +12,7 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -22,10 +23,7 @@ import javax.crypto.Cipher;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.Key;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.security.*;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.text.DateFormat;
@@ -156,8 +154,57 @@ public class WssProcessorImpl implements WssProcessor {
         return produceResult(cntx);
     }
 
-    private void processUsernameToken(Element usernameTokenElement, ProcessingStatusHolder cntx) throws ProcessorException {
-        // todo
+    private void processUsernameToken(final Element usernameTokenElement, ProcessingStatusHolder cntx)
+                                        throws ProcessorException, InvalidDocumentFormatException {
+        String applicableWsseNS = usernameTokenElement.getNamespaceURI();
+        // Get the Username child element
+        Element usernameEl = XmlUtil.findOnlyOneChildElementByName(usernameTokenElement,
+                                                                   applicableWsseNS,
+                                                                   SoapUtil.UNTOK_USERNAME_EL_NAME);
+        if (usernameEl == null) {
+            throw new InvalidDocumentFormatException("The usernametoken element does not contain a username element");
+        }
+        String username = XmlUtil.getTextValue(usernameEl).trim();
+        if (username.length() < 1) {
+            throw new InvalidDocumentFormatException("The usernametoken has an empty username element");
+        }
+        // Get the password element
+        Element passwdEl = XmlUtil.findOnlyOneChildElementByName(usernameTokenElement,
+                                                                 applicableWsseNS,
+                                                                 SoapUtil.UNTOK_PASSWORD_EL_NAME);
+        if (passwdEl == null) {
+            throw new InvalidDocumentFormatException("The usernametoken element does not contain a password element");
+        }
+        String passwd = XmlUtil.getTextValue(passwdEl).trim();
+        if (passwd.length() < 1) {
+            throw new InvalidDocumentFormatException("The usernametoken has an empty password element");
+        }
+        // Verify the password type to be supported
+        String passwdType = passwdEl.getAttribute(SoapUtil.UNTOK_PSSWD_TYPE_ATTR_NAME).trim();
+        if (passwdType.length() > 0) {
+            if (!passwdType.endsWith("PasswordText")) {
+                throw new ProcessorException("This username token password type is not supported: " + passwdType);
+            }
+        }
+        // Remember this as a security token
+        final LoginCredentials creds = new LoginCredentials(username, passwd.getBytes());
+        WssProcessor.SecurityToken rememberedSecToken = new WssProcessor.SecurityToken() {
+            public Object asObject() {
+                return creds;
+            }
+            public Element asElement() {
+                return usernameTokenElement;
+            }
+
+            public String asXmlString() {
+                try {
+                    return XmlUtil.elementToString(usernameTokenElement);
+                } catch (IOException e) {
+                    return e.getMessage();
+                }
+            }
+        };
+        cntx.securityTokens.add(rememberedSecToken);
     }
 
     private void processEncryptedKey(Element encryptedKeyElement,
