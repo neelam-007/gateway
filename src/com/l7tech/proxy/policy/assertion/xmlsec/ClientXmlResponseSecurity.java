@@ -148,6 +148,7 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
         } catch (NoSuchProviderException e) {
             throw new PolicyAssertionException("VM is misconfigured", e); // can't happen
         }
+        log.info("signature of response message verified");
 
         // must we also decrypt the body?
         if (data.isEncryption()) {
@@ -170,7 +171,7 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
             } catch (XMLSecurityElementNotFoundException e) {
                 throw new PolicyAssertionException("failure decrypting document", e);
             }
-            log.info("message decrypted");
+            log.info("response message decrypted");
         }
 
         return AssertionStatus.NONE;
