@@ -1,7 +1,7 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.mime.ContentTypeHeader;
-import com.l7tech.common.mime.MultipartMessage;
+import com.l7tech.common.mime.MimeBody;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
@@ -14,37 +14,37 @@ import java.io.InputStream;
  * Base class for SSB pending requests and SSB responses from the Gateway.
  */
 public class ClientXmlMessage {
-    private final MultipartMessage multipartMessage;
+    private final MimeBody mimeBody;
     private final Document originalDocument;
     private final HttpHeaders headers;
     private final boolean isSoapMessage;
 
-    private boolean firstPartBodyMatchesDecoratedDocument = false; // if false, first part of multipartMessage might not be in sync with decorated document
+    private boolean firstPartBodyMatchesDecoratedDocument = false; // if false, first part of mimeBodyot be in sync with decorated document
 
     /**
      * Create a new ClientXmlMessage.
      *
-     * @param multipartMessage   MultipartMessage instance that is managing the InputStream, or null.
-     *                           If no MultipartMessage is provided, one will be made up by serializing the document
+     * @param mimeBody   MimeBody instance that is managing the InputStream, or null.
+     *                           If no MimeBody is provided, one will be made up by serializing the document
      *                           and treating it as a single-part message of type text/xml.
      * @param originalDocument   The XML document in the message.  Must not be null.
      * @param headers            HTTP headers for logging purposes, or null if there weren't any.
      * @throws IOException       if originalDocument needs to be serialized, but cannot be, due to some
      *                           canonicalizer problem (relative namespaces, maybe)
      */
-    protected ClientXmlMessage(MultipartMessage multipartMessage, Document originalDocument, HttpHeaders headers)
+    protected ClientXmlMessage(MimeBody mimeBody, Document originalDocument, HttpHeaders headers)
             throws IOException
     {
         if (originalDocument == null) throw new NullPointerException("soapEnvelope is null");
-        if (multipartMessage == null) {
+        if (mimeBody == null) {
             try {
-                multipartMessage = new MultipartMessage(XmlUtil.nodeToString(originalDocument).getBytes(),
+                mimeBody = new MimeBody(XmlUtil.nodeToString(originalDocument).getBytes(),
                                                         ContentTypeHeader.XML_DEFAULT);
             } catch (NoSuchPartException e) {
                 throw new RuntimeException(e); // can't happen with single-part XML_DEFAULT
             }
         }
-        this.multipartMessage = multipartMessage;
+        this.mimeBody = mimeBody;
         this.originalDocument = originalDocument;
         this.headers = headers;
         this.isSoapMessage = originalDocument == null ? false : SoapUtil.isSoapMessage(originalDocument);
@@ -89,18 +89,18 @@ public class ClientXmlMessage {
             return;
 
         byte[] xmlBytes = XmlUtil.nodeToString(getDecoratedDocument()).getBytes("UTF-8"); // agree with XML_DEFAULT about encoding
-        multipartMessage.getFirstPart().setBodyBytes(xmlBytes);
-        multipartMessage.getFirstPart().setContentType(ContentTypeHeader.XML_DEFAULT);
+        mimeBody.getFirstPart().setBodyBytes(xmlBytes);
+        mimeBody.getFirstPart().setContentType(ContentTypeHeader.XML_DEFAULT);
         firstPartBodyMatchesDecoratedDocument = true;
     }
 
     public boolean isMultipart() {
-        return multipartMessage.isMultipart();
+        return mimeBody.isMultipart();
     }
 
     /** @return the outer content type of the request, or a default.  never null. */
     public ContentTypeHeader getOuterContentType() {
-        return multipartMessage.getOuterContentType();
+        return mimeBody.getOuterContentType();
     }
 
     /**
@@ -113,7 +113,7 @@ public class ClientXmlMessage {
         try {
             ensureFirstPartBodyMatchesDecoratedDocument();
             long len = 0;
-            len = multipartMessage.getEntireMessageBodyLength();
+            len = mimeBody.getEntireMessageBodyLength();
             if (len < 0)
                 throw new IllegalStateException("At least one multipart part length could not be determinated"); // can't happen
             return len;
@@ -131,7 +131,7 @@ public class ClientXmlMessage {
     public InputStream getEntireMessageBody() throws IOException {
         try {
             ensureFirstPartBodyMatchesDecoratedDocument();
-            return multipartMessage.getEntireMessageBodyAsInputStream(false);
+            return mimeBody.getEntireMessageBodyAsInputStream(false);
         } catch (NoSuchPartException e) {
             throw new IllegalStateException("At least one multipart part's body has been lost"); // can't happen
         }
@@ -149,6 +149,6 @@ public class ClientXmlMessage {
      * Close the request and run the cleanup runnables.
      */
     public void close() {
-        multipartMessage.close();
+        mimeBody.close();
     }
 }

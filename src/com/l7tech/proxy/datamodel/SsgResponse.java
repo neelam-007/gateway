@@ -11,7 +11,7 @@ import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.mime.MultipartMessage;
+import com.l7tech.common.mime.MimeBody;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import org.apache.commons.httpclient.Header;
@@ -48,7 +48,7 @@ public class SsgResponse extends ClientXmlMessage {
     /**
      * Create a new SsgResponse object with the specified values.
      *
-     * @param multipartMessage      a MultipartMessage managing any extra multipart parts that may have accompanied this response.
+     * @param mimeBody      a MimeBody managing any extra multipart parts that may have accompanied this response.
      *                              May not be null.
      * @param wssProcessedResponse  the response document, already processed by the WssProcessor if applicable.  May not be null.
      * @param wssProcessorResult    the result of running the response through the WssProcessor, or null if this wasn't done.
@@ -57,12 +57,12 @@ public class SsgResponse extends ClientXmlMessage {
      * @throws IOException          if originalDocument needs to be serialized, but cannot be, due to some
      *                              canonicalizer problem (relative namespaces, maybe)
      */
-    public SsgResponse(MultipartMessage multipartMessage, Document wssProcessedResponse, ProcessorResult wssProcessorResult,
+    public SsgResponse(MimeBody mimeBody, Document wssProcessedResponse, ProcessorResult wssProcessorResult,
                        int httpStatus, HttpHeaders headers)
             throws IOException
     {
-        super(multipartMessage, wssProcessedResponse, headers);
-        if (multipartMessage == null) throw new NullPointerException("multipartMessage must be non-null");
+        super(mimeBody, wssProcessedResponse, headers);
+        if (mimeBody == null) throw new NullPointerException("mimeBody non-null");
         if (wssProcessedResponse == null) throw new NullPointerException("wssProcessedResponse must be non-null");
         this.httpStatus = httpStatus;
         this.processorResult = wssProcessorResult;
@@ -154,8 +154,8 @@ public class SsgResponse extends ClientXmlMessage {
             HttpHeaders headers = new HttpHeaders(new Header[0]);
             final Document soapEnvelope = XmlUtil.stringToDocument(responseString);
             final byte[] xmlBytes = XmlUtil.nodeToString(soapEnvelope).getBytes();
-            final MultipartMessage multipartMessage = new MultipartMessage(xmlBytes, ContentTypeHeader.XML_DEFAULT);
-            return new SsgResponse(multipartMessage,
+            final MimeBody mimeBody = new MimeBody(xmlBytes, ContentTypeHeader.XML_DEFAULT);
+            return new SsgResponse(mimeBody,
                                    soapEnvelope, null, 500, headers);
         } catch (IOException e) {
             throw new RuntimeException(e); // can't happen

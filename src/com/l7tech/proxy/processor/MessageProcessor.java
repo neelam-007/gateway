@@ -630,11 +630,11 @@ public class MessageProcessor {
 
             InputStream responseBodyAsStream = postMethod.getResponseBodyAsStream();
             //responseBodyAsStream = new TeeInputStream(responseBodyAsStream, System.err);
-            final MultipartMessage multipartMessage = new MultipartMessage(Managers.createStashManager(),
+            final MimeBody mimeBody = new MimeBody(Managers.createStashManager(),
                                                                            outerContentType,
                                                                            responseBodyAsStream);
 
-            PartInfo firstPart = multipartMessage.getFirstPart();
+            PartInfo firstPart = mimeBody.getFirstPart();
             ContentTypeHeader firstPartContentType = firstPart.getContentType();
             if (!firstPartContentType.isXml())
                 throw new IOException("Multipart response from Gateway contained a non-XML first part of type " + firstPartContentType.getFullValue());
@@ -645,18 +645,18 @@ public class MessageProcessor {
 
             if (LogFlags.logResponse) {
                 if (LogFlags.reformatLoggedXml) {
-                    String logStr = multipartMessage.getOuterContentType().toString() + "\r\n" +
+                    String logStr = mimeBody.getOuterContentType().toString() + "\r\n" +
                             XmlUtil.nodeToFormattedString(responseDocument);
                     log.info("Got response from Gateway (reformatted):\n" + logStr);
                 } else {
-                    if (LogFlags.logAttachments && multipartMessage.isMultipart()) {
+                    if (LogFlags.logAttachments && mimeBody.isMultipart()) {
                         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        InputStream bodyStream = multipartMessage.getEntireMessageBodyAsInputStream(false);
+                        InputStream bodyStream = mimeBody.getEntireMessageBodyAsInputStream(false);
                         HexUtils.copyStream(bodyStream, baos);
                         log.info("Got response from Gateway (unformatted, including attachments):\n" +
-                                 baos.toString(multipartMessage.getOuterContentType().getEncoding()));
+                                 baos.toString(mimeBody.getOuterContentType().getEncoding()));
                     } else {
-                        String logStr = multipartMessage.getOuterContentType().toString() + "\r\n" +
+                        String logStr = mimeBody.getOuterContentType().toString() + "\r\n" +
                                 XmlUtil.nodeToString(responseDocument);
                         log.info("Got response from Gateway (unformatted):\n" + logStr);
                     }
@@ -702,7 +702,7 @@ public class MessageProcessor {
                 processorResult = null;
             }
 
-            response = new SsgResponse(multipartMessage, responseDocument, processorResult, status, headers);
+            response = new SsgResponse(mimeBody, responseDocument, processorResult, status, headers);
             if (status == 401 || status == 402) {
                 req.setLastErrorResponse(response);
                 Header authHeader = postMethod.getResponseHeader("WWW-Authenticate");

@@ -27,11 +27,11 @@ import java.util.logging.Logger;
  * metadata and an InputStream.  The first PartInfo can be completely changed, but subsequent PartInfos are read-only.
  * <p>
  * None of the methods in this class are guaranteed to be reentrant.  Care should be taken when providing a custom
- * InputStream implementation not to call MultipartMessage methods from inside it, when it is itself being called
- * from MultipartMessage.
+ * InputStream implementation not to call MimeBody methods from inside it, when it is itself being called
+ * from MimeBody.
  */
-public class MultipartMessage {
-    private static final Logger logger = Logger.getLogger(MultipartMessage.class.getName());
+public class MimeBody {
+    private static final Logger logger = Logger.getLogger(MimeBody.class.getName());
     private static final int BLOCKSIZE = 4096;
 
     private final PushbackInputStream mainInputStream; // always pointed at current part's body, or just past end of message
@@ -52,15 +52,15 @@ public class MultipartMessage {
     private Exception errorCondition = null;  // If non-null, the specified error condition will be reported by public methods
 
     /**
-     * Create a new MultipartMessage instance that will read from the specified mainInputStream, treating the content
+     * Create a new MimeBody instance that will read from the specified mainInputStream, treating the content
      * as the specified outerContentType.
      * <p>
-     * When you have finished with a MultipartMessage, call {@link #close} to free any resources being used, including
+     * When you have finished with a MimeBody, call {@link #close} to free any resources being used, including
      * the StashManager. 
      *
      * @param stashManager the StashManager to use.  Must not be null.  See {@link ByteArrayStashManager} for an example.
-     *                     If a MultipartMessage is succesfully created, it takes ownership of the stashManager.
-     *                     {@link #close} to free resources used by this MultipartMessage
+     *                     If a MimeBody is succesfully created, it takes ownership of the stashManager.
+     *                     {@link #close} to free resources used by this MimeBody
      * @param outerContentType   a ContentTypeHeader describing the bytes produced by mainInputStream.
      *                           May be any single-part type, and
      *                           may be multipart/related if the message body is appropriately formatted (including
@@ -68,11 +68,11 @@ public class MultipartMessage {
      *                           Use {@link ContentTypeHeader#OCTET_STREAM_DEFAULT} if you have absolutely no clue.
      * @param mainInputStream  the primary InputStream.  May not be null.  Must be positioned to the first byte
      *                         of the body content, regardless of whether or not the body is multipart.
-     *                         If a MultipartMessage is successfully created, it takes ownership of the mainInputStream.
+     *                         If a MimeBody is successfully created, it takes ownership of the mainInputStream.
      * @throws NoSuchPartException if this message is multpart/related but does not have any parts
      * @throws IOException if the mainInputStream cannot be read or a multipart message is not in valid MIME format
      */
-    public MultipartMessage(StashManager stashManager,
+    public MimeBody(StashManager stashManager,
                              ContentTypeHeader outerContentType,
                              InputStream mainInputStream)
             throws IOException, NoSuchPartException
@@ -115,7 +115,7 @@ public class MultipartMessage {
                     if (stashedStream != null)
                         return stashedStream;
 
-                    InputStream is = MultipartMessage.this.mainInputStream;
+                    InputStream is = MimeBody.this.mainInputStream;
                     moreParts = false;
                     onBodyRead();
 
@@ -141,7 +141,7 @@ public class MultipartMessage {
     }
 
     /**
-     * Create a MultipartMessage out of the specified byte array interpreted as the specified outerContentType.
+     * Create a MimeBody out of the specified byte array interpreted as the specified outerContentType.
      * This will always create a new ByteArrayStashManager.
      *
      * @param bytes  bytes of the message body.  Must not be null.
@@ -152,7 +152,7 @@ public class MultipartMessage {
      * @throws NoSuchPartException if this message is multpart/related but does not have any parts
      * @throws IOException if the mainInputStream cannot be read, or a multipart message is not in valid MIME format
      */
-    public MultipartMessage(byte[] bytes, ContentTypeHeader outerContentType) throws IOException, NoSuchPartException {
+    public MimeBody(byte[] bytes, ContentTypeHeader outerContentType) throws IOException, NoSuchPartException {
         this(new ByteArrayStashManager(),
              outerContentType,
              new ByteArrayInputStream(bytes));
@@ -220,14 +220,14 @@ public class MultipartMessage {
     }
 
     /**
-     * Obtain an iterator that can be used to lazily iterate some or all parts in this MultipartMessage.
+     * Obtain an iterator that can be used to lazily iterate some or all parts in this MimeBody.
      * The iterator can be abandoned at any time, in which case any still-unread parts will be left in the main InputStream
-     * (as long as they hadn't already needed to be read due to other method calls on MultipartMessage or PartInfo).
+     * (as long as they hadn't already needed to be read due to other method calls on MimeBody or PartInfo).
      * <p>
      * Since this iterator is roughly equivalent to just calling {@link #getPart(int)}
-     * while {@link #isMorePartsPossible()}, it is safe to call other MultipartMessage and {@link PartInfo} methods
+     * while {@link #isMorePartsPossible()}, it is safe to call other MimeBody and {@link PartInfo} methods
      * while iterating.  The usual caveats regarding PartInfo methods apply though: specifically, it is not safe to
-     * call any MultipartMessage or PartInfo methods whatsoever if any destroyAsRead InputStreams are open
+     * call any MimeBody or PartInfo methods whatsoever if any destroyAsRead InputStreams are open
      * on a PartInfo.
      * <p>
      * Note that, differing from {@link java.util.Iterator}, this PartIterator might throw NoSuchPartException
@@ -294,7 +294,7 @@ public class MultipartMessage {
      * <p>
      * If any parts have already been destructively read, this method will throw immediately.
      * <p>
-     * If destroyAsRead is true, as-yet unexamined Parts in this MultipartMessage will no longer be available after
+     * If destroyAsRead is true, as-yet unexamined Parts in this MimeBody will no longer be available after
      * this call.  Parts will be read directly from the source stream where possible and will not be stashed;
      * in fact, Parts whose headers have not yet been parsed will never become available.
      * <p>
@@ -512,7 +512,7 @@ public class MultipartMessage {
      * When called, the main input stream must be positioned at the first byte of the body of the current part.
      *
      * @param ordinal  the ordinal of the part to position before.
-     * @throws NoSuchPartException if there turn out to be fewer than (ordinal + 1) parts in this MultipartMessage.
+     * @throws NoSuchPartException if there turn out to be fewer than (ordinal + 1) parts in this MimeBody.
      * @throws IOException  if there was a problem reading the main InputStream.
      */
     private void readUpToPart(int ordinal) throws IOException, NoSuchPartException {
@@ -659,14 +659,14 @@ public class MultipartMessage {
     }
 
     /**
-     * Free any resources being used by this MultipartMessage.  In particular this closes the StashManager.
-     * The behaviour of other MultipartMessage or PartInfo methods is undefined after close() has been called.
+     * Free any resources being used by this MimeBody.  In particular this closes the StashManager.
+     * The behaviour of other MimeBody or PartInfo methods is undefined after close() has been called.
      * <p>
      * Note that this does *not* close the main InputStream.  This is in case the user wishes to parse
-     * more than one MultipartMessage out of the same InputStream.
+     * more than one MimeBody out of the same InputStream.
      * <p>
      * TODO: to make multiple messages per stream actualyl work, the PushbackInputStream will need to be passed into
-     *       the MultipartMessage constructor instead of being created locally.
+     *       the MimeBody constructor instead of being created locally.
      */
     public void close() {
         stashManager.close();
@@ -785,11 +785,11 @@ public class MultipartMessage {
          * @return A previously-stashed InputStream, if there was one; or,
          *         null if and only if the main input stream is positioned to read this Part's body.
          * @throws IOException if there is a pending IOException from a previous operation on this
-         *                     MultipartMessage or one of its parts
+         *                     MimeBody or one of its parts
          * @throws IOException if there is a problem stashing or recalling from the StashManager
          * @throws NoSuchPartException if this Part's body has already been destructively read
          * @throws NoSuchPartException if there is a pending NoSuchPartException from a previous operation on this
-         *                             MultipartMessage or one of its parts
+         *                             MimeBody or one of its parts
          * @throws IllegalStateException if the part was not stashed or consumed, but the main inputstream does not
          *                               appear to be positioned to read this part's body.
          *
@@ -885,7 +885,7 @@ public class MultipartMessage {
             if (is == null) throw new NullPointerException();
             stashManager.stash(ordinal, is);
             // Replace content length with up-to-date version
-            final long actualLength = MultipartMessage.this.stashManager.getSize(ordinal);
+            final long actualLength = MimeBody.this.stashManager.getSize(ordinal);
             final String clen = Long.toString(actualLength);
             if (headers.hasContentLength()) {
                 // Make sure the declared content length is accurate

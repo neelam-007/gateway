@@ -111,10 +111,10 @@ public interface Message {
      * @return PartInfo describing the first part.  Never null.
      * @throws IllegalStateException if this message has not been initialized 
      */
-    PartInfo getFirstPart();
+    PartInfo getFirstPart() throws IOException;
 
     /**
-     * Obtain an iterator that can be used to lazily iterate some or all parts in the MultipartMessage.
+     * Obtain an iterator that can be used to lazily iterate some or all parts in the MimeBody.
      * The iterator can be abandoned at any time, in which case any still-unread parts will be left in the main InputStream
      * (as long as they hadn't already needed to be read due to other method calls on Message or PartInfo).
      * <p>

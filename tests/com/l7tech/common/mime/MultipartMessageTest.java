@@ -40,7 +40,7 @@ public class MultipartMessageTest extends TestCase {
     }
 
     public void testEmptySinglePartMessage() throws Exception {
-        MultipartMessage mm = new MultipartMessage(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new EmptyInputStream());
+        MimeBody mm = new MimeBody(new ByteArrayStashManager(), ContentTypeHeader.XML_DEFAULT, new EmptyInputStream());
         assertEquals(-1, mm.getFirstPart().getContentLength()); // size of part not yet known
         long len = mm.getEntireMessageBodyLength(); // force entire body to be read
         assertEquals(0, len);
@@ -48,7 +48,7 @@ public class MultipartMessageTest extends TestCase {
     }
 
     public void testSimple() throws Exception {
-        MultipartMessage mm = makeMessage(MESS, CT);
+        MimeBody mm = makeMessage(MESS, CT);
 
         PartInfo rubyPart = mm.getPart(1);
         InputStream rubyStream = rubyPart.getInputStream(true);
@@ -83,7 +83,7 @@ public class MultipartMessageTest extends TestCase {
     }
 
     public void testSimpleWithNoPreamble() throws Exception {
-        MultipartMessage mm = makeMessage(MESS2, CT2);
+        MimeBody mm = makeMessage(MESS2, CT2);
 
         PartInfo rubyPart = mm.getPart(1);
         InputStream rubyStream = rubyPart.getInputStream(true);
@@ -115,17 +115,17 @@ public class MultipartMessageTest extends TestCase {
         }
     }
 
-    private MultipartMessage makeMessage(String message, String contentTypeValue) throws IOException, NoSuchPartException {
+    private MimeBody makeMessage(String message, String contentTypeValue) throws IOException, NoSuchPartException {
         InputStream mess = new ByteArrayInputStream(message.getBytes());
         ContentTypeHeader mr = ContentTypeHeader.parseValue(contentTypeValue);
         StashManager sm = new ByteArrayStashManager();
-        MultipartMessage mm = new MultipartMessage(sm, mr, mess);
+        MimeBody mm = new MimeBody(sm, mr, mess);
         return mm;
     }
 
     public void testSinglePart() throws Exception {
         final String body = "<foo/>";
-        MultipartMessage mm = makeMessage(body, "text/xml");
+        MimeBody mm = makeMessage(body, "text/xml");
         PartInfo p = mm.getPart(0);
         InputStream in = p.getInputStream(true);
         final byte[] bodyStream = HexUtils.slurpStream(in);
@@ -134,7 +134,7 @@ public class MultipartMessageTest extends TestCase {
     }
 
     public void testStreamAllWithNoPreamble() throws Exception {
-        MultipartMessage mm = makeMessage(MESS2, CT2);
+        MimeBody mm = makeMessage(MESS2, CT2);
 
         InputStream bodyStream = mm.getEntireMessageBodyAsInputStream(true);
         byte[] body = HexUtils.slurpStream(bodyStream);
@@ -145,7 +145,7 @@ public class MultipartMessageTest extends TestCase {
     }
 
     public void testStreamAllWithPreamble() throws Exception {
-        MultipartMessage mm = makeMessage(MESS, CT);
+        MimeBody mm = makeMessage(MESS, CT);
 
         InputStream bodyStream = mm.getEntireMessageBodyAsInputStream(true);
         byte[] body = HexUtils.slurpStream(bodyStream);
@@ -163,7 +163,7 @@ public class MultipartMessageTest extends TestCase {
     }
 
     public void testStreamAllConsumedRubyPart() throws Exception {
-        MultipartMessage mm = makeMessage(MESS2, CT2);
+        MimeBody mm = makeMessage(MESS2, CT2);
 
         // Destroy body of ruby part
         HexUtils.slurpStream(mm.getPart(1).getInputStream(true));
@@ -177,7 +177,7 @@ public class MultipartMessageTest extends TestCase {
     }
 
     public void testStreamAllWithAllStashed() throws Exception {
-        MultipartMessage mm = makeMessage(MESS, CT);
+        MimeBody mm = makeMessage(MESS, CT);
 
         mm.getPart(1).getInputStream(false);
 
@@ -195,7 +195,7 @@ public class MultipartMessageTest extends TestCase {
     }
 
     public void testStreamAllWithFirstPartStashed() throws Exception {
-        MultipartMessage mm = makeMessage(MESS, CT);
+        MimeBody mm = makeMessage(MESS, CT);
 
         mm.getPart(0).getInputStream(false);
 
@@ -209,7 +209,7 @@ public class MultipartMessageTest extends TestCase {
     }
 
     public void testLookupsByCid() throws Exception {
-        MultipartMessage mm = makeMessage(MESS, CT);
+        MimeBody mm = makeMessage(MESS, CT);
 
         PartInfo rubyPart = mm.getPartByContentId(MESS_RUBYCID);
         InputStream rubyStream = rubyPart.getInputStream(true);
@@ -245,8 +245,8 @@ public class MultipartMessageTest extends TestCase {
 
     public void testByteArrayCtorNullByteArray() {
         try {
-            new MultipartMessage(null, ContentTypeHeader.XML_DEFAULT);
-            fail("Did not get a fast-failure exception passing null byte array to MultipartMessage(byte[], ctype)");
+            new MimeBody(null, ContentTypeHeader.XML_DEFAULT);
+            fail("Did not get a fast-failure exception passing null byte array to MimeBody(byte[], ctype)");
         } catch (NullPointerException e) {
             // This is acceptable
         } catch (IllegalArgumentException e) {
@@ -259,7 +259,7 @@ public class MultipartMessageTest extends TestCase {
     }
 
     public void testIterator() throws Exception {
-        MultipartMessage mm = makeMessage(MESS, CT);
+        MimeBody mm = makeMessage(MESS, CT);
 
         List parts = new ArrayList();
         for (PartIterator i = mm.iterator(); i.hasNext(); ) {
@@ -279,7 +279,7 @@ public class MultipartMessageTest extends TestCase {
         SwaTestcaseFactory stfu = new SwaTestcaseFactory(23, 888, 29);
         byte[] testMsg = stfu.makeTestMessage();
         InputStream mess = new ByteArrayInputStream(testMsg);
-        MultipartMessage mm = new MultipartMessage(new ByteArrayStashManager(),
+        MimeBody mm = new MimeBody(new ByteArrayStashManager(),
                                                    ContentTypeHeader.parseValue("multipart/mixed; boundary=\"" +
                                                                                 new String(stfu.getBoundary()) + "\""),
                                                    mess);
@@ -304,7 +304,7 @@ public class MultipartMessageTest extends TestCase {
         final String mess = "--blah\r\nContent-Length: 10\r\n\r\n\r\n--blah\r\n\r\n--blah--";
         try {
             // Test fail on getActualContentLength
-            MultipartMessage mm = new MultipartMessage(mess.getBytes(), ct);
+            MimeBody mm = new MimeBody(mess.getBytes(), ct);
             long len = mm.getPart(0).getActualContentLength();
             fail("Failed to throw expected exception on Content-Length: header that lies (got len=" + len + ")");
         } catch (IOException e) {
@@ -315,7 +315,7 @@ public class MultipartMessageTest extends TestCase {
         try {
             // Test fail during iteration
             int num = 0;
-            MultipartMessage mm = new MultipartMessage(mess.getBytes(), ct);
+            MimeBody mm = new MimeBody(mess.getBytes(), ct);
             for (PartIterator i = mm.iterator(); i.hasNext(); ) {
                 PartInfo partInfo = i.next();
                 partInfo.getInputStream(false).close();

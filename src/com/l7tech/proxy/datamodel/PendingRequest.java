@@ -6,7 +6,7 @@
 
 package com.l7tech.proxy.datamodel;
 
-import com.l7tech.common.mime.MultipartMessage;
+import com.l7tech.common.mime.MimeBody;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
@@ -77,8 +77,8 @@ public class PendingRequest extends ClientXmlMessage {
      *
      * @param ssg                the Ssg to which this request is destined.  Must not be null.
      * @param headers            HTTP headers for logging purposes, or null if there weren't any.
-     * @param multipartMessage   MultipartMessage instance that is managing the InputStream, or null.
-     *                           If no MultipartMessage is provided, one will be made up by serializing the document
+     * @param mimeBody   MimeBody instance that is managing the InputStream, or null.
+     *                           If no MimeBody is provided, one will be made up by serializing the document
      *                           and treating it as a single-part message of type text/xml.
      * @param originalDocument   The undecorated XML document in the message.  Must not be null.
      * @param requestInterceptor a RequestInterceptor that wishes to be notified about policy updates, or null.
@@ -87,11 +87,11 @@ public class PendingRequest extends ClientXmlMessage {
      * @throws IOException       if originalDocument needs to be serialized, but cannot be, due to some
      *                           canonicalizer problem (relative namespaces, maybe)
      */
-    public PendingRequest(Ssg ssg, HttpHeaders headers, MultipartMessage multipartMessage, Document originalDocument,
+    public PendingRequest(Ssg ssg, HttpHeaders headers, MimeBody mimeBody, Document originalDocument,
                           RequestInterceptor requestInterceptor, PolicyAttachmentKey policyAttachmentKey, URL origUrl)
             throws IOException
     {
-        super(multipartMessage, originalDocument, headers);
+        super(mimeBody, originalDocument, headers);
         if (ssg == null) throw new NullPointerException("ssg is null");
         if (requestInterceptor == null)
             requestInterceptor = NullRequestInterceptor.INSTANCE;

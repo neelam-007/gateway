@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 /**
- * Users of MultipartMessage must provide it with a StashManager in which it can store multipart parts throughout
+ * Users of MimeBody must provide it with a StashManager in which it can store multipart parts throughout
  * the duration of a request.  A StashManager can store the parts wherever it likes as long as it can stash an entire
  * InputStream on command, and provide a rewound view the InputStream when asked.
  * <p>

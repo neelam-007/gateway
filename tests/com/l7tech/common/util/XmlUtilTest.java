@@ -10,12 +10,16 @@ import org.w3c.dom.Element;
 
 import javax.xml.soap.SOAPConstants;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public class XmlUtilTest extends TestCase {
+    private static final Logger logger = Logger.getLogger(XmlUtilTest.class.getName());
+
     /**
      * test <code>XmlUtilTest</code> constructor
      */
@@ -181,6 +185,26 @@ public class XmlUtilTest extends TestCase {
         prefix = XmlUtil.findActivePrefixForNamespace(header, SoapUtil.SECURITY_NAMESPACE4);
         assertNull(prefix);
 
+    }
+
+    public void testParseEmptyString() {
+        try {
+            Document d = XmlUtil.stringToDocument("");
+            fail("Expected exception not thrown.  Returned d=" + d);
+        } catch (Exception e) {
+            // Ok
+            logger.log(Level.INFO, "The expected exception was thrown: " + e.getMessage());
+        }
+    }
+
+    public void testParseNull() {
+        try {
+            Document d = XmlUtil.stringToDocument(null);
+            fail("Expected exception not thrown.  Returned d=" + d);
+        } catch (Exception e) {
+            // Ok
+            logger.log(Level.INFO, "The expected exception was thrown: " + e.getMessage());
+        }
     }
 
     public static final String DOC_WITH_SEC_HEADERS = "<s:Envelope xmlns:s=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +

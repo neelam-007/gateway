@@ -2,7 +2,7 @@ package com.l7tech.proxy;
 
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
-import com.l7tech.common.mime.MultipartMessage;
+import com.l7tech.common.mime.MimeBody;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
@@ -203,16 +203,16 @@ public class RequestHandler extends AbstractHttpHandler {
             // TODO: PERF: doing full XML parsing for every request is causing a performance bottleneck
             HttpHeaders headers = gatherHeaders(request);
             ContentTypeHeader outerContentType = gatherContentTypeHeader(request);
-            MultipartMessage multipartMessage = null;
-            multipartMessage = new MultipartMessage(Managers.createStashManager(),
+            MimeBody mimeBody = null;
+            mimeBody = new MimeBody(Managers.createStashManager(),
                                                     outerContentType,
                                                     request.getInputStream());
-            Document envelope = XmlUtil.parse(multipartMessage.getFirstPart().getInputStream(true)); // throw away undecorated soap part as we parse it
+            Document envelope = XmlUtil.parse(mimeBody.getFirstPart().getInputStream(true)); // throw away undecorated soap part as we parse it
             URL originalUrl = getOriginalUrl(request, endpoint);
             PolicyAttachmentKey pak = gatherPolicyAttachmentKey(request, envelope, originalUrl);
             pendingRequest = new PendingRequest(ssg,
                                                 headers,
-                                                multipartMessage,
+                                                mimeBody,
                                                 envelope,
                                                 interceptor,
                                                 pak,

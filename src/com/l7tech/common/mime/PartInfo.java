@@ -26,8 +26,8 @@ public interface PartInfo {
      * that will play back the entire attachment body data.
      * <p>
      * If destroyAsRead is true, the caller must consume the returned InputStream before calling getInputStream()
-     * on other PartInfos from the MultipartMessage that produced this PartInfo, or any methods in the
-     * MultipartMessage.
+     * on other PartInfos from the MimeBody that produced this PartInfo, or any methods in the
+     * MimeBody.
      *
      * @param destroyAsRead if false, the InputStream will be stashed and subsequent callers will be able to
      *                      obtain it and read it from the beginning again.  If true, the InputStream's contents

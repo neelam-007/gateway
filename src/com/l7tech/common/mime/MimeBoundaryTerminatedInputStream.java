@@ -20,7 +20,7 @@ import java.io.PushbackInputStream;
  */
 class MimeBoundaryTerminatedInputStream extends FilterInputStream {
     private final byte[] crlfBoundary; // crlfBoundary with leading CRLF and leading dashes but no trailing CRLF
-    private final PushbackInputStream in; // the main inputstream for the MultipartMessage
+    private final PushbackInputStream in; // the main inputstream for the MimeBody
     private final int pushbackSize; // the maximum number of bytes that can be pushed back on this inputstream.
                                    // we will limit block reads to this many bytes
 

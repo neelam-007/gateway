@@ -24,7 +24,7 @@ import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.mime.MultipartMessage;
+import com.l7tech.common.mime.MimeBody;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
@@ -105,9 +105,9 @@ public class ClientXpathAssertionsTest extends TestCase {
         }
     }
 
-    private MultipartMessage makemm(Document placeorderDoc) {
+    private MimeBody makemm(Document placeorderDoc) {
         try {
-            return new MultipartMessage(XmlUtil.nodeToString(placeorderDoc).getBytes("UTF-8"),
+            return new MimeBody(XmlUtil.nodeToString(placeorderDoc).getBytes("UTF-8"),
                                         ContentTypeHeader.XML_DEFAULT);
         } catch (IOException e) {
             throw new RuntimeException(e);

@@ -25,8 +25,8 @@ import java.util.logging.Logger;
 public abstract class MessageAdapter implements Message {
     private static final Logger logger = Logger.getLogger(MessageAdapter.class.getName());
     private static int stashFileUnique = 1; // Used to make unique prefix for StashManager stash files
-    protected MultipartMessage multipartMessage = null;
-    private boolean firstPartBodyIsUpToDate = false; // if false, first part of multipartMessage might not be in sync with desired value ([un]decorated xml, say)
+    protected MimeBody mimeBody = null;
+    private boolean firstPartBodyIsUpToDate = false; // if false, first part of mimeBody might not be in sync with desired value ([un]decorated xml, say)
     private StashManager stashManager;
 
     /**
@@ -82,22 +82,22 @@ public abstract class MessageAdapter implements Message {
     public void initialize( InputStream messageBody, ContentTypeHeader outerContentType ) throws IOException {
         if (messageBody == null || outerContentType == null) throw new NullPointerException();
 
-        if (multipartMessage != null) {
+        if (mimeBody != null) {
             // Dispose of old message state
-            multipartMessage.close();
-            multipartMessage = null;
+            mimeBody.close();
+            mimeBody = null;
             invalidateFirstBodyPart();
         }
 
         try {
-            multipartMessage = new MultipartMessage(getStashManager(), outerContentType, messageBody);
+            mimeBody = new MimeBody(getStashManager(), outerContentType, messageBody);
         } catch (NoSuchPartException e) {
             throw new CausedIOException(e);
         }
     }
 
     public boolean isInitialized() {
-        return multipartMessage != null;
+        return mimeBody != null;
     }
 
     public Collection getDeferredAssertions() {
@@ -129,8 +129,8 @@ public abstract class MessageAdapter implements Message {
             }
             i.remove();
         }
-        if (multipartMessage != null)
-            multipartMessage.close();
+        if (mimeBody != null)
+            mimeBody.close();
     }
 
     private transient List _runOnClose = Collections.EMPTY_LIST;
@@ -144,13 +144,13 @@ public abstract class MessageAdapter implements Message {
     }
 
     /**
-     * Get or create a MultipartMessage for this message.  Requires that an InputStream be available.
+     * Get or create a MimeBody for this message.  Requires that an InputStream be available.
      *
      * @throws IllegalStateException if this message has not yet been initialized
      */
-    private MultipartMessage getMultipartMessage() {
-        if (multipartMessage == null) throw new IllegalStateException("Not yet initialized");
-        return multipartMessage;
+    private MimeBody getMultipartMessage() {
+        if (mimeBody == null) throw new IllegalStateException("Not yet initialized");
+        return mimeBody;
     }
 
     private StashManager getStashManager() {
@@ -261,7 +261,8 @@ public abstract class MessageAdapter implements Message {
      */
     protected abstract byte[] getUpToDateFirstPartBodyBytes() throws IOException;
 
-    public PartInfo getFirstPart() {
+    public PartInfo getFirstPart() throws IOException {
+        ensureFirstPartIsUpToDate();
         return getMultipartMessage().getFirstPart();
     }
 }
