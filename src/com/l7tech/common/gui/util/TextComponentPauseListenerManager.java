@@ -25,61 +25,61 @@ public class TextComponentPauseListenerManager {
     public static final int TIMER_PERIOD = 200;
 
     private static class TextComponentPauseNotifier
-            implements DocumentListener, PropertyChangeListener, ComponentListener,
-            InputMethodListener {
+      implements DocumentListener, PropertyChangeListener, ComponentListener,
+      InputMethodListener {
 
-        public TextComponentPauseNotifier( JTextComponent component, int notifyDelay ) {
+        public TextComponentPauseNotifier(JTextComponent component, int notifyDelay) {
             _component = component;
             _notifyDelay = notifyDelay;
 
-            component.addPropertyChangeListener( "enabled", this );
-            component.addComponentListener( this );
-            component.getDocument().addDocumentListener( this );
+            component.addPropertyChangeListener("enabled", this);
+            component.addComponentListener(this);
+            component.getDocument().addDocumentListener(this);
 
-            if ( component.isEnabled() && component.isVisible() ) start();
+            if (component.isEnabled() && component.isVisible()) start();
         }
 
         public JTextComponent getComponent() {
             return _component;
         }
 
-        public void addPauseListener( PauseListener pl ) {
-            _listeners.add( pl );
+        public void addPauseListener(PauseListener pl) {
+            _listeners.add(pl);
         }
 
-        public void removePauseListener( PauseListener pl ) {
-            _listeners.remove( pl );
+        public void removePauseListener(PauseListener pl) {
+            _listeners.remove(pl);
         }
 
-        private void notifyPause( long howlong ) {
+        private void notifyPause(long howlong) {
             for (Iterator i = _listeners.iterator(); i.hasNext();) {
-                PauseListener listener = (PauseListener) i.next();
-                listener.textEntryPaused( _component, howlong );
+                PauseListener listener = (PauseListener)i.next();
+                listener.textEntryPaused(_component, howlong);
             }
         }
 
         private void notifyResume() {
             for (Iterator i = _listeners.iterator(); i.hasNext();) {
-                PauseListener listener = (PauseListener) i.next();
-                listener.textEntryResumed( _component );
+                PauseListener listener = (PauseListener)i.next();
+                listener.textEntryResumed(_component);
             }
         }
 
         public void start() {
-            if ( _task != null ) _task.cancel();
+            if (_task != null) _task.cancel();
             _task = new MyTimerTask();
-            _timer.scheduleAtFixedRate( _task, 0, TIMER_PERIOD );
+            _timer.scheduleAtFixedRate(_task, 0, TIMER_PERIOD);
             _updated = System.currentTimeMillis();
         }
 
         public void updated() {
             _updated = System.currentTimeMillis();
-            if ( _paused ) notifyResume();
+            if (_paused) notifyResume();
             _paused = false;
         }
 
         public void stop() {
-            if ( _task != null ) _task.cancel();
+            if (_task != null) _task.cancel();
             _paused = true;
         }
 
@@ -97,9 +97,9 @@ public class TextComponentPauseListenerManager {
 
         public void propertyChange(PropertyChangeEvent evt) {
             String pname = evt.getPropertyName();
-            if ( "editable".equals( pname ) ) {
+            if ("editable".equals(pname)) {
                 Boolean b = (Boolean)evt.getNewValue();
-                if ( b.booleanValue() )
+                if (b.booleanValue())
                     start();
                 else
                     stop();
@@ -141,7 +141,7 @@ public class TextComponentPauseListenerManager {
             public void run() {
                 long now = System.currentTimeMillis();
                 long howlong = now - _updated;
-                if ( howlong >= _notifyDelay ) {
+                if (howlong >= _notifyDelay && !_paused) {
                     _paused = true;
                     notifyPause(howlong);
                     stop();
@@ -151,9 +151,9 @@ public class TextComponentPauseListenerManager {
         }
     }
 
-    public static void registerPauseListener( JTextComponent component, PauseListener pl, int notifyDelay ) {
-        TextComponentPauseNotifier holder = new TextComponentPauseNotifier( component, notifyDelay );
-        holder.addPauseListener( pl );
+    public static void registerPauseListener(JTextComponent component, PauseListener pl, int notifyDelay) {
+        TextComponentPauseNotifier holder = new TextComponentPauseNotifier(component, notifyDelay);
+        holder.addPauseListener(pl);
     }
 
     private static Timer _timer = new Timer(true);

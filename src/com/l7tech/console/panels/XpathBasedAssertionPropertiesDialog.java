@@ -1,5 +1,8 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.common.gui.util.PauseListener;
+import com.l7tech.common.gui.util.TextComponentPauseListenerManager;
+import com.l7tech.common.gui.widgets.SquigglyTextField;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.*;
@@ -16,9 +19,9 @@ import com.l7tech.console.xmlviewer.ViewerToolBar;
 import com.l7tech.console.xmlviewer.properties.ConfigurationProperties;
 import com.l7tech.console.xmlviewer.util.DocumentUtilities;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.policy.assertion.XpathBasedAssertion;
-import com.l7tech.policy.assertion.ResponseXpathAssertion;
 import com.l7tech.policy.assertion.RequestXpathAssertion;
+import com.l7tech.policy.assertion.ResponseXpathAssertion;
+import com.l7tech.policy.assertion.XpathBasedAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssConfidentiality;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssConfidentiality;
@@ -26,6 +29,7 @@ import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.jaxen.JaxenException;
+import org.jaxen.XPathSyntaxException;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -35,6 +39,7 @@ import org.xml.sax.SAXParseException;
 import javax.swing.*;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
+import javax.swing.text.JTextComponent;
 import javax.swing.tree.*;
 import javax.wsdl.Binding;
 import javax.wsdl.BindingOperation;
@@ -44,8 +49,6 @@ import javax.xml.soap.SOAPMessage;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -105,9 +108,10 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
 
         xmlSecAssertion = (XpathBasedAssertion)node.asAssertion();
         if (xmlSecAssertion instanceof RequestWssConfidentiality ||
-            xmlSecAssertion instanceof ResponseWssConfidentiality) {
+          xmlSecAssertion instanceof ResponseWssConfidentiality) {
             isEncryption = true;
-        } else isEncryption = false;
+        } else
+            isEncryption = false;
         serviceNode = AssertionTreeNode.getServiceNode(node);
         if (serviceNode == null) {
             throw new IllegalStateException("Unable to determine the service node for " + xmlSecAssertion);
@@ -134,36 +138,6 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
 
         // display the existing xpath expression
         messageViewerToolBar.getxpathField().setText(xmlSecAssertion.getXpathExpression().getExpression());
-
-        // ok button is disabled until a change is made
-        okButton.setEnabled(false);
-
-        // initialize the test evaluator
-        try {
-            testEvaluator = XpathEvaluator.newEvaluator(XmlUtil.stringToDocument("<blah xmlns=\"http://bzzt.com\"/>"),
-                                                        new HashMap());
-        } catch (IOException e) {
-            log.log(Level.WARNING, "cannot setup test evaluator", e);
-        } catch (SAXException e) {
-            log.log(Level.WARNING, "cannot setup test evaluator", e);
-        }
-    }
-
-    private boolean isValidValue(String xpath) {
-        if (xpath == null) return false;
-        xpath = xpath.trim();
-        if (xpath.length() < 1) return false;
-        if (isEncryption && xpath.equals("/soapenv:Envelope")) return false;
-        try {
-            testEvaluator.evaluate(xpath);
-        } catch (JaxenException e) {
-            log.fine(e.getMessage());
-            return false;
-        } catch (RuntimeException e) { // sometimes NPE, sometimes NFE
-            log.fine(e.getMessage());
-            return false;
-        }
-        return true;
     }
 
 
@@ -179,17 +153,23 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 // get xpath from control and the namespace map
                 // then save it in assertion
-                String xpath = (String)messageViewerToolBar.getxpathField().getText();
+                JTextField xpathTextField = messageViewerToolBar.getxpathField();
+                String xpath = xpathTextField.getText();
                 if (isEncryption && xpath.equals("/soapenv:Envelope")) {
                     // dont allow encryption of entire envelope
                     JOptionPane.showMessageDialog(okButton, "The path " + xpath + " is not valid for XML encryption",
-                                                  "XPath Error", JOptionPane.ERROR_MESSAGE);
+                      "XPath Error", JOptionPane.ERROR_MESSAGE);
                 } else {
-                    xmlSecAssertion.setXpathExpression(new XpathExpression(xpath, namespaces));
+                    if (xpath == null || "".equals(xpath.trim())) {
+                        xmlSecAssertion.setXpathExpression(null);
+                    } else {
+                        xmlSecAssertion.setXpathExpression(new XpathExpression(xpath, namespaces));
+                    }
                     XpathBasedAssertionPropertiesDialog.this.dispose();
                 }
             }
         });
+
         if (okActionListener != null) {
             okButton.addActionListener(okActionListener);
         }
@@ -227,7 +207,17 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
             throw new RuntimeException(e);
         }
 
-        messageViewerToolBar.getxpathField().addKeyListener(messageEditingListener);
+        // initialize the test evaluator
+        try {
+            testEvaluator = XpathEvaluator.newEvaluator(XmlUtil.stringToDocument("<blah xmlns=\"http://bzzt.com\"/>"),
+              new HashMap());
+        } catch (Exception e) {
+            final String msg = "cannot setup test evaluator";
+            log.log(Level.WARNING, msg, e);
+            throw new RuntimeException(msg, e);
+        }
+        TextComponentPauseListenerManager.registerPauseListener(messageViewerToolBar.getxpathField(), xpathFieldPauseListener, 1200);
+
         String description = null;
         String title = null;
         if (xmlSecAssertion instanceof RequestWssConfidentiality) {
@@ -252,6 +242,7 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         descriptionLabel.setText(description);
         setTitle(title);
     }
+
 
     /**
      * initialize the blank message tha is displayed on whole message
@@ -324,7 +315,6 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         ConfigurationProperties cp = new ConfigurationProperties();
         exchangerDocument = asExchangerDocument(msg);
         messageViewer = new Viewer(cp.getViewer(), exchangerDocument, false);
-        messageViewer.addDocumentTreeSelectionListener(messageSelectionListener);
         messageViewerToolBar = new ViewerToolBar(cp.getViewer(), messageViewer);
         com.intellij.uiDesigner.core.GridConstraints gridConstraints = new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 7, 7, null, null, null);
         messageViewerToolbarPanel.add(messageViewerToolBar, gridConstraints);
@@ -354,15 +344,15 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
      */
     private boolean isEditingRequest() {
         return (node instanceof RequestWssIntegrityTreeNode ||
-                node instanceof RequestWssConfidentialityTreeNode ||
-                node instanceof RequestXpathPolicyTreeNode);
+          node instanceof RequestWssConfidentialityTreeNode ||
+          node instanceof RequestXpathPolicyTreeNode);
     }
 
     private final
     TreeCellRenderer wsdlTreeRenderer = new DefaultTreeCellRenderer() {
         /**
          * Sets the value of the current tree cell to <code>value</code>.
-         * 
+         *
          * @return	the <code>Component</code> that the renderer uses to draw the value
          */
         public Component getTreeCellRendererComponent(JTree tree, Object value,
@@ -407,11 +397,14 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                           URL url = asTempFileURL("<all/>");
                           exchangerDocument.setProperties(url, null);
                           exchangerDocument.load();
+
                           return;
                       } catch (Exception e1) {
                           throw new RuntimeException(e1);
                       }
                   }
+                  final JTextField xpf = messageViewerToolBar.getxpathField();
+
                   BindingOperationTreeNode boperation = (BindingOperationTreeNode)lpc;
                   Message sreq = forOperation(boperation.getOperation());
                   messageViewerToolBar.setToolbarEnabled(true);
@@ -421,13 +414,13 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                           SOAPMessage soapMessage = sreq.getSOAPMessage();
                           displayMessage(soapMessage);
                           if (e.getSource() == operationsTree.getSelectionModel()) {
-                              messageViewerToolBar.getxpathField().setText("");
+                              xpf.setText("");
                           }
                       } catch (Exception e1) {
                           throw new RuntimeException(e1);
                       }
-
                   }
+                  xpathFieldPauseListener.textEntryResumed(xpf);
               }
           }
       };
@@ -468,22 +461,6 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         }
     }
 
-    private final TreeSelectionListener
-      messageSelectionListener = new TreeSelectionListener() {
-          public void valueChanged(TreeSelectionEvent e) {
-              okButton.setEnabled(isValidValue(messageViewerToolBar.getxpathField().getText()));
-          }
-      };
-
-    private final KeyListener
-      messageEditingListener = new KeyListener() {
-          public void keyTyped(KeyEvent e) {}
-          public void keyPressed(KeyEvent e) {}
-          public void keyReleased(KeyEvent e) {
-              okButton.setEnabled(isValidValue(messageViewerToolBar.getxpathField().getText()));
-          }
-      };
-
     private Message forOperation(BindingOperation bop) {
         String opName = bop.getOperation().getName();
         Binding binding = serviceWsdl.getBinding(bop);
@@ -502,4 +479,115 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
         return null;
     }
 
+
+    final PauseListener xpathFieldPauseListener = new PauseListener() {
+        public void textEntryPaused(JTextComponent component, long msecs) {
+            final JTextField xpathField = (JTextField)component;
+            XpathFeedBack feedBack = getFeedBackMessage(xpathField);
+            processFeedBack(feedBack, xpathField);
+        }
+
+        public void textEntryResumed(JTextComponent component) {
+//                final JTextField xpathField = (JTextField)component;
+//                XpathFeedBack feedBack = getFeedBackMessage(xpathField);
+//                processFeedBack(feedBack, xpathField);
+        }
+
+        private XpathFeedBack getFeedBackMessage(JTextField xpathField) {
+            String xpath = xpathField.getText();
+            if (xpath == null) return XpathFeedBack.EMPTY;
+            xpath = xpath.trim();
+            if (xpath.length() < 1) return XpathFeedBack.EMPTY;
+            if (isEncryption && xpath.equals("/soapenv:Envelope")) {
+                return new XpathFeedBack(-1, xpath, "The path " + xpath + " is not valid for XML encryption", null);
+            }
+            try {
+                testEvaluator.evaluate(xpath);
+                return XpathFeedBack.OK;
+            } catch (XPathSyntaxException e) {
+                log.log(Level.FINE, e.getMessage(), e);
+                return new XpathFeedBack(e.getPosition(), xpath, e.getMessage(), e.getMultilineMessage());
+            } catch (JaxenException e) {
+                log.log(Level.FINE, e.getMessage(), e);
+                return new XpathFeedBack(-1, xpath, e.getMessage(), e.getMessage());
+            } catch (RuntimeException e) { // sometimes NPE, sometimes NFE
+                log.log(Level.WARNING, e.getMessage(), e);
+                return new XpathFeedBack(-1, xpath, "XPath expression error '" + xpath + "'", null);
+            }
+        }
+
+        private void processFeedBack(XpathFeedBack feedBack, JTextField xpathField) {
+            if (feedBack == XpathFeedBack.OK || feedBack == XpathFeedBack.EMPTY) {
+                if (xpathField instanceof SquigglyTextField) {
+                    SquigglyTextField squigglyTextField = (SquigglyTextField)xpathField;
+                    squigglyTextField.setNone();
+                }
+                xpathField.setToolTipText(null);
+                return;
+            }
+
+            StringBuffer tooltip = new StringBuffer();
+            boolean htmlOpenAdded = false;
+            if (feedBack.getErrorPosition() != -1) {
+                tooltip.append("<html><b>Position : " + feedBack.getErrorPosition() + ", ");
+                htmlOpenAdded = true;
+            }
+            String msg = feedBack.getShortMessage();
+            if (msg != null) {
+                if (!htmlOpenAdded) {
+                    msg = "<html><b>" + msg;
+                }
+                tooltip.append(msg + "</b></html>");
+            }
+
+            xpathField.setToolTipText(tooltip.toString());
+
+            if (xpathField instanceof SquigglyTextField) {
+                SquigglyTextField squigglyTextField = (SquigglyTextField)xpathField;
+                final String expr = feedBack.getXpathExpression();
+                squigglyTextField.setAll();
+                squigglyTextField.setSquiggly();
+            }
+        }
+
+    };
+
+
+    private static class XpathFeedBack {
+        static final XpathFeedBack EMPTY = new XpathFeedBack(-1, null, "Empty XPath expression", "Empty XPath expression");
+        public static final XpathFeedBack OK = new XpathFeedBack(-1, null, null, null);
+        int errorPosition = -1;
+        String shortMessage = null;
+        String detailedMessage = null;
+        String xpathExpression = null;
+
+        public XpathFeedBack(int errorPosition, String expression, String sm, String lm) {
+            this.errorPosition = errorPosition;
+            this.xpathExpression = expression;
+            this.detailedMessage = lm;
+            this.shortMessage = sm;
+        }
+
+        boolean valid() {
+            return errorPosition == -1 && shortMessage == null;
+        }
+
+        public String getXpathExpression() {
+            return xpathExpression;
+        }
+
+        public int getErrorPosition() {
+            return errorPosition;
+        }
+
+        public String getDetailedMessage() {
+            return detailedMessage;
+        }
+
+        public String getShortMessage() {
+            return shortMessage;
+        }
+
+
+    }
 }

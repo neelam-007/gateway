@@ -1,5 +1,6 @@
 package com.l7tech.console.xmlviewer;
 
+import com.l7tech.common.gui.widgets.SquigglyTextField;
 import com.l7tech.console.xmlviewer.properties.ViewerProperties;
 
 import javax.swing.*;
@@ -11,7 +12,7 @@ import java.awt.*;
 
 /**
  * Insert comments here.
- * 
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version $Revision$, $Date$
  */
@@ -30,7 +31,7 @@ public class ViewerToolBar extends JToolBar {
         expand = new ExpandAllAction(v);
         collapse = new CollapseAllAction(v);
 
-        xpathField = new JTextField();
+        xpathField = new SquigglyTextField();
 
         JLabel xpathLabel = new JLabel("XPath:");
         xpathLabel.setForeground(new Color(102, 102, 102));
@@ -73,6 +74,7 @@ public class ViewerToolBar extends JToolBar {
 
     /**
      * Access the xpath combo box component. This accesses
+     *
      * @return the xpath combo box
      */
     public JTextField getxpathField() {
