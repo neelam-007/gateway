@@ -54,6 +54,7 @@ public class MessageProcessor {
     public AssertionStatus processMessage( Request request, Response response )
             throws IOException, PolicyAssertionException, PolicyVersionException {
 
+        WssProcessor.ProcessorResult wssOutput = null;
         // WSS-Processing Step
         if (request instanceof SoapRequest) {
             SoapRequest req = (SoapRequest)request;
@@ -70,7 +71,6 @@ public class MessageProcessor {
                 logger.log(Level.SEVERE, "Error getting server cert/private key", e);
                 return AssertionStatus.SERVER_ERROR;
             }
-            WssProcessor.ProcessorResult wssOutput = null;
             try {
                 wssOutput = trogdor.undecorateMessage(req.getDocument(),
                                                       serverSSLcert,
@@ -192,6 +192,12 @@ public class MessageProcessor {
                             final String messageId = SoapUtil.getL7aMessageId(soapRequest.getDocument());
                             if (messageId != null) {
                                 SoapUtil.setL7aRelatesTo(doc, messageId);
+                            }
+                        }
+
+                        if (soapResponse.getDecorationRequirements() != null) {
+                            if (wssOutput != null && wssOutput.getSecurityNS() != null) {
+                                soapResponse.getDecorationRequirements().setPreferredSecurityNamespace(wssOutput.getSecurityNS());
                             }
                         }
 
