@@ -24,6 +24,12 @@ import org.apache.log4j.Category;
  * @version $Revision$
  */
 public class SoapMessageProcessingServlet extends HttpServlet {
+    public static final String POLICYURL_HEADER = "PolicyUrl";
+    public static final String POLICYURL_TAG = "policy-url";
+    public static final String CONTENT_TYPE = "text/xml; charset=utf-8";
+    public static final String PARAM_POLICYSERVLET_URI = "PolicyServletUri";
+    public static final String DEFAULT_POLICYSERVLET_URI = "/policy/disco.modulator?serviceoid=";
+
     public void init( ServletConfig config ) throws ServletException {
         super.init(config);
     }
@@ -52,11 +58,11 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 AssertionStatus stat = MessageProcessor.getInstance().processMessage( sreq, sresp );
 
                 if ( sresp.isAuthenticationMissing() ) {
-                    sendChallenge( sreq, sresp, hresponse );
+                    sendChallenge( sreq, sresp, hrequest, hresponse );
                 } else if ( stat != AssertionStatus.NONE ) {
-                    sendFault( sreq, sresp, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, stat.getSoapFaultCode(), stat.getMessage() );
+                    sendFault( sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, stat.getSoapFaultCode(), stat.getMessage() );
                 } else {
-                    hresponse.setContentType( "text/xml; charset=utf-8" );
+                    hresponse.setContentType( CONTENT_TYPE );
                     protRespStream = new BufferedInputStream( sresp.getProtectedResponseStream() );
                     respStream = hresponse.getOutputStream();
 
@@ -69,10 +75,10 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
             } catch ( PolicyAssertionException pae ) {
                 _log.error( pae );
-                sendFault( sreq, sresp, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, SoapUtil.FC_SERVER, pae.toString() );
+                sendFault( sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, SoapUtil.FC_SERVER, pae.toString() );
             } catch ( MessageProcessingException mpe ) {
                 _log.error( mpe );
-                sendFault( sreq, sresp, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, SoapUtil.FC_SERVER, mpe.toString() );
+                sendFault( sreq, sresp, hrequest, hresponse, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, SoapUtil.FC_SERVER, mpe.toString() );
             }
         } catch ( SOAPException se ) {
             _log.error( se );
@@ -83,11 +89,11 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         }
     }
 
-    private void sendFault( SoapRequest sreq, SoapResponse sresp, HttpServletResponse hresp, int httpStatus, String faultCode, String faultString ) throws SOAPException, IOException {
+    private void sendFault( SoapRequest sreq, SoapResponse sresp, HttpServletRequest hreq, HttpServletResponse hresp, int httpStatus, String faultCode, String faultString ) throws SOAPException, IOException {
         OutputStream responseStream = null;
 
         try {
-            hresp.setContentType( "text/xml" );
+            hresp.setContentType( CONTENT_TYPE );
             hresp.setStatus( httpStatus );
 
             SOAPMessage msg = SoapUtil.makeMessage();
@@ -98,11 +104,26 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             PublishedService pserv = (PublishedService)sreq.getParameter( Request.PARAM_SERVICE );
             if ( pserv != null && sresp.isPolicyViolated() ) {
                 String soid = new Long( pserv.getOid() ).toString();
-                hresp.setHeader( "PublishedServiceOid", soid );
+                StringBuffer policyUrl = new StringBuffer( hreq.getScheme() );
+                policyUrl.append( "://" );
+                policyUrl.append( hreq.getServerName() );
+                policyUrl.append( ":" );
+                policyUrl.append( hreq.getServerPort() );
+                policyUrl.append( hreq.getContextPath() );
+                String policyServletUri = getServletConfig().getInitParameter( PARAM_POLICYSERVLET_URI );
+                if ( policyServletUri == null || policyServletUri.length() == 0 )
+                    policyServletUri = DEFAULT_POLICYSERVLET_URI;
+
+                policyUrl.append( policyServletUri );
+                policyUrl.append( soid );
+
+                String purl = policyUrl.toString();
+
+                hresp.setHeader( POLICYURL_HEADER, purl );
 
                 Detail detail = fault.addDetail();
-                DetailEntry entry = detail.addDetailEntry( senv.createName( "published-service-oid" ) );
-                entry.addTextNode( soid );
+                DetailEntry entry = detail.addDetailEntry( senv.createName( POLICYURL_TAG ) );
+                entry.addTextNode( purl );
             }
 
             responseStream = hresp.getOutputStream();
@@ -112,8 +133,8 @@ public class SoapMessageProcessingServlet extends HttpServlet {
         }
     }
 
-    private void sendChallenge( SoapRequest sreq, SoapResponse sresp, HttpServletResponse hresp ) throws SOAPException, IOException {
-        sendFault( sreq, sresp, hresp, HttpServletResponse.SC_UNAUTHORIZED, SoapUtil.FC_CLIENT, "Authentication Required" );
+    private void sendChallenge( SoapRequest sreq, SoapResponse sresp, HttpServletRequest hreq, HttpServletResponse hresp ) throws SOAPException, IOException {
+        sendFault( sreq, sresp, hreq, hresp, HttpServletResponse.SC_UNAUTHORIZED, SoapUtil.FC_CLIENT, "Authentication Required" );
     }
 
     private Category _log = Category.getInstance( getClass() );
