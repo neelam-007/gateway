@@ -11,9 +11,9 @@ import com.ibm.xml.dsig.util.AdHocIDResolver;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.CertUtils;
+import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.HexUtils;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpCredentialSourceAssertion;
@@ -33,8 +33,8 @@ import java.io.StringWriter;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.security.PrivateKey;
-import java.security.SignatureException;
 import java.security.SecureRandom;
+import java.security.SignatureException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -72,7 +72,7 @@ public abstract class SamlAssertionHelper {
 
         try {
             doc.getDocumentElement().setAttribute("Id", "SamlTicket"); // TODO use AssertionID and better values, if at all
-            signEnvelope(doc, signerInfo.getPrivate(), signerInfo.getCertificateChain());
+            if (sign) signAssertion(doc, signerInfo.getPrivate(), signerInfo.getCertificateChain());
             Element secElement = SoapUtil.getOrMakeSecurityElement(soapMessage);
             if ( secElement == null ) {
                 throw new SAXException("Can't attach SAML token to non-SOAP message");
@@ -82,7 +82,7 @@ public abstract class SamlAssertionHelper {
             if (list.getLength() == 0) {
                 throw new IOException("Cannot locate the saml assertion in \n"+XmlUtil.nodeToString(soapMessage));
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             SignatureException ex = new SignatureException("error signing the saml ticket");
             ex.initCause(e);
             throw ex;
