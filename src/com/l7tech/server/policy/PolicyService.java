@@ -45,6 +45,8 @@ import java.io.IOException;
  * comparing them with the identity resuling from the authentication of the policy download request.
  * Document format expected is <sp:Body><PolicyDiscoveryRequest serviceOid="132"/></sp:Body>
  *
+ * Todo, special case for TAM
+ *
  * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
