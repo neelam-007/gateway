@@ -6,19 +6,15 @@
 
 package com.l7tech.proxy.policy.assertion.credential.http;
 
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.proxy.policy.assertion.ClientAssertion;
-import com.l7tech.proxy.datamodel.PendingRequest;
-import com.l7tech.proxy.datamodel.SsgResponse;
-import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.proxy.datamodel.Managers;
+import com.l7tech.proxy.datamodel.PendingRequest;
+import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.logging.LogManager;
-
-import java.util.logging.Logger;
-
+import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import org.apache.log4j.Category;
 
 /**
@@ -46,7 +42,7 @@ public class ClientHttpBasic extends ClientAssertion {
             Managers.getCredentialManager().getCredentials(ssg);
         request.setBasicAuthRequired(true);
         request.setSslRequired(true); // force SSL when using HTTP Basic
-        log.info("HttpBasic: will use HTTP basic on this request to " + request.getSsg());
+        log.info("HttpBasic: will use HTTP basic (and SSL) on this request to " + request.getSsg());
         return AssertionStatus.NONE;
     }
 
