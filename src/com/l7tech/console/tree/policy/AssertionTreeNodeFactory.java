@@ -34,9 +34,7 @@ class AssertionTreeNodeFactory {
         if (assertion instanceof CompositeAssertion) {
             return makeCompositeAssertionNode((CompositeAssertion)assertion);
         }
-
         return makeLeafAssertionNode(assertion);
-
     }
 
     private static AssertionTreeNode makeCompositeAssertionNode(CompositeAssertion assertion) {

@@ -3,9 +3,12 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.console.util.IconManager2;
 
 import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.*;
 import java.util.Iterator;
+import java.awt.*;
 
 /**
  * Class AssertionTreeNode.
@@ -28,11 +31,30 @@ abstract class AssertionTreeNode extends DefaultMutableTreeNode {
         }
         return super.getChildCount();
     }
+
     /**
      * subclasses override this method
      */
     protected abstract void loadChildren();
 
+    /**
+     * loads the icon specified by subclass iconResource()
+     * implementation.
+     *
+     * @return the <code>ImageIcon</code> or null if not found
+     */
+    public Icon getIcon() {
+        Image image = IconManager2.getInstance().getIcon(iconResource());
+        if (image !=null) {
+            return new ImageIcon(image);
+        }
+        return null;
+    }
+
+    /**
+     * subclasses override this method specifying
+     */
+    protected abstract String iconResource();
 }
 
 
@@ -46,6 +68,13 @@ class LeafAssertionTreeNode extends AssertionTreeNode {
 
     protected void loadChildren() {
         hasLoadedChildren = true;
+    }
+
+    /**
+     * specify this node image resource
+     */
+    protected String iconResource() {
+        return "com/l7tech/console/resources/user16.png";
     }
 }
 
@@ -64,6 +93,13 @@ class CompositeAssertionTreeNode extends AssertionTreeNode {
             insert((AssertionTreeNodeFactory.asTreeNode((Assertion)i.next())), index++);
         }
         hasLoadedChildren = true;
+    }
+
+    /**
+     * specify this node image resource
+     */
+    protected String iconResource() {
+        return "com/l7tech/console/resources/folder.gif";
     }
 
 

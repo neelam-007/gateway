@@ -130,27 +130,6 @@ public class IconManager {
     }
 
     /**
-       * Get the icon for the Assertion passed.
-       *
-       * @param assertion   the Assertion instance
-       * @return ImageIcon for the given node
-       */
-      public ImageIcon getIcon(Assertion assertion) {
-          if (assertion == null) {
-              throw new IllegalArgumentException();
-          }
-          ClassLoader cl = assertion.getClass().getClassLoader();
-          if (assertion instanceof MemberOfGroup) {
-               return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/group16.png"));
-          } else if(assertion instanceof SpecificUser) {
-              return new ImageIcon(cl.getResource(MainWindow.RESOURCE_PATH + "/user16.png"));
-          }
-          return null;
-
-      }
-
-
-    /**
      * Returns an up button
      * enabled.
      */
