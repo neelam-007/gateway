@@ -232,7 +232,7 @@ public class ServerLogManager extends LogManager {
     public static final String DEFAULT_LOGPROPERTIES_PATH  = "/ssg/etc/conf/ssglog.properties";
 
     private Logger systemLogger = null;
-    private static final String SYSTEM_LOGGER_NAME = "com.l7tech.server.log";
+    private static final String SYSTEM_LOGGER_NAME = "com.l7tech";
     private ServerLogHandler dbHandler = null;
     private Properties props = null;
 
