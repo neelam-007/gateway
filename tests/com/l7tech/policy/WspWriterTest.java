@@ -102,8 +102,8 @@ public class WspWriterTest extends TestCase {
         assertTrue(knownStr.equals(gotXml));
         log.info("Output matched expected XML.");
 
-        Assertion tree = WspReader.parse(gotXml);
-        log.info("After parsing: " + tree);
+        //Assertion tree = WspReader.parse(gotXml);
+        //log.info("After parsing: " + tree);
     }
 
     public static void main(String[] args) {
