@@ -52,7 +52,7 @@ public interface WssProcessor {
     }
 
     public interface SecurityContext {
-        SecretKey getSecretKey();
+        SecretKey getSharedSecret();
     }
 
     public interface SecurityContextFinder {
