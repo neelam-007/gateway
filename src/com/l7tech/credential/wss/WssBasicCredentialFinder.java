@@ -11,10 +11,10 @@ import com.l7tech.credential.CredentialFinderException;
 import com.l7tech.message.Request;
 
 /**
- * @author alex
  */
 public class WssBasicCredentialFinder extends WssCredentialFinder {
     public PrincipalCredentials doFindCredentials( Request request ) throws CredentialFinderException {
+        // TODO: Implement!
         return null;
     }
 }

@@ -15,6 +15,7 @@ import com.l7tech.message.Request;
  */
 public class HttpClientCertCredentialFinder extends HttpCredentialFinder {
     protected PrincipalCredentials doFindCredentials(Request request) throws CredentialFinderException {
+        // TODO: Implement!
         return null;
     }
 }
