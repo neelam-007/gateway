@@ -24,13 +24,13 @@ import com.l7tech.policy.assertion.credential.wss.WssDigest;
  */
 public abstract class CredentialSourceAssertion extends Assertion {
     public static final CredentialSourceAssertion[] ALL_CREDENTIAL_ASSERTIONS_TYPES = new CredentialSourceAssertion[] {
-        new HttpBasic(),
-        new HttpClientCert(),
-        new HttpDigest(),
-        new WssBasic(),
-        new WssDigest(),
+        new SamlSecurity(),
         new RequestWssX509Cert(),
         new SecureConversation(),
-        new SamlSecurity()
+        new HttpClientCert(),
+        new WssDigest(),
+        new HttpDigest(),
+        new WssBasic(),
+        new HttpBasic(),
     };
 }
