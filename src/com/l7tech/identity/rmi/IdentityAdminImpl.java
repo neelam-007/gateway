@@ -1,4 +1,4 @@
-package com.l7tech.adminws.identity;
+package com.l7tech.identity.rmi;
 
 import com.l7tech.objectmodel.*;
 import com.l7tech.identity.*;
@@ -16,13 +16,13 @@ import net.jini.config.ConfigurationException;
  * User: flascelles
  * Date: May 26, 2003
  *
- * Admin WS for identities (provider configs, users, groups)
+ * RMI implementation of the IdentityAdmin
  */
-public class IdentityServiceImpl extends RemoteService implements IdentityService {
-    public IdentityServiceImpl(String[] configOptions, LifeCycle lc)
+public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
+    public IdentityAdminImpl(String[] configOptions, LifeCycle lc)
       throws ConfigurationException, IOException {
         super(configOptions, lc);
-        delegate = new Service();
+        delegate = new com.l7tech.identity.ws.IdentityAdminImpl();
     }
     /**
      * Returns a version string. This can be compared to version on client-side.
@@ -133,5 +133,5 @@ public class IdentityServiceImpl extends RemoteService implements IdentityServic
     // ************************************************
     // PRIVATES
     // ************************************************
-    private IdentityService delegate = null;
+    private IdentityAdmin delegate = null;
 }

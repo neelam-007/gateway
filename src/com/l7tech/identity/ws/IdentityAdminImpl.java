@@ -1,4 +1,4 @@
-package com.l7tech.adminws.identity;
+package com.l7tech.identity.ws;
 
 import com.l7tech.objectmodel.*;
 import com.l7tech.identity.*;
@@ -18,20 +18,21 @@ import java.security.cert.CertificateEncodingException;
  * User: flascelles
  * Date: May 26, 2003
  *
- * Admin WS for identities (provider configs, users, groups)
+ * Server side implementation of the IdentityAdmin interface
+ * This was originally used with the Axis layer
  */
-public class Service implements IdentityService {
+public class IdentityAdminImpl implements IdentityAdmin {
 
     public static final String VERSION = "20031007";
     public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/identityAdmin";
 
-    public Service() {
+    public IdentityAdminImpl() {
         logger = LogManager.getInstance().getSystemLogger();
     }
     /**
      * Returns a version string. This can be compared to version on client-side.
      * @return value to be compared with the client side value of Service.VERSION;
-     * @throws java.rmi.RemoteException
+     * @throws RemoteException
      */
     public String echoVersion() throws RemoteException {
         return VERSION;
@@ -39,7 +40,7 @@ public class Service implements IdentityService {
     /**
      *
      * @return Array of entity headers for all existing id provider config
-     * @throws java.rmi.RemoteException
+     * @throws RemoteException
      */
     public EntityHeader[] findAllIdentityProviderConfig() throws RemoteException, FindException {
         try {
@@ -52,7 +53,7 @@ public class Service implements IdentityService {
     /**
      *
      * @return Array of entity headers for all existing id provider config
-     * @throws java.rmi.RemoteException
+     * @throws RemoteException
      */
     public EntityHeader[] findAllIdentityProviderConfigByOffset(int offset, int windowSize)
                                 throws RemoteException, FindException {
@@ -66,7 +67,7 @@ public class Service implements IdentityService {
     /**
      *
      * @return An identity provider config object
-     * @throws java.rmi.RemoteException
+     * @throws RemoteException
      */
     public IdentityProviderConfig findIdentityProviderConfigByPrimaryKey(long oid)
                                       throws RemoteException, FindException {

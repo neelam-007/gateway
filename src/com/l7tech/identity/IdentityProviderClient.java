@@ -1,4 +1,4 @@
-package com.l7tech.adminws.identity;
+package com.l7tech.identity;
 
 import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
@@ -64,8 +64,8 @@ public class IdentityProviderClient implements IdentityProvider {
     // ************************************************
     // PRIVATES
     // ************************************************
-    private IdentityService getStub() throws RemoteException {
-        IdentityService svc = (IdentityService)Locator.getDefault().lookup(IdentityService.class);
+    private IdentityAdmin getStub() throws RemoteException {
+        IdentityAdmin svc = (IdentityAdmin)Locator.getDefault().lookup(IdentityAdmin.class);
         if (svc == null) {
             throw new RemoteException("Cannot obtain the identity service");
         }

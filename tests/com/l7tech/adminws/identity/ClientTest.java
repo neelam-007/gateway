@@ -2,6 +2,7 @@ package com.l7tech.adminws.identity;
 
 import com.l7tech.adminws.ClientCredentialManager;
 import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.ldap.LdapConfigSettings;
 import com.l7tech.common.util.Locator;
 import junit.extensions.TestSetup;
@@ -52,8 +53,8 @@ public class ClientTest extends TestCase {
 
     public void testFinds() throws Exception {
         // IdentityService me = new Client();
-        IdentityService me =
-                (IdentityService)Locator.getDefault().lookup(IdentityService.class);
+        IdentityAdmin me =
+                (IdentityAdmin)Locator.getDefault().lookup(IdentityAdmin.class);
         if (me == null) throw new IllegalStateException("cannot obtain identity service reference");
         // test echo
         System.out.println(me.echoVersion());
@@ -103,8 +104,8 @@ public class ClientTest extends TestCase {
 
     public void testCreateSpockLdapIDProviderConfig() throws Exception {
         // IdentityService me = new Client();
-        IdentityService me =
-                (IdentityService)Locator.getDefault().lookup(IdentityService.class);
+        IdentityAdmin me =
+                (IdentityAdmin)Locator.getDefault().lookup(IdentityAdmin.class);
         if (me == null) throw new IllegalStateException("cannot obtain identity service reference");
           
 

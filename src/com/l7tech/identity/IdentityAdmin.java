@@ -1,20 +1,19 @@
-package com.l7tech.adminws.identity;
+package com.l7tech.identity;
 
 import com.l7tech.objectmodel.*;
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.User;
-import com.l7tech.identity.InvalidIdProviderCfgException;
-import com.l7tech.identity.Group;
 
 import java.rmi.RemoteException;
 import java.rmi.Remote;
 import java.security.cert.CertificateEncodingException;
 
 /**
- * Class IdentityService.
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a> 
+ * Class IdentityAdmin.
+ * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
+ *
+ * Interface for the remote administration of the identity types.
+ * Two server-side implementations in subpackahes rmi and ws.
  */
-public interface IdentityService  extends Remote {
+public interface IdentityAdmin  extends Remote {
     String echoVersion() throws RemoteException;
 
     EntityHeader[] findAllIdentityProviderConfig() throws RemoteException, FindException;

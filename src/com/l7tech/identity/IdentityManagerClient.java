@@ -1,4 +1,4 @@
-package com.l7tech.adminws.identity;
+package com.l7tech.identity;
 
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.common.util.Locator;
@@ -20,8 +20,8 @@ public class IdentityManagerClient {
     // ************************************************
     // PRIVATES
     // ************************************************
-    protected IdentityService getStub() throws RemoteException {
-        IdentityService svc = (IdentityService)Locator.getDefault().lookup(IdentityService.class);
+    protected IdentityAdmin getStub() throws RemoteException {
+        IdentityAdmin svc = (IdentityAdmin)Locator.getDefault().lookup(IdentityAdmin.class);
         if (svc == null) {
             throw new RemoteException("Cannot obtain the identity service");
         }

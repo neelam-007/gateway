@@ -2,15 +2,15 @@ package com.l7tech.adminws;
 
 import com.l7tech.jini.lookup.ServiceLookup;
 import com.l7tech.common.util.Locator;
-import com.l7tech.adminws.identity.IdentityService;
 
 import javax.security.auth.login.LoginException;
 import java.net.PasswordAuthentication;
 import java.rmi.RemoteException;
 import java.rmi.ConnectException;
 
-import com.l7tech.adminws.identity.Service;
 import com.l7tech.console.event.ConnectionEvent;
+import com.l7tech.identity.IdentityAdmin;
+import com.l7tech.identity.ws.IdentityAdminImpl;
 
 /**
  * Default <code>ClientCredentialManager</code> implementaiton that validates
@@ -29,13 +29,13 @@ public class ClientCredentialManagerImpl extends ClientCredentialManager {
         resetCredentials();
         setCredentials(creds);
         // version check
-        IdentityService is = (IdentityService)Locator.getDefault().lookup(IdentityService.class);
+        IdentityAdmin is = (IdentityAdmin)Locator.getDefault().lookup(IdentityAdmin.class);
         if (is == null) {
             throw new ConnectException("Unable to connect to the remote service");
         }
         String remoteVersion = is.echoVersion();
-        if (!Service.VERSION.equals(remoteVersion)) {
-            throw new VersionException(Service.VERSION, remoteVersion);
+        if (!IdentityAdminImpl.VERSION.equals(remoteVersion)) {
+            throw new VersionException(IdentityAdminImpl.VERSION, remoteVersion);
         }
         serviceLookup =
           (ServiceLookup)Locator.getDefault().lookup(ServiceLookup.class);

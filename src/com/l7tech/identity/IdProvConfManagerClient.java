@@ -1,8 +1,6 @@
 package com.l7tech.identity;
 
 import com.l7tech.objectmodel.*;
-import com.l7tech.adminws.identity.IdentityProviderClient;
-import com.l7tech.adminws.identity.IdentityService;
 import com.l7tech.common.util.Locator;
 
 import java.util.Collection;
@@ -157,8 +155,8 @@ public class IdProvConfManagerClient implements IdentityProviderConfigManager {
     // ************************************************
     // PRIVATES
     // ************************************************
-    private IdentityService getStub() throws RemoteException {
-        IdentityService svc = (IdentityService)Locator.getDefault().lookup(IdentityService.class);
+    private IdentityAdmin getStub() throws RemoteException {
+        IdentityAdmin svc = (IdentityAdmin)Locator.getDefault().lookup(IdentityAdmin.class);
         if (svc == null) {
             throw new RemoteException("Unable to obtain the remote service");
         }
