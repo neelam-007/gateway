@@ -80,9 +80,6 @@ public class MessageProcessor {
                         }
                     }
                     if (wrongPolicyVersion) {
-                        String msg = "Wrong policy version " + requestorVersion;
-                        // logger.severe(msg);
-                        // this will make the servlet send back the URL of the policy
                         response.setPolicyViolated(true);
                         throw new PolicyVersionException();
                     }
