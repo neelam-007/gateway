@@ -370,10 +370,14 @@ public class NewFederatedUserDialog extends JDialog {
             }
         }
         if (emailRadioButton.isSelected()) {
-            emailTextField.setText(userNameTextField.getText() + "@");
+            if(!(extractNameFromEmail(emailTextField.getText())).equals(userNameTextField.getText())) {
+                emailTextField.setText(formulateEmail(emailTextField.getText()));
+            }
         }
         if (loginRadioButton.isSelected()) {
-            loginTextField.setText(userNameTextField.getText());
+            if(!loginTextField.getText().equals(userNameTextField.getText())) {
+                loginTextField.setText(userNameTextField.getText());
+            }
         }
 
         if (UserIdFieldFilled) {
@@ -417,12 +421,29 @@ public class NewFederatedUserDialog extends JDialog {
                 x509SubjectDNTextField.setText(formulateSubjectDN(x509SubjectDNTextField.getText()));
             }
             if (emailRadioButton.isSelected()) {
-                emailTextField.setText(userNameTextField.getText() + "@");
+                emailTextField.setText(formulateEmail(emailTextField.getText()));
             }
             if (loginRadioButton.isSelected()) {
                 loginTextField.setText(userNameTextField.getText());
             }
         }
+    }
+
+    private String formulateEmail(String currentEmail) {
+
+        if(currentEmail.length() == 0) {
+            return userNameTextField.getText() + "@";
+        }
+
+        int startIndex = currentEmail.indexOf("@");
+
+        if(startIndex <  0) {
+            return userNameTextField.getText() + "@";
+        } else {
+            return userNameTextField.getText() + currentEmail.substring(startIndex);
+        }
+
+
     }
 
     private String formulateSubjectDN(String currentDN) {
