@@ -31,6 +31,8 @@ import java.security.NoSuchProviderException;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateNotYetValidException;
+import java.security.cert.CertificateExpiredException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
@@ -61,22 +63,37 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
             TrustedCert cert = null;
             try {
                 cert = trustedCertManager.findByPrimaryKey(oid);
+                if (cert == null) {
+                    logger.severe("FederatedIdentityProvider '" + config.getName() +
+                                  "' refers to TrustedCert " + oid + ", which no longer exists");
+                    continue;
+                }
                 CertificateExpiry exp = CertUtils.checkValidity(cert.getCertificate());
                 if (exp.getDays() <= CertificateExpiry.FINE_DAYS) logWillExpire( cert, exp );
                 trustedCerts.put(cert.getSubjectDn(), cert);
             } catch ( FindException e ) {
                 throw new RuntimeException("Couldn't retrieve a cert from the TrustedCertManager - cannot proceed", e);
-            } catch ( Exception e ) {
-                logExpired( cert, e );
+            } catch ( CertificateNotYetValidException e ) {
+                logInvalidCert( cert, e );
+            } catch ( IOException e ) {
+                logInvalidCert( cert, e );
+            } catch ( CertificateExpiredException e ) {
+                logInvalidCert( cert, e );
+            } catch ( CertificateException e ) {
+                logInvalidCert( cert, e );
             }
         }
     }
 
-    private void logExpired( TrustedCert cert, Exception e ) {
+    private void logInvalidCert( TrustedCert cert, Exception e ) {
         final String msg = "Trusted cert for " + cert.getSubjectDn() +
-                           " is expired or corrupted. Identities asserted by the corresponding authority " +
+                           " is not valid or corrupted. Identities asserted by the corresponding authority " +
                            "will not be authorized.";
-        logger.log( Level.SEVERE, msg, e );
+        if ( e == null ) {
+            logger.log( Level.SEVERE, msg);
+        } else {
+            logger.log( Level.SEVERE, msg, e );
+        }
     }
 
     private void logWillExpire( TrustedCert cert, CertificateExpiry e ) {
@@ -133,7 +150,7 @@ public class FederatedIdentityProvider extends PersistentIdentityProvider {
                     if (exp.getDays() <= CertificateExpiry.FINE_DAYS)
                         logWillExpire(trustedCert, exp);
                 } catch ( CertificateException e ) {
-                    logExpired(trustedCert, e);
+                    logInvalidCert(trustedCert, e);
                     throw new AuthenticationException(e.getMessage(), e);
                 }
 
