@@ -110,6 +110,7 @@ public class ResolutionManager {
             String soapaction = (String)i.next();
             for (Iterator j = urns.iterator(); j.hasNext();) {
                 ResolutionParameters parameters = new ResolutionParameters();
+                parameters.setServiceid(service.getOid());
                 parameters.setSoapaction(soapaction);
                 parameters.setUrn((String)j.next());
                 listOfParameters.add(parameters);
