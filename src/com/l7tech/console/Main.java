@@ -209,6 +209,10 @@ public class Main {
 
         // apache logging layer to use the jdk logger
         System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
+        // rmi properties
+        // automatic loading of classes is prohibited except from the local CLASSPATH and from the
+        // java.rmi.server.codebase property set on this JVM
+        System.setProperty("java.rmi.server.useCodebaseOnly", "true");
 
     }
 

@@ -188,10 +188,9 @@
             <fileset dir="${src.root}/lib/crypto/bc">
                 <include name="bcprov-*.jar"/>
             </fileset>
-<!--            todo: to be restored - em -->
-<!--            <fileset dir="${src.root}/lib">-->
-<!--                <include name="webapp-rmiannotation.jar"/>-->
-<!--            </fileset>-->
+            <fileset dir="${build.dir}">
+                <include name="rmiannotation.jar"/>
+            </fileset>
         </copy>
 
         <!--
@@ -354,8 +353,8 @@
                 <include name="jboss-*.jar"/>
                 <include name="commons-logging-1.0.4.jar"/>
 
-                <include name="tarari_xcx.jar" />
-                <include name="tarari_xpath.jar" />
+                <include name="tarari_xcx.jar"/>
+                <include name="tarari_xpath.jar"/>
                 <include name="activation.jar"/>
                 <include name="mailapi-1.3.1.jar"/>
                 <include name="c3p0-0.8.5pre4.jar"/>
@@ -421,6 +420,8 @@
             <classes dir="${build.classes}">
                 <exclude name="com/l7tech/console/**/*"/>
                 <exclude name="com/l7tech/test/**/*"/>
+                <exclude name="com/l7tech/spring/remoting/rmi/codebase/ClassSetAnnotation.class"/>
+                <exclude name="com/l7tech/spring/remoting/rmi/codebase/java.rmi.server.RMIClassLoaderSpi"/>
                 <exclude name="com/l7tech/server/jms/**/*" unless="include.jms"/>
             </classes>
 
@@ -435,15 +436,13 @@
             <zipfileset dir="${src.root}/etc" includes="dataAccessContext.xml" prefix="WEB-INF"/>
         </war>
 
-        <!--    * keep prebuilt version in src.root/lib
-
-                <jar jarfile="${build.dir}/webapp-rmiannotation.jar">
-                    <fileset dir="${build.dir}/classes">
-                    <include name="com/l7tech/remote/jini/export/WebAppAnnotationClassProvider*.class"/>
-                    </fileset>
-                </jar>
-        -->
-
+        <jar jarfile="${build.dir}/rmiannotation.jar">
+            <fileset dir="${build.dir}/classes">
+                <include name="com/l7tech/spring/remoting/rmi/codebase/AnnotationClassProviderBean.class"/>
+            </fileset>
+            <zipfileset dir="${src.root}/src/com/l7tech/spring/remoting/rmi/codebase/"
+                        includes="java.rmi.server.RMIClassLoaderSpi" prefix="META-INF/services"/>
+        </jar>
     </target>
 
     <target name="package.bridge" unless="ssg.only">
@@ -455,10 +454,11 @@
                 <exclude name="com/l7tech/common/security/prov/rsa/**/*"/>
                 <exclude name="com/l7tech/common/security/prov/ncipher/**/*"/>
                 <exclude name="com/l7tech/common/security/prov/entrust/**/*"/>
-                <exclude name="com/l7tech/common/security/prov/tarari/**/*"/> <!-- goes in lib/ext -->
+                <exclude name="com/l7tech/common/security/prov/tarari/**/*"/>
+                <!-- goes in lib/ext -->
                 <exclude name="com/l7tech/common/security/TrustedCert**"/>
                 <exclude name="com/l7tech/common/audit/**"/>
-                <exclude name="com/l7tech/common/xml/tarari/**/*" />
+                <exclude name="com/l7tech/common/xml/tarari/**/*"/>
 
                 <exclude name="com/l7tech/policy/server/**/*"/>
                 <exclude name="com/l7tech/policy/exporter/**/*"/>
@@ -486,7 +486,7 @@
                 <exclude name="com/l7tech/common/security/prov/**/*"/>
                 <exclude name="com/l7tech/common/security/saml/**/*"/>
                 <exclude name="com/l7tech/common/xml/saml/**/*"/>
-                <exclude name="com/l7tech/common/xml/tarari/**/*" />
+                <exclude name="com/l7tech/common/xml/tarari/**/*"/>
                 <include name="com/l7tech/common/security/TrustedCert*.class"/>
                 <exclude name="com/l7tech/common/security/AesKey.class"/>
                 <exclude name="com/l7tech/common/security/Cert*.class"/>
@@ -855,10 +855,10 @@
 
     <!-- Compile RMI stubs -->
     <target name="compile-rmi">
-      <rmic base="${build.classes}" stubVersion="1.2">
-          <classpath refid="project.classpath"/>
-          <include name="com/l7tech/admin/rmi/AdminLoginImpl.class"/>
-      </rmic>
+        <rmic base="${build.classes}" stubVersion="1.2">
+            <classpath refid="project.classpath"/>
+            <include name="com/l7tech/admin/rmi/AdminLoginImpl.class"/>
+        </rmic>
     </target>
 
     <target name="db.properties" depends="db.properties.mysql, db.properties.postgres, db.properties.oracle8, db.properties.oracle9, db.properties.oracle10"/>
@@ -1232,7 +1232,7 @@
                 <include name="md5passwd.pl"/>
                 <include name="rpass.pl"/>
                 <include name="install.pl"/>
-		<include name="upgrade.sh"/>
+                <include name="upgrade.sh"/>
                 <include name="buildVersion.txt"/>
                 <include name="ssgruntimedefs.sh"/>
                 <include name="clean_db.pl"/>
