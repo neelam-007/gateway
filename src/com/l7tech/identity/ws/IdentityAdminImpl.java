@@ -45,7 +45,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
     public EntityHeader[] findAllIdentityProviderConfig() throws RemoteException, FindException {
         try {
             Collection res = getIdentityProviderConfigManagerAndBeginTransaction().findAllHeaders();
-            return collectionToHeaderArray(res);
+            return (EntityHeader[])res.toArray(new EntityHeader[]{});
         } finally {
             endTransaction();
         }
@@ -59,7 +59,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
                                 throws RemoteException, FindException {
         try {
             Collection res = getIdentityProviderConfigManagerAndBeginTransaction().findAllHeaders(offset, windowSize);
-            return collectionToHeaderArray(res);
+            return (EntityHeader[])res.toArray(new EntityHeader[]{});
         } finally {
             endTransaction();
         }
@@ -113,7 +113,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
         try {
             UserManager userManager = retrieveUserManagerAndBeginTransaction(identityProviderConfigId);
             Collection res = userManager.findAllHeaders();
-            return collectionToHeaderArray(res);
+            return (EntityHeader[])res.toArray(new EntityHeader[]{});
         } finally {
             endTransaction();
         }
@@ -123,7 +123,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
         try {
             UserManager userManager = retrieveUserManagerAndBeginTransaction(identityProviderConfigId);
             Collection res = userManager.findAllHeaders(offset, windowSize);
-            return collectionToHeaderArray(res);
+            return (EntityHeader[])res.toArray(new EntityHeader[]{});
         } finally {
             endTransaction();
         }
@@ -141,7 +141,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
                 }
             }
             Collection searchResults = provider.search(types, pattern);
-            return collectionToHeaderArray(searchResults);
+            return (EntityHeader[])searchResults.toArray(new EntityHeader[]{});
         } finally {
             endTransaction();
         }
@@ -236,7 +236,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
         try {
             Collection res = retrieveGroupManagerAndBeginTransaction(identityProviderConfigId).
                                 findAllHeaders();
-            return collectionToHeaderArray(res);
+            return (EntityHeader[])res.toArray(new EntityHeader[]{});
         } finally {
             endTransaction();
         }
@@ -247,7 +247,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
         try {
             Collection res = retrieveGroupManagerAndBeginTransaction(identityProviderConfigId).
                                 findAllHeaders(offset, windowSize);
-            return collectionToHeaderArray(res);
+            return (EntityHeader[])res.toArray(new EntityHeader[]{});
         } finally {
             endTransaction();
         }
@@ -454,26 +454,6 @@ public class IdentityAdminImpl implements IdentityAdmin {
             throw new RemoteException(msg + e.getMessage(), e);
         }
     }
-
-    private EntityHeader[] collectionToHeaderArray(Collection input) throws RemoteException {
-        if (input == null) return new EntityHeader[0];
-        EntityHeader[] output = new EntityHeader[input.size()];
-        int count = 0;
-        Iterator i = input.iterator();
-        while (i.hasNext()) {
-            try {
-                output[count] = (EntityHeader)i.next();
-            } catch (ClassCastException e) {
-                String msg = "Collection contained something other than a " +
-                             "com.l7tech.objectmodel.EntityHeader";
-                logger.log(Level.SEVERE, msg, e);
-                throw new RemoteException(msg, e);
-            }
-            ++count;
-        }
-        return output;
-    }
-
 
     IdentityProviderConfigManager identityProviderConfigManager = null;
     private Logger logger = null;
