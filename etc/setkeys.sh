@@ -234,7 +234,7 @@ done
 if $cygwin; then
     CP=`cygpath --path --windows $CP`
 fi
-echo $CP
+
 # do it
 java -cp $CP com.l7tech.identity.cert.RsaCertificateSigner $ROOT_KEYSTORE_FILE $KEYSTORE_PASSWORD $ROOT_KEY_ALIAS $KEYSTORE_PASSWORD $SSL_CSR_FILE $SSL_CERT_FILE
 
