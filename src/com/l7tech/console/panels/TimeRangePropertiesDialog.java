@@ -1,6 +1,9 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.action.Actions;
+import com.l7tech.policy.assertion.TimeRange;
+import com.l7tech.policy.assertion.TimeOfDayRange;
+import com.l7tech.policy.assertion.TimeOfDay;
 
 import javax.swing.*;
 import javax.swing.event.ChangeListener;
@@ -22,10 +25,10 @@ import java.util.*;
  */
 public class TimeRangePropertiesDialog extends JDialog {
 
-    public TimeRangePropertiesDialog(Frame owner, boolean modal) {
+    public TimeRangePropertiesDialog(Frame owner, boolean modal, TimeRange assertion) {
         super(owner, modal);
+        this.assertion = assertion;
         initialize();
-        // todo constructor to pass actual assertion
     }
 
     private void ok() {
@@ -48,7 +51,6 @@ public class TimeRangePropertiesDialog extends JDialog {
         for (Iterator iterator = itemsToToggleForDayOfWeek.iterator(); iterator.hasNext();) {
             JComponent component = (JComponent) iterator.next();
             component.setEnabled(enable);
-
         }
     }
 
@@ -120,7 +122,7 @@ public class TimeRangePropertiesDialog extends JDialog {
 
         itemsToToggleForTimeOfDay.clear();
         itemsToToggleForDayOfWeek.clear();
-        
+
         // calculate UTC offset
         int totOffsetInMin = Calendar.getInstance().getTimeZone().getRawOffset() / (1000*60);
         hroffset = totOffsetInMin/60;
@@ -202,8 +204,130 @@ public class TimeRangePropertiesDialog extends JDialog {
         setValuesToAssertion();
     }
 
+    /**
+     * use values stored in this.assertion to populate controls of the dialog.
+     */
     private void setValuesToAssertion() {
-        // todo, get values from the assertion and display in dialog
+        if (assertion != null) {
+            enableTimeOfDay.setSelected(assertion.isControlTime());
+            enableDayOfWeek.setSelected(assertion.isControlDay());
+            int day = assertion.getStartDayOfWeek();
+            SpinnerListModel spinModel = (SpinnerListModel)startDay.getModel();
+            switch (day) {
+                case Calendar.SUNDAY:
+                    spinModel.setValue(week[0]);
+                    break;
+                case Calendar.MONDAY:
+                    spinModel.setValue(week[1]);
+                    break;
+                case Calendar.TUESDAY:
+                    spinModel.setValue(week[2]);
+                    break;
+                case Calendar.WEDNESDAY:
+                    spinModel.setValue(week[3]);
+                    break;
+                case Calendar.THURSDAY:
+                    spinModel.setValue(week[4]);
+                    break;
+                case Calendar.FRIDAY:
+                    spinModel.setValue(week[5]);
+                    break;
+                case Calendar.SATURDAY:
+                    spinModel.setValue(week[6]);
+                    break;
+            }
+            day = assertion.getEndDayOfWeek();
+            spinModel = (SpinnerListModel)endDay.getModel();
+            switch (day) {
+                case Calendar.SUNDAY:
+                    spinModel.setValue(week[0]);
+                    break;
+                case Calendar.MONDAY:
+                    spinModel.setValue(week[1]);
+                    break;
+                case Calendar.TUESDAY:
+                    spinModel.setValue(week[2]);
+                    break;
+                case Calendar.WEDNESDAY:
+                    spinModel.setValue(week[3]);
+                    break;
+                case Calendar.THURSDAY:
+                    spinModel.setValue(week[4]);
+                    break;
+                case Calendar.FRIDAY:
+                    spinModel.setValue(week[5]);
+                    break;
+                case Calendar.SATURDAY:
+                    spinModel.setValue(week[6]);
+                    break;
+            }
+            toggleTimeOfDay();
+            toggleDayOfWeek();
+            TimeOfDayRange timeRange = assertion.getTimeRange();
+            if (timeRange != null) {
+                int hr, min, sec;
+                hr = timeRange.getFrom().getHour();
+                min = timeRange.getFrom().getMinute();
+                sec = timeRange.getFrom().getSecond();
+                String utclabelvalue = (hr < 10 ? "0" : "") + hr +
+                                       (min < 10 ? ":0" : ":") + min +
+                                       (sec < 10 ? ":0" : ":") + sec;
+                utcStartTime.setText(utclabelvalue);
+                hr += hroffset;
+                min += minoffset;
+                while (min >= 60) {
+                    ++hr;
+                    min -= 60;
+                }
+                while (hr >= 24) {
+                    hr -= 24;
+                }
+                while (min < 0) {
+                    --hr;
+                    min += 60;
+                }
+                while (hr < 0) {
+                    hr += 24;
+                }
+                SpinnerNumberModel spinNrModel = (SpinnerNumberModel)startHr.getModel();
+                spinNrModel.setValue(new Integer(hr));
+                spinNrModel = (SpinnerNumberModel)startMin.getModel();
+                spinNrModel.setValue(new Integer(min));
+                spinNrModel = (SpinnerNumberModel)startSec.getModel();
+                spinNrModel.setValue(new Integer(sec));
+
+
+                hr = timeRange.getTo().getHour();
+                min = timeRange.getTo().getMinute();
+                sec = timeRange.getTo().getSecond();
+                utclabelvalue = (hr < 10 ? "0" : "") + hr +
+                                (min < 10 ? ":0" : ":") + min +
+                                (sec < 10 ? ":0" : ":") + sec;
+                utcEndTime.setText(utclabelvalue);
+                hr += hroffset;
+                min += minoffset;
+                while (min >= 60) {
+                    ++hr;
+                    min -= 60;
+                }
+                while (hr >= 24) {
+                    hr -= 24;
+                }
+                while (min < 0) {
+                    --hr;
+                    min += 60;
+                }
+                while (hr < 0) {
+                    hr += 24;
+                }
+                spinNrModel = (SpinnerNumberModel)endHr.getModel();
+                spinNrModel.setValue(new Integer(hr));
+                spinNrModel = (SpinnerNumberModel)endMin.getModel();
+                spinNrModel.setValue(new Integer(min));
+                spinNrModel = (SpinnerNumberModel)endSec.getModel();
+                spinNrModel.setValue(new Integer(sec));
+            }
+        }
         // display UTC corresponding times
         refreshStartUTCLabel();
         refreshEndUTCLabel();
@@ -425,11 +549,16 @@ public class TimeRangePropertiesDialog extends JDialog {
      * for dev purposes only, to view dlg's layout
      */
     public static void main(String[] args) {
-        TimeRangePropertiesDialog me = new TimeRangePropertiesDialog(null, true);
+        TimeRange assertion = new TimeRange();
+        //assertion.setStartDayOfWeek(Calendar.WEDNESDAY);
+        assertion.setTimeRange(new TimeOfDayRange(new TimeOfDay(8,0,0), new TimeOfDay(17,0,0)));
+        TimeRangePropertiesDialog me = new TimeRangePropertiesDialog(null, true, assertion);
         me.pack();
         me.show();
         System.exit(0);
     }
+
+    private TimeRange assertion;
 
     private JButton helpButton;
     private JButton okButton;
