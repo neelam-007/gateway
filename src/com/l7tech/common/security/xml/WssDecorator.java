@@ -104,7 +104,9 @@ public interface WssDecorator {
         public interface SecureConversationSession {
             String getId();
             SecretKey getSecretKey();
+            // todo, this makes no sense --fla
             int getGeneration();
+            // todo, this makes no sense --fla
             int getLength();
         }
 
