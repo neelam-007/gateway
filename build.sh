@@ -57,6 +57,8 @@ CLASSPATH="${JDK_CLASSES}:${ANT_JARS}"
 # For Cygwin, switch paths to Windows format before running java
 if $cygwin; then
   CLASSPATH=`cygpath --path --windows "$CLASSPATH"`
+  SRC_ROOT=`cygpath --path --windows "$SRC_ROOT"`
+  TOMCAT_HOME=`cygpath --path --windows "$TOMCAT_HOME"`
 fi
 export CLASSPATH
 java org.apache.tools.ant.Main -Dtomcat.home=$TOMCAT_HOME -Dsrc.root=$SRC_ROOT $@
