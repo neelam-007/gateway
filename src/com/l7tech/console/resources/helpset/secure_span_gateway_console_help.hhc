@@ -1,0 +1,183 @@
+<html>
+<!-- Sitemap 1.0 -->
+<object type="text/site properties">
+  <param name="FrameName" value="bsscright">
+  <param name="SiteType" value="toc">
+  <param name="Image Width" value="16">
+</object>
+<ul>
+  <li><object type="text/sitemap">
+    <param name="Name" value="SecureSpan Manager Help">
+  </object>
+  <ul>
+    <li><object type="text/sitemap">
+      <param name="Name" value="Welcome">
+      <param name="Local" value="welcome.htm">
+    </object>
+    <li><object type="text/sitemap">
+      <param name="Name" value="Overview">
+    </object>
+    <ul>
+      <li><object type="text/sitemap">
+        <param name="Name" value="Product Overview">
+        <param name="Local" value="overview/product_overview.htm">
+      </object>
+      <li><object type="text/sitemap">
+        <param name="Name" value="Audience">
+        <param name="Local" value="overview/audience.htm">
+      </object>
+      <li><object type="text/sitemap">
+        <param name="Name" value="Architecture Model">
+        <param name="Local" value="overview/product_architecture_model.htm">
+      </object>
+      <li><object type="text/sitemap">
+        <param name="Name" value="Contact Information">
+        <param name="Local" value="overview/contact_information.htm">
+      </object>
+      </ul>
+    <li><object type="text/sitemap">
+      <param name="Name" value="Security Policy">
+    </object>
+    <ul>
+      <li><object type="text/sitemap">
+        <param name="Name" value="Product Design Logic">
+        <param name="Local" value="security_policy/product_design_logic.htm">
+      </object>
+      <li><object type="text/sitemap">
+        <param name="Name" value="Key Concepts">
+        <param name="Local" value="security_policy/key_concepts.htm">
+      </object>
+      <li><object type="text/sitemap">
+        <param name="Name" value="Examples">
+        <param name="Local" value="security_policy/examples.htm">
+      </object>
+      </ul>
+    <li><object type="text/sitemap">
+      <param name="Name" value="User Interface">
+    </object>
+    <ul>
+      <li><object type="text/sitemap">
+        <param name="Name" value="Preferences">
+        <param name="Local" value="user_interface/preferences.htm">
+      </object>
+      <li><object type="text/sitemap">
+        <param name="Name" value="Menus">
+        <param name="Local" value="user_interface/menus.htm">
+      </object>
+      <li><object type="text/sitemap">
+        <param name="Name" value="Screen Sections">
+        <param name="Local" value="user_interface/screen_sections.htm">
+      </object>
+      <li><object type="text/sitemap">
+        <param name="Name" value="Default Settings">
+        <param name="Local" value="user_interface/default_settings.htm">
+      </object>
+      </ul>
+    <li><object type="text/sitemap">
+      <param name="Name" value="Setup">
+    </object>
+    <ul>
+      <li><object type="text/sitemap">
+        <param name="Name" value="Setup Overview">
+        <param name="Local" value="setup/overview.htm">
+      </object>
+      <li><object type="text/sitemap">
+        <param name="Name" value="Connecting and Disconnecting">
+        <param name="Local" value="setup/connecting_and_disconnecting.htm">
+      </object>
+      <li><object type="text/sitemap">
+        <param name="Name" value="Identity Providers">
+        <param name="Local" value="setup/identity_providers.htm">
+      </object>
+      <li><object type="text/sitemap">
+        <param name="Name" value="Creating Users and Groups">
+        <param name="Local" value="setup/creating_users_and_groups.htm">
+      </object>
+      <li><object type="text/sitemap">
+        <param name="Name" value="Policy Templates">
+        <param name="Local" value="setup/policy_templates.htm">
+      </object>
+      </ul>
+    <li><object type="text/sitemap">
+      <param name="Name" value="Web Services">
+    </object>
+    <ul>
+      <li><object type="text/sitemap">
+        <param name="Name" value="Web Services Overview">
+        <param name="Local" value="publish_services/publish_services_overview.htm">
+      </object>
+      <li><object type="text/sitemap">
+        <param name="Name" value="Creating Services">
+        <param name="Local" value="publish_services/creating_services.htm">
+      </object>
+      <li><object type="text/sitemap">
+        <param name="Name" value="Publishing Services">
+        <param name="Local" value="publish_services/publishing_services.htm">
+      </object>
+      <li><object type="text/sitemap">
+        <param name="Name" value="Creating Policies">
+        <param name="Local" value="publish_services/creating_policies.htm">
+      </object>
+      <li><object type="text/sitemap">
+        <param name="Name" value="Validating Policies">
+        <param name="Local" value="publish_services/validating_policies.htm">
+      </object>
+      <li><object type="text/sitemap">
+        <param name="Name" value="Policy Views">
+        <param name="Local" value="publish_services/policy_views.htm">
+      </object>
+      <li><object type="text/sitemap">
+        <param name="Name" value="Examples">
+        <param name="Local" value="publish_services/examples.htm">
+      </object>
+      </ul>
+    <li><object type="text/sitemap">
+      <param name="Name" value="Gateway Management">
+    </object>
+    <ul>
+      <li><object type="text/sitemap">
+        <param name="Name" value="Gateway Controls">
+        <param name="Local" value="gateway_management/gateway_controls.htm">
+      </object>
+      <li><object type="text/sitemap">
+        <param name="Name" value="Logs Overview">
+        <param name="Local" value="gateway_management/logs_overview.htm">
+      </object>
+      <li><object type="text/sitemap">
+        <param name="Name" value="Reviewing Logs">
+        <param name="Local" value="gateway_management/reviewing_logs.htm">
+      </object>
+      <li><object type="text/sitemap">
+        <param name="Name" value="Statistics">
+        <param name="Local" value="gateway_management/statistics.htm">
+      </object>
+      </ul>
+    <li><object type="text/sitemap">
+      <param name="Name" value="Client Agent">
+    </object>
+    <ul>
+      <li><object type="text/sitemap">
+        <param name="Name" value="Client Agent Overview">
+        <param name="Local" value="client_agent/client_agent_overview.htm">
+      </object>
+      <li><object type="text/sitemap">
+        <param name="Name" value="Client User Interface">
+        <param name="Local" value="client_agent/client_user_interface.htm">
+      </object>
+      <li><object type="text/sitemap">
+        <param name="Name" value="Managing Clients">
+        <param name="Local" value="client_agent/managing_clients.htm">
+      </object>
+      </ul>
+    <li><object type="text/sitemap">
+      <param name="Name" value="Troubleshooting">
+    </object>
+    <ul>
+      <li><object type="text/sitemap">
+        <param name="Name" value="Troubleshooting">
+        <param name="Local" value="troubleshooting/troubleshooting.htm">
+      </object>
+      </ul>
+    </ul>
+</ul>
+</html>
