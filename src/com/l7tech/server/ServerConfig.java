@@ -161,6 +161,15 @@ public class ServerConfig implements ComponentConfig {
             logger.severe("Couldn't load serverconfig.properties!");
             throw new RuntimeException("Couldn't load serverconfig.properties!");
         }
+        // export as system property. This is required so custom assertions
+        // do not need to import in the ServerConfig and the clases referred by it
+        // (LogManager, TransportProtocol) to read the single property.  - em20040506
+        String cfgDirectory = getProperty(PARAM_CONFIG_DIRECTORY);
+        if (cfgDirectory !=null) {
+            System.setProperty("ssg.config.dir", cfgDirectory);
+        } else {
+            logger.warning("The server config directory value is empty");
+        }
     }
 
     private String print(InetAddress ip) {
