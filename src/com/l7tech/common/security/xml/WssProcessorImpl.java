@@ -118,7 +118,7 @@ public class WssProcessorImpl implements WssProcessor {
                     Node muNode = nl.item(0);
                     String mu = muNode.getNodeValue();
                     if (Integer.parseInt(mu) == 1)
-                        throw new ProcessorException("Unrecognized header: " + securityChildToProcess.getNodeName() + " with mustUnderstand=\"1\"");
+                        throw new ProcessorException("Unrecognized element in security header: " + securityChildToProcess.getNodeName() + " with mustUnderstand=\"1\"");
                 }
                 logger.finer("Unknown element in security header: " + securityChildToProcess.getNodeName());
             }
