@@ -89,7 +89,7 @@ public class ServerXmlResponseSecurity implements ServerAssertion {
                 // retrieve the session
                 try {
                     xmlsession = SessionManager.getInstance().getSession(Long.parseLong(sessionIDHeaderValue));
-                    encryptionKey = xmlsession.getKeyRes() != null ? new AesKey(xmlsession.getKeyReq(), 128) : null;
+                    encryptionKey = xmlsession.getKeyRes() != null ? new AesKey(xmlsession.getKeyRes(), 128) : null;
                 } catch (SessionNotFoundException e) {
                     String msg = "Exception finding session with id=" + sessionIDHeaderValue;
                     response.setParameter(Response.PARAM_HTTP_SESSION_STATUS, "invalid");
