@@ -341,6 +341,11 @@
         </exec>
     </target>
 
+
+    <!--
+      ** Ensure that all classes in the Agent and Manager jar files are loadable when the classpath
+      ** contains only the jars and their declared dependency jars.
+      -->
     <target name="testpackage" depends="package">
         <javac srcdir="tools" destdir="tools" debug="on" optimize="off"
             deprecation="on" depend="on" verbose="no" />
