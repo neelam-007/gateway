@@ -334,6 +334,7 @@ public class Gui {
         fileMenu.add( new JMenuItem( getSsgListPanel().getActionEditSsg() ) );
         fileMenu.add( new JMenuItem( getSsgListPanel().getActionSetDefaultSsg() ) );
         fileMenu.add( new JMenuItem( getSsgListPanel().getActionDeleteSsg() ) );
+        fileMenu.add( new JMenuItem( getSsgListPanel().getActionChangePasswordAndRevokeClientCertificate() ) );
         fileMenu.add( new JSeparator() );
         fileMenu.add( new JMenuItem( getSsgListPanel().getActionEmptyCookieCache() ) );
         fileMenu.add( new JSeparator() );

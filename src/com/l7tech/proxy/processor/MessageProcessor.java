@@ -46,6 +46,7 @@ import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.PasswordAuthentication;
 import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
 import java.security.KeyStoreException;
@@ -123,7 +124,7 @@ public class MessageProcessor {
                         undecorateResponse(req, res);
                         return res;
                     } catch (SSLException e) {
-                        handleSslException(e, req);
+                        handleSslException(req.getSsg(), req.getCredentials(), e);
                         // FALLTHROUGH -- retry with new server certificate
                     } catch (ServerCertificateUntrustedException e) {
                         SsgKeyStoreManager.installSsgServerCertificate(ssg, req.getCredentials()); // might throw BadCredentialsException
@@ -181,14 +182,23 @@ public class MessageProcessor {
         req.getNewCredentials();
     }
 
-    private static void handleSslException(SSLException e, PendingRequest req)
+    /**
+     * Attempt to fix whatever caused the specified SSLException, if it was something simple like the server
+     * cert being unknown.
+     * 
+     * @param ssg
+     * @param credentials
+     * @param e
+     * @throws BadCredentialsException
+     * @throws IOException
+     * @throws OperationCanceledException
+     * @throws GeneralSecurityException
+     * @throws KeyStoreCorruptException
+     */
+    public static void handleSslException(Ssg ssg, PasswordAuthentication credentials, SSLException e)
             throws BadCredentialsException, IOException, OperationCanceledException, GeneralSecurityException,
                    KeyStoreCorruptException
     {
-        // An SSL handshake with the SSG has failed.
-        // See if we can identify the cause and correct it.
-        Ssg ssg = req.getSsg();
-
         // Do we not have the right password to access our keystore?
         if (ExceptionUtils.causedBy(e, BadCredentialsException.class) ||
                 ExceptionUtils.causedBy(e, UnrecoverableKeyException.class))
@@ -214,7 +224,7 @@ public class MessageProcessor {
         }
 
         // We don't trust the server cert.  Perform certificate discovery and try again
-        SsgKeyStoreManager.installSsgServerCertificate(ssg, req.getCredentials()); // might throw BadCredentialsException
+        SsgKeyStoreManager.installSsgServerCertificate(ssg, credentials); // might throw BadCredentialsException
     }
 
     /**

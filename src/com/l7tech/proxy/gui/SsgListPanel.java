@@ -2,23 +2,29 @@ package com.l7tech.proxy.gui;
 
 import com.l7tech.common.gui.util.FontUtil;
 import com.l7tech.proxy.ClientProxy;
-import com.l7tech.proxy.datamodel.Managers;
-import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
-import com.l7tech.proxy.datamodel.SsgManager;
+import com.l7tech.proxy.processor.MessageProcessor;
+import com.l7tech.proxy.datamodel.*;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.gui.dialogs.SsgPropertyDialog;
+import com.l7tech.proxy.gui.dialogs.PasswordDialog;
 import com.l7tech.proxy.gui.util.IconManager;
 import com.l7tech.proxy.util.ClientLogger;
+import com.l7tech.proxy.util.SslUtils;
 
 import javax.swing.*;
 import javax.swing.table.TableCellRenderer;
+import javax.net.ssl.SSLException;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.net.PasswordAuthentication;
+import java.io.IOException;
+import java.security.KeyStoreException;
+import java.security.GeneralSecurityException;
 
 /**
  * Panel listing known SSGs and allowing create/edit/delete.
@@ -36,6 +42,7 @@ public class SsgListPanel extends JPanel {
     private Action actionDeleteSsg;
     private ClientProxy clientProxy;
     private Action actionEmptyCookieCache;
+    private Action actionChangePasswordAndRevokeClientCertificate;
 
     SsgListPanel(ClientProxy clientProxy, SsgManager ssgManager) {
         this.clientProxy = clientProxy;
@@ -279,6 +286,131 @@ public class SsgListPanel extends JPanel {
             actionEmptyCookieCache.putValue(Action.MNEMONIC_KEY, new Integer(KeyEvent.VK_C));
         }
         return actionEmptyCookieCache;
+    }
+
+    /**
+     * The action of changing one's password and revoking one's client certificate on an SSG.
+     */
+    public Action getActionChangePasswordAndRevokeClientCertificate() {
+        if (actionChangePasswordAndRevokeClientCertificate == null) {
+            actionChangePasswordAndRevokeClientCertificate = new AbstractAction("Change Password/Revoke Certificate", IconManager.getRemove()) {
+                public void actionPerformed(final ActionEvent e) {
+                    final Ssg ssg = getSelectedSsg();
+                    if (ssg != null) {
+                        boolean retry = true;
+                        boolean prompted = false;
+                        char[] newpass = null;
+                        while (retry) {
+                            retry = false;
+                            try {
+                                if (!prompted) {
+                                    Object[] certoptions;
+                                    String title;
+                                    String message;
+                                    if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
+                                        certoptions = new Object[] {"Revoke Certificate", "Cancel"};
+                                        title = "Gateway " + ssg + ": Change Password and Revoke Client Certificate";
+                                        message = "You are about to send a request to\n" +
+                                                "the Gateway \"" + ssg + "\" for it\n" +
+                                                "to change your password for this account\n" +
+                                                "and revoke your current Client Certificate.\n" +
+                                                "Are you sure you wish to proceed?\n\n" +
+                                                "This action cannot be undone.";
+                                    } else {
+                                        certoptions = new Object[] {"Change Password", "Cancel"};
+                                        title = "Gateway " + ssg + ": Change Password";
+                                        message = "You are about to send a request to\n" +
+                                                "the Gateway \"" + ssg + "\" for it\n" +
+                                                "to change your password for this account.\n" +
+                                                "Are you sure you wish to proceed?\n\n" +
+                                                "This action cannot be undone.";
+                                    }
+                                    int res2 = JOptionPane.showOptionDialog(null, message, title,
+                                                                            0, JOptionPane.WARNING_MESSAGE,
+                                                                            null, certoptions, certoptions[1]);
+                                    if (res2 != 0)
+                                        return;
+
+                                    prompted = true;
+                                }
+
+                                PasswordAuthentication pw = Managers.getCredentialManager().getCredentials(ssg);
+                                if (newpass == null)
+                                    newpass = PasswordDialog.getPassword(Gui.getInstance().getFrame(), "Enter desired new password");
+                                if (newpass == null)
+                                    return;
+
+                                CurrentRequest.setCurrentSsg(ssg);
+                                SslUtils.changePasswordAndRevokeClientCertificate(ssg.getServerPasswordChangeUrl(),
+                                                                                  pw.getUserName(),
+                                                                                  pw.getPassword(),
+                                                                                  newpass);
+
+                                // Succeeded, so update password and client cert
+                                ssg.cmPassword(newpass);
+                                SsgKeyStoreManager.deleteClientCert(ssg);
+
+                            } catch (KeyStoreCorruptException e1) {
+                                try {
+                                    Managers.getCredentialManager().notifyKeyStoreCorrupt(ssg);
+                                    SsgKeyStoreManager.deleteStores(ssg);
+                                    retry = true;
+                                    // FALLTHROUGH -- retry with newly-emptied keystore
+                                } catch (OperationCanceledException e2) {
+                                    return; // cancel the password change as well
+                                }
+                            } catch (OperationCanceledException e1) {
+                                return;
+                            } catch (SSLException sslException) {
+                                PasswordAuthentication credentials = null;
+                                try {
+                                    credentials = Managers.getCredentialManager().getCredentials(ssg);
+                                    MessageProcessor.handleSslException(ssg, credentials, sslException);
+                                    retry = true;
+                                    // FALLTHROUGH -- retry with newly-(re?)learned server certificate
+                                } catch (OperationCanceledException e1) {
+                                    return;
+                                } catch (BadCredentialsException e1) {
+                                    log.warn(e1);
+                                    Gui.errorMessage("Unable to change your password -- the Gateway reports that your current " +
+                                                     "password or client certificate is not valid.");
+                                    return;                                    
+                                } catch (Exception e1) {
+                                    log.warn(e1);
+                                    Gui.errorMessage("Unable to change your password", "Unable to negotiate an SSL connection " +
+                                                                                       "with the Gateway.", e1);
+                                    return;
+                                }
+                            } catch (IOException e1) {
+                                log.warn(e1);
+                                Gui.errorMessage("Unable to change your password", "The Gateway was unable to change " +
+                                                                                   "your password.", e1);
+                                return;
+                            } catch (BadCredentialsException e1) {
+                                log.warn(e1);
+                                Gui.errorMessage("Unable to change your password -- the Gateway reports that your current " +
+                                                 "password or client certificate is not valid.");
+                                return;
+                            } catch (KeyStoreException e1) {
+                                log.warn(e1);
+                                Gui.errorMessage("Unable to remove your existing client certificate",
+                                                 "There was an error while attempting to remove our local copy of your " +
+                                                 "newly-revoked client certificate.", e1);
+                                return;
+                            } finally {
+                                CurrentRequest.clearCurrentRequest();
+                            }
+                        }
+
+                        Gui.errorMessage("Your password has been changed successfully.");
+                    }
+                }
+            };
+            actionChangePasswordAndRevokeClientCertificate.putValue(Action.SHORT_DESCRIPTION,
+                "Request the selected Gateway to change this account's password and revoke any client certificate");
+            actionChangePasswordAndRevokeClientCertificate.putValue(Action.MNEMONIC_KEY, new Integer(KeyEvent.VK_R));
+        }
+        return actionChangePasswordAndRevokeClientCertificate;
     }
 
     /**
