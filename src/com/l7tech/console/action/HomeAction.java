@@ -99,9 +99,9 @@ public class HomeAction extends BaseAction {
                                 if (tree != null) {
                                     AbstractTreeNode node =
                                       (AbstractTreeNode)TreeNodeActions.
-                                      nodeByName(UserFolderNode.INTERNAL_USERS_NAME,
+                                      nodeByNamePath(new String[] {"Internal Identity Provider", "Users"},
                                                  (DefaultMutableTreeNode)tree.getModel().getRoot());
-                                    if (node !=null) new NewUserAction(node).actionPerformed(null);
+                                    new NewUserAction(node).actionPerformed(null);
                                 }
 
                             }
@@ -114,9 +114,9 @@ public class HomeAction extends BaseAction {
                                 if (tree != null) {
                                     AbstractTreeNode node =
                                       (AbstractTreeNode)TreeNodeActions.
-                                      nodeByName(GroupFolderNode.INTERNAL_GROUPS_NAME,
+                                      nodeByNamePath(new String[] {"Internal Identity Provider", "Groups"},
                                                  (DefaultMutableTreeNode)tree.getModel().getRoot());
-                                    if (node !=null) new NewGroupAction(node).actionPerformed(null);
+                                    new NewGroupAction(node).actionPerformed(null);
                                 }
 
                             }

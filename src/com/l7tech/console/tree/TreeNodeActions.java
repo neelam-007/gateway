@@ -16,27 +16,26 @@ public class TreeNodeActions {
     }
 
     /**
-     * locate the name
+     * locate the node by name starting at the given node.
      * the method is not geenral, that is it assumes that the
      * userObject() contains <CODE>AbstractTreeNode</CODE>
      * instance.
      *
      * @param name   the name to look for
      * @param node   the intial position where the search starts
-     * @return the <CODE>TreeNode</CODE> that contains the
-     *         userObject with the given name, or <B>null</B> if
-     *         not found
+     * @return the  <CODE>AbstractTreeNode </CODE> with the given name,
+     *              or <B>null</B> if  not found
      */
     public static TreeNode nodeByName(String name, DefaultMutableTreeNode node) {
         Enumeration enum = node.breadthFirstEnumeration();
         while (enum.hasMoreElements()) {
             DefaultMutableTreeNode tn =
-              (DefaultMutableTreeNode) enum.nextElement();
+              (DefaultMutableTreeNode)enum.nextElement();
 
             if (!(tn instanceof AbstractTreeNode)) {
                 continue;
             }
-            AbstractTreeNode an = (AbstractTreeNode) tn;
+            AbstractTreeNode an = (AbstractTreeNode)tn;
 
             if (name.equals(an.getName())) {
                 return tn;
@@ -44,6 +43,29 @@ public class TreeNodeActions {
         }
         return null;
     }
+
+    /**
+     * locate the node by name path starting at the given node.
+     * the method is not geenral, that is it assumes that the
+     * userObject() contains <CODE>AbstractTreeNode</CODE>
+     * instance.
+     *
+     * @param path   the name path to look for
+     * @param node   the intial position where the search starts
+     * @return the <CODE>TreeNode</CODE> that contains the
+     *         userObject with the given name, or <B>null</B> if
+     *         not found
+     */
+    public static TreeNode nodeByNamePath(String[] path, DefaultMutableTreeNode node) {
+        DefaultMutableTreeNode n = node;
+        for (int i = 0; path !=null && i < path.length; i++) {
+            String s = path[i];
+            n = (DefaultMutableTreeNode)nodeByName(s, n);
+            if (n == null) return null;
+        }
+        return n;
+    }
+
 
     /**
      * Deletes the given EntityTreeNode
@@ -56,7 +78,7 @@ public class TreeNodeActions {
         // Dispatch deletion based on the actual node type
         Object object = node.getUserObject();
         if (object instanceof AbstractTreeNode) {
-            rb = delete((AbstractTreeNode) object);
+            rb = delete((AbstractTreeNode)object);
         }
         return rb;
     }
@@ -70,7 +92,7 @@ public class TreeNodeActions {
     public static boolean delete(AbstractTreeNode bn) {
         boolean rb = false;
         if (bn instanceof ProviderNode) {
-            rb = delete((ProviderNode) bn);
+            rb = delete((ProviderNode)bn);
         } else {
             // Unknown node type .. do nothing
             rb = false;
