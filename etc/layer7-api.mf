@@ -1,0 +1,7 @@
+Manifest-Version: 1.0
+Extension-Name: com.l7tech.policy.assertion.ext
+Specification-Vendor: Layer7 Technologies, Inc
+Specification-Version: 1.0
+Implementation-Vendor-Id: com.layer7tech
+Implementation-Vendor: Layer7 Technologies, Inc
+Implementation-Version: 1.0 
