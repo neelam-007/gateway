@@ -27,8 +27,12 @@ import java.util.logging.*;
  * is not initialized yet.
  */
 public class ServerLogManager extends LogManager {
+
+    public ServerLogManager() {
+        initialize();
+    }
+
     public Logger getSystemLogger() {
-        if (systemLogger == null) initialize();
         return systemLogger;
     }
 
