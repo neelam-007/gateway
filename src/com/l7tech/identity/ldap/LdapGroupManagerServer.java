@@ -17,6 +17,10 @@ import java.util.HashSet;
  * User: flascelles
  * Date: Jun 13, 2003
  *
+ * List groups in a directory including the member users.
+ * This version assumes usage of the posixGroup object class in the directory.
+ * This member users are in the memberUid attributes.
+ *  
  */
 public class LdapGroupManagerServer extends LdapManager implements GroupManager {
 

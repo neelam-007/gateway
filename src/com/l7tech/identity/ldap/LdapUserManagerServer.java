@@ -4,7 +4,6 @@ import com.l7tech.identity.UserManager;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.*;
 
-import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.NamingEnumeration;
 import javax.naming.directory.*;
@@ -21,6 +20,9 @@ import java.util.HashSet;
  * This manager class lists users in a ldap directory given a LdapIdentityProviderConfig object
  * This manager does not support save, update or delete.
  *
+ * This version assumes users are registered in inetOrgPerson objects. Login is "uid"
+ * attribute, password is "userPassword" attribute, name is "cn", first name is "givenName",
+ * last name is "sn".
  */
 public class LdapUserManagerServer extends LdapManager implements UserManager {
 
