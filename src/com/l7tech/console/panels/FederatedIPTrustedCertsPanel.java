@@ -355,16 +355,14 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
         }
         byte[] certbytes = HexUtils.decodeBase64(trustedCert.getCertBase64());
         X509Certificate[] chainToVerify = CertUtils.decodeCertChain(certbytes);
-        logger.info("checking for chain length: " + chainToVerify.length);
-
         try {
             CertUtils.verifyCertificateChain(chainToVerify, ssgcert, chainToVerify.length);
         } catch (CertUtils.CertificateUntrustedException e) {
             // this is what we were hoping for
-            logger.info("the cert is not related.");
+            logger.finest("the cert is not related.");
             return false;
         }
-        logger.warning("The cert appears to be related!");
+        logger.finest("The cert appears to be related!");
         return true;
     }
 
