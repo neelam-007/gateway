@@ -102,12 +102,11 @@ public class ImportCertificateAction extends BaseAction {
     }
 
     /**
-     * Import an SSG certificate into our trust store.
-     * @param selectedFile the SSG certificate file.  Must be in *.cer binary format, whatever that is.
-     *                     Probably PKCS#7.
+     * Import a certificate into our trust store.
      */
-    private void importSsgCertificate(File selectedFile)
-      throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
+    public static void importSsgCertificate(Certificate cert)
+            throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException
+    {
         KeyStore ks = KeyStore.getInstance("JKS");
         char[] trustStorPassword = Preferences.getPreferences().getTrustStorePassword().toCharArray();
         String trustStoreFile = Preferences.getPreferences().getTrustStoreFile();
@@ -123,15 +122,8 @@ public class ImportCertificateAction extends BaseAction {
             ks.load(null, trustStorPassword);
         }
 
-        FileInputStream certfis = new FileInputStream(selectedFile);
-        CertificateFactory cf = CertificateFactory.getInstance("X.509");
-        Collection c = cf.generateCertificates(certfis);
-        Iterator i = c.iterator();
-        while (i.hasNext()) {
-            Certificate cert = (Certificate)i.next();
-            log.info("Adding certificate: " + cert);
-            ks.setCertificateEntry("tomcat", cert);
-        }
+        log.info("Adding certificate: " + cert);
+        ks.setCertificateEntry("tomcat", cert);
 
         FileOutputStream ksfos = null;
         try {
@@ -140,6 +132,25 @@ public class ImportCertificateAction extends BaseAction {
         } finally {
             if (ksfos != null)
                 ksfos.close();
+        }
+
+    }
+
+    /**
+     * Import an SSG certificate into our trust store.
+     * @param selectedFile the SSG certificate file.  Must be in *.cer binary format, whatever that is.
+     *                     Probably PKCS#7.
+     */
+    private void importSsgCertificate(File selectedFile)
+      throws IOException, CertificateException, KeyStoreException, NoSuchAlgorithmException {
+
+        FileInputStream certfis = new FileInputStream(selectedFile);
+        CertificateFactory cf = CertificateFactory.getInstance("X.509");
+        Collection c = cf.generateCertificates(certfis);
+        Iterator i = c.iterator();
+        if (i.hasNext()) {
+            Certificate cert = (Certificate)i.next();
+            importSsgCertificate(cert);
         }
 
         JOptionPane.showMessageDialog(getFrame(),
