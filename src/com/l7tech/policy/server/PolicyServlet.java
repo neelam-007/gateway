@@ -1,6 +1,9 @@
 package com.l7tech.policy.server;
 
 import com.l7tech.service.PublishedService;
+import com.l7tech.objectmodel.PersistenceContext;
+import com.l7tech.objectmodel.TransactionException;
+import com.l7tech.util.Locator;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -42,8 +45,12 @@ public class PolicyServlet extends HttpServlet {
     }
 
     private PublishedService resolveService(long oid) {
-        // todo
-        return null;
+        try {
+            return getServiceManagerAndBeginTransaction().findByPrimaryKey(oid);
+        } catch (Exception e) {
+            e.printStackTrace(System.err);
+            return null;
+        }
     }
 
     private PublishedService resolveService(String urn, String soapAction) {
@@ -56,8 +63,27 @@ public class PolicyServlet extends HttpServlet {
             response.sendError(HttpServletResponse.SC_NOT_FOUND, "ERROR cannot resolve target service");
             return;
         } else {
-            // todo
-            response.getOutputStream().println("todo");
+            response.setContentType("text/xml; charset=utf-8");
+            response.getOutputStream().println(service.getPolicyXml());
         }
     }
+
+    private com.l7tech.service.ServiceManager getServiceManagerAndBeginTransaction() throws java.sql.SQLException, TransactionException {
+        if (serviceManagerInstance == null){
+            initialiseServiceManager();
+        }
+        PersistenceContext.getCurrent().beginTransaction();
+        return serviceManagerInstance;
+    }
+
+    private void endTransaction() throws java.sql.SQLException, TransactionException {
+        PersistenceContext.getCurrent().commitTransaction();
+    }
+
+    private synchronized void initialiseServiceManager() throws ClassCastException, RuntimeException {
+        serviceManagerInstance = (com.l7tech.service.ServiceManager)Locator.getDefault().lookup(com.l7tech.service.ServiceManager.class);
+        if (serviceManagerInstance == null) throw new RuntimeException("Cannot instantiate the ServiceManager");
+    }
+
+    private com.l7tech.service.ServiceManager serviceManagerInstance = null;
 }
