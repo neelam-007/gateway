@@ -28,12 +28,6 @@ import java.util.logging.Level;
  * @version $Revision$
  */
 public abstract class PersistentUserManager extends HibernateEntityManager implements UserManager {
-    public abstract Class getImpClass();
-
-    public abstract Class getInterfaceClass();
-
-    public abstract String getTableName();
-
     public User findByPrimaryKey(String oid) throws FindException {
         try {
             if (oid == null) {

@@ -635,12 +635,6 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
 
     }
 
-    public abstract String getTableName();
-
-    public abstract Class getImpClass();
-
-    public abstract Class getInterfaceClass();
-
     protected final IdentityProvider provider;
     private final Logger logger = Logger.getLogger(getClass().getName());
 
