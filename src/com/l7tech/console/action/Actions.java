@@ -54,7 +54,7 @@ public class Actions {
           "Are you sure you wish to delete " +
           node.getName() + "?",
           "Delete User",
-          JOptionPane.YES_NO_OPTION)) == 1) {
+          JOptionPane.YES_NO_OPTION))  != JOptionPane.YES_OPTION) {
             return false;
         }
 
@@ -88,7 +88,7 @@ public class Actions {
           "Are you sure you wish to delete " +
           node.getName() + "?",
           "Delete Group",
-          JOptionPane.YES_NO_OPTION)) == 1) {
+          JOptionPane.YES_NO_OPTION)) != JOptionPane.YES_OPTION) {
             return false;
         }
 
@@ -122,7 +122,7 @@ public class Actions {
             "Are you sure you wish to delete " +
             node.getName() + "?",
             "Delete Provider",
-            JOptionPane.YES_NO_OPTION)) == 1) {
+            JOptionPane.YES_NO_OPTION)) != JOptionPane.YES_OPTION) {
               return false;
           }
 
@@ -157,7 +157,7 @@ public class Actions {
           "Are you sure you wish to delete service " +
           node.getName() + "?",
           "Delete Service",
-          JOptionPane.YES_NO_OPTION)) == 1) {
+          JOptionPane.YES_NO_OPTION)) != JOptionPane.YES_OPTION) {
             return false;
         }
 
@@ -190,7 +190,7 @@ public class Actions {
           "Are you sure you wish to delete assertion " +
           node.getName() + "?",
           "Delete assertion",
-          JOptionPane.YES_NO_OPTION)) == 1) {
+          JOptionPane.YES_NO_OPTION))  != JOptionPane.YES_OPTION) {
             return false;
         }
 
