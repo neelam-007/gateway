@@ -30,11 +30,16 @@ public class MessageProcessor {
         if ( _serviceManager == null ) throw new IllegalStateException( "ServiceManager is null!" );
         try {
             PublishedService service = _serviceManager.resolveService( request );
-
             AssertionStatus status;
-            if ( service == null ) {
+            if ( service == null || service.isDisabled() ) {
+                if ( service == null )
+                    LogManager.getInstance().getSystemLogger().log(Level.INFO, "Service not found" );
+                else
+                    LogManager.getInstance().getSystemLogger().log( Level.WARNING, "Service disabled" );
+
                 status = AssertionStatus.NOT_FOUND;
             } else {
+                LogManager.getInstance().getSystemLogger().log(Level.FINER, "Service resolved" );
                 request.setParameter( Request.PARAM_SERVICE, service );
                 Assertion ass = service.rootAssertion();
 
@@ -42,7 +47,7 @@ public class MessageProcessor {
 
                 if ( status == AssertionStatus.NONE ) {
                     if ( request.isRouted() ) {
-                        LogManager.getInstance().getSystemLogger().log(Level.INFO, "Request was routed with status " + status.getMessage() );
+                        LogManager.getInstance().getSystemLogger().log(Level.INFO, "Request was routed with status " + " " + status.getMessage() + "(" + status.getNumeric() + ")" );
                     } else {
                         LogManager.getInstance().getSystemLogger().log(Level.WARNING, "Request was not routed!");
                         status = AssertionStatus.FALSIFIED;
