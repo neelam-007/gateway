@@ -13,7 +13,6 @@
 
         <property name="description" type="string"/>
         <property name="name" type="string"/>
-        <property name="type" type="com.l7tech.identity.imp.IdentityProviderTypeImp"/>
     </class>
 
     <class name="com.l7tech.identity.ldap.LdapIdentityProviderConfig" table="ldap_identity_provider">
@@ -22,18 +21,8 @@
         </id>
         <property name="description" type="string"/>
         <property name="name" type="string"/>
-        <property name="type" type="com.l7tech.identity.imp.IdentityProviderTypeImp"/>
         <property name="ldapHostURL" type="string" column="ldap_host_url" />
         <property name="searchBase" type="string" column="search_base" />
-    </class>
-
-    <class name="com.l7tech.identity.imp.IdentityProviderTypeImp" table="identity_provider_type">
-        <id name="oid" column="oid" type="long">
-            <generator class="hilo.long"/>
-        </id>
-        <property name="description" type="string"/>
-        <property name="name" type="string"/>
-        <property name="className" type="string" column="class_name"/>
     </class>
 
    <class name="com.l7tech.objectmodel.imp.ObjectIdentityImp" table="object_identity">
