@@ -155,17 +155,7 @@ public class WssProcessorImpl implements WssProcessor {
                         if (securityContextFinder == null)
                             throw new ProcessorException("SecurityContextToken element found in message, but caller did not provide a SecurityContextFinder");                            
                         final SecurityContext secContext = securityContextFinder.getSecurityContext(identifier);
-                        SecurityContextToken secConTok = new SecurityContextToken() {
-                            public SecurityContext getSecurityContext() {
-                                return secContext;
-                            }
-                            public Object asObject() {
-                                return secContext;
-                            }
-                            public Element asElement() {
-                                return secConTokEl;
-                            }
-                        };
+                        SecurityContextTokenImpl secConTok = new SecurityContextTokenImpl(secContext, secConTokEl);
                         cntx.securityTokens.add(secConTok);
                     }
                 } else {
@@ -271,11 +261,11 @@ public class WssProcessorImpl implements WssProcessor {
         if (refEl == null) throw new InvalidDocumentFormatException("SecurityTokenReference should " +
                                                                     "contain a Reference");
         String refUri = refEl.getAttribute("URI");
-        SecurityContextToken sct = null;
+        SecurityContextTokenImpl sct = null;
         for (Iterator i = cntx.securityTokens.iterator(); i.hasNext();) {
             Object maybeSecToken = i.next();
-            if (maybeSecToken instanceof SecurityContextToken) {
-                sct = (SecurityContextToken)maybeSecToken;
+            if (maybeSecToken instanceof SecurityContextTokenImpl) {
+                sct = (SecurityContextTokenImpl)maybeSecToken;
                 String thisId = SoapUtil.getElementWsuId(sct.asElement());
                 // todo, match this against the id in case this refers to more than on context (unlikely)
                 break;
@@ -294,23 +284,10 @@ public class WssProcessorImpl implements WssProcessor {
         }
         final Element dktel = derivedKeyEl;
         final Key finalKey = resultingKey;
-        DerivedKeyToken rememberedKeyToken = new DerivedKeyToken(){
-            public String getId() {
-                return SoapUtil.getElementWsuId(dktel);
-            }
-            public Key getComputedDerivedKey() {
-                return finalKey;
-            }
-            public Object asObject() {
-                return finalKey;
-            }
-            public Element asElement() {
-                return dktel;
-            }
-        };
+        DerivedKeyTokenImpl rememberedKeyToken = new DerivedKeyTokenImpl(dktel, finalKey, sct);
         // remember this symmetric key so it can later be used to process the signature
         // or the encryption
-        cntx.securityTokens.add(rememberedKeyToken);
+        cntx.derivedKeyTokens.add(rememberedKeyToken);
     }
 
     private String extractIdentifierFromSecConTokElement(Element secConTokEl) {
@@ -822,7 +799,7 @@ public class WssProcessorImpl implements WssProcessor {
         return null;
     }
 
-    private DerivedKeyToken resolveDerivedKeyByRef(final Element parentElement, ProcessingStatusHolder cntx) {
+    private DerivedKeyTokenImpl resolveDerivedKeyByRef(final Element parentElement, ProcessingStatusHolder cntx) {
 
         // Looking for reference to a a derived key token
         // 1. look for a wsse:SecurityTokenReference element
@@ -848,11 +825,11 @@ public class WssProcessorImpl implements WssProcessor {
                 if (uriAttr.charAt(0) == '#') {
                     uriAttr = uriAttr.substring(1);
                 }
-                for (Iterator i = cntx.securityTokens.iterator(); i.hasNext();) {
+                for (Iterator i = cntx.derivedKeyTokens.iterator(); i.hasNext();) {
                     Object maybeDerivedKey = i.next();
-                    if (maybeDerivedKey instanceof DerivedKeyToken) {
-                        if (((DerivedKeyToken)maybeDerivedKey).getId().equals(uriAttr)) {
-                            return (DerivedKeyToken)maybeDerivedKey;
+                    if (maybeDerivedKey instanceof DerivedKeyTokenImpl) {
+                        if (((DerivedKeyTokenImpl)maybeDerivedKey).getId().equals(uriAttr)) {
+                            return (DerivedKeyTokenImpl)maybeDerivedKey;
                         }
                     }
                 }
@@ -901,7 +878,7 @@ public class WssProcessorImpl implements WssProcessor {
         X509Certificate signingCert = null;
         Key signingKey = null;
         // Try to find ref to derived key
-        final DerivedKeyToken dkt = resolveDerivedKeyByRef(keyInfoElement, cntx);
+        final DerivedKeyTokenImpl dkt = resolveDerivedKeyByRef(keyInfoElement, cntx);
         // Try to resolve cert by reference
         final X509SecurityTokenImpl signingCertToken = resolveCertByRef(keyInfoElement, cntx);
 
@@ -984,12 +961,10 @@ public class WssProcessorImpl implements WssProcessor {
                         return finalElementCovered;
                     }
                 });
-                // TODO remove this expensive feature if it remains unneeded
-                signingCertToken.elementsSignedWithCert.add(elementCovered);
             } else if (dkt != null) {
                 cntx.elementsThatWereSigned.add(new SignedElement() {
                     public SecurityToken getSigningSecurityToken() {
-                        return dkt;
+                        return dkt.getSecurityContextToken();
                     }
                     public Element asElement() {
                         return finalElementCovered;
@@ -1048,6 +1023,7 @@ public class WssProcessorImpl implements WssProcessor {
         final Collection elementsThatWereSigned = new ArrayList();
         final Collection elementsThatWereEncrypted = new ArrayList();
         final Collection securityTokens = new ArrayList();
+        final Collection derivedKeyTokens = new ArrayList();
         TimestampImpl timestamp = null;
         Element releventSecurityHeader = null;
         Map x509TokensById = new HashMap();
@@ -1058,7 +1034,6 @@ public class WssProcessorImpl implements WssProcessor {
         boolean possessionProved = false;
         private final X509Certificate finalcert;
         private final Element binarySecurityTokenElement;
-        private final List elementsSignedWithCert = new ArrayList();
 
         public X509SecurityTokenImpl(X509Certificate finalcert, Element binarySecurityTokenElement) {
             this.finalcert = finalcert;
@@ -1079,10 +1054,6 @@ public class WssProcessorImpl implements WssProcessor {
 
         public boolean isPossessionProved() {
             return possessionProved;
-        }
-
-        public Element[] getElementsSignedWithThisCert() {
-            return (Element[]) elementsSignedWithCert.toArray(PROTOTYPE_ELEMENT_ARRAY);
         }
 
         private void onPossessionProved() {
@@ -1114,7 +1085,7 @@ public class WssProcessorImpl implements WssProcessor {
             return signingToken != null;
         }
 
-        public WssProcessor.X509SecurityToken getSigningSecurityToken() {
+        public WssProcessor.SecurityToken getSigningSecurityToken() {
             return signingToken;
         }
 
@@ -1130,4 +1101,52 @@ public class WssProcessorImpl implements WssProcessor {
     private static final Element[] PROTOTYPE_ELEMENT_ARRAY = new Element[0];
     private static final SignedElement[] PROTOTYPE_SIGNEDELEMENT_ARRAY = new SignedElement[0];
     private static final WssProcessor.SecurityToken[] PROTOTYPE_SECURITYTOKEN_ARRAY = new WssProcessor.SecurityToken[0];
+
+    private static class DerivedKeyTokenImpl {
+        private final Element dktel;
+        private final Key finalKey;
+        private final SecurityContextTokenImpl sct;
+
+        public DerivedKeyTokenImpl(Element dktel, Key finalKey, SecurityContextTokenImpl sct) {
+            this.dktel = dktel;
+            this.finalKey = finalKey;
+            this.sct = sct;
+        }
+
+        String getId() {
+            return SoapUtil.getElementWsuId(dktel);
+        }
+        Key getComputedDerivedKey() {
+            return finalKey;
+        }
+        Object asObject() {
+            return finalKey;
+        }
+        Element asElement() {
+            return dktel;
+        }
+        SecurityContextTokenImpl getSecurityContextToken() {
+            return sct;
+        }
+    }
+
+    private static class SecurityContextTokenImpl implements WssProcessor.SecurityContextToken {
+        private final WssProcessor.SecurityContext secContext;
+        private final Element secConTokEl;
+
+        public SecurityContextTokenImpl(WssProcessor.SecurityContext secContext, Element secConTokEl) {
+            this.secContext = secContext;
+            this.secConTokEl = secConTokEl;
+        }
+
+        public WssProcessor.SecurityContext getSecurityContext() {
+            return secContext;
+        }
+        public Object asObject() {
+            return secContext;
+        }
+        public Element asElement() {
+            return secConTokEl;
+        }
+    }
 }

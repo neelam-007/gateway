@@ -6,20 +6,15 @@
 
 package com.l7tech.common.security.xml;
 
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import java.security.cert.X509Certificate;
-import java.security.PrivateKey;
-import java.security.GeneralSecurityException;
-import java.security.Key;
-import java.util.Date;
-
-import com.l7tech.common.xml.InvalidDocumentFormatException;
-
 import javax.crypto.SecretKey;
-
-import x0Assertion.oasisNamesTcSAML1.AssertionType;
+import java.security.GeneralSecurityException;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
+import java.util.Date;
 
 /**
  * Consumes and removes the default Security header in a message, removes any associated decorations, and returns a
@@ -48,7 +43,6 @@ public interface WssProcessor {
     public interface X509SecurityToken extends SecurityToken {
         X509Certificate asX509Certificate();
         boolean isPossessionProved();
-        Element[] getElementsSignedWithThisCert(); // TODO remove this expensive method if it remains unneeded
     }
 
     public interface XmlSecurityToken extends SecurityToken {
@@ -59,18 +53,6 @@ public interface WssProcessor {
 
     public interface SecurityContextToken extends SecurityToken {
         SecurityContext getSecurityContext();
-    }
-
-    public interface DerivedKeyToken extends SecurityToken {
-        /**
-         * The wsu:Id attribute of this derived key so that it can be referenced from.
-         */
-        String getId();
-
-        /**
-         * The actual symmetric key data to be used to verify signatures or decrypt.
-         */
-        Key getComputedDerivedKey();
     }
 
     public interface SecurityContext {
@@ -89,7 +71,7 @@ public interface WssProcessor {
         TimestampDate getCreated();
         TimestampDate getExpires();
         boolean isSigned();
-        X509SecurityToken getSigningSecurityToken();
+        SecurityToken getSigningSecurityToken();
     }
 
     public interface SignedElement extends ParsedElement {

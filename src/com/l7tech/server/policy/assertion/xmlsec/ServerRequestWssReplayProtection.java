@@ -90,7 +90,11 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
             throw new IOException("Request timestamp contained Created older than the maximum message age hard cap");
         }
 
-        WssProcessor.X509SecurityToken signingToken = timestamp.getSigningSecurityToken();
+        // TODO support signatures signed via WS-SecureConversation
+        if ((timestamp.getSigningSecurityToken() instanceof WssProcessor.X509SecurityToken))
+            throw new IOException("Unable to generate replay-protection ID for timestamp -- it was signed, but not with an X509 security token");
+
+        WssProcessor.X509SecurityToken signingToken = (WssProcessor.X509SecurityToken) timestamp.getSigningSecurityToken();
         if (signingToken == null)
             throw new IOException("Timestamp present and signed, but no signing token"); // can't happen
 

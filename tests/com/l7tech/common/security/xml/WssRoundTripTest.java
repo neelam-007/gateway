@@ -188,8 +188,10 @@ public class WssRoundTripTest extends TestCase {
         // If timestamp was supposed to be signed, make sure it actually was
         if (td.signTimestamp) {
             assertTrue("Timestamp was supposed to have been signed", r.getTimestamp().isSigned());
+            assertTrue("Timestamp was supposed to have been signed by an X509 cert",
+                       r.getTimestamp().getSigningSecurityToken() instanceof WssProcessor.X509SecurityToken);
             assertTrue("Timestamp signging security token must match sender cert",
-                       r.getTimestamp().getSigningSecurityToken().asX509Certificate().equals(td.senderCert));
+                       ((WssProcessor.X509SecurityToken)r.getTimestamp().getSigningSecurityToken()).asX509Certificate().equals(td.senderCert));
         }
 
         // Make sure all requested elements were signed
