@@ -27,8 +27,6 @@ public class MultipartUtil {
             Object o = (Object) itr.next();
             Message.Part part = (Message.Part) attachments.get(o);
 
-            sb.append("\n" + XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + "\n");
-
             Map headers = part.getHeaders();
             Set headerKeys = headers.keySet();
             Iterator headerItr = headerKeys.iterator();
@@ -48,6 +46,7 @@ public class MultipartUtil {
                 sb.append("\n");
             }
             sb.append("\n" + part.getContent());
+            sb.append("\n" + XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + "\n");
         }
 
         return sb.toString();

@@ -260,6 +260,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                         sb.append("\n");
                     }
                     sb.append(requestXml).append("\n");
+                    sb.append(XmlUtil.MULTIPART_BOUNDARY_PREFIX + request.getMultipartBoundary() + "\n");
                     postMethod.setRequestBody(MultipartUtil.addAttachments(sb.toString(), request.getRequestAttachments(), request.getMultipartBoundary()));
                 } else {
                     postMethod.setRequestBody(requestXml);

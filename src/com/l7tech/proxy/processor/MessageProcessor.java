@@ -534,6 +534,7 @@ public class MessageProcessor {
                 // an blank line is required between the header block and the body block
                 sb.append("\n");
                 sb.append(postBody).append("\n");
+                sb.append(XmlUtil.MULTIPART_BOUNDARY_PREFIX + req.getMultipartReader().getMultipartBoundary() + "\n");
 
                 String multipartBody = MultipartUtil.addAttachments(sb.toString(), req.getMultipartReader().getMessageAttachments(), req.getMultipartReader().getMultipartBoundary());
 
