@@ -127,6 +127,11 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
                 logger.log(Level.SEVERE, msg, e);
                 response.setPolicyViolated(true);
                 throw new PolicyAssertionException(msg, e);
+            } catch (Throwable e) {
+                String msg = "Unhandled exception from mangler: ";
+                logger.log(Level.SEVERE, msg, e);
+                response.setPolicyViolated(true);
+                throw new PolicyAssertionException(msg, e);
             }
             logger.info("Decrypted request successfully.");
         }
