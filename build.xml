@@ -775,6 +775,7 @@
 
             <fileset dir="${src.root}/etc">
                 <include name="keystore.properties" if="dev.build"/>
+                <include name="uddi.properties"/>
                 <include name="spring.xml"/>
                 <include name="treecache-service.xml"/>
             </fileset>
