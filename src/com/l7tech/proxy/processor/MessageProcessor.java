@@ -60,7 +60,7 @@ public class MessageProcessor {
                 enforcePolicy(req);
                 return obtainResponse(req);
             } catch (ServerCertificateUntrustedException e) {
-                installSsgServerCertificate(req);
+                installSsgServerCertificate(req.getSsg());
                 // allow policy to reset and retry
             } catch (PolicyRetryableException e) {
                 // allow policy to reset and retry
@@ -95,8 +95,7 @@ public class MessageProcessor {
             if (req.isCredentialsWouldHaveHelped() || req.isClientCertWouldHaveHelped()) {
                 boolean gotCreds = false;
                 if (!ssg.isCredentialsConfigured()) {
-                    Managers.getCredentialManager().getCredentials(ssg);
-                    if (!ssg.isCredentialsConfigured())
+                    if (!Managers.getCredentialManager().getCredentials(ssg))
                         throw new OperationCanceledException("User of Client Proxy declined to provide credentials.");
                     gotCreds = true;
                 }
@@ -188,7 +187,7 @@ public class MessageProcessor {
      */
     private String obtainResponse(PendingRequest req)
             throws ConfigurationException, IOException,
-                   PolicyRetryableException, ServerCertificateUntrustedException
+                   PolicyRetryableException, ServerCertificateUntrustedException, OperationCanceledException
     {
         URL url = getUrl(req);
         Ssg ssg = req.getSsg();
@@ -236,7 +235,8 @@ public class MessageProcessor {
             if (status == 401 || status == 500) {
                 req.setLastErrorResponse(response);
                 Managers.getCredentialManager().notifyInvalidCredentials(ssg);
-                Managers.getCredentialManager().getCredentials(req.getSsg());
+                if (!Managers.getCredentialManager().getCredentials(req.getSsg()))
+                    throw new OperationCanceledException("User declined to provide credentials");
                 throw new PolicyRetryableException();
             }
 
@@ -274,17 +274,15 @@ public class MessageProcessor {
      *
      * @throws java.security.KeyStoreException if the SSG key could not be stored in our trustStore
      */
-    private void installSsgServerCertificate(PendingRequest req)
+    private void installSsgServerCertificate(Ssg ssg)
             throws IOException, GeneralSecurityException, OperationCanceledException
     {
-        Ssg ssg = req.getSsg();
         CertificateDownloader cd = new CertificateDownloader(ssg.getServerUrl(),
                                                              ssg.getUsername(),
                                                              ssg.password());
         if (!ssg.isCredentialsConfigured())
-            Managers.getCredentialManager().getCredentials(ssg);
-        if (!ssg.isCredentialsConfigured())
-            throw new OperationCanceledException("Client Proxy user declined to provide credentials.");
+            if (!Managers.getCredentialManager().getCredentials(ssg))
+                throw new OperationCanceledException("Client Proxy user declined to provide credentials.");
 
         cd.setUsername(ssg.getUsername());
         cd.setPassword(ssg.password());
@@ -295,6 +293,7 @@ public class MessageProcessor {
         }
 
         Managers.getCredentialManager().notifyInvalidCredentials(ssg);
-        Managers.getCredentialManager().getCredentials(req.getSsg());
+        if (!Managers.getCredentialManager().getCredentials(ssg))
+            throw new OperationCanceledException("User declined to provide credentials");
     }
 }
