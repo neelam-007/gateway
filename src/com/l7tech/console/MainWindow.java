@@ -232,6 +232,9 @@ public class MainWindow extends JFrame {
             fileMenu.add(getDisconnectMenuItem());
             fileMenu.add(getJMenuItemPref());
             fileMenu.addSeparator();
+            fileMenu.add(new ImportCertificateAction());
+
+
             fileMenu.add(getExitMenuItem());
             int mnemonic = fileMenu.getText().toCharArray()[0];
             fileMenu.setMnemonic(mnemonic);
@@ -323,6 +326,7 @@ public class MainWindow extends JFrame {
 
         return helpMenu;
     }
+
 
     /**
      * create the Action (the component that is used by several controls)
