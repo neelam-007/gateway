@@ -18,6 +18,10 @@ import java.io.*;
  * @version $Revision$
  */
 public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMessage {
+    public XmlMessageAdapter( TransportMetadata tm ) {
+        super(tm);
+    }
+
     synchronized void parse( InputStream is ) throws SAXException, IOException {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         try {

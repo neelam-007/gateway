@@ -9,6 +9,10 @@ import java.io.OutputStream;
  * @version $Revision$
  */
 public class SoapResponse extends XmlMessageAdapter implements SoapMessage, XmlResponse {
+    public SoapResponse( TransportMetadata tm ) {
+        super(tm);
+    }
+
     public OutputStream getResponseStream() {
         return _responseStream;
     }
