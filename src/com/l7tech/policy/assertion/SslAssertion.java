@@ -26,8 +26,10 @@ public class SslAssertion extends ConfidentialityAssertion {
         TransportMetadata tm = request.getTransportMetadata();
         if ( tm.getProtocol() == TransportProtocol.HTTPS )
             return AssertionStatus.NONE;
-        else
+        else {
+            response.setPolicyViolated(true);
             return AssertionStatus.FALSIFIED;
+        }
     }
 
     /**
