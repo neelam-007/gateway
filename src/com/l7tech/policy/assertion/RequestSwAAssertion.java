@@ -1,7 +1,5 @@
 package com.l7tech.policy.assertion;
 
-import com.l7tech.common.wsdl.BindingInfo;
-
 import java.util.Map;
 import java.util.HashMap;
 
@@ -12,6 +10,7 @@ import java.util.HashMap;
  */
 public class RequestSwAAssertion extends SwAAssertion {
     private Map bindings = new HashMap();
+    private Map namespaceMap;
 
     public RequestSwAAssertion() {
     }
@@ -30,6 +29,14 @@ public class RequestSwAAssertion extends SwAAssertion {
         if (bindings == null)
             throw new IllegalArgumentException("bindings map may not be null");
         this.bindings = bindings;
+    }
+
+    public Map getNamespaceMap() {
+        return namespaceMap;
+    }
+
+    public void setNamespaceMap(Map namespaceMap) {
+        this.namespaceMap = namespaceMap;
     }
 
     public boolean hasMimeParts(String operationName) {
