@@ -34,6 +34,7 @@ public class AssertionMessages extends Messages {
     public static final M BRIDGE_NO_ATTACHMENTS                = m(4019, Level.WARNING, "Bridge Routing Assertion does not currently support SOAP-with-attachments.  Ignoring additional MIME parts");
     public static final M BAD_PROTECTED_SERVICE_URL            = m(4020, Level.SEVERE, "Routing Assertion is not configured with a valid protected service URL");
 
+
     // ServerCredentialSourceAssertion messages
     public static final M AUTH_REQUIRED                        = m(4100, Level.INFO, "Authentication Required");
 
@@ -167,5 +168,11 @@ public class AssertionMessages extends Messages {
     public static final M SCHEMA_VALIDATION_FAILED                          = m(5604, Level.FINE, "Assertion failure: {0}");
     public static final M SCHEMA_VALIDATION_SUCCEEDED                       = m(5605, Level.FINEST, "Schema validation success");
     public static final M SCHEMA_VALIDATION_EMPTY_BODY                      = m(5606, Level.FINE, "Empty body. Nothing to validate");
+
+    // ServerTimeRange
+    public static final M TIME_RANGE_NOTHING_TO_CHECK                       = m(5700, Level.FINEST, "Nothing to check.");
+    public static final M TIME_RANGE_DOW_OUTSIDE_RANGE                      = m(5701, Level.INFO, "Day of week outside allowed range. Returning failure.");
+    public static final M TIME_RANGE_TOD_OUTSIDE_RANGE                      = m(5702, Level.INFO, "Time of day outside allowed range. Returning failure.");
+    public static final M TIME_RAGNE_WITHIN_RANGE                           = m(5703, Level.FINEST, "Request within TimeRange.");
 
 }

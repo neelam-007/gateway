@@ -5,6 +5,8 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.TimeOfDay;
 import com.l7tech.policy.assertion.TimeRange;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.AssertionMessages;
+import com.l7tech.common.audit.Auditor;
 
 import java.io.IOException;
 import java.util.Calendar;
@@ -28,25 +30,28 @@ public class ServerTimeRange implements ServerAssertion {
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        Auditor auditor = new Auditor(context.getAuditContext(), logger);
         if (!subject.isControlDay() && !subject.isControlTime()) {
-            logger.finest("Nothing to check.");
+            auditor.logAndAudit(AssertionMessages.TIME_RANGE_NOTHING_TO_CHECK);
             return AssertionStatus.NONE;
         }
         Calendar nowCal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
         // check day of week first because it is cheaper
         if (subject.isControlDay()) {
             if (!checkDay(nowCal)) {
-                logger.info("Day of week outside allowed range. Returning failure.");
+                auditor.logAndAudit(AssertionMessages.TIME_RANGE_DOW_OUTSIDE_RANGE);
+
                 return AssertionStatus.FAILED;
             }
         }
         if (subject.isControlTime()) {
             if (!checkTimeOfDay(nowCal)) {
-                logger.info("Time of day outside allowed range. Returning failure.");
+                auditor.logAndAudit(AssertionMessages.TIME_RANGE_TOD_OUTSIDE_RANGE);
+
                 return AssertionStatus.FAILED;
             }
         }
-        logger.finest("Request within TimeRange.");
+        auditor.logAndAudit(AssertionMessages.TIME_RAGNE_WITHIN_RANGE);
         return AssertionStatus.NONE;
     }
 
