@@ -17,7 +17,7 @@ public class WizardTest extends JFrame {
           new WsdlDefinitionPanel(
             new WsdlMessagesPanel(
               new WsdlPortTypePanel(
-                new WsdlPortTypeBindingPanel(null))
+                new WsdlPortTypeBindingPanel(new WsdlServicePanel(null)))
             )
           );
         WsdlCreateOverviewPanel p = new WsdlCreateOverviewPanel(defPanel);

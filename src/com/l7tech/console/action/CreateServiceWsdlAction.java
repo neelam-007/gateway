@@ -1,12 +1,13 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.event.*;
-import com.l7tech.console.panels.PublishServiceWizard;
+import com.l7tech.console.panels.*;
 import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.tree.TreeNodeFactory;
-import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.Registry;
 import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -23,31 +24,32 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class PublishServiceAction extends BaseAction implements ConnectionListener {
-    static final Logger log = Logger.getLogger(PublishServiceAction.class.getName());
+public class CreateServiceWsdlAction extends BaseAction implements ConnectionListener {
+    static final Logger log = Logger.getLogger(CreateServiceWsdlAction.class.getName());
 
-    public PublishServiceAction() {
+    public CreateServiceWsdlAction() {
     }
 
     /**
      * @return the action name
      */
     public String getName() {
-        return "Publish Service";
+        return "Create Service";
     }
 
     /**
      * @return the aciton description
      */
     public String getDescription() {
-        return "Publish a service specifying access control";
+        return "Create the new service definition (WSDL)";
     }
 
     /**
      * specify the resource name for this action
      */
     protected String iconResource() {
-        return "com/l7tech/console/resources/New16.gif";
+        // todo: find better icon
+        return "com/l7tech/console/resources/services16.png";
     }
 
     /** Actually perform the action.
@@ -59,11 +61,21 @@ public class PublishServiceAction extends BaseAction implements ConnectionListen
     public void performAction() {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
-                PublishServiceWizard dialog = new PublishServiceWizard(f, false);
-                dialog.addEntityListener(listener);
-                dialog.setResizable(false);
-                dialog.show();
+                WsdlDefinitionPanel defPanel =
+                      new WsdlDefinitionPanel(
+                        new WsdlMessagesPanel(
+                          new WsdlPortTypePanel(
+                            new WsdlPortTypeBindingPanel(
+                              new WsdlServicePanel(null))
+                        )
+                      ));
+                    WsdlCreateOverviewPanel p = new WsdlCreateOverviewPanel(defPanel);
+                    JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
+                    Wizard w = new WsdlCreateWizard(f, p);
+                    w.pack();
+                    w.setSize(850, 500);
+                    Utilities.centerOnScreen(w);
+                    w.setVisible(true);
             }
         });
     }

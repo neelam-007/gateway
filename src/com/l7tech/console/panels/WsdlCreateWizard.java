@@ -3,6 +3,9 @@ package com.l7tech.console.panels;
 import com.ibm.wsdl.DefinitionImpl;
 import com.ibm.wsdl.extensions.PopulatedExtensionRegistry;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.console.event.WizardListener;
+import com.l7tech.console.event.WizardEvent;
+import com.l7tech.console.event.WizardAdapter;
 
 import javax.swing.*;
 import javax.swing.border.EtchedBorder;
@@ -33,10 +36,12 @@ public class WsdlCreateWizard extends Wizard {
 
     public WsdlCreateWizard(Frame parent, WizardStepPanel panel) {
         super(parent, panel);
+        setResizable(false);
+        setTitle("WSDL creation wizard");
         Definition def = new DefinitionImpl();
         def.setExtensionRegistry(new PopulatedExtensionRegistry());
         wizardInput = def;
-
+        this.addWizardListener(wizardListener);
     }
 
     protected final JPanel createButtonPanel() {
@@ -62,13 +67,15 @@ public class WsdlCreateWizard extends Wizard {
                         WSDLFactory fac = WSDLFactory.newInstance();
                         WSDLWriter wsdlWriter = fac.newWSDLWriter();
                         StringWriter writer = new StringWriter();
-                        wsdlWriter.writeWSDL((Definition)wizardInput, writer);
-                        new RawWsdlDialog(writer.toString(), "wsdl title here....");
+                        Definition definition = (Definition)wizardInput;
+                        wsdlWriter.writeWSDL(definition, writer);
+                        new RawWsdlDialog(writer.toString(), definition.getQName().getLocalPart());
                     } catch (WSDLException e1) {
                         e1.printStackTrace();
                     }
                 }
             });
+            buttonPreview.setEnabled(false);
         }
         return buttonPreview;
     }
@@ -95,10 +102,12 @@ public class WsdlCreateWizard extends Wizard {
                 }
             });
             pack();
+            setSize(600, 600);
             Utilities.centerOnScreen(this);
             setVisible(true);
         }
     }
+
 
     /**
      *
@@ -122,5 +131,20 @@ public class WsdlCreateWizard extends Wizard {
         return prefix + localName.getLocalPart();
     }
 
+    private final WizardListener wizardListener = new WizardAdapter() {
+        /**
+         * Invoked when the wizard page has been changed.
+         *
+         * @param e the event describing the selection change
+         */
+        public void wizardSelectionChanged(WizardEvent e) {
+            WizardStepPanel p = (WizardStepPanel)e.getSource();
+            boolean enable =
+              (!((p instanceof WsdlCreateOverviewPanel) ||
+              (p instanceof WsdlDefinitionPanel)));
+            getButtonPreview().setEnabled(enable);
+        }
+
+    };
     private JButton buttonPreview;
 }

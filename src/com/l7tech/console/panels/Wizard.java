@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.event.WizardListener;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
@@ -77,6 +78,7 @@ public class Wizard extends JDialog {
      * layout the form.
      */
     private void layoutComponents() {
+        getContentPane().setLayout(new BorderLayout());
         mainPanel = new JPanel();
         mainPanel.setLayout(new BorderLayout());
         mainPanel.setBorder(new EtchedBorder());
@@ -97,7 +99,7 @@ public class Wizard extends JDialog {
             new EmptyBorder(new Insets(5, 5, 5, 5))));
 
         titleLabel.setHorizontalAlignment(SwingConstants.TRAILING);
-        titleLabel.setFont(new Font("Dialog", 1, 14));
+        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 14));
         titlePanel.add(titleLabel);
 
         mainPanel.add(titlePanel, BorderLayout.NORTH);
@@ -115,7 +117,7 @@ public class Wizard extends JDialog {
         JPanel stepsTitlePanel = new JPanel();
         stepsTitlePanel.setLayout(new FlowLayout(FlowLayout.LEFT));
 
-        stepsTitlePanel.setPreferredSize(new Dimension(150, 40));
+        stepsTitlePanel.setPreferredSize(new Dimension(100, 40));
         stepsTitlePanel.setMaximumSize(new Dimension(150, 40));
 
         stepsTitlePanel.setBackground(stepsPanelColor);
@@ -129,12 +131,14 @@ public class Wizard extends JDialog {
 
         //steps label panel
         JLabel stepsLabel = new JLabel("Steps");
-        stepsLabel.setFont(new Font("Dialog", Font.BOLD, 14));
+        Font font = stepsLabel.getFont();
+        font = font.deriveFont(Font.BOLD, 14);
+        stepsLabel.setFont(font);
         stepsTitlePanel.add(stepsLabel);
         stepLabelsPanel.add(stepsTitlePanel);
         int i = 0;
         WizardStepPanel p = startPanel;
-        while(p !=null) {
+        while (p != null) {
             String label = "" + (++i) + ". " + p.getStepLabel();
             WizardLabel l = new WizardLabel(label, p, false);
             stepLabelsPanel.add(l);
@@ -161,9 +165,6 @@ public class Wizard extends JDialog {
         mainPanel.add(wizardStepPanel, BorderLayout.CENTER);
         mainPanel.add(createButtonPanel(), BorderLayout.SOUTH);
         getContentPane().add(mainPanel, BorderLayout.CENTER);
-
-        pack();
-        //setSize(new Dimension(800, 500));
     }
 
     /**
@@ -283,9 +284,9 @@ public class Wizard extends JDialog {
             }
             wizardStepPanel.remove(current);
         }
-            if (wizardInput != null) {
-                next.readSettings(wizardInput);
-            }
+        if (wizardInput != null) {
+            next.readSettings(wizardInput);
+        }
         wizardStepPanel.add(next, BorderLayout.CENTER);
         updateWizardControls(next);
         fireSelectionChanged(next);
@@ -417,6 +418,7 @@ public class Wizard extends JDialog {
             first = panel;
             current = panel;
         }
+
         /**
          * Returns <tt>true</tt> if this iterator has more elements when
          * traversing the list in the forward direction.
@@ -495,7 +497,7 @@ public class Wizard extends JDialog {
 
         WizardLabel(String label, WizardStepPanel panel, boolean selected) {
             this.wizardPanel = panel;
-            setFont(new Font("Dialog", Font.BOLD, 12));
+            setFont(getFont().deriveFont(Font.BOLD, 12));
             setText(label);
             setSelected(selected);
         }

@@ -7,13 +7,14 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 import javax.wsdl.Definition;
+import javax.xml.namespace.QName;
 import java.awt.*;
 import java.util.Iterator;
 
 /**
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 
+ * @version 1.0
  */
 public class WsdlDefinitionPanel extends WizardStepPanel {
     private static final String DEFAULT_NAME_SPACE = "http://schemas.xmlsoap.org/wsdl/";
@@ -119,6 +120,7 @@ public class WsdlDefinitionPanel extends WizardStepPanel {
         }
         Definition def = (Definition)settings;
         def.setTargetNamespace(targetNameSpaceField.getText());
+        def.setQName(new QName(nameField.getText()));
         def.getNamespaces().clear();
         for (Iterator iterator =
           nameSpaceDetailsModel.getDataVector().iterator(); iterator.hasNext();) {

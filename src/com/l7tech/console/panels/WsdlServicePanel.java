@@ -28,7 +28,9 @@ public class WsdlServicePanel extends WizardStepPanel {
      * @return the wizard step description
      */
     public String getDescription() {
-        return "Service";
+        return "Specify the SOAP elements: port definition and URI of an endpoint\n" +
+          " or port where the Web service can be reached.\n" +
+          "Choose Finish when you are satisfied.;";
     }
 
     /**
@@ -40,6 +42,62 @@ public class WsdlServicePanel extends WizardStepPanel {
      */
     public boolean isValid() {
         return true;
+    }
+
+    /**
+     * Test whether the step is finished and it is safe to advance to the next
+     * one.
+     *
+     * @return true if the panel is valid, false otherwis
+     */
+
+    public boolean canAdvance() {
+        return false;
+    }
+
+    /**
+     * Test whether the step is finished and it is safe to finish the wizard.
+     *
+     * @return true if the panel is valid, false otherwis
+     */
+
+    public boolean canFinish() {
+        return true;
+    }
+
+    /**
+     * Provides the wizard with the current data--either
+     * the default data or already-modified settings. This is a
+     * noop version that subclasses implement.
+     *
+     * @param settings the object representing wizard panel state
+     * @exception IllegalArgumentException if the the data provided
+     * by the wizard are not valid.
+     */
+    public void readSettings(Object settings) throws IllegalArgumentException {
+    }
+
+    /**
+     * Provides the wizard panel with the opportunity to update the
+     * settings with its current customized state.
+     * Rather than updating its settings with every change in the GUI,
+     * it should collect them, and then only save them when requested to
+     * by this method.
+     *
+     * This is a noop version that subclasses implement.
+     *
+     * @exception IllegalArgumentException if the the data provided
+     * by the wizard are not valid.
+     * @param settings the object representing wizard panel state
+     */
+    public void storeSettings(Object settings) throws IllegalArgumentException {
+    }
+
+    /**
+     * @return the wizard step label
+     */
+    public String getStepLabel() {
+        return "Service";
     }
 
     {
