@@ -5,7 +5,6 @@ import com.l7tech.objectmodel.FindException;
 import org.apache.log4j.Category;
 
 import java.io.UnsupportedEncodingException;
-import java.security.Principal;
 
 /**
  * Layer 7 Technologies, inc.
@@ -33,9 +32,7 @@ public class InternalIdentityProviderServer implements IdentityProvider {
         return groupManager;
     }
 
-    public boolean authenticate(Principal principal, byte[] credentials) {
-        if ( !(principal instanceof User) ) return false;
-        User authUser = (User)principal;
+    public boolean authenticate( User authUser, byte[] credentials) {
         String login = authUser.getLogin();
         try {
             User dbUser = userManager.findByLogin( login );
@@ -45,7 +42,10 @@ public class InternalIdentityProviderServer implements IdentityProvider {
             } else {
                 String dbPassHash = dbUser.getPassword();
                 String authPassHash = User.encodePasswd( login, new String( credentials, ENCODING ) );
-                if ( dbPassHash.equals( authPassHash ) ) return true;
+                if ( dbPassHash.equals( authPassHash ) ) {
+                    authUser.setProviderId( cfg.getOid() );
+                    return true;
+                }
                 _log.info( "Incorrect password for login " + login );
                 return false;
             }
