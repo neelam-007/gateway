@@ -222,9 +222,11 @@ public class CertificateDownloader {
 
     /**
      * Check whether an account with this username exists but whose password isn't available to the SSG.
-     * @return true if at least one Cert-Check-NNN: header contatining "NOPASS" was in the response
+     * @return true if at least one Cert-Check-NNN: header contatining "NOPASS" was in the response, or no password
+     *         was provided when this CertificateDownloader was instantiated, or no Cert-Check headers at all
+     *         were in the response.
      */
     public boolean isUncheckablePassword() {
-        return sawNoPass || password == null;
+        return sawNoPass || password == null || checks.size() < 1;
     }
 }
