@@ -117,6 +117,7 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
 
     public synchronized TrustedCert getCachedCertBySubjectDn( String dn, int maxAge ) throws FindException, IOException, CertificateException {
         final Long oid = (Long)dnToOid.get(dn);
+        if (oid == null) return null;
         return getCachedCertByOid(oid.longValue(), maxAge);
     }
 
@@ -130,8 +131,8 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
         try {
             read.acquire();
             cacheInfo = (CacheInfo)cache.get(oid);
+            read.release(); read = null;
             if (cacheInfo == null) {
-                read.release(); read = null;
                 // Might be new, or might be first run
                 cert = findByPrimaryKey(o);
                 if (cert == null) return null; // Doesn't exist
@@ -152,7 +153,7 @@ public class TrustedCertManagerImp extends HibernateEntityManager implements Tru
         }
 
         try {
-            if ( cacheInfo.timestamp + maxAge > System.currentTimeMillis() ) {
+            if ( cacheInfo.timestamp + maxAge < System.currentTimeMillis() ) {
                 // Time for a version check (getVersion() always goes to the database)
                 Integer currentVersion = getVersion(o);
                 if (currentVersion == null) {
