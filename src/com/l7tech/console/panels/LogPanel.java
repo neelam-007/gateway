@@ -1,10 +1,8 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.audit.AdminAuditRecord;
-import com.l7tech.common.audit.AuditRecord;
-import com.l7tech.common.audit.MessageSummaryAuditRecord;
-import com.l7tech.common.audit.SystemAuditRecord;
+import com.l7tech.common.audit.*;
 import com.l7tech.common.gui.widgets.ContextMenuTextArea;
+import com.l7tech.common.MessageMap;
 import com.l7tech.console.table.FilteredLogTableSorter;
 import com.l7tech.console.util.ArrowIcon;
 import com.l7tech.logging.GenericLogAdmin;
@@ -23,6 +21,8 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.text.SimpleDateFormat;
+import java.text.MessageFormat;
+import java.text.FieldPosition;
 import java.util.*;
 
 
@@ -50,6 +50,10 @@ public class LogPanel extends JPanel {
     public static final int LOG_REQUEST_ID_COLUMN_INDEX = 7;
     public static final int LOG_NODE_ID_COLUMN_INDEX = 8;
 
+    public static final int ASSOCIATED_LOG_TIMESTAMP_COLUMN_INDEX = 0;
+    public static final int ASSOCIATED_LOG_SECURITY_COLUMN_INDEX = 1;
+    public static final int ASSOCIATED_LOG_MSG_COLUMN_INDEX = 2;
+
     public static final String MSG_TOTAL_PREFIX = "Total: ";
 
     private static final int LOG_REFRESH_TIMER = 3000;
@@ -65,6 +69,7 @@ public class LogPanel extends JPanel {
     private JPanel statusPane = null;
     private JTable msgTable = null;
     private JTabbedPane msgDetailsPane = null;
+    private JScrollPane associatedLogsScrollPane = null;
     private JTextArea msgDetails = null;
     private JSlider slider = null;
     private JCheckBox autoRefresh = null;
@@ -77,6 +82,8 @@ public class LogPanel extends JPanel {
     private JScrollPane detailsScrollPane;
     private LogMessage displayedLogMessage = null;
     private GenericLogAdmin genericLogAdmin;
+    private JTable  associatedLogsTable = null;
+    private DefaultTableModel associatedLogsTableModel = null;
 
     /**
      * Constructor
@@ -162,6 +169,31 @@ public class LogPanel extends JPanel {
                     msg += "Entity name: " + arec.getName() + "\n";
                     msg += "IP Address : " + arec.getIpAddress() + "\n";
                 }
+
+                final Calendar cal = Calendar.getInstance();
+
+                // clear the associated log table
+                clearAssociatedLogTable();
+
+                // populate the associated logs
+                Iterator associatedLogsItr = arec.getDetails().iterator();
+                while(associatedLogsItr.hasNext()) {
+                    AuditDetail ad = (AuditDetail) associatedLogsItr.next();
+
+                    cal.setTimeInMillis(ad.getTime());
+                    final SimpleDateFormat sdf = new SimpleDateFormat( "yyyyMMdd HH:mm:ss.SSS" );
+                    String timeStamp = sdf.format(cal.getTime());
+
+                    String associatedLogMessage = MessageMap.getInstance().getMessageById(ad.getMessageId());
+                    String associatedLogLevel = MessageMap.getInstance().getSeverityLevelNameById(ad.getMessageId());
+
+                    MessageFormat mf = new MessageFormat(associatedLogMessage);
+                    StringBuffer result = new StringBuffer();
+                    mf.format(ad.getParams(), result, new FieldPosition(0));
+                    Object[] al = {timeStamp, associatedLogLevel, result.toString()};
+                    ((DefaultTableModel) getAssociatedLogsTable().getModel()).addRow(al);
+                }
+
             }
         }
 
@@ -448,7 +480,27 @@ public class LogPanel extends JPanel {
         JScrollPane msgDetailsScrollPane = getDetailsScrollPane();
         msgDetailsPane.addTab("Details", msgDetailsScrollPane);
 
+        JScrollPane associatedLogsScrollPane = getAssociatedLogsScrollPane();
+        msgDetailsPane.addTab("Associated Logs", associatedLogsScrollPane);
+
         return msgDetailsPane;
+    }
+
+    private JScrollPane getAssociatedLogsScrollPane() {
+        if (associatedLogsScrollPane != null) return associatedLogsScrollPane;
+        associatedLogsScrollPane = new JScrollPane();
+        associatedLogsScrollPane.setViewportView(getAssociatedLogsTable());
+        return associatedLogsScrollPane;
+    }
+
+    private JTable getAssociatedLogsTable() {
+        if(associatedLogsTable != null) return associatedLogsTable;
+
+        associatedLogsTable = new JTable(getAssociatedLogsTableModel());
+        associatedLogsTable.getColumnModel().getColumn(ASSOCIATED_LOG_TIMESTAMP_COLUMN_INDEX).setPreferredWidth(100);
+        associatedLogsTable.getColumnModel().getColumn(ASSOCIATED_LOG_SECURITY_COLUMN_INDEX).setPreferredWidth(50);
+        associatedLogsTable.getColumnModel().getColumn(ASSOCIATED_LOG_MSG_COLUMN_INDEX).setPreferredWidth(500);
+        return associatedLogsTable;
     }
 
     private JScrollPane getDetailsScrollPane() {
@@ -589,6 +641,30 @@ public class LogPanel extends JPanel {
         return logTableModel;
     }
 
+        /**
+     * create the table model with log fields
+     *
+     * @return DefaultTableModel
+     *
+     */
+    private DefaultTableModel getAssociatedLogsTableModel() {
+        if (associatedLogsTableModel != null) {
+            return associatedLogsTableModel;
+        }
+
+        String[] cols = {"Time", "Severity", "Message"};
+        String[][] rows = new String[][]{};
+
+        associatedLogsTableModel = new DefaultTableModel(rows, cols) {
+            public boolean isCellEditable(int row, int col) {
+                // the table cells are not editable
+                return false;
+            }
+        };
+
+        return associatedLogsTableModel;
+    }
+
     /**
      * Return the message number of the selected row in the log table.
      *
@@ -647,8 +723,15 @@ public class LogPanel extends JPanel {
             if (!rowFound) {
                 // clear the details text area
                 getMsgDetails().setText("");
+                clearAssociatedLogTable();
                 displayedLogMessage = null;
             }
+        }
+    }
+
+    private void clearAssociatedLogTable() {
+        while(((DefaultTableModel) getAssociatedLogsTable().getModel()).getRowCount() > 0) {
+            ((DefaultTableModel) getAssociatedLogsTable().getModel()).removeRow(0);
         }
     }
 

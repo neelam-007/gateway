@@ -32,4 +32,16 @@ public class Messages {
             super(id, level, message);
         }
     }
+
+    public String getMessageById(int id) {
+        M message = (M) messagesById.get(new Integer(id));
+        if(message != null) return message.getMessage();
+        return null;
+    }
+
+    public String getSeverityLevelNameById(int id) {
+        M message = (M) messagesById.get(new Integer(id));
+        if(message != null) return message.getLevelName();
+        return null;
+    }
 }
