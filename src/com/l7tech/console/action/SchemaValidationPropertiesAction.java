@@ -32,11 +32,11 @@ public class SchemaValidationPropertiesAction extends BaseAction {
     }
 
     public String getName() {
-        return "Schema validation properties";
+        return "Schema Validation Properties";
     }
 
     public String getDescription() {
-        return "View/Edit properties of the schema validation assertion.";
+        return "View and edit XML schema validation properties";
     }
 
     protected String iconResource() {
