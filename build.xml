@@ -456,7 +456,11 @@
                 <include name="com/l7tech/policy/assertion/ext/Category.class"/>
                 <include name="com/l7tech/policy/assertion/ext/CustomAssertion.class"/>
                 <include name="com/l7tech/policy/assertion/ext/CustomAssertionsRegistrar.class"/>
-                <exclude name="com/l7tech/policy/assertion/ext/*Impl*"/>
+
+                <!-- temp. changed from exclude to include to test testpackage on sarek -->
+                <include name="com/l7tech/policy/assertion/ext/*Impl*"/>
+                <!-- <exclude name="com/l7tech/policy/assertion/ext/*Impl*"/> -->
+
                 <exclude name="com/l7tech/policy/assertion/ext/*Boot*"/>
                 <exclude name="com/l7tech/policy/assertion/ext/CustomAssertions.class"/>
                 <exclude name="com/l7tech/policy/assertion/ext/*Netegrity*"/>
