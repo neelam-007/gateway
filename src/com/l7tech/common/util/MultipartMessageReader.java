@@ -455,7 +455,13 @@ public class MultipartMessageReader {
         } while((writeIndex < attachmentsRawData.length) && (d != -1));
 
         if(!boundaryFound && (d != -1)) {
-            return storeRawPartContentToFileCache(attachmentsRawData);
+            if(startIndex > 2) {
+                // push back the data from the last <cr><lf> seen
+                pushbackInputStream.unread(attachmentsRawData, startIndex - 2, attachmentsRawData.length - startIndex + 2);
+                return storeRawPartContentToFileCache(attachmentsRawData, 0, startIndex - 2);
+            } else {
+                return storeRawPartContentToFileCache(attachmentsRawData);
+            }
         } else {
             return (writeIndex - oldWriteIndex);
         }
@@ -517,16 +523,29 @@ public class MultipartMessageReader {
      * @throws IOException if there is error reading the input data stream.
      */
     private int storeRawPartContentToFileCache(byte[] data) throws IOException {
+       return storeRawPartContentToFileCache(data, 0, data.length);
+    }
 
-        int count;
+    /**
+     * Store the raw data of an attachment to the file cache. The initial part of the attachment
+     * is read from the input parameter (data). The remaining part of the attachment is read from
+     * the input data stream.
+     * @param data  The array of bytes of data to be stored in the file cache.
+     * @param off  The starting position of the data array is off set by the "off" parameter.
+     * @param len  The number of bytes to be stored in the file cache.
+     * @return int The length of the attachment in bytes.
+     * @throws IOException if there is error reading the input data stream.
+     */
+    private int storeRawPartContentToFileCache(byte[] data, int off, int len) throws IOException {
+         int count;
 
         // write the data in the temp buffer (the initial portion of the MIME part) to the file
-        writeDataToFileCache(data);
+        writeDataToFileCache(data, off, len);
 
         // write the remaining portion of the MIME part to the file
         count = storeRawPartContentToFileCache();
 
-        return (data.length + count);
+        return (len + count);
     }
 
     /**
@@ -603,7 +622,7 @@ public class MultipartMessageReader {
 
                 // NOTE: we should not include the case startIndex == 0 in this if statement,
                 // otherwise the same data are being checked repeately.
-                if(startIndex > 0) {
+                if(startIndex > 0 && startIndex != ATTACHMENT_BLOCK_SIZE - 1) {
                     // store the data up to the last <cr><lf> in the buffer to the file cache
                     writeDataToFileCache(buf, 0, startIndex);
 
@@ -633,8 +652,13 @@ public class MultipartMessageReader {
                    //reset buffer write index
                     index = 0;
 
-                    // reset the start index
-                    startIndex = -1;
+                    if(startIndex == ATTACHMENT_BLOCK_SIZE - 1) {
+                        // the last two bytes in the buf is <cr><lf>
+                        startIndex = 0;
+                    } else {
+                        // reset the start index
+                        startIndex = -1;
+                    }
                 }
 
                 endIndex = -1;
