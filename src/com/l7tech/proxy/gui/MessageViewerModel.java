@@ -3,6 +3,7 @@ package com.l7tech.proxy.gui;
 import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
+import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.console.tree.EntityTreeCellRenderer;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
@@ -175,8 +176,8 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
      * Can be called from any thread.
      * @param reply
      */
-    public void onReceiveReply(final String reply) {
-        appendMessage(new SavedTextMessage("From Server", reply));
+    public void onReceiveReply(final SsgResponse reply) {
+        appendMessage(new SavedTextMessage("From Server", reply.getResponseAsString()));
     }
 
     /**

@@ -3,6 +3,7 @@ package com.l7tech.proxy;
 import org.apache.axis.message.SOAPEnvelope;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
+import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.policy.assertion.Assertion;
 
 /**
@@ -30,7 +31,7 @@ public class NullRequestInterceptor implements RequestInterceptor {
      * Fired when a reply is read from the SSG, but before it is parsed.
      * @param reply
      */
-    public void onReceiveReply(final String reply) {
+    public void onReceiveReply(final SsgResponse reply) {
     }
 
     /**

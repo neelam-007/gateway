@@ -22,7 +22,7 @@ public class PendingRequest {
     private RequestInterceptor requestInterceptor = NullRequestInterceptor.INSTANCE;
     private String soapAction = "";
     private String uri = "";
-    private String lastErrorResponse = ""; // Last response received from SSG in the case of 401 or 500 status
+    private SsgResponse lastErrorResponse = null; // Last response received from SSG in the case of 401 or 500 status
     private boolean isPolicyUpdated = false;
 
     // Policy settings, filled in by traversing policy tree
@@ -179,11 +179,11 @@ public class PendingRequest {
         this.policySettings.clientCertWouldHaveHelped = clientCertWouldHaveHelped;
     }
 
-    public String getLastErrorResponse() {
+    public SsgResponse getLastErrorResponse() {
         return lastErrorResponse;
     }
 
-    public void setLastErrorResponse(String lastErrorResponse) {
+    public void setLastErrorResponse(SsgResponse lastErrorResponse) {
         this.lastErrorResponse = lastErrorResponse;
     }
 }

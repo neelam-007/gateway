@@ -16,6 +16,7 @@ import org.apache.axis.message.SOAPEnvelope;
 import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
+import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.policy.assertion.FalseAssertion;
 
 /**
@@ -44,7 +45,7 @@ public class MessageViewerTest extends TestCase {
         mv.show();
         RequestInterceptor ri = mv.getMessageViewerModel();
         ri.onReceiveMessage(new SOAPEnvelope());
-        ri.onReceiveReply("<reply>blah blah blah, if this were an actual response, this would be a real SOAPEnvelope document.</reply>");
+        ri.onReceiveReply(new SsgResponse("<reply>blah blah blah, if this were an actual response, this would be a real SOAPEnvelope document.</reply>"));
         ri.onPolicyUpdated(new Ssg(22, "My SSG", "http://whatever"),
                            new PolicyAttachmentKey("http://example.com/schemas/wompfoo",
                                                    "http://example.com/schemas/wompfoo#WompSomeFoos"),

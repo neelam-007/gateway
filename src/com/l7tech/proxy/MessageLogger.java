@@ -10,6 +10,7 @@ import org.apache.axis.message.SOAPEnvelope;
 import org.apache.log4j.Category;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
+import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.policy.assertion.Assertion;
 
 /**
@@ -36,7 +37,7 @@ public class MessageLogger implements RequestInterceptor {
      * Fired when a reply is read from the SSG, after it is parsed.
      * @param reply
      */
-    public void onReceiveReply(String reply) {
+    public void onReceiveReply(SsgResponse reply) {
         log.info("Received server response: " + reply);
     }
 

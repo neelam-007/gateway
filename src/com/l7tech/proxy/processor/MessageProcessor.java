@@ -16,6 +16,7 @@ import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.PolicyManager;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
+import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.util.CannedSoapFaults;
 import com.l7tech.proxy.util.ThreadLocalHttpClient;
@@ -51,7 +52,7 @@ public class MessageProcessor {
         this.policyManager = policyManager;
     }
 
-    public String processMessage(PendingRequest req)
+    public SsgResponse processMessage(PendingRequest req)
             throws ClientCertificateException, PolicyAssertionException, OperationCanceledException,
                    ConfigurationException, GeneralSecurityException, IOException
     {
@@ -185,7 +186,7 @@ public class MessageProcessor {
      * @return
      * @throws ConfigurationException
      */
-    private String obtainResponse(PendingRequest req)
+    private SsgResponse obtainResponse(PendingRequest req)
             throws ConfigurationException, IOException,
                    PolicyRetryableException, ServerCertificateUntrustedException, OperationCanceledException
     {
@@ -228,9 +229,9 @@ public class MessageProcessor {
             Header contentType = postMethod.getResponseHeader("Content-Type");
             log.info("Response Content-Type: " + contentType);
             if (contentType == null || contentType.getValue() == null || contentType.getValue().indexOf("text/xml") < 0)
-                return CannedSoapFaults.RESPONSE_NOT_XML;
+                return new SsgResponse(CannedSoapFaults.RESPONSE_NOT_XML);
 
-            String response = postMethod.getResponseBodyAsString();
+            SsgResponse response = new SsgResponse(postMethod.getResponseBodyAsString());
             log.info("Got response from SSG: " + response);
             if (status == 401 || status == 500) {
                 req.setLastErrorResponse(response);

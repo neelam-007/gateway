@@ -4,6 +4,7 @@ import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgFinder;
 import com.l7tech.proxy.datamodel.SsgNotFoundException;
+import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.processor.MessageProcessor;
 import org.apache.axis.message.SOAPEnvelope;
 import org.apache.log4j.Category;
@@ -100,7 +101,7 @@ public class RequestHandler extends AbstractHttpHandler {
 
         final SOAPEnvelope requestEnvelope = getRequestEnvelope(request);
 
-        final String responseString = getServerResponse(request, ssg, requestEnvelope);
+        SsgResponse responseString = getServerResponse(request, ssg, requestEnvelope);
 
         transmitResponse(response, responseString);
     }
@@ -108,13 +109,13 @@ public class RequestHandler extends AbstractHttpHandler {
     /**
      * Send the reponse SOAPEnvelope back to the client.
      * @param response          the interested client's HttpResponse
-     * @param responseString  the response we are to send them
+     * @param ssgResponse  the response we are to send them
      * @throws IOException      if something went wrong
      */
-    private void transmitResponse(final HttpResponse response, final String responseString) throws IOException {
+    private void transmitResponse(final HttpResponse response, SsgResponse ssgResponse) throws IOException {
         try {
             response.addField("Content-Type", "text/xml");
-            response.getOutputStream().write(responseString.getBytes());
+            response.getOutputStream().write(ssgResponse.getResponseAsString().getBytes());
             response.commit();
         } catch (IOException e) {
             interceptor.onReplyError(e);
@@ -185,16 +186,16 @@ public class RequestHandler extends AbstractHttpHandler {
      * @return                  the response it sends back
      * @throws HttpException    if there was Trouble
      */
-    private String getServerResponse(final HttpRequest request,
-                                           final Ssg ssg,
-                                           final SOAPEnvelope requestEnvelope)
+    private SsgResponse getServerResponse(final HttpRequest request,
+                                          final Ssg ssg,
+                                          final SOAPEnvelope requestEnvelope)
             throws HttpException
     {
         log.info("Processing message to SSG " + ssg.getName());
 
         try {
             PendingRequest pendingRequest = gatherRequest(request, requestEnvelope, ssg);
-            String reply = messageProcessor.processMessage(pendingRequest);
+            SsgResponse reply = messageProcessor.processMessage(pendingRequest);
             interceptor.onReceiveReply(reply);
             log.info("Returning result");
             return reply;

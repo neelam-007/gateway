@@ -3,6 +3,7 @@ package com.l7tech.proxy;
 import org.apache.axis.message.SOAPEnvelope;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.policy.assertion.Assertion;
 
 /**
@@ -23,7 +24,7 @@ public interface RequestInterceptor {
      * Fired when a reply is read from the SSG, after it is parsed.
      * @param reply
      */
-    void onReceiveReply(String reply);
+    void onReceiveReply(SsgResponse reply);
 
     /**
      * Fired when an error is encountered while reading the message from a client.
