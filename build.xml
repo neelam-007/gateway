@@ -521,7 +521,7 @@
         <echo>Replacing ${param_name} with ${param_value}</echo>
         <replaceregexp match='${param_name} = ".*"' replace='${param_name} = "${param_value}"'>
             <fileset dir="${src.root}/src">
-                <include name="**/BuildInfo.java"/>
+                <include name="com/l7tech/common/BuildInfo.java"/>
             </fileset>
         </replaceregexp>
     </target>
