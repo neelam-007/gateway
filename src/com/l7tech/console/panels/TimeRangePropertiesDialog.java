@@ -197,14 +197,14 @@ public class TimeRangePropertiesDialog extends JDialog {
         JLabel toto = new JLabel("between");
         itemsToToggleForDayOfWeek.add(toto);
         dayOfWeekPanel.add(toto, new GridBagConstraints(0, 0, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
-        startDay = new JSpinner(weekModel());
+        startDay = new JSpinner(weekModel(1));
         itemsToToggleForDayOfWeek.add(startDay);
         dayOfWeekPanel.add(startDay, new GridBagConstraints(1, 0, 1, 1, weightx, 0, dir, fill, insets, 0, 0));
 
         toto = new JLabel("and");
         itemsToToggleForDayOfWeek.add(toto);
         dayOfWeekPanel.add(toto, new GridBagConstraints(0, 1, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
-        endDay = new JSpinner(weekModel());
+        endDay = new JSpinner(weekModel(5));
         itemsToToggleForDayOfWeek.add(endDay);
         dayOfWeekPanel.add(endDay, new GridBagConstraints(1, 1, 1, 1, weightx, 0, dir, fill, insets, 0, 0));
 
@@ -274,9 +274,9 @@ public class TimeRangePropertiesDialog extends JDialog {
         return output;
     }
 
-    private SpinnerListModel weekModel() {
+    private SpinnerListModel weekModel(int selectedDay) {
         SpinnerListModel model = new SpinnerListModel(week);
-        model.setValue(week[3]);
+        model.setValue(week[selectedDay]);
         return model;
     }
 
