@@ -82,7 +82,7 @@ public class RemoteReferenceResolver {
             }
             // remove the children that are no longer wanted
             for (Iterator it = childrenToRemoveFromCA.iterator(); it.hasNext();) {
-                children.remove(it.next());
+                ca.removeChild((Assertion)it.next());
             }
             return true;
         } else {

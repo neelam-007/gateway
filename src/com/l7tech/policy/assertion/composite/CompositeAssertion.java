@@ -50,6 +50,23 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
         return children;
     }
 
+    public void addChild(Assertion kid) {
+        children.add(kid);
+        setParent(kid, this);        
+        super.treeChanged();
+    }
+
+    public void addChild(int index, Assertion kid) {
+        children.add(index, kid);
+        setParent(kid, this);
+        super.treeChanged();
+    }
+
+    public void removeChild(Assertion kid) {
+        children.remove(kid);
+        super.treeChanged();
+    }
+
     public void setChildren(List children) {
         this.children = reparentedChildren(this, children);
         final CompositeAssertion parent = getParent();

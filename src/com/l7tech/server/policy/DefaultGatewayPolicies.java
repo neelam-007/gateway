@@ -69,7 +69,7 @@ public class DefaultGatewayPolicies {
 
         configManager = (IdentityProviderConfigManager)Locator.getDefault().lookup(IdentityProviderConfigManager.class);
         identities = new OneOrMoreAssertion();
-        identities.getChildren().add(new PermissiveIdentityAssertion(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID));
+        identities.addChild(new PermissiveIdentityAssertion(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID));
         updateIdentities();
 
         defaultPolicy = new AllAssertion(Arrays.asList(new Assertion[] {
@@ -119,7 +119,7 @@ public class DefaultGatewayPolicies {
                     i.remove();
                 } else if (previousVersion == null) {
                     logger.info("Adding new provider " + providerOid + " to default policies");
-                    identities.getChildren().add(new PermissiveIdentityAssertion(providerOid.longValue()));
+                    identities.addChild(new PermissiveIdentityAssertion(providerOid.longValue()));
                 }
             }
             lastVersionCheck = System.currentTimeMillis();

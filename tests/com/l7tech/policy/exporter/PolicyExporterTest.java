@@ -51,12 +51,12 @@ public class PolicyExporterTest extends TestCase {
     private Assertion createTestPolicy() {
         AllAssertion root = new AllAssertion();
         SpecificUser suass = new SpecificUser(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID, "john", null, null);
-        root.getChildren().add(suass);
+        root.addChild(suass);
         JmsRoutingAssertion jrass = new JmsRoutingAssertion();
         jrass.setEndpointName("blah");
         jrass.setEndpointOid(new Long(25));
         jrass.setResponseTimeout(55);
-        root.getChildren().add(jrass);
+        root.addChild(jrass);
         // todo, plug in a real custom assertion, the WSPWriter cannot handle this garbage
         CustomAssertionHolder cahass = new CustomAssertionHolder();
         cahass.setCategory(Category.MESSAGE);

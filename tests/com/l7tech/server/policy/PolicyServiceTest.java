@@ -155,12 +155,12 @@ public class PolicyServiceTest extends TestCase {
 
     public void testWithIdentities() throws Exception {
         AllAssertion root = new AllAssertion();
-        root.getChildren().add(new HttpBasic());
+        root.addChild(new HttpBasic());
         OneOrMoreAssertion or = new OneOrMoreAssertion();
-        root.getChildren().add(or);
-        or.getChildren().add(TESTUSER_IDASSERTION);
-        or.getChildren().add(new SpecificUser(TestIdentityProvider.PROVIDER_ID, "mike", "111", "mike"));
-        root.getChildren().add(new HttpRoutingAssertion("http://soap.spacecrocodile.com"));
+        root.addChild(or);
+        or.addChild(TESTUSER_IDASSERTION);
+        or.addChild(new SpecificUser(TestIdentityProvider.PROVIDER_ID, "mike", "111", "mike"));
+        root.addChild(new HttpRoutingAssertion("http://soap.spacecrocodile.com"));
         root.setChildren(root.getChildren());
         or.setChildren(or.getChildren());
         log.info(root.toString());
@@ -170,23 +170,23 @@ public class PolicyServiceTest extends TestCase {
 
     public void testWithTwoBranchForTwoIdentities() throws Exception {
         AllAssertion root = new AllAssertion();
-        root.getChildren().add(new HttpBasic());
+        root.addChild(new HttpBasic());
         OneOrMoreAssertion or = new OneOrMoreAssertion();
-        root.getChildren().add(or);
+        root.addChild(or);
 
         AllAssertion branch1 = new AllAssertion();
-        branch1.getChildren().add(TESTUSER_IDASSERTION);
-        branch1.getChildren().add(new RequestWssIntegrity(new XpathExpression("/pathForFranco")));
+        branch1.addChild(TESTUSER_IDASSERTION);
+        branch1.addChild(new RequestWssIntegrity(new XpathExpression("/pathForFranco")));
         branch1.setChildren(branch1.getChildren());
 
         AllAssertion branch2 = new AllAssertion();
-        branch2.getChildren().add(new SpecificUser(TestIdentityProvider.PROVIDER_ID, "mike", "111", "mike"));
-        branch2.getChildren().add(new RequestWssIntegrity(new XpathExpression("/pathForMike")));
+        branch2.addChild(new SpecificUser(TestIdentityProvider.PROVIDER_ID, "mike", "111", "mike"));
+        branch2.addChild(new RequestWssIntegrity(new XpathExpression("/pathForMike")));
         branch2.setChildren(branch2.getChildren());
 
-        or.getChildren().add(branch1);
-        or.getChildren().add(branch2);
-        root.getChildren().add(new HttpRoutingAssertion("http://soap.spacecrocodile.com"));
+        or.addChild(branch1);
+        or.addChild(branch2);
+        root.addChild(new HttpRoutingAssertion("http://soap.spacecrocodile.com"));
         root.setChildren(root.getChildren());
         or.setChildren(or.getChildren());
         log.info(root.toString());
@@ -197,24 +197,24 @@ public class PolicyServiceTest extends TestCase {
     public void testAnonymousBranch() throws Exception {
         AllAssertion root = new AllAssertion();
         OneOrMoreAssertion or = new OneOrMoreAssertion();
-        root.getChildren().add(or);
+        root.addChild(or);
 
         AllAssertion branch1 = new AllAssertion();
-        branch1.getChildren().add(new RequestXpathAssertion(new XpathExpression("/anonymousPath")));
-        branch1.getChildren().add(new ResponseWssIntegrity());
+        branch1.addChild(new RequestXpathAssertion(new XpathExpression("/anonymousPath")));
+        branch1.addChild(new ResponseWssIntegrity());
         branch1.setChildren(branch1.getChildren());
 
         AllAssertion branch2 = new AllAssertion();
-        branch2.getChildren().add(new HttpBasic());
-        branch2.getChildren().add(new SpecificUser(TestIdentityProvider.PROVIDER_ID, "mike", "111", "mike"));
-        branch2.getChildren().add(new RequestXpathAssertion(new XpathExpression("/pathForMikeOnly")));
-        branch2.getChildren().add(new ResponseWssIntegrity());
+        branch2.addChild(new HttpBasic());
+        branch2.addChild(new SpecificUser(TestIdentityProvider.PROVIDER_ID, "mike", "111", "mike"));
+        branch2.addChild(new RequestXpathAssertion(new XpathExpression("/pathForMikeOnly")));
+        branch2.addChild(new ResponseWssIntegrity());
         branch2.setChildren(branch2.getChildren());
 
-        or.getChildren().add(branch1);
-        or.getChildren().add(branch2);
+        or.addChild(branch1);
+        or.addChild(branch2);
         
-        root.getChildren().add(new HttpRoutingAssertion("http://soap.spacecrocodile.com"));
+        root.addChild(new HttpRoutingAssertion("http://soap.spacecrocodile.com"));
         root.setChildren(root.getChildren());
         or.setChildren(or.getChildren());
         log.info(root.toString());
@@ -225,16 +225,16 @@ public class PolicyServiceTest extends TestCase {
     public void testFullAnonymous() throws Exception {
         AllAssertion root = new AllAssertion();
         OneOrMoreAssertion or = new OneOrMoreAssertion();
-        root.getChildren().add(or);
+        root.addChild(or);
 
         AllAssertion branch1 = new AllAssertion();
-        branch1.getChildren().add(new RequestXpathAssertion(new XpathExpression("/anonymousPath")));
-        branch1.getChildren().add(new ResponseWssIntegrity());
+        branch1.addChild(new RequestXpathAssertion(new XpathExpression("/anonymousPath")));
+        branch1.addChild(new ResponseWssIntegrity());
         branch1.setChildren(branch1.getChildren());
 
-        or.getChildren().add(branch1);
+        or.addChild(branch1);
         
-        root.getChildren().add(new HttpRoutingAssertion("http://soap.spacecrocodile.com"));
+        root.addChild(new HttpRoutingAssertion("http://soap.spacecrocodile.com"));
         root.setChildren(root.getChildren());
         or.setChildren(or.getChildren());
         log.info(root.toString());
@@ -244,12 +244,12 @@ public class PolicyServiceTest extends TestCase {
 
     public void testFailedAuthentication() throws Exception {
         AllAssertion root = new AllAssertion();
-        root.getChildren().add(new HttpBasic());
+        root.addChild(new HttpBasic());
         OneOrMoreAssertion or = new OneOrMoreAssertion();
-        root.getChildren().add(or);
-        or.getChildren().add(TESTUSER_IDASSERTION);
-        or.getChildren().add(new SpecificUser(TestIdentityProvider.PROVIDER_ID, "mike", "111", "mike"));
-        root.getChildren().add(new HttpRoutingAssertion("http://soap.spacecrocodile.com"));
+        root.addChild(or);
+        or.addChild(TESTUSER_IDASSERTION);
+        or.addChild(new SpecificUser(TestIdentityProvider.PROVIDER_ID, "mike", "111", "mike"));
+        root.addChild(new HttpRoutingAssertion("http://soap.spacecrocodile.com"));
         root.setChildren(root.getChildren());
         or.setChildren(or.getChildren());
         log.info(root.toString());

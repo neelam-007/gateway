@@ -369,11 +369,11 @@ public class PolicyService {
      */
     ServerAssertion constructPolicyPolicy(Assertion targetPolicy) {
         AllAssertion base = new AllAssertion();
-        base.getChildren().add(new OneOrMoreAssertion(allCredentialAssertions));
+        base.addChild(new OneOrMoreAssertion(allCredentialAssertions));
         List allTargetIdentities = new ArrayList();
         addIdAssertionToList(targetPolicy, allTargetIdentities);
         if (allTargetIdentities.size() > 0)
-            base.getChildren().add(new OneOrMoreAssertion(allTargetIdentities));
+            base.addChild(new OneOrMoreAssertion(allTargetIdentities));
         return ServerPolicyFactory.getInstance().makeServerPolicy(base);
     }
 
