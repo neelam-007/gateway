@@ -72,6 +72,14 @@ public class SecureSpanConstants {
     public static final String PASSWD_SERVICE_FILE = "/ssg/passwd";
 
     /**
+     * The filename portion of the URL for the Gateway's WS-Trust RequestSecurityToken service.
+     * Used for WS-SecureConversation sessions and for obtaining SAML tokens.
+     * The agent calls this servlet with a signed soap request for a new WS-SC SecurityContext,
+     * or for a new SAML token.
+     */
+    public static final String TOKEN_SERVICE_FILE = "/ssg/token";
+
+    /**
      * The console compares this value with the value returned by IdentityAdmin.echoVersion()
      * this ensures that the console can talk to the server.
      */

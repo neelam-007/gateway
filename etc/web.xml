@@ -71,6 +71,11 @@
         <servlet-name>WsdlProxy</servlet-name>
         <servlet-class>com.l7tech.server.WsdlProxyServlet</servlet-class>
     </servlet>
+    
+    <servlet>
+        <servlet-name>TokenService</servlet-name>
+        <servlet-class>com.l7tech.server.TokenServiceServlet</servlet-class>
+    </servlet>
 
     <servlet>
         <servlet-name>PasswdService</servlet-name>
@@ -175,6 +180,11 @@
     <servlet-mapping>
         <servlet-name>WsdlProxy</servlet-name>
         <url-pattern>/ssg/wsil</url-pattern>
+    </servlet-mapping>
+    
+    <servlet-mapping>
+        <servlet-name>TokenService</servlet-name>
+        <url-pattern>/ssg/token</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>
