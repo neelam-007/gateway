@@ -57,6 +57,49 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
         xmlRequestSecurity = data;
     }
 
+    public AssertionStatus newCheckRequest(Request request, Response response) throws IOException, PolicyAssertionException {
+        if (!(request instanceof SoapRequest)) {
+            throw new PolicyAssertionException("This type of assertion is only supported with SOAP type of messages");
+        }
+        SoapRequest soapmsg = (SoapRequest)request;
+        WssProcessor.ProcessorResult wssResults = soapmsg.getWssProcessorOutput();
+        if (wssResults == null) {
+            throw new PolicyAssertionException("This request was not processed for WSS level security.");
+        }
+        // get the elements that are expected to be signed/encrypted
+        ElementSecurity[] elements = xmlRequestSecurity.getElements();
+        // todo try to match these against the elements that the wss processor says were signed, encrypted
+
+        // if this assertion is expected to provide credentials, do it
+        if (xmlRequestSecurity.hasAuthenticationElement()) {
+            if (request.isAuthenticated()) {
+                logger.fine("Request was already authenticated but this XmlRequestSecurity is usable as a credential source" );
+            } else {
+                logger.info("Using credentials used to sign request" );
+                boolean certwasfound = false;
+                WssProcessor.SecurityToken[] tokens = wssResults.getSecurityTokens();
+                for (int i = 0; i < tokens.length; i++) {
+                    if (tokens[i].asObject() instanceof X509Certificate) {
+                        X509Certificate cert = (X509Certificate)tokens[i].asObject();
+                        X500Name x500name = new X500Name(cert.getSubjectX500Principal().getName());
+                        String certCN = x500name.getCommonName();
+                        request.setPrincipalCredentials(new LoginCredentials(certCN,
+                                                                             null,
+                                                                             CredentialFormat.CLIENTCERT,
+                                                                             null,
+                                                                             cert));
+                        certwasfound = true;
+                    }
+                }
+                if (!certwasfound) {
+                    logger.info("There were no cert extracted at WSS processing time.");
+                    return AssertionStatus.AUTH_REQUIRED;
+                }
+            }
+        }
+        return AssertionStatus.NONE;
+    }
+
     public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
         // get the document
         Document soapmsg = extractDocumentFromRequest(request);
