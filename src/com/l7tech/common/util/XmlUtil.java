@@ -22,6 +22,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Iterator;
 import java.util.logging.Logger;
 
 /**
@@ -32,7 +33,7 @@ import java.util.logging.Logger;
  */
 public class XmlUtil {
     private static final EntityResolver SAFE_ENTITY_RESOLVER = new EntityResolver() {
-        public InputSource resolveEntity( String publicId, String systemId ) throws SAXException, IOException {
+        public InputSource resolveEntity( String publicId, String systemId ) throws SAXException {
             String msg = "Document referred to an external entity with system id '" + systemId + "'";
             logger.warning( msg );
             throw new SAXException(msg);
@@ -181,7 +182,7 @@ public class XmlUtil {
 
     public static class MultipleChildElementsException extends Exception {
         public MultipleChildElementsException( String nsuri, String name ) {
-            super( "Multiple matching child elements found" );
+            super( "Multiple matching \"" + name + "\" child elements found" );
             this.nsuri = nsuri;
             this.name = name;
         }
@@ -224,6 +225,25 @@ public class XmlUtil {
         }
 
         return found;
+    }
+
+    /**
+     * Removes all child Elements of a parent Element
+     * with the specified name that are in the specified namespace.
+     *
+     * The parent must elong to a DOM produced by a namespace-aware parser,
+     * and the name must be undecorated.
+     *
+     * @param parent the element in which to search for children to remove.  Must be non-null.
+     * @param nsuri the URI of the namespace to which the children must belong, NOT THE PREFIX!  Must be non-null.
+     * @param name the name of the elements to find.  Must be non-null.
+     */
+    public static void removeChildElementsByName( Element parent, String nsuri, String name ) {
+        List found = findChildElementsByName( parent, nsuri, name );
+        for (Iterator i = found.iterator(); i.hasNext();) {
+            Node node = (Node)i.next();
+            parent.removeChild(node);
+        }
     }
 
     /**
