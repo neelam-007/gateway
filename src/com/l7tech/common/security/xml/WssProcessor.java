@@ -29,6 +29,10 @@ public interface WssProcessor {
     }
 
     public interface SecurityToken extends ParsedElement {
+        /**
+         * Get the object format for this Security Token if applicable. Possible types
+         * are LoginCredentials for UsernameToken or X509Certificate for BinarySecurityToken
+         */
         Object asObject();
     }
 
