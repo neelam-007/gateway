@@ -52,7 +52,8 @@ public class RemoteReferenceResolver {
             Utilities.centerOnScreen(wiz);
             wiz.setModal(true);
             wiz.setVisible(true);
-            // todo, check that wizard was not canceled.
+            // if the wizard returns false, we must return
+            if (wiz.wasCanceled()) return false;
         }
         resolvedReferences = references;
         return true;
