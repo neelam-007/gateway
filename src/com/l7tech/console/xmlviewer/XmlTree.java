@@ -54,7 +54,7 @@ public class XmlTree extends JTree {
         putClientProperty("JTree.lineStyle", "None");
         setEditable(false);
         setShowsRootHandles(true);
-        getSelectionModel().setSelectionMode(TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);
+        getSelectionModel().setSelectionMode(TreeSelectionModel.SINGLE_TREE_SELECTION);
         setCellRenderer(new XmlCellRenderer());
         setRootVisible(true);
 
