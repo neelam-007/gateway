@@ -2,8 +2,8 @@ package com.l7tech.policy.server;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.*;
-import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderConfigManager;
@@ -16,9 +16,7 @@ import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
-import com.l7tech.policy.server.filter.FilterManager;
 import com.l7tech.policy.server.filter.FilteringException;
-import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.AuthenticatableHttpServlet;
 import com.l7tech.server.identity.IdProvConfManagerServer;
 import com.l7tech.server.policy.PolicyService;
@@ -71,7 +69,6 @@ import java.util.logging.Level;
  * Date: Jun 11, 2003
  */
 public class PolicyServlet extends AuthenticatableHttpServlet {
-    // format is policyId|policyVersion (seperated with char '|')
 
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
@@ -143,13 +140,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             }
 
             // check if the response is already a soap fault
-            Element bodyChild = null;
-            try {
-                bodyChild = XmlUtil.findFirstChildElement(SoapUtil.getBodyElement(response));
-            } catch (InvalidDocumentFormatException e) {
-                generateFaultAndSendAsResponse(res, "Response is not soap", e.getMessage());
-            }
-            if ("Fault".equals(bodyChild.getLocalName())) {
+            if (isDocFault(response)) {
                 outputSoapFault(res, response);
                 return;
             } else {
@@ -197,8 +188,10 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     }
 
 
-    // todo, plug this in, get rid of old doGet()
-    protected void doGetNew(HttpServletRequest req, HttpServletResponse res)
+    /**
+     * HTTP Get policy downloads for those who want to see policies in their browser
+     */
+    protected void doGet(HttpServletRequest req, HttpServletResponse res)
       throws ServletException, IOException {
         try {
             // GET THE PARAMETERS PASSED
@@ -223,8 +216,8 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             try {
                 users = authenticateRequestBasic(req);
             } catch (AuthenticationException e) {
-                generateFaultAndSendAsResponse(res, "Authentication exception", e.getMessage());
-                return;
+                logger.log(Level.FINE, "Authentication exception", e);
+                users = Collections.EMPTY_LIST;
             }
 
             // pass over to the service
@@ -262,7 +255,11 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                 generateFaultAndSendAsResponse(res, "internal error", e.getMessage());
                 return;
             }
+            if (isDocFault(response)) {
+                response = null;
+            }
             if (response == null && users.size() < 1) {
+                logger.finest("sending challenge");
                 sendAuthChallenge(req, res);
                 return;
             } else if (response == null) {
@@ -270,6 +267,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                 generateFaultAndSendAsResponse(res, "Policy not found or download unauthorized", "");
                 return;
             } else {
+                logger.finest("returning policy");
                 outputPolicyDoc(res, response);
                 return;
             }
@@ -282,142 +280,19 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         }
     }
 
-    protected void doGet(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse)
-      throws ServletException, IOException {
+    private boolean isDocFault(Document doc) {
+        if (doc == null) return false;
+        Element bodyChild = null;
         try {
-            // GET THE PARAMETERS PASSED
-            String str_oid = httpServletRequest.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID);
-            String getCert = httpServletRequest.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_GETCERT);
-            String username = httpServletRequest.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_USERNAME);
-            String nonce = httpServletRequest.getParameter(SecureSpanConstants.HttpQueryParameters.PARAM_NONCE);
-
-            // See if it's actually a certificate download request
-            if (getCert != null) {
-                try {
-                    doCertDownload(httpServletResponse, username, nonce);
-                } catch (Exception e) {
-                    logger.log(Level.WARNING, "Unable to fulfil certificate discovery request", e);
-                    throw new ServletException("Unable to fulfil cert request", e);
-                }
-                return;
-            }
-
-            // RESOLVE THE PUBLISHED SERVICE
-            PublishedService targetService = null;
-            if (str_oid == null || str_oid.length() == 0) {
-                String err = SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID + " parameter is required";
-                logger.info(err);
-                httpServletResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, err);
-                return;
-            } else {
-                targetService = resolveService(Long.parseLong(str_oid));
-            }
-
-            if (targetService == null) {
-                String err = "Incomplete request or service does not exist.";
-                logger.info(err);
-                httpServletResponse.sendError(HttpServletResponse.SC_NOT_FOUND, err);
-                return;
-            }
-
-            long serviceid = targetService.getOid();
-            int serviceversion = targetService.getVersion();
-
-            // BEFORE SENDING BACK THIS POLICY, WE NEED TO DECIDE IF THE REQUESTOR IS ALLOWED TO SEE IT
-            // if policy does not allow anonymous access, then it should not be accessible through http
-            boolean anonymousok = policyAllowAnonymous(targetService);
-            if (!anonymousok && !httpServletRequest.isSecure()) {
-                // send error back axing to come back through ssl
-                String newUrl = "https://" + httpServletRequest.getServerName();
-                if (httpServletRequest.getServerPort() == 8080) newUrl += ":8443";
-                newUrl += httpServletRequest.getRequestURI() + "?" + httpServletRequest.getQueryString();
-                httpServletResponse.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, newUrl);
-                httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED,
-                  "Request must come through SSL. " + newUrl);
-                logger.info("Non-anonymous policy requested on in-secure channel (http). " +
-                  "Sending 401 back with secure URL to requestor: " + newUrl);
-                return;
-            }
-
-            // get credentials and check that they are valid for this policy
-            List users;
-            try {
-                users = authenticateRequestBasic(httpServletRequest, targetService);
-            } catch (AuthenticationException e) {
-                if (!anonymousok) {
-                    logger.info("Returning 401 to requestor because invalid credentials were provided");
-                    httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
-                    return;
-                } else users = Collections.EMPTY_LIST;
-            }
-
-            if (!anonymousok) {
-                if (users == null || users.isEmpty()) {
-                    // send error back with a hint that credentials should be provided
-                    String newUrl = "https://" + httpServletRequest.getServerName();
-                    if (httpServletRequest.getServerPort() == 8080 || httpServletRequest.getServerPort() == 8443) {
-                        newUrl += ":8443";
-                    }
-                    newUrl += httpServletRequest.getRequestURI() + "?" + httpServletRequest.getQueryString();
-                    httpServletResponse.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, newUrl);
-                    httpServletResponse.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                    logger.fine("sending back authentication challenge");
-                    // in this case, send an authentication challenge
-                    httpServletResponse.setHeader("WWW-Authenticate", "Basic realm=\"" + ServerHttpBasic.REALM + "\"");
-                    httpServletResponse.getOutputStream().close();
-                    return;
-                }
-            }
-
-            // THE POLICY SHOULD BE STRIPPED OUT OF ANYTHING THAT THE REQUESTOR SHOULD NOT BE ALLOWED TO SEE
-            // (this may be everything, if the user has no business seeing this policy)
-            try {
-                if (!anonymousok) {
-                    boolean someonecanseethis = false;
-                    for (Iterator i = users.iterator(); i.hasNext();) {
-                        User user = (User)i.next();
-                        // logger.finer("Policy before filtering: " + targetService.getPolicyXml());
-                        PublishedService tempService = FilterManager.getInstance().applyAllFilters(user, targetService);
-                        //logger.finer("Policy after filtering: " +
-                        //             ((tempService == null) ? "null" : tempService.getPolicyXml()));
-                        if (tempService != null) {
-                            targetService = tempService;
-                            someonecanseethis = true;
-                            break;
-                        }
-                    }
-
-                    if (!someonecanseethis) {
-                        targetService = null;
-                    }
-
-                    if (targetService == null) {
-                        logger.info("requestor tried to download policy that " +
-                          "he should not be allowed to see - will return error");
-                    }
-                } else {
-                    // even if the policy is anonymous, we might want to hide stuff
-                    targetService = FilterManager.getInstance().applyAllFilters(null, targetService);
-                }
-            } catch (FilteringException e) {
-                logger.log(Level.WARNING, "Could not filter policy", e);
-                httpServletResponse.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                  "Could not process policy. Consult server logs.");
-                return;
-            }
-
-            // OUTPUT THE POLICY
-            if (anonymousok && targetService == null) {
-                outputEmptyPolicy(httpServletResponse, serviceid, serviceversion);
-            } else
-                outputPublishedServicePolicy(targetService, httpServletResponse);
-        } finally {
-            try {
-                PersistenceContext.getCurrent().close();
-            } catch (SQLException e) {
-                logger.log(Level.WARNING, "Could not get current persistence context to close.", e);
-            }
+            bodyChild = XmlUtil.findFirstChildElement(SoapUtil.getBodyElement(doc));
+        } catch (InvalidDocumentFormatException e) {
+            logger.log(Level.WARNING, "cannot inspect document for fault", e);
+            return false;
         }
+        if ("Fault".equals(bodyChild.getLocalName())) {
+            return true;
+        }
+        return false;
     }
 
     /**
@@ -512,31 +387,6 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         OutputStream os = res.getOutputStream();
         os.write(XmlUtil.nodeToString(doc).getBytes());
         os.close();
-    }
-
-    private void outputEmptyPolicy(HttpServletResponse res, long serviceid, int serviceversion) throws IOException {
-        res.addHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION,
-          Long.toString(serviceid) + '|' + Long.toString(serviceversion));
-        res.setContentType(XmlUtil.TEXT_XML + "; charset=utf-8");
-        res.getOutputStream().println(WspWriter.getPolicyXml(null));
-        logger.fine("sent back empty policy");
-    }
-
-    private void outputPublishedServicePolicy(PublishedService service, HttpServletResponse response) throws IOException {
-        if (service == null) {
-            logger.fine("sending back 404 (either user has no business with this policy or " +
-                        "the service could not be found)");
-            response.sendError(HttpServletResponse.SC_NOT_FOUND,
-              "ERROR cannot resolve target service or you are not authorized to consult it");
-            return;
-        } else {
-            logger.fine("sending back filtered policy for service " + service.getOid() + " version " +
-                        service.getVersion());
-            response.addHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION,
-              Long.toString(service.getOid()) + '|' + Long.toString(service.getVersion()));
-            response.setContentType(XmlUtil.TEXT_XML + "; charset=utf-8");
-            response.getOutputStream().println(service.getPolicyXml());
-        }
     }
 
     private class CheckInfo {
