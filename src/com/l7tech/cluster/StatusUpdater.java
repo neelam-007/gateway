@@ -74,7 +74,7 @@ public class StatusUpdater extends Thread {
                 }
                 try {
                     updateNodeStatus();
-                    updateServiceUsage();
+                    updateServiceUsage(context);
                 } catch (Throwable e) {
                     logger.log(Level.SEVERE, "error in update", e);
                 } finally {
@@ -119,7 +119,7 @@ public class StatusUpdater extends Thread {
         clusterInfoManager.updateSelfStatus(load);
     }
 
-    public void updateServiceUsage() {
+    public void updateServiceUsage(PersistenceContext context) {
         // get service usage from local cache
         ServiceManager serviceManager = (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
         String ourid = clusterInfoManager.thisNodeId();
@@ -134,6 +134,14 @@ public class StatusUpdater extends Thread {
                 serviceUsageManager.clear(ourid);
             } catch (DeleteException e) {
                 logger.log(Level.SEVERE, "could not update service usage");
+                return;
+            }
+            // commit those deletes so that the following saves work properly
+            try {
+                context.commitTransaction();
+                context.beginTransaction();
+            } catch (TransactionException e) {
+                logger.log(Level.WARNING, "could not reset transaction", e);
                 return;
             }
             for (Iterator i = stats.iterator(); i.hasNext();) {
