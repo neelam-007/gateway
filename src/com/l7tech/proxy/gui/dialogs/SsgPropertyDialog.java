@@ -402,6 +402,11 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                                  true);
         try {
             SsgKeyStoreManager.importClientCertificate(ssg, certFile, pass, null, ssgPass);
+        } catch (ClassCastException e) {
+            // translate this one into a friendlier error message
+            log.log(Level.WARNING, "Unable to import certificate", e);
+            Gui.errorMessage("Unable to import certificate\n\nThis is not a valid PKCS#12 keystore file.");
+            return;
         } catch (Exception e) {
             log.log(Level.WARNING, "Unable to import certificate", e);
             Gui.errorMessage("Unable to import certificate\n\n" + (e.getMessage() != null ? e.getMessage() : e.getClass().getName()));
