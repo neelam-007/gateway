@@ -6,20 +6,15 @@
 
 package com.l7tech.skunkworks;
 
-import com.ibm.xml.dsig.KeyInfo;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.HexUtils;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 
-import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.ByteArrayInputStream;
-import java.math.BigInteger;
+import java.io.FileInputStream;
+import java.security.KeyStore;
 import java.security.Provider;
 import java.security.Signature;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
 import java.util.logging.Logger;
 
 /**
@@ -27,18 +22,34 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class JceSignaturePlayground {
-    public JceSignaturePlayground() {
-        dbf = DocumentBuilderFactory.newInstance();
-        dbf.setNamespaceAware( true );
-        dbf.setValidating( false );
-    }
-
     public static void main( String[] args ) throws Exception {
+        if ( args.length < 3 ) throw new Exception("args: keystore storepass keypass [kstype]");
+        String keystore = args[0];
+        String storepass = args[1];
+        String keypass = args[2];
+        String kstype = args.length >= 4 ? args[3] : "JKS";
+
+        FileInputStream fis = null;
+        KeyStore ks;
+
+        try {
+            fis = new FileInputStream(keystore);
+            ks = KeyStore.getInstance(kstype);
+            ks.load(fis,storepass.toCharArray());
+        } finally {
+            if ( fis != null ) fis.close();
+        }
+
+        String alias = (String)ks.aliases().nextElement();
+
+        final X509Certificate cert = (X509Certificate)ks.getCertificate(alias);
+        final RSAPrivateKey privateKey = (RSAPrivateKey)ks.getKey(alias,keypass.toCharArray());
+
         final Provider aprov = JceProvider.getAsymmetricJceProvider();
+        log.info( "Using asymmetric crypto provider " + aprov );
+
         final String cleartext = KEYINFO;
         final byte[] clearBytes = cleartext.getBytes("UTF-8");
-        final RSAPrivateKey privateKey = getPrivateKey();
-        final X509Certificate cert = getCertificate();
         final byte[] signature;
 
         try {
@@ -74,7 +85,7 @@ public class JceSignaturePlayground {
                     verifier.update( clearBytes );
                     byte[] signature2 = HexUtils.decodeBase64( base64Signature );
                     if ( !verifier.verify(signature2) )
-                        throw new AssertionError( "Verification should have succeeded" );
+                        assert false : "Verification should have succeeded";
                 } catch ( Exception e ) {
                     throw new RuntimeException(e);
                 }
@@ -88,7 +99,7 @@ public class JceSignaturePlayground {
                     verifier.initVerify( cert );
                     verifier.update( clearBytes );
                     if ( !verifier.verify( signature ) )
-                        throw new AssertionError( "Verification should have succeeded" );
+                        assert false : "Verification should have succeeded";
                 } catch ( Exception e ) {
                     throw new RuntimeException(e);
                 }
@@ -113,71 +124,6 @@ public class JceSignaturePlayground {
         runner.run();
     }
 
-    private static RSAPublicKey clientCertPublicKey = null;
-    private static RSAPublicKey getClientCertPublicKey() throws Exception {
-        if (clientCertPublicKey != null) return clientCertPublicKey;
-        return clientCertPublicKey = (RSAPublicKey)getCertificate().getPublicKey();
-    }
-
-    private static BigInteger getPrivateExponent() throws Exception {
-        String keyHex = PRIVATE_EXPONENT;
-        return new BigInteger(keyHex, 16);
-    }
-
-    private static RSAPrivateKey getPrivateKey() throws Exception {
-        final RSAPublicKey pubkey = getClientCertPublicKey();
-        final BigInteger exp = getPrivateExponent();
-        RSAPrivateKey privkey = new RSAPrivateKey() {
-            public BigInteger getPrivateExponent() {
-                return exp;
-            }
-
-            public byte[] getEncoded() {
-                throw new UnsupportedOperationException();
-            }
-
-            public String getAlgorithm() {
-                return "RSA";
-            }
-
-            public String getFormat() {
-                return "RAW";
-            }
-
-            public BigInteger getModulus() {
-                return pubkey.getModulus();
-            }
-        };
-
-        return privkey;
-    }
-
-
-
-    private static X509Certificate getCertificate() throws Exception {
-        // Find KeyInfo bodyElement, and extract certificate from this
-        Document keyInfoDoc = parse( KEYINFO );
-        Element keyInfoElement = keyInfoDoc.getDocumentElement();
-
-        if (keyInfoElement == null) {
-            throw new Exception("KeyInfo bodyElement not found");
-        }
-
-        KeyInfo keyInfo = new KeyInfo(keyInfoElement);
-
-        // Assume a single X509 certificate
-        KeyInfo.X509Data[] x509DataArray = keyInfo.getX509Data();
-
-        KeyInfo.X509Data x509Data = x509DataArray[0];
-        X509Certificate[] certs = x509Data.getCertificates();
-
-        X509Certificate cert = certs[0];
-        return cert;
-    }
-
-    private static Document parse( String xml ) throws Exception {
-        return dbf.newDocumentBuilder().parse( new ByteArrayInputStream( xml.getBytes("UTF-8") ) );
-    }
 
     private static final String KEYINFO = "<ds:KeyInfo xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\">\n" +
                                          "    <ds:X509Data>\n" +
@@ -200,13 +146,7 @@ public class JceSignaturePlayground {
                                          "    </ds:X509Data>\n" +
                                          "</ds:KeyInfo>";
 
-    private static final String PRIVATE_EXPONENT = "575971570e11dfbd9f4586763d88b08b79a7bd3d266bff189871fb9216a021080d7140411d87f1db13f99b68b983c5cf8071aebc28fb0553f366a6b387e435b44f4ea87aeef8bb247ce557bd1a7b09d4754c0eab239ad99d51c7df152956e03ab9e2bd61230b70dc8851113978f39c9d99f5e555aed0d3471619d4873a4520b1";
-
     private static final Logger log = Logger.getLogger(JceSignaturePlayground.class.getName());
 
-    private static DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-    static {
-        dbf.setNamespaceAware(true);
-    }
     public static final String SIG_ALG = "SHA1withRSA";
 }
