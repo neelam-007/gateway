@@ -30,8 +30,10 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.security.Principal;
 
 
 /**
@@ -123,8 +125,6 @@ public class PolicyAddIdentitiesDialog extends JDialog {
                     while (i.hasNext()) {
                         modelOut.addRow(new Object[]{i.next()});
                     }
-                    DefaultTableModel modelIn = getIdentitiesInTableModel();
-                    modelIn.getDataVector().clear();
                     getIdentitiesOutTableModel().fireTableDataChanged();
                     getIdentitiesInTableModel().fireTableDataChanged();
                 } catch (FindException ex) {
@@ -171,7 +171,11 @@ public class PolicyAddIdentitiesDialog extends JDialog {
                 java.util.List listOut = getIdentitiesOutTableModel().getDataVector();
 
                 for (int i = 0; i < rows.length; i++) {
-                    toAdd.add(listOut.get(rows[i]));
+                    final java.util.List l = (java.util.List)listOut.get(rows[i]);
+                    final Principal principal = headerToPrincipal((EntityHeader)l.get(0));
+                    Vector v = new Vector();
+                    v.add(principal);
+                    toAdd.add(v);
                 }
                 getIdentitiesOutTableModel().getDataVector().removeAll(toAdd);
                 getIdentitiesOutTableModel().fireTableDataChanged();
@@ -190,9 +194,12 @@ public class PolicyAddIdentitiesDialog extends JDialog {
         buttonAddAll.addActionListener(new ActionListener() {
             /** Invoked when an action occurs. */
             public void actionPerformed(ActionEvent e) {
-                java.util.List listOut = getIdentitiesOutTableModel().getDataVector();
+                Iterator it = getIdentitiesOutTableModel().getDataVector().iterator();
+                for (;it.hasNext();) {
+                    final Principal principal = headerToPrincipal((EntityHeader)it.next());
+                    getIdentitiesInTableModel().getDataVector().add(principal);
+                }
 
-                getIdentitiesInTableModel().getDataVector().addAll(listOut);
                 getIdentitiesOutTableModel().getDataVector().clear();
                 getIdentitiesOutTableModel().fireTableDataChanged();
                 getIdentitiesInTableModel().fireTableDataChanged();
@@ -336,27 +343,21 @@ public class PolicyAddIdentitiesDialog extends JDialog {
                 java.util.List identityAssertions = new ArrayList();
 
                 Iterator it = getIdentitiesInTableModel().getDataVector().iterator();
+
                 while (it.hasNext()) {
                     java.util.List row = (java.util.List)it.next();
-                    EntityHeader eh = (EntityHeader)row.get(0);
-                    if (EntityType.USER.equals(eh.getType())) {
-                        UserBean u = new UserBean();
-                        u.setName(eh.getName());
-                        u.setLogin(eh.getName());
-                        identityAssertions.add(new SpecificUser(ip.getConfig().getOid(), u.getLogin()));
-                    } else if (EntityType.GROUP.equals(eh.getType())) {
-                        GroupBean g = new GroupBean();
-                        g.setName(eh.getName());
-                        MemberOfGroup ma = new MemberOfGroup(ip.getConfig().getOid(), g.getName(), eh.getStrId());
-                        ma.setGroupName(g.getName());
-                        ma.setGroupId(eh.getStrId());
+                    Object o = row.get(0);
+                     if (o instanceof User) {
+                        User u = (User)o;
+                        identityAssertions.add(new SpecificUser(u.getProviderId(), u.getLogin()));
+                    } else if (o instanceof Group) {
+                        Group g = (Group)o;
+                        MemberOfGroup ma = new MemberOfGroup(g.getProviderId(), g.getName(), g.getUniqueIdentifier());
                         identityAssertions.add(ma);
                     }
                 }
 
-                JTree tree =
-                  (JTree)ComponentRegistry.
-                  getInstance().getComponent(PolicyTree.NAME);
+                JTree tree = (JTree)ComponentRegistry.getInstance().getComponent(PolicyTree.NAME);
                 if (tree != null) {
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                     for (Iterator idit = identityAssertions.iterator(); idit.hasNext();) {
@@ -429,25 +430,34 @@ public class PolicyAddIdentitiesDialog extends JDialog {
                       this.setForeground(table.getForeground());
                   }
               }
-
+              ImageIcon icon = null;
               this.setFont(new Font("Dialog", Font.PLAIN, 12));
-              EntityHeader h = (EntityHeader)value;
-              EntityType type = h.getType();
-              ImageIcon icon = PolicyAddIdentitiesDialog.this.getIcon(type);
-              if (icon != null) setIcon(icon);
-              setText(h.getName());
-              if (type.equals(EntityType.GROUP)) {
-                // assume that the strid is a valuable piece of information if it;s something else than a number
-                String strid = h.getStrId();
-                String tt = null;
-                try {
-                    Long.parseLong(strid);
-                    tt = null;
-                } catch (NumberFormatException nfe) {
-                    tt = strid;
-                }
-                setToolTipText(tt);
+              if (value instanceof EntityHeader) {
+                  EntityHeader h = (EntityHeader)value;
+                  EntityType type = h.getType();
+                  icon = PolicyAddIdentitiesDialog.this.getIcon(type);
+                  setText(h.getName());
+                  if (type.equals(EntityType.GROUP)) {
+                    // assume that the strid is a valuable piece of information if it;s something else than a number
+                    String strid = h.getStrId();
+                    String tt = null;
+                    try {
+                        Long.parseLong(strid);
+                        tt = null;
+                    } catch (NumberFormatException nfe) {
+                        tt = strid;
+                    }
+                    setToolTipText(tt);
+                  }
+              } else if (value instanceof User) {
+                  icon = PolicyAddIdentitiesDialog.this.getIcon(EntityType.USER);
+                  setText(((User)value).getName());
+              } else if (value instanceof Group) {
+                  icon = PolicyAddIdentitiesDialog.this.getIcon(EntityType.GROUP);
+                  setText(((Group)value).getName());
               }
+              if (icon != null) setIcon(icon);
+
               return this;
           }
       };
@@ -468,6 +478,24 @@ public class PolicyAddIdentitiesDialog extends JDialog {
             return new ImageIcon(ImageCache.getInstance().getIcon(UserPanel.USER_ICON_RESOURCE));
         }
         return null;
+    }
+
+    private Principal headerToPrincipal(EntityHeader eh) {
+        IdentityProvider ip = (IdentityProvider)providersComboBoxModel.getSelectedItem();
+
+        if (eh.getType() == EntityType.USER) {
+            UserBean u = new UserBean();
+            u.setName(eh.getName());
+            u.setLogin(eh.getName());
+            u.setProviderId(ip.getConfig().getOid());
+            return u;
+        } else if (eh.getType() == EntityType.GROUP) {
+            GroupBean g = new GroupBean();
+            g.setName(eh.getName());
+            g.setProviderId(ip.getConfig().getOid());
+            return g;
+        }
+        throw new IllegalArgumentException("Don't know anything about "+eh.getType());
     }
 
     /**
