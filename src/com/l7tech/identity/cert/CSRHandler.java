@@ -86,7 +86,7 @@ public class CSRHandler extends HttpServlet {
         }
         if (authenticatedUser == null) {
             response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "must provide valid credentials");
-            logger.log(Level.SEVERE, "failed authorization " + tmp);
+            logger.log(Level.SEVERE, "Failed authorization");
             return;
         }
         logger.info("User " + authenticatedUser.getLogin() + " has authenticated for CSR");
