@@ -13,6 +13,7 @@ import com.l7tech.common.transport.jms.JmsProvider;
 import com.l7tech.identity.StubDataStore;
 import com.l7tech.objectmodel.*;
 
+import javax.jms.JMSException;
 import java.rmi.RemoteException;
 import java.util.*;
 
@@ -103,5 +104,17 @@ public class JmsAdminStub implements JmsAdmin {
 
     public void deleteEndpoint( long endpointOid ) throws RemoteException, FindException, DeleteException {
         endpoints.remove(new Long(endpointOid));
+    }
+
+    public void testConnection(JmsConnection connection) throws RemoteException, JMSException {
+        // automatic success in stub mode, unless the name contains "FAIL"
+        if (connection.getName().indexOf("FAIL") >= 0)
+            throw new JMSException("Invalid JMS connection settings");
+    }
+
+    public void testEndpoint(JmsEndpoint endpoint) throws RemoteException, JMSException {
+        // automatic success in stub mode, unless the name contains "FAIL"
+        if (endpoint.getName().indexOf("FAIL") >= 0)
+            throw new JMSException("Invalid Destination name");
     }
 }

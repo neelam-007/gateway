@@ -18,6 +18,7 @@ import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.rmi.RemoteException;
 
 /**
  * Dialog for registering a new JMS Endpoint with a given connection.
@@ -121,6 +122,29 @@ public class NewJmsEndpointDialog extends JDialog {
     private JButton getTestButton() {
         if (testButton == null) {
             testButton = new JButton("Test Settings");
+            testButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    JmsEndpoint endpoint = makeJmsEndpointFromView();
+                    if (endpoint == null)
+                        return;
+
+                    try {
+                        Registry.getDefault().getJmsManager().testEndpoint(endpoint);
+                        JOptionPane.showMessageDialog(NewJmsEndpointDialog.this,
+                                                      "The Gateway has verified the existence of this JMS Endpoint.",
+                                                      "JMS Connection Successful",
+                                                      JOptionPane.INFORMATION_MESSAGE);
+                    } catch (RemoteException e1) {
+                        throw new RuntimeException("Unable to test this JMS endpoint", e1);
+                    } catch (Exception e1) {
+                        JOptionPane.showMessageDialog(NewJmsEndpointDialog.this,
+                                                      "The Gateway was unable to find this JMS Endpoint:\n" +
+                                                      e1.getMessage(),
+                                                      "JMS Connection Settings",
+                                                      JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            });
         }
         return testButton;
     }
@@ -137,7 +161,24 @@ public class NewJmsEndpointDialog extends JDialog {
         return cancelButton;
     }
 
+    /**
+     * Extract information from the view and create a new JmsEndpoint object.  The new object will not have a
+     * valid OID and will not yet have been saved to the database.
+     *
+     * If the form state is not valid, an error dialog is displayed and null is returned.
+     *
+     * @return a new JmsEndpoint with the current settings, or null if one could not be created.  The new connection
+     * will not yet have been saved to the database.
+     */
     private JmsEndpoint makeJmsEndpointFromView() {
+        if (!validateForm()) {
+            JOptionPane.showMessageDialog(NewJmsEndpointDialog.this,
+                                          "The queue name must be provided.",
+                                          "Unable to proceed",
+                                          JOptionPane.ERROR_MESSAGE);
+            return null;
+        }
+
         JmsEndpoint ep = new JmsEndpoint();
         String name = getNameTextField().getText();
         ep.setName(name);
@@ -155,15 +196,9 @@ public class NewJmsEndpointDialog extends JDialog {
             addButton = new JButton("Add Endpoint");
             addButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    if (!validateForm()) {
-                        JOptionPane.showMessageDialog(NewJmsEndpointDialog.this,
-                                                      "The queue name must be provided.",
-                                                      "Unable to proceed",
-                                                      JOptionPane.ERROR_MESSAGE);
-                        return;
-                    }
-
                     JmsEndpoint ep = makeJmsEndpointFromView();
+                    if (ep == null)
+                        return;
 
                     try {
                         long oid = Registry.getDefault().getJmsManager().saveEndpoint(ep);

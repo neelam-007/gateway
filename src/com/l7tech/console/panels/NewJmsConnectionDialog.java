@@ -15,6 +15,7 @@ import com.l7tech.objectmodel.FindException;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.jms.JMSException;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -283,9 +284,64 @@ public class NewJmsConnectionDialog extends JDialog {
         return optionalCredentialsPanel;
     }
 
+    /**
+     * Extract information from the view and create a new JmsConnection object.  The new object will not have a
+     * valid OID and will not yet have been saved to the database.
+     *
+     * If the form state is not valid, an error dialog is displayed and null is returned.
+     *
+     * @return a new JmsConnection with the current settings, or null if one could not be created.  The new connection
+     * will not yet have been saved to the database.
+     */
+    private JmsConnection makeJmsConnectionFromView() {
+        if (!validateForm()) {
+            JOptionPane.showMessageDialog(NewJmsConnectionDialog.this,
+                                          "At minimum, the name, driver, naming URL and factory URL are required.",
+                                          "Unable to proceed",
+                                          JOptionPane.ERROR_MESSAGE);
+            return null;
+        }
+
+        JmsProvider provider = ((ProviderComboBoxItem)getDriverComboBox().getSelectedItem()).getProvider();
+        JmsConnection conn = provider.createConnection(getNameTextField().getText(),
+                                                       getJndiUrlTextField().getText());
+
+        if (optionalCredentialsPanel.isUsernameAndPasswordRequired()) {
+            conn.setUsername(optionalCredentialsPanel.getUsername());
+            conn.setPassword(new String(optionalCredentialsPanel.getPassword()));
+        }
+
+        conn.setQueueFactoryUrl(qcfNameTextField.getText());
+
+        return conn;
+    }
+
     private JButton getTestButton() {
         if (testButton == null) {
             testButton = new JButton("Test Settings");
+            testButton.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    JmsConnection conn = makeJmsConnectionFromView();
+                    if (conn == null)
+                        return;
+
+                    try {
+                        Registry.getDefault().getJmsManager().testConnection(conn);
+                        JOptionPane.showMessageDialog(NewJmsConnectionDialog.this,
+                                                      "The Gateway successfully established this JMS connection.",
+                                                      "JMS Connection Successful",
+                                                      JOptionPane.INFORMATION_MESSAGE);
+                    } catch (RemoteException e1) {
+                        throw new RuntimeException("Unable to test this JMS connection", e1);
+                    } catch (Exception e1) {
+                        JOptionPane.showMessageDialog(NewJmsConnectionDialog.this,
+                                                      "The Gateway was unable to establish this JMS connection:\n" +
+                                                      e1.getMessage(),
+                                                      "JMS Connection Settings",
+                                                      JOptionPane.ERROR_MESSAGE);
+                    }
+                }
+            });
         }
         return testButton;
     }
@@ -295,25 +351,9 @@ public class NewJmsConnectionDialog extends JDialog {
             saveButton = new JButton("Save Connection");
             saveButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    if (!validateForm()) {
-                        JOptionPane.showMessageDialog(NewJmsConnectionDialog.this,
-                                                      "At minimum, the name, driver, naming URL and factory URL are required.",
-                                                      "Unable to proceed",
-                                                      JOptionPane.ERROR_MESSAGE);
+                    JmsConnection conn = makeJmsConnectionFromView();
+                    if (conn == null)
                         return;
-                    }
-
-                    JmsProvider provider = ((ProviderComboBoxItem)getDriverComboBox().getSelectedItem()).getProvider();
-                    JmsConnection conn = provider.createConnection(getNameTextField().getText(),
-                                                                   getJndiUrlTextField().getText());
-
-                    if (optionalCredentialsPanel.isUsernameAndPasswordRequired()) {
-                        conn.setUsername(optionalCredentialsPanel.getUsername());
-                        conn.setPassword(new String(optionalCredentialsPanel.getPassword()));
-                    }
-
-                    conn.setQueueFactoryUrl(qcfNameTextField.getText());
-
 
                     try {
                         long oid = Registry.getDefault().getJmsManager().saveConnection(conn);

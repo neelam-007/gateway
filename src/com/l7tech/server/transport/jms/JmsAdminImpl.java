@@ -17,6 +17,7 @@ import com.l7tech.logging.LogManager;
 import com.sun.jini.start.LifeCycle;
 import net.jini.config.ConfigurationException;
 
+import javax.jms.JMSException;
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.sql.SQLException;
@@ -147,6 +148,14 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
         } finally {
             closeContext();
         }
+    }
+
+    public void testConnection(JmsConnection connection) throws RemoteException, JMSException {
+        throw new RuntimeException("Testing JMS connections is not yet implemented on this Gateway");
+    }
+
+    public void testEndpoint(JmsEndpoint endpoint) throws RemoteException, JMSException {
+        throw new RuntimeException("Testing JMS endpoints is not yet implemented on this Gateway");
     }
 
     public long saveEndpoint( JmsEndpoint endpoint ) throws RemoteException, UpdateException,
