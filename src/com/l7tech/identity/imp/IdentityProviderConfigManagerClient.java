@@ -1,7 +1,6 @@
 package com.l7tech.identity.imp;
 
-import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.*;
 import com.l7tech.adminws.identity.Identity;
 import com.l7tech.adminws.identity.IdentityService;
 import com.l7tech.adminws.identity.IdentityServiceLocator;
@@ -35,6 +34,10 @@ public class IdentityProviderConfigManagerClient implements IdentityProviderConf
         }
         if (ipcStubFormat == null) return null;
         return TypeTranslator.serviceIdentityProviderConfigToGenericOne(ipcStubFormat);
+    }
+
+    public Collection findAllIdentityProviders() throws FindException {
+        return IdentityProviderFactory.findAllIdentityProviders(this);
     }
 
     public long save(IdentityProviderConfig identityProviderConfig) throws SaveException {
