@@ -72,15 +72,40 @@ fi
 unzip $ROOT_WAR_PATH -d $TOMCAT_HOME/webapps/ROOT
 
 # -----------------------------------------------------------------------------
-# HIBERNATE STUFF
+# HIBERNATE STUFF (ASSUME PSQL)
 # -----------------------------------------------------------------------------
 HIBERNATE_PROPERTIES_PATH=$TOMCAT_HOME/webapps/ROOT/WEB-INF/classes/hibernate.properties
+echo "Please type in the existing psql password for user gateway"
+read -s PSQL_PASSWORD
 # EDIT hibernate.properties
 # hibernate.connection.driver_class = org.postgresql.Driver
 # hibernate.connection.url = jdbc:postgresql://localhost/ssg
 # hibernate.connection.username = gateway
 # hibernate.connection.password = prompt_for_password
-echo "todo edit ${HIBERNATE_PROPERTIES_PATH}"
+SUBSTITUTE_FROM=hibernate\.connection\.driver_class.*
+SUBSTITUTE_TO=hibernate\.connection\.driver_class=org.postgresql.Driver
+perl -pi.bak -e s/$SUBSTITUTE_FROM/$SUBSTITUTE_TO/ "$HIBERNATE_PROPERTIES_PATH"
+SUBSTITUTE_FROM=hibernate\.connection\.url.*
+SUBSTITUTE_TO="hibernate\.connection\.url=jdbc\:postgresql\:\/\/localhost\/ssg"
+perl -pi.bak -e s/$SUBSTITUTE_FROM/$SUBSTITUTE_TO/ "$HIBERNATE_PROPERTIES_PATH"
+SUBSTITUTE_FROM=hibernate\.connection\.username.*
+SUBSTITUTE_TO=hibernate\.connection\.username=gateway
+perl -pi.bak -e s/$SUBSTITUTE_FROM/$SUBSTITUTE_TO/ "$HIBERNATE_PROPERTIES_PATH"
+SUBSTITUTE_FROM=hibernate\.connection\.password.*
+SUBSTITUTE_TO=hibernate\.connection\.password=${PSQL_PASSWORD}
+perl -pi.bak -e s/$SUBSTITUTE_FROM/$SUBSTITUTE_TO/ "$HIBERNATE_PROPERTIES_PATH"
+echo "modified "$HIBERNATE_PROPERTIES_PATH
 
 # COPY APPROPRIATE SSG.hbm.xml
 echo "todo copy SSG.hbm.xml"
+
+
+# -----------------------------------------------------------------------------
+# START THE KEY GENERATION
+# -----------------------------------------------------------------------------
+$PRGDIR/setkeys.sh
+
+# -----------------------------------------------------------------------------
+# END
+# -----------------------------------------------------------------------------
+echo "You are done deploying the gateway. Start the server with the startssg command".
