@@ -109,11 +109,9 @@ public class MainWindow extends JFrame {
     private final ClassLoader cl = getClass().getClassLoader();
 
     private JMenu gotoMenu;
-    private JMenu serverLoadMenu;
 
     public static final String TITLE = "SSG Management Console";
     public static final String NAME = "main.window"; // registered
-    private JTree policyTree;
     private EventListenerList listenerList = new WeakEventListenerList();
     // cached credential manager
     private ClientCredentialManager credentialManager;
@@ -1140,12 +1138,10 @@ public class MainWindow extends JFrame {
      * Return the ToolBarPane property value.
      * @return JToolBar
      */
-    private JToolBar getPolicyToolBar() {
+    public PolicyToolBar getPolicyToolBar() {
         if (policyToolBar != null) return policyToolBar;
         policyToolBar = new PolicyToolBar();
         policyToolBar.registerPaletteTree(getAssertionPaletteTree());
-        policyTree = Registry.getDefault().getComponentRegistry().getPolicyTree();
-        policyToolBar.registerPolicyTree(policyTree);
         return policyToolBar;
     }
 

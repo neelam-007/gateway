@@ -8,10 +8,7 @@ import com.l7tech.console.event.ContainerVetoException;
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
 import java.awt.*;
-import java.awt.event.HierarchyEvent;
-import java.awt.event.HierarchyListener;
-import java.awt.event.ContainerListener;
-import java.awt.event.ContainerEvent;
+import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
@@ -28,7 +25,6 @@ public class WorkSpacePanel extends JPanel {
     static final Logger log = Logger.getLogger(WorkSpacePanel.class.getName());
     private final TabbedPane tabbedPane = new TabbedPane();
     /* this class classloader */
-    private final ClassLoader cl = getClass().getClassLoader();
 
 
     /**
@@ -150,6 +146,22 @@ public class WorkSpacePanel extends JPanel {
             // throwables as params. why?
             log.log(Level.WARNING, "error instantiaitng preferences", e);
         }
+
+        tabbedPane.addContainerListener(new ContainerAdapter() {
+
+            public void componentRemoved(ContainerEvent e) {
+                final Component c = e.getChild();
+                if (c instanceof ContainerListener) {
+                    SwingUtilities.invokeLater(new Runnable() {
+                        public void run() {
+                            log.fine("Removig container listener of type "+c.getClass());
+                            tabbedPane.
+                              removeContainerListener((ContainerListener)c);
+                        }
+                    });
+                }
+            }
+        });
     }
 
     // hierarchy listener
@@ -189,9 +201,8 @@ public class WorkSpacePanel extends JPanel {
         public synchronized void addContainerListener(ContainerListener l) {
             if (l instanceof VetoableContainerListener) {
                 listenerList.add(VetoableContainerListener.class, l);
-            } else {
-                super.addContainerListener(l);
             }
+            super.addContainerListener(l);
         }
 
         /**
@@ -206,9 +217,8 @@ public class WorkSpacePanel extends JPanel {
         public synchronized void removeContainerListener(ContainerListener l) {
             if (l instanceof VetoableContainerListener) {
                 listenerList.remove(VetoableContainerListener.class, l);
-            } else {
-                super.removeContainerListener(l);
             }
+            super.removeContainerListener(l);
         }
 
         /**

@@ -105,8 +105,14 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
 
     private JComponent getPolicyTreePane() {
         if (policyTreePane != null) return policyTreePane;
+        // todo: hack, rework policy tree do it is instantiated
+        // here.
+        componentRegistry.unregisterComponent(PolicyTree.NAME);
         policyTree = (PolicyTree)componentRegistry.getPolicyTree();
         policyTree.setPolicyEditor(this);
+        componentRegistry.
+          getMainWindow().
+          getPolicyToolBar().registerPolicyTree(policyTree);
         policyTreePane = new JScrollPane(policyTree);
         return policyTreePane;
     }
@@ -513,6 +519,12 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      * Invoked when a component has been removed from the container.
      */
     public void componentRemoved(ContainerEvent e) {
+        log.fine("Resetting the policy editor panel");
+        serviceNode.removePropertyChangeListener(servicePropertyChangeListener);
+        serviceNode = null;
+        policyTree.putClientProperty("service.node", null);
+        policyTree.setPolicyEditor(null);
+        policyTree.setModel(null);
     }
 
     /**
@@ -552,12 +564,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     throw new ContainerVetoException(e, "User aborted");
                 }
             }
-            log.fine("Resetting the policy editor panel");
-            serviceNode.removePropertyChangeListener(servicePropertyChangeListener);
-            serviceNode = null;
-            policyTree.putClientProperty("service.node", null);
-            policyTree.setPolicyEditor(null);
-            policyTree.setModel(null);
         }
     }
 
