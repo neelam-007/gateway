@@ -31,7 +31,6 @@ public class TrustCertificateDialog extends JDialog {
         super(Gui.getInstance().getFrame(), title, true);
         Container c = this.getContentPane();
         c.setLayout(new GridBagLayout());
-        c.setSize(new Dimension(300, 200));
         c.add(new WrappingLabel(mess),
               new GridBagConstraints(0, 0, GridBagConstraints.REMAINDER, 1, 0.0, 0.0,
                                      GridBagConstraints.CENTER,
@@ -71,7 +70,7 @@ public class TrustCertificateDialog extends JDialog {
                                      GridBagConstraints.EAST,
                                      GridBagConstraints.NONE,
                                      new Insets(5, 5, 5, 5), 0, 0));
-        pack();
+        this.setSize(550, 250);
         Utilities.centerOnScreen(this);
     }
 
