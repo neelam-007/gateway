@@ -21,7 +21,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.RemoteException;
 import java.util.logging.Level;
-import java.awt.*;
 
 /**
  * This action resets the wsdl of an already published web service (for example if the downstream
