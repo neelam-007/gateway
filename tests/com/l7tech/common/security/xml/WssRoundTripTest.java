@@ -124,6 +124,8 @@ public class WssRoundTripTest extends TestCase {
         WssDecorator martha = new WssDecoratorImpl();
         WssProcessor trogdor = new WssProcessorImpl();
 
+        log.info("Message before decoration:" + XmlUtil.documentToString(message));
+
         martha.decorateMessage(message,
                                td.recipientCert,
                                td.senderCert,
@@ -140,11 +142,13 @@ public class WssRoundTripTest extends TestCase {
         // Ooh, an incoming message has just arrived!
         Document incomingMessage = XmlUtil.stringToDocument(new String(decoratedMessage));
 
+        log.info("Message just before undecoration:" + XmlUtil.documentToString(message));
+
         WssProcessor.ProcessorResult r = trogdor.undecorateMessage(incomingMessage,
                                                                    td.recipientCert,
                                                                    td.recipientKey);
 
         Document undecorated = r.getUndecoratedMessage();
-        log.info("After round-trip:" + XmlUtil.documentToFormattedString(undecorated));
+        log.info("After undecoration:" + XmlUtil.documentToString(undecorated));
     }
 }
