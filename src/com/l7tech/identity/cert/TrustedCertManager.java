@@ -6,8 +6,12 @@
 
 package com.l7tech.identity.cert;
 
+import com.l7tech.common.security.CertificateExpiry;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.objectmodel.*;
+
+import java.io.IOException;
+import java.security.cert.CertificateException;
 
 /**
  * Provides access to CRUD functionality for {@link TrustedCert} objects.
@@ -54,4 +58,52 @@ public interface TrustedCertManager extends EntityManager {
      * @throws DeleteException if the {@link TrustedCert} cannot be deleted for any reason other than nonexistence
      */
     void delete(long oid) throws FindException, DeleteException;
+
+    /**
+     * Retrieves the TrustedCert with the specified subject DN from a cache,
+     * if it was cached less than maxAge milliseconds ago.
+     * <p>
+     * If the cached version is more than the specified maximum age, the manager will check
+     * the database for the latest version.  If it has been updated, it will retrieve the new
+     * version and update the cache.
+     *
+     * @param dn the Subject DN to search by
+     * @param maxAge the maximum age of cache entries that will be returned without a database version check
+     * @return the TrustedCert with the specified Subject DN, or null if no such cert exists.
+     * @throws FindException if the TrustedCert cannot be found.
+     */
+    TrustedCert getCachedCertBySubjectDn(String dn, int maxAge) throws FindException, IOException, CertificateException;
+
+    /**
+     * Retrieves the TrustedCert with the specified oid from a cache,
+     * if it was cached less than maxAge milliseconds ago.
+     * <p>
+     * If the cached version is more than the specified maximum age, the manager will check
+     * the database for the latest version.  If it has been updated, it will retrieve the new
+     * version and update the cache.
+     *
+     * @param oid the oid to search by
+     * @param maxAge the maximum age of cache entries that will be returned without a database version check
+     * @return the TrustedCert with the specified Subject DN, or null if no such cert exists.
+     * @throws FindException if the TrustedCert cannot be found.
+     */
+    TrustedCert getCachedCertByOid(long oid, int maxAge) throws FindException, IOException, CertificateException;
+
+    /**
+     * Checks whether the specified cert is valid, and logs a warning if it will expire within {@link CertificateExpiry#FINE_DAYS}
+     * @param cert the {@link TrustedCert} to check
+     * @throws CertificateException if the cert is not valid
+     * @throws IOException if the cert cannot be parsed
+     */
+    void check( TrustedCert cert ) throws CertificateException, IOException;
+
+    /**
+     * Logs a good warning message for an invalid cert
+     */
+    void logInvalidCert( TrustedCert cert, Exception e );
+
+    /**
+     * Logs a good warning message for a cert that will expire soon
+     */
+    void logWillExpire( TrustedCert cert, CertificateExpiry e );
 }

@@ -77,7 +77,7 @@ public class SslClientTrustManager implements X509TrustManager {
         try {
             // Try cartel first
             delegate.checkServerTrusted(certs, authType);
-            logger.fine("SSL server cert was issued to '" + serverCert.getSubjectDN().getName() + "' by a recognized CA" );
+            logger.fine("SSL server cert was issued to '" + serverCert.getSubjectDN().getName() + "' by a globally recognized CA" );
             return;
         } catch ( CertificateException unused ) {
             serverCert.checkValidity();
@@ -90,7 +90,7 @@ public class SslClientTrustManager implements X509TrustManager {
 
             // Check if this cert is trusted as-is
             try {
-                TrustedCert selfTrust = manager.findBySubjectDn(subjectDn);
+                TrustedCert selfTrust = manager.getCachedCertBySubjectDn(subjectDn, MAX_CACHE_AGE);
                 if ( selfTrust != null ) {
                     if ( !selfTrust.isTrustedForSsl() ) throw new CertificateException("Self-signed cert with DN '" + subjectDn + "' present but not trusted for SSL" );
                     if ( !selfTrust.getCertificate().equals(serverCert) ) throw new CertificateException("Self-signed cert with DN '" + subjectDn + "' present but doesn't match" );
@@ -107,7 +107,7 @@ public class SslClientTrustManager implements X509TrustManager {
 
             // Check that signer is trusted
             try {
-                TrustedCert caTrust = manager.findBySubjectDn(issuerDn);
+                TrustedCert caTrust = manager.getCachedCertBySubjectDn(issuerDn, MAX_CACHE_AGE);
 
                 if ( caTrust == null )
                     throw new FindException("Couldn't find CA cert with DN '" + issuerDn + "'" );
@@ -129,8 +129,6 @@ public class SslClientTrustManager implements X509TrustManager {
                 if ( !caCert.equals(caTrustCert) )
                     throw new CertificateException("CA cert from server didn't match stored version");
 
-                caCert.checkValidity();
-
                 serverCert.verify(caTrustCert.getPublicKey());
             } catch (IOException e) {
                 final String msg = "Couldn't decode stored CA certificate with DN '" + issuerDn + "'";
@@ -151,4 +149,5 @@ public class SslClientTrustManager implements X509TrustManager {
 
     private final X509TrustManager delegate;
     private final Logger logger = Logger.getLogger(this.getClass().getName());
+    private static final int MAX_CACHE_AGE = 30 * 1000;
 }
