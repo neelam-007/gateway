@@ -23,6 +23,10 @@ public class EntityType {
         return ((EntityType)obj).val == val;
     }
 
+    public int hashCode() {
+        return val;
+    }
+
     /**
      * this constructor is provided to maintain serializablility use
      * the static values instead
