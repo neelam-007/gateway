@@ -16,7 +16,7 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
  * @version $Revision$
  * @author flascelles
  */
-public class EntityHeader extends NamedEntityImp {
+public class EntityHeader {
 
     public EntityHeader(long oid, EntityType type, String name, String description) {
         setOid(oid);
@@ -38,9 +38,24 @@ public class EntityHeader extends NamedEntityImp {
         description = "";
     }
 
+    public String getName() {
+        return _name;
+    }
+
+    public void setName( String name ) {
+        _name = name;
+    }
+
     public void setOid( long oid ) {
-        _oid = oid;
         strId = Long.toString(oid);
+    }
+
+    public long getOid() {
+        try {
+            return Long.parseLong(strId);
+        } catch (Exception e) {
+            return DEFAULT_OID;
+        }
     }
 
     public EntityType getType() {
@@ -76,13 +91,6 @@ public class EntityHeader extends NamedEntityImp {
      */
     public void setStrId(String strId) {
         this.strId = strId;
-        if (strId != null) {
-            try {
-                _oid = Long.parseLong(strId);
-            } catch (Exception e) {
-                _oid = DEFAULT_OID;
-            }
-        }
     }
 
     // ************************************************
@@ -91,4 +99,6 @@ public class EntityHeader extends NamedEntityImp {
     private EntityType type;
     private String description;
     private String strId;
+    protected String _name;
+    private static final long DEFAULT_OID = -1;
 }
