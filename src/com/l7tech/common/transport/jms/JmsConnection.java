@@ -10,6 +10,7 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 import java.io.Serializable;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * A reference to a preconfigured connection to a JMS provider.
@@ -27,7 +28,7 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     private String _destinationFactoryUrl;
     private String _username;
     private String _password;
-    private Set _endpoints;
+    private Set _endpoints = new TreeSet();
 
     public String getUsername() {
         return _username;
@@ -93,9 +94,11 @@ public class JmsConnection extends NamedEntityImp implements Serializable {
     }
 
     /**
-     * @param endpoints a Set of JmsEndpoint objects representing JMS Destinations we know about on this connection.
+     * @param endpoints a Set of JmsEndpoint objects representing JMS Destinations we know about on this connection.  Must not be null.
      */
     public void setEndpoints( Set endpoints ) {
+        if (endpoints == null)
+            throw new IllegalArgumentException("endpoints may not be null");
         _endpoints = endpoints;
     }
 }
