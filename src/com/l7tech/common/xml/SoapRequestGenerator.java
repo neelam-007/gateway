@@ -1,6 +1,12 @@
 package com.l7tech.common.xml;
 
-import org.w3c.dom.*;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.traversal.DocumentTraversal;
+import org.w3c.dom.traversal.NodeFilter;
+import org.w3c.dom.traversal.NodeIterator;
 
 import javax.wsdl.*;
 import javax.wsdl.extensions.ExtensibilityElement;
@@ -175,7 +181,11 @@ public class SoapRequestGenerator {
 
             if (elementQName != null) {
                 elementName = elementQName.getLocalPart();
-                browseTypes(elementName);
+                NameTypePair[] npair = getSchemaParameterElements(elementName);
+                for (int i = 0; i < npair.length; i++) {
+                    NameTypePair nameTypePair = npair[i];
+                    System.out.println(nameTypePair);
+                }
                 String uri = elementQName.getNamespaceURI();
                 String prefix = null;
                 if (uri != null) {
@@ -220,29 +230,98 @@ public class SoapRequestGenerator {
         return soapMessage;
     }
 
-    private void browseTypes(String elementName) {
+    /**
+     * extract the parameter names from schema (wsdl Types section)
+     *
+     * @param elementName the element name to search for
+     * @return the array of name, type pairs or empty array if not found
+     */
+    private NameTypePair[] getSchemaParameterElements(String elementName) {
         Types types = wsdl.getTypes();
-        if (types == null) return;
+        if (types == null) return new NameTypePair[]{};
         List l = types.getExtensibilityElements();
-        if (l == null || l.isEmpty()) return;
+        if (l == null || l.isEmpty()) return new NameTypePair[]{};
 
         Iterator iter = l.iterator();
         Element elem = null;
+
         while (iter.hasNext()) {
             ExtensibilityElement el = (ExtensibilityElement)iter.next();
             if (el.getElementType().getLocalPart().equals("schema")) {
                 UnknownExtensibilityElement uee = (UnknownExtensibilityElement)el;
                 elem = uee.getElement();
+
                 NodeList nl = elem.getChildNodes();
                 for (int i = 0; i < nl.getLength(); i++) {
-                    Element child = (Element)nl.item(i);
-                    if ("element".equals(child.getNodeName())
-                        && elementName.equals(child.getAttribute("name"))) { {
-
+                    Node child = nl.item(i);
+                    if (!(child instanceof Element)) continue;
+                    Element element = (Element)child;
+                    if ("element".equals(element.getLocalName())) {
+                        if (!elementName.equals(element.getAttribute("name"))) {
+                            continue;
                         }
+                        Document doc = elem.getOwnerDocument();
+                        DocumentTraversal traversable = (DocumentTraversal)doc; // tragic! em20040204
+                        NodeIterator nodeIterator =
+                          traversable.createNodeIterator(child,
+                            NodeFilter.SHOW_ELEMENT, new LocalNameFilter("element"), true);
+                        List elements = new ArrayList();
+                        Node n = nodeIterator.nextNode();
+                        if (n == null) return new NameTypePair[]{};
+                        n = nodeIterator.nextNode();
+                        for (;n != null; n = nodeIterator.nextNode()) {
+                            Element e = (Element)n;
+                            elements.add(new NameTypePair(e.getAttribute("name"), e.getAttribute("type")));
+                        }
+                        return (NameTypePair[])elements.toArray(new NameTypePair[]{});
                     }
                 }
             }
+        }
+        return new NameTypePair[]{};
+    }
+
+    private class LocalNameFilter implements NodeFilter {
+        String nodeName;
+
+        public LocalNameFilter(String attributeName) {
+            this.nodeName = attributeName;
+        }
+
+        /**
+         * Test whether a specified node is visible in the logical view of a
+         * <code>TreeWalker</code>
+         *
+         * @param n The node to check to see if it passes the filter or not.
+         * @return A constant to determine whether the node is accepted,
+         *         rejected, or skipped, as defined above.
+         */
+        public short acceptNode(Node n) {
+            Element element = (Element)n; // blow on cast
+            if (nodeName.equals(n.getLocalName())) return FILTER_ACCEPT;
+
+            return FILTER_REJECT;
+        }
+
+    }
+
+    /**
+     * internal helper class that holds name type pair for schema based
+     * wsdl4j does not give much support for it.
+     */
+    private static class NameTypePair {
+        String name;
+        String type;
+        public NameTypePair(String name, String type) {
+            this.name = name;
+            this.type = type;
+        }
+
+        /**
+         * @return a string representation of the name type pair.
+         */
+        public String toString() {
+            return "[ name = "+name+", type = "+type+" ]";
         }
     }
 
