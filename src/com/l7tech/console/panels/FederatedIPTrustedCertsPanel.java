@@ -320,16 +320,24 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
             if(!trustedCertTable.getTableSorter().contains(e.getCert())) {
                 TrustedCert tc = e.getCert();
                 try {
-                    if (checkCertRelated(tc)) {
+                    if (isCertRelatedToSSG(tc)) {
                         JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
                                                       "This cert cannot be used as a trusted cert in this " +
                                                       "federated identity\nprovider because it is related to the " +
                                                       "SecureSpan Gateway's root cert.",
                                                       "Cannot add this cert",
-                            JOptionPane.ERROR_MESSAGE);
+                                                      JOptionPane.ERROR_MESSAGE);
+                    } else if (isCertTrustedByAnotherProvider(tc)) {
+                        JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
+                                                      "This cert cannot be used as a trusted cert in this " +
+                                                      "federated identity\nprovider because it is already " +
+                                                      "trusted by another identity provider.",
+                                                      "Cannot add this cert",
+                                                      JOptionPane.ERROR_MESSAGE);
                     } else {
                         trustedCertTable.getTableSorter().addRow(tc);
                     }
+
                 } catch (IOException e1) {
                     throw new RuntimeException(e1); //  not expected to happen
                 } catch (CertificateException e1) {
@@ -345,11 +353,15 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
 
     };
 
+    private boolean isCertTrustedByAnotherProvider(TrustedCert trustedCert) {
+        return false;
+    }
+
     /**
      * Check whether or not the passed cert is related somehow to the ssg's root cert.
      * @return true if it is
      */
-    private boolean checkCertRelated(TrustedCert trustedCert) throws IOException, CertificateException {
+    private boolean isCertRelatedToSSG(TrustedCert trustedCert) throws IOException, CertificateException {
         if (ssgcert == null) {
             ssgcert = getTrustedCertAdmin().getSSGRootCert();
         }
