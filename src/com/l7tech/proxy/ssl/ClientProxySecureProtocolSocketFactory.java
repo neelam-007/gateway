@@ -9,8 +9,6 @@ package com.l7tech.proxy.ssl;
 import com.l7tech.proxy.datamodel.CurrentRequest;
 import com.l7tech.proxy.datamodel.Ssg;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
-import org.apache.commons.httpclient.params.HttpConnectionParams;
-import org.apache.commons.httpclient.ConnectTimeoutException;
 
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
@@ -65,14 +63,6 @@ public class ClientProxySecureProtocolSocketFactory extends SSLSocketFactory imp
         if (ssg == null)
             throw new IllegalStateException("Unable to create SSL client socket: No peer Gateway is available in this thread");
         final SSLSocket sock = (SSLSocket) ssg.sslContext().getSocketFactory().createSocket(host, port, clientHost, clientPort);
-        return sock;
-    }
-
-    public Socket createSocket(String host, int port, InetAddress localAddress, int localPort, HttpConnectionParams params) throws IOException, UnknownHostException, ConnectTimeoutException {
-        Ssg ssg = CurrentRequest.getPeerSsg();
-        if (ssg == null)
-            throw new IllegalStateException("Unable to create SSL client socket: No peer Gateway is available in this thread");
-        final SSLSocket sock = (SSLSocket) ssg.sslContext().getSocketFactory().createSocket(host, port, localAddress, localPort);
         return sock;
     }
 

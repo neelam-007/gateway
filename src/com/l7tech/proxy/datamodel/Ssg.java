@@ -8,13 +8,12 @@ import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.ssl.ClientProxyKeyManager;
 import com.l7tech.proxy.ssl.ClientProxyTrustManager;
 import org.apache.commons.httpclient.Cookie;
-import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
-import javax.swing.*;
+import javax.swing.SwingUtilities;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -100,8 +99,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private transient SamlHolderOfKeyAssertion samlHolderOfKeyAssertion = null;
     private transient long timeOffset = 0;
 
-    private transient ThreadLocal httpClient = new ThreadLocalHttpClient();
-    private transient MultiThreadedHttpConnectionManager httpConnectionManager = null;
+    private transient final MultiThreadedHttpConnectionManager httpConnectionManager = new MultiThreadedHttpConnectionManager();
 
     public int compareTo(final Object o) {
         long id0 = getId();
@@ -130,10 +128,13 @@ public class Ssg implements Serializable, Cloneable, Comparable {
 
     /** Create a new Ssg instance with default fields. */
     public Ssg() {
+        this.httpConnectionManager.setMaxConnectionsPerHost(MAX_CONNECTIONS);
+        this.httpConnectionManager.setMaxTotalConnections(MAX_CONNECTIONS);
     }
 
     /** Create a new Ssg instance with the given ID. */
     public Ssg(long id) {
+        this();
         this.id = id;
     }
 
@@ -820,8 +821,6 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         sslContext = createSslContext();
         serverCert = null;
         clientCert = null;
-        httpConnectionManager = createHttpConnectionManager();
-        httpClient = new ThreadLocalHttpClient();
     }
 
     /** Transient cached certificate for quicker access; only for use by SsgKeystoreManager. */
@@ -968,30 +967,6 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         return toSsgDateTranslator;
     }
 
-    public HttpClient httpClient() {
-        return (HttpClient)this.httpClient.get();
-    }
-
-    private synchronized MultiThreadedHttpConnectionManager getHttpConnectionManager() {
-        if (httpConnectionManager == null)
-            httpConnectionManager = createHttpConnectionManager();
-        return httpConnectionManager;
-    }
-
-    private MultiThreadedHttpConnectionManager createHttpConnectionManager() {
-        MultiThreadedHttpConnectionManager cm = new MultiThreadedHttpConnectionManager();
-        cm.setMaxConnectionsPerHost(MAX_CONNECTIONS);
-        cm.setMaxTotalConnections(MAX_CONNECTIONS);
-        return cm;
-    }
-
-    private class ThreadLocalHttpClient extends ThreadLocal {
-        protected Object initialValue() {
-            HttpClient hc = new HttpClient(getHttpConnectionManager());
-            return hc;
-        }
-    }
-
     public boolean isUseOverrideIpAddresses() {
         return useOverrideIpAddresses;
     }
@@ -1006,5 +981,9 @@ public class Ssg implements Serializable, Cloneable, Comparable {
 
     public void setOverrideIpAddresses(String[] overrideIpAddresses) {
         this.overrideIpAddresses = overrideIpAddresses;
+    }
+
+    public MultiThreadedHttpConnectionManager getHttpConnectionManager() {
+        return httpConnectionManager;
     }
 }

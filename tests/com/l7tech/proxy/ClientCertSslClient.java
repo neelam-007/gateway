@@ -8,8 +8,6 @@ package com.l7tech.proxy;
 
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.ConnectTimeoutException;
-import org.apache.commons.httpclient.params.HttpConnectionParams;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
@@ -154,14 +152,6 @@ public class ClientCertSslClient {
             log.info("Socket is type: " + sock.getClass());
             return sock;
         }
-
-        public Socket createSocket(String host, int port, InetAddress localAddress, int localPort, HttpConnectionParams params) throws IOException, UnknownHostException, ConnectTimeoutException {
-            log.info("MySocketFactory.createSocket4(): host=" + host);
-            final SSLSocket sock = (SSLSocket)sslContext.getSocketFactory().createSocket(host, port, localAddress, localPort);
-            log.info("Socket is type: " + sock.getClass());
-            return sock;
-        }
-
     }
 
     public static void main(String[] args) {

@@ -517,7 +517,7 @@ public class MessageProcessor {
         URL url = getUrl(context);
         final Ssg ssg = context.getSsg();
 
-        HttpClient client = context.getSsg().httpClient();
+        HttpClient client = new HttpClient(context.getSsg().getHttpConnectionManager());
         HttpState state = client.getState();
 
         // Forget any cached session cookies, for all services shared by this SSG        
