@@ -7,8 +7,13 @@
 package com.l7tech.common.xml;
 
 import com.l7tech.common.util.SoapUtil;
+import com.tarari.xml.XMLDocumentException;
+import com.tarari.xml.XMLErrorCode;
 import com.tarari.xml.xpath.XPathCompiler;
 import com.tarari.xml.xpath.XPathCompilerException;
+import com.tarari.xml.xpath.XPathLoaderException;
+import com.tarari.xml.xpath.XPathProcessorException;
+import org.xml.sax.SAXException;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -64,6 +69,61 @@ public class TarariUtil {
             }
         }
         return present.booleanValue();
+    }
+
+    /** Thrown when a document cannot be processed in hardware for some reason but should be retried in software. */
+    public static class SoftwareFallbackException extends Exception {
+        public SoftwareFallbackException() {
+        }
+
+        public SoftwareFallbackException(String message) {
+            super(message);
+        }
+
+        public SoftwareFallbackException(Throwable cause) {
+            super(cause);
+        }
+
+        public SoftwareFallbackException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
+    public static void translateTarariErrorCode(Exception cause, int code)
+            throws SAXException, SoftwareFallbackException, RuntimeException
+    {
+        switch (code) {
+            case XMLErrorCode.CANNOT_TOKENIZE:
+            case XMLErrorCode.XPATH_UNDECLARED_PREFIX:
+            case XMLErrorCode.PREFIX_NOT_FOUND:
+            case XMLErrorCode.NAMESPACE_NOT_FOUND:
+                throw new SAXException(cause);
+        }
+        throw new SoftwareFallbackException(cause);
+    }
+
+    public static void translateException(XPathCompilerException e) 
+            throws SAXException, SoftwareFallbackException, RuntimeException
+    {
+        translateTarariErrorCode(e, e.getCompilerErrorCode());
+    }
+
+    public static void translateException(XPathLoaderException e)
+            throws SAXException, SoftwareFallbackException, RuntimeException
+    {
+        translateTarariErrorCode(e, e.getStatus());
+    }
+
+    public static void translateException(XPathProcessorException e)
+            throws SAXException, SoftwareFallbackException, RuntimeException
+    {
+        translateTarariErrorCode(e, e.getStatus());
+    }
+
+    public static void translateException(XMLDocumentException e)
+            throws SAXException, SoftwareFallbackException, RuntimeException
+    {
+        translateTarariErrorCode(e, e.getStatus());
     }
 
     public static void setupIsSoap() throws XPathCompilerException {

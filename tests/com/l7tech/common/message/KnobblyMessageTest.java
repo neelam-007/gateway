@@ -78,6 +78,8 @@ public class KnobblyMessageTest extends TestCase {
         try {
             msg.getSoapKnob();
             fail();
+        } catch (MessageNotSoapException e) {
+            // ok
         } catch (SAXException e) {
             // ok
         }
@@ -162,11 +164,16 @@ public class KnobblyMessageTest extends TestCase {
         try {
             msg.getSoapKnob();
             fail();
+        } catch (MessageNotSoapException e) {
+            // ok
         } catch (IllegalStateException e) {
             // ok
         }
 
-        TarariUtil.setupIsSoap();
+        if (TarariUtil.isTarariPresent()) {
+            logger.info("Initializing XML Hardware Acceleration");
+            TarariUtil.setupIsSoap();
+        }
         msg.initialize(new ByteArrayStashManager(),
                               ContentTypeHeader.XML_DEFAULT,
                               TestDocuments.getInputStream(TestDocuments.PLACEORDER_CLEARTEXT));

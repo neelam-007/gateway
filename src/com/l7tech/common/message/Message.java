@@ -203,14 +203,16 @@ public final class Message {
      * @throws SAXException if the first part's content type is not text/xml.
      * @throws IOException if XML serialization throws IOException, perhaps due to a lazy Document.
      * @throws MessageNotSoapException if there is an XML document but it doesn't look like a valid SOAP envelope
+     * @throws IllegalStateException if the SOAP MIME part has already been destructively read.
      */
     public SoapKnob getSoapKnob() throws SAXException, IOException, MessageNotSoapException {
         SoapKnob soapKnob = (SoapKnob)getKnob(SoapKnob.class);
         if (soapKnob == null) {
-            getXmlKnob(); // guarantee XML facet exists somewhere
-            rootFacet = new SoapFacet(this, rootFacet);
+            if (!isSoap())
+                throw new MessageNotSoapException();
             soapKnob = (SoapKnob)getKnob(SoapKnob.class);
-            if (soapKnob == null) throw new IllegalStateException(); // can't happen, we just made one
+            if (soapKnob == null)
+                throw new IllegalStateException("isSoap() is true but there's no SoapKnob");
         }
         return soapKnob;
     }
@@ -225,6 +227,7 @@ public final class Message {
      * @throws SAXException if the XML in the first part's InputStream is not well formed
      * @throws IOException if there is a problem reading XML from the first part's InputStream
      * @throws IOException if XML serialization is necessary, and it throws IOException (perhaps due to a lazy DOM)
+     * @throws IllegalStateException if the SOAP MIME part has already been destructively read.
      */
     public boolean isSoap() throws IOException, SAXException {
         if (getKnob(SoapKnob.class) != null)
@@ -232,14 +235,18 @@ public final class Message {
         if (!isXml())
             return false;
 
-        // TODO evil hack was: It's definitely soap.  Install the SOAP knob while we are here.
+        // We have an XML knob but no SOAP knob.  See if we can create a SOAP knob.
+        SoapFacet.SoapInfo info = null;
         try {
-            getSoapKnob();
-            return true;
-        } catch (MessageNotSoapException e) {
-            return false;
-//            throw new CausedIllegalStateException("Unable to create SOAP facet", e); // can't happen here
+            info = SoapFacet.getSoapInfo(this);
+        } catch (NoSuchPartException e) {
+            throw new CausedIllegalStateException(e);
         }
+        if (info == null)
+            return false;
+
+        rootFacet = new SoapFacet(this, rootFacet, info);
+        return true;
     }
 
     /**

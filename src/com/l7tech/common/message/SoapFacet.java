@@ -10,7 +10,6 @@ import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.common.xml.TarariUtil;
 import com.tarari.xml.Node;
@@ -24,7 +23,9 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -32,19 +33,55 @@ import java.util.logging.Logger;
  */
 class SoapFacet extends MessageFacet {
     private SoapFaultDetail faultDetail = null;
+    private final SoapInfo soapInfo;
 
-    private String payloadNsUri;
-    private boolean hasSecurityNode;
     private transient static final Logger logger = Logger.getLogger(SoapFacet.class.getName());
 
-    private TarariContext getProcessedContext() throws XMLDocumentException, IOException, NoSuchPartException, XPathProcessorException {
-        XMLDocument tarariDoc = null;
-        tarariDoc = new XMLDocument(getMessage().getMimeKnob().getFirstPart().getInputStream(false));
-        XPathProcessor tproc = new XPathProcessor(tarariDoc);
-        RAXContext context = tproc.processXPaths();
-        return new TarariContext(tarariDoc, context);
+    /**
+     * Load the specified InputStream, which is expected to produce an XML document, into the Tarari board,
+     * run the current XPaths against it, and return the TarariContext.
+     *
+     * @param inputStream  An InputStream containing an XML document.  Must not be null.
+     * @return the TarariContext pointing at the document and the processed results.  Never null.
+     * @throws SAXException if this document is invalid.
+     * @throws TarariUtil.SoftwareFallbackException if this document could not be processed in hardware.
+     *                                              the operation should be retried using software.
+     */
+    private static TarariContext getProcessedContext(InputStream inputStream)
+            throws TarariUtil.SoftwareFallbackException, SAXException
+    {
+        try {
+            XMLDocument tarariDoc = null;
+            tarariDoc = new XMLDocument(inputStream);
+            XPathProcessor tproc = new XPathProcessor(tarariDoc);
+            RAXContext context = tproc.processXPaths();
+            return new TarariContext(tarariDoc, context);
+        } catch (XPathProcessorException e) {
+            TarariUtil.translateException(e);
+        } catch (XMLDocumentException e) {
+            TarariUtil.translateException(e);
+        }
+        throw new RuntimeException(); // unreachable
     }
 
+    /**
+     * Represents information extracted from a SOAP document that can be used for future service resolution.
+     * The same SoapInfo class is used for both software or hardware processing.
+     */
+    static class SoapInfo {
+        SoapInfo(String payloadNsUri, boolean hasSecurityNode) {
+            this.payloadNsUri = payloadNsUri;
+            this.hasSecurityNode = hasSecurityNode;
+        }
+
+        final String payloadNsUri;
+        final boolean hasSecurityNode;
+    }
+
+    /**
+     * Represents resources held in kernel-memory by the Tarari driver, namely
+     * a document in one buffer and a token list in the other.
+     */
     private static class TarariContext {
         private TarariContext(XMLDocument doc, RAXContext context) {
             this.tarariDoc = doc;
@@ -69,33 +106,70 @@ class SoapFacet extends MessageFacet {
         RAXContext raxContext;
     }
 
-
     /**
-     * Create a new SoapFacet for the specified message, wrapping the specified root facet.
+     * Create a new SoapFacet for the specified message, wrapping the specified root facet.  SoapFacets can only
+     * be created on messages for which {@link #getSoapInfo} has already returned a non-null value.
      *
      * @param message  the message being enhanced.  May not be null.
      * @param facet  the previous root facet.  May not be null.  Must contain an XML facet.
-     * @throws SAXException if the first part's content type is not text/xml.
-     * @throws IOException if XML serialization throws IOException, perhaps due to a lazy Document.
-     * @throws MessageNotSoapException if there is an XML document but it doesn't look like a valid SOAP envelope
+     * @param soapInfo  the non-null result of calling getSoapInfo() with this message's first part content.
      */
-    public SoapFacet(Message message, MessageFacet facet)
-            throws SAXException, IOException, MessageNotSoapException
-    {
+    public SoapFacet(Message message, MessageFacet facet, SoapInfo soapInfo) {
         super(message, facet);
 
+        if (soapInfo == null) throw new NullPointerException();
+        this.soapInfo = soapInfo;
+    }
+
+    /**
+     * Check if an already-known-to-be-XML Message is actually SOAP, and if so, returns a SoapInfo
+     * for creating a SoapFacet.
+     *
+     * @param message  the Message to examine.  Must already have a MimeKnob and an XmlKnob.
+     * @return the SoapInfo if this Message is SOAP, or null if it is not SOAP.
+     * @throws IOException if there is a problem reading the Message data.
+     * @throws SAXException if the XML is not well formed or has invalid namespace declarations
+     * @throws NoSuchPartException if the Message first part has already been destructively read
+     */
+    public static SoapInfo getSoapInfo(Message message) throws IOException, SAXException, NoSuchPartException {
         if (TarariUtil.isTarariPresent()) {
-            TarariContext context = null;
-            TarariContext context2 = null;
             try {
-                context = getProcessedContext();
-                if (!context.raxContext.isSoap(TarariUtil.getUriIndices())) {
-                    context2 = getProcessedContext();
-                    if (!context.raxContext.isSoap(TarariUtil.getUriIndices())) {
-                        // What I say to you two times is true
-                        throw new MessageNotSoapException("This message might not be SOAP");
-                    }
-                }
+                return getSoapInfoTarari(message.getMimeKnob().getFirstPart().getInputStream(false));
+            } catch (TarariUtil.SoftwareFallbackException e) {
+                // TODO if this happens a lot for perfectly reasonable reasons, downgrade to something below INFO
+                logger.log(Level.INFO, "Falling back from hardware to software processing", e);
+                // fallthrough to software
+            }
+        }
+        return getSoapInfoDom(message.getXmlKnob().getDocument(false));
+    }
+
+    /** Software fallback version of getSoapInfo.  Requires DOM parsing have been done already. */
+    private static SoapInfo getSoapInfoDom(Document document) throws SAXException {
+        boolean hasSecurityNode = false;
+        String payloadNs = null;
+        if (SoapUtil.isSoapMessage(document)) {
+            try {
+                List els = SoapUtil.getSecurityElements(document);
+                if (els != null && !els.isEmpty()) hasSecurityNode = true;
+                payloadNs = SoapUtil.getPayloadNamespaceUri(document);
+                return new SoapInfo(payloadNs, hasSecurityNode);
+            } catch (InvalidDocumentFormatException e) {
+                throw new SAXException(e);
+            }
+        } else {
+            return null;
+        }
+    }
+
+    /** Hardware version of getSoapInfo.  Might require software fallback if hardware processing can't be done. */
+    private static SoapInfo getSoapInfoTarari(InputStream in) throws SAXException, TarariUtil.SoftwareFallbackException {
+        TarariContext context = null;
+        String payloadNs = null;
+        boolean hasSecurityHeaders = false;
+        try {
+            context = getProcessedContext(in);
+            if (context.raxContext.isSoap(TarariUtil.getUriIndices())) {
                 int numUris = context.raxContext.getCount(0,6);
                 if (numUris <= 0) {
                     logger.info("Couldn't find a namespace URI for SOAP payload");
@@ -106,7 +180,7 @@ class SoapFacet extends MessageFacet {
                     }
                     Node first = payloadNodes.getFirstNode();
                     if (first.getNodeType() == Node.ELEMENT_NODE) {
-                        this.payloadNsUri = context.raxContext.getNamespaceByPrefix(first, first.getPrefix());
+                        payloadNs = context.raxContext.getNamespaceByPrefix(first, first.getPrefix());
                     }
                 }
 
@@ -123,34 +197,18 @@ class SoapFacet extends MessageFacet {
                     while (node != null) {
                         String uri = context.raxContext.getNamespaceByPrefix(node, node.getPrefix());
                         if (SoapUtil.SECURITY_URIS.contains(uri)) {
-                            hasSecurityNode = true;
+                            hasSecurityHeaders = true;
                             break;
                         }
                         node = secNodes.getNextNode();
                     }
                 }
-            } catch (XMLDocumentException e) {
-                throw new SAXException(e);
-            } catch (NoSuchPartException e) {
-                throw new SAXException(e);
-            } catch (XPathProcessorException e) {
-                throw new SAXException(e);
-            } finally {
-                if (context != null) context.close();
-                if (context2 != null) context2.close();
-            }
-        } else {
-            Document doc = message.getXmlKnob().getDocument(false);
-            if (SoapUtil.isSoapMessage(doc)) {
-                try {
-                    List els = SoapUtil.getSecurityElements(doc);
-                    if (els != null && !els.isEmpty()) hasSecurityNode = true;
-                } catch (InvalidDocumentFormatException e) {
-                    throw new SAXException(e);
-                }
+                return new SoapInfo(payloadNs, hasSecurityHeaders);
             } else {
-                throw new MessageNotSoapException();
+                return null;
             }
+        } finally {
+            if (context != null) context.close();
         }
     }
 
@@ -159,8 +217,8 @@ class SoapFacet extends MessageFacet {
             return new SoapKnob() {
 
                 public String getPayloadNamespaceUri() throws IOException, SAXException {
-                    if (payloadNsUri != null) {
-                        return payloadNsUri;
+                    if (soapInfo != null && soapInfo.payloadNsUri != null) {
+                        return soapInfo.payloadNsUri;
                     } else {
                         return SoapUtil.getPayloadNamespaceUri(getMessage().getXmlKnob().getDocument(false));
                     }
@@ -182,7 +240,7 @@ class SoapFacet extends MessageFacet {
                 }
 
                 public boolean isSecurityHeaderPresent() {
-                    return hasSecurityNode;
+                    return soapInfo.hasSecurityNode;
                 }
 
                 /**
