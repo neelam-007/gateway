@@ -39,8 +39,8 @@ public class WsdlServicePanel extends WizardStepPanel {
      */
     public String getDescription() {
         return "<html>" +
-          "The service element defines the address (URI) of an endpoint" +
-          " and the port where the Web service can be reached.</html>";
+               "The \"service\" element defines the Web service endpoint URL and connection port." +
+               "</html>";
     }
 
     /**
