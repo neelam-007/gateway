@@ -135,6 +135,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
             }
             outputServiceDescription(req, res, svc);
             endTransaction();
+            logger.info("Returned description for service, " + svcId);
         } else { // HANDLE REQUEST FOR LIST OF SERVICES
             Collection services = null;
             try {
@@ -155,6 +156,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 return;
             }
             outputServiceDescriptions(req, res, services);
+            logger.info("Returned list of service description targets");
         }
     }
 
@@ -303,10 +305,13 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         // for each service
         for (Iterator i = services.iterator(); i.hasNext();) {
             PublishedService svc = (PublishedService)i.next();
-            outDoc.append("\t<description referencedNamespace=\"http://schemas.xmlsoap.org/wsdl/\" ");
+            outDoc.append("\t<service>\n");
+            outDoc.append("\t\t<abstract>" + svc.getName() + "</abstract>\n");
+            outDoc.append("\t\t<description referencedNamespace=\"http://schemas.xmlsoap.org/wsdl/\" ");
             outDoc.append("location=\"");
             outDoc.append(protocol + "://" + host + ":" + port + uri + "?" + PARAM_SERVICEOID + "=" + Long.toString(svc.getOid()));
             outDoc.append("\"/>\n");
+            outDoc.append("\t</service>\n");
         }
         outDoc.append("</inspection>");
         return outDoc.toString();
