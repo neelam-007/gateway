@@ -8,6 +8,9 @@ package com.l7tech.identity;
 
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.util.Locator;
+import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
+import com.l7tech.identity.ldap.LdapIdentityProviderServer;
+import com.l7tech.identity.internal.imp.InternalIdentityProviderImp;
 
 import java.util.*;
 
@@ -27,16 +30,22 @@ public class IdentityProviderFactory {
     }
 
     public static IdentityProvider makeProvider(IdentityProviderConfig config) {
+        /*
         IdentityProviderType type = config.getType();
         String className = type.getClassName();
+        */
         IdentityProvider provider;
 
+
         try {
-            provider = (IdentityProvider)Class.forName(className).newInstance();
+            if (config instanceof LdapIdentityProviderConfig) provider = new LdapIdentityProviderServer();
+            else provider = new InternalIdentityProviderImp();
+            // todo, better
+            //provider = (IdentityProvider)Class.forName(className).newInstance();
             provider.initialize(config);
             return provider;
         } catch (Exception e) {
-            throw new IllegalArgumentException("Couldn't locate an implementation of " + className + " for IdentityProviderConfig " + config.getName() + " (#" + config.getOid() + "): " + e.toString());
+            throw new IllegalArgumentException("Couldn't locate an implementation for IdentityProviderConfig " + config.getName() + " (#" + config.getOid() + "): " + e.toString());
         }
     }
 }
