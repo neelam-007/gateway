@@ -50,7 +50,7 @@ public class RequestXpathAssertion extends XpathBasedAssertion {
     private void initDefaultXpath() {
         Map nsmap = new HashMap();
         nsmap.put("soapenv", SOAPConstants.URI_NS_SOAP_ENVELOPE);
-        setXpathExpression( new XpathExpression( "/soapenv:Envelope", nsmap ) );
+        setXpathExpression(new XpathExpression(SoapUtil.SOAP_ENVELOPE_XPATH, nsmap));
     }
 
     /** Shortcut to get xpath pattern.  Name doesn't use get, to hide it from policy serializer. */
