@@ -3,12 +3,13 @@ package com.l7tech.logging;
 import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.common.RequestId;
 import com.l7tech.message.Request;
+import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.HibernatePersistenceContext;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
-import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.server.MessageProcessor;
 import net.sf.hibernate.HibernateException;
+import net.sf.hibernate.Query;
 import net.sf.hibernate.Session;
 
 import java.sql.SQLException;
@@ -133,6 +134,23 @@ public class ServerLogHandler extends Handler {
         return idToPokeAround + 1;
     }
 
+    private Collection getLastRecords(String nodeId, int maxSize, HibernatePersistenceContext context )
+    throws HibernateException, SQLException {
+        StringBuffer hql = new StringBuffer("FROM log IN CLASS " );
+        hql.append( SSGLogRecord.class.getName() );
+        hql.append( " WHERE log.");
+        hql.append( NODEID_COLNAME );
+        hql.append( " = ? " );
+        hql.append( " ORDER BY log." );
+        hql.append( OID_COLNAME );
+        hql.append( " DESC" );
+        Query q = context.getSession().createQuery(hql.toString());
+        q.setString(0,nodeId);
+        q.setMaxResults(maxSize);
+        Collection found = q.list();
+        return found;
+    }
+
     /**
      * Gets the last records of the table. Ugly logic because this table can grow to unreal proportions. We first
      * find a record id for the node involved near the end of the table using timestamp column. Then we play with
@@ -140,7 +158,7 @@ public class ServerLogHandler extends Handler {
      * @param nodeId the node id for which we want those records
      * @param maxSize how many records we want
      */
-    private Collection getLastRecords(String nodeId, int maxSize, HibernatePersistenceContext context)
+    private Collection getLastRecords_NotSoOld(String nodeId, int maxSize, HibernatePersistenceContext context)
                                                                 throws HibernateException, SQLException {
         // we need an id near the end of the table, make a query using
         // the logrecords timestamps
