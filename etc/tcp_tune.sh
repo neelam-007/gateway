@@ -37,8 +37,8 @@ start() {
 	echo 1> /proc/sys/net/ipv4/tcp_tw_reuse
 	echo "Disabling Route Triangulation"
 	echo 1 > /proc/sys/net/ipv4/conf/all/rp_filter
-	echo "Enable logging of packets with malformed IP addresses"
-	echo 1 > /proc/sys/net/ipv4/conf/all/log_martians
+	echo "Disable logging of packets with malformed IP addresses"
+	echo 0 > /proc/sys/net/ipv4/conf/all/log_martians
 	echo "Disabling redirects"
 	echo 0 > /proc/sys/net/ipv4/conf/all/send_redirects
 	echo "Disabling source routed packets"
