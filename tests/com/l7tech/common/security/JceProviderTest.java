@@ -105,9 +105,7 @@ public class JceProviderTest {
             driver = "com.l7tech.common.security.prov.ncipher.NcipherJceProviderEngine";
         } else if ("entrust".equalsIgnoreCase(prov)) {
             driver = JceProvider.ENTRUST_ENGINE;
-        } else if ("ibm".equalsIgnoreCase(prov)) {
-            driver = "com.l7tech.common.security.prov.ibm.IbmJceProviderEngine";
-        }else if ("sun".equalsIgnoreCase(prov)) {
+        } else if ("sun".equalsIgnoreCase(prov)) {
             driver = "com.l7tech.common.security.prov.sun.SunJceProviderEngine";
         }else
             throw new IllegalArgumentException("Unknown provider " + USAGE);
@@ -149,8 +147,7 @@ public class JceProviderTest {
 
             log.info("pretest: loading key pair...");
             PrivateKey priv = (PrivateKey)ks.getKey("tomcat",pkpass.toCharArray());
-            X509Certificate cert = (X509Certificate)ks.getCertificate("tomcat\u0000");   // when BouncyCastle crypto is used
-  //          X509Certificate cert = (X509Certificate)ks.getCertificate("tomcat");    // when IBM crypto is used
+            X509Certificate cert = (X509Certificate)ks.getCertificate("tomcat");
 
             kp = new KeyPair(cert.getPublicKey(),priv);
 
