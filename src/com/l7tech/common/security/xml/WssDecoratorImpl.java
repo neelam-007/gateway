@@ -77,7 +77,7 @@ public class WssDecoratorImpl implements WssDecorator {
     {
         Context c = new Context();
 
-        Element securityHeader = createSecurityHeader(message);
+        Element securityHeader = createSecurityHeader(message, decorationRequirements.getPreferredSecurityNamespace());
         Set signList = decorationRequirements.getElementsToSign();
 
         // If we aren't signing the entire message, find extra elements to sign
@@ -702,7 +702,7 @@ public class WssDecoratorImpl implements WssDecorator {
         return element;
     }
 
-    private Element createSecurityHeader(Document message) throws InvalidDocumentFormatException {
+    private Element createSecurityHeader(Document message, String wsseNS) throws InvalidDocumentFormatException {
         // Wrap any existing header
         Element oldSecurity = SoapUtil.getSecurityElement(message);
         if (oldSecurity != null) {
@@ -712,7 +712,7 @@ public class WssDecoratorImpl implements WssDecorator {
             SoapUtil.setSoapAttr(message, oldSecurity, SoapUtil.ACTOR_ATTR_NAME, SoapUtil.ACTOR_LAYER7_WRAPPED);
         }
 
-        Element securityHeader = SoapUtil.makeSecurityElement(message);
+        Element securityHeader = SoapUtil.makeSecurityElement(message, wsseNS);
         // Make sure wsu is declared to save duplication
         XmlUtil.getOrCreatePrefixForNamespace(securityHeader, SoapUtil.WSU_NAMESPACE, "wsu");
         return securityHeader;
