@@ -6,13 +6,10 @@
 
 package com.l7tech.common.util;
 
+import com.l7tech.common.security.CertificateRequest;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.methods.PostMethod;
-import org.bouncycastle.asn1.ASN1Set;
-import org.bouncycastle.asn1.x509.X509Name;
-import org.bouncycastle.jce.PKCS10CertificationRequest;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import javax.security.auth.x500.X500Principal;
 import java.io.ByteArrayInputStream;
@@ -21,9 +18,6 @@ import java.net.URL;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.Security;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -36,40 +30,6 @@ import java.security.cert.X509Certificate;
  * Time: 10:10:53 AM
  */
 public class SslUtils {
-    public static final String REQUEST_SIG_ALG = "SHA1withRSA";
-
-    static {
-        Security.addProvider(new BouncyCastleProvider());
-    }
-
-    /**
-     * Create a Certificate Signing Request.  The newly-created CSR will use the username
-     * as the Common Name, and the SSG hostname as the Organizational Unit.
-     *
-     * @param username the Username, ie "joeblow"
-     * @throws SignatureException
-     * @throws InvalidKeyException
-     * @throws RuntimeException if a needed algorithm or crypto provider was not found
-     */
-    public static PKCS10CertificationRequest makeCsr(String username,
-                                               PublicKey publicKey,
-                                               PrivateKey privateKey)
-            throws SignatureException, InvalidKeyException, RuntimeException
-    {
-        X509Name subject = new X509Name("cn=" + username);
-        ASN1Set attrs = null;
-
-        // Generate request
-        PKCS10CertificationRequest certReq = null;
-        try {
-            certReq = new PKCS10CertificationRequest(REQUEST_SIG_ALG, subject, publicKey, attrs, privateKey);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e); // can't happen
-        } catch (NoSuchProviderException e) {
-            throw new RuntimeException(e); // can't happen
-        }
-        return certReq;
-    }
 
     /** Thrown when the Certificate Signer doesn't like our username or password. */
     public static class BadCredentialsException extends Exception {
@@ -126,13 +86,13 @@ public class SslUtils {
      * @throws SslUtils.BadCredentialsException if the username or password was rejected by the CSR signer
      */
     public static X509Certificate obtainClientCertificate(URL url, String username, char[] password,
-                                                          PKCS10CertificationRequest csr,
+                                                          CertificateRequest csr,
                                                           X509Certificate caCert)
             throws IOException, CertificateException, NoSuchAlgorithmException,
                    InvalidKeyException, NoSuchProviderException, SslUtils.BadCredentialsException,
                    SignatureException, CertificateAlreadyIssuedException
     {
-        X500Principal csrName = new X500Principal(csr.getCertificationRequestInfo().getSubject().toString());
+        X500Principal csrName = new X500Principal(csr.getSubjectAsString());
         String csrNameString = csrName.getName(X500Principal.CANONICAL);
         HttpClient hc = new HttpClient();
         hc.getState().setAuthenticationPreemptive(true);

@@ -6,17 +6,17 @@
 
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.common.security.CertificateRequest;
+import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.CertificateDownloader;
 import com.l7tech.common.util.FileUtils;
 import com.l7tech.common.util.SslUtils;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
+import com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
-import com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException;
 import com.l7tech.proxy.util.ClientLogger;
-import org.bouncycastle.jce.PKCS10CertificationRequest;
-import org.bouncycastle.jce.provider.JDKKeyPairGenerator;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -399,13 +399,12 @@ public class SsgKeyStoreManager {
                     BadCredentialsException, CertificateAlreadyIssuedException, KeyStoreCorruptException
     {
         KeyPair keyPair;
-        PKCS10CertificationRequest csr;
+        CertificateRequest csr;
         try {
             log.info("Generating new RSA key pair (could take several seconds)...");
             Managers.getCredentialManager().notifyLengthyOperationStarting(ssg, "Generating new client certificate...");
-            JDKKeyPairGenerator.RSA kpg = new JDKKeyPairGenerator.RSA();
-            keyPair = kpg.generateKeyPair();
-            csr = SslUtils.makeCsr(ssg.getUsername(), keyPair.getPublic(), keyPair.getPrivate());
+            keyPair = JceProvider.generateRsaKeyPair();
+            csr = JceProvider.makeCsr(ssg.getUsername(), keyPair.getPublic(), keyPair.getPrivate());
         } finally {
             Managers.getCredentialManager().notifyLengthyOperationFinished(ssg);
         }

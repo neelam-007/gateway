@@ -20,8 +20,8 @@ import com.ibm.xml.enc.type.KeyInfo;
 import com.ibm.xml.enc.type.KeyName;
 import com.ibm.xml.enc.util.AdHocIdResolver;
 import com.l7tech.common.security.AesKey;
+import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.SoapUtil;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -32,7 +32,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.Key;
-import java.security.Provider;
 
 /**
  * Class that encrypts and decrypts XML documents.
@@ -41,11 +40,6 @@ import java.security.Provider;
  * Time: 11:07:41 AM
  */
 public class XmlMangler {
-    private static final Provider bcp = new BouncyCastleProvider();
-    static {
-        java.security.Security.addProvider(bcp);
-    }
-
     // ID for EncryptedData element
     private static final String id = "bodyId";
 
@@ -116,7 +110,7 @@ public class XmlMangler {
         // Create encryption context and encrypt the header subtree
         EncryptionContext ec = new EncryptionContext();
         AlgorithmFactoryExtn af = new AlgorithmFactoryExtn();
-        af.setProvider(bcp.getName());
+        af.setProvider(JceProvider.getProvider().getName());
         ec.setAlgorithmFactory(af);
         ec.setEncryptedType(encDataElement, EncryptedData.CONTENT,  null, null);
 
@@ -205,7 +199,7 @@ public class XmlMangler {
         // soapMsg document
         DecryptionContext dc = new DecryptionContext();
         AlgorithmFactoryExtn af = new AlgorithmFactoryExtn();
-        af.setProvider(bcp.getName());
+        af.setProvider(JceProvider.getProvider().getName());
         dc.setAlgorithmFactory(af);
         dc.setEncryptedType(encryptedDataEl, EncryptedData.CONTENT, null, null);
         dc.setKey(key);
