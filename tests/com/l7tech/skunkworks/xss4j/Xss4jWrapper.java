@@ -10,20 +10,18 @@ import com.ibm.xml.dsig.*;
 import com.ibm.xml.dsig.KeyInfo;
 import com.ibm.xml.dsig.util.AdHocIDResolver;
 import com.ibm.xml.enc.*;
-import com.ibm.xml.enc.util.AdHocIdResolver;
 import com.ibm.xml.enc.type.*;
-
+import com.ibm.xml.enc.util.AdHocIdResolver;
+import org.apache.xml.serialize.OutputFormat;
+import org.apache.xml.serialize.XMLSerializer;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-import org.apache.xml.serialize.XMLSerializer;
-import org.apache.xml.serialize.OutputFormat;
 
 import javax.crypto.SecretKey;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringWriter;
@@ -31,13 +29,12 @@ import java.math.BigInteger;
 import java.security.Key;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
-import java.util.List;
-import java.util.Iterator;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * @author alex
