@@ -47,7 +47,7 @@ public class ClientResponseWssConfidentiality extends ClientAssertion {
 
     public AssertionStatus unDecorateReply(PolicyApplicationContext context)
             throws ServerCertificateUntrustedException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException, PolicyAssertionException {
-        Document soapmsg = context.getResponse().getXmlKnob().getDocument();
+        Document soapmsg = context.getResponse().getXmlKnob().getDocument(false);
         ProcessorResult wssRes = context.getResponse().getXmlKnob().getProcessorResult();
         if (wssRes == null) {
             log.info("WSS processing was not done on this response.");

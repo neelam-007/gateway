@@ -52,7 +52,7 @@ public abstract class ServerRequestWssOperation implements ServerAssertion {
         // get the document
         Document soapmsg = null;
         try {
-            soapmsg = context.getRequest().getXmlKnob().getDocument();
+            soapmsg = context.getRequest().getXmlKnob().getDocument(false);
         } catch (SAXException e) {
             logger.log(Level.SEVERE, "Cannot get payload document.", e);
             return AssertionStatus.BAD_REQUEST;

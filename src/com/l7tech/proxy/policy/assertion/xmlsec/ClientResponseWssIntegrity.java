@@ -1,5 +1,7 @@
 package com.l7tech.proxy.policy.assertion.xmlsec;
 
+import com.l7tech.common.message.Message;
+import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.security.xml.processor.ProcessorException;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.security.xml.processor.ProcessorResultUtil;
@@ -67,8 +69,10 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
     public AssertionStatus unDecorateReply(PolicyApplicationContext context)
             throws ServerCertificateUntrustedException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException, InvalidDocumentFormatException, PolicyAssertionException
     {
-        Document soapmsg = context.getResponse().getXmlKnob().getDocument();
-        ProcessorResult wssRes = context.getResponse().getXmlKnob().getProcessorResult();
+        final Message response = context.getResponse();
+        final XmlKnob responseXml = response.getXmlKnob();
+        Document soapmsg = responseXml.getDocument(false);
+        ProcessorResult wssRes = responseXml.getProcessorResult();
         if (wssRes == null) {
             log.info("WSS processing was not done on this response.");
             return AssertionStatus.FAILED;
@@ -87,6 +91,7 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
             }
 
             // Skip this check on subsequent ResponseWssIntegrity assertions.
+            soapmsg = responseXml.getDocument(true); // upgrade to writable document
             context.setL7aMessageId(null);
         }
 

@@ -142,7 +142,7 @@ public class PolicyService extends ApplicationObjectSupport {
 
         // We need a Document
         Document requestDoc = null;
-        requestDoc = reqXml.getDocument();
+        requestDoc = reqXml.getDocument(false);
 
         // Process request for message level security stuff
         ProcessorResult wssOutput = null;

@@ -6,41 +6,41 @@
 
 package com.l7tech.server;
 
+import com.l7tech.common.ApplicationContexts;
+import com.l7tech.common.message.Message;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
-import com.l7tech.common.ApplicationContexts;
-import com.l7tech.common.message.Message;
 import com.l7tech.identity.User;
 import com.l7tech.identity.UserBean;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.proxy.util.TokenServiceClient;
-import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.ServerPolicyFactory;
+import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import junit.extensions.TestSetup;
-import org.w3c.dom.Document;
 import org.springframework.context.ApplicationContext;
+import org.w3c.dom.Document;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpSession;
-import javax.servlet.ServletInputStream;
 import javax.servlet.RequestDispatcher;
-import java.security.PrivateKey;
-import java.security.Principal;
-import java.security.cert.X509Certificate;
-import java.util.logging.Logger;
-import java.util.Enumeration;
-import java.util.Map;
-import java.util.Locale;
-import java.io.UnsupportedEncodingException;
-import java.io.IOException;
+import javax.servlet.ServletInputStream;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.security.Principal;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
+import java.util.Enumeration;
+import java.util.Locale;
+import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * @author mike
@@ -103,7 +103,7 @@ public class TokenServiceTest extends TestCase {
 
         service.respondToSecurityTokenRequest(context, authenticator);
 
-        Document responseMsg = response.getXmlKnob().getDocument();
+        Document responseMsg = response.getXmlKnob().getDocument(true);
 
         log.info("Decorated response (reformatted): " + XmlUtil.nodeToFormattedString(responseMsg));
 
@@ -154,7 +154,7 @@ public class TokenServiceTest extends TestCase {
 
         service.respondToSecurityTokenRequest(context, authenticator);
 
-        Document responseMsg = response.getXmlKnob().getDocument();
+        Document responseMsg = response.getXmlKnob().getDocument(true);
 
         log.info("Decorated response (reformatted): " + XmlUtil.nodeToFormattedString(responseMsg));
 

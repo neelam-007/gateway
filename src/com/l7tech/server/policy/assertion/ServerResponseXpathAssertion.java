@@ -73,7 +73,7 @@ public class ServerResponseXpathAssertion implements ServerAssertion {
                 return AssertionStatus.FALSIFIED;
             }
 
-            Document doc = context.getResponse().getXmlKnob().getDocument();
+            Document doc = context.getResponse().getXmlKnob().getDocument(false);
 
             List result = null;
             DOMXPath xp = getDOMXpath();

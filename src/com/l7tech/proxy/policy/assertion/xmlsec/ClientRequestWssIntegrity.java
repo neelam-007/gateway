@@ -60,7 +60,7 @@ public class ClientRequestWssIntegrity extends ClientAssertion {
                     throws PolicyAssertionException, SAXException, IOException
             {
                 final XpathExpression xpathExpression = requestWssIntegrity.getXpathExpression();
-                final XpathEvaluator eval = XpathEvaluator.newEvaluator(context.getRequest().getXmlKnob().getDocument(),
+                final XpathEvaluator eval = XpathEvaluator.newEvaluator(context.getRequest().getXmlKnob().getDocument(false),
                                                                         xpathExpression.getNamespaces());
                 try {
                     List elements = eval.selectElements(xpathExpression.getExpression());

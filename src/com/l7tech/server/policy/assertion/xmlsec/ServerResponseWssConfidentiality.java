@@ -123,7 +123,7 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
                 // GET THE DOCUMENT
                 Document soapmsg = null;
                 try {
-                    soapmsg = context.getResponse().getXmlKnob().getDocument();
+                    soapmsg = context.getResponse().getXmlKnob().getDocument(false);
 
                     final XpathExpression xpath = responseWssConfidentiality.getXpathExpression();
                     XpathEvaluator evaluator = XpathEvaluator.newEvaluator(soapmsg,

@@ -105,7 +105,7 @@ public class PolicyApplicationContext extends ProcessingContext {
             throws SAXException, IOException
     {
         super(request, response);
-        originalDoc = request.getXmlKnob().getDocument();
+        originalDoc = request.getXmlKnob().getDocument(false);
         if (ssg == null) throw new NullPointerException("ssg is null");
         if (requestInterceptor == null)
             requestInterceptor = NullRequestInterceptor.INSTANCE;
@@ -141,6 +141,12 @@ public class PolicyApplicationContext extends ProcessingContext {
         policySettings = new PolicySettings();
     }
 
+    /**
+     * Get the original document, as it arrived.  Must not be modified.  Assumed to be identical to what came in
+     * as the first part of the MIME body.
+     *
+     * @return the original Document.  Modifications will not be written back to the first MIME part's body.
+     */
     public Document getOriginalDocument() {
         return originalDoc;
     }

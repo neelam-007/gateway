@@ -76,7 +76,7 @@ public class ServerRequestXpathAssertion implements ServerAssertion {
                 }
 
                 XmlKnob reqXml = context.getRequest().getXmlKnob();
-                Document doc = reqXml.getDocument();
+                Document doc = reqXml.getDocument(false);
 
                 List result = null;
                 DOMXPath xp = getDOMXpath();

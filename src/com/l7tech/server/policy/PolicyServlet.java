@@ -103,7 +103,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
             Document responseDoc = null;
             try {
-                responseDoc = response.getXmlKnob().getDocument();
+                responseDoc = response.getXmlKnob().getDocument(false);
             } catch (SAXException e) {
                 generateFaultAndSendAsResponse(servletResponse, "No response available", e.getMessage());
             }

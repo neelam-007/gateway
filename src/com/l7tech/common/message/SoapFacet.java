@@ -34,7 +34,7 @@ class SoapFacet extends MessageFacet {
             throws SAXException, IOException, MessageNotSoapException
     {
         super(message, facet);
-        if (!SoapUtil.isSoapMessage(message.getXmlKnob().getDocument()))
+        if (!SoapUtil.isSoapMessage(message.getXmlKnob().getDocument(false)))
             throw new MessageNotSoapException();
     }
 
@@ -43,7 +43,7 @@ class SoapFacet extends MessageFacet {
             return new SoapKnob() {
 
                 public String getPayloadNamespaceUri() throws IOException, SAXException {
-                    return SoapUtil.getPayloadNamespaceUri(getMessage().getXmlKnob().getDocument());
+                    return SoapUtil.getPayloadNamespaceUri(getMessage().getXmlKnob().getDocument(false));
                 }
 
                 public boolean isFault() throws SAXException, IOException, InvalidDocumentFormatException {
@@ -72,7 +72,7 @@ class SoapFacet extends MessageFacet {
                  */
                 private SoapFaultDetail gatherFaultDetail() throws SAXException, IOException, InvalidDocumentFormatException {
                     if (faultDetail == null)
-                       faultDetail = SoapFaultUtils.gatherSoapFaultDetail(getMessage().getXmlKnob().getDocument());
+                       faultDetail = SoapFaultUtils.gatherSoapFaultDetail(getMessage().getXmlKnob().getDocument(false));
                     return faultDetail;
                 }
             };

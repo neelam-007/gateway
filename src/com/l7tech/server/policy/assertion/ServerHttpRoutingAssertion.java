@@ -36,9 +36,9 @@ import org.apache.commons.httpclient.params.HttpConnectionParams;
 import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
+import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
-import org.springframework.context.ApplicationContext;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
@@ -223,7 +223,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 }
 
                 if (httpRoutingAssertion.isAttachSamlSenderVouches()) {
-                    Document document = context.getRequest().getXmlKnob().getDocument();
+                    Document document = context.getRequest().getXmlKnob().getDocument(true);
                     SamlAssertionGenerator ag = new SamlAssertionGenerator();
                     SignerInfo si = KeystoreUtils.getInstance().getSignerInfo();
                     SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();

@@ -128,7 +128,7 @@ public class MessageProcessor extends ApplicationObjectSupport {
             WssProcessor trogdor = new WssProcessorImpl(); // no need for locator
             try {
                 final XmlKnob reqXml = request.getXmlKnob();
-                wssOutput = trogdor.undecorateMessage(reqXml.getDocument(),
+                wssOutput = trogdor.undecorateMessage(reqXml.getDocument(false),
                                                       serverCertificate,
                                                       serverPrivateKey,
                                                       SecureConversationContextManager.getInstance());
@@ -247,10 +247,10 @@ public class MessageProcessor extends ApplicationObjectSupport {
                         final XmlKnob respXml = response.getXmlKnob();
                         final DecorationRequirements responseDecoReq = respXml.getDecorationRequirements();
                         XmlKnob reqXml = request.getXmlKnob();
-                        doc = respXml.getDocument();
+                        doc = respXml.getDocument(true); // writable, we are about to decorate it
 
                         if (request.isSoap()) {
-                            final String messageId = SoapUtil.getL7aMessageId(reqXml.getDocument());
+                            final String messageId = SoapUtil.getL7aMessageId(reqXml.getDocument(false));
                             if (messageId != null) {
                                 SoapUtil.setL7aRelatesTo(doc, messageId);
                             }

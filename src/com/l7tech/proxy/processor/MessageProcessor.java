@@ -372,7 +372,7 @@ public class MessageProcessor {
                 if (result == AssertionStatus.NONE) {
                     // Ensure L7a:MessageID exists if we are supposed to have one
                     final Message request = context.getRequest();
-                    final Document requestDoc = request.getXmlKnob().getDocument();
+                    final Document requestDoc = request.getXmlKnob().getDocument(false);
                     if (context.getL7aMessageId() != null)
                         if (SoapUtil.getL7aMessageId(requestDoc) == null)
                             SoapUtil.setL7aMessageId(requestDoc, context.getL7aMessageId());
@@ -384,7 +384,8 @@ public class MessageProcessor {
                         Integer expiryMillis = Integer.getInteger(PROPERTY_TIMESTAMP_EXPIRY);
                         if (expiryMillis != null)
                             context.getWssRequirements().setTimestampTimeoutMillis(expiryMillis.intValue());
-                        wssDecorator.decorateMessage(requestDoc, context.getWssRequirements());
+                        wssDecorator.decorateMessage(request.getXmlKnob().getDocument(true), // upgrade to writable document
+                                                     context.getWssRequirements());
                     } else
                         log.info("Request isn't SOAP; skipping WS-Security decoration");
                 }
@@ -547,7 +548,7 @@ public class MessageProcessor {
             if (policy != null && policy.getVersion() != null)
                 postMethod.addRequestHeader(SecureSpanConstants.HttpHeaders.POLICY_VERSION, policy.getVersion());
 
-            final Document decoratedDocument = request.getXmlKnob().getDocument();
+            final Document decoratedDocument = request.getXmlKnob().getDocument(false);
             String postBody = XmlUtil.nodeToString(decoratedDocument);
 
             if (LogFlags.logPosts) {
@@ -659,7 +660,8 @@ public class MessageProcessor {
             });
 
             // Assert that response is XML
-            Document responseDocument = response.getXmlKnob().getDocument();
+            Document responseDocument = response.getXmlKnob().getDocument(false);
+            boolean responseDocChanged = false;
 
             if (LogFlags.logResponse) {
                 final MimeKnob respMime = response.getMimeKnob();
@@ -715,6 +717,7 @@ public class MessageProcessor {
                 };
 
                 responseDocument = processorResult.getUndecoratedMessage();
+                responseDocChanged = true;
             } catch (MessageNotSoapException e) {
                 // Response is not SOAP.
                 log.info("Response from Gateway is not SOAP.");
@@ -722,7 +725,8 @@ public class MessageProcessor {
             }
 
             response.attachKnob(HttpHeadersKnob.class, new HttpHeadersKnob(headers));
-            response.getXmlKnob().setDocument(responseDocument);
+            if (responseDocChanged)
+                response.getXmlKnob().setDocument(responseDocument);
             response.getXmlKnob().setProcessorResult(processorResult);
             response.attachHttpResponseKnob(new AbstractHttpResponseKnob() {
                 public void addCookie(Cookie cookie) {

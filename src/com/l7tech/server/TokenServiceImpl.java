@@ -1,5 +1,6 @@
 package com.l7tech.server;
 
+import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.XencUtil;
@@ -11,31 +12,30 @@ import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.SoapFaultDetailImpl;
-import com.l7tech.common.message.XmlKnob;
 import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.User;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.policy.assertion.credential.http.HttpClientCert;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
-import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
-import com.l7tech.policy.assertion.xmlsec.SecureConversation;
-import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.credential.http.HttpClientCert;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.policy.assertion.credential.wss.WssBasic;
+import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
+import com.l7tech.policy.assertion.xmlsec.SecureConversation;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.policy.ServerPolicyFactory;
+import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.saml.HolderOfKeyHelper;
 import com.l7tech.server.saml.SamlAssertionGenerator;
 import com.l7tech.server.secureconversation.DuplicateSessionException;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.server.policy.ServerPolicyFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -101,7 +101,7 @@ public class TokenServiceImpl implements TokenService {
             final XmlKnob reqXml = context.getRequest().getXmlKnob();
             X509Certificate serverSSLcert = getServerCert();
             PrivateKey sslPrivateKey = getServerKey();
-            ProcessorResult wssOutput = trogdor.undecorateMessage(reqXml.getDocument(),
+            ProcessorResult wssOutput = trogdor.undecorateMessage(reqXml.getDocument(false),
                                                                   serverSSLcert,
                                                                   sslPrivateKey,
                                                                   SecureConversationContextManager.getInstance());
@@ -409,7 +409,7 @@ public class TokenServiceImpl implements TokenService {
         Document doc = null;
         try {
             XmlKnob reqXml = context.getRequest().getXmlKnob();
-            doc = reqXml.getDocument();
+            doc = reqXml.getDocument(false);
         } catch (SAXException e) {
             // if we can't get the doc, then the request must be bad
             logger.log(Level.WARNING, "Cannot get request's document", e);
@@ -464,7 +464,7 @@ public class TokenServiceImpl implements TokenService {
         Document doc = null;
         try {
             XmlKnob reqXml = context.getRequest().getXmlKnob();
-            doc = reqXml.getDocument();
+            doc = reqXml.getDocument(false);
         } catch (SAXException e) {
             // if we can't get the doc, then the request must be bad
             logger.log(Level.WARNING, "Cannot get request's document", e);

@@ -142,7 +142,7 @@ class XmlFacet extends MessageFacet {
             this.mk = mk;
         }
 
-        public Document getDocument() throws SAXException, IOException {
+        public Document getDocument(boolean writable) throws SAXException, IOException {
             if (document == null) {
                 final PartInfo firstPart = mk.getFirstPart();
                 if (!firstPart.getContentType().isXml())
@@ -153,7 +153,8 @@ class XmlFacet extends MessageFacet {
                     throw new SAXException("Unable to parse XML: " + e);
                 }
             }
-            firstPartValid = false; // Assume caller is going to run roughshod over document
+            if (writable)
+                firstPartValid = false; // Assume caller is going to run roughshod over document
             return document;
         }
 

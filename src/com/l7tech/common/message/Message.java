@@ -229,7 +229,7 @@ public final class Message {
             return true;
         if (!isXml())
             return false;
-        if (!SoapUtil.isSoapMessage(getXmlKnob().getDocument())) // SAXException here can't happen
+        if (!SoapUtil.isSoapMessage(getXmlKnob().getDocument(false))) // SAXException here can't happen
             return false;
 
         // It's definitely soap.  Install the SOAP knob while we are here.

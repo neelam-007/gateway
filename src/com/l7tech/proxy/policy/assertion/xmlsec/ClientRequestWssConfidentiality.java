@@ -66,7 +66,7 @@ public class ClientRequestWssConfidentiality extends ClientAssertion {
             {
                 final XpathExpression xpathExpression = requestWssConfidentiality.getXpathExpression();
                 try {
-                    final XpathEvaluator eval = XpathEvaluator.newEvaluator(context.getRequest().getXmlKnob().getDocument(),
+                    final XpathEvaluator eval = XpathEvaluator.newEvaluator(context.getRequest().getXmlKnob().getDocument(false),
                                                                             xpathExpression.getNamespaces());
                     List elements = eval.selectElements(xpathExpression.getExpression());
                     if (elements == null || elements.size() < 1) {

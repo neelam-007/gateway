@@ -21,11 +21,13 @@ public interface XmlKnob extends MessageKnob {
      * TODO: Add a version of this that will not invalidate the first part of the message
      * TODO: if the caller sets a flag indicating that it does not intend to modify the Document
      * TODO: Add a way to obtain the original document, before any undecorating
+     * @param writable Set to true if you intend to modify the Document.
+     *                 If true, the first MIME part will be invalidated immediately.
      * @return the parsed Document.
      * @throws SAXException if the XML in the first part's InputStream is not well formed
      * @throws IOException if there is a problem reading XML from the first part's InputStream
      */
-    Document getDocument() throws SAXException, IOException;
+    Document getDocument(boolean writable) throws SAXException, IOException;
 
     /**
      * set the Document.  Also invalidates the first MIME part.
