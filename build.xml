@@ -278,6 +278,11 @@
             deprecation="on" depend="on" verbose="no">
             <classpath refid="project.class.path"/>
         </javac>
+        <copy todir="${build.classes}">
+            <fileset dir="tests">
+                <include name="**/resources/*"/>
+            </fileset>
+        </copy>
     </target>
 
 </project>
