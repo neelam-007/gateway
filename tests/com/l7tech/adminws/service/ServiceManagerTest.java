@@ -1,6 +1,7 @@
 package com.l7tech.adminws.service;
 
 import com.l7tech.service.PublishedService;
+import com.l7tech.service.ServiceAdmin;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.util.Locator;
 import junit.extensions.TestSetup;
@@ -28,7 +29,7 @@ import java.util.List;
  */
 public class ServiceManagerTest extends TestCase {
 
-    static ServiceManager manager;
+    static ServiceAdmin manager;
     PublishedService service;
 
     /**
@@ -55,7 +56,7 @@ public class ServiceManagerTest extends TestCase {
                 System.setProperty("com.l7tech.common.locator.properties",
                         "/com/l7tech/console/resources/services.properties");
                 ServiceManagerTest.manager =
-                        (ServiceManager) Locator.getDefault().lookup(ServiceManager.class);
+                        (ServiceAdmin) Locator.getDefault().lookup(ServiceAdmin.class);
                 if (manager == null) {
                     throw new RuntimeException("Cannot obtain the identity service");
                 }
