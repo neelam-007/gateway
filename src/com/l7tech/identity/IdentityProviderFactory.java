@@ -7,8 +7,6 @@
 package com.l7tech.identity;
 
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.util.Locator;
-import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.identity.ldap.LdapIdentityProviderServer;
 import com.l7tech.identity.internal.imp.InternalIdentityProviderImp;
 
@@ -30,18 +28,11 @@ public class IdentityProviderFactory {
     }
 
     public static IdentityProvider makeProvider(IdentityProviderConfig config) {
-        /*
-        IdentityProviderType type = config.getType();
-        String className = type.getClassName();
-        */
         IdentityProvider provider;
-
-
         try {
-            if (config instanceof LdapIdentityProviderConfig) provider = new LdapIdentityProviderServer();
-            else provider = new InternalIdentityProviderImp();
-            // todo, better
-            //provider = (IdentityProvider)Class.forName(className).newInstance();
+            if (config.type() == IdentityProviderType.LDAP) provider = new LdapIdentityProviderServer();
+            else if (config.type() == IdentityProviderType.INTERNAL) provider = new InternalIdentityProviderImp();
+            else throw new RuntimeException("no provider type specified.");
             provider.initialize(config);
             return provider;
         } catch (Exception e) {
