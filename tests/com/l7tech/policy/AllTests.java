@@ -33,6 +33,7 @@ public class AllTests extends TestCase {
         suite.addTest(new TestSuite(CompositeAssertionTest.class));
         suite.addTest(new TestSuite(AssertionTraversalTest.class));
         suite.addTest(new TestSuite(DefaultPolicyPathBuilderTest.class));
+        suite.addTest(new TestSuite(PolicyCloneTest.class));
         return suite;
     }
 
