@@ -102,7 +102,7 @@ public class HibernatePersistenceContext extends PersistenceContext {
     public synchronized Session getSession() throws SQLException, HibernateException {
         Connection conn = null;
         ResultSet rs = null;
-        PreparedStatement pingStmt = null;
+        Statement pingStmt = null;
         SQLException sqlException = null;
         HibernateException hibernateException = null;
 
@@ -112,15 +112,15 @@ public class HibernatePersistenceContext extends PersistenceContext {
                     if ( _session == null || !_session.isOpen() || !_session.isConnected() )
                         _session = _manager.makeSession();
                     conn = _session.connection();
-                    pingStmt = conn.prepareStatement( PINGSQL );
-                    rs = pingStmt.executeQuery();
+                    pingStmt = conn.createStatement();
+                    rs = pingStmt.executeQuery( PINGSQL );
                     return _session;
                 } catch ( SQLException se ) {
-                    LogManager.getInstance().getSystemLogger().log( Level.WARNING, "Try #" + i+1 + " caught SQLException", se );
+                    LogManager.getInstance().getSystemLogger().log( Level.WARNING, "Try #" + (i+1) + " caught SQLException", se );
                     _session = null;
                     sqlException = se;
                 } catch ( HibernateException he ) {
-                    LogManager.getInstance().getSystemLogger().log( Level.WARNING, "Try #" + i+1 + " caught HibernateException", he );
+                    LogManager.getInstance().getSystemLogger().log( Level.WARNING, "Try #" + (i+1) + " caught HibernateException", he );
                     _session = null;
                     hibernateException = he;
                 }
