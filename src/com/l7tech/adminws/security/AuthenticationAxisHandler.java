@@ -158,6 +158,7 @@ public class AuthenticationAxisHandler extends org.apache.axis.handlers.BasicHan
                 logger.log(Level.SEVERE, "authentication failed for " + login, e);
                 return null;
             }
+            return creds.getUser();
 
         } finally {
             try {
