@@ -134,8 +134,12 @@ public class StubDataStore {
             decoder = new XMLDecoder(
                     new BufferedInputStream(
                             new FileInputStream(path + "/data.xml")));
-            while (true)
+            while (true) {
                 populate(decoder.readObject());
+                this.nextObjectId();
+
+            }
+
         } catch (ArrayIndexOutOfBoundsException e) {
             // swallow, means no more objects, this exceptional
             // flow control brought to you by JDK!
@@ -174,7 +178,6 @@ public class StubDataStore {
                 encoder.close();
         }
     }
-
 
 
     private EntityHeader fromUser(User u) {
