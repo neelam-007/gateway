@@ -10,6 +10,10 @@ import com.l7tech.identity.User;
  * User: flascelles
  * Date: May 13, 2003
  *
+ * Console-side implemenation of the internal identity provider object giving access
+ * to both the user manager and the group manager.
+ * Authentication in not implemented in this version since this is intended to be used on the console only.
+ * 
  */
 public class InternalIdentityProviderClient implements com.l7tech.identity.IdentityProvider {
     public void initialize(IdentityProviderConfig config) {
