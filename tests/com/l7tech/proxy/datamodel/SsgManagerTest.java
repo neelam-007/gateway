@@ -193,6 +193,8 @@ public class SsgManagerTest extends TestCase {
         assertTrue(sm.getSsgList().size() == 0);
     }
 
+    Flurfle zoink = new Blaf();
+
     public static void main(String[] args) {
         junit.textui.TestRunner.run(suite());
     }
