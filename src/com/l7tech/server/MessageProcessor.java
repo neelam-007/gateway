@@ -37,13 +37,13 @@ public class MessageProcessor {
 
             AssertionStatus status;
             if ( service == null ) {
-                _log.info( "Service not found" );
+                logger.info( "Service not found" );
                 status = AssertionStatus.SERVICE_NOT_FOUND;
             } else if ( service.isDisabled() ) {
-                _log.warning( "Service disabled" );
+                logger.warning( "Service disabled" );
                 status = AssertionStatus.SERVICE_DISABLED;
             } else {
-                _log.finer( "Resolved service #" + service.getOid() );
+                logger.finer( "Resolved service #" + service.getOid() );
                 request.setParameter( Request.PARAM_SERVICE, service );
 
                 // check if requestor provided a version number for published service
@@ -58,14 +58,14 @@ public class MessageProcessor {
                         throw new PolicyAssertionException("Wrong policy version " + requestorVersion);
                     }
                 } else {
-                    _log.info("Requestor did not provide policy id.");
+                    logger.info("Requestor did not provide policy id.");
                 }
 
                 // If an xml-enc session id is provided, make sure it's still valid
                 // (because we can't wait for the XmlResponseSecurity to fail because it happens after routing)
                 if (checkForInvalidXmlSessIdRef(request)) {
                     response.setParameter( Response.PARAM_HTTP_SESSION_STATUS, "invalid" );
-                    _log.info("Request refered to a session id that is not valid. Policy will not be executed.");
+                    logger.info("Request refered to a session id that is not valid. Policy will not be executed.");
                     return AssertionStatus.FALSIFIED;
                 }
 
@@ -77,20 +77,20 @@ public class MessageProcessor {
                 if ( status == AssertionStatus.NONE ) {
                     service.authorizedRequest();
                     if ( request.isRouted() ) {
-                        _log.info( "Request was routed with status " + " " + status.getMessage() + "(" + status.getNumeric() + ")" );
+                        logger.info( "Request was routed with status " + " " + status.getMessage() + "(" + status.getNumeric() + ")" );
                         service.completedRequest();
                     } else {
-                        _log.warning( "Request was not routed!");
+                        logger.warning( "Request was not routed!");
                         status = AssertionStatus.FALSIFIED;
                     }
                 } else {
-                    _log.warning( status.getMessage() );
+                    logger.warning( status.getMessage() );
                 }
             }
 
             return status;
         } catch ( ServiceResolutionException sre ) {
-            _log.log(Level.SEVERE, sre.getMessage(), sre);
+            logger.log(Level.SEVERE, sre.getMessage(), sre);
             return AssertionStatus.SERVER_ERROR;
         }
     }
@@ -143,11 +143,11 @@ public class MessageProcessor {
             xmlsession = SessionManager.getInstance().getSession(Long.parseLong(sessionIDHeaderValue));
         } catch (SessionNotFoundException e) {
             String msg = "Exception finding session with id=" + sessionIDHeaderValue;
-            _log.log(Level.WARNING, msg, e);
+            logger.log(Level.WARNING, msg, e);
             return true;
         } catch (NumberFormatException e) {
             String msg = "Session id is not long value : " + sessionIDHeaderValue;
-            _log.log(Level.WARNING, msg, e);
+            logger.log(Level.WARNING, msg, e);
             return true;
         }
 
@@ -162,6 +162,5 @@ public class MessageProcessor {
     private static ThreadLocal _currentResponse = new ThreadLocal();
 
     private ServiceManager _serviceManager;
-    private Logger _log = LogManager.getInstance().getSystemLogger();
-    //private transient Logger _log = Logger.getLogger( this.getClass().getName() );
+    private Logger logger = LogManager.getInstance().getSystemLogger();
 }
