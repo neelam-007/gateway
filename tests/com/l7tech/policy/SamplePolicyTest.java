@@ -8,6 +8,7 @@ package com.l7tech.policy;
 
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.User;
+import com.l7tech.identity.Group;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
@@ -17,6 +18,7 @@ import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -35,6 +37,7 @@ public class SamplePolicyTest extends TestCase {
     IdentityProvider identityProvider = null;
     User userAlice = null;
     User userBob = null;
+    Group groupStaff = null;
 
     public SamplePolicyTest(String name) {
         super(name);
@@ -49,10 +52,9 @@ public class SamplePolicyTest extends TestCase {
     }
 
     public void testSimple() {
-        // Simplest possible policy.  No special requirements at all
-        Assertion simplestPolicy = new RoutingAssertion("http://backend.example.com/soap");
+        // Simplest possible policy.  No special requirements at all; unconditionally route to default ProtServ.
+        Assertion simplestPolicy = new RoutingAssertion();
     }
-
 
     public void testBasicAuth() {
         // Require HTTP Basic auth.
@@ -64,12 +66,12 @@ public class SamplePolicyTest extends TestCase {
             new SpecificUser(identityProvider, userAlice),
 
             // Route:
-            new RoutingAssertion("http://backend.example.com/soap")
+            new RoutingAssertion()
         }));
     }
 
     public void testDigestAuth() {
-        // Require HTTP Digest auth.  Allow Bob in.
+        // Require HTTP Digest auth.  Allow Alice in, but nobody else.
         Assertion basicAuthPolicy = new IfThenAssertion(Arrays.asList(new Assertion[] {
             // Identify:
             new HttpDigest(),
@@ -78,7 +80,7 @@ public class SamplePolicyTest extends TestCase {
             new SpecificUser(identityProvider, userAlice),
 
             // Route:
-            new RoutingAssertion("http://backend.example.com/soap")
+            new RoutingAssertion()
         }));
     }
 
@@ -98,24 +100,40 @@ public class SamplePolicyTest extends TestCase {
             })),
 
             // Route:
-            new RoutingAssertion("http://backend.example.com/soap")
+            new RoutingAssertion() // will use default URL for the PublishedService using this policy
+        }));
+    }
+
+    public void testDigestGroup() {
+        // Require HTTP Digest auth with group.  All staff get to use this service.
+        Assertion basicAuthPolicy = new IfThenAssertion(Arrays.asList(new Assertion[] {
+            // Identify:
+            new HttpDigest(),
+
+            // Authorize:
+            new MemberOfGroup(identityProvider, groupStaff),
+
+            // Route:
+            new RoutingAssertion()
         }));
     }
 
     public void testPerUserRouting() {
         // Require HTTP Digest auth.  Alice goes to service1, Bob goes to service2
-        Assertion perUserRoutingPolicy = new AllAssertion(Arrays.asList(new Assertion[] {
+        Assertion perUserRoutingPolicy = new IfThenAssertion(Arrays.asList(new Assertion[] {
             // Identify:
             new HttpBasic(),
 
             // Route:
-            new IfThenAssertion(Arrays.asList(new Assertion[] {
-                new SpecificUser(identityProvider, userAlice),
-                new RoutingAssertion("http://backend.example.com/service1/soap")
-            })),
-            new IfThenAssertion(Arrays.asList(new Assertion[] {
-                new SpecificUser(identityProvider, userAlice),
-                new RoutingAssertion("http://backend.example.com/service2/soap")
+            new ExactlyOneAssertion(Arrays.asList(new Assertion[] {
+                new IfThenAssertion(Arrays.asList(new Assertion[] {
+                    new SpecificUser(identityProvider, userAlice),
+                    new RoutingAssertion("http://backend.example.com/service1/soap")
+                })),
+                new IfThenAssertion(Arrays.asList(new Assertion[] {
+                    new SpecificUser(identityProvider, userBob),
+                    new RoutingAssertion("http://backend.example.com/service2/soap")
+                })),
             })),
         }));
     }
