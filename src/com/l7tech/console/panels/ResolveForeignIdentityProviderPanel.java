@@ -7,11 +7,16 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.policy.exporter.IdProviderReference;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Map;
+import java.util.Iterator;
+import java.util.Set;
+import java.io.ByteArrayInputStream;
 
 /**
  * This wizard panel allows an administrator to resolve a missing identity provider
@@ -38,7 +43,7 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
     }
 
     public String getStepLabel() {
-        return "Fix missing provider " + unresolvedRef.getProviderName();
+        return "Unresolved provider " + unresolvedRef.getProviderName();
     }
 
     public boolean canFinish() {
@@ -98,6 +103,29 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
         });
 
         populateIdProviders();
+        populatePropsTable();
+    }
+
+    private void populatePropsTable() {
+        DefaultTableModel model = (DefaultTableModel)providerPropsTable.getModel();
+        model.addColumn("Name");
+        model.addColumn("Value");
+        String szedProps = unresolvedRef.getIdProviderConfProps();
+        if (szedProps != null) {
+            ByteArrayInputStream in = new ByteArrayInputStream(szedProps.getBytes());
+            java.beans.XMLDecoder decoder = new java.beans.XMLDecoder(in);
+            Map props = (Map)decoder.readObject();
+            Set keys = props.keySet();
+            for (Iterator iterator = keys.iterator(); iterator.hasNext();) {
+                Object o = (Object) iterator.next();
+                if (o instanceof String) {
+                    Object val = props.get(o);
+                    if (val instanceof String) {
+                        model.addRow(new Object[] {o, val});
+                    }
+                }
+            }
+        }
     }
 
     private void populateIdProviders() {
@@ -145,6 +173,7 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
     private JRadioButton removeRadio;
     private JRadioButton ignoreRadio;
     private JComboBox providerSelector;
+    private JTable providerPropsTable;
     private ButtonGroup actionRadios;
 
     private IdProviderReference unresolvedRef;
@@ -170,7 +199,7 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
         _1.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(3, 1, new Insets(10, 10, 10, 10), -1, -1));
         final JPanel _2;
         _2 = new JPanel();
-        _2.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 2, new Insets(5, 5, 5, 5), -1, -1));
+        _2.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(3, 2, new Insets(5, 5, 5, 5), -1, -1));
         _1.add(_2, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 3, 3, 3, null, null, null));
         _2.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Missing Identity Provider Details"));
         final JLabel _3;
@@ -193,44 +222,53 @@ public class ResolveForeignIdentityProviderPanel extends WizardStepPanel {
         _6.setEditable(false);
         _6.setText("blah provider type");
         _2.add(_6, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
-        final JPanel _7;
-        _7 = new JPanel();
-        _7.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(4, 2, new Insets(5, 5, 5, 5), -1, -1));
-        _1.add(_7, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 0, 3, 3, 3, null, null, null));
-        _7.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Action"));
-        final JRadioButton _8;
-        _8 = new JRadioButton();
-        manualResolvRadio = _8;
-        _8.setText("Change assertions to use this identity provider:");
-        _7.add(_8, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 3, 0, null, null, null));
-        final JRadioButton _9;
-        _9 = new JRadioButton();
-        removeRadio = _9;
-        _9.setText("Remove assertions that refer to the missing identity provider");
-        _9.setLabel("Remove assertions that refer to the missing identity provider");
-        _7.add(_9, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 3, 0, null, null, null));
+        final JScrollPane _7;
+        _7 = new JScrollPane();
+        _2.add(_7, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 2, 0, 3, 7, 7, null, null, null));
+        final JTable _8;
+        _8 = new JTable();
+        providerPropsTable = _8;
+        _8.setPreferredScrollableViewportSize(new Dimension(450, 150));
+        _8.setAutoResizeMode(4);
+        _7.setViewportView(_8);
+        final JPanel _9;
+        _9 = new JPanel();
+        _9.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(4, 2, new Insets(5, 5, 5, 5), -1, -1));
+        _1.add(_9, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 0, 3, 3, 3, null, null, null));
+        _9.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "Action"));
         final JRadioButton _10;
         _10 = new JRadioButton();
-        ignoreRadio = _10;
-        _10.setText("Import erroneous assertions as-is");
-        _10.setLabel("Import erroneous assertions as-is");
-        _10.setRequestFocusEnabled(false);
-        _10.setFocusPainted(false);
-        _7.add(_10, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 8, 0, 3, 0, null, null, null));
-        final JComboBox _11;
-        _11 = new JComboBox();
-        providerSelector = _11;
-        _11.setToolTipText("Existing local identity provider");
-        _7.add(_11, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 8, 1, 2, 0, null, null, null));
-        final JButton _12;
-        _12 = new JButton();
-        _12.setText("Create new Identity Provider");
-        _12.setToolTipText("Create a new identity provider so you can then associate those assertions with");
-        _7.add(_12, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, 8, 0, 1, 0, null, null, null));
-        final JLabel _13;
-        _13 = new JLabel();
-        _13.setText("Policy contains assertions that refer to an unknown identity provider.");
-        _1.add(_13, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 2, 0, 6, null, null, null));
+        manualResolvRadio = _10;
+        _10.setText("Change assertions to use this identity provider:");
+        _9.add(_10, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 3, 0, null, null, null));
+        final JRadioButton _11;
+        _11 = new JRadioButton();
+        removeRadio = _11;
+        _11.setText("Remove assertions that refer to the missing identity provider");
+        _11.setLabel("Remove assertions that refer to the missing identity provider");
+        _9.add(_11, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 3, 0, null, null, null));
+        final JRadioButton _12;
+        _12 = new JRadioButton();
+        ignoreRadio = _12;
+        _12.setText("Import erroneous assertions as-is");
+        _12.setRequestFocusEnabled(false);
+        _12.setLabel("Import erroneous assertions as-is");
+        _12.setFocusPainted(false);
+        _9.add(_12, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 8, 0, 3, 0, null, null, null));
+        final JComboBox _13;
+        _13 = new JComboBox();
+        providerSelector = _13;
+        _13.setToolTipText("Existing local identity provider");
+        _9.add(_13, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 8, 1, 2, 0, null, null, null));
+        final JButton _14;
+        _14 = new JButton();
+        _14.setText("Create new Identity Provider");
+        _14.setToolTipText("Create a new identity provider so you can then associate those assertions with");
+        _9.add(_14, new com.intellij.uiDesigner.core.GridConstraints(3, 0, 1, 1, 8, 0, 1, 0, null, null, null));
+        final JLabel _15;
+        _15 = new JLabel();
+        _15.setText("Policy contains assertions that refer to an unknown identity provider.");
+        _1.add(_15, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 2, 0, 6, null, null, null));
     }
 
 }
