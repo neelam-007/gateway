@@ -1,7 +1,7 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.gui.widgets.WrappingLabel;
+import com.l7tech.common.gui.widgets.ContextMenuTextField;
 import com.l7tech.console.event.ConnectionEvent;
 import com.l7tech.console.event.ConnectionListener;
 import com.l7tech.console.tree.ServiceNode;
@@ -16,8 +16,8 @@ import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The <code>PublishServiceAction</code> action invokes the pubish
@@ -95,9 +95,16 @@ public class ViewServiceWsdlAction extends BaseAction implements ConnectionListe
             JPanel wsdlPanel = new JPanel();
             wsdlPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
             panel.add(wsdlPanel, BorderLayout.NORTH);
-            final JLabel l = new JLabel("Wsdl Url: "+ps.getWsdlUrl());
+
+            final JLabel l = new JLabel("Wsdl Url: ");
             l.setFont(l.getFont().deriveFont(Font.BOLD));
             wsdlPanel.add(l);
+
+            final JTextField tf = new ContextMenuTextField(ps.getWsdlUrl());
+            tf.setBorder(BorderFactory.createEmptyBorder());
+            tf.setEditable(false);
+            wsdlPanel.add(tf);
+
             wsdlPanel.setBorder(BorderFactory.createEtchedBorder());
             panel.add(wsdlTextArea, BorderLayout.CENTER);
 
