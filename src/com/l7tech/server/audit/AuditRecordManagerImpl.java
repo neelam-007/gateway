@@ -35,7 +35,7 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
     private EventManager eventManager;
 
     public AuditRecord findByPrimaryKey(long oid) throws FindException {
-        Entity obj = findEntity(oid);
+        Object obj = findByPrimaryKey(AuditRecord.class, oid);
         if (obj == null) return null;
         if (obj instanceof AuditRecord) return (AuditRecord)obj;
         throw new FindException("Expected to find '" + obj.getClass().getName() + "' but found '" + obj.getClass().getName() + "'");
