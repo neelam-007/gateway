@@ -9,9 +9,11 @@ import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.identity.*;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrarStub;
+import com.l7tech.policy.validator.DefaultPolicyValidator;
 import com.l7tech.service.JmsAdminStub;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.service.ServiceAdminStub;
+import com.l7tech.service.ServiceManagerStub;
 import com.l7tech.cluster.ClusterStatusAdmin;
 import com.l7tech.cluster.ClusterStatusAdminStub;
 
@@ -27,6 +29,8 @@ public class RegistryStub extends Registry {
      * default constructor
      */
     public RegistryStub() {
+        serviceAdmin.setPolicyValidator(new DefaultPolicyValidator());
+        serviceAdmin.setServiceManager(new ServiceManagerStub());
     }
 
     public IdentityAdmin getIdentityAdmin() {
@@ -45,7 +49,7 @@ public class RegistryStub extends Registry {
      * @return the service managerr
      */
     public ServiceAdmin getServiceManager() {
-        return serviceManager;
+        return serviceAdmin;
     }
 
     /**
@@ -81,7 +85,7 @@ public class RegistryStub extends Registry {
     StubDataStore dataStore = StubDataStore.defaultStore();
 
     private IdentityAdmin identityAdmin = new IdentityAdminStub();
-    private ServiceAdmin serviceManager = new ServiceAdminStub();
+    private ServiceAdminStub serviceAdmin = new ServiceAdminStub();
     private JmsAdmin jmsAdmin = new JmsAdminStub();
     private CustomAssertionsRegistrar customAssertionsRegistrar = new CustomAssertionsRegistrarStub();
     private AuditAdmin auditAdmin = new AuditAdminStub();
