@@ -43,11 +43,9 @@ public class JmsSoapRequest extends SoapRequest {
             final BytesMessage breq = (BytesMessage)request;
 
             return new BytesMessageInputStream( breq );
-            //return new InputStreamReader( is, JmsUtil.DEFAULT_ENCODING );     // todo sane encoding
         } else {
             _logger.warning( "Can't get a reader for a non-text message! Returning a reader on an empty String!" );
             return new ByteArrayInputStream( new String("").getBytes() );
-            //return new StringReader("");
         }
     }
 
