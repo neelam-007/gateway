@@ -65,18 +65,18 @@ public class Wizard extends JDialog {
     }
 
     /**
-     * access the informatin that the wizard collects
-     * @return the wizard information, typically user
+     * access the information that the wizard collected
+     * @return the wizard information object, typically user
      * entered data
      */
-    public final Object getCollectedInformation() {
+    public final Object getWizardInput() {
         return wizardInput;
     }
 
     /**
      * instruct wizard to collect the information
      */
-    public final void collect() {
+    protected final void collect() {
         Wizard.Iterator it = new Wizard.Iterator(startPanel);
         while (it.hasNext()) {
             WizardStepPanel p = it.next();

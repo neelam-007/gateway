@@ -115,7 +115,7 @@ public class CreateServiceWsdlAction extends SecureAction {
             PublishedService service = new PublishedService();
             try {
                 Wizard w = (Wizard)we.getSource();
-                Definition def = (Definition)w.getCollectedInformation();
+                Definition def = (Definition)w.getWizardInput();
 
                 service.setDisabled(true);
                 WSDLFactory fac = WSDLFactory.newInstance();

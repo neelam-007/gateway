@@ -281,7 +281,7 @@ public class UserCertPanel extends JPanel {
             // update the provider
             Wizard w = (Wizard) we.getSource();
 
-            Object o = w.getCollectedInformation();
+            Object o = w.getWizardInput();
 
             if (o instanceof TrustedCert) {
 

@@ -32,7 +32,7 @@ public class AddSamlAuthenticationStatementAssertionAdvice implements Advice {
         if (assertions == null || assertions.length != 1 || !(assertions[0] instanceof SamlAuthenticationStatement)) {
             throw new IllegalArgumentException();
         }
-        SamlAuthenticationStatement subject = (SamlAuthenticationStatement)assertions[0];
+        SamlAuthenticationStatement assertion = (SamlAuthenticationStatement)assertions[0];
         JFrame f = TopComponents.getInstance().getMainWindow();
 
         IntroductionWizardStepPanel p =
@@ -42,7 +42,7 @@ public class AddSamlAuthenticationStatementAssertionAdvice implements Advice {
                 new SubjectConfirmationNameIdentifierWizardStepPanel(
                 new ConditionsWizardStepPanel(null)))));
 
-        Wizard w = new AuthenticationStatementWizard(f, p);
+        final Wizard w = new AuthenticationStatementWizard(assertion, f, p);
         w.addWizardListener(new WizardAdapter() {
             public void wizardFinished(WizardEvent e) {
                 proceed = true;

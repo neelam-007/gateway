@@ -1,6 +1,7 @@
 package com.l7tech.console.panels.saml;
 
 import com.l7tech.console.panels.*;
+import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 
 import javax.swing.*;
 import java.awt.event.WindowAdapter;
@@ -21,7 +22,8 @@ public class SamlAuthenticationWizardTest extends JFrame {
               new SubjectConfirmationWizardStepPanel(
                 new SubjectConfirmationNameIdentifierWizardStepPanel(
                 new ConditionsWizardStepPanel(null)))));
-        Wizard w = new AuthenticationStatementWizard(frame, p);
+        SamlAuthenticationStatement assertion = new SamlAuthenticationStatement();
+        Wizard w = new AuthenticationStatementWizard(assertion, frame, p);
         w.pack();
         w.show();
         w.addWindowListener(

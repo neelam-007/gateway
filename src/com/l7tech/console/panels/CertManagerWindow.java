@@ -272,7 +272,7 @@ public class CertManagerWindow extends JDialog {
             // update the provider
             Wizard w = (Wizard)we.getSource();
 
-            Object o = w.getCollectedInformation();
+            Object o = w.getWizardInput();
 
             if (o instanceof TrustedCert) {
 

@@ -98,7 +98,7 @@ public class NewFederatedIdentityProviderAction extends NewProviderAction {
 
             // update the provider
             Wizard w = (Wizard)we.getSource();
-            final IdentityProviderConfig iProvider = (IdentityProviderConfig)w.getCollectedInformation();
+            final IdentityProviderConfig iProvider = (IdentityProviderConfig)w.getWizardInput();
 
             if (iProvider != null) {
 
