@@ -84,6 +84,11 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
             throw new SaveException("Record exists, service oid= " + service.getOid());
         }
         services.put(key, service);
+        try {
+            serviceCache.cache(service);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
         return oid;
     }
 
@@ -117,8 +122,14 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
         if (services.get(key) == null) {
             throw new UpdateException("Record missing, service oid= " + service.getOid());
         }
-        services.remove(key);
+        PublishedService oldService = (PublishedService)services.remove(key);
         services.put(key, service);
+        try {
+            serviceCache.removeFromCache(oldService);
+            serviceCache.cache(service);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 
     }
 
@@ -131,6 +142,11 @@ public class ServiceManagerStub extends ApplicationObjectSupport implements Serv
     public void delete(PublishedService service) throws DeleteException {
         if (services.remove(new Long(service.getOid())) == null) {
             throw new DeleteException("Could not find service oid= " + service.getOid());
+        }
+        try {
+            serviceCache.removeFromCache(service);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 

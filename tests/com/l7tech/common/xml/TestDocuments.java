@@ -28,6 +28,7 @@ public final class TestDocuments {
     public static final String TEST_SOAP_XML = DIR + "GetLastTradePriceSoapRequest.xml";
     public static final String WSDL2PORTS = DIR + "xmltoday-delayed-quotes-2ports.wsdl";
     public static final String WSDL = DIR + "StockQuoteService.wsdl";
+    public static final String WSDL_STOCK_QUOTE = DIR + "StockQuoteService.wsdl";
     public static final String WSDL_DOC_LITERAL = DIR + "GeoServe.wsdl";
     public static final String WSDL_DOC_LITERAL2 = DIR + "QuoteService.wsdl";
     public static final String WSDL_DOC_LITERAL3 = DIR + "DeadOrAlive.wsdl";
@@ -81,7 +82,7 @@ public final class TestDocuments {
     }
 
     public static URL getTestDocumentURL(String resource)
-      throws IOException, SAXException {
+      throws IOException {
         if (resource == null) {
             throw new IllegalArgumentException();
         }

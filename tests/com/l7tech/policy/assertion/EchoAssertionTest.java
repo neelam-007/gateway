@@ -1,5 +1,6 @@
 package com.l7tech.policy.assertion;
 
+import com.ibm.xml.dsig.transform.W3CCanonicalizer2WC;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.SoapMessageGenerator;
@@ -9,23 +10,21 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.server.MockServletApi;
 import com.l7tech.server.SoapMessageProcessingServlet;
-import com.l7tech.service.PublishedService;
 import com.l7tech.service.ResolutionParameterTooLongException;
 import com.l7tech.service.ServiceAdmin;
-import com.ibm.xml.dsig.transform.W3CCanonicalizer2WC;
+import com.l7tech.service.ServicesHelper;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.springframework.context.ApplicationContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.xml.sax.SAXException;
 
 import javax.xml.soap.SOAPMessage;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
-import java.io.ByteArrayInputStream;
 import java.util.Arrays;
 
 /**
@@ -34,8 +33,8 @@ import java.util.Arrays;
  */
 public class EchoAssertionTest extends TestCase {
     private static MockServletApi servletApi;
-    private static ServiceDescriptor[] serviceDescriptors;
     private SoapMessageProcessingServlet messageProcessingServlet;
+    private static ServicesHelper servicesHelper;
 
     /**
      * test <code>EchoAssertionTest</code> constructor
@@ -51,7 +50,8 @@ public class EchoAssertionTest extends TestCase {
     public static Test suite() throws Exception {
         TestSuite suite = new TestSuite(EchoAssertionTest.class);
         servletApi = MockServletApi.defaultMessageProcessingServletApi("com/l7tech/common/testApplicationContext.xml");
-        initializeServicesAndPolicies(servletApi.getApplicationContext());
+        servicesHelper = new ServicesHelper((ServiceAdmin)servletApi.getApplicationContext().getBean("serviceAdmin"));
+        initializeServicesAndPolicies();
         return suite;
     }
 
@@ -68,9 +68,10 @@ public class EchoAssertionTest extends TestCase {
      * @throws Exception
      */
     public void testRequestResponseEqual() throws Exception {
+        com.l7tech.service.ServicesHelper.ServiceDescriptor[] serviceDescriptors = servicesHelper.getAlllDescriptors();
         for (int i = 0; i < serviceDescriptors.length; i++) {
-            ServiceDescriptor serviceDescriptor = serviceDescriptors[i];
-            Wsdl wsdl = Wsdl.newInstance(null, new StringReader(serviceDescriptor.wsdlXml));
+            ServicesHelper.ServiceDescriptor serviceDescriptor = serviceDescriptors[i];
+            Wsdl wsdl = Wsdl.newInstance(null, new StringReader(serviceDescriptor.getWsdlXml()));
             wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
             SoapMessageGenerator sm = new SoapMessageGenerator();
             SoapMessageGenerator.Message[] requests = sm.generateRequests(wsdl);
@@ -104,52 +105,13 @@ public class EchoAssertionTest extends TestCase {
         }
     }
 
-    private static void initializeServicesAndPolicies(ApplicationContext context)
+    private static void initializeServicesAndPolicies()
       throws IOException, FindException, DeleteException, UpdateException,
       SaveException, VersionException, ResolutionParameterTooLongException, SAXException {
-
-        ServiceAdmin serviceAdmin = (ServiceAdmin)context.getBean("serviceAdmin");
-        EntityHeader[] headers = serviceAdmin.findAllPublishedServices();
-        for (int i = 0; i < headers.length; i++) {
-            EntityHeader header = headers[i];
-            serviceAdmin.deletePublishedService(header.getStrId());
-        }
-
-        serviceDescriptors = new ServiceDescriptor[]{
-                new ServiceDescriptor(TestDocuments.WSDL_DOC_LITERAL,
-                  TestDocuments.getTestDocumentAsXml(TestDocuments.WSDL_DOC_LITERAL),
-                  getPolicy()),
-                new ServiceDescriptor(TestDocuments.WSDL_DOC_LITERAL2,
-                  TestDocuments.getTestDocumentAsXml(TestDocuments.WSDL_DOC_LITERAL2),
-                  getPolicy()),
-                new ServiceDescriptor(TestDocuments.WSDL_DOC_LITERAL3,
-                  TestDocuments.getTestDocumentAsXml(TestDocuments.WSDL_DOC_LITERAL3),
-                  getPolicy())
-              };
-
-        for (int i = 0; i < serviceDescriptors.length; i++) {
-            final ServiceDescriptor descriptor = serviceDescriptors[i];
-            PublishedService ps = new PublishedService() {
-                public synchronized Assertion rootAssertion() throws IOException {
-                    return descriptor.policy;
-                }
-            };
-            ps.setName(descriptor.name);
-            ps.setWsdlXml(descriptor.wsdlXml);
-            serviceAdmin.savePublishedService(ps);
-        }
-    }
-
-    private static class ServiceDescriptor {
-        final String name;
-        final String wsdlXml;
-        final Assertion policy;
-
-        public ServiceDescriptor(String name, String wsdlXml, Assertion policy) {
-            this.name = name;
-            this.policy = policy;
-            this.wsdlXml = wsdlXml;
-        }
+        servicesHelper.deleteAllServices();
+        servicesHelper.publish(TestDocuments.WSDL_DOC_LITERAL, TestDocuments.WSDL_DOC_LITERAL, getPolicy());
+        servicesHelper.publish(TestDocuments.WSDL_DOC_LITERAL2, TestDocuments.WSDL_DOC_LITERAL2, getPolicy());
+        servicesHelper.publish(TestDocuments.WSDL_DOC_LITERAL3, TestDocuments.WSDL_DOC_LITERAL3, getPolicy());
     }
 
     private static Assertion getPolicy() {
