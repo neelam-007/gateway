@@ -283,7 +283,7 @@ public class JmsReceiver implements ServerComponentLifecycle {
                                 Thread.sleep(OOPS_RETRY);
                             } catch ( InterruptedException e1 ) {
                                 _logger.info( "Interrupted during retry interval" );
-                                _thread.interrupt();
+                                Thread.currentThread().interrupt();
                             }
                         } else {
                             _logger.warning( "Too many (" + MAXIMUM_OOPSES + ") errors - listener for JMS endpoint " + _inboundRequestEndpoint + " will try again in " + OOPS_SLEEP + "ms" );
@@ -291,7 +291,7 @@ public class JmsReceiver implements ServerComponentLifecycle {
                                 Thread.sleep(OOPS_SLEEP);
                             } catch ( InterruptedException e1 ) {
                                 _logger.info( "Interrupted during sleep interval" );
-                                _thread.interrupt();
+                                Thread.currentThread().interrupt();
                             }
                         }
                     }
