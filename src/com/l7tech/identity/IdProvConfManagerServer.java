@@ -25,6 +25,8 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
         // construct the internal id provider
         internalProvider = new InternalIdentityProviderServer();
         IdentityProviderConfig cfg = new IdentityProviderConfig(IdentityProviderType.INTERNAL);
+        cfg.setName("Internal Identity Provider");
+        cfg.setDescription("Internal Identity Provider");
         cfg.setOid(INTERNALPROVIDER_SPECIAL_OID);
         internalProvider.initialize(cfg);
     }
