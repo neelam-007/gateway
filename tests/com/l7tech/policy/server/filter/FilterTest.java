@@ -6,26 +6,23 @@
 
 package com.l7tech.policy.server.filter;
 
+import com.l7tech.identity.User;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.RoutingAssertion;
+import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.identity.MemberOfGroup;
+import com.l7tech.policy.assertion.identity.SpecificUser;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import java.util.logging.Logger;
 import java.util.Arrays;
 import java.util.List;
-
-import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
-import com.l7tech.policy.assertion.composite.CompositeAssertion;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.policy.assertion.RoutingAssertion;
-import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.identity.MemberOfGroup;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.wsp.WspWriter;
-import com.l7tech.identity.User;
-import com.l7tech.service.PublishedService;
+import java.util.logging.Logger;
 
 /**
  * Test of some policy filter scenarios.
@@ -73,6 +70,4 @@ public class FilterTest extends TestCase {
         assertTrue(kids.get(0) instanceof SslAssertion);
         assertTrue(kids.get(1) instanceof HttpBasic);
     }
-
-
 }
