@@ -61,15 +61,29 @@ public class PolicyServiceTest extends TestCase {
         log.info("Request (pretty-printed): " + XmlUtil.nodeToFormattedString(request));
 
         SoapRequest soapReq = new TestSoapRequest(request);
-        if (loginCredentials != null)
+        // todo
+        // Mike, you can't do this because those credentials will simply be overwritten by
+        // the assertion that processes the signature you are creating in PolicyServiceClient.createGetPolicyRequest
+        //
+        if (loginCredentials != null) {
             soapReq.setPrincipalCredentials(loginCredentials);
+        }
         SoapResponse soapRes = new TestSoapResponse();
 
         PolicyService ps = new PolicyService(TestDocuments.getDotNetServerPrivateKey(),
                                              TestDocuments.getDotNetServerCertificate());
         PolicyService.PolicyGetter policyGetter = new PolicyService.PolicyGetter() {
-            public Assertion getPolicy(String serviceId) {
-                return policyToTest;
+            public PolicyService.ServiceInfo getPolicy(String serviceId) {
+                return new PolicyService.ServiceInfo() {
+
+                    public Assertion getPolicy() {
+                        return policyToTest;
+                    }
+
+                    public String getVersion() {
+                        return "666";
+                    }
+                };
             }
         };
 
