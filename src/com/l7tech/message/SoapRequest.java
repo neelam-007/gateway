@@ -11,12 +11,10 @@ import java.io.Reader;
 /**
  * Encapsulates a SOAP request. Not thread-safe.
  *
- * TODO, reduce binding to HTTP!
- *
  * @author alex
  * @version $Revision$
  */
-public class SoapRequest extends XmlMessageAdapter implements SoapMessage, XmlRequest {
+public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessage, XmlRequest {
     public SoapRequest( TransportMetadata metadata ) throws IOException {
         super( metadata );
     }
@@ -36,17 +34,9 @@ public class SoapRequest extends XmlMessageAdapter implements SoapMessage, XmlRe
                 throw new IllegalStateException( "No XML yet!" );
             else
                 parse( xml );
-
         }
 
         return _document;
-    }
-
-   private Reader getRequestReader() throws IOException {
-        if ( _transportMetadata instanceof HttpTransportMetadata ) {
-            HttpTransportMetadata htm = (HttpTransportMetadata)_transportMetadata;
-            return htm.getRequest().getReader();
-        } else throw new IllegalStateException( "I don't know how to get a Reader from a non-HTTP TransportMetadata!" );
     }
 
     public String getRequestXml() throws IOException {
@@ -91,6 +81,8 @@ public class SoapRequest extends XmlMessageAdapter implements SoapMessage, XmlRe
     public synchronized void setRouted(boolean routed) {
         _routed = routed;
     }
+
+    protected abstract Reader getRequestReader() throws IOException;
 
     protected boolean _authenticated;
     protected boolean _routed;
