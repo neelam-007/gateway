@@ -263,8 +263,8 @@ public class MultipartMessageTest extends TestCase {
         assertEquals(MESS_RUBYCID, ((PartInfo)parts.get(1)).getContentId());
     }
 
-    private final String MESS_SOAPCID = "-76394136.15558";
-    private final String MESS_RUBYCID = "-76392836.15558";
+    public final String MESS_SOAPCID = "-76394136.15558";
+    public final String MESS_RUBYCID = "-76392836.15558";
     public static final String CT = "multipart/related; type=\"text/xml\"; boundary=\"----=Part_-763936460.407197826076299\"; start=\"-76394136.15558\"";
     public static final String SOAP = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
             "<env:Envelope xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"\n" +

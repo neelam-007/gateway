@@ -154,6 +154,21 @@ public class WssRoundTripTest extends TestCase {
                                                wssDecoratorTest.getEncryptedEmptyElementTestDocument()));
     }
 
+    public void testSoapWithUnsignedAttachment() throws Exception {
+        runRoundTripTest(new NamedTestDocument("SoapWithUnsignedAttachment",
+                                               wssDecoratorTest.getSoapWithUnsignedAttachmentTestDocument()));
+    }
+
+    public void testSoapWithSignedAttachment() throws Exception {
+        runRoundTripTest(new NamedTestDocument("SoapWithSignedAttachment",
+                                               wssDecoratorTest.getSoapWithSignedAttachmentTestDocument()));
+    }
+
+    public void testSoapWithSignedEncryptedAttachment() throws Exception {
+        runRoundTripTest(new NamedTestDocument("SoapWithSignedEncryptedAttachment",
+                                               wssDecoratorTest.getSoapWithSignedEncryptedAttachmentTestDocument()));
+    }
+    
     private void runRoundTripTest(NamedTestDocument ntd) throws Exception {
         log.info("Running round-trip test on test document: " + ntd.name);
         final WssDecoratorTest.TestDocument td = ntd.td;

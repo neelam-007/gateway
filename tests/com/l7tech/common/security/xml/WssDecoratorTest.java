@@ -14,6 +14,7 @@ import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.TestDocuments;
+import com.l7tech.common.mime.MultipartMessageTest;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
@@ -494,6 +495,54 @@ public class WssDecoratorTest extends TestCase {
                                 false,
                                 new Element[0],
                                 new Element[0]);
+    }
+
+    public void testSoapWithUnsignedAttachment() throws Exception {
+        runTest(getSoapWithUnsignedAttachmentTestDocument());
+    }
+
+    public TestDocument getSoapWithUnsignedAttachmentTestDocument() throws Exception {
+        final Context c = new Context(XmlUtil.stringToDocument(MultipartMessageTest.SOAP));
+        return new TestDocument(c,
+                                TestDocuments.getEttkClientCertificate(),
+                                TestDocuments.getEttkClientPrivateKey(),
+                                TestDocuments.getDotNetServerCertificate(),
+                                TestDocuments.getDotNetServerPrivateKey(),
+                                true,
+                                new Element[0],
+                                new Element[0]);
+    }
+
+    public void testSoapWithSignedAttachment() throws Exception {
+        runTest(getSoapWithSignedAttachmentTestDocument());
+    }
+
+    public TestDocument getSoapWithSignedAttachmentTestDocument() throws Exception {
+        final Context c = new Context(XmlUtil.stringToDocument(MultipartMessageTest.SOAP));
+        return new TestDocument(c,
+                                TestDocuments.getEttkClientCertificate(),
+                                TestDocuments.getEttkClientPrivateKey(),
+                                TestDocuments.getDotNetServerCertificate(),
+                                TestDocuments.getDotNetServerPrivateKey(),
+                                true,
+                                new Element[0],
+                                new Element[] { c.body });
+    }
+
+    public void testSoapWithSignedEncryptedAttachment() throws Exception {
+        runTest(getSoapWithSignedEncryptedAttachmentTestDocument());
+    }
+
+    public TestDocument getSoapWithSignedEncryptedAttachmentTestDocument() throws Exception {
+        final Context c = new Context(XmlUtil.stringToDocument(MultipartMessageTest.SOAP));
+        return new TestDocument(c,
+                                TestDocuments.getEttkClientCertificate(),
+                                TestDocuments.getEttkClientPrivateKey(),
+                                TestDocuments.getDotNetServerCertificate(),
+                                TestDocuments.getDotNetServerPrivateKey(),
+                                true,
+                                new Element[] { c.payload },
+                                new Element[] { c.body });
     }
 
 }
