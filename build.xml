@@ -483,6 +483,7 @@
                 <include name="com/l7tech/proxy/**/*"/>
                 <exclude name="com/l7tech/common/transport/jms/*"/>
                 <include name="com/l7tech/common/**/*"/>
+                <include name="com/l7tech/logging/**/*"/>
                 <include name="com/l7tech/policy/**/*"/>
                 <exclude name="com/l7tech/policy/assertion/ext/**/*"/>
             </fileset>
