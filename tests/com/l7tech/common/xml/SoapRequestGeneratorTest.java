@@ -87,7 +87,7 @@ public class SoapRequestGeneratorTest extends TestCase {
 
         for (int i = 0; i < requests.length; i++) {
             SoapRequestGenerator.SOAPRequest request = requests[i];
-            request.getSOAPMessage().writeTo(System.out);
+            // request.getSOAPMessage().writeTo(System.out);
         }
     }
 
@@ -103,7 +103,7 @@ public class SoapRequestGeneratorTest extends TestCase {
         SoapRequestGenerator.SOAPRequest[] requests = sg.generate(WSDL);
         for (int i = 0; i < requests.length; i++) {
             SoapRequestGenerator.SOAPRequest request = requests[i];
-            request.getSOAPMessage().writeTo(System.out);
+            //request.getSOAPMessage().writeTo(System.out);
         }
 
         Collection bindings = wsdl.getBindings();

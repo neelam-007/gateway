@@ -3,8 +3,12 @@ package com.l7tech.common.xml;
 import javax.wsdl.*;
 import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.soap.SOAPOperation;
+import javax.xml.namespace.QName;
 import javax.xml.soap.*;
-import java.io.*;
+import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -131,6 +135,10 @@ public class SoapRequestGenerator {
                     javax.wsdl.extensions.soap.SOAPBody body = (javax.wsdl.extensions.soap.SOAPBody)ee;
                     String uri = body.getNamespaceURI();
                     if (uri != null) ns = uri;
+                    List encodingStyles = body.getEncodingStyles();
+                    if (!encodingStyles.isEmpty()) {
+                        envelope.setEncodingStyle(encodingStyles.get(0).toString());
+                    }
                 }
             }
         }
@@ -152,6 +160,23 @@ public class SoapRequestGenerator {
             Part part = (Part)iterator.next();
             Name partName = envelope.createName(part.getName());
             SOAPElement partElement = bodyElement.addChildElement(partName);
+            QName typeName = part.getTypeName();
+            String typeNameLocalPart = typeName.getLocalPart();
+
+            if (typeName !=null) {
+                String uri = typeName.getNamespaceURI();
+                if (uri !=null) {
+                    Iterator prefixes = envelope.getNamespacePrefixes();
+                    while(prefixes.hasNext()) {
+                        String prefix = (String)prefixes.next();
+                        String nsURI = envelope.getNamespaceURI(prefix);
+                        if (nsURI.equals(typeName.getNamespaceURI())) {
+                            typeNameLocalPart = prefix+":"+typeNameLocalPart;
+                        }
+                    }
+                }
+                partElement.addAttribute(envelope.createName("xsi:type"), typeNameLocalPart);
+            }
             if (messageInputGenerator != null) {
                 String value = messageInputGenerator.generate(partName.getLocalName(),
                                                               bindingOperation.getName(),
