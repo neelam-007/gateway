@@ -65,7 +65,7 @@ public abstract class SoapResponse extends XmlMessageAdapter implements SoapMess
             if (xml == null || xml.length() == 0) {
                 throw new NoDocumentPresentException();
             } else {
-                parse(getResponseXml());
+                parse(xml);
             }
         }
         return _document;
