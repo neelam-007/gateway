@@ -103,6 +103,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
 
             if ( respWriter != null ) respWriter.close();
             if ( respStream != null ) respStream.close();
+            if ( sreq != null ) sreq.close();
             if ( sresp != null ) sresp.close();
         }
     }
