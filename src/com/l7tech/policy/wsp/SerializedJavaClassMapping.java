@@ -30,7 +30,7 @@ class SerializedJavaClassMapping extends WspConstants.BeanTypeMapping {
         }
         try {
             Serializable se = (Serializable)object.target;
-            Element entryElement = element.getOwnerDocument().createElement(ELEMENT_NAME);
+            Element entryElement = element.getOwnerDocument().createElementNS(WspConstants.L7_POLICY_NS, ELEMENT_NAME);
             element.appendChild(entryElement);
             entryElement.appendChild(XmlUtil.createTextNode(element, objectToBase64(se)));
         } catch (IOException e) {
@@ -67,13 +67,15 @@ class SerializedJavaClassMapping extends WspConstants.BeanTypeMapping {
         }
         Text textNode = (Text)node;
         try {
-            return new TypedReference(clazz, base64ToObject(textNode.getData()), element.getNodeName());
+            try {
+                return new TypedReference(clazz, base64ToObject(textNode.getData()), element.getNodeName());
+            } catch (ClassNotFoundException e) {
+                UnknownAssertion ua = new UnknownAssertion(e,
+                                                           XmlUtil.nodeToString(element));
+                return new TypedReference(UnknownAssertion.class, ua, element.getNodeName());
+            }
         } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (ClassNotFoundException e) {
-            UnknownAssertion ua = new UnknownAssertion();
-            ua.setDetailMessage("Unknown assertion '" + e.getMessage() + "'");
-            return new TypedReference(UnknownAssertion.class, ua, element.getNodeName());
+            throw new InvalidPolicyStreamException(e);
         }
     }
 

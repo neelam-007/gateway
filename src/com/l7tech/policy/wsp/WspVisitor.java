@@ -34,7 +34,9 @@ interface WspVisitor {
     
     /**
      * Report a problem parsing an element in the serialized policy.  Visitor can optionally return an alternate
-     * element to use instead.
+     * element to use instead.  If a replacement element is returned, the invalidElement() implementor will have
+     * taken responsibility for ensuring that it has been properly imported into the same document as problematicElement,
+     * with the appropriate namespaces intact.
      * 
      * @param problematicElement the element that we were unable to process.  never null.
      * @param problemEncountered the exception we encountered, if any. may be null.

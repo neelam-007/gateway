@@ -11,9 +11,9 @@ import org.w3c.dom.Element;
 /**
  * Implementation of WspVisitor that aborts policy parsing whenever it encounters any error.
  */
-class WspVisitorImpl implements WspVisitor {
+class StrictWspVisitor implements WspVisitor {
     /** A WspVisitor that always throws if any problem is encountered. */
-    static final WspVisitor INSTANCE = new WspVisitorImpl();
+    static final WspVisitor INSTANCE = new StrictWspVisitor();
 
     public void unknownProperty(Element originalObject,
                                 Element problematicParameter,

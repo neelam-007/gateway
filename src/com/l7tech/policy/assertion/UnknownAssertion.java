@@ -16,6 +16,20 @@ package com.l7tech.policy.assertion;
  */
 public class UnknownAssertion extends Assertion {
     private String detailMessage;
+    private String originalXml = null;
+    private Throwable problemEncountered = null;
+
+    public UnknownAssertion() {
+    }
+
+    public UnknownAssertion(String detailMessage) {
+        this.detailMessage = detailMessage;
+    }
+
+    public UnknownAssertion(Throwable problemEncountered, String originalXml) {
+        this.detailMessage = "Unknown assertion '" + problemEncountered.getMessage() + "'";
+        this.originalXml = originalXml;
+    }
 
     /**
      * An optional detail message for this unknown assertion. It will
@@ -33,4 +47,22 @@ public class UnknownAssertion extends Assertion {
     public void setDetailMessage(String detailMessage) {
         this.detailMessage = detailMessage;
     }
+
+    public String getOriginalXml() {
+        return originalXml;
+    }
+
+    public void setOriginalXml(String originalXml) {
+        this.originalXml = originalXml;
+    }
+
+    public String toString() {
+        StringBuffer sb = new StringBuffer(super.toString());
+        if (detailMessage != null)
+            sb.append(" detailMessage=" + detailMessage);
+        if (originalXml != null)
+            sb.append(" originalXml=" + originalXml);
+        return sb.toString();
+    }
+
 }

@@ -137,7 +137,7 @@ public class WspConstants {
          * Return the new element, without appending it to the container yet.
          */
         protected Element freezeNamed(TypedReference object, Element container) {
-            Element elm = container.getOwnerDocument().createElement(object.name);
+            Element elm = container.getOwnerDocument().createElementNS(L7_POLICY_NS, object.name);
             if (object.target == null) {
                 if (!isNullable)  // sanity check
                     throw new InvalidPolicyTreeException("Assertion has property \"" + object.name + "\" which mustn't be null yet is");
@@ -172,7 +172,11 @@ public class WspConstants {
         }
 
         public TypedReference thaw(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
-            return doThaw(source, visitor, false);
+            try {
+                return doThaw(source, visitor, false);
+            } catch (InvalidPolicyStreamException e) {
+                return doThaw(visitor.invalidElement(source, e), visitor, true);
+            }
         }
 
         private TypedReference doThaw(Element source, WspVisitor visitor, boolean recursing)
@@ -193,7 +197,7 @@ public class WspConstants {
                             "Policy contains a " + source.getNodeName() +
                             " element with more than one attribute");
                     if (recursing) throw e;
-                    return doThaw((Element)source.getOwnerDocument().importNode(visitor.invalidElement(source, e), true), visitor, true);
+                    return doThaw(visitor.invalidElement(source, e), visitor, true);
             }
         }
 
@@ -209,10 +213,11 @@ public class WspConstants {
                                                                                                        source.getNodeName() +
                                                                                                        " element that doesn't have exactly one attribute");
                 if (recursing) throw e;
-                return doThawNamed((Element)source.getOwnerDocument().importNode(visitor.invalidElement(source, e), true), visitor, true);
+                return doThawNamed(visitor.invalidElement(source, e), visitor, true);
             }
             Node attr = attrs.item(0);
             String typeName = attr.getLocalName();
+            if (typeName == null) typeName = attr.getNodeName();
             String value = attr.getNodeValue();
 
             if (typeName.endsWith("Null") && typeName.length() > 4) {
@@ -221,14 +226,14 @@ public class WspConstants {
                 if (!isNullable) {
                     final InvalidPolicyStreamException e = new InvalidPolicyStreamException("Policy contains a null " + externalName);
                     if (recursing) throw e;
-                    return doThawNamed((Element)source.getOwnerDocument().importNode(visitor.invalidElement(source, e), true), visitor, true);
+                    return doThawNamed(visitor.invalidElement(source, e), visitor, true);
                 }
             }
 
             if (!externalName.equals(typeName)) {
                 final InvalidPolicyStreamException e = new InvalidPolicyStreamException("TypeMapping for " + clazz + ": unrecognized attr " + typeName);
                 if (recursing) throw e;
-                return doThawNamed((Element)source.getOwnerDocument().importNode(visitor.invalidElement(source, e), true), visitor, true);
+                return doThawNamed(visitor.invalidElement(source, e), visitor, true);
             }
 
             if (value == null)
@@ -304,7 +309,7 @@ public class WspConstants {
         }
 
         protected Element freezeAnonymous(TypedReference object, Element container) {
-            Element elm = container.getOwnerDocument().createElement(externalName);
+            Element elm = container.getOwnerDocument().createElementNS(L7_POLICY_NS, externalName);
             if (object.target == null)
                 throw new InvalidPolicyTreeException("Null objects may not be serialized in Anonymous format");
             populateElement(elm, object);
@@ -424,7 +429,11 @@ public class WspConstants {
         }
 
         public TypedReference thaw(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
-            return doThaw(source, visitor, false);
+            try {
+                return doThaw(source, visitor, false);
+            } catch (InvalidPolicyStreamException e) {
+                return doThaw(visitor.invalidElement(source, e), visitor, true);
+            }
         }
 
         private TypedReference doThaw(Element source, WspVisitor visitor, boolean recursing) throws InvalidPolicyStreamException {
@@ -439,7 +448,7 @@ public class WspConstants {
                 if (tm == null) {
                     final InvalidPolicyStreamException e = new InvalidPolicyStreamException("Unrecognized anonymous element " + source.getNodeName());
                     if (recursing) throw e;
-                    final Element newSource = (Element)source.getOwnerDocument().importNode(visitor.invalidElement(source, e), true);
+                    final Element newSource = visitor.invalidElement(source, e);
 
                     return doThaw(newSource, visitor, true);
                 }
@@ -451,10 +460,14 @@ public class WspConstants {
                 final InvalidPolicyStreamException e = new BadAttributeCountException("Policy contains a " + source.getNodeName() +
                                   " element that doesn't have exactly one attribute");
                 if (recursing) throw e;
-                return doThaw((Element)source.getOwnerDocument().importNode(visitor.invalidElement(source, e), true), visitor, true);
+                return doThaw(visitor.invalidElement(source, e), visitor, true);
             }
             Node attr = attrs.item(0);
             String typeName = attr.getLocalName();
+            if (typeName == null)
+                typeName = attr.getNodeName();
+            if (typeName == null)
+                throw new RuntimeException("Policy contains an attribute with a null LocalName");
             boolean isNull = false;
             if (typeName.endsWith("Null") && typeName.length() > 4) {
                 typeName = typeName.substring(0, typeName.length() - 4);
@@ -608,7 +621,7 @@ public class WspConstants {
                 Object value = entry.getValue();
                 //if (value != null && !(value instanceof String))
                 //    throw new InvalidPolicyTreeException("Maps with non-string values are not currently permitted within a policy");
-                Element entryElement = newElement.getOwnerDocument().createElement("entry");
+                Element entryElement = newElement.getOwnerDocument().createElementNS(L7_POLICY_NS, "entry");
                 newElement.appendChild(entryElement);
                 typeMappingString.freeze(new TypedReference(String.class, key, "key"), entryElement);
                 typeMappingObject.freeze(new TypedReference(value.getClass(), value, "value"), entryElement);

@@ -29,14 +29,83 @@ import java.util.logging.Logger;
 public class WspTranslator21to30 implements WspTranslator {
     private static final Logger log = Logger.getLogger(WspTranslator21to30.class.getName());
 
+    private interface LookupEntry {
+        Object getKey();
+    }
+
     private abstract static class ElementTranslator { // class, rather than interface, so we can make its members private
         abstract Element translateElement(Element in) throws InvalidPolicyStreamException;
     }
 
-    private abstract static class TranslatorEntry extends ElementTranslator {
-        private String localName;
+    private abstract static class TranslatorEntry extends ElementTranslator implements LookupEntry {
+        private final String localName;
         private TranslatorEntry(String localName) {
             this.localName = localName;
+        }
+        public Object getKey() { return localName; }
+    }
+
+    private abstract static class PropertyTranslator {
+        abstract void setProperty(Object target, String propertyName, TypedReference value) throws InvalidPolicyStreamException;
+    }
+
+    private abstract static class PropertyTranslatorEntry extends PropertyTranslator implements LookupEntry {
+        protected final Class targetClass;
+        protected PropertyTranslatorEntry(Class targetClass) {
+            this.targetClass = targetClass;
+        }
+        public Object getKey() { return targetClass; }
+    }
+
+    private static final Map PROPERTY_MAP = makeMap(new PropertyTranslatorEntry[] {
+        new XpathBasedAssertionTranslator(RequestXpathAssertion.class),
+    });
+
+    private static final Map ELEMENT_MAP = makeMap(new TranslatorEntry[] {
+        new XmlSecurityTranslator("XmlRequestSecurity"),
+        new XmlSecurityTranslator("XmlResponseSecurity"),
+    });
+
+    private static Map makeMap(LookupEntry[] in) {
+        Map out = new HashMap();
+        for (int i = 0; i < in.length; i++)
+            out.put(in[i].getKey(), in[i]);
+        return out;
+    }
+
+    private static class XpathBasedAssertionTranslator extends PropertyTranslatorEntry {
+        public XpathBasedAssertionTranslator(Class targetClass) {
+            super(targetClass);
+        }
+
+        void setProperty(Object target, String propertyName, TypedReference value) throws InvalidPolicyStreamException {
+            if (!(target.getClass() == targetClass))
+                throw new InvalidPolicyStreamException("Internal error -- incorrect target class"); // can't happen
+
+            XpathBasedAssertion xba = (XpathBasedAssertion)target;
+            if ("NamespaceMap".equals(propertyName)) {
+                if (value.type != Map.class)
+                    throw new InvalidPolicyStreamException("NamespaceMap in 2.1 can only be a Map");
+                Map namespaceMap = (Map)value.target;
+                XpathExpression xe = xba.getXpathExpression();
+                if (xe == null)
+                    xba.setXpathExpression(xe = new XpathExpression(null, namespaceMap));
+                else
+                    xe.setNamespaces(namespaceMap);
+                return;
+            } else if ("Pattern".equals(propertyName)) {
+                if (value.type != String.class)
+                    throw new InvalidPolicyStreamException("Pattern in 2.1 can only be a String");
+                String pattern = (String)value.target;
+                XpathExpression xe = xba.getXpathExpression();
+                if (xe == null)
+                    xba.setXpathExpression(xe = new XpathExpression(pattern));
+                else
+                    xe.setExpression(pattern);
+                return;
+            }
+
+            throw new InvalidPolicyStreamException("Unable to translate property " + propertyName + " of " + targetClass);
         }
     }
 
@@ -111,7 +180,7 @@ public class WspTranslator21to30 implements WspTranslator {
                     Element elementXpath = XmlUtil.findOnlyOneChildElementByName(item, item.getNamespaceURI(), "ElementXpath");
                     if (preconditionXpath == null || elementXpath == null)
                         throw new InvalidPolicyStreamException("Invalid 2.1 policy - " + origName + " requires both PreconditionXpath and ElementXpath");
-                    TypedReference pxref = WspConstants.thawElement(preconditionXpath, WspVisitorImpl.INSTANCE);
+                    TypedReference pxref = WspConstants.thawElement(preconditionXpath, StrictWspVisitor.INSTANCE);
                     final AllAssertion itemAll = new AllAssertion();
                     enforcementOr.addChild(itemAll);
                     if (pxref.target != null) {
@@ -132,7 +201,7 @@ public class WspTranslator21to30 implements WspTranslator {
                             seenNamespaceMap = pxpath.getNamespaces();
                     }
 
-                    TypedReference exref = WspConstants.thawElement(elementXpath, WspVisitorImpl.INSTANCE);
+                    TypedReference exref = WspConstants.thawElement(elementXpath, StrictWspVisitor.INSTANCE);
                     if (exref.target == null)
                         throw new InvalidPolicyStreamException("Invalid 2.1 policy - " + origName + " ElementXpath may not be null");
 
@@ -192,20 +261,8 @@ public class WspTranslator21to30 implements WspTranslator {
         }
     }
 
-    private static final Map ELEMENT_MAP = makeMap(new TranslatorEntry[] {
-        new XmlSecurityTranslator("XmlRequestSecurity"),
-        new XmlSecurityTranslator("XmlResponseSecurity"),
-    });
-
-    private static Map makeMap(TranslatorEntry[] in) {
-        Map out = new HashMap();
-        for (int i = 0; i < in.length; i++)
-            out.put(in[i].localName, in[i]);
-        return out;
-    }
-
     public Document translatePolicy(Document input) throws InvalidPolicyStreamException {
-        Assertion root = WspReader.parse(input.getDocumentElement(), new WspVisitorImpl() {
+        Assertion root = WspReader.parse(input.getDocumentElement(), new PermissiveWspVisitor() {
             public void unknownProperty(Element originalObject,
                                         Element problematicParameter,
                                         Object deserializedObject,
@@ -214,6 +271,13 @@ public class WspTranslator21to30 implements WspTranslator {
                                         Exception problemEncountered)
                     throws InvalidPolicyStreamException
             {
+                log.info("Attempting to interpret invalid property " + parameterName + " of " + deserializedObject.getClass());
+                PropertyTranslatorEntry pte = (PropertyTranslatorEntry)PROPERTY_MAP.get(deserializedObject.getClass());
+                if (pte != null) {
+                    pte.setProperty(deserializedObject, parameterName, parameterValue);
+                    return;
+                }
+
                 super.unknownProperty(originalObject,
                                       problematicParameter,
                                       deserializedObject,

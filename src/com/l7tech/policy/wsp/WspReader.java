@@ -51,7 +51,7 @@ public class WspReader {
      * @throws InvalidPolicyStreamException if the stream did not contain a valid policy
      */
     public static Assertion parse(Element policyElement) throws InvalidPolicyStreamException {
-        return parse(policyElement, WspVisitorImpl.INSTANCE);
+        return parse(policyElement, StrictWspVisitor.INSTANCE);
     }
 
     static Assertion parse(Element policyElement, WspVisitor visitor) throws InvalidPolicyStreamException {
@@ -78,7 +78,7 @@ public class WspReader {
      * @throws IOException if the stream did not contain a valid policy
      */
     public static Assertion parse(InputStream wspStream) throws IOException {
-        return parse(wspStream, WspVisitorImpl.INSTANCE);
+        return parse(wspStream, StrictWspVisitor.INSTANCE);
     }
 
     static Assertion parse(InputStream wspStream, WspVisitor visitor) throws IOException {
@@ -105,7 +105,7 @@ public class WspReader {
      * @throws ArrayIndexOutOfBoundsException if the string contains no objects
      */
     public static Assertion parse(String wspXml) throws IOException {
-        return parse(wspXml, WspVisitorImpl.INSTANCE);
+        return parse(wspXml, StrictWspVisitor.INSTANCE);
     }
 
     static Assertion parse(String wspXml, WspVisitor visitor) throws IOException {

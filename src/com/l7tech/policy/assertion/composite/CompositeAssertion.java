@@ -130,7 +130,10 @@ public abstract class CompositeAssertion extends Assertion implements Cloneable,
     private List reparentedChildren(CompositeAssertion newParent, List children) {
         List newKids = new LinkedList();
         for (Iterator i = children.iterator(); i.hasNext(); ) {
-            Assertion child = (Assertion)i.next();
+            Object next = i.next();
+            if (!(next instanceof Assertion))
+                throw new ClassCastException("CompositeAssertion contains a child of non-Assertion type " + next.getClass());
+            Assertion child = (Assertion)next;
             setParent(child, newParent);
             newKids.add(child);
         }
