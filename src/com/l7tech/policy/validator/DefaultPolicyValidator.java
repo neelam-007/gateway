@@ -93,12 +93,12 @@ public class DefaultPolicyValidator extends PolicyValidator {
         }
         if (!pv.seenCredentials) {
             r.addWarning(new PolicyValidatorResult.Warning(null,
-              "No credential assertions are present in the policy. The\n" +
+              "No credential assertion is present in the policy. The" +
               " service may be exposed to public access", null));
         }
         if (pv.seenCredentials && !pv.seenAccessControl) {
-            r.addWarning(new PolicyValidatorResult.Warning(null, "Credentials are collected but are not authenticated." +
-              "\nThis service may be exposed to public access.", null));
+            r.addWarning(new PolicyValidatorResult.Warning(null, "Credentials are collected but not authenticated." +
+              " This service may be exposed to public access.", null));
         }
     }
 
@@ -144,21 +144,25 @@ public class DefaultPolicyValidator extends PolicyValidator {
             CustomAssertionHolder csh = (CustomAssertionHolder)a;
             if (Category.ACCESS_CONTROL.equals(csh.getCategory())) {
                 if (!seenCredentials) {
-                    result.addError(new PolicyValidatorResult.Error(a, "Access control specified without authentication scheme.", null));
+                    result.addError(new PolicyValidatorResult.Error(a, "Access control specified without " +
+                                                                       "authentication scheme.", null));
                 } else {
                     // if the credential source is not HTTP Basic
                     if (!seenHTTPBasic) {
                         result.addError(new PolicyValidatorResult.
-                          Error(a, "Only HTTP Basic Authentication can be used as a authentication scheme when a policy involes Custom Assertion.", null));
+                          Error(a, "Only HTTP Basic Authentication can be used as a authentication scheme" +
+                                " when a policy involes Custom Assertion.", null));
                     }
                 }
 
                 if (seenAccessControl && !seenCustomAssertion) {
-                    result.addError(new PolicyValidatorResult.Error(a, "No user or group assertions is allowed when Custom Assertion is used.", null));
+                    result.addError(new PolicyValidatorResult.Error(a, "No user or group assertion is allowed when " +
+                            "a Custom Assertion is used.", null));
                 }
 
                 if (seenCustomAssertion) {
-                    result.addWarning(new PolicyValidatorResult.Warning(a, "You already have a Custom Assertion.", null));
+                    result.addWarning(new PolicyValidatorResult.Warning(a, "You already have a Custom Assertion " +
+                                                                           "in this path.", null));
                 }
 
                 if (seenRouting) {
@@ -186,11 +190,12 @@ public class DefaultPolicyValidator extends PolicyValidator {
             }
 
             if (seenSpecificUserAssertion && isSpecificUser(a)) {
-                result.addError(new PolicyValidatorResult.Error(a, "Duplicate identity.", null));
+                result.addError(new PolicyValidatorResult.Error(a, "More than one identity in path.", null));
             }
 
             if (seenCustomAssertion) {
-                result.addError(new PolicyValidatorResult.Error(a, "No user or group assertions is allowed when Custom Assertion is used.", null));
+                result.addError(new PolicyValidatorResult.Error(a, "No user or group assertions is allowed when " +
+                                                                   "a Custom Assertion is used.", null));
             }
             // if we encountered an assertion that requires a client cert or digest, make sure the identity
             // involved is from the internal id provider
@@ -274,7 +279,8 @@ public class DefaultPolicyValidator extends PolicyValidator {
             // Custom Assertion can only be used with HTTP Basic
             if (seenCustomAssertion && !seenHTTPBasic) {
                 result.addError(new PolicyValidatorResult.
-                  Error(a, "Only HTTP Basic Authentication can be used as a authentication scheme when a policy involes Custom Assertion.", null));
+                  Error(a, "Only HTTP Basic Authentication can be used as a " +
+                           "authentication scheme when the policy involes a Custom Assertion.", null));
             }
 
             seenCredentials = true;
@@ -290,7 +296,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
                 if (seenRouting) {
                     result.addWarning(new PolicyValidatorResult.Warning(a,
                       "The assertion might not work as configured." +
-                      "\nThere is a routing assertion before this assertion.", null));
+                      " There is a routing assertion before this assertion.", null));
                 }
             } else if (a instanceof XmlResponseSecurity) {
                 if (!seenRouting) {
@@ -299,7 +305,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
                 }
                 if (seenXmlResponseSecurityAssertion) {
                     result.addError(new PolicyValidatorResult.Error(a,
-                      "Xml Response Security cannot appear twice in path.", null));
+                      "Xml Response Security cannot appear more than once in path.", null));
                 }
                 seenXmlResponseSecurityAssertion = true;
             } else if (a instanceof HttpClientCert) {
@@ -349,7 +355,7 @@ public class DefaultPolicyValidator extends PolicyValidator {
             if (oid == null) {
                 result.addWarning(new PolicyValidatorResult.Warning(a,
                   "The assertion might not work as configured." +
-                  "\nThere is no protected service JMS queue defined.", null));
+                  " There is no protected service JMS queue defined.", null));
             } else {
                 // TODO: for now we just assume that any non-null oid is a valid JmsEndpoint
             }
@@ -360,14 +366,14 @@ public class DefaultPolicyValidator extends PolicyValidator {
             if (url == null) {
                 result.addWarning(new PolicyValidatorResult.Warning(a,
                   "The assertion might not work as configured." +
-                  "\nThe protected service url is empty.", null));
+                  " The protected service url is empty.", null));
             } else {
                 try {
                     new URL(url);
                 } catch (MalformedURLException e) {
                     result.addWarning(new PolicyValidatorResult.Warning(a,
                       "The assertion might not work as configured." +
-                      "\nThe protected service url is malformed.", null));
+                      " The protected service url is malformed.", null));
                 }
             }
         }
