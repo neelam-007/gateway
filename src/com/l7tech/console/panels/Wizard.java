@@ -229,7 +229,18 @@ public class Wizard extends JDialog {
      */
     protected void advance(ActionEvent evt) {
         WizardStepPanel current = wizardIterator.current();
-        selectWizardPanel(current, wizardIterator.next());
+
+        WizardStepPanel next = null;
+        while (wizardIterator.hasNext()) {
+            next = wizardIterator.next();
+            if (!next.isSkipped()) {
+                break;
+            }
+        }
+
+        if (next != null) {
+            selectWizardPanel(current, next);
+        }
     }
 
     /**
@@ -237,7 +248,18 @@ public class Wizard extends JDialog {
      */
     protected void reverse(ActionEvent evt) {
         WizardStepPanel current = wizardIterator.current();
-        selectWizardPanel(current, wizardIterator.previous());
+
+        WizardStepPanel previous = null;
+        while (wizardIterator.hasPrevious()) {
+            previous = wizardIterator.previous();
+            if (!previous.isSkipped()) {
+                break;
+            }
+        }
+
+        if (previous != null) {
+            selectWizardPanel(current, previous);
+        }
     }
 
     /**
@@ -358,6 +380,33 @@ public class Wizard extends JDialog {
         wizardStepPanel.updateUI();
     }
 
+    /**
+     * Set the panels to the skipped mode
+     * @param panels  The class names of panels to be skipped
+     */
+    private void setSkippedPanels(Object[] panels) {
+        WizardStepPanel currentPanel = startPanel;
+
+        // all panels are not skipped by default
+        do {
+            currentPanel.setSkipped(false);
+            currentPanel = currentPanel.nextPanel();
+        } while (currentPanel.hasNextPanel());
+
+        for (int i = 0; i < panels.length; i++) {
+            String panel = (String) panels[i];
+
+            currentPanel = startPanel;
+
+            do {
+                if (currentPanel != null && (currentPanel.getClass().getName()).equals(panel)) {
+                    currentPanel.setSkipped(true);
+                    break;
+                }
+                currentPanel = currentPanel.nextPanel();
+            } while (currentPanel.hasNextPanel());
+        }
+    }
 
     /**
      * @return the description area
@@ -433,6 +482,11 @@ public class Wizard extends JDialog {
             buttonNext.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent evt) {
                     if (wizardIterator.current().onNextButton()) {
+                        if(wizardIterator.current().skippedPanelsModified()) {
+                            setSkippedPanels(wizardIterator.current().getSkippedPanels());
+                            // reset the flag
+                            wizardIterator.current().resetSkippedPanelsModifiedFlag();
+                        }
                         advance(evt);
                     }
                 }

@@ -18,10 +18,30 @@ import java.util.EventListener;
 public abstract class WizardStepPanel extends JPanel {
     private EventListenerList listenerList = new WeakEventListenerList();
     private WizardStepPanel nextPanel;
+    private Object[] skippedPanels;
+    private boolean skipped = false;
+    private boolean skippedPanelsModified = false;
 
+    public boolean isSkipped() {
+        return skipped;
+    }
+
+    public void setSkipped(boolean skipped) {
+        this.skipped = skipped;
+    }
+
+    public boolean skippedPanelsModified() {
+        return skippedPanelsModified;
+    }
+
+    public void resetSkippedPanelsModifiedFlag() {
+        skippedPanelsModified = false;
+    }
+    
     /** Creates new form WizardPanel */
     public WizardStepPanel(WizardStepPanel next) {
         this.nextPanel = next;
+        skippedPanels = new String[0];
     }
 
     public final boolean hasNextPanel() {
@@ -32,6 +52,14 @@ public abstract class WizardStepPanel extends JPanel {
         return nextPanel;
     }
 
+    public Object[] getSkippedPanels() {
+       return skippedPanels;
+    }
+
+    protected void setSkippedPanels(Object[] skippedPanels) {
+        this.skippedPanels = skippedPanels;
+        skippedPanelsModified = true;
+    }
 
     /**
      * Perform any panel-specific last-second checking at the time the user presses the "Next"
