@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.util.Locator;
+import com.l7tech.common.util.HexUtils;
 
 import javax.swing.*;
 import javax.swing.event.ChangeListener;
@@ -11,7 +12,6 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.io.*;
-import java.net.URL;
 import java.net.MalformedURLException;
 import java.util.logging.Logger;
 import java.util.ResourceBundle;
@@ -28,8 +28,9 @@ import java.security.cert.CertificateEncodingException;
  */
 public class CertImportMethodsPanel extends WizardStepPanel {
 
+    private static String PEM_CERT_BEGIN_MARKER = "-----BEGIN CERTIFICATE-----";
+    private static String PEM_CERT_END_MARKER = "-----END CERTIFICATE-----";
     private JPanel mainPanel;
-    private JPanel certImportMethodsPane;
     private JRadioButton copyAndPasteRadioButton;
     private JRadioButton fileRadioButton;
     private JRadioButton urlConnRadioButton;
@@ -127,7 +128,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
     }
 
     public boolean onNextButton() {
-        boolean rc = false;
+
         InputStream is = null;
         CertificateFactory cf = null;
 
@@ -142,7 +143,8 @@ public class CertImportMethodsPanel extends WizardStepPanel {
                 is = new FileInputStream(new File(certFileName.getText().trim()));
                 cert = (X509Certificate) cf.generateCertificate(is);
                 is.close();
-                rc = true;
+                return true;
+
             } catch (FileNotFoundException fne) {
                 JOptionPane.showMessageDialog(this, resources.getString("view.error.filenotfound"),
                         resources.getString("view.error.title"),
@@ -156,12 +158,9 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         } else if (urlConnRadioButton.isSelected()) {
             try {
 
-                // test if the URL is well formed first by creating a URL object
-                URL url = new URL(urlConnTextField.getText().trim());
-
                 X509Certificate[] certs = getTrustedCertAdmin().retrieveCertFromUrl(urlConnTextField.getText().trim(), true);
                 cert = certs[0];
-                rc = true;
+                return true;
 
             } catch (TrustedCertAdmin.HostnameMismatchException e) {
                 logger.warning("Hostname does not match with the one the certificate is issued to");
@@ -174,13 +173,56 @@ public class CertImportMethodsPanel extends WizardStepPanel {
             }
 
         } else if (copyAndPasteRadioButton.isSelected()) {
-            //todo:
+
+            String certPEM = copyAndPasteTextArea.getText();
+            int index = -1;
+
+            if((index = certPEM.indexOf(PEM_CERT_BEGIN_MARKER)) == -1) {
+                JOptionPane.showMessageDialog(this, resources.getString("view.error.pem.cert.begin.marker.missing") + PEM_CERT_BEGIN_MARKER,
+                        resources.getString("view.error.title"),
+                        JOptionPane.ERROR_MESSAGE);
+
+                return false;
+            } else {
+                // strip the begin marker
+                certPEM = certPEM.substring(index + PEM_CERT_BEGIN_MARKER.length());
+            }
+
+            if((index = certPEM.indexOf(PEM_CERT_END_MARKER)) == -1) {
+                JOptionPane.showMessageDialog(this, resources.getString("view.error.pem.cert.end.marker.missing") + PEM_CERT_END_MARKER,
+                        resources.getString("view.error.title"),
+                        JOptionPane.ERROR_MESSAGE);
+
+                return false;
+            } else {
+                // strip the end marker
+                certPEM = certPEM.substring(0, index);
+            }
+
+            byte[] certDER = null;
+            try {
+                certDER = HexUtils.decodeBase64(certPEM, true);
+            } catch (IOException e) {
+                //todo:
+            }
+
+            is = new ByteArrayInputStream(certDER);
+
+            try {
+                cert = (X509Certificate) cf.generateCertificate(is);
+
+                is.close();
+
+                return true;
+            } catch (CertificateException e) {
+                //todo:
+            } catch (IOException e) {
+                //todo:
+            }
 
         }
 
-
-        return rc;
-
+        return false;
     }
 
     /**
@@ -246,21 +288,20 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         _1.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 1, new Insets(10, 10, 10, 10), -1, -1));
         final JPanel _2;
         _2 = new JPanel();
-        certImportMethodsPane = _2;
         _2.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(4, 3, new Insets(0, 0, 0, 0), -1, -1));
         _1.add(_2, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 3, 3, 3, null, null, null));
         final JRadioButton _3;
         _3 = new JRadioButton();
         urlConnRadioButton = _3;
-        _3.setText("Retrieve via SSL Connection");
         _3.setSelected(false);
+        _3.setText("Retrieve via SSL Connection");
         _2.add(_3, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JRadioButton _4;
         _4 = new JRadioButton();
         fileRadioButton = _4;
+        _4.setSelected(false);
         _4.setText("Import from a File");
         _4.setEnabled(true);
-        _4.setSelected(false);
         _2.add(_4, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JRadioButton _5;
         _5 = new JRadioButton();
