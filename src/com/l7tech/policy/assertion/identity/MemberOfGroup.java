@@ -27,37 +27,65 @@ public class MemberOfGroup extends IdentityAssertion {
         super();
     }
 
+    public String getGroupName() {
+        return _groupName;
+    }
+
+    public void setGroupName(String groupName) {
+        _groupName = groupName;
+    }
+
     public MemberOfGroup( long providerOid, String groupOid ) {
         super( providerOid );
         _groupOid = groupOid;
     }
 
+    /**
+     * Sets the Assertion's <code>groupOid</code> property.
+     * @deprecated Please use <code>groupName</code> instead!
+     * @param oid
+     */
     public void setGroupOid( String oid ) {
-        if ( oid != _groupOid ) _group = null;
+        if (oid != _groupOid) _group = null;
         _groupOid = oid;
-
     }
 
+    /**
+     * Gets the value of the <code>groupOid</code> property.
+     * @deprecated Please use <code>groupName</code> instead!
+     * @return
+     */
     public String getGroupOid() {
         return _groupOid;
     }
 
+    /**
+     * Attempts to resolve a <code>Group</code> from the <code>groupOid</code> and <code>groupName</code> properties, in that order.
+     * @return
+     * @throws FindException
+     */
     protected Group getGroup() throws FindException {
         if ( _group == null ) {
-            try {
-                GroupManager gman = getIdentityProvider().getGroupManager();
+            GroupManager gman = getIdentityProvider().getGroupManager();
+            if ( _groupOid != null ) {
                 _group = gman.findByPrimaryKey( _groupOid );
-            } catch ( FindException fe ) {
-                LogManager.getInstance().getSystemLogger().log(Level.SEVERE, null, fe);
+            } else if ( _groupName != null ) {
+                _group = gman.findByName( _groupName );
             }
         }
         return _group;
     }
 
+    /**
+     * Returns <code>AssertionStatus.NONE</code> if the authenticated <code>User</code> is a member of the <code>Group</code> with which this assertion was initialized.
+     * @param user
+     * @return
+     */
     public AssertionStatus doCheckUser( User user ) {
-        Set groups = user.getGroups();
+        Set userGroups = user.getGroups();
         try {
-            if ( groups.contains( getGroup() ) )
+            Group targetGroup = getGroup();
+            if ( targetGroup != null && userGroups.contains( targetGroup ) )
                 return AssertionStatus.NONE;
             else {
                 return AssertionStatus.AUTH_FAILED;
@@ -69,5 +97,7 @@ public class MemberOfGroup extends IdentityAssertion {
     }
 
     protected String _groupOid;
+    protected String _groupName;
+
     protected transient Group _group;
 }
