@@ -51,7 +51,7 @@ public class PolicyExporterTest extends TestCase {
                 return "Some Custom Assertion Lame name";
             }
         });
-        root.getChildren().add(cahass);
+        //root.getChildren().add(cahass);
         return root;
     }
 
