@@ -1,9 +1,8 @@
 package com.l7tech.service.rmi;
 
-import com.l7tech.remote.jini.export.RemoteService;
 import com.l7tech.objectmodel.*;
+import com.l7tech.remote.jini.export.RemoteService;
 import com.l7tech.service.PublishedService;
-import com.l7tech.service.ServiceStatistics;
 import com.l7tech.service.ServiceAdmin;
 import com.sun.jini.start.LifeCycle;
 import net.jini.config.ConfigurationException;
@@ -54,10 +53,6 @@ public class ServiceAdminImpl extends RemoteService implements ServiceAdmin {
 
     public void deletePublishedService(long oid) throws RemoteException, DeleteException {
         delegate.deletePublishedService(oid);
-    }
-
-    public ServiceStatistics getStatistics(long oid) throws RemoteException {
-        return delegate.getStatistics( oid );
     }
 
     // ************************************************

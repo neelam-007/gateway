@@ -88,10 +88,6 @@ public class ServiceAdminStub implements ServiceAdmin {
 
     }
 
-    public ServiceStatistics getStatistics(long oid) throws RemoteException {
-        return new ServiceStatistics(oid);
-    }
-
     /**
      * Returns an unmodifiable collection of <code>EntityHeader</code>
      * objects for all instances of the entity class corresponding to

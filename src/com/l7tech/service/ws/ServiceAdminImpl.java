@@ -78,14 +78,6 @@ public class ServiceAdminImpl implements ServiceAdmin {
         }
     }
 
-    public ServiceStatistics getStatistics( long serviceOid ) throws RemoteException {
-        try {
-            return getServiceManager().getServiceStatistics(serviceOid);
-        } catch (FindException e) {
-            throw new RemoteException("cache exception", e);
-        }
-    }
-
     /**
      * this save method handles both save and updates.
      * the distinction happens on the server side by inspecting the oid of the object

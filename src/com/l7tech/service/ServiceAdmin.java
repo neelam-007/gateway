@@ -1,7 +1,5 @@
 package com.l7tech.service;
 
-import com.l7tech.service.PublishedService;
-import com.l7tech.service.ServiceStatistics;
 import com.l7tech.objectmodel.*;
 
 import java.rmi.Remote;
@@ -26,6 +24,4 @@ public interface ServiceAdmin extends Remote {
                     throws RemoteException, UpdateException, SaveException, VersionException;
 
     void deletePublishedService(long oid) throws RemoteException, DeleteException;
-
-    ServiceStatistics getStatistics( long oid ) throws RemoteException;
 }
