@@ -28,7 +28,9 @@ public class LdapGroupManagerServer extends AbstractLdapGroupManagerServer imple
         String output = "(|";
         String[] memberAttrs = _constants.groupMemberAttribute();
         for (int i = 0; i < memberAttrs.length; i++) {
+            // could refer either to cn or dn
             output +=       "(" + memberAttrs[i] + "=" + user.getCn() + ")";
+            output +=       "(" + memberAttrs[i] + "=" + user.getDn() + ")";
         }
         output +=       ")";
         return output;
@@ -39,7 +41,11 @@ public class LdapGroupManagerServer extends AbstractLdapGroupManagerServer imple
     }
 
     protected User getUserFromGroupMember(String member) throws FindException {
-        return getUserManager().findByLogin( member );
+        // member could refer to either the cn or the dn value
+        if (member.indexOf('=') >= 0) {
+            return getUserManager().findByPrimaryKey(member);
+        }
+        else return getUserManager().findByLogin(member);
     }
 
 
