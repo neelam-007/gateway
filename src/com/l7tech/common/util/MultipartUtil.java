@@ -21,7 +21,7 @@ public class MultipartUtil {
         if(part == null) throw new IllegalArgumentException("The SOAP part is NULL");
         if(boundary == null) throw new IllegalArgumentException("The StringBuffer is NULL");
 
-        sbuf.append(boundary + "\n");
+        sbuf.append(XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + XmlUtil.MULTIPART_BOUNDARY_PREFIX + "\n");        
         Map headerMap = part.getHeaders();
         Set headerKeys = headerMap.keySet();
         Iterator headerItr = headerKeys.iterator();
@@ -40,7 +40,7 @@ public class MultipartUtil {
             sbuf.append("\n");
         }
         sbuf.append("\n").append(modifiedSoapEnvelope).append("\n");
-        sbuf.append(boundary + "\n");
+        sbuf.append(XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + XmlUtil.MULTIPART_BOUNDARY_PREFIX + "\n");
     }
 
 
@@ -76,7 +76,7 @@ public class MultipartUtil {
                 sbuf.append("\n");
             }
             sbuf.append("\n" + part.getContent());
-            sbuf.append("\n" + boundary + "\n");
+            sbuf.append("\n" + XmlUtil.MULTIPART_BOUNDARY_PREFIX + boundary + XmlUtil.MULTIPART_BOUNDARY_PREFIX + "\n");
         }
     }
 }
