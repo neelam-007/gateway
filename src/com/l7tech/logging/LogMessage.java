@@ -19,10 +19,7 @@ public class LogMessage {
 
     public LogMessage(String log){
 
-
-         System.out.println(log);
         StringTokenizer st = new StringTokenizer(log, "|");
-        //System.out.println("number of fields is: " + fields.length);
 
         int index = 0;
         while(st.hasMoreTokens()){
