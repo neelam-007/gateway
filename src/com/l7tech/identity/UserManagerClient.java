@@ -44,22 +44,24 @@ public class UserManagerClient extends IdentityManagerClient implements UserMana
 
     public void delete(String id ) throws DeleteException {
         try {
-            if (userIsCurrentlyAdministrator( id ) ) {
-                throw new CannotDeleteAdminAccountException();
-            }
-            // todo, user must be refactored so that it's id is always a string
             getStub().deleteUser(config.getOid(), id );
         } catch (RemoteException e) {
-            throw new DeleteException(e.getMessage(), e);
-        } catch (FindException e) {
             throw new DeleteException(e.getMessage(), e);
         }
 
     }
 
     public String save(User user) throws SaveException {
+        throw new UnsupportedOperationException();
+    }
+
+    public void update(User user) throws UpdateException {
+        throw new UnsupportedOperationException();
+    }
+
+    public String save(User user, Set groupHeaders) throws SaveException {
         try {
-            return getStub().saveUser(config.getOid(), user);
+            return getStub().saveUser(config.getOid(), user, groupHeaders );
         } catch (UpdateException e) { // because the stub uses same method for save and update
             throw new SaveException(e.getMessage(), e);
         } catch (RemoteException e) {
@@ -67,9 +69,9 @@ public class UserManagerClient extends IdentityManagerClient implements UserMana
         }
     }
 
-    public void update(User user) throws UpdateException {
+    public void update(User user, Set groupHeaders ) throws UpdateException {
         try {
-            getStub().saveUser(config.getOid(), user);
+            getStub().saveUser(config.getOid(), user, groupHeaders );
         } catch (RemoteException e) {
             throw new UpdateException(e.getMessage(), e);
         } catch (SaveException e) { // because the stub uses same method for save and update
@@ -129,21 +131,5 @@ public class UserManagerClient extends IdentityManagerClient implements UserMana
             output.add(findByPrimaryKey(header.getStrId()));
         }
         return output;
-    }
-
-    // ************************************************
-    // PRIVATES
-    // ************************************************
-    private boolean userIsCurrentlyAdministrator(String userId) throws FindException {
-        // i actually dont get the user, the console only construct a new user and sets the oid
-        User user = findByPrimaryKey(userId);
-        Set groupMembershipHeaders = user.getGroupHeaders();
-        for (Iterator i = groupMembershipHeaders.iterator(); i.hasNext();) {
-            EntityHeader header = (EntityHeader)i.next();
-            if (header.getName() != null && header.getName().equals(Group.ADMIN_GROUP_NAME)) {
-                return true;
-            }
-        }
-        return false;
     }
 }
