@@ -8,6 +8,7 @@ package com.l7tech.proxy.datamodel;
 
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.processor.ServerCertificateUntrustedException;
+import com.l7tech.proxy.processor.OperationCanceledException;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 
 import java.io.IOException;
@@ -37,5 +38,5 @@ public interface PolicyManager {
      * @throws ConfigurationException if a policy for this request cannot be obtained for config reasons
      * @throws IOException if there was a problem getting the policy from the server
      */
-    void updatePolicy(PendingRequest request, URL policyUrl) throws ConfigurationException, IOException, ServerCertificateUntrustedException;
+    void updatePolicy(PendingRequest request, URL policyUrl) throws ConfigurationException, IOException, ServerCertificateUntrustedException, OperationCanceledException;
 }
