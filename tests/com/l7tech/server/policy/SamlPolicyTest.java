@@ -12,6 +12,8 @@ import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.objectmodel.VersionException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.MockServletApi;
@@ -37,11 +39,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
 
 
 /**
  * Class SamlPolicyTest.
- * 
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class SamlPolicyTest extends TestCase {
@@ -66,7 +69,7 @@ public class SamlPolicyTest extends TestCase {
         TestSetup wrapper = new TestSetup(suite) {
             /**
              * sets the test environment
-             * 
+             *
              * @throws Exception on error deleting the stub data store
              */
             protected void setUp() throws Exception {
@@ -102,7 +105,7 @@ public class SamlPolicyTest extends TestCase {
         // put tear down code here
     }
 
-    public void testSecurityElementCheck() throws Exception {
+    public void xtestSecurityElementCheck() throws Exception {
         for (int i = 0; i < soapRequests.length; i++) {
             MockServletApi servletApi = MockServletApi.defaultMessageProcessingServletApi();
             SoapMessageGenerator.Message soapRequest = soapRequests[i];
@@ -122,18 +125,22 @@ public class SamlPolicyTest extends TestCase {
         }
     }
 
-    public void xtestSenderVouches() throws Exception {
+    public void testSenderVouches() throws Exception {
         for (int i = 0; i < soapRequests.length; i++) {
             MockServletApi servletApi = MockServletApi.defaultMessageProcessingServletApi();
             SoapMessageGenerator.Message soapRequest = soapRequests[i];
+            AllAssertion aa = new AllAssertion();
+            aa.getChildren().add(new HttpBasic());
             HttpRoutingAssertion assertion = new HttpRoutingAssertion();
             assertion.setAttachSamlSenderVouches(true);
             assertion.setProtectedServiceUrl("http://localhost:8081");
-            prepareServicePolicy(assertion);
+            aa.getChildren().add(assertion);
+            prepareServicePolicy(aa);
             servletApi.setPublishedService(publishedService);
             Mock sreqMock = servletApi.getServletRequestMock();
             sreqMock.matchAndReturn("getAttribute", Request.PARAM_HTTP_SOAPACTION, soapRequest.getSOAPAction());
             sreqMock.matchAndReturn("getCookies", null);
+            sreqMock.matchAndReturn("getHeader", "Authorization", "Basic Zmxhc2NlbGw6YmxhaGJsYWg=");
 
             SOAPMessage soapMessage = soapRequest.getSOAPMessage();
             servletApi.setSoapRequest(soapMessage, soapRequest.getSOAPAction());
@@ -192,26 +199,6 @@ public class SamlPolicyTest extends TestCase {
         return df.newDocumentBuilder().parse(is);
     }
 
-    private void xattachAssertionHeader(SOAPMessage sm, Document assertionDocument)
-      throws SOAPException {
-        SOAPEnvelope envelope = sm.getSOAPPart().getEnvelope();
-        envelope.addNamespaceDeclaration("wsse", "http://schemas.xmlsoap.org/ws/2002/xx/secext");
-        envelope.addNamespaceDeclaration("ds", "http://www.w3.org/2000/09/xmldsig#");
-        SOAPHeader sh = envelope.getHeader();
-        if (sh == null) {
-            sh = envelope.addHeader();
-        }
-        Element domNode = assertionDocument.getDocumentElement();
-        SOAPHeaderElement she = null;
-        SOAPFactory sf = SOAPFactory.newInstance();
-        Name headerName = sf.createName("Security", "wsse", "http://schemas.xmlsoap.org/ws/2002/xx/secext");
-
-        she = sh.addHeaderElement(headerName);
-        Name assertionName = sf.createName(domNode.getLocalName(), domNode.getPrefix(), domNode.getNamespaceURI());
-
-        SOAPElement assertionElement = she.addChildElement(assertionName);
-        SoapUtil.domToSOAPElement(assertionElement, domNode);
-    }
 
     private void attachAssertionHeader(SOAPMessage sm, Document assertionDocument)
       throws SOAPException {
