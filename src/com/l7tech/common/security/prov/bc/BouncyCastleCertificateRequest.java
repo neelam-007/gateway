@@ -20,7 +20,7 @@ import java.security.PublicKey;
  * @author mike
  * @version 1.0
  */
-public class BouncyCastleCertificateRequest extends CertificateRequest {
+public class BouncyCastleCertificateRequest implements CertificateRequest {
     private PKCS10CertificationRequest certReq;
     private String providerName;
 

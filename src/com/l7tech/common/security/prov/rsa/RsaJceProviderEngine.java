@@ -34,7 +34,7 @@ public class RsaJceProviderEngine implements JceProviderEngine {
         Security.insertProviderAt(PROVIDER, 0);
     }
 
-    private static class RsaCertificateRequest extends CertificateRequest {
+    private static class RsaCertificateRequest implements CertificateRequest {
         private final com.rsa.certj.cert.PKCS10CertRequest csr;
 
         private RsaCertificateRequest(com.rsa.certj.cert.PKCS10CertRequest csr) {

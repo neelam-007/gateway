@@ -36,7 +36,7 @@ public class PhaosJceProviderEngine implements JceProviderEngine {
         Security.insertProviderAt(PROVIDER, 0);
     }
 
-    private static class PhaosCertificateRequest extends CertificateRequest {
+    private static class PhaosCertificateRequest implements CertificateRequest {
         private final com.phaos.cert.CertificateRequest csr;
 
         private PhaosCertificateRequest(com.phaos.cert.CertificateRequest csr) {

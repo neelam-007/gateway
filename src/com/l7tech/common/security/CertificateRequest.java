@@ -16,19 +16,19 @@ import java.security.NoSuchAlgorithmException;
  * @author mike
  * @version 1.0
  */
-public abstract class CertificateRequest {
+public interface CertificateRequest {
     /**
      * @return a string like "cn=lyonsm"
      */
-    public abstract String getSubjectAsString();
+    String getSubjectAsString();
 
     /**
      * @return the bytes of the encoded form of this certificate request
      */
-    public abstract byte[] getEncoded();
+    byte[] getEncoded();
 
     /**
      * @return the public key in this certificate request
      */
-    public abstract PublicKey getPublicKey() throws InvalidKeyException, NoSuchProviderException, NoSuchAlgorithmException;
+    PublicKey getPublicKey() throws InvalidKeyException, NoSuchProviderException, NoSuchAlgorithmException;
 }
