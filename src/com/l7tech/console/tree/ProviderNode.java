@@ -61,7 +61,7 @@ public class ProviderNode extends EntityHeaderNode {
         newGroupAction.setEnabled(oid == IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID);
         list.add(newUserAction);
         list.add(newGroupAction);
-        RefreshAction ra = new ProviderRefreshAction(this);
+        RefreshAction ra = new RefreshTreeNodeAction(this);
         list.add(ra);
 
 
@@ -100,7 +100,6 @@ public class ProviderNode extends EntityHeaderNode {
         }
     }
 
-
     /**
      * Returns true if the receiver is a leaf.
      * 
@@ -119,41 +118,12 @@ public class ProviderNode extends EntityHeaderNode {
         return "com/l7tech/console/resources/providers16.gif";
     }
 
-
-
     /**
-     * the refresh groups action class
+     * test whether the node can refresh its children. The provider
+     * node can always refresh its children
+     * @return always true
      */
-    class ProviderRefreshAction extends RefreshAction {
-        public ProviderRefreshAction(ProviderNode node) {
-            super(node);
-        }
-
-        public void performAction() {
-            if (tree == null) {
-                logger.warning("No tree assigned, ignoring the refresh action");
-                return;
-            }
-
-            Runnable runnable = new Runnable() {
-                public void run() {
-                    try {
-                        SwingUtilities.getWindowAncestor(tree);
-                        tree.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-
-                        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                        TreePath treePath = new TreePath(ProviderNode.this.getPath());
-                        if (tree.isExpanded(treePath)) {
-                            ProviderNode.this.hasLoadedChildren = false;
-                            model.reload(ProviderNode.this);
-                        }
-                    } finally {
-                        tree.setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
-                    }
-                }
-            };
-            SwingUtilities.invokeLater(runnable);
-        }
+    public boolean canRefresh() {
+        return true;
     }
-
 }

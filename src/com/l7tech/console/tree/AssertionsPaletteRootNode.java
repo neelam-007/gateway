@@ -85,6 +85,16 @@ public class AssertionsPaletteRootNode extends AbstractTreeNode {
     }
 
 
+
+    /**
+     * test whether the node can refresh its children. The provider
+     * node can always refresh its children
+     * @return always true
+     */
+    public boolean canRefresh() {
+        return true;
+    }
+
     /**
      * Get the set of actions associated with this node.
      * This may be used e.g. in constructing a context menu.
@@ -95,7 +105,9 @@ public class AssertionsPaletteRootNode extends AbstractTreeNode {
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
-        return new Action[]{new NewProviderAction(this)};
+        return new Action[]{
+            new NewProviderAction(this),
+            new RefreshTreeNodeAction(this)};
     }
 
     /**
