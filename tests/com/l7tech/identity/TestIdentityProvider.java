@@ -19,7 +19,7 @@ import java.security.cert.X509Certificate;
  */
 public class TestIdentityProvider implements IdentityProvider {
     private Map usernameMap = Collections.synchronizedMap(new HashMap());
-    private IdentityProviderConfig config = new IdentityProviderConfig();
+    private IdentityProviderConfig config = new IdentityProviderConfig(IdentityProviderType.INTERNAL);
     {
         config.setOid(9898);
         config.setName("TestIdentityProvider");
