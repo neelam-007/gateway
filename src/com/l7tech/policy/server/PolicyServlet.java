@@ -5,10 +5,7 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.identity.BadCredentialsException;
-import com.l7tech.identity.IdentityProvider;
-import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.identity.User;
+import com.l7tech.identity.*;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.policy.assertion.ext.Category;
@@ -121,7 +118,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
             List users;
             try {
                 users = authenticateRequestBasic(httpServletRequest, targetService);
-            } catch (BadCredentialsException e) {
+            } catch (AuthenticationException e) {
                 if (!anonymousok) {
                     logger.info("Returning 401 to requestor because invalid credentials were provided");
                     httpServletResponse.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());

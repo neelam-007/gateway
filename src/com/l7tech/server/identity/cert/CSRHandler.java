@@ -8,6 +8,7 @@ import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.User;
+import com.l7tech.identity.IssuedCertNotPresentedException;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.cert.RsaCertificateSigner;
 import com.l7tech.objectmodel.*;
@@ -92,6 +93,11 @@ public class CSRHandler extends AuthenticatableHttpServlet {
             }  catch (BadCredentialsException e) {
                 response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "must provide valid credentials");
                 logger.log(Level.SEVERE, "Failed authentication", e);
+                return;
+            } catch (IssuedCertNotPresentedException e) {
+                logger.log(Level.SEVERE, "Requestor is refused csr", e);
+                response.sendError(HttpServletResponse.SC_FORBIDDEN, "CSR Forbidden." +
+                                            " Contact your administrator for more info.");
                 return;
             }
 

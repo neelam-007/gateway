@@ -43,7 +43,7 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
             List users;
             try {
                 users = authenticateRequestBasic(req);
-            } catch (BadCredentialsException e) {
+            } catch (AuthenticationException e) {
                 logger.log(Level.WARNING, "Bad credentials, returning 401", e);
                 res.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Bad credentials");
                 return;

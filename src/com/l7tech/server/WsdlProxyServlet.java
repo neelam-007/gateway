@@ -4,7 +4,7 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.Wsdl;
-import com.l7tech.identity.BadCredentialsException;
+import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistenceContext;
@@ -82,7 +82,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
                 users = authenticateRequestBasic(req);
             }
 
-        } catch (BadCredentialsException e) {
+        } catch (AuthenticationException e) {
             logger.log(Level.INFO, "Credentials do not authenticate against any of the providers, assuming anonymous");
             users = null;
         }

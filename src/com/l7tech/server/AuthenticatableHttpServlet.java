@@ -63,7 +63,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
      *
      * @return the authenticated user, null if no creds provided
      */
-    protected List authenticateRequestBasic(HttpServletRequest req) throws BadCredentialsException {
+    protected List authenticateRequestBasic(HttpServletRequest req) throws BadCredentialsException, IssuedCertNotPresentedException {
         List users = new ArrayList();
         try {
             users = getUsers(req);
@@ -138,7 +138,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
         }
     }
 
-    private List getUsers(HttpServletRequest req) throws FindException {
+    private List getUsers(HttpServletRequest req) throws FindException, IssuedCertNotPresentedException {
         List users = new ArrayList();
         IdentityProviderConfigManager configManager = new IdProvConfManagerServer();
         Collection providers;
@@ -174,6 +174,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
             String msg = "Basic credentials are valid but the client did not present " +
                          "his client cert as part of the ssl handshake";
             logger.warning("POTENTIAL DICTIONNARY ATTACK. " + msg);
+            throw new IssuedCertNotPresentedException(msg);
         }
         return users;
     }
@@ -201,7 +202,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
      *                             on invalid credentials
      */
     protected List authenticateRequestBasic(HttpServletRequest req, PublishedService service)
-      throws IOException, BadCredentialsException {
+      throws IOException, BadCredentialsException, IssuedCertNotPresentedException {
         List users = new ArrayList();
         try {
             users = getUsers(req);

@@ -8,6 +8,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.identity.BadCredentialsException;
 import com.l7tech.identity.User;
+import com.l7tech.identity.AuthenticationException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.AuthenticatableHttpServlet;
 import org.apache.xmlbeans.XmlException;
@@ -66,7 +67,7 @@ public class SamlProtocolServlet extends AuthenticatableHttpServlet {
         } catch (SOAPException e) {
             res.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             soapResponseGenerator.streamFault("Server SOAP error", e, os);
-        } catch (BadCredentialsException e) {
+        } catch (AuthenticationException e) {
             res.setStatus(HttpServletResponse.SC_FORBIDDEN);
         } catch (GeneralSecurityException e) {
             res.sendError(HttpServletResponse.SC_FORBIDDEN, e.getMessage());
@@ -74,7 +75,7 @@ public class SamlProtocolServlet extends AuthenticatableHttpServlet {
     }
 
     private User authenticate(HttpServletRequest req)
-      throws BadCredentialsException, GeneralSecurityException {
+      throws AuthenticationException, GeneralSecurityException {
         if (req.isSecure()) {
             throw new GeneralSecurityException("Not secured request; use https");
         }
