@@ -34,4 +34,17 @@ public class FontUtil {
         Font newFont = Font.getFont(fontAttributes);
         c.setFont(newFont);
     }
+
+    /**
+     * Change the font used by the given component into bold face.
+     *
+     * @param c
+     */
+    public static void emboldenFont(Component c) {
+        Font font = c.getFont();
+        Map fontAttributes = new HashMap(font.getAttributes());
+        fontAttributes.put(TextAttribute.WEIGHT, TextAttribute.WEIGHT_BOLD);
+        Font newFont = Font.getFont(fontAttributes);
+        c.setFont(newFont);
+    }
 }

@@ -6,6 +6,7 @@ import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
 import com.l7tech.proxy.util.ClientLogger;
 
 import javax.swing.*;
+import javax.swing.table.AbstractTableModel;
 import java.io.IOException;
 
 /**
@@ -14,32 +15,60 @@ import java.io.IOException;
  * Date: Jun 3, 2003
  * Time: 2:48:51 PM
  */
-public class SsgListModel extends AbstractListModel {
-    private static final ClientLogger log = ClientLogger.getInstance(SsgListModel.class);
+public class SsgTableModel extends AbstractTableModel {
+    private static final ClientLogger log = ClientLogger.getInstance(SsgTableModel.class);
     private SsgManager ssgManager;
 
-    public SsgListModel(SsgManager ssgManager) {
+    public SsgTableModel(SsgManager ssgManager) {
+        super();
         if (ssgManager == null)
             throw new IllegalArgumentException("No SsgManager provided");
         this.ssgManager = ssgManager;
     }
 
-    public int getSize() {
+    public boolean isCellEditable(int row, int column) {
+        return false;
+    }
+
+    public Object getValueAt(int rowIndex, int columnIndex) {
+        synchronized (ssgManager) {
+            if (rowIndex < 0 || rowIndex >= ssgManager.getSsgList().size())
+                return null;
+            Ssg ssg = (Ssg)  ssgManager.getSsgList().get(rowIndex);
+            switch (columnIndex) {
+                case 0:
+                    return ssg;
+                case 1:
+                    return ssg.getLocalEndpoint();
+                case 2:
+                    return ssg.getUsername() == null ? "" : ssg.getUsername();
+                default:
+                    return null;
+            }
+        }
+    }
+
+    public int getRowCount() {
         return ssgManager.getSsgList().size();
     }
 
-    public Object getElementAt(final int index) {
+    public int getColumnCount() {
+        return 3;
+    }
+
+    /** Get the SSG at the specified row, or null. */
+    public Ssg getSsgAtRow(final int rowNumber) {
         synchronized (ssgManager) {
-            if (index < 0 || index >= ssgManager.getSsgList().size())
+            if (rowNumber < 0 || rowNumber >= ssgManager.getSsgList().size())
                 return null;
-            return ssgManager.getSsgList().get(index);
+            return (Ssg)  ssgManager.getSsgList().get(rowNumber);
         }
     }
 
     public void addSsg(final Ssg ssg) {
         if (ssgManager.add(ssg)) {
             saveSsgList();
-            fireIntervalAdded(this, getSize(), getSize());
+            this.fireTableDataChanged();
         }
         ssgManager.onSsgUpdated(ssg);
     }
@@ -48,7 +77,7 @@ public class SsgListModel extends AbstractListModel {
         try {
             ssgManager.remove(ssg);
             saveSsgList();
-            fireContentsChanged(this, 0, getSize() + 1);
+            this.fireTableDataChanged();
         } catch (SsgNotFoundException e) {
             // who cares
         }
@@ -67,7 +96,7 @@ public class SsgListModel extends AbstractListModel {
     public void editedSsg() {
         saveSsgList();
         ssgManager.onSsgUpdated(null);
-        fireContentsChanged(this, 0, getSize());
+        this.fireTableDataChanged();
     }
 
     public Ssg createSsg() {

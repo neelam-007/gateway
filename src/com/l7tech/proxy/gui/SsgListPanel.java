@@ -6,8 +6,10 @@ import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.gui.util.IconManager;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.util.ClientLogger;
+import com.l7tech.common.gui.util.FontUtil;
 
 import javax.swing.*;
+import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseAdapter;
@@ -22,8 +24,8 @@ import java.awt.event.MouseEvent;
  */
 public class SsgListPanel extends JPanel {
     private final ClientLogger log = ClientLogger.getInstance(SsgListPanel.class);
-    private SsgListModel ssgListModel;
-    private JList ssgList;
+    private SsgTableModel ssgTableModel;
+    private JTable ssgTable;
     private Action actionNewSsg;
     private Action actionEditSsg;
     private Action actionSetDefaultSsg;
@@ -58,17 +60,37 @@ public class SsgListPanel extends JPanel {
                                    new Insets(0, 0, 0, 0),
                                    0, 0));
 
-        ssgListModel = new SsgListModel(ssgManager);
-        ssgList = new JList(ssgListModel);
-        ssgList.setSelectedIndex(0);
-        ssgList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        ssgList.addMouseListener(new MouseAdapter() {
+        ssgTableModel = new SsgTableModel(ssgManager);
+        ssgTable = new JTable(ssgTableModel) {
+            public TableCellRenderer getCellRenderer(int row, int column) {
+                final TableCellRenderer ce = super.getCellRenderer(row, column);
+                return new TableCellRenderer() {
+                    public Component getTableCellRendererComponent(JTable table, Object value,
+                                                                   boolean isSelected, boolean hasFocus,
+                                                                   int row, int column) {
+                        Component c = ce.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                        Ssg ssg = (Ssg) ssgTableModel.getSsgAtRow(row);
+                        if (ssg.isDefaultSsg()) {
+                            FontUtil.emboldenFont(c);
+                        }
+                        return c;
+                    }
+                };
+            }
+        };
+        ssgTable.getColumnModel().getColumn(0).setHeaderValue("Gateway");
+        ssgTable.getColumnModel().getColumn(1).setHeaderValue("Proxy");
+        ssgTable.getColumnModel().getColumn(2).setHeaderValue("Username");
+        ssgTable.getSelectionModel().setSelectionInterval(0, 0);
+        ssgTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        ssgTable.addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2)
                     getActionEditSsg().actionPerformed(new ActionEvent(this, 1, "properties"));
             }
         });
-        final JScrollPane ssgListPane = new JScrollPane(ssgList);
+
+        final JScrollPane ssgListPane = new JScrollPane(ssgTable);
         ssgListPanel.add(ssgListPane, BorderLayout.CENTER);
 
         toolBar.add(new JButton(getActionNewSsg()));
@@ -83,14 +105,14 @@ public class SsgListPanel extends JPanel {
      * @return The selected SSG or null.
      */
     public Ssg getSelectedSsg() {
-        return (Ssg)ssgList.getSelectedValue();
+        return ssgTableModel.getSsgAtRow(ssgTable.getSelectedRow());
     }
 
     public Action getActionDeleteSsg() {
         if (actionDeleteSsg == null) {
             actionDeleteSsg = new AbstractAction("Delete", IconManager.getRemove()) {
                 public void actionPerformed(final ActionEvent e) {
-                    final Ssg ssg = (Ssg)ssgList.getSelectedValue();
+                    final Ssg ssg = getSelectedSsg();
                     log.info("Removing Gateway " + ssg);
                     if (ssg == null)
                         return;
@@ -120,7 +142,7 @@ public class SsgListPanel extends JPanel {
                                 return;
                         }
 
-                        ssgListModel.removeSsg(ssg);
+                        ssgTableModel.removeSsg(ssg);
                         SsgKeyStoreManager.deleteKeyStore(ssg);
                     }
                 }
@@ -134,13 +156,13 @@ public class SsgListPanel extends JPanel {
         if (actionEditSsg == null) {
             actionEditSsg = new AbstractAction("Properties", IconManager.getEdit()) {
                 public void actionPerformed(final ActionEvent e) {
-                    final Ssg ssg = (Ssg)ssgList.getSelectedValue();
+                    final Ssg ssg = getSelectedSsg();
                     log.info("Editing ssg " + ssg);
                     if (ssg != null) {
                         if (SsgPropertyDialog.makeSsgPropertyDialog(clientProxy, ssg).runDialog()) {
                             if (ssg.isDefaultSsg())
-                                ssgListModel.setDefaultSsg(ssg);
-                            ssgListModel.editedSsg();
+                                ssgTableModel.setDefaultSsg(ssg);
+                            ssgTableModel.editedSsg();
                         }
                     }
                 }
@@ -154,12 +176,12 @@ public class SsgListPanel extends JPanel {
         if (actionNewSsg == null) {
             actionNewSsg = new AbstractAction("New", IconManager.getAdd()) {
                 public void actionPerformed(final ActionEvent e) {
-                    final Ssg newSsg = ssgListModel.createSsg();
+                    final Ssg newSsg = ssgTableModel.createSsg();
                     log.info("Creating new SSG " + newSsg);
-                    if (ssgListModel.getSize() < 1)
+                    if (ssgTableModel.getRowCount() < 1)
                         newSsg.setDefaultSsg(true);
                         if (SsgPropertyDialog.makeSsgPropertyDialog(clientProxy, newSsg).runDialog())
-                            ssgListModel.addSsg(newSsg);
+                            ssgTableModel.addSsg(newSsg);
                 }
             };
             actionNewSsg.putValue(Action.SHORT_DESCRIPTION, "Register a new Gateway with this Agent");
@@ -171,11 +193,11 @@ public class SsgListPanel extends JPanel {
         if (actionSetDefaultSsg == null) {
             actionSetDefaultSsg = new AbstractAction("Set Default", IconManager.getDefault()) {
                 public void actionPerformed(final ActionEvent e) {
-                    final Ssg ssg = (Ssg)ssgList.getSelectedValue();
+                    final Ssg ssg = getSelectedSsg();
                     log.info("Setting default ssg to " + ssg);
                     if (ssg != null)
-                        ssgListModel.setDefaultSsg(ssg);
-                    ssgListModel.editedSsg();
+                        ssgTableModel.setDefaultSsg(ssg);
+                    ssgTableModel.editedSsg();
                 }
             };
             actionSetDefaultSsg.putValue(Action.SHORT_DESCRIPTION, "Set this Gateway as the default");
@@ -188,7 +210,6 @@ public class SsgListPanel extends JPanel {
      * @return the number of registered SSGs.
      */
     public int getNumSsgs() {
-        return ssgList.getModel().getSize();
-
+        return ssgTableModel.getRowCount();
     }
 }
