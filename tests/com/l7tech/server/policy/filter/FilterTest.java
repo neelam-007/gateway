@@ -58,8 +58,10 @@ public class FilterTest extends TestCase {
             new HttpBasic(),
             new ExactlyOneAssertion(Arrays.asList(new Assertion[] {
                 new SpecificUser(providerid, "alice", null, null),
-                new SpecificUser(providerid, "bob", null, null),
-                new MemberOfGroup(providerid, "sales", "666")
+                new SpecificUser(providerid, "bob", null, null)
+                // you cant test this because member of group requires access to the id provider and you
+                // dont have access to the actual provider here
+                //new MemberOfGroup(providerid, "sales", "666")
             })),
             new HttpRoutingAssertion()
         }));
