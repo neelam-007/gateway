@@ -32,6 +32,7 @@ public class CredentialFormat {
      * The credentials are a client's certificate (TODO: encoded how?)
      */
     public static final CredentialFormat CLIENTCERT = new CredentialFormat( "Client Certificate" );
+    public static final CredentialFormat CLIENTCERT_X509_ASN1_DER = new CredentialFormat( "ASN.1 DER-encoded X.509 Client Certificate" );
 
     public String toString() {
         return "<CredentialFormat name='" + _name + "'/>";
