@@ -18,8 +18,8 @@ public class HttpSoapRequest extends SoapRequest {
         super( htm );
     }
 
-    protected Reader getRequestReader() throws IOException {
-         HttpTransportMetadata htm = (HttpTransportMetadata)_transportMetadata;
-         return htm.getRequest().getReader();
+    protected Reader doGetRequestReader() throws IOException {
+        HttpTransportMetadata htm = (HttpTransportMetadata)_transportMetadata;
+        return htm.getRequest().getReader();
     }
 }
