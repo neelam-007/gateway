@@ -48,13 +48,14 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
 
             final X509Certificate subjectCertificate = assertion.getSubjectCertificate();
             String subjectDn = subjectCertificate.getSubjectDN().getName();
-            String issuerDn = assertion.getSubjectCertificate().getIssuerDN().getName();
+            final X509Certificate signerCertificate = assertion.getIssuerCertificate();
+            String samlSignerDn = signerCertificate.getSubjectDN().getName();
 
             TrustedCert issuerTrust = null;
             try {
-                issuerTrust = trustedCertManager.getCachedCertBySubjectDn(issuerDn, MAX_CACHE_AGE);
+                issuerTrust = trustedCertManager.getCachedCertBySubjectDn(samlSignerDn, MAX_CACHE_AGE);
                 final String untrusted = "Subject certificate '" + subjectDn + "' was signed by '" +
-                                         issuerDn + "', which is not trusted";
+                                         samlSignerDn + "', which is not trusted";
                 if (issuerTrust == null) {
                     throw new BadCredentialsException(untrusted);
                 } else if (!issuerTrust.isTrustedForSigningSamlTokens()) {
@@ -75,11 +76,11 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
                 issuerCert = issuerTrust.getCertificate();
                 subjectCertificate.verify(issuerCert.getPublicKey());
             } catch ( CertificateException e ) {
-                throw new AuthenticationException("Couldn't decode issuer certificate '" + issuerDn + "'", e);
+                throw new AuthenticationException("Couldn't decode issuer certificate '" + samlSignerDn + "'", e);
             } catch ( IOException e ) {
-                throw new AuthenticationException("Couldn't decode issuer certificate '" + issuerDn + "'", e);
+                throw new AuthenticationException("Couldn't decode issuer certificate '" + samlSignerDn + "'", e);
             } catch ( GeneralSecurityException e ) {
-                throw new AuthenticationException("Couldn't verify subject certificate '" + issuerDn + "'", e);
+                throw new AuthenticationException("Couldn't verify subject certificate '" + samlSignerDn + "'", e);
             }
 
             final String niFormat = assertion.getNameIdentifierFormat();
