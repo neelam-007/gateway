@@ -1155,7 +1155,7 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
     </target>
 
     <target name="INTERNAL-buildinfo">
-        <property name="hostname" value="data.l7tech.com"/>
+        <property name="hostname" value="buildmachine.l7tech.com"/>
 
         <tstamp>
             <format property="build.date" pattern="yyyyMMdd"/>
