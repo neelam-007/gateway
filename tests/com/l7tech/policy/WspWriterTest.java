@@ -1,10 +1,6 @@
 package com.l7tech.policy;
 
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.FalseAssertion;
-import com.l7tech.policy.assertion.HttpRoutingAssertion;
-import com.l7tech.policy.assertion.RequestXpathAssertion;
-import com.l7tech.policy.assertion.TrueAssertion;
+import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
@@ -59,12 +55,12 @@ public class WspWriterTest extends TestCase {
         foo.put("blee", "http://namespaces.nowhere.com/asdf/fdsa/qwer#blortch.1.2");
         rxa.setNamespaceMap(foo);
 
-        Assertion policy = new ExactlyOneAssertion(Arrays.asList(new Assertion[] {
-            new AllAssertion(Arrays.asList(new Assertion[] {
+        Assertion policy = new ExactlyOneAssertion(Arrays.asList(new Assertion[]{
+            new AllAssertion(Arrays.asList(new Assertion[]{
                 new TrueAssertion(),
-                new OneOrMoreAssertion(Arrays.asList(AllAssertions.EVERYTHING)),
+                new OneOrMoreAssertion(Arrays.asList(AllAssertions.SERIALIZABLE_EVERYTHING)),
             })),
-            new ExactlyOneAssertion(Arrays.asList(new Assertion[] {
+            new ExactlyOneAssertion(Arrays.asList(new Assertion[]{
                 new TrueAssertion(),
                 new FalseAssertion(),
                 new HttpRoutingAssertion("http://floomp.boomp.foomp/", "bob&joe", "james;bloo=foo&goo\"poo\"\\sss\\", "", -5),

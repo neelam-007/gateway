@@ -19,7 +19,7 @@ import com.l7tech.policy.assertion.ext.CustomAssertion;
  * @version 1.0
  */
 public class CustomAssertionHolder extends Assertion {
-    protected CompositeAssertion parent;
+    protected transient CompositeAssertion parent;
 
     public CustomAssertionHolder() {
         this.parent = null;

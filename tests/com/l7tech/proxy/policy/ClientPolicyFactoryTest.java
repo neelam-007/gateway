@@ -40,9 +40,9 @@ public class ClientPolicyFactoryTest extends TestCase {
         ClientPolicyFactory pfac = ClientPolicyFactory.getInstance();
 
         ClientAssertion foo;
-        Assertion[] everything = AllAssertions.EVERYTHING;
-        for ( int i = 0; i < everything.length; i++ ) {
-            foo = pfac.makeClientPolicy( everything[i] );
+        Assertion[] everything = AllAssertions.AGENT_EVERYTHING;
+        for (int i = 0; i < everything.length; i++) {
+            foo = pfac.makeClientPolicy(everything[i]);
         }
     }
 
@@ -50,7 +50,7 @@ public class ClientPolicyFactoryTest extends TestCase {
      * Test <code>ClientPolicyFactoryTest</code> main.
      */
     public static void main(String[] args) throws
-            Throwable {
+      Throwable {
         junit.textui.TestRunner.run(suite());
     }
 }

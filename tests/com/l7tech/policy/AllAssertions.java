@@ -25,7 +25,11 @@ import com.l7tech.policy.assertion.xmlsec.XmlResponseSecurity;
  * @version $Revision$
  */
 public class AllAssertions {
-    public static Assertion[] EVERYTHING = new Assertion[]{
+
+    /**
+     * the assertions that the agent (ssa) uses
+     */
+    public static Assertion[] AGENT_EVERYTHING = new Assertion[]{
         new HttpBasic(),
         new HttpClientCert(),
         new HttpDigest(),
@@ -43,11 +47,70 @@ public class AllAssertions {
         new SpecificUser(),
         new XmlResponseSecurity(),
         new XmlRequestSecurity(),
-        new RequestXpathAssertion()
-        // new CustomAssertionHolder()
+        new RequestXpathAssertion(),
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),
         // TODO new DayOfWeekAssertion(),
         // TODO new InetAddressAssertion(),
     };
+
+    /**
+     * all assertions that the gateway must handle
+     */
+    public static Assertion[] GATEWAY_EVERYTHING = new Assertion[]{
+        new HttpBasic(),
+        new HttpClientCert(),
+        new HttpDigest(),
+        new WssBasic(),
+        new WssDigest(),
+        new AllAssertion(),
+        new ExactlyOneAssertion(),
+        new OneOrMoreAssertion(),
+        new FalseAssertion(),
+        new SslAssertion(),
+        new HttpRoutingAssertion(),
+        new JmsRoutingAssertion(),
+        new TrueAssertion(),
+        new MemberOfGroup(),
+        new SpecificUser(),
+        new XmlResponseSecurity(),
+        new XmlRequestSecurity(),
+        new RequestXpathAssertion(),
+        new CustomAssertionHolder()
+        // TODO new TimeOfDayAssertion(),
+        // TODO new DateRangeAssertion(),
+        // TODO new DayOfWeekAssertion(),
+        // TODO new InetAddressAssertion(),
+    };
+
+
+    /**
+     * all assertions that the serialization must handle
+     */
+    public static Assertion[] SERIALIZABLE_EVERYTHING = new Assertion[]{
+        new HttpBasic(),
+        new HttpClientCert(),
+        new HttpDigest(),
+        new WssBasic(),
+        new WssDigest(),
+        new AllAssertion(),
+        new ExactlyOneAssertion(),
+        new OneOrMoreAssertion(),
+        new FalseAssertion(),
+        new SslAssertion(),
+        new HttpRoutingAssertion(),
+        new JmsRoutingAssertion(),
+        new TrueAssertion(),
+        new MemberOfGroup(),
+        new SpecificUser(),
+        new XmlResponseSecurity(),
+        new XmlRequestSecurity(),
+        new RequestXpathAssertion(),
+        new CustomAssertionHolder()
+        // TODO new TimeOfDayAssertion(),
+        // TODO new DateRangeAssertion(),
+        // TODO new DayOfWeekAssertion(),
+        // TODO new InetAddressAssertion(),
+    };
+
 }
