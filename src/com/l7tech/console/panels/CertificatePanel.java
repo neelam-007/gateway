@@ -5,6 +5,7 @@ import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.UpdateException;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
@@ -182,9 +183,12 @@ class CertificatePanel extends JPanel {
             revokeCertButton.setText("Revoke");
             revokeCertButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent event) {
-                    //todo: add action (remote service invocation) that revokes
-                    // the certificate
-
+                    // revoke the user cert
+                    try {
+                        ((com.l7tech.adminws.identity.UserManagerClient)Registry.getDefault().getInternalUserManager()).revokeCert(Long.toString(user.getOid()));
+                    } catch (UpdateException e) {
+                        log.log(Level.WARNING, "ERROR Revoking certificate", e);
+                    }
                     // reset values and redisplay
                     cert = null;
                     certificateTableModel = null;
