@@ -84,7 +84,7 @@ public class BouncyCastleJceProviderEngine implements JceProviderEngine {
     }
 
     public Cipher getRsaNoPaddingCipher() throws NoSuchProviderException, NoSuchAlgorithmException, NoSuchPaddingException {
-        return Cipher.getInstance("RSA/NONE/NoPadding", PROVIDER.getName()); // todo for sun implementation, this needs to be "RSA/ECB/NoPadding"
+        return Cipher.getInstance("RSA/NONE/NoPadding", PROVIDER.getName());
     }
 
     /**
