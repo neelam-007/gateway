@@ -361,6 +361,10 @@ public class MessageProcessor {
                 req.setLastErrorResponse(response);
                 Header authHeader = postMethod.getResponseHeader("WWW-Authenticate");
                 log.info("Got auth header: " + (authHeader == null ? "<null>" : authHeader.getValue()));
+                if (authHeader == null && "https".equals(url.getProtocol()) && SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
+                    log.info("Got 401 response from SSG over https; possible that client cert is no good");
+                }
+
                 throw new BadCredentialsException();
             }
 
