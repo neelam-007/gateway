@@ -632,27 +632,13 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
      */
     private PolicyValidatorResult pruneDuplicates(PolicyValidatorResult result) {
         PolicyValidatorResult pr = new PolicyValidatorResult();
-        // sort the same assertion messages together
-        Comparator c = new Comparator() {
-            public int compare(Object o1, Object o2) {
-                PolicyValidatorResult.Message m1 = (PolicyValidatorResult.Message)o1;
-                PolicyValidatorResult.Message m2 = (PolicyValidatorResult.Message)o2;
-                if (m1.getAssertion() == null) {
-                    return 1;
-                }
-                if (m1.getAssertion().equals(m2.getAssertion())) {
-                   return 0;
-                }
-                return 1;
-            }
-        };
 
-        Set errors = new TreeSet(c);
+        Set errors = new HashSet();
         errors.addAll(result.getErrors());
         for (Iterator iterator = errors.iterator(); iterator.hasNext();) {
             pr.addError((PolicyValidatorResult.Error)iterator.next());
         }
-        Set warnings = new TreeSet(c);
+        Set warnings = new HashSet();
         warnings.addAll(result.getWarnings());
 
         for (Iterator iterator = warnings.iterator(); iterator.hasNext();) {
