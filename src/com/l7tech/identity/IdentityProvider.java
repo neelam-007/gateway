@@ -14,7 +14,7 @@ public interface IdentityProvider {
     IdentityProviderConfig getConfig();
     UserManager getUserManager();
     GroupManager getGroupManager();
-    boolean authenticate( PrincipalCredentials pc );
+    void authenticate( PrincipalCredentials pc ) throws AuthenticationException;
     /**
      * If true, the save, update and delete methods wont be supported on the usermanager and groupmanager objects
      */
