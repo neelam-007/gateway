@@ -69,7 +69,7 @@ public class DistributedMessageIdManager implements MessageIdManager {
     private void start() throws Exception {
         tree.startService(); // kick start tree cache
 
-        gcTimer = new Timer();
+        gcTimer = new Timer(true);
         // Perturb delay to avoid synchronization with other cluster nodes
         long when = GC_PERIOD * 2 + new Random().nextInt(1 + (int)GC_PERIOD/4);
         gcTimer.schedule(new GarbageCollectionTask(), when, GC_PERIOD);
