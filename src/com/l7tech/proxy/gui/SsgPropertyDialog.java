@@ -2,6 +2,7 @@ package com.l7tech.proxy.gui;
 
 import com.l7tech.common.gui.CertificatePanel;
 import com.l7tech.common.gui.WrappingLabel;
+import com.l7tech.common.gui.IntegerField;
 import com.l7tech.console.panels.Utilities;
 import com.l7tech.console.tree.EntityTreeCellRenderer;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
@@ -21,6 +22,8 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.DocumentEvent;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ChangeEvent;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.tree.TreeModel;
 import java.awt.*;
@@ -39,6 +42,7 @@ import java.util.ArrayList;
  */
 public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     private static final Category log = Category.getInstance(SsgPropertyDialog.class);
+    private static final Ssg referenceSsg = new Ssg(); // SSG bean with default values for all
 
     // Model
     private Ssg ssg; // The real Ssg instance, to which changes may be committed.
@@ -61,6 +65,10 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     //   View for Network pane
     private JComponent networkPane;
     private WrappingLabel fieldLocalEndpoint;
+    private JRadioButton radioStandardPorts;
+    private JRadioButton radioNonstandardPorts;
+    private JTextField fieldSsgPort;
+    private JTextField fieldSslPort;
 
     //   View for Policy pane
     private JComponent policiesPane;
@@ -294,14 +302,15 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             JPanel pane = new JPanel(new GridBagLayout());
             networkPane = new JScrollPane(pane);
             networkPane.setBorder(BorderFactory.createEmptyBorder());
+
             // Endpoint panel
 
             JPanel epp = new JPanel(new GridBagLayout());
             epp.setBorder(BorderFactory.createTitledBorder(" Our proxy URL "));
             pane.add(epp, new GridBagConstraints(0, gridY++, 2, 1, 1000.0, 0.0,
-                                                              GridBagConstraints.WEST,
-                                                              GridBagConstraints.HORIZONTAL,
-                                                              new Insets(14, 5, 0, 5), 0, 0));
+                                                 GridBagConstraints.WEST,
+                                                 GridBagConstraints.HORIZONTAL,
+                                                 new Insets(14, 5, 0, 5), 0, 0));
 
             int oy = gridY;
             gridY = 0;
@@ -325,6 +334,85 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                                               new Insets(5, 5, 5, 5), 0, 0));
 
             gridY = oy;
+
+
+            // Gateway ports panel
+
+            JPanel gpp = new JPanel(new GridBagLayout());
+            gpp.setBorder(BorderFactory.createTitledBorder(" Gateway ports "));
+            pane.add(gpp,
+                     new GridBagConstraints(0, gridY++, 2, 1, 1000.0, 0.0,
+                                            GridBagConstraints.WEST,
+                                            GridBagConstraints.HORIZONTAL,
+                                            new Insets(14, 5, 0, 5), 0, 0));
+
+            gpp.add(new WrappingLabel("If your Gateway is listening on nonstandard ports, " +
+                                      "you can configure them here.", 2),
+                    new GridBagConstraints(0, 0, 5, 1, 0.0, 0.0,
+                                           GridBagConstraints.WEST,
+                                           GridBagConstraints.HORIZONTAL,
+                                           new Insets(0, 5, 0, 0), 0, 0));
+
+            ButtonGroup bg = new ButtonGroup();
+            radioStandardPorts = new JRadioButton("Gateway is using standard ports", true);
+            radioStandardPorts.addChangeListener(new ChangeListener() {
+                public void stateChanged(ChangeEvent e) {
+                    updateCustomPortsEnableState();
+                }
+            });
+            bg.add(radioStandardPorts);
+            gpp.add(radioStandardPorts,
+                    new GridBagConstraints(0, 1, 5, 1, 0.0, 0.0,
+                                           GridBagConstraints.SOUTHWEST,
+                                           GridBagConstraints.NONE,
+                                           new Insets(5, 5, 0, 5), 0, 0));
+
+            radioNonstandardPorts = new JRadioButton("Gateway requires custom ports:", false);
+            radioNonstandardPorts.addChangeListener(new ChangeListener() {
+                public void stateChanged(ChangeEvent e) {
+                    updateCustomPortsEnableState();
+                }
+            });
+            bg.add(radioNonstandardPorts);
+            gpp.add(radioNonstandardPorts,
+                    new GridBagConstraints(0, 2, 5, 1, 0.0, 0.0,
+                                           GridBagConstraints.NORTHWEST,
+                                           GridBagConstraints.NONE,
+                                           new Insets(0, 5, 5, 0), 0, 0));
+
+            gpp.add(new JLabel("Web Service port:"),
+                    new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
+                                           GridBagConstraints.WEST,
+                                           GridBagConstraints.NONE,
+                                           new Insets(0, 40, 5, 0), 0, 0));
+            fieldSsgPort = new JTextField("");
+            initDfg(fieldSsgPort);
+            fieldSsgPort.setDocument(new IntegerField(0, 65535));
+            fieldSsgPort.setPreferredSize(new Dimension(50, 20));
+            gpp.add(fieldSsgPort,
+                    new GridBagConstraints(1, 3, 1, 1, 0.0, 0.0,
+                                           GridBagConstraints.WEST,
+                                           GridBagConstraints.NONE,
+                                           new Insets(0, 5, 5, 5), 0, 0));
+            gpp.add(new JLabel("SSL port:"),
+                    new GridBagConstraints(2, 3, 1, 1, 0.0, 0.0,
+                                           GridBagConstraints.WEST,
+                                           GridBagConstraints.NONE,
+                                           new Insets(0, 15, 5, 0), 0, 0));
+            fieldSslPort = new JTextField("");
+            initDfg(fieldSslPort);
+            fieldSslPort.setDocument(new IntegerField(0, 65535));
+            fieldSslPort.setPreferredSize(new Dimension(50, 20));
+            gpp.add(fieldSslPort,
+                    new GridBagConstraints(3, 3, 1, 1, 0.0, 0.0,
+                                           GridBagConstraints.WEST,
+                                           GridBagConstraints.NONE,
+                                           new Insets(0, 5, 5, 5), 0, 0));
+            gpp.add(new JPanel(),
+                    new GridBagConstraints(4, 3, 1, 1, 1000.0, 0.0,
+                                           GridBagConstraints.CENTER,
+                                           GridBagConstraints.HORIZONTAL,
+                                           new Insets(0, 0, 0, 0), 0, 0));
 
             // Have a spacer eat any leftover space
             pane.add(new JPanel(),
@@ -412,6 +500,12 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             });
         }
         return serverCertButton;
+    }
+
+    private void updateCustomPortsEnableState() {
+        boolean en = radioNonstandardPorts.isSelected();
+        setEnabled(fieldSsgPort, en);
+        setEnabled(fieldSslPort, en);
     }
 
     private JButton getClientCertificateButton() {
@@ -520,6 +614,10 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         displaySelectedPolicy();
     }
 
+    private boolean isPortsCustom(Ssg ssg) {
+        return referenceSsg.getSsgPort() != ssg.getSsgPort() || referenceSsg.getSslPort() != ssg.getSslPort();
+    }
+
     /** Set the Ssg object being edited by this panel. */
     public void setSsg(final Ssg ssg) {
         this.ssg = ssg;
@@ -531,6 +629,12 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         boolean hasPassword = ssg.password() != null;
         fieldPassword.setText(new String(hasPassword ? ssg.password() : "".toCharArray()));
         policyFlushRequested = false;
+        fieldSsgPort.setText(Integer.toString(ssg.getSsgPort()));
+        fieldSslPort.setText(Integer.toString(ssg.getSslPort()));
+        boolean customPorts = isPortsCustom(ssg);
+        radioStandardPorts.setSelected(!customPorts);
+        radioNonstandardPorts.setSelected(customPorts);
+        updateCustomPortsEnableState();
 
         updatePolicyPanel();
     }
@@ -555,6 +659,15 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                     (ssg.password() != null && !new String(ssg.password()).equals(new String(pass))))
                 ssg.promptForUsernameAndPassword(true);
             ssg.password(pass.length > 0 ? fieldPassword.getPassword() : null);
+
+            if (radioNonstandardPorts.isSelected()) {
+                ssg.setSsgPort(Integer.parseInt(fieldSsgPort.getText()));
+                ssg.setSslPort(Integer.parseInt(fieldSslPort.getText()));
+            } else {
+                ssg.setSsgPort(referenceSsg.getSsgPort());
+                ssg.setSslPort(referenceSsg.getSslPort());
+            }
+
 
             if (policyFlushRequested)
                 ssg.clearPolicies();
