@@ -1,22 +1,21 @@
 package com.l7tech.proxy.datamodel;
 
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.composite.AllAssertion;
+import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
+import com.l7tech.policy.assertion.credential.http.HttpBasic;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
+import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.apache.log4j.Category;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.logging.Logger;
-
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.credential.http.HttpDigest;
-import com.l7tech.policy.assertion.composite.AllAssertion;
-import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
-import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
 
 /**
  * Work the Client Proxy's SSG Manager a little bit.
@@ -25,7 +24,7 @@ import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
  * Time: 3:39:14 PM
  */
 public class SsgManagerTest extends TestCase {
-    static Logger log = Logger.getLogger(SsgManagerTest.class.getName());
+    private static final Category log = Category.getInstance(SsgManagerTest.class);
 
     private static final SsgManagerImpl sm = SsgManagerImpl.getSsgManagerImpl();
 
