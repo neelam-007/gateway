@@ -19,7 +19,7 @@ import java.security.cert.X509Certificate;
  * @author mike
  * @version 1.0
  */
-interface SecureSpanAgent {
+public interface SecureSpanAgent {
     /**
      * This is the result returned from a call to send().
      */
