@@ -44,6 +44,14 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
     }
 
     /**
+     * Return all data in the model
+     * @return  The data in the model
+     */
+    public Vector getAllData() {
+        return rawdata;
+    }
+
+    /**
      * Set the data object.
      *
      * @param data  The list of the node status of every gateways in the cluster (unsorted).

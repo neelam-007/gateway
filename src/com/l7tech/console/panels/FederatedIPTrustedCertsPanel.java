@@ -7,6 +7,7 @@ import com.l7tech.console.event.CertListenerAdapter;
 import com.l7tech.console.event.CertEvent;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
@@ -15,8 +16,7 @@ import javax.swing.*;
 import javax.swing.event.EventListenerList;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.ListSelectionEvent;
-import java.util.ResourceBundle;
-import java.util.Locale;
+import java.util.*;
 import java.util.logging.Logger;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
@@ -29,7 +29,7 @@ import java.awt.event.ActionEvent;
  * <p> @author fpang </p>
  * $Id$
  */
-public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel{
+public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
     private JPanel mainPanel;
     private JScrollPane certScrollPane;
     private JButton addButton;
@@ -37,7 +37,6 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel{
     private JButton propertiesButton;
 
     private TrustedCertsTable trustedCertTable = null;
-    private IdentityProviderConfig providerConfig;
     private EventListenerList listenerList = new EventListenerList();
 
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.FederatedIdentityProviderDialog", Locale.getDefault());
@@ -49,10 +48,12 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel{
     }
 
     public String getDescription() {
-        return  "Select the certificates that will be trusted by this identity provider from the SecureSpan Gateway's trusted certificate store.";
+        return "Select the certificates that will be trusted by this identity provider from the SecureSpan Gateway's trusted certificate store.";
     }
 
-    /** @return the wizard step label    */
+    /**
+     * @return the wizard step label
+     */
     public String getStepLabel() {
         return "Select the Trusted Certificates";
     }
@@ -64,7 +65,28 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel{
      * @throws IllegalArgumentException if the data provided by the wizard are not valid.
      */
     public void readSettings(Object settings) throws IllegalArgumentException {
-        //todo:
+        if (!(settings instanceof FederatedIdentityProviderConfig))
+            throw new IllegalArgumentException("The settings object must be FederatedIdentityProviderConfig");
+
+        FederatedIdentityProviderConfig iProviderConfig = (FederatedIdentityProviderConfig) settings;
+
+        Set trustedCerts = iProviderConfig.getTrustedCerts();
+
+        if (trustedCerts != null) {
+
+            Vector certs = new Vector();
+
+            for (Iterator iterator = trustedCerts.iterator(); iterator.hasNext();) {
+                Object o = (Object) iterator.next();
+                if (!(o instanceof TrustedCert)) {
+                    throw new IllegalArgumentException("The cert must be TrustedCert object");
+                }
+                certs.add(o);
+
+            }
+
+            trustedCertTable.getTableSorter().setData(certs);
+        }
     }
 
 
@@ -76,15 +98,29 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel{
      * @param settings the object representing wizard panel state
      */
     public void storeSettings(Object settings) {
-        //todo:
+        if (!(settings instanceof FederatedIdentityProviderConfig))
+            throw new IllegalArgumentException("The settings object must be FederatedIdentityProviderConfig");
+
+        FederatedIdentityProviderConfig iProviderConfig = (FederatedIdentityProviderConfig) settings;
+
+        Vector data = trustedCertTable.getTableSorter().getAllData();
+        HashSet trustedCerts = new HashSet();
+
+        for (int i = 0; i < data.size(); i++) {
+            Object o = (Object) data.elementAt(i);
+            trustedCerts.add(o);
+        }
+
+        iProviderConfig.setTrustedCerts(trustedCerts);
+
     }
-    
+
     private void initComponents() {
 
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
 
-        if(trustedCertTable == null) {
+        if (trustedCertTable == null) {
             trustedCertTable = new TrustedCertsTable();
         }
         certScrollPane.setViewportView(trustedCertTable);
@@ -125,7 +161,7 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel{
             public void actionPerformed(ActionEvent event) {
                 int row = trustedCertTable.getSelectedRow();
                 if (row >= 0) {
-                     trustedCertTable.getTableSorter().deleteRow(row);
+                    trustedCertTable.getTableSorter().deleteRow(row);
                 }
             }
         });
@@ -135,7 +171,7 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel{
 
                 int row = trustedCertTable.getSelectedRow();
                 if (row >= 0) {
-                     Wizard w = (Wizard) TopComponents.getInstance().getComponent(CreateFederatedIPWizard.NAME);
+                    Wizard w = (Wizard) TopComponents.getInstance().getComponent(CreateFederatedIPWizard.NAME);
 
                     CertPropertiesWindow cpw = new CertPropertiesWindow(w, (TrustedCert) trustedCertTable.getTableSorter().getData(row), false);
                     cpw.show();
@@ -144,30 +180,29 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel{
         });
 
 
-
     }
 
     /**
-      * Enable or disable the fields based on the current selections.
-      */
-     private void enableOrDisableButtons() {
-         boolean propsEnabled = false;
-         boolean removeEnabled = false;
-         int row = trustedCertTable.getSelectedRow();
-         if (row >= 0) {
-             removeEnabled = true;
-             propsEnabled = true;
-         }
-         removeButton.setEnabled(removeEnabled);
-         propertiesButton.setEnabled(propsEnabled);
-     }
+     * Enable or disable the fields based on the current selections.
+     */
+    private void enableOrDisableButtons() {
+        boolean propsEnabled = false;
+        boolean removeEnabled = false;
+        int row = trustedCertTable.getSelectedRow();
+        if (row >= 0) {
+            removeEnabled = true;
+            propsEnabled = true;
+        }
+        removeButton.setEnabled(removeEnabled);
+        propertiesButton.setEnabled(propsEnabled);
+    }
 
-     private final CertListener certListener = new CertListenerAdapter() {
-         public void certSelected(CertEvent e) {
-              trustedCertTable.getTableSorter().addRow(e.getCert());
-         }
+    private final CertListener certListener = new CertListenerAdapter() {
+        public void certSelected(CertEvent e) {
+            trustedCertTable.getTableSorter().addRow(e.getCert());
+        }
 
-     };
+    };
 
     {
 // GUI initializer generated by IntelliJ IDEA GUI Designer

@@ -4,6 +4,7 @@ import com.l7tech.console.action.Actions;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -29,13 +30,10 @@ public class CreateFederatedIPWizard extends IdentityProviderWizard {
         setTitle("Create Federated Identity Provider Wizard");
         setShowDescription(false);
         Actions.setEscKeyStrokeDisposes(this);
-        // create a holder for the new identity provider
-        // NOTE: we only support creating LDAP provider
+        
+        wizardInput = new FederatedIdentityProviderConfig();
 
-       //todo:
-        //wizardInput = new LdapIdentityProviderConfig();
-
-       // ((IdentityProviderConfig)wizardInput).setTypeVal(IdentityProviderType.LDAP.toVal());
+        ((IdentityProviderConfig)wizardInput).setTypeVal(IdentityProviderType.FEDERATED.toVal());
 
         pack();
 

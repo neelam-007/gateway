@@ -1,5 +1,7 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
+
 import javax.swing.*;
 import java.util.ResourceBundle;
 import java.util.Locale;
@@ -34,11 +36,13 @@ public class FederatedIPGeneralPanel extends IdentityProviderStepPanel {
     }
 
     public String getDescription() {
-        return  "Enter the identity provider name, " +
+        return "Enter the identity provider name, " +
                 "and select the types of credential source this identity provider will handle.";
     }
 
-    /** @return the wizard step label    */
+    /**
+     * @return the wizard step label
+     */
     public String getStepLabel() {
         return "Enter Provider Information";
     }
@@ -50,10 +54,18 @@ public class FederatedIPGeneralPanel extends IdentityProviderStepPanel {
      * @throws IllegalArgumentException if the data provided by the wizard are not valid.
      */
     public void readSettings(Object settings) throws IllegalArgumentException {
-        //todo:
-        //providerNameTextField;
-        x509CertCheckbox.setSelected(true);
-        //samlCheckbox;
+
+        if (!(settings instanceof FederatedIdentityProviderConfig))
+            throw new IllegalArgumentException("The settings object must be FederatedIdentityProviderConfig");
+
+        FederatedIdentityProviderConfig iProviderConfig = (FederatedIdentityProviderConfig) settings;
+
+        if (iProviderConfig.getOid() != -1) {
+            providerNameTextField.setText(iProviderConfig.getName());
+        }
+
+        //x509CertCheckbox.setSelected(iProviderConfig.isX509Supported());
+       // samlCheckbox.setSelected(iProviderConfig.isSamlSupported());
     }
 
 
@@ -65,14 +77,21 @@ public class FederatedIPGeneralPanel extends IdentityProviderStepPanel {
      * @param settings the object representing wizard panel state
      */
     public void storeSettings(Object settings) {
-        //todo:
+        if (!(settings instanceof FederatedIdentityProviderConfig))
+            throw new IllegalArgumentException("The settings object must be FederatedIdentityProviderConfig");
+
+        FederatedIdentityProviderConfig iProviderConfig = (FederatedIdentityProviderConfig) settings;
+
+       // iProviderConfig.setSamlSupported(samlCheckbox.isSelected());
+       // iProviderConfig.setX509Supported(x509CertCheckbox.isSelected());
+        iProviderConfig.setName(providerNameTextField.getText().trim());
 
     }
 
     public boolean onNextButton() {
         java.util.ArrayList skippedPanels = new java.util.ArrayList();
-        if(!x509CertCheckbox.isSelected()) skippedPanels.add(FederatedIPX509CertPanel.class.getName());
-        if(!samlCheckbox.isSelected()) skippedPanels.add(FederatedIPSamlPanel.class.getName());
+        if (!x509CertCheckbox.isSelected()) skippedPanels.add(FederatedIPX509CertPanel.class.getName());
+        if (!samlCheckbox.isSelected()) skippedPanels.add(FederatedIPSamlPanel.class.getName());
 
         setSkippedPanels(skippedPanels.toArray());
         return true;

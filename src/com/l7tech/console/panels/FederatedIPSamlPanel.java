@@ -1,5 +1,7 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
+
 import javax.swing.*;
 import java.awt.*;
 
@@ -46,13 +48,20 @@ public class FederatedIPSamlPanel extends IdentityProviderStepPanel {
      * @throws IllegalArgumentException if the data provided by the wizard are not valid.
      */
     public void readSettings(Object settings) throws IllegalArgumentException {
-        //todo:
-        //emailCheckbox;
-        x509SubjectNameCheckbox.setSelected(true);
-        holderOfKeyCheckbox.setSelected(true);
-        //domainNameCheckbox;
-        //senderVouchesCheckbox;
-        //nameQualifierTextField;
+        if (!(settings instanceof FederatedIdentityProviderConfig))
+            throw new IllegalArgumentException("The settings object must be FederatedIdentityProviderConfig");
+
+        FederatedIdentityProviderConfig iProviderConfig = (FederatedIdentityProviderConfig) settings;
+
+        emailCheckbox.setSelected(iProviderConfig.getSamlConfig().isNameIdEmail());
+        x509SubjectNameCheckbox.setSelected(iProviderConfig.getSamlConfig().isNameIdX509SubjectName());
+        holderOfKeyCheckbox.setSelected(iProviderConfig.getSamlConfig().isSubjConfHolderOfKey());
+        domainNameCheckbox.setSelected(iProviderConfig.getSamlConfig().isNameIdWindowsDomain());
+        senderVouchesCheckbox.setSelected(iProviderConfig.getSamlConfig().isSubjConfSenderVouches());
+
+        if (iProviderConfig.getOid() != -1) {
+            nameQualifierTextField.setText(iProviderConfig.getSamlConfig().getNameQualifier());
+        }
     }
 
 
@@ -64,7 +73,16 @@ public class FederatedIPSamlPanel extends IdentityProviderStepPanel {
      * @param settings the object representing wizard panel state
      */
     public void storeSettings(Object settings) {
-        //todo:
+        if (!(settings instanceof FederatedIdentityProviderConfig))
+            throw new IllegalArgumentException("The settings object must be FederatedIdentityProviderConfig");
+
+        FederatedIdentityProviderConfig iProviderConfig = (FederatedIdentityProviderConfig) settings;
+
+        iProviderConfig.getSamlConfig().setNameIdEmail(emailCheckbox.isSelected());
+        iProviderConfig.getSamlConfig().setNameIdX509SubjectName(x509SubjectNameCheckbox.isSelected());
+        iProviderConfig.getSamlConfig().setSubjConfHolderOfKey(holderOfKeyCheckbox.isSelected());
+        iProviderConfig.getSamlConfig().setSubjConfSenderVouches(senderVouchesCheckbox.isSelected());
+        iProviderConfig.getSamlConfig().setNameQualifier(nameQualifierTextField.getText().trim());
     }
 
     {

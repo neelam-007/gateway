@@ -1,5 +1,7 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
+
 import javax.swing.*;
 import java.util.ResourceBundle;
 import java.util.Locale;
@@ -31,10 +33,12 @@ public class FederatedIPX509CertPanel extends IdentityProviderStepPanel {
     }
 
     public String getDescription() {
-        return  "Select the usage of the X.509 certificate credential source allowed by this identity provider.";
+        return "Select the usage of the X.509 certificate credential source allowed by this identity provider.";
     }
 
-    /** @return the wizard step label    */
+    /**
+     * @return the wizard step label
+     */
     public String getStepLabel() {
         return "Configure X.509 Cert Credential Source";
     }
@@ -46,9 +50,13 @@ public class FederatedIPX509CertPanel extends IdentityProviderStepPanel {
      * @throws IllegalArgumentException if the data provided by the wizard are not valid.
      */
     public void readSettings(Object settings) throws IllegalArgumentException {
-        //todo:       
-        wssBSTCheckbox.setSelected(true);
-        sslCertCheckbox.setSelected(false);
+        if (!(settings instanceof FederatedIdentityProviderConfig))
+            throw new IllegalArgumentException("The settings object must be FederatedIdentityProviderConfig");
+
+        FederatedIdentityProviderConfig iProviderConfig = (FederatedIdentityProviderConfig) settings;
+
+        wssBSTCheckbox.setSelected(iProviderConfig.getX509Config().isWssBinarySecurityToken());
+        sslCertCheckbox.setSelected(iProviderConfig.getX509Config().isSslClientCert());
 
     }
 
@@ -61,7 +69,13 @@ public class FederatedIPX509CertPanel extends IdentityProviderStepPanel {
      * @param settings the object representing wizard panel state
      */
     public void storeSettings(Object settings) {
-        //todo:
+        if (!(settings instanceof FederatedIdentityProviderConfig))
+            throw new IllegalArgumentException("The settings object must be FederatedIdentityProviderConfig");
+
+        FederatedIdentityProviderConfig iProviderConfig = (FederatedIdentityProviderConfig) settings;
+
+        iProviderConfig.getX509Config().setSslClientCert(sslCertCheckbox.isSelected());
+        iProviderConfig.getX509Config().setWssBinarySecurityToken(wssBSTCheckbox.isSelected());
     }
 
     {
