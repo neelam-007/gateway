@@ -10,6 +10,7 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import org.w3c.dom.Document;
 
+import javax.crypto.SecretKey;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -92,13 +93,29 @@ public interface WssDecorator {
             this.usernameTokenCredentials = usernameTokenCredentials;
         }
 
+        public SecureConversationSession getSecureConversationSession() {
+            return secureConversationSession;
+        }
+
+        public void setSecureConversationSession(SecureConversationSession secureConversationSession) {
+            this.secureConversationSession = secureConversationSession;
+        }
+
+        public interface SecureConversationSession {
+            String getId();
+            SecretKey getSecretKey();
+            int getGeneration();
+            int getLength();
+        }
+
         private X509Certificate recipientCertificate = null;
         private X509Certificate senderCertificate = null;
+        private LoginCredentials usernameTokenCredentials = null;
+        private SecureConversationSession secureConversationSession = null;
         private PrivateKey senderPrivateKey = null;
         private boolean signTimestamp;
         private Set elementsToEncrypt = new LinkedHashSet();
         private Set elementsToSign = new LinkedHashSet();
-        private LoginCredentials usernameTokenCredentials = null;
     }
 
     /**

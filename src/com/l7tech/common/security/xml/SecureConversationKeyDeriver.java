@@ -98,12 +98,12 @@ public class SecureConversationKeyDeriver {
         }
 
         // get nonce
-        Element nonceNode = (Element)((XmlUtil.findChildElementsByName(derivedKeyToken,
-                                                                       SoapUtil.SECURITY_URIS_ARRAY,
-                                                                       "Nonce")).get(0));
-        if(nonceNode != null) {
-            nonce = ((Text)nonceNode.getFirstChild()).getNodeValue();
-        }
+        Element nonceNode = XmlUtil.findOnlyOneChildElementByName(derivedKeyToken,
+                                                                  SoapUtil.SECURITY_URIS_ARRAY,
+                                                                  "Nonce");
+        if (nonceNode == null)
+            throw new InvalidDocumentFormatException("DerivedKeyToken has no Nonce");
+        nonce = ((Text)nonceNode.getFirstChild()).getNodeValue();
 
         byte[] nonceA = new byte[1];
         try {

@@ -14,6 +14,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
+import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -122,9 +123,21 @@ public class WssRoundTripTest extends TestCase {
                                                wssDecoratorTest.getSkilessRecipientCertTestDocument()));        
     }
 
+    // TODO make this pass
+    public void OFF_testSigningOnlyWithSecureConversation() throws Exception {
+        runRoundTripTest(new NamedTestDocument("SigningOnlyWithSecureConversation",
+                                               wssDecoratorTest.getSigningOnlyWithSecureConversationTestDocument()));
+    }
+
+    // TODO make this pass
+    public void OFF_testSigningAndEncryptionWithSecureConversation() throws Exception {
+        runRoundTripTest(new NamedTestDocument("SigningAndEncryptionWithSecureConversation",
+                                               wssDecoratorTest.getSigningAndEncryptionWithSecureConversationTestDocument()));
+    }
+
     private void runRoundTripTest(NamedTestDocument ntd) throws Exception {
         log.info("Running round-trip test on test document: " + ntd.name);
-        WssDecoratorTest.TestDocument td = ntd.td;
+        final WssDecoratorTest.TestDocument td = ntd.td;
         WssDecoratorTest.Context c = td.c;
         Document message = c.message;
 
@@ -148,6 +161,13 @@ public class WssRoundTripTest extends TestCase {
         reqs.setSenderPrivateKey(td.senderKey);
         reqs.setSignTimestamp(td.signTimestamp);
         reqs.setUsernameTokenCredentials(null);
+        if (td.secureConversationKey != null)
+            reqs.setSecureConversationSession(new WssDecorator.DecorationRequirements.SecureConversationSession() {
+                public String getId() { return "http://www.layer7tech.com/uuid/mike/myfunkytestsessionid"; }
+                public SecretKey getSecretKey() { return td.secureConversationKey; }
+                public int getGeneration() { return 0; }
+                public int getLength() { return 16; }
+            });
         if (td.elementsToEncrypt != null)
             for (int i = 0; i < td.elementsToEncrypt.length; i++) {
                 reqs.getElementsToEncrypt().add(td.elementsToEncrypt[i]);
@@ -175,7 +195,7 @@ public class WssRoundTripTest extends TestCase {
         WssProcessor.ProcessorResult r = trogdor.undecorateMessage(incomingMessage,
                                                                    td.recipientCert,
                                                                    td.recipientKey,
-                                                                   null);
+                                                                   makeSecurityContextFinder(td.secureConversationKey));
 
         Document undecorated = r.getUndecoratedMessage();
         log.info("After undecoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(undecorated));
@@ -239,6 +259,19 @@ public class WssRoundTripTest extends TestCase {
             assertTrue("Element " + elementToEncrypt.getLocalName() + " must be encrypted", wasEncrypted);
             log.info("Element " + elementToEncrypt.getLocalName() + " verified as encrypted successfully.");
         }
+    }
+
+    private WssProcessor.SecurityContextFinder makeSecurityContextFinder(final SecretKey secureConversationKey) {
+        if (secureConversationKey == null) return null;
+        return new WssProcessor.SecurityContextFinder() {
+            public WssProcessor.SecurityContext getSecurityContext(String securityContextIdentifier) {
+                return new WssProcessor.SecurityContext() {
+                    public SecretKey getSharedSecret() {
+                        return secureConversationKey;
+                    }
+                };
+            }
+        };
     }
 
     private String canonicalize(Node node) throws IOException {

@@ -19,6 +19,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
+import javax.crypto.SecretKey;
 import java.io.IOException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
@@ -83,6 +84,7 @@ public class WssDecoratorTest extends TestCase {
         X509Certificate recipientCert;
         PrivateKey recipientKey;
         boolean signTimestamp;
+        SecretKey secureConversationKey;   // may be used instead of a sender cert + sender key if using WS-SC
         Element[] elementsToEncrypt;
         Element[] elementsToSign;
 
@@ -92,6 +94,17 @@ public class WssDecoratorTest extends TestCase {
                             Element[] elementsToEncrypt,
                             Element[] elementsToSign)
         {
+            this(c, senderCert, senderKey, recipientCert, recipientKey, signTimestamp,
+                 elementsToEncrypt, elementsToSign, null);
+        }
+
+        public TestDocument(Context c, X509Certificate senderCert, PrivateKey senderKey,
+                            X509Certificate recipientCert, PrivateKey recipientKey,
+                            boolean signTimestamp,
+                            Element[] elementsToEncrypt,
+                            Element[] elementsToSign,
+                            SecretKey secureConversationKey)
+        {
             this.c = c;
             this.senderCert = senderCert;
             this.senderKey = senderKey;
@@ -100,10 +113,11 @@ public class WssDecoratorTest extends TestCase {
             this.signTimestamp = signTimestamp;
             this.elementsToEncrypt = elementsToEncrypt;
             this.elementsToSign = elementsToSign;
+            this.secureConversationKey = secureConversationKey;
         }
     }
 
-    private void runTest(TestDocument d) throws Exception {
+    private void runTest(final TestDocument d) throws Exception {
         WssDecorator decorator = new WssDecoratorImpl();
         log.info("Before decoration (*note: pretty-printed):" + XmlUtil.nodeToFormattedString(d.c.message));
         WssDecorator.DecorationRequirements reqs = new WssDecorator.DecorationRequirements();
@@ -112,6 +126,13 @@ public class WssDecoratorTest extends TestCase {
         reqs.setSenderPrivateKey(d.senderKey);
         reqs.setSignTimestamp(d.signTimestamp);
         reqs.setUsernameTokenCredentials(null);
+        if (d.secureConversationKey != null)
+            reqs.setSecureConversationSession(new WssDecorator.DecorationRequirements.SecureConversationSession() {
+                public String getId() { return "http://www.layer7tech.com/uuid/mike/myfunkytestsessionid"; }
+                public SecretKey getSecretKey() { return d.secureConversationKey; }
+                public int getGeneration() { return 0; }
+                public int getLength() { return 16; }
+            });
         if (d.elementsToEncrypt != null)
             for (int i = 0; i < d.elementsToEncrypt.length; i++) {
                 reqs.getElementsToEncrypt().add(d.elementsToEncrypt[i]);
@@ -282,5 +303,39 @@ public class WssDecoratorTest extends TestCase {
                                 true,
                                 new Element[] { c.message.getDocumentElement() },
                                 new Element[] { c.body });
+    }
+
+    public void testSigningOnlyWithSecureConversation() throws Exception {
+        runTest(getSigningOnlyWithSecureConversationTestDocument());
+    }
+
+    public TestDocument getSigningOnlyWithSecureConversationTestDocument() throws Exception {
+        final Context c = new Context();
+        return new TestDocument(c,
+                                null,
+                                null,
+                                null,
+                                null,
+                                true,
+                                new Element[0],
+                                new Element[] { c.body },
+                                TestDocuments.getDotNetSecureConversationSharedSecret());
+    }
+
+    public void testSigningAndEncryptionWithSecureConversation() throws Exception {
+        runTest(getSigningAndEncryptionWithSecureConversationTestDocument());
+    }
+
+    public TestDocument getSigningAndEncryptionWithSecureConversationTestDocument() throws Exception {
+        final Context c = new Context();
+        return new TestDocument(c,
+                                null,
+                                null,
+                                null,
+                                null,
+                                true,
+                                new Element[] { c.productid,  c.accountid },
+                                new Element[] { c.body },
+                                TestDocuments.getDotNetSecureConversationSharedSecret());
     }
 }
