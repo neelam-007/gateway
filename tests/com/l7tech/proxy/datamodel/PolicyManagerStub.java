@@ -7,8 +7,10 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.proxy.ConfigurationException;
 
 import java.io.IOException;
+import java.net.URL;
 
 /**
  * PolicyManager for testing.  Provides a fixed policy that is manually set.
@@ -29,5 +31,8 @@ public class PolicyManagerStub implements PolicyManager {
 
     public Assertion getPolicy(PendingRequest request) {
         return policy;
+    }
+
+    public void updatePolicy(PendingRequest request, URL policyUrl) throws ConfigurationException, IOException {
     }
 }
