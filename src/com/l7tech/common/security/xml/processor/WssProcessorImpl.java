@@ -422,11 +422,12 @@ public class WssProcessorImpl implements WssProcessor {
         UsernameTokenImpl rememberedSecToken = null;
         try {
             rememberedSecToken = new UsernameTokenImpl(usernameTokenElement);
+            cntx.securityTokens.add(rememberedSecToken);
         } catch (UnsupportedDocumentFormatException e) {
+            // if the format is not supported, we should ignore it completly
             logger.log(Level.INFO, "A usernametoken element was encountered but we dont support the format.", e);
             return;
         }
-        cntx.securityTokens.add(rememberedSecToken);
     }
 
     private void processEncryptedKey(Element encryptedKeyElement,
