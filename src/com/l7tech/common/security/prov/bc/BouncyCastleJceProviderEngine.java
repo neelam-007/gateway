@@ -54,8 +54,8 @@ public class BouncyCastleJceProviderEngine implements JceProviderEngine {
      * @param privateKeyPass
      * @return
      */
-    public RsaSignerEngine createRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass) {
-        return new BouncyCastleRsaSignerEngine(keyStorePath, storePass, privateKeyAlias, privateKeyPass, KEYSTORE_TYPE, PROVIDER.getName(), REQUEST_SIG_ALG );
+    public RsaSignerEngine createRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass, String storeType) {
+        return new BouncyCastleRsaSignerEngine(keyStorePath, storePass, privateKeyAlias, privateKeyPass, storeType, PROVIDER.getName(), REQUEST_SIG_ALG );
     }
 
     /**
@@ -105,6 +105,4 @@ public class BouncyCastleJceProviderEngine implements JceProviderEngine {
         }
         return new BouncyCastleCertificateRequest(certReq, providerName);
     }
-
-    private static final String KEYSTORE_TYPE = "JKS";
 }

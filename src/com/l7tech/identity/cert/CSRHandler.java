@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
@@ -57,6 +58,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
         if (tmp == null || tmp.length() < 1) tmp = "../../kstores/ssgroot";
         rootkstore = KeystoreUtils.getInstance().getRootKeystorePath();
         rootkstorepasswd = KeystoreUtils.getInstance().getRootKeystorePasswd();
+        rootkstoretype = KeystoreUtils.getInstance().getKeyStoreType();
         if (rootkstorepasswd == null || rootkstorepasswd.length() < 1) {
             String msg = "Key store password not found (root CA).";
             logger.log(Level.SEVERE, msg);
@@ -211,7 +213,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
     }
 
     private RsaCertificateSigner getSigner() {
-        return new RsaCertificateSigner(rootkstore, rootkstorepasswd, "ssgroot", rootkstorepasswd);
+        return new RsaCertificateSigner(rootkstore, rootkstorepasswd, "ssgroot", rootkstorepasswd, rootkstoretype);
     }
 
     private boolean keystorePresent() {
@@ -335,6 +337,8 @@ public class CSRHandler extends AuthenticatableHttpServlet {
 
     private String rootkstore = null;
     private String rootkstorepasswd = null;
+    private String rootkstoretype = KeyStore.getDefaultType();
+
     public static final String CONTENT_TYPE = "Content-Type";
     public static final String AUTH_HEADER_NAME = "Authorization";
     public static final String ROUTED_FROM_PEER = "Routed-From-Peer";

@@ -59,8 +59,8 @@ public abstract class JceProvider {
         return Holder.engine.getAsymmetricProvider();
     }
 
-    public static RsaSignerEngine createRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass) {
-        return Holder.engine.createRsaSignerEngine(keyStorePath, storePass, privateKeyAlias, privateKeyPass);
+    public static RsaSignerEngine createRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass, String storeType) {
+        return Holder.engine.createRsaSignerEngine(keyStorePath, storePass, privateKeyAlias, privateKeyPass, storeType);
     }
 
     public static KeyPair generateRsaKeyPair() {

@@ -158,8 +158,8 @@ public class PhaosJceProviderEngine implements JceProviderEngine {
      * @param privateKeyPass
      * @return
      */
-    public RsaSignerEngine createRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass) {
-        return new PhaosRsaSignerEngine(keyStorePath, storePass, privateKeyAlias, privateKeyPass);
+    public RsaSignerEngine createRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass, String storeType) {
+        return new PhaosRsaSignerEngine(keyStorePath, storePass, privateKeyAlias, privateKeyPass, storeType);
     }
 
     /**

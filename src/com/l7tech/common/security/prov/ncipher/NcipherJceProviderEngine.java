@@ -54,8 +54,8 @@ public class NcipherJceProviderEngine implements JceProviderEngine {
      * @param privateKeyPass
      * @return
      */
-    public RsaSignerEngine createRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass) {
-        return new NcipherRsaSignerEngine(keyStorePath, storePass, privateKeyAlias, privateKeyPass);
+    public RsaSignerEngine createRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass, String storeType) {
+        return new NcipherRsaSignerEngine(keyStorePath, storePass, privateKeyAlias, privateKeyPass, storeType);
     }
 
     /**

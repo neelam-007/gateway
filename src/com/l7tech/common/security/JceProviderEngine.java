@@ -40,7 +40,7 @@ public interface JceProviderEngine {
      * @param privateKeyPass
      * @return
      */
-    RsaSignerEngine createRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass);
+    RsaSignerEngine createRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass, String storeType);
 
     /**
      * Generate an RSA public key / private key pair using the current Crypto provider.

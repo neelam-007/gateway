@@ -32,6 +32,7 @@ import java.util.logging.Logger;
  */
 public class RsaRsaSignerEngine implements RsaSignerEngine {
     private String keyStorePath;
+    private String keyStoreType;
     private String storePass;
     private String privateKeyPassString;
     private String privateKeyAlias;
@@ -39,8 +40,9 @@ public class RsaRsaSignerEngine implements RsaSignerEngine {
     private X509Certificate caCert;
     private SecureRandom random;
 
-    public RsaRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass) {
+    public RsaRsaSignerEngine(String keyStorePath, String storePass, String privateKeyAlias, String privateKeyPass, String keyStoreType) {
         this.keyStorePath = keyStorePath;
+        this.keyStoreType = keyStoreType;
         this.storePass = storePass;
         this.privateKeyAlias = privateKeyAlias;
         this.privateKeyPassString = privateKeyPass;
@@ -54,7 +56,7 @@ public class RsaRsaSignerEngine implements RsaSignerEngine {
     }
 
     private void init() throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException, UnrecoverableKeyException {
-        KeyStore keyStore = KeyStore.getInstance("JKS");
+        KeyStore keyStore = KeyStore.getInstance(keyStoreType);
         InputStream is = new FileInputStream(keyStorePath);
 
         if (storePass == null)

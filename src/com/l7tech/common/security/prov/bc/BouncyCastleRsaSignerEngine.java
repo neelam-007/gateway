@@ -9,9 +9,7 @@ package com.l7tech.common.security.prov.bc;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.RsaSignerEngine;
 import org.bouncycastle.asn1.ASN1Sequence;
-import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERInputStream;
-import org.bouncycastle.asn1.DEROutputStream;
 import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
 import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
@@ -19,16 +17,17 @@ import org.bouncycastle.jce.X509KeyUsage;
 import org.bouncycastle.jce.X509V3CertificateGenerator;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -52,7 +51,7 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
     private boolean useku, kucritical;
     private boolean useski, skicritical;
     private boolean useaki, akicritical;
-    private SecureRandom random;
+    private static final SecureRandom random = new SecureRandom();
 
     private Properties defaultProperties;
 
@@ -145,6 +144,89 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         }
     }
 
+    private static X509V3CertificateGenerator makeCertGenerator( X509Name subject, int validity, PublicKey publicKey, boolean isCa ) {
+        Calendar cal = Calendar.getInstance();
+        // Set back startdate ten minutes to avoid some problems with wrongly set clocks.
+        cal.add(Calendar.MINUTE, -10);
+        Date firstDate = cal.getTime();
+        cal.add(Calendar.DATE, validity);
+        Date lastDate = cal.getTime();
+
+        X509V3CertificateGenerator certgen = new X509V3CertificateGenerator();
+        // Serialnumber is random bits, where random generator is initialized with Date.getTime() when this
+        // bean is created.
+        byte[] serno = new byte[8];
+        random.nextBytes(serno);
+        certgen.setSerialNumber((new BigInteger(serno)).abs());
+        certgen.setNotBefore(firstDate);
+        certgen.setNotAfter(lastDate);
+        certgen.setSignatureAlgorithm("SHA1WithRSA");
+
+        certgen.setSubjectDN(subject);
+        certgen.setPublicKey(publicKey);
+
+        BasicConstraints bc = isCa ? new BasicConstraints(2) : new BasicConstraints(false);
+        certgen.addExtension(X509Extensions.BasicConstraints.getId(), true, bc);
+
+        // Set key usage (signing only)
+        X509KeyUsage keyusage = new X509KeyUsage( X509KeyUsage.digitalSignature
+                                                  + ( isCa ? X509KeyUsage.keyEncipherment : 0 ) );
+        certgen.addExtension(X509Extensions.KeyUsage, true, keyusage);
+
+        // Add subject public key info for fingerprint (not critical)
+        SubjectPublicKeyInfo spki = null;
+        try {
+            spki = new SubjectPublicKeyInfo(ASN1Sequence.getInstance(new DERInputStream(new ByteArrayInputStream(publicKey.getEncoded())).readObject()));
+        } catch ( IOException e ) {
+            throw new RuntimeException(e);
+        }
+        SubjectKeyIdentifier ski = new SubjectKeyIdentifier(spki);
+        certgen.addExtension(X509Extensions.SubjectKeyIdentifier.getId(), false, ski);
+
+        return certgen;
+    }
+
+    /**
+     * Creates and signs a self-signed {@link X509Certificate}.
+     * @param subjectDn The distinguished name of the certificate's subject (usually 'cn=hostname')
+     * @param validity The period during which the cert should be valid, in days.
+     * @param keypair The keypair belonging to the certificate's subject.
+     * @return The self-signed {@link X509Certificate}.
+     * @throws SignatureException if the certificate cannot be found
+     * @throws InvalidKeyException if all or part of the keypair is invalid
+     */
+    public static X509Certificate makeSelfSignedRootCertificate( String subjectDn, int validity, KeyPair keypair )
+            throws SignatureException, InvalidKeyException
+    {
+        X509Name subject = new X509Name(subjectDn);
+        X509V3CertificateGenerator certgen = makeCertGenerator(subject, validity, keypair.getPublic(), true);
+
+        // Self-signed, issuer == subject
+        certgen.setIssuerDN(subject);
+
+        X509Certificate cert = certgen.generateX509Certificate(keypair.getPrivate());
+        return cert;
+    }
+
+    public static X509Certificate makeSignedCertificate( String subjectDn, int validity, PublicKey subjectPublicKey,
+                                                   X509Certificate caCert, PrivateKey caKey )
+            throws IOException, SignatureException, InvalidKeyException
+    {
+        X509Name subject = new X509Name(subjectDn);
+        X509V3CertificateGenerator certgen = makeCertGenerator(subject, validity, subjectPublicKey, false );
+        certgen.setIssuerDN(new X509Name(caCert.getSubjectDN().getName()));
+
+        // Add authority key info (fingerprint)
+        SubjectPublicKeyInfo apki = new SubjectPublicKeyInfo(ASN1Sequence.getInstance(new DERInputStream(new ByteArrayInputStream(caCert.getPublicKey().getEncoded())).readObject()));
+        AuthorityKeyIdentifier aki = new AuthorityKeyIdentifier(apki);
+        certgen.addExtension(X509Extensions.AuthorityKeyIdentifier.getId(), false, aki);
+
+        X509Certificate cert = certgen.generateX509Certificate(caKey);
+        return cert;
+    }
+
+
+
     /**
      * Create a certificate from the given PKCS10 Certificate Request.
      *
@@ -157,12 +239,10 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
         CertificationRequestInfo certReqInfo = pkcs10.getCertificationRequestInfo();
         String dn= certReqInfo.getSubject().toString();
         logger.fine("Signing cert for subject DN = " + dn);
-
-        if (verify(pkcs10) == false) {
+        if (pkcs10.verify() == false) {
             logger.severe("POPO verification failed for " + dn);
             throw new Exception("Verification of signature (popo) on PKCS10 request failed.");
         }
-
         Certificate ret = null;
         // TODO: extract more information or attributes
         // Standard key usages for end users are: digitalSignature | keyEncipherment or nonRepudiation
@@ -180,71 +260,12 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
             // If this is a CA, only allow CA-type keyUsage
             keyusage1 = X509KeyUsage.keyCertSign + X509KeyUsage.cRLSign;
         }
-        X509Certificate cert = makeBCCertificate(dn, caSubjectName, validity.longValue(), getPublicKey(pkcs10), keyusage1);
+        X509Certificate cert = makeBCCertificate(dn, caSubjectName, validity.longValue(), pkcs10.getPublicKey(), keyusage1);
         // Verify before returning
         cert.verify(caCert.getPublicKey());
         ret = cert;
         return ret;
     }
-
-    private static Map oidToAlgorithmNameMap = new HashMap();
-    static {
-        oidToAlgorithmNameMap.put("1.2.840.113549.1.1.5","SHA1withRSA");
-        oidToAlgorithmNameMap.put("1.2.840.113549.1.1.4","MD5withRSA");
-        oidToAlgorithmNameMap.put("1.2.840.113549.1.1.1","RSA");
-    }
-
-    private String getAlgorithm(PKCS10CertificationRequest pkcs10) {
-        String oid = pkcs10.getSignatureAlgorithm().getObjectId().getId();
-        String name = (String)oidToAlgorithmNameMap.get(oid);
-        if ( name == null ) name = oid;
-        return name;
-    }
-
-    public boolean verify(PKCS10CertificationRequest pkcs10) throws NoSuchAlgorithmException,
-                                                                    NoSuchProviderException,
-                                                                    InvalidKeyException,
-                                                                    SignatureException
-    {
-        Signature sig = Signature.getInstance(getAlgorithm(pkcs10));
-
-        sig.initVerify(getPublicKey(pkcs10));
-
-        try {
-            ByteArrayOutputStream   bOut = new ByteArrayOutputStream();
-            DEROutputStream         dOut = new DEROutputStream(bOut);
-
-            dOut.writeObject(pkcs10.getCertificationRequestInfo());
-
-            sig.update(bOut.toByteArray());
-        } catch (Exception e) {
-            throw new SecurityException("exception encoding TBS cert request - " + e);
-        }
-
-        return sig.verify(pkcs10.getSignature().getBytes());
-    }
-
-
-    public PublicKey getPublicKey(PKCS10CertificationRequest pkcs10) throws NoSuchAlgorithmException,
-                                                                            NoSuchProviderException,
-                                                                            InvalidKeyException
-    {
-        SubjectPublicKeyInfo subjectPKInfo = pkcs10.getCertificationRequestInfo().getSubjectPublicKeyInfo();
-
-        try {
-            X509EncodedKeySpec      xspec = new X509EncodedKeySpec(new DERBitString(subjectPKInfo).getBytes());
-            AlgorithmIdentifier     keyAlg = subjectPKInfo.getAlgorithmId();
-
-            String algid = keyAlg.getObjectId().getId();
-            String alg = (String)oidToAlgorithmNameMap.get(algid);
-            if ( alg == null ) alg = algid;
-
-            return KeyFactory.getInstance(alg, providerName).generatePublic(xspec);
-        } catch (InvalidKeySpecException e) {
-            throw new InvalidKeyException("error encoding public key");
-        }
-    }
-
 
 
     /**
@@ -377,7 +398,7 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
             ext.addObject(distp);
             certgen.addExtension(X509Extensions.CRLDistributionPoints.getId(), crldistcritical, ext);
         }*/
-        X509Certificate cert = certgen.generateX509Certificate(privateKey, providerName);
+        X509Certificate cert = certgen.generateX509Certificate(privateKey);
         return cert;
     }
     // makeBCCertificate
@@ -433,40 +454,6 @@ public class BouncyCastleRsaSignerEngine implements RsaSignerEngine {
             crldistcritical = cRLDistributionPointCritical;
             crldisturi = cRLDistURI;
         }*/
-
-        // Init random number generator for random serialnumbers
-        random = new SecureRandom();
-        // Using this seed we should get a different seed every time.
-        // We are not concerned about the security of the random bits, only that they are different every time.
-        // Extracting 64 bit random numbers out of this should give us 2^32 (4 294 967 296) serialnumbers before
-        // collisions (which are seriously BAD), well anyhow sufficien for pretty large scale installations.
-        // Design criteria: 1. No counter to keep track on. 2. Multiple thereads can generate numbers at once, in
-        // a clustered environment etc.
-
-        // this random number is just for the serial number
-        long seed = (new Date().getTime()) + this.hashCode();
-        random.setSeed(seed);
-
-        /*
-         *  Another possibility is to use SecureRandom's default seeding which is designed to be secure:
-         *  <p>The seed is produced by counting the number of times the VM
-         *  manages to loop in a given period. This number roughly
-         *  reflects the machine load at that point in time.
-         *  The samples are translated using a permutation (s-box)
-         *  and then XORed together. This process is non linear and
-         *  should prevent the samples from "averaging out". The s-box
-         *  was designed to have even statistical distribution; it's specific
-         *  values are not crucial for the security of the seed.
-         *  We also create a number of sleeper threads which add entropy
-         *  to the system by keeping the scheduler busy.
-         *  Twenty such samples should give us roughly 160 bits of randomness.
-         *  <P> These values are gathered in the background by a daemon thread
-         *  thus allowing the system to continue performing it's different
-         *  activites, which in turn add entropy to the random seed.
-         *  <p> The class also gathers miscellaneous system information, some
-         *  machine dependent, some not. This information is then hashed together
-         *  with the 20 seed bytes.
-         */
     }
 
     /**
