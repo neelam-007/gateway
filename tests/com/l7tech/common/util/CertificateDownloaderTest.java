@@ -7,7 +7,7 @@
 package com.l7tech.common.util;
 
 import com.l7tech.common.http.SimpleHttpClient;
-import com.l7tech.common.http.UrlConnectionHttpClient;
+import com.l7tech.common.http.prov.jdk.UrlConnectionHttpClient;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;

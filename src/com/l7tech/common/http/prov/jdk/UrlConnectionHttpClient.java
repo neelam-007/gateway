@@ -4,8 +4,9 @@
  * $Id$
  */
 
-package com.l7tech.common.http;
+package com.l7tech.common.http.prov.jdk;
 
+import com.l7tech.common.http.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.util.HexUtils;
@@ -13,7 +14,6 @@ import com.l7tech.common.util.HexUtils;
 import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.PasswordAuthentication;
 import java.net.URLConnection;
@@ -75,14 +75,14 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
 
             return new GenericHttpRequest() {
                 boolean completedRequest = false;
+                private InputStream requestInputStream = null;
 
-                public OutputStream getOutputStream() throws GenericHttpException {
-                    try {
-                        if (method != POST) throw new UnsupportedOperationException();
-                        return conn.getOutputStream();
-                    } catch (IOException e) {
-                        throw new GenericHttpException(e);
-                    }
+                public void setInputStream(InputStream bodyInputStream) {
+                    if (method != POST)
+                        throw new UnsupportedOperationException("bodyInputStream only needed for POST request");
+                    if (completedRequest)
+                        throw new IllegalStateException("This HTTP request is already closed");
+                    requestInputStream = bodyInputStream;
                 }
 
                 public GenericHttpResponse getResponse() throws GenericHttpException {
@@ -100,7 +100,12 @@ public class UrlConnectionHttpClient implements GenericHttpClient {
                             n++;
                         } while (value != null);
 
+
                         completedRequest = true;
+
+                        if (requestInputStream != null)
+                            HexUtils.copyStream(requestInputStream, conn.getOutputStream());
+
                         return new GenericHttpResponse() {
                             public InputStream getInputStream() throws GenericHttpException {
                                 InputStream inputStream;

@@ -22,6 +22,7 @@ public class GenericHttpRequestParamsImpl implements GenericHttpRequestParams {
     private ContentTypeHeader contentType = null;
     private Long contentLength = null;
     private HttpHeader[] extraHeaders = new HttpHeader[0];
+    private boolean preemptiveAuthentication = true;
 
     /**
      * Create a new request description that does not yet have a target URL set.
@@ -101,6 +102,20 @@ public class GenericHttpRequestParamsImpl implements GenericHttpRequestParams {
      */
     public void setPasswordAuthentication(PasswordAuthentication passwordAuthentication) {
         this.passwordAuthentication = passwordAuthentication;
+    }
+
+    public boolean isPreemptiveAuthentication() {
+        return preemptiveAuthentication;
+    }
+
+    /**
+     * Set whether to request preemptive authentication be performed with the request.
+     * 
+     * @see #isPreemptiveAuthentication()
+     * @param preemptiveAuthentication
+     */
+    public void setPreemptiveAuthentication(boolean preemptiveAuthentication) {
+        this.preemptiveAuthentication = preemptiveAuthentication;
     }
 
     public SSLSocketFactory getSslSocketFactory() {

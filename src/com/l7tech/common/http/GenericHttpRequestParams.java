@@ -34,11 +34,23 @@ public interface GenericHttpRequestParams {
      * <p>
      * Unless a particular HTTP client implementation promises differently, it should be assumed that if credentials
      * are specified here, they might be transmitted in plaintext with the initial request regardless of whether an
-     * HTTP challenge actually occurs.
+     * HTTP challenge actually occurs, and regardless of the setting of {@link #isPreemptiveAuthentication()}.
      *
      * @return the credentials that will be presented, or null.
      */
     PasswordAuthentication getPasswordAuthentication();
+
+    /**
+     * Check the hint for whether to present credentials preemptively, with the initial request, rather than
+     * waiting to be challenged.  This setting is only meaningful if {@link #getPasswordAuthentication()} returns non-null.
+     * <p>
+     * Unless a particular HTTP client implementation promises differently, it should be assumed that
+     * this setting will be ignored.
+     *
+     * @return true if the password should be sent in the clear with the request, or false if the password should only
+     *         be disclosed if challenged.
+     */
+    boolean isPreemptiveAuthentication();
 
     /**
      * Get the socket factory to use for an SSL request.

@@ -11,7 +11,6 @@ import com.l7tech.common.mime.ContentTypeHeader;
 
 import javax.net.ssl.SSLSocketFactory;
 import java.io.InputStream;
-import java.io.OutputStream;
 
 /**
  * Http client wrapper that always sets thread-local {@link CurrentSslPeer} to a given value when creating
@@ -26,12 +25,14 @@ public class SslPeerHttpClient implements GenericHttpClient {
      * Create a SslPeerHttpClient that delegates to the specified implementation, and prepares https connections
      * to be against the specified SslPeer.
      *
-     * @param client
+     * @param client the underlying GenericHttpClient implementation to wrap.
+     * @param sslPeer the SslPeer this client will be pointing at
+     * @param sslSocketFactory the SSL socket factory to use
      */
-    public SslPeerHttpClient(GenericHttpClient client, SslPeer sslPeer) {
+    public SslPeerHttpClient(GenericHttpClient client, SslPeer sslPeer, SSLSocketFactory sslSocketFactory) {
         this.sslPeer = sslPeer;
         this.client = client;
-        this.socketFactory = ClientProxySecureProtocolSocketFactory.getInstance();
+        this.socketFactory = sslSocketFactory;
     }
 
     public GenericHttpRequest createRequest(GenericHttpMethod method, GenericHttpRequestParams params)
@@ -47,8 +48,8 @@ public class SslPeerHttpClient implements GenericHttpClient {
 
         final GenericHttpRequest request = client.createRequest(method, p);
         return new GenericHttpRequest() {
-            public OutputStream getOutputStream() throws GenericHttpException {
-                return request.getOutputStream();
+            public void setInputStream(InputStream bodyInputStream) {
+                request.setInputStream(bodyInputStream);
             }
 
             public GenericHttpResponse getResponse() throws GenericHttpException {

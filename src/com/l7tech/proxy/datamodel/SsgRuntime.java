@@ -7,16 +7,13 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.http.SimpleHttpClient;
-import com.l7tech.common.http.UrlConnectionHttpClient;
+import com.l7tech.common.http.prov.apache.CommonsHttpClient;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.util.DateTranslator;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.proxy.ssl.ClientProxyKeyManager;
-import com.l7tech.proxy.ssl.ClientProxyTrustManager;
-import com.l7tech.proxy.ssl.SslPeer;
-import com.l7tech.proxy.ssl.SslPeerHttpClient;
+import com.l7tech.proxy.ssl.*;
 import org.apache.commons.httpclient.Cookie;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 
@@ -561,7 +558,9 @@ public class SsgRuntime {
     public SimpleHttpClient getHttpClient() {
         synchronized (ssg) {
             if (simpleHttpClient == null)
-                simpleHttpClient = new SimpleHttpClient(new SslPeerHttpClient(new UrlConnectionHttpClient(), ssg));
+                simpleHttpClient = new SimpleHttpClient(new SslPeerHttpClient(new CommonsHttpClient(getHttpConnectionManager()),
+                                                                              ssg,
+                                                                              ClientProxySecureProtocolSocketFactory.getInstance()));
             return simpleHttpClient;
         }
     }

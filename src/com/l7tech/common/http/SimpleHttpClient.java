@@ -130,7 +130,7 @@ public class SimpleHttpClient implements GenericHttpClient {
         GenericHttpResponse response = null;
         try {
             request = client.createRequest(GenericHttpClient.POST, params);
-            HexUtils.copyStream(new ByteArrayInputStream(requestBody), request.getOutputStream());
+            request.setInputStream(new ByteArrayInputStream(requestBody));
             response = request.getResponse();
             byte[] bodyBytes = HexUtils.slurpStream(response.getInputStream());
             return new SimpleHttpResponseImpl(response, bodyBytes);
@@ -159,7 +159,7 @@ public class SimpleHttpClient implements GenericHttpClient {
         try {
             byte[] requestBody = XmlUtil.nodeToString(doc).getBytes(params.getContentType().getEncoding());
             request = client.createRequest(GenericHttpClient.POST, params);
-            HexUtils.copyStream(new ByteArrayInputStream(requestBody), request.getOutputStream());
+            request.setInputStream(new ByteArrayInputStream(requestBody));
             response = request.getResponse();
             final ContentTypeHeader contentType = response.getContentType();
             if (contentType == null || !contentType.isXml())

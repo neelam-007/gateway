@@ -6,7 +6,7 @@
 
 package com.l7tech.common.http;
 
-import java.io.OutputStream;
+import java.io.InputStream;
 
 /**
  * Represents a generic HTTP request.
@@ -15,14 +15,14 @@ import java.io.OutputStream;
  */
 public interface GenericHttpRequest {
     /**
-     * Get the OutputStream to which the request body can be written.  Only meaningful if this is a POST request.
+     * Set the InputStream from which the request body will be read, if applicable.  Will only be read if this
+     * is a POST request.
      *
-     * @return the OutputStream to which the request body should be written.  Never null.
-     * @throws GenericHttpException if there is a network or HTTP problem
-     * @throws UnsupportedOperationException if this is a GET request.
+     * @param bodyInputStream the InputStream for the request body, or null to send an empty body.
+     * @throws UnsupportedOperationException if this is not a POST or PUT request.
      * @throws IllegalStateException if getResponse() has already been called.
      */
-    OutputStream getOutputStream() throws GenericHttpException;
+    void setInputStream(InputStream bodyInputStream);
 
     /**
      * Commit the request and begin receiving the response.  This is the pivot point of the request.

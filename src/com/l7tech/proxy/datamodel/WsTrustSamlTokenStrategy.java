@@ -7,7 +7,7 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.http.GenericHttpClient;
-import com.l7tech.common.http.UrlConnectionHttpClient;
+import com.l7tech.common.http.prov.jdk.UrlConnectionHttpClient;
 import com.l7tech.common.security.token.SecurityTokenType;
 import com.l7tech.common.security.token.UsernameToken;
 import com.l7tech.common.security.token.UsernameTokenImpl;
@@ -18,10 +18,7 @@ import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
-import com.l7tech.proxy.ssl.ClientProxyKeyManager;
-import com.l7tech.proxy.ssl.ClientProxyTrustManager;
-import com.l7tech.proxy.ssl.SslPeer;
-import com.l7tech.proxy.ssl.SslPeerHttpClient;
+import com.l7tech.proxy.ssl.*;
 import com.l7tech.proxy.util.SslUtils;
 import com.l7tech.proxy.util.TokenServiceClient;
 import org.w3c.dom.Element;
@@ -97,7 +94,8 @@ public class WsTrustSamlTokenStrategy extends AbstractSamlTokenStrategy implemen
         final URL url = new URL(wsTrustUrl);
 
         GenericHttpClient httpClient = new SslPeerHttpClient(genericHttpClient,
-                                                             new WsTrustSslPeer(tokenServerCert, url));
+                                                             new WsTrustSslPeer(tokenServerCert, url),
+                                                             ClientProxySecureProtocolSocketFactory.getInstance());
 
         UsernameToken usernameToken = new UsernameTokenImpl(getUsername(), getPassword());
         Element utElm = usernameToken.asElement();
