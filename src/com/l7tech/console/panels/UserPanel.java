@@ -3,8 +3,8 @@ package com.l7tech.console.panels;
 import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.IconManager;
 import com.l7tech.console.util.Registry;
-import com.l7tech.identity.Group;
-import com.l7tech.identity.internal.imp.GroupImp;
+import com.l7tech.identity.User;
+import com.l7tech.identity.internal.imp.UserImp;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.imp.EntityHeaderImp;
 import org.apache.log4j.Category;
@@ -17,16 +17,19 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
-import java.rmi.RemoteException;
 
 /**
  * GroupPanel is the main entry point panel for the <CODE>Group</CODE>.
  */
-public class GroupPanel extends EntityEditorPanel {
-    private static final Category log = Category.getInstance(GroupPanel.class.getName());
+public class UserPanel extends EntityEditorPanel {
+    private static final Category log = Category.getInstance(UserPanel.class.getName());
     private JLabel nameLabel;
-    private JLabel descriptionLabel;
-    private JTextField descriptionTextField;
+
+    private JLabel firstNameLabel;
+    private JTextField firstNameTextField;
+
+    private JLabel lastNameLabel;
+    private JTextField lastNameTextField;
 
     // Panels always present
     private JPanel mainPanel;
@@ -34,30 +37,34 @@ public class GroupPanel extends EntityEditorPanel {
     private JPanel buttonPanel;
 
     private JTabbedPane tabbedPane;
-    private final GroupUsersPanel usersPanel = new GroupUsersPanel(this); // membership
+    //private final UsersGroupPanel groupPanel = new UsersGroupPanel(this); // membership
 
     // Apply/Revert buttons
     private JButton okButton;
     private JButton cancelButton;
 
 
-    // group
-    private EntityHeader groupHeader;
-    private Group group;
+
+    // user
+    private EntityHeader userHeader;
+    private User user;
+
+    private boolean formModified;
 
     // Titles/Labels
     private static final String DETAILS_LABEL = "General";
     private static final String MEMBERSHIP_LABEL = "Memebership";
-    private static final String GROUP_DESCRIPTION_TITLE = "Description:";
 
     private static final String OK_BUTTON = "OK";
     private static final String CANCEL_BUTTON = "Cancel";
+    private JLabel emailLabel;
+    private JTextField emailTextField;
 
 
     /**
      * default constructor
      */
-    public GroupPanel() {
+    public UserPanel() {
         try {
             // Initialize form components
             layoutComponents();
@@ -74,8 +81,9 @@ public class GroupPanel extends EntityEditorPanel {
      */
     void setModified(boolean b) {
         // If entity not already changed
+        formModified = b;
         getOKButton().setEnabled(b);
-
+        formModified = true;
     }
 
 
@@ -93,43 +101,43 @@ public class GroupPanel extends EntityEditorPanel {
                         + "\nReceived: " + object.getClass().getName());
             }
 
-            groupHeader = (EntityHeader)object;
+            userHeader = (EntityHeader)object;
 
-            if (!Group.class.equals(groupHeader.getType())) {
+            if (!User.class.equals(userHeader.getType())) {
                 throw new IllegalArgumentException("Invalid argument type: "
-                        + "\nExpected: Group "
-                        + "\nReceived: " + groupHeader.getType());
+                        + "\nExpected: User "
+                        + "\nReceived: " + userHeader.getType());
             }
 
-            boolean isNew = groupHeader.getOid() == 0;
+            boolean isNew = userHeader.getOid() == 0;
             if (isNew) {
-                group = new GroupImp();
-                group.setName(groupHeader.getName());
+                user = new UserImp();
+                user.setName(userHeader.getName());
             } else {
-                group =
-                        Registry.getDefault().getInternalGroupManager().findByPrimaryKey(groupHeader.getOid());
-                if (group == null) {
-                    throw new RuntimeException("Group missing " + groupHeader.getOid());
+                user =
+                        Registry.getDefault().getInternalUserManager().findByPrimaryKey(userHeader.getOid());
+                if (user == null) {
+                    throw new RuntimeException("User missing " + userHeader.getOid());
                 }
             }
 
             // Populate the form for insert/update
-            setData(group);
+            setData(user);
         } catch (Exception e) {
             log.error("GroupPanel Edit Exception: " + e.toString());
         }
     }
 
     /**
-     * Retrieve the <code>Group</code> this panel is editing.
+     * Retrieve the <code>USer</code> this panel is editing.
      * It is a convenience, and package private method, for
      * interested panels.
      *
      *
-     * @return the group that this panel is currently editing
+     * @return the user that this panel is currently editing
      */
-    Group getGroup() {
-        return group;
+    User getUser() {
+        return user;
     }
 
 
@@ -181,14 +189,15 @@ public class GroupPanel extends EntityEditorPanel {
     /** Returns tabbedPane */
     private JTabbedPane getGroupTabbedPane() {
         // If tabbed pane not already created
-        if (null == tabbedPane) {
+        if (null != tabbedPane) return tabbedPane;
+
             // Create tabbed pane
             tabbedPane = new JTabbedPane();
 
             // Add all tabs
             tabbedPane.add(getDetailsPanel(), DETAILS_LABEL);
-            tabbedPane.add(usersPanel, MEMBERSHIP_LABEL);
-        }
+            //tabbedPane.add(usersPanel, MEMBERSHIP_LABEL);
+
 
         // Return tabbed pane
         return tabbedPane;
@@ -197,11 +206,12 @@ public class GroupPanel extends EntityEditorPanel {
     /** Returns detailsPanel */
     private JPanel getDetailsPanel() {
         // If panel not already created
-        if (detailsPanel == null) {
+        if (detailsPanel != null) return detailsPanel;
+
             detailsPanel = new JPanel();
             detailsPanel.setLayout(new GridBagLayout());
 
-            detailsPanel.add(new JLabel(IconManager.getInstance().getIcon(Group.class)),
+            detailsPanel.add(new JLabel(IconManager.getInstance().getIcon(User.class)),
                     new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
                             GridBagConstraints.WEST,
                             GridBagConstraints.NONE,
@@ -219,19 +229,41 @@ public class GroupPanel extends EntityEditorPanel {
                             GridBagConstraints.BOTH,
                             new Insets(10, 10, 0, 10), 0, 0));
 
+        detailsPanel.add(getFirstNameLabel(),
+                      new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
+                              GridBagConstraints.WEST,
+                              GridBagConstraints.NONE,
+                              new Insets(10, 10, 0, 0), 0, 0));
 
-            detailsPanel.add(getDescriptionLabel(),
+              detailsPanel.add(getFirstNameTextField(),
+                      new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
+                              GridBagConstraints.WEST,
+                              GridBagConstraints.HORIZONTAL,
+                              new Insets(10, 15, 0, 10), 0, 0));
+
+            detailsPanel.add(getLastNameLabel(),
                     new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
                             GridBagConstraints.WEST,
                             GridBagConstraints.NONE,
                             new Insets(10, 10, 0, 0), 0, 0));
 
-            detailsPanel.add(getDescriptionTextField(),
+            detailsPanel.add(getLastNameTextField(),
                     new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0,
                             GridBagConstraints.WEST,
                             GridBagConstraints.HORIZONTAL,
                             new Insets(10, 15, 0, 10), 0, 0));
 
+        detailsPanel.add(getEmailLabel(),
+                         new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
+                                 GridBagConstraints.WEST,
+                                 GridBagConstraints.NONE,
+                                 new Insets(10, 10, 0, 0), 0, 0));
+
+                 detailsPanel.add(getEmailTextField(),
+                         new GridBagConstraints(1, 4, 1, 1, 1.0, 0.0,
+                                 GridBagConstraints.WEST,
+                                 GridBagConstraints.HORIZONTAL,
+                                 new Insets(10, 15, 0, 10), 0, 0));
 
             detailsPanel.add(new JSeparator(JSeparator.HORIZONTAL),
                     new GridBagConstraints(0, 11, 2, 1, 0.0, 0.0,
@@ -248,15 +280,15 @@ public class GroupPanel extends EntityEditorPanel {
                             new Insets(10, 0, 0, 0), 0, 0));
 
             Utilities.equalizeLabelSizes(new JLabel[]{
-                getDescriptionLabel(),
+                getLastNameLabel(),
             });
-        }
+
         // Return panel
         return detailsPanel;
     }
 
 
-    /** Returns descriptionLabel */
+    /** Returns lastNameLabel */
     private JLabel getNameLabel() {
         // If label not already created
         if (nameLabel != null) return nameLabel;
@@ -265,43 +297,107 @@ public class GroupPanel extends EntityEditorPanel {
 
         // Return label
         return nameLabel;
-
     }
 
 
-    /** Returns descriptionLabel */
-    private JLabel getDescriptionLabel() {
+    /** Returns firstNameLabel */
+    private JLabel getFirstNameLabel() {
         // If label not already created
-        if (descriptionLabel == null) {
-            // Create label
-            descriptionLabel = new JLabel(GROUP_DESCRIPTION_TITLE);
-        }
+        if (firstNameLabel != null) return firstNameLabel;
+
+           // Create label
+        firstNameLabel = new JLabel("Fisrt Name:");
 
         // Return label
-        return descriptionLabel;
-
-        /*
-        new JLabel(groupHeader.getName()
-        */
+        return firstNameLabel;
     }
 
-    /** Returns descriptionTextField */
-    private JTextField getDescriptionTextField() {
+    /** Returns lastNameTextField */
+    private JTextField getFirstNameTextField() {
         // If text field not already created
-        if (descriptionTextField == null) {
+        if (firstNameTextField == null) {
             // Create text field
-            descriptionTextField = new JTextField();
-            descriptionTextField.setMinimumSize(new Dimension(200, 20));
-            descriptionTextField.setPreferredSize(new Dimension(200, 20));
-            descriptionTextField.setEditable(true);
-            descriptionTextField.setDocument(new MaxLengthDocument(50));
+            firstNameTextField = new JTextField();
+            firstNameTextField.setMinimumSize(new Dimension(200, 20));
+            firstNameTextField.setPreferredSize(new Dimension(200, 20));
+            firstNameTextField.setEditable(true);
+            firstNameTextField.setDocument(new MaxLengthDocument(50));
             // Register listeners
-            descriptionTextField.getDocument().addDocumentListener(documentListener);
+            firstNameTextField.getDocument().addDocumentListener(documentListener);
         }
 
         // Return text field
-        return descriptionTextField;
+        return firstNameTextField;
     }
+
+
+
+
+    /** Returns lastNameLabel */
+    private JLabel getLastNameLabel() {
+        // If label not already created
+        if (lastNameLabel != null) return lastNameLabel;
+
+           // Create label
+        lastNameLabel = new JLabel("Last Name:");
+
+
+        // Return label
+        return lastNameLabel;
+    }
+
+    /** Returns lastNameTextField */
+    private JTextField getLastNameTextField() {
+        // If text field not already created
+        if (lastNameTextField == null) {
+            // Create text field
+            lastNameTextField = new JTextField();
+            lastNameTextField.setMinimumSize(new Dimension(200, 20));
+            lastNameTextField.setPreferredSize(new Dimension(200, 20));
+            lastNameTextField.setEditable(true);
+            lastNameTextField.setDocument(new MaxLengthDocument(50));
+            // Register listeners
+            lastNameTextField.getDocument().addDocumentListener(documentListener);
+        }
+
+        // Return text field
+        return lastNameTextField;
+    }
+
+
+
+
+    /** Returns email Label */
+    private JLabel getEmailLabel() {
+        // If label not already created
+        if (emailLabel != null) return emailLabel;
+
+           // Create label
+        emailLabel = new JLabel("Email:");
+
+
+        // Return label
+        return emailLabel;
+    }
+
+    /** Returns email TextField */
+    private JTextField getEmailTextField() {
+        // If text field not already created
+        if (emailTextField == null) {
+            // Create text field
+            emailTextField = new JTextField();
+            emailTextField.setMinimumSize(new Dimension(200, 20));
+            emailTextField.setPreferredSize(new Dimension(200, 20));
+            emailTextField.setEditable(true);
+            emailTextField.setDocument(new MaxLengthDocument(50));
+            // Register listeners
+            emailTextField.getDocument().addDocumentListener(documentListener);
+        }
+
+        // Return text field
+        return emailTextField;
+    }
+
 
     /** Returns buttonPanel */
     private JPanel getButtonPanel() {
@@ -357,7 +453,7 @@ public class GroupPanel extends EntityEditorPanel {
                             // Error - just return
                             return;
                         }
-                        Window dlg = SwingUtilities.windowForComponent(GroupPanel.this);
+                        Window dlg = SwingUtilities.windowForComponent(UserPanel.this);
                         dlg.setVisible(false);
                         dlg.dispose();
                     } catch (Exception ex) {
@@ -382,7 +478,7 @@ public class GroupPanel extends EntityEditorPanel {
             // Register listener
             cancelButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    SwingUtilities.windowForComponent(GroupPanel.this).dispose();
+                    SwingUtilities.windowForComponent(UserPanel.this).dispose();
                 }
             });
         }
@@ -393,32 +489,34 @@ public class GroupPanel extends EntityEditorPanel {
 
 
     /**
-     * Populates the form from the group bean
+     * Populates the form from the user bean
      *
-     * @param group
+     * @param user
      */
-    private void setData(Group group) throws Exception {
+    private void setData(User user) throws Exception {
         // Set tabbed panels (add/remove extranet tab)
-        nameLabel.setText(group.getName());
-        getDescriptionTextField().setText(group.getDescription());
+        nameLabel.setText(user.getName());
+        getFirstNameTextField().setText(user.getFirstName());
+        getLastNameTextField().setText(user.getLastName());
         setModified(false);
     }
 
 
     /**
-     * Collect changes from the form into the group instance.
+     * Collect changes from the form into the user instance.
      *
-     * @return Group   the instance with changes applied
+     * @return User   the instance with changes applied
      */
-    private Group collectChanges() {
-        group.setDescription(this.getDescriptionTextField().getText());
-        group.setMemberHeaders(usersPanel.getCurrentUsers());
-        return group;
+    private User collectChanges() {
+        user.setLastName(this.getLastNameTextField().getText());
+        user.setFirstName(this.getFirstNameTextField().getText());
+
+        return user;
     }
 
 
     /**
-     * Applies the changes on the form to the group bean and update the database;
+     * Applies the changes on the form to the user bean and update the database;
      * Returns indication if the changes were applied successfully.
      *
      * @return boolean - the indication if the changes were applied successfully
@@ -436,29 +534,30 @@ public class GroupPanel extends EntityEditorPanel {
 
         // Try adding/updating the Group
         try {
-            if (groupHeader.getOid() != 0) {
-                Registry.getDefault().getInternalGroupManager().update(group);
+            if (userHeader.getOid() != 0) {
+                Registry.getDefault().getInternalUserManager().update(user);
             } else {
                 long id =
-                        Registry.getDefault().getInternalGroupManager().save(group);
-                groupHeader.setOid(id);
+                        Registry.getDefault().getInternalUserManager().save(user);
+                userHeader.setOid(id);
             }
 
             // Notify listener of this insert/update
             if (null != panelListener) {
-                panelListener.onUpdate(groupHeader);
+                panelListener.onUpdate(userHeader);
             }
 
             // Cleanup
+            formModified = false;
         } catch (Exception e) {
             StringBuffer msg = new StringBuffer();
             msg.append("There was an error updating ");
-            msg.append("Group ").append(groupHeader.getName()).append(".\n");
+            msg.append("User ").append(userHeader.getName()).append(".\n");
             JOptionPane.showMessageDialog(null,
                     msg.toString(),
                     "Error",
                     JOptionPane.ERROR_MESSAGE);
-            log.error("Error updating Group: " + e.toString());
+            log.error("Error updating User: " + e.toString());
             e.printStackTrace();
             result = false;
         }
@@ -467,7 +566,7 @@ public class GroupPanel extends EntityEditorPanel {
 
 
     /**
-     * Validates form data and returns if group Id and description form fields
+     * Validates form data and returns if user Id and description form fields
      * are valid or not.
      *
      * @return boolean indicating if the form fields are valid or not.
@@ -479,13 +578,13 @@ public class GroupPanel extends EntityEditorPanel {
     // debug
     public static void main(String[] args) {
 
-        GroupPanel panel = new GroupPanel();
+        UserPanel panel = new UserPanel();
         EntityHeader eh = new EntityHeaderImp();
-        eh.setName("Test group");
-        eh.setType(Group.class);
+        eh.setName("Test user");
+        eh.setType(User.class);
         panel.edit(eh);
 
-        panel.setPreferredSize(new java.awt.Dimension(600, 300));
+        panel.setPreferredSize(new Dimension(600, 300));
         JFrame frame = new JFrame("Group panel Test");
         frame.setContentPane(panel);
         frame.pack();
@@ -526,10 +625,10 @@ public class GroupPanel extends EntityEditorPanel {
 
                     if (eID == HierarchyEvent.HIERARCHY_CHANGED &&
                             ((flags & HierarchyEvent.DISPLAYABILITY_CHANGED) == HierarchyEvent.DISPLAYABILITY_CHANGED)) {
-                        if (GroupPanel.this.isDisplayable()) {
-                            JDialog d = (JDialog)SwingUtilities.windowForComponent(GroupPanel.this);
+                        if (UserPanel.this.isDisplayable()) {
+                            JDialog d = (JDialog)SwingUtilities.windowForComponent(UserPanel.this);
                             if (d != null) {
-                                d.setTitle(groupHeader.getName() + " Properties");
+                                d.setTitle(userHeader.getName() + " Properties");
                             }
                         }
                     }

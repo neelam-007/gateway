@@ -20,7 +20,7 @@ import java.util.ResourceBundle;
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
 public class NewUserDialog extends JDialog {
-       /** Resource bundle with default locale */
+    /** Resource bundle with default locale */
     private ResourceBundle resources = null;
 
     private String CMD_CANCEL = "cmd.cancel";
@@ -40,7 +40,7 @@ public class NewUserDialog extends JDialog {
     private boolean createThenEdit = false;
 
     /* the user instance */
-    private User user =  new UserImp();
+    private User user = new UserImp();
 
     /* new user Password */
     private char[] newPassword;
@@ -409,7 +409,7 @@ public class NewUserDialog extends JDialog {
 
         if (actionCommand != null) {
             if (actionCommand instanceof ActionEvent) {
-                cmd = ((ActionEvent) actionCommand).getActionCommand();
+                cmd = ((ActionEvent)actionCommand).getActionCommand();
             } else {
                 cmd = actionCommand.toString();
             }
@@ -440,24 +440,24 @@ public class NewUserDialog extends JDialog {
     private void insertUser() {
         user.setName(idTextField.getText());
         user.setPassword(new String(passwordField.getPassword()));
-           SwingUtilities.invokeLater(
-                   new Runnable() {
-                       public void run() {
-                           try {
-                               EntityHeader header = new EntityHeaderImp();
-                               header.setType(User.class);
-                               header.setName(user.getName());
-                               Registry.getDefault().getInternalUserManager().save(user);
-                               panelListener.onInsert(header);
-                               insertSuccess = true;
-                               } catch (SaveException e) {
-                                   e.printStackTrace();
-                           } catch (RuntimeException e) {
-                               e.printStackTrace();
-                           }
-                           NewUserDialog.this.dispose();
-                       }
-                   });
+        SwingUtilities.invokeLater(
+                new Runnable() {
+                    public void run() {
+                        try {
+                            EntityHeader header = new EntityHeaderImp();
+                            header.setType(User.class);
+                            header.setName(user.getName());
+                            Registry.getDefault().getInternalUserManager().save(user);
+                            panelListener.onInsert(header);
+                            insertSuccess = true;
+                        } catch (SaveException e) {
+                            e.printStackTrace();
+                        } catch (RuntimeException e) {
+                            e.printStackTrace();
+                        }
+                        NewUserDialog.this.dispose();
+                    }
+                });
 
 
     }
@@ -478,9 +478,14 @@ public class NewUserDialog extends JDialog {
                 SwingUtilities.invokeLater(
                         new Runnable() {
                             public void run() {
-                                JPanel panel = null;
-
+                                EntityEditorPanel panel = PanelFactory.getPanel(User.class, panelListener);
                                 if (panel == null) return;
+                                EntityHeader header = new EntityHeaderImp();
+                                header.setType(User.class);
+                                header.setName(user.getName());
+                                header.setOid(user.getOid());
+                                panel.edit(header);
+
                                 EditorDialog dialog = new EditorDialog(parent, panel);
                                 dialog.pack();
                                 Utilities.centerOnScreen(dialog);

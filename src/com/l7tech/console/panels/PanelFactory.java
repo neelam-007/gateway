@@ -7,6 +7,7 @@ import com.l7tech.console.tree.BasicTreeNode;
 import com.l7tech.console.tree.EntityTreeNode;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.identity.Group;
+import com.l7tech.identity.User;
 
 import javax.swing.*;
 
@@ -52,15 +53,18 @@ public class PanelFactory {
      * Return the panel instance for the given <CODE>Object</CODE> with
      * the specified read/write mode and panel listener.
      *
-     * @param cls     the BasicTreeNode Object
+     * @param cls     the class that the editor is looked for
      * @param l    - the PanelListener for the given panel
      * @return the <CODE>EntityEditorPanel</CODE> for given directory object, null
      *         if no panel assigned
      */
     public static EntityEditorPanel getPanel(Class cls, PanelListener l) {
         EntityEditorPanel panel = null;
-        if (Group.class.equals(cls)) {
+        if (Group.class.isAssignableFrom(cls)) {
             panel = new GroupPanel();
+            panel.setPanelListener(l);
+        } else if(User.class.isAssignableFrom(cls)) {
+            panel = new UserPanel();
             panel.setPanelListener(l);
         }
         return panel;
