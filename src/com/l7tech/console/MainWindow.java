@@ -5,7 +5,6 @@ import com.incors.plaf.kunststoff.themes.KunststoffDesktopTheme;
 import com.l7tech.console.action.AboutAction;
 import com.l7tech.console.action.ConsoleAction;
 import com.l7tech.console.action.HomeAction;
-import com.l7tech.console.action.ImportCertificateAction;
 import com.l7tech.console.panels.LogonDialog;
 import com.l7tech.console.panels.PreferencesDialog;
 import com.l7tech.console.panels.Utilities;
@@ -45,7 +44,7 @@ public class MainWindow extends JFrame {
     public static final String RESOURCE_PATH = "com/l7tech/console/resources";
 
     /** the path to JavaHelp helpset file */
-    public static final String HELP_PATH = "com/l7tech/console/resources/helpset/console.hs";
+    public static final String HELP_PATH = "com/l7tech/console/resources/helpset/ssg.hs";
 
     /** the resource bundle name */
     private static
