@@ -37,6 +37,7 @@ public class GroupManagerImp extends ProviderSpecificEntityManager implements Gr
 
     public long save(Group group) throws SaveException {
         try {
+            group.setProviderOid( _identityProviderOid );
             return _manager.save( getContext(), group );
         } catch ( SQLException se ) {
             throw new SaveException( se.toString(), se );
@@ -45,6 +46,7 @@ public class GroupManagerImp extends ProviderSpecificEntityManager implements Gr
 
     public void update( Group group ) throws UpdateException {
         try {
+            group.setProviderOid( _identityProviderOid );
             _manager.update( getContext(), group );
         } catch ( SQLException se ) {
             throw new UpdateException( se.toString(), se );
