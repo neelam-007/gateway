@@ -328,7 +328,8 @@ public class NewGroupDialog extends JDialog {
                             EntityHeader header = new EntityHeader();
                             header.setType(EntityType.GROUP);
                             header.setName(group.getName());
-                            header.setStrId(Registry.getDefault().getInternalGroupManager().save(group, null ));
+                            group.setUniqueIdentifier(Registry.getDefault().getInternalGroupManager().save(group, null ));
+                            header.setStrId(group.getUniqueIdentifier());
                             NewGroupDialog.this.fireEventGroupAdded(header);
                             insertSuccess = true;
                         } catch (Exception e) {
@@ -366,13 +367,13 @@ public class NewGroupDialog extends JDialog {
                 SwingUtilities.invokeLater(
                         new Runnable() {
                             public void run() {
-                                EntityEditorPanel panel = new GroupPanel();
+                                GroupPanel panel = new GroupPanel();
                                 if (panel == null) return;
                                 EntityHeader header = new EntityHeader();
                                 header.setType(EntityType.GROUP);
                                 header.setName(group.getName());
                                 header.setStrId(group.getUniqueIdentifier());
-                                panel.edit(header);
+                                panel.edit(header, Registry.getDefault().getInternalProvider());
                                 EditorDialog dialog = new EditorDialog(parent, panel);
                                 dialog.pack();
                                 Utilities.centerOnScreen(dialog);
