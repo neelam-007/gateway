@@ -160,6 +160,7 @@
         <env-entry-value>
             com.l7tech.service.resolution.SoapActionResolver
             com.l7tech.service.resolution.UrnResolver
+            com.l7tech.service.resolution.HttpUriResolver
         </env-entry-value>
         <env-entry-type>java.lang.String</env-entry-type>
     </env-entry>
