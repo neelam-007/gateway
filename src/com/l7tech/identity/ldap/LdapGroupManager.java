@@ -278,7 +278,7 @@ public class LdapGroupManager implements GroupManager {
             // look for OU memberships
             String tmpdn = user.getUniqueIdentifier();
             int pos = 0;
-            int res = tmpdn.indexOf("ou", pos);
+            int res = tmpdn.indexOf("ou=", pos);
             while (res >= 0) {
                 // is there a valid organizational unit there?
                 Group maybegrp = null;
@@ -294,8 +294,8 @@ public class LdapGroupManager implements GroupManager {
                                                 ldapgrp.getDescription());
                     output.add(grpheader);
                 }
-                pos = res+1;
-                res = tmpdn.indexOf("ou", pos);
+                pos = res+2;
+                res = tmpdn.indexOf("ou=", pos);
             }
         }
         return output;
@@ -361,7 +361,7 @@ public class LdapGroupManager implements GroupManager {
         }
         // look for sub-OU memberships
         int pos = 0;
-        int res = dn.indexOf("ou", pos);
+        int res = dn.indexOf("ou=", pos);
         while (res >= 0) {
             // is there a valid organizational unit there?
             Group maybegrp = null;
@@ -377,8 +377,8 @@ public class LdapGroupManager implements GroupManager {
                                             ldapgrp.getDescription());
                 output.add(grpheader);
             }
-            pos = res+1;
-            res = dn.indexOf("ou", pos);
+            pos = res+2;
+            res = dn.indexOf("ou=", pos);
         }
         return output;
     }
