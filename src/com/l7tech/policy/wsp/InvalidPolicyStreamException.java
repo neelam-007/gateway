@@ -14,7 +14,7 @@ import java.io.IOException;
  * Date: Sep 8, 2003
  * Time: 1:34:19 PM
  */
-class InvalidPolicyStreamException extends IOException {
+public class InvalidPolicyStreamException extends IOException {
     public InvalidPolicyStreamException() {
     }
 
