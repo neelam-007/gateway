@@ -248,9 +248,11 @@ public class GuiCredentialManager implements CredentialManager {
              try {
                  SwingUtilities.invokeAndWait(new Runnable() {
                      public void run() {
-                         Gui.getInstance().errorMessage("The hostname in the Gateway's certificate, " + whatWeGotInstead + "\n" +
-                                                        "does not match the hostname we connected to (" + whatWeWanted + ")." +
-                                                        "Please double check the Gateway hostname for the Gateway " + ssg + ".");
+                         Gui.getInstance().errorMessage(
+                                 "<HTML>The configured hostname for the Gateway " + ssg + " is \"" + whatWeWanted + "\", <br>" +
+                                 "but the server presented a certificate claiming its hostname is \"" + whatWeGotInstead + "\". <br>" +
+                                 "<p>Please double check the Gateway hostname for the Gateway " + ssg + ".");
+
                      }
                  });
              } catch (InterruptedException e) {

@@ -80,13 +80,13 @@ public class ClientProxy {
 
     private ClientProxyTrustManager getTrustManager() {
         if (trustManager == null)
-            trustManager = new ClientProxyTrustManager(ssgFinder);
+            trustManager = new ClientProxyTrustManager();
         return trustManager;
     }
 
     private ClientProxyKeyManager getKeyManager() {
         if (keyManager == null)
-            keyManager = new ClientProxyKeyManager(ssgFinder);
+            keyManager = new ClientProxyKeyManager();
         return keyManager;
     }
 

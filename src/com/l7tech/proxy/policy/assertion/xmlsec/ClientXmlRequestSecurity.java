@@ -88,6 +88,8 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
             if (!SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
                 try {
                     request.getClientProxy().obtainClientCertificate(ssg);
+                } catch (ServerCertificateUntrustedException e) {
+                    throw e;
                 } catch (GeneralSecurityException e) {
                     throw new PolicyAssertionException("Unable to obtain a client certificate with SSG " + ssg, e);
                 } catch (IOException e) {

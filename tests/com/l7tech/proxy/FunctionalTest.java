@@ -114,7 +114,7 @@ public class FunctionalTest extends TestCase {
         clientProxy = new ClientProxy(ssgManager, messageProcessor, DEFAULT_PORT, MIN_THREADS, MAX_THREADS);
 
         // Turn off server cert verification for the test
-        clientProxy.setTrustManager(new ClientProxyTrustManager(ssgManager) {
+        clientProxy.setTrustManager(new ClientProxyTrustManager() {
             public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
                 return;
             }
