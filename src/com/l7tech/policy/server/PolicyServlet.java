@@ -90,8 +90,13 @@ public class PolicyServlet extends HttpServlet {
 
         // RESOLVE THE PUBLISHED SERVICE
         PublishedService targetService = null;
-        if (str_oid != null && str_oid.length() > 0)
+        if ( str_oid == null || str_oid.length() == 0 ) {
+            String err = PARAM_SERVICEOID + " parameter is required";
+            logger.warning( err );
+            throw new ServletException( err );
+        } else {
             targetService = resolveService(Long.parseLong(str_oid));
+        }
 
         if (targetService == null) {
             httpServletResponse.sendError(HttpServletResponse.SC_NOT_FOUND, "Incomplete request or service does not exist.");
