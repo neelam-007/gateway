@@ -14,7 +14,8 @@ import java.util.logging.Logger;
 public class MultipartMessageReader {
 
     public static final int ATTACHMENTS_BUFFER_SIZE = 100000;
-    public static final int SOAP_PART_BUFFER_SIZE = 10000;
+    public static final int SOAP_PART_BUFFER_SIZE = 30000;
+    private static final int ATTACHMENT_BLOCK_SIZE = 4096;
     private boolean atLeastOneAttachmentParsed;
     private String multipartBoundary;
     private PushbackInputStream pushbackInputStream = null;
@@ -182,6 +183,7 @@ public class MultipartMessageReader {
      *
      * @param cid  The content id of the part to be retrieved.
      * @return Part The part parsed.  Return NULL if not found.
+     * @throws IOException if there is error reading the input data stream.
      */
     private MultipartUtil.Part getMessagePartFromMap(String cid) throws IOException {
 
@@ -201,14 +203,27 @@ public class MultipartMessageReader {
         return part;
     }
 
-    private boolean validateContentId(String cid, String partName) throws IOException {
-        if(cid.equals(partName) ||
-                   cid.endsWith(MultipartUtil.removeConentIdBrackets(partName))) {
+    /**
+     * Validate the content Id specified.
+     * @param cid The content Id to be validated.
+     * @param cidInPartHeader The content Id found in the header of the MIME part.
+     * @return TRUE if the cid equals to the cidInPartHeader or matches the last part of the cidInPartHeader.
+     * @throws IOException if there is error reading the input data stream.
+     */
+    private boolean validateContentId(String cid, String cidInPartHeader) throws IOException {
+        if(cid.equals(cidInPartHeader) ||
+                   cid.endsWith(MultipartUtil.removeConentIdBrackets(cidInPartHeader))) {
             return true;
         }
         return false;
     }
 
+    /**
+     * Parse the SOAP part of data in the input data stream.
+     *
+     * @return The SOAP part found. NULL if not found.
+     * @throws IOException if there is error reading the input data stream.
+     */
     private MultipartUtil.Part parseSoapPart() throws IOException {
         StringBuffer xml = new StringBuffer();
         MultipartUtil.Part part = null;
@@ -321,6 +336,11 @@ public class MultipartMessageReader {
         return part;
     }
 
+    /**
+     * Add line delimiter to the cache.
+     *
+     * @throws IOException if there is error reading the input data stream.
+     */
     private void addLineDelimiter() throws IOException {
 
         byte[] delimiter = new byte[2];
@@ -340,6 +360,12 @@ public class MultipartMessageReader {
         }
     }
 
+    /**
+     * Store a raw header of attachments.
+     *
+     * @param line The header to be stored.
+     * @throws IOException if there is error reading the input data stream.
+     */
     private void storeRawHeader(String line) throws IOException {
 
         if(line == null) {
@@ -368,6 +394,13 @@ public class MultipartMessageReader {
         }
     }
 
+    /**
+     * Store the raw data of an attachment to the memory cache. If the memory cache is full, store the
+     * data to the file cache including those in the memory cache (if any).
+     *
+     * @return int The length of the attachment in bytes.
+     * @throws IOException if there is error reading the input data stream.
+     */
     private int storeRawPartContent() throws IOException {
 
         int d;
@@ -430,6 +463,14 @@ public class MultipartMessageReader {
         writeDataToFileCache(data, 0, data.length);
     }
 
+    /**
+     * Write data to the file cache. Create the file cache if it's never been created.
+     *
+     * @param data The array of data to be stored in the file cache.
+     * @param off  The starting position of the data array is off set by the "off" parameter.
+     * @param len  The number of bytes to be stored in the file cache.
+     * @throws IOException if there is error reading the input data stream.
+     */
     private void writeDataToFileCache(byte[] data, int off, int len) throws IOException {
 
         if(fileCache == null) {
@@ -464,6 +505,14 @@ public class MultipartMessageReader {
         fileCache.write(data, off, len);
     }
 
+    /**
+     * Store the raw data of an attachment to the file cache. The initial part of the attachment
+     * is read from the input parameter (data). The remaining part of the attachment is read from
+     * the input data stream.
+     * @param data  The array of bytes of data to be stored in the file cache.
+     * @return int The length of the attachment in bytes.
+     * @throws IOException if there is error reading the input data stream.
+     */
     private int storeRawPartContentToFileCache(byte[] data) throws IOException {
 
         int count;
@@ -477,6 +526,12 @@ public class MultipartMessageReader {
         return (data.length + count);
     }
 
+    /**
+     * Store the raw data of an attachment to the file cache. The data is read from the input data stream.
+     *
+     * @return int The length of the attachment in bytes.
+     * @throws IOException if there is error reading the input data stream.
+     */
     private int storeRawPartContentToFileCache() throws IOException {
 
         int count = 0;
@@ -486,7 +541,7 @@ public class MultipartMessageReader {
         int d;
         boolean crSeen = false;
         boolean boundaryFound = false;
-        byte[] buf = new byte[1024];
+        byte[] buf = new byte[ATTACHMENT_BLOCK_SIZE];
         int startIndex = -1;
         int endIndex = -1;
         int index = 0;
@@ -499,7 +554,7 @@ public class MultipartMessageReader {
 
         while(!boundaryFound && (d != -1)) {
 
-            while((index < buf.length - 4) && (d != -1)) {
+            while((index < buf.length) && (d != -1)) {
                 // looking for <CR>
                 if(d == 0x0d) {
                     crSeen = true;
@@ -539,14 +594,41 @@ public class MultipartMessageReader {
 
             // if the boundary NOT found when the buffer is full, store the data first and then continue
             if(!boundaryFound) {
-                writeDataToFileCache(buf, 0, index);
 
-                // update count
-                count += index;
+                if(startIndex >= 0) {
+                    // store the data up to the last <cr><lf> in the buffer to the file cache
+                    writeDataToFileCache(buf, 0, startIndex);
 
-                //reset indices
-                index = 0;
-                startIndex = -1;
+                    // move the rest of the data to the beginning of the buffer;
+                    int numberOfBytesToMoveBack = index - startIndex;
+                    int i = 0;
+                    for (; i < numberOfBytesToMoveBack && i < buf.length; i++) {
+                         buf[i] = buf[startIndex+i];
+                    }
+
+                    // update count
+                    count += startIndex;
+
+                    //reset buffer write index
+                    index = i;
+
+                    // reset the start index
+                    startIndex = 0;
+
+                } else {
+                    // store all data in the buffer to the file cache
+                    writeDataToFileCache(buf, 0, index);
+
+                    // update count
+                    count += index;
+
+                   //reset buffer write index
+                    index = 0;
+
+                    // reset the start index
+                    startIndex = -1;
+                }
+
                 endIndex = -1;
 
                 // read the next byte
@@ -560,7 +642,13 @@ public class MultipartMessageReader {
         return count;
     }
 
-
+    /**
+     * Check if the multipart boundary is found in the buffer specified.
+     * @param data  The data to be examined.
+     * @param startIndex  The starting position of the data to be examined.
+     * @param endIndex  The ending position of the data to be examined.
+     * @return  TRUE if the multipart boundary is found. FALSE otherwise.
+     */
     private boolean isMultipartBoundaryFound(byte[] data, int startIndex, int endIndex) {
 
         // check if the length of the two objects are the same
@@ -582,7 +670,7 @@ public class MultipartMessageReader {
      *
      * @param cid The part to be parsed given the content id of the part.
      * @return Part The part parsed. Return NULL if not found.
-     * @throws IOException
+     * @throws IOException if there is error reading the input data stream.
      */
     private MultipartUtil.Part parseMultipart(String cid) throws IOException {
 
@@ -633,6 +721,11 @@ public class MultipartMessageReader {
         }
     }
 
+    /**
+     * Read a line from the input data stream
+     * @return The line retrieved from the input data stream. -1 if no more data exists in the input stream.
+     * @throws IOException if there is error reading the input data stream.
+     */
     private String readLine() throws IOException {
         boolean newlineFound = false;
         long byteCount = 0;
