@@ -57,6 +57,10 @@ public class LdapUser implements User, Serializable {
         return _userBean.getDepartment();
     }
 
+    public String getSubjectDn() {
+        return _dn;
+    }
+
     public UserBean getUserBean() {
         return _userBean;
     }
