@@ -449,7 +449,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
                     GroupBean g = new GroupBean();
                     g.setName(eh.getName());
                     g.getName();
-                    MemberOfGroup ma = new MemberOfGroup(ip.getConfig().getOid(), g.getName());
+                    MemberOfGroup ma = new MemberOfGroup(ip.getConfig().getOid(), g.getName(), eh.getStrId());
                     identityAssertions.add(ma);
                 }
             }
@@ -511,7 +511,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
                 GroupBean g = new GroupBean();
                 g.setName(eh.getName());
                 g.getName();
-                MemberOfGroup ma = new MemberOfGroup(ip.getConfig().getOid(), g.getName());
+                MemberOfGroup ma = new MemberOfGroup(ip.getConfig().getOid(), g.getName(), eh.getStrId());
                 identityAssertion.add(ma);
             }
             allAssertions.add(new AllAssertion(identityAssertion));
