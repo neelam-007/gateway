@@ -149,7 +149,7 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
             return document;
         }
 
-        public void stDocument(Document document) {
+        public void setDocument(Document document) {
             response.setDocument(document);
             try {
                 final String docstring = XmlUtil.documentToString(document);
@@ -188,7 +188,7 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
             return document;
         }
 
-        public void stDocument(Document document) {
+        public void setDocument(Document document) {
             request.setDocument(document);
             try {
                 final String docstring = XmlUtil.documentToString(document);
