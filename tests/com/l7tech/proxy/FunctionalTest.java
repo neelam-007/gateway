@@ -15,13 +15,8 @@ import org.apache.axis.AxisEngine;
 import org.apache.axis.AxisFault;
 import org.apache.axis.client.Call;
 import org.apache.axis.encoding.DeserializationContextImpl;
-import org.apache.axis.message.MessageElement;
-import org.apache.axis.message.SOAPBodyElement;
-import org.apache.axis.message.SOAPEnvelope;
-import org.apache.axis.message.SOAPHandler;
-import org.apache.axis.message.SOAPHeader;
+import org.apache.axis.message.*;
 import org.apache.axis.soap.SOAPConstants;
-import org.apache.log4j.Category;
 import org.xml.sax.helpers.AttributesImpl;
 
 import javax.xml.soap.SOAPException;
@@ -34,6 +29,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.logging.Logger;
 
 /**
  * Test message processing.
@@ -42,7 +38,7 @@ import java.security.cert.X509Certificate;
  * Time: 12:05:43 PM
  */
 public class FunctionalTest extends TestCase {
-    private static final Category log = Category.getInstance(FunctionalTest.class);
+    private static final Logger log = Logger.getLogger(FunctionalTest.class.getName());
     private static final String pingNamespace = "http://services.l7tech.com/soap/demos/Ping";
     private static final String pingPrefix = "p";
     private static final String ssg0ProxyEndpoint = "ssg0";
@@ -86,7 +82,9 @@ public class FunctionalTest extends TestCase {
         clientProxy = null;
     }
 
-    /** Starts up the SSG Faker and the Client Proxy. */
+    /**
+     * Starts up the SSG Faker and the Client Proxy.
+     */
     protected void setUp() throws Exception, IOException, KeyManagementException, NoSuchAlgorithmException, NoSuchProviderException {
         destroyFaker();
         destroyProxy();
@@ -123,7 +121,9 @@ public class FunctionalTest extends TestCase {
         proxyUrl = clientProxy.start().toString();
     }
 
-    /** Shuts down the SSG Faker and the Client Proxy. */
+    /**
+     * Shuts down the SSG Faker and the Client Proxy.
+     */
     protected void tearDown() {
         destroyFaker();
         destroyProxy();
@@ -133,12 +133,12 @@ public class FunctionalTest extends TestCase {
         SOAPEnvelope reqEnvelope = new SOAPEnvelope();
 
         SOAPHeader reqHeader = new SOAPHeader(pingNamespace,
-                                              "/ssgFaker",
-                                              pingPrefix,
-                                              new AttributesImpl(),
-                                              new DeserializationContextImpl(AxisEngine.getCurrentMessageContext(),
-                                                                             new SOAPHandler()),
-                                              SOAPConstants.SOAP12_CONSTANTS);
+          "/ssgFaker",
+          pingPrefix,
+          new AttributesImpl(),
+          new DeserializationContextImpl(AxisEngine.getCurrentMessageContext(),
+            new SOAPHandler()),
+          SOAPConstants.SOAP12_CONSTANTS);
         reqHeader.setNamespaceURI(pingNamespace);
         reqEnvelope.setHeader(reqHeader);
 
@@ -207,7 +207,7 @@ public class FunctionalTest extends TestCase {
             call.invoke(reqEnvelope);
         } catch (AxisFault e) {
             threwAxisFault = true;
-            log.error("EndUserClient: SOAP call to CP threw expected exception: " + e.getClass().getName());
+            log.severe("EndUserClient: SOAP call to CP threw expected exception: " + e.getClass().getName());
         }
         assertTrue(threwAxisFault);
 

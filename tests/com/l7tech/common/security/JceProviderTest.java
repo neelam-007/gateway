@@ -11,7 +11,6 @@ import com.l7tech.common.security.xml.XmlMangler;
 import com.l7tech.common.security.xml.XmlManglerTest;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.XmlUtil;
-import org.apache.log4j.Category;
 import org.w3c.dom.Document;
 
 import java.security.Key;
@@ -21,14 +20,16 @@ import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.util.logging.Logger;
 
 /**
  * Test the performance of a JceProviderEngine.
+ *
  * @author mike
  * @version 1.0
  */
 public class JceProviderTest {
-    private static final Category log = Category.getInstance(JceProviderTest.class);
+    private static final Logger log = Logger.getLogger(JceProviderTest.class.getName());
     //$ ls c:/cygwin/kstores
     //ca.cer  ca.ks  ssl.csr  ssl.ks  ssl_self.cer
     private static final String DIR = "c:/cygwin/kstores/";
@@ -55,13 +56,13 @@ public class JceProviderTest {
             driver = "com.l7tech.common.security.prov.bc.BouncyCastleJceProviderEngine";
         } else
             throw new IllegalArgumentException("Usage: JceProviderTest [phaos|bc|rsa]");
-        System.setProperty(JceProvider.ENGINE_PROPERTY,  driver);
+        System.setProperty(JceProvider.ENGINE_PROPERTY, driver);
 
-        final byte[] keyBytes = new byte[] {
-            (byte) 0x9f,(byte) 0x04,(byte) 0xe4,(byte) 0xcf,(byte) 0x95,(byte) 0x9e,(byte) 0xd6,(byte) 0x16,
-            (byte) 0xa1,(byte) 0x58,(byte) 0xf9,(byte) 0x8a,(byte) 0xc6,(byte) 0x2c,(byte) 0xf7,(byte) 0x33,
-            (byte) 0xc8,(byte) 0x1b,(byte) 0xe2,(byte) 0x67,(byte) 0xd1,(byte) 0x52,(byte) 0xa0,(byte) 0xb1,
-            (byte) 0x75,(byte) 0xcf,(byte) 0x38,(byte) 0x0c,(byte) 0xc1,(byte) 0xf8,(byte) 0x61,(byte) 0xcd,
+        final byte[] keyBytes = new byte[]{
+            (byte)0x9f, (byte)0x04, (byte)0xe4, (byte)0xcf, (byte)0x95, (byte)0x9e, (byte)0xd6, (byte)0x16,
+            (byte)0xa1, (byte)0x58, (byte)0xf9, (byte)0x8a, (byte)0xc6, (byte)0x2c, (byte)0xf7, (byte)0x33,
+            (byte)0xc8, (byte)0x1b, (byte)0xe2, (byte)0x67, (byte)0xd1, (byte)0x52, (byte)0xa0, (byte)0xb1,
+            (byte)0x75, (byte)0xcf, (byte)0x38, (byte)0x0c, (byte)0xc1, (byte)0xf8, (byte)0x61, (byte)0xcd,
         };
 
         final Key key = new AesKey(keyBytes, 128);
@@ -90,7 +91,7 @@ public class JceProviderTest {
             log.info("CSR public key: " + publicKeyInfo(csr.getPublicKey()));
 
             byte[] csrEnc = csr.getEncoded();
-            signedClientCert = (X509Certificate) signer.createCertificate(csrEnc);
+            signedClientCert = (X509Certificate)signer.createCertificate(csrEnc);
             log.info("Signed: " + CertUtils.toString(signedClientCert));
 
             log.info("pretest: signing XML message");
@@ -171,7 +172,7 @@ public class JceProviderTest {
 
     private static String privateKeyInfo(PrivateKey pk) {
         if (pk instanceof RSAPrivateKey) {
-            RSAPrivateKey rsaKey = (RSAPrivateKey) pk;
+            RSAPrivateKey rsaKey = (RSAPrivateKey)pk;
             String modulus = rsaKey.getModulus().toString(16);
             String strength = (modulus.length() * 4) + " bits";
             String exponent = rsaKey.getPrivateExponent().toString(16);
@@ -182,7 +183,7 @@ public class JceProviderTest {
 
     private static String publicKeyInfo(PublicKey pk) {
         if (pk instanceof RSAPublicKey) {
-            RSAPublicKey rsaKey = (RSAPublicKey) pk;
+            RSAPublicKey rsaKey = (RSAPublicKey)pk;
             String modulus = rsaKey.getModulus().toString(16);
             String strength = (modulus.length() * 4) + " bits";
             String exponent = rsaKey.getPublicExponent().toString(16);
@@ -191,7 +192,9 @@ public class JceProviderTest {
             return "Unknown public key";
     }
 
-    /** Time how long the specified operation takes to complete. */
+    /**
+     * Time how long the specified operation takes to complete.
+     */
     private static long time(Testable r) throws Throwable {
         long before = System.currentTimeMillis();
         r.run();
@@ -206,6 +209,6 @@ public class JceProviderTest {
                     r.run();
             }
         });
-        log.info("Timed " + count + " executions of " + name + ": " + t + " ms; " + (((double)t)/count) + " ms per execution; " + (((double)count)/(t+1))*1000 + " per second");
+        log.info("Timed " + count + " executions of " + name + ": " + t + " ms; " + (((double)t) / count) + " ms per execution; " + (((double)count) / (t + 1)) * 1000 + " per second");
     }
 }

@@ -11,7 +11,6 @@ import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
-import org.apache.log4j.Category;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
@@ -23,28 +22,22 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.Principal;
-import java.security.PrivateKey;
+import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.logging.Logger;
 
 /**
- *
  * User: mike
  * Date: Jul 29, 2003
  * Time: 10:37:49 AM
  */
 public class ClientCertSslClient {
-    public static final Category log = Category.getInstance(ClientCertSslClient.class);
+    public static final Logger log = Logger.getLogger(ClientCertSslClient.class.getName());
     public static final String CONFIG_DIR =
-            System.getProperties().getProperty("user.home") + File.separator + ".l7tech";
+      System.getProperties().getProperty("user.home") + File.separator + ".l7tech";
     public static final File TRUST_FILE =
-            new File(CONFIG_DIR + File.separator + "trustStore");
+      new File(CONFIG_DIR + File.separator + "trustStore");
     public static final String TRUST_PASS = "password";
     public static final String KEYSTORE = "C:/tomcatSsl";
     public static final String KEYPASS = "tralala";
@@ -70,7 +63,7 @@ public class ClientCertSslClient {
         public PrivateKey getPrivateKey(String s) {
             log.info("MyKeyManager: getClientCertPrivateKey: s=" + s);
             try {
-                PrivateKey key = (PrivateKey) getKeyStore().getKey(s, KEYPASS.toCharArray());
+                PrivateKey key = (PrivateKey)getKeyStore().getKey(s, KEYPASS.toCharArray());
                 if (key == null)
                     throw new RuntimeException("Could not find private key");
                 log.info("Found client private key");
@@ -83,9 +76,9 @@ public class ClientCertSslClient {
         public X509Certificate[] getCertificateChain(String s) {
             log.info("MyKeyManager: getCertificateChain: s=" + s);
             try {
-                X509Certificate cert = (X509Certificate) getKeyStore().getCertificate(s);
+                X509Certificate cert = (X509Certificate)getKeyStore().getCertificate(s);
                 log.info("Using client certificate " + cert);
-                return new X509Certificate[] { cert };
+                return new X509Certificate[]{cert};
             } catch (KeyStoreException e) {
                 throw new RuntimeException(e);
             }
@@ -93,12 +86,12 @@ public class ClientCertSslClient {
 
         public String[] getClientAliases(String s, Principal[] principals) {
             log.info("MyKeyManager: getClientAliases");
-            return new String[] {"tomcat"};
+            return new String[]{"tomcat"};
         }
 
         public String[] getServerAliases(String s, Principal[] principals) {
             log.info("MyKeyManager: getServerAliases");
-            return new String[] {"tomcat"};
+            return new String[]{"tomcat"};
         }
 
         public String chooseServerAlias(String s, Principal[] principals, Socket socket) {
@@ -138,26 +131,24 @@ public class ClientCertSslClient {
         }
 
         public Socket createSocket(Socket socket, String host, int port, boolean autoClose)
-                throws IOException, UnknownHostException
-        {
+          throws IOException, UnknownHostException {
             log.info("MySocketFactory.createSocket1(): host=" + host);
-            final SSLSocket sock = (SSLSocket) sslContext.getSocketFactory().createSocket(socket, host, port, autoClose);
+            final SSLSocket sock = (SSLSocket)sslContext.getSocketFactory().createSocket(socket, host, port, autoClose);
             log.info("Socket is type: " + sock.getClass());
             return sock;
         }
 
         public Socket createSocket(String host, int port, InetAddress clientHost, int clientPort)
-                throws IOException, UnknownHostException
-        {
+          throws IOException, UnknownHostException {
             log.info("MySocketFactory.createSocket2(): host=" + host);
-            final SSLSocket sock = (SSLSocket) sslContext.getSocketFactory().createSocket(host, port, clientHost, clientPort);
+            final SSLSocket sock = (SSLSocket)sslContext.getSocketFactory().createSocket(host, port, clientHost, clientPort);
             log.info("Socket is type: " + sock.getClass());
             return sock;
         }
 
         public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
             log.info("MySocketFactory.createSocket3(): host=" + host);
-            final SSLSocket sock = (SSLSocket) sslContext.getSocketFactory().createSocket(host, port);
+            final SSLSocket sock = (SSLSocket)sslContext.getSocketFactory().createSocket(host, port);
             log.info("Socket is type: " + sock.getClass());
             return sock;
         }
@@ -173,16 +164,15 @@ public class ClientCertSslClient {
     }
 
     private static void doMain()
-            throws NoSuchProviderException, NoSuchAlgorithmException,
-                   KeyManagementException, IOException, HttpException
-    {
+      throws NoSuchProviderException, NoSuchAlgorithmException,
+      KeyManagementException, IOException, HttpException {
         // Set up SSL trust store
         MyKeyManager keyManager = new MyKeyManager();
         MyTrustManager trustManager = new MyTrustManager();
         SSLContext sslContext = SSLContext.getInstance("SSL", "SunJSSE");
-        sslContext.init(new X509KeyManager[] {keyManager},
-                        new X509TrustManager[] {trustManager},
-                        null);
+        sslContext.init(new X509KeyManager[]{keyManager},
+          new X509TrustManager[]{trustManager},
+          null);
         Protocol https = new Protocol("https", new MySocketFactory(sslContext), 443);
         Protocol.registerProtocol("https", https);
 

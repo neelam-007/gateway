@@ -6,48 +6,34 @@
 
 package com.l7tech.proxy;
 
-import org.apache.log4j.Category;
-import org.mortbay.http.HttpContext;
-import org.mortbay.http.HttpException;
-import org.mortbay.http.HttpRequest;
-import org.mortbay.http.HttpResponse;
-import org.mortbay.http.HttpServer;
-import org.mortbay.http.SunJsseListener;
+import org.mortbay.http.*;
 import org.mortbay.http.handler.AbstractHttpHandler;
 import org.mortbay.util.InetAddrPort;
 import org.mortbay.util.MultiException;
 import org.mortbay.util.MultiMap;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLServerSocket;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.X509KeyManager;
-import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.*;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.NoSuchAlgorithmException;
-import java.security.Principal;
-import java.security.PrivateKey;
+import java.security.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.logging.Logger;
 
 /**
- *
  * User: mike
  * Date: Jul 28, 2003
  * Time: 3:02:31 PM
  */
 public class ClientCertSslServer {
-    private static final Category log = Category.getInstance(ClientCertSslServer.class);
+    private static final Logger log = Logger.getLogger(ClientCertSslServer.class.getName());
     private static final String KEYSTORE = "C:/tomcatSsl";
     private static final String KEYPASS = "tralala";
     private static final String KEYNAME = "tomcat";
@@ -63,7 +49,7 @@ public class ClientCertSslServer {
                 ks = KeyStore.getInstance("JKS");
                 FileInputStream ksFile = new FileInputStream(KEYSTORE);
                 ks.load(ksFile, KEYPASS.toCharArray());
-                PrivateKey key = (PrivateKey) ks.getKey(s, KEYPASS.toCharArray());
+                PrivateKey key = (PrivateKey)ks.getKey(s, KEYPASS.toCharArray());
                 return key;
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -77,12 +63,12 @@ public class ClientCertSslServer {
 
         public String[] getClientAliases(String s, Principal[] principals) {
             log.info("MyKeyManager: getClientAliases");
-            return new String[] {"tomcat"};
+            return new String[]{"tomcat"};
         }
 
         public String[] getServerAliases(String s, Principal[] principals) {
             log.info("MyKeyManager: getServerAliases");
-            return new String[] {"tomcat"};
+            return new String[]{"tomcat"};
         }
 
         public String chooseServerAlias(String s, Principal[] principals, Socket socket) {
@@ -123,43 +109,43 @@ public class ClientCertSslServer {
     }
 
     private static class MyHandler extends AbstractHttpHandler {
-        /** Handle a request.
-         *
+        /**
+         * Handle a request.
+         * <p/>
          * Note that Handlers are tried in order until one has handled the
          * request. i.e. until request.isHandled() returns true.
-         *
+         * <p/>
          * In broad terms this means, either a response has been commited
          * or request.setHandled(true) has been called.
          *
          * @param pathInContext The context path
-         * @param pathParams Path parameters such as encoded Session ID
-         * @param request The HttpRequest request
-         * @param response The HttpResponse response
+         * @param pathParams    Path parameters such as encoded Session ID
+         * @param request       The HttpRequest request
+         * @param response      The HttpResponse response
          */
         public void handle(String pathInContext,
                            String pathParams,
                            HttpRequest request,
                            HttpResponse response)
-                throws HttpException, IOException
-        {
+          throws HttpException, IOException {
             log.info("Got request: " + request);
             log.info("isConfidential=" + request.isConfidential());
             Enumeration names = request.getFieldNames();
             while (names.hasMoreElements()) {
-                String s = (String) names.nextElement();
+                String s = (String)names.nextElement();
                 log.info("Field " + s + ":" + request.getField(s));
             }
 
             Enumeration attrs = request.getAttributeNames();
             while (attrs.hasMoreElements()) {
-                String s = (String) attrs.nextElement();
+                String s = (String)attrs.nextElement();
                 log.info("Attribute " + s + ":" + request.getAttribute(s));
             }
 
             MultiMap parms = request.getParameters();
             Collection parmKeys = parms.keySet();
             for (Iterator i = parmKeys.iterator(); i.hasNext();) {
-                String s = (String) i.next();
+                String s = (String)i.next();
                 log.info("Parameter " + s + ":" + parms.get(s));
             }
 
@@ -188,7 +174,7 @@ public class ClientCertSslServer {
         ctx.addHandler(new MyHandler());
 
         httpServer.start();
-        SSLServerSocket sss = (SSLServerSocket) jl.getServerSocket();
+        SSLServerSocket sss = (SSLServerSocket)jl.getServerSocket();
         sss.setWantClientAuth(true);
         //sss.setNeedClientAuth(true);
 
@@ -217,8 +203,8 @@ public class ClientCertSslServer {
         //props.put("javax.net.ssl.keyStore", KEYSTORE);
         //props.put("javax.net.ssl.keyStorePassword", KEYPASS);
         SSLContext ctx = SSLContext.getInstance("ssl");
-        ctx.init(new X509KeyManager[] {new MyKeyManager()}, new X509TrustManager[] {new MyTrustManager()}, null);
-        SSLServerSocket sock = (SSLServerSocket) ctx.getServerSocketFactory().createServerSocket();
+        ctx.init(new X509KeyManager[]{new MyKeyManager()}, new X509TrustManager[]{new MyTrustManager()}, null);
+        SSLServerSocket sock = (SSLServerSocket)ctx.getServerSocketFactory().createServerSocket();
         SSLSocket remote;
         while ((remote = (SSLSocket)sock.accept()) != null) {
             Certificate[] certs = remote.getSession().getPeerCertificates();

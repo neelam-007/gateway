@@ -6,33 +6,25 @@
 
 package com.l7tech.common.locator;
 
+import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.util.Locator;
 import com.l7tech.console.util.Registry;
-import com.l7tech.identity.GroupManager;
-import com.l7tech.identity.GroupManagerStub;
-import com.l7tech.identity.IdentityProvider;
-import com.l7tech.identity.IdentityProviderConfigManager;
-import com.l7tech.identity.IdentityProviderConfigManagerStub;
-import com.l7tech.identity.IdentityProviderStub;
-import com.l7tech.identity.StubDataStore;
-import com.l7tech.identity.UserManager;
-import com.l7tech.identity.UserManagerStub;
-import com.l7tech.common.transport.jms.JmsAdmin;
+import com.l7tech.identity.*;
 import com.l7tech.service.JmsAdminStub;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.service.ServiceAdminStub;
-import org.apache.log4j.Category;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Logger;
 
 /**
  * Locator for use during tests, that uses stub versions of all manager classes.
-  */
+ */
 public class StubModeLocator extends Locator {
-    private static final Category log = Category.getInstance(StubModeLocator.class);
+    private static final Logger log = Logger.getLogger(StubModeLocator.class.getName());
 
     public StubModeLocator() {
         log.info("New StubModeLocator");

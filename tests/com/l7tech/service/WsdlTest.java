@@ -1,29 +1,24 @@
 package com.l7tech.service;
 
+import com.l7tech.common.xml.Wsdl;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.apache.log4j.Category;
 
 import javax.wsdl.Port;
 import javax.wsdl.WSDLException;
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.StringReader;
-import java.io.StringWriter;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
-
-import com.l7tech.common.xml.Wsdl;
+import java.util.logging.Logger;
 
 /**
  * Class WsdlTest tests the {@link com.l7tech.common.xml.Wsdl}
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
 public class WsdlTest extends TestCase {
-    private static final Category log = Category.getInstance(WsdlTest.class);
+    private static final Logger log = Logger.getLogger(WsdlTest.class.getName());
     public static final String WSDL = "com/l7tech/service/resources/StockQuoteService.wsdl";
     public static final String WSDL2PORTS = "com/l7tech/service/resources/xmltoday-delayed-quotes-2ports.wsdl";
     public static final String WSDL2SERVICES = "com/l7tech/service/resources/xmltoday-delayed-quotes-2services.wsdl";
@@ -65,6 +60,7 @@ public class WsdlTest extends TestCase {
 
     /**
      * Read the well formed WSDL using StringReader.
+     *
      * @throws Exception on tesat errors
      */
     public void testReadWsdlFromString() throws Exception {
@@ -77,7 +73,7 @@ public class WsdlTest extends TestCase {
         }
 
         Wsdl wsdl =
-                Wsdl.newInstance(null, new StringReader(sw.toString()));
+          Wsdl.newInstance(null, new StringReader(sw.toString()));
         wsdl.getTypes();
         wsdl.getBindings();
         wsdl.getMessages();
@@ -88,11 +84,12 @@ public class WsdlTest extends TestCase {
 
     /**
      * Read the well fromed WSDL using FileReader.
+     *
      * @throws Exception on tesat errors
      */
     public void testReadWsdlFromFile() throws Exception {
         Wsdl wsdl =
-                Wsdl.newInstance(null, getWsdlReader(WSDL));
+          Wsdl.newInstance(null, getWsdlReader(WSDL));
         wsdl.getTypes();
         wsdl.getBindings();
         wsdl.getMessages();
@@ -137,7 +134,7 @@ public class WsdlTest extends TestCase {
      * Test <code>AbstractLocatorTest</code> main.
      */
     public static void main(String[] args) throws
-            Throwable {
+      Throwable {
         junit.textui.TestRunner.run(suite());
     }
 }

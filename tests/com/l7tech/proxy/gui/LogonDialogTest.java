@@ -7,14 +7,14 @@
 package com.l7tech.proxy.gui;
 
 import com.l7tech.proxy.ClientProxy;
-import com.l7tech.proxy.gui.dialogs.LogonDialog;
 import com.l7tech.proxy.datamodel.SsgManager;
 import com.l7tech.proxy.datamodel.SsgManagerStub;
-import org.apache.log4j.Category;
+import com.l7tech.proxy.gui.dialogs.LogonDialog;
 
 import javax.swing.*;
 import java.awt.*;
 import java.net.PasswordAuthentication;
+import java.util.logging.Logger;
 
 /**
  * Test the logon dialog
@@ -23,7 +23,7 @@ import java.net.PasswordAuthentication;
  * Time: 12:53:01 PM
  */
 public class LogonDialogTest {
-    private static final Category log = Category.getInstance(LogonDialogTest.class);
+    private static final Logger log = Logger.getLogger(LogonDialogTest.class.getName());
 
     public static void main(String[] args) {
         SsgManager ssgManager = new SsgManagerStub();

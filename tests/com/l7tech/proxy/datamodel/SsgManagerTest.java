@@ -10,7 +10,6 @@ import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.apache.log4j.Category;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -24,16 +23,15 @@ import java.util.Iterator;
  * Time: 3:39:14 PM
  */
 public class SsgManagerTest extends TestCase {
-    private static final Category log = Category.getInstance(SsgManagerTest.class);
 
     private static final SsgManagerImpl sm = SsgManagerImpl.getSsgManagerImpl();
 
     private static final Ssg SSG1 =
-            new Ssg(1, "bunky1.foo.bar");
+      new Ssg(1, "bunky1.foo.bar");
     private static final Ssg SSG2 =
-            new Ssg(2, "bunky2.foo.bar");
+      new Ssg(2, "bunky2.foo.bar");
     private static final Ssg SSG3 =
-            new Ssg(3, "bunky3.foo.bar");
+      new Ssg(3, "bunky3.foo.bar");
     private static final Ssg SSG3_CLONE = SSG3.getCopy();
 
     public SsgManagerTest(String name) {
@@ -62,12 +60,13 @@ public class SsgManagerTest extends TestCase {
 
     /**
      * Find how many SSGs are registered under the specified hostname.
+     *
      * @param name
      * @return The number of SSGs this.sm with the given name
      */
     private int countNames(String name) {
         int count = 0;
-        for (Iterator i = sm.getSsgList().iterator(); i.hasNext(); ) {
+        for (Iterator i = sm.getSsgList().iterator(); i.hasNext();) {
             Ssg ssg = (Ssg)i.next();
             if (name.equals(ssg.getSsgAddress()))
                 ++count;
@@ -91,7 +90,9 @@ public class SsgManagerTest extends TestCase {
         throw new Exception("Testable failed to throw the expected exception");
     }
 
-    /** Make sure none of our test records are present in the given SMI. */
+    /**
+     * Make sure none of our test records are present in the given SMI.
+     */
     public void assertNoBunkysIn(final SsgManagerImpl smi) throws Exception {
         mustThrow(SsgNotFoundException.class, new Testable() {
             public void run() throws Exception {
@@ -111,16 +112,17 @@ public class SsgManagerTest extends TestCase {
             }
         });
 
-        Collection unwantedNames = Arrays.asList(new String[] {
+        Collection unwantedNames = Arrays.asList(new String[]{
             SSG1.getSsgAddress(), SSG2.getSsgAddress(), SSG3.getSsgAddress()
         });
-        Collection unwantedEndpoints = Arrays.asList(new String[] {
+        Collection unwantedEndpoints = Arrays.asList(new String[]{
             SSG1.getLocalEndpoint(), SSG2.getLocalEndpoint(), SSG3.getLocalEndpoint()
         });
-        for (Iterator i = smi.getSsgList().iterator(); i.hasNext(); ) {
+        for (Iterator i = smi.getSsgList().iterator(); i.hasNext();) {
             Ssg ssg = (Ssg)i.next();
             if (unwantedNames.contains(ssg.getSsgAddress()) || unwantedEndpoints.contains(ssg.getLocalEndpoint()))
-                throw new Exception("Failed to remove all test SSG records");;
+                throw new Exception("Failed to remove all test SSG records");
+            ;
         }
     }
 
@@ -129,12 +131,12 @@ public class SsgManagerTest extends TestCase {
         assertTrue(sm.getSsgList().size() == 0);
 
         // Add a couple of SSGs
-        Assertion policy1 = new AllAssertion(Arrays.asList(new Assertion[] {
+        Assertion policy1 = new AllAssertion(Arrays.asList(new Assertion[]{
             new HttpBasic(),
             new SslAssertion()
         }));
 
-        Assertion policy2 = new ExactlyOneAssertion(Arrays.asList(new Assertion[] {
+        Assertion policy2 = new ExactlyOneAssertion(Arrays.asList(new Assertion[]{
             policy1,
             new HttpDigest()
         }));
