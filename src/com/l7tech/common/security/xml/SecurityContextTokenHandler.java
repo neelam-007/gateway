@@ -16,7 +16,7 @@ import java.util.Date;
 
 /**
  * Appends and parses out xml security session information in/out of soap messages.
- * The specifications used here are WS-Secure Conversation
+ * The specifications used here are WS-Secure Conversation and WS-Trust versions 1.1.
  *
  * This is not yet plugged in and will eventually phase out the class SecureConversationTokenHandler.
  *
