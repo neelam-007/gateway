@@ -59,7 +59,7 @@ public class UserManagerImp extends HibernateEntityManager implements UserManage
     }
 
     public Class getImpClass() {
-        return UserImp.class;
+        return User.class;
     }
 
     public Class getInterfaceClass() {
