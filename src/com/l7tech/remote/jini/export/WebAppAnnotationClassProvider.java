@@ -85,7 +85,7 @@ public class WebAppAnnotationClassProvider extends PreferredClassProvider {
         }
 
         String annotation = getLoaderAnnotation(getClassLoader(cl));
-        logger.finest("getClassAnnotation '" + cl + "' returns annotation '" + (annotation == null ? "null" : annotation) + "'");
+        // logger.finest("getClassAnnotation '" + cl + "' returns annotation '" + (annotation == null ? "null" : annotation) + "'");
         return annotation;
 
     }
