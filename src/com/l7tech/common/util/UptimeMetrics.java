@@ -102,8 +102,6 @@ public class UptimeMetrics implements Serializable {
      * @return  An UptimeMetrics instance containing the pertinent information from this string.
      */
     private static UptimeMetrics parseUptimeOutput(String result) {
-        long now = System.currentTimeMillis();
-
         int days = 0;
         int hours = 0;
         int minutes = 0;
@@ -140,7 +138,7 @@ public class UptimeMetrics implements Serializable {
             load3 = strToDouble(matchLoads.group(3));
         }
 
-        UptimeMetrics um = new UptimeMetrics(result, now, days, hours, minutes, load1, load2, load3);
+        UptimeMetrics um = new UptimeMetrics(result, 0, days, hours, minutes, load1, load2, load3);
         return um;
     }
 
