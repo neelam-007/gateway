@@ -32,22 +32,16 @@ import java.util.logging.Level;
  * @version 1.0
  */
 public class HttpServiceLookup extends ServiceLookup {
-    private final String serviceUrl;
-
     /**
      * Instantiate http serrvice lookup.
      *
      * @throws ConfigurationException if problem encountered with
      * configuration
-     * @throws IOException on io erro reading configuration
+     * @throws ConfigurationException on configuration error
      */
     public HttpServiceLookup()
-     throws ConfigurationException, IOException {
+     throws ConfigurationException {
         super();
-        serviceUrl = Preferences.getPreferences().getServiceUrl();
-        if (serviceUrl == null) {
-            throw new ConfigurationException("The service url cannot be null");
-        }
     }
 
     /**
@@ -96,6 +90,12 @@ public class HttpServiceLookup extends ServiceLookup {
       throws IOException, ConfigurationException, ClassNotFoundException {
 
         URLConnection conn = null;
+        String serviceUrl = Preferences.getPreferences().getServiceUrl();
+        if (serviceUrl == null) {
+            throw new ConfigurationException("The service url cannot be null");
+        }
+        logger.fine("Attempting connection to "+serviceUrl);
+;
         URL url = new URL(serviceUrl+"/registrar");
         conn = url.openConnection();
 
