@@ -247,12 +247,9 @@
                 <!-- <include name="hibernate.cfg.xml"/> -->
                 <include name="hibernate.properties"/>
                 <include name="SSG.hbm.xml"/>
-                <include name="tyrex-domain.xml"/>
                 <include name="com/l7tech/objectmodel/hibernatepersistence.properties"/>
             </fileset>
         </copy>
-        <!-- replace with tomcat.home tokens  -->
-        <replace file="${build.classes}/tyrex-domain.xml" token="@TOMCAT_HOME@" value="${tomcat.home}"/>
 
         <!-- html and other static web files -->
         <copy todir="${doc.root}">
