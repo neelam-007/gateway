@@ -7,6 +7,7 @@ import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.common.xml.SoapFaultDetailImpl;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
@@ -14,6 +15,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.AssertionMessages;
 import org.springframework.context.ApplicationContext;
 import org.xml.sax.SAXException;
 
@@ -64,23 +66,25 @@ public class ServerSamlAuthenticationStatement implements ServerAssertion {
      */
     public AssertionStatus checkRequest(PolicyEnforcementContext context)
       throws IOException, PolicyAssertionException {
+
+        Auditor auditor = new Auditor(context.getAuditContext(), logger);
         try {
             final XmlKnob xmlKnob = context.getRequest().getXmlKnob();
             if (!context.getRequest().isSoap()) {
-                logger.finest("Request not SOAP; cannot validate Saml Statement");
+                auditor.logAndAudit(AssertionMessages.SAML_AUTHN_STMT_REQUEST_NOT_SOAP);
                 return AssertionStatus.NOT_APPLICABLE;
             }
 
             ProcessorResult wssResults = xmlKnob.getProcessorResult();
             if (wssResults == null) {
-                logger.info("No tokens were processed from this request. Returning AUTH_REQUIRED.");
+                auditor.logAndAudit(AssertionMessages.SAML_AUTHN_STMT_NO_TOKENS_PROCESSED);
                 context.setAuthenticationMissing();
                 return AssertionStatus.AUTH_REQUIRED;
             }
 
             SecurityToken[] tokens = wssResults.getSecurityTokens();
             if (tokens == null) {
-                logger.info("No tokens were processed from this request. Returning AUTH_REQUIRED.");
+                auditor.logAndAudit(AssertionMessages.SAML_AUTHN_STMT_NO_TOKENS_PROCESSED);
                 context.setAuthenticationMissing();
                 return AssertionStatus.AUTH_REQUIRED;
             }
@@ -91,8 +95,7 @@ public class ServerSamlAuthenticationStatement implements ServerAssertion {
                     SamlSecurityToken samlToken = (SamlSecurityToken)tok;
                     if (samlToken.isPossessionProved() || samlToken.isBearerToken()) {
                         if (samlAssertion != null) {
-                            logger.severe("We got a request that contained more than one SAML assertion.  " +
-                                          "This is not currently supported.");
+                            auditor.logAndAudit(AssertionMessages.SAML_AUTHN_STMT_MULTIPLE_SAML_ASSERTIONS_UNSUPPORTED);
                             return AssertionStatus.BAD_REQUEST;
                         }
                         samlAssertion = samlToken;
@@ -100,7 +103,7 @@ public class ServerSamlAuthenticationStatement implements ServerAssertion {
                 }
             }
             if (samlAssertion == null) {
-                logger.info("This assertion did not find an acceptable SAML assertion to use as credentials.");
+                auditor.logAndAudit(AssertionMessages.SAML_AUTHN_STMT_NO_ACCEPTABLE_SAML_ASSERTION);
                 context.setAuthenticationMissing();
                 return AssertionStatus.AUTH_REQUIRED;
             }
