@@ -8,7 +8,6 @@ package com.l7tech.server.event;
 
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
-import com.l7tech.objectmodel.event.Event;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.server.MessageProcessor;
 

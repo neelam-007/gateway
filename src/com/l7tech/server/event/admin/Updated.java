@@ -4,22 +4,23 @@
  * $Id$
  */
 
-package com.l7tech.objectmodel.event;
+package com.l7tech.server.event.admin;
 
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.server.event.EntityChangeSet;
 
 import java.util.EventListener;
 
 /**
  * Fired when a persistent {@link Entity} has been updated.
  * <p>
- * The {@link #source} is the updated object, and the included {@link EntityChangeSet} gives access
+ * The {@link #source} is the updated object, and the included {@link com.l7tech.server.event.EntityChangeSet} gives access
  * to the old and new values on a per-property basis.
  *  
  * @author alex
  * @version $Revision$
  */
-public class Updated extends PersistenceEvent {
+public class Updated extends AdminEvent {
     public Updated(Entity entity, EntityChangeSet changes, String note ) {
         super(entity, note );
         this.changeSet = changes;

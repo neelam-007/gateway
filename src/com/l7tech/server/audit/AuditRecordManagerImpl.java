@@ -8,10 +8,9 @@ package com.l7tech.server.audit;
 
 import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.common.audit.AuditSearchCriteria;
-import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.HibernateEntityManager;
-import com.l7tech.objectmodel.SaveException;
+import com.l7tech.objectmodel.*;
+import com.l7tech.server.event.EventManager;
+import com.l7tech.server.event.system.AuditPurgeEvent;
 import net.sf.hibernate.Criteria;
 import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Session;
@@ -120,6 +119,25 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
         } catch ( SQLException e ) {
             throw new SaveException("Couldn't save AuditRecord", e);
         }
+    }
+
+    public void deleteOldAuditRecords() throws DeleteException {
+        EventManager.fire(new AuditPurgeEvent( this ));
+        throw new IllegalStateException("Not yet implemented");
+/*
+        try {
+            HibernatePersistenceContext context = (HibernatePersistenceContext)HibernatePersistenceContext.getCurrent();
+            Session s = context.getSession();
+            StringBuffer query = new StringBuffer("FROM ").append(getTableName()).append(" IN CLASS ").append(getInterfaceClass().getName());
+            query.append("WHERE ").append(getTableName()).append(".").append(PROP_LEVEL).append("");
+            s.delete()
+
+        } catch ( SQLException e ) {
+            throw new DeleteException("Couldn't purge audit events", e);
+        } catch ( HibernateException e ) {
+            throw new DeleteException("Couldn't purge audit events", e);
+        }
+*/
     }
 
     public Class getImpClass() {

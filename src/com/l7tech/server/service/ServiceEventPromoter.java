@@ -6,10 +6,10 @@
 
 package com.l7tech.server.service;
 
-import com.l7tech.objectmodel.event.EntityChangeSet;
-import com.l7tech.objectmodel.event.Event;
-import com.l7tech.objectmodel.event.Updated;
+import com.l7tech.server.event.EntityChangeSet;
+import com.l7tech.server.event.Event;
 import com.l7tech.server.event.EventPromoter;
+import com.l7tech.server.event.admin.Updated;
 import com.l7tech.service.PublishedService;
 
 /**

@@ -4,7 +4,7 @@
  * $Id$
  */
 
-package com.l7tech.objectmodel.event;
+package com.l7tech.server.event;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -12,7 +12,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * A map of persistent object properties that have been changed.  Propagated in an {@link Updated} event.
+ * A map of persistent object properties that have been changed.  Propagated in an {@link com.l7tech.server.event.admin.Updated} event.
  * <p>
  * Immutable.
  * @author alex

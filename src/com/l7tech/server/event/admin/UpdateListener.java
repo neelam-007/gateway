@@ -4,7 +4,7 @@
  * $Id$
  */
 
-package com.l7tech.objectmodel.event;
+package com.l7tech.server.event.admin;
 
 import java.util.EventListener;
 

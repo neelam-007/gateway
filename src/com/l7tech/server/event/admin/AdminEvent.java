@@ -4,21 +4,22 @@
  * $Id$
  */
 
-package com.l7tech.objectmodel.event;
+package com.l7tech.server.event.admin;
 
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.server.event.Event;
 
 /**
  * Implementations are events in the lifecycle of a persistent {@link Entity}.
  * @author alex
  * @version $Revision$
  */
-public abstract class PersistenceEvent extends Event {
-    public PersistenceEvent(Entity entity) {
+public abstract class AdminEvent extends Event {
+    public AdminEvent(Entity entity) {
         super(entity);
     }
 
-    public PersistenceEvent(Entity entity, String note) {
+    public AdminEvent(Entity entity, String note) {
         this(entity);
         this.note = note;
     }

@@ -8,6 +8,7 @@ package com.l7tech.server.audit;
 
 import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.common.audit.AuditSearchCriteria;
+import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.SaveException;
@@ -30,4 +31,5 @@ public interface AuditRecordManager extends EntityManager {
     Collection find(AuditSearchCriteria criteria) throws FindException;
 
     long save(AuditRecord rec) throws SaveException;
+    void deleteOldAuditRecords() throws DeleteException;
 }

@@ -6,12 +6,12 @@
 
 package com.l7tech.server.audit;
 
-import com.l7tech.objectmodel.event.PersistenceEvent;
 import com.l7tech.server.ComponentConfig;
 import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerComponentLifecycle;
 import com.l7tech.server.event.EventManager;
 import com.l7tech.server.event.MessageProcessed;
+import com.l7tech.server.event.admin.AdminEvent;
 import com.l7tech.server.service.ServiceEventPromoter;
 
 /**
@@ -32,8 +32,8 @@ public class AuditBootProcess implements ServerComponentLifecycle {
 
     public void start() throws LifecycleException {
         EventManager.addListener(MessageProcessed.class, messageAuditListener);
-        EventManager.addListener(PersistenceEvent.class, adminAuditListener);
-        EventManager.addPromoter(PersistenceEvent.class, servicePromoter);
+        EventManager.addListener(AdminEvent.class, adminAuditListener);
+        EventManager.addPromoter(AdminEvent.class, servicePromoter);
     }
 
     public void stop() throws LifecycleException {

@@ -4,7 +4,7 @@
  * $Id$
  */
 
-package com.l7tech.objectmodel.event;
+package com.l7tech.server.event.admin;
 
 import java.util.EventListener;
 
@@ -12,6 +12,6 @@ import java.util.EventListener;
  * @author alex
  * @version $Revision$
  */
-public interface GenericListener extends EventListener {
-    void receive(Event event);
+public interface CreateListener extends EventListener {
+    void entityCreated(Created event);
 }

@@ -8,10 +8,10 @@ package com.l7tech.common.audit;
 
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.NamedEntity;
-import com.l7tech.objectmodel.event.Created;
-import com.l7tech.objectmodel.event.Deleted;
-import com.l7tech.objectmodel.event.PersistenceEvent;
-import com.l7tech.objectmodel.event.Updated;
+import com.l7tech.server.event.admin.AdminEvent;
+import com.l7tech.server.event.admin.Created;
+import com.l7tech.server.event.admin.Deleted;
+import com.l7tech.server.event.admin.Updated;
 
 import java.util.logging.Level;
 
@@ -29,7 +29,7 @@ public class AdminAuditRecord extends AuditRecord {
     public static final char ACTION_UPDATED = 'U';
     public static final char ACTION_DELETED = 'D';
 
-    public AdminAuditRecord(Level level, String nodeId, PersistenceEvent event, String adminLogin, String ip) {
+    public AdminAuditRecord(Level level, String nodeId, AdminEvent event, String adminLogin, String ip) {
         super(level, nodeId, ip, null, null);
         if (adminLogin == null) throw new IllegalStateException("Couldn't determine current administrator login");
         this.adminLogin = adminLogin;

@@ -4,7 +4,7 @@
  * $Id$
  */
 
-package com.l7tech.server.event.lifecycle;
+package com.l7tech.server.event.system;
 
 import com.l7tech.common.Component;
 
@@ -12,8 +12,8 @@ import com.l7tech.common.Component;
  * @author alex
  * @version $Revision$
  */
-public class Initializing extends LifecycleEvent {
-    public Initializing(Object source, Component component, String ip) {
+public class Stopping extends SystemEvent {
+    public Stopping(Object source, Component component, String ip) {
         super(source, component, ip);
     }
 
@@ -21,6 +21,5 @@ public class Initializing extends LifecycleEvent {
         return NAME;
     }
 
-    private static final String NAME = "Initializing";
-
+    private static final String NAME = "Stopping";
 }

@@ -18,7 +18,7 @@ import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.server.audit.SystemAuditListener;
 import com.l7tech.server.event.EventManager;
-import com.l7tech.server.event.lifecycle.*;
+import com.l7tech.server.event.system.*;
 import com.l7tech.server.policy.DefaultGatewayPolicies;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.ServiceManagerImp;
@@ -63,7 +63,7 @@ public class BootProcess implements ServerComponentLifecycle {
 
             // This needs to happen here, early enough that it will notice early events but after the database init
             systemAuditListener = new SystemAuditListener();
-            EventManager.addListener(LifecycleEvent.class, systemAuditListener);
+            EventManager.addListener(SystemEvent.class, systemAuditListener);
 
             // add the server handler programatically after the hibernate is initialized.
             // the handlers specified in the configuraiton get loaded by the system classloader and hibernate

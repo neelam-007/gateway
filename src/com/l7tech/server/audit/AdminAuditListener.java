@@ -10,7 +10,8 @@ import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.common.audit.AdminAuditRecord;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.event.*;
+import com.l7tech.server.event.Event;
+import com.l7tech.server.event.admin.*;
 import com.l7tech.server.service.ServiceEvent;
 import com.l7tech.service.PublishedService;
 import net.jini.export.ServerContext;
@@ -73,7 +74,7 @@ public class AdminAuditListener implements CreateListener, UpdateListener, Delet
         levels.put(Created.class, Level.WARNING);
     }
 
-    private Level level(PersistenceEvent event) {
+    private Level level(AdminEvent event) {
         Entity ent = event.getEntity();
         LevelMapping lm = (LevelMapping) levelMappings.get(ent.getClass());
         Level level = DEFAULT_LEVEL;

@@ -15,11 +15,11 @@ import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.HibernatePersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.objectmodel.TransactionListener;
-import com.l7tech.objectmodel.event.Created;
-import com.l7tech.objectmodel.event.Deleted;
-import com.l7tech.objectmodel.event.EntityChangeSet;
-import com.l7tech.objectmodel.event.Updated;
+import com.l7tech.server.event.EntityChangeSet;
 import com.l7tech.server.event.EventManager;
+import com.l7tech.server.event.admin.Created;
+import com.l7tech.server.event.admin.Deleted;
+import com.l7tech.server.event.admin.Updated;
 import com.l7tech.server.service.resolution.ResolutionParameters;
 import net.sf.hibernate.CallbackException;
 import net.sf.hibernate.Interceptor;
@@ -35,7 +35,7 @@ import java.util.logging.Logger;
 
 /**
  * Notices when any persistent {@link Entity} is saved, updated or deleted, and creates and fires
- * corresponding {@link Updated}, {@link Deleted} and {@link Created} events if and when the
+ * corresponding {@link Updated}, {@link Deleted} and {@link com.l7tech.server.event.admin.Created} events if and when the
  * current transaction commits.
  *
  * @see HibernatePersistenceContext#registerTransactionListener(com.l7tech.objectmodel.TransactionListener)
@@ -61,7 +61,7 @@ public class PersistenceEventInterceptor implements Interceptor {
     }
 
     /**
-     * Detects updates and fires an {@link Updated} event if the entity isn't {@link #ignored} and the update is committed
+     * Detects updates and fires an {@link com.l7tech.server.event.admin.Updated} event if the entity isn't {@link #ignored} and the update is committed
      */
     public boolean onFlushDirty( final Object entity, final Serializable id, final Object[] currentState, final Object[] previousState, final String[] propertyNames, Type[] types ) throws CallbackException {
         if (!ignored( entity )) {
@@ -94,7 +94,7 @@ public class PersistenceEventInterceptor implements Interceptor {
     }
 
     /**
-     * Detects saves and fires a {@link Created} event if the entity isn't {@link #ignored} and the save is committed
+     * Detects saves and fires a {@link com.l7tech.server.event.admin.Created} event if the entity isn't {@link #ignored} and the save is committed
      */
     public boolean onSave( final Object entity, final Serializable id, Object[] state, String[] propertyNames, Type[] types ) throws CallbackException {
         if (!ignored( entity )) {

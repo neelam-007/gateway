@@ -20,6 +20,7 @@ public class Component {
     public static final Component GW_MESSAGE_PROCESSOR = new Component(  10, "M", "Message Processor", GW_SERVER);
     public static final Component GW_POLICY_SERVICE    = new Component(  20, "P", "Policy Service", GW_SERVER);
     public static final Component GW_TOKEN_SERVICE     = new Component(  30, "T", "Security Token Service", GW_SERVER);
+    public static final Component GW_AUDIT_SYSTEM      = new Component(  40, "A", "Audit System", GW_SERVER);
     public static final Component GW_CLUSTER           = new Component( 300, "C", "Cluster", GATEWAY);
     public static final Component GW_DATABASE          = new Component( 400, "D", "Database", GATEWAY);
 

@@ -4,7 +4,7 @@
  * $Id$
  */
 
-package com.l7tech.server.event.lifecycle;
+package com.l7tech.server.event.system;
 
 import com.l7tech.common.Component;
 
@@ -12,7 +12,7 @@ import com.l7tech.common.Component;
  * @author alex
  * @version $Revision$
  */
-public class Closing extends LifecycleEvent {
+public class Closing extends SystemEvent {
     public Closing(Object source, Component component, String ip) {
         super( source, component, ip);
     }

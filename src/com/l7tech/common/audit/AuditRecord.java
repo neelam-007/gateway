@@ -29,13 +29,13 @@ public abstract class AuditRecord extends SSGLogRecord {
         return ipAddress;
     }
 
+    public String getName() {
+        return name;
+    }
+
     /** @deprecated to be called only for serialization and persistence purposes! */
     public void setIpAddress( String ipAddress ) {
         this.ipAddress = ipAddress;
-    }
-
-    public String getName() {
-        return name;
     }
 
     /** @deprecated to be called only for serialization and persistence purposes! */

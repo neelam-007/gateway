@@ -7,8 +7,8 @@
 package com.l7tech.server.service;
 
 import com.l7tech.objectmodel.Entity;
-import com.l7tech.objectmodel.event.EntityChangeSet;
-import com.l7tech.objectmodel.event.Updated;
+import com.l7tech.server.event.EntityChangeSet;
+import com.l7tech.server.event.admin.Updated;
 import com.l7tech.service.PublishedService;
 
 /**
@@ -19,8 +19,7 @@ public abstract class ServiceEvent extends Updated {
     private ServiceEvent( Entity entity, EntityChangeSet changes, String which ) {
         super( entity, changes );
         if (!(entity instanceof PublishedService)) throw new IllegalArgumentException("Entity must be a PublishedService");
-        PublishedService service = (PublishedService)entity;
-        this.note = "Service #" + service.getOid() + " ('" + service.getName() + ") " + which;
+        this.note = which;
     }
 
     public static class Disabled extends ServiceEvent {

@@ -4,7 +4,7 @@
  * $Id$
  */
 
-package com.l7tech.server.event.lifecycle;
+package com.l7tech.server.event.system;
 
 import com.l7tech.common.Component;
 
@@ -12,8 +12,8 @@ import com.l7tech.common.Component;
  * @author alex
  * @version $Revision$
  */
-public class Closed extends LifecycleEvent {
-    public Closed(Object source, Component component, String ip) {
+public class Initialized extends SystemEvent {
+    public Initialized( Object source, Component component, String ip ) {
         super(source, component, ip);
     }
 
@@ -21,5 +21,5 @@ public class Closed extends LifecycleEvent {
         return NAME;
     }
 
-    public static final String NAME = "Closed";
+    private static final String NAME = "Initialized";
 }

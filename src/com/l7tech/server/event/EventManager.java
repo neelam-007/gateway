@@ -8,7 +8,6 @@ package com.l7tech.server.event;
 
 import com.l7tech.objectmodel.HibernatePersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
-import com.l7tech.objectmodel.event.Event;
 import net.sf.hibernate.Transaction;
 
 import java.util.*;

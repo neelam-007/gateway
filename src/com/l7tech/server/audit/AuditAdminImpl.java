@@ -56,7 +56,16 @@ public class AuditAdminImpl extends RemoteService implements AuditAdmin {
 
     public void deleteOldAuditRecords() throws RemoteException {
         enforceAdminRole();
-        throw new RemoteException("Not yet implemented."); // TODO implement this
+        try {
+            doInTransactionAndClose(new PersistenceAction() {
+                public Object run() throws ObjectModelException {
+                    getManager().deleteOldAuditRecords();
+                    return null;
+                }
+            });
+        } catch ( ObjectModelException e ) {
+            throw new RemoteException("Couldn't find AuditRecords", e);
+        }
     }
 
     public SSGLogRecord[] getSystemLog(final String nodeid, final long startMsgNumber, final long endMsgNumber, final int size) throws RemoteException {

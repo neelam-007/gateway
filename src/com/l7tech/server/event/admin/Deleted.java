@@ -4,7 +4,7 @@
  * $Id$
  */
 
-package com.l7tech.objectmodel.event;
+package com.l7tech.server.event.admin;
 
 import com.l7tech.objectmodel.Entity;
 
@@ -14,19 +14,24 @@ import java.util.EventListener;
  * @author alex
  * @version $Revision$
  */
-public class Created extends PersistenceEvent {
-    public Created(Entity entity, String note ) {
+public class Deleted extends AdminEvent {
+    public Deleted(Entity entity, String note ) {
         super(entity, note );
     }
 
-    public Created(Entity entity) {
+    public Deleted(Entity entity) {
         super(entity);
     }
 
+    public Class getListenerClass() {
+        return DeleteListener.class;
+    }
+
     public void sendTo(EventListener listener) {
-        if (listener instanceof CreateListener)
-            ((CreateListener)listener).entityCreated(this);
+        if (listener instanceof DeleteListener)
+            ((DeleteListener)listener).entityDeleted(this);
         else
             super.sendTo(listener);
     }
+
 }
