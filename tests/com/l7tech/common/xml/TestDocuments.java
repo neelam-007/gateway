@@ -21,6 +21,7 @@ public final class TestDocuments {
     public static final String WSDL = DIR + "StockQuoteService.wsdl";
     public static final String WSDL_DOC_LITERAL = DIR + "GeoServe.wsdl";
     public static final String WSDL_DOC_LITERAL2 = DIR + "QuoteService.wsdl";
+    public static final String WSDL_DOC_LITERAL3 = DIR + "DeadOrAlive.wsdl";
     public static final String WSDL2SERVICES = DIR + "xmltoday-delayed-quotes-2services.wsdl";
     public static final String PLACEORDER_CLEARTEXT = DIR + "PlaceOrder_cleartext.xml";
     public static final String PLACEORDER_WITH_MAJESTY = DIR + "PlaceOrder_with_XmlRequestSecurity.xml";
