@@ -30,6 +30,8 @@ public final class TestDocuments {
     public static final String BUG_763_MONSTER_POLICY = PDIR + "bug763MonsterPolicy.xml";
     public static final String DOTNET_SIGNED_REQUEST = DIR + "dotNetSignedSoapRequest.xml";
     public static final String DOTNET_SIGNED_TAMPERED_REQUEST = DIR + "dotNetSignedTamperedSoapRequest.xml";
+    public static final String DOTNET_ENCRYPTED_REQUEST = DIR + "dotNetSignedAndEncryptedRequest.xml";
+    public static final String SSL_KS = DIR + "rikerssl.ks";
 
     private TestDocuments() { }
 
