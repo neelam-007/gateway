@@ -7,6 +7,7 @@
 package com.l7tech.common.xml;
 
 import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -17,6 +18,7 @@ import javax.xml.soap.SOAPMessage;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Iterator;
 
 /**
  * Test <code>XpathEvaluatorTest</code> test the various select/evaluate
@@ -31,6 +33,27 @@ public class XpathEvaluatorTest extends TestCase {
 
     public static Test suite() {
         return new TestSuite(XpathEvaluatorTest.class);
+    }
+
+    public void testContains() throws Exception {
+        Document doc = TestDocuments.getTestDocument(TestDocuments.TEST_SOAP_XML);
+        System.out.println(XmlUtil.nodeToFormattedString(doc));
+        SOAPMessage sm = SoapUtil.asSOAPMessage(doc);
+        Map namespaces = XpathEvaluator.getNamespaces(sm);
+        XpathEvaluator xe = XpathEvaluator.newEvaluator(doc, namespaces);
+        List nodes = xe.select("contains(//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/symbol,'DI')");
+        assertTrue("Size should have been >0", nodes.size() > 0);
+        for (Iterator iterator = nodes.iterator(); iterator.hasNext();) {
+            Boolean bool = (Boolean) iterator.next();
+            assertTrue("Should return true", bool.booleanValue());
+        }
+
+        nodes = xe.select("contains(//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/symbol,'BZZT')");
+        assertTrue("Size should have been >0", nodes.size() > 0);
+        for (Iterator iterator = nodes.iterator(); iterator.hasNext();) {
+            Boolean bool = (Boolean) iterator.next();
+            assertTrue("Should return false", !bool.booleanValue());
+        }
     }
 
     public void testBasicXmlMessage() throws Exception {
