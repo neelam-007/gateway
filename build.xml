@@ -314,7 +314,7 @@
             </fileset>
         </jar>
         <!-- the console jar -->
-        <jar jarfile="${build.dir}/PolicyEditor.jar" manifest="${src.root}/etc/PolicyEditor.mf">
+        <jar jarfile="${build.dir}/ManagementConsole.jar" manifest="${src.root}/etc/ManagementConsole.mf">
             <fileset dir="${build.dir}/classes">
                 <include name="com/l7tech/**" /> <!-- Well that was easy enough! -->
             </fileset>
