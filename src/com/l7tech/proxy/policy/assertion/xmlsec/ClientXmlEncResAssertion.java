@@ -17,7 +17,7 @@ import com.l7tech.policy.assertion.xmlsec.XmlEncResAssertion;
  *
  * Verifies that the response's body is encrypted and decypher it
  */
-public class ClientXmlEncResAssertion implements ClientAssertion {
+public class ClientXmlEncResAssertion extends ClientAssertion {
     public ClientXmlEncResAssertion(XmlEncResAssertion data) {
         // no data
     }

@@ -36,7 +36,7 @@ import java.io.IOException;
  *
  * @author flascell
  */
-public class ClientXmlDsigReqAssertion implements ClientAssertion {
+public class ClientXmlDsigReqAssertion extends ClientAssertion {
 
     public ClientXmlDsigReqAssertion(XmlDsigReqAssertion data) {
         this.data = data;

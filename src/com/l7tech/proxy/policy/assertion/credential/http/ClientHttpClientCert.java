@@ -19,7 +19,7 @@ import org.apache.log4j.Category;
  * @author alex
  * @version $Revision$
  */
-public class ClientHttpClientCert implements ClientAssertion {
+public class ClientHttpClientCert extends ClientAssertion {
     private static final Category log = Category.getInstance(ClientHttpClientCert.class);
     public ClientHttpClientCert( HttpClientCert data ) {
         this.data = data;

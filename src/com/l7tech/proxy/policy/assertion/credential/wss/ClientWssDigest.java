@@ -6,18 +6,17 @@
 
 package com.l7tech.proxy.policy.assertion.credential.wss;
 
-import com.l7tech.proxy.policy.assertion.ClientAssertion;
-import com.l7tech.proxy.datamodel.PendingRequest;
-import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.wss.WssDigest;
+import com.l7tech.proxy.datamodel.PendingRequest;
+import com.l7tech.proxy.datamodel.SsgResponse;
 
 /**
  * @author alex
  * @version $Revision$
  */
-public class ClientWssDigest implements ClientAssertion {
+public class ClientWssDigest extends ClientWssCredentialSource {
     public ClientWssDigest( WssDigest data ) {
         this.data = data;
     }

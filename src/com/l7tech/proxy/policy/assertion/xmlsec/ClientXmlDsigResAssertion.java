@@ -1,18 +1,17 @@
 package com.l7tech.proxy.policy.assertion.xmlsec;
 
-import com.l7tech.proxy.policy.assertion.ClientAssertion;
-import com.l7tech.proxy.datamodel.PendingRequest;
-import com.l7tech.proxy.datamodel.SsgResponse;
+import com.ibm.xml.dsig.XSignatureException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.XmlDsigResAssertion;
-import com.l7tech.xmlsig.SoapMsgSigner;
-import com.l7tech.xmlsig.SignatureNotFoundException;
+import com.l7tech.proxy.datamodel.PendingRequest;
+import com.l7tech.proxy.datamodel.SsgResponse;
+import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.xmlsig.InvalidSignatureException;
-import com.ibm.xml.dsig.XSignatureException;
+import com.l7tech.xmlsig.SignatureNotFoundException;
+import com.l7tech.xmlsig.SoapMsgSigner;
 import org.w3c.dom.Document;
 
-import javax.xml.soap.SOAPException;
 import java.security.cert.X509Certificate;
 
 /**
@@ -28,7 +27,7 @@ import java.security.cert.X509Certificate;
  *
  * @author flascell
  */
-public class ClientXmlDsigResAssertion implements ClientAssertion {
+public class ClientXmlDsigResAssertion extends ClientAssertion {
 
     public ClientXmlDsigResAssertion(XmlDsigResAssertion data) {
     }

@@ -18,7 +18,7 @@ import org.apache.log4j.Category;
  * @author alex
  * @version $Revision$
  */
-public class ClientExactlyOneAssertion extends ClientCompositeAssertion implements ClientAssertion {
+public class ClientExactlyOneAssertion extends ClientCompositeAssertion {
     private static final Category log = Category.getInstance(ClientExactlyOneAssertion.class);
 
     public ClientExactlyOneAssertion( ExactlyOneAssertion data ) {

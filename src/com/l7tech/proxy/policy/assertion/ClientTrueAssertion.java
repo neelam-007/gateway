@@ -16,7 +16,7 @@ import com.l7tech.proxy.datamodel.SsgResponse;
  * @author alex
  * @version $Revision$
  */
-public class ClientTrueAssertion implements ClientAssertion {
+public class ClientTrueAssertion extends ClientAssertion {
     public ClientTrueAssertion( TrueAssertion ass ) {
         // meaningless
     }

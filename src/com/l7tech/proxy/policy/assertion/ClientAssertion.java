@@ -15,14 +15,14 @@ import com.l7tech.proxy.datamodel.SsgResponse;
  * @author alex
  * @version $Revision$
  */
-public interface ClientAssertion {
+public abstract class ClientAssertion {
     /**
      * ClientProxy client-side processing of the given request.
      * @param request    The request to decorate.
      * @return AssertionStatus.NONE if this Assertion was applied to the request successfully; otherwise, some error code
      * @throws PolicyAssertionException if processing should not continue due to a serious error
      */
-    AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException;
+    public abstract AssertionStatus decorateRequest(PendingRequest request) throws PolicyAssertionException;
 
     /**
      * ClientProxy clinet-side processing of the given response.
@@ -31,5 +31,5 @@ public interface ClientAssertion {
      * @return AssertionStatus.NONE if this Assertion was applied to the response successfully; otherwise, some error conde
      * @throws PolicyAssertionException if processing should not continue due to a serious error
      */
-    AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws PolicyAssertionException;
+    public abstract AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws PolicyAssertionException;
 }

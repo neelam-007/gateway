@@ -16,7 +16,7 @@ import com.l7tech.proxy.datamodel.SsgResponse;
  * @author alex
  * @version $Revision$
  */
-public class ClientRoutingAssertion implements ClientAssertion {
+public class ClientRoutingAssertion extends ClientAssertion {
     public ClientRoutingAssertion( RoutingAssertion data ) {
         this.data = data;
     }

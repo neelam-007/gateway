@@ -18,7 +18,7 @@ import org.apache.log4j.Category;
  * @author alex
  * @version $Revision$
  */
-public class ClientOneOrMoreAssertion extends ClientCompositeAssertion implements ClientAssertion {
+public class ClientOneOrMoreAssertion extends ClientCompositeAssertion {
     private static final Category log = Category.getInstance(ClientOneOrMoreAssertion.class);
 
     public ClientOneOrMoreAssertion( OneOrMoreAssertion data ) {

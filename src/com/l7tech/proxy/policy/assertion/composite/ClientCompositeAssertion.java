@@ -15,7 +15,7 @@ import com.l7tech.proxy.policy.assertion.ClientAssertion;
  * @author alex
  * @version $Revision$
  */
-public abstract class ClientCompositeAssertion implements ClientAssertion {
+public abstract class ClientCompositeAssertion extends ClientAssertion {
     protected ClientAssertion[] children;
 
     public ClientCompositeAssertion() {

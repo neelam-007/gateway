@@ -17,7 +17,7 @@ import org.apache.log4j.Category;
  * @author alex
  * @version $Revision$
  */
-public class ClientSslAssertion implements ClientAssertion {
+public class ClientSslAssertion extends ClientAssertion {
     private static final Category log = Category.getInstance(ClientSslAssertion.class);
 
     public ClientSslAssertion( SslAssertion data ) {

@@ -17,7 +17,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
  * @author alex
  * @version $Revision$
  */
-public class ClientMemberOfGroup implements ClientAssertion {
+public class ClientMemberOfGroup extends ClientAssertion {
     public ClientMemberOfGroup( MemberOfGroup data ) {
         this.data = data;
     }

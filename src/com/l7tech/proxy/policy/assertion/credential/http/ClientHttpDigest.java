@@ -18,7 +18,7 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
  * @author alex
  * @version $Revision$
  */
-public class ClientHttpDigest implements ClientAssertion {
+public class ClientHttpDigest extends ClientAssertion {
     public ClientHttpDigest( HttpDigest data ) {
         this.data = data;
     }

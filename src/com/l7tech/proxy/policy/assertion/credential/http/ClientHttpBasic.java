@@ -22,7 +22,7 @@ import org.apache.log4j.Category;
  * @author alex
  * @version $Revision$
  */
-public class ClientHttpBasic implements ClientAssertion {
+public class ClientHttpBasic extends ClientAssertion {
     private static final Category log = Category.getInstance(ClientHttpBasic.class);
 
     public ClientHttpBasic( HttpBasic data ) {

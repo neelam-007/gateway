@@ -17,7 +17,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
  * @author alex
  * @version $Revision$
  */
-public class ClientSpecificUser implements ClientAssertion {
+public class ClientSpecificUser extends ClientAssertion {
     public ClientSpecificUser( SpecificUser data ) {
         this.data = data;
     }

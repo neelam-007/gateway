@@ -6,23 +6,22 @@
 
 package com.l7tech.proxy.policy.assertion.credential.wss;
 
-import com.l7tech.proxy.policy.assertion.ClientAssertion;
-import com.l7tech.proxy.datamodel.PendingRequest;
-import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
+import com.l7tech.proxy.datamodel.PendingRequest;
+import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.util.SoapUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.StringReader;
 import java.io.IOException;
+import java.io.StringReader;
 
 /**
  * decorates a request with a header that looks like that:
@@ -35,7 +34,7 @@ import java.io.IOException;
  * @author flascell
  * @version $Revision$
  */
-public class ClientWssBasic extends ClientWssCredentialSource implements ClientAssertion {
+public class ClientWssBasic extends ClientWssCredentialSource {
     public ClientWssBasic( WssBasic data ) {
         this.data = data;
     }

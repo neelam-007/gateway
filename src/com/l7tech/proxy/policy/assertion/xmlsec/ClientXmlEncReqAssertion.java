@@ -17,7 +17,7 @@ import com.l7tech.policy.assertion.xmlsec.XmlEncReqAssertion;
  *
  * Encrypts the body of the request
  */
-public class ClientXmlEncReqAssertion implements ClientAssertion {
+public class ClientXmlEncReqAssertion extends ClientAssertion {
 
     public ClientXmlEncReqAssertion(XmlEncReqAssertion data) {
         // no data
