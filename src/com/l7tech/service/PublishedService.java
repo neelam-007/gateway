@@ -117,7 +117,7 @@ public class PublishedService extends NamedEntityImp {
 
                 Iterator portKeys = ports.keySet().iterator();
                 String portKey;
-                if ( portKeys.hasNext() ) {
+                while ( portKeys.hasNext() ) {
                     if ( soapPort == null ) {
                         portKey = (String)portKeys.next();
                         pork = (Port)ports.get(portKey);
