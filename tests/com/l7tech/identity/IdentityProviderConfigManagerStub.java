@@ -148,6 +148,10 @@ public class IdentityProviderConfigManagerStub implements IdentityProviderConfig
         return list;
     }
 
+    public Collection search(String searchString) throws FindException {
+        throw new FindException("not implemented");
+    }
+
 
     private EntityHeader fromIdentityProviderConfig(IdentityProviderConfig c) {
         return

@@ -83,6 +83,10 @@ public class ServiceManagerClientImp implements ServiceManager {
         }
     }
 
+    public Collection search(String searchString) throws FindException {
+        throw new FindException("not implemented");
+    }
+
     public long save(PublishedService service) throws SaveException {
         try {
             long res = getStub().savePublishedService(service);

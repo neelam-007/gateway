@@ -227,6 +227,10 @@ public class LdapGroupManagerServer extends LdapManager implements GroupManager 
         return output;
     }
 
+    public Collection search(String searchString) throws FindException {
+        throw new FindException("not implemented");
+    }
+
     public void invalidate() {
         valid = false;
     }

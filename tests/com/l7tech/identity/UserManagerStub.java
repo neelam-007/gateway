@@ -144,6 +144,10 @@ public class UserManagerStub implements UserManager {
         return list;
     }
 
+    public Collection search(String searchString) throws FindException {
+        throw new FindException("not implemented");
+    }
+
     private EntityHeader fromUser(User u) {
         return
                 new EntityHeader(u.getOid(), EntityType.USER, u.getLogin(), null);
