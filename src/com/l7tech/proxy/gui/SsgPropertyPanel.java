@@ -42,20 +42,21 @@ public class SsgPropertyPanel extends JPanel {
 
         federatedSSGRadioButton.addActionListener(new ActionListener() {
                  public void actionPerformed(ActionEvent e) {
-                     disableEnableFederatedSSGForm(federatedSSGRadioButton.isSelected());
-                     disableEnableTrustedSSGForm(!federatedSSGRadioButton.isSelected());
+                     setFederatedSSGFormEnabled(federatedSSGRadioButton.isSelected());
+                     setTrustedSSGFormEnabled(!federatedSSGRadioButton.isSelected());
                  }
         });
 
         trustedSSGRadioButton.addActionListener(new ActionListener() {
                  public void actionPerformed(ActionEvent e) {
-                     disableEnableTrustedSSGForm(trustedSSGRadioButton.isSelected());
-                     disableEnableFederatedSSGForm(!trustedSSGRadioButton.isSelected());
+                     setTrustedSSGFormEnabled(trustedSSGRadioButton.isSelected());
+                     setFederatedSSGFormEnabled(!trustedSSGRadioButton.isSelected());
                  }
         });
 
         // select Trusted SSG form by default
         trustedSSGRadioButton.setSelected(true);
+        setFederatedSSGFormEnabled(false);
     }
 
     public JRadioButton getFederatedSSGRadioButton() {
@@ -130,11 +131,11 @@ public class SsgPropertyPanel extends JPanel {
         this.userPasswordField = userPasswordField;
     }
 
-    public void disableEnableFederatedSSGForm(boolean enabled) {
+    public void setFederatedSSGFormEnabled(boolean enabled) {
         trustedSSGComboBox.setEnabled(enabled);
     }
 
-    public void disableEnableTrustedSSGForm(boolean enabled) {
+    public void setTrustedSSGFormEnabled(boolean enabled) {
         usernameTextField.setEnabled(enabled);
         userPasswordField.setEnabled(enabled);
         useClientCredentialCheckBox.setEnabled(enabled);
