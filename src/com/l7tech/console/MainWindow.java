@@ -1324,6 +1324,12 @@ public class MainWindow extends JFrame {
         }
 
         setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent e) {
+                // exit routine, do not remove
+                MainWindow.this.exitMenuEventHandler(null);
+            }
+        });
         setName("MainWindow");
         setJMenuBar(getMainJMenuBar());
         setTitle(resapplication.getString("SSG"));
