@@ -1,21 +1,25 @@
 package com.l7tech.console.action;
 
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.identity.*;
+import com.l7tech.identity.CannotDeleteAdminAccountException;
+import com.l7tech.identity.IdProvConfManagerServer;
+import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.ObjectNotFoundException;
 
 import javax.swing.*;
 import javax.swing.tree.TreeNode;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.io.File;
-import java.io.IOException;
 import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.io.File;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Supporting class for actions.
@@ -31,7 +35,7 @@ public class Actions {
      * @param bn - the node to be deleted
      * @return true if deleted, false otherwise
      */
-    static boolean deleteEntity(EntityHeaderNode bn) {
+    static boolean deleteEntity(EntityHeaderNode bn) throws ObjectNotFoundException {
         boolean rb = false;
         if (bn instanceof UserNode) {
             return deleteUser((UserNode)bn);
@@ -47,10 +51,10 @@ public class Actions {
     }
 
     // Deletes the given user
-    private static boolean deleteUser(UserNode node) {
+    private static boolean deleteUser(UserNode node) throws ObjectNotFoundException {
         // Check that the user is not read-only
         if (!isParentIdProviderInternal(node)) {
-            JOptionPane.showMessageDialog(null, "This user is read-only.",
+            JOptionPane.showMessageDialog(getMainWindow(), "This user is read-only.",
                                                 "Read-only",
                                                 JOptionPane.INFORMATION_MESSAGE);
             return false;
@@ -81,7 +85,7 @@ public class Actions {
               " is an administrator, and cannot be deleted.",
               "Delete User",
               JOptionPane.ERROR_MESSAGE);
-        } catch (Exception e) {
+        } catch (DeleteException e) {
             log.log(Level.SEVERE, "Error deleting user", e);
             // Error deleting realm - display error msg
             JOptionPane.showMessageDialog(
@@ -97,10 +101,10 @@ public class Actions {
 
 
     // Deletes the given user
-    private static boolean deleteGroup(GroupNode node) {
+    private static boolean deleteGroup(GroupNode node) throws ObjectNotFoundException {
         // Check that the group is not read-only
         if (!isParentIdProviderInternal(node)) {
-            JOptionPane.showMessageDialog(null, "This user is read-only.",
+            JOptionPane.showMessageDialog(getMainWindow(), "This user is read-only.",
                                                 "Read-only",
                                                 JOptionPane.INFORMATION_MESSAGE);
             return false;
@@ -121,7 +125,7 @@ public class Actions {
             EntityHeader eh = node.getEntityHeader();
             Registry.getDefault().getInternalGroupManager().delete(eh.getStrId());
             return true;
-        } catch (Exception e) {
+        } catch (DeleteException e) {
             log.log(Level.SEVERE, "Error deleting group", e);
             // Error deleting realm - display error msg
             JOptionPane.showMessageDialog(
@@ -155,7 +159,7 @@ public class Actions {
             ic.setOid(eh.getOid());
             Registry.getDefault().getProviderConfigManager().delete(ic);
             return true;
-        } catch (Exception e) {
+        } catch (DeleteException e) {
             log.log(Level.SEVERE, "Error deleting provider", e);
             // Error deleting realm - display error msg
             JOptionPane.showMessageDialog(

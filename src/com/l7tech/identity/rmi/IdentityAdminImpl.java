@@ -86,7 +86,8 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
         return delegate.findUserByPrimaryKey(idProvCfgId, userId);
     }
 
-    public void deleteUser(long idProvCfgId, String userId) throws RemoteException, DeleteException {
+    public void deleteUser(long idProvCfgId, String userId)
+      throws RemoteException, DeleteException, ObjectNotFoundException {
         delegate.deleteUser(idProvCfgId, userId);
     }
 
@@ -109,7 +110,8 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
         return delegate.findGroupByPrimaryKey(idProvCfgId, groupId);
     }
 
-    public void deleteGroup(long idProvCfgId, String groupId) throws RemoteException, DeleteException {
+    public void deleteGroup(long idProvCfgId, String groupId)
+      throws RemoteException, DeleteException, ObjectNotFoundException {
         delegate.deleteGroup(idProvCfgId, groupId);
     }
 

@@ -127,7 +127,7 @@ public abstract class AbstractLdapUserManagerServer implements UserManager {
         return null;
     }
 
-    public void delete(String identifier) throws DeleteException {
+    public void delete(String identifier) throws DeleteException, ObjectNotFoundException {
         throw new DeleteException( UNSUPPORTED );
     }
 
@@ -135,7 +135,7 @@ public abstract class AbstractLdapUserManagerServer implements UserManager {
      * This is actually not supported in this UserManager since the we assume the ldap connector is only used to
      * read user information
      */
-    public void delete(User user) throws DeleteException {
+    public void delete(User user) throws DeleteException, ObjectNotFoundException {
         throw new DeleteException( UNSUPPORTED );
     }
 

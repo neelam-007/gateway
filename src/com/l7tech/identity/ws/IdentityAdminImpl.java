@@ -22,7 +22,7 @@ import java.util.logging.Logger;
  * Layer 7 Technologies, inc.
  * User: flascelles
  * Date: May 26, 2003
- *
+ * <p/>
  * Server side implementation of the IdentityAdmin interface
  * This was originally used with the Axis layer
  */
@@ -33,18 +33,20 @@ public class IdentityAdminImpl implements IdentityAdmin {
     public IdentityAdminImpl() {
         logger = LogManager.getInstance().getSystemLogger();
     }
+
     /**
      * Returns a version string. This can be compared to version on client-side.
+     * 
      * @return value to be compared with the client side value of Service.VERSION;
-     * @throws RemoteException
+     * @throws RemoteException 
      */
     public String echoVersion() throws RemoteException {
         return SecureSpanConstants.ADMIN_PROTOCOL_VERSION;
     }
+
     /**
-     *
      * @return Array of entity headers for all existing id provider config
-     * @throws RemoteException
+     * @throws RemoteException 
      */
     public EntityHeader[] findAllIdentityProviderConfig() throws RemoteException, FindException {
         try {
@@ -54,13 +56,13 @@ public class IdentityAdminImpl implements IdentityAdmin {
             closeContext();
         }
     }
+
     /**
-     *
      * @return Array of entity headers for all existing id provider config
-     * @throws RemoteException
+     * @throws RemoteException 
      */
     public EntityHeader[] findAllIdentityProviderConfigByOffset(int offset, int windowSize)
-                                throws RemoteException, FindException {
+      throws RemoteException, FindException {
         try {
             Collection res = getIdProvCfgMan().findAllHeaders(offset, windowSize);
             return (EntityHeader[])res.toArray(new EntityHeader[]{});
@@ -68,21 +70,22 @@ public class IdentityAdminImpl implements IdentityAdmin {
             closeContext();
         }
     }
+
     /**
-     *
      * @return An identity provider config object
-     * @throws RemoteException
+     * @throws RemoteException 
      */
     public IdentityProviderConfig findIdentityProviderConfigByPrimaryKey(long oid)
-                                      throws RemoteException, FindException {
+      throws RemoteException, FindException {
         try {
             return getIdProvCfgMan().findByPrimaryKey(oid);
         } finally {
             closeContext();
         }
     }
+
     public long saveIdentityProviderConfig(IdentityProviderConfig identityProviderConfig)
-                                        throws RemoteException, SaveException, UpdateException {
+      throws RemoteException, SaveException, UpdateException {
         beginTransaction();
         try {
             if (identityProviderConfig.getOid() > 0) {
@@ -102,6 +105,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
             endTransaction();
         }
     }
+
     public void deleteIdentityProviderConfig(long oid) throws RemoteException, DeleteException {
         beginTransaction();
         try {
@@ -115,6 +119,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
             endTransaction();
         }
     }
+
     public EntityHeader[] findAllUsers(long identityProviderConfigId) throws RemoteException, FindException {
         try {
             UserManager userManager = retrieveUserManager(identityProviderConfigId);
@@ -124,8 +129,9 @@ public class IdentityAdminImpl implements IdentityAdmin {
             closeContext();
         }
     }
+
     public EntityHeader[] findAllUsersByOffset(long identityProviderConfigId, int offset, int windowSize)
-            throws RemoteException, FindException {
+      throws RemoteException, FindException {
         try {
             UserManager userManager = retrieveUserManager(identityProviderConfigId);
             Collection res = userManager.findAllHeaders(offset, windowSize);
@@ -136,10 +142,10 @@ public class IdentityAdminImpl implements IdentityAdmin {
     }
 
     public EntityHeader[] searchIdentities(long identityProviderConfigId, EntityType[] types, String pattern)
-                                throws RemoteException, FindException {
+      throws RemoteException, FindException {
         try {
             IdentityProviderConfig cfg = getIdProvCfgMan().
-                                            findByPrimaryKey(identityProviderConfigId);
+              findByPrimaryKey(identityProviderConfigId);
             IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
             if (types != null) {
                 for (int i = 0; i < types.length; i++) {
@@ -154,7 +160,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
     }
 
     public User findUserByPrimaryKey(long identityProviderConfigId, String userId)
-                                throws RemoteException, FindException {
+      throws RemoteException, FindException {
         try {
             IdentityProviderConfig cfg = getIdProvCfgMan().findByPrimaryKey(identityProviderConfigId);
             IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
@@ -166,12 +172,17 @@ public class IdentityAdminImpl implements IdentityAdmin {
             closeContext();
         }
     }
-    public void deleteUser(long cfgid, String userId) throws RemoteException, DeleteException {
+
+    public void deleteUser(long cfgid, String userId)
+      throws RemoteException, DeleteException, ObjectNotFoundException {
         beginTransaction();
         try {
             UserManager userManager = retrieveUserManager(cfgid);
             if (userManager == null) throw new RemoteException("Cannot retrieve the UserManager");
             User user = userManager.findByPrimaryKey(userId);
+            if (user == null) {
+                throw new ObjectNotFoundException(" User "+userId);
+            }
             userManager.delete(user);
             logger.info("Deleted User: " + user.getLogin());
         } catch (FindException e) {
@@ -182,8 +193,8 @@ public class IdentityAdminImpl implements IdentityAdmin {
         }
     }
 
-    public String saveUser(long identityProviderConfigId, User user, Set groupHeaders )
-                                    throws RemoteException, SaveException, UpdateException, ObjectNotFoundException {
+    public String saveUser(long identityProviderConfigId, User user, Set groupHeaders)
+      throws RemoteException, SaveException, UpdateException, ObjectNotFoundException {
         beginTransaction();
         try {
             IdentityProviderConfig cfg = getIdProvCfgMan().findByPrimaryKey(identityProviderConfigId);
@@ -191,9 +202,9 @@ public class IdentityAdminImpl implements IdentityAdmin {
             UserManager userManager = provider.getUserManager();
 
             String id = user.getUniqueIdentifier();
-            if ( id == null ) {
+            if (id == null) {
                 id = userManager.save(user, groupHeaders);
-                logger.info("Saved User: " + user.getLogin() + " [" + id + "]" );
+                logger.info("Saved User: " + user.getLogin() + " [" + id + "]");
             } else {
                 userManager.update(user, groupHeaders);
                 logger.info("Updated User: " + user.getLogin() + " [" + id + "]");
@@ -219,7 +230,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
     }
 
     public EntityHeader[] findAllGroupsByOffset(long cfgid, int offset, int windowSize)
-                                throws RemoteException, FindException {
+      throws RemoteException, FindException {
         try {
             Collection res = retrieveGroupManager(cfgid).findAllHeaders(offset, windowSize);
             return (EntityHeader[])res.toArray(new EntityHeader[]{});
@@ -227,6 +238,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
             closeContext();
         }
     }
+
     public Group findGroupByPrimaryKey(long cfgid, String groupId) throws RemoteException, FindException {
         try {
             IdentityProviderConfig cfg = getIdProvCfgMan().findByPrimaryKey(cfgid);
@@ -238,22 +250,24 @@ public class IdentityAdminImpl implements IdentityAdmin {
             closeContext();
         }
     }
-    public void deleteGroup(long cfgid, String groupId) throws RemoteException, DeleteException {
+
+    public void deleteGroup(long cfgid, String groupId)
+      throws RemoteException, DeleteException, ObjectNotFoundException {
         beginTransaction();
         try {
             GroupManager groupManager = retrieveGroupManager(cfgid);
             Group grp = groupManager.findByPrimaryKey(groupId);
-            if (grp == null) throw new RemoteException("Group does not exist");
+            if (grp == null) throw new ObjectNotFoundException("Group does not exist");
             groupManager.delete(grp);
             logger.info("Deleted Group: " + grp.getName());
-        } catch(FindException e) {
+        } catch (FindException e) {
             throw new DeleteException("This object cannot be found (it no longer exist?).", e);
         } finally {
             endTransaction();
         }
     }
 
-    public String saveGroup(long identityProviderConfigId, Group group, Set userHeaders )
+    public String saveGroup(long identityProviderConfigId, Group group, Set userHeaders)
       throws RemoteException, SaveException, UpdateException, ObjectNotFoundException {
         beginTransaction();
         try {
@@ -262,9 +276,9 @@ public class IdentityAdminImpl implements IdentityAdmin {
             GroupManager groupManager = provider.getGroupManager();
 
             String id = group.getUniqueIdentifier();
-            if ( id == null ) {
+            if (id == null) {
                 id = groupManager.save(group, userHeaders);
-                logger.info("Saved Group: " + group.getName() + " [" + id + "]" );
+                logger.info("Saved Group: " + group.getName() + " [" + id + "]");
             } else {
                 groupManager.update(group, userHeaders);
                 logger.info("Updated Group: " + group.getName() + " [" + id + "]");
@@ -329,7 +343,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
     }
 
     public void testIdProviderConfig(IdentityProviderConfig identityProviderConfig)
-                                throws RemoteException, InvalidIdProviderCfgException {
+      throws RemoteException, InvalidIdProviderCfgException {
         try {
             getIdProvCfgMan().test(identityProviderConfig);
         } finally {
@@ -384,7 +398,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
         }
     }
 
-    private void endTransaction()  {
+    private void endTransaction() {
         try {
             PersistenceContext context = PersistenceContext.getCurrent();
             //context.flush();
@@ -392,17 +406,17 @@ public class IdentityAdminImpl implements IdentityAdmin {
             context.close();
         } catch (java.sql.SQLException e) {
             logger.log(Level.SEVERE, "could not end transaction", e);
-        } catch ( ObjectModelException e) {
+        } catch (ObjectModelException e) {
             logger.log(Level.SEVERE, "could not end transaction", e);
         }
     }
 
     private UserManager retrieveUserManager(long cfgid)
-            throws RemoteException {
+      throws RemoteException {
         UserManager ret = null;
         try {
             IdentityProvider provider = IdentityProviderFactory.makeProvider(getIdProvCfgMan().
-                                          findByPrimaryKey(cfgid));
+              findByPrimaryKey(cfgid));
             ret = provider.getUserManager();
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
@@ -412,11 +426,11 @@ public class IdentityAdminImpl implements IdentityAdmin {
     }
 
     private GroupManager retrieveGroupManager(long cfgid)
-            throws RemoteException {
+      throws RemoteException {
         GroupManager ret = null;
         try {
             IdentityProvider provider = IdentityProviderFactory.makeProvider(getIdProvCfgMan().
-                                          findByPrimaryKey(cfgid));
+              findByPrimaryKey(cfgid));
             ret = provider.getGroupManager();
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
@@ -429,19 +443,19 @@ public class IdentityAdminImpl implements IdentityAdmin {
         try {
             // get the config manager implementation
             identityProviderConfigManager = (IdentityProviderConfigManager)Locator.
-                                                getDefault().
-                                                    lookup(IdentityProviderConfigManager.class);
+              getDefault().
+              lookup(IdentityProviderConfigManager.class);
             if (identityProviderConfigManager == null) {
                 throw new RemoteException("Cannot instantiate the IdentityProviderConfigManager");
             }
         } catch (ClassCastException e) {
             String msg = "ClassCastException in IdentitiesSoapBindingImpl.initialiseConfigManager " +
-                         "from Locator.getDefault().lookup";
+              "from Locator.getDefault().lookup";
             logger.log(Level.SEVERE, msg, e);
             throw new RemoteException(msg, e);
         } catch (RuntimeException e) {
             String msg = "RuntimeException in IdentitiesSoapBindingImpl.initialiseConfigManager" +
-                         " from Locator.getDefault().lookup: ";
+              " from Locator.getDefault().lookup: ";
             logger.log(Level.SEVERE, msg, e);
             throw new RemoteException(msg + e.getMessage(), e);
         }

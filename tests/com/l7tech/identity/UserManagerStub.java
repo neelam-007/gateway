@@ -39,17 +39,17 @@ public class UserManagerStub implements UserManager {
         return null;
     }
 
-    public void delete(User user) throws DeleteException {
+    public void delete(User user) throws DeleteException, ObjectNotFoundException {
         InternalUser imp = (InternalUser)user;
         if (dataStore.getUsers().remove(imp.getUniqueIdentifier()) == null) {
-            throw new DeleteException("Could not find user oid= " + imp.getOid());
+            throw new ObjectNotFoundException("Could not find user oid= " + imp.getOid());
         }
     }
 
-    public void delete(String identifier) throws DeleteException {
+    public void delete(String identifier) throws DeleteException, ObjectNotFoundException {
         InternalUser imp = new InternalUser();
         imp.setOid( Long.valueOf(identifier).longValue() );
-        delete( imp );
+        delete(imp);
     }
 
     public String save(User user) throws SaveException {

@@ -109,11 +109,14 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
         return allHeadersQuery;
     }
 
-    public void delete(User user) throws DeleteException {
+    public void delete(User user) throws DeleteException, ObjectNotFoundException {
         InternalUser imp = cast(user);
 
         try {
             InternalUser originalUser = (InternalUser)findByPrimaryKey( imp.getUniqueIdentifier() );
+            if (originalUser == null) {
+                throw new ObjectNotFoundException("User "+user.getName());
+            }
             if (isLastAdmin(originalUser)) {
                 String msg = "An attempt was made to nuke the last standing adminstrator";
                 logger.severe(msg);
@@ -129,10 +132,10 @@ public class InternalUserManagerServer extends HibernateEntityManager implements
         }
     }
 
-    public void delete(String identifier) throws DeleteException {
+    public void delete(String identifier) throws DeleteException, ObjectNotFoundException {
         InternalUser imp = new InternalUser();
         imp.setOid( Long.valueOf( identifier ).longValue() );
-        delete( imp );
+        delete(imp);
     }
 
     public String save( User user ) throws SaveException {

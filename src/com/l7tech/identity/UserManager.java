@@ -10,8 +10,8 @@ import java.util.Set;
 public interface UserManager extends EntityManager {
     User findByPrimaryKey( String identifier ) throws FindException;
     User findByLogin( String login ) throws FindException;
-    void delete( User user ) throws DeleteException;
-    void delete( String identifier ) throws DeleteException;
+    void delete( User user ) throws DeleteException, ObjectNotFoundException;
+    void delete( String identifier ) throws DeleteException, ObjectNotFoundException;
     String save( User user ) throws SaveException;
     void update( User user ) throws UpdateException, ObjectNotFoundException;
     String save( User user, Set groupHeaders ) throws SaveException;

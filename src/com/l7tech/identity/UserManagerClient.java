@@ -38,11 +38,11 @@ public class UserManagerClient extends IdentityManagerClient implements UserMana
         return null;
     }
 
-    public void delete(User user) throws DeleteException {
+    public void delete(User user) throws DeleteException, ObjectNotFoundException {
         delete( user.getUniqueIdentifier() );
     }
 
-    public void delete(String id ) throws DeleteException {
+    public void delete(String id) throws DeleteException, ObjectNotFoundException {
         try {
             getStub().deleteUser(config.getOid(), id );
         } catch (RemoteException e) {

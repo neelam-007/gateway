@@ -12,12 +12,11 @@ import java.util.Set;
  * Layer 7 Technologies, inc.
  * User: flascelles
  * Date: Jun 24, 2003
- *
  */
 public class GroupManagerClient extends GroupManagerAdapter implements GroupManager {
 
     public GroupManagerClient(IdentityProviderConfig config) {
-        manager = new IdentityManagerClient( config );
+        manager = new IdentityManagerClient(config);
         this.config = config;
     }
 
@@ -33,21 +32,21 @@ public class GroupManagerClient extends GroupManagerAdapter implements GroupMana
         throw new FindException("not implemented in this version of the manager");
     }
 
-    public void delete( String id ) throws DeleteException {
+    public void delete(String id) throws DeleteException, ObjectNotFoundException {
         try {
-            if (groupIsAdminGroup( id )) throw new CannotDeleteAdminAccountException();
+            if (groupIsAdminGroup(id)) throw new CannotDeleteAdminAccountException();
             // todo, group must be refactored so that it's id is always a string
-            manager.getStub().deleteGroup(config.getOid(), id );
+            manager.getStub().deleteGroup(config.getOid(), id);
         } catch (RemoteException e) {
             throw new DeleteException(e.getMessage(), e);
         }
     }
 
-    public void delete( Group group ) throws DeleteException {
-        delete( group.getUniqueIdentifier() );
+    public void delete(Group group) throws DeleteException, ObjectNotFoundException {
+        delete(group.getUniqueIdentifier());
     }
 
-    public String save(Group group, Set userHeaders ) throws SaveException {
+    public String save(Group group, Set userHeaders) throws SaveException {
         try {
             return manager.getStub().saveGroup(config.getOid(), group, userHeaders);
         } catch (ObjectModelException e) {
@@ -57,7 +56,7 @@ public class GroupManagerClient extends GroupManagerAdapter implements GroupMana
         }
     }
 
-    public void update(Group group, Set userHeaders) throws UpdateException, ObjectNotFoundException{
+    public void update(Group group, Set userHeaders) throws UpdateException, ObjectNotFoundException {
         try {
             manager.getStub().saveGroup(config.getOid(), group, userHeaders);
         } catch (SaveException e) {
@@ -69,17 +68,17 @@ public class GroupManagerClient extends GroupManagerAdapter implements GroupMana
 
     public Set getGroupHeaders(String userId) throws FindException {
         try {
-            return manager.getStub().getGroupHeaders( config.getOid(), userId );
+            return manager.getStub().getGroupHeaders(config.getOid(), userId);
         } catch (RemoteException e) {
-            throw new FindException( e.getMessage(), e );
+            throw new FindException(e.getMessage(), e);
         }
     }
 
     public Set getUserHeaders(String groupId) throws FindException {
         try {
-            return manager.getStub().getUserHeaders( config.getOid(), groupId );
+            return manager.getStub().getUserHeaders(config.getOid(), groupId);
         } catch (RemoteException e) {
-            throw new FindException( e.getMessage(), e );
+            throw new FindException(e.getMessage(), e);
         }
     }
 
@@ -132,11 +131,14 @@ public class GroupManagerClient extends GroupManagerAdapter implements GroupMana
     // ************************************************
     // PRIVATES
     // ************************************************
-    private boolean groupIsAdminGroup( String id ) {
+    private boolean groupIsAdminGroup(String id) throws ObjectNotFoundException {
         // i actually dont get the group, the console only constructs a new group and sets the oid
         try {
-            Group actualGroup = findByPrimaryKey( id );
-            if ( Group.ADMIN_GROUP_NAME.equals( actualGroup.getName() ) ) return true;
+            Group actualGroup = findByPrimaryKey(id);
+            if (actualGroup == null) {
+                throw new ObjectNotFoundException("Group "+id);
+            }
+            if (Group.ADMIN_GROUP_NAME.equals(actualGroup.getName())) return true;
         } catch (FindException e) {
             // it's valid that the group does not exist here
             // todo, use client's error reporting mechanism

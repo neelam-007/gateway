@@ -35,9 +35,9 @@ public class GroupManagerStub extends GroupManagerAdapter {
         return null;
     }
 
-    public void delete(Group group) throws DeleteException {
+    public void delete(Group group) throws DeleteException, ObjectNotFoundException {
         if (dataStore.getGroups().remove(group.getUniqueIdentifier()) == null) {
-            throw new DeleteException("Could not find group oid= " + group.getUniqueIdentifier());
+            throw new ObjectNotFoundException("Could not find group oid= " + group.getUniqueIdentifier());
         }
     }
 

@@ -97,7 +97,7 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
         }
     }
 
-    public void delete(Group group) throws DeleteException {
+    public void delete(Group group) throws DeleteException, ObjectNotFoundException {
         try {
             InternalGroup imp = cast( group );
             // it is not allowed to delete the admin group
@@ -111,7 +111,7 @@ public class InternalGroupManagerServer extends HibernateEntityManager implement
         }
     }
 
-    public void delete(String identifier) throws DeleteException {
+    public void delete(String identifier) throws DeleteException, ObjectNotFoundException {
         InternalGroup imp = new InternalGroup();
         imp.setOid( Long.valueOf( identifier ).longValue() );
         delete( imp );

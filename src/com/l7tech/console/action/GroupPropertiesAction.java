@@ -71,7 +71,7 @@ public class GroupPropertiesAction extends NodeAction {
                     Utilities.centerOnScreen(dialog);
                     dialog.show();
                 } catch (NoSuchElementException e) {
-                    notifyGroupDoesNotExist(header, f);
+                    removeGroupTreeNode(header);
                 }
             }
         });
@@ -81,14 +81,11 @@ public class GroupPropertiesAction extends NodeAction {
         this.idProvider = idProvider;
     }
 
-    private void notifyGroupDoesNotExist(EntityHeader header, JFrame f) {
-        JOptionPane.showMessageDialog(f, GROUP_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
+    private void removeGroupTreeNode(EntityHeader header) {
         JTree tree = (JTree)ComponentRegistry.getInstance().getComponent(AssertionsTree.NAME);
         DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
         model.removeNodeFromParent(node);
     }
 
     private IdentityProvider idProvider;
-    private final String GROUP_DOES_NOT_EXIST_MSG = "This group no longer exists";
-
 }

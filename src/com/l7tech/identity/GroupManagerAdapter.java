@@ -24,11 +24,11 @@ public class GroupManagerAdapter implements GroupManager {
         throw new UnsupportedOperationException();
     }
 
-    public void delete(Group group) throws DeleteException {
+    public void delete(Group group) throws DeleteException, ObjectNotFoundException {
         throw new UnsupportedOperationException();
     }
 
-    public void delete(String identifier) throws DeleteException {
+    public void delete(String identifier) throws DeleteException, ObjectNotFoundException {
         throw new UnsupportedOperationException();
     }
 

@@ -3,6 +3,7 @@ package com.l7tech.console.action;
 import com.l7tech.console.tree.AssertionsTree;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.objectmodel.ObjectNotFoundException;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
@@ -55,10 +56,18 @@ public class DeleteEntityAction extends BaseAction {
      * without explicitly asking for the AWT event thread!
      */
     public void performAction() {
-        boolean deleted = Actions.deleteEntity(node);
+        boolean deleted = false;
+        try {
+            deleted = Actions.deleteEntity(node);
+        } catch (ObjectNotFoundException e) {
+            JOptionPane.showMessageDialog(
+              ComponentRegistry.getInstance().getMainWindow(),
+              "The '"+node.getEntityHeader().getName()+"' no longer exists",
+              "Warning", JOptionPane.WARNING_MESSAGE);
+            deleted = true;
+        }
         if (deleted) {
-            JTree tree =
-              (JTree)ComponentRegistry.getInstance().getComponent(AssertionsTree.NAME);
+            JTree tree = (JTree)ComponentRegistry.getInstance().getComponent(AssertionsTree.NAME);
             DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
             model.removeNodeFromParent(node);
         }

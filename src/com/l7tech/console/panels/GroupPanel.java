@@ -1,15 +1,15 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.console.MainWindow;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.text.MaxLengthDocument;
+import com.l7tech.console.util.Registry;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.GroupBean;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.IdentityProvider;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.*;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -65,6 +65,8 @@ public class GroupPanel extends EntityEditorPanel {
     private boolean formModified;
 
     private IdentityProvider idProvider;
+    private final String GROUP_DOES_NOT_EXIST_MSG = "This group no longer exists";
+    private final MainWindow mainWindow = Registry.getDefault().getComponentRegistry().getMainWindow();
 
     /**
      * default constructor
@@ -492,17 +494,15 @@ public class GroupPanel extends EntityEditorPanel {
                 id = gman.save(group, groupMembers );
                 groupHeader.setStrId(id);
             }
-            // Cleanup
-        } catch (Exception e) {
+        } catch (ObjectNotFoundException e) {
+                JOptionPane.showMessageDialog(mainWindow, GROUP_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
+                result = false;
+        } catch (ObjectModelException e) {
             StringBuffer msg = new StringBuffer();
             msg.append("There was an error updating ");
             msg.append("Group ").append(groupHeader.getName()).append(".\n");
-            JOptionPane.showMessageDialog(null,
-                    msg.toString(),
-                    "Error",
-                    JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(mainWindow, msg.toString(), "Error", JOptionPane.ERROR_MESSAGE);
             log.log(Level.SEVERE, "Error updating Group: " + e.toString());
-            e.printStackTrace();
             result = false;
         }
         return result;

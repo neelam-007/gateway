@@ -2,7 +2,6 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
-import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
@@ -31,7 +30,7 @@ import java.util.logging.Logger;
 
 /**
  * UserPanel - edits the <CODE>User/CODE> instances.
- *
+ * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
@@ -81,7 +80,6 @@ public class UserPanel extends EntityEditorPanel {
 
     private IdentityProvider idProvider;
     private final MainWindow mainWindow = Registry.getDefault().getComponentRegistry().getMainWindow();
-;
 
 
     /**
@@ -113,8 +111,9 @@ public class UserPanel extends EntityEditorPanel {
 
     /**
      * Constructs the panel
-     * @param userHeader
-     * @param idProvider
+     * 
+     * @param userHeader 
+     * @param idProvider 
      */
     public void edit(EntityHeader userHeader, IdentityProvider idProvider) {
         this.idProvider = idProvider;
@@ -123,8 +122,8 @@ public class UserPanel extends EntityEditorPanel {
 
     /**
      * Retrieves the Group and constructs the Panel
-     *
-     * @param object
+     * 
+     * @param object 
      * @throws NoSuchElementException if the user cannot be retrieved
      */
     public void edit(Object object) throws NoSuchElementException {
@@ -155,7 +154,7 @@ public class UserPanel extends EntityEditorPanel {
                 userGroups = null;
             } else {
                 User u = idProvider.getUserManager().findByPrimaryKey(userHeader.getStrId());
-                if ( u == null ) {
+                if (u == null) {
                     JOptionPane.showMessageDialog(mainWindow, USER_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
                     throw new NoSuchElementException("User missing " + userHeader.getOid());
                 }
@@ -166,7 +165,7 @@ public class UserPanel extends EntityEditorPanel {
             initialize();
             setData(user);
         } catch (FindException e) {
-            ErrorManager.getDefault().notify(Level.SEVERE, e, "Error whilee editing user " +userHeader.getName());
+            ErrorManager.getDefault().notify(Level.SEVERE, e, "Error whilee editing user " + userHeader.getName());
         }
     }
 
@@ -174,8 +173,7 @@ public class UserPanel extends EntityEditorPanel {
      * Retrieve the <code>USer</code> this panel is editing.
      * It is a convenience, and package private method, for
      * interested panels.
-     *
-     *
+     * 
      * @return the user that this panel is currently editing
      */
     UserBean getUser() {
@@ -183,7 +181,7 @@ public class UserPanel extends EntityEditorPanel {
     }
 
     Set getUserGroups() {
-        if ( userGroups == null ) userGroups = new HashSet();
+        if (userGroups == null) userGroups = new HashSet();
         return userGroups;
     }
 
@@ -211,7 +209,9 @@ public class UserPanel extends EntityEditorPanel {
             new Insets(8, 8, 8, 8), 0, 0));
     }
 
-    /** Returns the mainPanel */
+    /**
+     * Returns the mainPanel
+     */
     private JPanel getMainPanel() {
         // If panel not already created
         if (null != mainPanel) return mainPanel;
@@ -238,7 +238,9 @@ public class UserPanel extends EntityEditorPanel {
         return mainPanel;
     }
 
-    /** Returns tabbedPane */
+    /**
+     * Returns tabbedPane
+     */
     private JTabbedPane getTabbedPane() {
         // If tabbed pane not already created
         if (null != tabbedPane) return tabbedPane;
@@ -255,7 +257,9 @@ public class UserPanel extends EntityEditorPanel {
         return tabbedPane;
     }
 
-    /** Returns detailsPanel */
+    /**
+     * Returns detailsPanel
+     */
     private JPanel getDetailsPanel() {
         // If panel not already created
         if (detailsPanel != null) return detailsPanel;
@@ -346,7 +350,9 @@ public class UserPanel extends EntityEditorPanel {
     }
 
 
-    /** Returns lastNameLabel */
+    /**
+     * Returns lastNameLabel
+     */
     private JLabel getNameLabel() {
         // If label not already created
         if (nameLabel != null) return nameLabel;
@@ -358,7 +364,9 @@ public class UserPanel extends EntityEditorPanel {
     }
 
 
-    /** Returns firstNameLabel */
+    /**
+     * Returns firstNameLabel
+     */
     private JLabel getFirstNameLabel() {
         // If label not already created
         if (firstNameLabel != null) return firstNameLabel;
@@ -370,7 +378,9 @@ public class UserPanel extends EntityEditorPanel {
         return firstNameLabel;
     }
 
-    /** Returns lastNameTextField */
+    /**
+     * Returns lastNameTextField
+     */
     private JTextField getFirstNameTextField() {
         // If text field not already created
         if (firstNameTextField == null) {
@@ -391,7 +401,9 @@ public class UserPanel extends EntityEditorPanel {
     }
 
 
-    /** Returns lastNameLabel */
+    /**
+     * Returns lastNameLabel
+     */
     private JLabel getLastNameLabel() {
         // If label not already created
         if (lastNameLabel != null) return lastNameLabel;
@@ -404,7 +416,9 @@ public class UserPanel extends EntityEditorPanel {
         return lastNameLabel;
     }
 
-    /** Returns lastNameTextField */
+    /**
+     * Returns lastNameTextField
+     */
     private JTextField getLastNameTextField() {
         // If text field not already created
         if (lastNameTextField == null) {
@@ -425,7 +439,9 @@ public class UserPanel extends EntityEditorPanel {
     }
 
 
-    /** Returns email Label */
+    /**
+     * Returns email Label
+     */
     private JLabel getEmailLabel() {
         // If label not already created
         if (emailLabel != null) return emailLabel;
@@ -438,7 +454,9 @@ public class UserPanel extends EntityEditorPanel {
         return emailLabel;
     }
 
-    /** Returns email TextField */
+    /**
+     * Returns email TextField
+     */
     private JTextField getEmailTextField() {
         // If text field not already created
         if (emailTextField == null) {
@@ -458,7 +476,9 @@ public class UserPanel extends EntityEditorPanel {
         return emailTextField;
     }
 
-    /** Returns buttonPanel */
+    /**
+     * Returns buttonPanel
+     */
     private JPanel getButtonPanel() {
         if (buttonPanel == null) {
             buttonPanel = new JPanel();
@@ -493,7 +513,9 @@ public class UserPanel extends EntityEditorPanel {
         return buttonPanel;
     }
 
-    /** Returns okButton */
+    /**
+     * Returns okButton
+     */
     private JButton getOKButton() {
 // If button not already created
         if (null == okButton) {
@@ -503,28 +525,24 @@ public class UserPanel extends EntityEditorPanel {
             // Register listener
             okButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    try {
-                        // Apply changes if possible
-                        if (!collectAndSaveChanges()) {
-                            // Error - just return
-                            return;
-                        }
-                        Window dlg = SwingUtilities.windowForComponent(UserPanel.this);
-                        dlg.setVisible(false);
-                        dlg.dispose();
-                    } catch (Exception ex) {
-                        // Popup dialog with error
+                    // Apply changes if possible
+                    if (!collectAndSaveChanges()) {
+                        // Error - just return
+                        return;
                     }
+                    Window dlg = SwingUtilities.windowForComponent(UserPanel.this);
+                    dlg.setVisible(false);
+                    dlg.dispose();
                 }
             });
             if (idProvider.isReadOnly()) okButton.setEnabled(false);
         }
-
-// Return button
         return okButton;
     }
 
-    /** Returns cancelButton */
+    /**
+     * Returns cancelButton
+     */
     private JButton getCancelButton() {
         // If button not already created
         if (null == cancelButton) {
@@ -544,7 +562,9 @@ public class UserPanel extends EntityEditorPanel {
         return cancelButton;
     }
 
-    /** Create the Change password button */
+    /**
+     * Create the Change password button
+     */
     private JButton getChangePassButton() {
         final UserPanel userPanel = this;
 
@@ -570,6 +590,7 @@ public class UserPanel extends EntityEditorPanel {
       passwordChangeListener = new EntityListenerAdapter() {
           /**
            * Fired when an set of children is updated.
+           * 
            * @param ev event describing the action
            */
           public void entityUpdated(EntityEvent ev) {
@@ -581,20 +602,20 @@ public class UserPanel extends EntityEditorPanel {
                   setData(user);
                   setModified(b);
               } catch (Exception ex) {
-                 ErrorManager.getDefault().notify(Level.WARNING, ex, "Error retrieving the user "+userHeader.getStrId());
+                  ErrorManager.getDefault().notify(Level.WARNING, ex, "Error retrieving the user " + userHeader.getStrId());
               }
 
           }
       };
 
-    public boolean certExist(){
+    public boolean certExist() {
         return certPanel.certExist();
     }
 
     /**
      * Populates the form from the user bean
-     *
-     * @param user
+     * 
+     * @param user 
      */
     private void setData(UserBean user) {
         // Set tabbed panels (add/remove extranet tab)
@@ -608,7 +629,7 @@ public class UserPanel extends EntityEditorPanel {
 
     /**
      * Collect changes from the form into the user instance.
-     *
+     * 
      * @return User   the instance with changes applied
      */
     private UserBean collectChanges() {
@@ -623,7 +644,7 @@ public class UserPanel extends EntityEditorPanel {
     /**
      * Applies the changes on the form to the user bean and update the database;
      * Returns indication if the changes were applied successfully.
-     *
+     * 
      * @return boolean - the indication if the changes were applied successfully
      */
     private boolean collectAndSaveChanges() {
@@ -651,18 +672,16 @@ public class UserPanel extends EntityEditorPanel {
 
             // Cleanup
             formModified = false;
-        } catch (SaveException e) {
-            // handle
-        } catch (UpdateException e) {
+        } catch (ObjectNotFoundException e) {
+            JOptionPane.showMessageDialog(mainWindow, USER_DOES_NOT_EXIST_MSG, "Warning", JOptionPane.WARNING_MESSAGE);
+            result = false;
+        } catch (ObjectModelException e) {
             StringBuffer msg = new StringBuffer();
             msg.append("There was an error updating ");
             msg.append("User ").append(userHeader.getName()).append(".\n");
             JOptionPane.showMessageDialog(mainWindow, msg.toString(), "Error", JOptionPane.ERROR_MESSAGE);
             log.log(Level.SEVERE, "Error updating User: " + e.toString());
-            e.printStackTrace();
             result = false;
-        } catch (ObjectNotFoundException e) {
-            // handle
         }
         return result;
     }
@@ -671,16 +690,13 @@ public class UserPanel extends EntityEditorPanel {
     /**
      * Validates form data and returns if user Id and description form fields
      * are valid or not.
-     *
+     * 
      * @return boolean indicating if the form fields are valid or not.
      */
     private boolean validateForm() {
         return true;
     }
 
-    private void handleThrowable(Throwable t) {
-        Throwable cause = ExceptionUtils.unnestToRoot(t);
-    }
     // debug
     public static void main(String[] args) {
 
@@ -704,17 +720,23 @@ public class UserPanel extends EntityEditorPanel {
      * enabled.
      */
     private final DocumentListener documentListener = new DocumentListener() {
-        /** Gives notification that there was an insert into the document.*/
+        /**
+         * Gives notification that there was an insert into the document.
+         */
         public void insertUpdate(DocumentEvent e) {
             setModified(true);
         }
 
-        /** Gives notification that a portion of the document has been */
+        /**
+         * Gives notification that a portion of the document has been
+         */
         public void removeUpdate(DocumentEvent e) {
             setModified(true);
         }
 
-        /** Gives notification that an attribute or set of attributes changed. */
+        /**
+         * Gives notification that an attribute or set of attributes changed.
+         */
         public void changedUpdate(DocumentEvent e) {
             setModified(true);
         }
@@ -724,7 +746,9 @@ public class UserPanel extends EntityEditorPanel {
     private final
     HierarchyListener hierarchyListener =
       new HierarchyListener() {
-          /** Called when the hierarchy has been changed.*/
+          /**
+           * Called when the hierarchy has been changed.
+           */
           public void hierarchyChanged(HierarchyEvent e) {
               int eID = e.getID();
               long flags = e.getChangeFlags();
