@@ -209,6 +209,11 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
             Action a = node.getPreferredAction();
             if (a != null) {
+                if (a instanceof SecureAction) {
+                    SecureAction sa = (SecureAction)a;
+                    if (!sa.isAuthorized()) return;
+                }
+
                 ActionManager.getInstance().invokeAction(a);
             }
 

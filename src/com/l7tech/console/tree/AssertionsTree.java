@@ -1,8 +1,9 @@
 package com.l7tech.console.tree;
 
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.action.ActionManager;
 import com.l7tech.console.action.DeletePolicyTemplateAction;
-import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.console.action.SecureAction;
 
 import javax.swing.*;
 import javax.swing.event.TreeExpansionEvent;
@@ -140,6 +141,10 @@ public class AssertionsTree extends JTree implements DragGestureListener {
             } else if (keyCode == KeyEvent.VK_ENTER) {
                 Action a = node.getPreferredAction();
                 if (a != null) {
+                    if (a instanceof SecureAction) {
+                        SecureAction sa = (SecureAction)a;
+                        if (!sa.isAuthorized()) return;
+                    }
                     ActionManager.getInstance().invokeAction(a);
                 }
             }
@@ -161,6 +166,11 @@ public class AssertionsTree extends JTree implements DragGestureListener {
 
             Action a = node.getPreferredAction();
             if (a != null) {
+                if (a instanceof SecureAction) {
+                    SecureAction sa = (SecureAction)a;
+                    if (!sa.isAuthorized()) return;
+                }
+
                 ActionManager.getInstance().invokeAction(a);
             }
         }
