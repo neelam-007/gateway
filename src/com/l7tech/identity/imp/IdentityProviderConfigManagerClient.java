@@ -2,9 +2,9 @@ package com.l7tech.identity.imp;
 
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.adminws.clientstub.Identity;
-import com.l7tech.adminws.clientstub.IdentityService;
-import com.l7tech.adminws.clientstub.IdentityServiceLocator;
+import com.l7tech.adminws.identity.Identity;
+import com.l7tech.adminws.identity.IdentityService;
+import com.l7tech.adminws.identity.IdentityServiceLocator;
 import com.l7tech.adminws.translation.TypeTranslator;
 import com.l7tech.objectmodel.imp.EntityHeaderImp;
 import com.l7tech.objectmodel.EntityHeader;
@@ -22,7 +22,7 @@ import java.util.Collection;
  */
 public class IdentityProviderConfigManagerClient implements IdentityProviderConfigManager {
     public IdentityProviderConfig findByPrimaryKey(long oid) {
-        com.l7tech.adminws.clientstub.IdentityProviderConfig ipcStubFormat = null;
+        com.l7tech.adminws.identity.IdentityProviderConfig ipcStubFormat = null;
         try {
             ipcStubFormat = getStub().findIdentityProviderConfigByPrimaryKey(oid);
         }
@@ -31,14 +31,14 @@ public class IdentityProviderConfigManagerClient implements IdentityProviderConf
             System.err.println(e.getMessage());
         }
         if (ipcStubFormat != null) {
-            return TypeTranslator.transferStubIdentityProviderConfigToGenericOne(ipcStubFormat);
+            return TypeTranslator.serviceIdentityProviderConfigToGenericOne(ipcStubFormat);
         }
         else return null;
     }
 
     public long save(IdentityProviderConfig identityProviderConfig) {
         try {
-            return getStub().saveIdentityProviderConfig(TypeTranslator.transferGenericIdentityProviderConfigToStubOne(identityProviderConfig));
+            return getStub().saveIdentityProviderConfig(TypeTranslator.genericToServiceIdProviderConfig(identityProviderConfig));
         }
         catch (Exception e) {
             // todo, show nice user message?
@@ -58,25 +58,25 @@ public class IdentityProviderConfigManagerClient implements IdentityProviderConf
     }
 
     public Collection findAllHeaders() {
-        com.l7tech.adminws.clientstub.Header[] array = null;
+        com.l7tech.adminws.identity.Header[] array = null;
         try {
             array = getStub().findAlllIdentityProviderConfig();
         } catch (Exception e) {
             // todo, show nice user message?
             System.err.println(e.getMessage());
         }
-        return TypeTranslator.transferHeaderArrayToCollection(array);
+        return TypeTranslator.headerArrayToCollection(array);
     }
 
     public Collection findAllHeaders(int offset, int windowSize) {
-        com.l7tech.adminws.clientstub.Header[] array = null;
+        com.l7tech.adminws.identity.Header[] array = null;
         try {
             array = getStub().findAllIdentityProviderConfigByOffset(offset, windowSize);
         } catch (Exception e) {
             // todo, show nice user message?
             System.err.println(e.getMessage());
         }
-        return TypeTranslator.transferHeaderArrayToCollection(array);
+        return TypeTranslator.headerArrayToCollection(array);
     }
 
     public Collection findAll() {

@@ -17,36 +17,7 @@ import java.util.Iterator;
  * between types used in the admin service and generic types used by the model.
  */
 public class TypeTranslator {
-    public static com.l7tech.identity.IdentityProviderConfig transferStubIdentityProviderConfigToGenericOne(com.l7tech.adminws.clientstub.IdentityProviderConfig stub) {
-        if (stub == null) return null;
-        IdentityProviderConfigImp ret = new IdentityProviderConfigImp();
-        ret.setDescription(stub.getDescription());
-        ret.setName(stub.getName());
-        ret.setOid(stub.getOid());
-        IdentityProviderTypeImp retType = new IdentityProviderTypeImp();
-        retType.setClassName(stub.getTypeClassName());
-        retType.setDescription(stub.getTypeDescription());
-        retType.setName(stub.getTypeName());
-        retType.setOid(stub.getTypeOid());
-        ret.setType(retType);
-        return ret;
-    }
-
-    public static com.l7tech.adminws.clientstub.IdentityProviderConfig transferGenericIdentityProviderConfigToStubOne(com.l7tech.identity.IdentityProviderConfig gen) {
-        if (gen == null) return null;
-        com.l7tech.adminws.clientstub.IdentityProviderConfig ret = new com.l7tech.adminws.clientstub.IdentityProviderConfig();
-        ret.setDescription(gen.getDescription());
-        ret.setName(gen.getName());
-        ret.setOid(gen.getOid());
-        ret.setTypeClassName(gen.getType().getClassName());
-        ret.setTypeClassName(gen.getType().getClassName());
-        ret.setTypeDescription(gen.getType().getDescription());
-        ret.setTypeName(gen.getType().getName());
-        ret.setTypeOid(gen.getType().getOid());
-        return ret;
-    }
-
-    public static com.l7tech.objectmodel.EntityHeader transferStubHeaderToGenHeader(com.l7tech.adminws.clientstub.Header stubHeader) {
+    public static com.l7tech.objectmodel.EntityHeader serviceHeaderToGenHeader(com.l7tech.adminws.identity.Header stubHeader) {
         if (stubHeader == null) return null;
         EntityHeaderImp ret = new EntityHeaderImp();
         ret.setName(stubHeader.getName());
@@ -59,34 +30,34 @@ public class TypeTranslator {
         return ret;
     }
 
-    public static Collection transferHeaderArrayToCollection(com.l7tech.adminws.clientstub.Header[] headerArray) {
+    public static Collection headerArrayToCollection(com.l7tech.adminws.identity.Header[] headerArray) {
         if (headerArray != null && headerArray.length > 0) {
             Collection ret = new java.util.ArrayList(headerArray.length);
             for (int i = 0; i < headerArray.length; i++) {
                 // add the header
-                ret.add(TypeTranslator.transferStubHeaderToGenHeader(headerArray[i]));
+                ret.add(TypeTranslator.serviceHeaderToGenHeader(headerArray[i]));
             }
             return ret;
         }
         else return new java.util.ArrayList();
     }
 
-    public static com.l7tech.adminws.service.Header[] collectionToServiceHeaders(Collection collectionOfGenHeaders) {
-        if (collectionOfGenHeaders == null) return new com.l7tech.adminws.service.Header[0];
-        com.l7tech.adminws.service.Header[] ret = new com.l7tech.adminws.service.Header[collectionOfGenHeaders.size()];
+    public static com.l7tech.adminws.identity.Header[] collectionToServiceHeaders(Collection collectionOfGenHeaders) {
+        if (collectionOfGenHeaders == null) return new com.l7tech.adminws.identity.Header[0];
+        com.l7tech.adminws.identity.Header[] ret = new com.l7tech.adminws.identity.Header[collectionOfGenHeaders.size()];
         Iterator iter = collectionOfGenHeaders.iterator();
         int count = 0;
         while(iter.hasNext()){
             EntityHeader colMember = (EntityHeader)iter.next();
-            ret[count] = new com.l7tech.adminws.service.Header(colMember.getOid(), colMember.getType().toString(), colMember.getName());
+            ret[count] = new com.l7tech.adminws.identity.Header(colMember.getOid(), colMember.getType().toString(), colMember.getName());
             ++count;
         }
         return ret;
     }
 
-    public static com.l7tech.adminws.service.IdentityProviderConfig genericToServiceIdProviderConfig(com.l7tech.identity.IdentityProviderConfig serviceConfig) {
+    public static com.l7tech.adminws.identity.IdentityProviderConfig genericToServiceIdProviderConfig(com.l7tech.identity.IdentityProviderConfig serviceConfig) {
         if (serviceConfig == null) return null;
-        com.l7tech.adminws.service.IdentityProviderConfig ret = new com.l7tech.adminws.service.IdentityProviderConfig();
+        com.l7tech.adminws.identity.IdentityProviderConfig ret = new com.l7tech.adminws.identity.IdentityProviderConfig();
         ret.setDescription(serviceConfig.getDescription());
         ret.setName(serviceConfig.getName());
         ret.setOid(serviceConfig.getOid());
@@ -97,7 +68,7 @@ public class TypeTranslator {
         return ret;
     }
 
-    public static com.l7tech.identity.IdentityProviderConfig serviceIdentityProviderConfigToGenericOne(com.l7tech.adminws.service.IdentityProviderConfig stub) {
+    public static com.l7tech.identity.IdentityProviderConfig serviceIdentityProviderConfigToGenericOne(com.l7tech.adminws.identity.IdentityProviderConfig stub) {
         if (stub == null) return null;
         IdentityProviderConfigImp ret = new IdentityProviderConfigImp();
         ret.setDescription(stub.getDescription());
