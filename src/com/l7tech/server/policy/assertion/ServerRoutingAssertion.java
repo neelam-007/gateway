@@ -95,6 +95,7 @@ public class ServerRoutingAssertion implements ServerAssertion {
             String password = _data.getPassword();
 
             if ( login != null && password != null) {
+                logger.fine( "Routing with login '" + login + "'" );
                 synchronized (this) {
                     if (_httpCredentials == null)
                         _httpCredentials = new UsernamePasswordCredentials( login, password );
@@ -114,6 +115,11 @@ public class ServerRoutingAssertion implements ServerAssertion {
             client.executeMethod(postMethod);
 
             int status = postMethod.getStatusCode();
+            if ( status == 200 )
+                logger.fine( "Request routed successfully" );
+            else
+                logger.info( "Protected service responded with status " + status );
+
             response.setParameter( Response.PARAM_HTTP_STATUS, new Integer( status ) );
 
             // TODO: Attachments
