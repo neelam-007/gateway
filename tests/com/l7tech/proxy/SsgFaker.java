@@ -156,7 +156,6 @@ public class SsgFaker {
             }
 
             response.addField("Content-Type", "text/xml");
-            response.commitHeader();
             response.getOutputStream().write(responseEnvelope.toString().getBytes());
             response.commit();
         }
