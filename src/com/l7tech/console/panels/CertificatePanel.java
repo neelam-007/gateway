@@ -1,6 +1,5 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.common.gui.util.TableUtil;
 import com.l7tech.common.util.Locator;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
@@ -8,11 +7,13 @@ import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.identity.UserBean;
 import com.l7tech.identity.cert.ClientCertManager;
-import com.l7tech.objectmodel.*;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.ObjectNotFoundException;
+import com.l7tech.objectmodel.UpdateException;
 
 import javax.swing.*;
-import javax.swing.table.AbstractTableModel;
-import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -21,12 +22,10 @@ import java.awt.event.HierarchyListener;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.security.KeyStore;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -38,10 +37,13 @@ class CertificatePanel extends JPanel {
     static Logger log = Logger.getLogger(CertificatePanel.class.getName());
     private X509Certificate cert;
     private UserPanel userPanel;
-    private JTable certificateTable;
-    private JScrollPane tableScrollPane;
     private JLabel certStatusLabel;
     private EntityListener parentListener;
+    private JComponent certificateView = new JLabel();
+    public static final GridBagConstraints CERTIFICATE_VIEW_CONSTRAINTS = new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
+                GridBagConstraints.NORTHWEST,
+                GridBagConstraints.BOTH,
+                new Insets(15, 15, 0, 15), 0, 0);
 
     /**
      * Create a new CertificatePanel
@@ -61,11 +63,9 @@ class CertificatePanel extends JPanel {
         setLayout(new GridBagLayout());
         // setTitle("Certificate Information");
 
-        certificateTable = new JTable();
-        certificateTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-        certificateTable.getTableHeader().setReorderingAllowed(false);
+        //certificateTable = new JTable();
+        //certificateTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
-        tableScrollPane = new JScrollPane(certificateTable);
         certStatusLabel = new JLabel();
         Font f = certStatusLabel.getFont();
         certStatusLabel.setFont(new Font(f.getName(), Font.BOLD, f.getSize()));
@@ -75,11 +75,7 @@ class CertificatePanel extends JPanel {
             GridBagConstraints.NONE,
             new Insets(15, 15, 0, 15), 0, 0));
 
-        add(tableScrollPane,
-          new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
-            GridBagConstraints.CENTER,
-            GridBagConstraints.BOTH,
-            new Insets(15, 15, 0, 15), 0, 0));
+        add(certificateView, CERTIFICATE_VIEW_CONSTRAINTS);
 
         // Buttons
         add(getRevokeCertButton(),
@@ -89,94 +85,15 @@ class CertificatePanel extends JPanel {
             new Insets(17, 12, 11, 11), 0, 0));
     }
 
-    /**
-     * create the table model with certificate fields
-     *
-     * @return the <code>AbstractTableModel</code> for the
-     * user's certificate
-     * @throws NoSuchAlgorithmException
-     * @throws CertificateEncodingException
-     */
-    public AbstractTableModel getCertificateTableModel()
-      throws NoSuchAlgorithmException, CertificateEncodingException {
-
-        final AbstractTableModel certificateTableModel;
-        certificateTableModel = new AbstractTableModel() {
-            String[] cols = {"Certificate Field", "Value"};
-            ArrayList data = getCertProperties();
-
-            public String getColumnName(int col) {
-                return cols[col];
-            }
-
-            public int getColumnCount() {
-                return cols.length;
-            }
-
-            public int getRowCount() {
-                return data.size();
-            }
-
-            public Object getValueAt(int row, int col) {
-                return ((String[])data.get(row))[col];
-            }
-        };
-
-        SwingUtilities.invokeLater(
-          new Runnable() {
-              public void run() {
-
-                  DefaultTableCellRenderer dft = new DefaultTableCellRenderer();
-                  dft.setText("Value");
-                  dft.setHorizontalAlignment(SwingConstants.LEFT);
-                  dft.setBackground(tableScrollPane.getBackground());
-                  certificateTable.getColumn("Value").setHeaderRenderer(dft);
-
-                  dft = new DefaultTableCellRenderer();
-                  dft.setText("Certificate Field");
-                  dft.setHorizontalAlignment(SwingConstants.LEFT);
-                  dft.setBackground(tableScrollPane.getBackground());
-                  certificateTable.getColumn("Certificate Field").setHeaderRenderer(dft);
-
-                  int rows = certificateTableModel.getRowCount();
-
-                  String[] cols = {"Certificate Field", "Value"};
-                  for (int i = 0; i < cols.length; i++) {
-                      String longest = cols[i];
-                      for (int j = 0; j < rows; j++) {
-                          String val = (String)certificateTableModel.getValueAt(j, i);
-                          if (val != null && val.length() > longest.length()) {
-                              longest = val;
-                          }
-                      }
-                      TableUtil.adjustColumnWidth(certificateTable, i, longest);
-                  }
-              }
-          });
-
-        return certificateTableModel;
-    }
-
     /** Returns a properties instance filled out with info about the certificate. */
-    private ArrayList getCertProperties()
-      throws CertificateEncodingException, NoSuchAlgorithmException {
-        ArrayList l = new ArrayList();
-        if (cert == null) return l;
-
-        l.add(new String[]{"User", user.getName()});
-
-
-        // l.add(new String[]{"Revocation date", new Date().toString()});
-        l.add(new String[]{"Creation date", nullNa(cert.getNotBefore())});
-        l.add(new String[]{"Expiry date", nullNa(cert.getNotAfter())});
-        l.add(new String[]{"Issued to", nullNa(cert.getSubjectDN())});
-        l.add(new String[]{"Serial number", nullNa(cert.getSerialNumber())});
-        l.add(new String[]{"Issuer", nullNa(cert.getIssuerDN())});
-
-        l.add(new String[]{"SHA-1 fingerprint", getCertificateFingerprint(cert, "SHA1")});
-        l.add(new String[]{"MD5 fingerprint", getCertificateFingerprint(cert, "MD5")});
-
-        return l;
+    private JComponent getCertView()
+      throws CertificateEncodingException, NoSuchAlgorithmException
+    {
+        if (cert == null)
+            return null;
+        com.l7tech.common.gui.widgets.CertificatePanel i = new com.l7tech.common.gui.widgets.CertificatePanel(cert);
+        i.setCertBorderEnabled(false);
+        return i;
     }
 
     /** Creates if needed the Ok button. */
@@ -232,18 +149,28 @@ class CertificatePanel extends JPanel {
      */
     private void loadCertificateInfo() {
         try {
-            AbstractTableModel
-              certificateTableModel = getCertificateTableModel();
-            certificateTable.setModel(certificateTableModel);
-            boolean enabled = certificateTableModel.getRowCount() > 0;
+            boolean enabled = cert != null;
             getRevokeCertButton().setEnabled(enabled);
             if (enabled) {
                 certStatusLabel.setText("Certificate status: issued");
             } else {
                 certStatusLabel.setText("Certificate status: not issued");
             }
+            this.remove(certificateView);
+            try {
+                JComponent view = getCertView();
+                if (view == null)
+                    view = new JLabel();
+                certificateView = new JScrollPane(view);
+            } catch (CertificateEncodingException e) {
+                log.log(Level.SEVERE, "Unable to decode this user's certificate", e);
+            } catch (NoSuchAlgorithmException e) {
+                log.log(Level.SEVERE, "Unable to process this user's certificate", e);
+            }
+            add(certificateView, CERTIFICATE_VIEW_CONSTRAINTS);
+            getRootPane().getContentPane().invalidate();
         } catch (Exception e) {
-            log.log(Level.WARNING, "There was an error loading the certifuc", e);
+            log.log(Level.WARNING, "There was an error loading the certificate", e);
         }
     }
 
@@ -268,45 +195,6 @@ class CertificatePanel extends JPanel {
             }
         }
     };
-
-
-    /**
-     * The method creates the fingerprint and returns it in a
-     * String to the caller.
-     *
-     * @param cert      the certificate
-     * @param algorithm the alghorithm (MD5 or SHA1)
-     * @return the certificate fingerprint as a String
-     * @exception NoSuchAlgorithmException
-     *                      if the algorithm is not available.
-     * @exception CertificateEncodingException
-     *                      thrown whenever an error occurs while attempting to
-     *                      encode a certificate.
-     */
-    private String getCertificateFingerprint(X509Certificate cert, String algorithm)
-      throws NoSuchAlgorithmException, CertificateEncodingException {
-        if (cert == null) {
-            throw new NullPointerException("cert");
-        }
-        StringBuffer buff = new StringBuffer();
-        byte[] fingers = cert.getEncoded();
-
-        MessageDigest md = MessageDigest.getInstance(algorithm);
-        md.update(fingers);
-        byte[] digest = md.digest();
-        // the algorithm
-        buff.append(algorithm + ":");
-
-        for (int i = 0; i < digest.length; i++) {
-            if (i != 0) buff.append(":");
-            int b = digest[i] & 0xff;
-            String hex = Integer.toHexString(b);
-            if (hex.length() == 1) buff.append("0");
-            buff.append(hex.toUpperCase());
-        }
-        return buff.toString();
-    }
-
 
     /**
      * obtain certificate from the application default
@@ -347,16 +235,6 @@ class CertificatePanel extends JPanel {
         } catch (FindException e) {
             log.log(Level.WARNING, "There was an error loading the certificate", e);
         }
-    }
-
-    /** Convert a null String into "N/A" */
-    private String nullNa(String s) {
-        return s == null ? "N/A" : s;
-    }
-
-    /** Convert a null object into "N/A", otherwise toString */
-    private String nullNa(Object o) {
-        return o == null ? "N/A" : o.toString();
     }
 
     /** UI Elements */
