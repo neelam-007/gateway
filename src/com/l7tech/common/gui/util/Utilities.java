@@ -27,7 +27,9 @@ public class Utilities {
     public static final String CONTEXT_PASTE = "Paste";
     public static final String CONTEXT_SELECT_ALL = "Select All";
 
-    /** private constructor, this class cannot be instantiated */
+    /**
+     * private constructor, this class cannot be instantiated
+     */
     private Utilities() {
     }
 
@@ -69,11 +71,11 @@ public class Utilities {
      * Sets all of the buttons to be the same size. This is done
      * dynamically by setting each button's preferred and maximum
      * sizes after the buttons are created.
-     *
+     * <p/>
      * Limitations:
      * Button images are not considered into the calcualtion, nor
      * the alignment.
-     *
+     * <p/>
      * The first button is used to determine the font size, that is
      * same font is assumed for all the buttons.
      *
@@ -114,11 +116,38 @@ public class Utilities {
     }
 
     /**
+     * Get the button size.
+     * <p/>
+     * The button size is detemrined by the text, font, and insets.
      *
+     * @param button the buttons to get the size for.
+     * @return the button size dimension
+     */
+    public static Dimension getButtonSize(javax.swing.AbstractButton button) {
+        // Get the largest width and height
+        Dimension buttonSize = new Dimension();
+        Rectangle2D textBounds = null;
+        FontMetrics metrics = button.getFontMetrics(button.getFont());
+        Graphics g = button.getGraphics();
+
+        textBounds = metrics.getStringBounds(button.getText(), g);
+        buttonSize.width = (int)textBounds.getWidth();
+        buttonSize.height = (int)textBounds.getHeight();
+
+        if (button.getBorder() != null) {
+            Insets insets = button.getBorder().getBorderInsets(button);
+            buttonSize.width += insets.left + insets.right;
+            buttonSize.height += insets.top + insets.bottom;
+        }
+
+        return buttonSize;
+    }
+
+
+    /**
      * Sets the JComponents in the array to be the same size.
      * This is done by setting each component's preferred and
      * maximum sizes after the components have been created.
-     *
      *
      * @param components instances of JComponent
      */
@@ -145,11 +174,9 @@ public class Utilities {
     }
 
     /**
-     *
      * Sets the JComponents in the array to be the same widthe.
      * This is done by setting each component's preferred and
      * maximum sizes after the components have been created.
-     *
      *
      * @param components instances of JComponent
      */
@@ -177,12 +204,10 @@ public class Utilities {
 
 
     /**
-     *
      * Sets the Components in the array to be the same size.
      * This is done dynamically by setting each button's
      * preferred and maximum sizes after the components have
      * been created.
-     *
      *
      * @param components instances of Component
      */
@@ -227,6 +252,7 @@ public class Utilities {
     /**
      * Loads an image from the specified resourceD.
      * Lookup.
+     *
      * @param resource resource path of the icon (no initial slash)
      * @return icon's Image, or null, if the icon cannot be loaded.
      */
@@ -240,13 +266,19 @@ public class Utilities {
      */
     public static final String PROPERTY_CONTEXT_MENU_AUTO_SELECT_ALL = "com.l7tech.common.gui.util.Utilities.contextMenuAutoSelectAll";
 
-    /** Creates pop-up menus for text components. */
+    /**
+     * Creates pop-up menus for text components.
+     */
     public static interface ContextMenuFactory {
-        /** Create a pop-up menu for the given text component. */
+        /**
+         * Create a pop-up menu for the given text component.
+         */
         JPopupMenu createContextMenu(JTextComponent textComponent);
     }
 
-    /** Creates default pop-up menus for text components. */
+    /**
+     * Creates default pop-up menus for text components.
+     */
     public static class DefaultContextMenuFactory implements ContextMenuFactory {
         /**
          * Create a context menu with appropriate items for the given JTextComponent.
@@ -315,8 +347,8 @@ public class Utilities {
      * component has the PROPERTY_CONTEXT_MENU_AUTO_SELECT_ALL client property set to "true" when
      * the listener is triggered, the component will have "select all" called on it first.
      *
-     * @param tc  The JTextComponent to which this MouseListener will be attached
-     * @return  the newly created MouseListener
+     * @param tc The JTextComponent to which this MouseListener will be attached
+     * @return the newly created MouseListener
      */
     public static MouseListener createContextMenuMouseListener(final JTextComponent tc) {
         return createContextMenuMouseListener(tc, new DefaultContextMenuFactory());
@@ -326,13 +358,12 @@ public class Utilities {
      * Create a MouseListener that will create an edit context menu when triggered.  The menu will be
      * created using the specified ContextMenuFactory.  See Utilities.createContextMenu() for
      *
-     * @param tc  The JTextComponent to which this MouseListener will be attached
-     * @param factory  The ContextMenuFactory which will produce the actual context menu.
-     * @return  the newly created MouseListener
+     * @param tc      The JTextComponent to which this MouseListener will be attached
+     * @param factory The ContextMenuFactory which will produce the actual context menu.
+     * @return the newly created MouseListener
      */
     public static MouseListener createContextMenuMouseListener(final JTextComponent tc,
-                                                               final ContextMenuFactory factory)
-    {
+                                                               final ContextMenuFactory factory) {
         return new MouseAdapter() {
             public void mousePressed(final MouseEvent ev) {
                 checkPopup(ev);
@@ -345,11 +376,11 @@ public class Utilities {
             private void checkPopup(MouseEvent ev) {
                 if (ev.isPopupTrigger()) {
                     tc.requestFocus();
-                    String selectAll = (String) tc.getClientProperty(PROPERTY_CONTEXT_MENU_AUTO_SELECT_ALL);
+                    String selectAll = (String)tc.getClientProperty(PROPERTY_CONTEXT_MENU_AUTO_SELECT_ALL);
                     if (Boolean.valueOf(selectAll).booleanValue())
                         tc.selectAll();
                     JPopupMenu menu = factory.createContextMenu(tc);
-                    menu.show((Component) ev.getSource(), ev.getX(), ev.getY());
+                    menu.show((Component)ev.getSource(), ev.getX(), ev.getY());
                 }
             }
         };
