@@ -57,16 +57,15 @@ public class GatewayStatus {
     public int getRequestRouted() {
         long totalRequest = getTotalCountFromCache(requestCounterCache);
 
- //       System.out.println("Node is: " + getName());
- //       System.out.println("totalRequest : " + totalRequest);
-        if(totalRequest > 0) {
+        //       System.out.println("Node is: " + getName());
+        //       System.out.println("totalRequest : " + totalRequest);
+        if (totalRequest > 0) {
             long totalCompleted = getTotalCountFromCache(completedCounterCache);
- //           System.out.println("totalCompleted : " + totalCompleted);
+            //           System.out.println("totalCompleted : " + totalCompleted);
 
-            return (new Long(totalCompleted*100/ totalRequest)).intValue();
-        }
-        else {
- //           System.out.println("totalRequest : 0");
+            return (new Long(totalCompleted * 100 / totalRequest)).intValue();
+        } else {
+            //           System.out.println("totalRequest : 0");
             return 0;
         }
     }
@@ -115,15 +114,14 @@ public class GatewayStatus {
 
     public void updateRequestCounterCache(long newCount) {
 
- //       System.out.println("Add new counter in requestCounterCache - flag: " + addRequestCounterInCache);
+        //       System.out.println("Add new counter in requestCounterCache - flag: " + addRequestCounterInCache);
 
-        if(addRequestCounterInCache){
+        if (addRequestCounterInCache) {
             updateCounterCache(requestCounterCache, newCount, true);
 
             // add a counter only the first time, reset the flag
             addRequestCounterInCache = false;
-        }
-        else{
+        } else {
             updateCounterCache(requestCounterCache, newCount, false);
         }
 
@@ -131,15 +129,14 @@ public class GatewayStatus {
 
     public void updateCompletedCounterCache(long newCount) {
 
- //       System.out.println("Add new counter in completedCounterCache - flag: " + addCompletedCounterInCache);
+        //       System.out.println("Add new counter in completedCounterCache - flag: " + addCompletedCounterInCache);
 
-        if(addCompletedCounterInCache){
+        if (addCompletedCounterInCache) {
             updateCounterCache(completedCounterCache, newCount, true);
 
             // add a counter only the first time, reset the flag
             addCompletedCounterInCache = false;
-        }
-        else{
+        } else {
             updateCounterCache(completedCounterCache, newCount, false);
         }
     }
@@ -154,7 +151,7 @@ public class GatewayStatus {
                 cache.add(new Long(newCount));
             }
         } else {
-            Long count = new Long(((Long)cache.lastElement()).longValue() + newCount);
+            Long count = new Long(((Long) cache.lastElement()).longValue() + newCount);
 
             // remove the last element
             cache.remove(cache.size() - 1);
@@ -164,16 +161,16 @@ public class GatewayStatus {
         }
     }
 
-       private long getTotalCountFromCache(Vector cache){
+    private long getTotalCountFromCache(Vector cache) {
 
         long totalCount = 0;
 
-            int index = cache.size() - 1;
+        int index = cache.size() - 1;
 
-            for(int i = 0; i < cache.size() - 1 ; i++, index--){
+        for (int i = 0; i < cache.size() - 1; i++, index--) {
 
-                totalCount += ((Long) cache.get(index)).longValue() - ((Long) cache.get(index-1)).longValue();
-            }
+            totalCount += ((Long) cache.get(index)).longValue() - ((Long) cache.get(index - 1)).longValue();
+        }
 
         return totalCount;
     }
@@ -182,53 +179,52 @@ public class GatewayStatus {
         return getTotalCountFromCache(requestCounterCache);
     }
 
-    public void setRequestCounterCache(Vector cache){
+    public void setRequestCounterCache(Vector cache) {
         requestCounterCache = cache;
     }
 
-    public void setCompletedCounterCache(Vector cache){
+    public void setCompletedCounterCache(Vector cache) {
         completedCounterCache = cache;
     }
 
-    public Vector getRequestCounterCache(){
+    public Vector getRequestCounterCache() {
         return requestCounterCache;
     }
 
-    public Vector getCompletedCounterCache(){
+    public Vector getCompletedCounterCache() {
         return completedCounterCache;
     }
 
-    public void resetCacheUpdateFlag(){
+    public void resetCacheUpdateFlag() {
         addRequestCounterInCache = true;
         addCompletedCounterInCache = true;
     }
+
     public long getSecondLastUpdateTimeStamp() {
-         return secondLastUpdateTimeStamp;
-     }
+        return secondLastUpdateTimeStamp;
+    }
 
     public void setSecondLastUpdateTimeStamp(long secondLastUpdateTime) {
         this.secondLastUpdateTimeStamp = secondLastUpdateTime;
     }
 
-    public String getNodeId(){
+    public String getNodeId() {
         return clusterInfo.getMac();
     }
 
-    public void incrementTimeStampUpdateFailureCount(){
+    public void incrementTimeStampUpdateFailureCount() {
         timeStampUpdateFailureCount++;
-        System.out.println("Node: " + getName() + ", Increment TimeStampUpdateFailureCount, New count = " + timeStampUpdateFailureCount);
     }
 
-    public void resetTimeStampUpdateFailureCount(){
-        System.out.println("Node: " + getName() + ", Reset TimeStampUpdateFailureCount");
+    public void resetTimeStampUpdateFailureCount() {
         timeStampUpdateFailureCount = 0;
     }
 
-    public int getTimeStampUpdateFailureCount(){
+    public int getTimeStampUpdateFailureCount() {
         return timeStampUpdateFailureCount;
     }
 
-     public int setTimeStampUpdateFailureCount(int count){
+    public int setTimeStampUpdateFailureCount(int count) {
         return timeStampUpdateFailureCount = count;
     }
 
