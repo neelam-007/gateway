@@ -104,6 +104,8 @@ public class CertDetailsPanel extends WizardStepPanel {
 
                 try {
                     ci.getTrustedCert().setCertificate(cert);
+                    ci.getTrustedCert().setName(cert.getSubjectDN().getName());
+                    ci.getTrustedCert().setSubjectDn(cert.getSubjectDN().getName());
 
                 } catch (CertificateEncodingException e) {
                     //todo:
