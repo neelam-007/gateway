@@ -355,6 +355,8 @@ public class PolicyServiceClient {
      * @param ssg                required. the Ssg from which we are downloading.  Used to keep CurrentRequest.getPeerSsg() up-to-date.
      * @param serviceId          required. the identifier of the service whose policy we wish to download.  Opaque to the client.
      * @param serverCertificate  required. used to verify identity of signer of downloaded policy.
+     * @param useSsl             If true, will use HTTPS instead of HTTP.  If we have a client cert for this Ssg it
+     *                           will be presented to the Gateway if we are challenged for it during the handshake.
      * @param clientCert         required. used to sign the request (and to decyrpt any encrypted portion in a response)
      * @param clientKey          required. used to sign the request (and to decyrpt any encrypted portion in a response)
      * @return a new Policy.  Never null.
@@ -366,11 +368,15 @@ public class PolicyServiceClient {
     public static Policy downloadPolicyWithWssSignature(Ssg ssg,
                                                         String serviceId,
                                                         X509Certificate serverCertificate,
+                                                        boolean useSsl,
                                                         X509Certificate clientCert,
                                                         PrivateKey clientKey)
             throws IOException, GeneralSecurityException, BadCredentialsException, InvalidDocumentFormatException
     {
-        URL url = new URL("http", ssg.getSsgAddress(), ssg.getSsgPort(), SecureSpanConstants.POLICY_SERVICE_FILE);
+        URL url = new URL(useSsl ? "https" : "http",
+                          ssg.getSsgAddress(),
+                          useSsl ? ssg.getSslPort() : ssg.getSsgPort(),
+                          SecureSpanConstants.POLICY_SERVICE_FILE);
         Document requestDoc = createSignedGetPolicyRequest(serviceId, clientCert, clientKey);
         return obtainResponse(url, ssg, requestDoc, null, serverCertificate, clientCert, clientKey);
     }
@@ -411,6 +417,8 @@ public class PolicyServiceClient {
      * @param ssg                required. the Ssg from which we are downloading.  Used to keep CurrentRequest.getPeerSsg() up-to-date.
      * @param serviceId          required. the identifier of the service whose policy we wish to download.  Opaque to the client.
      * @param serverCertificate  required. used to verify identity of signer of downloaded policy.
+     * @param useSsl             If true, will use HTTPS instead of HTTP.  If we have a client cert for this Ssg it
+     *                           will be presented to the Gateway if we are challenged for it during the handshake.
      * @param samlAss            required. a Saml holder-of-key assertion containing your client cert as the subject.
      *                           The whole assertion must already be signed by an issuer trusted by this policy service.
      * @param subjectPrivateKey  required. The private key corresponding to the subject certificate in samlAss.
@@ -423,23 +431,29 @@ public class PolicyServiceClient {
     public static Policy downloadPolicyWithSamlAssertion(Ssg ssg,
                                                          String serviceId,
                                                          X509Certificate serverCertificate,
+                                                         boolean useSsl,
                                                          SamlHolderOfKeyAssertion samlAss,
                                                          PrivateKey subjectPrivateKey)
             throws IOException, GeneralSecurityException, BadCredentialsException, InvalidDocumentFormatException
     {
-        URL url = new URL("http", ssg.getSsgAddress(), ssg.getSsgPort(), SecureSpanConstants.POLICY_SERVICE_FILE);
+        URL url = new URL(useSsl ? "https" : "http",
+                          ssg.getSsgAddress(),
+                          useSsl ? ssg.getSslPort() : ssg.getSsgPort(),
+                          SecureSpanConstants.POLICY_SERVICE_FILE);
         Document requestDoc = createSignedGetPolicyRequest(serviceId, samlAss, subjectPrivateKey);
         return obtainResponse(url, ssg, requestDoc, null, serverCertificate, samlAss.getSubjectCertificate(), subjectPrivateKey);
     }
 
     /**
      * Connect to the specified SSG over HTTP and download an anonymous policy using a GetPolicy request with
-     * no client side authentication at all, but still verifying that the response signature was valid and made 
-     * by the specified serverCertificate.
+     * no client side authentication (other than client cert if we have one available and useSsl is true),
+     * but still verifying that the response signature was valid and made by the specified serverCertificate.
      *
      * @param ssg                required. the Ssg from which we are downloading.  Used to keep CurrentRequest.getPeerSsg() up-to-date.
      * @param serviceId          required. the identifier of the service whose policy we wish to download.  Opaque to the client.
      * @param serverCertificate  required. used to verify identity of signer of downloaded policy.
+     * @param useSsl             If true, will use HTTPS instead of HTTP.  If we have a client cert for this Ssg it
+     *                           will be presented to the Gateway if we are challenged for it during the handshake.
      * @return a new Policy.  Never null.
      * @throws IOException if there is a network problem
      * @throws GeneralSecurityException if there is a problem with a certificate or a crypto operation.
@@ -448,10 +462,14 @@ public class PolicyServiceClient {
      */
     public static Policy downloadPolicyWithNoAuthentication(Ssg ssg,
                                                             String serviceId,
-                                                            X509Certificate serverCertificate)
+                                                            X509Certificate serverCertificate,
+                                                            boolean useSsl)
             throws IOException, GeneralSecurityException, BadCredentialsException, InvalidDocumentFormatException
     {
-        URL url = new URL("http", ssg.getSsgAddress(), ssg.getSsgPort(), SecureSpanConstants.POLICY_SERVICE_FILE);
+        URL url = new URL(useSsl ? "https" : "http",
+                          ssg.getSsgAddress(),
+                          useSsl ? ssg.getSslPort() : ssg.getSsgPort(),
+                          SecureSpanConstants.POLICY_SERVICE_FILE);
         Document requestDoc = createGetPolicyRequest(serviceId);
         return obtainResponse(url, ssg, requestDoc, null, serverCertificate, null, null);        
     }

@@ -103,14 +103,18 @@ public class PolicyManagerImpl implements PolicyManager {
     {
         PolicyAttachmentKey pak = new PolicyAttachmentKey(request.getUri(), request.getSoapAction());
         Ssg ssg = request.getSsg();
+        boolean useSsl = ssg.isUseSslByDefault();
         X509Certificate serverCert = SsgKeyStoreManager.getServerCert(ssg);
         if (serverCert == null)
             throw new ServerCertificateUntrustedException("Server certificate not yet known");
 
         // Try anonymous download first
         try {
-            log.info("Trying anonymous policy download from " + ssg);
-            Policy policy = PolicyServiceClient.downloadPolicyWithNoAuthentication(ssg, serviceId, serverCert);
+            if (useSsl && SsgKeyStoreManager.isClientCertAvailabile(ssg))
+                log.info("Trying SSL-with-client-cert policy download from " + ssg);
+            else
+                log.info("Trying anonymous policy download from " + ssg);
+            Policy policy = PolicyServiceClient.downloadPolicyWithNoAuthentication(ssg, serviceId, serverCert, useSsl);
             request.getSsg().attachPolicy(pak, policy);
             request.getRequestInterceptor().onPolicyUpdated(request.getSsg(), pak, policy);
             log.info("New policy saved successfully");
@@ -133,14 +137,14 @@ public class PolicyManagerImpl implements PolicyManager {
                     SamlHolderOfKeyAssertion samlHok = request.getOrCreateSamlHolderOfKeyAssertion();
                     PrivateKey key = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
                     if (key == null) throw new ConfigurationException("Unable to obtain client cert private key"); // shouldn't happen
-                    policy = PolicyServiceClient.downloadPolicyWithSamlAssertion(ssg, serviceId, serverCert, samlHok, key);
+                    policy = PolicyServiceClient.downloadPolicyWithSamlAssertion(ssg, serviceId, serverCert, useSsl, samlHok, key);
                 } else if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
                     // Trusted SSG, but with a client cert -- use WSS signature for authentication.
                     log.info("Trying WSS-signature-authenticated policy download from Trusted Gateway " + ssg);
                     request.prepareClientCertificate();
                     X509Certificate clientCert = SsgKeyStoreManager.getClientCert(ssg);
                     PrivateKey key = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
-                    policy = PolicyServiceClient.downloadPolicyWithWssSignature(ssg, serviceId, serverCert,
+                    policy = PolicyServiceClient.downloadPolicyWithWssSignature(ssg, serviceId, serverCert, useSsl,
                                                                                 clientCert, key);
                 } else {
                     // Trusted SSG, but with no client cert -- use HTTP Basic over SSL for authentication.
