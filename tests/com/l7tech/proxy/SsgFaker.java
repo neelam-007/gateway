@@ -2,9 +2,19 @@ package com.l7tech.proxy;
 
 import org.apache.axis.AxisEngine;
 import org.apache.axis.encoding.DeserializationContextImpl;
-import org.apache.axis.message.*;
+import org.apache.axis.encoding.Base64;
+import org.apache.axis.message.SOAPBody;
+import org.apache.axis.message.SOAPEnvelope;
+import org.apache.axis.message.SOAPHandler;
+import org.apache.axis.message.SOAPHeader;
 import org.apache.log4j.Category;
-import org.mortbay.http.*;
+import org.mortbay.http.HttpContext;
+import org.mortbay.http.HttpException;
+import org.mortbay.http.HttpHandler;
+import org.mortbay.http.HttpRequest;
+import org.mortbay.http.HttpResponse;
+import org.mortbay.http.HttpServer;
+import org.mortbay.http.SocketListener;
 import org.mortbay.http.handler.AbstractHttpHandler;
 import org.mortbay.util.MultiException;
 import org.xml.sax.SAXException;
@@ -12,6 +22,7 @@ import org.xml.sax.helpers.AttributesImpl;
 
 import javax.xml.soap.SOAPException;
 import java.io.IOException;
+import java.util.Enumeration;
 
 /**
  * A "test" Ssg that can be controlled programmatically.  Used to test the Client Proxy.
@@ -127,7 +138,7 @@ public class SsgFaker {
                            HttpResponse response)
                 throws HttpException, IOException
         {
-            log.info("SsgFakerHandler: incoming request");
+            log.info("SsgFakerHandler: incoming request: pathInContext=" + pathInContext);
 
             SOAPEnvelope requestEnvelope;
             try {
@@ -137,6 +148,54 @@ public class SsgFaker {
                 throw new HttpException(400, "Couldn't parse SOAP envelope: " + e.getMessage());
             }
 
+            boolean isBasicAuth = false;
+            String authHeader = request.getField("Authorization");
+            if (authHeader != null && "Basic ".equalsIgnoreCase(authHeader.substring(0, 6))) {
+                String authStuff = new String(Base64.decode(authHeader.substring(6)));
+                log.info("Found HTTP Basic auth stuff: " + authStuff);
+                isBasicAuth = true;
+            }
+
+            Enumeration fields = request.getFieldNames();
+            while (fields.hasMoreElements()) {
+                String s = (String) fields.nextElement();
+                log.info("Request header: " + s + ": " + request.getField(s));
+            }
+
+            if ("/soap/ssg".equalsIgnoreCase(pathInContext)) {
+                handlerPing(requestEnvelope, response);
+            } else if ("/soap/ssg/basicauth".equalsIgnoreCase(pathInContext)) {
+                if (!isBasicAuth) {
+                    response.addField("WWW-Authenticate", "Basic realm=\"business\"");
+                    response.setReason("Unauthorized");
+                    response.addField("Content-Type", "text/html");
+                    response.setStatus(401);
+                    response.getOutputStream().write("<title>Uh oh</title>Uh oh".getBytes());
+                    response.commit();
+                } else
+                    handlerPing(requestEnvelope, response);
+            } else if ("/soap/ssg/throwfault".equalsIgnoreCase(pathInContext)) {
+                response.setStatus(200);
+                response.addField("Content-Type", "text/xml");
+                response.getOutputStream().write(("<soapenv:Envelope" +
+                                                 " xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\"" +
+                                                 " xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\"" +
+                                                 " xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
+                                                 " <soapenv:Body>\n" +
+                                                 "  <soapenv:Fault>\n" +
+                                                 "   <faultcode>soapenv:Server</faultcode>\n" +
+                                                 "   <faultstring>Assertion Falsified</faultstring>\n" +
+                                                 "   <faultactor></faultactor>\n" +
+                                                 "   <detail/>\n" +
+                                                 "  </soapenv:Fault>\n" +
+                                                 " </soapenv:Body>\n" +
+                                                 "</soapenv:Envelope>\n").getBytes());
+                response.commit();
+            } else
+                throw new HttpException(404, "No service with that URI in this SsgFaker");
+        }
+
+        private void handlerPing(SOAPEnvelope requestEnvelope, HttpResponse response) throws IOException, HttpException {
             String namespace = requestEnvelope.getNamespaceURI();
 
             SOAPEnvelope responseEnvelope = new SOAPEnvelope();
