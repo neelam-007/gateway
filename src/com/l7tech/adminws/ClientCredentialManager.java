@@ -1,12 +1,7 @@
 package com.l7tech.adminws;
 
-import com.l7tech.adminws.identity.Client;
-import com.l7tech.adminws.identity.Service;
-
-import java.io.IOException;
-import java.net.PasswordAuthentication;
-import java.rmi.RemoteException;
 import javax.security.auth.login.LoginException;
+import java.net.PasswordAuthentication;
 
 /**
  * Layer 7 Technologies, inc.
@@ -59,19 +54,7 @@ public abstract class ClientCredentialManager {
         synchronized (ClientCredentialManager.class) {
             cachedCredentials = pa;
         }
-
-    }
-
-    private String getServiceURL() throws IOException {
-        String prefUrl = com.l7tech.console.util.Preferences.getPreferences().getServiceUrl();
-        if (prefUrl == null || prefUrl.length() < 1 || prefUrl.equals("null/ssg")) {
-            System.err.println("com.l7tech.console.util.Preferences.getPreferences does not resolve a server address");
-            prefUrl = "http://localhost:8080/ssg";
-        }
-        prefUrl += "/services/identityAdmin";
-        return prefUrl;
     }
 
     protected static PasswordAuthentication cachedCredentials = new PasswordAuthentication("", new char[]{});
-
 }
