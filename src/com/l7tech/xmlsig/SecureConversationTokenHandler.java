@@ -64,8 +64,10 @@ import com.l7tech.util.SoapUtil;
  *
  */
 public class SecureConversationTokenHandler {
-    public static final String L7_NAMESPACE = "http://l7tech.com/ns/msgid";
+
+    public static final String L7_NAMESPACE = "http://l7tech.com/ns/msgseqnr";
     public static final String L7_NAMESPACE_PREFIX = "l7";
+    public static final String SEQ_EL_NAME = "SeqNr";
 
     public static final String HEADER_EL_NAME = "Header";
     public static final String SECURITY_EL_NAME = "Security";
@@ -80,21 +82,10 @@ public class SecureConversationTokenHandler {
 
     public static final String IDENTIFIER_EL_NAME = "Identifier";
 
-    public static final String SESS_ID_EL_NAME = "SessId";
-    public static final String SEQ_EL_NAME = "SeqNr";
-
-    public static final String NONCE_EL_NAME = "Nonce";
-
 
     public void appendNonceToDocument(Document soapmsg, long nonce) {
         Element securityCtxTokEl = getOrMakeSecurityContextTokenElement(soapmsg);
-        Element idElement = soapmsg.createElementNS(WSU_NAMESPACE, IDENTIFIER_EL_NAME);
-
-        idElement.setPrefix(WSU_NAMESPACE_PREFIX);
-        idElement.setAttribute("xmlns:" + WSU_NAMESPACE_PREFIX, WSU_NAMESPACE);
-        Text val = soapmsg.createTextNode(Long.toString(nonce));
-        idElement.appendChild(val);
-        securityCtxTokEl.insertBefore(idElement, null);
+        writeIdentifierElementToSecurityContextTokenElement(securityCtxTokEl, Long.toString(nonce));
     }
 
     public long readNonceFromDocument(Document soapmsg) {
@@ -103,7 +94,9 @@ public class SecureConversationTokenHandler {
     }
 
     public void appendSessIdAndSeqNrToDocument(Document soapmsg, long sessId, long seqNr) {
-        // todo
+        Element securityCtxTokEl = getOrMakeSecurityContextTokenElement(soapmsg);
+        writeIdentifierElementToSecurityContextTokenElement(securityCtxTokEl, Long.toString(sessId));
+        writeL7SeqElementToSecurityContextTokenElement(securityCtxTokEl, Long.toString(seqNr));
     }
 
     public long readSessIdFromDocument(Document soapmsg) {
@@ -116,9 +109,25 @@ public class SecureConversationTokenHandler {
         return -1;
     }
 
-    public static Element getOrMakeSecurityContextTokenElement(Document soapMsg) {
+    private void writeIdentifierElementToSecurityContextTokenElement(Element securityContextTokenEl, String value) {
+        Element idElement = securityContextTokenEl.getOwnerDocument().createElementNS(WSU_NAMESPACE, IDENTIFIER_EL_NAME);
+        idElement.setPrefix(WSU_NAMESPACE_PREFIX);
+        idElement.setAttribute("xmlns:" + WSU_NAMESPACE_PREFIX, WSU_NAMESPACE);
+        Text valNode = securityContextTokenEl.getOwnerDocument().createTextNode(value);
+        idElement.appendChild(valNode);
+        securityContextTokenEl.insertBefore(idElement, null);
+    }
 
+    private void writeL7SeqElementToSecurityContextTokenElement(Element securityContextTokenEl, String value) {
+        Element idElement = securityContextTokenEl.getOwnerDocument().createElementNS(L7_NAMESPACE, SEQ_EL_NAME);
+        idElement.setPrefix(L7_NAMESPACE_PREFIX);
+        idElement.setAttribute("xmlns:" + L7_NAMESPACE_PREFIX, L7_NAMESPACE);
+        Text valNode = securityContextTokenEl.getOwnerDocument().createTextNode(value);
+        idElement.appendChild(valNode);
+        securityContextTokenEl.insertBefore(idElement, null);
+    }
 
+    private Element getOrMakeSecurityContextTokenElement(Document soapMsg) {
         NodeList listSecurityElements = soapMsg.getElementsByTagName(SECURITY_CONTEXT_TOKEN_EL_NAME);
         if (listSecurityElements.getLength() < 1) {
             // element does not exist
@@ -132,6 +141,4 @@ public class SecureConversationTokenHandler {
             return (Element)listSecurityElements.item(0);
         }
     }
-
-
 }
