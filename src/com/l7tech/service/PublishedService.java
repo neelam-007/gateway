@@ -8,6 +8,8 @@ package com.l7tech.service;
 
 import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
+import com.l7tech.message.HttpSoapRequest;
+import com.l7tech.message.HttpTransportMetadata;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.FalseAssertion;
@@ -30,7 +32,6 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class PublishedService extends NamedEntityImp {
-
     public PublishedService() {
         setVersion(1);
     }
@@ -48,6 +49,16 @@ public class PublishedService extends NamedEntityImp {
         }
 
         return _rootAssertion;
+    }
+
+    public void ping() throws IOException, WSDLException {
+        InputStream is = null;
+        try {
+            URL url = serviceUrl( null );
+            is = url.openStream();
+        } finally {
+            if ( is != null ) is.close();
+        }
     }
 
     public String getWsdlUrl() {
