@@ -22,13 +22,24 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.soap.*;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.FileNotFoundException;
+import java.io.InputStream;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
 
 /**
  * Class SamlPolicyTest.
- *
+ * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class SamlPolicyTest extends TestCase {
@@ -53,7 +64,7 @@ public class SamlPolicyTest extends TestCase {
         TestSetup wrapper = new TestSetup(suite) {
             /**
              * sets the test environment
-             *
+             * 
              * @throws Exception on error deleting the stub data store
              */
             protected void setUp() throws Exception {
@@ -91,13 +102,16 @@ public class SamlPolicyTest extends TestCase {
         // put tear down code here
     }
 
-    public void testInvokeWithSamlPolicy() throws Exception {
+    public void testSecurityElementCheck() throws Exception {
         for (int i = 0; i < soapRequests.length; i++) {
             MockServletApi servletApi = MockServletApi.defaultMessageProcessor();
             SoapRequestGenerator.SOAPRequest soapRequest = soapRequests[i];
             prepareServicePolicy(new SamlSecurity());
             servletApi.setPublishedService(publishedService);
-            servletApi.setSoapRequest(soapRequest.getSOAPMessage(), soapRequest.getSOAPAction());
+            Document samlHeader = getDocument("com/l7tech/common/security/saml/saml1.xml");
+            SOAPMessage soapMessage = soapRequest.getSOAPMessage();
+            attachAssertionHeader(soapMessage, samlHeader);
+            servletApi.setSoapRequest(soapMessage, soapRequest.getSOAPAction());
             HttpServletRequest mhreq = servletApi.getServletRequest();
             MockHttpServletResponse mhres = new MockHttpServletResponse();
             messageProcessingServlet = new SoapMessageProcessingServlet();
@@ -113,6 +127,104 @@ public class SamlPolicyTest extends TestCase {
         publishedService.setPolicyXml(bo.toString());
         serviceAdmin.savePublishedService(publishedService);
         ServiceCache.getInstance().cache(publishedService);
+    }
+
+    private Document getDocument(String resourceName)
+      throws IOException, ParserConfigurationException, SAXException {
+        ClassLoader cl = getClass().getClassLoader();
+        InputStream is = cl.getResourceAsStream(resourceName);
+        if (is == null) {
+            throw new FileNotFoundException(resourceName);
+        }
+        DocumentBuilderFactory df = DocumentBuilderFactory.newInstance();
+        df.setNamespaceAware(true);
+        return df.newDocumentBuilder().parse(is);
+    }
+
+    private void attachAssertionHeader(SOAPMessage sm, Document assertionDocument)
+      throws SOAPException {
+        SOAPEnvelope envelope = sm.getSOAPPart().getEnvelope();
+        envelope.addNamespaceDeclaration("wsse", "http://schemas.xmlsoap.org/ws/2002/xx/secext");
+        envelope.addNamespaceDeclaration("ds", "http://www.w3.org/2000/09/xmldsig#");
+        SOAPHeader sh = envelope.getHeader();
+        if (sh == null) {
+            sh = envelope.addHeader();
+        }
+        Element domNode = assertionDocument.getDocumentElement();
+        SOAPHeaderElement she = null;
+        SOAPFactory sf = SOAPFactory.newInstance();
+        Name headerName = sf.createName("Security", "wsse", "http://schemas.xmlsoap.org/ws/2002/xx/secext");
+
+        she = sh.addHeaderElement(headerName);
+        Name assertionName = sf.createName(domNode.getLocalName(), domNode.getPrefix(), domNode.getNamespaceURI());
+
+        SOAPElement assertionElement = she.addChildElement(assertionName);
+        domToSOAPElement(assertionElement, domNode);
+    }
+
+    /**
+     * There is no built-in provision in jax-rpc for adding a DOM document object (that
+     * represents an XML document) as a SOAP body subelement in a SOAP message. The document
+     * object needs to be 'unmarshalled' into a javax.xml.soap.SOAPElement object. In other
+     * words a SOAPElement object is constructed from the contents of a DOM object. The
+     * following method, domToSOAPElement(javax.xml.soap.SOAPEnvelope, org.w3c.dom.Node)
+     * performs the 'unmarshalling' of the DOM object and creates an equivalent
+     * javax.xml.soap.SOAPElement object. It basically performs a depth first traversal
+     * of the DOM object's tree, and for each node in the tree creates a
+     * javax.xml.soap.SOAPElement object and populates the SOAPElement with the contents
+     * of the node.
+     * 
+     * @param soapElement the soap element
+     * @param domNode     the domNode to
+     * @return the dom element marshalled into the SOAP
+     * @throws SOAPException on soap error
+     */
+    private SOAPElement domToSOAPElement(SOAPElement soapElement, org.w3c.dom.Node domNode)
+      throws SOAPException {
+
+        //Test that DOMNode is of type org.w3c.dom.Node.ELEMENT_NODE. 
+        if ((domNode.getNodeType()) != org.w3c.dom.Node.ELEMENT_NODE)
+            throw new SOAPException("DOM Node must of type ELEMENT_NODE. received " + domNode.getNodeType());
+
+
+        SOAPFactory sf = SOAPFactory.newInstance();
+
+        if (domNode.hasAttributes()) {
+            NamedNodeMap DOMAttributes = domNode.getAttributes();
+            int noOfAttributes = DOMAttributes.getLength();
+            for (int i = 0; i < noOfAttributes; i++) {
+                org.w3c.dom.Node attr = DOMAttributes.item(i);
+                Name name =
+                  sf.createName(attr.getLocalName(), attr.getPrefix(), attr.getNamespaceURI());
+                soapElement.addAttribute(name, attr.getNodeValue());
+            }
+        }
+
+        if (domNode.hasChildNodes()) {
+            NodeList children = domNode.getChildNodes();
+            for (int i = 0; i < children.getLength(); i++) {
+                org.w3c.dom.Node child = children.item(i);
+
+                switch (child.getNodeType()) {
+                    case org.w3c.dom.Node.PROCESSING_INSTRUCTION_NODE:
+                        break;
+                    case org.w3c.dom.Node.DOCUMENT_TYPE_NODE:
+                        break;
+                    case org.w3c.dom.Node.CDATA_SECTION_NODE:
+                    case org.w3c.dom.Node.COMMENT_NODE:
+                    case org.w3c.dom.Node.TEXT_NODE:
+                        {
+                            soapElement.addTextNode(child.getNodeValue());
+                            break;
+                        }
+                    default:
+                        Name name = sf.createName(child.getLocalName(), child.getPrefix(), child.getNamespaceURI());
+                        soapElement.addChildElement(domToSOAPElement(sf.createElement(name), child));
+                }
+
+            }
+        }
+        return soapElement;
     }
 
     /**
