@@ -1,5 +1,6 @@
 package com.l7tech.server.policy;
 
+import com.l7tech.common.http.HttpHeader;
 import com.l7tech.common.message.HttpServletRequestKnob;
 import com.l7tech.common.message.HttpServletResponseKnob;
 import com.l7tech.common.message.Message;
@@ -34,7 +35,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.rmi.RemoteException;
-import java.security.MessageDigest;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -271,28 +271,12 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
         // Insert Cert-Check-NNN: headers if we can.
         if (username != null && nonce != null) {
-
-            ArrayList checks = findCheckInfos(username);
+            Collection checks = findCheckInfos(username, serverCertificate, nonce);
             for (Iterator i = checks.iterator(); i.hasNext();) {
-                CheckInfo info = (CheckInfo)i.next();
-
+                CertificateCheckInfo info = (CertificateCheckInfo)i.next();
                 if (info != null) {
-                    String hash = null;
-                    if (info.ha1 == null) {
-                        logger.info("Server does not have access to requestor's password and cannot send a cert check.");
-                        hash = SecureSpanConstants.NOPASS;
-                    } else {
-                        MessageDigest md5 = HexUtils.getMd5();
-                        md5.update(info.ha1.getBytes());
-                        md5.update(nonce.getBytes());
-                        md5.update(String.valueOf(info.idProvider).getBytes());
-                        md5.update(serverCertificate);
-                        md5.update(info.ha1.getBytes());
-                        hash = HexUtils.encodeMd5Digest(md5.digest());
-                    }
-
-                    response.addHeader(SecureSpanConstants.HttpHeaders.CERT_CHECK_PREFIX + info.idProvider,
-                      hash + "; " + info.realm);
+                    HttpHeader header = info.asHttpHeader();
+                    response.addHeader(header.getName(), header.getFullValue());
                 }
             }
         }
@@ -352,38 +336,29 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         os.close();
     }
 
-    private class CheckInfo {
-        public CheckInfo(long idp, String h, String r) {
-            idProvider = idp;
-            ha1 = h;
-            realm = r;
-        }
-
-        public final long idProvider;
-        public final String ha1;
-        public final String realm;
-    }
-
     /**
      * Given a username, find all matching users in every registered ID provider
-     * and return the corresponding IdProv OID and H(A1) string.
+     * and return the corresponding {@link com.l7tech.common.util.CertificateCheckInfo} instance.
      *
      * @param username
-     * @return A collection of CheckInfo instances.
-     * @throws FindException if the ID Provider list could not be determined.
+     * @return A collection of {@link CertificateCheckInfo} instances.
+     * @throws com.l7tech.objectmodel.FindException if the ID Provider list could not be determined.
      */
-    private ArrayList findCheckInfos(String username) throws FindException {
+    private Collection findCheckInfos(String username, byte[] certBytes, String nonce) throws FindException {
         IdentityProviderConfigManager configManager = getIdentityProviderConfigManager();
         ArrayList checkInfos = new ArrayList();
+        final String trimmedUsername = username.trim();
 
         Collection idps = configManager.findAllIdentityProviders();
         for (Iterator i = idps.iterator(); i.hasNext();) {
             IdentityProvider provider = (IdentityProvider)i.next();
             try {
-                User user = provider.getUserManager().findByLogin(username.trim());
+                User user = provider.getUserManager().findByLogin(trimmedUsername);
                 if (user != null) {
-                    checkInfos.add(new CheckInfo(provider.getConfig().getOid(),
-                      user.getPassword(), provider.getAuthRealm()));
+                    String password = user.getPassword();
+                    String oid = Long.toString(provider.getConfig().getOid());
+                    String realm = provider.getAuthRealm();
+                    checkInfos.add(new CertificateCheckInfo(certBytes, trimmedUsername, password, nonce, oid, realm));
                 }
             } catch (FindException e) {
                 // Log it and continue
@@ -394,7 +369,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         CustomAssertionsRegistrar car = (CustomAssertionsRegistrar)getApplicationContext().getBean("customAssertionRegistrar");
         try {
             if (car != null && !car.getAssertions(Category.ACCESS_CONTROL).isEmpty()) {
-                checkInfos.add(new CheckInfo(Long.MAX_VALUE, null, null));
+                checkInfos.add(new CertificateCheckInfo(Long.toString(Long.MAX_VALUE), SecureSpanConstants.NOPASS, null));
             }
         } catch (RemoteException e) {
             logger.log(Level.WARNING, "Custom assertions error", e);

@@ -12,7 +12,6 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
@@ -25,8 +24,6 @@ import java.util.List;
  * Download a certificate from the SSG and check it for validity, if possible.
  */
 public class CertificateDownloader {
-    private static final int CHECK_PREFIX_LENGTH = SecureSpanConstants.HttpHeaders.CERT_CHECK_PREFIX.length();
-
     private final SimpleHttpClient httpClient;
     private final URL ssgUrl;
     private final String username;
@@ -51,40 +48,6 @@ public class CertificateDownloader {
         this.ssgUrl = ssgUrl;
         this.username = username;
         this.password = password;
-    }
-
-    private String getHa1(String realm) {
-        MessageDigest md5 = HexUtils.getMd5();
-        md5.update((username == null ? "" : username).getBytes());
-        md5.update(":".getBytes());
-        md5.update((realm == null ? "" : realm).getBytes());
-        md5.update(":".getBytes());
-        md5.update((password == null ? "" : new String(password)).getBytes());
-        return HexUtils.encodeMd5Digest(md5.digest());
-    }
-
-    private class CheckInfo {
-        public String oid;
-        public String digest;
-        public String realm;
-
-        public CheckInfo(String oid, String digest, String realm) {
-            this.oid = oid;
-            this.digest = digest;
-            this.realm = realm;
-        }
-
-        public boolean checkCert() {
-            MessageDigest md5 = HexUtils.getMd5();
-            byte[] ha1 = getHa1(realm).getBytes();
-            md5.update(ha1);
-            md5.update(nonce.getBytes());
-            md5.update(oid.getBytes());
-            md5.update(certBytes);
-            md5.update(ha1);
-            String desiredValue = HexUtils.encodeMd5Digest(md5.digest());
-            return desiredValue.equals(digest);
-        }
     }
 
     /**
@@ -118,28 +81,14 @@ public class CertificateDownloader {
 
         sawNoPass = false;
         for (int i = 0; i < headers.length; i++) {
-            HttpHeader header = headers[i];
-            String key = header.getName();
-            String value = header.getFullValue();
-            if (key == null || key.length() <= CHECK_PREFIX_LENGTH ||
-                    !key.substring(0, CHECK_PREFIX_LENGTH).equalsIgnoreCase(
-                            SecureSpanConstants.HttpHeaders.CERT_CHECK_PREFIX))
-                continue;
-            String idp = key.substring(CHECK_PREFIX_LENGTH);
-            int semiPos = value.indexOf(';');
-            if (semiPos < 0) {
-                // Check header was badly formatted -- continuing
-                continue;
+            CertificateCheckInfo checkInfo = CertificateCheckInfo.parseHttpHeader(headers[i]);
+            if (checkInfo != null) {
+                if (checkInfo.isNoPass()) {
+                    sawNoPass = true;
+                } else {
+                    checks.add(checkInfo);
+                }
             }
-            String hash = value.substring(0, semiPos);
-            String realm = value.substring(semiPos + 1);
-            if (realm.substring(0, 1).equals(" "))
-                realm = realm.substring(1);
-
-            if (SecureSpanConstants.NOPASS.equals(hash))
-                sawNoPass = true;
-            else
-                checks.add(new CheckInfo(idp, hash, realm));
         }
         return cert;
     }
@@ -157,8 +106,8 @@ public class CertificateDownloader {
         if (certBytes == null) throw new IllegalStateException();
 
         for (Iterator i = checks.iterator(); i.hasNext();) {
-            CheckInfo checkInfo = (CheckInfo) i.next();
-            if (checkInfo.checkCert())
+            CertificateCheckInfo certificateCheckInfo = (CertificateCheckInfo) i.next();
+            if (certificateCheckInfo.checkCert(certBytes, username, password, nonce))
                 return true;
         }
 
