@@ -2,6 +2,7 @@ package com.l7tech.server;
 
 import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.FindException;
@@ -54,7 +55,14 @@ public class TokenServiceServlet extends HttpServlet {
             // todo, some error
         }
         TokenService tokenService = new TokenService();
-        Document response = tokenService.respondToRequestSecurityToken(payload, authenticator());
+        Document response = null;
+        try {
+            response = tokenService.respondToRequestSecurityToken(payload, authenticator());
+        } catch (InvalidDocumentFormatException e) {
+            // todo
+        } catch (TokenService.TokenServiceException e) {
+            // todo
+        }
         outputRequestSecurityTokenResponse(response, res);
     }
 
