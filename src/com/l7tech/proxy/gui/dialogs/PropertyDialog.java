@@ -45,7 +45,7 @@ public abstract class PropertyDialog extends JDialog {
         getContentPane().setLayout(new GridBagLayout());
 
         tabbedPane = new JTabbedPane(JTabbedPane.NORTH, JTabbedPane.WRAP_TAB_LAYOUT);
-        tabbedPane.setPreferredSize(new Dimension(400, 450));
+        tabbedPane.setPreferredSize(new Dimension(420, 450));
         getContentPane().add(tabbedPane,
                              new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
                                                     GridBagConstraints.CENTER,
