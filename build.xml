@@ -676,6 +676,13 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
 
         <!-- Unpack WAR -->
 
+        <!--
+            * todo: add the property prompts and environment variables in the install
+            * script for
+            * - jini.server.hostname pointing to the name that the console clients
+            * resovle to
+        -->
+
     </target>
 
     <target name="OFFICIAL-build" depends="init-dev">
