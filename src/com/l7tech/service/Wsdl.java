@@ -3,9 +3,8 @@ package com.l7tech.service;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
-import javax.wsdl.Definition;
-import javax.wsdl.Types;
-import javax.wsdl.WSDLException;
+import javax.wsdl.*;
+import javax.wsdl.extensions.soap.SOAPAddress;
 import javax.wsdl.factory.WSDLFactory;
 import javax.wsdl.xml.WSDLReader;
 import javax.wsdl.xml.WSDLWriter;
@@ -13,6 +12,9 @@ import java.io.Reader;
 import java.io.Writer;
 import java.io.OutputStream;
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.List;
 
 /**
  * <code>Wsdl</code> is the internal object structure for
@@ -117,6 +119,35 @@ public class Wsdl {
         return new Wsdl(reader.readWSDL(documentBaseURI, inputSource));
     }
 
+    /**
+     * Returns the service URI (url) from WSDL <code>Port</code>
+     * instances described in this definition. If there
+     * are multiple <code>Port</code> instances it is arbitrary
+     * as to which port object is returned.
+     * <p>
+     * Note that WS vendors do not support multiple ports and
+     * services per definition too.
+     *
+     * @return the service url or <b>null</b> if service url
+     *         is not found
+     */
+    public String getServiceURI() {
+        for (Iterator it = getServices().iterator(); it.hasNext();) {
+            Service svc = (Service)it.next();
+            for (Iterator ports = svc.getPorts().values().iterator();ports.hasNext();) {
+                Port p = (Port)ports.next();
+                List elements = p.getExtensibilityElements();
+                for (Iterator ite = elements.iterator(); ite.hasNext();) {
+                    Object o = ite.next();
+                    if (o instanceof SOAPAddress) {
+                        SOAPAddress sa = (SOAPAddress)o;
+                        return sa.getLocationURI();
+                    }
+                }
+            }
+        }
+        return null;
+    }
 
     /**
      * @return the collection of WSDL <code>Binding</code>

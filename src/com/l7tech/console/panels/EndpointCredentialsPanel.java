@@ -179,10 +179,11 @@ public class EndpointCredentialsPanel extends WizardStepPanel {
             PublishServiceWizard.ServiceAndAssertion
               sa = (PublishServiceWizard.ServiceAndAssertion)settings;
             PublishedService publishedService = sa.getService();
+
             service.setWsdlUrl(publishedService.getWsdlUrl());
             String text = serviceUrlTextField.getText();
             if (text == null || "".equals(text)) {
-                serviceUrlTextField.setText(service.getWsdlUrl());
+                serviceUrlTextField.setText(sa.getServiceURI());
             }
 
         } catch (MalformedURLException e) {

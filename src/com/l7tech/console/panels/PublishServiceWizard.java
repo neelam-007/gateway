@@ -13,6 +13,7 @@ import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
+import com.l7tech.service.Wsdl;
 
 import javax.swing.*;
 import javax.swing.border.CompoundBorder;
@@ -22,6 +23,7 @@ import javax.swing.border.MatteBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.EventListenerList;
+import javax.wsdl.WSDLException;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.ByteArrayOutputStream;
@@ -58,6 +60,15 @@ public class PublishServiceWizard extends JDialog {
 
         public RoutingAssertion getRoutingAssertion() {
             return routingAssertion;
+        }
+
+        public String getServiceURI() {
+            try {
+                Wsdl wsdl = service.parsedWsdl();
+                if (wsdl !=null) return wsdl.getServiceURI();
+            } catch (WSDLException e) {
+            }
+            return null;
         }
 
         private RoutingAssertion routingAssertion = null;

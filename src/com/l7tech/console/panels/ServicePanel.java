@@ -14,7 +14,6 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.StringReader;
-import java.io.StringWriter;
 import java.net.MalformedURLException;
 import java.rmi.RemoteException;
 
@@ -73,19 +72,18 @@ public class ServicePanel extends WizardStepPanel {
                 isValid = false;
                 notifyListeners();
                 try {
-                    String url =
+                    String wsdlXml =
                       Registry.getDefault().getServiceManager().resolveWsdlTarget(wsdlUrljTextField.getText());
-                    Wsdl wsdl = Wsdl.newInstance(null, new StringReader(url));
+                    Wsdl wsdl = Wsdl.newInstance(null, new StringReader(wsdlXml));
                     TreeNode node = WsdlTreeNode.newInstance(wsdl);
                     wsdlJTree.setModel(new DefaultTreeModel(node));
                     wsdlJTree.setCellRenderer(wsdlTreeRenderer);
 
                     service.setName(wsdl.getDefinition().getTargetNamespace());
                     service.setUrn(wsdl.getDefinition().getTargetNamespace());
-                    StringWriter sw = new StringWriter();
-                    wsdl.toWriter(sw);
-                    service.setWsdlXml(sw.toString());
+                    service.setWsdlXml(wsdlXml);
                     service.setWsdlUrl(wsdlUrljTextField.getText());
+
                     isValid = true;
                     notifyListeners();
                 } catch (RemoteException e1) {
