@@ -43,4 +43,8 @@ public class IntroductionWizardStepPanel extends WizardStepPanel {
     public String getStepLabel() {
         return "Introduction";
     }
+
+    public boolean canFinish() {
+        return false;
+    }
 }
