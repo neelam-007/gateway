@@ -12,7 +12,6 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.jaxen.NamespaceContext;
-import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -23,7 +22,6 @@ import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.logging.Logger;
 
 /**
  * Test <code>XpathEvaluatorTest</code> test the various select/evaluate
