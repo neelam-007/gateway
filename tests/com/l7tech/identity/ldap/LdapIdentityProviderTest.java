@@ -43,6 +43,16 @@ public class LdapIdentityProviderTest extends TestCase {
         return msadTemplate;
     }
 
+    private LdapIdentityProviderConfig getConfigForTimTam() throws IOException {
+        LdapConfigTemplateManager templateManager = new LdapConfigTemplateManager();
+        LdapIdentityProviderConfig msadTemplate = templateManager.getTemplate("TivoliLdap");
+        msadTemplate.setLdapUrl("ldap://192.168.1.120:389");
+        msadTemplate.setSearchBase("DC=IBM,DC=COM");
+        msadTemplate.setBindDN("cn=root");
+        msadTemplate.setBindPasswd("passw0rd");
+        return msadTemplate;
+    }
+
     private LdapIdentityProviderConfig getConfigForOracle() throws IOException {
         LdapConfigTemplateManager templateManager = new LdapConfigTemplateManager();
         LdapIdentityProviderConfig orclTemplate = templateManager.getTemplate("Oracle");
@@ -58,6 +68,12 @@ public class LdapIdentityProviderTest extends TestCase {
         LdapIdentityProvider spock =  new LdapIdentityProvider();
         spock.initialize(getConfigForSpock());
         return spock;
+    }
+
+    private LdapIdentityProvider getTimTamProvider() throws IOException {
+        LdapIdentityProvider timtam =  new LdapIdentityProvider();
+        timtam.initialize(getConfigForTimTam());
+        return timtam;
     }
 
     private LdapIdentityProvider getMSADProvider() throws IOException {
@@ -123,9 +139,9 @@ public class LdapIdentityProviderTest extends TestCase {
 
         //me.localProvider = me.getSpockProvider();
         //me.localProvider = me.getMSADProvider();
-        me.localProvider = me.getOracleProvider();
-
-        me.testAuthenticate("clara", "password");
+        //me.localProvider = me.getOracleProvider();
+        me.localProvider = me.getTimTamProvider();
+        me.testAuthenticate("test_user", "passw0rd");
         me.testGetUsers();
         me.testGetGroupsAndMembers();
     }
