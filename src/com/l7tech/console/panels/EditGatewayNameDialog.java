@@ -265,7 +265,7 @@ public class EditGatewayNameDialog extends JDialog {
                     logger.info("Gateway name changed. Old name: " + oldGatewayName + " , New name: " + newName);
 
                     // update the status message on the Main Window
-                    TopComponents.getInstance().getMainWindow().updateNodeNameInStatusMessage(newName);
+                    TopComponents.getInstance().getMainWindow().updateNodeNameInStatusMessage(oldGatewayName, newName);
 
                 } catch (UpdateException e) {
                     logger.warning("Cannot rename the node: " + oldGatewayName);

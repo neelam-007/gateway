@@ -62,6 +62,7 @@ public class MainWindow extends JFrame {
     public static final String HELP_PATH = "com/l7tech/console/resources/helpset/secure_span_gateway_console_help.hs";
 
     public static final int MAIN_SPLIT_PANE_DIVIDER_SIZE = 10;
+    public static final String CONNECTION_PREFIX = " [connected to node: ";
     /**
      * the resource bundle name
      */
@@ -1851,15 +1852,28 @@ public class MainWindow extends JFrame {
         return statMenuItem;
     }
 
-    public void updateNodeNameInStatusMessage(String nodeName) {
-        getStatusMsgLeft().setText(connectionContext + getNodeNameMsg(nodeName));
+    public void updateNodeNameInStatusMessage(String oldName, String newName) {
+        // extract the node name from the status message
+
+        int startIndex = getStatusMsgLeft().getText().indexOf(CONNECTION_PREFIX);
+        if (startIndex > 0) {
+            String nodeName = getStatusMsgLeft().getText().substring(startIndex+CONNECTION_PREFIX.length(), getStatusMsgLeft().getText().length() - 1);
+
+            if (nodeName.equals(oldName)) {
+                // update the node name only when the nodeName mataches with the oldName
+                getStatusMsgLeft().setText(connectionContext + getNodeNameMsg(newName));
+            }
+        } else {
+            // this should never happen
+            log.severe("Internal error: cannot update the node name on the status bar.");
+        }
     }
 
     private String getNodeNameMsg(String nodeName) {
 
         String nodeNameMsg = "";
         if (nodeName != null) {
-            nodeNameMsg = " [connected to node: " + nodeName + "]";
+            nodeNameMsg = CONNECTION_PREFIX + nodeName + "]";
         }
         return nodeNameMsg;
     }
