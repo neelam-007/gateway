@@ -95,27 +95,33 @@ public class PolicyManagerImpl implements PolicyManager {
 
                 // Make sure we actually have the credentials
                 Ssg ssg = request.getSsg();
-                if (!ssg.isCredentialsConfigured()) {
-                    if (!Managers.getCredentialManager().getCredentials(ssg))
-                        throw new OperationCanceledException("User declined to enter credentials");
-                }
+                if (!ssg.isCredentialsConfigured())
+                    Managers.getCredentialManager().getCredentials(ssg);
 
                 client.getState().setAuthenticationPreemptive(true);
 
                 String username = ssg.getUsername();
                 char[] password = ssg.password();
-                client.getState().setCredentials(null, null, new UsernamePasswordCredentials(username, new String(password)));
-                getMethod = new GetMethod(newUrl);
-                getMethod.setDoAuthentication(true);
-                try {
-                    status = client.executeMethod(getMethod);
-                } catch (SSLHandshakeException e) {
-                    if (e.getCause() instanceof ServerCertificateUntrustedException)
-                        throw (ServerCertificateUntrustedException) e.getCause();
-                    throw e;
+                int attempts = 0;
+                for (;;) {
+                    client.getState().setCredentials(null, null, new UsernamePasswordCredentials(username, new String(password)));
+                    getMethod = new GetMethod(newUrl);
+                    getMethod.setDoAuthentication(true);
+                    try {
+                        status = client.executeMethod(getMethod);
+                        if (status == 401 && ++attempts < 3) {
+                            Managers.getCredentialManager().notifyInvalidCredentials(ssg);
+                            Managers.getCredentialManager().getCredentials(ssg);
+                            continue;
+                        } else
+                            break;
+                    } catch (SSLHandshakeException e) {
+                        if (e.getCause() instanceof ServerCertificateUntrustedException)
+                            throw (ServerCertificateUntrustedException) e.getCause();
+                        throw e;
+                    }
                 }
             }
-            // fla, end of my addition
 
             log.info("Policy download completed with HTTP status " + status);
             Assertion policy = WspReader.parse(getMethod.getResponseBodyAsStream());
