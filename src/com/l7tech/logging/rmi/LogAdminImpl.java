@@ -30,18 +30,53 @@ public class LogAdminImpl extends RemoteService implements LogAdmin {
     }
 
     /**
-     * Retrieve the system logs in between the startMsgNumber and endMsgNumber specified
-     * up to the specified size. This version of getSystemLog is used when the ssm connects
-     * to a ssg cluster that has more than one server. Calls to ClusterStatusAdmin.getClusterStatus
-     * tell the ssm how nodes exist and what their nodeid is.
+     * Retrieve the system logs of a node in between the startMsgNumber and endMsgNumber specified
+     * up to the specified size.
+     *
+     * The design principle of this log retrieval API is to facilitate the client to retrieve the latest
+     * logs up to the number of logs that the client's buffer can hold in an efficient way. Hence, the
+     * retrieval is designed to be done in the reverse order of time. This means that the startMsgNumber
+     * is always greater than the endMsgNumber except for the cases where their value is set to -1.
+     *
+     * Log Retrieval Sequence I (Initial Retrieval):
+     * This is a typical sequence of log retrievals when the client just started and retrieves the logs the first time.
+     * In this case, both the starting and ending points of the logs in the retrieval are unknown.
+     * 1. Initially, the client specifies startMsgNumber=-1 and endMsgNumber=-1 since it has no knowledge of
+     *    the starting and ending points.
+     * 2. After the retrieval succeeded, the client is now able to find the starting point for the next
+     *    block of log retrieval from the logs just retrieved. The smallest message number found in the retrieved
+     *    logs should be used as the startMsgNumber in the next call. The endMsgNumber should still be set to -1.
+     * 3. The client repeats the Step 2 above until:
+     *   i) its allocated buffer is full; or
+     *   ii) the number of logs retrieved is zero.
+     *
+     * Log Retrieval Sequence II (Refresh):
+     * This is a typical sequence of log retrievals for obtaining the latest logs after the initial retrieval
+     * of the logs is done (as described in the Log Retrieval Sequence I above) and there is at least
+     * one log message stored in the client's buffer.
+     * In this case, the client knows the ending message number of the logs to be retrieved. This number is the
+     * greatest message number of the log messages stored in the client's buffer.
+     * 1. The client specifies startMsgNumber=-1 and
+     *    endMsgNumber=<the greatest message number of the log messages stored in the client's buffer>.
+     * 2. After the retrieval succeeded, the client is able to find the starting point for the next
+     *    block of log retrieval from the logs just retrieved. The smallest message number found in the retrieved
+     *    logs should be used as the startMsgNumber in the next call. The same endMsgNumber
+     *    in the Step 1 above should be used.
+     * 3. The client repeats the Step 2 above until:
+     *   i) its allocated buffer is full; or
+     *   ii) the number of logs retrieved is zero.
+     *
+     * To get the information about what nodes exist in the cluster and what their nodeid is,
+     * call the method {@link com.l7tech.cluster.ClusterStatusAdmin#getClusterStatus}.
      *
      * @param nodeid the id of the node for which the logs should be retrieved.
      * @param startMsgNumber the message number to locate the start point.
-     *                       Start from beginning of the message buffer if it equals to -1.
+     *                       Start from beginning of the SecureSpan Gateway message buffer if it equals to -1.
      * @param endMsgNumber   the message number to locate the end point.
-     *                       Retrieve messages until the end of the message buffer is hit if it equals to -1.
+     *                       Retrieve messages until the end of the SecureSpan Gateway message buffer is hit if it equals to -1.
      * @param size  the max. number of messages retrieved
      * @return String[] the array of messages retrieved
+     * @see com.l7tech.cluster.ClusterStatusAdmin#getClusterStatus
      */
     public SSGLogRecord[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, int size) throws RemoteException {
         return delegate.getSystemLog(nodeid, startMsgNumber, endMsgNumber, size);
