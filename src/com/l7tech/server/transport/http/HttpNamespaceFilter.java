@@ -81,7 +81,7 @@ public class HttpNamespaceFilter implements Filter {
         }
 
         RequestDispatcher rd = config.getServletContext().getNamedDispatcher(routerServlet);
-        rd.include(request, response);
+        rd.forward(request, response);
     }
 
     private boolean matches( String prefix, String candidate ) {
