@@ -4,6 +4,7 @@ import com.l7tech.common.gui.IntegerField;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.CertificatePanel;
 import com.l7tech.common.gui.widgets.WrappingLabel;
+import com.l7tech.common.gui.widgets.ContextMenuTextField;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.util.ClientLogger;
 import com.l7tech.proxy.datamodel.Policy;
@@ -274,7 +275,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             int oy = gridY;
             gridY = 0;
 
-            fieldUsername = new JTextField();
+            fieldUsername = new ContextMenuTextField();
             fieldUsername.setPreferredSize(new Dimension(200, 20));
             authp.add(new JLabel("Username:"),
                       new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
@@ -483,7 +484,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                            GridBagConstraints.WEST,
                                            GridBagConstraints.NONE,
                                            new Insets(0, 40, 5, 0), 0, 0));
-            fieldSsgPort = new JTextField("");
+            fieldSsgPort = new ContextMenuTextField("");
             initDfg(fieldSsgPort);
             fieldSsgPort.setDocument(new IntegerField(0, 65535));
             fieldSsgPort.setPreferredSize(new Dimension(50, 20));
@@ -497,7 +498,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                            GridBagConstraints.WEST,
                                            GridBagConstraints.NONE,
                                            new Insets(0, 15, 5, 0), 0, 0));
-            fieldSslPort = new JTextField("");
+            fieldSslPort = new ContextMenuTextField("");
             initDfg(fieldSslPort);
             fieldSslPort.setDocument(new IntegerField(0, 65535));
             fieldSslPort.setPreferredSize(new Dimension(50, 20));
@@ -681,7 +682,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     /** Get the Server URL text field. */
     private JTextField getFieldServerAddress() {
         if (fieldServerAddress == null) {
-            fieldServerAddress = new JTextField();
+            fieldServerAddress = new ContextMenuTextField();
             fieldServerAddress.setPreferredSize(new Dimension(220, 20));
             fieldServerAddress.setToolTipText("<HTML>Gateway hostname or address, for example<br><address>gateway.example.com");
             fieldServerAddress.getDocument().addDocumentListener(new DocumentListener() {
