@@ -15,7 +15,6 @@ import java.security.SecureRandom;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.TimeZone;
 
 /**
  * Appends and parses out xml security session information in/out of soap messages.
@@ -190,7 +189,9 @@ public class SecurityContextTokenHandler {
         Element createdEl = securityCtxTokenEl.getOwnerDocument().createElementNS(WSU_NAMESPACE, CREATED_ELNAME);
         createdEl.setAttribute("xmlns:" + DEF_WSU_PREFIX, WSU_NAMESPACE);
         createdEl.setPrefix(DEF_WSU_PREFIX);
-        String stamp = ISO8601Local.format(new Date(creationTimeStamp));
+        DateFormat dateFormat = new SimpleDateFormat(SoapUtil.DATE_FORMAT_PATTERN);
+        dateFormat.setTimeZone(SoapUtil.DATE_FORMAT_TIMEZONE);
+        String stamp = dateFormat.format(new Date(creationTimeStamp));
         Text valNode = securityCtxTokenEl.getOwnerDocument().createTextNode(stamp);
         createdEl.appendChild(valNode);
         securityCtxTokenEl.insertBefore(createdEl, null);
@@ -229,10 +230,6 @@ public class SecurityContextTokenHandler {
 
     private static final SecureRandom rand = new SecureRandom();
     public static final String URI_PREFIX = "uuid:";
-    private static DateFormat ISO8601Local = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-    static {
-        ISO8601Local.setTimeZone(TimeZone.getTimeZone("UTC"));
-    }
 
     private static final String L7_NAMESPACE = "http://www.layer7tech.com/ws/security";
     private static final String L7_NAMESPACE_PREFIX = "l7";
