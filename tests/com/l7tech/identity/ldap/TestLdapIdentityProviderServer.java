@@ -72,7 +72,7 @@ public class TestLdapIdentityProviderServer extends junit.framework.TestCase {
         Iterator i = res.iterator();
         boolean grpsReceived = false;
         while (i.hasNext()) {
-            LdapGroup group = (LdapGroup)i.next();
+            Group group = (Group)i.next();
             // uncomment if you want to see the content
             //System.out.println(group);
             if (group != null) grpsReceived = true;

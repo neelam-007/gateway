@@ -7,6 +7,7 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import com.l7tech.identity.IdentityProviderType;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.Group;
 
 /**
  * Layer 7 Technologies, inc.
@@ -32,7 +33,7 @@ public class TestLdapGroupManagerServer extends TestCase {
         Collection res = me.findAll();
         Iterator i = res.iterator();
         while (i.hasNext()) {
-            LdapGroup group = (LdapGroup)i.next();
+            Group group = (Group)i.next();
             System.out.println(group);
         }
     }
