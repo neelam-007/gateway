@@ -107,9 +107,9 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
         try {
             PublishedService service = (PublishedService)request.getParameter(Request.PARAM_SERVICE);
             URL url;
-            URL serviceUrl = service.serviceUrl(request);
+            URL wsdlUrl = service.serviceUrl(request);
             if (_protectedServiceUrl == null) {
-                url = serviceUrl;
+                url = wsdlUrl;
             } else {
                 url = new URL(_protectedServiceUrl);
             }
@@ -118,8 +118,8 @@ public class RoutingAssertion extends Assertion implements Cloneable, Serializab
 
             // TODO: Attachments
             postMethod.setRequestHeader(CONTENT_TYPE, TEXT_XML + "; charset=" + ENCODING.toLowerCase());
-            int port = serviceUrl.getPort();
-            StringBuffer hostValue = new StringBuffer(serviceUrl.getHost());
+            int port = wsdlUrl.getPort();
+            StringBuffer hostValue = new StringBuffer(wsdlUrl.getHost());
             if (port != -1) {
                 hostValue.append(":");
                 hostValue.append(port);
