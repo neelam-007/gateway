@@ -81,7 +81,6 @@ public class CertSearchPanel extends JDialog {
         });
 
         trustedCertTable.getTableSorter().addTableModelListener(new TableModelListener() {
-              int counter = 0;
 
               /**
                * This fine grain notification tells listeners the exact range
@@ -89,8 +88,7 @@ public class CertSearchPanel extends JDialog {
                */
               public void tableChanged(TableModelEvent e) {
                   if (e.getType() == TableModelEvent.INSERT) {
-                      counter += e.getLastRow() - e.getFirstRow();
-                      resultCounter.setText("[ " + counter + " objects found]");
+                      resultCounter.setText("[ " + trustedCertTable.getTableSorter().getRealModel().getRowCount() + " objects found]");
                       searchButton.setEnabled(true);
                       stopButton.setEnabled(false);
                   }
