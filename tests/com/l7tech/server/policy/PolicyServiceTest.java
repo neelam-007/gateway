@@ -18,7 +18,9 @@ import com.l7tech.message.TestSoapResponse;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
+import com.l7tech.policy.assertion.RequestXpathAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
+import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
@@ -161,6 +163,34 @@ public class PolicyServiceTest extends TestCase {
         log.info(root.toString());
 
         testwithValidIdentity(root);
+    }
+
+    public void testAnonymousBranch() throws Exception {
+        AllAssertion root = new AllAssertion();
+        OneOrMoreAssertion or = new OneOrMoreAssertion();
+        root.getChildren().add(or);
+
+        AllAssertion branch1 = new AllAssertion();
+        branch1.getChildren().add(new RequestXpathAssertion(new XpathExpression("/anonymousPath")));
+        branch1.getChildren().add(new ResponseWssIntegrity());
+        branch1.setChildren(branch1.getChildren());
+
+        AllAssertion branch2 = new AllAssertion();
+        branch2.getChildren().add(new HttpBasic());
+        branch2.getChildren().add(new SpecificUser(TestIdentityProvider.PROVIDER_ID, "mike", "111", "mike"));
+        branch2.getChildren().add(new RequestXpathAssertion(new XpathExpression("/pathForMikeOnly")));
+        branch2.getChildren().add(new ResponseWssIntegrity());
+        branch2.setChildren(branch2.getChildren());
+
+        or.getChildren().add(branch1);
+        or.getChildren().add(branch2);
+        
+        root.getChildren().add(new HttpRoutingAssertion("http://soap.spacecrocodile.com"));
+        root.setChildren(root.getChildren());
+        or.setChildren(or.getChildren());
+        log.info(root.toString());
+
+        testPolicy(root, null);
     }
 
     private static final String TESTUSER_UID = "666";

@@ -6,6 +6,8 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.CustomAssertionHolder;
+import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.server.filter.FilterManager;
@@ -22,7 +24,11 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.identity.User;
+import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.IdentityProviderType;
+import com.l7tech.objectmodel.FindException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -149,7 +155,7 @@ public class PolicyService {
         }
         logger.finest("Policy requested is " + policyId);
 
-        // Run the policy-policy
+        // get target
         ServiceInfo si = policyGetter.getPolicy(policyId);
         Assertion targetPolicy = si.getPolicy();
         if (targetPolicy == null) {
@@ -170,20 +176,38 @@ public class PolicyService {
             response.setDocument(fault);
             return;
         }
-        ServerAssertion policyPolicy = constructPolicyPolicy(targetPolicy);
-        AssertionStatus status = null;
+
+        // if the policy allows anonymous, skip the meta policy
+        boolean canSkipMetaPolicyStep = false;
         try {
-            status = policyPolicy.checkRequest(request, response);
+            if (policyAllowAnonymous(targetPolicy)) {
+                canSkipMetaPolicyStep = true;
+            } else {
+                logger.fine("The policy does not allow anonymous.");
+            }
         } catch (IOException e) {
-            exceptionToFault(e, response);
-            return;
-        } catch (PolicyAssertionException e) {
             exceptionToFault(e, response);
             return;
         }
 
+        // Run the policy-policy
+        AssertionStatus status = null;
+        if (!canSkipMetaPolicyStep) {
+            logger.fine("Running meta-policy.");
+            ServerAssertion policyPolicy = constructPolicyPolicy(targetPolicy);
+            try {
+                status = policyPolicy.checkRequest(request, response);
+            } catch (IOException e) {
+                exceptionToFault(e, response);
+                return;
+            } catch (PolicyAssertionException e) {
+                exceptionToFault(e, response);
+                return;
+            }
+        }
+
         Document policyDoc = null;
-        if (status == AssertionStatus.NONE) {
+        if (canSkipMetaPolicyStep || status == AssertionStatus.NONE) {
             try {
                 policyDoc = respondToPolicyDownloadRequest(policyId, request.getUser(), policyGetter);
             } catch (FilteringException e) {
@@ -346,6 +370,75 @@ public class PolicyService {
             Assertion a = (Assertion)i.next();
             addIdAssertionToList(a, receptacle);
         }
+    }
+
+    /**
+     * copied from AuthenticatableHttpServlet
+     */
+    protected boolean policyAllowAnonymous(Assertion rootassertion) throws IOException {
+        // logic: a policy allows anonymous if and only if it does not contains any CredentialSourceAssertion
+        // com.l7tech.policy.assertion.credential.CredentialSourceAssertion
+        Iterator it = rootassertion.preorderIterator();
+        boolean allIdentitiesAreFederated = true;
+        while (it.hasNext()) {
+            Assertion a = (Assertion)it.next();
+            if (a instanceof CustomAssertionHolder) {
+                CustomAssertionHolder ca = (CustomAssertionHolder)a;
+                if (Category.ACCESS_CONTROL.equals(ca.getCategory())) {
+                    return true;
+                }
+            } else if (a instanceof IdentityAssertion) {
+                IdentityAssertion ia = (IdentityAssertion)a;
+                final String msg = "Policy refers to a nonexistent identity provider";
+                try {
+                    IdentityProvider provider = IdentityProviderFactory.getProvider(ia.getIdentityProviderOid());
+                    if ( provider == null ) {
+                        logger.warning(msg);
+                        return false;
+                    }
+                    if ( provider.getConfig().type() != IdentityProviderType.FEDERATED ) allIdentitiesAreFederated = false;
+                } catch ( FindException e ) {
+                    logger.warning(msg);
+                    return false;
+                }
+            }
+        }
+
+        if ( allIdentitiesAreFederated ) {
+            // TODO support federated credentials in PolicyServlet
+            logger.info("All IdentityAssertions point to a Federated IDP. Treating as anonymous");
+            return true;
+        }
+
+        if (findCredentialAssertion(rootassertion) != null) {
+            logger.info("Policy does not allow anonymous requests.");
+            return false;
+        }
+        logger.info("Policy does allow anonymous requests.");
+        return true;
+    }
+
+    /**
+     * Look for an assertion extending CredentialSourceAssertion in the assertion passed
+     * and all it's decendents.
+     * Returns null if not there.
+     * (recursive method)
+     * copied from AuthenticatableHttpServlet
+     */
+    private CredentialSourceAssertion findCredentialAssertion(Assertion arg) {
+        if (arg instanceof CredentialSourceAssertion) {
+            return (CredentialSourceAssertion)arg;
+        }
+        if (arg instanceof CompositeAssertion) {
+            CompositeAssertion root = (CompositeAssertion)arg;
+            Iterator i = root.getChildren().iterator();
+            while (i.hasNext()) {
+                Assertion child = (Assertion)i.next();
+                CredentialSourceAssertion res = findCredentialAssertion(child);
+                if (res != null) return res;
+            }
+        }
+        return null;
     }
 
     private final List allCredentialAssertions;
