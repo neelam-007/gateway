@@ -6,7 +6,7 @@
 
 package com.l7tech.skunkworks;
 
-import java.math.BigDecimal;
+import java.io.PrintStream;
 import java.text.NumberFormat;
 
 /**
@@ -16,7 +16,7 @@ public class Birthday {
     public static void main(String[] args) {
         long[] numbers = new long[] {
             1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 15, 20, 30, 40, 50, 100,
-            500, 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000, 10000000
+            500, 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000, 10000000, 50000000, 100000000
         };
         int[] bits = new int[] { 8, 16, 32, 40, 50, 53 };
         double[] fields = new double[bits.length];
@@ -24,30 +24,23 @@ public class Birthday {
 
         NumberFormat nf = NumberFormat.getInstance();
         nf.setMaximumFractionDigits(100);
-        StringBuffer out = new StringBuffer();
-        out.append("||Number");
+        PrintStream out = System.out;
+        out.print("||Number");
         for (int i = 0; i < fields.length; ++i) {
-            out.append("||" + bits[i] + " bits");
+            out.print("||" + bits[i] + " bits");
         }
-        out.append("\n");
+        out.print("\n");
         for (int num = 0; num < numbers.length; ++num) {
             long n = numbers[num];
-            out.append("|" + n);
+            out.print("|" + n);
             for (int i = 0; i < fields.length; ++i) {
-                out.append("|");
-                out.append(nf.format(pbirthday(n, fields[i])));
+                out.print("|");
+                out.print(nf.format(pbirthday(n, fields[i])));
+                out.flush();
             }
-            out.append("\n");
+            out.print("\n");
         }
-
-        System.out.println(out);
-        //long n = 10000000;
-        //System.out.println("For " + n + " samples in field of " + FIELD + ",");
-        //System.out.println("probability of remaining collision-free is " + pbirthday(n, FIELD));
     }
-
-    private static final int NONCE_BITS = 53;
-    private static final double FIELD = Math.pow(2, NONCE_BITS);
 
     /**
      * Compute the probability of encountering a birthday-paradox collision in the specified set.
