@@ -52,7 +52,8 @@ public class ClusterInfoManager {
      * returns the node id to which this server applies to
      */
     public String thisNodeId() {
-        ClusterNodeInfo selfCI = getSelfNodeId();
+        if (selfId != null) return selfId;
+        ClusterNodeInfo selfCI = getSelfNodeInf();
         if (selfCI != null) return selfCI.getMac();
         return null;
     }
@@ -64,7 +65,7 @@ public class ClusterInfoManager {
      */
     public void updateSelfStatus(double avgLoad) throws UpdateException {
         long now = System.currentTimeMillis();
-        ClusterNodeInfo selfCI = getSelfNodeId();
+        ClusterNodeInfo selfCI = getSelfNodeInf();
         if (selfCI != null) {
             selfCI.setAvgLoad(avgLoad);
             selfCI.setLastUpdateTimeStamp(now);
@@ -115,7 +116,7 @@ public class ClusterInfoManager {
      */
     public void updateSelfUptime() throws UpdateException {
         long newuptimevalue = System.currentTimeMillis();
-        ClusterNodeInfo selfCI = getSelfNodeId();
+        ClusterNodeInfo selfCI = getSelfNodeInf();
         if (selfCI != null) {
             selfCI.setUptime(newuptimevalue);
             selfCI.setLastUpdateTimeStamp(newuptimevalue);
@@ -163,7 +164,7 @@ public class ClusterInfoManager {
     /**
      * determines this node's nodeid value
      */
-    private synchronized ClusterNodeInfo getSelfNodeId() {
+    private synchronized ClusterNodeInfo getSelfNodeInf() {
         if (selfId != null) {
             return getNodeStatusFromDB(selfId);
         } else {
