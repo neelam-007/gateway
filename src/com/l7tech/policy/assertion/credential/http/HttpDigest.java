@@ -24,8 +24,10 @@ public class HttpDigest extends HttpCredentialSourceAssertion {
     public static final String PARAM_NC = "nc";
     public static final String PARAM_URI = "uri";
     public static final String PARAM_OPAQUE = "opaque";
+    public static final String PARAM_METHOD = "method";
 
     public static final String SCHEME = "Digest";
+    public static final String REALM = "L7SSGDigestRealm";
 
     // Some values that are commonly found in Authorization and WWW-Authenticate headers
     public static final String QOP_AUTH = "auth";
