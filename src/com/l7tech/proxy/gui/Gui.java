@@ -131,6 +131,17 @@ public class Gui {
 
     private ShutdownListener ShutdownListener;
 
+    /**
+     * Shut down the GUI.  The actual shutdown will occur asynchronously, on the Swing thread.
+     */
+    public void stop() {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                closeFrame();
+            }
+        });
+    }
+
     /** Shut down the GUI. */
     private void closeFrame() {
         if (messageViewer != null) {
