@@ -22,6 +22,7 @@ import java.security.SecureRandom;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * Holds request state while the client proxy is processing it.
@@ -332,6 +333,8 @@ public class PendingRequest {
 
     private void establishSecureConversationSession() {
         // TODO establish session
+        log.log(Level.INFO, "Establishing new WS-SecureConversation session with Gateway " + ssg.toString());
+        log.log(Level.WARNING, "Warning: token server and client not implemented yet; using hardcoded session parameters");
         ssg.secureConversationId("http://www.l7tech.com/uuid/sessionid/123");
         ssg.secureConversationSharedSecret(new byte[] {5,2,4,5,
                                                        8,7,9,6,
