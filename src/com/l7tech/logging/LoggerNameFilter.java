@@ -122,8 +122,10 @@ public class LoggerNameFilter implements Filter, PropertyChangeListener {
         List list = Arrays.asList(val.split(","));
         List out = new ArrayList();
         for (Iterator iterator = list.iterator(); iterator.hasNext();) {
-            String s = (String)iterator.next();
-            out.add(s.trim());
+            String s = iterator.next().toString().trim();
+            if (s.length() > 0) {
+                out.add(s);
+            }
         }
         return (String[])out.toArray(new String[]{});
     }
