@@ -16,6 +16,7 @@ import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
 import com.l7tech.proxy.datamodel.exceptions.ResponseValidationException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
+import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.util.ClientLogger;
 import org.xml.sax.SAXException;
@@ -41,7 +42,7 @@ public class ClientOneOrMoreAssertion extends ClientCompositeAssertion {
      * @param req
      * @return the AssertionStatus.NONE if at least one child succeeded; the rightmost-child error otherwise.
      */
-    public AssertionStatus decorateRequest(PendingRequest req) throws OperationCanceledException, BadCredentialsException, GeneralSecurityException, IOException, ClientCertificateException, SAXException, KeyStoreCorruptException {
+    public AssertionStatus decorateRequest(PendingRequest req) throws OperationCanceledException, BadCredentialsException, GeneralSecurityException, IOException, ClientCertificateException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException {
         try {
             data.mustHaveChildren();
         } catch (PolicyAssertionException e) {

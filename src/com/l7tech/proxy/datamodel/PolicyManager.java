@@ -9,6 +9,7 @@ package com.l7tech.proxy.datamodel;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 
 import java.io.IOException;
@@ -39,5 +40,5 @@ public interface PolicyManager {
      * @throws IOException if there was a problem getting the policy from the server
      * @throws com.l7tech.proxy.datamodel.exceptions.OperationCanceledException if the user canceled the login dialog
      */
-    void updatePolicy(PendingRequest request, URL policyUrl) throws ConfigurationException, IOException, ServerCertificateUntrustedException, OperationCanceledException;
+    void updatePolicy(PendingRequest request, URL policyUrl) throws ConfigurationException, IOException, ServerCertificateUntrustedException, OperationCanceledException, HttpChallengeRequiredException;
 }

@@ -9,6 +9,7 @@ import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgFinder;
 import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
+import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.proxy.util.ClientLogger;
 import com.l7tech.common.xml.Wsdl;
@@ -26,10 +27,13 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.PasswordAuthentication;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
+
+import sun.misc.BASE64Decoder;
 
 /**
  * Handle an incoming HTTP request, and proxy it if it's a SOAP request we know how to deal with.
@@ -155,19 +159,56 @@ public class RequestHandler extends AbstractHttpHandler {
         }
 
         PendingRequest pendingRequest;
+        String reqUsername = null;
+        String reqPassword = null;
+        if (ssg.isChainCredentialsFromClient()) {
+            String authHeader = request.getField("Authorization");
+            if (authHeader != null && "Basic ".equalsIgnoreCase(authHeader.substring(0, 6))) {
+                byte[] authStuff = new BASE64Decoder().decodeBuffer(authHeader.substring(6));
+                for (int i = 0; i < authStuff.length - 1; ++i) {
+                    if (authStuff[i] == ':') {
+                        reqUsername = new String(authStuff, 0, i);
+                        reqPassword = new String(authStuff, i + 1, authStuff.length - i - 1);
+                    }
+                }
+            } else {
+                sendChallenge(response);
+                log.info("Send HTTP Basic auth challenge back to the client");
+                return;
+            }
+        }
+
         try {
             // TODO: PERF: this XML parsing is causing a performance bottleneck
             Document envelope = XmlUtil.parse(request.getInputStream());
             pendingRequest = gatherRequest(request, envelope, ssg);
+            if (ssg.isChainCredentialsFromClient())
+                pendingRequest.setCredentials(new PasswordAuthentication(reqUsername, reqPassword.toCharArray()));
             interceptor.onReceiveMessage(pendingRequest);
         } catch (Exception e) {
             interceptor.onMessageError(e);
             throw new HttpException(500, "Invalid SOAP envelope: " + e);
         }
 
-        SsgResponse responseString = getServerResponse(pendingRequest);
+        SsgResponse responseString = null;
+        try {
+            responseString = getServerResponse(pendingRequest);
+        } catch (HttpChallengeRequiredException e) {
+            interceptor.onMessageError(e);
+            sendChallenge(response);
+            log.info("Send HTTP Basic auth challenge back to the client");
+        }
 
         transmitResponse(response, responseString);
+    }
+
+    private void sendChallenge(HttpResponse response) throws IOException {
+        response.addField("WWW-Authenticate", "Basic realm=\"SecureSpan Agent\"");
+        response.setReason("Unauthorized");
+        response.addField("Content-Type", "text/html");
+        response.setStatus(401);
+        response.getOutputStream().write("<title>A username and password are required</title>A username and password are required.".getBytes());
+        response.commit();
     }
 
     /**
@@ -261,7 +302,7 @@ public class RequestHandler extends AbstractHttpHandler {
      * @throws HttpException    if there was Trouble
      */
     private SsgResponse getServerResponse(PendingRequest request)
-            throws HttpException
+            throws HttpException, HttpChallengeRequiredException
     {
         log.info("Processing message to Gateway " + request.getSsg());
 
@@ -270,6 +311,8 @@ public class RequestHandler extends AbstractHttpHandler {
             interceptor.onReceiveReply(reply);
             log.info("Returning result");
             return reply;
+        } catch (HttpChallengeRequiredException e) {
+            throw e;
         } catch (Exception e) {
             log.error(e);
             e.printStackTrace(System.err);

@@ -68,6 +68,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     private JButton clientCertButton;
     private JButton serverCertButton;
     private JCheckBox cbSavePassword;
+    private JCheckBox cbChainFromClient;
 
     //   View for Network pane
     private JComponent networkPane;
@@ -304,7 +305,20 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                       new GridBagConstraints(1, gridY++, 1, 1, 0.0, 0.0,
                                              GridBagConstraints.WEST,
                                              GridBagConstraints.NONE,
-                                             new Insets(5, 5, 5, 0), 0, 0));
+                                             new Insets(5, 5, 0, 0), 0, 0));
+
+            cbChainFromClient = new JCheckBox("Use credentials from client (HTTP Basic)");
+            cbChainFromClient.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    updateIdentityEnableState();
+                }
+            });
+
+            authp.add(cbChainFromClient,
+                      new GridBagConstraints(1, gridY++, 1, 1, 0.0, 0.0,
+                                             GridBagConstraints.WEST,
+                                             GridBagConstraints.NONE,
+                                             new Insets(0, 5, 5, 0), 0, 0));
 
             gridY = oy;
 
@@ -342,7 +356,20 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                             new Insets(0, 0, 0, 0), 0, 0));
 
         }
+
         return identityPane;
+    }
+
+    private void updateIdentityEnableState() {
+        if (cbChainFromClient.isSelected()) {
+            cbSavePassword.setEnabled(false);
+            fieldUsername.setEditable(false);
+            fieldPassword.setEditable(false);
+        } else {
+            cbSavePassword.setEnabled(true);
+            fieldPassword.setEditable(true);
+            fieldUsername.setEditable(lookupClientCertUsername(ssg) == null);
+        }
     }
 
     private JComponent getNetworkPane() {
@@ -658,17 +685,9 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             fieldServerAddress.setPreferredSize(new Dimension(220, 20));
             fieldServerAddress.setToolTipText("<HTML>Gateway hostname or address, for example<br><address>gateway.example.com");
             fieldServerAddress.getDocument().addDocumentListener(new DocumentListener() {
-                public void insertUpdate(DocumentEvent e) {
-                    checkOk();
-                }
-
-                public void removeUpdate(DocumentEvent e) {
-                    checkOk();
-                }
-
-                public void changedUpdate(DocumentEvent e) {
-                    checkOk();
-                }
+                public void  insertUpdate(DocumentEvent e) { checkOk(); }
+                public void  removeUpdate(DocumentEvent e) { checkOk(); }
+                public void changedUpdate(DocumentEvent e) { checkOk(); }
             });
         }
         return fieldServerAddress;
@@ -685,6 +704,28 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
     private boolean isPortsCustom(Ssg ssg) {
         return referenceSsg.getSsgPort() != ssg.getSsgPort() || referenceSsg.getSslPort() != ssg.getSslPort();
+    }
+
+    /** Return the username in our client certificate, or null if we don't have an active client cert. */
+    private String lookupClientCertUsername(Ssg ssg) {
+        try {
+            if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
+                X509Certificate cert = null;
+                cert = SsgKeyStoreManager.getClientCert(ssg);
+                X500Principal certName = new X500Principal(cert.getSubjectDN().toString());
+                String certNameString = certName.getName(X500Principal.CANONICAL);
+                return certNameString.substring(3);
+            }
+        } catch (KeyStoreCorruptException e) {
+            try {
+                Managers.getCredentialManager().notifyKeyStoreCorrupt(ssg);
+                SsgKeyStoreManager.deleteKeyStore(ssg);
+                // FALLTHROUGH -- continue, with newly-blank keystore
+            } catch (OperationCanceledException e1) {
+                // FALLTHROUGH -- continue, pretending we had no keystore
+            }
+        }
+        return null;
     }
 
     /** Set the Ssg object being edited by this panel. */
@@ -708,26 +749,15 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             radioStandardPorts.setSelected(!customPorts);
             radioNonstandardPorts.setSelected(customPorts);
             cbSavePassword.setSelected(ssg.isSavePasswordToDisk());
-            updateCustomPortsEnableState();
+            cbChainFromClient.setSelected(ssg.isChainCredentialsFromClient());
             cbUseSslByDefault.setSelected(ssg.isUseSslByDefault());
+            updateCustomPortsEnableState();
+            updateIdentityEnableState();
 
-            try {
-                if (SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
-                    X509Certificate cert = null;
-                    cert = SsgKeyStoreManager.getClientCert(ssg);
-                    X500Principal certName = new X500Principal(cert.getSubjectDN().toString());
-                    String certNameString = certName.getName(X500Principal.CANONICAL);
-                    fieldUsername.setText(certNameString.substring(3));
+            String clientCertUsername = lookupClientCertUsername(ssg);
+            if (clientCertUsername != null) {
+                    fieldUsername.setText(clientCertUsername);
                     fieldUsername.setEditable(false);
-                }
-            } catch (KeyStoreCorruptException e) {
-                try {
-                    Managers.getCredentialManager().notifyKeyStoreCorrupt(ssg);
-                    SsgKeyStoreManager.deleteKeyStore(ssg);
-                    // FALLTHROUGH -- continue, with newly-blank keystore
-                } catch (OperationCanceledException e1) {
-                    // FALLTHROUGH -- continue, pretending we had no keystore
-                }
             }
 
             updatePolicyPanel();
@@ -746,6 +776,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             ssg.setUsername(fieldUsername.getText().trim());
             ssg.setSavePasswordToDisk(cbSavePassword.isSelected());
             ssg.setUseSslByDefault(cbUseSslByDefault.isSelected());
+            ssg.setChainCredentialsFromClient(cbChainFromClient.isSelected());
 
             // We'll treat a blank password as though it's unconfigured.  If the user really needs to use
             // a blank password to access a service, he can leave the password field blank in the logon
@@ -765,7 +796,6 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 ssg.setSsgPort(referenceSsg.getSsgPort());
                 ssg.setSslPort(referenceSsg.getSslPort());
             }
-
             if (policyFlushRequested)
                 ssg.clearPolicies();
         }

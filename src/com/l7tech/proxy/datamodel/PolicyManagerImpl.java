@@ -13,6 +13,7 @@ import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.util.ClientLogger;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
+import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpState;
@@ -68,7 +69,7 @@ public class PolicyManagerImpl implements PolicyManager {
      * @throws com.l7tech.proxy.datamodel.exceptions.OperationCanceledException if credentials were required, but the user canceled the logon dialog
      */
     public void updatePolicy(PendingRequest request, URL policyUrl)
-            throws ConfigurationException, IOException, ServerCertificateUntrustedException, OperationCanceledException
+            throws ConfigurationException, IOException, ServerCertificateUntrustedException, OperationCanceledException, HttpChallengeRequiredException
     {
         HttpClient client = new HttpClient();
         HttpState state = client.getState();

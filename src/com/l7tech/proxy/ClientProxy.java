@@ -12,6 +12,7 @@ import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
+import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.proxy.ssl.ClientProxyKeyManager;
 import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
@@ -288,7 +289,7 @@ public class ClientProxy {
      */
     public void obtainClientCertificate(PendingRequest request)
             throws  ServerCertificateUntrustedException, GeneralSecurityException, IOException,
-                    OperationCanceledException, BadCredentialsException
+                    OperationCanceledException, BadCredentialsException, HttpChallengeRequiredException
     {
         Ssg ssg = request.getSsg();
         KeyPair keyPair;

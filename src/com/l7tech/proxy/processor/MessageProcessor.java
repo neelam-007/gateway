@@ -30,6 +30,7 @@ import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.PolicyRetryableException;
 import com.l7tech.proxy.datamodel.exceptions.ResponseValidationException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
+import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import com.l7tech.proxy.ssl.HostnameMismatchException;
 import com.l7tech.proxy.util.CannedSoapFaults;
 import com.l7tech.proxy.util.ClientLogger;
@@ -96,11 +97,12 @@ public class MessageProcessor {
      * @throws IOException                  if a certificate could not be saved to disk
      * @throws SAXException                 if the client request needed to be parsed and wasn't well-formed XML
      * @throws ResponseValidationException  if the response was signed, but the signature did not validate
+     * @throws HttpChallengeRequiredException if an HTTP 401 should be sent back to the client
      */
     public SsgResponse processMessage(PendingRequest req)
             throws ClientCertificateException, OperationCanceledException,
             ConfigurationException, GeneralSecurityException, IOException, SAXException,
-            ResponseValidationException
+            ResponseValidationException, HttpChallengeRequiredException
     {
         Ssg ssg = req.getSsg();
 
@@ -141,8 +143,12 @@ public class MessageProcessor {
 
     private void handleBadCredentialsException(Ssg ssg, PendingRequest req, BadCredentialsException e)
             throws KeyStoreCorruptException, IOException, OperationCanceledException, ConfigurationException,
-                   KeyStoreException, NoSuchAlgorithmException, NoSuchProviderException, KeyManagementException
+                   KeyStoreException, NoSuchAlgorithmException, NoSuchProviderException, KeyManagementException, HttpChallengeRequiredException
+
     {
+        if (ssg.isChainCredentialsFromClient())
+            throw new HttpChallengeRequiredException(e);
+
         // If we have a client cert, and the current password worked to decrypt it's private key, but something
         // has rejected the password anyway, we need to reestablish the validity of this account with the SSG.
         if (SsgKeyStoreManager.isClientCertAvailabile(ssg) && SsgKeyStoreManager.isPasswordWorkedForPrivateKey(ssg)) {
@@ -239,7 +245,7 @@ public class MessageProcessor {
      * @throws ServerCertificateUntrustedException  if the Ssg certificate needs to be (re)imported.
      */
     private Policy enforcePolicy(PendingRequest req)
-            throws OperationCanceledException, GeneralSecurityException, BadCredentialsException, IOException, SAXException, ClientCertificateException, KeyStoreCorruptException
+            throws OperationCanceledException, GeneralSecurityException, BadCredentialsException, IOException, SAXException, ClientCertificateException, KeyStoreCorruptException, HttpChallengeRequiredException
     {
         Policy policy = policyManager.getPolicy(req);
         if (policy == null) {
@@ -333,7 +339,7 @@ public class MessageProcessor {
      */
     private SsgResponse obtainResponse(PendingRequest req, Policy policy)
             throws ConfigurationException, IOException, PolicyRetryableException, ServerCertificateUntrustedException,
-            OperationCanceledException, ClientCertificateException, BadCredentialsException, KeyStoreCorruptException
+            OperationCanceledException, ClientCertificateException, BadCredentialsException, KeyStoreCorruptException, HttpChallengeRequiredException
     {
         URL url = getUrl(req);
         Ssg ssg = req.getSsg();

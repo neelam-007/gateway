@@ -13,6 +13,7 @@ import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
+import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
 import org.w3c.dom.Document;
 
 import java.net.URL;
@@ -77,13 +78,20 @@ public class PendingRequest {
         soapEnvelope = initialEnvelope;
     }
 
+    /** Manually set the credentials to use throughout this request. */
+    public void setCredentials(PasswordAuthentication pw) {
+        this.pw = pw;
+    }
+
     /**
      * Assert that credentials must be available to continue processing this request,
      * but that the existing ones were found to be no good.  Other than first throwing out
      * any existing configured credentials and displaying an error message,
      * this behaves like gatherCredentials().
      */
-    public PasswordAuthentication getNewCredentials() throws OperationCanceledException {
+    public PasswordAuthentication getNewCredentials() throws OperationCanceledException, HttpChallengeRequiredException {
+        if (ssg.isChainCredentialsFromClient())
+            throw new HttpChallengeRequiredException("Invalid username or password");
         return this.pw = credentialManager.getNewCredentials(ssg);
     }
 
