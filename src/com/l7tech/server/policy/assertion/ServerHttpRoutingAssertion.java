@@ -140,9 +140,8 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 // TODO: Attachments
                 if(request.isMultipart()) {
                     postMethod.setRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.MULTIPART_CONTENT_TYPE +
-                            "; type=" + XmlUtil.TEXT_XML +
-                            "; charset=" + ENCODING.toLowerCase() +
-                            "; " + XmlUtil.MULTIPART_BOUNDARY + "=" + request.getMultipartBoundary());
+                            "; type=\"" + XmlUtil.TEXT_XML + "\"" +
+                            "; " + XmlUtil.MULTIPART_BOUNDARY + "=\"" + request.getMultipartBoundary()  + "\"");
                 } else {
                     postMethod.setRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML + "; charset=" + ENCODING.toLowerCase());
                 }
@@ -240,15 +239,21 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
                 if(request.isMultipart()) {
                     StringBuffer sb = new StringBuffer();
-                    sb.append(request.getMultipartBoundary() + "\n");
-                    //sb.append(XmlUtil.CONTENT_TYPE + ": " + XmlUtil.TEXT_XML + "; charset=" + ENCODING.toLowerCase() + "\n");
+                    sb.append(XmlUtil.MULTIPART_BOUNDARY_PREFIX + request.getMultipartBoundary() + "\n");
+
                     Message.Part soapPart = request.getSoapPart();
                     Map headerMap = soapPart.getHeaders();
                     Set headerKeys = headerMap.keySet();
                     Iterator headerItr = headerKeys.iterator();
                     while(headerItr.hasNext()) {
                         Message.HeaderValue headerValue = (Message.HeaderValue) headerMap.get(headerItr.next());
-                        sb.append(headerValue.getName()).append("=").append(headerValue.getValue()).append("\n");
+                        if(headerValue.getName().equals(XmlUtil.CONTENT_TYPE)) {
+                            // replace the content type of the SOAP part with the one we use
+                            sb.append(XmlUtil.CONTENT_TYPE + ": " + XmlUtil.TEXT_XML +
+                                                        "; charset=\"" + ENCODING.toLowerCase() + "\"\n");
+                        } else {
+                            sb.append(headerValue.getName()).append("=").append(headerValue.getValue()).append("\n");
+                        }
                     }
                     sb.append(requestXml).append("\n");
                     postMethod.setRequestBody(addAttachments(sb.toString(), request));
@@ -338,7 +343,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             Object o = (Object) itr.next();
             Message.Part part = (Message.Part) attachments.get(o);
 
-            sb.append("\n" + request.getMultipartBoundary() + "\n");
+            sb.append("\n" + XmlUtil.MULTIPART_BOUNDARY_PREFIX + request.getMultipartBoundary() + "\n");
 
             Map headers = part.getHeaders();
             Set headerKeys = headers.keySet();

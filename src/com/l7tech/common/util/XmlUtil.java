@@ -34,6 +34,7 @@ public class XmlUtil {
     public static final String MULTIPART_CONTENT_TYPE = "multipart/related";
     public static final String MULTIPART_TYPE = "type";
     public static final String MULTIPART_BOUNDARY = "boundary";
+    public static final String MULTIPART_BOUNDARY_PREFIX = "--";
     public static final String CONTENT_TYPE = "Content-Type";
     public static final String CONTENT_ID = "Content-Id";
     public static final String TEXT_XML = "text/xml";
