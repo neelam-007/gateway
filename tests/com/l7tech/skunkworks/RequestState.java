@@ -17,6 +17,7 @@ import java.io.Serializable;
  */
 public class RequestState implements Serializable {
     private static int n = 0;
+    public static final RequestState IDLE                   = new RequestState(n++, "Idle");
     public static final RequestState CLIENT_RECEIVING_WAIT  = new RequestState(n++, "Waiting for request from client");
     public static final RequestState CLIENT_RECEIVING_READ  = new RequestState(n++, "Receiving request from client");
     public static final RequestState SSG_PROCESSING         = new RequestState(n++, "Processing policy");
@@ -27,7 +28,8 @@ public class RequestState implements Serializable {
     public static final RequestState CLIENT_SENDING_WAIT    = new RequestState(n++, "Waiting to send response to client");
     public static final RequestState CLIENT_SENDING_WRITE   = new RequestState(n++, "Sending response to client");
 
-    private static final RequestState[] VALUES = { CLIENT_RECEIVING_WAIT,
+    private static final RequestState[] VALUES = { IDLE,
+                                                   CLIENT_RECEIVING_WAIT,
                                                    CLIENT_RECEIVING_READ,
                                                    SSG_PROCESSING,
                                                    SERVICE_SENDING_WAIT,
