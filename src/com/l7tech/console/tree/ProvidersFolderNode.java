@@ -16,6 +16,8 @@ import java.util.Enumeration;
  */
 public class ProvidersFolderNode extends AbstractTreeNode {
     IdentityProviderConfigManager manager;
+    public static String NAME = "Identity providers";
+
     /**
      * construct the <CODE>ProvidersFolderNode</CODE> instance.
      */
@@ -76,7 +78,7 @@ public class ProvidersFolderNode extends AbstractTreeNode {
      * @return the FQ name as a String
      */
     public String getName() {
-        return "Identity providers";
+        return NAME;
     }
 
     /**

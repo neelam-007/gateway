@@ -2,13 +2,11 @@ package com.l7tech.console;
 
 import com.incors.plaf.kunststoff.KunststoffLookAndFeel;
 import com.incors.plaf.kunststoff.themes.KunststoffDesktopTheme;
+import com.l7tech.adminws.ClientCredentialManager;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.Locator;
-import com.l7tech.console.action.AboutAction;
-import com.l7tech.console.action.ConsoleAction;
-import com.l7tech.console.action.FindIdentityAction;
-import com.l7tech.console.action.HomeAction;
+import com.l7tech.console.action.*;
 import com.l7tech.console.event.ConnectionEvent;
 import com.l7tech.console.event.ConnectionListener;
 import com.l7tech.console.event.WeakEventListenerList;
@@ -19,7 +17,6 @@ import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.ProgressBar;
 import com.l7tech.console.util.Registry;
-import com.l7tech.adminws.ClientCredentialManager;
 
 import javax.help.HelpBroker;
 import javax.help.HelpSet;
@@ -29,6 +26,7 @@ import javax.swing.border.Border;
 import javax.swing.event.EventListenerList;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
+import javax.swing.tree.DefaultMutableTreeNode;
 import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
@@ -40,10 +38,6 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Dictionary;
-import java.util.Hashtable;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 
 
 /**
@@ -62,7 +56,7 @@ public class MainWindow extends JFrame {
     /** the resource bundle name */
     private static
     ResourceBundle resapplication =
-            java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
+      java.util.ResourceBundle.getBundle("com.l7tech.console.resources.console");
 
     private JMenuBar mainJMenuBar = null;
     private JMenu fileMenu = null;
@@ -76,10 +70,6 @@ public class MainWindow extends JFrame {
     private JMenuItem exitMenuItem = null;
     private JMenuItem menuItemPref = null;
 
-    private JMenu newMenu = null;
-//  private JMenuItem editMenuItem = null;
-    private JMenuItem deleteMenuItem = null;
-
     private JMenuItem helpTopicsMenuItem = null;
 
     private Action refreshAction = null;
@@ -89,10 +79,10 @@ public class MainWindow extends JFrame {
     private Action removeNodeAction = null;
     private Action connectAction = null;
     private Action disconnectAction = null;
-    private Action logRefreshAction = null;
-
     private Action toggleStatusBarAction = null;
     private Action toggleShowLogAction = null;
+    private Action publishServiceAction = null;
+
 
     private JPanel frameContentPane = null;
     private JPanel mainPane = null;
@@ -126,6 +116,9 @@ public class MainWindow extends JFrame {
     private EventListenerList listenerList = new WeakEventListenerList();
     // cached credential manager
     private ClientCredentialManager credentialManager;
+    private Action newInernalUserAction;
+    private Action newInernalGroupAction;
+    private Action newProviderAction;
 
     /**
      * MainWindow constructor comment.
@@ -161,7 +154,7 @@ public class MainWindow extends JFrame {
         ConnectionEvent event = new ConnectionEvent(this, ConnectionEvent.CONNECTED);
         EventListener[] listeners = listenerList.getListeners(ConnectionListener.class);
         for (int i = 0; i < listeners.length; i++) {
-            ((ConnectionListener) listeners[i]).onConnect(event);
+            ((ConnectionListener)listeners[i]).onConnect(event);
         }
     }
 
@@ -173,7 +166,7 @@ public class MainWindow extends JFrame {
         ConnectionEvent event = new ConnectionEvent(this, ConnectionEvent.DISCONNECTED);
         EventListener[] listeners = listenerList.getListeners(ConnectionListener.class);
         for (int i = 0; i < listeners.length; i++) {
-            ((ConnectionListener) listeners[i]).onDisconnect(event);
+            ((ConnectionListener)listeners[i]).onDisconnect(event);
         }
     }
 
@@ -243,34 +236,6 @@ public class MainWindow extends JFrame {
         return exitMenuItem;
     }
 
-    /**
-     * Return the newMenu property value.
-     * @return JMenuItem
-     */
-    private JMenu getNewMenu() {
-        if (newMenu == null) {
-            newMenu = new JMenu();
-            newMenu.setText(resapplication.getString("New_MenuItem_text"));
-        }
-        return newMenu;
-    }
-
-
-    /**
-     * Return the deleteMenuItem property value.
-     * @return JMenuItem
-     */
-    private JMenuItem getDeleteMenuItem() {
-        if (deleteMenuItem == null) {
-            deleteMenuItem = new JMenuItem(getRemoveNodeAction());
-            deleteMenuItem.setIcon(null);
-            int mnemonic = 'X';
-            deleteMenuItem.setMnemonic(mnemonic);
-            deleteMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.CTRL_MASK));
-        }
-        return deleteMenuItem;
-    }
-
 
     /**
      * Return the helpTopicsMenuItem property value.
@@ -315,17 +280,17 @@ public class MainWindow extends JFrame {
         if (editMenu == null) {
             editMenu = new JMenu();
             editMenu.setText(resapplication.getString("Edit"));
-            editMenu.add(getNewMenu());
-
-            editMenu.add(getDeleteMenuItem());
-/*      editMenu.add(getCopyMenuItem());
-      editMenu.add(getPasteMenuItem());*/
-            //editMenu.addSeparator();
+            editMenu.add(getPublishServiceAction());
+            editMenu.addSeparator();
+            editMenu.add(getNewInternalUserAction());
+            editMenu.add(getNewInternalGroupAction());
+            editMenu.add(getNewProviderAction());
             int mnemonic = editMenu.getText().toCharArray()[0];
             editMenu.setMnemonic(mnemonic);
         }
         return editMenu;
     }
+
 
     /**
      * Return the viewMenu property value.
@@ -356,7 +321,7 @@ public class MainWindow extends JFrame {
         logItem.setEnabled(false);
 
         final JCheckBoxMenuItem jcm =
-                new JCheckBoxMenuItem(getToggleStatusBarToggleAction());
+          new JCheckBoxMenuItem(getToggleStatusBarToggleAction());
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 try {
@@ -419,16 +384,16 @@ public class MainWindow extends JFrame {
         String atext = resapplication.getString("ConnectMenuItem_text");
         Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/connect2.gif"));
         connectAction =
-                new AbstractAction(atext, icon) {
-                    /**
-                     * Invoked when an action occurs.
-                     *
-                     * @param event  the event that occured
-                     */
-                    public void actionPerformed(ActionEvent event) {
-                        connectHandler(event);
-                    }
-                };
+          new AbstractAction(atext, icon) {
+              /**
+               * Invoked when an action occurs.
+               *
+               * @param event  the event that occured
+               */
+              public void actionPerformed(ActionEvent event) {
+                  connectHandler(event);
+              }
+          };
         connectAction.putValue(Action.SHORT_DESCRIPTION, atext);
         return connectAction;
     }
@@ -443,19 +408,144 @@ public class MainWindow extends JFrame {
         String atext = resapplication.getString("CloseButton_text");
         Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/disconnect.gif"));
         disconnectAction =
-                new AbstractAction(atext, icon) {
-                    /**
-                     * Invoked when an action occurs.
-                     *
-                     * @param event  the event that occured
-                     */
-                    public void actionPerformed(ActionEvent event) {
-                        disconnectHandler(event);
-                    }
-                };
+          new AbstractAction(atext, icon) {
+              /**
+               * Invoked when an action occurs.
+               *
+               * @param event  the event that occured
+               */
+              public void actionPerformed(ActionEvent event) {
+                  disconnectHandler(event);
+              }
+          };
         disconnectAction.putValue(Action.SHORT_DESCRIPTION, atext);
         return disconnectAction;
     }
+
+    /**
+     * @return the <code>Action</code> for the publish service
+     */
+    private Action getPublishServiceAction() {
+        if (publishServiceAction != null) {
+            return publishServiceAction;
+        }
+        publishServiceAction = new PublishServiceAction() {
+            /** specify the resource name for this action */
+            protected String iconResource() {
+                return "com/l7tech/console/resources/services16.png";
+            }
+        };
+        publishServiceAction.setEnabled(false);
+        this.addConnectionListener((PublishServiceAction)publishServiceAction);
+        return publishServiceAction;
+    }
+
+    private Action getNewInternalUserAction() {
+        if (newInernalUserAction != null) return newInernalUserAction;
+        newInernalUserAction = new NewUserAction(null) {
+            /** specify the resource name for this action */
+            protected String iconResource() {
+                return "com/l7tech/console/resources/user16.png";
+            }
+
+            ConnectionListener listener = new ConnectionListener() {
+                public void onConnect(ConnectionEvent e) {
+                    setEnabled(true);
+                    final DefaultMutableTreeNode root =
+                      (DefaultMutableTreeNode)getAssertionPaletteTree().getModel().getRoot();
+                    AbstractTreeNode parent =
+                      (AbstractTreeNode)TreeNodeActions.nodeByName(
+                        UserFolderNode.INTERNAL_USERS_NAME,
+                        root
+                      );
+                    node = parent;
+
+                }
+
+                public void onDisconnect(ConnectionEvent e) {
+                    setEnabled(false);
+                }
+            };
+
+            {
+                MainWindow.this.addConnectionListener(listener);
+            }
+        };
+        newInernalUserAction.setEnabled(false);
+        return newInernalUserAction;
+    }
+
+    private Action getNewInternalGroupAction() {
+        if (newInernalGroupAction != null) return newInernalGroupAction;
+        newInernalGroupAction = new NewGroupAction(null) {
+            /** specify the resource name for this action */
+            protected String iconResource() {
+                return "com/l7tech/console/resources/group16.png";
+            }
+
+            ConnectionListener listener = new ConnectionListener() {
+                public void onConnect(ConnectionEvent e) {
+                    setEnabled(true);
+                    final DefaultMutableTreeNode root =
+                      (DefaultMutableTreeNode)getAssertionPaletteTree().getModel().getRoot();
+                    AbstractTreeNode parent =
+                      (AbstractTreeNode)TreeNodeActions.nodeByName(
+                        GroupFolderNode.INTERNAL_GROUPS_NAME,
+                        root
+                      );
+                    node = parent;
+                }
+
+                public void onDisconnect(ConnectionEvent e) {
+                    setEnabled(false);
+                }
+            };
+
+            {
+                MainWindow.this.addConnectionListener(listener);
+            }
+        };
+        newInernalGroupAction.setEnabled(false);
+        return newInernalGroupAction;
+    }
+
+
+    private Action getNewProviderAction() {
+          if (newProviderAction != null) return newProviderAction;
+          newProviderAction = new NewProviderAction(null) {
+              /** specify the resource name for this action */
+              protected String iconResource() {
+                  return "com/l7tech/console/resources/providers16.gif";
+              }
+
+              ConnectionListener listener = new ConnectionListener() {
+                  public void onConnect(ConnectionEvent e) {
+                      setEnabled(true);
+                      final DefaultMutableTreeNode root =
+                        (DefaultMutableTreeNode)getAssertionPaletteTree().getModel().getRoot();
+                      AbstractTreeNode parent =
+                        (AbstractTreeNode)TreeNodeActions.nodeByName(
+                          ProvidersFolderNode.NAME,
+                          root
+                        );
+                      node = parent;
+
+                  }
+
+                  public void onDisconnect(ConnectionEvent e) {
+                      setEnabled(false);
+                  }
+              };
+
+              {
+                  MainWindow.this.addConnectionListener(listener);
+              }
+          };
+          newProviderAction.setEnabled(false);
+          return newProviderAction;
+      }
+
+
 
     // Francis
     /**
@@ -479,22 +569,21 @@ public class MainWindow extends JFrame {
                */
               public void actionPerformed(ActionEvent event) {
                   JCheckBoxMenuItem item = (JCheckBoxMenuItem)event.getSource();
-  //                Component[] comps = getMainLeftJPanel().getComponents();
-   //               for (int i = comps.length - 1; i >= 0; i--) {
-     //                 if (comps[i] instanceof JSplitPane) {
-      //
-                              if(item.isSelected())
-                              {
-                                  getLogPane().getLogs();
-                              }
-                             getLogPane().getPane().setVisible(item.isSelected());
-                              mainJSplitPane.setDividerLocation(700);
+                  //                Component[] comps = getMainLeftJPanel().getComponents();
+                  //               for (int i = comps.length - 1; i >= 0; i--) {
+                  //                 if (comps[i] instanceof JSplitPane) {
+                  //
+                  if (item.isSelected()) {
+                      logPane.getLogs();
+                  }
+                  logPane.getPane().setVisible(item.isSelected());
+                  mainJSplitPane.setDividerLocation(700);
 
-                              validate();
-                              repaint();
-                      }
-   //               }
-  //            }
+                  validate();
+                  repaint();
+              }
+              //               }
+              //            }
           };
         toggleShowLogAction.putValue(Action.SHORT_DESCRIPTION, atext);
         return toggleShowLogAction;
@@ -533,23 +622,23 @@ public class MainWindow extends JFrame {
         String atext = resapplication.getString("Refresh_MenuItem_text");
         Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/Refresh16.gif"));
         refreshAction =
-                new AbstractAction(atext, icon) {
-                    /**
-                     * Invoked when an action occurs.
-                     *
-                     * @param event  the event that occured
-                     * @see Action#removePropertyChangeListener
-                     */
-                    public void actionPerformed(ActionEvent event) {
-                        JTree tree = getAssertionPaletteTree();
-                        EntityTreeNode node =
-                                (EntityTreeNode) tree.getLastSelectedPathComponent();
+          new AbstractAction(atext, icon) {
+              /**
+               * Invoked when an action occurs.
+               *
+               * @param event  the event that occured
+               * @see Action#removePropertyChangeListener
+               */
+              public void actionPerformed(ActionEvent event) {
+                  JTree tree = getAssertionPaletteTree();
+                  EntityTreeNode node =
+                    (EntityTreeNode)tree.getLastSelectedPathComponent();
 
-                        if (node != null) {
-                            refreshNode(node);
-                        }
-                    }
-                };
+                  if (node != null) {
+                      refreshNode(node);
+                  }
+              }
+          };
         refreshAction.setEnabled(false);
         refreshAction.putValue(Action.SHORT_DESCRIPTION, atext);
         return refreshAction;
@@ -567,26 +656,26 @@ public class MainWindow extends JFrame {
         String atext = resapplication.getString("toggle.status.bar");
 
         toggleStatusBarAction =
-                new AbstractAction(atext) {
-                    /**
-                     * Invoked when an action occurs.
-                     *
-                     * @param event  the event that occured
-                     * @see Action#removePropertyChangeListener
-                     */
-                    public void actionPerformed(ActionEvent event) {
-                        JCheckBoxMenuItem item = (JCheckBoxMenuItem) event.getSource();
-                        final boolean selected = item.isSelected();
-                        getStatusBarPane().setVisible(selected);
-                        try {
-                            Preferences p = Preferences.getPreferences();
-                            p.seStatusBarVisible(selected);
-                            p.store();
-                        } catch (IOException e) {
-                            // ignore
-                        }
-                    }
-                };
+          new AbstractAction(atext) {
+              /**
+               * Invoked when an action occurs.
+               *
+               * @param event  the event that occured
+               * @see Action#removePropertyChangeListener
+               */
+              public void actionPerformed(ActionEvent event) {
+                  JCheckBoxMenuItem item = (JCheckBoxMenuItem)event.getSource();
+                  final boolean selected = item.isSelected();
+                  getStatusBarPane().setVisible(selected);
+                  try {
+                      Preferences p = Preferences.getPreferences();
+                      p.seStatusBarVisible(selected);
+                      p.store();
+                  } catch (IOException e) {
+                      // ignore
+                  }
+              }
+          };
         toggleStatusBarAction.putValue(Action.SHORT_DESCRIPTION, atext);
         return toggleStatusBarAction;
     }
@@ -614,16 +703,16 @@ public class MainWindow extends JFrame {
         String atext = resapplication.getString("Preferences_MenuItem_text");
         Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/preferences.gif"));
         prefsAction =
-                new AbstractAction(atext, icon) {
-                    /** Invoked when an action occurs. */
-                    public void actionPerformed(ActionEvent event) {
-                        PreferencesDialog dialog = new PreferencesDialog(MainWindow.this, true, isConnected());
-                        dialog.pack();
-                        Utilities.centerOnScreen(dialog);
-                        dialog.setResizable(false);
-                        dialog.setVisible(true);
-                    }
-                };
+          new AbstractAction(atext, icon) {
+              /** Invoked when an action occurs. */
+              public void actionPerformed(ActionEvent event) {
+                  PreferencesDialog dialog = new PreferencesDialog(MainWindow.this, true, isConnected());
+                  dialog.pack();
+                  Utilities.centerOnScreen(dialog);
+                  dialog.setResizable(false);
+                  dialog.setVisible(true);
+              }
+          };
         prefsAction.putValue(Action.SHORT_DESCRIPTION, atext);
         return prefsAction;
     }
@@ -639,12 +728,13 @@ public class MainWindow extends JFrame {
         String atext = resapplication.getString("Delete_MenuItem_text");
         Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/Delete16.gif"));
         removeNodeAction =
-                new AbstractAction(atext, icon) {
-                    /** Invoked when an action occurs.*/
-                    public void actionPerformed(ActionEvent event) {
-                    }
-                };
+          new AbstractAction(atext, icon) {
+              /** Invoked when an action occurs.*/
+              public void actionPerformed(ActionEvent event) {
+              }
+          };
         removeNodeAction.putValue(Action.SHORT_DESCRIPTION, atext);
+        removeNodeAction.setEnabled(false);
         return removeNodeAction;
     }
 
@@ -675,7 +765,7 @@ public class MainWindow extends JFrame {
             getJFrameContentPane().add(getToolBarPane(), "North");
             // getJFrameContentPane().add(getStatusBarPane(), "South");
             getJFrameContentPane().add(getMainPane(), "Center");
-         }
+        }
         return frameContentPane;
     }
 
@@ -703,7 +793,7 @@ public class MainWindow extends JFrame {
      */
     private JTree getAssertionPaletteTree() {
         JTree tree =
-                (JTree) ComponentRegistry.getInstance().getComponent(AssertionsTree.NAME);
+          (JTree)ComponentRegistry.getInstance().getComponent(AssertionsTree.NAME);
         if (tree != null)
             return tree;
         tree = new AssertionsTree();
@@ -717,7 +807,7 @@ public class MainWindow extends JFrame {
      */
     private JTree getServicesTree() {
         JTree tree =
-                (JTree) ComponentRegistry.getInstance().getComponent(ServicesTree.NAME);
+          (JTree)ComponentRegistry.getInstance().getComponent(ServicesTree.NAME);
         if (tree != null)
             return tree;
 
@@ -732,7 +822,7 @@ public class MainWindow extends JFrame {
     private void initalizeWorkspace() {
         DefaultTreeModel treeModel = new FilteredTreeModel(null);
         final AbstractTreeNode paletteRootNode =
-                new AssertionsPaletteRootNode("Policy Assertions");
+          new AssertionsPaletteRootNode("Policy Assertions");
         treeModel.setRoot(paletteRootNode);
         getAssertionPaletteTree().setRootVisible(true);
         getAssertionPaletteTree().setModel(treeModel);
@@ -743,14 +833,14 @@ public class MainWindow extends JFrame {
         String rootTitle = "Services @ ";
         try {
             rootTitle +=
-                    Preferences.getPreferences().getString(Preferences.SERVICE_URL);
+              Preferences.getPreferences().getString(Preferences.SERVICE_URL);
 
         } catch (IOException e) {
             e.printStackTrace();
         }
         DefaultTreeModel servicesTreeModel = new FilteredTreeModel(null);
         final AbstractTreeNode servicesRootNode =
-                new ServicesFolderNode(Registry.getDefault().getServiceManager(), rootTitle);
+          new ServicesFolderNode(Registry.getDefault().getServiceManager(), rootTitle);
         servicesTreeModel.setRoot(servicesRootNode);
 
         getServicesTree().setRootVisible(true);
@@ -760,17 +850,17 @@ public class MainWindow extends JFrame {
 
         getMainSplitPaneRight().removeAll();
         GridBagConstraints constraints
-                = new GridBagConstraints(0, // gridx
-                        0, // gridy
-                        1, // widthx
-                        1, // widthy
-                        1.0, // weightx
-                        1.0, // weigthy
-                        GridBagConstraints.NORTH, // anchor
-                        GridBagConstraints.BOTH, //fill
-                        new Insets(0, 0, 0, 0), // inses
-                        0, // padx
-                        0); // pady
+          = new GridBagConstraints(0, // gridx
+            0, // gridy
+            1, // widthx
+            1, // widthy
+            1.0, // weightx
+            1.0, // weigthy
+            GridBagConstraints.NORTH, // anchor
+            GridBagConstraints.BOTH, //fill
+            new Insets(0, 0, 0, 0), // inses
+            0, // padx
+            0); // pady
         getMainSplitPaneRight().add(getWorkSpacePanel(), constraints);
     }
 
@@ -800,7 +890,7 @@ public class MainWindow extends JFrame {
 
 
         mainJSplitPaneTop =
-                new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+          new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
 
         mainJSplitPaneTop.add(getMainSplitPaneRight(), "right");
         mainJSplitPaneTop.add(getMainLeftJPanel(), "left");
@@ -845,18 +935,18 @@ public class MainWindow extends JFrame {
             mainPane = new JPanel();
             mainPane.setLayout(new BorderLayout());
             getMainPane().add(getMainJSplitPane(), "Center");
-         }
+        }
         return mainPane;
     }
 
     // Francis
-     private JSplitPane getMainJSplitPane() {
+    private JSplitPane getMainJSplitPane() {
         if (mainJSplitPane == null) {
             mainJSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
             mainJSplitPane.setResizeWeight(0.75);
-             mainJSplitPane.setTopComponent(getMainJSplitPaneTop());
-            mainJSplitPane.setBottomComponent(getLogPane().getPane());
-           // mainJSplitPane.setDividerLocation(mainJSplitPane.getSize().getHeight() * 0.5);
+            mainJSplitPane.setTopComponent(getMainJSplitPaneTop());
+            mainJSplitPane.setBottomComponent(logPane.getPane());
+            // mainJSplitPane.setDividerLocation(mainJSplitPane.getSize().getHeight() * 0.5);
             mainJSplitPane.setDividerLocation(700);
         }
         return mainJSplitPane;
@@ -868,7 +958,6 @@ public class MainWindow extends JFrame {
         }
         return logPane;
     }
-
     /**
      * Return the StatusBarPane property value.
      *
@@ -880,9 +969,9 @@ public class MainWindow extends JFrame {
             statusBarPane.setLayout(new BorderLayout());
             statusBarPane.setDoubleBuffered(true);
             Border border =
-                    BorderFactory.
-                    createCompoundBorder(getStatusMsgLeft().getBorder(),
-                            BorderFactory.createEmptyBorder(2, 2, 2, 2));
+              BorderFactory.
+              createCompoundBorder(getStatusMsgLeft().getBorder(),
+                BorderFactory.createEmptyBorder(2, 2, 2, 2));
 
             getStatusMsgLeft().setBorder(border);
 
@@ -893,7 +982,7 @@ public class MainWindow extends JFrame {
             getStatusMsgRight().setBorder(border);
             rightPanel.add(getStatusMsgRight(), BorderLayout.WEST);
             progressBar =
-                    (ProgressBar) ComponentRegistry.getInstance().getComponent(ProgressBar.NAME);
+              (ProgressBar)ComponentRegistry.getInstance().getComponent(ProgressBar.NAME);
             if (progressBar == null) {
                 progressBar = new ProgressBar(0, 100, 20);
                 ComponentRegistry.getInstance().registerComponent(ProgressBar.NAME, progressBar);
@@ -947,31 +1036,31 @@ public class MainWindow extends JFrame {
 
         JButton b = toolBarPane.add(getConnectAction());
         b.setFont(new Font("Dialog", 1, 10));
-        b.setText((String) getConnectAction().getValue(Action.NAME));
+        b.setText((String)getConnectAction().getValue(Action.NAME));
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
 
         b = toolBarPane.add(getDisconnectAction());
         b.setFont(new Font("Dialog", 1, 10));
-        b.setText((String) getDisconnectAction().getValue(Action.NAME));
+        b.setText((String)getDisconnectAction().getValue(Action.NAME));
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
 
         b = toolBarPane.add(getRefreshAction());
         b.setFont(new Font("Dialog", 1, 10));
-        b.setText((String) getRefreshAction().getValue(Action.NAME));
+        b.setText((String)getRefreshAction().getValue(Action.NAME));
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
 
         b = toolBarPane.add(getFindAction());
         b.setFont(new Font("Dialog", 1, 10));
-        b.setText((String) getFindAction().getValue(Action.NAME));
+        b.setText((String)getFindAction().getValue(Action.NAME));
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
 
         b = toolBarPane.add(getPreferencesAction());
         b.setFont(new Font("Dialog", 1, 10));
-        b.setText((String) getPreferencesAction().getValue(Action.NAME));
+        b.setText((String)getPreferencesAction().getValue(Action.NAME));
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
 
@@ -1012,9 +1101,9 @@ public class MainWindow extends JFrame {
         int mInc = js.getVerticalScrollBar().getUnitIncrement();
         // some arbitrary text to set the unit increment to the
         // height of one line instead of default value
-        int vInc = (int) getStatusMsgLeft().getPreferredSize().getHeight();
+        int vInc = (int)getStatusMsgLeft().getPreferredSize().getHeight();
         js.getVerticalScrollBar().setUnitIncrement(Math.max(mInc, vInc));
-        int hInc = (int) getStatusMsgLeft().getPreferredSize().getWidth();
+        int hInc = (int)getStatusMsgLeft().getPreferredSize().getWidth();
         js.getHorizontalScrollBar().setUnitIncrement(Math.max(mInc, hInc));
 
         final JSplitPane sections = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
@@ -1059,9 +1148,9 @@ public class MainWindow extends JFrame {
         mInc = js.getVerticalScrollBar().getUnitIncrement();
         // some arbitrary text to set the unit increment to the
         // height of one line instead of default value
-        vInc = (int) getStatusMsgLeft().getPreferredSize().getHeight();
+        vInc = (int)getStatusMsgLeft().getPreferredSize().getHeight();
         js.getVerticalScrollBar().setUnitIncrement(Math.max(mInc, vInc));
-        hInc = (int) getStatusMsgLeft().getPreferredSize().getWidth();
+        hInc = (int)getStatusMsgLeft().getPreferredSize().getWidth();
         js.getHorizontalScrollBar().setUnitIncrement(Math.max(mInc, hInc));
         sections.setBottomComponent(js);
         sections.setDividerSize(10);
@@ -1109,11 +1198,11 @@ public class MainWindow extends JFrame {
         }
 
         SwingUtilities.invokeLater(
-                new Runnable() {
-                    public void run() {
-                        System.gc(); // hack to help clearing references
-                    }
-                });
+          new Runnable() {
+              public void run() {
+                  System.gc(); // hack to help clearing references
+              }
+          });
     }
 
     /**
@@ -1136,10 +1225,6 @@ public class MainWindow extends JFrame {
      * @param node   currently selected node
      */
     private void updateActions(AbstractTreeNode node) {
-        JMenu nMenu = getNewMenu();
-        nMenu.removeAll();
-        nMenu.setEnabled(false);
-
         if (node == null) {
             toggleConnectedMenus(false);
             getRemoveNodeAction().setEnabled(false);
@@ -1166,23 +1251,23 @@ public class MainWindow extends JFrame {
         try {
             final Preferences prefs = Preferences.getPreferences();
             prefs.addPropertyChangeListener(
-                    new PropertyChangeListener() {
-                        /**
-                         * This method gets called when a property is changed.
-                         * @param evt A PropertyChangeEvent object describing the
-                         * event source and the property that has changed.
-                         */
-                        public void propertyChange(PropertyChangeEvent evt) {
-                            MainWindow.log.info("preferences have been updated");
-                            MainWindow.this.setLookAndFeel(prefs.getString(Preferences.LOOK_AND_FEEL));
-                            MainWindow.this.setInactivitiyTimeout(prefs.getInactivityTimeout());
-                        }
-                    });
+              new PropertyChangeListener() {
+                  /**
+                   * This method gets called when a property is changed.
+                   * @param evt A PropertyChangeEvent object describing the
+                   * event source and the property that has changed.
+                   */
+                  public void propertyChange(PropertyChangeEvent evt) {
+                      MainWindow.log.info("preferences have been updated");
+                      MainWindow.this.setLookAndFeel(prefs.getString(Preferences.LOOK_AND_FEEL));
+                      MainWindow.this.setInactivitiyTimeout(prefs.getInactivityTimeout());
+                  }
+              });
         } catch (IOException e) {
             log.log(Level.WARNING, "cannot get preferences", e);
         }
         credentialManager =
-                (ClientCredentialManager) Locator.getDefault().lookup(ClientCredentialManager.class);
+          (ClientCredentialManager)Locator.getDefault().lookup(ClientCredentialManager.class);
         if (credentialManager == null) {
             log.log(Level.WARNING, "Cannot obtain current credential manager");
         } else {
@@ -1193,19 +1278,19 @@ public class MainWindow extends JFrame {
 
         // exitMenuItem listener
         getExitMenuItem().
-                addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        exitMenuEventHandler(e);
-                    }
-                });
+          addActionListener(new ActionListener() {
+              public void actionPerformed(ActionEvent e) {
+                  exitMenuEventHandler(e);
+              }
+          });
 
         // HelpTopics listener
         getHelpTopicsMenuItem().
-                addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        showHelpTopics();
-                    }
-                });
+          addActionListener(new ActionListener() {
+              public void actionPerformed(ActionEvent e) {
+                  showHelpTopics();
+              }
+          });
     }
 
 
@@ -1231,7 +1316,7 @@ public class MainWindow extends JFrame {
         setJMenuBar(getMainJMenuBar());
         setTitle(resapplication.getString("SSG"));
         ImageIcon imageIcon =
-                new ImageIcon(ImageCache.getInstance().getIcon(RESOURCE_PATH + "/layer7_logo_small_32x32.png"));
+          new ImageIcon(ImageCache.getInstance().getIcon(RESOURCE_PATH + "/layer7_logo_small_32x32.png"));
         setIconImage(imageIcon.getImage());
         getContentPane().setLayout(new BorderLayout());
         getContentPane().add(getJFrameContentPane(), BorderLayout.CENTER);
@@ -1247,19 +1332,19 @@ public class MainWindow extends JFrame {
         /* restore window position */
         initializeWindowPosition();
         SwingUtilities.
-                invokeLater(new Runnable() {
-                    public void run() {
-                        int key =
-                                connectMenuItem.getAccelerator().getKeyCode();
-                        int modifiers =
-                                connectMenuItem.getAccelerator().getModifiers();
-                        dispatchEvent(new KeyEvent(MainWindow.this,
-                                KeyEvent.KEY_PRESSED,
-                                0,
-                                modifiers,
-                                key));
-                    }
-                });
+          invokeLater(new Runnable() {
+              public void run() {
+                  int key =
+                    connectMenuItem.getAccelerator().getKeyCode();
+                  int modifiers =
+                    connectMenuItem.getAccelerator().getModifiers();
+                  dispatchEvent(new KeyEvent(MainWindow.this,
+                    KeyEvent.KEY_PRESSED,
+                    0,
+                    modifiers,
+                    key));
+              }
+          });
     }
 
     /**
@@ -1291,8 +1376,8 @@ public class MainWindow extends JFrame {
             Dimension lastWindowSize = prefs.getLastWindowSize();
             Point lastWindowLocation = prefs.getLastWindowLocation();
             if (lastScreenSize != null &&
-                    lastScreenSize.width >= curScreenSize.width &&
-                    lastScreenSize.height >= curScreenSize.height) {
+              lastScreenSize.width >= curScreenSize.width &&
+              lastScreenSize.height >= curScreenSize.height) {
                 if (lastWindowLocation != null) {
                     this.setLocation(lastWindowLocation);
                     posWasSet = true;
@@ -1336,79 +1421,79 @@ public class MainWindow extends JFrame {
             //Make sure the URL exists.
             if (url == null) {
                 JOptionPane.showMessageDialog(null,
-                        "Help URL is missing",
-                        "Bad HelpSet Path ",
-                        JOptionPane.WARNING_MESSAGE);
+                  "Help URL is missing",
+                  "Bad HelpSet Path ",
+                  JOptionPane.WARNING_MESSAGE);
             }
         } catch (HelpSetException hex) {
             JOptionPane.showMessageDialog(null,
-                    helpsetName + " is not available",
-                    "Warning",
-                    JOptionPane.WARNING_MESSAGE);
+              helpsetName + " is not available",
+              "Warning",
+              JOptionPane.WARNING_MESSAGE);
             log.log(Level.SEVERE, helpsetName + " file was not found. " + hex.toString());
         }
     }
 
     // -------------- inactivitiy timeout (close your eyes) -------------------
     final Timer
-            inactivityTimer =
-            new Timer(60 * 1000 * 20,
-                    new ActionListener() {
-                        long lastStamp = System.currentTimeMillis();
+      inactivityTimer =
+      new Timer(60 * 1000 * 20,
+        new ActionListener() {
+            long lastStamp = System.currentTimeMillis();
 
-                        /** Invoked when an action occurs. */
-                        public void actionPerformed(ActionEvent e) {
+            /** Invoked when an action occurs. */
+            public void actionPerformed(ActionEvent e) {
 
-                            long now = System.currentTimeMillis();
-                            double inactive = (now - lastStamp);
-                            if (Math.round(inactive / inactivityTimer.getDelay()) >= 1) { // match
-                                inactivityTimer.stop(); // stop timer
-                                MainWindow.this.getStatusMsgRight().
-                                        setText("inactivity timeout expired; disconnecting...");
-                                // make sure it is invoked on event dispatching thread
-                                SwingUtilities.invokeLater(
-                                        new Runnable() {
-                                            public void run() {
-                                                MainWindow.this.disconnectHandler(null);
-                                            }
-                                        });
-                            }
-                        }
+                long now = System.currentTimeMillis();
+                double inactive = (now - lastStamp);
+                if (Math.round(inactive / inactivityTimer.getDelay()) >= 1) { // match
+                    inactivityTimer.stop(); // stop timer
+                    MainWindow.this.getStatusMsgRight().
+                      setText("inactivity timeout expired; disconnecting...");
+                    // make sure it is invoked on event dispatching thread
+                    SwingUtilities.invokeLater(
+                      new Runnable() {
+                          public void run() {
+                              MainWindow.this.disconnectHandler(null);
+                          }
+                      });
+                }
+            }
 
-                        // AWT event listener
-                        private final
-                        AWTEventListener listener =
-                                new AWTEventListener() {
-                                    public void eventDispatched(AWTEvent e) {
-                                        lastStamp = System.currentTimeMillis();
-                                        // MainWindow.this.log.debug("listener invoked");
-                                    }
-                                };
-                        // all events we know about
-                        long mask =
-                                AWTEvent.COMPONENT_EVENT_MASK |
-                                AWTEvent.CONTAINER_EVENT_MASK |
-                                AWTEvent.FOCUS_EVENT_MASK |
-                                AWTEvent.KEY_EVENT_MASK |
-                                AWTEvent.MOUSE_EVENT_MASK |
-                                AWTEvent.MOUSE_MOTION_EVENT_MASK |
-                                AWTEvent.WINDOW_EVENT_MASK |
-                                AWTEvent.ACTION_EVENT_MASK |
-                                AWTEvent.ADJUSTMENT_EVENT_MASK |
-                                AWTEvent.ITEM_EVENT_MASK |
-                                AWTEvent.TEXT_EVENT_MASK |
-                                AWTEvent.INPUT_METHOD_EVENT_MASK |
-                                AWTEvent.PAINT_EVENT_MASK |
-                                AWTEvent.INVOCATION_EVENT_MASK |
-                                AWTEvent.HIERARCHY_EVENT_MASK |
-                                AWTEvent.HIERARCHY_BOUNDS_EVENT_MASK;
+            // AWT event listener
+            private final
+            AWTEventListener listener =
+              new AWTEventListener() {
+                  public void eventDispatched(AWTEvent e) {
+                      lastStamp = System.currentTimeMillis();
+                      // MainWindow.this.log.debug("listener invoked");
+                  }
+              };
+            // all events we know about
+            long mask =
+              AWTEvent.COMPONENT_EVENT_MASK |
+              AWTEvent.CONTAINER_EVENT_MASK |
+              AWTEvent.FOCUS_EVENT_MASK |
+              AWTEvent.KEY_EVENT_MASK |
+              AWTEvent.MOUSE_EVENT_MASK |
+              AWTEvent.MOUSE_MOTION_EVENT_MASK |
+              AWTEvent.WINDOW_EVENT_MASK |
+              AWTEvent.ACTION_EVENT_MASK |
+              AWTEvent.ADJUSTMENT_EVENT_MASK |
+              AWTEvent.ITEM_EVENT_MASK |
+              AWTEvent.TEXT_EVENT_MASK |
+              AWTEvent.INPUT_METHOD_EVENT_MASK |
+              AWTEvent.PAINT_EVENT_MASK |
+              AWTEvent.INVOCATION_EVENT_MASK |
+              AWTEvent.HIERARCHY_EVENT_MASK |
+              AWTEvent.HIERARCHY_BOUNDS_EVENT_MASK;
 
-                        // dynamic initializer, register listener
-                        {
-                            MainWindow.this.getToolkit().
-                                    addAWTEventListener(listener, mask);
-                        }
-                    });
+            // dynamic initializer, register listener
+            {
+                MainWindow.this.getToolkit().
+                  addAWTEventListener(listener, mask);
+            }
+        });
     // -------------- inactivitiy timeout end (open your eyes) -------------------
 
 
@@ -1456,14 +1541,14 @@ public class MainWindow extends JFrame {
 
         // if same look and feel quick exit
         if (lookAndFeel.
-                equals(UIManager.getLookAndFeel().getClass().getName())) {
+          equals(UIManager.getLookAndFeel().getClass().getName())) {
             return;
         }
 
         try {
             Object lafObject =
-                    Class.forName(lookAndFeel).newInstance();
-            UIManager.setLookAndFeel((LookAndFeel) lafObject);
+              Class.forName(lookAndFeel).newInstance();
+            UIManager.setLookAndFeel((LookAndFeel)lafObject);
         } catch (Exception e) {
             lfSet = false;
         }
@@ -1471,7 +1556,7 @@ public class MainWindow extends JFrame {
         if (!lfSet) {
             try {
                 UIManager.setLookAndFeel(UIManager.
-                        getCrossPlatformLookAndFeelClassName());
+                  getCrossPlatformLookAndFeelClassName());
             } catch (Exception e) {
                 return;
             }
@@ -1504,43 +1589,43 @@ public class MainWindow extends JFrame {
 
     private
     LogonDialog.LogonListener logonListenr =
-            new LogonDialog.LogonListener() {
-                /* invoked on authentication success */
-                public void onAuthSuccess(String id) {
-                    getStatusMsgLeft().setText(id);
-                    /* load user preferences and merge them with system props */
-                    try {
-                        Preferences prefs = Preferences.getPreferences();
-                        if (prefs.rememberLoginId()) {
-                            prefs.putProperty(Preferences.LAST_LOGIN_ID, id);
-                            prefs.store();
-                        }
-                    } catch (IOException e) {
-                        log.log(Level.WARNING, "onAuthSuccess()", e);
+      new LogonDialog.LogonListener() {
+          /* invoked on authentication success */
+          public void onAuthSuccess(String id) {
+              getStatusMsgLeft().setText(id);
+              /* load user preferences and merge them with system props */
+              try {
+                  Preferences prefs = Preferences.getPreferences();
+                  if (prefs.rememberLoginId()) {
+                      prefs.putProperty(Preferences.LAST_LOGIN_ID, id);
+                      prefs.store();
+                  }
+              } catch (IOException e) {
+                  log.log(Level.WARNING, "onAuthSuccess()", e);
+              }
+              initalizeWorkspace();
+              int timeout = 0;
+              try {
+                  timeout = Preferences.getPreferences().getInactivityTimeout();
+              } catch (IOException e) {
+                  log.log(Level.WARNING, "unable to get preferences", e);
+              }
+              final int fTimeout = timeout;
+              SwingUtilities.invokeLater(
+                new Runnable() {
+                    public void run() {
+                        MainWindow.this.
+                          setInactivitiyTimeout(fTimeout);
+                        MainWindow.this.fireConnected();
                     }
-                    initalizeWorkspace();
-                    int timeout = 0;
-                    try {
-                        timeout = Preferences.getPreferences().getInactivityTimeout();
-                    } catch (IOException e) {
-                        log.log(Level.WARNING, "unable to get preferences", e);
-                    }
-                    final int fTimeout = timeout;
-                    SwingUtilities.invokeLater(
-                            new Runnable() {
-                                public void run() {
-                                    MainWindow.this.
-                                            setInactivitiyTimeout(fTimeout);
-                                    MainWindow.this.fireConnected();
-                                }
-                            });
-                    toggleConnectedMenus(true);
-                    new HomeAction().actionPerformed(null);
-                }
+                });
+              toggleConnectedMenus(true);
+              new HomeAction().actionPerformed(null);
+          }
 
-                /* invoked on authentication failure */
-                public void onAuthFailure() {
-                    ;
-                }
-            };
+          /* invoked on authentication failure */
+          public void onAuthFailure() {
+              ;
+          }
+      };
 }

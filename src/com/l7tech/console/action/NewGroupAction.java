@@ -29,7 +29,6 @@ public class NewGroupAction extends NodeAction {
 
     public NewGroupAction(AbstractTreeNode node) {
         super(node);
-        this.node = node;
     }
 
     /**
@@ -78,6 +77,10 @@ public class NewGroupAction extends NodeAction {
          * @param ev event describing the action
          */
         public void entityAdded(final EntityEvent ev) {
+            if (node == null) {
+                log.fine("Parent node has not been set - skipping notificaiton.");
+                return;
+            }
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     EntityHeader eh = (EntityHeader)ev.getEntity();

@@ -29,7 +29,6 @@ public class NewUserAction extends NodeAction {
 
     public NewUserAction(AbstractTreeNode node) {
         super(node);
-        this.node = node;
     }
 
     /**
@@ -80,6 +79,10 @@ public class NewUserAction extends NodeAction {
          * @param ev event describing the action
          */
         public void entityAdded(final EntityEvent ev) {
+            if (node == null) {
+                log.fine("The parent node is null");
+                return;
+            }
             SwingUtilities.invokeLater(new Runnable() {
                 public void run() {
                     EntityHeader eh = (EntityHeader)ev.getEntity();
@@ -87,7 +90,7 @@ public class NewUserAction extends NodeAction {
                       (JTree)ComponentRegistry.
                       getInstance().getComponent(AssertionsTree.NAME);
                     if (tree != null) {
-                            TreeNode[] nodes = node.getPath();
+                        TreeNode[] nodes = node.getPath();
                         TreePath nPath = new TreePath(nodes);
                         if (tree.hasBeenExpanded(nPath)) {
                             DefaultTreeModel model = (DefaultTreeModel)tree.getModel();

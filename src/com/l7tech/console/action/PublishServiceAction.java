@@ -1,8 +1,6 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.event.EntityEvent;
-import com.l7tech.console.event.EntityListener;
-import com.l7tech.console.event.EntityListenerAdapter;
+import com.l7tech.console.event.*;
 import com.l7tech.console.panels.PublishServiceWizard;
 import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.tree.TreeNodeFactory;
@@ -25,7 +23,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
-public class PublishServiceAction extends BaseAction {
+public class PublishServiceAction extends BaseAction implements ConnectionListener {
     static final Logger log = Logger.getLogger(PublishServiceAction.class.getName());
 
     public PublishServiceAction() {
@@ -95,4 +93,12 @@ public class PublishServiceAction extends BaseAction {
             });
         }
     };
+
+    public void onConnect(ConnectionEvent e) {
+        setEnabled(true);
+    }
+
+    public void onDisconnect(ConnectionEvent e) {
+        setEnabled(false);
+    }
 }
