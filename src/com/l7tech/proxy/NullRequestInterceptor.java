@@ -15,7 +15,7 @@ import org.w3c.dom.Document;
  * To change this template use Options | File Templates.
  */
 public class NullRequestInterceptor implements RequestInterceptor {
-    public static NullRequestInterceptor INSTANCE = new NullRequestInterceptor();
+    public static final NullRequestInterceptor INSTANCE = new NullRequestInterceptor();
 
     private NullRequestInterceptor() {
     }
