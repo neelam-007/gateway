@@ -104,7 +104,7 @@ class SenderXmlSecurityProcessor extends SecurityProcessor {
                     if ( o instanceof Element ) {
                         element = (Element)o;
                     } else {
-                        final String message = "The XPath result is not an element '" + xpath.getExpression() + "'";
+                        final String message = "The XPath query resulted in something other than a single element '" + xpath.getExpression() + "'";
                         logger.warning(message);
                         throw new SecurityProcessorException(message);
                     }
