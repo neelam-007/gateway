@@ -2,6 +2,7 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
+import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
@@ -52,6 +53,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(RequestXpathAssertion.class, RequestXpathPolicyTreeNode.class);
         assertionMap.put(SamlSecurity.class, SamlTreeNode.class);
         assertionMap.put(SchemaValidation.class, SchemaValidationTreeNode.class);
+        assertionMap.put(XslTransformation.class, XslTransformationTreeNode.class);
     }
 
     /**
