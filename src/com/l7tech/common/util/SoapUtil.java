@@ -245,7 +245,7 @@ public class SoapUtil {
         Element securityEl = soapMsg.createElementNS(SECURITY_NAMESPACE, SECURITY_EL_NAME);
         securityEl.setPrefix(SECURITY_NAMESPACE_PREFIX);
         securityEl.setAttribute("xmlns:" + SECURITY_NAMESPACE_PREFIX, SECURITY_NAMESPACE);
-        securityEl.setAttribute(MUSTUNDERSTAND_ATTR_NAME, "true");
+        setSoapAttr(soapMsg, securityEl, MUSTUNDERSTAND_ATTR_NAME, "true");
 
         Element existing = XmlUtil.findFirstChildElement(header);
         if (existing == null)
@@ -253,6 +253,53 @@ public class SoapUtil {
         else
             header.insertBefore(securityEl, existing);
         return securityEl;
+    }
+
+    /**
+     * Remove any soap-specific attribute from the specified element.
+     * Removes any attribute with a matching unqualified name, or a name fully
+     * qualified in one of the known SOAP envelope namespaces.
+     *
+     * @param element
+     * @param attrName
+     */
+    public static void removeSoapAttr(Element element, String attrName) {
+        // todo - find out if soap-specific attrs can ever appear without a prefix.  if not, remove following line
+        element.removeAttribute(attrName);
+
+        for (Iterator i = ENVELOPE_URIS.iterator(); i.hasNext();) {
+            String ns = (String)i.next();
+            element.removeAttributeNS(ns, attrName);
+        }
+
+    }
+
+    /**
+     * Set a SOAP-specific attribute on the specified element.
+     * The new attribute will be created using the namespace and prefix from the document element, which
+     * is assumed to be a SOAP Envelope.
+     * @param soapMsg
+     * @param elementNeedingAttr
+     * @param attrName
+     * @param attrValue
+     */
+    public static void setSoapAttr(Document soapMsg, Element elementNeedingAttr, String attrName, String attrValue) {
+        Element env = soapMsg.getDocumentElement();
+        String soapNs = env.getNamespaceURI();
+        String prefix = env.getPrefix();
+        if (prefix == null) {
+            // SOAP must be the default namespace.  We'll have to declare a prefix of our own.
+            prefix = "soap8271"; // todo - find an unused prefix
+            elementNeedingAttr.setAttributeNS(soapNs,
+                                                   prefix + ":" + attrName,
+                                                   attrValue);
+            if (elementNeedingAttr.getAttribute("xmlns:" + prefix).length() < 1)
+                elementNeedingAttr.setAttribute("xmlns:" + prefix, soapNs);
+        } else {
+            elementNeedingAttr.setAttributeNS(soapNs,
+                                                   prefix + ":" + attrName,
+                                                   attrValue);
+        }
     }
 
     /**
@@ -320,7 +367,7 @@ public class SoapUtil {
             return ROLE_VALUE_NEXT.equals(role);
         for (Iterator i = ENVELOPE_URIS.iterator(); i.hasNext();) {
             String ns = (String)i.next();
-            role = element.getAttributeNS(element.getNamespaceURI(), ROLE_ATTR_NAME);
+            role = element.getAttributeNS(ns, ROLE_ATTR_NAME);
             if (role != null && role.length() > 0)
                 return ROLE_VALUE_NEXT.equals(role);
         }
