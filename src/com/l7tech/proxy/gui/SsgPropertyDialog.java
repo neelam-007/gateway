@@ -576,6 +576,14 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         }
     }
 
+    /** Enable or disable the Ok button, depending on whether all input is acceptable. */
+    private void checkOk() {
+        if (fieldServerAddress.getText().length() > 1)
+            SsgPropertyDialog.this.enableOk();
+        else
+            SsgPropertyDialog.this.disableOk();
+    }
+
     /** Get the Server URL text field. */
     private JTextField getFieldServerAddress() {
         if (fieldServerAddress == null) {
@@ -583,13 +591,6 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             fieldServerAddress.setPreferredSize(new Dimension(220, 20));
             fieldServerAddress.setToolTipText("<HTML>Gateway hostname or address, for example<br><address>gateway.example.com");
             fieldServerAddress.getDocument().addDocumentListener(new DocumentListener() {
-                private void checkOk() {
-                    if (fieldServerAddress.getText().length() > 1)
-                        SsgPropertyDialog.this.enableOk();
-                    else
-                        SsgPropertyDialog.this.disableOk();
-                }
-
                 public void insertUpdate(DocumentEvent e) {
                     checkOk();
                 }
@@ -638,6 +639,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         updateCustomPortsEnableState();
 
         updatePolicyPanel();
+        checkOk();
     }
 
     /**
