@@ -77,6 +77,6 @@ public class AssertionMessages extends Messages {
     // ServerRemoteIpRange messages
     public static final M CANNOT_VALIDATE_IP_ADDRESS              = m(4250, Level.INFO, "Request was not received via TCP; cannot validate remote IP address");
     public static final M REMOTE_ADDRESS_INVALID                  = m(4251, Level.INFO, "The remote address {0} is null or not in expected format.");
-    public static final M REQUESTOR_ADDRESS_ACCEPTED              = m(4252, Level.FINEST, "Requestor's address ({0}) is accepted.");
-    public static final M REQUESTOR_ADDRESS_REJECTED              = m(4253, Level.INFO,  "This assertion is failing because address {0} is not allowed");
+    public static final M REQUESTOR_ADDRESS_ACCEPTED              = m(4252, Level.FINEST, "Requestor address {0} is accepted.");
+    public static final M REQUESTOR_ADDRESS_REJECTED              = m(4253, Level.INFO,  "Requestor address {0} is not allowed");
 }
