@@ -100,4 +100,13 @@ public class AssertionMessages extends Messages {
     public static final M REQUEST_XPATH_OTHER_NODE_FOUND          = m(4707, Level.FINE,  "XPath pattern {0} found some other node {1}");
     public static final M REQUEST_XPATH_SUCCEED                   = m(4708, Level.FINE, "XPath pattern {0} matched request; assertion therefore succeeds.");
 
+    // ServerRequestWssX509Cert messages
+    public static final M REQUEST_WSS_X509_FOR_ANOTHER_USER       = m(4800, Level.FINE, "This is intended for another recipient, there is nothing to validate here.");
+    public static final M REQUEST_WSS_X509_NON_SOAP               = m(4801, Level.INFO, "Request not SOAP; unable to check for WS-Security signature");
+    public static final M REQUEST_WSS_X509_NO_WSS_LEVEL_SECURITY  = m(4802, Level.INFO, "This request did not contain any WSS level security.");
+    public static final M REQUEST_WSS_X509_NO_TOKEN               = m(4803, Level.INFO, "No tokens were processed from this request. Returning AUTH_REQUIRED.");
+    public static final M REQUEST_WSS_X509_TOO_MANY_VALID_SIG     = m(4804, Level.SEVERE, "We got a request that presented more than one valid signature from {0} more than one client cert. This is not yet supported");
+    public static final M REQUEST_WSS_X509_CERT_LOADED            = m(4805, Level.FINE, "Cert loaded as principal credential for CN:{0}");
+    public static final M REQUEST_WSS_X509_NO_PROVEN_CERT         = m(4806, Level.INFO, "This assertion did not find a proven x509 cert to use as credentials. Returning AUTH_REQUIRED.");
+
 }

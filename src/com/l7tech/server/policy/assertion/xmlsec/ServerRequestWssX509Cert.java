@@ -4,6 +4,7 @@ import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.security.token.X509SecurityToken;
 import com.l7tech.common.security.xml.processor.ProcessorResult;
 import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
@@ -11,6 +12,7 @@ import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.AssertionMessages;
 import org.xml.sax.SAXException;
 import sun.security.x509.X500Name;
 
@@ -35,14 +37,15 @@ public class ServerRequestWssX509Cert implements ServerAssertion {
         this.subject = subject;
     }
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        Auditor auditor = new Auditor(context.getAuditContext(), logger);
         if (!subject.getRecipientContext().localRecipient()) {
-            logger.fine("This is intended for another recipient, there is nothing to validate here.");
+            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_X509_FOR_ANOTHER_USER);
             return AssertionStatus.NONE;
         }
         ProcessorResult wssResults;
         try {
             if (!context.getRequest().isSoap()) {
-                logger.info("Request not SOAP; unable to check for WS-Security signature");
+                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_X509_NON_SOAP);
                 return AssertionStatus.BAD_REQUEST;
             }
             wssResults = context.getRequest().getXmlKnob().getProcessorResult();
@@ -50,7 +53,7 @@ public class ServerRequestWssX509Cert implements ServerAssertion {
             throw new CausedIOException(e);
         }
         if (wssResults == null) {
-            logger.info("This request did not contain any WSS level security.");
+            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_X509_NO_WSS_LEVEL_SECURITY);
             context.setRequestPolicyViolated();
             context.setAuthenticationMissing();
             return AssertionStatus.FALSIFIED;
@@ -58,7 +61,7 @@ public class ServerRequestWssX509Cert implements ServerAssertion {
 
         SecurityToken[] tokens = wssResults.getSecurityTokens();
         if (tokens == null) {
-            logger.info("No tokens were processed from this request. Returning AUTH_REQUIRED.");
+            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_X509_NO_TOKEN);
             context.setAuthenticationMissing();
             return AssertionStatus.AUTH_REQUIRED;
         }
@@ -73,8 +76,7 @@ public class ServerRequestWssX509Cert implements ServerAssertion {
                     // identity. we should refactor request.setPrincipalCredentials to be able to remember
                     // more than one proven identity.
                     if (gotACertAlready != null) {
-                        logger.severe("We got a request that presented more than one valid signature from" +
-                                      "more than one client cert. This is not yet supported");
+                        auditor.logAndAudit(AssertionMessages.REQUEST_WSS_X509_TOO_MANY_VALID_SIG);
                         return AssertionStatus.NOT_YET_IMPLEMENTED;
                     }
                     gotACertAlready = okCert;
@@ -90,10 +92,10 @@ public class ServerRequestWssX509Cert implements ServerAssertion {
                                                         subject.getClass(),
                                                         null,
                                                         gotACertAlready));
-            logger.fine("Cert loaded as principal credential for CN:" + certCN);
+            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_X509_CERT_LOADED, new String[] {certCN});
             return AssertionStatus.NONE;
         }
-        logger.info("This assertion did not find a proven x509 cert to use as credentials. Returning AUTH_REQUIRED.");
+        auditor.logAndAudit(AssertionMessages.REQUEST_WSS_X509_NO_PROVEN_CERT);
         context.setAuthenticationMissing();
         return AssertionStatus.AUTH_REQUIRED;
     }
