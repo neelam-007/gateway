@@ -128,8 +128,8 @@ public class SsgResponse {
         try {
             String responseString = SoapFaultUtils.generateRawSoapFault(faultCode,
                                                                         faultString,
-                                                                        "",
-                                                                        "");
+                                                                        null,
+                                                                        faultActor);
             HttpHeaders headers = new HttpHeaders(new Header[0]);
             return new SsgResponse(XmlUtil.stringToDocument(responseString), null, 500, headers, null);
         } catch (IOException e) {

@@ -84,7 +84,7 @@ class JmsRequestHandler {
                 if ( faultMessage == null ) faultMessage = status.getMessage();
                 try {
                     responseXml = SoapFaultUtils.generateRawSoapFault(faultCode == null ? SoapFaultUtils.FC_SERVER : faultCode,
-                                                                      faultMessage, "", "");
+                                                                      faultMessage, null, "");
                 } catch (SAXException e) {
                     throw new JmsRuntimeException(e);
                 }

@@ -351,9 +351,14 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
     private void generateFaultAndSendAsResponse(HttpServletResponse res, String msg, String details) throws IOException {
         Document fault = null;
         try {
+            Element exceptiondetails = null;
+            if (details != null && details.length() > 0) {
+                Document tmpdc = XmlUtil.stringToDocument("<more>" + details + "</more>");
+                exceptiondetails = tmpdc.getDocumentElement();
+            }
             fault = SoapFaultUtils.generateSoapFault(SoapFaultUtils.FC_SERVER,
                                                      msg,
-                                                     details,
+                                                     exceptiondetails,
                                                      "");
         } catch (SAXException e) {
             throw new RuntimeException(e); // should not happen

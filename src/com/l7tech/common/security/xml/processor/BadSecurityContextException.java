@@ -8,6 +8,7 @@ package com.l7tech.common.security.xml.processor;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.xml.SoapFaultDetail;
+import org.w3c.dom.Element;
 
 /**
  * @author mike
@@ -23,8 +24,8 @@ public class BadSecurityContextException extends Exception implements SoapFaultD
     public String getFaultString() {
         return "The soap message referred to a secure conversation context that was not recognized. " + id;
     }
-    public String getFaultDetails() {
-        return getFaultString();
+    public Element getFaultDetails() {
+        return null;
     }
     private String id;
 }

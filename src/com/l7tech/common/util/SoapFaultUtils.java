@@ -5,6 +5,7 @@ import com.l7tech.common.xml.SoapFaultDetail;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -28,7 +29,7 @@ public class SoapFaultUtils {
 
     public static Document generateSoapFault(String faultCode,
                                              String faultString,
-                                             String faultDetails,
+                                             Element faultDetails,
                                              String faultActor) throws IOException, SAXException {
         Document tmpDoc = null;
         try {
@@ -56,7 +57,10 @@ public class SoapFaultUtils {
                 faultstringEl.appendChild(XmlUtil.createTextNode(tmpDoc, faultString));
             }
             faultactorEl.appendChild(XmlUtil.createTextNode(tmpDoc, faultActor));
-            faultdetailEl.appendChild(XmlUtil.createTextNode(tmpDoc, faultDetails));
+            if (faultDetails != null) {
+                Node fdc = tmpDoc.importNode(faultDetails, true);
+                faultdetailEl.appendChild(fdc);
+            }
         } catch (InvalidDocumentFormatException e) {
             throw new RuntimeException(e); // this should never happen
         }
@@ -73,7 +77,7 @@ public class SoapFaultUtils {
 
     public static String generateRawSoapFault(String faultCode,
                                               String faultString,
-                                              String faultDetails,
+                                              Element faultDetails,
                                               String faultActor) throws IOException, SAXException {
 
         Document doc = generateSoapFault(faultCode, faultString, faultDetails, faultActor);

@@ -20,6 +20,7 @@ import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.service.PublishedService;
 import org.xml.sax.SAXException;
+import org.w3c.dom.Document;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -248,8 +249,9 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 purl = makePolicyUrl(hreq, pserv.getOid());
                 hresp.setHeader(SecureSpanConstants.HttpHeaders.POLICYURL_HEADER, purl);
             }
-
-            responseStream.write(SoapFaultUtils.generateRawSoapFault(faultCode, faultString, purl, actor).getBytes());
+            Document urlelement = XmlUtil.stringToDocument("<policyURL>" + purl + "</policyURL>");
+            responseStream.write(SoapFaultUtils.generateRawSoapFault(faultCode, faultString,
+                                                                     urlelement.getDocumentElement(), actor).getBytes());
         } finally {
             if (responseStream != null) responseStream.close();
         }

@@ -1,5 +1,7 @@
 package com.l7tech.common.xml;
 
+import org.w3c.dom.Element;
+
 /**
  * Some error or exception that can be translated into a SOAP fault.
  * <p/>
@@ -12,5 +14,5 @@ package com.l7tech.common.xml;
 public interface SoapFaultDetail {
     String getFaultCode();
     String getFaultString();
-    String getFaultDetails();
+    Element getFaultDetails();
 }

@@ -176,7 +176,7 @@ public class PolicyService {
             try {
                 fault = SoapFaultUtils.generateSoapFault(SoapFaultUtils.FC_SERVER,
                                                          "policy " + policyId + " not found",
-                                                         "the policy requested does not exist",
+                                                         null,
                                                          "");
             } catch (IOException e) {
                 exceptionToFault(e, response);
@@ -253,9 +253,14 @@ public class PolicyService {
     private void returnUnauthorizedPolicyDownloadFault(SoapResponse response, String msg) {
         Document fault = null;
         try {
+            Element detailEl = null;
+            if (msg != null) {
+                Document ded = XmlUtil.stringToDocument("<more>" + msg + "</more>");
+                detailEl = ded.getDocumentElement();
+            }
             fault = SoapFaultUtils.generateSoapFault(SoapFaultUtils.FC_SERVER,
                                                      "unauthorized policy download",
-                                                     msg,
+                                                     detailEl,
                                                      "");
         } catch (IOException e) {
             exceptionToFault(e, response);
@@ -350,11 +355,12 @@ public class PolicyService {
             Document fault;
             if (e instanceof SoapFaultDetail)
                 fault = SoapFaultUtils.generateSoapFault((SoapFaultDetail)e, SoapFaultUtils.FC_SERVER);
-            else
+            else {
                 fault = SoapFaultUtils.generateSoapFault(SoapFaultUtils.FC_SERVER,
                                                          e.getMessage(),
-                                                         e.toString(),
+                                                         null,
                                                          e.getClass().getName());
+            }
             response.setDocument(fault);
         } catch (IOException e1) {
             throw new RuntimeException(e1); // can't happen

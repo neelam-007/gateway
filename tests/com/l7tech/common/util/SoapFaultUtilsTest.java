@@ -4,6 +4,7 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import junit.framework.TestCase;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import java.util.logging.Logger;
 
@@ -38,7 +39,14 @@ public class SoapFaultUtilsTest extends TestCase {
     }
 
     public Document tryThis(String faultCode, String faultString, String faultDetails, String faultActor) throws Exception {
-        String fault = SoapFaultUtils.generateRawSoapFault(faultCode, faultString, faultDetails, faultActor);
+
+        Element exceptiondetails = null;
+        if (faultDetails != null && faultDetails.length() > 0) {
+            Document tmpdc = XmlUtil.stringToDocument("<more>" + faultDetails + "</more>");
+            exceptiondetails = tmpdc.getDocumentElement();
+        }
+
+        String fault = SoapFaultUtils.generateRawSoapFault(faultCode, faultString, exceptiondetails, faultActor);
         logger.info("Raw result:\n" + fault);
         Document output = XmlUtil.stringToDocument(fault);
         logger.info("Parsed result:\n" + XmlUtil.nodeToFormattedString(output));

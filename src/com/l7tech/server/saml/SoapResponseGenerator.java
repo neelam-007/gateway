@@ -101,7 +101,12 @@ class SoapResponseGenerator {
     void streamFault(String faultString, Exception e, OutputStream os) {
         logger.log(Level.WARNING, "Returning SOAP fault " + faultString, e);
         try {
-            String fault = SoapFaultUtils.generateRawSoapFault(SoapFaultUtils.FC_SERVER, faultString, e.getMessage(), "");
+            Element exceptiondetails = null;
+            if (e.getMessage() != null && e.getMessage().length() > 0) {
+                Document tmpdc = XmlUtil.stringToDocument("<more>" + e.getMessage() + "</more>");
+                exceptiondetails = tmpdc.getDocumentElement();
+            }
+            String fault = SoapFaultUtils.generateRawSoapFault(SoapFaultUtils.FC_SERVER, faultString, exceptiondetails, "");
             os.write(fault.getBytes());
         } catch (IOException se) {
             se.printStackTrace();

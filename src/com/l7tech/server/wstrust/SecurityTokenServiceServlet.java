@@ -10,6 +10,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.server.AuthenticatableHttpServlet;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.servlet.ServletConfig;
@@ -80,7 +81,12 @@ public class SecurityTokenServiceServlet extends AuthenticatableHttpServlet {
     private void streamFault(String faultString, Exception e, OutputStream os) {
         logger.log(Level.WARNING, "Returning SOAP fault " + faultString, e);
         try {
-            String fault = SoapFaultUtils.generateRawSoapFault(SoapFaultUtils.FC_SERVER, faultString, e.getMessage(), "");
+            Element exceptiondetails = null;
+            if (e.getMessage() != null && e.getMessage().length() > 0) {
+                Document tmpdc = XmlUtil.stringToDocument("<more>" + e.getMessage() + "</more>");
+                exceptiondetails = tmpdc.getDocumentElement();
+            }
+            String fault = SoapFaultUtils.generateRawSoapFault(SoapFaultUtils.FC_SERVER, faultString, exceptiondetails, "");
             os.write(fault.getBytes());
         } catch (IOException se) {
             se.printStackTrace();
