@@ -2,8 +2,7 @@ package com.l7tech.identity;
 
 import com.l7tech.objectmodel.*;
 import com.l7tech.adminws.identity.Client;
-import com.l7tech.identity.internal.InternalIdentityProviderClient;
-
+import com.l7tech.adminws.identity.IdentityProviderClient;
 import java.util.Collection;
 import java.util.Iterator;
 import java.io.IOException;
@@ -21,7 +20,7 @@ import java.rmi.RemoteException;
 public class IdProvConfManagerClient implements IdentityProviderConfigManager {
 
     public IdentityProvider getInternalIdentityProvider() {
-        InternalIdentityProviderClient internalProvider = new InternalIdentityProviderClient();
+        IdentityProviderClient internalProvider = new IdentityProviderClient();
         IdentityProviderConfig cfg = new IdentityProviderConfig(IdentityProviderType.INTERNAL);
         cfg.setOid(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID);
         cfg.setDescription("Internal identity provider");
@@ -70,16 +69,7 @@ public class IdProvConfManagerClient implements IdentityProviderConfigManager {
             EntityHeader thisHeader = (EntityHeader)iter.next();
             IdentityProviderConfig conf = findByPrimaryKey(thisHeader.getOid());
             IdentityProvider provider = null;
-
-            // construct the provider based on the config type
-            if (conf.type() == IdentityProviderType.LDAP) {
-                provider = new com.l7tech.identity.ldap.LdapIdentityProviderClient();
-            }
-            else if (conf.type() == IdentityProviderType.INTERNAL) {
-                provider = new InternalIdentityProviderClient();
-            }
-            else throw new FindException("no provider type specified");
-
+            provider = new IdentityProviderClient();
             provider.initialize(conf);
             output.add(provider);
         }
