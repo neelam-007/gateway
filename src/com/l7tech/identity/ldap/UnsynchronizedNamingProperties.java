@@ -6,7 +6,9 @@
 
 package com.l7tech.identity.ldap;
 
+import javax.naming.Context;
 import java.util.*;
+import java.util.logging.Logger;
 import java.io.*;
 
 /**
@@ -23,6 +25,7 @@ public class UnsynchronizedNamingProperties extends Properties {
     private volatile boolean locked = false;
 
     public UnsynchronizedNamingProperties() {
+        properties.put(Context.URL_PKG_PREFIXES,ORG_APACHE_NAMING);
     }
 
     public void lock() {
@@ -55,8 +58,37 @@ public class UnsynchronizedNamingProperties extends Properties {
     }
 
     public Object put( Object key, Object value ) {
-        checkMutate();
+        if ( key.equals(Context.URL_PKG_PREFIXES) ) return null;
+        if ( locked ) {
+            if ( key.equals(Context.PROVIDER_URL) ) {
+                // TODO this is worrying.  Does the connection pool legitimately need to vary the URL?
+                return null;
+            } else {
+                logger.warning("put(\"" + key + "\", \"" + value +"\")");
+            }
+        }
         return properties.put(key,value);
+    }
+
+    public Object clone() {
+        checkAccess();
+        // TODO Is this safe?
+        return this;
+    }
+
+    public boolean equals( Object o ) {
+        checkAccess();
+        return properties.equals(o);
+    }
+
+    public String toString() {
+        checkAccess();
+        return properties.toString();
+    }
+
+    public Object get( Object key ) {
+        checkAccess();
+        return properties.get(key);
     }
 
     /** Throws UnsupportedOperationException unconditionally. */
@@ -115,11 +147,6 @@ public class UnsynchronizedNamingProperties extends Properties {
     }
 
     /** Throws UnsupportedOperationException unconditionally. */
-    public Object clone() {
-        throw new UnsupportedOperationException();
-    }
-
-    /** Throws UnsupportedOperationException unconditionally. */
     public boolean contains( Object value ) {
         throw new UnsupportedOperationException();
     }
@@ -131,16 +158,6 @@ public class UnsynchronizedNamingProperties extends Properties {
 
     /** Throws UnsupportedOperationException unconditionally. */
     public boolean containsValue( Object value ) {
-        throw new UnsupportedOperationException();
-    }
-
-    /** Throws UnsupportedOperationException unconditionally. */
-    public boolean equals( Object o ) {
-        throw new UnsupportedOperationException();
-    }
-
-    /** Throws UnsupportedOperationException unconditionally. */
-    public String toString() {
         throw new UnsupportedOperationException();
     }
 
@@ -174,13 +191,12 @@ public class UnsynchronizedNamingProperties extends Properties {
         throw new UnsupportedOperationException();
     }
 
-    /** Throws UnsupportedOperationException unconditionally. */
-    public Object get( Object key ) {
-        throw new UnsupportedOperationException();
-    }
 
     /** Throws UnsupportedOperationException unconditionally. */
     public Object remove( Object key ) {
         throw new UnsupportedOperationException();
     }
+
+    public static final String ORG_APACHE_NAMING = "org.apache.naming";
+    private Logger logger = Logger.getLogger(getClass().getName());
 }
