@@ -489,7 +489,14 @@ public class WssProcessorImpl implements WssProcessor {
         logger.finest("Processing BinarySecurityToken");
 
         // assume that this is a b64ed binary x509 cert, get the value
-        // todo, look into the ValueType argument instead of assuming this
+        // todo, what namespaces are these attributes supposed to be in?  
+        String valueType = binarySecurityTokenElement.getAttribute("ValueType");
+        String encodingType = binarySecurityTokenElement.getAttribute("EncodingType");
+        if (!valueType.endsWith("X509v3"))
+            throw new ProcessorException("BinarySecurityToken has unsupported ValueType " + valueType);
+        if (!encodingType.endsWith("Base64Binary"))
+            throw new ProcessorException("BinarySecurityToken has unsupported EncodingType " + encodingType);
+
         String value = XmlUtil.getTextValue(binarySecurityTokenElement);
         if (value == null || value.length() < 1) {
             String msg = "The " + binarySecurityTokenElement.getLocalName() + " does not contain a value.";
