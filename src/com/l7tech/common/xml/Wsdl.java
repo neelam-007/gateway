@@ -791,10 +791,14 @@ public class Wsdl {
         collector.collect(def);
         final Map imports = def.getImports();
         for (Iterator iterator = imports.values().iterator(); iterator.hasNext();) {
-            Import importDef = (Import)iterator.next();
-            collectElements(collector, importDef.getDefinition());
+            List importList = (List) iterator.next();
+            for (int i = 0; i < importList.size(); i++) {
+                Import importDef = (Import) importList.get(i);
+                collectElements(collector, importDef.getDefinition());
+            }
         }
     }
+    
     /**
      * Get the schema element from the wsdl definiton.
      *
