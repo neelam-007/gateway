@@ -7,6 +7,7 @@ import com.l7tech.common.security.xml.WssDecoratorImpl;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.identity.User;
+import com.l7tech.identity.AuthenticationException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
@@ -77,7 +78,8 @@ public class TokenService {
      */
     public Document respondToRequestSecurityToken(Document request, CredentialsAuthenticator authenticator)
                                                     throws InvalidDocumentFormatException, TokenServiceException,
-                                                           WssProcessor.ProcessorException, GeneralSecurityException {
+                                                           WssProcessor.ProcessorException, GeneralSecurityException,
+                                                           AuthenticationException {
         // Pass request to the trogdorminator!
         WssProcessor trogdor = new WssProcessorImpl();
         X509Certificate serverSSLcert = null;
@@ -134,7 +136,8 @@ public class TokenService {
                                                                                  null,
                                                                                  clientCert));
         if (authenticatedUser == null) {
-            // todo, some authentication exception, dont allow creation of a context not associated with an identity
+            logger.info("Throwing AuthenticationException because credentials cannot be authenticated.");
+            throw new AuthenticationException("Cert found, but cannot associate to a user.");
             
         }
         // Actually handle the request

@@ -92,6 +92,9 @@ public class TokenServiceServlet extends HttpServlet {
             logger.log(Level.SEVERE, msg, e);
             res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
             return;
+        } catch (AuthenticationException e) {
+            res.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
+            return;
         }
         // dont let this ioexception fall through, this is a debugging nightmare!
         try {
