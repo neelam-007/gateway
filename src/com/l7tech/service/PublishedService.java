@@ -124,6 +124,7 @@ public class PublishedService extends NamedEntityImp {
     public synchronized URL serviceUrl( Request request ) throws WSDLException, MalformedURLException {
         if ( _serviceUrl == null ) {
             Port wsdlPort = wsdlPort( request );
+            if ( wsdlPort == null ) return null;
             URL url = parsedWsdl().getUrlFromPort( wsdlPort );
 
             if ( url == null ) {
