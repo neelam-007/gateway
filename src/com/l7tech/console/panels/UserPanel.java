@@ -60,7 +60,7 @@ public class UserPanel extends EntityEditorPanel {
 
     // Titles/Labels
     private static final String DETAILS_LABEL = "General";
-    private static final String MEMBERSHIP_LABEL = "Memebership";
+    private static final String MEMBERSHIP_LABEL = "Membership";
 
     private static final String OK_BUTTON = "OK";
     private static final String CANCEL_BUTTON = "Cancel";
