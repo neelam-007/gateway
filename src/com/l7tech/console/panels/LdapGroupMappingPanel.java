@@ -117,41 +117,39 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
 
             iProviderConfig = (LdapIdentityProviderConfig) settings;
 
-            if (iProviderConfig.getOid() != -1) {
+            GroupMappingConfig[] groupMappings = iProviderConfig.getGroupMappings();
 
-                GroupMappingConfig[] groupMappings = iProviderConfig.getGroupMappings();
+            // clear the model
+            getGroupListModel().clear();
 
-                // clear the model
-                getGroupListModel().clear();
+            for (int i = 0; i < groupMappings.length; i++) {
 
-                for (int i = 0; i < groupMappings.length; i++) {
+                // update the user list display
+                getGroupListModel().add(groupMappings[i]);
+            }
 
-                    // update the user list display
-                    getGroupListModel().add(groupMappings[i]);
-                }
+            // select the first row for display of attributes
+            if (getGroupListModel().getSize() > 0) {
 
-                // select the first row for display of attributes
-                if (getGroupListModel().getSize() > 0) {
+                if (lastSelectedGroup != null) {
 
-                    if (lastSelectedGroup != null) {
-
-                        Iterator itr = getGroupListModel().iterator();
-                        while (itr.hasNext()) {
-                            Object o = itr.next();
-                            if (o instanceof GroupMappingConfig) {
-                                if(((GroupMappingConfig) o).getObjClass().equals(lastSelectedGroup.getObjClass())) {
-                                    // the selected group found
-                                    getGroupList().setSelectedValue(o, true);
-                                    lastSelectedGroup = (GroupMappingConfig) o;
-                                    break;
-                                }
+                    Iterator itr = getGroupListModel().iterator();
+                    while (itr.hasNext()) {
+                        Object o = itr.next();
+                        if (o instanceof GroupMappingConfig) {
+                            if (((GroupMappingConfig) o).getObjClass().equals(lastSelectedGroup.getObjClass())) {
+                                // the selected group found
+                                getGroupList().setSelectedValue(o, true);
+                                lastSelectedGroup = (GroupMappingConfig) o;
+                                break;
                             }
                         }
-                    } else {
-                        getGroupList().setSelectedIndex(0);
                     }
+                } else {
+                    getGroupList().setSelectedIndex(0);
                 }
             }
+
         }
     }
 
@@ -200,6 +198,17 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
             memberStrategy.setSelectedIndex(groupMapping.getMemberStrategy().getVal());
             originalObjectClass = groupMapping.getObjClass();
         }
+    }
+
+    /**
+     * Clear the display of the group mapping
+     *
+     */
+    private void clearDisplay() {
+            objectClass.setText("");
+            nameAttribute.setText("");
+            memberAttribute.setText("");
+            memberStrategy.setSelectedIndex(0);
     }
 
     /**
@@ -260,6 +269,9 @@ public class LdapGroupMappingPanel extends WizardStepPanel {
                     // select the first item for display
                     if (getGroupListModel().getSize() > 0) {
                         getGroupList().setSelectedIndex(0);
+                    } else {
+                        // clear the fields
+                        clearDisplay();
                     }
                 }
             }

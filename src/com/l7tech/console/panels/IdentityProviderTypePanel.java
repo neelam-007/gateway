@@ -171,8 +171,18 @@ public class IdentityProviderTypePanel extends WizardStepPanel {
     public void storeSettings(Object settings) {
 
         if (settings != null) {
-            LdapIdentityProviderConfig ldapType = (LdapIdentityProviderConfig )providerTypesCombo.getSelectedItem();
-            ((LdapIdentityProviderConfig) settings).setTemplateName(ldapType.getTemplateName());
+            LdapIdentityProviderConfig ldapType = (LdapIdentityProviderConfig) providerTypesCombo.getSelectedItem();
+
+            // stores the new settings only when the config is a new object or
+            // when the selection of the template is changed
+            if (((LdapIdentityProviderConfig) settings).getTemplateName() == null ||
+                    (((LdapIdentityProviderConfig) settings).getTemplateName() != null &&
+                    !((LdapIdentityProviderConfig) settings).getTemplateName().equals(ldapType.getTemplateName()))) {
+
+                ((LdapIdentityProviderConfig) settings).setTemplateName(ldapType.getTemplateName());
+                ((LdapIdentityProviderConfig) settings).setGroupMappings(ldapType.getGroupMappings());
+                ((LdapIdentityProviderConfig) settings).setUserMappings(ldapType.getUserMappings());
+            }
         }
     }
 

@@ -125,40 +125,38 @@ public class LdapUserMappingPanel extends WizardStepPanel {
 
             iProviderConfig = (LdapIdentityProviderConfig) settings;
 
-            if (iProviderConfig.getOid() != -1) {
+            UserMappingConfig[] userMappings = iProviderConfig.getUserMappings();
 
-                UserMappingConfig[] userMappings = iProviderConfig.getUserMappings();
+            // clear the model
+            getUserListModel().clear();
 
-                // clear the model
-                getUserListModel().clear();
+            for (int i = 0; i < userMappings.length; i++) {
 
-                for (int i = 0; i < userMappings.length; i++) {
+                // update the user list display
+                getUserListModel().add(userMappings[i]);
+            }
 
-                    // update the user list display
-                    getUserListModel().add(userMappings[i]);
-                }
+            // select the first row for display of attributes
+            if (getUserListModel().getSize() > 0) {
+                if (lastSelectedUser != null) {
 
-                // select the first row for display of attributes
-                if (getUserListModel().getSize() > 0) {
-                    if (lastSelectedUser != null) {
-
-                        Iterator itr = getUserListModel().iterator();
-                        while (itr.hasNext()) {
-                            Object o = itr.next();
-                            if (o instanceof UserMappingConfig) {
-                                if (((UserMappingConfig) o).getObjClass().equals(lastSelectedUser.getObjClass())) {
-                                    // the selected group found
-                                    getUserList().setSelectedValue(o, true);
-                                    lastSelectedUser = (UserMappingConfig) o;
-                                    break;
-                                }
+                    Iterator itr = getUserListModel().iterator();
+                    while (itr.hasNext()) {
+                        Object o = itr.next();
+                        if (o instanceof UserMappingConfig) {
+                            if (((UserMappingConfig) o).getObjClass().equals(lastSelectedUser.getObjClass())) {
+                                // the selected group found
+                                getUserList().setSelectedValue(o, true);
+                                lastSelectedUser = (UserMappingConfig) o;
+                                break;
                             }
                         }
-                    } else {
-                        getUserList().setSelectedIndex(0);
                     }
+                } else {
+                    getUserList().setSelectedIndex(0);
                 }
             }
+
         }
     }
 
@@ -211,6 +209,21 @@ public class LdapUserMappingPanel extends WizardStepPanel {
 
             originalObjectClass = userMapping.getObjClass();
         }
+    }
+
+    /**
+     * Clear the display of the user mapping
+     *
+     */
+    private void clearDisplay() {
+        emailAttribute.setText("");
+        firstNameAttribute.setText("");
+        lastNameAttribute.setText("");
+        loginNameAttribute.setText("");
+        nameAttribute.setText("");
+        objectClass.setText("");
+        passwordAttribute.setText("");
+        passwordStrategyAttribute.setSelectedIndex(0);
     }
 
     /**
@@ -269,7 +282,10 @@ public class LdapUserMappingPanel extends WizardStepPanel {
                      // select the first item for display
                     if (getUserListModel().getSize() > 0) {
                         getUserList().setSelectedIndex(0);
+                    } else {
+                        clearDisplay();
                     }
+
                  }
             }
         });
