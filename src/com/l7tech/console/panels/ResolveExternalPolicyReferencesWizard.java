@@ -3,6 +3,7 @@ package com.l7tech.console.panels;
 import com.l7tech.policy.exporter.ExternalReference;
 import com.l7tech.policy.exporter.IdProviderReference;
 import com.l7tech.policy.exporter.JMSEndpointReference;
+import com.l7tech.policy.exporter.CustomAssertionReference;
 
 import java.awt.*;
 
@@ -34,6 +35,8 @@ public class ResolveExternalPolicyReferencesWizard extends Wizard {
                 panel = new ResolveForeignIdentityProviderPanel(null, (IdProviderReference)(refs[i]));
             } else if (refs[i] instanceof JMSEndpointReference) {
                 panel = new ResolveForeignJMSEndpointPanel(null, (JMSEndpointReference)(refs[i]));
+            } else if (refs[i] instanceof CustomAssertionReference) {
+                panel = new ResolveForeignCustomAssertionPanel(null, (CustomAssertionReference)(refs[i]));
             }
             if (panel != null) {
                 if (firstPanel == null) {
