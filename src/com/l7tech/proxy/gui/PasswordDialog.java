@@ -69,7 +69,8 @@ public class PasswordDialog extends JDialog {
             buttonCancel = new JButton("Cancel");
             buttonCancel.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    PasswordDialog.this.hide();
+                    passwordValid = false;
+                    hide();
                 }
             });
         }
@@ -82,8 +83,10 @@ public class PasswordDialog extends JDialog {
             buttonOk.putClientProperty(DFG, buttonOk.getForeground());
             buttonOk.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    if (isPasswordValid())
+                    if (isPasswordValid()) {
+                        passwordValid = true;
                         hide();
+                    }
                 }
             });
         }
@@ -93,7 +96,7 @@ public class PasswordDialog extends JDialog {
     private boolean isPasswordValid() {
         char[] p1 = getFieldPassword().getPassword();
         char[] p2 = getFieldPasswordVerify().getPassword();
-        return passwordValid = Arrays.equals(p1, p2);
+        return Arrays.equals(p1, p2);
     }
 
     private JPanel getWidgetPanel() {
@@ -165,7 +168,7 @@ public class PasswordDialog extends JDialog {
 
     private void checkCapsLock() {
         capsMessage.setText(Toolkit.getDefaultToolkit().getLockingKeyState(KeyEvent.VK_CAPS_LOCK) ?
-                                    "(CAPS LOCK)" : " ");
+                                    "(CAPS LOCK ON)" : " ");
     }
 
     private char[] runPasswordPrompt() {
