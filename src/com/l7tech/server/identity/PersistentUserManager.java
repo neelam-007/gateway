@@ -206,6 +206,7 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
         try {
             PersistentUser originalUser = (PersistentUser)findByPrimaryKey(user.getUniqueIdentifier());
             if (originalUser == null) {
+                logger.warning("The user " + user.getName() + " is not found.");
                 throw new ObjectNotFoundException("User "+user.getName());
             }
 
