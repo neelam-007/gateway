@@ -4,11 +4,18 @@
 <web-app>
     <display-name>Layer7 Secure Span Gateway</display-name>
 
+    <!-- class servlet registered frst, in case boot process requires it -->
+    <servlet>
+        <servlet-name>ClassServerServlet</servlet-name>
+        <servlet-class>com.l7tech.remote.jini.export.ClassServerServlet</servlet-class>
+        <load-on-startup>1</load-on-startup>
+    </servlet>
+
     <!-- ssg boot servlet properties -->
     <servlet>
         <servlet-name>boot</servlet-name>
         <servlet-class>com.l7tech.server.BootServlet</servlet-class>
-        <load-on-startup>1</load-on-startup>
+        <load-on-startup>2</load-on-startup>
     </servlet>
 
     <servlet>
@@ -40,12 +47,6 @@
         <servlet-name>RegistrarServlet</servlet-name>
         <servlet-class>com.l7tech.remote.jini.lookup.RegistrarLookupServlet</servlet-class>
     </servlet>
-
-    <servlet>
-        <servlet-name>ClassServerServlet</servlet-name>
-        <servlet-class>com.l7tech.remote.jini.export.ClassServerServlet</servlet-class>
-    </servlet>
-
 
     <servlet>
         <servlet-name>WsdlProxy</servlet-name>
