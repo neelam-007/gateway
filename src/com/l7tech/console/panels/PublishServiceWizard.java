@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.widgets.WrappingLabel;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
@@ -148,7 +149,7 @@ public class PublishServiceWizard extends JDialog {
         stepsLabel = new JLabel();
         stepPanel = new JPanel();
         stepDescriptionScrollPane = new JScrollPane();
-        stepDescriptionTextArea = new JTextArea();
+        stepDescriptionTextArea = new WrappingLabel();
 
         setTitle("Publish service wizard");
         addHierarchyListener(new HierarchyListener() {
