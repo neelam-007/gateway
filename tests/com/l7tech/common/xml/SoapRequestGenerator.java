@@ -1,6 +1,4 @@
-package com.l7tech.service;
-
-import com.l7tech.common.xml.Wsdl;
+package com.l7tech.common.xml;
 
 import javax.wsdl.*;
 import javax.wsdl.extensions.ExtensibilityElement;

@@ -1,6 +1,7 @@
 package com.l7tech.service;
 
 import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.xml.SoapRequestGenerator;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;

@@ -6,7 +6,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.service.ServiceCache;
-import com.l7tech.service.SoapRequestGenerator;
+import com.l7tech.common.xml.SoapRequestGenerator;
 import com.mockobjects.servlet.MockHttpServletResponse;
 import junit.extensions.TestSetup;
 import junit.framework.Test;
