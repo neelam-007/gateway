@@ -3,7 +3,7 @@ package com.l7tech.objectmodel;
 import com.l7tech.identity.Group;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.User;
-import com.l7tech.common.transport.jms.JmsProvider;
+import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.service.PublishedService;
 
 import java.io.ObjectStreamException;
@@ -23,7 +23,7 @@ public class EntityType implements Serializable {
     public static final EntityType USER = new EntityType(2);
     public static final EntityType GROUP = new EntityType(3);
     public static final EntityType SERVICE = new EntityType(4);
-    public static final EntityType JMS_PROVIDER = new EntityType(5);
+    public static final EntityType JMS_CONNECTION = new EntityType(5);
     public static final EntityType UNDEFINED = new EntityType(-1);
 
     /**
@@ -91,7 +91,7 @@ public class EntityType implements Serializable {
             case 4:
                 return "SERVICE";
             case 5:
-                return "JMS_PROVIDER";
+                return "JMS_CONNECTION";
             default:
                 return "?";
         }
@@ -102,7 +102,7 @@ public class EntityType implements Serializable {
         else if (interfaceType.equals(User.class)) return USER;
         else if (interfaceType.equals(Group.class)) return GROUP;
         else if (interfaceType.equals(PublishedService.class)) return SERVICE;
-        else if (interfaceType.equals(JmsProvider.class)) return JMS_PROVIDER;
+        else if (interfaceType.equals(JmsConnection.class)) return JMS_CONNECTION;
         throw new IllegalArgumentException("no EntityType for interface " + interfaceType.getName());
     }
 
@@ -124,7 +124,7 @@ public class EntityType implements Serializable {
             case 4:
                 return SERVICE;
             case 5:
-                return JMS_PROVIDER;
+                return JMS_CONNECTION;
             default:
                 return UNDEFINED;
         }

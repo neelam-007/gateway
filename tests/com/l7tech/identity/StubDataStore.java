@@ -13,7 +13,7 @@ import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.WsdlTest;
-import com.l7tech.common.transport.jms.JmsProvider;
+import com.l7tech.common.transport.jms.JmsConnection;
 
 import javax.wsdl.WSDLException;
 import java.beans.XMLDecoder;
@@ -26,7 +26,7 @@ import java.util.*;
  * The test in memory datastore with users, groups, providers etc. Used
  * for testing and developing with manager stubs, that is, without the
  * server side component.
- * 
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.0
  */
@@ -42,7 +42,7 @@ public class StubDataStore {
 
     /**
      * create the default store
-     * 
+     *
      * @return the default data  store
      */
     public synchronized static StubDataStore defaultStore() {
@@ -57,8 +57,8 @@ public class StubDataStore {
 
     /**
      * Instantiate path
-     * 
-     * @param storePath 
+     *
+     * @param storePath
      */
     protected StubDataStore(String storePath)
       throws IOException, WSDLException, MalformedURLException {
@@ -89,7 +89,7 @@ public class StubDataStore {
         return pubServices;
     }
 
-    public Map getJmsProviders() {
+    public Map getJmsConnections() {
         return jmsProviders;
     }
 
@@ -216,21 +216,21 @@ public class StubDataStore {
     }
 
     private void initialJmsProviders(XMLEncoder encoder) {
-        JmsProvider p = new JmsProvider();
+        JmsConnection p = new JmsConnection();
         p.setOid(nextObjectId());
         p.setJndiUrl("JNDI:foo:bar:baz");
         p.setName("JMS on NowhereInteresting");
-        p.setDestinations(new TreeSet());
+        p.setEndpoints(new TreeSet());
 
         encoder.writeObject(p);
         populate(p);
 
 
-        p = new JmsProvider();
+        p = new JmsConnection();
         p.setOid(nextObjectId());
         p.setJndiUrl("JNDI:blee:bloo:boof");
         p.setName("JMS on SomewhereElse");
-        p.setDestinations(new TreeSet());
+        p.setEndpoints(new TreeSet());
 
         encoder.writeObject(p);
         populate(p);
@@ -293,8 +293,8 @@ public class StubDataStore {
             providerConfigs.put(new Long(((IdentityProviderConfig)o).getOid()), o);
         } else if (o instanceof PublishedService) {
             pubServices.put(new Long(((PublishedService)o).getOid()), o);
-        } else if (o instanceof JmsProvider) {
-            jmsProviders.put(new Long(((JmsProvider)o).getOid()), o);
+        } else if (o instanceof JmsConnection) {
+            jmsProviders.put(new Long(((JmsConnection)o).getOid()), o);
         } else {
             System.err.println("Don't know how to handle " + o.getClass());
         }
@@ -332,7 +332,7 @@ public class StubDataStore {
 
     /**
      * initial seed data load.
-     * 
+     *
      * @param args command lien arguments
      */
     public static void main(String[] args) {
