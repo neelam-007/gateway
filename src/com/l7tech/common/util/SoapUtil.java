@@ -367,7 +367,7 @@ public class SoapUtil {
         Element securityEl = soapMsg.createElementNS(preferredWsseNamespace, SECURITY_EL_NAME);
         securityEl.setPrefix(SECURITY_NAMESPACE_PREFIX);
         securityEl.setAttribute("xmlns:" + SECURITY_NAMESPACE_PREFIX, preferredWsseNamespace);
-        setSoapAttr(soapMsg, securityEl, MUSTUNDERSTAND_ATTR_NAME, "1");
+        setSoapAttr(securityEl, MUSTUNDERSTAND_ATTR_NAME, "1");
 
         Element existing = XmlUtil.findFirstChildElement(header);
         if (existing == null)
@@ -419,27 +419,25 @@ public class SoapUtil {
      * The new attribute will be created using the namespace and prefix from the document element, which
      * is assumed to be a SOAP Envelope.
      *
-     * @param soapMsg
      * @param elementNeedingAttr
      * @param attrName
      * @param attrValue
      */
-    public static void setSoapAttr(Document soapMsg, Element elementNeedingAttr, String attrName, String attrValue) {
-        Element env = soapMsg.getDocumentElement();
+    public static void setSoapAttr(Element elementNeedingAttr, String attrName, String attrValue) {
+        Element env = elementNeedingAttr.getOwnerDocument().getDocumentElement();
         String soapNs = env.getNamespaceURI();
         String prefix = env.getPrefix();
         if (prefix == null) {
             // SOAP must be the default namespace.  We'll have to declare a prefix of our own.
             prefix = "soap8271"; // todo - find an unused prefix
             elementNeedingAttr.setAttributeNS(soapNs,
-              prefix + ":" + attrName,
-              attrValue);
-            if (elementNeedingAttr.getAttribute("xmlns:" + prefix).length() < 1)
-                elementNeedingAttr.setAttribute("xmlns:" + prefix, soapNs);
+                                              prefix + ":" + attrName,
+                                              attrValue);
+            elementNeedingAttr.setAttribute("xmlns:" + prefix, soapNs);
         } else {
             elementNeedingAttr.setAttributeNS(soapNs,
-              prefix + ":" + attrName,
-              attrValue);
+                                              prefix + ":" + attrName,
+                                              attrValue);
         }
     }
 
