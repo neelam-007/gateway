@@ -173,13 +173,7 @@ public class WssProcessorImpl implements WssProcessor {
                 // In the case of a Secure Conversation the reference list is declared outside
                 // of the DerivedKeyToken
                 if (securityChildToProcess.getNamespaceURI().equals(SoapUtil.XMLENC_NS)) {
-
-
-
-                    // todo
-                    throw new ProcessorException("ReferenceList handling not yet supported.");
-
-
+                    processReferenceList(securityChildToProcess, cntx);
                 } else {
                     logger.info("Encountered ReferenceList element but not of expected namespace (" +
                                 securityChildToProcess.getNamespaceURI() + ")");
@@ -261,6 +255,46 @@ public class WssProcessorImpl implements WssProcessor {
             soapHeader.getParentNode().removeChild(soapHeader);
 
         return produceResult(cntx);
+    }
+
+    private void processReferenceList(Element referenceListEl, ProcessingStatusHolder cntx) throws ProcessorException, InvalidDocumentFormatException {
+        // get each element one by one
+        List dataRefEls = XmlUtil.findChildElementsByName(referenceListEl, SoapUtil.XMLENC_NS, "DataReference");
+        if ( dataRefEls == null || dataRefEls.isEmpty() ) {
+            logger.warning("ReferenceList is present, but is empty");
+            return;
+        }
+
+        for (Iterator j = dataRefEls.iterator(); j.hasNext();) {
+            Element dataRefEl = (Element)j.next();
+            String dataRefUri = dataRefEl.getAttribute(SoapUtil.REFERENCE_URI_ATTR_NAME);
+            Element encryptedDataElement = SoapUtil.getElementByWsuId(referenceListEl.getOwnerDocument(), dataRefUri);
+            if (encryptedDataElement == null) {
+                String msg = "cannot resolve encrypted data element " + dataRefUri;
+                logger.warning(msg);
+                throw new ProcessorException(msg);
+            }
+            // get the reference to the derived key token from the http://www.w3.org/2000/09/xmldsig#:KeyInfo element
+            Element keyInfo = XmlUtil.findFirstChildElementByName(encryptedDataElement, SoapUtil.DIGSIG_URI, "KeyInfo");
+            if (keyInfo == null) {
+                throw new InvalidDocumentFormatException("The DataReference here should contain a KeyInfo child");
+            }
+            DerivedKeyTokenImpl dktok = resolveDerivedKeyByRef(keyInfo, cntx);
+            if (dktok == null) {
+                throw new InvalidDocumentFormatException("The DataReference's KeyInfo did not refer to a DerivedKey");
+            }
+            try {
+                decryptElement(encryptedDataElement, dktok.getComputedDerivedKey(), cntx);
+            } catch (GeneralSecurityException e) {
+                throw new ProcessorException(e);
+            } catch (ParserConfigurationException e) {
+                throw new ProcessorException(e);
+            } catch (IOException e) {
+                throw new ProcessorException(e);
+            } catch (SAXException e) {
+                throw new ProcessorException(e);
+            }
+        }
     }
 
     private void processDerivedKey(Element derivedKeyEl, ProcessingStatusHolder cntx) throws InvalidDocumentFormatException {
