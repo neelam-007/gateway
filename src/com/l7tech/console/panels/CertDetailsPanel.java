@@ -91,25 +91,9 @@ public class CertDetailsPanel extends WizardStepPanel {
 
                         // retrieve the value of cn
                         String subjectName = cert.getSubjectDN().getName();
-
-                        int index1 = subjectName.indexOf("cn=");
-                        int index2 = subjectName.indexOf("CN=");
-                        int startIndex = -1;
-                        int endIndex = -1;
-
-                        if(index1 >= 0 ) {
-                             startIndex = index1 + 3;
-                        } else if(index2 >= 0) {
-                             startIndex = index2 + 3;
-                        }
-
-                        if(startIndex >= 0) {
-                            endIndex = subjectName.indexOf(",", startIndex);
-                            if(endIndex > 0) {
-                                certNameTextField.setText(subjectName.substring(startIndex, endIndex));
-                            } else {
-                                certNameTextField.setText(subjectName.substring(startIndex, subjectName.length()));
-                            }
+                        String cn = null;
+                        if((cn = retrieveSubjectCommonName(subjectName)) != null) {
+                             certNameTextField.setText(cn);
                         }
                         else {
                             // cn NOT found, use the subject name
@@ -147,6 +131,36 @@ public class CertDetailsPanel extends WizardStepPanel {
         }
     }
 
+    /**
+     * Extract the value of the CN attribute from the subject DN.
+     *
+     * @return  The value of CN attribute. NULL if not found.
+     */
+    private String retrieveSubjectCommonName(String subjectDN) {
+        String cn = null;
+
+        int index1 = subjectDN.indexOf("cn=");
+        int index2 = subjectDN.indexOf("CN=");
+        int startIndex = -1;
+        int endIndex = -1;
+
+        if (index1 >= 0) {
+            startIndex = index1 + 3;
+        } else if (index2 >= 0) {
+            startIndex = index2 + 3;
+        }
+
+        if (startIndex >= 0) {
+            endIndex = subjectDN.indexOf(",", startIndex);
+            if (endIndex > 0) {
+                cn = subjectDN.substring(startIndex, endIndex);
+            } else {
+                cn = subjectDN.substring(startIndex, subjectDN.length());
+            }
+        }
+
+        return cn;
+    }
 
     /**
      * Store the values of all fields on the panel to the wizard object which is a used for
