@@ -62,7 +62,6 @@ public class MainWindow extends JFrame {
      */
     public static final String HELP_PATH = "com/l7tech/console/resources/helpset/SecureSpan_Manager_Help_System.hs";
 
-    public static final int MAIN_SPLIT_PANE_DIVIDER_SIZE = 10;
     public static final String CONNECTION_PREFIX = " [connected to node: ";
     /**
      * the resource bundle name
@@ -1240,6 +1239,9 @@ public class MainWindow extends JFrame {
                     if (s != null) {
                         int l = Integer.parseInt(s);
                         mainSplitPane.setDividerLocation(l);
+                    } else {
+                        mainSplitPane.setDividerLocation(getSize().width/3);
+
                     }
                 } catch (NumberFormatException e1) {
                 }
@@ -1443,6 +1445,8 @@ public class MainWindow extends JFrame {
                     if (s != null) {
                         int l = Integer.parseInt(s);
                         sections.setDividerLocation(l);
+                    } else {
+                        sections.setDividerLocation(sections.getSize().height/2);
                     }
                 } catch (NumberFormatException e1) {
                 }
@@ -1678,6 +1682,10 @@ public class MainWindow extends JFrame {
         }
 
         if (!posWasSet) {
+            if (curScreenSize.height > 768 &&
+                curScreenSize.width > 1024) {
+                curScreenSize = new Dimension(1024, 768);
+            }
             this.setSize(curScreenSize);
             Utilities.centerOnScreen(this);
         }
