@@ -474,6 +474,10 @@ EOF
 		system ("chown $user_name.$group_name /ssg/tomcat/conf/server.xml");
 		system ("chown $user_name.$group_name /ssg/etc/conf/keystore.properties");
 	}
+
+        # 6. inform user that the script is done
+        print "INFO: If <$setkey> script ever being invoked by <$0> and error occurs, you just need to re-run <$setkey>\n";
+        print "INFO: <$0> script done\n" 
 }
 	
 
