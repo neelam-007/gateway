@@ -142,7 +142,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
 
         int y = 0;
 
-        p.add(new JLabel("Queue name:"),
+        p.add(new JLabel("Queue Name:"),
               new GridBagConstraints(0, y, 1, 1, 0, 0,
                                      GridBagConstraints.EAST,
                                      GridBagConstraints.NONE,
@@ -166,7 +166,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
                                      GridBagConstraints.NONE,
                                      new Insets(0, 0, 5, 0), 0, 0));
 
-        p.add(new JLabel("Naming provider URL:"),
+        p.add(new JLabel("Naming Provider URL:"),
               new GridBagConstraints(0, y, 1, 1, 0, 0,
                                      GridBagConstraints.EAST,
                                      GridBagConstraints.NONE,
@@ -178,7 +178,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
                                      GridBagConstraints.HORIZONTAL,
                                      new Insets(0, 0, 5, 0), 0, 0));
 
-        p.add(new JLabel("Queue connection factory URL:"),
+        p.add(new JLabel("Queue Connection Factory URL:"),
               new GridBagConstraints(0, y, 1, 1, 0, 0,
                                      GridBagConstraints.EAST,
                                      GridBagConstraints.NONE,
@@ -190,7 +190,7 @@ public class JmsQueuePropertiesDialog extends JDialog {
                                      GridBagConstraints.HORIZONTAL,
                                      new Insets(0, 0, 5, 0), 0, 0));
 
-        p.add(new JLabel("Initial context factory class:"),
+        p.add(new JLabel("Initial Context Factory Class:"),
               new GridBagConstraints(0, y, 1, 1, 0, 0,
                                      GridBagConstraints.EAST,
                                      GridBagConstraints.NONE,
