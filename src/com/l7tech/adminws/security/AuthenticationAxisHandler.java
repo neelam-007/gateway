@@ -2,7 +2,8 @@ package com.l7tech.adminws.security;
 
 import org.apache.axis.MessageContext;
 import org.apache.axis.AxisFault;
-import org.apache.axis.utils.Messages;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 import org.apache.axis.encoding.Base64;
 import org.apache.axis.transport.http.HTTPConstants;
 import com.l7tech.identity.User;
@@ -34,6 +35,8 @@ import com.l7tech.identity.Group;
  * </transport>
  */
 public class AuthenticationAxisHandler extends InternalIDSecurityAxisHandler {
+    public static final long SESSION_MAX_LENGTH = 120000; // two minutes
+
     /**
      * Invoked by the axis engine. if successful, will feed the messageContext with
      * a property whose key is AuthenticationAxisHandler.AUTHENTICATED_USER and whose
@@ -42,7 +45,24 @@ public class AuthenticationAxisHandler extends InternalIDSecurityAxisHandler {
      */
     public void invoke(MessageContext messageContext) throws AxisFault {
         // CHECK FOR SESSION
-        // todo
+        // get the HTTPRequest object
+        HttpServletRequest servletrequest = (HttpServletRequest)messageContext.getProperty(HTTPConstants.MC_HTTP_SERVLETREQUEST);
+        if (servletrequest == null) {
+            System.err.println("cannot retrieve servlet request from axis context");
+        } else {
+            // check out for a session
+            HttpSession session = servletrequest.getSession(false);
+            if (session != null && session.getAttribute(AUTHENTICATED_USER) != null) {
+                if (System.currentTimeMillis() - session.getCreationTime() > SESSION_MAX_LENGTH) {
+                    // session reset
+                    session.removeAttribute(AUTHENTICATED_USER);
+                    session.invalidate();
+                } else {
+                    // SESSION PASSTHROUGH HERE. THE REQUEST IS BYPASSING AUTHENTICATION
+                    return;
+                }
+            }
+        }
 
         // Process the Auth stuff in the headers
         String tmp = (String)messageContext.getProperty(HTTPConstants.HEADER_AUTHORIZATION);
@@ -67,11 +87,13 @@ public class AuthenticationAxisHandler extends InternalIDSecurityAxisHandler {
         // NOW, PROCEED TO AUTHORIZATION
         if (authorizeAdminMembership(authenticatedUser)) {
             // CREATE SESSION
-            // todo
+            HttpSession session = servletrequest.getSession(true);
+            session.setAttribute(AUTHENTICATED_USER, authenticatedUser);
+            session.setMaxInactiveInterval(30); // 30 seconds times you out
         }
         else {
             System.err.println("authorization failure for user " + authenticatedUser.getLogin());
-            throw new AxisFault("Server.Unauthorized", "com.l7tech.adminws.security.AuthorizationAxisHandler failed", null, null );
+            throw new AxisFault("Server.Unauthorized", "com.l7tech.adminws.security.AuthenticationAxisHandler failed", null, null );
         }
     }
 
