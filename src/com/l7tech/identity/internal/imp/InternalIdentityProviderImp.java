@@ -46,6 +46,6 @@ public class InternalIdentityProviderImp implements InternalIdentityProvider {
     }
 
     private IdentityProviderConfig _identityProviderConfig;
-    private UserManager _userManager;
-    private GroupManager _groupManager;
+    private UserManagerImp _userManager;
+    private GroupManagerImp _groupManager;
 }
