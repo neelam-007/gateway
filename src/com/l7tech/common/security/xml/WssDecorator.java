@@ -105,8 +105,18 @@ public interface WssDecorator {
             String getId();
             SecretKey getSecretKey();
             // todo, this makes no sense --fla
+            // length and generations are things that relate
+            // to the derived key (not the Session)
+            // the decorator can choose itself to use any generation
+            // and length it wants when it needs to create DerivedKeys
+            // i recommend we fix the key length in the WssDecorator
+            // (always use the same length for keys we generate ourselves)
+            // Regarding the generation two things make sense
+            // 1. either we fix it to 0
+            // 2. or we increment it within a message and use the same nonce
+            // for each key in that message
+            // i think 1 is good enough for now.
             int getGeneration();
-            // todo, this makes no sense --fla
             int getLength();
         }
 
