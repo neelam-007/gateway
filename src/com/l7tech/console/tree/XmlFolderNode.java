@@ -45,6 +45,7 @@ public class XmlFolderNode extends AbstractTreeNode {
         insert(new SchemaValidationPaletteNode(), index++);
         insert(new XslTransformationPaletteNode(), index++);
         insert(new RequestSwAAssertionPaletteNode(), index++);
+        insert(new RegexNode(), index++);
         final CustomAssertionsRegistrar cr = Registry.getDefault().getCustomAssertionsRegistrar();
         try {
             Iterator it = cr.getAssertions(Category.MESSAGE).iterator();

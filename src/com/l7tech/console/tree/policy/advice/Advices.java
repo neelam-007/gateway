@@ -89,5 +89,6 @@ public class Advices {
         advicesMap.put(RequestSwAAssertion.class, new Class[] {AddRequestSwAAssertionAdvice.class});
         advicesMap.put(RequestWssSaml.class, new Class[] {AddRequestWssSamlAdvice.class});
         advicesMap.put(WsTrustCredentialExchange.class, new Class[] {AddWsTrustCredentialExchangeAdvice.class});
+        advicesMap.put(Regex.class, new Class[] {AddWsTrustCredentialExchangeAdvice.class});
     }
 }

@@ -22,7 +22,7 @@ import java.util.Map;
 
 /**
  * The class <code>AssertionTreeNodeFactory</code> is a factory
- * class that creates <code>TreeNode</code> instances based on
+ * class that creates policy <code>TreeNode</code> instances based on
  * <code>Assertion</code> instances.
  * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
@@ -67,6 +67,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(AuditAssertion.class, AuditAssertionTreeNode.class);
         assertionMap.put(RequestWssSaml.class, RequestWssSamlTreeNode.class);
         assertionMap.put(WsTrustCredentialExchange.class, WsTrustCredentialExchangeTreeNode.class);
+        assertionMap.put(Regex.class, RegexPolicyNode.class);
     }
 
     /**

@@ -229,4 +229,8 @@ public class AssertionMessages extends Messages {
     public static final M WSTRUST_NON_XML_MESSAGE         = m(6203, Level.INFO, "Can't replace security token in non-XML message");
     public static final M WSTRUST_DECORATION_FAILED       = m(6204, Level.WARNING, "Unable to replace security token");
     public static final M WSTRUST_ORIGINAL_TOKEN_NOT_XML  = m(6205, Level.WARNING, "Can't remove original security token; it does not appear to have been an Element");
+
+    //ServerRegex
+    public static final M REGEX_PATTERN_INVALID                   = m(6300, Level.WARNING, "Regex pattern '{0}' compile error: {1}; assertion therefore fails.");
+
 }
