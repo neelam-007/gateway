@@ -393,17 +393,20 @@ public class PolicyApplicationContext extends ProcessingContext {
     }
 
     private String establishSecureConversationSession()
-      throws OperationCanceledException, GeneralSecurityException, ClientCertificateException,
-            KeyStoreCorruptException, PolicyRetryableException, BadCredentialsException,
-      IOException {
-        prepareClientCertificate(); // todo fla, if the ssa can talk ssl to ssg, then a client cert is not necessary
+      throws OperationCanceledException, GeneralSecurityException, KeyStoreCorruptException,
+             BadCredentialsException, IOException {
+        // prepareClientCertificate(); // todo fla, if the ssa can talk ssl to ssg, then a client cert is not necessary
         Ssg ssg = getSsg();
+        TokenServiceClient.SecureConversationSession s = null;
         logger.log(Level.INFO, "Establishing new WS-SecureConversation session with Gateway " + ssg.toString());
-        TokenServiceClient.SecureConversationSession s =
-          TokenServiceClient.obtainSecureConversationSession(ssg,
-            SsgKeyStoreManager.getClientCert(ssg),
-            SsgKeyStoreManager.getClientCertPrivateKey(ssg),
-            SsgKeyStoreManager.getServerCert(ssg));
+        if (SsgKeyStoreManager.getClientCert(ssg) == null) {
+            s = TokenServiceClient.obtainSecureConversationSession(ssg, SsgKeyStoreManager.getServerCert(ssg));
+        } else {
+            s = TokenServiceClient.obtainSecureConversationSession(ssg,
+                                                                   SsgKeyStoreManager.getClientCert(ssg),
+                                                                   SsgKeyStoreManager.getClientCertPrivateKey(ssg),
+                                                                   SsgKeyStoreManager.getServerCert(ssg));
+        }
         logger.log(Level.INFO, "WS-SecureConversation session established with Gateway " + ssg.toString() + "; session ID=" + s.getSessionId());
         ssg.secureConversationId(s.getSessionId());
         secureConversationId = s.getSessionId();

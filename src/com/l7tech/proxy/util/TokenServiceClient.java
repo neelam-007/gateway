@@ -15,24 +15,26 @@ import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.security.xml.processor.*;
-import com.l7tech.common.util.CausedIOException;
-import com.l7tech.common.util.ISO8601Date;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.saml.SamlHolderOfKeyAssertion;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.proxy.datamodel.CurrentRequest;
 import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.Managers;
+import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.xml.soap.SOAPConstants;
+import javax.net.ssl.HttpsURLConnection;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.PasswordAuthentication;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
@@ -106,12 +108,37 @@ public class TokenServiceClient {
         }
     }
 
+    public static Document createRequestSecurityTokenMessage(String desiredTokenType) {
+        try {
+            Document msg = XmlUtil.stringToDocument("<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\">" +
+                                                    "<soap:Body>" +
+                                                    "<wst:RequestSecurityToken xmlns:wst=\"" + SoapUtil.WST_NAMESPACE + "\">" +
+                                                    "<wst:RequestType>http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue</wst:RequestType>" +
+                                                    "</wst:RequestSecurityToken>" +
+                                                    "</soap:Body></soap:Envelope>");
+            Element env = msg.getDocumentElement();
+            Element body = XmlUtil.findFirstChildElement(env);
+            Element rst = XmlUtil.findFirstChildElement(body);
+            Element tokenType = XmlUtil.createAndPrependElementNS(rst, "TokenType", SoapUtil.WST_NAMESPACE, "wst");
+            tokenType.appendChild(XmlUtil.createTextNode(msg, desiredTokenType));
+
+            return msg;
+        } catch (IOException e) {
+            throw new RuntimeException(e); // can't happen
+        } catch (SAXException e) {
+            throw new RuntimeException(e); // can't happen
+        }
+    }
+
     public interface SecureConversationSession {
         String getSessionId();
         byte[] getSharedSecret();
         Date getExpiryDate();
     }
 
+    /**
+     * Requests a SecureConversation context token. The request is authenticated using an xml digital signature.
+     */
     public static SecureConversationSession obtainSecureConversationSession(Ssg ssg,
                                                                             X509Certificate clientCertificate,
                                                                             PrivateKey clientPrivateKey,
@@ -123,6 +150,21 @@ public class TokenServiceClient {
         Document requestDoc = createRequestSecurityTokenMessage(clientCertificate, clientPrivateKey,
                                                                 TOKENTYPE_SECURITYCONTEXT, timestampCreatedDate);
         Object result = obtainResponse(clientCertificate, url, ssg, requestDoc, clientPrivateKey, serverCertificate);
+
+        if (!(result instanceof SecureConversationSession))
+            throw new IOException("Token server returned unwanted token type " + result.getClass());
+        return (SecureConversationSession)result;
+    }
+
+    /**
+     * Requests a SecureConversation context token. The request is transport-secured (ssl) and transport authenticated.
+     */
+    public static SecureConversationSession obtainSecureConversationSession(Ssg ssg, X509Certificate serverCertificate)
+            throws IOException, GeneralSecurityException, OperationCanceledException {
+        URL url = new URL("https", ssg.getSsgAddress(), ssg.getSslPort(), SecureSpanConstants.TOKEN_SERVICE_FILE);
+
+        Document requestDoc = createRequestSecurityTokenMessage(TOKENTYPE_SECURITYCONTEXT);
+        Object result = obtainResponse(url, ssg, requestDoc, serverCertificate);
 
         if (!(result instanceof SecureConversationSession))
             throw new IOException("Token server returned unwanted token type " + result.getClass());
@@ -187,6 +229,60 @@ public class TokenServiceClient {
             throw new CausedIOException("Unable to obtain a token from the security token server: " + e.getMessage(), e);
         } catch (IOException e) {
             throw new CausedIOException("Unable to obtain a token from the security token server: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Get a response from the TokenService over https
+     * @param url must be https
+     */
+    private static Object obtainResponse(URL url, Ssg ssg, Document requestDoc, X509Certificate serverCertificate)
+                                                                      throws IOException, GeneralSecurityException,
+                                                                             OperationCanceledException {
+        HttpsURLConnection sslConn = null;
+        try {
+            log.log(Level.INFO, "Applying for new Security Token with token server " + url.toString());
+
+            CurrentRequest.setPeerSsg(ssg);
+            // enforce https and provide password credentials
+            PasswordAuthentication pw = Managers.getCredentialManager().getCredentials(ssg);
+            String encodedbasicauthvalue = HexUtils.encodeBase64((pw.getUserName() + ":" +
+                                                                  new String(pw.getPassword())).getBytes());
+            // here, we must use the special
+            CurrentRequest.setPeerSsg(ssg);
+            URLConnection conn = url.openConnection();
+            conn.setRequestProperty("Authorization", "Basic " + encodedbasicauthvalue);
+            if (conn instanceof HttpsURLConnection) {
+                sslConn = (HttpsURLConnection)conn;
+                sslConn.setSSLSocketFactory(ClientProxySecureProtocolSocketFactory.getInstance());
+            } else {
+                throw new GeneralSecurityException("Cannot send this request over insecure channel.");
+            }
+            conn.setDoOutput(true);
+            conn.setAllowUserInteraction(false);
+            conn.setRequestProperty(MimeUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
+            XmlUtil.nodeToOutputStream(requestDoc, conn.getOutputStream());
+            int len = conn.getContentLength();
+            log.log(Level.FINEST, "Token server response content length=" + len);
+            String contentType = conn.getContentType();
+            if (contentType == null || contentType.indexOf(XmlUtil.TEXT_XML) < 0)
+                throw new IOException("Token server returned unsupported content type " + conn.getContentType());
+            Document response = null;
+            response = XmlUtil.parse(conn.getInputStream());
+            Object result = null;
+            result = parseRequestSecurityTokenResponse(response, null, null, serverCertificate);
+            return result;
+        } catch (SAXException e) {
+            throw new CausedIOException("Unable to parse RequestSecurityTokenResponse from security token service: " + e.getMessage(), e);
+        } catch (InvalidDocumentFormatException e) {
+            throw new CausedIOException("Unable to process response from security token service: " + e.getMessage(), e);
+        } catch (ProcessorException e) {
+            throw new CausedIOException("Unable to obtain a token from the security token server: " + e.getMessage(), e);
+        } catch (IOException e) {
+            throw new CausedIOException("Unable to obtain a token from the security token server: " + e.getMessage(), e);
+        } finally {
+            sslConn.disconnect();
+            sslConn = null;
         }
     }
 
@@ -285,7 +381,11 @@ public class TokenServiceClient {
                                                  " (namespace=" + what.getNamespaceURI() + ")");
     }
 
-    private static Object processSecurityContextToken(Element scTokenEl, Element rstr, X509Certificate clientCertificate, PrivateKey clientPrivateKey) throws InvalidDocumentFormatException, GeneralSecurityException {
+    private static Object processSecurityContextToken(Element scTokenEl,
+                                                      Element rstr,
+                                                      X509Certificate clientCertificate,
+                                                      PrivateKey clientPrivateKey)
+                                            throws InvalidDocumentFormatException, GeneralSecurityException {
         // Extract session ID
         Element identifierEl = XmlUtil.findOnlyOneChildElementByName(scTokenEl, SoapUtil.WSSC_NAMESPACE, "Identifier");
         if (identifierEl == null) throw new InvalidDocumentFormatException("Response contained no wsc:Identifier");
@@ -313,28 +413,45 @@ public class TokenServiceClient {
         Element rpt = XmlUtil.findOnlyOneChildElementByName(rstr, SoapUtil.WST_NAMESPACE, "RequestedProofToken");
         if (rpt == null) throw new InvalidDocumentFormatException("Response contained no RequestedProofToken");
 
-        Element encryptedKey = XmlUtil.findOnlyOneChildElementByName(rpt, SoapUtil.XMLENC_NS, "EncryptedKey");
-        if (encryptedKey == null) throw new InvalidDocumentFormatException("Response RequestedProofToken did not contain an EncryptedKey");
+        Element encryptedKeyEl = XmlUtil.findOnlyOneChildElementByName(rpt, SoapUtil.XMLENC_NS, "EncryptedKey");
+        Element binarySecretEl = XmlUtil.findOnlyOneChildElementByName(rpt, SoapUtil.WST_NAMESPACE, "BinarySecret");
+        byte[] sharedSecret = null;
+        if (encryptedKeyEl != null) {
+            // If there's a KeyIdentifier, log whether it's talking about our key
+            // Check that this is for us by checking the ds:KeyInfo/wsse:SecurityTokenReference/wsse:KeyIdentifier
+            XencUtil.checkKeyInfo(encryptedKeyEl, clientCertificate);
 
-        // If there's a KeyIdentifier, log whether it's talking about our key
-        // Check that this is for us by checking the ds:KeyInfo/wsse:SecurityTokenReference/wsse:KeyIdentifier
-        XencUtil.checkKeyInfo(encryptedKey, clientCertificate);
+            // verify that the algo is supported
+            XencUtil.checkEncryptionMethod(encryptedKeyEl);
 
-        // verify that the algo is supported
-        XencUtil.checkEncryptionMethod(encryptedKey);
-
-        // Extract the encrypted key
-        final byte[] unencryptedKey = XencUtil.decryptKey(encryptedKey, clientPrivateKey);
+            // Extract the encrypted key
+            sharedSecret = XencUtil.decryptKey(encryptedKeyEl, clientPrivateKey);
+        } else if (binarySecretEl != null && clientPrivateKey == null) {
+            String base64edsecret = XmlUtil.getTextValue(binarySecretEl);
+            try {
+                sharedSecret = HexUtils.decodeBase64(base64edsecret, true);
+            } catch (IOException e) {
+                throw new InvalidDocumentFormatException(e);
+            }
+        } else if (binarySecretEl != null && clientPrivateKey != null) {
+            throw new InvalidDocumentFormatException("Response RequestedProofToken contained a BinarySecret element " +
+                                                     "but should contain an EncryptedKey instead since this client has " +
+                                                     "a private key.");
+        } else {
+            throw new InvalidDocumentFormatException("Response RequestedProofToken did not contain an EncryptedKey " +
+                                                     "element nor a BinarySecret element.");
+        }
 
         final Date finalExpires = expires;
         final String finalIdentifier = identifier;
+        final byte[] finalSecret = sharedSecret;
         return new SecureConversationSession() {
             public String getSessionId() {
                 return finalIdentifier;
             }
 
             public byte[] getSharedSecret() {
-                return unencryptedKey;
+                return finalSecret;
             }
 
             public Date getExpiryDate() {
