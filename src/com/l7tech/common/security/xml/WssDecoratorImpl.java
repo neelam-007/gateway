@@ -524,8 +524,8 @@ public class WssDecoratorImpl implements WssDecorator {
         Element element = factory.createElementNS(securityHeader.getNamespaceURI(),
                                                   SoapUtil.BINARYSECURITYTOKEN_EL_NAME);
         element.setPrefix(securityHeader.getPrefix());
-        element.setAttribute("ValueType", element.getPrefix() + ":X509v3");
-        element.setAttribute("EncodingType", element.getPrefix() + ":Base64Binary");
+        element.setAttribute("ValueType", SoapUtil.VALUETYPE_X509);
+        element.setAttribute("EncodingType", SoapUtil.ENCODINGTYPE_BASE64BINARY);
         element.appendChild(factory.createTextNode(HexUtils.encodeBase64(certificate.getEncoded(), true)));
         securityHeader.appendChild(element);
         return element;
