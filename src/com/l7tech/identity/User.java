@@ -20,6 +20,7 @@ public interface User extends Entity {
     Address getBillingAddress();
 
     Collection getGroups();
+    Collection getGroupHeaders();
 
     void setLogin( String login );
     void setPassword( String password );
