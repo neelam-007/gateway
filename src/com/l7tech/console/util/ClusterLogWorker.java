@@ -117,11 +117,12 @@ public class ClusterLogWorker extends SwingWorker {
 
         SSGLogRecord[] rawLogs = new SSGLogRecord[]{};
         int accumulatedNewLogs = 0;
-        Vector newLogs = new Vector();
 
         if (requests.size() > 0) {
-            //for (int i = 0; i < requests.size(); i++) {
-            for (int i = 0; i < 1; i++) {
+
+            for (int i = 0; i < requests.size(); i++) {
+
+                Vector newLogs = new Vector();
                 LogRequest logRequest = (LogRequest) requests.elementAt(i);
 
                 do {
@@ -132,10 +133,10 @@ public class ClusterLogWorker extends SwingWorker {
                         rawLogs = logService.getSystemLog(logRequest.getNodeId(), logRequest.getStartMsgNumber(), logRequest.getEndMsgNumber(), FilteredLogTableModel.MAX_MESSAGE_BLOCK_SIZE);
                         //    rawLogs = logService.getSystemLog(((LogRequest) requests.get(0)).getNodeId(), ((LogRequest) requests.get(0)).getStartMsgNumber(), ((LogRequest) requests.get(0)).getEndMsgNumber(), FilteredLogTableModel.MAX_MESSAGE_BLOCK_SIZE);
 
-                       // System.out.println("startMsgNumber: " + logRequest.getStartMsgNumber());
-                       // System.out.println("endMsgNumber: " + logRequest.getEndMsgNumber());
+                        // System.out.println("startMsgNumber: " + logRequest.getStartMsgNumber());
+                        // System.out.println("endMsgNumber: " + logRequest.getEndMsgNumber());
 
-                       // System.out.println("NodeId: " + logRequest.getNodeId() + ", Number of logs received: " + rawLogs.length);
+                        //System.out.println("NodeId: " + logRequest.getNodeId() + ", Number of logs received: " + rawLogs.length);
                         // todo: retrieve multiple nodes later
                         //rawLogs = logService.getSystemLog(requests[0].getNodeId(), requests[0].getStartMsgNumber(), requests[0].getEndMsgNumber(), FilteredLogTableModel.MAX_MESSAGE_BLOCK_SIZE);
 
@@ -146,8 +147,8 @@ public class ClusterLogWorker extends SwingWorker {
                             for (int j = 0; j < (rawLogs.length) && (newLogs.size() < FilteredLogTableModel.MAX_NUMBER_OF_LOG_MESSGAES); j++) {
                                 logMsg = new LogMessage(rawLogs[j]);
 
-                                    newLogs.add(logMsg);
-                                   // System.out.println("msg no: " + logMsg.getMsgNumber());
+                                newLogs.add(logMsg);
+                                // System.out.println("msg no: " + logMsg.getMsgNumber());
                             }
 
                             if (accumulatedNewLogs + rawLogs.length <= FilteredLogTableModel.MAX_NUMBER_OF_LOG_MESSGAES) {

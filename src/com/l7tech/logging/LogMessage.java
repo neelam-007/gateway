@@ -24,8 +24,9 @@ public class LogMessage {
 
     public LogMessage(SSGLogRecord log) {
         msgNumber = log.getSequenceNumber();
-        Calendar.getInstance().setTimeInMillis(log.getMillis());
-        time = sdf.format(Calendar.getInstance().getTime());
+        Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis(log.getMillis());
+        time = sdf.format(cal.getTime());
         severity = log.getLevel().toString();
         msgClass = log.getSourceClassName().toString();
         msgMethod = log.getSourceMethodName().toString();
