@@ -1,36 +1,38 @@
 package com.l7tech.server;
 
-import com.l7tech.common.security.xml.WssProcessor;
-import com.l7tech.common.security.xml.WssProcessorImpl;
+import com.l7tech.common.security.saml.Constants;
 import com.l7tech.common.security.xml.WssDecorator;
 import com.l7tech.common.security.xml.WssDecoratorImpl;
+import com.l7tech.common.security.xml.WssProcessor;
+import com.l7tech.common.security.xml.WssProcessorImpl;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.identity.User;
 import com.l7tech.identity.AuthenticationException;
+import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.server.secureconversation.DuplicateSessionException;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
 import com.l7tech.server.secureconversation.SecureConversationSession;
-import com.l7tech.server.secureconversation.DuplicateSessionException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 import sun.security.x509.X500Name;
 
-import javax.xml.soap.SOAPConstants;
-import javax.crypto.SecretKey;
 import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.xml.soap.SOAPConstants;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.*;
-import java.security.interfaces.RSAPublicKey;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPublicKey;
+import java.util.Calendar;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Calendar;
 
 /**
  * Handles WS Trust RequestSecurityToken requests as well as SAML token requests.
@@ -354,8 +356,64 @@ public class TokenService {
         return false;
     }
 
-    private boolean isValidRequestForSAMLToken(Document request, WssProcessor.ProcessorResult wssOutput) {
-        // todo, alex what makes this request a saml token request?
+    private boolean isValidRequestForSAMLToken(Document request, WssProcessor.ProcessorResult wssOutput) throws InvalidDocumentFormatException {
+        Element body = SoapUtil.getBodyElement(request);
+        Element maybeRSTEl = XmlUtil.findFirstChildElement(body);
+
+        // body must include wst:RequestSecurityToken element
+        if (!maybeRSTEl.getLocalName().equals(RST_ELNAME)) {
+            logger.fine("Body's child does not seem to be a RST (" + maybeRSTEl.getLocalName() + ")");
+            return false;
+        }
+        if (!maybeRSTEl.getNamespaceURI().equals(SoapUtil.WST_NAMESPACE)) {
+            logger.fine("Trust namespace not recognized (" + maybeRSTEl.getNamespaceURI() + ")");
+            return false;
+        }
+        Element tokenTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE, TOKTYPE_ELNAME);
+        if (tokenTypeEl == null) {
+            logger.warning("Token type not specified. This is not supported.");
+            return false;
+        }
+
+        // validate <wst:RequestType>http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue</wst:RequestType>
+        Element reqTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE, REQTYPE_ELNAME);
+        if (reqTypeEl == null) {
+            logger.warning("Request type not specified. This is not supported.");
+            return false;
+        }
+        String value = XmlUtil.getTextValue(reqTypeEl);
+        if (!value.equals("http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue")) {
+            logger.warning("RequestType '" + value + "' not supported.");
+            return false;
+        }
+        // make sure body was signed
+        boolean signed = false;
+        WssProcessor.SignedElement[] signedElements = wssOutput.getElementsThatWereSigned();
+        for (int i = 0; i < signedElements.length; i++) {
+            WssProcessor.SignedElement signedElement = signedElements[i];
+            if (signedElement.asElement() == body) {
+                signed = true;
+            }
+        }
+        if (!signed) {
+            logger.warning("Seems like the body was not signed.");
+            return false;
+        }
+
+        // validate <wst:TokenType>saml:Assertion</wst:TokenType>
+        String qname = XmlUtil.getTextValue(tokenTypeEl);
+        Map namespaces = XmlUtil.getAncestorNamespaces(tokenTypeEl);
+        String samlPrefix = (String)namespaces.get(Constants.NS_SAML);
+        int cpos = qname.indexOf(":");
+        if (cpos > 0) {
+            String qprefix = qname.substring(0,cpos);
+            String qlpart = qname.substring(cpos+1);
+            if (qprefix.equals(samlPrefix) && Constants.ELEMENT_ASSERTION.equals(qlpart)) {
+                return true;
+            }
+        }
+
+        logger.warning("TokenType '" + qname + "' is not a valid saml:Assertion QName");
         return false;
     }
 
