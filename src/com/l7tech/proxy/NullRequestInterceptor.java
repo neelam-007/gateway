@@ -20,7 +20,7 @@ public class NullRequestInterceptor implements RequestInterceptor {
     }
 
     /**
-     * Fired when a msgNoTrust is received from a client, after it is parsed.
+     * Fired when a message is received from a client, after it is parsed.
      * @param message
      */
     public void onReceiveMessage(PendingRequest message) {
@@ -34,7 +34,7 @@ public class NullRequestInterceptor implements RequestInterceptor {
     }
 
     /**
-     * Fired when an error is encountered while reading the msgNoTrust from a client.
+     * Fired when an error is encountered while reading the message from a client.
      * @param t The error that occurred during the request.
      */
     public void onMessageError(final Throwable t) {

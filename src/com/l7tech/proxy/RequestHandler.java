@@ -250,7 +250,7 @@ public class RequestHandler extends AbstractHttpHandler {
     }
 
     /**
-     * Handle a GET request to this Agent's msgNoTrust processing port.  We'll try to return a useful
+     * Handle a GET request to this Agent's message processing port.  We'll try to return a useful
      * HTML document including links to the WSIL proxies for each configured SSG.
      * @param request
      */
@@ -309,7 +309,7 @@ public class RequestHandler extends AbstractHttpHandler {
     private SsgResponse getServerResponse(PendingRequest request)
             throws HttpChallengeRequiredException
     {
-        log.fine("Processing msgNoTrust to Gateway " + request.getSsg());
+        log.fine("Processing message to Gateway " + request.getSsg());
 
         try {
             SsgResponse reply = messageProcessor.processMessage(request);
@@ -341,7 +341,7 @@ public class RequestHandler extends AbstractHttpHandler {
         interceptor = requestInterceptor;
     }
 
-    /** Turn off msgNoTrust interception. */
+    /** Turn off message interception. */
     public void clearRequestInterceptor() {
         setRequestInterceptor(NullRequestInterceptor.INSTANCE);
     }
