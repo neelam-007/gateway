@@ -122,6 +122,7 @@ public class TrustedCertAdminTest extends TestCase {
         System.out.println("Saved " + oid );
 
         tc.setSubjectDn("The other one");
+        tc.setTrustedForSsl(true);
         tc.setOid(oid.longValue());
 
         new SsgAdminSession() {
@@ -204,8 +205,12 @@ public class TrustedCertAdminTest extends TestCase {
 
     public void testSaveCert() throws Exception {
         final TrustedCert tc = getTrustedCert();
+        tc.setTrustedForSigningClientCerts(true);
+        tc.setTrustedForSigningSamlTokens(true);
+        tc.setTrustedForSigningServerCerts(true);
+        tc.setTrustedForSsl(true);
         X509Certificate cert = tc.getCertificate();
-        System.out.println("Saving cert with dn " + cert.getSubjectDN().getName());
+        System.out.println("Saving cert with dn '" + cert.getSubjectDN().getName() + "' and usage '" + tc.getUsageDescription() + "'" );
 
         SsgAdminSession save = new SsgAdminSession() {
             protected Object doSomething() throws Exception {
