@@ -7,20 +7,19 @@
 package com.l7tech.identity.ldap;
 
 import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.UserManager;
 import com.l7tech.identity.User;
-import com.l7tech.identity.UserBean;
-import com.l7tech.objectmodel.*;
+import com.l7tech.identity.UserManager;
 import com.l7tech.logging.LogManager;
+import com.l7tech.objectmodel.*;
 
-import javax.naming.directory.*;
-import javax.naming.NamingException;
-import javax.naming.NamingEnumeration;
-import javax.naming.Context;
 import javax.naming.AuthenticationException;
+import javax.naming.Context;
+import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
+import javax.naming.directory.*;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.*;
 
 /**
  * @author alex
@@ -131,12 +130,8 @@ public abstract class AbstractLdapUserManagerServer implements UserManager {
         throw new SaveException( UNSUPPORTED );
     }
 
-    public String save(UserBean user) throws SaveException {
+    public String save(User user, Set groupHeaders ) throws SaveException {
         throw new SaveException( UNSUPPORTED );
-    }
-
-    public void update(UserBean user) throws UpdateException {
-        throw new UpdateException( UNSUPPORTED );
     }
 
     /**
@@ -144,6 +139,10 @@ public abstract class AbstractLdapUserManagerServer implements UserManager {
      * read user information
      */
     public void update(User user) throws UpdateException {
+        throw new UpdateException( UNSUPPORTED );
+    }
+
+    public void update(User user, Set groupHeaders ) throws UpdateException {
         throw new UpdateException( UNSUPPORTED );
     }
 
