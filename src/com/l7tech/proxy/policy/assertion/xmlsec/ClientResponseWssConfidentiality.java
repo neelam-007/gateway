@@ -50,6 +50,10 @@ public class ClientResponseWssConfidentiality extends ClientAssertion {
             throws ServerCertificateUntrustedException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException, PolicyAssertionException {
         Document soapmsg = response.getResponseAsDocument();
         ProcessorResult wssRes = response.getProcessorResult();
+        if (wssRes == null) {
+            log.info("WSS processing was not done on this response.");
+            return AssertionStatus.FAILED;
+        }
 
         ProcessorResultUtil.SearchResult result = null;
         try {

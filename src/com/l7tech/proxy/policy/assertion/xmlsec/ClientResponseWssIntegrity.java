@@ -70,6 +70,10 @@ public class ClientResponseWssIntegrity extends ClientAssertion {
             throws ServerCertificateUntrustedException, IOException, SAXException, ResponseValidationException, KeyStoreCorruptException, InvalidDocumentFormatException, PolicyAssertionException {
         Document soapmsg = response.getResponseAsDocument();
         ProcessorResult wssRes = response.getProcessorResult();
+        if (wssRes == null) {
+            log.info("WSS processing was not done on this response.");
+            return AssertionStatus.FAILED;
+        }
 
         String sentMessageId = request.getL7aMessageId();
         if (sentMessageId != null) {

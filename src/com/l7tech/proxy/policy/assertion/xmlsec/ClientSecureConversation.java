@@ -72,6 +72,10 @@ public class ClientSecureConversation extends ClientAssertion {
     {
         // Make sure the response's WssProcessor.Results contain a reference to the Secure Conversation
         ProcessorResult pr = response.getProcessorResult();
+        if (pr == null) {
+            log.info("WSS processing was not done on this response.");
+            return AssertionStatus.FAILED;
+        }
         SecurityToken[] tokens = pr.getSecurityTokens();
         SecurityContextToken sct = null;
         for (int i = 0; i < tokens.length; i++) {

@@ -25,11 +25,11 @@ import java.util.logging.Logger;
  */
 public class SsgResponse {
     private static final Logger log = Logger.getLogger(SsgResponse.class.getName());
-    private Document responseDoc = null;
+    final private Document responseDoc;
+    final private HttpHeaders headers;
+    final private int httpStatus;
+    final private ProcessorResult processorResult;
     private String responseString = null;
-    private HttpHeaders headers;
-    private int httpStatus = 0;
-    private ProcessorResult processorResult = null;
 
     public SsgResponse(Document wssProcessedResponse, ProcessorResult wssProcessorResult,
                        int httpStatus, HttpHeaders headers)

@@ -14,6 +14,7 @@ import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.security.xml.processor.*;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
@@ -636,21 +637,29 @@ public class MessageProcessor {
                 };
             }
 
-            boolean haveKey = SsgKeyStoreManager.isClientCertUnlocked(ssg);
-            final ProcessorResult processorResultRaw =
-                    wssProcessor.undecorateMessage(responseDocument,
-                                                   haveKey ? SsgKeyStoreManager.getClientCert(ssg) : null,
-                                                   haveKey ? SsgKeyStoreManager.getClientCertPrivateKey(ssg) : null,
-                                                   scf);
-            // Translate timestamp in result from SSG time to local time
-            final WssTimestamp wssTimestampRaw = processorResultRaw.getTimestamp();
-            ProcessorResult processorResult = new ProcessorResultWrapper(processorResultRaw) {
-                public WssTimestamp getTimestamp() {
-                    return new WssTimestampWrapper(wssTimestampRaw, ssg.dateTranslatorFromSsg());
-                }
-            };
+            ProcessorResult processorResult = null;
+            try {
+                boolean haveKey = SsgKeyStoreManager.isClientCertUnlocked(ssg);
+                final ProcessorResult processorResultRaw =
+                        wssProcessor.undecorateMessage(responseDocument,
+                                                       haveKey ? SsgKeyStoreManager.getClientCert(ssg) : null,
+                                                       haveKey ? SsgKeyStoreManager.getClientCertPrivateKey(ssg) : null,
+                                                       scf);
+                // Translate timestamp in result from SSG time to local time
+                final WssTimestamp wssTimestampRaw = processorResultRaw.getTimestamp();
+                processorResult = new ProcessorResultWrapper(processorResultRaw) {
+                    public WssTimestamp getTimestamp() {
+                        return new WssTimestampWrapper(wssTimestampRaw, ssg.dateTranslatorFromSsg());
+                    }
+                };
 
-            responseDocument = processorResult.getUndecoratedMessage();
+                responseDocument = processorResult.getUndecoratedMessage();
+            } catch (MessageNotSoapException e) {
+                // Response is not SOAP.
+                log.info("Response from Gateway is not SOAP.");
+                processorResult = null;
+            }
+
             SsgResponse response = new SsgResponse(responseDocument, processorResult, status, headers);
             if (status == 401 || status == 402) {
                 req.setLastErrorResponse(response);
