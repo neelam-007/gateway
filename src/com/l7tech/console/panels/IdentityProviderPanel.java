@@ -1,10 +1,15 @@
 package com.l7tech.console.panels;
 
+import com.l7tech.console.util.Registry;
+import com.l7tech.objectmodel.FindException;
+import com.l7tech.identity.IdentityProviderConfig;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
+import java.util.Iterator;
 
 
 /**
@@ -16,7 +21,8 @@ import java.awt.*;
  * @version 1.0
  */
 public class IdentityProviderPanel extends WizardStepPanel {
-    
+    private DefaultComboBoxModel providersComboBoxModel;
+
     /** Creates new form IdentityProviderPanel */
     public IdentityProviderPanel() {
         initComponents();
@@ -58,7 +64,8 @@ public class IdentityProviderPanel extends WizardStepPanel {
         selecProviderjLabel.setBorder(new EmptyBorder(new java.awt.Insets(2, 2, 2, 2)));
         providerSelectorjPanel.add(selecProviderjLabel);
 
-        providersjComboBox.setModel(new DefaultComboBoxModel(new String[] { "Internal provider", "LDAP provider (Corporate LDAP)", "NTLM (Windows corporate netzwerke)" }));
+
+        providersjComboBox.setModel(getProvidersComboBoxModel());
         providerSelectorjPanel.add(providersjComboBox);
 
         add(providerSelectorjPanel, java.awt.BorderLayout.NORTH);
@@ -76,12 +83,7 @@ public class IdentityProviderPanel extends WizardStepPanel {
                 {"fred"},
                 {"bunky"},
                 {"spock"},
-                {"stuart"},
-                {null},
-                {null},
-                {null},
-                {null},
-                {null}
+                {"stuart"}
             },
             new String [] {
                 "Non Users"
@@ -128,13 +130,7 @@ public class IdentityProviderPanel extends WizardStepPanel {
                 {"alice"},
                 {"helmut"},
                 {"marketing-group"},
-                {"development-group"},
-                {null},
-                {null},
-                {null},
-                {null},
-                {null},
-                {null}
+                {"development-group"}
             },
             new String [] {
                 "Service users"
@@ -174,6 +170,27 @@ public class IdentityProviderPanel extends WizardStepPanel {
 
         add(credentialsAndTransportjPanel, java.awt.BorderLayout.CENTER);
     }
+
+    private DefaultComboBoxModel getProvidersComboBoxModel() {
+        if (providersComboBoxModel !=null)
+            return providersComboBoxModel;
+
+        providersComboBoxModel = new DefaultComboBoxModel();
+
+        try {
+
+            Iterator providers =
+                    Registry.getDefault().getProviderConfigManager().findAllIdentityProviders().iterator();
+            while(providers.hasNext()) {
+                IdentityProviderConfig ip = (IdentityProviderConfig)providers.next();
+                providersComboBoxModel.addElement(ip.getDescription());
+
+            }
+        } catch (FindException e) {
+        }
+        return providersComboBoxModel;
+    }
+
 
     public String getDescription() {
         return "Select the identities (users, groups) that are allowed to access the published service"+
