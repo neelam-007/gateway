@@ -164,11 +164,14 @@ public class IdentityProviderPropertiesAction extends NodeAction {
             if (iProvider != null  && iProvider.type() != IdentityProviderType.INTERNAL) {
                 SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
-                        EntityHeader header = ((EntityHeaderNode)node).getEntityHeader();
-                        header.setName(iProvider.getName());
-                        header.setType(EntityType.ID_PROVIDER_CONFIG);
+
                         try {
                             getProviderConfigManager().update(iProvider);
+
+                            // update the node name in the identity provider tree
+                            EntityHeader header = ((EntityHeaderNode)node).getEntityHeader();
+                            header.setName(iProvider.getName());
+                            header.setType(EntityType.ID_PROVIDER_CONFIG);
                             fireEventProviderUpdated(header);
 
                         } catch (UpdateException e) {
