@@ -125,8 +125,10 @@
         <antcall target="package">
         </antcall>
 
+        <!--
         <delete dir="${tomcat.home}/webapps/${app.name}"/>
         <delete dir="${tomcat.home}/webapps/${app.name}"/>
+        -->
         <copy todir="${tomcat.home}/webapps">
             <fileset dir="${build.dir}" includes="*.war"/>
         </copy>
