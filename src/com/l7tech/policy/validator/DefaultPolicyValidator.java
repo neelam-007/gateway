@@ -307,7 +307,8 @@ public class DefaultPolicyValidator extends PolicyValidator {
                 XmlRequestSecurity maybepartialsignature = (XmlRequestSecurity)a;
                 if (!maybepartialsignature.hasAuthenticationElement()) {
                     // check that an identity has been declared
-                    if (!seenSpecificUserAssertion) {
+                    if (!seenAccessControl) {
+                    //if (!seenSpecificUserAssertion) {
                         result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
                             "Partial signature on the request must be preceeded by an access control assertion " +
                             "so that the cert used can be compared to a valid user cert.", null));
