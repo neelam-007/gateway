@@ -57,6 +57,7 @@ public interface WssProcessor {
     public static class ProcessorException extends Exception {}
 
     /**
+     * This processes a soap message. That is, the contents of the Header/Security are processed as per the WSS rules.
      *
      * @param message the xml document containing the soap message. this document may be modified on exit
      * @param recipientCertificate the recipient's cert to which encrypted keys may be encoded for
