@@ -78,6 +78,8 @@ CREATE TABLE internal_user (
   last_name varchar(32) default NULL,
   email varchar(128) default NULL,
   title varchar(64) default NULL,
+  cert BLOB DEFAULT NULL,
+  cert_reset_counter INT DEFAULT '0',
   PRIMARY KEY  (oid),
   UNIQUE KEY l_idx (login)
 ) TYPE=InnoDB;
@@ -87,7 +89,7 @@ CREATE TABLE internal_user (
 --
 
 
-INSERT INTO internal_user VALUES (3,0,'ssgadmin','ssgadmin','309b9c7ab4c3ee2144fce9b071acd440','fname','lname','email','title');
+INSERT INTO internal_user VALUES (3,0,'ssgadmin','ssgadmin','309b9c7ab4c3ee2144fce9b071acd440','fname','lname','email','title', NULL, 0);
 
 --
 -- Table structure for table 'internal_user_group'
@@ -147,18 +149,3 @@ CREATE TABLE published_service (
 --
 -- Dumping data for table 'published_service'
 --
-
-
-
---
--- Table structure for table 'client_cert'
---
-
-DROP TABLE IF EXISTS client_cert;
-CREATE TABLE client_cert (
-  userid VARCHAR(64) NOT NULL default '',
-  consumed BOOL NOT NULL default '0',
-  regen_since_consumed INT,
-  cert BLOB NOT NULL,
-  PRIMARY KEY  (userid)
-) TYPE=InnoDB;
