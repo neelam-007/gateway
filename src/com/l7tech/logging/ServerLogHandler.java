@@ -46,16 +46,13 @@ public class ServerLogHandler extends Handler implements PropertyChangeListener 
         super();
         configure();
         manager.addPropertyChangeListener(this);
-        // start the deamon
-        if (flusherTask == null) {
-            flusherTask = new TimerTask() {
-                public void run() {
-                    cleanAndFlush();
-                }
-            };
-            // as configurable properties
-            flusherDeamon.schedule(flusherTask, FLUSH_FREQUENCY, FLUSH_FREQUENCY);
-        }
+        flusherTask = new TimerTask() {
+            public void run() {
+                cleanAndFlush();
+            }
+        };
+        // as configurable properties
+        flusherDeamon.schedule(flusherTask, FLUSH_FREQUENCY, FLUSH_FREQUENCY);
     }
 
     public void publish(LogRecord record) {
@@ -73,6 +70,7 @@ public class ServerLogHandler extends Handler implements PropertyChangeListener 
     }
 
     public void flush() {
+        cleanAndFlush();
     }
 
 
@@ -87,7 +85,12 @@ public class ServerLogHandler extends Handler implements PropertyChangeListener 
      *            and the property that has changed.
      */
     public void propertyChange(PropertyChangeEvent evt) {
-        configure();
+        // need to add new instance  again on change, as this handler was added programatically
+        manager.removePropertyChangeListener(this);
+        final Logger rootLogger = manager.getLogger("");
+        ServerLogHandler newHandler = new ServerLogHandler();
+        manager.addPropertyChangeListener(newHandler);
+        rootLogger.addHandler(newHandler);
     }
 
     // Private method to configure Handler from LogManager
@@ -284,10 +287,10 @@ if (fullClean) {
      * where log records are stored waiting to be flushed to the database
      */
     private ArrayList cache = new ArrayList();
-    private static long MAX_CACHE_SIZE = 1000;
-    private static TimerTask flusherTask = null;
+    private TimerTask flusherTask = null;
     private final Timer flusherDeamon = new Timer(true);
 
+    private static long MAX_CACHE_SIZE = 1000;
     private static final long FLUSH_FREQUENCY = 15000;
 
 }
