@@ -16,7 +16,7 @@ my @list=(
 	dc_firstnode  => "Cluster DB env, First node in DB cluster (y/n)                                                            ",
         dc_dbip       => "Cluster DB env, DB cluster IP (eg. 10.0.0.10)                                                             ",
 	dblocal       => "Non cluster DB env, DB is on the localhost (database must able to login as localhost) (y/n)               ",
-	dbhostname    => "Non cluster DB env, DB hostname (must be reach-able by this node) if DB is not on localhost (eg. dbserver)",
+	dbhostname    => "Non cluster DB env, DB hostname or IP (must be reach-able by this node) if DB is not on localhost         ",
 	dbuser        => "Database Username (eg. dbuser)                                                                            ",
 	dbpass        => "Database Password (eg. dbpassword)                                                                        ",
 	net_def_rt    => "IP of Load Balancer between bridge/client and gateway (eg. 192.168.1.1)                                   ",
@@ -30,9 +30,6 @@ my @list=(
 my %Conf=();
 
 my $SAVE_FILE="/var/log/SSG_INSTALL";
-
-my $cnf_src="/ssg/bin/my.cnf";
-my $cnf_target="/etc/my.cnf";
 
 # then change the local files as appropriate
 if ( -e $SAVE_FILE ) {
@@ -67,11 +64,12 @@ LOOP:
 sub change_os_config {
 	# lets start small
 	# 1. the front network config
-	print "Starting Network config: \n";
+	print "INFO: Starting Front End Network Configuration... \n";
 	my $front_conf = "/etc/sysconfig/network-scripts/ifcfg-eth1";
 	
 	if ($Conf{"net_front_ip"} ) {
 		if ( -e $front_conf ) {
+			print "INFO: $front_conf existed, now renaming $front_conf to $front_conf.save\n";
 			`mv $front_conf $front_conf.save`;
 		}
 		open (OUT, ">$front_conf");
@@ -84,17 +82,18 @@ NETMASK=$Conf{"net_front_mask"}
 GATEWAY=$Conf{"net_def_rt"}
 EOF
 		close OUT;
-		print "Front: Eth1 ";	
+		print "INFO: Front end network configured $front_conf - IPADDR of $Conf{net_front_ip}; NETMASK of $Conf{net_front_mask}; GATEWAY of $Conf{net_def_rt}";	
 	} else {
 		print "WARNING: No front end network defined\n";
 	}
-	
-	# 2. the back network config
 
+	# 2. the back network config
+        print "INFO: Starting Front End Network Configuration... \n";
 	my $back_conf = "/etc/sysconfig/network-scripts/ifcfg-eth0";
-	
+ 	my $back_route = "/etc/init.d/back_route";	
 	if ($Conf{"net_back_ip"} ) {
 		if ( -e $back_conf ) {
+                        print "INFO: $front_conf existed, now renaming $front_conf to $front_conf.save\n";
 			`mv $back_conf $back_conf.save`;
 		}
 		open (OUT, ">$back_conf");
@@ -106,21 +105,39 @@ IPADDR=$Conf{"net_back_ip"}
 NETMASK=$Conf{"net_back_mask"}
 EOF
 		close OUT;
-		print "Back: Eth0 ";	
+	if ($Conf{net_back_net} && $Conf{net_back_mask} && $Conf{net_back_rt}) {
+		if ( -e $back_route ) {
+			`mv $back_route $back_route.save`;
+		}
+		open (IN, "<$back_route.save");
+		open (OUT, ">$back_route");
+		while (<IN>) {
+                        s/start\(\)\s*\{\s*\n/start\(\) \{\n\t\$route add -net $Conf{net_back_net} netmask $Conf{net_back_mask} gw $Conf{net_back_rt}\n/;
+                        s/stop\(\)\s*\{\s*\n/stop\(\) \{\n\t\$route del -net $Conf{net_back_net} netmask $Conf{net_back_mask} gw $Conf{net_back_rt}\n/;
+                        print OUT;
+		}
+		close IN;
+		close OUT;
+	}
+		print "INFO: Restarting $back_route\n";
+		print "MANUAL TASK: Please review and restart $back_route";	
+                print "INFO: Back end network configured $back_conf - IPADDR of $Conf{net_back_ip}; NETMASK of $Conf{net_back_mask}\n";
+		print "INRO: Back end network configured $back_route - back_net of $Conf{net_back_net}; back_mask of $Conf{net_back_mask}; back_rt of $Conf{net_back_rt}\n";
 	} else {
 		print "WARNING: No back end network defined\n";
 	}
-	print " ... Done\n";
 
-	# cluster stuff
-	# 3 . hostname
-	print "Cluster Hostname: ";
+	# 3. hostname
+	# 3a. hostname for cluster
+	my $cluster_hostname_file = "/ssg/etc/conf/cluster_hostname";
+	my $hosts_file = "/etc/hosts";
+	print "INFO: Configuring cluster hostname for /ssg/etc/conf/cluster_hostname & /etc/hosts";
 	if ($Conf{gc_clusternm} && lc($Conf{gc_cluster}) eq "y") {
-		open (OUT, ">/ssg/etc/conf/cluster_hostname") or die "Can't open cluster hostname file";
+		open (OUT, ">$cluster_hostname_file") or die "Can't open cluster hostname file";
 		print OUT "$Conf{gc_clusternm}\n";
 		close OUT;
 		print "$Conf{gc_clusternm}\n";
-		open (HOST, ">/etc/hosts") or die "Can't open /etc/hosts!";
+		open (HOST, ">$hosts_file") or die "Can't open /etc/hosts!\n";
 		print HOST <<EOF;
 # Modified by /ssg/bin/install.pl
 # Will be replaced if you rerun!
@@ -130,11 +147,28 @@ $Conf{net_back_ip}	$Conf{gc_clusternm} $Conf{hostname}
 EOF
 		close HOST;
 		chmod 0644, "/etc/hosts";
-		print ".... Cluster Hostname and hosts files replaced\n";
+		print "INFO: $cluster_hostname_file and $hosts_file files replaced\n";
 	} else {
-		print "WARNING: Cluster hostname not set\n";
+		print "WARNING: $cluster_hostname_file not set\n";
 	}
-	
+
+	if ( $Conf{gc_cluster} eq "n") {
+		if ( -e $cluster_hostname_file) {
+			`rm -f $cluster_hostname_file`  #non cluster ssg should not have this file
+		}
+                open (HOST, ">$hosts_file") or die "Can't open /etc/hosts!\n";
+                print HOST <<EOF;
+# Modified by /ssg/bin/install.pl
+# Will be replaced if you rerun!
+127.0.0.1       localhost localhost.localdomain
+$Conf{host_ip}      $Conf{hostname}
+
+EOF
+                close HOST;
+                chmod 0644, "/etc/hosts";
+                print "INFO: $cluster_hostname_file removed and $hosts_file files replaced\n";
+	}
+
 	print "Not Implemented: mess around with my.cnf. gotta think on that\n";
 	# 4. local config of db connection
 	# Only works with a distro hib properties, it has placeholders
@@ -198,39 +232,51 @@ EOF
 		print "WARNING: DB username/password not granted to local database\n";
 	}
  
-	# 4c. copy $cnf_src to $cnf_target 
-	print "INFO: Now copy $cnf_src to $cnf_target\n";
-        if (-e $cnf_target) {
-		print "WARNING: $cnf_target existed, now renaming $cnf_target to $cnf_target.orig\n";
-	        rename ($cnf_target,"$cnf_target.orig");
-        }
-	print "INFO: Copying $cnf_src to $cnf_target\n";
-       `cp -f $cnf_src $cnf_target`;
- 
-	# 4d. do the config for db cluster id?
-	print "INFO: Now update $cnf_target\n";
-	if ( ($Conf{dc_cluster} eq "y") && ($Conf{dc_dbserver} eq "y") ) {
+	# 4c. do the config for db cluster on my.cnf and on dbfaildetect.sh?
+	my $cnf = "/etc/my.cnf";
+        my $dbfaildetect_file = "/ssg/bin/dbfaildetect.sh";
+
+	if ( ($Conf{dc_cluster} eq "y") && ($Conf{dc_dbserver} eq "y") && ($Conf{dc_dbip})) {
+        	print "INFO: Now updating $cnf\n";
 		my $s_id=2;
                 if ($Conf{dc_firstnode} eq "y" ) {
                         $s_id=1;
                 }
-		open (IN,"$cnf_target");
-		open(CNF, ">$cnf_target");
-		while(<IN>) {
+		`mv $cnf $cnf.orig`;
+		open(CNF_IN, "<$cnf.orig");
+		open(CNF_OUT, ">$cnf");
+		while(<CNF_IN>) {
                         s/^#server-id=1$/server-id=$s_id/;   #uncomment it and set server id value if commented out
 			s/^server-id=(.*)$/server-id=$s_id/; #set server id value if already uncomment, also purge any server-id were set to other values
-			print CNF;
+			s/#\s*log-bin/log-bin/; #ensure uncomment
+			s/#\s*log-slave-update/log-slave-update/; #ensure comment
+			print CNF_OUT;
 		}		
-		close CNF;
+		close CNF_IN;
+		close CNF_OUT;
 		# server id is set. Need to run the sync; then set the master/slave relationship
 		# perhaps this is best left to the user.
-		print "INFO: Server id is set - need to manually runt the sync, then set the master/slave relationship\n";
-		print "INFO: $cnf_target updated with cluster server id: $s_id\n";
+		print "MANUAL TASK: Server id is set - need to manually run the sync, then set the master/slave relationship\n";
+		print "INFO: $cnf updated with cluster server id: $s_id\n";
+		
+                print "INFO: Now updating $dbfaildetect_file\n";
+		`mv $dbfaildetect_file $dbfaildetect_file.orig`;		
+		open (FDF_IN,"$dbfaildetect_file.orig");
+		open (FDF_OUT,">$dbfaildetect_file");
+                while (<FDF_IN>) {
+                        s/DBHOST/^DBHOST=$Conf{dc_dbip}/;
+                        print <FDF_OUT>;
+                }
+                close FDF_IN;
+                close FDF_OUT;
+		print "INFO: DB cluster $cnf updated with server $s_id\n";
+		print "INFO: DB cluster $dbfaildetect_file updated with DBHOST $Conf{dc_dbip}\n";
 	} else {
-		print "WARNING: DB cluster server id not set\n";
+		print "WARNING: DB cluster $cnf for server id is not updated\n";
+		print "WARNING: DB cluster $dbfaildetect_file is not updated\n";
 	}
 	
-	# 5. gen keys? 
+	# 5. gen keys?  (only generate keys after hostname/cluster hostname confirmed)
 	if (($Conf{gc_cluster} eq "n") || ($Conf{gc_cluster} eq "y" && $Conf{gc_firstnode} eq "y")) {
 		# gen the keys, otherwise copy them
 		print "Invoke /ssg/bin/setkeys.sh script to generate keys\n";
@@ -238,16 +284,16 @@ EOF
 
 	} else {
 		print "Copy keys & keys configuration files from the first node...\n";
-		print "Supply gateway user password of first node - " + $Conf{gc_masternip} + "\n";
+		print "Supply gateway user password of first node - $Conf{gc_masternip}\n";
                 print "Now to copy /ssg/etc/keys/*:\n"; 
-		`cp gateway\@$Conf{gc_masternip}/ssg/etc/keys/* /ssg/etc/keys`;
+		system("scp gateway\@$Conf{gc_masternip}:/ssg/etc/keys/* /ssg/etc/keys");
 		print "Now to copy /ssg/tomcat/conf/server.xml:\n";
-		`scp gateway\@$Conf{gc_masternip}/ssg/tomcat/conf/server.xml /ssg/tomcat/conf/server.xml`;
+		system("scp gateway\@$Conf{gc_masternip}:/ssg/tomcat/conf/server.xml /ssg/tomcat/conf/server.xml");
 		print "Now to copy /ssg/etc/conf/keystore.properties:\n";
-		`scp gateway\@$Conf{gc_masternip}/ssg/etc/conf/keystore.properties /ssg/etc/conf/keystore.properties`;
-		`chmod -R gateway.gateway /ssg/etc`;
-		`chmod gateway.gateway /ssg/tomcat/conf/server.xml`;
-		`chmod gateway.gateway /ssg/etc/conf/keystore.properties`;
+		system("scp gateway\@$Conf{gc_masternip}:/ssg/etc/conf/keystore.properties /ssg/etc/conf/keystore.properties");
+		`chown -R gateway.gateway /ssg/etc`;
+		`chown gateway.gateway /ssg/tomcat/conf/server.xml`;
+		`chown gateway.gateway /ssg/etc/conf/keystore.properties`;
 	}
 }
 	
