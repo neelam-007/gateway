@@ -145,7 +145,6 @@ public class MainWindow extends JFrame {
     private ExportPolicyToFileAction exportPolicyAction;
     private ImportPolicyFromFileAction importPolicyAction;
     private SavePolicyAction savePolicyAction;
-    private static MainWindow singleMainWindow = null;
     private boolean disconnected = false;
     private String ssgURL;
     private ViewGatewayAuditsAction viewGatewayAuditsWindowAction;
@@ -156,15 +155,6 @@ public class MainWindow extends JFrame {
     public MainWindow() {
         super(TITLE);
         initialize();
-        MainWindow.setCurrentMain(this);
-    }
-
-    private synchronized static void setCurrentMain(MainWindow mainWindow) {
-        singleMainWindow = mainWindow;
-    }
-
-    public static MainWindow getMain() {
-        return singleMainWindow;
     }
 
     /**
@@ -1995,7 +1985,7 @@ public class MainWindow extends JFrame {
               } catch (IOException e) {
                   log.log(Level.WARNING, "onAuthSuccess()", e);
               }
-              
+
               securityProvider = (SecurityProvider)Locator.getDefault().lookup(SecurityProvider.class);
               if (securityProvider == null) {
                   log.log(Level.WARNING, "Cannot obtain current SSM security provider");

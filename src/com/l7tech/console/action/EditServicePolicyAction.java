@@ -1,6 +1,5 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.MainWindow;
 import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
@@ -92,7 +91,7 @@ public class EditServicePolicyAction extends NodeAction {
             final PolicyEditorPanel pep = new PolicyEditorPanel(serviceNode, policyTree, validate);
             wpanel.setComponent(pep);
             wpanel.addWorkspaceContainerListener(pep);
-            MainWindow.getMain().firePolicyEdit(pep);
+            TopComponents.getInstance().getMainWindow().firePolicyEdit(pep);
         } catch (ActionVetoException e) {
             // action vetoed
         } catch (FindException e) {

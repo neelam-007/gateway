@@ -1,6 +1,5 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.console.tree.ServiceNode;
@@ -15,7 +14,7 @@ import java.util.logging.Logger;
 
 /**
  * The <code>DeleteServiceAction</code> action deletes the service
- * 
+ *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.0
  */
@@ -25,7 +24,7 @@ public class DeleteServiceAction extends SecureAction {
 
     /**
      * create the acction that deletes the service
-     * 
+     *
      * @param en the node to delete
      */
     public DeleteServiceAction(ServiceNode en) {
@@ -80,7 +79,7 @@ public class DeleteServiceAction extends SecureAction {
                     // if currently edited service was deleted
                     if (node.getPublishedService().getOid() == svc.getOid()) {
                         cws.clearWorkspace();
-                        MainWindow.getMain().firePolicyEditDeleted();
+                        TopComponents.getInstance().getMainWindow().firePolicyEditDeleted();
                     }
                 } catch (Exception e) {
                     throw new RuntimeException(e);
