@@ -34,6 +34,7 @@
                 </RoutingAssertion>
                 <TrueAssertion/>
                 <MemberOfGroup>
+                    <GroupId stringValueNull="null"/>
                     <GroupName stringValueNull="null"/>
                     <IdentityProviderOid longValue="-1"/>
                 </MemberOfGroup>
