@@ -133,7 +133,9 @@ public class KeystoreUtils {
         } catch (CertificateException e) {
             String msg = "cannot generate cert from cert file";
             logger.severe(msg);
-            throw new IOException(msg);
+            IOException ioe = new IOException(msg);
+            ioe.initCause(e);
+            throw ioe;
         }
 
         PrivateKey pkey = null;
@@ -142,7 +144,9 @@ public class KeystoreUtils {
         } catch (KeyStoreException e) {
             String msg = "cannot get ssl private key";
             logger.severe(msg);
-            throw new IOException(msg);
+            IOException ioe =  new IOException(msg);
+            ioe.initCause(e);
+            throw ioe;
         }
         return new SignerInfo(pkey, cert);
     }
