@@ -20,6 +20,14 @@ public class EntityHeader extends NamedEntityImp {
 
     public EntityHeader(long oid, EntityType type, String name, String description) {
         setOid(oid);
+        strId = Long.toString(oid);
+        setType(type);
+        setName(name);
+        setDescription(description);
+    }
+
+    public EntityHeader(String id, EntityType type, String name, String description) {
+        setStrId(id);
         setType(type);
         setName(name);
         setDescription(description);
@@ -28,6 +36,11 @@ public class EntityHeader extends NamedEntityImp {
     public EntityHeader() {
         type = EntityType.UNDEFINED;
         description = "";
+    }
+
+    public void setOid( long oid ) {
+        _oid = oid;
+        strId = Long.toString(oid);
     }
 
     public EntityType getType() {
@@ -50,9 +63,32 @@ public class EntityHeader extends NamedEntityImp {
         return "EntityHeader. Name=" + getName() + ", oid=" + getOid() + ", description=" + description;
     }
 
+    /**
+     * if the oid was set but not the StrId, the strId will be returned as Long.toString(oid)
+     * @return the id
+     */
+    public String getStrId() {
+        return strId;
+    }
+
+    /**
+     * oid and strId are interchangeable. setting this will override the oid property if it contains a parseable string.
+     */
+    public void setStrId(String strId) {
+        this.strId = strId;
+        if (strId != null) {
+            try {
+                _oid = Long.parseLong(strId);
+            } catch (Exception e) {
+                _oid = DEFAULT_OID;
+            }
+        }
+    }
+
     // ************************************************
     // PRIVATES
     // ************************************************
     private EntityType type;
     private String description;
+    private String strId;
 }
