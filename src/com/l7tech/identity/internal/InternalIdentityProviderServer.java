@@ -55,7 +55,7 @@ public class InternalIdentityProviderServer implements IdentityProvider {
                     authPassHash = new String( credentials, ENCODING );
 
                 if ( dbPassHash.equals( authPassHash ) ) {
-                    authUser.setProviderId( cfg.getOid() );
+                    authUser.copyFrom( dbUser );
                     return true;
                 }
 
