@@ -28,6 +28,7 @@ import java.util.logging.Logger;
  */
 public class XencUtil {
     private static final Logger logger = Logger.getLogger(XencUtil.class.getName());
+    private static final int PKCS1_RSA_PAYLOAD_LIMIT = 11;
 
     /**
      * This handles the padding of the encryption method designated by http://www.w3.org/2001/04/xmlenc#rsa-1_5.
@@ -263,7 +264,14 @@ public class XencUtil {
         if (!(publicKey instanceof RSAPublicKey))
             throw new KeyException("Unable to encrypt -- unsupported recipient public key type " +
                                    publicKey.getClass().getName());
-        final int modulusLength = ((RSAPublicKey)publicKey).getModulus().toByteArray().length;
+
+        // PKS1_RSA_PAYLOAD_LIMIT - PKCS#1 requires that the plaintext data length not exceed the modulus length
+        // less 11 octets.  This appears to conflict with the padding rules in
+        // http://www.w3.org/TR/2002/REC-xmlenc-core-20021210/, which says to pad to 1 octet less than the modulus length.
+        // We obey PKCS#1 here because most of our JCE providers enforce its more conservative limit.
+        final int modulusLength = ((RSAPublicKey)publicKey).getModulus().toByteArray().length - PKCS1_RSA_PAYLOAD_LIMIT;
+
+
         byte[] paddedKeyBytes = XencUtil.padSymmetricKeyForRsaEncryption(keyBytes, modulusLength, rand);
         byte[] encrypted = rsa.doFinal(paddedKeyBytes);
         return HexUtils.encodeBase64(encrypted, true);
