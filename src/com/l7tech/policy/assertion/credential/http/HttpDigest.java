@@ -20,9 +20,13 @@ import com.l7tech.proxy.datamodel.Ssg;
  * @version $Revision$
  */
 public class HttpDigest extends HttpCredentialSourceAssertion {
-    public AssertionStatus doCheckRequest(Request request, Response response) throws CredentialFinderException {
+    public AssertionStatus checkCredentials(Request request, Response response) throws CredentialFinderException {
         // FIXME: Implement
-        return AssertionStatus.NOT_YET_IMPLEMENTED;
+        return super.checkCredentials( request, response );
+    }
+
+    protected String scheme() {
+        return "Digest";
     }
 
     public Class getCredentialFinderClass() {
@@ -39,7 +43,7 @@ public class HttpDigest extends HttpCredentialSourceAssertion {
         Ssg ssg = request.getSsg();
         if (ssg.getUsername() == null || ssg.getPassword() == null || ssg.getUsername().length() < 1) {
             request.setCredentialsWouldHaveHelped(true);
-            return AssertionStatus.NOT_FOUND;
+            return AssertionStatus.AUTH_REQUIRED;
         }
         request.setDigestAuthRequired(true);
         request.setHttpDigestUsername(ssg.getUsername());
