@@ -32,6 +32,25 @@ import java.util.logging.Logger;
 public class ClientProxyTrustManager implements X509TrustManager {
     private static final Logger log = Logger.getLogger(ClientProxyTrustManager.class.getName());
 
+    private static class CausedCertificateException extends CertificateException {
+        public CausedCertificateException() {
+        }
+
+        public CausedCertificateException(String msg) {
+            super(msg);
+        }
+
+        public CausedCertificateException(Throwable cause) {
+            super();
+            initCause(cause);
+        }
+
+        public CausedCertificateException(String msg, Throwable cause) {
+            super(msg);
+            initCause(cause);
+        }
+    }
+
     public ClientProxyTrustManager() {}
 
     public X509Certificate[] getAcceptedIssuers() {
@@ -54,7 +73,7 @@ public class ClientProxyTrustManager implements X509TrustManager {
     }
 
     public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-        log.info("ClientProxyTrustManager: checkServerTrusted");
+        log.log(Level.FINER, "ClientProxyTrustManager: checkServerTrusted");
         if (x509Certificates == null || x509Certificates.length < 1 || s == null)
             throw new IllegalArgumentException("empty certificate chain, or null auth type");
 
@@ -70,8 +89,8 @@ public class ClientProxyTrustManager implements X509TrustManager {
             X509Certificate cert = x509Certificates[0];
             cn = new X500Name(cert.getSubjectX500Principal().toString()).getCommonName();
         } catch (IOException e) {
-            log.log(Level.SEVERE, e.getMessage(), e);
-            // can't happen
+            log.log(Level.SEVERE, e.getMessage(), e); // log in case SSL layer obscures our diagnostic info
+            throw new CausedCertificateException(e);
         }
         if (!cn.equals(expectedHostname)) {
             final String msg = "Server certificate name (" + cn +
@@ -92,18 +111,18 @@ public class ClientProxyTrustManager implements X509TrustManager {
         }
         if (trustedCert == null) {
             final String msg = "We have not yet discovered this Gateway's server certificate";
-            log.log(Level.INFO, msg);
+            log.log(Level.FINE, msg);
             throw new ServerCertificateUntrustedException(msg);
         }
 
         try {
             CertUtils.verifyCertificateChain( x509Certificates, trustedCert, 1 );
-            log.info("Peer certificate was signed by a trusted Gateway.");
+            log.log(Level.FINE, "Peer certificate was signed by a trusted Gateway.");
         } catch (CertUtils.CertificateUntrustedException e) {
-            log.warning(e.getMessage());
+            log.warning(e.getMessage()); // log in case SSL layer obscures our diagnostic info
             throw new ServerCertificateUntrustedException(e);
         } catch ( CertificateException e ) {
-            log.warning(e.getMessage());
+            log.warning(e.getMessage()); // log in case SSL layer obscures our diagnostic info
             throw e;
         }
     }
