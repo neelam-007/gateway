@@ -9,10 +9,12 @@ package com.l7tech.server.identity.fed;
 import com.l7tech.common.util.Locator;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.TrustedCertManager;
+import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.credential.http.HttpDigest;
 
 import java.security.cert.X509Certificate;
 import java.util.Collection;
@@ -23,18 +25,23 @@ import java.util.Collection;
  */
 public class FederatedIdentityProvider implements IdentityProvider {
     public void initialize( IdentityProviderConfig config ) {
+        if ( !(config instanceof FederatedIdentityProviderConfig) )
+            throw new IllegalArgumentException("Config must be an instance of FederatedIdentityProviderConfig");
+        this.config = (FederatedIdentityProviderConfig)config;
+        this.userManager = new FederatedUserManager(this);
+        this.groupManager = new FederatedGroupManager(this);
     }
 
     public IdentityProviderConfig getConfig() {
-        return null;
+        return config;
     }
 
     public UserManager getUserManager() {
-        return null;
+        return userManager;
     }
 
     public GroupManager getGroupManager() {
-        return null;
+        return groupManager;
     }
 
     public User authenticate( LoginCredentials pc ) throws AuthenticationException, FindException {
@@ -57,7 +64,17 @@ public class FederatedIdentityProvider implements IdentityProvider {
         return null;
     }
 
+    /**
+     * Meaningless - no passwords in FIP anyway
+     */
     public String getAuthRealm() {
-        return null;
+        return HttpDigest.REALM;
     }
+
+    public void test() {
+    }
+
+    private FederatedIdentityProviderConfig config;
+    private FederatedUserManager userManager;
+    private FederatedGroupManager groupManager;
 }

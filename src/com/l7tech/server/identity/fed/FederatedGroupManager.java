@@ -36,7 +36,7 @@ public class FederatedGroupManager extends PersistentGroupManager {
     }
 
     protected void preDelete( Group group ) throws DeleteException {
-        // No admin group, don't need to call super
+        // No admin group, don't care
     }
 
     protected void preUpdate( Group group ) throws FindException, UpdateException {

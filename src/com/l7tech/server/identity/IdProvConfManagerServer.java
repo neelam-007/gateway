@@ -3,6 +3,7 @@ package com.l7tech.server.identity;
 import com.l7tech.identity.*;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
+import com.l7tech.server.identity.fed.FederatedIdentityProvider;
 import com.l7tech.server.identity.internal.InternalIdentityProviderServer;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.server.identity.ldap.LdapIdentityProvider;
@@ -15,7 +16,7 @@ import java.util.logging.Level;
 
 /**
  * This IdentityProviderConfigManager is the server side manager who manages the one and only
- * internal identity provider as well as the other providers (ldap) configured by the administrator.
+ * internal identity provider as well as the other providers (ldap & federated) configured by the administrator.
  *
  * <br/><br/>
  * Layer 7 Technologies, inc.<br/>
@@ -72,6 +73,10 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
             LdapIdentityProvider tmpProvider = new LdapIdentityProvider();
             tmpProvider.initialize(identityProviderConfig);
             tmpProvider.test();
+        } else if ( type.equals(IdentityProviderType.FEDERATED)) {
+            FederatedIdentityProvider tmpProvider = new FederatedIdentityProvider();
+            tmpProvider.initialize(identityProviderConfig);
+            tmpProvider.test();
         } else {
             String msg = "Unsupported IdentityProviderConfig type: " + type;
             logger.severe(msg);
@@ -91,6 +96,7 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
             logger.warning("Attempt to save invalid ldap id provider config. " + msg);
             throw new SaveException(msg);
         }*/
+/*
         if (!identityProviderConfig.type().equals(IdentityProviderType.LDAP) ||
                 !(identityProviderConfig instanceof LdapIdentityProviderConfig)) {
             // not the food additive
@@ -98,6 +104,7 @@ public class IdProvConfManagerServer extends HibernateEntityManager implements I
             logger.warning("Attempt to save invalid ldap id provider config. " + msg);
             throw new SaveException(msg);
         }
+*/
 
         // first, check that there isn't an existing provider with same name
         try {

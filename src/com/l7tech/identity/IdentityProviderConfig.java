@@ -5,6 +5,7 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -20,7 +21,6 @@ import java.util.Set;
  *
  */
 public class IdentityProviderConfig extends NamedEntityImp {
-
     public IdentityProviderConfig(IdentityProviderType type) {
         super();
         props = new HashMap();
@@ -82,7 +82,7 @@ public class IdentityProviderConfig extends NamedEntityImp {
         {
             ByteArrayInputStream in = new ByteArrayInputStream(serializedProps.getBytes());
             java.beans.XMLDecoder decoder = new java.beans.XMLDecoder(in);
-            props = (HashMap)decoder.readObject();
+            props = (Map)decoder.readObject();
         }
     }
 
@@ -110,10 +110,15 @@ public class IdentityProviderConfig extends NamedEntityImp {
         props = objToCopy.props;
     }
 
+    protected boolean getBooleanProperty(String prop) {
+        Boolean val = (Boolean)props.get(prop);
+        return val == null ? false : val.booleanValue();
+    }
+
     // ************************************************
     // PRIVATES
     // ************************************************
     protected String description;
     protected IdentityProviderType type;
-    protected HashMap props;
+    protected Map props;
 }
