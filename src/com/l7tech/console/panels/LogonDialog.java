@@ -34,7 +34,6 @@ public class LogonDialog extends JDialog {
     /* the PasswordAuthentication instance with user supplied credentials */
     private PasswordAuthentication authentication = null;
 
-
     /* was the dialog aborted */
     private boolean aborted = false;
 
@@ -63,6 +62,8 @@ public class LogonDialog extends JDialog {
     private JTextField userNameTextField = null;
     /** password text field */
     private JPasswordField passwordField = null;
+    /** toolbars property (icons, text, icons and text) */
+    private static final String DISABLE_SERVER_CHECK = "disable.server.check";
 
     /** context field (company.realm)
      private JTextField contextField = null;*/
@@ -108,8 +109,7 @@ public class LogonDialog extends JDialog {
 
         constraints = new GridBagConstraints();
 
-        companyLogoJLabel = new javax.swing.JLabel();
-        companyLogoJLabel.setName("companyLogoJLabel");
+        companyLogoJLabel = new JLabel();
         companyLogoJLabel.setText("SSG Policy Editor");
         companyLogoJLabel.setFont(new Font("Dialog", Font.BOLD, 12));
         //companyLogoJLabel.setBorder(BorderFactory.createLoweredBevelBorder());
@@ -480,19 +480,20 @@ public class LogonDialog extends JDialog {
      */
     private static boolean isServiceAvailable(String serviceUrl) {
         boolean serviceAvailable;
+        boolean b = Boolean.getBoolean(DISABLE_SERVER_CHECK);
+        if (b) return true;
+
         // try to connect and read the HTTP(S) code. We are ok if it
         // is 200, 401, 403, 302.
         // if it is everything else we assume the connection cannot
         // be established
         HttpClient client = new HttpClient();
+        GetMethod method = null;
         try {
             URL url = new URL(serviceUrl);
 
-            client.startSession(url);
-            GetMethod method = new GetMethod("/");
-            method.setUseDisk(false);
+            method = new GetMethod(serviceUrl);
             int code = client.executeMethod(method);
-
             if (code == 403 || code == 401 || code == 200 || code == 302) {
                 serviceAvailable = true;
             } else {
@@ -505,10 +506,8 @@ public class LogonDialog extends JDialog {
             serviceAvailable = false;
             log.log(Level.INFO, "LogonDialog", e);
         } finally {
-            try {
-                client.endSession();
-            } catch (IOException e) {
-                ; // swallow
+            if (method != null) {
+                method.releaseConnection();
             }
         }
         return serviceAvailable;
@@ -545,7 +544,6 @@ public class LogonDialog extends JDialog {
         } catch (Exception e) {
             log.log(Level.WARNING, "logoff()", e);
         } finally {
-
         }
     }
 
