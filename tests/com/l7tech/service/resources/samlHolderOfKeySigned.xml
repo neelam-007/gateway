@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<saml:Assertion AssertionID="mySamlAssertion" xmlns:saml="urn:oasis:names:tc:SAML:1.0:assertion">
+    <saml:AuthenticationStatement
+        AuthenticationInstant="2004-08-04T17:21:43.436-07:00" AuthenticationMethod="urn:oasis:names:tc:SAML:1.0:am:X509-PKI">
+        <saml:Subject>
+            <saml:NameIdentifier
+                Format="urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName" NameQualifier="root.locutus.l7tech.com">CN=joe</saml:NameIdentifier>
+            <saml:SubjectConfirmation>
+                <saml:ConfirmationMethod>urn:oasis:names:tc:SAML:1.0:cm:holder-of-key</saml:ConfirmationMethod>
+                <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+                    <ds:X509Data>
+                        <ds:X509SubjectName>CN=joe</ds:X509SubjectName>
+                        <ds:X509Certificate>MIICDTCCAXagAwIBAgIIIXW9r5+nC4kwDQYJKoZIhvcNAQEFBQAwIjEgMB4GA1UEAxMXcm9vdC5sb2N1dHVzLmw3dGVjaC5jb20wHhcNMDQwNzMwMjMyNDAzWhcNMDYwNzMwMjMyNDAzWjAOMQwwCgYDVQQDEwNqb2UwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBALQpfTYesuITkdVKBfXLmnvnreDz85JmK4zosugBH82ZG02aJkB8yrHFoZEkijN3jWaDxISMw424u09RwjLzkEWGF6t/QEKwY2oBXDuoc5OIr7Hb1Yu5iubr4jWk+NPUJlRUNNGlh8oGru3U1JtG7aFGfB1FJcgtRniCwJ6h09J/AgMBAAGjYDBeMAwGA1UdEwEB/wQCMAAwDgYDVR0PAQH/BAQDAgWgMB0GA1UdDgQWBBTVLF5dyonEqa+cWFuKhiRzOFHUajAfBgNVHSMEGDAWgBTVhkrHue7zyZsNSTwz9oZuotKO4jANBgkqhkiG9w0BAQUFAAOBgQAJ3QUciAZuTjXE+90l8iwVdy2y2lXOpO8bAUY7DyenCqWFsAUBs39wiuobIxUV7fkHag2kORVCxAwjpPW9EqDbfT1iqmmUwTwzTZqXF73yKW/cykKjzJrdUm1mr2hSR+PpIEAoHoeyFiGqDUUSkQozyvu8aciLIvKoO9D8dALOXw==</ds:X509Certificate>
+                    </ds:X509Data>
+                </ds:KeyInfo>
+            </saml:SubjectConfirmation>
+        </saml:Subject>
+        <saml:SubjectLocality IPAddress="192.168.1.220"/>
+    </saml:AuthenticationStatement>
+    <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+        <ds:SignedInfo>
+            <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+            <ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+            <ds:Reference URI="#mySamlAssertion">
+                <ds:Transforms>
+                    <ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+                    <ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+                </ds:Transforms>
+                <ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+                <ds:DigestValue>n8ME2eXxUn7SWAy123Ek92/CsrI=</ds:DigestValue>
+            </ds:Reference>
+        </ds:SignedInfo>
+        <ds:SignatureValue>
+            HE08/OM2/cv0LEd90+O2H0RuXGAze3YhCfGmkA7TI+qewbx+hZkXe55n4sENGuny0/mKtQN0
+            JSSOTU723yCJNL51u7gKoSbWtXuIWMrAR3q+HVxpCo5eT4/q++fhV1J/Ns3u+OqtafuF/FyA
+            kP7/HkuO+QJxZmx5K3e+AqHvM5g=   </ds:SignatureValue>
+        <KeyInfo>
+            <X509Data>
+                <X509SubjectName>CN=root.locutus.l7tech.com</X509SubjectName>
+                <X509Certificate>
+                    MIICBjCCAW+gAwIBAgIIXhgZ64swGKYwDQYJKoZIhvcNAQEFBQAwIjEgMB4GA1UEAxMXcm9vdC5s
+                    b2N1dHVzLmw3dGVjaC5jb20wHhcNMDQwNzE2MTgwNTE0WhcNMDkwNzE1MTgwNTE0WjAiMSAwHgYD
+                    VQQDExdyb290LmxvY3V0dXMubDd0ZWNoLmNvbTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEA
+                    wWBeJQPxmonKzzFFQbT3vssdRW/IIAHHewPMNvPPpVxdgfWQ7as4QYpKAaXgjlRwuTQxANdWBxGF
+                    YNxTqsqHV99lAlpKDp5PdOyzwGtzl9ZNVBt1UkTnqj4DEtgVNGpCzJNGy5Dh0ZLT4MyQP1G7fpBc
+                    ZvVquKeDq+9TUk9r1usCAwEAAaNFMEMwEgYDVR0TAQH/BAgwBgEB/wIBAjAOBgNVHQ8BAf8EBAMC
+                    AgQwHQYDVR0OBBYEFNWGSse57vPJmw1JPDP2hm6i0o7iMA0GCSqGSIb3DQEBBQUAA4GBAAgkp+kS
+                    zqdeGPM5KH9d60EOehE1fNqVbdnX7STcBpU+KzJC6zT9SGOdKvgDkjl/u/JTPtHdsk5tqDVWO5et
+                    sHZXEFLB4PkgNmxJV0eZZe6dykgZzsZj/r9sZFyeYa54bQJdbMBgqoeCLrHu+QZxaB5yoYBbyInM
+                    pASqOLj8jCGw       </X509Certificate>
+            </X509Data>
+        </KeyInfo>
+    </ds:Signature>
+</saml:Assertion>
