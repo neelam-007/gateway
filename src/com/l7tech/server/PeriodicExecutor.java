@@ -12,6 +12,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * @deprecated Please use {@link java.util.Timer} and {@link PeriodicVersionCheck} instead!
  * @author alex
  * @version $Revision$
  */
