@@ -46,10 +46,11 @@ public class LdapIdentityProviderServer implements com.l7tech.identity.IdentityP
             LogManager.getInstance().getSystemLogger().log(Level.INFO, "invalid user");
             return false;
         }
-        pc.getUser().copyFrom(realUser);
         if ( pc.getFormat() == CredentialFormat.CLEARTEXT ) {
             // basic authentication
-            return userManager.authenticateBasic( realUser.getName(), new String( pc.getCredentials() ));
+            boolean res = userManager.authenticateBasic(realUser.getName(), new String(pc.getCredentials()));
+            if (res) pc.getUser().copyFrom(realUser);
+            return res;
         } else {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Attempt to authenticate using unsupported method" + pc.getFormat());
             throw new IllegalArgumentException( "Only cleartext credentials are currently supported!" );
