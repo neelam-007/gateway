@@ -17,8 +17,9 @@ import java.awt.*;
  */
 public class SubjectConfirmationWizardStepPanel extends WizardStepPanel {
     private JPanel mainPanel;
-    private JPanel greetingPanel;
     private JLabel titleLabel;
+    private JCheckBox checkBoxSenderVouches;
+    private JCheckBox checkBoxHolderOfKey;
 
     /**
      * Creates new form WizardPanel

@@ -17,8 +17,10 @@ import java.awt.*;
  */
 public class ConditionsWizardStepPanel extends WizardStepPanel {
     private JPanel mainPanel;
-    private JPanel greetingPanel;
     private JLabel titleLabel;
+    private JCheckBox checkBoxCheckAssertionValidity;
+    private JTextField textFieldTargetRestriction;
+    private JTextField textFieldAudienceRestriction;
 
     /**
      * Creates new form WizardPanel
