@@ -152,6 +152,8 @@
       -->
     <target name="deploy" depends="init-dev">
         <property name="dev.build" value="true"/>
+        <property name="ssg.only" value="true"/>
+
         <antcall target="package"/>
         <antcall target="ssm-webstart"/>
 
@@ -288,7 +290,9 @@
       ** respective archives (war, jar).
       ** This target is invoked by other targets such as deploy and dist.
       -->
-    <target name="package" depends="init-dev, compile">
+    <target name="package" depends="init-dev, compile, package.gateway, package.agent, package.manager"/>
+
+    <target name="package.gateway">
         <!-- the ssg war -->
         <war warfile="${build.dir}/${war}" webxml="${build.etc}/web.xml">
             <lib dir="${build.dir}/lib">
@@ -368,6 +372,9 @@
             <zipfileset dir="${src.root}/etc/jini" includes="PREFERRED.LIST" prefix="WEB-INF/classes/META-INF"/>
 
         </war>
+    </target>
+
+    <target name="package.agent" unless="ssg.only">
         <!-- the client proxy jar -->
         <jar jarfile="${build.dir}/Agent.jar" manifest="${src.root}/etc/Agent.mf">
             <fileset dir="${build.dir}/classes">
@@ -389,7 +396,9 @@
                 <exclude name="com/l7tech/policy/assertion/ext/**/*"/>
             </fileset>
         </jar>
+    </target>
 
+    <target name="package.manager" unless="ssg.only">
         <jar jarfile="${build.dir}/Manager.jar" manifest="${src.root}/etc/Manager.mf">
             <fileset dir="${build.dir}/classes">
                 <exclude name="com/l7tech/logging/rmi/**/*"/>
@@ -454,7 +463,9 @@
                 <include name="com/l7tech/service/ServiceStatistics.class"/>
             </fileset>
         </jar>
+    </target>
 
+    <target name="package.api" unless="ssg.only">
         <!--
            ** Layer7 API jar, pack and sign
          -->
