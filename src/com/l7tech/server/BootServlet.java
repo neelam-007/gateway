@@ -41,6 +41,7 @@ public class BootServlet extends HttpServlet {
     public void init( ServletConfig config ) throws ServletException {
         ServerConfig.getInstance();
         super.init( config );
+        boolean failure = false;
         try {
             initializeAdminServices();
             HibernatePersistenceManager.initialize();
@@ -55,11 +56,18 @@ public class BootServlet extends HttpServlet {
             PersistenceContext.getCurrent().close();
         } catch (SQLException e) {
             logger.log(Level.SEVERE, "SQL ERROR IN BOOT SERVLET", e);
+            failure = true;
             throw new ServletException(e);
         } catch (Throwable e) {
             logger.log(Level.SEVERE, "ERROR IN BOOT SERVLET", e);
+            failure = true;
             throw new ServletException(e);
+        } finally {
+            if (failure) {
+                destroy();
+            }
         }
+
         logger.info( BuildInfo.getLongBuildString() );
         logger.info("Boot servlet complete.");
     }
