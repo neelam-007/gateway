@@ -1,6 +1,5 @@
 package com.l7tech.proxy.policy.assertion.xmlsec;
 
-import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.xml.*;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.ExceptionUtils;
