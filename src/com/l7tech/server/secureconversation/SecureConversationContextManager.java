@@ -2,7 +2,6 @@ package com.l7tech.server.secureconversation;
 
 import com.l7tech.common.security.xml.WssProcessor;
 
-import javax.crypto.SecretKey;
 import java.util.HashMap;
 
 /**
@@ -44,13 +43,7 @@ public class SecureConversationContextManager implements WssProcessor.SecurityCo
      * For use by the WssProcessor on the ssg.
      */
     public WssProcessor.SecurityContext getSecurityContext(String securityContextIdentifier) {
-        final SecureConversationSession session = getSession(securityContextIdentifier);
-        if (session == null) return null;
-        return new WssProcessor.SecurityContext() {
-            public SecretKey getSecretKey() {
-                return session.getSharedSecret();
-            }
-        };
+        return getSession(securityContextIdentifier);
     }
 
     private SecureConversationContextManager() {
