@@ -29,9 +29,9 @@ public class ExportKeys {
 
         KeyStore ks = KeyStore.getInstance("JKS");
         ks.load( new FileInputStream( keystorefile ), storepassword.toCharArray()) ;
-        Enumeration enum = ks.aliases();
-        while (enum.hasMoreElements()) {
-            String alias = (String) enum.nextElement();
+        Enumeration e = ks.aliases();
+        while (e.hasMoreElements()) {
+            String alias = (String) e.nextElement();
             System.err.println("alias="+alias);
 
             if ( ks.isKeyEntry(alias) ){

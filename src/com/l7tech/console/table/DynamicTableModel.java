@@ -24,7 +24,7 @@ import java.util.*;
  * @version 1.0
  */
 public class DynamicTableModel extends AbstractTableModel {
-    private final Enumeration enum;
+    private final Enumeration enumeration;
     private Thread th;
     private static final int DEFAULT_BATCH_SIZE = 50;
     private ObjectRowAdapter oAdapter = null;
@@ -40,7 +40,7 @@ public class DynamicTableModel extends AbstractTableModel {
                              int numberOfCols,
                              String[] colNames,
                              ObjectRowAdapter oAdapter) {
-        this.enum = nEnum;
+        this.enumeration = nEnum;
         this.numberOfCols = numberOfCols;
         this.colNames = colNames;
         this.oAdapter = oAdapter;
@@ -150,12 +150,12 @@ public class DynamicTableModel extends AbstractTableModel {
     private void load() {
         List list = new ArrayList(DEFAULT_BATCH_SIZE);
         int count = 0;
-        while (enum.hasMoreElements()
+        while (enumeration.hasMoreElements()
           && ++count < DEFAULT_BATCH_SIZE && isLoading) {
-            list.add(enum.nextElement());
+            list.add(enumeration.nextElement());
         }
         addBatch(list);
-        if (enum.hasMoreElements() && isLoading) {
+        if (enumeration.hasMoreElements() && isLoading) {
             th = new Thread(contextLoader);
             th.start();
         }
@@ -174,8 +174,8 @@ public class DynamicTableModel extends AbstractTableModel {
           List list = new ArrayList(DEFAULT_BATCH_SIZE);
 
           public void run() {
-              while (enum.hasMoreElements() && isLoading) {
-                  list.add(enum.nextElement());
+              while (enumeration.hasMoreElements() && isLoading) {
+                  list.add(enumeration.nextElement());
                   if (list.size() == DEFAULT_BATCH_SIZE) {
                       addBatch(list);
                       list = new ArrayList(DEFAULT_BATCH_SIZE);

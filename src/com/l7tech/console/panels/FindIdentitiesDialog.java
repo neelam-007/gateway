@@ -764,7 +764,7 @@ public class FindIdentitiesDialog extends JDialog {
      * set the <CODE>TableModel</CODE> that is used by this
      * object browser instance.
      */
-    private void setTableModel(Enumeration enum) {
+    private void setTableModel(Enumeration e) {
         stopLoadingTableModel();
 
         DynamicTableModel.
@@ -795,7 +795,7 @@ public class FindIdentitiesDialog extends JDialog {
         String columns[] =
           new String[]{"Name", "Description"};
 
-        tableModel = new DynamicTableModel(enum, columns.length, columns, oa);
+        tableModel = new DynamicTableModel(e, columns.length, columns, oa);
         searchResultTable.setModel(tableModel);
 
         tableModel.

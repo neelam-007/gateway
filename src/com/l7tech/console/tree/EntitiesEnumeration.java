@@ -15,7 +15,7 @@ import java.util.NoSuchElementException;
  */
 public class EntitiesEnumeration implements Enumeration {
     private EntitiesCollection entitiesList;
-    private Enumeration enum;
+    private Enumeration enumeration;
 
 
     public EntitiesEnumeration(EntitiesCollection ctxList) {
@@ -60,13 +60,13 @@ public class EntitiesEnumeration implements Enumeration {
      *                   enumeration.
      */
     public final boolean hasMore() throws RuntimeException {
-        if (enum == null) {
-            enum = Collections.enumeration(entitiesList.getNextBatch());
-            return enum.hasMoreElements();
+        if (enumeration == null) {
+            enumeration = Collections.enumeration(entitiesList.getNextBatch());
+            return enumeration.hasMoreElements();
         }
 
-        if (!enum.hasMoreElements()) {
-            enum = null;
+        if (!enumeration.hasMoreElements()) {
+            enumeration = null;
             return hasMore();
         }
         return true;
@@ -86,7 +86,7 @@ public class EntitiesEnumeration implements Enumeration {
         if (!hasMore()) {
             throw new NoSuchElementException();
         }
-        return enum.nextElement();
+        return enumeration.nextElement();
     }
 }
 

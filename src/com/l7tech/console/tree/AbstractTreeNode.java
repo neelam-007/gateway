@@ -9,14 +9,14 @@ import com.l7tech.policy.assertion.Assertion;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.TreeNode;
 import javax.swing.tree.MutableTreeNode;
+import javax.swing.tree.TreeNode;
 import java.awt.*;
 import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.Iterator;
-import java.util.Comparator;
 import java.util.logging.Logger;
 
 /**
@@ -148,9 +148,9 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
 
         int visibleIndex = -1;
         int realIndex = -1;
-        Enumeration enum = children.elements();
-        while (enum.hasMoreElements()) {
-            if (filter.accept((javax.swing.tree.TreeNode)enum.nextElement())) {
+        Enumeration e = children.elements();
+        while (e.hasMoreElements()) {
+            if (filter.accept((javax.swing.tree.TreeNode)e.nextElement())) {
                 visibleIndex++;
             }
             realIndex++;
@@ -176,9 +176,9 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
         }
 
         int count = 0;
-        Enumeration enum = children.elements();
-        while (enum.hasMoreElements()) {
-            if (filter.accept((TreeNode)enum.nextElement())) {
+        Enumeration e = children.elements();
+        while (e.hasMoreElements()) {
+            if (filter.accept((TreeNode)e.nextElement())) {
                 count++;
             }
         }

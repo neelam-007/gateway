@@ -143,9 +143,9 @@ public class XmlTree extends JTree {
         expandPath(path);
         addSelectionPath(path);
         if (node.getChildCount() == 0) return;
-        Enumeration enum = node.breadthFirstEnumeration();
-        while (enum.hasMoreElements()) {
-            XmlElementNode child = (XmlElementNode)enum.nextElement();
+        Enumeration e = node.breadthFirstEnumeration();
+        while (e.hasMoreElements()) {
+            XmlElementNode child = (XmlElementNode)e.nextElement();
             path = new TreePath(model.getPathToRoot(child));
             expandPath(path);
             addSelectionPath(path);

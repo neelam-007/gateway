@@ -27,10 +27,10 @@ public class TreeNodeActions {
      *              or <B>null</B> if  not found
      */
     public static TreeNode nodeByName(String name, DefaultMutableTreeNode node) {
-        Enumeration enum = node.breadthFirstEnumeration();
-        while (enum.hasMoreElements()) {
+        Enumeration e = node.breadthFirstEnumeration();
+        while (e.hasMoreElements()) {
             DefaultMutableTreeNode tn =
-              (DefaultMutableTreeNode)enum.nextElement();
+              (DefaultMutableTreeNode)e.nextElement();
 
             if (!(tn instanceof AbstractTreeNode)) {
                 continue;
