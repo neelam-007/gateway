@@ -25,6 +25,9 @@ import java.text.SimpleDateFormat;
 import java.rmi.RemoteException;
 
 /**
+ * This class provides a dialog for viewing a trusted certificate and its usage.
+ * Users can modify the cert name and ussage via the dialog.
+ *
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
  * <p> @author fpang </p>
  * $Id$
@@ -52,6 +55,12 @@ public class CertPropertiesWindow extends JDialog {
     private static Logger logger = Logger.getLogger(CertPropertiesWindow.class.getName());
 
 
+    /**
+     * Constructor
+     *
+     * @param owner The parent component.
+     * @param tc   The trusted certificate.
+     */
     public CertPropertiesWindow(Dialog owner, TrustedCert tc) {
         super(owner, resources.getString("dialog.title"), true);
         trustedCert = tc;
@@ -60,10 +69,13 @@ public class CertPropertiesWindow extends JDialog {
         Utilities.centerOnScreen(this);
     }
 
+    /**
+     * Initialization of the window
+     */
     private void initialize() {
 
         JRootPane rp = this.getRootPane();
-        rp.setPreferredSize(new Dimension(580, 350));
+        rp.setPreferredSize(new Dimension(550, 350));
 
         Container p = getContentPane();
         p.setLayout(new BorderLayout());
@@ -85,12 +97,12 @@ public class CertPropertiesWindow extends JDialog {
                         tc.setCertificate(trustedCert.getCertificate());
                         tc.setSubjectDn(trustedCert.getSubjectDn());
                     } catch (CertificateException e) {
-                        logger.severe("Internal error");
+                        logger.warning(resources.getString("cert.decode.error"));
                         JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
                                            resources.getString("save.error.title"),
                                            JOptionPane.ERROR_MESSAGE);
                     } catch (IOException e) {
-                       logger.severe("Internal error");
+                       logger.warning(resources.getString("cert.decode.error"));
                         JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
                                            resources.getString("save.error.title"),
                                            JOptionPane.ERROR_MESSAGE);
@@ -136,6 +148,9 @@ public class CertPropertiesWindow extends JDialog {
         });
     }
 
+    /**
+     * Populate the data to the views
+     */
     private void populateData() {
         if (trustedCert == null) {
             return;
@@ -145,13 +160,13 @@ public class CertPropertiesWindow extends JDialog {
         try {
             cert = trustedCert.getCertificate();
         } catch (CertificateException e) {
-            logger.severe("Internal error");
-                        JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
+             logger.warning(resources.getString("cert.decode.error"));
+            JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
                                            resources.getString("save.error.title"),
                                            JOptionPane.ERROR_MESSAGE);
         } catch (IOException e) {
-            logger.severe("Internal error");
-                        JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
+            logger.warning(resources.getString("cert.decode.error"));
+            JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
                                            resources.getString("save.error.title"),
                                            JOptionPane.ERROR_MESSAGE);
         }
@@ -211,6 +226,10 @@ public class CertPropertiesWindow extends JDialog {
         return certPanel;
     }
 
+    /**
+     * Update the trusted cert object with the current settings (from the form).
+     * @param tc  The trusted cert to be updated.
+     */
     private void updateTrustedCert(TrustedCert tc) {
         if(tc != null) {
             tc.setName(certNameTextField.getText().trim());
@@ -221,6 +240,12 @@ public class CertPropertiesWindow extends JDialog {
         }
     }
 
+    /**
+     * Retrieve the object reference of the Trusted Cert Admin service
+     *
+     * @return TrustedCertAdmin  The object reference.
+     * @throws RuntimeException  if the object reference of the Trusted Cert Admin service is not found.
+     */
     private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
         TrustedCertAdmin tca =
                 (TrustedCertAdmin) Locator.
@@ -309,8 +334,8 @@ public class CertPropertiesWindow extends JDialog {
         final JTextField _16;
         _16 = new JTextField();
         certExpiredOnTextField = _16;
-        _16.setEditable(false);
         _16.setText("");
+        _16.setEditable(false);
         _7.add(_16, new com.intellij.uiDesigner.core.GridConstraints(3, 1, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
         final JScrollPane _17;
         _17 = new JScrollPane();
