@@ -9,8 +9,8 @@ package com.l7tech.message;
 import com.l7tech.policy.assertion.AssertionResult;
 import com.l7tech.policy.assertion.AssertionStatus;
 
-import javax.xml.soap.SOAPFault;
-import java.io.*;
+import java.io.InputStream;
+import java.io.IOException;
 import java.util.Iterator;
 
 /**
@@ -18,7 +18,10 @@ import java.util.Iterator;
  */
 public interface Response extends Message {
     void setProtectedResponseStream( InputStream stream );
-    InputStream getProtectedResponseStream();
+    InputStream getProtectedResponseStream() throws IOException;
+
+    void setResponseXml( String xml );
+    String getResponseXml() throws IOException;
 
     void addResult( AssertionResult result );
     Iterator results();
@@ -27,4 +30,10 @@ public interface Response extends Message {
 
     boolean isAuthenticationMissing();
     void setAuthenticationMissing( boolean authMissing );
+
+    boolean isPolicyViolated();
+    void setPolicyViolated( boolean policyViolated );
+
+    void runOnClose( Runnable runMe );
+    void close();
 }
