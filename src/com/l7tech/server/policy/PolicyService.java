@@ -224,22 +224,13 @@ public class PolicyService {
                 return;
             }
         } else {
-            Document fault = null;
-            try {
-                fault = SoapFaultUtils.generateSoapFault(SoapFaultUtils.FC_SERVER,
-                                                         "unauthorized policy download",
-                                                         status.getMessage(),
-                                                         "");
-            } catch (IOException e) {
-                exceptionToFault(e, response);
-                return;
-            } catch (SAXException e) {
-                exceptionToFault(e, response);
-                return;
-            }
-            response.setDocument(fault);
-            return;
+            returnUnauthorizedPolicyDownloadFault(response, status.getMessage());
         }
+
+        if (policyDoc == null) {
+            returnUnauthorizedPolicyDownloadFault(response, "No such policy available to you.");
+        }
+
         try {
             String policyVersion = policyId + "|" + si.getVersion();
             wrapFilteredPolicyInResponse(policyDoc, policyVersion, relatesTo, response);
@@ -251,6 +242,23 @@ public class PolicyService {
             return;
         }
         return;
+    }
+
+    private void returnUnauthorizedPolicyDownloadFault(SoapResponse response, String msg) {
+        Document fault = null;
+        try {
+            fault = SoapFaultUtils.generateSoapFault(SoapFaultUtils.FC_SERVER,
+                                                     "unauthorized policy download",
+                                                     msg,
+                                                     "");
+        } catch (IOException e) {
+            exceptionToFault(e, response);
+            return;
+        } catch (SAXException e) {
+            exceptionToFault(e, response);
+            return;
+        }
+        response.setDocument(fault);
     }
 
     private void wrapFilteredPolicyInResponse(Document policyDoc, String policyVersion, String relatesTo, SoapResponse response)
