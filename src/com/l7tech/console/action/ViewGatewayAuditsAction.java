@@ -16,10 +16,9 @@ import java.util.Collection;
 
 
 /**
- * The <code>ViewGatewayLogsAction</code> invokes the log browser.
+ * The <code>ViewGatewayAuditsAction</code> invokes the audit viewer.
  *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.0
+ * @author mike
  */
 public class ViewGatewayAuditsAction extends SecureAction {
     private GatewayLogWindow gatewayAuditWindow;
