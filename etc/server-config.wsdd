@@ -61,7 +61,7 @@
   </operation>
   <operation name="deleteUser" qname="ns10:deleteUser" xmlns:ns10="http://www.layer7-tech.com/identity">
    <parameter name="identityProviderConfigId" type="xsd:long" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
-   <parameter name="userId" type="xsd:long" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
+   <parameter name="userId" type="xsd:string" xmlns:xsd="http://www.w3.org/2001/XMLSchema"/>
   </operation>
   <operation name="saveUser" qname="ns11:saveUser" returnQName="saveUserReturn" returnType="xsd:long" xmlns:ns11="http://www.layer7-tech.com/identity" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
    <parameter name="identityProviderConfigId" type="xsd:long"/>

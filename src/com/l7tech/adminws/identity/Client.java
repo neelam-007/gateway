@@ -100,13 +100,13 @@ public class Client {
         call.setReturnClass(com.l7tech.identity.internal.imp.UserImp.class);
         return (com.l7tech.identity.internal.imp.UserImp)call.invoke(new Object[]{new java.lang.Long(identityProviderConfigId), userId});
     }
-    public void deleteUser(long identityProviderConfigId, long userId) throws java.rmi.RemoteException {
+    public void deleteUser(long identityProviderConfigId, String userId) throws java.rmi.RemoteException {
         Call call = createStubCall();
         call.setOperationName(new QName(IDENTITY_URN, "deleteUser"));
         call.addParameter(new javax.xml.namespace.QName("", "identityProviderConfigId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "long"), long.class, javax.xml.rpc.ParameterMode.IN);
-        call.addParameter(new javax.xml.namespace.QName("", "userId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "long"), long.class, javax.xml.rpc.ParameterMode.IN);
+        call.addParameter(new javax.xml.namespace.QName("", "userId"), new javax.xml.namespace.QName("http://www.w3.org/2001/XMLSchema", "string"), String.class, javax.xml.rpc.ParameterMode.IN);
         call.setReturnType(org.apache.axis.encoding.XMLType.AXIS_VOID);
-        call.invoke(new Object[]{new java.lang.Long(identityProviderConfigId), new java.lang.Long(userId)});
+        call.invoke(new Object[]{new java.lang.Long(identityProviderConfigId), userId});
     }
     public long saveUser(long identityProviderConfigId, com.l7tech.identity.User user) throws java.rmi.RemoteException {
         Call call = createStubCall();

@@ -140,11 +140,11 @@ public class Service {
             endTransaction();
         }
     }
-    public void deleteUser(long identityProviderConfigId, long userId) throws java.rmi.RemoteException {
+    public void deleteUser(long identityProviderConfigId, String userId) throws java.rmi.RemoteException {
         UserManager userManager = retrieveUserManagerAndBeginTransaction(identityProviderConfigId);
         if (userManager == null) throw new java.rmi.RemoteException("Cannot retrieve the UserManager");
         try {
-            com.l7tech.identity.User user = userManager.findByPrimaryKey(Long.toString(userId));
+            com.l7tech.identity.User user = userManager.findByPrimaryKey(userId);
             userManager.delete(user);
         } catch (DeleteException e) {
             throw new java.rmi.RemoteException("DeleteException in deleteUser", e);

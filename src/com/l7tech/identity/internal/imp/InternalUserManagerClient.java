@@ -31,7 +31,7 @@ public class InternalUserManagerClient implements com.l7tech.identity.UserManage
 
     public void delete(User user) throws DeleteException {
         try {
-            getStub().deleteUser(identityProviderConfigId, user.getOid());
+            getStub().deleteUser(identityProviderConfigId, Long.toString(user.getOid()));
         } catch (java.rmi.RemoteException e) {
             throw new DeleteException("RemoteException in delete", e);
         }
