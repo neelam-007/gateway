@@ -21,7 +21,10 @@ import com.l7tech.policy.assertion.identity.PermissiveIdentityAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -63,6 +66,7 @@ public class DefaultGatewayPolicies {
 
         configManager = (IdentityProviderConfigManager)Locator.getDefault().lookup(IdentityProviderConfigManager.class);
         identities = new OneOrMoreAssertion();
+        identities.getChildren().add(new PermissiveIdentityAssertion(IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID));
         updateIdentities();
 
         defaultPolicy = new AllAssertion(Arrays.asList(new Assertion[] {
@@ -131,7 +135,7 @@ public class DefaultGatewayPolicies {
     private final OneOrMoreAssertion certBasedCredentialSources;
     private final IdentityProviderConfigManager configManager;
 
-    private Map providerVersionMap = Collections.EMPTY_MAP;
+    private Map providerVersionMap = new HashMap();
     private long lastVersionCheck;
     public static final int CHECK_DELAY = 5000;
 }

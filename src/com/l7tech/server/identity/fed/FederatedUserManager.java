@@ -16,6 +16,8 @@ import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistenceManager;
 import com.l7tech.server.identity.PersistentUserManager;
+import net.sf.hibernate.Criteria;
+import net.sf.hibernate.expression.Expression;
 
 import java.sql.SQLException;
 import java.util.List;
@@ -61,9 +63,6 @@ public class FederatedUserManager extends PersistentUserManager {
         return "fed_user";
     }
 
-    private long getProviderOid() {
-        return provider.getConfig().getOid();
-    }
 
     public FederatedUser findBySubjectDN(String dn) throws FindException {
         try {
@@ -81,6 +80,10 @@ public class FederatedUserManager extends PersistentUserManager {
         } catch ( SQLException e ) {
             throw new FindException("Couldn't find user", e);
         }
+    }
+
+    protected void addFindAllCriteria( Criteria findHeadersCriteria ) {
+        findHeadersCriteria.add(Expression.eq("providerId", new Long(getProviderOid())));
     }
 
     private final String FIND_BY_DN = "FROM " + getTableName() + " IN CLASS " + getImpClass() +

@@ -13,9 +13,11 @@ import com.l7tech.identity.User;
 import com.l7tech.identity.UserManager;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.*;
+import net.sf.hibernate.Criteria;
 import net.sf.hibernate.Hibernate;
 import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Session;
+import net.sf.hibernate.expression.Expression;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -87,27 +89,30 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
         searchString = searchString.replace('*', '%');
         searchString = searchString.replace('?', '_');
         try {
-            List results = PersistenceManager.find(getContext(),
-                                                   getAllHeadersQuery() + " where " + getTableName() + "." + getNameFieldname() + " like ?",
-                                                   searchString, String.class);
+            Criteria search = getContext().getSession().createCriteria(getImpClass());
+            search.add(Expression.ilike(getNameFieldname(), searchString));
+            addFindAllCriteria(search);
+            List entities = search.list();
             List headers = new ArrayList();
-            for (Iterator i = results.iterator(); i.hasNext();) {
-                Object[] row = (Object[])i.next();
-                Object oid = row[0];
-                Object name = row[1];
-                if ( oid != null && name != null ) {
-                    final long id = ((Long)oid).longValue();
-                    headers.add(new EntityHeader(id, EntityType.fromInterface(getInterfaceClass()), name.toString(), EMPTY_STRING));
-                }
+            for (Iterator i = entities.iterator(); i.hasNext();) {
+                PersistentUser user = (PersistentUser)i.next();
+                headers.add(userToHeader(user));
             }
             return Collections.unmodifiableList(headers);
         } catch (SQLException e) {
             final String msg = "Error while searching for "+getInterfaceClass() + " instances.";
             logger.log(Level.SEVERE, msg, e);
             throw new FindException(msg, e);
+        } catch ( HibernateException e ) {
+            final String msg = "Error while searching for "+getInterfaceClass() + " instances.";
+            logger.log(Level.SEVERE, msg, e);
+            throw new FindException(msg, e);
         }
     }
 
+    protected long getProviderOid() {
+        return provider.getConfig().getOid();
+    }
 
     /** Must be called in a transaction! */
     public void delete(User user) throws DeleteException, ObjectNotFoundException {
@@ -235,10 +240,6 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
         }
     }
 
-    protected String getAllHeadersQuery() {
-        return allHeadersQuery;
-    }
-
     /**
      * Override this method to check something before a user is saved
      * @throws SaveException to veto the save
@@ -275,8 +276,4 @@ public abstract class PersistentUserManager extends HibernateEntityManager imple
     protected abstract String getNameFieldname();
 
     protected IdentityProvider provider;
-
-    private final String allHeadersQuery = "select " + getTableName() + ".oid, " +
-                                           getTableName() + "." + getNameFieldname() + " from " + getTableName() +
-                                           " in class "+ getImpClass().getName();
 }

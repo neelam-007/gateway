@@ -14,6 +14,8 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.PersistenceManager;
 import com.l7tech.objectmodel.SaveException;
 import com.l7tech.server.identity.PersistentGroupManager;
+import net.sf.hibernate.Criteria;
+import net.sf.hibernate.expression.Expression;
 
 import java.sql.SQLException;
 import java.util.logging.Logger;
@@ -39,6 +41,10 @@ public class FederatedGroupManager extends PersistentGroupManager {
     protected void preSave( PersistentGroup group ) throws SaveException {
         if ( group instanceof VirtualGroup && providerConfig.getTrustedCertOids().length == 0 )
             throw new SaveException("Virtual groups cannot be created in a Federated Identity Provider with no Trusted Certificates");
+    }
+
+    protected void addFindAllCriteria( Criteria allHeadersCriteria ) {
+        allHeadersCriteria.add(Expression.eq("providerId", new Long(getProviderOid())));
     }
 
     public Group findByPrimaryKey( String oid ) throws FindException {

@@ -6,6 +6,7 @@
 
 package com.l7tech.objectmodel;
 
+import net.sf.hibernate.Criteria;
 import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Session;
 
@@ -161,25 +162,24 @@ public abstract class HibernateEntityManager implements EntityManager {
     public abstract String getTableName();
 
     public Collection findAllHeaders() throws FindException {
-        try {
-            List headers = new ArrayList();
-            List results = PersistenceManager.find( getContext(), getAllHeadersQuery());
-            for (Iterator i = results.iterator(); i.hasNext();) {
-                Object[] row = (Object[])i.next();
-                String name = null;
-                if ( row.length > 1 & row[1] != null ) name = row[1].toString();
-                if ( name == null ) name = "";
-                final long id = ((Long)row[0]).longValue();
-                headers.add(new EntityHeader(id, EntityType.fromInterface(getInterfaceClass()), name, EMPTY_STRING));
-            }
-            return Collections.unmodifiableList(headers);
-        } catch ( SQLException se ) {
-            throw new FindException( se.toString(), se );
+        Collection entities = findAll();
+        List headers = new ArrayList();
+        for (Iterator i = entities.iterator(); i.hasNext();) {
+            Entity entity = (Entity)i.next();
+            String name = null;
+            if (entity instanceof NamedEntity) name = ((NamedEntity)entity).getName();
+            if ( name == null ) name = "";
+            final long id = entity.getOid();
+            headers.add(new EntityHeader(id, EntityType.fromInterface(getInterfaceClass()), name, EMPTY_STRING));
         }
+        return Collections.unmodifiableList(headers);
     }
 
-    protected String getAllHeadersQuery() {
-        return allHeadersQuery;
+    /**
+     * Override this method to add additional criteria to findAll(), findAllHeaders(), findByName() etc.
+     * @param allHeadersCriteria
+     */
+    protected void addFindAllCriteria( Criteria allHeadersCriteria ) {
     }
 
     public Collection findAllHeaders( int offset, int windowSize ) throws FindException {
@@ -188,9 +188,15 @@ public abstract class HibernateEntityManager implements EntityManager {
 
     public Collection findAll() throws FindException {
         try {
-            return PersistenceManager.find( getContext(), getAllQuery() );
+            Session s = getContext().getSession();
+            Criteria allHeadersCriteria = s.createCriteria(getImpClass());
+            addFindAllCriteria(allHeadersCriteria);
+            List entities = allHeadersCriteria.list();
+            return entities;
         } catch ( SQLException se ) {
             throw new FindException( se.toString(), se );
+        } catch ( HibernateException e ) {
+            throw new FindException( e.toString(), e );
         }
     }
 
@@ -215,14 +221,6 @@ public abstract class HibernateEntityManager implements EntityManager {
         return (HibernatePersistenceContext)PersistenceContext.getCurrent();
     }
 
-    private String alias = getTableName();
-
-    /**
-     * all headers query,
-     */
-    private final String allHeadersQuery = "select " + alias + ".oid, " +
-                                             alias + ".name from " + alias + " in class "+
-                                             getImpClass().getName();
     protected PersistenceManager _manager;
     protected final Logger logger = Logger.getLogger(getClass().getName());
 }

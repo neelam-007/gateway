@@ -9,9 +9,11 @@ package com.l7tech.server.identity;
 import com.l7tech.identity.*;
 import com.l7tech.identity.internal.GroupMembership;
 import com.l7tech.objectmodel.*;
+import net.sf.hibernate.Criteria;
 import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Query;
 import net.sf.hibernate.Session;
+import net.sf.hibernate.expression.Expression;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -43,7 +45,10 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
 
     public Group findByName(String name) throws FindException {
         try {
-            List groups = PersistenceManager.find(getContext(), "from " + getTableName() + " in class " + getImpClass().getName() + " where " + getTableName() + ".name = ?", name, String.class);
+            Criteria findByName = getContext().getSession().createCriteria(getImpClass());
+            findByName.add(Expression.eq("name", name));
+            addFindAllCriteria(findByName);
+            List groups = findByName.list();
             switch (groups.size()) {
                 case 0:
                     return null;
@@ -59,8 +64,10 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
         } catch (SQLException se) {
             logger.log(Level.SEVERE, null, se);
             throw new FindException(se.toString(), se);
+        } catch ( HibernateException e ) {
+            logger.log(Level.SEVERE, null, e);
+            throw new FindException(e.toString(), e);
         }
-
     }
 
     public Group findByPrimaryKey(String oid) throws FindException {
@@ -71,7 +78,7 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
             }
             PersistentGroup out = (PersistentGroup)PersistenceManager.findByPrimaryKey(getContext(), getImpClass(), Long.parseLong(oid));
             if (out == null) return null;
-            out.setProviderId(provider.getConfig().getOid());
+            out.setProviderId(getProviderOid());
             return out;
         } catch (SQLException se) {
             throw new FindException(se.toString(), se);
@@ -96,21 +103,29 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
         searchString = searchString.replace('*', '%');
         searchString = searchString.replace('?', '_');
         try {
-            List results = PersistenceManager.find(getContext(),
-              getAllHeadersQuery() + " where " + getTableName() + ".name like ?",
-              searchString, String.class);
+            Criteria searchCriteria = getContext().getSession().createCriteria(getImpClass());
+            searchCriteria.add(Expression.ilike("name", searchString));
+            addFindAllCriteria(searchCriteria);
+            List results = searchCriteria.list();
             List headers = new ArrayList();
             for (Iterator i = results.iterator(); i.hasNext();) {
-                Object[] row = (Object[])i.next();
-                final long id = ((Long)row[0]).longValue();
-                headers.add(new EntityHeader(id, EntityType.fromInterface(getInterfaceClass()), row[1].toString(), EMPTY_STRING));
+                PersistentGroup group = (PersistentGroup)i.next();
+                headers.add(new EntityHeader(group.getOid(), EntityType.fromInterface(getInterfaceClass()), group.getName(), EMPTY_STRING));
             }
             return Collections.unmodifiableList(headers);
         } catch (SQLException e) {
             final String msg = "Error while searching for " + getInterfaceClass() + " instances.";
             logger.log(Level.SEVERE, msg, e);
             throw new FindException(msg, e);
+        } catch ( HibernateException e ) {
+            final String msg = "Error while searching for " + getInterfaceClass() + " instances.";
+            logger.log(Level.SEVERE, msg, e);
+            throw new FindException(msg, e);
         }
+    }
+
+    protected long getProviderOid() {
+        return provider.getConfig().getOid();
     }
 
     /** Must be called in a transaction! */

@@ -268,6 +268,7 @@
         <version name="version" column="version" type="integer"/>
 
         <property name="description" type="string"/>
+        <property name="providerId" column="provider_oid" type="long"/>
         <property name="name" type="string"/>
 
         <property name="samlEmailPattern" column="saml_email_pattern" type="string"/>
