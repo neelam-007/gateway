@@ -17,9 +17,10 @@ import java.security.cert.*;
 import java.security.interfaces.DSAParams;
 import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.RSAPublicKey;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
+
+import org.bouncycastle.asn1.x509.X509Name;
+import org.bouncycastle.asn1.DERObjectIdentifier;
 
 /**
  *
@@ -39,6 +40,38 @@ public class CertUtils {
         certificate.checkValidity();
         int days = (int)(.5f + ((System.currentTimeMillis() - certificate.getNotAfter().getTime()) * 1000 * 86400));
         return new CertificateExpiry(days);
+    }
+
+    /**
+     * Constructs a {@link Map} based on an X.500 distinguished name.
+     *
+     * The keys in the map are are upper-case X.500 attribute names (e.g. CN, DC, UID, etc.)
+     * where possible, otherwise a String containing an OID.'
+     *
+     * The values are a {@link List} of values for that attribute (they are frequently multivalued)
+     * 
+     * @param dn the X.500 DN to parse
+     * @return a Map of attribute names to value lists
+     */
+    public static Map dnToAttributeMap(String dn) {
+        X509Name x509name = new X509Name(dn);
+        Map map = new HashMap();
+        for (int i = 0; i < x509name.getOIDs().size(); i++ ) {
+            String oid = ((DERObjectIdentifier)x509name.getOIDs().get(i)).toString();
+
+            String name = (String)X509Name.DefaultSymbols.get(oid);
+            if (name == null) name = (String)X509Name.RFC2253Symbols.get(oid);
+            if (name == null) name = oid.toString();
+
+            List values = (List) map.get(name);
+            if ( values == null ) {
+                values = new ArrayList();
+                map.put(name, values);
+            }
+            String value = (String)x509name.getValues().get(i);
+            values.add(value);
+        }
+        return map;
     }
 
     public static final String X509_OID_SUBJECTKEYID = "2.5.29.14";
