@@ -56,7 +56,7 @@ public class GroupManagerImp extends HibernateEntityManager implements GroupMana
     }
 
     public Class getImpClass() {
-        return GroupImp.class;
+        return Group.class;
     }
 
     public Class getInterfaceClass() {
