@@ -22,7 +22,7 @@ public class CustomAssertionReference extends ExternalReference {
 
     public void serializeToRefElement(Element referencesParentElement) {
         Element refEl = referencesParentElement.getOwnerDocument().createElement("CustomAssertionReference");
-        refEl.setAttribute(ExporterConstants.REF_TYPE_ATTRNAME, IdProviderReference.class.getName());
+        refEl.setAttribute(ExporterConstants.REF_TYPE_ATTRNAME, CustomAssertionReference.class.getName());
         referencesParentElement.appendChild(refEl);
         Element nameEl = referencesParentElement.getOwnerDocument().createElement("CustomAssertionName");
         if (customAssertionName != null) {
