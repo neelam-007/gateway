@@ -30,6 +30,11 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class PublishedService extends NamedEntityImp {
+
+    public PublishedService() {
+        setVersion(1);
+    }
+
     public synchronized ServerAssertion rootAssertion() throws IOException {
         String policyXml = getPolicyXml();
         if ( policyXml == null || policyXml.length() == 0 ) {
@@ -154,6 +159,7 @@ public class PublishedService extends NamedEntityImp {
         setPolicyXml(objToCopy.getPolicyXml());
         setWsdlUrl(objToCopy.getWsdlUrl());
         setWsdlXml(objToCopy.getWsdlXml());
+        setVersion(objToCopy.getVersion());
     }
 
     public boolean isDisabled() {
