@@ -16,7 +16,7 @@ import java.io.*;
 class SsgManagerImpl implements SsgManager {
     private static final Category log = Category.getInstance(SsgManagerImpl.class);
 
-    private static final String STORE_DIR = System.getProperty("user.home") + File.separator + ".l7proxy";
+    private static final String STORE_DIR = System.getProperty("user.home") + File.separator + ".l7tech";
     private static final String STORE_FILE = STORE_DIR + File.separator + "ssgs.xml";
     private static final String STORE_FILE_NEW = STORE_DIR + File.separator + "ssgs_xml.OLD";
     private static final String STORE_FILE_OLD = STORE_DIR + File.separator + "ssgs_xml.NEW";
