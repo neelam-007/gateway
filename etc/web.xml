@@ -60,16 +60,6 @@
         <load-on-startup>100</load-on-startup>
     </servlet>
 
-    <servlet>
-        <servlet-name>HibernatePersistenceManagerServlet</servlet-name>
-        <servlet-class>com.l7tech.server.HibernatePersistenceManagerServlet</servlet-class>
-    </servlet>
-
-    <servlet>
-        <servlet-name>TestServlet</servlet-name>
-        <servlet-class>com.l7tech.server.TestServlet</servlet-class>
-    </servlet>
-
     <servlet-mapping>
         <servlet-name>SoapMessageProcessingServlet</servlet-name>
         <url-pattern>/servlet/soap</url-pattern>
@@ -87,16 +77,6 @@
         above when you change this <url-pattern>!
         -->
         <url-pattern>/policy/disco.modulator/*</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>HibernatePersistenceManagerServlet</servlet-name>
-        <url-pattern>/servlet/HibernatePersistenceManagerServlet</url-pattern>
-    </servlet-mapping>
-
-    <servlet-mapping>
-        <servlet-name>TestServlet</servlet-name>
-        <url-pattern>/servlet/TestServlet</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>
