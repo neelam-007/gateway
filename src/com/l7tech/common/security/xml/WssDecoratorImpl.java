@@ -121,7 +121,7 @@ public class WssDecoratorImpl implements WssDecorator {
         return false;
     }
 
-    private Element addSignature(Context c, PrivateKey senderPrivateKey,
+    private Element addSignature(final Context c, PrivateKey senderPrivateKey,
                                  Element[] elementsToSign, Element securityHeader,
                                  Element binarySecurityToken) throws DecoratorException {
 
@@ -151,7 +151,7 @@ public class WssDecoratorImpl implements WssDecorator {
             if (isWrappingOrSame(elementsToSign[i], securityHeader)) {
                 ref.addTransform(Transform.ENVELOPED);
             }
-            ref.addTransform(Transform.W3CC14N2);
+            ref.addTransform(Transform.C14N_EXCLUSIVE);
             template.addReference(ref);
         }
         Element emptySignatureElement = template.getSignatureElement();
@@ -185,7 +185,13 @@ public class WssDecoratorImpl implements WssDecorator {
         SignatureContext sigContext = new SignatureContext();
         sigContext.setIDResolver(new IDResolver() {
             public Element resolveID(Document doc, String s) {
-                return SoapUtil.getElementByWsuId(doc, s);
+                Element e = (Element)c.idToElementCache.get(s);
+                if (e != null)
+                    return e;
+                e = SoapUtil.getElementByWsuId(doc, s);
+                if (e != null)
+                    c.idToElementCache.put(s, e);
+                return e;
             }
         });
         try {
@@ -244,7 +250,7 @@ public class WssDecoratorImpl implements WssDecorator {
 
         for (int i = 0; i < elementsToEncrypt.length; i++) {
             Element element = elementsToEncrypt[i];
-            Element encryptedElement = encryptElement(c, element, keyBytes);
+            Element encryptedElement = encryptElement(element, keyBytes);
 
             Element dataReference = XmlUtil.createAndAppendElementNS(referenceList, "DataReference", xencNs, xenc);
             dataReference.setAttribute("URI", "#" + getOrCreateWsuId(c, encryptedElement));
@@ -255,12 +261,11 @@ public class WssDecoratorImpl implements WssDecorator {
 
     /**
      * Encrypt the specified element.  Returns the new EncryptedData element.
-     * @param c
      * @param element
      * @param keyBytes
      * @return the EncryptedData element that replaces the specified element.
      */
-    private Element encryptElement(Context c, Element element, byte[] keyBytes)
+    private Element encryptElement(Element element, byte[] keyBytes)
             throws CausedDecoratorException, GeneralSecurityException
     {
         Document soapMsg = element.getOwnerDocument();
