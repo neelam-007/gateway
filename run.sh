@@ -50,6 +50,8 @@ fi
 
 PATH=$JAVA_HOME/bin:$PATH; export PATH
 JDK_CLASSES="$JAVA_HOME/lib/rt.jar:$JAVA_HOME/lib/tools.jar"
+BUILD_CLASSES="$SRC_ROOT/build/classes"
+
 for i in "$SRC_ROOT/lib"/*.jar
     do
     # if the directory is empty, then it will return the input string
@@ -62,7 +64,7 @@ for i in "$SRC_ROOT/lib"/*.jar
     	fi
       fi
     done 
-CLASSPATH="${JDK_CLASSES}:${LOCALCLASSPATH}"
+CLASSPATH="${JDK_CLASSES}:${BUILD_CLASSES}:${LOCALCLASSPATH}"
 # Cygwin - switch paths to Windows format before running java
 if $cygwin; then
   CLASSPATH=`cygpath --path --windows "$CLASSPATH"`
