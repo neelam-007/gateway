@@ -137,7 +137,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             policiesPane = new JScrollPane(pane);
             policiesPane.setBorder(BorderFactory.createEmptyBorder());
 
-            pane.add(new JLabel("<HTML><h4>Policies being cached by this client</h4></HTML>"),
+            pane.add(new JLabel("<HTML><h4>Policies being cached by this Agent</h4></HTML>"),
                      new GridBagConstraints(0, y++, 1, 1, 0.0, 0.0,
                                             GridBagConstraints.NORTHWEST,
                                             GridBagConstraints.BOTH,
