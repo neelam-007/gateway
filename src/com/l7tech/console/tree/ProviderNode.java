@@ -40,14 +40,8 @@ public class ProviderNode extends EntityHeaderNode {
      *                      retrieving child nodes.
      */
     public Enumeration children() throws Exception {
-        EntityHeader header = super.getEntityHeader();
         List list =
-                Arrays.asList(
-                        new BasicTreeNode[]{
-                            new AdminFolderNode(header),
-                            new UserFolderNode(header),
-                            new GroupFolderNode(header)
-                        });
+                Arrays.asList(new BasicTreeNode[]{});
         return Collections.enumeration(list);
     }
 

@@ -890,7 +890,7 @@ public class MainWindow extends JFrame {
                     dialog.show();
                 } else if (TreeNodeMenu.NEW_GROUP.equals(e.getActionCommand())) {
                     NewGroupDialog dialog =
-                            new NewGroupDialog(MainWindow.this, (EntityHeader) parent.getUserObject());
+                            new NewGroupDialog(MainWindow.this);
                     dialog.setResizable(false);
                     dialog.setPanelListener(listenerBroker);
                     dialog.show();

@@ -11,7 +11,7 @@ import javax.jnlp.UnavailableServiceException;
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  * @version 1.1
  */
-public class Services {
+class Services {
 
   /** hidden constructor, the class cannot be instantiated */
   private Services() {

@@ -52,8 +52,8 @@ public class ProvidersFolderNode implements BasicTreeNode {
     }
 
     /**
-     * Returns the node FQ name.
-     * Gui nodes have FQ name to facilitate handling in
+     * Returns the node name.
+     * Gui nodes have name to facilitate handling in
      * hierarchical gui components such as JTree.
      *
      * @return the FQ name as a String
@@ -63,7 +63,7 @@ public class ProvidersFolderNode implements BasicTreeNode {
     }
 
     /**
-     * Returns the label; constant "Realms" is returned
+     * Returns the label; constant "Identity providers" is returned
      */
     public String getLabel() {
         return "Identity providers";

@@ -43,6 +43,8 @@ public class RootNode implements BasicTreeNode {
         List list =
                 Arrays.asList(
                         new BasicTreeNode[]{
+                            new UserFolderNode(),
+                            new GroupFolderNode(),
                             new ProvidersFolderNode(),
                             new PoliciesFolderNode(),
                             new ServicesFolderNode()

@@ -34,9 +34,6 @@ public class NewGroupDialog extends JDialog {
     private boolean insertSuccess = false;
     private boolean createThenEdit = false;
 
-    /* the provider user is added to */
-    private EntityHeader cEntry;
-
     /* the panel listener */
     private PanelListener panelListener;
 
@@ -44,11 +41,9 @@ public class NewGroupDialog extends JDialog {
      * Create a new NewUserDialog fdialog for a given Company
      *
      * @param parent  the parent Frame. May be <B>null</B>
-     * @param cEntry the company entry
      */
-    public NewGroupDialog(JFrame parent, EntityHeader cEntry) {
+    public NewGroupDialog(JFrame parent) {
         super(parent, true);
-        this.cEntry = cEntry;
         this.parent = parent;
         initResources();
         initComponents();

@@ -20,14 +20,9 @@ public class GroupFolderNode implements BasicTreeNode {
     /**
      * construct the <CODE>UserFolderNode</CODE> instance for
      * a given entry.
-     *
-     * @param entry  the Entry instance, must be Company
-     * @exception IllegalArgumentException
-     *                   thrown if the entry is <b>null
      */
-    public GroupFolderNode(EntityHeader entry)
-            throws IllegalArgumentException {
-        this.entry = entry;
+    public GroupFolderNode() {
+
     }
 
     /**
@@ -63,21 +58,14 @@ public class GroupFolderNode implements BasicTreeNode {
     }
 
     /**
-     * Returns the node FQ name.
-     * Gui nodes have FQ name to facilitate handling in
+     * Returns the node name.
+     * Gui nodes have name to facilitate handling in
      * hierarchical gui components such as JTree.
      *
-     * @return the FQ name as a String
+     * @return the name as a String
      */
     public String getName() {
-        if (fqName == null) {
-            if (!"".equals(entry.getName())) {
-                fqName = getLabel() + "." + entry.getName();
-            } else {
-                fqName = getLabel();
-            }
-        }
-        return fqName;
+        return getLabel();
     }
 
     /**
@@ -86,7 +74,4 @@ public class GroupFolderNode implements BasicTreeNode {
     public String getLabel() {
         return "Groups";
     }
-
-    private EntityHeader entry;
-    private String fqName;
 }

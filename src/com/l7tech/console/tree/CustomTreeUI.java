@@ -28,180 +28,175 @@ import java.awt.*;
  * packages.
  */
 public final class CustomTreeUI {
-  /**
-   * private constructor, this class cannot be instantiated
-   */
-  private CustomTreeUI() {
-  }
-
-  public static TreeUI getTreeUI(String lookAndFeel) {
-    if (WindowsLookAndFeel.class.getName().equals(lookAndFeel)) {
-      return new CustomWindowsTreeUI();
-    } else if (MotifLookAndFeel.class.getName().equals(lookAndFeel)) {
-      return new CustomMotifTreeUI();
-    } else if (MetalLookAndFeel.class.getName().equals(lookAndFeel)) {
-      return new CustomMetalTreeUI(); // default 
-    } else if (KunststoffLookAndFeel.class.getName().equals(lookAndFeel)) {
-      return new CustomKunstStoffTreeUI(null);
-    }
-    throw new 
-      IllegalArgumentException("Don't know how to handle look and feel "+lookAndFeel);
-  }
-
-  public static TreeUI getTreeUI() {
-    return getTreeUI(UIManager.getLookAndFeel().getClass().getName());
-  }
-
-  /**
-   * The Metal treeUI override
-   */
-  private static class CustomMetalTreeUI 
-    extends MetalTreeUI {
     /**
-     * Paints the expand (toggle) part of a row. The reciever should
-     * NOT modify <code>clipBounds</code>, or <code>insets</code>.
+     * private constructor, this class cannot be instantiated
      */
-    protected void paintExpandControl(Graphics g,
-                                      Rectangle clipBounds, Insets insets,
-                                      Rectangle bounds, TreePath path,
-                                      int row, boolean isExpanded,
-                                      boolean hasBeenExpanded,
-                                      boolean isLeaf) {
-
-      Object value = path.getLastPathComponent();               
-      Icon mExpanded = this.getExpandedIcon();
-      Icon mCollapsed = this.getCollapsedIcon();
-
-      if (isNonExpandableFolder(value)) {
-        this.setExpandedIcon(null);
-        this.setCollapsedIcon(null);
-      }
-
-      super.paintExpandControl(g, clipBounds, insets, bounds, path, 
-                               row, isExpanded, hasBeenExpanded, isLeaf);
-
-      this.setExpandedIcon(mExpanded);
-      this.setCollapsedIcon(mCollapsed);
+    private CustomTreeUI() {
     }
-  }
 
-  /**
-   * The Motif treeUI override
-   */
-  private static final
-    class CustomMotifTreeUI extends MotifTreeUI {
+    public static TreeUI getTreeUI(String lookAndFeel) {
+        if (WindowsLookAndFeel.class.getName().equals(lookAndFeel)) {
+            return new CustomWindowsTreeUI();
+        } else if (MotifLookAndFeel.class.getName().equals(lookAndFeel)) {
+            return new CustomMotifTreeUI();
+        } else if (MetalLookAndFeel.class.getName().equals(lookAndFeel)) {
+            return new CustomMetalTreeUI(); // default
+        } else if (KunststoffLookAndFeel.class.getName().equals(lookAndFeel)) {
+            return new CustomKunstStoffTreeUI(null);
+        }
+        throw new
+                IllegalArgumentException("Don't know how to handle look and feel " + lookAndFeel);
+    }
+
+    public static TreeUI getTreeUI() {
+        return getTreeUI(UIManager.getLookAndFeel().getClass().getName());
+    }
+
     /**
-     * Paints the expand (toggle) part of a row. The reciever should
-     * NOT modify <code>clipBounds</code>, or <code>insets</code>.
+     * The Metal treeUI override
      */
-    protected void paintExpandControl(Graphics g,
-                                      Rectangle clipBounds, Insets insets,
-                                      Rectangle bounds, TreePath path,
-                                      int row, boolean isExpanded,
-                                      boolean hasBeenExpanded,
-                                      boolean isLeaf) {
+    private static class CustomMetalTreeUI
+            extends MetalTreeUI {
+        /**
+         * Paints the expand (toggle) part of a row. The reciever should
+         * NOT modify <code>clipBounds</code>, or <code>insets</code>.
+         */
+        protected void paintExpandControl(Graphics g,
+                                          Rectangle clipBounds, Insets insets,
+                                          Rectangle bounds, TreePath path,
+                                          int row, boolean isExpanded,
+                                          boolean hasBeenExpanded,
+                                          boolean isLeaf) {
 
-      Object value = path.getLastPathComponent();               
-      Icon mExpanded = this.getExpandedIcon();
-      Icon mCollapsed = this.getCollapsedIcon();
+            Object value = path.getLastPathComponent();
+            Icon mExpanded = this.getExpandedIcon();
+            Icon mCollapsed = this.getCollapsedIcon();
 
-      if (isNonExpandableFolder(value)) {
-        this.setExpandedIcon(null);
-        this.setCollapsedIcon(null);
-      }
+            if (isNonExpandableFolder(value)) {
+                this.setExpandedIcon(null);
+                this.setCollapsedIcon(null);
+            }
 
-      super.paintExpandControl(g, clipBounds, insets, bounds, path, 
-                               row, isExpanded, hasBeenExpanded, isLeaf);
+            super.paintExpandControl(g, clipBounds, insets, bounds, path,
+                    row, isExpanded, hasBeenExpanded, isLeaf);
 
-      this.setExpandedIcon(mExpanded);
-      this.setCollapsedIcon(mCollapsed);
+            this.setExpandedIcon(mExpanded);
+            this.setCollapsedIcon(mCollapsed);
+        }
     }
-  }
 
-  /**
-   * The Windows treeUI override
-   */
-  private static class CustomWindowsTreeUI 
-    extends WindowsTreeUI {
     /**
-     * Paints the expand (toggle) part of a row. The reciever should
-     * NOT modify <code>clipBounds</code>, or <code>insets</code>.
+     * The Motif treeUI override
      */
-    protected void paintExpandControl(Graphics g,
-                                      Rectangle clipBounds, Insets insets,
-                                      Rectangle bounds, TreePath path,
-                                      int row, boolean isExpanded,
-                                      boolean hasBeenExpanded,
-                                      boolean isLeaf) {
+    private static final
+            class CustomMotifTreeUI extends MotifTreeUI {
+        /**
+         * Paints the expand (toggle) part of a row. The reciever should
+         * NOT modify <code>clipBounds</code>, or <code>insets</code>.
+         */
+        protected void paintExpandControl(Graphics g,
+                                          Rectangle clipBounds, Insets insets,
+                                          Rectangle bounds, TreePath path,
+                                          int row, boolean isExpanded,
+                                          boolean hasBeenExpanded,
+                                          boolean isLeaf) {
 
-      Object value = path.getLastPathComponent();               
-      Icon mExpanded = this.getExpandedIcon();
-      Icon mCollapsed = this.getCollapsedIcon();
+            Object value = path.getLastPathComponent();
+            Icon mExpanded = this.getExpandedIcon();
+            Icon mCollapsed = this.getCollapsedIcon();
 
-      if (isNonExpandableFolder(value)) {
-        this.setExpandedIcon(null);
-        this.setCollapsedIcon(null);
-      }
+            if (isNonExpandableFolder(value)) {
+                this.setExpandedIcon(null);
+                this.setCollapsedIcon(null);
+            }
 
-      super.paintExpandControl(g, clipBounds, insets, bounds, path, 
-                               row, isExpanded, hasBeenExpanded, isLeaf);
+            super.paintExpandControl(g, clipBounds, insets, bounds, path,
+                    row, isExpanded, hasBeenExpanded, isLeaf);
 
-      this.setExpandedIcon(mExpanded);
-      this.setCollapsedIcon(mCollapsed);
+            this.setExpandedIcon(mExpanded);
+            this.setCollapsedIcon(mCollapsed);
+        }
     }
-  }
 
-
-  /**
-   * The kunststoff treeUI override
-   */
-  private static class CustomKunstStoffTreeUI 
-    extends KunststoffTreeUI {
-
-    CustomKunstStoffTreeUI(JComponent comp) {
-      super(comp);
-    }
     /**
-     * Paints the expand (toggle) part of a row. The reciever should
-     * NOT modify <code>clipBounds</code>, or <code>insets</code>.
+     * The Windows treeUI override
      */
-    protected void paintExpandControl(Graphics g,
-                                      Rectangle clipBounds, Insets insets,
-                                      Rectangle bounds, TreePath path,
-                                      int row, boolean isExpanded,
-                                      boolean hasBeenExpanded,
-                                      boolean isLeaf) {
+    private static class CustomWindowsTreeUI
+            extends WindowsTreeUI {
+        /**
+         * Paints the expand (toggle) part of a row. The reciever should
+         * NOT modify <code>clipBounds</code>, or <code>insets</code>.
+         */
+        protected void paintExpandControl(Graphics g,
+                                          Rectangle clipBounds, Insets insets,
+                                          Rectangle bounds, TreePath path,
+                                          int row, boolean isExpanded,
+                                          boolean hasBeenExpanded,
+                                          boolean isLeaf) {
 
-      Object value = path.getLastPathComponent();               
-      Icon mExpanded = this.getExpandedIcon();
-      Icon mCollapsed = this.getCollapsedIcon();
+            Object value = path.getLastPathComponent();
+            Icon mExpanded = this.getExpandedIcon();
+            Icon mCollapsed = this.getCollapsedIcon();
 
-      if (CustomTreeUI.isNonExpandableFolder(value)) {
-        this.setExpandedIcon(null);
-        this.setCollapsedIcon(null);
-      }
+            if (isNonExpandableFolder(value)) {
+                this.setExpandedIcon(null);
+                this.setCollapsedIcon(null);
+            }
 
-      super.paintExpandControl(g, clipBounds, insets, bounds, path, 
-                               row, isExpanded, hasBeenExpanded, isLeaf);
+            super.paintExpandControl(g, clipBounds, insets, bounds, path,
+                    row, isExpanded, hasBeenExpanded, isLeaf);
 
-      this.setExpandedIcon(mExpanded);
-      this.setCollapsedIcon(mCollapsed);
+            this.setExpandedIcon(mExpanded);
+            this.setCollapsedIcon(mCollapsed);
+        }
     }
-  }
 
-  /**
-   * is this non expandable folder?
-   *
-   * @param object the object to check
-   * @return true if object is any of the folders, false otherwise
-   */
-  static boolean isNonExpandableFolder(Object object) {
-    Object uObject = ((DefaultMutableTreeNode)object).getUserObject();
 
-    Class clazz = uObject.getClass();
-    return
-      clazz.equals(AdminFolderNode.class) ||
-      clazz.equals(GroupFolderNode.class) ||
-      clazz.equals(UserFolderNode.class);
-  }
+    /**
+     * The kunststoff treeUI override
+     */
+    private static class CustomKunstStoffTreeUI
+            extends KunststoffTreeUI {
+
+        CustomKunstStoffTreeUI(JComponent comp) {
+            super(comp);
+        }
+
+        /**
+         * Paints the expand (toggle) part of a row. The reciever should
+         * NOT modify <code>clipBounds</code>, or <code>insets</code>.
+         */
+        protected void paintExpandControl(Graphics g,
+                                          Rectangle clipBounds, Insets insets,
+                                          Rectangle bounds, TreePath path,
+                                          int row, boolean isExpanded,
+                                          boolean hasBeenExpanded,
+                                          boolean isLeaf) {
+
+            Object value = path.getLastPathComponent();
+            Icon mExpanded = this.getExpandedIcon();
+            Icon mCollapsed = this.getCollapsedIcon();
+
+            if (CustomTreeUI.isNonExpandableFolder(value)) {
+                this.setExpandedIcon(null);
+                this.setCollapsedIcon(null);
+            }
+
+            super.paintExpandControl(g, clipBounds, insets, bounds, path,
+                    row, isExpanded, hasBeenExpanded, isLeaf);
+
+            this.setExpandedIcon(mExpanded);
+            this.setCollapsedIcon(mCollapsed);
+        }
+    }
+
+    /**
+     * is this non expandable folder?
+     *
+     * @param object the object to check
+     * @return true if object is any of the folders, false otherwise
+     */
+    static boolean isNonExpandableFolder(Object object) {
+        return false;
+    }
 }
