@@ -32,7 +32,7 @@ public class TarariProber {
                             Class xpathCompilerClass = Class.forName(XPATH_COMPILER_CLASSNAME, false, TarariProber.class.getClassLoader());
                             Method resetMethod = xpathCompilerClass.getMethod("reset", new Class[0]);
                             resetMethod.invoke(null, new Object[0]);
-                            Class tarariFactoryClass = Class.forName("com.l7tech.common.xml.tarari.TariSoapInfoFactory");
+                            Class tarariFactoryClass = Class.forName("com.l7tech.common.xml.tarari.TarariSoapInfoFactory");
                             Constructor c = tarariFactoryClass.getConstructor(new Class[0]);
                             soapInfoFactory = (SoapInfoFactory)c.newInstance(new Object[0]);
                             present = Boolean.TRUE;
