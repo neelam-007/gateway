@@ -1,12 +1,10 @@
 package com.l7tech.common.security.saml;
 
 import com.ibm.xml.dsig.*;
-import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.xml.TestDocuments;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -52,15 +50,23 @@ public class SignedSamlTest extends TestCase {
 
     public void setUp() throws Exception {
         KeystoreUtils ku = KeystoreUtils.getInstance();
-        SignerInfo si = ku.getSignerInfo();
-        caPrivateKey = si.getPrivate();
-        caPublicKey = si.getPublic();
-        caCertChain = si.getCertificateChain();
 
-        final char[] passChars = CLIENT_PASS.toCharArray();
-        KeyStore clientKeystore = KeystoreUtils.getKeyStore(CLIENT_KEYSTORE, passChars, "PKCS12");
-        clientPrivateKey = (PrivateKey)clientKeystore.getKey(CLIENT_ALIAS, passChars);
-        final Certificate[] certs = clientKeystore.getCertificateChain(CLIENT_ALIAS);
+        final char[] caPassChars = ku.getRootKeystorePasswd().toCharArray();
+        KeyStore caKeyStore = KeystoreUtils.getKeyStore(ku.getRootKeystorePath(), caPassChars, ku.getKeyStoreType());
+        caPrivateKey = (PrivateKey)caKeyStore.getKey(CA_ALIAS, caPassChars);
+        Certificate[] certs = caKeyStore.getCertificateChain(CA_ALIAS);
+        X509Certificate[] caCerts = new X509Certificate[certs.length];
+        for ( int i = 0; i < certs.length; i++ ) {
+            Certificate cert = certs[i];
+            caCerts[i] = (X509Certificate)cert;
+        }
+        caCertChain = caCerts;
+        caPublicKey = caCerts[0].getPublicKey();
+
+        final char[] clientPassChars = CLIENT_PASS.toCharArray();
+        KeyStore clientKeystore = KeystoreUtils.getKeyStore(CLIENT_KEYSTORE, clientPassChars, "PKCS12");
+        clientPrivateKey = (PrivateKey)clientKeystore.getKey(CLIENT_ALIAS, clientPassChars);
+        certs = clientKeystore.getCertificateChain(CLIENT_ALIAS);
         final X509Certificate[] clientCerts = new X509Certificate[certs.length];
         for ( int i = 0; i < certs.length; i++ ) {
             Certificate cert = certs[i];
@@ -129,8 +135,7 @@ public class SignedSamlTest extends TestCase {
         return sb.toString();
     }
 
-    public void testHolderOfKey() throws Exception {
-        final Document placeOrderClear = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
+    public void testSignedHolderOfKey() throws Exception {
         final AssertionType samlAssertion = getUnsignedHolderOfKeyAssertion();
 
         final HashMap prefixMap = new HashMap();
@@ -173,7 +178,7 @@ public class SignedSamlTest extends TestCase {
         KeyInfo keyInfo = new KeyInfo();
         KeyInfo.X509Data x509 = new KeyInfo.X509Data();
         x509.setCertificate(caCertChain[0]);
-        x509.setParameters(caCertChain[0], true, true, true);
+        x509.setParameters(caCertChain[0], false, false, true);
         keyInfo.setX509Data(new KeyInfo.X509Data[] { x509 });
 
         signatureElement.appendChild(keyInfo.getKeyInfoElement(assertionDoc));
@@ -205,4 +210,5 @@ public class SignedSamlTest extends TestCase {
     private static final String CLIENT_KEYSTORE = System.getProperty("user.home") +
                                                   "/.l7tech/key1.p12";
     private static final String ASSERTION_ID = "mySamlAssertion";
+    private static final String CA_ALIAS = "ssgroot";
 }
