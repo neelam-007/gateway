@@ -119,9 +119,10 @@ public class HibernatePersistenceContext extends PersistenceContext {
                 _session.close();
             }
             _session = null;
-            PersistenceContext.releaseContext();
         } catch (HibernateException e) {
             logger.log(Level.FINE, "error closing context", e);
+        } finally {
+            PersistenceContext.releaseContext();
         }
     }
 
