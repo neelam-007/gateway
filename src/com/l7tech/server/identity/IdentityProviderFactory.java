@@ -15,6 +15,9 @@ import com.l7tech.server.identity.internal.InternalGroupManager;
 import com.l7tech.server.identity.fed.FederatedIdentityProvider;
 import com.l7tech.server.identity.fed.FederatedGroupManager;
 import com.l7tech.server.identity.fed.FederatedUserManager;
+import com.l7tech.server.identity.ldap.LdapIdentityProvider;
+import com.l7tech.server.identity.ldap.LdapUserManager;
+import com.l7tech.server.identity.ldap.LdapGroupManager;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -265,9 +268,16 @@ public class IdentityProviderFactory extends ApplicationObjectSupport implements
             final FederatedIdentityProvider federatedIdentityProvider = ((FederatedIdentityProvider)bean);
             UserManager um = (UserManager)abstractBeanFactory.getBean("federatedUserManager", new Object[]{FederatedUserManager.class, bean});
             federatedIdentityProvider.setUserManager((FederatedUserManager)um);
-            GroupManager gm = (GroupManager)abstractBeanFactory.getBean("fedaratedGroupManager", new Object[]{FederatedGroupManager.class, bean});
+            GroupManager gm = (GroupManager)abstractBeanFactory.getBean("federatedGroupManager", new Object[]{FederatedGroupManager.class, bean});
             federatedIdentityProvider.setGroupManager((FederatedGroupManager)gm);
+        } else if (LDAP_PROVIDER_BEAN_NAME.equals(beanName)) {
+            final LdapIdentityProvider ldapIdentityProvider = ((LdapIdentityProvider)bean);
+            UserManager um = (UserManager)abstractBeanFactory.getBean("ldapUserManager", new Object[]{LdapUserManager.class, bean});
+            ldapIdentityProvider.setUserManager((LdapUserManager)um);
+            GroupManager gm = (GroupManager)abstractBeanFactory.getBean("ldapGroupManager", new Object[]{LdapGroupManager.class, bean});
+            ldapIdentityProvider.setGroupManager((LdapGroupManager)gm);
         }
+
         return bean;
     }
 
@@ -280,5 +290,5 @@ public class IdentityProviderFactory extends ApplicationObjectSupport implements
 
     private static final String INTERNAL_PROVIDER_BEAN_NAME = "internalIdentityProvider";
     private static final String FEDERATED_PROVIDER_BEAN_NAME = "federatedIdentityProvider";
-    private static final String LDAP_PROVIDER_BEAN_NAME = "federatedIdentityProvider";
+    private static final String LDAP_PROVIDER_BEAN_NAME = "ldapIdentityProvider";
 }
