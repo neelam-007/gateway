@@ -110,7 +110,7 @@ public class SoapUtil {
     public static final String SOAP_BODY_XPATH = SOAP_ENVELOPE_XPATH+"/"+NamespaceConstants.NSPREFIX_SOAP_ENVELOPE + ":Body";
 
     /** Timestamp date format */
-    public static final String DATE_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss";
+    public static final String DATE_FORMAT_PATTERN = "yyyy-MM-dd'T'HH:mm:ss'Z'";
     public static final TimeZone DATE_FORMAT_TIMEZONE = TimeZone.getTimeZone("UTC");
 
     /**
