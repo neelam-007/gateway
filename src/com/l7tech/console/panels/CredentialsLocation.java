@@ -7,7 +7,6 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
-import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 
 import javax.swing.*;
 import java.util.Map;
@@ -79,7 +78,6 @@ public class CredentialsLocation {
             credentialsLocationMap.put("WS Token Basic", new WssBasic());
             credentialsLocationMap.put("WSS Signature", new RequestWssX509Cert());
             credentialsLocationMap.put("WS Secure Conversation", new SecureConversation());
-            credentialsLocationMap.put("SAML", new SamlSecurity());
         }
 
         return credentialsLocationMap;

@@ -26,10 +26,7 @@ import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
-import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
-import com.l7tech.policy.assertion.xmlsec.SecureConversation;
+import com.l7tech.policy.assertion.xmlsec.*;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.ServerPolicyFactory;
 import com.l7tech.server.policy.assertion.ServerAssertion;
@@ -190,7 +187,7 @@ public class TokenServiceImpl implements TokenService {
             msgLvlBranch.addChild(new RequestWssIntegrity());
             OneOrMoreAssertion validCredsOverMsgLvlSec = new OneOrMoreAssertion();
             validCredsOverMsgLvlSec.addChild(new RequestWssX509Cert());
-            validCredsOverMsgLvlSec.addChild(new SamlSecurity(SamlSecurity.CONFIRMATION_METHOD_WHATEVER));
+            validCredsOverMsgLvlSec.addChild(new SamlAuthenticationStatement());
             validCredsOverMsgLvlSec.addChild(new SecureConversation());
             msgLvlBranch.addChild(validCredsOverMsgLvlSec);
 

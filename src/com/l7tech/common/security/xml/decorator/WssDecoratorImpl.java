@@ -66,17 +66,19 @@ public class WssDecoratorImpl implements WssDecorator {
 
     /**
      * Decorate a soap message with WSS style security.
+     *
      * @param message the soap message to decorate
      */
     public void decorateMessage(Document message, DecorationRequirements decorationRequirements)
-            throws InvalidDocumentFormatException, GeneralSecurityException, DecoratorException
-    {
+      throws InvalidDocumentFormatException, GeneralSecurityException, DecoratorException {
         Context c = new Context();
 
         c.wsseNS = decorationRequirements.getPreferredSecurityNamespace();
         c.wsuNS = decorationRequirements.getPreferredWSUNamespace();
+
         Element securityHeader = createSecurityHeader(message, c.wsseNS, c.wsuNS,
-                                                      decorationRequirements.getSecurityHeaderActor());
+                                                      decorationRequirements.getSecurityHeaderActor(),
+                                                      decorationRequirements.isExistingSecurityHeaderAllowed());
         Set signList = decorationRequirements.getElementsToSign();
 
         // If we aren't signing the entire message, find extra elements to sign
@@ -85,9 +87,9 @@ public class WssDecoratorImpl implements WssDecorator {
             if (timeoutMillis < 1)
                 timeoutMillis = TIMESTAMP_TIMOUT_MILLIS;
             Element timestamp = SoapUtil.addTimestamp(securityHeader,
-                                                      c.wsuNS,
-                                                      decorationRequirements.getTimestampCreatedDate(), // null ok
-                                                      timeoutMillis);
+              c.wsuNS,
+              decorationRequirements.getTimestampCreatedDate(), // null ok
+              timeoutMillis);
             signList.add(timestamp);
         }
 
@@ -100,7 +102,7 @@ public class WssDecoratorImpl implements WssDecorator {
             signList.add(relatesTo);
 
         if (decorationRequirements.getUsernameTokenCredentials() != null &&
-            decorationRequirements.getUsernameTokenCredentials().getFormat() == CredentialFormat.CLEARTEXT) {
+          decorationRequirements.getUsernameTokenCredentials().getFormat() == CredentialFormat.CLEARTEXT) {
             createUsernameToken(securityHeader, decorationRequirements.getUsernameTokenCredentials());
         }
 
@@ -110,7 +112,7 @@ public class WssDecoratorImpl implements WssDecorator {
 
         Element sct = null;
         DecorationRequirements.SecureConversationSession session =
-                                                            decorationRequirements.getSecureConversationSession();
+          decorationRequirements.getSecureConversationSession();
         if (session != null) {
             if (session.getId() == null)
                 throw new DecoratorException("SeureConversation Session ID must not be null");
@@ -118,7 +120,7 @@ public class WssDecoratorImpl implements WssDecorator {
         }
 
         Element saml = null;
-        if (decorationRequirements.getSenderSamlToken() != null && !signList.isEmpty())
+        if (decorationRequirements.getSenderSamlToken() != null && !signList.isEmpty()) // todo: for other then hok need to add a token even if sign list is emtpy
             saml = addSamlSecurityToken(securityHeader, decorationRequirements.getSenderSamlToken());
 
         Element signature = null;
@@ -161,11 +163,11 @@ public class WssDecoratorImpl implements WssDecorator {
                 throw new IllegalArgumentException("Signing is requested, but there is no senderCertificate or WS-SecureConversation session");
 
             signature = addSignature(c,
-                                     senderSigningKey,
-                                     (Element[])(decorationRequirements.getElementsToSign().toArray(new Element[0])),
-                                     securityHeader,
-                                     keyInfoReferenceTarget,
-                                     keyInfoValueTypeURI);
+              senderSigningKey,
+              (Element[])(decorationRequirements.getElementsToSign().toArray(new Element[0])),
+              securityHeader,
+              keyInfoReferenceTarget,
+              keyInfoValueTypeURI);
         }
 
         if (decorationRequirements.getElementsToEncrypt().size() > 0) {
@@ -177,19 +179,19 @@ public class WssDecoratorImpl implements WssDecorator {
                 Element keyInfoReferenceTarget = derivedKeyToken.dkt;
                 String keyInfoValueTypeURI = SoapUtil.VALUETYPE_DERIVEDKEY;
                 addEncryptedReferenceList(c,
-                                          securityHeader,
-                                          derivedKeyToken.derivedKey,
-                                          (Element[])(decorationRequirements.getElementsToEncrypt().toArray(new Element[0])),
-                                          signature,
-                                          keyInfoReferenceTarget,
-                                          keyInfoValueTypeURI);
+                  securityHeader,
+                  derivedKeyToken.derivedKey,
+                  (Element[])(decorationRequirements.getElementsToEncrypt().toArray(new Element[0])),
+                  signature,
+                  keyInfoReferenceTarget,
+                  keyInfoValueTypeURI);
             } else if (decorationRequirements.getRecipientCertificate() != null) {
                 // Encrypt to recipient's certificate
                 addEncryptedKey(c,
-                                securityHeader,
-                                decorationRequirements.getRecipientCertificate(),
-                                (Element[])(decorationRequirements.getElementsToEncrypt().toArray(new Element[0])),
-                                signature);
+                  securityHeader,
+                  decorationRequirements.getRecipientCertificate(),
+                  (Element[])(decorationRequirements.getElementsToEncrypt().toArray(new Element[0])),
+                  signature);
             } else
                 throw new IllegalArgumentException("Encryption is requested, but there is no recipientCertificate or SecureConversation session.");
 
@@ -223,17 +225,18 @@ public class WssDecoratorImpl implements WssDecorator {
     private static class DerivedKeyToken {
         Element dkt;
         byte[] derivedKey;
+
         DerivedKeyToken(Element dkt, byte[] derivedKey) {
             this.dkt = dkt;
             this.derivedKey = derivedKey;
         }
     }
+
     private DerivedKeyToken addDerivedKeyToken(Context c,
                                                Element securityHeader,
                                                Element desiredNextSibling,
                                                DecorationRequirements.SecureConversationSession session)
-            throws NoSuchAlgorithmException, InvalidKeyException
-    {
+      throws NoSuchAlgorithmException, InvalidKeyException {
         Document factory = securityHeader.getOwnerDocument();
         String wsseNs = securityHeader.getNamespaceURI();
         String wsse = securityHeader.getPrefix();
@@ -242,14 +245,14 @@ public class WssDecoratorImpl implements WssDecorator {
         Element dkt;
         if (desiredNextSibling == null)
             dkt = XmlUtil.createAndAppendElementNS(securityHeader,
-                                                   SoapUtil.WSSC_DK_EL_NAME,
-                                                   SoapUtil.WSSC_NAMESPACE,
-                                                   "wssc");
+              SoapUtil.WSSC_DK_EL_NAME,
+              SoapUtil.WSSC_NAMESPACE,
+              "wssc");
         else
             dkt = XmlUtil.createAndInsertBeforeElementNS(desiredNextSibling,
-                                                         SoapUtil.WSSC_DK_EL_NAME,
-                                                         SoapUtil.WSSC_NAMESPACE,
-                                                         "wssc");
+              SoapUtil.WSSC_DK_EL_NAME,
+              SoapUtil.WSSC_NAMESPACE,
+              "wssc");
         String wssc = dkt.getPrefix() == null ? "" : dkt.getPrefix() + ":";
         dkt.setAttributeNS(SoapUtil.WSSC_NAMESPACE, wssc + "Algorithm", SoapUtil.ALGORITHM_PSHA);
         Element str = XmlUtil.createAndAppendElementNS(dkt, SoapUtil.SECURITYTOKENREFERENCE_EL_NAME, wsseNs, wsse);
@@ -291,13 +294,13 @@ public class WssDecoratorImpl implements WssDecorator {
 
     private Element addSecurityContextToken(Element securityHeader, String id) {
         Element sct = XmlUtil.createAndAppendElementNS(securityHeader,
-                                                       SoapUtil.SECURITY_CONTEXT_TOK_EL_NAME,
-                                                       SoapUtil.WSSC_NAMESPACE,
-                                                       "wssc");
+          SoapUtil.SECURITY_CONTEXT_TOK_EL_NAME,
+          SoapUtil.WSSC_NAMESPACE,
+          "wssc");
         Element identifier = XmlUtil.createAndAppendElementNS(sct,
-                                                              "Identifier",
-                                                              SoapUtil.WSSC_NAMESPACE,
-                                                              "wssc");
+          "Identifier",
+          SoapUtil.WSSC_NAMESPACE,
+          "wssc");
         identifier.appendChild(XmlUtil.createTextNode(identifier, id));
         return sct;
     }
@@ -324,12 +327,12 @@ public class WssDecoratorImpl implements WssDecorator {
             signaturemethod = SignatureMethod.HMAC;
         else {
             throw new DecoratorException("Private Key type not supported " +
-                                               senderSigningKey.getClass().getName());
+              senderSigningKey.getClass().getName());
         }
 
         // Create signature template and populate with appropriate transforms. Reference is to SOAP Envelope
         TemplateGenerator template = new TemplateGenerator(elementsToSign[0].getOwnerDocument(),
-                                                           XSignature.SHA1, Canonicalizer.EXCLUSIVE, signaturemethod);
+          XSignature.SHA1, Canonicalizer.EXCLUSIVE, signaturemethod);
         template.setPrefix("ds");
         for (int i = 0; i < elementsToSign.length; i++) {
             final Element element = elementsToSign[i];
@@ -338,7 +341,7 @@ public class WssDecoratorImpl implements WssDecorator {
             Reference ref = template.createReference("#" + id);
             if (XmlUtil.isElementAncestor(securityHeader, element)) {
                 logger.fine("Per policy, breaking Basic Security Profile rules with enveloped signature" +
-                            " of element " + element.getLocalName() + " with Id=\"" + id + "\"");
+                  " of element " + element.getLocalName() + " with Id=\"" + id + "\"");
                 ref.addTransform(Transform.ENVELOPED);
             }
             ref.addTransform(Transform.C14N_EXCLUSIVE);
@@ -349,8 +352,8 @@ public class WssDecoratorImpl implements WssDecorator {
         // Ensure that CanonicalizationMethod has required c14n subelemen
         final Element signedInfoElement = template.getSignedInfoElement();
         Element c14nMethod = XmlUtil.findFirstChildElementByName(signedInfoElement,
-                                                                 SoapUtil.DIGSIG_URI,
-                                                                 "CanonicalizationMethod");
+          SoapUtil.DIGSIG_URI,
+          "CanonicalizationMethod");
         addInclusiveNamespacesToElement(c14nMethod);
 
         NodeList transforms = signedInfoElement.getElementsByTagNameNS(signedInfoElement.getNamespaceURI(), "Transform");
@@ -369,19 +372,18 @@ public class WssDecoratorImpl implements WssDecorator {
         String bstId = getOrCreateWsuId(c, keyInfoReferenceTarget, null);
         String wssePrefix = securityHeader.getPrefix();
         Element keyInfoEl = securityHeader.getOwnerDocument().createElementNS(emptySignatureElement.getNamespaceURI(),
-                                                                              "KeyInfo");
+          "KeyInfo");
         keyInfoEl.setPrefix("ds");
         Element secTokRefEl = securityHeader.getOwnerDocument().createElementNS(securityHeader.getNamespaceURI(),
-                                                                                SoapUtil.SECURITYTOKENREFERENCE_EL_NAME);
+          SoapUtil.SECURITYTOKENREFERENCE_EL_NAME);
         secTokRefEl.setPrefix(wssePrefix);
         Element refEl = securityHeader.getOwnerDocument().createElementNS(securityHeader.getNamespaceURI(),
-                                                                          "Reference");
+          "Reference");
         refEl.setPrefix(wssePrefix);
         secTokRefEl.appendChild(refEl);
         keyInfoEl.appendChild(secTokRefEl);
         refEl.setAttribute("URI", "#" + bstId);
         refEl.setAttribute("ValueType", keyInfoValueTypeURI);
-
 
 
         SignatureContext sigContext = new SignatureContext();
@@ -399,7 +401,7 @@ public class WssDecoratorImpl implements WssDecorator {
         sigContext.setEntityResolver(new EntityResolver() {
             public InputSource resolveEntity(String publicId, String systemId) throws SAXException {
                 throw new SAXException("Unsupported external entity reference publicId=" + publicId +
-                                       ", systemId=" + systemId);
+                  ", systemId=" + systemId);
             }
         });
         try {
@@ -417,12 +419,14 @@ public class WssDecoratorImpl implements WssDecorator {
         return signatureElement;
     }
 
-    /** Add a c14n:InclusiveNamespaces child element to the specified element with an empty PrefixList. */  
+    /**
+     * Add a c14n:InclusiveNamespaces child element to the specified element with an empty PrefixList.
+     */
     private void addInclusiveNamespacesToElement(Element element) {
         Element inclusiveNamespaces = XmlUtil.createAndAppendElementNS(element,
-                                                                       "InclusiveNamespaces",
-                                                                       Transform.C14N_EXCLUSIVE,
-                                                                       "c14n");
+          "InclusiveNamespaces",
+          Transform.C14N_EXCLUSIVE,
+          "c14n");
         inclusiveNamespaces.setAttribute("PrefixList", "");
     }
 
@@ -441,25 +445,26 @@ public class WssDecoratorImpl implements WssDecorator {
     }
 
 
-    /** Appends a KeyInfo to the specified parent Element, referring to keyInfoReferenceTarget. */
+    /**
+     * Appends a KeyInfo to the specified parent Element, referring to keyInfoReferenceTarget.
+     */
     private Element addKeyInfo(Context c,
                                Element securityHeader,
                                Element parent,
                                Element keyInfoReferenceTarget,
-                               String keyInfoValueTypeURI)
-    {
+                               String keyInfoValueTypeURI) {
         Element keyInfo = XmlUtil.createAndAppendElementNS(parent,
-                                                           "KeyInfo",
-                                                           SoapUtil.DIGSIG_URI,
-                                                           "dsig");
+          "KeyInfo",
+          SoapUtil.DIGSIG_URI,
+          "dsig");
         Element str = XmlUtil.createAndAppendElementNS(keyInfo,
-                                                       SoapUtil.SECURITYTOKENREFERENCE_EL_NAME,
-                                                       securityHeader.getNamespaceURI(),
-                                                       "wsse");
+          SoapUtil.SECURITYTOKENREFERENCE_EL_NAME,
+          securityHeader.getNamespaceURI(),
+          "wsse");
         Element ref = XmlUtil.createAndAppendElementNS(str,
-                                                       "Reference",
-                                                       securityHeader.getNamespaceURI(),
-                                                       "wsse");
+          "Reference",
+          securityHeader.getNamespaceURI(),
+          "wsse");
         String uri = getOrCreateWsuId(c, keyInfoReferenceTarget, null);
         ref.setAttribute("URI", uri);
         ref.setAttribute("ValueType", keyInfoValueTypeURI);
@@ -470,7 +475,6 @@ public class WssDecoratorImpl implements WssDecorator {
      * Encrypts one or more document elements using a caller-supplied key (probaly from a DKT),
      * and appends a ReferenceList to the Security header before the specified desiredNextSibling element
      * (probably the Signature).
-     *
      */
     private Element addEncryptedReferenceList(Context c,
                                               Element securityHeader,
@@ -479,20 +483,19 @@ public class WssDecoratorImpl implements WssDecorator {
                                               Element desiredNextSibling,
                                               Element keyInfoReferenceTarget,
                                               String keyInfoValueTypeURI)
-            throws GeneralSecurityException, DecoratorException
-    {
+      throws GeneralSecurityException, DecoratorException {
         String xencNs = SoapUtil.XMLENC_NS;
 
         // Put the ReferenceList in the right place
         Element referenceList;
         if (desiredNextSibling == null) {
             referenceList = XmlUtil.createAndAppendElementNS(securityHeader,
-                                                            SoapUtil.REFLIST_EL_NAME,
-                                                            xencNs, "xenc");
+              SoapUtil.REFLIST_EL_NAME,
+              xencNs, "xenc");
         } else {
             referenceList = XmlUtil.createAndInsertBeforeElementNS(desiredNextSibling,
-                                                                  SoapUtil.REFLIST_EL_NAME,
-                                                                  xencNs, "xenc");
+              SoapUtil.REFLIST_EL_NAME,
+              xencNs, "xenc");
         }
         String xenc = referenceList.getPrefix();
 
@@ -535,8 +538,7 @@ public class WssDecoratorImpl implements WssDecorator {
                                     X509Certificate recipientCertificate,
                                     Element[] elementsToEncrypt,
                                     Element desiredNextSibling)
-            throws GeneralSecurityException, DecoratorException
-    {
+      throws GeneralSecurityException, DecoratorException {
         Document soapMsg = securityHeader.getOwnerDocument();
 
         byte[] keyBytes = new byte[16];
@@ -548,12 +550,12 @@ public class WssDecoratorImpl implements WssDecorator {
         Element encryptedKey;
         if (desiredNextSibling == null) {
             encryptedKey = XmlUtil.createAndAppendElementNS(securityHeader,
-                                                            SoapUtil.ENCRYPTEDKEY_EL_NAME,
-                                                            xencNs, "xenc");
+              SoapUtil.ENCRYPTEDKEY_EL_NAME,
+              xencNs, "xenc");
         } else {
             encryptedKey = XmlUtil.createAndInsertBeforeElementNS(desiredNextSibling,
-                                                                  SoapUtil.ENCRYPTEDKEY_EL_NAME,
-                                                                  xencNs, "xenc");
+              SoapUtil.ENCRYPTEDKEY_EL_NAME,
+              xencNs, "xenc");
         }
         String xenc = encryptedKey.getPrefix();
 
@@ -609,13 +611,13 @@ public class WssDecoratorImpl implements WssDecorator {
 
     /**
      * Encrypt the specified element.  Returns the new EncryptedData element.
+     *
      * @param element
      * @param keyBytes
      * @return the EncryptedData element that replaces the specified element.
      */
     private Element encryptElement(Element element, byte[] keyBytes)
-            throws DecoratorException, GeneralSecurityException
-    {
+      throws DecoratorException, GeneralSecurityException {
         Document soapMsg = element.getOwnerDocument();
 
         CipherData cipherData = new CipherData();
@@ -662,9 +664,10 @@ public class WssDecoratorImpl implements WssDecorator {
     /**
      * Get the wsu:Id for the specified element.  If it doesn't already have a wsu:Id attribute a new one
      * is created for the element.
+     *
      * @param c
      * @param element
-     * @param basename  Optional.  If non-null, will be used as the start of the Id string
+     * @param basename Optional.  If non-null, will be used as the start of the Id string
      * @return
      */
     private String getOrCreateWsuId(Context c, Element element, String basename) {
@@ -682,9 +685,9 @@ public class WssDecoratorImpl implements WssDecorator {
 
         Element keyInfo = XmlUtil.createAndAppendElementNS(encryptedKey, "KeyInfo", SoapUtil.DIGSIG_URI, "dsig");
         Element securityTokenRef = XmlUtil.createAndAppendElementNS(keyInfo, SoapUtil.SECURITYTOKENREFERENCE_EL_NAME,
-                                                                    wsseNs, wssePrefix);
+          wsseNs, wssePrefix);
         Element keyId = XmlUtil.createAndAppendElementNS(securityTokenRef, SoapUtil.KEYIDENTIFIER_EL_NAME,
-                                                         wsseNs, wssePrefix);
+          wsseNs, wssePrefix);
         keyId.setAttribute("ValueType", valueType);
         String recipSkiB64 = HexUtils.encodeBase64(idBytes, true);
         keyId.appendChild(XmlUtil.createTextNode(soapMsg, recipSkiB64));
@@ -693,6 +696,7 @@ public class WssDecoratorImpl implements WssDecorator {
     /**
      * Generate a wsu:Id for the specified element, adds it to the element, and returns it.
      * Uses the specified basename as the start of the Id.
+     *
      * @param c
      * @param element
      * @return
@@ -723,11 +727,10 @@ public class WssDecoratorImpl implements WssDecorator {
     }
 
     private Element addX509BinarySecurityToken(Element securityHeader, X509Certificate certificate, Context c)
-            throws CertificateEncodingException
-    {
+      throws CertificateEncodingException {
         Document factory = securityHeader.getOwnerDocument();
         Element element = factory.createElementNS(securityHeader.getNamespaceURI(),
-                                                  SoapUtil.BINARYSECURITYTOKEN_EL_NAME);
+          SoapUtil.BINARYSECURITYTOKEN_EL_NAME);
         element.setPrefix(securityHeader.getPrefix());
 
         if (c.wsseNS.equals(SoapUtil.SECURITY_NAMESPACE)) {
@@ -745,10 +748,14 @@ public class WssDecoratorImpl implements WssDecorator {
     private Element createSecurityHeader(Document message,
                                          String wsseNS,
                                          String wsuNs,
-                                         String actor) throws InvalidDocumentFormatException {
-        // Wrap any existing header
+                                         String actor,
+                                         boolean allowExistingDefaultSecurityHeader) throws InvalidDocumentFormatException {
+        if (allowExistingDefaultSecurityHeader && actor != null) {
+            throw new IllegalArgumentException("Default Actor (null) required when using existing Default Security Header");
+        }
         Element oldSecurity = SoapUtil.getSecurityElement(message, actor);
-        if (oldSecurity != null) {
+
+        if (oldSecurity != null && !allowExistingDefaultSecurityHeader) {
             String error;
             if (actor != null) {
                 error = "This message already has a security header for actor " + actor;
@@ -765,7 +772,12 @@ public class WssDecoratorImpl implements WssDecorator {
             */
         }
 
-        Element securityHeader = SoapUtil.makeSecurityElement(message, wsseNS, actor);
+        Element securityHeader = null;
+        if (oldSecurity == null) {
+            securityHeader = SoapUtil.makeSecurityElement(message, wsseNS, actor);
+        } else {
+            securityHeader = oldSecurity;
+        }
         // Make sure wsu is declared to save duplication
         XmlUtil.getOrCreatePrefixForNamespace(securityHeader, wsuNs, "wsu");
         return securityHeader;

@@ -10,6 +10,7 @@ import com.ibm.xml.dsig.IDResolver;
 import com.ibm.xml.dsig.SignatureContext;
 import com.ibm.xml.dsig.Validity;
 import com.l7tech.common.security.token.SamlSecurityToken;
+import com.l7tech.common.security.saml.SamlException;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
@@ -28,8 +29,7 @@ import java.security.PublicKey;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.Calendar;
-import java.util.TimeZone;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -89,32 +89,54 @@ public class SamlAssertion implements SamlSecurityToken {
 
     /**
      * Constructs a new SamlAssertion from an XML Element.
-     * <p>
+     * <p/>
      * The resulting object could be either sender-vouches or holder-of-key depending on the
      * SubjectConfirmation/ConfirmationMethod found in the XML; separate subclasses are no longer used.
      *
      * @param ass xmlassertion the xml element containing the assertion
      */
-    public SamlAssertion(Element ass) throws SAXException {
+    public SamlAssertion(Element ass) throws SAXException, SamlException {
         assertionElement = ass;
         assertionId = assertionElement.getAttribute("AssertionID");
         if (assertionId == null || assertionId.length() < 1)
             throw new SAXException("AssertionID missing or empty");
         try {
             assertion = AssertionDocument.Factory.parse(ass).getAssertion();
-            AuthenticationStatementType[] authStatements = assertion.getAuthenticationStatementArray();
+            Collection statementList = new ArrayList();
+            statementList.addAll(Arrays.asList(assertion.getAuthenticationStatementArray()));
+            statementList.addAll(Arrays.asList(assertion.getAuthorizationDecisionStatementArray()));
+            statementList.addAll(Arrays.asList(assertion.getAttributeStatementArray()));
+            SubjectStatementAbstractType[] subjectStatements =
+              (SubjectStatementAbstractType[])statementList.toArray(new SubjectStatementAbstractType[] {});
 
-            // Extract subject certificate
-            AuthenticationStatementType authStatement = authStatements[0];
-            SubjectType subject = authStatement.getSubject();
-            this.authenticationMethod = authStatement.getAuthenticationMethod();
-            NameIdentifierType nameIdentifier = subject.getNameIdentifier();
-            if (nameIdentifier != null) {
-                this.nameIdentifierFormat = nameIdentifier.getFormat();
-                this.nameQualifier = nameIdentifier.getNameQualifier();
-                this.nameIdentifierValue = nameIdentifier.getStringValue();
+            SubjectType subject = null;
+            // all the statements must have the same subject (L7 requirement).
+            for (int i = 0; i < subjectStatements.length; i++) {
+                StatementAbstractType statementAbstractType = subjectStatements[i];
+                if (statementAbstractType instanceof SubjectStatementAbstractType) {
+                    // Extract subject certificate
+                    SubjectStatementAbstractType subjectStatement = (SubjectStatementAbstractType)statementAbstractType;
+                    subject = subjectStatement.getSubject();
+                    NameIdentifierType nameIdentifier = subject.getNameIdentifier();
+                    if (nameIdentifier != null) {
+                        this.nameIdentifierFormat = nameIdentifier.getFormat();
+                        this.nameQualifier = nameIdentifier.getNameQualifier();
+                        this.nameIdentifierValue = nameIdentifier.getStringValue();
+                    }
+                    if (statementAbstractType instanceof AuthenticationStatementType) {
+                        AuthenticationStatementType authenticationStatementType = (AuthenticationStatementType)statementAbstractType;
+                        authenticationMethod = authenticationStatementType.getAuthenticationMethod();
+
+                    }
+                } else {
+                    logger.warning("Unknown and skipped statement type " + statementAbstractType.getClass());
+                }
             }
-
+            if (subject == null) {
+                String msg = "Could not find the subject in the assertion :\n" + XmlUtil.nodeToFormattedString(ass);
+                logger.warning(msg);
+                throw new SamlException(msg);
+            }
             ConditionsType conditions = assertion.getConditions();
             if (conditions == null)
                 throw new SAXException("Assertion has no Conditions");
@@ -277,7 +299,7 @@ public class SamlAssertion implements SamlSecurityToken {
             throw new CausedSignatureException(e);
         }
     }
-    
+
     /** @return the name identifier format, or null if there wasn't one. {@see SamlConstants} */
     public String getNameIdentifierFormat() {
         return nameIdentifierFormat;

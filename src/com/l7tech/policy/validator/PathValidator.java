@@ -198,8 +198,8 @@ class PathValidator {
             seenSecureConversation = true;
         }
 
-        if (a instanceof SamlSecurity)
-            setSeenSamlSecurity(a, true);
+        if (a instanceof SamlStatementAssertion)
+            setSeenSamlStatement(a, true);
 
         // Custom Assertion can only be used with HTTP Basic
         if (seenCustomAssertion && !seenHTTPBasic) {
@@ -457,7 +457,7 @@ class PathValidator {
           a instanceof RequestWssConfidentiality || a instanceof RequestWssIntegrity ||
           a instanceof RequestWssReplayProtection || a instanceof RequestWssX509Cert ||
           a instanceof ResponseWssConfidentiality || a instanceof ResponseWssIntegrity ||
-          a instanceof SamlSecurity || a instanceof SwAAssertion)
+          a instanceof SamlStatementAssertion || a instanceof SwAAssertion)
             return true;
         return false;
     }
@@ -509,7 +509,7 @@ class PathValidator {
         else return currentvalue.booleanValue();
     }
 
-    private void setSeenSamlSecurity(Assertion context, boolean value) {
+    private void setSeenSamlStatement(Assertion context, boolean value) {
         String actor = assertionToActor(context);
         seenSamlSecurity.put(actor, new Boolean(value));
     }

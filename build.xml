@@ -265,6 +265,7 @@
             <test name="com.l7tech.server.MockServletApiTest" haltonfailure="no"/>
             <test name="com.l7tech.common.xml.XpathEvaluatorTest" haltonfailure="no"/>
             <test name="com.l7tech.common.xml.SoapMessageGeneratorTest" haltonfailure="no" fork="yes"/>
+            <test name="com.l7tech.server.saml.SamlProcessingTest" haltonfailure="no"/>
             <!--
             ** TODO: make sure -security flag is added to the 'nightly' build/test
             ** Tomcat config. When done enable the tests below.

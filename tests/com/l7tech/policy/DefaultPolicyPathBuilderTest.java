@@ -18,10 +18,7 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.http.HttpClientCert;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
-import com.l7tech.policy.assertion.xmlsec.SecureConversation;
-import com.l7tech.policy.assertion.xmlsec.RequestWssReplayProtection;
-import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
+import com.l7tech.policy.assertion.xmlsec.*;
 import com.l7tech.policy.wsp.WspReader;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -265,7 +262,7 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
         credentialsLocationList.add(new WssBasic());
         credentialsLocationList.add(new RequestWssX509Cert());
         credentialsLocationList.add(new SecureConversation());
-        credentialsLocationList.add(new SamlSecurity());
+        credentialsLocationList.add(new SamlAuthenticationStatement());
 
         return credentialsLocationList;
     }

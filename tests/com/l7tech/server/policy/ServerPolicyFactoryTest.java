@@ -7,7 +7,7 @@ import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.identity.SpecificUser;
-import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
+import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import junit.framework.Test;
@@ -92,7 +92,7 @@ public class ServerPolicyFactoryTest extends TestCase {
         AllAssertion real = new AllAssertion(Arrays.asList(new Assertion[]{
             new HttpBasic(),
             new SpecificUser(),
-            new SamlSecurity(),
+            new SamlAuthenticationStatement(),
             new HttpRoutingAssertion()
         }));
         ServerPolicyFactory pfac = (ServerPolicyFactory)testApplicationContext.getBean("policyFactory");

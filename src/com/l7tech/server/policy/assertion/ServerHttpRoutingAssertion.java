@@ -24,6 +24,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.saml.SamlAssertionGenerator;
+import com.l7tech.server.saml.SubjectStatement;
 import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.service.PublishedService;
 import org.apache.commons.httpclient.*;
@@ -275,7 +276,8 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                         }
                     }
                     samlOptions.setExpiryMinutes(httpRoutingAssertion.getSamlAssertionExpiry());
-                    ag.attachSenderVouches(document, context.getCredentials(), samlOptions);
+                    SubjectStatement statement = SubjectStatement.createAuthenticationStatement(context.getCredentials(), SubjectStatement.SENDER_VOUCHES);
+                    ag.attachStatement(document, statement, samlOptions);
                 }
                 attachCookies(client, context, url);
 

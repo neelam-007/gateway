@@ -9,10 +9,7 @@ import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
-import com.l7tech.server.saml.HolderOfKeyHelper;
-import com.l7tech.server.saml.SamlAssertionGenerator;
-import com.l7tech.server.saml.SamlAssertionHelper;
-import com.l7tech.server.saml.SenderVouchesHelper;
+import com.l7tech.server.saml.*;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -38,25 +35,25 @@ public class SignedSamlTest extends TestCase {
     /**
      * test <code>SignedSamlTest</code> constructor
      */
-    public SignedSamlTest( String name ) {
-        super( name );
+    public SignedSamlTest(String name) {
+        super(name);
     }
 
     /**
      * create the <code>TestSuite</code> for the SignedSamlTest <code>TestCase</code>
      */
     public static Test suite() {
-        TestSuite suite = new TestSuite( SignedSamlTest.class );
+        TestSuite suite = new TestSuite(SignedSamlTest.class);
         return suite;
     }
 
     public void setUp() throws Exception {
         caPrivateKey = TestDocuments.getEttkServerPrivateKey();
-        caCertChain = new X509Certificate[] { TestDocuments.getEttkServerCertificate() };
+        caCertChain = new X509Certificate[]{TestDocuments.getEttkServerCertificate()};
         caPublicKey = caCertChain[0].getPublicKey();
 
         clientPrivateKey = TestDocuments.getEttkClientPrivateKey();
-        clientCertChain = new X509Certificate[] { TestDocuments.getEttkClientCertificate() };
+        clientCertChain = new X509Certificate[]{TestDocuments.getEttkClientCertificate()};
         clientPublicKey = clientCertChain[0].getPublicKey();
     }
 
@@ -113,11 +110,12 @@ public class SignedSamlTest extends TestCase {
         SamlAssertionGenerator ag = new SamlAssertionGenerator(new SignerInfo(caPrivateKey, caCertChain));
         SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
         samlOptions.setExpiryMinutes(5);
-        samlOptions.setSignEnvelope(false);
-        ag.attachSenderVouches(request,
-                               LoginCredentials.makeCertificateCredentials(clientCertChain[0], getClass()),
-                               //LoginCredentials.makePasswordCredentials("john", "ilovesheep".toCharArray(), getClass()),
-                               samlOptions);
+        samlOptions.setProofOfPosessionRequired(false);
+        SubjectStatement statement =
+          SubjectStatement.createAuthenticationStatement(LoginCredentials.makeCertificateCredentials(clientCertChain[0],
+                                                                                                     RequestWssX509Cert.class),
+                                                         SubjectStatement.HOLDER_OF_KEY);
+        ag.attachStatement(request, statement, samlOptions);
         return request;
     }
 
@@ -147,7 +145,7 @@ public class SignedSamlTest extends TestCase {
 
         SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
         samlOptions.setExpiryMinutes(5);
-        samlOptions.setSignEnvelope(false);
+        samlOptions.setProofOfPosessionRequired(false);
         samlOptions.setId(bstId);
 
         SenderVouchesHelper svh = new SenderVouchesHelper(request, samlOptions, LoginCredentials.makeCertificateCredentials(clientCertChain[0], getClass()), new SignerInfo(caPrivateKey, caCertChain));
@@ -197,9 +195,9 @@ public class SignedSamlTest extends TestCase {
     /**
      * Test <code>SignedSamlTest</code> main.
      */
-    public static void main( String[] args ) throws
-                                             Throwable {
-        junit.textui.TestRunner.run( suite() );
+    public static void main(String[] args) throws
+      Throwable {
+        junit.textui.TestRunner.run(suite());
     }
 
     private PrivateKey caPrivateKey;

@@ -57,7 +57,6 @@ public class AllAssertions {
         new ResponseXpathAssertion(),
         new RequestWssReplayProtection(),
         new RequestSwAAssertion(),
-        new SamlSecurity(),
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),
         // TODO new DayOfWeekAssertion(),
@@ -102,7 +101,6 @@ public class AllAssertions {
         new ResponseXpathAssertion(),
         new RequestWssReplayProtection(),
         new RequestSwAAssertion(),
-        new SamlSecurity(),
         new SamlAuthenticationStatement(),
         new SamlAuthorizationStatement(),
         new SamlAttributeStatement(),
@@ -145,7 +143,6 @@ public class AllAssertions {
         new ResponseXpathAssertion(),
         new RequestWssReplayProtection(),
         new RequestSwAAssertion(),
-        new SamlSecurity(),
         new SamlAuthenticationStatement(),
         new SamlAuthorizationStatement(),
         new SamlAttributeStatement(),
@@ -168,8 +165,7 @@ public class AllAssertions {
         new SecureConversation(),
         new SamlAuthenticationStatement(),
         new SamlAuthorizationStatement(),
-        new SamlAttributeStatement(),
-        new SamlSecurity()
+        new SamlAttributeStatement()
     };
 
 }

@@ -158,13 +158,6 @@
                     <NamespaceMap mapValue="included"/>
                     <Bindings mapValue="included"/>
                 </RequestSwAAssertion>
-                <SamlSecurity>
-                    <RecipientContext xmlSecurityRecipientContext="included">
-                        <Base64edX509Certificate stringValueNull="null"/>
-                        <Actor stringValue=""/>
-                    </RecipientContext>
-                    <ConfirmationMethodType intValue="0"/>
-                </SamlSecurity>
                 <SamlAuthenticationStatement>
                     <AudienceRestriction stringValueNull="null"/>
                     <SubjectConfirmations stringArrayValue="included"/>

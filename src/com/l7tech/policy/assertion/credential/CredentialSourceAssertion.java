@@ -22,10 +22,8 @@ import com.l7tech.policy.assertion.xmlsec.*;
 public abstract class CredentialSourceAssertion extends Assertion {
     public static final CredentialSourceAssertion[] ALL_CREDENTIAL_ASSERTIONS_TYPES = new CredentialSourceAssertion[] {
         //new SamlAuthorizationStatement(),
-        //new SamlAuthenticationStatement(),
+        new SamlAuthenticationStatement(),
         //new SamlAttributeStatement(),
-        // new SamlSecurity(),
-        new SamlSecurity(),
         new RequestWssX509Cert(),
         new SecureConversation(),
         new HttpClientCert(),

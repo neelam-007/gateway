@@ -11,7 +11,7 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
+import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.exceptions.*;
@@ -32,11 +32,11 @@ import java.util.logging.Logger;
  * @author mike
  * @version 1.0
  */
-public class ClientSamlSecurity extends ClientAssertion {
-    private static final Logger logger = Logger.getLogger(ClientSamlSecurity.class.getName());
-    private SamlSecurity data;
+public class ClientSamlAuthenticationStatement extends ClientAssertion {
+    private static final Logger logger = Logger.getLogger(ClientSamlAuthenticationStatement.class.getName());
+    private SamlAuthenticationStatement data;
 
-    public ClientSamlSecurity(SamlSecurity data) {
+    public ClientSamlAuthenticationStatement(SamlAuthenticationStatement data) {
         this.data = data;
     }
 
@@ -91,7 +91,7 @@ public class ClientSamlSecurity extends ClientAssertion {
     }
 
     public String getName() {
-        return "SAML Holder-of-key token";
+        return "SAML Authentication Statement";
     }
 
     public String iconResource(boolean open) {

@@ -734,7 +734,6 @@ public class WspConstants {
         new AssertionMapping(new RequestSwAAssertion(), "RequestSwAAssertion"),
         new AssertionMapping(new SecureConversation(), "SecureConversation"),
         new AssertionMapping(new RequestWssReplayProtection(), "RequestWssReplayProtection"),
-        new AssertionMapping(new SamlSecurity(), "SamlSecurity"),
         new AssertionMapping(new SamlAuthenticationStatement(), "SamlAuthenticationStatement"),
         new AssertionMapping(new SamlAuthorizationStatement(), "SamlAuthorizationStatement"),
         new AssertionMapping(new SamlAttributeStatement(), "SalmAttributeStatement"),

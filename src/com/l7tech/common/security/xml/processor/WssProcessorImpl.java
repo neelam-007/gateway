@@ -9,6 +9,7 @@ import com.ibm.xml.enc.type.EncryptedData;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.saml.SamlConstants;
+import com.l7tech.common.security.saml.SamlException;
 import com.l7tech.common.security.token.*;
 import com.l7tech.common.security.xml.SecureConversationKeyDeriver;
 import com.l7tech.common.security.xml.XencUtil;
@@ -645,6 +646,8 @@ public class WssProcessorImpl implements WssProcessor {
         try {
             samlToken = new SamlAssertion(securityTokenElement);
         } catch (SAXException e) {
+            throw new InvalidDocumentFormatException(e);
+        } catch (SamlException e) {
             throw new InvalidDocumentFormatException(e);
         }
         context.securityTokens.add(samlToken);
