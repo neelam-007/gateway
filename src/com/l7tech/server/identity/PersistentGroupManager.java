@@ -71,7 +71,7 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
             }
             PersistentGroup out = (PersistentGroup)PersistenceManager.findByPrimaryKey(getContext(), getImpClass(), Long.parseLong(oid));
             if (out == null) return null;
-            out.setProviderId(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID);
+            out.setProviderId(provider.getConfig().getOid());
             return out;
         } catch (SQLException se) {
             throw new FindException(se.toString(), se);
@@ -86,8 +86,8 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
      * @param searchString the search string (supports '*' wildcards)
      * @return the never <b>null</b> collection of entitites
      * @throws com.l7tech.objectmodel.FindException thrown if an SQL error is encountered
-     * @see com.l7tech.server.identity.internal.InternalGroupManagerServer
-     * @see com.l7tech.server.identity.internal.InternalUserManagerServer
+     * @see com.l7tech.server.identity.PersistentGroupManager
+     * @see com.l7tech.server.identity.PersistentUserManager
      */
     public Collection search(String searchString) throws FindException {
         // replace wildcards to match stuff understood by mysql
@@ -119,7 +119,7 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
         try {
             context = (HibernatePersistenceContext)getContext();
             // it is not allowed to delete the admin group
-            Group imp = cast(group);
+            PersistentGroup imp = cast(group);
             long oid = new Long(imp.getUniqueIdentifier()).longValue();
             preDelete(imp);
             Set userHeaders = getUserHeaders(imp);
@@ -142,9 +142,11 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
 
     protected abstract Class getMembershipClass();
 
-    protected void preDelete( Group group ) throws DeleteException { }
+    protected void preSave( PersistentGroup persistentGroup ) throws SaveException { }
 
-    protected void preUpdate( Group group ) throws FindException, UpdateException { }
+    protected void preDelete( PersistentGroup group ) throws DeleteException { }
+
+    protected void preUpdate( PersistentGroup group ) throws FindException, UpdateException { }
 
     protected abstract PersistentGroup cast( Group group );
 
@@ -179,7 +181,8 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
                 throw new SaveException("This group cannot be saved because an existing group already uses the name '" + group.getName() + "'");
             }
 
-            Group imp = cast(group);
+            PersistentGroup imp = cast(group);
+            preSave(imp);
             String oid = Long.toString( PersistenceManager.save(getContext(), (NamedEntity)imp) );
 
             if ( userHeaders != null ) {
@@ -209,7 +212,7 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
 
         try {
             // if this is the admin group, make sure that we are not removing all memberships
-            preUpdate( group );
+            preUpdate( imp );
             PersistentGroup originalGroup = (PersistentGroup)findByPrimaryKey( group.getUniqueIdentifier() );
             if (originalGroup == null) {
                 throw new ObjectNotFoundException("Group "+group.getName());
