@@ -143,7 +143,7 @@ public class ExceptionDialog extends JDialog implements ActionListener {
             internalErroLabelPanel = new JPanel();
             internalErroLabelPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
             internalErroLabelPanel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5 ,0));
-            internalErrorLabel = new JLabel("An internal error has occurred. " +
+            internalErrorLabel = new JLabel("An severe error has occurred. " +
                                             "You may need to restart the application");
             internalErroLabelPanel.add(internalErrorLabel);
             main.add(internalErroLabelPanel, BorderLayout.NORTH);

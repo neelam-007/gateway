@@ -78,7 +78,7 @@ public class SavePolicyAction extends BaseAction {
             Registry.getDefault().getServiceManager().savePublishedService(svc);
             sn.clearServiceHolder();
         } catch (Exception e) {
-            ErrorManager.getDefault().notify(Level.WARNING, e, "Error saving service and policy");
+            throw new RuntimeException("Error saving service and policy",e);
         }
     }
 

@@ -1,12 +1,11 @@
 package com.l7tech.console.logging;
 
-import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.ExceptionDialog;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.util.ComponentRegistry;
 
 import javax.swing.*;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Class ErrorManager is the console error handler. It handles user notifying
@@ -14,18 +13,18 @@ import java.util.logging.Logger;
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class DefaultErrorManager extends ErrorManager {
+public class DefaultErrorHandler implements ErrorHandler {
     private JFrame mainFrame = null;
-
     /**
-     * Log and notify the user about the problem or error
+     * handle the error event
      *
-     * @param level the log level
-     * @param t the throwable with the
-     * @param message the message
+     * @param e the error event
      */
-    public void notify(Level level, Throwable t, String message, Logger log) {
-        log.log(level, message, t);
+    public void handle(ErrorEvent e) {
+        final String message = e.getMessage();
+        final Throwable t = e.getThrowable();
+        final Level level = e.getLevel();
+        e.getLogger().log(level, message, t);
         ExceptionDialog d = new ExceptionDialog(getMainWindow(), "Securespan Manager - message", message, t, level);
         d.pack();
         Utilities.centerOnScreen(d);

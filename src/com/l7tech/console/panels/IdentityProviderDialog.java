@@ -663,11 +663,9 @@ public class IdentityProviderDialog extends JDialog {
         if (cause instanceof SaveException) {
             String msg =
               MessageFormat.format(resources.getString("provider.save.error"), new Object[]{header.getName()});
-              ErrorManager.getDefault().
-                notify(Level.WARNING, cause, msg, log);
+              ErrorManager.getDefault().notify(Level.WARNING, cause, msg);
         } else {
-            ErrorManager.getDefault().
-              notify(Level.WARNING, e, "Error updating the identity provider.");
+            ErrorManager.getDefault().notify(Level.WARNING, e, "Error updating the identity provider.");
         }
     }
 
