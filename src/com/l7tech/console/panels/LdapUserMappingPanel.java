@@ -6,6 +6,8 @@ import com.l7tech.identity.ldap.PasswdStrategy;
 import com.l7tech.console.util.SortedListModel;
 
 import javax.swing.*;
+import javax.swing.border.Border;
+import javax.swing.border.EtchedBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import java.awt.*;
@@ -37,7 +39,8 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         super(next);
         initResources();
         initComponents();
-
+        setLayout(new BorderLayout());
+        add(userPanel, BorderLayout.CENTER);
     }
 
     /**
@@ -460,7 +463,7 @@ public class LdapUserMappingPanel extends WizardStepPanel {
 
         userListPanel.add(userListScrollPane, java.awt.BorderLayout.CENTER);
 
-        userListTitleLabel.setText("User Object Class List");
+        userListTitleLabel.setText("User Object Classes");
         userListTitleLabel.setMaximumSize(new java.awt.Dimension(102, 40));
         userListTitleLabel.setMinimumSize(new java.awt.Dimension(102, 30));
         userListTitleLabel.setPreferredSize(new java.awt.Dimension(102, 40));
@@ -469,6 +472,7 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         userPanel.add(userListPanel, java.awt.BorderLayout.WEST);
 
         userActionPanel.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.RIGHT));
+        userActionPanel.setBorder(new EtchedBorder());
 
         userActionPanel.setMinimumSize(new java.awt.Dimension(400, 36));
         userActionPanel.setPreferredSize(new java.awt.Dimension(400, 36));
@@ -633,7 +637,7 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         gridBagConstraints.insets = new java.awt.Insets(25, 0, 8, 0);
         userAttributePanel.add(mappingTitleLabel, gridBagConstraints);
 
-        objectClassLabel.setText("Object Class");
+        objectClassLabel.setText("Object Class Name");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
@@ -648,9 +652,7 @@ public class LdapUserMappingPanel extends WizardStepPanel {
         userAttributePanel.add(getObjectClassField(), gridBagConstraints);
 
         userPanel.add(userAttributePanel, java.awt.BorderLayout.CENTER);
-
-        add(userPanel);
-
+        userPanel.setBorder(new EtchedBorder());
     }
 
    /**
