@@ -53,6 +53,20 @@ public interface WssDecorator {
             return signTimestamp;
         }
 
+        /**
+         * Set whether a signed timestamp is required.<p>
+         *
+         * If this is true, a timestamp will be added to the document regardless of the
+         * content of elementsToSign.<p>
+         *
+         * If this is false, a timestamp will added to the document only if elementsToSign
+         * is non-empty.<p>
+         *
+         * Regardless of this setting, if a timestamp is added to the document it will always be signed,
+         * either directly or indirectly.  It will be signed directly unless it will be covered by an
+         * Envelope signature.<p>
+         *
+         */
         public void setSignTimestamp(boolean signTimestamp) {
             this.signTimestamp = signTimestamp;
         }

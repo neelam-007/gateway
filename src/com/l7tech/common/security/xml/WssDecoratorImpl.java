@@ -83,10 +83,11 @@ public class WssDecoratorImpl implements WssDecorator {
 
         Element securityHeader = createSecurityHeader(message);
 
-        Element timestamp = addTimestamp(securityHeader);
-        if (decorationRequirements.isSignTimestamp()) {
+        if (decorationRequirements.isSignTimestamp() || !decorationRequirements.getElementsToSign().isEmpty()) {
+            Element timestamp = addTimestamp(securityHeader);
             Set signList = decorationRequirements.getElementsToSign();
-            signList.add(timestamp);
+            if (!signList.contains(message.getDocumentElement()))
+                signList.add(timestamp);
         }
 
         if (decorationRequirements.getUsernameTokenCredentials() != null &&
