@@ -17,6 +17,8 @@ import java.util.Iterator;
  * @author alex
  */
 public interface Response extends Message {
+    public static final String PARAM_HTTP_WWWAUTHENTICATE = PREFIX_HTTP_HEADER + ".www-authenticate";
+
     void setProtectedResponseStream( InputStream stream );
     InputStream getProtectedResponseStream() throws IOException;
 
