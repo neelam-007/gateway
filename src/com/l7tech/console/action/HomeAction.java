@@ -91,6 +91,7 @@ public class HomeAction extends SecureAction {
         URL url = cl.getResource(home);
         htmlPane.setName("Home");
         htmlPane.setEditable(false);
+        htmlPane.setFocusable(false);
         htmlPane.addHyperlinkListener(new HyperlinkListener() {
             public void hyperlinkUpdate(HyperlinkEvent e) {
                 if (HyperlinkEvent.EventType.ACTIVATED == e.getEventType()) {

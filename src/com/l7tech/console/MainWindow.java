@@ -249,7 +249,7 @@ public class MainWindow extends JFrame {
             return disconnectMenuItem;
 
         disconnectMenuItem = new JMenuItem(getDisconnectAction());
-        disconnectMenuItem.setFocusable(false);
+        //disconnectMenuItem.setFocusable(false);
         Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/disconnect.gif"));
         disconnectMenuItem.setIcon(icon);
 
@@ -269,7 +269,7 @@ public class MainWindow extends JFrame {
     private JMenuItem getMenuItemPreferences() {
         if (menuItemPref == null) {
             menuItemPref = new JMenuItem(getPreferencesAction());
-            menuItemPref.setFocusable(false);
+            //menuItemPref.setFocusable(false);
             Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/preferences.gif"));
             menuItemPref.setIcon(icon);
             int mnemonic = menuItemPref.getText().toCharArray()[0];
@@ -288,7 +288,7 @@ public class MainWindow extends JFrame {
     private JMenuItem getExitMenuItem() {
         if (exitMenuItem == null) {
             exitMenuItem = new JMenuItem();
-            exitMenuItem.setFocusable(false);
+            //exitMenuItem.setFocusable(false);
             exitMenuItem.setText(resapplication.getString("ExitMenuItem.name"));
             exitMenuItem.setToolTipText(resapplication.getString("ExitMenuItem.desc"));
             int mnemonic = 'X';
@@ -307,7 +307,7 @@ public class MainWindow extends JFrame {
     private JMenuItem getHelpTopicsMenuItem() {
         if (helpTopicsMenuItem == null) {
             helpTopicsMenuItem = new JMenuItem();
-            helpTopicsMenuItem.setFocusable(false);
+            //helpTopicsMenuItem.setFocusable(false);
             helpTopicsMenuItem.setText(resapplication.getString("Help_TopicsMenuItem_text_name"));
             helpTopicsMenuItem.setToolTipText(resapplication.getString("Help_TopicsMenuItem_text_description"));
             int mnemonic = helpTopicsMenuItem.getText().toCharArray()[0];
@@ -326,7 +326,7 @@ public class MainWindow extends JFrame {
     private JMenu getFileMenu() {
         if (fileMenu == null) {
             fileMenu = new JMenu();
-            fileMenu.setFocusable(false);
+            //fileMenu.setFocusable(false);
             fileMenu.setText(resapplication.getString("File"));
 
             fileMenu.add(getSaveMenuItem());
@@ -434,7 +434,7 @@ public class MainWindow extends JFrame {
     private JMenu getEditMenu() {
         if (editMenu == null) {
             editMenu = new JMenu();
-            editMenu.setFocusable(false);
+            //editMenu.setFocusable(false);
             editMenu.setText(resapplication.getString("Edit"));
 
             editMenu.add(getNewProviderSubMenu());
@@ -466,7 +466,7 @@ public class MainWindow extends JFrame {
     private JMenu getNewProviderSubMenu() {
         if (newProviderSubMenu == null) {
             newProviderSubMenu = new JMenu();
-            newProviderSubMenu.setFocusable(false);
+            //newProviderSubMenu.setFocusable(false);
 
             newProviderSubMenu.setText("Create Identity Provider");
             newProviderSubMenu.setIcon(new ImageIcon(ImageCache.getInstance().getIcon("com/l7tech/console/resources/CreateIdentityProvider16x16.gif")));
@@ -486,7 +486,7 @@ public class MainWindow extends JFrame {
         if (viewMenu != null) return viewMenu;
 
         viewMenu = new JMenu();
-        viewMenu.setFocusable(false);
+        //viewMenu.setFocusable(false);
         viewMenu.setText(resapplication.getString("View"));
         JCheckBoxMenuItem jcm = new JCheckBoxMenuItem(getPolicyMessageAreaToggle());
         final Preferences preferences = Preferences.getPreferences();
@@ -521,7 +521,7 @@ public class MainWindow extends JFrame {
         if (helpMenu != null) return helpMenu;
 
         helpMenu = new JMenu();
-        helpMenu.setFocusable(false);
+        //helpMenu.setFocusable(false);
         helpMenu.setText(resapplication.getString("Help"));
         helpMenu.add(getHelpTopicsMenuItem());
         helpMenu.add(new AboutAction());
@@ -1154,7 +1154,7 @@ public class MainWindow extends JFrame {
     private JMenuBar getMainJMenuBar() {
         if (mainJMenuBar == null) {
             mainJMenuBar = new JMenuBar();
-            mainJMenuBar.setFocusable(false);
+            //mainJMenuBar.setFocusable(false);
             mainJMenuBar.add(getFileMenu());
             mainJMenuBar.add(getEditMenu());
             mainJMenuBar.add(getViewMenu());
@@ -1362,12 +1362,14 @@ public class MainWindow extends JFrame {
         b.setText((String)getConnectAction().getValue(Action.NAME));
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
+        b.setFocusable(false);
 
         b = toolBarPane.add(getDisconnectAction());
         b.setFont(new Font("Dialog", 1, 10));
         b.setText((String)getDisconnectAction().getValue(Action.NAME));
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
+        b.setFocusable(false);
 
         b = toolBarPane.add(getRefreshAction());
         b.setFont(new Font("Dialog", 1, 10));
@@ -1380,6 +1382,8 @@ public class MainWindow extends JFrame {
         b.setFont(new Font("Dialog", 1, 10));
         b.setText((String)homeAction.getValue(Action.NAME));
         b.setMargin(new Insets(0, 0, 0, 0));
+        b.setFocusable(false);
+
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
 
         b = toolBarPane.add(getPreferencesAction());
@@ -1387,6 +1391,7 @@ public class MainWindow extends JFrame {
         b.setText((String)getPreferencesAction().getValue(Action.NAME));
         b.setMargin(new Insets(0, 0, 0, 0));
         b.setHorizontalTextPosition(SwingConstants.RIGHT);
+        b.setFocusable(false);
 
         toolBarPane.add(Box.createHorizontalGlue());
 
@@ -1636,7 +1641,7 @@ public class MainWindow extends JFrame {
         contentPane.setLayout(new BorderLayout());
         contentPane.add(getFrameContentPane(), BorderLayout.CENTER);
         contentPane.add(getStatusBarPane(), BorderLayout.SOUTH);
-        getRootPane().setFocusable(false);
+        //getRootPane().setFocusable(false);
 
         initListeners();
 
