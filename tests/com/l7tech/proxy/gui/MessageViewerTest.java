@@ -45,7 +45,7 @@ public class MessageViewerTest extends TestCase {
         RequestInterceptor ri = mv.getMessageViewerModel();
         ri.onReceiveMessage(XmlUtil.stringToDocument("<foo><bar/><baz/></foo>"));
         ri.onReceiveReply(new SsgResponse("<reply>blah blah blah, if this were an actual response, this would be a real SOAPEnvelope document.</reply>"));
-        ri.onPolicyUpdated(new Ssg(22, "My SSG", "http://whatever"),
+        ri.onPolicyUpdated(new Ssg(22, "whatever"),
                            new PolicyAttachmentKey("http://example.com/schemas/wompfoo",
                                                    "http://example.com/schemas/wompfoo#WompSomeFoos"),
                            FalseAssertion.getInstance());

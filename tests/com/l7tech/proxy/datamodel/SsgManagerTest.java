@@ -29,11 +29,11 @@ public class SsgManagerTest extends TestCase {
     private static final SsgManagerImpl sm = SsgManagerImpl.getSsgManagerImpl();
 
     private static final Ssg SSG1 =
-            new Ssg(sm.nextId(), "Test SSG1", "http://localhost:4444/soap");
+            new Ssg(sm.nextId(), "bunky1.foo.bar");
     private static final Ssg SSG2 =
-            new Ssg(sm.nextId(), "Test SSG2", "http://localhost:4445/soap");
+            new Ssg(sm.nextId(), "bunky2.foo.bar");
     private static final Ssg SSG3 =
-            new Ssg(sm.nextId(), "Test SSG3", "http://localhost:4446/soap");
+            new Ssg(sm.nextId(), "bunky3.foo.bar");
     private static final Ssg SSG3_CLONE = SSG3.getCopy();
 
     private static final Ssg[] TEST_SSGS = { SSG1, SSG2, SSG3, SSG3_CLONE };
@@ -63,7 +63,7 @@ public class SsgManagerTest extends TestCase {
                 do {
                     found = true;
                     try {
-                        Ssg ssg = smi.getSsgByName(TEST_SSGS[i].getName());
+                        Ssg ssg = smi.getSsgByHostname(TEST_SSGS[i].getSsgAddress());
                         smi.remove(ssg);
                     } catch (SsgNotFoundException e) {
                         found = false;
@@ -73,7 +73,7 @@ public class SsgManagerTest extends TestCase {
     }
 
     /**
-     * Find how many SSGs are registered under the specified name.
+     * Find how many SSGs are registered under the specified hostname.
      * @param name
      * @return The number of SSGs this.sm with the given name
      */
@@ -81,7 +81,7 @@ public class SsgManagerTest extends TestCase {
         int count = 0;
         for (Iterator i = sm.getSsgList().iterator(); i.hasNext(); ) {
             Ssg ssg = (Ssg)i.next();
-            if (name.equals(ssg.getName()))
+            if (name.equals(ssg.getSsgAddress()))
                 ++count;
         }
         return count;
@@ -107,31 +107,31 @@ public class SsgManagerTest extends TestCase {
     public void assertNoBunkysIn(final SsgManagerImpl smi) throws Exception {
         mustThrow(SsgNotFoundException.class, new Testable() {
             public void run() throws Exception {
-                smi.getSsgByName(SSG1.getName());
+                smi.getSsgByHostname(SSG1.getSsgAddress());
             }
         });
 
         mustThrow(SsgNotFoundException.class, new Testable() {
             public void run() throws Exception {
-                smi.getSsgByName(SSG2.getName());
+                smi.getSsgByHostname(SSG2.getSsgAddress());
             }
         });
 
         mustThrow(SsgNotFoundException.class, new Testable() {
             public void run() throws Exception {
-                smi.getSsgByName(SSG3.getName());
+                smi.getSsgByHostname(SSG3.getSsgAddress());
             }
         });
 
         Collection unwantedNames = Arrays.asList(new String[] {
-            SSG1.getName(), SSG2.getName(), SSG3.getName()
+            SSG1.getSsgAddress(), SSG2.getSsgAddress(), SSG3.getSsgAddress()
         });
         Collection unwantedEndpoints = Arrays.asList(new String[] {
             SSG1.getLocalEndpoint(), SSG2.getLocalEndpoint(), SSG3.getLocalEndpoint()
         });
         for (Iterator i = smi.getSsgList().iterator(); i.hasNext(); ) {
             Ssg ssg = (Ssg)i.next();
-            if (unwantedNames.contains(ssg.getName()) || unwantedEndpoints.contains(ssg.getLocalEndpoint()))
+            if (unwantedNames.contains(ssg.getSsgAddress()) || unwantedEndpoints.contains(ssg.getLocalEndpoint()))
                 throw new Exception("Failed to remove all test SSG records");;
         }
     }
@@ -170,8 +170,8 @@ public class SsgManagerTest extends TestCase {
         assertTrue(sm.getSsgList().contains(SSG2));
 
         // Find SSGs by name.
-        assertTrue(sm.getSsgByName(SSG1.getName()) == SSG1);
-        assertTrue(sm.getSsgByName(SSG2.getName()) == SSG2);
+        assertTrue(sm.getSsgByHostname(SSG1.getSsgAddress()) == SSG1);
+        assertTrue(sm.getSsgByHostname(SSG2.getSsgAddress()) == SSG2);
 
         // Find SSGs by local endpoint.
         assertTrue(sm.getSsgByEndpoint(SSG1.getLocalEndpoint()) == SSG1);
@@ -180,7 +180,7 @@ public class SsgManagerTest extends TestCase {
         // Unable to find nonexistent SSGs
         mustThrow(SsgNotFoundException.class, new Testable() {
             public void run() throws Exception {
-                sm.getSsgByName("Bloof Blaz");
+                sm.getSsgByHostname("Bloof Blaz");
             }
         });
         mustThrow(SsgNotFoundException.class, new Testable() {
@@ -197,9 +197,9 @@ public class SsgManagerTest extends TestCase {
         sm.clear();
         assertNoBunkysIn(sm);
         sm.load();
-        Ssg loaded1 = sm.getSsgByName(SSG1.getName());
+        Ssg loaded1 = sm.getSsgByHostname(SSG1.getSsgAddress());
         assertTrue(loaded1 != null);
-        assertTrue(loaded1.getName() != null);
+        assertTrue(loaded1.getSsgAddress() != null);
         assertTrue(loaded1.getLocalEndpoint().equals(SSG1.getLocalEndpoint()));
         assertTrue(loaded1.lookupPolicy(SSG1P1_URI, SSG1P1_SA) == null); // policies not persisted
         assertTrue(loaded1.lookupPolicy(SSG1P2_URI, SSG1P2_SA) == null);
@@ -207,8 +207,8 @@ public class SsgManagerTest extends TestCase {
 
         Ssg loaded2 = sm.getSsgByEndpoint(SSG2.getLocalEndpoint());
         assertTrue(loaded2 != null);
-        assertTrue(loaded2.getName() != null);
-        assertTrue(loaded2.getName().equals(SSG2.getName()));
+        assertTrue(loaded2.getSsgAddress() != null);
+        assertTrue(loaded2.getSsgAddress().equals(SSG2.getSsgAddress()));
         assertTrue(loaded2.lookupPolicy(SSG2P1_URI, SSG2P1_SA) == null); // policies not persisted
         assertTrue(loaded2.lookupPolicy(SSG2P2_URI, SSG2P2_SA) == null);
 
@@ -217,12 +217,12 @@ public class SsgManagerTest extends TestCase {
         sm.add(SSG3);
         SSG3_CLONE.setId(SSG3.getId());
         assertFalse(sm.add(SSG3_CLONE));
-        assertTrue(countNames(SSG3.getName()) == 1);
+        assertTrue(countNames(SSG3.getSsgAddress()) == 1);
 
         // May add two Ssgs with the same fields as long as the Ids differ.
         SSG3_CLONE.setId(sm.nextId());
         sm.add(SSG3_CLONE);
-        assertTrue(countNames(SSG3.getName()) == 2);
+        assertTrue(countNames(SSG3.getSsgAddress()) == 2);
 
         eraseAllSsgs();
         assertTrue(sm.getSsgList().size() == 0);

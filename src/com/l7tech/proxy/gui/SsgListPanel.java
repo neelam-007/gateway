@@ -135,7 +135,6 @@ public class SsgListPanel extends JPanel {
                 public void actionPerformed(final ActionEvent e) {
                     final Ssg newSsg = ssgListModel.createSsg();
                     log.info("Creating new SSG " + newSsg);
-                    newSsg.setName("New SSG");
                     if (ssgListModel.getSize() < 1)
                         newSsg.setDefaultSsg(true);
                         if (SsgPropertyDialog.makeSsgPropertyDialog(clientProxy, newSsg).runDialog())

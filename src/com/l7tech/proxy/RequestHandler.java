@@ -206,7 +206,7 @@ public class RequestHandler extends AbstractHttpHandler {
                                           final Document requestEnvelope)
             throws HttpException
     {
-        log.info("Processing message to SSG " + ssg.getName());
+        log.info("Processing message to SSG " + ssg);
 
         try {
             PendingRequest pendingRequest = gatherRequest(request, requestEnvelope, ssg);

@@ -97,7 +97,6 @@ public class FunctionalTest extends TestCase {
         ssgManager = new SsgManagerStub();
         ssgManager.clear();
         ssgFake = ssgManager.createSsg();
-        ssgFake.setName("SSG Faker");
         ssgFake.setLocalEndpoint(ssg0ProxyEndpoint);
         ssgFake.setSsgAddress(new URL(ssgUrl).getHost());
         ssgFake.setSsgPort(new URL(ssgUrl).getPort());

@@ -35,7 +35,6 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private static final String CERT_REQUEST_FILE = "/ssg/csr";
 
     private long id = 0;
-    private String name = "";
     private String localEndpoint = null;
     private String ssgAddress = "";
     private int ssgPort = SSG_PORT;
@@ -93,12 +92,10 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     /**
      * Create a new Ssg instance with the given field contents.
      * @param id        assigned by the SsgManager.  Unique number for identifying this Ssg instance.
-     * @param name      human-readable name of the Ssg.
      * @param serverAddress hostname or address of the associated SSG.
      */
-    public Ssg(long id, final String name, final String serverAddress) {
+    public Ssg(long id, final String serverAddress) {
         this(id);
-        this.name = name;
         this.localEndpoint = null;
         this.ssgAddress = serverAddress;
     }
@@ -136,7 +133,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     }
 
     public String toString() {
-        return getName() + (isDefaultSsg() ? " (Default)" : "");
+        return getSsgAddress() + (isDefaultSsg() ? " (Default)" : "");
     }
 
     /**
@@ -265,14 +262,6 @@ public class Ssg implements Serializable, Cloneable, Comparable {
 
     public void setId(long id) {
         this.id = id;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(final String name) {
-        this.name = name;
     }
 
     public String getLocalEndpoint() {

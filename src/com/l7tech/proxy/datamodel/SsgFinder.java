@@ -19,16 +19,6 @@ public interface SsgFinder {
     List getSsgList();
 
     /**
-     * Find the Ssg with the specified name.  If multiple Ssgs have the same name only the
-     * first one is returned.
-     *
-     * @param name the name to look for (ie, "R&D Gateway")
-     * @return The requested Ssg.  Never null.
-     * @throws com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException If the specified name was not found.
-     */
-    Ssg getSsgByName(String name) throws SsgNotFoundException;
-
-    /**
      * Find the Ssg with the specified local endpoint.  If multiple Ssgs have the same endpoint
      * only the first one is returned.
      *

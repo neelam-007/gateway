@@ -46,7 +46,7 @@ public class SsgPropertyDialogTest extends TestCase {
     }
 
     public void testSomeStuff() throws Exception {
-        Ssg ssg = new Ssg(1, "Test SSG", "blah.bloof.com");
+        Ssg ssg = new Ssg(1, "blah.bloof.com");
         ssg.attachPolicy("http://blah",  "http://gwerg.asd.gfa", new Policy(new AllAssertion(Arrays.asList(new Assertion[] {
             new HttpBasic(),
             new SpecificUser(444, "blahuser"),

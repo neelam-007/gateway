@@ -15,22 +15,13 @@ import java.io.IOException;
  */
 public class SsgManagerStub implements SsgManager {
     List ssgs = new ArrayList(Arrays.asList(new Ssg[] {
-        new Ssg(0, "Default SSG", "http://127.0.0.1:5555"),
-        new Ssg(1, "Alternate SSG", "http://127.0.0.1:5556")
+        new Ssg(0, "127.0.0.1"),
+        new Ssg(1, "127.0.0.1")
     }));
     private long nextId = 2;
 
     public List getSsgList() {
         return Collections.unmodifiableList(ssgs);
-    }
-
-    public Ssg getSsgByName(String name) throws SsgNotFoundException {
-        for (Iterator i = ssgs.iterator(); i.hasNext(); ) {
-            Ssg ssg = (Ssg)i.next();
-            if (ssg.getName().equals(name))
-                return ssg;
-        }
-        throw new SsgNotFoundException();
     }
 
     public Ssg getSsgByEndpoint(String endpoint) throws SsgNotFoundException {

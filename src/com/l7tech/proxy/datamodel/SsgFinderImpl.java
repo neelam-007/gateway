@@ -140,25 +140,6 @@ public class SsgFinderImpl implements SsgFinder {
     }
 
     /**
-     * Find the Ssg with the specified name.  If multiple Ssgs have the same name only the
-     * first one is returned.
-     *
-     * @param name the name to look for (ie, "R&D Gateway")
-     * @return The requested Ssg.  Never null.
-     * @throws com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException If the specified name was not found.
-     */
-    public synchronized Ssg getSsgByName(final String name) throws SsgNotFoundException {
-        if (!init)
-            initialize();
-        for (Iterator i = ssgs.iterator(); i.hasNext();) {
-            final Ssg ssg = (Ssg)i.next();
-            if (name.equals(ssg.getName()))
-                return ssg;
-        }
-        throw new SsgNotFoundException("No SSG is registered with the name " + name);
-    }
-
-    /**
      * Find the Ssg with the specified local endpoint.  If multiple Ssgs have the same endpoint
      * only the first one is returned.
      *

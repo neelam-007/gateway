@@ -53,7 +53,7 @@ public class ClientPolicyTest extends TestCase {
 
     /** Decorate a message with an empty policy. */
     public void testNullPolicy() throws Exception {
-        Ssg ssg = new Ssg(1, "Foo Ssg", "http://foo");
+        Ssg ssg = new Ssg(1, "foo");
         PendingRequest req = new PendingRequest(null, null, ssg, NullRequestInterceptor.INSTANCE);
 
         ClientAssertion policy = new ClientTrueAssertion( TrueAssertion.getInstance() );
@@ -66,7 +66,7 @@ public class ClientPolicyTest extends TestCase {
     /** Test decoration of a message with an HTTP Basic policy. */
     public void testHttpBasicPolicy() throws Exception {
         ClientAssertion policy = new ClientHttpBasic( new HttpBasic() );
-        Ssg ssg = new Ssg(1, "Foo ssg", "http://foo");
+        Ssg ssg = new Ssg(1, "foo");
         Document env = null;
         PendingRequest req;
         AssertionStatus result;
@@ -104,7 +104,7 @@ public class ClientPolicyTest extends TestCase {
     /** Test decoration of a message with an SSL policy (specifying no certificates in particular). */
     public void testAnonymousSslPolicy() throws Exception {
         ClientAssertion policy = new ClientSslAssertion( new SslAssertion() );
-        Ssg ssg = new Ssg(1, "Foo ssg", "http://foo");
+        Ssg ssg = new Ssg(1, "foo");
         Document env = null;
         PendingRequest req;
         AssertionStatus result;
@@ -116,7 +116,7 @@ public class ClientPolicyTest extends TestCase {
 
     /** Test a composite policy. */
     public void testCompositePolicy() throws Exception {
-        Ssg ssg = new Ssg(1, "Foo ssg", "http://foo");
+        Ssg ssg = new Ssg(1, "foo");
         Document env = null;
         PendingRequest req;
         AssertionStatus result;

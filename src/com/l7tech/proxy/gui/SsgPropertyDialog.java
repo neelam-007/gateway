@@ -45,7 +45,6 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
     //   View for General pane
     private JComponent generalPane;
-    private JTextField fieldName;
     private JLabel fieldLocalEndpoint;
     private JTextField fieldServerAddress;
     private JCheckBox cbDefault;
@@ -55,6 +54,12 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     private JCheckBox cbPromptForPassword;
     private JLabel fieldPassword;
     private char[] editPassword;
+
+    //   View for Identity pane
+    private JComponent identityPane;
+
+    //   View for Network pane
+    private JComponent networkPane;
 
     //   View for Policy pane
     private JComponent policiesPane;
@@ -74,6 +79,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         super("SSG Properties");
         this.clientProxy = clientProxy;
         tabbedPane.add("General", getGeneralPane());
+        tabbedPane.add("Identity", getIdentityPane());
+        tabbedPane.add("Network", getNetworkPane());
         tabbedPane.add("Policies", getPoliciesPane());
         ssg.addSsgListener(this);
         setSsg(ssg);
@@ -211,6 +218,26 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         policyTree.setModel(policy == null ? null : new PolicyTreeModel(policy.getAssertion()));
     }
 
+    private JComponent getIdentityPane() {
+        if (identityPane == null) {
+            gridY = 0;
+            JPanel pane = new JPanel(new GridBagLayout());
+            identityPane = new JScrollPane(pane);
+            identityPane.setBorder(BorderFactory.createEmptyBorder());
+        }
+        return identityPane;
+    }
+
+    private JComponent getNetworkPane() {
+        if (networkPane == null) {
+            gridY = 0;
+            JPanel pane = new JPanel(new GridBagLayout());
+            networkPane = new JScrollPane(pane);
+            networkPane.setBorder(BorderFactory.createEmptyBorder());
+        }
+        return networkPane;
+    }
+
     /** Create panel controls.  Should be called only from a constructor. */
     private JComponent getGeneralPane() {
         if (generalPane == null) {
@@ -219,29 +246,17 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             generalPane = new JScrollPane(pane);
             generalPane.setBorder(BorderFactory.createEmptyBorder());
 
-            fieldName = new JTextField();
-            pane.add(new JLabel("Name:"),
-                     new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
-                                            GridBagConstraints.EAST,
-                                            GridBagConstraints.NONE,
-                                            new Insets(15, 5, 0, 0), 0, 0));
-            pane.add(fieldName,
-                     new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
-                                            GridBagConstraints.WEST,
-                                            GridBagConstraints.HORIZONTAL,
-                                            new Insets(15, 5, 0, 5), 0, 0));
-
             getFieldServerAddress();
-            pane.add(new JLabel("SSG Hostname:"),
+            pane.add(new JLabel("Gateway Hostname:"),
                      new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
                                             GridBagConstraints.EAST,
                                             GridBagConstraints.NONE,
-                                            new Insets(5, 5, 0, 0), 0, 0));
+                                            new Insets(10, 5, 0, 0), 0, 0));
             pane.add(fieldServerAddress,
                      new GridBagConstraints(1, gridY++, 1, 1, 1000.0, 0.0,
                                             GridBagConstraints.WEST,
                                             GridBagConstraints.HORIZONTAL,
-                                            new Insets(5, 5, 0, 5), 0, 0));
+                                            new Insets(10, 5, 0, 5), 0, 0));
 
             // Authentication panel
 
@@ -513,7 +528,6 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     public void setSsg(final Ssg ssg) {
         this.ssg = ssg;
 
-        fieldName.setText(ssg.getName());
         fieldLocalEndpoint.setText("http://localhost:" + clientProxy.getBindPort() + "/" +
                                        ssg.getLocalEndpoint());
         fieldServerAddress.setText(ssg.getSsgAddress());
@@ -534,7 +548,6 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
      */
     protected void commitChanges() {
         synchronized (ssg) {
-            ssg.setName(fieldName.getText());
             ssg.setSsgAddress(fieldServerAddress.getText().trim().toLowerCase());
             ssg.setUsername(fieldUsername.getText().trim());
             ssg.password(editPassword);
