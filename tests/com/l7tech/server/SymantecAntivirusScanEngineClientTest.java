@@ -33,7 +33,7 @@ public class SymantecAntivirusScanEngineClientTest extends TestCase {
     }
 
     public void testInfectedMultipartMsg() throws Exception {
-        Message msg = makeMsg("multipart/mixed; boundary=MIME_boundary; start=\"<soapRequest>\"",
+        Message msg = makeMsg(MULTIPART_CONTENTTYPE,
                               INFECTED_MULTIPART_MIME_MSG_PAYLOAD.getBytes());
         SymantecAntivirusScanEngineClient.SAVScanEngineResponse[] res = scanMsg(msg);
         boolean[] infected = interpretResults(res);
@@ -43,7 +43,7 @@ public class SymantecAntivirusScanEngineClientTest extends TestCase {
     }
 
     public void testCleanMultipartMsg() throws Exception {
-        Message msg = makeMsg("multipart/mixed; boundary=MIME_boundary; start=\"<soapRequest>\"",
+        Message msg = makeMsg(MULTIPART_CONTENTTYPE,
                               CLEAN_MULTIPART_MIME_MSG_PAYLOAD.getBytes());
         SymantecAntivirusScanEngineClient.SAVScanEngineResponse[] res = scanMsg(msg);
         boolean[] infected = interpretResults(res);
@@ -104,6 +104,8 @@ public class SymantecAntivirusScanEngineClientTest extends TestCase {
                                          0x49, 0x56, 0x49, 0x52, 0x55, 0x53, 0x2d, 0x54,
                                          0x45, 0x53, 0x54, 0x2d, 0x46, 0x49, 0x4c, 0x45,
                                          0x21, 0x24, 0x48, 0x2b, 0x48, 0x2a};
+
+    public static final String MULTIPART_CONTENTTYPE = "multipart/mixed; boundary=MIME_boundary; start=\"<soapRequest>\"";
 
     public static final String INFECTED_MULTIPART_MIME_MSG_PAYLOAD =
             "--MIME_boundary\r\n" +
