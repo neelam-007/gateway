@@ -6,6 +6,7 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.UnknownAssertion;
 import com.l7tech.console.util.Registry;
 
 import java.util.Collection;
@@ -45,8 +46,38 @@ public class CustomAssertionReference extends ExternalReference {
         return customAssertionName;
     }
 
+    public void setLocalizeDelete() {
+        localizeType = LocaliseAction.DELETE;
+    }
+
+    public void setLocalizeIgnore() {
+        localizeType = LocaliseAction.IGNORE;
+    }
+
     private CustomAssertionReference() {
         super();
+    }
+
+    public static class LocaliseAction {
+        public static final LocaliseAction IGNORE = new LocaliseAction(1);
+        public static final LocaliseAction DELETE = new LocaliseAction(2);
+        private LocaliseAction(int val) {
+            this.val = val;
+        }
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof LocaliseAction)) return false;
+
+            final LocaliseAction localiseAction = (LocaliseAction) o;
+
+            if (val != localiseAction.val) return false;
+
+            return true;
+        }
+        public int hashCode() {
+            return val;
+        }
+        private int val = 0;
     }
 
     void serializeToRefElement(Element referencesParentElement) {
@@ -95,6 +126,7 @@ public class CustomAssertionReference extends ExternalReference {
                 if (thisname != null && thisname.equals(customAssertionName)) {
                     // WE HAVE A MATCH!
                     logger.fine("Custom assertion " + customAssertionName + " found on local system.");
+                    localizeType = LocaliseAction.IGNORE;
                     return true;
                 }
             }
@@ -106,7 +138,16 @@ public class CustomAssertionReference extends ExternalReference {
     }
 
     boolean localizeAssertion(Assertion assertionToLocalize) {
-        // nothing to do. if the verify passed, then this is good to go
+        if (localizeType == LocaliseAction.IGNORE) return true;
+        // we need to instruct deletion for assertions that refer to this
+        if (assertionToLocalize instanceof CustomAssertionHolder) {
+            CustomAssertionHolder cahAss = (CustomAssertionHolder)assertionToLocalize;
+            if (customAssertionName.equals(cahAss.getCustomAssertion().getName())) {
+                return false;
+            }
+        } else if (assertionToLocalize instanceof UnknownAssertion) {
+            return false;
+        }
         return true;
     }
 
@@ -115,4 +156,6 @@ public class CustomAssertionReference extends ExternalReference {
     private String customAssertionName;
     public static final String REF_EL_NAME = "CustomAssertionReference";
     public static final String ASSNAME_EL_NAME = "CustomAssertionName";
+
+    private LocaliseAction localizeType = null;
 }
