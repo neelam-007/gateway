@@ -122,32 +122,27 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             } catch (GeneralSecurityException e) {
                 String msg = "Error decrypting request";
                 logger.log(Level.SEVERE, msg, e);
-                response.setPolicyViolated(true);
                 throw new PolicyAssertionException(msg, e);
             } catch (ParserConfigurationException e) {
                 String msg = "Error decrypting request";
                 logger.log(Level.SEVERE, msg, e);
-                response.setPolicyViolated(true);
                 throw new PolicyAssertionException(msg, e);
             } catch (IOException e) {
                 String msg = "Error decrypting request";
                 logger.log(Level.SEVERE, msg, e);
-                response.setPolicyViolated(true);
                 throw new PolicyAssertionException(msg, e);
             } catch (SAXException e) {
                 String msg = "Error decrypting request";
                 logger.log(Level.SEVERE, msg, e);
-                response.setPolicyViolated(true);
                 throw new PolicyAssertionException(msg, e);
             } catch (XMLSecurityElementNotFoundException e) {
-                String msg = "Error decrypting request";
+                String msg = "Request does not contain security element";
                 logger.log(Level.SEVERE, msg, e);
                 response.setPolicyViolated(true);
                 throw new PolicyAssertionException(msg, e);
             } catch (Throwable e) {
                 String msg = "Unhandled exception from mangler: ";
                 logger.log(Level.SEVERE, msg, e);
-                response.setPolicyViolated(true);
                 throw new PolicyAssertionException(msg, e);
             }
             logger.info("Decrypted request successfully.");
