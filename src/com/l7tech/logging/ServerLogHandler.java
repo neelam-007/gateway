@@ -144,7 +144,7 @@ public class ServerLogHandler extends Handler {
                                                                 throws HibernateException, SQLException {
         // we need an id near the end of the table, make a query using
         // the logrecords timestamps
-        long timewarp = 1;
+        long timewarp = 1000;
         final long max_time_warp = 1000*3600*24*5; // assume there is nothing at all beyond 5 days old
         long recentTimeStamp = System.currentTimeMillis() - timewarp;
         boolean recentIdFound = false;
