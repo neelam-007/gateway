@@ -1,21 +1,20 @@
 package com.l7tech.common.gui;
 
 
-import com.l7tech.common.gui.widgets.HyperlinkLabel;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.gui.widgets.HyperlinkLabel;
 
 import javax.swing.*;
-import javax.swing.border.Border;
-import javax.swing.event.HyperlinkListener;
 import javax.swing.event.HyperlinkEvent;
+import javax.swing.event.HyperlinkListener;
 import javax.swing.text.html.HTML;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.logging.Level;
 import java.net.MalformedURLException;
+import java.util.logging.Level;
 
 
 /**
@@ -30,7 +29,7 @@ public class ExceptionDialog extends JDialog implements ActionListener {
     private static final String CLOSE_HTML = "</html>";
     private JPanel main = new JPanel();
     private JPanel messagePanel = new JPanel();
-    private JPanel internalErroLabelPanel = new JPanel();
+    private JPanel internalErroLabelPanel = null;
     private JPanel buttons = new JPanel();
     private JTabbedPane tabPane = new JTabbedPane();
     private JTextArea textArea = new JTextArea();
@@ -126,7 +125,7 @@ public class ExceptionDialog extends JDialog implements ActionListener {
             e.printStackTrace(System.err);
         }
 
-        messagePanel.setLayout(new GridLayout(exceptionMessageLabel == null ? 3 : 4, 1));
+        messagePanel.setLayout(new BoxLayout(messagePanel, BoxLayout.Y_AXIS));
         messagePanel.add(Box.createGlue());
         messagePanel.add(messageLabel);
 
@@ -140,6 +139,7 @@ public class ExceptionDialog extends JDialog implements ActionListener {
         main.add(messagePanel, BorderLayout.CENTER);
 
         if (level == Level.SEVERE) {
+            internalErroLabelPanel = new JPanel();
             internalErroLabelPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
             internalErroLabelPanel.setBorder(BorderFactory.createEmptyBorder(5, 0, 5 ,0));
             internalErrorLabel = new JLabel("An internal error has occurred. " +
@@ -150,18 +150,13 @@ public class ExceptionDialog extends JDialog implements ActionListener {
 
         main.add(buttons, BorderLayout.SOUTH);
 
-        //
         tabPane.add(main, "Error");
         tabPane.add(scrollPane, "Details");
+        tabPane.setPreferredSize(new Dimension(650, 175));
 
-        //
         pane.setLayout(new BorderLayout());
         pane.add(tabPane, BorderLayout.CENTER);
         pane.add(buttons, BorderLayout.SOUTH);
-        //todo: dynamically resize
-        tabPane.setMaximumSize(new Dimension(650, 300));
-        tabPane.setPreferredSize(new Dimension(550, 175));
-
     }
 
     private JLabel getExceptionMessageLabel(Throwable t)
@@ -261,6 +256,16 @@ public class ExceptionDialog extends JDialog implements ActionListener {
         } else if (source == shutdown) {
             System.exit(-1);
         }
+    }
+
+    private void calculateDialogSize() {
+          //todo: dynamically resize
+        double height = messagePanel.getSize().getHeight();
+        if (internalErroLabelPanel != null) {
+            height += internalErroLabelPanel.getSize().getHeight();
+        }
+        height += buttons.getSize().getHeight();
+        setSize(new Dimension(650, (int)height));
     }
 
     public static void main(String[] args) {
