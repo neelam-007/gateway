@@ -1,21 +1,40 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.policy.assertion.RequestSwAAssertion;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.AssertionPath;
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.xml.Wsdl;
+import com.l7tech.common.wsdl.BindingInfo;
+import com.l7tech.common.wsdl.BindingOperationInfo;
+import com.l7tech.common.wsdl.MimePartInfo;
+import com.l7tech.console.event.PolicyListener;
+import com.l7tech.console.event.PolicyEvent;
+import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.objectmodel.FindException;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.Spacer;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
+import javax.wsdl.Binding;
+import javax.wsdl.BindingOperation;
+import javax.wsdl.WSDLException;
+import javax.wsdl.extensions.mime.MIMEMultipartRelated;
+import javax.wsdl.extensions.mime.MIMEContent;
+import javax.wsdl.extensions.mime.MIMEPart;
+import javax.wsdl.extensions.soap.SOAPBody;
 import java.util.logging.Logger;
-import java.util.ResourceBundle;
-import java.util.Locale;
+import java.util.*;
+import java.util.List;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.rmi.RemoteException;
+
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -31,15 +50,21 @@ public class RequestSwAAssertionDialog extends JDialog {
     private JComboBox bindingsListComboxBox;
     private JScrollPane operationsScrollPane;
     private JScrollPane multipartScrollPane;
+    private ServiceNode serviceNode;
     private EventListenerList listenerList = new EventListenerList();
+    private com.l7tech.common.wsdl.BindingInfo bindingInfo;
 
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.RequestSwAPropertiesDialog", Locale.getDefault());
     private static Logger logger = Logger.getLogger(RequestSwAAssertionDialog.class.getName());
 
-    public RequestSwAAssertionDialog(JFrame parent, RequestSwAAssertion assertion) {
+    public RequestSwAAssertionDialog(JFrame parent, RequestSwAAssertion assertion, ServiceNode sn) {
         super(parent, resources.getString("window.title"), true);
         this.assertion = assertion;
+        this.serviceNode = sn;
+
+
         initialize();
+        populateData();
         pack();
         Utilities.centerOnScreen(this);
     }
@@ -71,6 +96,137 @@ public class RequestSwAAssertionDialog extends JDialog {
 
         Utilities.equalizeButtonSizes(new JButton[]{cancelButton, okButton});
 
+    }
+
+    private void populateData() {
+        // get the MIMEParts Info from WSDL
+        loadMIMEPartsInfoFromWSDL();
+
+        if (assertion.getBindingName() == null) {
+            // this is the first time
+            populateDataFromWSDL();
+        } else {
+            // check if the WSDL changed
+            populateDataFromAssertion();
+        }
+    }
+
+    private void populateDataFromAssertion() {
+
+    }
+
+    private void populateDataFromWSDL() {
+
+    }
+
+    private void loadMIMEPartsInfoFromWSDL() {
+        try {
+            Wsdl parsedWsdl = serviceNode.getPublishedService().parsedWsdl();
+
+            Collection bindingList = parsedWsdl.getBindings();
+            HashMap operations = new HashMap();
+
+            // for each binding
+            for (Iterator iterator = bindingList.iterator(); iterator.hasNext();) {
+                Binding binding = (Binding) iterator.next();
+
+                //todo: should filter out non-SOAP binding
+                Collection boList = binding.getBindingOperations();
+
+                // for each operation
+                for (Iterator iterator1 = boList.iterator(); iterator1.hasNext();) {
+                    BindingOperation bo = (BindingOperation) iterator1.next();
+                //    System.out.println(bo.getOperation().toString());
+
+                    HashMap partList = new HashMap();
+                    Collection elements = parsedWsdl.getInputParameters(bo);
+
+                    for (Iterator itr = elements.iterator(); itr.hasNext();) {
+
+                        Object o = (Object) itr.next();
+                        if (o instanceof MIMEMultipartRelated) {
+
+                            MIMEMultipartRelated multipart = (MIMEMultipartRelated) o;
+
+                            List parts = multipart.getMIMEParts();
+                            for (Iterator partsItr = parts.iterator(); partsItr.hasNext();) {
+
+                                MIMEPart mimePart = (MIMEPart) partsItr.next();
+                                Collection mimePartSubElements = parsedWsdl.getMimePartSubElements(mimePart);
+
+                                for (Iterator subElementItr = mimePartSubElements.iterator(); subElementItr.hasNext();) {
+                                    Object subElement = (Object) subElementItr.next();
+
+                                    if (subElement instanceof MIMEContent) {
+                                        MIMEContent mimeContent = (MIMEContent) subElement;
+                                        MimePartInfo part = new MimePartInfo(mimeContent.getPart(), mimeContent.getType());
+
+                                        //concat the content type if the part alreay exists
+                                        MimePartInfo partInfo = (MimePartInfo) partList.get(mimeContent.getPart());
+                                        if (partInfo != null) {
+                                            partInfo.setContentType(partInfo.getContentType() + mimeContent.getPart());
+                                        } else {
+                                            partList.put(mimeContent.getPart(), part);
+                                        }
+                                    } else if (subElement instanceof SOAPBody) {
+                                        // don't care about soapPart for now
+                                        //SOAPBody soapBody = (SOAPBody) subElement;
+                                    }
+                                }
+                            }
+                        }
+                        // create BindingOperationInfo
+                        BindingOperationInfo operation = new BindingOperationInfo(bo.getOperation().getName(), partList);
+                        operations.put(bo.getOperation().toString(), operation);
+                    }
+                }
+                bindingInfo = new BindingInfo(binding.getQName().getLocalPart(), operations);
+            }
+
+        } catch (FindException e) {
+            logger.warning("The service not found: " + serviceNode.getName());
+        } catch (RemoteException re) {
+            logger.severe("Remote exception");
+        } catch (WSDLException e) {
+            logger.warning("Unable to retrieve parse the WSDL of the service " + serviceNode.getName());
+        }
+    }
+
+    /**
+     * add the PolicyListener
+     *
+     * @param listener the PolicyListener
+     */
+    public void addPolicyListener(PolicyListener listener) {
+        listenerList.add(PolicyListener.class, listener);
+    }
+
+    /**
+     * remove the the PolicyListener
+     *
+     * @param listener the PolicyListener
+     */
+    public void removePolicyListener(PolicyListener listener) {
+        listenerList.remove(PolicyListener.class, listener);
+    }
+
+    /**
+     * notfy the listeners
+     *
+     * @param a the assertion
+     */
+    private void fireEventAssertionChanged(final Assertion a) {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                int[] indices = new int[a.getParent().getChildren().indexOf(a)];
+                PolicyEvent event = new
+                        PolicyEvent(this, new AssertionPath(a.getPath()), indices, new Assertion[]{a});
+                EventListener[] listeners = listenerList.getListeners(PolicyListener.class);
+                for (int i = 0; i < listeners.length; i++) {
+                    ((PolicyListener) listeners[i]).assertionsChanged(event);
+                }
+            }
+        });
     }
 
     {

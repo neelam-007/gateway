@@ -6,6 +6,7 @@ import org.xml.sax.InputSource;
 
 import javax.wsdl.*;
 import javax.wsdl.extensions.ExtensibilityElement;
+import javax.wsdl.extensions.mime.MIMEPart;
 import javax.wsdl.extensions.http.HTTPBinding;
 import javax.wsdl.extensions.soap.SOAPAddress;
 import javax.wsdl.extensions.soap.SOAPBinding;
@@ -531,6 +532,22 @@ public class Wsdl {
             operations.addAll(binding.getBindingOperations());
         }
         return operations;
+    }
+
+    public Collection getInputParameters(BindingOperation bindingOperation) {
+        if(bindingOperation != null) {
+            return bindingOperation.getBindingInput().getExtensibilityElements();
+        } else {
+            throw new IllegalArgumentException("The argument bindingOperation is NULL");
+        }
+    }
+
+    public Collection getMimePartSubElements(MIMEPart mimePart) {
+        if(mimePart != null) {
+            return mimePart.getExtensibilityElements();
+        } else {
+            throw new IllegalArgumentException("The argument mimePart is NULL");
+        }
     }
 
     public URL getUrlFromPort(Port wsdlPort) throws MalformedURLException {

@@ -8,6 +8,8 @@ import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.event.PolicyListenerAdapter;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.panels.RequestSwAAssertionDialog;
+import com.l7tech.console.panels.WorkSpacePanel;
+import com.l7tech.console.poleditor.PolicyEditorPanel;
 import com.l7tech.policy.assertion.RequestSwAAssertion;
 import com.l7tech.common.gui.util.Utilities;
 
@@ -58,14 +60,20 @@ public class RequestSwAAssertionPropertiesAction extends NodeAction {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 JFrame f = TopComponents.getInstance().getMainWindow();
-                RequestSwAAssertionDialog d =
-                        new RequestSwAAssertionDialog(f, (RequestSwAAssertion)node.asAssertion());
-                d.setModal(true);
-                d.pack();
-                Utilities.centerOnScreen(d);
-                //todo:
-                //d.addPolicyListener(listener);
-                d.show();
+
+                WorkSpacePanel currentWorkSpace = TopComponents.getInstance().getCurrentWorkspace();
+                JComponent currentPanel = currentWorkSpace.getComponent();
+                if(currentPanel == null || !(currentPanel instanceof PolicyEditorPanel)) {
+                    logger.warning("Internal error: current workspace is not a PolicyEditorPanel instance");
+                } else {
+                     RequestSwAAssertionDialog d =
+                            new RequestSwAAssertionDialog(f, (RequestSwAAssertion)node.asAssertion(), ((PolicyEditorPanel) currentPanel).getServiceNode());
+                    d.setModal(true);
+                    d.pack();
+                    Utilities.centerOnScreen(d);
+                    d.addPolicyListener(listener);
+                    d.show();
+                }
             }
         });
     }
