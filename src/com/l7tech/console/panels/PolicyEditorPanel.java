@@ -8,6 +8,8 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.WindowManager;
 import com.l7tech.policy.PolicyPathBuilder;
 import com.l7tech.policy.PolicyPathResult;
+import com.l7tech.policy.AssertionPath;
+import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
@@ -16,6 +18,10 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.StringReader;
+import java.io.StringWriter;
+import java.util.Iterator;
+import java.util.Set;
+import java.util.Collection;
 
 /**
  * The class represnts the policy editor
@@ -93,15 +99,8 @@ public class PolicyEditorPanel extends JPanel {
         }
 
         private void initComponents() {
-            buttonSave = new JButton(new SavePolicyAction());
+            buttonSave = new JButton(new SavePolicyAction(rootAssertion));
             this.add(buttonSave);
-            buttonSave.addActionListener(
-                    new ActionListener() {
-                        /** Invoked when an action occurs.*/
-                        public void actionPerformed(ActionEvent e) {
-
-                        }
-                    });
 
             buttonValidate = new JButton(new ValidatePolicyAction());
                         this.add(buttonValidate);
@@ -112,7 +111,17 @@ public class PolicyEditorPanel extends JPanel {
                                         PolicyPathResult result =
                                           PolicyPathBuilder.getDefault().
                                           generate(rootAssertion.asAssertion());
-                                        appendToMessageArea("Paths :"+result.getPathCount());
+                                        StringWriter sw = new StringWriter();
+                                        sw.write("Paths :"+result.getPathCount()+"\n");
+                                        for (Iterator it = result.paths().iterator(); it.hasNext();) {
+                                            AssertionPath path = (AssertionPath)it.next();
+                                            sw.write("\n");
+                                            for (Iterator onepathit = path.assertions().iterator(); onepathit.hasNext();) {
+                                                Assertion ass = (Assertion)onepathit.next();
+                                                 sw.write(ass.toString());
+                                            }
+                                        }
+                                        appendToMessageArea(sw.toString());
                                     }
                                 });
 
