@@ -15,7 +15,7 @@ import java.sql.SQLException;
 /**
  * @author alex
  */
-public class UserManagerImp extends ProviderSpecificEntityManager implements UserManager {
+public class UserManagerImp extends HibernateEntityManager implements UserManager {
     public UserManagerImp() {
         super();
     }
@@ -40,7 +40,6 @@ public class UserManagerImp extends ProviderSpecificEntityManager implements Use
 
     public long save(User user) throws SaveException {
         try {
-            user.setProviderOid( _identityProviderOid );
             return _manager.save( getContext(), user );
         } catch ( SQLException se ) {
             throw new SaveException( se.toString(), se );
@@ -49,7 +48,6 @@ public class UserManagerImp extends ProviderSpecificEntityManager implements Use
 
     public void update( User user ) throws UpdateException {
         try {
-            user.setProviderOid( _identityProviderOid );
             _manager.update( getContext(), user );
         } catch ( SQLException se ) {
             throw new UpdateException( se.toString(), se );
