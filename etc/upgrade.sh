@@ -18,10 +18,10 @@ else
 fi
 echo "Does this upgrade require any \"ssg upgrade script\" to be run? (y/n)"
 read inputReqSsgUp
-if [ $inputReqSsgUp = y ]; then
+if [ "$inputReqSsgUp" = "y" ]; then
   echo "Name of \"ssg upgrade script\"? (eg. upgrade_<releaseX>-<releaseY>.sh)"
   read inputNameSsgUp
-  if [ -e $ssgDir/$inputNameSsgUp -a -x $ssgDir/$inputNameSsgUp ]; then
+  if [ -e $ssgDir/$inputNameSsgUp -a -x $ssgDir/$inputNameSsgUp -a ! -d $ssgDir/$inputNameSsgUp ]; then
     echo "INFO: Start running script \"$ssgDir/$inputNameSsgUp\"..."
     $ssgDir/$inputNameSsgUp
   else
@@ -30,10 +30,10 @@ if [ $inputReqSsgUp = y ]; then
 fi
 echo "Does this upgrade require any \"database upgrade script\" to be run? (y/n)" 
 read inputReqDBUp
-if [ $inputReqDBUp = y ]; then
+if [ "$inputReqDBUp" = "y" ]; then
   echo "Name of \"database upgrade script\"? (eg. upgrade_<releaseX>-<releaseY>.sql)"
   read inputNameDBUp
-  if [ -e $ssgDBDir/$inputNameDBUp ]; then
+  if [ -e $ssgDBDir/$inputNameDBUp -a ! -d $ssgDBDir/$inputNameDBUp ]; then
     echo "What is the database vendor? (Select by entering a number which represent a database vendor, and press <Enter> key)"
     select dbVendor in "MySQL" "Postgres" "Oracle"; do
       break
