@@ -33,6 +33,7 @@ import javax.xml.soap.SOAPConstants;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Iterator;
+import java.util.logging.Logger;
 import java.security.PrivateKey;
 import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
@@ -43,7 +44,6 @@ import java.io.IOException;
  * Whether or not a requestor is allowed to download a policy depends on whether or not he is capable
  * of consuming it. This is determined by looking at the identity assertions inside the target policy
  * comparing them with the identity resuling from the authentication of the policy download request.
- * Document format expected is <sp:Body><PolicyDiscoveryRequest serviceOid="132"/></sp:Body>
  *
  * Todo, special case for TAM
  *
@@ -75,12 +75,17 @@ public class PolicyService {
     }
 
     /**
-     * @return the filtered policy
+     * @return the filtered policy or null if the target policy does not exist
      */
     public Document respondToPolicyDownloadRequest(String policyId,
                                                    User preAuthenticatedUser,
                                                    PolicyGetter policyGetter) throws FilteringException, IOException, SAXException{
-        Assertion filteredAssertion = FilterManager.getInstance().applyAllFilters(preAuthenticatedUser, policyGetter.getPolicy(policyId));
+        Assertion targetPolicy = policyGetter.getPolicy(policyId);
+        if (targetPolicy == null) {
+            logger.info("cannot find target policy from id: " + policyId);
+            return null;
+        }
+        Assertion filteredAssertion = FilterManager.getInstance().applyAllFilters(preAuthenticatedUser, targetPolicy);
         return XmlUtil.stringToDocument(WspWriter.getPolicyXml(filteredAssertion));
     }
 
@@ -135,6 +140,23 @@ public class PolicyService {
 
         // Run the policy-policy
         AllAssertion targetPolicy = policyGetter.getPolicy(policyId);
+        if (targetPolicy == null) {
+            logger.info("cannot find target policy from id: " + policyId);
+            Document fault = null;
+            try {
+                fault = SoapFaultUtils.generateSoapFault(SoapFaultUtils.FC_SERVER,
+                                                         "policy " + policyId + " not found",
+                                                         "the policy requested does not exist",
+                                                         "");
+            } catch (IOException e) {
+                exceptionToFault(e, response);
+                return;
+            } catch (SAXException e) {
+                exceptionToFault(e, response);
+                return;
+            }
+            response.setDocument(fault);
+        }
         ServerAssertion policyPolicy = constructPolicyPolicy(targetPolicy);
         AssertionStatus status = null;
         try {
@@ -278,4 +300,5 @@ public class PolicyService {
     private final List allCredentialAssertions;
     private PrivateKey privateServerKey = null;
     private X509Certificate serverCert = null;
+    private final Logger logger = Logger.getLogger(PolicyService.class.getName());
 }
