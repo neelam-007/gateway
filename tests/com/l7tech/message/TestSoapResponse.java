@@ -7,7 +7,7 @@
 package com.l7tech.message;
 
 /**
- * @author mike
+ * Simple standalone SoapResponse for testing.
  */
 public class TestSoapResponse extends SoapResponse {
     public TestSoapResponse() {
