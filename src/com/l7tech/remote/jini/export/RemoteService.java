@@ -10,15 +10,18 @@ import net.jini.discovery.DiscoveryManagement;
 import net.jini.discovery.LookupDiscovery;
 import net.jini.export.Exporter;
 import net.jini.export.ProxyAccessor;
+import net.jini.export.ServerContext;
 import net.jini.id.Uuid;
 import net.jini.id.UuidFactory;
 import net.jini.jeri.BasicILFactory;
 import net.jini.jeri.BasicJeriExporter;
 import net.jini.jeri.tcp.TcpServerEndpoint;
 import net.jini.lookup.JoinManager;
+import net.jini.io.context.ClientSubject;
 
 import java.io.IOException;
 import java.rmi.Remote;
+import java.rmi.server.ServerNotActiveException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -84,8 +87,8 @@ public abstract class RemoteService implements Remote, ProxyAccessor {
         /* Get the discovery manager, for discovering lookup services */
         return
           (DiscoveryManagement)getConfigEntry("discoveryManager",
-                                              DiscoveryManagement.class,
-                                              new LookupDiscovery(new String[]{""}, config));
+            DiscoveryManagement.class,
+            new LookupDiscovery(new String[]{""}, config));
     }
 
     /**
@@ -119,7 +122,7 @@ public abstract class RemoteService implements Remote, ProxyAccessor {
     protected Exporter getExporter() throws ConfigurationException {
         return
           (Exporter)getConfigEntry("serverExporter", Exporter.class,
-                    new BasicJeriExporter(TcpServerEndpoint.getInstance(0), new BasicILFactory()));
+            new BasicJeriExporter(TcpServerEndpoint.getInstance(0), new BasicILFactory()));
     }
 
     /**
@@ -128,7 +131,7 @@ public abstract class RemoteService implements Remote, ProxyAccessor {
      *
      * @param name  the configuration entry name
      * @param clazz the confuguration entry class
-     * @param def the default value in case the entry is not found
+     * @param def   the default value in case the entry is not found
      * @throws ConfigurationException if a problem occurs getting the exporter
      *                                from the configuration
      */
@@ -140,13 +143,13 @@ public abstract class RemoteService implements Remote, ProxyAccessor {
             String section = components[i];
             try {
                 result = config.getEntry(section, name, clazz);
-                logger.fine("Found config entry "+result+" for name '"+name+"'");
+                logger.fine("Found config entry " + result + " for name '" + name + "'");
                 return result;
             } catch (NoSuchEntryException e) {
                 continue;
             }
         }
-        logger.fine("Returning default value "+def+" for name '"+name+"'");
+        logger.fine("Returning default value " + def + " for name '" + name + "'");
         return def;
     }
 
@@ -168,5 +171,26 @@ public abstract class RemoteService implements Remote, ProxyAccessor {
     protected static ServiceID createServiceID() {
         Uuid uuid = UuidFactory.generate();
         return new ServiceID(uuid.getMostSignificantBits(), uuid.getLeastSignificantBits());
+    }
+
+    /**
+     * Returns a boolean indicating whether the authenticated user is included in the specified
+     * logical "roles".
+     *
+     * @param roles role - a String array specifying the role names
+     * @return a boolean indicating whether the user making this request belongs to one or more given
+     *         roles; false if not or the user has not been authenticated
+     */
+    protected boolean isUserInRole(String[] roles) {
+        try {
+            //todo: finish implementation
+            ClientSubject subject = (ClientSubject)ServerContext.getServerContextElement(ClientSubject.class);
+//            if (subject == null) {
+//                return false;
+//            }
+            return true;
+        } catch (ServerNotActiveException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
