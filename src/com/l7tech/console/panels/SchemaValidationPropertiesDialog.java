@@ -393,7 +393,7 @@ public class SchemaValidationPropertiesDialog extends JDialog {
     }
 
     private void displayError(String msg, String title) {
-        if (title == null) title = resources.getString("window.title");
+        if (title == null) title = resources.getString("error.window.title");
         JOptionPane.showMessageDialog(this, msg, title, JOptionPane.ERROR_MESSAGE);
     }
 
