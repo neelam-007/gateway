@@ -2,6 +2,9 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.event.BeanEditSupport;
 import com.l7tech.policy.assertion.Regex;
+import com.l7tech.common.gui.widgets.SquigglyTextArea;
+import com.l7tech.common.gui.util.TextComponentPauseListenerManager;
+import com.l7tech.common.gui.util.PauseListener;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -24,7 +27,7 @@ public class RegexDialog extends JDialog {
     private JPanel mainPanel;
     private JButton cancelButton;
     private JButton okButton;
-    private JTextArea regexTextArea;
+    private SquigglyTextArea regexTextArea;
     private JScrollPane regexTextAreaScrollPane;
     private JPanel testPanel;
     private JTextArea replaceTextArea;
@@ -140,9 +143,9 @@ public class RegexDialog extends JDialog {
                         String beforeMatchString = testInputString.substring(offset, matcher.start());
                         try {
                             doc.insertString(offset, beforeMatchString, nas);
-                            offset+=beforeMatchString.length();
+                            offset += beforeMatchString.length();
                             doc.insertString(offset, matcher.group(), sas);
-                            offset +=matcher.group().length();
+                            offset += matcher.group().length();
                         } catch (BadLocationException e1) {
                             throw new RuntimeException(e1);
                         }
@@ -201,6 +204,29 @@ public class RegexDialog extends JDialog {
         okButton.setEnabled(pattern != null);
         testResultTextPane.setEditable(false);
         testResultTextPane.setFont(testInputTextArea.getFont());
+        TextComponentPauseListenerManager.registerPauseListener(regexTextArea, new PauseListener() {
+            public void textEntryPaused(JTextComponent component, long msecs) {
+                updatePattern();
+                if (empty(regexTextArea)) {
+                    regexTextArea.setNone();
+                    return;
+                }
+
+                regexTextArea.setAll();
+                if (pattern == null) {
+                    regexTextArea.setColor(Color.RED);
+                    regexTextArea.setSquiggly();
+                } else {
+                    regexTextArea.setColor(Color.BLUE);
+                    regexTextArea.setStraight();
+                }
+            }
+
+            public void textEntryResumed(JTextComponent component) {
+
+            }
+        }, 700);
+
 
     }
 
@@ -219,7 +245,7 @@ public class RegexDialog extends JDialog {
 
 
     private void updatePattern() {
-        regexTextArea.setToolTipText("");
+        regexTextArea.setToolTipText(null);
         if (!empty(regexTextArea)) {
             try {
                 int flags = Pattern.DOTALL | Pattern.MULTILINE;
@@ -227,8 +253,9 @@ public class RegexDialog extends JDialog {
                     flags |= Pattern.CASE_INSENSITIVE;
                 }
                 pattern = Pattern.compile(regexTextArea.getText(), flags);
+                regexTextArea.setToolTipText("OK");
             } catch (PatternSyntaxException e1) {
-                regexTextArea.setToolTipText(e1.getDescription()+" index: "+e1.getIndex());
+                regexTextArea.setToolTipText(e1.getDescription() + " index: " + e1.getIndex());
                 pattern = null;
             }
         } else {

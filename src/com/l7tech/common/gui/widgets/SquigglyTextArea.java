@@ -17,11 +17,11 @@ public class SquigglyTextArea extends JTextArea {
     }
 
     public SquigglyTextArea(String text) {
-        super(text);
+        this(null, text, 0, 0);
     }
 
     public SquigglyTextArea(String text, int rows, int columns) {
-        super(text, rows, columns);
+        this(null, text, rows, columns);
     }
 
     public SquigglyTextArea(Document doc, String text, int rows, int columns) {
@@ -86,30 +86,34 @@ public class SquigglyTextArea extends JTextArea {
 
         if (begin == NONE || end == NONE) return;
 
-        g.setColor(_color);
-
-        int ya = getHeight() - 7;
-        int xb = 0;
-        int xe = getWidth();
-
         String text = getText();
         int len = text.length();
 
-        if (begin > len) return;
-
+        if (begin >= len || len == 0) return;
+        Color gColor = g.getColor();
         try {
-            int beginLine = getLineOfOffset(begin == ALL ? 0 : begin);
-            int endLine = getLineOfOffset(_end == ALL || _end > len ? len : _end);
+            g.setColor(_color);
 
-            for(int i = beginLine; i <= endLine; i++) {
-                Rectangle firstChar = modelToView(begin == ALL ? 0 : begin);
-                ya = (int)(firstChar.getY() + firstChar.getHeight());
-                xb = (int)firstChar.getX();
-                Rectangle lastChar = modelToView(_end == ALL || _end > len ? len : _end);
-                xe = (int)(lastChar.getX() + lastChar.getWidth());
-                _style.draw(g, xb, xe, ya);
+            int ya = getHeight() - 7;
+            int xb = 0;
+            int xe = getWidth();
+
+            try {
+                int beginLine = getLineOfOffset(begin == ALL ? 0 : begin);
+                int endLine = getLineOfOffset(_end == ALL || _end > len ? len : _end);
+
+                for(int i = beginLine; i <= endLine; i++) {
+                    Rectangle firstChar = modelToView(begin == ALL ? 0 : begin);
+                    ya = (int)(firstChar.getY() + firstChar.getHeight());
+                    xb = (int)firstChar.getX();
+                    Rectangle lastChar = modelToView(_end == ALL || _end > len ? len : _end);
+                    xe = (int)(lastChar.getX() + lastChar.getWidth());
+                    _style.draw(g, xb, xe, ya);
+                }
+            } catch (BadLocationException e) {
             }
-        } catch (BadLocationException e) {
+        } finally {
+            g.setColor(gColor);
         }
     }
 
