@@ -34,7 +34,7 @@ public class AssertionMessages extends Messages {
     public static final M BRIDGE_NO_ATTACHMENTS                = m(4019, Level.WARNING, "Bridge Routing Assertion does not currently support SOAP-with-attachments.  Ignoring additional MIME parts");
     public static final M BAD_PROTECTED_SERVICE_URL            = m(4020, Level.SEVERE, "Routing Assertion is not configured with a valid protected service URL");
     public static final M BAD_ORIGINAL_REQUEST_URL             = m(4021, Level.WARNING, "Invalid original request URI -- using default");
-    public static final M ACCESS_DENIED                        = m(4022, Level.WARNING, "Protected service ({0}) denies access with current BridgeRoutingAssertion credentials");
+    public static final M ACCESS_DENIED                        = m(4022, Level.WARNING, "Protected service denies access with current BridgeRoutingAssertion credentials");
 
     // ServerCredentialSourceAssertion messages
     public static final M AUTH_REQUIRED                        = m(4100, Level.INFO, "Authentication Required");

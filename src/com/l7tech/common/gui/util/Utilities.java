@@ -378,6 +378,14 @@ public class Utilities {
     }
 
     /**
+     * Configure the specified text component with a default context menu containing Cut, Copy, Paste, and Select All.
+     * @param tc the JTextComponent to configure.  Must not be null.
+     */
+    public static void attachDefaultContextMenu(final JTextComponent tc) {
+        tc.addMouseListener(createContextMenuMouseListener(tc));
+    }
+
+    /**
      * Create a MouseListener that will create an edit context menu when triggered.  If the specified
      * component has the PROPERTY_CONTEXT_MENU_AUTO_SELECT_ALL client property set to "true" when
      * the listener is triggered, the component will have "select all" called on it first.  This method

@@ -55,7 +55,7 @@ public class SsgRuntime {
     private PrivateKey privateKey = null; // cache of private key
     private boolean passwordWorkedForPrivateKey = false;
     private SSLContext sslContext = null;
-    private ClientProxyTrustManager trustManager = null;
+    private X509TrustManager trustManager = null;
     private HttpCookie[] sessionCookies = null;
     private X509Certificate serverCert = null;
     private X509Certificate clientCert = null;
@@ -64,7 +64,9 @@ public class SsgRuntime {
     private Calendar secureConversationExpiryDate = null;
     private long timeOffset = 0;
     private Map tokenStrategiesByType;
-    SimpleHttpClient simpleHttpClient = null;
+    private SimpleHttpClient simpleHttpClient = null;
+    private CredentialManager credentialManager = Managers.getCredentialManager();
+    private SsgKeyStoreManager ssgKeyStoreManager;
 
     private DateTranslator fromSsgDateTranslator = new DateTranslator() {
         public Date translate(Date source) {
@@ -95,6 +97,7 @@ public class SsgRuntime {
     public SsgRuntime(Ssg ssg) {
         if (ssg == null) throw new NullPointerException();
         this.ssg = ssg;
+        this.ssgKeyStoreManager = new Pkcs12SsgKeyStoreManager(ssg);
         httpConnectionManager.setMaxConnectionsPerHost(MAX_CONNECTIONS);
         httpConnectionManager.setMaxTotalConnections(MAX_CONNECTIONS);
     }
@@ -354,7 +357,7 @@ public class SsgRuntime {
     }
 
     /** Get the trust manager used for SSL connections to this SSG. */
-    public ClientProxyTrustManager getTrustManager() {
+    public X509TrustManager getTrustManager() {
         synchronized (ssg) {
             if (trustManager == null) {
                 trustManager = SslInstanceHolder.trustManager;
@@ -364,7 +367,7 @@ public class SsgRuntime {
     }
 
     /** Set the trust manager to use for SSL connections to this SSG. */
-    public void setTrustManager(ClientProxyTrustManager tm) {
+    public void setTrustManager(X509TrustManager tm) {
         synchronized (ssg) {
             if (tm == null)
                 throw new IllegalArgumentException("TrustManager may not be null");
@@ -383,7 +386,7 @@ public class SsgRuntime {
         synchronized (ssg) {
             log.info("Creating new SSL context for SSG " + toString());
             ClientProxyKeyManager keyManager = SslInstanceHolder.keyManager;
-            ClientProxyTrustManager trustManager = getTrustManager();
+            X509TrustManager trustManager = getTrustManager();
             SSLContext sslContext = null;
             try {
                 sslContext = SSLContext.getInstance("SSL", System.getProperty(SslPeer.PROP_SSL_PROVIDER,
@@ -588,6 +591,14 @@ public class SsgRuntime {
         }
     }
 
+    /**
+     * Set the SimpleHttpClient to use for requests to this Ssg.
+     * @param httpClient the new HTTP client, or null to use the default one.
+     */
+    public void setHttpClient(SimpleHttpClient httpClient) {
+        simpleHttpClient = httpClient;
+    }
+
     // Hack to allow lazy initialization of SSL stuff
     private static class SslInstanceHolder {
         private static final ClientProxyKeyManager keyManager = new ClientProxyKeyManager();
@@ -597,8 +608,8 @@ public class SsgRuntime {
     public void handleKeyStoreCorrupt() throws OperationCanceledException {
         Ssg problemSsg = ssg.getTrustedGateway();
         if (problemSsg == null) problemSsg = ssg;
-        Managers.getCredentialManager().notifyKeyStoreCorrupt(problemSsg);
-        SsgKeyStoreManager.deleteStores(problemSsg);
+        problemSsg.getRuntime().getCredentialManager().notifyKeyStoreCorrupt(problemSsg);
+        problemSsg.getRuntime().getSsgKeyStoreManager().deleteStores();
         resetSslContext();
     }
 
@@ -608,7 +619,7 @@ public class SsgRuntime {
         for (;;) {
             try {
                 log.info("Attempting to discover Gateway server certificate for " + this);
-                SsgKeyStoreManager.installSsgServerCertificate(ssg, pw);
+                getSsgKeyStoreManager().installSsgServerCertificate(ssg, pw);
                 return;
             } catch (OperationCanceledException e) {
                 throw new RuntimeException(e); // cancel it
@@ -623,4 +634,33 @@ public class SsgRuntime {
         }
     }
 
+    /**
+     * @return the Credential Manager to use for this Ssg.  Never null.
+     */
+    public CredentialManager getCredentialManager() {
+        return credentialManager;
+    }
+
+    /**
+     * @param credentialManager the Credential Manager to use for this Ssg.  Must not be null.
+     */
+    public void setCredentialManager(CredentialManager credentialManager) {
+        if (credentialManager == null) throw new NullPointerException();
+        this.credentialManager = credentialManager;
+    }
+
+    /**
+     * @return the SsgKeyStoreManager to use for managing persistence of key and cert material for this Ssg.  Never null.
+     */
+    public SsgKeyStoreManager getSsgKeyStoreManager() {
+        return ssgKeyStoreManager;
+    }
+
+    /**
+     * @param ssgKeyStoreManager to use for managing persistence of key and cert material for this Ssg.  Must not be null.
+     */
+    public void setSsgKeyStoreManager(SsgKeyStoreManager ssgKeyStoreManager) {
+        if (ssgKeyStoreManager == null) throw new NullPointerException();
+        this.ssgKeyStoreManager = ssgKeyStoreManager;
+    }
 }

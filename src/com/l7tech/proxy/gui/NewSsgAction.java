@@ -9,7 +9,6 @@ package com.l7tech.proxy.gui;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.gui.dialogs.NewSsgDialog;
 import com.l7tech.proxy.gui.dialogs.SsgPropertyDialog;
 import com.l7tech.proxy.gui.util.IconManager;
@@ -40,7 +39,7 @@ class NewSsgAction extends AbstractAction {
     public void actionPerformed(final ActionEvent e) {
         final Ssg newSsg = ssgTableModel.createSsg();
         logger.info("Creating new Gateway registration " + newSsg);
-        SsgKeyStoreManager.deleteStores(newSsg);
+        newSsg.getRuntime().getSsgKeyStoreManager().deleteStores();
         if (ssgTableModel.getRowCount() < 1)
             newSsg.setDefaultSsg(true);
 

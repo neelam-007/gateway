@@ -8,7 +8,6 @@ package com.l7tech.proxy.gui;
 
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.gui.util.IconManager;
 
 import javax.swing.*;
@@ -97,7 +96,7 @@ class DeleteSsgAction extends AbstractAction {
             ssgListPanel.removeSsg(ssg);
             ssg.setTrustedGateway(null); // break federation prior to removing key stores
             ssg.setWsTrustSamlTokenStrategy(null); // break federation prior to removing key stores TODO fix hack
-            SsgKeyStoreManager.deleteStores(ssg);
+            ssg.getRuntime().getSsgKeyStoreManager().deleteStores();
         }
     }
 }

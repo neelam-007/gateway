@@ -7,7 +7,10 @@ import com.l7tech.common.gui.widgets.WrappingLabel;
 import com.l7tech.common.security.token.SecurityToken;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.proxy.ClientProxy;
-import com.l7tech.proxy.datamodel.*;
+import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.SsgEvent;
+import com.l7tech.proxy.datamodel.SsgListener;
+import com.l7tech.proxy.datamodel.WsTrustSamlTokenStrategy;
 import com.l7tech.proxy.gui.Gui;
 import com.l7tech.proxy.gui.util.IconManager;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
@@ -297,7 +300,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         if (pass == null)
             return;
         try {
-            SsgKeyStoreManager.importClientCertificate(ssg, certFile, pass, null, ssgPass);
+            ssg.getRuntime().getSsgKeyStoreManager().importClientCertificate(certFile, pass, null, ssgPass);
         } catch (ClassCastException e) {
             // translate this one into a friendlier error message
             log.log(Level.WARNING, "Unable to import certificate", e);
@@ -309,7 +312,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             return;
         }
 
-        String clientCertUsername = SsgKeyStoreManager.lookupClientCertUsername(ssg);
+        String clientCertUsername = ssg.getRuntime().getSsgKeyStoreManager().lookupClientCertUsername();
         if (clientCertUsername != null)
             trustPane.getUsernameTextField().setText(clientCertUsername);
         updateIdentityEnableState();
@@ -330,7 +333,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             tp.getSavePasswordCheckBox().setEnabled(true);
             tp.getUserPasswordField().setEnabled(true);
             tp.getUserPasswordField().setEditable(true);
-            tp.getUsernameTextField().setEditable(SsgKeyStoreManager.lookupClientCertUsername(ssg) == null);
+            tp.getUsernameTextField().setEditable(ssg.getRuntime().getSsgKeyStoreManager().lookupClientCertUsername() == null);
         }
     }
 
@@ -480,7 +483,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                 getNetworkPane().setCustomPorts(customPorts);
                 tp.getSavePasswordCheckBox().setSelected(ssg.isSavePasswordToDisk());
                 tp.getUseClientCredentialCheckBox().setSelected(ssg.isChainCredentialsFromClient());
-                String clientCertUsername = SsgKeyStoreManager.lookupClientCertUsername(ssg);
+                String clientCertUsername = ssg.getRuntime().getSsgKeyStoreManager().lookupClientCertUsername();
                 if (clientCertUsername != null) {
                     tp.getUsernameTextField().setText(clientCertUsername);
                     tp.getUsernameTextField().setEditable(false);

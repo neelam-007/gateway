@@ -12,10 +12,13 @@ import com.l7tech.common.mime.MimeUtil;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.commons.httpclient.protocol.Protocol;
+import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 
+import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.PasswordAuthentication;
+import java.net.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,11 +35,38 @@ public class CommonsHttpClient implements GenericHttpClient {
     public GenericHttpRequest createRequest(GenericHttpMethod method, GenericHttpRequestParams params)
             throws GenericHttpException
     {
+        final HostConfiguration hconf;
+        final URL targetUrl = params.getTargetUrl();
+        final String targetProto = targetUrl.getProtocol();
+        if ("https".equals(targetProto)) {
+            final SSLSocketFactory sockFac = params.getSslSocketFactory();
+            if (sockFac != null) {
+                final int targetPort = targetUrl.getPort();
+                Protocol protocol = new Protocol("https", new SecureProtocolSocketFactory() {
+                    public Socket createSocket(Socket socket, String host, int port, boolean autoClose) throws IOException, UnknownHostException {
+                        return sockFac.createSocket(socket, host, port, autoClose);
+                    }
+
+                    public Socket createSocket(String host, int port, InetAddress clientAddress, int clientPort) throws IOException, UnknownHostException {
+                        return sockFac.createSocket(host, port, clientAddress, clientPort);
+                    }
+
+                    public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
+                        return sockFac.createSocket(host, port);
+                    }
+                }, targetPort);
+                hconf = new HostConfiguration();
+                hconf.setHost(targetUrl.getHost(), targetPort, protocol);
+            } else
+                hconf = null;
+        } else
+            hconf = null;
+
         final HttpClient client = new HttpClient(cman);
         HttpState state = client.getState();
 
-        final HttpMethod httpMethod = method == POST ? new PostMethod(params.getTargetUrl().toString())
-                                                     : new GetMethod(params.getTargetUrl().toString());
+        final HttpMethod httpMethod = method == POST ? new PostMethod(targetUrl.toString())
+                                                     : new GetMethod(targetUrl.toString());
 
         PasswordAuthentication pw = params.getPasswordAuthentication();
         if (pw != null) {
@@ -88,7 +118,10 @@ public class CommonsHttpClient implements GenericHttpClient {
                 final ContentTypeHeader contentType;
                 final Long contentLength;
                 try {
-                    status = client.executeMethod(method);
+                    if (hconf == null)
+                        status = client.executeMethod(method);
+                    else
+                        status = client.executeMethod(hconf, method);
                     Header cth = method.getResponseHeader(MimeUtil.CONTENT_TYPE);
                     contentType = cth == null || cth.getValue() == null ? null : ContentTypeHeader.parseValue(cth.getValue());
                     Header clh = method.getResponseHeader(MimeUtil.CONTENT_LENGTH);

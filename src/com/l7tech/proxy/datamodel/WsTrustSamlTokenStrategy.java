@@ -205,7 +205,7 @@ public class WsTrustSamlTokenStrategy extends AbstractSamlTokenStrategy implemen
             throw (SSLException)new SSLException("SSL connection failure, but third-party WS-Trust was not the SSL peer: " + e.getMessage()).initCause(e);
 
         final String serverName = "the WS-Trust server " + wstHostname;
-        SslUtils.handleServerCertProblem(serverName, e);
+        SslUtils.handleServerCertProblem(sslPeer, serverName, e);
 
         // Import the peer certificate
         final X509Certificate peerCert = sslPeer.getLastSeenPeerCertificate();
@@ -213,7 +213,10 @@ public class WsTrustSamlTokenStrategy extends AbstractSamlTokenStrategy implemen
             throw (SSLException)new SSLException("SSL connection failure, but no peer certificate presented: " + e.getMessage()).initCause(e);
 
         // Check if the user wants to trust this peer certificate
-        Managers.getCredentialManager().notifySslCertificateUntrusted(sslPeer, serverName, peerCert);
+        if (sslPeer instanceof Ssg)
+            ((Ssg)sslPeer).getRuntime().getCredentialManager().notifySslCertificateUntrusted(sslPeer, serverName, peerCert);
+        else
+            Managers.getCredentialManager().notifySslCertificateUntrusted(sslPeer, serverName, peerCert);
 
         // They do; import it
         storeTokenServerCert(peerCert);

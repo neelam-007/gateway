@@ -8,10 +8,7 @@ package com.l7tech.proxy.processor;
 
 import com.l7tech.common.http.*;
 import com.l7tech.common.io.TeeInputStream;
-import com.l7tech.common.message.AbstractHttpResponseKnob;
-import com.l7tech.common.message.HttpHeadersKnob;
-import com.l7tech.common.message.Message;
-import com.l7tech.common.message.MimeKnob;
+import com.l7tech.common.message.*;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.mime.NoSuchPartException;
@@ -31,7 +28,10 @@ import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.proxy.ConfigurationException;
-import com.l7tech.proxy.datamodel.*;
+import com.l7tech.proxy.datamodel.Managers;
+import com.l7tech.proxy.datamodel.Policy;
+import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.WsTrustSamlTokenStrategy;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
@@ -159,16 +159,16 @@ public class MessageProcessor {
                             if (context.getSsg().isFederatedGateway()) {
                                 SslPeer sslPeer = CurrentSslPeer.get();
                                 if (sslPeer == context.getSsg())
-                                    SsgKeyStoreManager.installSsgServerCertificate(ssg, null);
+                                    ssg.getRuntime().getSsgKeyStoreManager().installSsgServerCertificate(ssg, null);
                                 else if (sslPeer == context.getSsg().getTrustedGateway())
-                                    SsgKeyStoreManager.installSsgServerCertificate((Ssg)sslPeer, context.getFederatedCredentials());
+                                    ((Ssg)sslPeer).getRuntime().getSsgKeyStoreManager().installSsgServerCertificate(ssg, context.getFederatedCredentials());
                                 else if (sslPeer != null)
                                     // We were talking to something else, probably a token provider.
                                     handleSslExceptionForWsTrustTokenService(ssg, sslPeer, e);
                                 else
                                     throw new ConfigurationException("SSL handshake failed, but peer Gateway was neither the Trusted nor Federated Gateway.");
                             } else
-                                SsgKeyStoreManager.installSsgServerCertificate(ssg, context.getCredentialsForTrustedSsg()); // might throw BadCredentialsException
+                                ssg.getRuntime().getSsgKeyStoreManager().installSsgServerCertificate(ssg, context.getCredentialsForTrustedSsg()); // might throw BadCredentialsException
                             // FALLTHROUGH allow policy to reset and retry
                         }
                     } catch (PolicyRetryableException e) {
@@ -231,7 +231,7 @@ public class MessageProcessor {
 
         // If we have a client cert, and the current password worked to decrypt it's private key, but something
         // has rejected the password anyway, we need to reestablish the validity of this account with the SSG.
-        if (ssg.getClientCertificate() != null && SsgKeyStoreManager.isPasswordWorkedForPrivateKey(ssg)) {
+        if (ssg.getClientCertificate() != null && ssg.getRuntime().getSsgKeyStoreManager().isPasswordWorkedForPrivateKey()) {
             if (securePasswordPing(context)) {
                 // password works with our keystore, and with the SSG, so why did it fail just now?
                 String message = "Recieved password failure, but it worked with our keystore and the Gateway liked it when we double-checked it.  " +
@@ -242,7 +242,7 @@ public class MessageProcessor {
             }
             log.severe("The Gateway password that was used to obtain this client cert is no longer valid -- deleting the client cert");
             try {
-                SsgKeyStoreManager.deleteClientCert(ssg);
+                ssg.getRuntime().getSsgKeyStoreManager().deleteClientCert();
             } catch (KeyStoreCorruptException e1) {
                 ssg.getRuntime().handleKeyStoreCorrupt();
             }
@@ -282,10 +282,10 @@ public class MessageProcessor {
             throw (KeyStoreCorruptException)ksce;
 
         // Check for server cert untrusted, or server hostname mismatch
-        SslUtils.handleServerCertProblem("the Gateway " + ssg, e);
+        SslUtils.handleServerCertProblem(ssg, "the Gateway " + ssg, e);
 
         // We don't trust the server cert.  Perform certificate discovery and try again
-        SsgKeyStoreManager.installSsgServerCertificate(ssg, credentials); // might throw BadCredentialsException
+        ssg.getRuntime().getSsgKeyStoreManager().installSsgServerCertificate(ssg, credentials); // might throw BadCredentialsException
     }
 
     private void handleSslExceptionForWsTrustTokenService(Ssg federatedSsg, SslPeer sslPeer, Exception e)
@@ -297,7 +297,7 @@ public class MessageProcessor {
         strat.handleSslException(sslPeer, e);
 
         // Update SSGs
-        Managers.getCredentialManager().saveSsgChanges(federatedSsg);
+        federatedSsg.getRuntime().getCredentialManager().saveSsgChanges(federatedSsg);
     }
 
     /**
@@ -631,7 +631,7 @@ public class MessageProcessor {
                         log.log(Level.SEVERE, "Federated Gateway " + context.getSsg() + " is trying to tell us to destroy our Trusted client certificate; ignoring it");
                         throw new ConfigurationException("Federated Gateway rejected our client certificate");
                     }
-                    SsgKeyStoreManager.obtainClientCertificate(context.getSsg(), context.getCredentialsForTrustedSsg());
+                    ssg.getRuntime().getSsgKeyStoreManager().obtainClientCertificate(context.getCredentialsForTrustedSsg());
                     throw new PolicyRetryableException(); // try again with the new cert
                 } catch (GeneralSecurityException e) {
                     throw new ClientCertificateException("Unable to obtain new client certificate", e);
@@ -643,7 +643,7 @@ public class MessageProcessor {
                         ssg.getRuntime().rootPolicyManager().flushPolicy(context.getPolicyAttachmentKey());
                         throw new PolicyRetryableException();
                     } else {
-                        Managers.getCredentialManager().notifyCertificateAlreadyIssued(ssg);
+                        ssg.getRuntime().getCredentialManager().notifyCertificateAlreadyIssued(ssg);
                         throw new CertificateAlreadyIssuedException(e);
                     }
                 }
@@ -715,18 +715,21 @@ public class MessageProcessor {
             }
 
             response.initialize(Managers.createStashManager(),
-                                             outerContentType,
-                                             responseBodyAsStream);
-            response.attachHttpResponseKnob(new AbstractHttpResponseKnob() {
-                public void addCookie(Cookie cookie) {
-                    // Agent currently stores cookies in the Ssg instance, and does not pass them on to the client
-                    throw new UnsupportedOperationException();
-                }
+                                outerContentType,
+                                responseBodyAsStream);
+            
+            if (response.getKnob(HttpResponseKnob.class) == null) {
+                response.attachHttpResponseKnob(new AbstractHttpResponseKnob() {
+                    public void addCookie(Cookie cookie) {
+                        // Agent currently stores cookies in the Ssg instance, and does not pass them on to the client
+                        throw new UnsupportedOperationException();
+                    }
 
-                public void beginResponse() {
-                    throw new UnsupportedOperationException();
-                }
-            });
+                    public void beginResponse() {
+                        throw new UnsupportedOperationException();
+                    }
+                });
+            }
 
             // Replace any cookies in the response.
             gatherCookies(responseHeaders, ssg);
@@ -781,7 +784,7 @@ public class MessageProcessor {
 
             ProcessorResult processorResult = null;
             try {
-                boolean haveKey = SsgKeyStoreManager.isClientCertUnlocked(ssg);
+                boolean haveKey = ssg.getRuntime().getSsgKeyStoreManager().isClientCertUnlocked();
                 final ProcessorResult processorResultRaw =
                   wssProcessor.undecorateMessage(responseDocument,
                     haveKey ? ssg.getClientCertificate() : null,

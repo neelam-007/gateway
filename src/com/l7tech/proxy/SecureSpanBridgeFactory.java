@@ -256,7 +256,7 @@ public class SecureSpanBridgeFactory {
         {
             try {
                 if (ssg.getServerCertificate() == null)
-                    SsgKeyStoreManager.installSsgServerCertificate(ssg, pw);
+                    ssg.getRuntime().getSsgKeyStoreManager().installSsgServerCertificate(ssg, pw);
             } catch (com.l7tech.proxy.datamodel.exceptions.BadCredentialsException e) {
                 throw new CausedBadCredentialsException(e);
             } catch (OperationCanceledException e) {
@@ -267,7 +267,7 @@ public class SecureSpanBridgeFactory {
 
             try {
                 if (ssg.getClientCertificate() == null)
-                    SsgKeyStoreManager.obtainClientCertificate(ssg, pw);
+                    ssg.getRuntime().getSsgKeyStoreManager().obtainClientCertificate(pw);
             } catch (KeyStoreCorruptException e) {
                 throw new CausedIOException(e);
             } catch (com.l7tech.proxy.datamodel.exceptions.BadCredentialsException e) {
@@ -280,7 +280,7 @@ public class SecureSpanBridgeFactory {
         public void importServerCert(X509Certificate serverCert) throws IOException {
             try {
                 synchronized (ssg) {
-                    SsgKeyStoreManager.saveSsgCertificate(ssg, serverCert);
+                    ssg.getRuntime().getSsgKeyStoreManager().saveSsgCertificate(serverCert);
                     ssg.getRuntime().resetSslContext();
                 }
             } catch (KeyStoreException e) {
@@ -300,7 +300,7 @@ public class SecureSpanBridgeFactory {
                 if (pw == null)
                     throw new CausedIOException("Unable to import a client certificate -- no credentials were set for this Bridge instance.");
                 synchronized (ssg) {
-                    SsgKeyStoreManager.saveClientCertificate(ssg, clientKey, clientCert, pw.getPassword());
+                    ssg.getRuntime().getSsgKeyStoreManager().saveClientCertificate(clientKey, clientCert, pw.getPassword());
                     ssg.getRuntime().resetSslContext();
                 }
             } catch (KeyStoreException e) {
@@ -328,7 +328,7 @@ public class SecureSpanBridgeFactory {
                             return options[0];
                         }
                     };
-                    SsgKeyStoreManager.importClientCertificate(ssg, pkcs12Path, pkcs12Password, aliasPicker, pw.getPassword());
+                    ssg.getRuntime().getSsgKeyStoreManager().importClientCertificate(pkcs12Path, pkcs12Password, aliasPicker, pw.getPassword());
                     ssg.getRuntime().resetSslContext();
                 }
             } catch (GeneralSecurityException e) {
@@ -342,7 +342,7 @@ public class SecureSpanBridgeFactory {
 
         public void destroyClientCertificate() throws IOException {
             try {
-                SsgKeyStoreManager.deleteClientCert(ssg);
+                ssg.getRuntime().getSsgKeyStoreManager().deleteClientCert();
             } catch (KeyStoreException e) {
                 throw new CausedIOException(e);
             } catch (KeyStoreCorruptException e) {

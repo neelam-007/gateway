@@ -6,9 +6,7 @@
 
 package com.l7tech.proxy.gui;
 
-import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.SsgManagerImpl;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.BadPasswordFormatException;
@@ -93,7 +91,7 @@ class ChangePasswordAction extends AbstractAction {
                     }
 
                     if (oldpass == null)
-                        oldpass = Managers.getCredentialManager().getNewCredentials(ssg, false);
+                        oldpass = ssg.getRuntime().getCredentialManager().getNewCredentials(ssg, false);
                     cmPasswdPotentiallyChanged = true;
                     if (newpass == null)
                         newpass = PasswordDialog.getPassword(Gui.getInstance().getFrame(), "New password");
@@ -107,7 +105,7 @@ class ChangePasswordAction extends AbstractAction {
 
                     // Succeeded, so update password and client cert
                     ssg.getRuntime().setCachedPassword(newpass);
-                    SsgKeyStoreManager.deleteClientCert(ssg);
+                    ssg.getRuntime().getSsgKeyStoreManager().deleteClientCert();
                     SsgManagerImpl.getSsgManagerImpl().save();
                     changeCompleted = true;
                 } catch (KeyStoreCorruptException e1) {
@@ -123,7 +121,7 @@ class ChangePasswordAction extends AbstractAction {
                 } catch (SSLException sslException) {
                     PasswordAuthentication credentials = null;
                     try {
-                        credentials = Managers.getCredentialManager().getCredentials(ssg);
+                        credentials = ssg.getRuntime().getCredentialManager().getCredentials(ssg);
                         MessageProcessor.handleSslException(ssg, credentials, sslException);
                         retry = true;
                         // FALLTHROUGH -- retry with newly-(re?)learned server certificate

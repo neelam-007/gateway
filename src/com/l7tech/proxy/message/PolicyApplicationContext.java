@@ -50,8 +50,6 @@ public class PolicyApplicationContext extends ProcessingContext {
     private static final int WSSC_PREEXPIRE_SEC = 30;
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
-    private final CredentialManager credentialManager = Managers.getCredentialManager();
-
     private final Ssg ssg;
     private final RequestInterceptor requestInterceptor;
     private final PolicyAttachmentKey policyAttachmentKey;
@@ -338,7 +336,7 @@ public class PolicyApplicationContext extends ProcessingContext {
 
         PasswordAuthentication pw = getPasswordAuthentication();
         if (pw == null || pw.getUserName() == null || pw.getUserName().length() < 1 || pw.getPassword() == null)
-            pw = credentialManager.getCredentials(trusted);
+            pw = ssg.getRuntime().getCredentialManager().getCredentials(trusted);
         return pw;
     }
 
@@ -367,7 +365,7 @@ public class PolicyApplicationContext extends ProcessingContext {
     public PasswordAuthentication getNewCredentials() throws OperationCanceledException, HttpChallengeRequiredException {
         if (ssg.isChainCredentialsFromClient())
             throw new HttpChallengeRequiredException("Invalid user name or password");
-        PasswordAuthentication pw = credentialManager.getNewCredentials(ssg, true);
+        PasswordAuthentication pw = ssg.getRuntime().getCredentialManager().getNewCredentials(ssg, true);
         setCredentials(new LoginCredentials(pw.getUserName(), pw.getPassword(), CredentialFormat.CLEARTEXT, null));
         return pw;
     }
@@ -389,7 +387,7 @@ public class PolicyApplicationContext extends ProcessingContext {
             throw new OperationCanceledException("Not permitted to send real password to Federated Gateway.");
         PasswordAuthentication pw = getPasswordAuthentication();
         if (pw == null || pw.getUserName() == null || pw.getUserName().length() < 1 || pw.getPassword() == null)
-            pw = credentialManager.getCredentials(ssg);
+            pw = ssg.getRuntime().getCredentialManager().getCredentials(ssg);
         return pw;
     }
 
@@ -411,9 +409,9 @@ public class PolicyApplicationContext extends ProcessingContext {
                 if (trusted == null) {
                     if (ssg.isFederatedGateway())
                         throw new OperationCanceledException("Unable to apply for client cert from third-party WS-Trust server");
-                    SsgKeyStoreManager.obtainClientCertificate(ssg, getCredentialsForTrustedSsg());
+                    ssg.getRuntime().getSsgKeyStoreManager().obtainClientCertificate(getCredentialsForTrustedSsg());
                 } else {
-                    SsgKeyStoreManager.obtainClientCertificate(trusted, getFederatedCredentials());
+                    trusted.getRuntime().getSsgKeyStoreManager().obtainClientCertificate(getFederatedCredentials());
                 }
             }
         } catch (CertificateAlreadyIssuedException e) {
@@ -422,7 +420,7 @@ public class PolicyApplicationContext extends ProcessingContext {
                 getSsg().getRuntime().rootPolicyManager().flushPolicy(getPolicyAttachmentKey());
                 throw new PolicyRetryableException();
             } else {
-                Managers.getCredentialManager().notifyCertificateAlreadyIssued(ssg);
+                ssg.getRuntime().getCredentialManager().notifyCertificateAlreadyIssued(ssg);
                 throw new OperationCanceledException("Unable to obtain a client certificate");
             }
         } catch (IOException e) {

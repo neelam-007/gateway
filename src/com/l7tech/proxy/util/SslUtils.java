@@ -22,6 +22,7 @@ import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException
 import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
 import com.l7tech.proxy.ssl.HostnameMismatchException;
+import com.l7tech.proxy.ssl.SslPeer;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.methods.PostMethod;
@@ -77,7 +78,7 @@ public class SslUtils {
      * @throws javax.net.ssl.SSLException if the exception could not be handled.
      * @param e the SSLException that was caught
      */
-    public static void handleServerCertProblem(String server, Exception e) throws SSLException {
+    public static void handleServerCertProblem(SslPeer sslPeer, String server, Exception e) throws SSLException {
         // Was this server cert untrusted?
         Throwable scuet = ExceptionUtils.getCauseIfCausedBy(e, ServerCertificateUntrustedException.class);
         ServerCertificateUntrustedException scue = (ServerCertificateUntrustedException)scuet;
@@ -89,9 +90,10 @@ public class SslUtils {
                 // Notify user of the hostname mismatch and then abort this request
                 String wanted = hme.getWhatWasWanted();
                 String got = hme.getWhatWeGotInstead();
-                Managers.getCredentialManager().notifySslHostnameMismatch(server,
-                  wanted,
-                  got);
+                if (sslPeer instanceof Ssg)
+                    ((Ssg)sslPeer).getRuntime().getCredentialManager().notifySslHostnameMismatch(server, wanted, got);
+                else
+                    Managers.getCredentialManager().notifySslHostnameMismatch(server, wanted, got);
                 throw (SSLException)new SSLException("SSL hostname mismatch: " + e.getMessage()).initCause(e);
             }
 

@@ -10,7 +10,6 @@ import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.Wsdl;
-import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
@@ -153,7 +152,7 @@ class WsdlProxy {
         for (int retries = 0; retries < 3; ++retries) {
             GetMethod getMethod = null;
             try {
-                pw = Managers.getCredentialManager().getCredentials(ssg);
+                pw = ssg.getRuntime().getCredentialManager().getCredentials(ssg);
                 getMethod = new GetMethod(url.toString());
                 if (pw != null)
                     httpClient.getState().setCredentials(null,
@@ -192,7 +191,7 @@ class WsdlProxy {
                 } else if (status == 404) {
                     throw new ServiceNotFoundException("No service was found on Gateway " + ssg + " with serviceoid " + serviceoid);
                 } else if (status == 401) {
-                    pw = Managers.getCredentialManager().getNewCredentials(ssg, true);
+                    pw = ssg.getRuntime().getCredentialManager().getNewCredentials(ssg, true);
                     // FALLTHROUGH - continue and try again with new password
                 } else if (status == -1) {
                     // FALLTHROUGH -- continue and try again with empty keystore

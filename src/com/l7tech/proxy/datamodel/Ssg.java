@@ -527,7 +527,7 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
     public X509Certificate getServerCertificate() {
         for (;;) {
             try {
-                return SsgKeyStoreManager.getServerCert(this);
+                return getRuntime().getSsgKeyStoreManager().getServerCert();
             } catch (KeyStoreCorruptException e) {
                 log.log(Level.WARNING, "Unable to read server certificate for Ssg " + this + ": " + e.getMessage(), e);
                 try {
@@ -543,7 +543,7 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
     public X509Certificate getClientCertificate() {
         for (;;) {
             try {
-                return SsgKeyStoreManager.getClientCert(this);
+                return getRuntime().getSsgKeyStoreManager().getClientCert();
             } catch (KeyStoreCorruptException e) {
                 log.log(Level.WARNING, "Unable to read client certificate for Ssg " + this + ": " + e.getMessage(), e);
                 try {
@@ -562,7 +562,7 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
     public PrivateKey getClientCertificatePrivateKey() throws BadCredentialsException {
         for (;;) {
             try {
-                return SsgKeyStoreManager.getClientCertPrivateKey(this);
+                return getRuntime().getSsgKeyStoreManager().getClientCertPrivateKey();
             } catch (NoSuchAlgorithmException e) {
                 throw new RuntimeException("Unable to read private key from keystore", e);
             } catch (KeyStoreCorruptException e) {

@@ -34,7 +34,8 @@ public class AssertionStatus {
     public static final AssertionStatus NOT_APPLICABLE      = make( MISC + 1, "Not applicable in this context" );
 
     /** Generic catch-all status */
-    public static final AssertionStatus SERVER_ERROR = make( SERVER + 0, "Internal Server Error" );
+    public static final AssertionStatus SERVER_ERROR        = make( SERVER + 0, "Internal Server Error" );
+    public static final AssertionStatus SERVER_AUTH_FAILED  = make( SERVER + 1, "Access Denied by Protected Service" );
 
     /** A generic negative result */
     public static final AssertionStatus FALSIFIED = make( POLICY + 0, "Assertion Falsified" );

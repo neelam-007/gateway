@@ -8,7 +8,6 @@ package com.l7tech.proxy.util;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.proxy.datamodel.Ssg;
-import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -49,7 +48,7 @@ public class SslUtilsTest extends TestCase {
         ssg.setUsername(username);
         ssg.getRuntime().setCachedPassword(password);
 
-        SsgKeyStoreManager.installSsgServerCertificate(ssg, pw);
+        ssg.getRuntime().getSsgKeyStoreManager().installSsgServerCertificate(ssg, pw);
 
         SslUtils.changePasswordAndRevokeClientCertificate(ssg,
                                                           username,

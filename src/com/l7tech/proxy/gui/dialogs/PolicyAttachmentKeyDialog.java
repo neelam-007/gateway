@@ -61,6 +61,9 @@ public class PolicyAttachmentKeyDialog extends JDialog {
                     }
                 };
         cancelButton.addActionListener(closeAction);
+        Utilities.attachDefaultContextMenu(localPathTextField);
+        Utilities.attachDefaultContextMenu(soapActionTextField);
+        Utilities.attachDefaultContextMenu(namespaceUriTextField);
         Utilities.runActionOnEscapeKey(policyAttachmentKeyPanel, closeAction);
         pack();
     }
