@@ -154,20 +154,16 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                             Vector hrefs = new Vector();
                             if(href == null) {
                                 // maybe it is an array
-                                Element currentNode = (Element) parameterElementRequest.getFirstChild();
+                                Node currentNode = parameterElementRequest.getFirstChild();
 
-                                if(currentNode != null) {
-                                    href = currentNode.getAttributeNode("href");
-                                    if(href != null) {
-                                        hrefs.add(href);
+                                do {
+                                    if(currentNode instanceof Element) {
+                                        href = ((Element) currentNode).getAttributeNode("href");
+                                        if(href != null) {
+                                            hrefs.add(href);
+                                        }
                                     }
-                                }
-                                while((currentNode = (Element) currentNode.getNextSibling()) != null) {
-                                    href = currentNode.getAttributeNode("href");
-                                    if(href != null) {
-                                        hrefs.add(href);
-                                    }
-                                }
+                                } while((currentNode = currentNode.getNextSibling()) != null);
 
                             } else {
                                  hrefs.add(href);
