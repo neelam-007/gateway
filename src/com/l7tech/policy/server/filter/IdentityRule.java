@@ -69,11 +69,9 @@ public class IdentityRule extends Filter {
                 parentIterator.remove();
             } else {
                 if (parent instanceof AllAssertion) {
-                    logger.severe("\n\n\nClearing the all\n\n\n");
                     return ALL_SIBLINGS_SHOULD_BE_DELETED;
                 } else {
                     parentIterator.remove();
-                    logger.severe("\n\n\nNOT ALL?\n" + parent.getClass().getName());
                 }
             }
             return SOMETHING_WAS_DELETED;
@@ -90,7 +88,6 @@ public class IdentityRule extends Filter {
                 }
             }
             if (shouldClearTheAll) {
-                logger.severe("\n\n\nClearing the " + root + "\n\n\n");
                 root.getChildren().clear();
             }
             // if all children of this composite were removed, we have to remove it from it's parent
