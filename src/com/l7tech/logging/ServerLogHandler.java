@@ -76,54 +76,50 @@ public class ServerLogHandler extends Handler {
      */
     public Collection getLogRecords(String nodeId, long highMsgNumber, long lowMsgNumber, int size) {
         HibernatePersistenceContext context = null;
+        boolean ok = false;
         try {
-            boolean ok = false;
-            try {
-                context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-                context.beginTransaction();
-                ok = true;
-            } catch (SQLException e) {
-                reportException("cannot get persistence context", e);
-                return Collections.EMPTY_LIST;
-            } catch ( TransactionException e ) {
-                reportException("cannot get persistence context", e);
-                return Collections.EMPTY_LIST;
-            } finally {
-                if ( context != null && !ok ) context.close();
-            }
-
-            String reqnode = nodeId;
-            if (reqnode == null) reqnode = nodeid;
-            Collection res = null;
-            try {
-                if (lowMsgNumber < 0 && highMsgNumber >= 0) {
-                    res = getRecordsBeforeLowId(reqnode, size, context, highMsgNumber);
-                } else if (lowMsgNumber >= 0 && highMsgNumber < 0) {
-                    res = getRecordsBeyondHighId(reqnode, size, context, lowMsgNumber);
-                } else if (lowMsgNumber >= 0 && highMsgNumber >= 0) {
-                    res = getRecordsInRange(reqnode, size, context, lowMsgNumber, highMsgNumber);
-                } else {
-                    res = getLastRecords(reqnode, size, context);
-                }
-            } catch (HibernateException e) {
-                reportException("Error getting log records", e);
-                return Collections.EMPTY_LIST;
-            } catch (SQLException e) {
-                reportException("Error getting log records", e);
-                return Collections.EMPTY_LIST;
-            } finally {
-                try {
-                    if ( context != null ) context.commitTransaction();
-                } catch ( TransactionException e ) {
-                    reportException("Error getting log records", e);
-                    return Collections.EMPTY_LIST;
-                }
-            }
-            if (res == null) return Collections.EMPTY_LIST;
-            return res;
+            context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
+            context.beginTransaction();
+            ok = true;
+        } catch (SQLException e) {
+            reportException("cannot get persistence context", e);
+            return Collections.EMPTY_LIST;
+        } catch ( TransactionException e ) {
+            reportException("cannot get persistence context", e);
+            return Collections.EMPTY_LIST;
         } finally {
-            if ( context != null ) context.close();
+            if ( context != null && !ok ) context.close();
         }
+
+        String reqnode = nodeId;
+        if (reqnode == null) reqnode = nodeid;
+        Collection res = null;
+        try {
+            if (lowMsgNumber < 0 && highMsgNumber >= 0) {
+                res = getRecordsBeforeLowId(reqnode, size, context, highMsgNumber);
+            } else if (lowMsgNumber >= 0 && highMsgNumber < 0) {
+                res = getRecordsBeyondHighId(reqnode, size, context, lowMsgNumber);
+            } else if (lowMsgNumber >= 0 && highMsgNumber >= 0) {
+                res = getRecordsInRange(reqnode, size, context, lowMsgNumber, highMsgNumber);
+            } else {
+                res = getLastRecords(reqnode, size, context);
+            }
+        } catch (HibernateException e) {
+            reportException("Error getting log records", e);
+            return Collections.EMPTY_LIST;
+        } catch (SQLException e) {
+            reportException("Error getting log records", e);
+            return Collections.EMPTY_LIST;
+        } finally {
+            try {
+                if ( context != null ) context.commitTransaction();
+            } catch ( TransactionException e ) {
+                reportException("Error getting log records", e);
+                return Collections.EMPTY_LIST;
+            }
+        }
+        if (res == null) return Collections.EMPTY_LIST;
+        return res;
     }
 
     public void close() throws SecurityException {
