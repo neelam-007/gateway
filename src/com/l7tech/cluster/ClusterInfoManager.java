@@ -13,6 +13,7 @@ import java.io.InputStream;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.net.Inet4Address;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
@@ -485,7 +486,7 @@ public class ClusterInfoManager {
                 Enumeration enum2 = net.getInetAddresses();
                 while (enum2.hasMoreElements()) {
                     InetAddress add = (InetAddress)enum2.nextElement();
-                    if ((add.getAddress()[0] & 0xff) != 127) {
+                    if (add instanceof Inet4Address && (add.getAddress()[0] & 0xff) != 127) {
                         thisNodeIPAddress = add.getHostAddress();
                         return thisNodeIPAddress;
                     }

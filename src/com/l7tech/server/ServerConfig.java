@@ -14,10 +14,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -277,7 +274,7 @@ public class ServerConfig implements ComponentConfig {
                         Enumeration ips = net.getInetAddresses();
                         while (ips.hasMoreElements()) {
                             ip = (InetAddress)ips.nextElement();
-                            if ((ip.getAddress()[0] & 0xff) != 127) {
+                            if (ip instanceof Inet4Address && (ip.getAddress()[0] & 0xff) != 127) {
                                 // Ignore localhost for autoconfigured IPs
                                 logger.info("Automatically found IP address " + print(ip) + " on network interface " + net.getName());
                                 localIps.add(ip);
