@@ -105,6 +105,9 @@ public class SoapUtil {
     public static final String RELATESTO_EL_NAME = "RelatesTo";
     public static final String WSSC_ID_EL_NAME = "Identifier";
     public static final String WSSC_DK_EL_NAME = "DerivedKeyToken";
+    public static final String REFLIST_EL_NAME = "ReferenceList";
+    public static final String DATAREF_EL_NAME = "DataReference";
+    public static final String KINFO_EL_NAME = "KeyInfo";
 
     // Misc
     public static final String FC_CLIENT = "Client";
