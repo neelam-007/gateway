@@ -536,8 +536,8 @@ public class WsdlMessagesPanel extends WizardStepPanel {
         _15 = new JButton();
         removeMessageButton = _15;
         _15.setText("Remove");
-        _15.setLabel("Remove");
         _15.setActionCommand("AddMessage");
+        _15.setLabel("Remove");
         _14.add(_15, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 4, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         final JButton _16;
         _16 = new JButton();

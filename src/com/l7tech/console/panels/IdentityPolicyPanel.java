@@ -401,10 +401,10 @@ public class IdentityPolicyPanel extends JPanel {
         final JCheckBox _9;
         _9 = new JCheckBox();
         sslCheckBox = _9;
-        _9.setHorizontalTextPosition(10);
-        _9.setText("Require SSL/TLS encryption");
         _9.setMargin(new Insets(2, 2, 2, 0));
+        _9.setHorizontalTextPosition(10);
         _9.setContentAreaFilled(true);
+        _9.setText("Require SSL/TLS encryption");
         _6.add(_9, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 2, 4, 0, 3, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         final JLabel _10;
         _10 = new JLabel();
