@@ -11,6 +11,7 @@ import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.*;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.skunkworks.SecureConversationKeyDeriver;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -21,10 +22,7 @@ import javax.crypto.Cipher;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.Key;
-import java.security.PrivateKey;
-import java.security.PublicKey;
+import java.security.*;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CertificateNotYetValidException;
@@ -174,8 +172,7 @@ public class WssProcessorImpl implements WssProcessor {
                 }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.WSSC_DK_EL_NAME)) {
                 if (securityChildToProcess.getNamespaceURI().equals(SoapUtil.WSSC_NAMESPACE)) {
-                    // todo, remember this symmetric key so it can later be used to process the signature
-                    // or the encryption
+                    processDerivedKey(securityChildToProcess, cntx);
                 } else {
                     logger.info("Encountered DerivedKey element but not of expected namespace (" +
                                 securityChildToProcess.getNamespaceURI() + ")");
@@ -257,6 +254,61 @@ public class WssProcessorImpl implements WssProcessor {
             soapHeader.getParentNode().removeChild(soapHeader);
 
         return produceResult(cntx);
+    }
+
+    private void processDerivedKey(Element derivedKeyEl, ProcessingStatusHolder cntx) throws InvalidDocumentFormatException {
+        // get corresponding shared secret reference wsse:SecurityTokenReference
+        Element sTokrefEl = XmlUtil.findFirstChildElementByName(derivedKeyEl,
+                                                            SoapUtil.SECURITY_URIS_ARRAY,
+                                                            SoapUtil.SECURITYTOKENREFERENCE_EL_NAME);
+        if (sTokrefEl == null) throw new InvalidDocumentFormatException("DerivedKeyToken should " +
+                                                                        "contain a SecurityTokenReference");
+        Element refEl = XmlUtil.findFirstChildElementByName(sTokrefEl,
+                                                            SoapUtil.SECURITY_URIS_ARRAY,
+                                                            SoapUtil.REFERENCE_EL_NAME);
+        if (refEl == null) throw new InvalidDocumentFormatException("SecurityTokenReference should " +
+                                                                    "contain a Reference");
+        String refUri = refEl.getAttribute("URI");
+        SecurityContextToken sct = null;
+        for (Iterator i = cntx.securityTokens.iterator(); i.hasNext();) {
+            Object maybeSecToken = i.next();
+            if (maybeSecToken instanceof SecurityContextToken) {
+                sct = (SecurityContextToken)maybeSecToken;
+                String thisId = SoapUtil.getElementWsuId(sct.asElement());
+                // todo, match this against the id in case this refers to more than on context (unlikely)
+                break;
+            }
+        }
+        if (sct == null) {
+            throw new InvalidDocumentFormatException("could not find a security context token for this derived key");
+        }
+        SecureConversationKeyDeriver keyDeriver = new SecureConversationKeyDeriver();
+        Key resultingKey = null;
+        try {
+            resultingKey = keyDeriver.derivedKeyTokenToKey(derivedKeyEl,
+                                                               sct.getSecurityContext().getSharedSecret().getEncoded());
+        } catch (NoSuchAlgorithmException e) {
+            throw new InvalidDocumentFormatException(e);
+        }
+        final Element dktel = derivedKeyEl;
+        final Key finalKey = resultingKey;
+        DerivedKeyToken rememberedKeyToken = new DerivedKeyToken(){
+            public String getId() {
+                return SoapUtil.getElementWsuId(dktel);
+            }
+            public Key getComputedDerivedKey() {
+                return finalKey;
+            }
+            public Object asObject() {
+                return finalKey;
+            }
+            public Element asElement() {
+                return dktel;
+            }
+        };
+        // remember this symmetric key so it can later be used to process the signature
+        // or the encryption
+        cntx.securityTokens.add(rememberedKeyToken);
     }
 
     private String extractIdentifierFromSecConTokElement(Element secConTokEl) {
