@@ -4,6 +4,8 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.BuildInfo;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.Registry;
+import com.incors.plaf.kunststoff.KunststoffLookAndFeel;
+import com.incors.plaf.kunststoff.themes.KunststoffDesktopTheme;
 import net.jini.security.policy.DynamicPolicyProvider;
 import net.jini.security.policy.PolicyInitializationException;
 
@@ -25,9 +27,11 @@ import java.util.logging.Logger;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class Main {
-    static Logger log = Logger.getLogger(Main.class.getName());
-    // splash screen
+    Logger log = Logger.getLogger(Main.class.getName());
+    /* this class classloader */
+    private final ClassLoader cl = getClass().getClassLoader();
 
+    // splash screen
     private SplashScreen mainSplashScreen = null;
 
     /**
@@ -38,13 +42,13 @@ public class Main {
         try {
             // AWT event dispatching thread error handler
             System.setProperty("sun.awt.exception.handler",
-                    "com.l7tech.console.logging.AwtErrorHandler");
+              "com.l7tech.console.logging.AwtErrorHandler");
             //System.setProperty("java.security.policy", "etc/jini/policy.all");
             installEventQueue();
-            
+
             Policy.setPolicy(new DynamicPolicyProvider());
             final JFrame main;
-
+            initializeUIPreferences();
             /* invoke the splash screen */
             showSplashScreen();
 
@@ -55,7 +59,7 @@ public class Main {
             prefs.updateSystemProperties();
             // where locator looks for implementaitons
             System.setProperty("com.l7tech.common.locator.properties",
-                    "/com/l7tech/console/resources/services.properties");
+              "/com/l7tech/console/resources/services.properties");
             // Build information
             System.setProperty("com.l7tech.buildstring", BuildInfo.getBuildString());
             System.setProperty("com.l7tech.builddate", BuildInfo.getBuildDate() + BuildInfo.getBuildTime());
@@ -63,29 +67,28 @@ public class Main {
             main = Registry.getDefault().getComponentRegistry().getMainWindow();
             // Window listener
             main.addWindowListener(
-                    new WindowAdapter() {
-                        /**
-                         * Invoked when a window has been opened.
-                         */
-                        public void windowOpened(WindowEvent e) {
-                            if (mainSplashScreen != null) {
-                                mainSplashScreen.dispose();
-                            }
-                        }
+              new WindowAdapter() {
+                  /**
+                   * Invoked when a window has been opened.
+                   */
+                  public void windowOpened(WindowEvent e) {
+                      if (mainSplashScreen != null) {
+                          mainSplashScreen.dispose();
+                      }
+                  }
 
-                        public void windowClosed(WindowEvent e) {
-                            saveWindowPosition(main);
-                            System.exit(0);
-                        }
-                    });
-
+                  public void windowClosed(WindowEvent e) {
+                      saveWindowPosition(main);
+                      System.exit(0);
+                  }
+              });
             main.setVisible(true);
         } catch (HeadlessException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, "SSM Error", e);
         } catch (IOException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, "SSM Error", e);
         } catch (PolicyInitializationException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, "SSM Error", e);
         }
     }
 
@@ -110,8 +113,8 @@ public class Main {
         // our event queue
         eq.push(new EventQueue() {
             final Subject current =
-                    Subject.getSubject(AccessController.getContext());
-           EventPrivilegedAction privilegedAction = new EventPrivilegedAction();
+              Subject.getSubject(AccessController.getContext());
+            EventPrivilegedAction privilegedAction = new EventPrivilegedAction();
 
             protected void dispatchEvent(final AWTEvent event) {
                 privilegedAction.setEvent(event);
@@ -127,7 +130,11 @@ public class Main {
              */
             class EventPrivilegedAction implements PrivilegedAction {
                 AWTEvent event;
-                void setEvent(AWTEvent event) { this.event = event; }
+
+                void setEvent(AWTEvent event) {
+                    this.event = event;
+                }
+
                 /**
                  * This method will be called by <code>AccessController.doPrivileged</code>
                  * after enabling privileges.
@@ -138,7 +145,6 @@ public class Main {
                     return null;
                 }
             }
-
         });
     }
 
@@ -157,6 +163,51 @@ public class Main {
             log.log(Level.WARNING, "unable to save window position prefs: ", e);
         }
     }
+
+
+    private void installLookAndFeel() {
+        // register L&F
+        new KunststoffLookAndFeel();
+        KunststoffLookAndFeel.setCurrentTheme(new KunststoffDesktopTheme());
+
+        String lfName = null;
+        try {
+            Preferences prefs = Preferences.getPreferences();
+            lfName = prefs.getString(Preferences.LOOK_AND_FEEL);
+        } catch (IOException e) {
+            // swallowed
+        }
+        LookAndFeel lf = null;
+        if (lfName == null) {
+            lf = new KunststoffLookAndFeel();
+            KunststoffLookAndFeel.setCurrentTheme(new KunststoffDesktopTheme());
+        } else {
+            try {
+                lf = (LookAndFeel)Class.forName(lfName).newInstance();
+            } catch (Exception e) {
+                log.log(Level.WARNING, "Unable to instantiate L&F from properties. Will attempt system L&F", e);
+                try {
+                    lf = (LookAndFeel)Class.forName(UIManager.getSystemLookAndFeelClassName()).newInstance();
+                } catch (Exception e1) {
+                    log.log(Level.WARNING, "Unable to instantiate L&F", e1);
+                }
+            }
+        }
+        try {
+            UIManager.setLookAndFeel(lf);
+        } catch (UnsupportedLookAndFeelException e) {
+            log.log(Level.WARNING, "Unable to set L&F", e);
+        }
+    }
+
+    /**
+     * Tweak any global preferences.
+     */
+    private void initializeUIPreferences() {
+        UIManager.put("ClassLoader", cl);
+        installLookAndFeel();
+    }
+
 
     /**
      * Starts the application. The applicaiton is started

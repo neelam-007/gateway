@@ -1,15 +1,14 @@
 package com.l7tech.console.util;
 
+import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.tree.policy.PolicyTree;
-import com.l7tech.console.MainWindow;
 
 import javax.swing.*;
-import java.util.Map;
-import java.util.HashMap;
-import java.lang.ref.WeakReference;
 import java.awt.*;
-import java.io.IOException;
+import java.lang.ref.WeakReference;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Central UI component manager/registry in the Policy editor.
@@ -45,13 +44,9 @@ public class ComponentRegistry {
         synchronized (componentsRegistry) {
             MainWindow main = (MainWindow)getComponent(MainWindow.NAME);
             if (main != null) return main;
-            try {
-                MainWindow m = new MainWindow();
-                registerComponent(MainWindow.NAME, m);
-                return m;
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to initialize main window", e);
-            }
+            MainWindow m = new MainWindow();
+            registerComponent(MainWindow.NAME, m);
+            return m;
         }
     }
 

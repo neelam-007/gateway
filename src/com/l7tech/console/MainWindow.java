@@ -1,7 +1,5 @@
 package com.l7tech.console;
 
-import com.incors.plaf.kunststoff.KunststoffLookAndFeel;
-import com.incors.plaf.kunststoff.themes.KunststoffDesktopTheme;
 import com.l7tech.adminws.ClientCredentialManager;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.gui.util.Utilities;
@@ -10,7 +8,10 @@ import com.l7tech.console.action.*;
 import com.l7tech.console.event.ConnectionEvent;
 import com.l7tech.console.event.ConnectionListener;
 import com.l7tech.console.event.WeakEventListenerList;
-import com.l7tech.console.panels.*;
+import com.l7tech.console.panels.LogonDialog;
+import com.l7tech.console.panels.MonitorPanel;
+import com.l7tech.console.panels.PreferencesDialog;
+import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.PolicyToolBar;
 import com.l7tech.console.util.ComponentRegistry;
@@ -124,7 +125,7 @@ public class MainWindow extends JFrame {
     /**
      * MainWindow constructor comment.
      */
-    public MainWindow() throws IOException {
+    public MainWindow() {
         super(TITLE);
         initialize();
     }
@@ -1292,17 +1293,7 @@ public class MainWindow extends JFrame {
     /**
      * Initialize the class.
      */
-    private void initialize() throws IOException {
-        Preferences prefs = Preferences.getPreferences();
-        initializePreferences();
-
-        String lfName = prefs.getString(Preferences.LOOK_AND_FEEL);
-        if (lfName == null) {
-            //setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-            setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-        } else {
-            setLookAndFeel(lfName);
-        }
+    private void initialize() {
 
         setDefaultCloseOperation(WindowConstants.DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
@@ -1344,22 +1335,6 @@ public class MainWindow extends JFrame {
                     key));
               }
           });
-    }
-
-    /**
-     * Tweak any global preferences.
-     */
-    private void initializePreferences() {
-        try {
-            // see http://developer.java.sun.com/developer/bugParade/bugs/4155617.html
-            // same problem exists for JWS
-            UIManager.put("ClassLoader", cl);
-            KunststoffLookAndFeel lf = new com.incors.plaf.kunststoff.KunststoffLookAndFeel();
-            KunststoffLookAndFeel.setCurrentTheme(new KunststoffDesktopTheme());
-            Preferences prefs = Preferences.getPreferences();
-        } catch (IOException e) {
-            log.log(Level.WARNING, "cannot get preferences", e);
-        }
     }
 
     /**
