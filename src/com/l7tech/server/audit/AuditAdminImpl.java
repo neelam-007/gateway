@@ -23,6 +23,7 @@ import java.io.PipedOutputStream;
 import java.rmi.RemoteException;
 import java.sql.SQLException;
 import java.util.Collection;
+import java.util.logging.Level;
 
 /**
  * @author alex
@@ -130,6 +131,10 @@ public class AuditAdminImpl extends RemoteService implements AuditAdmin {
             if (auditRecordManager == null) throw new IllegalStateException("Can't locate AuditRecordManager");
         }
         return auditRecordManager;
+    }
+
+    public Level serverMessageAuditThreshold() throws RemoteException {
+        return AuditContext.getSystemMessageThreshold();
     }
 
     private AuditRecordManager auditRecordManager;

@@ -11,6 +11,7 @@ import com.l7tech.objectmodel.FindException;
 
 import java.rmi.RemoteException;
 import java.util.Collection;
+import java.util.logging.Level;
 
 /**
  * @author mike
@@ -38,5 +39,9 @@ public class AuditAdminStub implements AuditAdmin {
 
     public SSGLogRecord[] getSystemLog(String nodeid, long startMsgNumber, long endMsgNumber, int size) throws RemoteException {
         return new SSGLogRecord[0];
+    }
+
+    public Level serverMessageAuditThreshold() throws RemoteException {
+        return Level.INFO;
     }
 }

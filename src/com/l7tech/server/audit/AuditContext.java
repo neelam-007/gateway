@@ -36,31 +36,6 @@ public class AuditContext {
     private static Level systemMessageThreshold = DEFAULT_MESSAGE_THRESHOLD;
     private static Level systemAdminThreshold = DEFAULT_ADMIN_THRESHOLD;
 
-    public Level getMessageThreshold() {
-        return systemMessageThreshold;
-    }
-
-    public void setMessageThreshold( Level messageThreshold ) {
-        AuditContext.systemMessageThreshold = messageThreshold;
-    }
-
-    public Level getAdminThreshold() {
-        return systemAdminThreshold;
-    }
-
-    public void setAdminThreshold( Level adminThreshold ) {
-        AuditContext.systemAdminThreshold = adminThreshold;
-    }
-
-    public Level getMinimumLevel() {
-        return minimumLevel;
-    }
-
-    public void setMinimumLevel(Level minimumLevel) {
-        if (minimumLevel.intValue() < this.minimumLevel.intValue()) throw new IllegalArgumentException("Attempted to downgrade minimum level from " + this.minimumLevel.getName() + " to " + minimumLevel.getName());
-        this.minimumLevel = minimumLevel;
-    }
-
     public void add(AuditRecord record) {
         if (record == null) return;
         if (closed) throw new IllegalStateException("Can't add new AuditRecords to a closed AuditContext");
@@ -143,15 +118,7 @@ public class AuditContext {
     }
 
     static {
-        String msgLevel = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_MESSAGE_AUDIT_THRESHOLD);
-        if (msgLevel != null) {
-            try {
-                systemMessageThreshold = Level.parse(msgLevel);
-            } catch(IllegalArgumentException e) {
-                logger.warning("Invalid message threshold value '" + msgLevel + "'. Will use default " + DEFAULT_MESSAGE_THRESHOLD.getName() + " instead.");
-            }
-        }
-
+        systemMessageThreshold = getSystemMessageThreshold();
         String adminLevel = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_ADMIN_AUDIT_THRESHOLD);
         if (adminLevel != null) {
             try {
@@ -160,6 +127,23 @@ public class AuditContext {
                 logger.warning("Invalid admin threshold value '" + adminLevel + "'. Will use default " + DEFAULT_ADMIN_THRESHOLD.getName() + " instead.");
             }
         }
+    }
+
+    public static Level getSystemMessageThreshold() {
+        String msgLevel = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_MESSAGE_AUDIT_THRESHOLD);
+        Level output = null;
+        if (msgLevel != null) {
+            try {
+                output = Level.parse(msgLevel);
+            } catch(IllegalArgumentException e) {
+                logger.warning("Invalid message threshold value '" + msgLevel + "'. Will use default " +
+                               DEFAULT_MESSAGE_THRESHOLD.getName() + " instead.");
+            }
+        }
+        if (output == null) {
+            output = DEFAULT_MESSAGE_THRESHOLD;
+        }
+        return output;
     }
 
     private AuditContext() {
@@ -191,5 +175,4 @@ public class AuditContext {
 
     private Set records = new HashSet();
     private Level highestLevelYetSeen = Level.ALL;
-    private Level minimumLevel = Level.ALL;
 }

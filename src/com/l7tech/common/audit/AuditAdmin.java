@@ -12,6 +12,7 @@ import com.l7tech.objectmodel.FindException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.util.Collection;
+import java.util.logging.Level;
 
 /**
  * @author alex
@@ -41,4 +42,11 @@ public interface AuditAdmin extends GenericLogAdmin {
 
     /** @return a RemoteBulkStream from which can be read a zip file containing the exported audit events along with a signature. */
     RemoteBulkStream downloadAllAudits() throws RemoteException;
+
+    /**
+     * Get the level below which the server will not record audit events of type message.
+     * @return the level currently applicable
+     * @throws RemoteException
+     */
+    Level serverMessageAuditThreshold() throws RemoteException;
 }

@@ -10,11 +10,12 @@ import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.AuditAssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.AuditAssertion;
 
 import javax.swing.*;
-import java.awt.*;
 import java.util.logging.Level;
+import java.rmi.RemoteException;
 
 /**
  * Display properties dialog for AuditAssertion.
@@ -38,11 +39,18 @@ public class AuditAssertionPropertiesAction extends SecureAction {
     }
 
     protected void performAction() {
-        Frame f = TopComponents.getInstance().getMainWindow();
-
+        Level thresold = null;
+        try {
+            thresold = Registry.getDefault().getAuditAdmin().serverMessageAuditThreshold();
+        } catch (RemoteException e) {
+            logger.log(Level.SEVERE, "Cannot call AuditAdmin.serverMessageAuditThreshold", e);
+            thresold = Level.INFO;
+        }
+        String msg = "Record audit events at the following level beyond this point:\n(NOTE: the server is " +
+                     "currently not recording below level " + thresold.getName() + ")\n";
         String s =
           (String)JOptionPane.showInputDialog(TopComponents.getInstance().getMainWindow(),
-            "Audit level shall be no lower than:\n",
+            msg,
             "Audit Properties",
             JOptionPane.PLAIN_MESSAGE,
             new ImageIcon(subject.getIcon()),
