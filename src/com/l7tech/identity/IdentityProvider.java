@@ -14,11 +14,14 @@ public interface IdentityProvider {
     IdentityProviderConfig getConfig();
     UserManager getUserManager();
     GroupManager getGroupManager();
+
     void authenticate( PrincipalCredentials pc ) throws AuthenticationException;
+
     /**
      * If true, the save, update and delete methods wont be supported on the usermanager and groupmanager objects
      */
     boolean isReadOnly();
+
     /**
      * searches for users and groups whose name match the pattern described in searchString
      * pattern may include wildcard such as * character
