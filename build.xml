@@ -338,10 +338,11 @@
         <!-- the client proxy jar -->
         <jar jarfile="${build.dir}/Agent.jar" manifest="${src.root}/etc/Agent.mf">
             <fileset dir="${build.dir}/classes">
-                <!-- Omit Phaos driver unless we need to ship it.  Including it causes testpackage to fail -->
+                <!-- Omit the third-party crypto drivers unless we need to ship with one or more of them.  Including it causes testpackage to fail -->
                 <exclude name="com/l7tech/common/security/prov/phaos/**/*"/>
                 <exclude name="com/l7tech/common/security/prov/rsa/**/*"/>
                 <exclude name="com/l7tech/common/security/prov/ncipher/**/*"/>
+                <exclude name="com/l7tech/common/security/prov/entrust/**/*"/>
 
                 <exclude name="com/l7tech/policy/server/**/*"/>
                 <exclude name="com/l7tech/policy/validator/RequestXpathAssertionValidator.class"/>
@@ -351,7 +352,7 @@
                 <exclude name="com/l7tech/common/transport/jms/*"/>
                 <include name="com/l7tech/common/**/*"/>
                 <include name="com/l7tech/policy/**/*"/>
-                <exclude name="com/l7tech/policy/assertion/ext/*"/>
+                <exclude name="com/l7tech/policy/assertion/ext/**/*"/>
             </fileset>
         </jar>
 
@@ -385,6 +386,7 @@
                 <include name="com/l7tech/console/**/*"/>
                 <include name="com/l7tech/remote/jini/lookup/*ServiceLookup*"/>
                 <include name="com/l7tech/remote/jini/lookup/ServiceFactory.class"/>
+                <include name="com/l7tech/remote/jini/export/RemoteService.class" />
                 <include name="com/l7tech/logging/**/*"/>
                 <include name="com/l7tech/message/**/*"/>
                 <include name="com/l7tech/objectmodel/**/*"/>
