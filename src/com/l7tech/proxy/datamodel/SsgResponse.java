@@ -13,6 +13,7 @@ import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import org.apache.commons.httpclient.Header;
+import org.apache.commons.httpclient.methods.PostMethod;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
@@ -35,6 +36,7 @@ public class SsgResponse {
     final private ProcessorResult processorResult;
     private String responseString = null;
     private MultipartMessageReader multipartReader;
+    private PostMethod downstreamPostMethod = null;
 
     private transient Boolean isSoap = null;
     private transient Boolean isFault = null;
@@ -112,6 +114,14 @@ public class SsgResponse {
     public Element getFaultdetail() {
         if (!isFault()) return null;
         return faultdetail;
+    }
+
+    public PostMethod getDownstreamPostMethod() {
+        return downstreamPostMethod;
+    }
+
+    public void setDownstreamPostMethod(PostMethod downstreamPostMethod) {
+        this.downstreamPostMethod = downstreamPostMethod;
     }
 
     public static SsgResponse makeFaultResponse(String faultCode, String faultString, String faultActor) {

@@ -512,6 +512,8 @@ public class MessageProcessor {
         }
 
         PostMethod postMethod = null;
+        SsgResponse response = null;
+
         try {
             postMethod = new PostMethod(url.toString());
             setAuthenticationState(req, state, postMethod);
@@ -707,7 +709,7 @@ public class MessageProcessor {
                 processorResult = null;
             }
 
-            SsgResponse response = new SsgResponse(responseDocument, processorResult, status, headers, multipartReader);
+            response = new SsgResponse(responseDocument, processorResult, status, headers, multipartReader);
             if (status == 401 || status == 402) {
                 req.setLastErrorResponse(response);
                 Header authHeader = postMethod.getResponseHeader("WWW-Authenticate");
@@ -718,7 +720,7 @@ public class MessageProcessor {
 
                 throw new BadCredentialsException();
             }
-
+            response.setDownstreamPostMethod(postMethod);
             return response;
 
         } finally {
@@ -728,7 +730,11 @@ public class MessageProcessor {
                 } else {
                     req.getSsg().storeSessionCookies(state.getCookies());
                 }
-                postMethod.releaseConnection();
+
+                // if not deferring the connection release
+                if(response != null && response.getDownstreamPostMethod() == null) {
+                    postMethod.releaseConnection();
+                }
             }
             try {
                 client.endSession();

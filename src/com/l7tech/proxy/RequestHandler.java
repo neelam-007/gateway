@@ -278,7 +278,7 @@ public class RequestHandler extends AbstractHttpHandler {
 
                 // add modified SOAP part
                 MultipartUtil.addModifiedSoapPart(sb,
-                        ssgResponse.getResponseAsString(),
+                        XmlUtil.XML_VERSION + ssgResponse.getResponseAsString(),
                         multipartReader.getSoapPart(),
                         multipartReader.getMultipartBoundary());
 
@@ -288,9 +288,10 @@ public class RequestHandler extends AbstractHttpHandler {
                 pbis.unread(sb.toString().getBytes());
 
                 byte[] buf = new byte[1024];
-                int read = pbis.read(buf);
+                int read = pbis.read(buf, 0, buf.length);
                 while (read > 0) {
                     os.write(buf, 0, read);
+                    read = pbis.read(buf, 0, buf.length);
                 }
                                 
             } else {
@@ -300,6 +301,10 @@ public class RequestHandler extends AbstractHttpHandler {
         } catch (IOException e) {
             interceptor.onReplyError(e);
             throw e;
+        } finally {
+            if(ssgResponse.getDownstreamPostMethod() != null) {
+                ssgResponse.getDownstreamPostMethod().releaseConnection();
+            }
         }
     }
 
