@@ -20,28 +20,5 @@ import java.io.FileInputStream;
  * Tests WsseBasicCredentialFinder against a file containing a soap request with a password in it (or not)
  */
 public class WsseBasicCredentialFinderTest {
-    public static void main(String[] args) throws Exception {
-        String fileToParse = "/home/flascell/dev/wssSamples/wssebasic1.xml";
-        // String fileToParse = "/home/flascell/dev/wssSamples/noheader.xml";
-        if (args.length > 0) fileToParse = args[0];
-
-        FileInputStream fis = new FileInputStream(fileToParse);
-        byte[] fileContents = HexUtils.slurpStream(fis, 4096);
-        fis.close();
-
-        SoapRequest soapRequest = new HttpSoapRequest(null);
-        SoapResponse soapResponse = new HttpSoapResponse(null);
-        soapRequest.setRequestXml(new String(fileContents));
-
-        ServerWssBasic wssBasic = new ServerWssBasic( new WssBasic() );
-        LoginCredentials creds = wssBasic.findCredentials(soapRequest, soapResponse);
-
-        if (creds != null) {
-            System.out.println("creds found");
-            System.out.println("user login = " + creds.getLogin());
-            System.out.println("passwd = " + new String(creds.getCredentials()));
-        }
-
-
-    }
+    // todo
 }
