@@ -78,7 +78,7 @@ public class MainWindow extends JFrame {
     private JMenuItem menuItemPref = null;
     private JCheckBoxMenuItem logMenuItem = null;
     private JCheckBoxMenuItem statMenuItem = null;
-    private JCheckBoxMenuItem monitoredEndpointsMenuItem;
+    private JMenuItem manageJmsEndpointsMenuItem = null;
     private JMenuItem helpTopicsMenuItem = null;
 
     private Action refreshAction = null;
@@ -93,7 +93,6 @@ public class MainWindow extends JFrame {
     private Action createServiceAction = null;
     private Action toggleGatewayLogWindowAction = null;
     private Action toggleClusterStatusWindowAction = null;
-    private Action toggleMonitoredEndpointsAction;
     private JPanel frameContentPane = null;
     private JPanel mainPane = null;
     private JPanel statusBarPane = null;
@@ -128,7 +127,7 @@ public class MainWindow extends JFrame {
     Action monitorAction = null;
     private ClusterStatusWindow clusterStatusWindow = null;
     private GatewayLogWindow gatewayLogWindow = null;
-    private MonitoredEndpointsWindow monitoredEndpointsWindow;
+    private Action manageJmsEndpointsAction = null;
 
     /**
      * MainWindow constructor comment.
@@ -303,6 +302,7 @@ public class MainWindow extends JFrame {
             editMenu.add(getNewInternalUserAction());
             editMenu.add(getNewInternalGroupAction());
             editMenu.add(getNewProviderAction());
+            editMenu.add(getManageJmsEndpointsMenuItem());
             int mnemonic = editMenu.getText().toCharArray()[0];
             editMenu.setMnemonic(mnemonic);
         }
@@ -345,7 +345,6 @@ public class MainWindow extends JFrame {
 
         viewMenu.add(getStatMenuItem());
         viewMenu.add(getLogMenuItem());
-        viewMenu.add(getMonitoredEndpointsMenuItem());
 
         return viewMenu;
     }
@@ -1043,51 +1042,33 @@ public class MainWindow extends JFrame {
         gatewayLogWindow = null;
     }
 
-    private Action getMonitoredEndpointsAction() {
-        if (toggleMonitoredEndpointsAction != null)
-            return toggleMonitoredEndpointsAction;
+    private Action getManageJmsEndpointsAction() {
+        if (manageJmsEndpointsAction != null)
+            return manageJmsEndpointsAction;
 
-        String atext = resapplication.getString("toggle.jms.monitored.endpoints.display");
+        final String atext = resapplication.getString("jms.monitored.endpoints.display");
 
-        toggleMonitoredEndpointsAction = new AbstractAction(atext) {
-            public void actionPerformed(ActionEvent e) {
-                JCheckBoxMenuItem item = (JCheckBoxMenuItem)e.getSource();
-                if (item.isSelected()) {
-                    getMonitoredEndpointsWindow().show();
-                } else {
-                    destroyMonitoredEndpointsWindow();
-                }
-             }
+        manageJmsEndpointsAction = new BaseAction() {
+            public String getName() {
+                return atext;
+            }
+
+            public String getDescription() {
+                return atext;
+            }
+
+            protected String iconResource() {
+                return "com/l7tech/console/resources/enableService.gif";
+            }
+
+            public void performAction() {
+                new MonitoredEndpointsWindow(MainWindow.this).show();
+            }
         };
-        toggleMonitoredEndpointsAction.putValue(Action.SHORT_DESCRIPTION, atext);
-        toggleMonitoredEndpointsAction.setEnabled(false);
-        enableActionWhileConnected(toggleMonitoredEndpointsAction);
-        return toggleMonitoredEndpointsAction;
-    }
-
-    private MonitoredEndpointsWindow getMonitoredEndpointsWindow() {
-        if (monitoredEndpointsWindow != null)
-            return monitoredEndpointsWindow;
-        monitoredEndpointsWindow = new MonitoredEndpointsWindow(this);
-        monitoredEndpointsWindow.addWindowListener(new WindowAdapter() {
-            public void windowClosed(WindowEvent e) {
-                destroyMonitoredEndpointsWindow();
-            }
-
-            public void windowClosing(WindowEvent e) {
-                destroyMonitoredEndpointsWindow();
-            }
-        });
-        return monitoredEndpointsWindow;
-    }
-
-    private void destroyMonitoredEndpointsWindow() {
-        if (monitoredEndpointsWindow == null)
-            return;
-        getMonitoredEndpointsMenuItem().setSelected(false);
-        monitoredEndpointsWindow.dispose();
-        removeConnectionListener(monitoredEndpointsWindow);
-        monitoredEndpointsWindow = null;
+        manageJmsEndpointsAction.putValue(Action.NAME, atext);
+        manageJmsEndpointsAction.putValue(Action.SHORT_DESCRIPTION, atext);
+        enableActionWhileConnected(manageJmsEndpointsAction);
+        return manageJmsEndpointsAction;
     }
 
     private Action getGatewayLogWindowAction() {
@@ -1868,12 +1849,12 @@ public class MainWindow extends JFrame {
         return logMenuItem;
     }
 
-    public JCheckBoxMenuItem getMonitoredEndpointsMenuItem() {
-        if (monitoredEndpointsMenuItem != null)
-            return monitoredEndpointsMenuItem;
-        monitoredEndpointsMenuItem = new JCheckBoxMenuItem(getMonitoredEndpointsAction());
+    public JMenuItem getManageJmsEndpointsMenuItem() {
+        if (manageJmsEndpointsMenuItem != null)
+            return manageJmsEndpointsMenuItem;
+        manageJmsEndpointsMenuItem = new JMenuItem(getManageJmsEndpointsAction());
 
-        return monitoredEndpointsMenuItem;
+        return manageJmsEndpointsMenuItem;
     }
 
     public JCheckBoxMenuItem getStatMenuItem() {

@@ -9,6 +9,7 @@ package com.l7tech.service;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.common.transport.jms.JmsConnection;
 import com.l7tech.common.transport.jms.JmsProvider;
+import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.UpdateException;
@@ -20,16 +21,14 @@ import com.l7tech.objectmodel.Entity;
 import com.l7tech.identity.StubDataStore;
 
 import java.rmi.RemoteException;
-import java.util.Map;
-import java.util.Collection;
-import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.*;
 
 /**
  * Stub-mode JMS admin interface.
  */
 public class JmsAdminStub implements JmsAdmin {
     private Map connections;
+    private List monitoredEndpoints = new ArrayList();
 
     private static JmsProvider[] providers = new JmsProvider[] {
         new JmsProvider("IBM MQSeries 5.2.1", "com.ibm.jms.jndi.InitialContextFactory", "JmsQueueConnectionFactory"),
@@ -59,6 +58,19 @@ public class JmsAdminStub implements JmsAdmin {
 
     public JmsConnection findConnectionByPrimaryKey(long oid) throws RemoteException, FindException {
         return (JmsConnection) connections.get(new Long(oid));
+    }
+
+    public EntityHeader[] findAllMonitoredEndpoints() throws RemoteException, FindException {
+        Collection list = new ArrayList();
+        for (Iterator i = monitoredEndpoints.iterator(); i.hasNext();) {
+            JmsEndpoint endpoint = (JmsEndpoint) i.next();
+            list.add(fromEndpoint(endpoint));
+        }
+        return (EntityHeader[]) list.toArray(new EntityHeader[0]);
+    }
+
+    private EntityHeader fromEndpoint(JmsEndpoint endpoint) {
+        return new EntityHeader(endpoint.getOid(), EntityType.UNDEFINED,  endpoint.getDestinationName(), endpoint.getName());
     }
 
     public long saveConnection(JmsConnection connection) throws RemoteException, UpdateException, SaveException, VersionException {

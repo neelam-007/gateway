@@ -17,6 +17,13 @@ public interface JmsAdmin extends Remote {
     JmsConnection findConnectionByPrimaryKey( long oid ) throws RemoteException, FindException;
 
     /**
+     * Obtain the list of JMS endpoints that are monitored for incoming messages for processing by the SSG.
+     *
+     * @return the EntityHeaders of the JmsEndpoint instances that the SSG is monitoring.
+     */
+    EntityHeader[] findAllMonitoredEndpoints() throws RemoteException, FindException;
+
+    /**
      * Save the specified JmsConnection, which may or may not have been newly created by the caller, to the database.
      *
      * @param connection the JmsConnection to save
