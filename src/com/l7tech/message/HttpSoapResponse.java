@@ -11,6 +11,7 @@ import com.l7tech.policy.assertion.AssertionStatus;
 
 import javax.servlet.http.HttpServletResponse;
 import java.util.Iterator;
+import java.io.IOException;
 
 /**
  * Encapsulates a SOAP response using HTTP transport.  Not thread-safe.
@@ -23,7 +24,7 @@ public class HttpSoapResponse extends SoapResponse {
         super( htm );
     }
 
-    public void setHeadersIn( HttpServletResponse hresponse, HttpSoapResponse sresp, AssertionStatus status ) {
+    public void setHeadersIn( HttpServletResponse hresponse, HttpSoapResponse sresp, AssertionStatus status ) throws IOException {
 
         Integer irouteStat = (Integer)getParameter( Response.PARAM_HTTP_STATUS );
         int routeStat;

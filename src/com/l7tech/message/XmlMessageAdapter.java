@@ -133,7 +133,16 @@ public abstract class XmlMessageAdapter extends MessageAdapter implements XmlMes
         return multipartReader;
     }
 
-    public boolean isMultipart() {
+    public boolean isMultipart() throws IOException {
+        // if not multipart set, may be because the request has not been read yet
+        // and if it was and not multipart message, the call is cheap as messages are cached 
+        if (!multipart) {
+            if (this instanceof XmlRequest) {
+               ((XmlRequest)this).getRequestXml();
+            } else if(this instanceof XmlResponse) {
+                ((XmlResponse)this).getResponseXml();
+            }
+        }
         return multipart;
     }
 

@@ -38,5 +38,5 @@ public interface XmlMessage extends Message {
 
     public MultipartUtil.Part getSoapPart() throws IOException;
 
-    public boolean isMultipart();
+    public boolean isMultipart() throws IOException;
 }
