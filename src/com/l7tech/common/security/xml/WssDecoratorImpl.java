@@ -45,7 +45,7 @@ public class WssDecoratorImpl implements WssDecorator {
     private static final Logger logger = Logger.getLogger(WssDecorator.class.getName());
 
     public static final int TIMESTAMP_TIMOUT_SEC = 300;
-    private static final int DERIVED_KEY_LENGTH = 8;
+    private static final int DERIVED_KEY_LENGTH = 16;
 
     private static class Context {
         SecureRandom rand = new SecureRandom();
