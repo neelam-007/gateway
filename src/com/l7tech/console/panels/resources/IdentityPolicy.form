@@ -203,19 +203,19 @@
                     </constraints>
                     <properties/>
                   </component>
-                  <component id="939b4" class="javax.swing.JTextField" binding="passwordRouteField">
+                  <component id="49142" class="javax.swing.JTextField" binding="realmRouteField">
                     <constraints>
-                      <xy x="115" y="57" width="203" height="24"/>
-                      <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
+                      <xy x="115" y="86" width="203" height="24"/>
+                      <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
                         <preferred-size width="150" height="-1"/>
                       </grid>
                     </constraints>
                     <properties/>
                   </component>
-                  <component id="49142" class="javax.swing.JTextField" binding="realmRouteField">
+                  <component id="2e063" class="javax.swing.JPasswordField" binding="passwordRouteField">
                     <constraints>
-                      <xy x="115" y="86" width="203" height="24"/>
-                      <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
+                      <xy x="115" y="57" width="203" height="24"/>
+                      <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
                         <preferred-size width="150" height="-1"/>
                       </grid>
                     </constraints>

@@ -37,7 +37,7 @@ public class IdentityPolicyPanel extends JPanel {
     private JCheckBox sslCheckBox;
     private JTextField routeToUrlField;
     private JTextField userRouteField;
-    private JTextField passwordRouteField;
+    private JPasswordField passwordRouteField;
     private JTextField realmRouteField;
 
     private Principal principal;
@@ -81,7 +81,7 @@ public class IdentityPolicyPanel extends JPanel {
             }
         });
         Utilities.equalizeButtonSizes(new JButton[]{cancelButton, okButton, helpButton});
-        authMethodComboBox.setModel(Components.getCredentialsLocationComboBoxModel());
+        authMethodComboBox.setModel(Components.getCredentialsLocationComboBoxModelNonAnonymous());
 
         principalAssertionPaths = IdentityPath.forIdentity(principal, rootAssertion);
         otherPaths = IdentityPath.getPaths(rootAssertion);
@@ -93,12 +93,98 @@ public class IdentityPolicyPanel extends JPanel {
             }
         }
         otherPaths.removeAll(remove);
-        sslCheckBox.setEnabled(isSslAssertionModifiable());
-        final boolean authMethodModifiable = isAuthMethodModifiable();
-        authMethodComboBox.setEnabled(authMethodModifiable);
-        xmlSecOptions.setEnabled(authMethodModifiable);
 
-        boolean routeModifiable = isRouteModifiable();
+        updateSslAssertion();
+        updateAuthMethod();
+        updateRouting();
+    }
+
+    /**
+     * update the ssl assertion control for the identity
+     * This updates the asserion elements by analyzing
+     * the policy to find out if the assertion can modified
+     * and what is the value of it.
+     */
+    private void updateSslAssertion() {
+        boolean canmod = true;
+        boolean selected = false;
+
+        Set othersSslAssertions = new HashSet();
+        for (Iterator iterator = otherPaths.iterator(); iterator.hasNext();) {
+            IdentityPath ip = (IdentityPath)iterator.next();
+            othersSslAssertions.addAll(ip.getEqualAssertions(SslAssertion.class));
+        }
+
+        Set principalSslAssertions = principalAssertionPaths.getEqualAssertions(SslAssertion.class);
+        selected = !principalSslAssertions.isEmpty();
+        for (Iterator iterator = principalSslAssertions.iterator(); iterator.hasNext();) {
+            Assertion assertion = (Assertion)iterator.next();
+            if (othersSslAssertions.contains(assertion)) {
+                canmod = false;
+                break;
+            }
+        }
+        sslCheckBox.setSelected(selected);
+        sslCheckBox.setEnabled(canmod);
+    }
+
+    private void updateAuthMethod() {
+        boolean canmod = true;
+
+        Set othersCredAssertions = new HashSet();
+        for (Iterator iterator = otherPaths.iterator(); iterator.hasNext();) {
+            IdentityPath ip = (IdentityPath)iterator.next();
+            othersCredAssertions.addAll(ip.getAssignableAssertions(CredentialSourceAssertion.class));
+        }
+
+        Set principalCredAssertions =
+          principalAssertionPaths.getAssignableAssertions(CredentialSourceAssertion.class);
+        for (Iterator it = principalCredAssertions.iterator(); it.hasNext();) {
+            Assertion cas = (Assertion)it.next();
+            selectAuthMethodComboItem(cas);
+            if (othersCredAssertions.contains(cas)) {
+                canmod = false;
+            }
+        }
+
+        authMethodComboBox.setEnabled(canmod);
+        xmlSecOptions.setEnabled(canmod);
+    }
+
+    private void selectAuthMethodComboItem(Assertion cas) {
+        Set entrySet = Components.getCredentialsLocationMap().entrySet();
+        for (Iterator iterator = entrySet.iterator(); iterator.hasNext();) {
+            Map.Entry entry = (Map.Entry)iterator.next();
+            if (cas.getClass().equals(entry.getValue().getClass())) {
+                authMethodComboBox.setSelectedItem(entry.getKey());
+                break;
+            }
+        }
+    }
+
+    private void updateRouting() {
+        boolean routeModifiable = true;
+
+        Set othersRouteAssertions = new HashSet();
+        for (Iterator iterator = otherPaths.iterator(); iterator.hasNext();) {
+            IdentityPath ip = (IdentityPath)iterator.next();
+            othersRouteAssertions.addAll(ip.getEqualAssertions(RoutingAssertion.class));
+        }
+
+        Set principalRouteAssertions =
+          principalAssertionPaths.getEqualAssertions(RoutingAssertion.class);
+        for (Iterator it = principalRouteAssertions.iterator(); it.hasNext();) {
+            RoutingAssertion ra = (RoutingAssertion)it.next();
+            routeToUrlField.setText(ra.getProtectedServiceUrl());
+            userRouteField.setText(ra.getLogin());
+            passwordRouteField.setText(ra.getPassword());
+            realmRouteField.setText(ra.getRealm());
+            if (othersRouteAssertions.contains(ra)) {
+                routeModifiable = false;
+                break;
+            }
+        }
+
         routeToUrlField.setEnabled(routeModifiable);
         userRouteField.setEditable(routeModifiable);
         passwordRouteField.setEnabled(routeModifiable);
@@ -106,67 +192,6 @@ public class IdentityPolicyPanel extends JPanel {
         defaultUrlButton.setEnabled(routeModifiable);
     }
 
-    private boolean isSslAssertionModifiable() {
-        Set othersSslAssertions = new HashSet();
-
-        for (Iterator iterator = otherPaths.iterator(); iterator.hasNext();) {
-            IdentityPath ip = (IdentityPath)iterator.next();
-            othersSslAssertions.addAll(ip.getEqualAssertions(SslAssertion.class));
-        }
-        if (othersSslAssertions.isEmpty()) {
-            return true;
-        }
-        if (othersSslAssertions.isEmpty()) return true;
-
-        Set principalSslAssertions = principalAssertionPaths.getEqualAssertions(SslAssertion.class);
-        for (Iterator iterator = principalSslAssertions.iterator(); iterator.hasNext();) {
-            Assertion assertion = (Assertion)iterator.next();
-            if (othersSslAssertions.contains(assertion)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private boolean isAuthMethodModifiable() {
-        Set othersCredAssertions = new HashSet();
-        for (Iterator iterator = otherPaths.iterator(); iterator.hasNext();) {
-            IdentityPath ip = (IdentityPath)iterator.next();
-            othersCredAssertions.addAll(ip.getAssignableAssertions(CredentialSourceAssertion.class));
-        }
-        if (othersCredAssertions.isEmpty()) return true;
-
-        Set principalCredAssertions = principalAssertionPaths.getAssignableAssertions(CredentialSourceAssertion.class);
-        for (Iterator iterator = principalCredAssertions.iterator(); iterator.hasNext();) {
-            Assertion assertion = (Assertion)iterator.next();
-            if (othersCredAssertions.contains(assertion)) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private boolean isRouteModifiable() {
-        Set othersRouteAssertions = new HashSet();
-        for (Iterator iterator = otherPaths.iterator(); iterator.hasNext();) {
-            IdentityPath ip = (IdentityPath)iterator.next();
-            othersRouteAssertions.addAll(ip.getEqualAssertions(RoutingAssertion.class));
-        }
-        if (othersRouteAssertions.isEmpty()) return true;
-
-        Set principalRouteAssertions = principalAssertionPaths.getEqualAssertions(RoutingAssertion.class);
-        for (Iterator iterator = principalRouteAssertions.iterator(); iterator.hasNext();) {
-            Assertion assertion = (Assertion)iterator.next();
-            if (principalRouteAssertions.contains(assertion)) {
-                return false;
-            }
-        }
-
-        return true;
-
-    }
 
     {
 // do not edit this generated initializer!!! do not add your code here!!!
@@ -209,10 +234,10 @@ public class IdentityPolicyPanel extends JPanel {
         JCheckBox _9;
         _9 = new JCheckBox();
         sslCheckBox = _9;
+        _9.setContentAreaFilled(true);
         _9.setHorizontalTextPosition(10);
         _9.setMargin(new Insets(2, 2, 2, 0));
         _9.setText("Require SSL/TLS encryption");
-        _9.setContentAreaFilled(true);
         _6.add(_9, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 2, 4, 0, 3, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         JLabel _10;
         _10 = new JLabel();
@@ -270,20 +295,20 @@ public class IdentityPolicyPanel extends JPanel {
         _19.add(_23, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 8, 1, 6, 0, new Dimension(-1, -1), new Dimension(150, -1), new Dimension(-1, -1)));
         JTextField _24;
         _24 = new JTextField();
-        passwordRouteField = _24;
-        _19.add(_24, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 8, 1, 6, 0, new Dimension(-1, -1), new Dimension(150, -1), new Dimension(-1, -1)));
-        JTextField _25;
-        _25 = new JTextField();
-        realmRouteField = _25;
-        _19.add(_25, new com.intellij.uiDesigner.core.GridConstraints(2, 1, 1, 1, 8, 1, 6, 0, new Dimension(-1, -1), new Dimension(150, -1), new Dimension(-1, -1)));
+        realmRouteField = _24;
+        _19.add(_24, new com.intellij.uiDesigner.core.GridConstraints(2, 1, 1, 1, 8, 1, 6, 0, new Dimension(-1, -1), new Dimension(150, -1), new Dimension(-1, -1)));
+        JPasswordField _25;
+        _25 = new JPasswordField();
+        passwordRouteField = _25;
+        _19.add(_25, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 8, 1, 6, 0, new Dimension(-1, -1), new Dimension(150, -1), new Dimension(-1, -1)));
         com.intellij.uiDesigner.core.Spacer _26;
         _26 = new com.intellij.uiDesigner.core.Spacer();
         _16.add(_26, new com.intellij.uiDesigner.core.GridConstraints(2, 2, 1, 1, 0, 1, 6, 1, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         JButton _27;
         _27 = new JButton();
         defaultUrlButton = _27;
-        _27.setLabel("Default");
         _27.setText("Default");
+        _27.setLabel("Default");
         _16.add(_27, new com.intellij.uiDesigner.core.GridConstraints(0, 3, 1, 1, 0, 1, 3, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         com.intellij.uiDesigner.core.Spacer _28;
         _28 = new com.intellij.uiDesigner.core.Spacer();
