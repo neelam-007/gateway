@@ -11,6 +11,7 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.common.security.JceProvider;
 import org.w3c.dom.Element;
 
 import javax.crypto.Cipher;
@@ -193,7 +194,7 @@ public class XencUtil {
             throw new InvalidDocumentFormatException("Unable to parse base64 EncryptedKey CipherValue", e);
         }
         Cipher rsa = null;
-        rsa = Cipher.getInstance("RSA");
+        rsa = Cipher.getInstance("RSA", JceProvider.getAsymmetricJceProvider());
         rsa.init(Cipher.DECRYPT_MODE, recipientKey);
 
         byte[] decryptedPadded = rsa.doFinal(encryptedKeyBytes);
@@ -257,7 +258,7 @@ public class XencUtil {
      * @throws GeneralSecurityException
      */
     public static String encryptKeyWithRsaAndPad(byte[] keyBytes, PublicKey publicKey, SecureRandom rand) throws GeneralSecurityException {
-        Cipher rsa = Cipher.getInstance("RSA");
+        Cipher rsa = Cipher.getInstance("RSA", JceProvider.getAsymmetricJceProvider());
         rsa.init(Cipher.ENCRYPT_MODE, publicKey);
         if (!(publicKey instanceof RSAPublicKey))
             throw new KeyException("Unable to encrypt -- unsupported recipient public key type " +
