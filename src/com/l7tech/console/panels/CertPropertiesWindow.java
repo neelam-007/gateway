@@ -103,8 +103,8 @@ public class CertPropertiesWindow extends JDialog {
                                            resources.getString("save.error.title"),
                                            JOptionPane.ERROR_MESSAGE);
                     } catch (IOException e) {
-                       logger.warning(resources.getString("cert.decode.error"));
-                        JOptionPane.showMessageDialog(mainPanel, resources.getString("cert.decode.error"),
+                       logger.warning(e.getMessage());
+                        JOptionPane.showMessageDialog(mainPanel, e.getMessage(),
                                            resources.getString("save.error.title"),
                                            JOptionPane.ERROR_MESSAGE);
                     }
