@@ -16,7 +16,6 @@ import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.message.PolicyApplicationContext;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.assertion.ClientDecorator;
-import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpClientCert;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
