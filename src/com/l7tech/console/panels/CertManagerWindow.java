@@ -85,6 +85,7 @@ public class CertManagerWindow extends JDialog {
             trustedCertTable = new TrustedCertsTable();
         }
         certTableScrollPane.setViewportView(trustedCertTable);
+        certTableScrollPane.getViewport().setBackground(Color.white);
 
         // Hide the cert usage data column
         trustedCertTable.hideColumn(TrustedCertTableSorter.CERT_TABLE_ISSUER_NAME_COLUMN_INDEX);

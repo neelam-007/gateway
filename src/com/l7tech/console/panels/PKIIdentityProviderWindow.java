@@ -73,6 +73,7 @@ public class PKIIdentityProviderWindow extends JDialog {
             trustedCertTable = new TrustedCertsTable();
         }
         certScrollPane.setViewportView(trustedCertTable);
+        certScrollPane.getViewport().setBackground(Color.white);
 
         // Hide the cert usage data column
         trustedCertTable.hideColumn(TrustedCertTableSorter.CERT_TABLE_CERT_USAGE_COLUMN_INDEX);
