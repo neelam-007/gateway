@@ -17,6 +17,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+import org.apache.xmlbeans.XmlException;
 
 import javax.crypto.Cipher;
 import javax.xml.parsers.ParserConfigurationException;
@@ -824,7 +825,7 @@ public class WssProcessorImpl implements WssProcessor {
             AssertionType assertion = AssertionType.Factory.parse( securityTokenElement );
             SamlSecurityToken saml = new SamlSecurityTokenImpl(securityTokenElement, assertion);
             context.securityTokens.add(saml);
-        } catch ( XmlException e ) {
+        } catch (XmlException e) {
             throw new InvalidDocumentFormatException("Couldn't parse SAML Assertion", e);
         }
     }
