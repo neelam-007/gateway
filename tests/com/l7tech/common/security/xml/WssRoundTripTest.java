@@ -167,8 +167,9 @@ public class WssRoundTripTest extends TestCase {
 
         // If timestamp was supposed to be signed, make sure it actually was
         if (td.signTimestamp) {
-            assertTrue(r.getTimestamp().isSigned());
-            assertTrue(r.getTimestamp().getSigningSecurityToken().asX509Certificate().equals(td.senderCert));
+            assertTrue("Timestamp was supposed to have been signed", r.getTimestamp().isSigned());
+            assertTrue("Timestamp signging security token must match sender cert",
+                       r.getTimestamp().getSigningSecurityToken().asX509Certificate().equals(td.senderCert));
         }
 
         // Make sure all requested elements were signed
@@ -179,13 +180,14 @@ public class WssRoundTripTest extends TestCase {
             for (int j = 0; j < signed.length; ++j) {
                 Element signedElement = signed[j].asElement();
                 if (localNamePathMatches(elementToSign, signedElement)) {
-                    assertEquals(signed[j].getSigningSecurityToken().asX509Certificate(), td.senderCert);
+                    assertEquals("Element " + elementToSign.getLocalName() + " signing token must match sender cert",
+                                 signed[j].getSigningSecurityToken().asX509Certificate(), td.senderCert);
                     wasSigned = true;
                     break;
                 }
             }
-            assertTrue(wasSigned);
-            log.info("Element " + elementToSign + " verified as signed successfully.");
+            assertTrue("Element " + elementToSign.getLocalName() + " must be signed", wasSigned);
+            log.info("Element " + elementToSign.getLocalName() + " verified as signed successfully.");
         }
 
         // Make sure all requested elements were encrypted
@@ -198,15 +200,16 @@ public class WssRoundTripTest extends TestCase {
                 Element encryptedElement = encrypted[j];
                 log.info("Checking if element matches: " + XmlUtil.nodeToString(encryptedElement));
                 if (localNamePathMatches(elementToEncrypt, encryptedElement)) {
-                    // Make sure the encryption did not damage the element or its contents
-                    assertEquals(XmlUtil.nodeToString(elementToEncrypt),
+                    assertEquals("Original element " + encryptedElement.getLocalName() +
+                                 " content must match decrypted element content",
+                                 XmlUtil.nodeToString(elementToEncrypt),
                                  XmlUtil.nodeToString(encryptedElement));
                     wasEncrypted = true;
                     break;
                 }
             }
-            assertTrue(wasEncrypted);
-            log.info("Element " + elementToEncrypt + " verified as encrypted successfully.");
+            assertTrue("Element " + elementToEncrypt.getLocalName() + " must be encrypted", wasEncrypted);
+            log.info("Element " + elementToEncrypt.getLocalName() + " verified as encrypted successfully.");
         }
     }
 
