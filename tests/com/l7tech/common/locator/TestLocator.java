@@ -12,6 +12,7 @@ import java.util.logging.Logger;
 import java.util.Collection;
 import java.util.Map;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  * A locator to be used by test classes.
@@ -48,7 +49,7 @@ public class TestLocator extends Locator {
                 return idprovider.getConfig();
             }
             public long save(IdentityProviderConfig identityProviderConfig) throws SaveException {
-                return 0;
+                throw new UnsupportedOperationException("not implemented");
             }
             public void update(IdentityProviderConfig identityProviderConfig) throws UpdateException {}
             public void delete(IdentityProviderConfig identityProviderConfig) throws DeleteException {}
@@ -58,17 +59,17 @@ public class TestLocator extends Locator {
                 return output;
             }
             public LdapIdentityProviderConfig[] getLdapTemplates() throws FindException {
-                return new LdapIdentityProviderConfig[0];
+                throw new UnsupportedOperationException("not implemented");
             }
             public IdentityProvider getIdentityProvider(long oid) throws FindException {
                 return idprovider;
             }
             public void test(IdentityProviderConfig identityProviderConfig) throws InvalidIdProviderCfgException {}
             public Collection findAllHeaders() throws FindException {
-                return null;
+                throw new UnsupportedOperationException("not implemented");
             }
             public Collection findAllHeaders(int offset, int windowSize) throws FindException {
-                return null;
+                throw new UnsupportedOperationException("not implemented");
             }
             public Collection findAll() throws FindException {
                 Collection output = new ArrayList();
@@ -76,12 +77,18 @@ public class TestLocator extends Locator {
                 return output;
             }
             public Collection findAll(int offset, int windowSize) throws FindException {
-                return findAll();
+                throw new UnsupportedOperationException("not implemented");
             }
-            public Integer getVersion(long oid) throws FindException {return null;}
+            public Integer getVersion(long oid) throws FindException {return new Integer(1);}
             public Map findVersionMap() throws FindException {
-                return null;
+                if (versionMap.isEmpty()) {
+                    versionMap.put(new Long(TestIdentityProvider.PROVIDER_ID),
+                                  new Integer(TestIdentityProvider.PROVIDER_VERSION));
+                }
+                return versionMap;
             }
+
+            private Map versionMap = new HashMap();
         };
     }
 
