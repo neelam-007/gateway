@@ -17,9 +17,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Iterator;
+import java.util.*;
 import java.util.logging.Logger;
 
 import com.l7tech.common.xml.TooManyChildElementsException;
@@ -397,11 +395,80 @@ public class XmlUtil {
 
             if (element == element.getOwnerDocument().getDocumentElement())
                 return null;
-            
+
             element = (Element)element.getParentNode();
         }
 
         return null;
+    }
+
+    /**
+     * Find a namespace prefix which is free to use within the specified element.  Caller specifies
+     * the desired prefix.  This method will first check for the required prefix; then the required prefix with "1"
+     * appended, then "2", etc.  The returned prefix is guaranteed to be undeclared by the specified element
+     * or its direct ancestors.
+     * @param element  the element to examine
+     * @param desiredPrefix  the desired namespace prefix
+     * @return An namespace prefix as close as possible to desiredPrefix that is undeclared by this element or
+     *         its direct ancestors.
+     */
+    public static String findUnusedNamespacePrefix(Element element, String desiredPrefix) {
+        // Find all used prefixes
+        Set usedPrefixes = new HashSet();
+        while (element != null) {
+            NamedNodeMap attrs = element.getAttributes();
+            int numAttr = attrs.getLength();
+            for (int i = 0; i < numAttr; ++i) {
+                Attr attr = (Attr)attrs.item(i);
+                if (!"xmlns".equals(attr.getPrefix()))
+                    continue;
+                usedPrefixes.add(attr.getLocalName());
+            }
+            if (element == element.getOwnerDocument().getDocumentElement())
+                return desiredPrefix;
+            element = (Element)element.getParentNode();
+        }
+
+        // Generate an unused prefix
+        long count = 0;
+        String testPrefix = desiredPrefix;
+        while (usedPrefixes.contains(testPrefix)) testPrefix = desiredPrefix + count++;
+
+        return testPrefix;
+    }
+
+    /**
+     * Finds an existing declaration of the specified namespace already in scope, or creates a new one in the
+     * specified element, and then returns the active prefix for this namespace URI.  If a new prefix is declared,
+     * it will be as close as possible to desiredPrefix (that is, identical unless some other namespace is already
+     * using it in which case it will be desiredPrefix with one or more digits appended to make it unique).
+     * @param element
+     * @param namespace
+     * @param desiredPrefix
+     * @return
+     */
+    public static String getOrCreatePrefixForNamespace(Element element, String namespace, String desiredPrefix) {
+        String existingPrefix = findActivePrefixForNamespace(element, namespace);
+        if (existingPrefix != null)
+            return existingPrefix;
+        String prefix = findUnusedNamespacePrefix(element, desiredPrefix);
+        Attr decl = element.getOwnerDocument().createAttributeNS("http://www.w3.org/2000/xmlns/", "xmlns:" + prefix);
+        decl.setValue(namespace);
+        element.setAttributeNodeNS(decl);
+        return prefix;
+    }
+
+    /** @return true iff. prospectiveAncestor is a direct ancestor of element (or is the same element). */
+    public static boolean isElementAncestor(Element element, Element prospectiveAncestor) {
+        while (element != null) {
+            if (element == prospectiveAncestor)
+                return true;
+            if (element == element.getOwnerDocument().getDocumentElement())
+                return false;
+            element = (Element)element.getParentNode();
+        }
+
+        return false;
     }
 
     private static final Logger logger = Logger.getLogger(XmlUtil.class.getName());
