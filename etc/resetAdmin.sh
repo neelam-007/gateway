@@ -58,7 +58,19 @@ if [ "$PASSWORD_LENGTH" -lt 6 ]; then
 fi
 
 # ENCODE PASSWORD
-ENCODED_ADMIN_PASSWD=`perl md5passwd.pl $ACCOUNT_NAME:$ADMIN_PASSWORD`
+# RESOLVE THE DIRECTORY WHERE THESE SCRIPTS RESIDE
+PRG="$0"
+while [ -h "$PRG" ]; do
+  ls=`ls -ld "$PRG"`
+  link=`expr "$ls" : '.*-> \(.*\)$'`
+  if expr "$link" : '.*/.*' > /dev/null; then
+    PRG="$link"
+  else
+    PRG=`dirname "$PRG"`/"$link"
+  fi
+done
+PRGDIR=`dirname "$PRG"`
+ENCODED_ADMIN_PASSWD=`perl $PRGDIR/md5passwd.pl $ACCOUNT_NAME:$ADMIN_PASSWORD`
 
 # VERIFY THAT THE LAST OPERATION SUCCEEDED
 PASSWORD_LENGTH=${#ENCODED_ADMIN_PASSWD}
