@@ -99,16 +99,18 @@ public class MessageProcessor {
 
         state.setAuthenticationPreemptive(false);
         if (pendingRequest.isBasicAuthRequired()) {
+            log.info("Enabling HTTP Basic auth with username=" + pendingRequest.getHttpBasicUsername());
             postMethod.setDoAuthentication(true);
             state.setAuthenticationPreemptive(true);
             state.setCredentials(null, null,
                                  new UsernamePasswordCredentials(pendingRequest.getHttpBasicUsername(),
                                                                  new String(pendingRequest.getHttpBasicPassword())));
         } else if (pendingRequest.isDigestAuthRequired()) {
+            log.info("Enabling HTTP Digest auth with username=" + pendingRequest.getHttpDigestUsername());
             postMethod.setDoAuthentication(true);
             state.setCredentials(null, null,
-                                 new UsernamePasswordCredentials(pendingRequest.getHttpBasicUsername(),
-                                                                 new String(pendingRequest.getHttpBasicPassword())));
+                                 new UsernamePasswordCredentials(pendingRequest.getHttpDigestUsername(),
+                                                                 new String(pendingRequest.getHttpDigestPassword())));
         }
 
         postMethod.setRequestBody(pendingRequest.getSoapEnvelope().toString());
