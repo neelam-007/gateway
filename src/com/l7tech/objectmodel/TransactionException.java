@@ -24,6 +24,7 @@ public class TransactionException extends ObjectModelException {
     }
 
     public TransactionException(Throwable cause) {
-        super(cause.getMessage(), cause);
+        super(cause);
     }
+
 }

@@ -52,7 +52,7 @@ public class HibernatePersistenceContext extends PersistenceContext {
             txListenerList.clear();
         } catch ( HibernateException he ) {
             logger.throwing( getClass().getName(), "commitTransaction", he );
-            throw new TransactionException( he.getCause().getMessage(), he );
+            throw new TransactionException(he);
         } finally {
             try {
                 //if ( _session != null ) _session.close();
