@@ -8,6 +8,8 @@ package com.l7tech.proxy.policy.assertion.credential.wss;
 
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.datamodel.PendingRequest;
+import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.credential.wss.WssClientCert;
@@ -15,9 +17,15 @@ import com.l7tech.xmlsig.SoapMsgSigner;
 import com.ibm.xml.dsig.SignatureStructureException;
 import com.ibm.xml.dsig.XSignatureException;
 import org.w3c.dom.Document;
+import org.apache.axis.message.SOAPEnvelope;
 
 import java.security.PrivateKey;
+import java.security.NoSuchAlgorithmException;
+import java.security.KeyStoreException;
+import java.security.UnrecoverableKeyException;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
+import java.io.IOException;
 
 /**
  * @author alex
@@ -42,9 +50,36 @@ public class ClientWssClientCert implements ClientAssertion {
             throw new PolicyAssertionException("cannot get request document", e);
         }
 
+        Ssg ssg = request.getSsg();
+
+        // We must have credentials to get the private key
+        if (!ssg.isCredentialsConfigured()) {
+            request.setCredentialsWouldHaveHelped(true);
+            return AssertionStatus.FAILED;
+        }
+
+        // We must have a client cert
+        if (!SsgKeyStoreManager.isClientCertAvailabile(ssg)) {
+            request.setClientCertWouldHaveHelped(true);
+            return AssertionStatus.FAILED;
+        }
+
         PrivateKey userPrivateKey = null;
         X509Certificate userCert = null;
-        // todo, where do i get those two things ?
+        try {
+            userPrivateKey = SsgKeyStoreManager.getPrivateKey(ssg);
+            userCert = SsgKeyStoreManager.getClientCert(ssg);
+        } catch (NoSuchAlgorithmException e) {
+            throw new PolicyAssertionException(e);
+        } catch (IOException e) {
+            throw new PolicyAssertionException(e);
+        } catch (CertificateException e) {
+            throw new PolicyAssertionException(e);
+        } catch (KeyStoreException e) {
+            throw new PolicyAssertionException(e);
+        } catch (UnrecoverableKeyException e) {
+            throw new PolicyAssertionException(e);
+        }
 
         SoapMsgSigner dsigHelper = new SoapMsgSigner();
         try {
