@@ -605,10 +605,12 @@ public class MessageProcessor {
                     }
                 };
             }
+
+            boolean haveKey = SsgKeyStoreManager.isClientCertUnlocked(ssg);
             WssProcessor.ProcessorResult processorResult =
                     wssProcessor.undecorateMessage(responseDocument,
-                                                   SsgKeyStoreManager.getClientCert(ssg),
-                                                   SsgKeyStoreManager.getClientCertPrivateKey(ssg),
+                                                   haveKey ? SsgKeyStoreManager.getClientCert(ssg) : null,
+                                                   haveKey ? SsgKeyStoreManager.getClientCertPrivateKey(ssg) : null,
                                                    scf);
             responseDocument = processorResult.getUndecoratedMessage();
 

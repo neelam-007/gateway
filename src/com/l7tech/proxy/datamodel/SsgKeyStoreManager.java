@@ -52,7 +52,9 @@ public class SsgKeyStoreManager {
     /**
      * Very quickly check if a client certificate is available for the specified SSG.
      * The first time this is called for a given SSG it will take the time to load the KeyStore.
-     * May be slow if there is a problem with the key store.
+     * May be slow if there is a problem with the key store.  Even if this method returns
+     * true, the client cert might still require credentials to unlock its private key.
+     * To check if the cert has already been unlocked, use isClientCertUnlocked() instead.
      *
      * @param ssg the ssg to look at
      * @return true if we have a client cert for this ssg
@@ -65,6 +67,25 @@ public class SsgKeyStoreManager {
         if (ssg.haveClientCert() == null)
             ssg.haveClientCert(getClientCert(ssg) == null ? Boolean.FALSE : Boolean.TRUE);
         return ssg.haveClientCert().booleanValue();
+    }
+
+    /**
+     * Very quickly check if a client cert private key has already been unlocked for
+     * the specified SSG.  The first time this is called for a given SSG it will
+     * take the tiem to load the KeyStore.  May be slow if there are problems with
+     * the key store.  If this method returns true, the client cert private key
+     * is already cached in memory.
+     *
+     * @param ssg the ssg to look at
+     * @return true if we have a client cert for this SSG and have already unlocked the private key
+     * @throws KeyStoreCorruptException if the trust store or key store is damaged
+     */
+    public static boolean isClientCertUnlocked(Ssg ssg) throws KeyStoreCorruptException {
+        Ssg trusted = ssg.getTrustedGateway();
+        if (trusted != null)
+            return isClientCertUnlocked(trusted);
+        if (!isClientCertAvailabile(ssg)) return false;
+        return ssg.privateKey() != null;
     }
 
     /**
