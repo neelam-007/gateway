@@ -11,6 +11,8 @@ import com.l7tech.policy.assertion.xmlsec.SamlAttributeStatement;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * The SAML Conditions <code>WizardStepPanel</code>
@@ -28,6 +30,7 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
     private JButton removeButton;
     private JButton editButton;
     private DefaultTableModel attributesTableModel;
+
     /**
      * Creates new form WizardPanel
      */
@@ -59,6 +62,16 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
      */
     public void storeSettings(Object settings) throws IllegalArgumentException {
         SamlAttributeStatement statement = (SamlAttributeStatement)settings;
+        int nrows = attributesTableModel.getRowCount();
+        Collection attributes = new ArrayList();
+        for (int i = 0; i < nrows; i++) {
+            SamlAttributeStatement.Attribute att =
+            new SamlAttributeStatement.Attribute(attributesTableModel.getValueAt(i, 0).toString(),
+                          attributesTableModel.getValueAt(i, 1).toString(),
+                          attributesTableModel.getValueAt(i, 2).toString());
+            attributes.add(att);
+        }
+        statement.setAttributes((SamlAttributeStatement.Attribute[])attributes.toArray(new SamlAttributeStatement.Attribute[]{}));
     }
 
     /**
@@ -73,6 +86,13 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
     public void readSettings(Object settings) throws IllegalArgumentException {
         SamlAttributeStatement statement = (SamlAttributeStatement)settings;
         // put in table
+        attributesTableModel.setRowCount(0);
+        attributesTableModel.fireTableDataChanged();
+        SamlAttributeStatement.Attribute[] attributes = statement.getAttributes();
+        for (int i = 0; i < attributes.length; i++) {
+            SamlAttributeStatement.Attribute att = attributes[i];
+            attributesTableModel.addRow(new Object[]{att.getName(), att.getNamespace(), att.getValue()});
+        }
     }
 
     private void initialize() {
@@ -84,8 +104,10 @@ public class AttributeStatementWizardStepPanel extends WizardStepPanel {
         } else {
             titleLabel.getParent().remove(titleLabel);
         }
-        attributesTableModel = new DefaultTableModel( new String[] {"Name", "Namespace", "Value"}, 0);
+        attributesTableModel = new DefaultTableModel(new String[]{"Name", "Namespace", "Value"}, 0);
         attributeTable.setModel(attributesTableModel);
+        removeButton.setEnabled(false);
+        editButton.setEnabled(false);
 
     }
 

@@ -202,6 +202,7 @@
                     <CheckAssertionValidity booleanValue="true"/>
                     <NameQualifier stringValueNull="null"/>
                     <NoSubjectConfirmation booleanValue="false"/>
+                    <Attributes samlAttributeInfoArray="included"/>
                 </SalmAttributeStatement>
                 <AuditAssertion>
                     <SaveRequest booleanValue="false"/>

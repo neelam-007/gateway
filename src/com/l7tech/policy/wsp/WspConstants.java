@@ -752,7 +752,8 @@ public class WspConstants {
         new BeanTypeMapping(BindingInfo.class, "wsdlBindingInfo"),
         new BeanTypeMapping(BindingOperationInfo.class, "wsdlBindingOperationInfo"),
         new BeanTypeMapping(MimePartInfo.class, "wsdlMimePartInfo"),
-
+        new BeanTypeMapping(SamlAttributeStatement.Attribute.class, "samlAttributeInfo"),
+        new ArrayTypeMapping(new SamlAttributeStatement.Attribute[0], "samlAttributeInfoArray"),
     };
 
     /**
