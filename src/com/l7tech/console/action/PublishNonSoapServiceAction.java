@@ -73,7 +73,7 @@ public class PublishNonSoapServiceAction extends SecureAction {
                     tree.setSelectionPath(new TreePath(sn.getPath()));
                     SwingUtilities.invokeLater(new Runnable() {
                         public void run() {
-                            new EditServicePolicyAction((ServiceNode)sn).performAction();
+                            new EditServicePolicyAction((ServiceNode)sn).invoke();
                         }
                     });
                 }

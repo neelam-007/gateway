@@ -91,34 +91,34 @@ public class HomeAction extends BaseAction {
                     if (ADD_SERVICE.equals(url)) {
                         SwingUtilities.invokeLater(new Runnable() {
                             public void run() {
-                                new PublishServiceAction().performAction();
+                                new PublishServiceAction().invoke();
                             }
                         });
                     } else if (CREATE_DEFINITION.equals(url)) {
                         SwingUtilities.invokeLater(new Runnable() {
                             public void run() {
-                                new CreateServiceWsdlAction().performAction();
+                                new CreateServiceWsdlAction().invoke();
                             }
                         });
                     } else if (ADD_USER.equals(url)) {
-                        new NewInternalUserAction(null).actionPerformed(null);
+                        new NewInternalUserAction(null).invoke();
                     } else if (ADD_GROUP.equals(url)) {
                         new NewGroupAction(null).actionPerformed(null);
                     } else if (SEARCH_ID_PROVIDER.equals(url)) {
                         FindIdentitiesDialog.Options options = new FindIdentitiesDialog.Options();
                         options.enableDeleteAction();
                         options.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-                        new FindIdentityAction(options).actionPerformed(null);
+                        new FindIdentityAction(options).invoke();
                     } else if (ADD_LDAP_ID_PROVIDER.equals(url)) {
                         final DefaultMutableTreeNode root =
                           (DefaultMutableTreeNode)getIdentitiesTree().getModel().getRoot();
                         AbstractTreeNode node = (AbstractTreeNode)root;
-                        new NewLdapProviderAction(node).actionPerformed(null);
+                        new NewLdapProviderAction(node).invoke();
                     } else if (ADD_FEDERATED_ID_PROVIDER.equals(url)) {
                         final DefaultMutableTreeNode root =
                           (DefaultMutableTreeNode)getIdentitiesTree().getModel().getRoot();
                         AbstractTreeNode node = (AbstractTreeNode)root;
-                        new NewFederatedIdentityProviderAction(node).actionPerformed(null);
+                        new NewFederatedIdentityProviderAction(node).invoke();
                     }
                 }
             }

@@ -31,7 +31,7 @@ public abstract class SecureAction extends BaseAction implements LogonListener {
      */
     public boolean isAuthorized() {
         final Subject subject = Subject.getSubject(AccessController.getContext());
-        if (subject == null) { // if no subject
+        if (subject == null || subject.getPrincipals().isEmpty()) { // if no subject or no principal
             return false;
         }
         try {

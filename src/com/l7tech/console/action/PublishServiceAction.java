@@ -53,11 +53,6 @@ public class PublishServiceAction extends SecureAction {
     }
 
     /**
-     * Actually perform the action.
-     * This is the method which should be called programmatically.
-     * <p/>
-     * note on threading usage: do not access GUI components
-     * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
         JFrame f = TopComponents.getInstance().getMainWindow();
@@ -88,7 +83,7 @@ public class PublishServiceAction extends SecureAction {
                     tree.setSelectionPath(new TreePath(sn.getPath()));
                     SwingUtilities.invokeLater(new Runnable() {
                         public void run() {
-                            new EditServicePolicyAction((ServiceNode)sn).performAction();
+                            new EditServicePolicyAction((ServiceNode)sn).invoke();
                         }
                     });
                 }

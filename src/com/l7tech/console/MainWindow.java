@@ -1182,7 +1182,7 @@ public class MainWindow extends JFrame {
         final String atext = resapplication.getString("jms.monitored.endpoints.display.action.name");
         final String aDesc = resapplication.getString("jms.monitored.endpoints.display.action.desc");
 
-        manageJmsEndpointsAction = new BaseAction() {
+        manageJmsEndpointsAction = new SecureAction() {
             public String getName() {
                 return atext;
             }
@@ -1216,7 +1216,7 @@ public class MainWindow extends JFrame {
         final String atext = resapplication.getString("manage.cert.action.name");
         final String aDesc = resapplication.getString("manage.cert.action.desc");
 
-        manageCertificatesAction = new BaseAction() {
+        manageCertificatesAction = new SecureAction() {
             public String getName() {
                 return atext;
             }

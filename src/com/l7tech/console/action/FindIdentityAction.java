@@ -120,7 +120,7 @@ public class FindIdentityAction extends BaseAction {
 
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
-                a.performAction();
+                a.invoke();
             }
         });
 
