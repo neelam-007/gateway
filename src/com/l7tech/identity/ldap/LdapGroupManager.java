@@ -312,6 +312,35 @@ public class LdapGroupManager implements GroupManager {
                                             if (!headers.contains(newheader))
                                                 headers.add(newheader);
                                             done = true;
+                                        } else {
+                                            // GROUPS WITHIN GROUPS
+                                            // fla note: the member hint might actually refer to another group
+                                            // insted of a user
+                                            LdapGroup subgroup = null;
+                                            try {
+                                                subgroup = (LdapGroup)findByPrimaryKey(memberhint);
+                                            } catch (FindException e) {
+                                                // nothing on purpose
+                                                logger.finest("seems like " + memberhint +
+                                                              " is not a group dn" + e.getMessage());
+                                                subgroup = null;
+                                            }
+                                            if (subgroup == null) {
+                                                try {
+                                                    subgroup = (LdapGroup)findByName(memberhint);
+                                                } catch (FindException e) {
+                                                    // nothing on purpose
+                                                    logger.finest("seems like " + memberhint +
+                                                                  " is not a group name" + e.getMessage());
+                                                    subgroup = null;
+                                                }
+                                            }
+                                            if (subgroup != null) {
+                                                // todo, what if some asshole has circular reference of groups?
+                                                // note. i dont think this is possible
+                                                Set subgroupmembers = getUserHeaders(subgroup);
+                                                headers.addAll(subgroupmembers);
+                                            }
                                         }
                                     } catch (FindException e) {
                                         logger.log(Level.FINEST, "cannot resolve user through dn, try nv" +
