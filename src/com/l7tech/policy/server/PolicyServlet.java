@@ -74,7 +74,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                 doCertDownload(httpServletResponse, username, nonce);
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Unable to fulfil certificate discovery request", e);
-                  throw new ServletException("Unable to fulfil cert request", e);
+                throw new ServletException("Unable to fulfil cert request", e);
             }
             return;
         }
