@@ -9,10 +9,10 @@ import java.util.Collection;
  * @author alex
  */
 public interface IdentityProviderConfigManager extends EntityManager {
-    public IdentityProviderConfig findByPrimaryKey( long oid ) throws FindException;
-    public long save( IdentityProviderConfig identityProviderConfig ) throws SaveException;
-    public void update( IdentityProviderConfig identityProviderConfig ) throws UpdateException;
-    public void delete( IdentityProviderConfig identityProviderConfig ) throws DeleteException;
-
-    public Collection findAllIdentityProviders() throws FindException;
+    IdentityProvider getInternalIdentityProvider();
+    IdentityProviderConfig findByPrimaryKey( long oid ) throws FindException;
+    long save( IdentityProviderConfig identityProviderConfig ) throws SaveException;
+    void update( IdentityProviderConfig identityProviderConfig ) throws UpdateException;
+    void delete( IdentityProviderConfig identityProviderConfig ) throws DeleteException;
+    Collection findAllIdentityProviders() throws FindException;
 }
