@@ -198,18 +198,19 @@ public class GuiCredentialManager extends CredentialManager {
             return;
         invokeDialog(new Runnable() {
             public void run() {
-                String msg = "The key store for the Gateway " + ssg + "\n is irrepairably damaged.\n\n" +
-                        "Do you want to delete it and build a new one?";
-
+                String msg = "The certificate and/or key store for the Gateway " + ssg +
+                        "\n is irrepairably damaged.\n\n" +
+                        "Do you want to delete and rebuild them?";
                 Gui.getInstance().getFrame().toFront();
+                Object[] certoptions = { "Destroy Certificate and Key Stores", "Cancel" };                
                 int result = JOptionPane.showOptionDialog(Gui.getInstance().getFrame(),
                                                           msg,
                                                           "Key Store Corrupt",
                                                           JOptionPane.YES_NO_CANCEL_OPTION,
                                                           JOptionPane.ERROR_MESSAGE,
                                                           null,
-                                                          null,
-                                                          null);
+                                                          certoptions,
+                                                          certoptions[1]);
                 if (result == 0)
                     df.destroyKeystore = true;
             }
