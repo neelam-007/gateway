@@ -74,6 +74,9 @@ public class FilterManager {
         PublishedService localCopyOfService = new PublishedService();
         try {
             localCopyOfService.copyFrom(policyToFilter);
+            // copy from does not touch the version so this local object has to be
+            // version set manually
+            localCopyOfService.setVersion(policyToFilter.getVersion());
         } catch (IOException e) {
             throw new FilteringException(e);
         }
