@@ -5,7 +5,6 @@ import com.l7tech.console.panels.EditorDialog;
 import com.l7tech.console.panels.GenericUserPanel;
 import com.l7tech.console.panels.UserPanel;
 import com.l7tech.console.panels.FederatedUserPanel;
-import com.l7tech.console.tree.AssertionsTree;
 import com.l7tech.console.tree.EntityHeaderNode;
 import com.l7tech.console.tree.UserNode;
 import com.l7tech.console.util.TopComponents;
@@ -14,7 +13,6 @@ import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.EntityHeader;
 
 import javax.swing.*;
-import javax.swing.tree.DefaultTreeModel;
 import java.util.NoSuchElementException;
 
 /**
@@ -65,7 +63,7 @@ public class UserPropertiesAction extends NodeAction {
                 EntityHeader header = ((EntityHeaderNode) node).getEntityHeader();
 
                 UserPanel panel;
-                if(UserPropertiesAction.this instanceof GenericUserPropertiesAction) {
+                if (UserPropertiesAction.this instanceof GenericUserPropertiesAction) {
                     panel = new GenericUserPanel();
                 } else if (UserPropertiesAction.this instanceof FederatedUserPropertiesAction) {
                     panel = new FederatedUserPanel();
@@ -100,12 +98,6 @@ public class UserPropertiesAction extends NodeAction {
      */
     protected String[] requiredRoles() {
         return new String[]{Group.ADMIN_GROUP_NAME, Group.OPERATOR_GROUP_NAME};
-    }
-
-    private void removeUserFromTree(EntityHeader header) {
-        JTree tree = (JTree) TopComponents.getInstance().getComponent(AssertionsTree.NAME);
-        DefaultTreeModel model = (DefaultTreeModel) tree.getModel();
-        model.removeNodeFromParent(node);
     }
 
     private IdentityProviderConfig config;
