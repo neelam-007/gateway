@@ -16,8 +16,8 @@ import java.util.StringTokenizer;
 public class RemoteIpRange {
 
     public RemoteIpRange() {
-        startIp = "0.0.0.0";
-        networkMask = 0;
+        startIp = "192.168.0.0";
+        networkMask = 24;
         allowRange = true;
     }
 
