@@ -56,6 +56,7 @@
                     <UserName stringValueNull="null"/>
                 </SpecificUser>
                 <RequestWssX509Cert/>
+                <SecureConversation/>
                 <RequestWssIntegrity>
                     <XpathExpression xpathExpressionValue="included">
                         <Expression stringValue="/soapenv:Envelope/soapenv:Body"/>

@@ -46,6 +46,8 @@ public class AllAssertions {
         new TrueAssertion(),
         new MemberOfGroup(),
         new SpecificUser(),
+        new RequestWssX509Cert(),
+        new SecureConversation(),
         new RequestWssIntegrity(),
         new RequestWssConfidentiality(),
         new ResponseWssIntegrity(),
