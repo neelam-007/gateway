@@ -222,8 +222,8 @@ public class WssDecoratorTest extends TestCase {
                                 TestDocuments.getDotNetServerPrivateKey(),
                                 TestDocuments.getEttkClientCertificate(),
                                 TestDocuments.getEttkClientPrivateKey(),
-                                false,
+                                true,
                                 new Element[] { c.body },
-                                new Element[] { c.message.getDocumentElement() });
+                                new Element[] { c.body });
     }
 }
