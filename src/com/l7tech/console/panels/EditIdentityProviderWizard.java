@@ -2,6 +2,8 @@ package com.l7tech.console.panels;
 
 import com.l7tech.console.action.Actions;
 import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.identity.IdentityProviderType;
+
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -26,7 +28,15 @@ public class EditIdentityProviderWizard extends IdentityProviderWizard {
     public EditIdentityProviderWizard(Frame parent, WizardStepPanel panel, IdentityProviderConfig iProvider) {
         super(parent, panel);
         setResizable(true);
-        setTitle("Edit Identity Provider Properties Wizard");
+
+        if(iProvider.type() == IdentityProviderType.LDAP) {
+            setTitle("Edit LDAP Identity Provider Properties Wizard");
+        } else if (iProvider.type() == IdentityProviderType.INTERNAL) {
+            setTitle("Edit Internal Identity Provider Properties Wizard");
+        } else {
+            setTitle("Edit Identity Provider Properties Wizard");
+        }
+
         setShowDescription(false);
 
         // store the current settings

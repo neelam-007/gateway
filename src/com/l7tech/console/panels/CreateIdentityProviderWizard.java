@@ -29,7 +29,7 @@ public class CreateIdentityProviderWizard extends IdentityProviderWizard {
     public CreateIdentityProviderWizard(Frame parent, final WizardStepPanel panel) {
         super(parent, panel);
         setResizable(true);
-        setTitle("Create Identity Provider Wizard");
+        setTitle("Create LDAP Identity Provider Wizard");
         setShowDescription(false);
         Actions.setEscKeyStrokeDisposes(this);
 
