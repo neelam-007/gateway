@@ -239,7 +239,6 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
             PersistenceManager.delete(context, service );
             resolutionManager.deleteResolutionParameters(service.getOid());
             logger.info("Deleted service " + service.getOid());
-
         } catch ( SQLException se ) {
             throw new DeleteException( se.toString(), se );
         }
