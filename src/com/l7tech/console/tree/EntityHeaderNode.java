@@ -21,6 +21,7 @@ public abstract class EntityHeaderNode extends AbstractTreeNode {
      */
     public EntityHeaderNode(EntityHeader e) {
         super(e);
+        setAllowsChildren(false);
     }
 
     /**
@@ -30,13 +31,6 @@ public abstract class EntityHeaderNode extends AbstractTreeNode {
      */
     public boolean isLeaf() {
         return true;
-    }
-
-    /**
-     * Returns true if the receiver allows children.
-     */
-    public boolean getAllowsChildren() {
-        return false;
     }
 
     /**

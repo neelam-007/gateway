@@ -42,6 +42,7 @@ public abstract class CompositeAssertionTreeNode extends AssertionTreeNode {
         if (assertion == null) {
             throw new IllegalArgumentException();
         }
+        this.setAllowsChildren(true);
     }
 
     /**

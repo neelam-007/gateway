@@ -35,6 +35,7 @@ public class ProviderNode extends EntityHeaderNode {
         if (e == null) {
             throw new IllegalArgumentException("entity == null");
         }
+        setAllowsChildren(true);
     }
 
 
@@ -96,10 +97,6 @@ public class ProviderNode extends EntityHeaderNode {
      * @return true if leaf, false otherwise
      */
     public boolean isLeaf() {
-        return false;
-    }
-
-    public boolean getAllowsChildren() {
         return false;
     }
 

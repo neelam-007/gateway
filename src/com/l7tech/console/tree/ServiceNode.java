@@ -42,6 +42,7 @@ public class ServiceNode extends EntityHeaderNode {
     public ServiceNode(EntityHeader e)
       throws IllegalArgumentException {
         super(e);
+        setAllowsChildren(true);
     }
 
     public PublishedService getPublishedService() throws FindException, RemoteException {
@@ -105,13 +106,6 @@ public class ServiceNode extends EntityHeaderNode {
      */
     public boolean isLeaf() {
         return false;
-    }
-
-    /**
-     * Returns true if the receiver allows children.
-     */
-    public boolean getAllowsChildren() {
-        return true;
     }
 
     /**

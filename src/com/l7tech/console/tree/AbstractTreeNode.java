@@ -60,16 +60,20 @@ public abstract class AbstractTreeNode extends DefaultMutableTreeNode {
         public Object getValue() {
             return cookieValue;
         }
+
         private Object cookieValue;
     }
+
     /**
      * Returns the number of children <code>TreeNode</code>s the receiver
      * contains.
      */
     public int getChildCount() {
         if (!hasLoadedChildren) {
-            loadChildren();
-            hasLoadedChildren = true;
+            if (getAllowsChildren()) {
+                loadChildren();
+                hasLoadedChildren = true;
+            }
         }
         return super.getChildCount();
     }

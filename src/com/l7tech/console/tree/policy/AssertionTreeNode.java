@@ -34,6 +34,7 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
 
     AssertionTreeNode(Assertion assertion) {
         super(assertion);
+        this.setAllowsChildren(false);
     }
 
     /**

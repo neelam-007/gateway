@@ -35,14 +35,6 @@ public class ProvidersFolderNode extends AbstractTreeNode {
         return false;
     }
 
-
-    /**
-     * Returns true if the receiver allows children.
-     */
-    public boolean getAllowsChildren() {
-        return false;
-    }
-
     /**
      * subclasses override this method
      */
