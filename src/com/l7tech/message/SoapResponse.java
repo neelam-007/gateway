@@ -84,7 +84,7 @@ public class SoapResponse extends XmlMessageAdapter implements SoapMessage, XmlR
 
     public void setAuthenticationMissing( boolean authMissing ) {
         _authMissing = authMissing;
-        _policyViolated = authMissing;
+        if ( authMissing ) _policyViolated = authMissing;
     }
 
     public synchronized void runOnClose( Runnable runMe ) {
@@ -120,5 +120,5 @@ public class SoapResponse extends XmlMessageAdapter implements SoapMessage, XmlR
     protected boolean _authMissing;
     protected boolean _policyViolated;
 
-    protected List _runOnClose = Collections.EMPTY_LIST;
+    protected transient List _runOnClose = Collections.EMPTY_LIST;
 }
