@@ -4,8 +4,7 @@ import com.l7tech.objectmodel.imp.NamedEntityImp;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 
 import java.security.Principal;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Layer 7 Technologies, inc.
@@ -14,7 +13,7 @@ import java.util.Set;
  *
  * User either from the internal identity provider or a ldap directory.
  * In the case of ldap, the name property contains the dn.
- * Password property is stored as HEX(MD5(login:password)). If you pass a clear text passwd in
+ * Password property is stored as HEX(MD5(login:L7SSGDigestRealm:password)). If you pass a clear text passwd in
  * setPassword, this encoding will be done ofr you (provided that login was set before). 
  */
 public class User extends NamedEntityImp implements Principal {
@@ -48,10 +47,12 @@ public class User extends NamedEntityImp implements Principal {
     }
 
     public Set getGroups() {
+        if ( _groups == null ) _groups = new HashSet();
         return _groups;
     }
 
     public Set getGroupHeaders() {
+        if ( _groupHeaders == null ) _groupHeaders = new HashSet();
         return _groupHeaders;
     }
 
@@ -236,7 +237,7 @@ public class User extends NamedEntityImp implements Principal {
     private int _certResetCounter;
     private String _cert;
 
-    private Set _groups = new HashSet();
-    private Set _groupHeaders = new HashSet();
+    private Set _groups;
+    private Set _groupHeaders;
     private long providerId = DEFAULT_OID;
 }
