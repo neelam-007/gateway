@@ -26,19 +26,19 @@ public class IconManager {
 
     public static ImageIcon getAdd() {
         if (iconAdd == null)
-            iconAdd = new ImageIcon(cl.getResource(Gui.RESOURCE_PATH + "/New16.gif"));
+            iconAdd = loadImage(Gui.RESOURCE_PATH + "/New16.gif");
         return iconAdd;
     }
 
     public static ImageIcon getEdit() {
         if (iconEdit == null)
-            iconEdit = new ImageIcon(cl.getResource(Gui.RESOURCE_PATH + "/Edit16.gif"));
+            iconEdit = loadImage(Gui.RESOURCE_PATH + "/Edit16.gif");
         return iconEdit;
     }
 
     public static ImageIcon getRemove() {
         if (iconRemove == null)
-            iconRemove = new ImageIcon(cl.getResource(Gui.RESOURCE_PATH + "/Delete16.gif"));
+            iconRemove = loadImage(Gui.RESOURCE_PATH + "/Delete16.gif");
         return iconRemove;
     }
 }
