@@ -151,9 +151,9 @@ CREATE TABLE client_cert (
 DROP TABLE service_resolution;
 CREATE TABLE service_resolution (
   serviceid bigint NOT NULL default '0',
-  soapaction varchar(128) NOT NULL default '',
-  urn varchar(255) NOT NULL default '',
-  primary key(soapaction, urn)
+  soapaction varchar(128) default '',
+  urn varchar(255) default '',
+  unique(soapaction, urn)
 );
 
 --
