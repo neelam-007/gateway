@@ -33,7 +33,18 @@ public abstract class Filter {
         logger = LogManager.getInstance().getSystemLogger();
     }
 
-    protected void removeSelfFromParent(Assertion arg, boolean removeAlsoNextSiblings) throws FilteringException {
+    /**
+     * Used by subclasses. Removes the passed assertion from its parent and potentially "next" siblings.
+     * If the assertion does not have a parent, nothing will be done.
+     * @param arg the assertion to remove from its parent
+     * @param removeAlsoNextSiblings if true, the siblings coming after this assertion will also be removed from the parent
+     */
+    protected void removeSelfFromParent(Assertion arg, boolean removeAlsoNextSiblings) {
+        if (arg == null) {
+            String msg = "null assertion was passed"; // (not the stuff in chineese food)
+            logger.severe(msg);
+            throw new IllegalArgumentException(msg);
+        }
         CompositeAssertion parent = arg.getParent();
         // special case, empty root assertion (anonymous access?)
         if (parent == null) {
@@ -53,7 +64,16 @@ public abstract class Filter {
         parent.setChildren(newKids);
     }
 
-    protected void removeSelfAndAllSiblings(Assertion arg)  throws FilteringException {
+    /**
+     * removes all assertion children of the parent of the assertion passed. (sets empty children to the parent node)
+     * @param arg the assertion whose parent's children will be removed
+     */
+    protected void removeSelfAndAllSiblings(Assertion arg) {
+        if (arg == null) {
+            String msg = "null assertion was passed"; // (not the stuff in chineese food)
+            logger.severe(msg);
+            throw new IllegalArgumentException(msg);
+        }
         CompositeAssertion parent = arg.getParent();
         if (parent == null) {
             logger.warning("Filter action resulted in removing all assertions from policy.");
