@@ -7,6 +7,7 @@
 package com.l7tech.proxy.datamodel;
 
 import com.l7tech.common.security.xml.Session;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
@@ -33,10 +34,6 @@ import java.io.IOException;
  */
 public class SsgSessionManager {
     private static final Category log = Category.getInstance(SsgSessionManager.class);
-    private static final String SERVLET_FILE = "/ssg/xmlencsession";
-    private static final String HEADER_KEYREQ = "keyreq";
-    private static final String HEADER_KEYRES = "keyres";
-    private static final String HEADER_SESSION_ID = "sessionid";
 
     private static class InvalidSessionIdException extends IOException {
         public InvalidSessionIdException(String s, Throwable cause) {
@@ -87,17 +84,6 @@ public class SsgSessionManager {
         return header.getValue();
     }
 
-    /** Hack for now, until Sybok has new session servlet deployed.  TODO: remove */
-    private static String header(HttpMethod method, String name, String alternateName) throws IOException {
-        Header header = method.getResponseHeader(name);
-        if (header == null)
-            header = method.getResponseHeader(alternateName);
-        if (header == null)
-            throw new IOException("Required HTTP header " + name + " was missing from response (also checked for alternate name " + alternateName + ")");
-        return header.getValue();
-
-    }
-
     private static Session establishNewSession(Ssg ssg)
             throws OperationCanceledException, MalformedURLException, IOException,
             ServerCertificateUntrustedException, BadCredentialsException
@@ -114,7 +100,7 @@ public class SsgSessionManager {
         HttpMethod getMethod = new GetMethod(new URL("https",
                                                      ssg.getSsgAddress(),
                                                      ssg.getSslPort(),
-                                                     SERVLET_FILE).toString());
+                                                     SecureSpanConstants.SESSION_SERVICE_FILE).toString());
         getMethod.setDoAuthentication(true);
         try {
             int status = client.executeMethod(getMethod);
@@ -124,12 +110,12 @@ public class SsgSessionManager {
             }
             log.info("Session establishment completed with status " + status);
 
-            String idstr = header(getMethod, HEADER_SESSION_ID);
-            String b64keyreq = header(getMethod, HEADER_KEYREQ, "key1"); // todo: remove key1 alternate name
+            String idstr = header(getMethod, SecureSpanConstants.HttpHeaders.HEADER_SESSION_ID);
+            String b64keyreq = header(getMethod, SecureSpanConstants.HttpHeaders.HEADER_KEYREQ);
             byte[] keyreq = Base64.decode(b64keyreq);
             if (keyreq == null)
                 throw new IOException("SSG sent invalid request key in session: base64 keyreq=" + b64keyreq);
-            String b64keyres = header(getMethod, HEADER_KEYRES, "key2"); // todo: remove key2 alternate name
+            String b64keyres = header(getMethod, SecureSpanConstants.HttpHeaders.HEADER_KEYRES);
             byte[] keyres = Base64.decode(b64keyres);
             if (keyres == null)
                 throw new IOException("SSG sent invalid response key in session: base64 keyres=" + b64keyres);
