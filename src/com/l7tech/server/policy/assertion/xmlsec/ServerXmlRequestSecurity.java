@@ -1,11 +1,10 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import com.l7tech.server.policy.assertion.credential.wss.ServerWssCredentialSource;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import com.l7tech.policy.assertion.credential.CredentialFinderException;
 import com.l7tech.policy.assertion.credential.PrincipalCredentials;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.xmlsec.XmlRequestSecurity;
 import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
@@ -42,43 +41,21 @@ import sun.security.x509.X500Name;
  * This extends ServerWssCredentialSource because once the validity of the signature if confirmed, the cert is used
  * as credentials.
  */
-public class ServerXmlRequestSecurity extends ServerWssCredentialSource implements ServerAssertion {
+public class ServerXmlRequestSecurity implements ServerAssertion {
     public ServerXmlRequestSecurity(XmlRequestSecurity data ) {
-        super(null);
-        _data = data;
+        this.data = data;
         logger = LogManager.getInstance().getSystemLogger();
     }
 
-    /**
-     * validates the signature and
-     * @param request
-     * @param response
-     * @return
-     * @throws CredentialFinderException
-     */
-    protected AssertionStatus checkCredentials(Request request, Response response) throws CredentialFinderException {
-        // nothing to check, if the credentials were extracted successfully, then there is nothing to check
-        return AssertionStatus.NONE;
-    }
-
-    /**
-     *
-     * @param request
-     * @return
-     * @throws IOException
-     * @throws CredentialFinderException
-     */
-    protected PrincipalCredentials findCredentials(Request request, Response response) throws IOException, CredentialFinderException {
-
-        // todo, xml-enc part
-
+    public AssertionStatus checkRequest(Request request, Response response) throws IOException, PolicyAssertionException {
         // try to get credentials out of the digital signature
         Document soapmsg = null;
         try {
             soapmsg = ((SoapRequest)request).getDocument();
         } catch (SAXException e) {
             logger.log(Level.SEVERE, "could not get request's xml document", e);
-            throw new CredentialFinderException("cannot extract name from cert", e, AssertionStatus.AUTH_FAILED);
+            response.setAuthenticationMissing(true);
+            throw new PolicyAssertionException("cannot extract name from cert", e);
         }
         SoapMsgSigner dsigHelper = new SoapMsgSigner();
         X509Certificate clientCert = null;
@@ -88,14 +65,17 @@ public class ServerXmlRequestSecurity extends ServerWssCredentialSource implemen
             // no digital signature, return null
             logger.log(Level.WARNING, e.getMessage(), e);
             logger.info(((SoapRequest)request).getRequestXml());
-            throw new CredentialFinderException(e.getMessage(), e, AssertionStatus.AUTH_REQUIRED);
+            response.setAuthenticationMissing(true);
+            throw new PolicyAssertionException(e.getMessage(), e);
         } catch (InvalidSignatureException e) {
             // bad signature !
             logger.log(Level.SEVERE, e.getMessage(), e);
             logger.info(((SoapRequest)request).getRequestXml());
-            throw new CredentialFinderException(e.getMessage(), e, AssertionStatus.AUTH_FAILED);
+            response.setAuthenticationMissing(true);
+            throw new PolicyAssertionException(e.getMessage(), e);
         } catch (XSignatureException e) {
-            throw new CredentialFinderException(e.getMessage(), e, AssertionStatus.AUTH_FAILED);
+            response.setAuthenticationMissing(true);
+            throw new PolicyAssertionException(e.getMessage(), e);
         }
 
         // Get DN from cert, ie "CN=testuser, OU=ssg.example.com"
@@ -106,17 +86,26 @@ public class ServerXmlRequestSecurity extends ServerWssCredentialSource implemen
             X500Name x500name = new X500Name( clientCert.getSubjectX500Principal().getName() );
             certCN = x500name.getCommonName();
         } catch (IOException e) {
-            _log.log(Level.SEVERE, e.getMessage(), e);
-            throw new CredentialFinderException("cannot extract name from cert", e, AssertionStatus.AUTH_FAILED);
+            logger.log(Level.SEVERE, e.getMessage(), e);
+            response.setAuthenticationMissing(true);
+            throw new PolicyAssertionException("cannot extract name from cert", e);
         }
 
         logger.log(Level.INFO, "cert extracted from digital signature for user " + certCN);
 
         User u = new User();
         u.setLogin(certCN);
-        return new PrincipalCredentials( u, null, CredentialFormat.CLIENTCERT, null, clientCert );
+        request.setPrincipalCredentials(new PrincipalCredentials(u, null, CredentialFormat.CLIENTCERT, null, clientCert));
+
+        // if we must also do xml-encryption,
+        if (data.isEncryption()){
+            // todo, decypher the body
+        }
+        return AssertionStatus.NONE;
     }
 
-    protected XmlRequestSecurity _data;
+    protected XmlRequestSecurity data;
     private Logger logger = null;
+
+
 }
