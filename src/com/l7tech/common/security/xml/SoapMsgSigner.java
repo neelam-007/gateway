@@ -1,9 +1,7 @@
 package com.l7tech.common.security.xml;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.w3c.dom.Node;
+import org.w3c.dom.*;
+
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.interfaces.RSAPrivateKey;
@@ -60,6 +58,9 @@ public class SoapMsgSigner {
             throw new IllegalArgumentException("Unsupported private key type: " + privateKey.getClass().getName());
         }
 
+        // get or create security element
+        Element securityEl = SoapUtil.getOrMakeSecurityElement(soapMsg);
+
         // Create signature template and populate with appropriate transforms. Reference is to SOAP Envelope
         TemplateGenerator template = new TemplateGenerator(soapMsg, XSignature.SHA1, Canonicalizer.W3C2, signaturemethod);
         template.setPrefix(DS_PREFIX);
@@ -70,7 +71,6 @@ public class SoapMsgSigner {
         Element sigEl = template.getSignatureElement();
 
         // Signature is inserted in Header/Security, as per WS-S
-        Element securityEl = SoapUtil.getOrMakeSecurityElement(soapMsg);
         Element envelopedSigEl = (Element) securityEl.appendChild(sigEl);
 
         // Include KeyInfo element in signature and embed cert into subordinate X509Data element
@@ -81,7 +81,7 @@ public class SoapMsgSigner {
         keyInfo.setX509Data(new KeyInfo.X509Data[]{x509Data});
         keyInfo.insertTo(envelopedSigEl, DS_PREFIX);
 
-        filterOutEmptyTextNodes(soapMsg.getDocumentElement());
+        normalizeDoc(soapMsg);
 
         // Setup context and sign document
         SignatureContext sigContext = new SignatureContext();
@@ -101,8 +101,7 @@ public class SoapMsgSigner {
      * @throws com.l7tech.common.security.xml.InvalidSignatureException if the signature is invalid, not in an expected format or is missing information
      */
     public X509Certificate validateSignature(Document soapMsg) throws SignatureNotFoundException, InvalidSignatureException {
-
-        filterOutEmptyTextNodes(soapMsg.getDocumentElement());
+        normalizeDoc(soapMsg);
 
         // find signature element
         Element sigElement = getSignatureHeaderElement(soapMsg);
@@ -178,7 +177,20 @@ public class SoapMsgSigner {
         return (Element)tmpNodeList.item(0);
     }
 
-    private void filterOutEmptyTextNodes(Element el) {
+    /**
+     * Document normalization is necessary because the serialization / deserialization process between the
+     * ssg and the CP causes \n characters to be inserted in certain text nodes that contain space char
+     * as well as empty text nodes being created all over the place.
+     */
+    private void normalizeDoc(Document doc) {
+        // fla note, IBM's Normalizer.normalize is useless
+        filterOutEmptyTextNodesAndNormalizeStrings(doc.getDocumentElement());
+    }
+
+    /**
+     * See normalizeDoc
+     */
+    private void filterOutEmptyTextNodesAndNormalizeStrings(Element el) {
         NodeList children = el.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
             Node node = children.item(i);
@@ -188,24 +200,70 @@ public class SoapMsgSigner {
                 boolean legitNode = false;
                 for (int j = 0; j < val.length(); j++) {
                     char c = val.charAt(j);
-                    if (c == ' ' || c == '\n' || c == '\t' || c == '\r') continue;
+                    if (isCharSpace(c)) continue;
                     // a non-empty character was found, leave this node alone (should we trim the value?)
                     legitNode = true;
                     break;
                 }
                 if (!legitNode) {
                     el.removeChild(node);
-                    filterOutEmptyTextNodes(el);
+                    filterOutEmptyTextNodesAndNormalizeStrings(el);
+                } else {
+                    normalizeTextNodeValue((Text)node);
                 }
             }
             else if (node.getNodeType() == Node.ELEMENT_NODE) {
-                filterOutEmptyTextNodes((Element)node);
+                filterOutEmptyTextNodesAndNormalizeStrings((Element)node);
             }
         }
     }
 
+    /**
+     * See normalizeDoc
+     */
+    private void normalizeTextNodeValue(Text node) {
+        String originalVal = node.getNodeValue();
+        for (int i = 0; i < originalVal.length(); i++) {
+            char c = originalVal.charAt(i);
+            if (isCharSpace(c)) {
+                int begin = i;
+                int end = -1; // the first non space char
+                for (int j = i+1; j < originalVal.length(); j++) {
+                    char c2 = originalVal.charAt(j);
+                    if (!isCharSpace(c2)) {
+                        end = j;
+                        break;
+                    }
+                }
+                // trailing spaces at end of string
+                if (end == -1) {
+                    originalVal = originalVal.substring(0, begin);
+                    // we're done
+                    break;
+                } else if ((end-begin) > 1) {
+                    // either a space prefix
+                    if (begin == 0) {
+                        originalVal = originalVal.substring(end);
+                    } else { // or a space gap
+                        String newVal = originalVal.substring(0, begin) + ' ' + originalVal.substring(end, originalVal.length());
+                        originalVal = newVal;
+                    }
+                }
+                // this is a lonely space
+                // check if it's first thing
+                if (begin == 0) originalVal = originalVal.substring(1);
+                // make sure it hasn't been replaced by a \n or something like that
+                else if (c != ' ') originalVal = originalVal.replace(c, ' ');
+            }
+        }
+        node.setNodeValue(originalVal);
+    }
+
+    private boolean isCharSpace(char c) {
+        if (c == ' ' || c == '\n' || c == '\t' || c == '\r') return true;
+        return false;
+    }
+
     private static final String DS_PREFIX = "ds";
     private static final String DEF_ENV_TAG = "envId";
-    private static final String HEADER_EL_NAME = "Header";
-    private static final String BODY_EL_NAME = "Body";
 }
