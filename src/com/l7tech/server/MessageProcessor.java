@@ -103,7 +103,7 @@ public class MessageProcessor extends ApplicationObjectSupport {
     public AssertionStatus processMessage( PolicyEnforcementContext context )
             throws IOException, PolicyAssertionException, PolicyVersionException
     {
-        auditor = new Auditor(AuditContext.getCurrent(getApplicationContext()), Logger.getLogger(getClass().getName()));
+        auditor = new Auditor(AuditContext.getCurrent(getApplicationContext()), logger);
         context.setAuditContext(AuditContext.getCurrent(getApplicationContext()));
         try {
             currentContext.set(context);
@@ -318,10 +318,10 @@ public class MessageProcessor extends ApplicationObjectSupport {
 
             return status;
         } catch ( ServiceResolutionException sre ) {
-            auditor.logAndAudit(MessageProcessingMessages.EXCEPTION, new String[] {sre.getMessage()}, sre);
+            auditor.logAndAudit(MessageProcessingMessages.EXCEPTION_SEVERE, new String[] {sre.getMessage()}, sre);
             return AssertionStatus.SERVER_ERROR;
         } catch (SAXException e) {
-            auditor.logAndAudit(MessageProcessingMessages.EXCEPTION, new String[] {e.getMessage()}, e);
+            auditor.logAndAudit(MessageProcessingMessages.EXCEPTION_SEVERE, new String[] {e.getMessage()}, e);
             return AssertionStatus.SERVER_ERROR;
         } finally {
             try {
@@ -358,5 +358,6 @@ public class MessageProcessor extends ApplicationObjectSupport {
     private XmlPullParserFactory _xppf;
     private static final Level DEFAULT_MESSAGE_AUDIT_LEVEL = Level.INFO;
     private Auditor auditor;
+    final Logger logger = Logger.getLogger(getClass().getName());
 
 }
