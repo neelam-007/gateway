@@ -13,10 +13,10 @@ import net.sf.hibernate.Session;
  */
 public class HibernatePersistenceContextStub extends HibernatePersistenceContext {
     public Session getSession() {
-        return _session;
+        return mainSession;
     }
 
-    public HibernatePersistenceContextStub( Session session ) {
-        super( session );
+    public HibernatePersistenceContextStub( Session mainSession, Session auditSession ) {
+        super(mainSession, auditSession);
     }
 }

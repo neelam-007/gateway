@@ -7,16 +7,18 @@
 package com.l7tech.server;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
+import com.l7tech.common.util.MultipartUtil;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.MultipartUtil;
 import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.message.*;
 import com.l7tech.objectmodel.PersistenceContext;
+import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.service.PublishedService;
+import org.xml.sax.SAXException;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -26,8 +28,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import org.xml.sax.SAXException;
 
 /**
  * Receives SOAP requests via HTTP POST, passes them into the <code>MessageProcessor</code>
@@ -146,9 +146,15 @@ public class SoapMessageProcessingServlet extends HttpServlet {
             }
         } finally {
             PersistenceContext pc = PersistenceContext.peek();
-            if (pc != null) pc.close();
+            if (pc != null) {
+                try {
+                    pc.commitIfPresent();
+                } catch (TransactionException e) {
+                    logger.log(Level.SEVERE, "Unable to commit transaction", e);
+                }
+                pc.close();
+            }
 
-            // RequestAuditRecord rec = new RequestAuditRecord( "HTTP(s) SOAP Request", status );
             try { if (respWriter != null) respWriter.close(); } catch (Throwable t) {}
             try { if (sreq != null) sreq.close(); } catch (Throwable t) {}
             try { if (sresp != null) sresp.close(); } catch (Throwable t) {}

@@ -7,6 +7,9 @@
 package com.l7tech.server;
 
 import com.l7tech.cluster.ClusterNodeInfo;
+import com.l7tech.common.audit.AdminAuditRecord;
+import com.l7tech.common.audit.MessageSummaryAuditRecord;
+import com.l7tech.common.audit.SystemAuditRecord;
 import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.HibernatePersistenceContext;
@@ -45,6 +48,9 @@ public class PersistenceEventInterceptor implements Interceptor {
         ignoredClassNames.add(SSGLogRecord.class.getName());
         ignoredClassNames.add(ClusterNodeInfo.class.getName());
         ignoredClassNames.add(ResolutionParameters.class.getName());
+        ignoredClassNames.add(AdminAuditRecord.class.getName());
+        ignoredClassNames.add(SystemAuditRecord.class.getName());
+        ignoredClassNames.add(MessageSummaryAuditRecord.class.getName());
     }
 
     private final Set ignoredClassNames;

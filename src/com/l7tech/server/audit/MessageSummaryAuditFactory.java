@@ -6,6 +6,7 @@
 
 package com.l7tech.server.audit;
 
+import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.common.audit.MessageSummaryAuditRecord;
 import com.l7tech.identity.User;
 import com.l7tech.message.Request;
@@ -28,6 +29,7 @@ import java.util.logging.Level;
  */
 public class MessageSummaryAuditFactory {
     private MessageSummaryAuditFactory() {}
+    private static String nodeId = ClusterInfoManager.getInstance().thisNodeId();
 
     public static MessageSummaryAuditRecord makeEvent(Level level, AssertionStatus status ) {
         String requestXml = null;
@@ -43,6 +45,7 @@ public class MessageSummaryAuditFactory {
         String userId = null;
 
         Request currentRequest = MessageProcessor.getCurrentRequest();
+        String requestId = currentRequest.getId().toString();
         if ( currentRequest != null ) {
             if ( currentRequest instanceof XmlRequest ) {
                 XmlRequest xreq = (XmlRequest)currentRequest;
@@ -101,18 +104,14 @@ public class MessageSummaryAuditFactory {
                 }
             }
 
-            try {
-                responseContentLength = new Integer( (String)currentResponse.getParameter( Response.PARAM_HTTP_CONTENT_LENGTH ) ).intValue();
-            } catch ( NumberFormatException nfe ) {
-            }
-            if ( responseContentLength == -1 && responseXml != null ) responseContentLength = responseXml.length();
+            if (responseXml != null) responseContentLength = responseXml.length();
         }
 
-        return new MessageSummaryAuditRecord( level, status, clientAddr,
+        return new MessageSummaryAuditRecord(level, nodeId, requestId, status, clientAddr,
                                              requestXml, requestContentLength,
                                              responseXml, responseContentLength,
                                              serviceOid, serviceName,
-                                             authenticated, identityProviderOid, userName, userId );
+                                             authenticated, identityProviderOid, userName, userId);
     }
 
 }

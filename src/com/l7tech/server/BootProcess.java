@@ -7,13 +7,18 @@
 package com.l7tech.server;
 
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.Component;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.util.JdkLoggerConfigurator;
 import com.l7tech.common.util.Locator;
 import com.l7tech.logging.ServerLogHandler;
+import com.l7tech.objectmodel.HibernatePersistenceContext;
 import com.l7tech.objectmodel.HibernatePersistenceManager;
 import com.l7tech.objectmodel.PersistenceContext;
 import com.l7tech.objectmodel.TransactionException;
+import com.l7tech.server.audit.SystemAuditListener;
+import com.l7tech.server.event.EventManager;
+import com.l7tech.server.event.lifecycle.*;
 import com.l7tech.server.policy.DefaultGatewayPolicies;
 import com.l7tech.server.service.ServiceManager;
 import com.l7tech.server.service.ServiceManagerImp;
@@ -43,17 +48,26 @@ public class BootProcess implements ServerComponentLifecycle {
     private List _components = new ArrayList();
 
     public void init(ComponentConfig config) throws LifecycleException {
-        PersistenceContext context = null;
+        HibernatePersistenceContext context = null;
         try {
             // Initialize database stuff
             HibernatePersistenceManager.initialize();
+
+            // This needs to happen here, early enough that it will notice early events but after the database init
+            systemAuditListener = new SystemAuditListener();
+            EventManager.addListener(LifecycleEvent.class, systemAuditListener);
 
             // add the server handler programatically after the hibernate is initialized.
             // the handlers specified in the configuraiton get loaded by the system classloader and hibernate
             // stuff lives in the web app classloader
             JdkLoggerConfigurator.addHandler(new ServerLogHandler());
 
-            context = PersistenceContext.getCurrent();
+            context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
+            try {
+                EventManager.fireInNewTransaction(new Initializing(this, Component.GW_SERVER));
+            } catch ( TransactionException e ) {
+                logger.log( Level.WARNING, "Couldn't commit event transaction", e );
+            }
             logger.info("Initializing server");
 
             setSystemProperties(config);
@@ -95,6 +109,12 @@ public class BootProcess implements ServerComponentLifecycle {
                 }
             }
 
+            try {
+                EventManager.fireInNewTransaction(new Initialized(this, Component.GW_SERVER));
+            } catch ( TransactionException e ) {
+                logger.log( Level.WARNING, "Couldn't commit event transaction", e );
+            }
+
             logger.info("Initialized server");
         } catch (IOException e) {
             throw new LifecycleException(e.toString(), e);
@@ -109,6 +129,11 @@ public class BootProcess implements ServerComponentLifecycle {
         PersistenceContext context = null;
         try {
             context = PersistenceContext.getCurrent();
+            try {
+                EventManager.fireInNewTransaction(new Starting(this, Component.GW_SERVER));
+            } catch ( TransactionException e ) {
+                logger.log( Level.WARNING, "Couldn't commit event transaction", e );
+            }
             logger.info("Starting server");
 
             // make sure the ServiceManager is available. this will also build the service cache
@@ -132,6 +157,11 @@ public class BootProcess implements ServerComponentLifecycle {
             }
 
             logger.info(BuildInfo.getLongBuildString());
+            try {
+                EventManager.fireInNewTransaction(new Started(this, Component.GW_SERVER));
+            } catch ( TransactionException e ) {
+                logger.log( Level.WARNING, "Couldn't commit event transaction", e );
+            }
             logger.info("Boot process complete.");
         } catch (SQLException se) {
             throw new LifecycleException(se.toString(), se);
@@ -141,6 +171,12 @@ public class BootProcess implements ServerComponentLifecycle {
     }
 
     public void stop() throws LifecycleException {
+        try {
+            EventManager.fireInNewTransaction(new Stopping(this, Component.GW_SERVER));
+        } catch ( TransactionException e ) {
+            logger.log( Level.WARNING, "Couldn't commit event transaction", e );
+        }
+
         logger.info("Stopping server components");
 
         List stnenopmoc = new ArrayList();
@@ -153,10 +189,17 @@ public class BootProcess implements ServerComponentLifecycle {
             component.stop();
         }
 
+        EventManager.fire(new Stopped(this, Component.GW_SERVER));
         logger.info("Stopped.");
     }
 
     public void close() throws LifecycleException {
+        try {
+            EventManager.fireInNewTransaction(new Closing(this, Component.GW_SERVER));
+        } catch ( TransactionException e ) {
+            logger.log( Level.WARNING, "Couldn't commit event transaction", e );
+        }
+
         logger.info("Closing server components");
 
         List stnenopmoc = new ArrayList();
@@ -174,6 +217,8 @@ public class BootProcess implements ServerComponentLifecycle {
         if (serviceManager != null && serviceManager instanceof ServiceManagerImp) {
             ((ServiceManagerImp)serviceManager).destroy();
         }
+        EventManager.fire(new Closed(this, Component.GW_SERVER));
+        EventManager.removeListener(systemAuditListener);
         logger.info("Closed.");
     }
 
@@ -199,10 +244,13 @@ public class BootProcess implements ServerComponentLifecycle {
             for (Iterator i = props.keySet().iterator(); i.hasNext();) {
                 String name = (String)i.next();
                 String value = (String)props.get(name);
+                logger.info("Setting system property " + name + "=" + value);
                 System.setProperty(name, value);
             }
         } finally {
             if (is != null) is.close();
         }
     }
+
+    private SystemAuditListener systemAuditListener;
 }

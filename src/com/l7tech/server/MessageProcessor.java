@@ -20,6 +20,8 @@ import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
+import com.l7tech.server.event.EventManager;
+import com.l7tech.server.event.MessageProcessed;
 import com.l7tech.server.policy.PolicyVersionException;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.secureconversation.SecureConversationContextManager;
@@ -106,11 +108,11 @@ public class MessageProcessor {
         }
         
         // Policy Verification Step
+        AssertionStatus status = AssertionStatus.UNDEFINED;
         try {
             ServiceManager manager = (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
             PublishedService service = manager.resolve(request);
 
-            AssertionStatus status;
             if ( service == null ) {
                 logger.warning( "Service not found" );
                 status = AssertionStatus.SERVICE_NOT_FOUND;
@@ -259,6 +261,8 @@ public class MessageProcessor {
         } catch ( ServiceResolutionException sre ) {
             logger.log(Level.SEVERE, sre.getMessage(), sre);
             return AssertionStatus.SERVER_ERROR;
+        } finally {
+            EventManager.fire(new MessageProcessed(request, response, status));
         }
     }
 

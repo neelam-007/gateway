@@ -26,6 +26,7 @@ import java.util.logging.Logger;
  */
 public class HibernatePersistenceManager extends PersistenceManager {
     public static final String DEFAULT_HIBERNATE_RESOURCEPATH = "SSG.hbm.xml";
+    public static final String AUDIT_HIBERNATE_RESOURCEPATH = "audit.hbm.xml";
     public static final String DEFAULT_PINGSQL = "select 1";
     public static String pingStatement = DEFAULT_PINGSQL;
 
@@ -46,11 +47,11 @@ public class HibernatePersistenceManager extends PersistenceManager {
     private HibernatePersistenceManager(Properties properties) throws IOException, SQLException {
         FileInputStream fis = null;
         try {
-            Configuration cfg = new Configuration();
+            Configuration mainConfig = new Configuration();
 
             if (properties != null) {
                 logger.info("Loading database configuration from presupplied properties");
-                cfg.setProperties(properties);
+                mainConfig.setProperties(properties);
             } else {
                 String propsPath = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_HIBERNATE);
 
@@ -59,15 +60,19 @@ public class HibernatePersistenceManager extends PersistenceManager {
                     Properties props = new Properties();
                     fis = new FileInputStream(propsPath);
                     props.load(fis);
-                    cfg.setProperties(props);
+                    mainConfig.setProperties(props);
                 } else {
                     logger.info("Loading database configuration from system classpath");
                 }
             }
-            cfg.addResource(DEFAULT_HIBERNATE_RESOURCEPATH, getClass().getClassLoader());
-            _sessionFactory = cfg.buildSessionFactory();
+            mainConfig.addResource(DEFAULT_HIBERNATE_RESOURCEPATH, getClass().getClassLoader());
+            _sessionFactory = mainConfig.buildSessionFactory();
 
-            String temp = cfg.getProperty("hibernate.dbcp.validationQuery");
+            Configuration auditConfig = new Configuration();
+            auditConfig.addResource(AUDIT_HIBERNATE_RESOURCEPATH, getClass().getClassLoader());
+            _auditSessionFactory = auditConfig.buildSessionFactory();
+
+            String temp = mainConfig.getProperty("hibernate.dbcp.validationQuery");
             if ( temp != null && temp.length() > 0 ) pingStatement = temp;
         } catch (HibernateException he) {
             logger.throwing(getClass().getName(), "<init>", he);
@@ -79,7 +84,7 @@ public class HibernatePersistenceManager extends PersistenceManager {
 
     public PersistenceContext doMakeContext() throws SQLException {
         try {
-            return new HibernatePersistenceContext(makeSession());
+            return new HibernatePersistenceContext(makeSession(), makeAuditSession());
         } catch (HibernateException he) {
             throw new SQLException(he.toString());
         }
@@ -87,14 +92,23 @@ public class HibernatePersistenceManager extends PersistenceManager {
 
     Session makeSession() throws HibernateException, SQLException {
         if (_sessionFactory == null) throw new IllegalStateException("HibernatePersistenceManager must be initialized before calling makeSession()!");
-        Session session = _sessionFactory.openSession(interceptor);
+        Session mainSession = _sessionFactory.openSession(interceptor);
         // make sure this session is clean
-        session.clear();
-        return session;
+        mainSession.clear();
+        return mainSession;
+    }
+
+    Session makeAuditSession() throws HibernateException, SQLException {
+        if (_auditSessionFactory == null) throw new IllegalStateException("HibernatePersistenceManager must be initialized before calling makeSession()!");
+        Session auditSession = _auditSessionFactory.openSession();
+        // make sure this session is clean
+        auditSession.clear();
+        return auditSession;
     }
 
     private PersistenceEventInterceptor interceptor = new PersistenceEventInterceptor();
     private SessionFactory _sessionFactory;
+    private SessionFactory _auditSessionFactory;
 
     List doFind(PersistenceContext context, String query) throws FindException {
         try {

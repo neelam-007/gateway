@@ -6,7 +6,10 @@
 
 package com.l7tech.server.event;
 
+import com.l7tech.objectmodel.HibernatePersistenceContext;
+import com.l7tech.objectmodel.TransactionException;
 import com.l7tech.objectmodel.event.Event;
+import net.sf.hibernate.Transaction;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -32,10 +35,20 @@ public class EventManager {
         removeFromMapOfSets(promoter, promotersByEventClass);
     }
 
-
+    public static void fireInNewTransaction(Event event) throws TransactionException {
+        HibernatePersistenceContext context = null;
+        try {
+            context = (HibernatePersistenceContext) HibernatePersistenceContext.getCurrent();
+            Transaction t = context.getAuditSession().beginTransaction();
+            fire(event);
+            t.commit();
+        } catch ( Exception e ) {
+            throw new TransactionException("Unable to commit event transaction", e);
+        }
+    }
 
     public static void fire(Event event) {
-        logger.info("Firing event " + event);
+        logger.fine("Firing event " + event);
         Set listeners = new HashSet();
         collectEventClassMap(listenersByEventClass, listeners, event.getClass());
         Set promoters = new HashSet();
@@ -45,7 +58,7 @@ public class EventManager {
             Event old = event;
             event = promoter.promote(event);
             if (event != old) {
-                logger.info(old + " was promoted to " + event); // TODO finer
+                logger.finer(old + " was promoted to " + event);
             }
         }
 

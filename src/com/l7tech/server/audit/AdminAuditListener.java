@@ -6,8 +6,11 @@
 
 package com.l7tech.server.audit;
 
+import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.common.audit.AdminAuditRecord;
+import com.l7tech.common.util.Locator;
 import com.l7tech.objectmodel.Entity;
+import com.l7tech.objectmodel.SaveException;
 import com.l7tech.objectmodel.event.*;
 import com.l7tech.server.service.ServiceEvent;
 import com.l7tech.service.PublishedService;
@@ -21,13 +24,16 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author alex
  * @version $Revision$
  */
 public class AdminAuditListener implements CreateListener, UpdateListener, DeleteListener {
+    private static String nodeId = ClusterInfoManager.getInstance().thisNodeId();
     public static final Level DEFAULT_LEVEL = Level.INFO;
+
     public static class LevelMapping {
         public LevelMapping(Class entityClass, Map eventClassesToLevels) {
             if (entityClass == null || eventClassesToLevels == null) throw new IllegalArgumentException("Args must not be null");
@@ -53,6 +59,9 @@ public class AdminAuditListener implements CreateListener, UpdateListener, Delet
     }
 
     public AdminAuditListener() {
+        auditRecordManager = (AuditRecordManager)Locator.getDefault().lookup(AuditRecordManager.class);
+        if (auditRecordManager == null) throw new IllegalStateException("Couldn't locate AuditRecordManager");
+
         Map levels;
 
         levels = new HashMap();
@@ -98,23 +107,34 @@ public class AdminAuditListener implements CreateListener, UpdateListener, Delet
     public void entityCreated( Created created ) {
         String adminLogin = getAdminLogin();
         if (adminLogin == null) return;
-        AdminAuditRecord rec = new AdminAuditRecord(level(created), created, adminLogin);
-        // todo save it
+        try {
+            auditRecordManager.save(new AdminAuditRecord(level(created), nodeId, created, adminLogin));
+        } catch ( SaveException e ) {
+            logger.log( Level.SEVERE, "Couldn't save " + created, e );
+        }
     }
 
     public void entityUpdated( Updated updated ) {
         String adminLogin = getAdminLogin();
         if (adminLogin == null) return;
-        AdminAuditRecord rec = new AdminAuditRecord(level(updated), updated, adminLogin);
-        // todo save it
+        try {
+            auditRecordManager.save(new AdminAuditRecord(level(updated), nodeId, updated, adminLogin));
+        } catch ( SaveException e ) {
+            logger.log( Level.SEVERE, "Couldn't save " + updated, e );
+        }
     }
 
     public void entityDeleted( Deleted deleted ) {
         String adminLogin = getAdminLogin();
         if (adminLogin == null) return;
-        AdminAuditRecord rec = new AdminAuditRecord(level(deleted), deleted, adminLogin);
-        // todo save it
+        try {
+            auditRecordManager.save(new AdminAuditRecord(level(deleted), nodeId, deleted, adminLogin));
+        } catch ( SaveException e ) {
+            logger.log( Level.SEVERE, "Couldn't save " + deleted, e );
+        }
     }
 
     private Map levelMappings = new HashMap();
+    private final AuditRecordManager auditRecordManager;
+    private static final Logger logger = Logger.getLogger(AdminAuditListener.class.getName());
 }

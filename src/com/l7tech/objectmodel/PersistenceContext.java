@@ -52,5 +52,7 @@ public abstract class PersistenceContext {
         _contextLocal.set(null);
     }
 
+    public abstract void commitIfPresent() throws TransactionException;
+
     static ThreadLocal _contextLocal = new ThreadLocal();
 }

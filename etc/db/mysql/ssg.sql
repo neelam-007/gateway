@@ -232,7 +232,8 @@ CREATE TABLE ssg_logs (
   sourcemethodname varchar(128),
   strrequestid varchar(40),
   PRIMARY KEY(objectid),
-  KEY idx_millis(millis)
+  KEY idx_millis(millis),
+  KEY idx_requestid(strrequestid)
 ) TYPE=InnoDB;
 
 --
@@ -353,4 +354,73 @@ CREATE TABLE fed_group_virtual (
   UNIQUE KEY i_name (provider_oid, name)
 ) TYPE=InnoDB;
 
+--
+-- Table structure for table `audit`
+--
 
+DROP TABLE IF EXISTS audit;
+CREATE TABLE audit (
+  objectid bigint(20) NOT NULL,
+  nodeid varchar(18) NOT NULL,
+  time bigint(20) NOT NULL,
+  level varchar(12) NOT NULL,
+  message varchar(255) NOT NULL,
+  PRIMARY KEY  (objectid),
+  KEY idx_nodeid (nodeid),
+  KEY idx_time (time),
+  KEY idx_level (level)
+) TYPE=InnoDB;
+
+--
+-- Table structure for table `audit_admin`
+--
+
+DROP TABLE IF EXISTS audit_admin;
+CREATE TABLE audit_admin (
+  objectid bigint(20) NOT NULL,
+  admin_login varchar(32) NOT NULL,
+  entity_class varchar(255) default NULL,
+  entity_id bigint(20) default NULL,
+  PRIMARY KEY  (objectid),
+  KEY idx_class (entity_class),
+  KEY idx_oid (entity_id)
+) TYPE=InnoDB;
+
+--
+-- Table structure for table `audit_message`
+--
+
+DROP TABLE IF EXISTS audit_message;
+CREATE TABLE audit_message (
+  objectid bigint(20) NOT NULL default '0',
+  status varchar(32) NOT NULL,
+  request_id varchar(40) NOT NULL,
+  client_address varchar(32) NOT NULL,
+  service_oid bigint(20),
+  service_name varchar(128),
+  user_name varchar(64),
+  authenticated tinyint(1) default '0',
+  provider_oid bigint(20),
+  user_id varchar(128),
+  request_length int(11) NOT NULL,
+  response_length int(11),
+  request_xml text,
+  response_xml text,
+  PRIMARY KEY  (objectid),
+  KEY idx_status (status),
+  KEY idx_request_id (request_id),
+  KEY idx_client_address (client_address),
+  KEY idx_service_oid (service_oid),
+  KEY idx_provider_oid (provider_oid),
+  KEY idx_user_id (user_id),
+) TYPE=InnoDB;
+
+DROP TABLE IF EXISTS audit_system;
+CREATE TABLE audit_system (
+  objectid bigint(20) NOT NULL default '0',
+  component varchar(32) NOT NULL,
+  action varchar(32) NOT NULL,
+  PRIMARY KEY (objectid),
+  KEY idx_component (component),
+  KEY idx_action (action)
+) TYPE=InnoDB;
