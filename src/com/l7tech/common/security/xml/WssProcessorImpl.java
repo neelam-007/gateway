@@ -963,6 +963,13 @@ public class WssProcessorImpl implements WssProcessor {
             public WssProcessor.Timestamp getTimestamp() {
                 return cntx.timestamp;
             }
+
+            public String getSecurityNS() {
+                if (cntx.releventSecurityHeader != null) {
+                    return cntx.releventSecurityHeader.getNamespaceURI();
+                }
+                return null;
+            }
         };
     }
 

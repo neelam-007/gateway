@@ -95,6 +95,7 @@ public interface WssProcessor {
         Element[] getElementsThatWereEncrypted();
         SecurityToken[] getSecurityTokens();
         Timestamp getTimestamp();
+        String getSecurityNS();
     }
 
     public static class ProcessorException extends Exception {}
