@@ -62,7 +62,8 @@ public class DotNetInteropTest extends TestCase {
         Document encryptedDoc = getEncryptedDoc();
         PrivateKey privateServerKey = getRikerPrivateKey();
         Key[] encryptionKeys = XmlMangler.getEncryptedKeyFromMessage(encryptedDoc, privateServerKey);
-        XmlMangler.decryptDocument(encryptedDoc, encryptionKeys[0]);
+        Element body = (Element)encryptedDoc.getElementsByTagNameNS(encryptedDoc.getDocumentElement().getNamespaceURI(), "Body").item(0);
+        XmlMangler.decryptElement(body, encryptionKeys[0]);
     }
 
     private PrivateKey getRikerPrivateKey() throws Exception {
