@@ -410,7 +410,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      */
     public void refreshLogs(final LogPanel logPane, final boolean restartTimer, Vector requests, final boolean newRefresh) {
 
-        long endMsgNumber = -1;
+        //long endMsgNumber = -1;
 
         if (newRefresh) {
 
@@ -420,13 +420,19 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
 
                 Object logCache = null;
                 if ((logCache = rawLogCache.get(gatewayStatus.getNodeId())) != null) {
-
-                    if (((Vector) logCache).size() > 0) {
-                        endMsgNumber = ((LogMessage) ((Vector) logCache).firstElement()).getMsgNumber();
+                    Vector cachevector = (Vector)logCache;
+                    long highest = -1;
+                    if (cachevector.size() > 0) {
+                        highest = ((LogMessage) cachevector.firstElement()).getMsgNumber();
+                        for (Iterator cc = cachevector.iterator(); cc.hasNext();) {
+                            LogMessage lm = (LogMessage)cc.next();
+                            if (lm.getMsgNumber() > highest) highest = lm.getMsgNumber();
+                        }
+                        //endMsgNumber = ((LogMessage) cachevector.firstElement()).getMsgNumber();
                     }
 
                     // add the request for retrieving logs from the node
-                    requests.add(new LogRequest(gatewayStatus.getNodeId(), -1, endMsgNumber));
+                    requests.add(new LogRequest(gatewayStatus.getNodeId(), -1, highest));
                 }
             }
         }
