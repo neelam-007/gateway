@@ -7,7 +7,6 @@
 package com.l7tech.identity.internal.imp;
 
 import com.l7tech.identity.*;
-import com.l7tech.identity.internal.InternalIdentityProvider;
 
 import java.security.Principal;
 
@@ -17,7 +16,7 @@ import java.security.Principal;
  * Date: May 14, 2003
  *
  */
-public class InternalIdentityProviderImp implements InternalIdentityProvider {
+public class InternalIdentityProviderImp implements IdentityProvider {
     public InternalIdentityProviderImp() {
     }
 
