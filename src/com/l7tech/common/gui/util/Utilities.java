@@ -20,6 +20,10 @@ import java.awt.geom.Rectangle2D;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class Utilities {
+    public static final String CONTEXT_CUT = "Cut";
+    public static final String CONTEXT_COPY = "Copy";
+    public static final String CONTEXT_PASTE = "Paste";
+    public static final String CONTEXT_SELECT_ALL = "Select All";
 
     /** private constructor, this class cannot be instantiated */
     private Utilities() {
@@ -228,53 +232,81 @@ public class Utilities {
         return ImageCache.getInstance().getIcon(resource);
     }
 
-
-    /**
-     * Create a context menu with appropriate items for the given JTextComponent.
-     * The menu will always include a "Copy" option, but will include "Cut" and "Paste" only
-     * if this.isEditable() is true.
-     *
-     * @return A newly-created context menu, ready to pop up.
-     */
-    public static JPopupMenu createContextMenu(final JTextComponent tc) {
-        JPopupMenu contextMenu = new JPopupMenu();
-
-        if (tc.isEditable()) {
-            JMenuItem cutItem = new JMenuItem("Cut");
-            cutItem.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    tc.cut();
-                }
-            });
-            contextMenu.add(cutItem);
-        }
-
-        JMenuItem copyItem = new JMenuItem("Copy");
-        copyItem.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                tc.copy();
-            }
-        });
-        contextMenu.add(copyItem);
-
-        if (tc.isEditable()) {
-            JMenuItem pasteItem = new JMenuItem("Paste");
-            pasteItem.addActionListener(new ActionListener() {
-                public void actionPerformed(ActionEvent e) {
-                    tc.paste();
-                }
-            });
-            contextMenu.add(pasteItem);
-        }
-
-        return contextMenu;
-    }
-
     /**
      * If this property is set to "true" in a control with an edit context menu, it's right-click
      * mouse listener will do an automatic "select all" before popping up the menu.
      */
     public static final String PROPERTY_CONTEXT_MENU_AUTO_SELECT_ALL = "com.l7tech.common.gui.util.Utilities.contextMenuAutoSelectAll";
+
+    /** Creates pop-up menus for text components. */
+    public static interface ContextMenuFactory {
+        /** Create a pop-up menu for the given text component. */
+        JPopupMenu createContextMenu(JTextComponent textComponent);
+    }
+
+    /** Creates default pop-up menus for text components. */
+    public static class DefaultContextMenuFactory implements ContextMenuFactory {
+        /**
+         * Create a context menu with appropriate items for the given JTextComponent.
+         * The menu will always include a "Copy" option, but will include "Cut" and "Paste" only
+         * if this.isEditable() is true.
+         *
+         * @return A newly-created context menu, ready to pop up.
+         */
+        public JPopupMenu createContextMenu(final JTextComponent tc) {
+            JPopupMenu contextMenu = new JPopupMenu();
+
+            if (tc.isEditable() && shouldIncludeMenu(tc, CONTEXT_CUT)) {
+                JMenuItem cutItem = new JMenuItem(CONTEXT_CUT);
+                cutItem.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        tc.cut();
+                    }
+                });
+                contextMenu.add(cutItem);
+            }
+
+            if (shouldIncludeMenu(tc, CONTEXT_COPY)) {
+                JMenuItem copyItem = new JMenuItem(CONTEXT_COPY);
+                copyItem.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        tc.copy();
+                    }
+                });
+                contextMenu.add(copyItem);
+            }
+
+            if (tc.isEditable()) {
+                if (shouldIncludeMenu(tc, CONTEXT_PASTE)) {
+                    JMenuItem pasteItem = new JMenuItem(CONTEXT_PASTE);
+                    pasteItem.addActionListener(new ActionListener() {
+                        public void actionPerformed(ActionEvent e) {
+                            tc.paste();
+                        }
+                    });
+                    contextMenu.add(pasteItem);
+                }
+            }
+
+            if (shouldIncludeMenu(tc, CONTEXT_SELECT_ALL)) {
+                JMenuItem selectAllItem = new JMenuItem(CONTEXT_SELECT_ALL);
+                selectAllItem.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        tc.selectAll();
+                    }
+                });
+                if (contextMenu.getSubElements().length > 0)
+                    contextMenu.add(new JSeparator());
+                contextMenu.add(selectAllItem);
+            }
+
+            return contextMenu;
+        }
+
+        protected boolean shouldIncludeMenu(JTextComponent tc, String menuText) {
+            return true;
+        }
+    }
 
     /**
      * Create a MouseListener that will create an edit context menu when triggered.  If the specified
@@ -285,6 +317,20 @@ public class Utilities {
      * @return  the newly created MouseListener
      */
     public static MouseListener createContextMenuMouseListener(final JTextComponent tc) {
+        return createContextMenuMouseListener(tc, new DefaultContextMenuFactory());
+    }
+
+    /**
+     * Create a MouseListener that will create an edit context menu when triggered.  The menu will be
+     * created using the specified ContextMenuFactory.  See Utilities.createContextMenu() for
+     *
+     * @param tc  The JTextComponent to which this MouseListener will be attached
+     * @param factory  The ContextMenuFactory which will produce the actual context menu.
+     * @return  the newly created MouseListener
+     */
+    public static MouseListener createContextMenuMouseListener(final JTextComponent tc,
+                                                               final ContextMenuFactory factory)
+    {
         return new MouseAdapter() {
             public void mousePressed(final MouseEvent ev) {
                 checkPopup(ev);
@@ -300,7 +346,7 @@ public class Utilities {
                     String selectAll = (String) tc.getClientProperty(PROPERTY_CONTEXT_MENU_AUTO_SELECT_ALL);
                     if (Boolean.valueOf(selectAll).booleanValue())
                         tc.selectAll();
-                    JPopupMenu menu = Utilities.createContextMenu(tc);
+                    JPopupMenu menu = factory.createContextMenu(tc);
                     menu.show((Component) ev.getSource(), ev.getX(), ev.getY());
                 }
             }

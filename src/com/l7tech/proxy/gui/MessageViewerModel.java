@@ -1,6 +1,7 @@
 package com.l7tech.proxy.gui;
 
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.gui.widgets.ContextMenuTextArea;
 import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.HttpHeaders;
 import com.l7tech.proxy.datamodel.PendingRequest;
@@ -68,7 +69,9 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
         }
 
         public Component getComponent() {
-            return new JTextArea(message);
+            JTextArea ta = new ContextMenuTextArea(message);
+            ta.setEditable(false);
+            return ta;
         }
     }
 
@@ -175,7 +178,9 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
         }
 
         public Component getComponent() {
-            return new JTextArea(getMessageText());
+            JTextArea ta = new ContextMenuTextArea(getMessageText());
+            ta.setEditable(false);
+            return ta;
         }
     }
 

@@ -10,6 +10,7 @@ import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
 import javax.swing.text.Document;
+import javax.swing.text.JTextComponent;
 import java.awt.event.MouseListener;
 
 /**
@@ -55,7 +56,13 @@ public class ContextMenuTextField extends JTextField {
 
     private MouseListener getContextMenuMouseListener() {
         if (contextMenuMouseListener == null) {
-            contextMenuMouseListener = Utilities.createContextMenuMouseListener(this);
+            contextMenuMouseListener = Utilities.createContextMenuMouseListener(this, new Utilities.DefaultContextMenuFactory() {
+                protected boolean shouldIncludeMenu(JTextComponent tc, String menuText) {
+                    if (menuText.equals(Utilities.CONTEXT_SELECT_ALL))
+                        return !contextMenuAutoSelectAll;
+                    return true;
+                }
+            });
         }
         return contextMenuMouseListener;
     }
