@@ -435,8 +435,8 @@ public class MainWindow extends JFrame {
             editMenu.setText(resapplication.getString("Edit"));
 
             editMenu.add(getNewProviderSubMenu());
-            editMenu.add(getNewInternalGroupAction());
             editMenu.add(getNewInternalUserAction());
+            editMenu.add(getNewInternalGroupAction());
             editMenu.add(getFindAction());
 
             editMenu.addSeparator();
