@@ -90,7 +90,7 @@ public class MessageProcessor {
                 return AssertionStatus.SERVER_ERROR;
             } catch (WssProcessor.BadContextException e) {
                 logger.log(Level.SEVERE, "Error in WSS processing of request", e);
-                // todo, push soapfaultdetails to response
+                response.setFaultDetail(e);
                 return AssertionStatus.FAILED;
             }
             // todo, refactor SoapRequest so that it keeps a hold on the original message
