@@ -143,12 +143,12 @@ public class AdminAuditListener implements GenericListener, CreateListener, Upda
                 Object ovalue = changes.getOldValue(property);
                 Object nvalue = changes.getNewValue(property);
                 String verbed = null;
-                if (ovalue == null) {
-                    if (nvalue != null) {
+                if (isEmpty(ovalue)) {
+                    if (!isEmpty(nvalue)) {
                         verbed = "set";
                     }
-                } else if (nvalue == null) {
-                    if (ovalue != null) {
+                } else if (isEmpty(nvalue)) {
+                    if (!isEmpty(ovalue)) {
                         verbed = "cleared";
                     }
                 } else if (!ovalue.equals(nvalue)) {
@@ -180,6 +180,11 @@ public class AdminAuditListener implements GenericListener, CreateListener, Upda
         return new AdminAuditRecord(level(event), nodeId, entityOid, entityClassname, name, action, msg.toString(), info.login, info.ip);
     }
 
+    private boolean isEmpty(Object o) {
+        if (o == null) return true;
+        if (o instanceof String) return (((String)o).length() == 0);
+        return false;
+    }
 
     public void entityCreated( Created created ) {
         AuditContext.getCurrent().add(makeAuditRecord(created));
