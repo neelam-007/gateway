@@ -156,6 +156,8 @@ public class MessageProcessor {
                 Managers.getCredentialManager().notifyKeyStoreCorrupt(ssg);
                 SsgKeyStoreManager.deleteStores(ssg);
                 // FALLTHROUGH -- retry, creating new keystore
+            } catch (WssDecorator.DecoratorException e) {
+                throw new ConfigurationException(e);
             }
             req.reset();
         }
@@ -315,6 +317,7 @@ public class MessageProcessor {
                 }
 
                 // Do all WSS processing all at once
+                log.info("Running pending request through WS-Security decorator");
                 wssDecorator.decorateMessage(req.getDecoratedSoapEnvelope(), req.getWssRequirements());
 
             } catch (PolicyAssertionException e) {
@@ -529,7 +532,8 @@ public class MessageProcessor {
                 return new SsgResponse(XmlUtil.stringToDocument(CannedSoapFaults.RESPONSE_NOT_XML), null, 500, null);
 
             Document responseDocument = XmlUtil.stringToDocument(responseString);
-            // TODO trogdor integration goes here
+
+            log.info("Running SSG response through WS-Security undecorator");
             WssProcessor.ProcessorResult processorResult =
                     wssProcessor.undecorateMessage(responseDocument,
                                                    SsgKeyStoreManager.getClientCert(ssg),
