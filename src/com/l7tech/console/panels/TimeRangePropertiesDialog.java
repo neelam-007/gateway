@@ -120,12 +120,21 @@ public class TimeRangePropertiesDialog extends JDialog {
 
         itemsToToggleForTimeOfDay.clear();
         itemsToToggleForDayOfWeek.clear();
+        
         // calculate UTC offset
         int totOffsetInMin = Calendar.getInstance().getTimeZone().getRawOffset() / (1000*60);
         hroffset = totOffsetInMin/60;
         minoffset = totOffsetInMin%60;
 
-        setTitle("Time Range Assertion Properties");
+        week = new String[] {resources.getString("week.sunday"),
+                             resources.getString("week.monday"),
+                             resources.getString("week.tuesday"),
+                             resources.getString("week.wednesday"),
+                             resources.getString("week.thursday"),
+                             resources.getString("week.friday"),
+                             resources.getString("week.saturday")};
+
+        setTitle(resources.getString("window.title"));
         Container contents = getContentPane();
         contents.setLayout(new BorderLayout(0,0));
         contents.add(makeGlobalPanel(), BorderLayout.CENTER);
@@ -202,8 +211,7 @@ public class TimeRangePropertiesDialog extends JDialog {
 
     private void initResources() {
         Locale locale = Locale.getDefault();
-        // todo, plug in resources
-        // resources = ResourceBundle.getBundle("com.l7tech.console.resources.TimeRangePropertiesDialog", locale);
+        resources = ResourceBundle.getBundle("com.l7tech.console.resources.TimeRangePropertiesDialog", locale);
     }
 
     private JComponent makeGlobalPanel() {
@@ -234,48 +242,49 @@ public class TimeRangePropertiesDialog extends JDialog {
         int dir = GridBagConstraints.WEST;
         Insets insets = new Insets(0, 0, 0, CONTROL_SPACING);
 
-        JLabel toto = new JLabel("between");
+        JLabel toto = new JLabel(resources.getString("general.between"));
         itemsToToggleForTimeOfDay.add(toto);
         timeOfDayPanel.add(toto, new GridBagConstraints(0, 0, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
         startHr = new JSpinner(new SpinnerNumberModel(8, 0, 23, 1));
         itemsToToggleForTimeOfDay.add(startHr);
         itemsToToggleForTimeOfDay.add(startHr);
         timeOfDayPanel.add(startHr, new GridBagConstraints(1, 0, 1, 1, weightx, 0, dir, fill, insets, 0, 0));
-        toto = new JLabel("hr");
+        toto = new JLabel(resources.getString("general.hr"));
         itemsToToggleForTimeOfDay.add(toto);
         timeOfDayPanel.add(toto, new GridBagConstraints(2, 0, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
         startMin = new JSpinner(new SpinnerNumberModel(0, 0, 59, 1));
         itemsToToggleForTimeOfDay.add(startMin);
         timeOfDayPanel.add(startMin, new GridBagConstraints(3, 0, 1, 1, weightx, 0, dir, fill, insets, 0, 0));
-        toto = new JLabel("min");
+
+        toto = new JLabel(resources.getString("general.min"));
         itemsToToggleForTimeOfDay.add(toto);
         timeOfDayPanel.add(toto, new GridBagConstraints(4, 0, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
         startSec = new JSpinner(new SpinnerNumberModel(0, 0, 59, 1));
         itemsToToggleForTimeOfDay.add(startSec);
         timeOfDayPanel.add(startSec, new GridBagConstraints(5, 0, 1, 1, weightx, 0, dir, fill, insets, 0, 0));
-        toto = new JLabel("sec");
+        toto = new JLabel(resources.getString("general.sec"));
         itemsToToggleForTimeOfDay.add(toto);
         timeOfDayPanel.add(toto, new GridBagConstraints(6, 0, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
 
-        toto = new JLabel("and");
+        toto = new JLabel(resources.getString("general.and"));
         itemsToToggleForTimeOfDay.add(toto);
         timeOfDayPanel.add(toto, new GridBagConstraints(0, 1, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
         endHr = new JSpinner(new SpinnerNumberModel(17, 0, 23, 1));
         itemsToToggleForTimeOfDay.add(endHr);
         timeOfDayPanel.add(endHr, new GridBagConstraints(1, 1, 1, 1, weightx, 0, dir, fill, insets, 0, 0));
-        toto = new JLabel("hr");
+        toto = new JLabel(resources.getString("general.hr"));
         itemsToToggleForTimeOfDay.add(toto);
         timeOfDayPanel.add(toto, new GridBagConstraints(2, 1, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
         endMin = new JSpinner(new SpinnerNumberModel(0, 0, 59, 1));
         itemsToToggleForTimeOfDay.add(endMin);
         timeOfDayPanel.add(endMin, new GridBagConstraints(3, 1, 1, 1, weightx, 0, dir, fill, insets, 0, 0));
-        toto = new JLabel("min");
+        toto = new JLabel(resources.getString("general.min"));
         itemsToToggleForTimeOfDay.add(toto);
         timeOfDayPanel.add(toto, new GridBagConstraints(4, 1, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
         endSec = new JSpinner(new SpinnerNumberModel(0, 0, 59, 1));
         itemsToToggleForTimeOfDay.add(endSec);
         timeOfDayPanel.add(endSec, new GridBagConstraints(5, 1, 1, 1, weightx, 0, dir, fill, insets, 0, 0));
-        toto = new JLabel("sec");
+        toto = new JLabel(resources.getString("general.sec"));
         itemsToToggleForTimeOfDay.add(toto);
         timeOfDayPanel.add(toto, new GridBagConstraints(6, 1, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
 
@@ -292,14 +301,14 @@ public class TimeRangePropertiesDialog extends JDialog {
         double weightx = 1.0;
         Insets insets = new Insets(0, 0, 0, CONTROL_SPACING);
 
-        JLabel toto = new JLabel("between");
+        JLabel toto = new JLabel(resources.getString("general.between"));
         itemsToToggleForDayOfWeek.add(toto);
         dayOfWeekPanel.add(toto, new GridBagConstraints(0, 0, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
         startDay = new JSpinner(weekModel(1));
         itemsToToggleForDayOfWeek.add(startDay);
         dayOfWeekPanel.add(startDay, new GridBagConstraints(1, 0, 1, 1, weightx, 0, dir, fill, insets, 0, 0));
 
-        toto = new JLabel("and");
+        toto = new JLabel(resources.getString("general.and"));
         itemsToToggleForDayOfWeek.add(toto);
         dayOfWeekPanel.add(toto, new GridBagConstraints(0, 1, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
         endDay = new JSpinner(weekModel(5));
@@ -319,23 +328,23 @@ public class TimeRangePropertiesDialog extends JDialog {
         double weightx = 1.0;
         Insets insets = new Insets(0, 0, 0, CONTROL_SPACING*3);
 
-        JLabel toto = new JLabel("between");
+        JLabel toto = new JLabel(resources.getString("general.between"));
         itemsToToggleForTimeOfDay.add(toto);
         utcConversionPanel.add(toto, new GridBagConstraints(0, 0, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
         utcStartTime = new JLabel("06:00:00");
         itemsToToggleForTimeOfDay.add(utcStartTime);
         utcConversionPanel.add(utcStartTime, new GridBagConstraints(1, 0, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
-        toto = new JLabel("UTC");
+        toto = new JLabel(resources.getString("utc.label"));
         itemsToToggleForTimeOfDay.add(toto);
         utcConversionPanel.add(toto, new GridBagConstraints(2, 0, 1, 1, weightx, 0, dir, fill, insets, 0, 0));
 
-        toto = new JLabel("and");
+        toto = new JLabel(resources.getString("general.and"));
         itemsToToggleForTimeOfDay.add(toto);
         utcConversionPanel.add(toto, new GridBagConstraints(0, 1, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
         utcEndTime = new JLabel("21:00:00");
         itemsToToggleForTimeOfDay.add(utcEndTime);
         utcConversionPanel.add(utcEndTime, new GridBagConstraints(1, 1, 1, 1, 0, 0, dir, nfill, insets, 0, 0));
-        toto = new JLabel("UTC");
+        toto = new JLabel(resources.getString("utc.label"));
         itemsToToggleForTimeOfDay.add(toto);
         utcConversionPanel.add(toto, new GridBagConstraints(2, 1, 1, 1, weightx, 0, dir, fill, insets, 0, 0));
 
@@ -348,7 +357,7 @@ public class TimeRangePropertiesDialog extends JDialog {
         timeOfDayPanel.setLayout(new GridLayout(6, 1, 0, 0));
         JPanel titlePanel = new JPanel();
         titlePanel.setLayout(new FlowLayout(FlowLayout.LEADING, 0, 0));
-        enableTimeOfDay = new JCheckBox("Restrict time of day");
+        enableTimeOfDay = new JCheckBox(resources.getString("enableTimeOfDay.name"));
         titlePanel.add(enableTimeOfDay);
         enableTimeOfDay.setSelected(true);
         timeOfDayPanel.add(titlePanel);
@@ -358,7 +367,7 @@ public class TimeRangePropertiesDialog extends JDialog {
 
         titlePanel = new JPanel();
         titlePanel.setLayout(new FlowLayout(FlowLayout.LEADING, CONTROL_SPACING, 0));
-        enableDayOfWeek = new JCheckBox("Restrict day of week");
+        enableDayOfWeek = new JCheckBox(resources.getString("enableDayOfWeek.name"));
         titlePanel.add(enableDayOfWeek);
         enableDayOfWeek.setSelected(true);
         timeOfDayPanel.add(titlePanel);
@@ -380,11 +389,11 @@ public class TimeRangePropertiesDialog extends JDialog {
     private JPanel makeBottomButtonsPanel() {
         // construct buttons
         helpButton = new JButton();
-        helpButton.setText("Help");
+        helpButton.setText(resources.getString("helpButton.name"));
         okButton = new JButton();
-        okButton.setText("Ok");
+        okButton.setText(resources.getString("okButton.name"));
         cancelButton = new JButton();
-        cancelButton.setText("Cancel");
+        cancelButton.setText(resources.getString("cancelButton.name"));
 
         // construct the bottom panel and wrap it with a border
         JPanel buttonsPanel = new JPanel();
@@ -438,10 +447,8 @@ public class TimeRangePropertiesDialog extends JDialog {
     private JCheckBox enableDayOfWeek;
     private JSpinner startDay;
     private JSpinner endDay;
-    private static final String[] week = new String[] {"Sunday", "Monday",
-                                                       "Tuesday", "Wednesday",
-                                                       "Thursday", "Friday",
-                                                       "Saturday"};
+    private String[] week;
+
     private final Collection itemsToToggleForTimeOfDay = new ArrayList();
     private final Collection itemsToToggleForDayOfWeek = new ArrayList();
     private int hroffset;
