@@ -2,18 +2,18 @@ package com.l7tech.proxy.datamodel;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.proxy.ClientProxy;
-import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import com.l7tech.proxy.policy.ClientPolicyFactory;
+import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import org.apache.log4j.Category;
 
-import java.io.Serializable;
 import java.io.File;
+import java.io.Serializable;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.security.KeyStore;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.TreeSet;
-import java.net.URL;
-import java.net.MalformedURLException;
-import java.security.KeyStore;
 
 /**
  * In-core representation of an SSG.
@@ -49,6 +49,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private transient KeyStore keyStore = null;
     private transient Boolean haveClientCert = null;
     private transient int numTimesLogonDialogCanceled = 0;
+    private transient long credentialsUpdatedTimeMillis = 0;
 
     public int compareTo(final Object o) {
         long id0 = getId();
@@ -414,5 +415,13 @@ public class Ssg implements Serializable, Cloneable, Comparable {
 
     public synchronized int incrementNumTimesLogonDialogCanceled() {
         return numTimesLogonDialogCanceled++;
+    }
+
+    public void onCredentialsUpdated() {
+        credentialsUpdatedTimeMillis = System.currentTimeMillis();
+    }
+
+    public long credentialsUpdatedTime() {
+        return credentialsUpdatedTimeMillis;
     }
 }
