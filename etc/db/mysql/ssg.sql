@@ -209,6 +209,7 @@ CREATE TABLE urlcache (
 DROP TABLE cluster_info;
 CREATE TABLE cluster_info (
   mac varchar(18) NOT NULL default '',
+  name varchar(128) NOT NULL default '',
   address varchar(16) NOT NULL default '',
   ismaster TINYINT(1) NOT NULL default '0',
   uptime bigint NOT NULL default '0',
