@@ -784,10 +784,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             // dialog when it eventually appears.
             char[] pass = fieldPassword.getPassword();
 
-            // If it's been changed, make sure prompting is enabled
-            if ((pass == null) != (ssg.cmPassword() == null) ||
-                    (ssg.cmPassword() != null && !new String(ssg.cmPassword()).equals(new String(pass))))
-                ssg.promptForUsernameAndPassword(true);
+            // Make sure prompting is enabled
+            ssg.promptForUsernameAndPassword(true);
             ssg.cmPassword(pass.length > 0 ? fieldPassword.getPassword() : null);
 
             if (radioNonstandardPorts.isSelected()) {
