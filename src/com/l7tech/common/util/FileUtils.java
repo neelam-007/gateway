@@ -54,6 +54,9 @@ public class FileUtils {
             File curFile = new File(path);
             File newFile = new File(path + ".NEW");
 
+            if (curFile.isDirectory())
+                throw new IllegalArgumentException("Unable to overwrite a directory with a file");
+
             // Make directory if needed
             if (curFile.getParentFile() != null)
                 curFile.getParentFile().mkdir();
