@@ -18,6 +18,7 @@ import com.l7tech.logging.LogManager;
 import com.l7tech.identity.*;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.FindException;
+import com.l7tech.common.protocol.SecureSpanConstants;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -95,7 +96,7 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
                     response.addResult( new AssertionResult( _data, AssertionStatus.AUTH_FAILED, icce.getMessage(), icce ));
                     logger.info("Invalid client cert for " + pc.getLogin() );
                     // set some response header so that the CP is made aware of this situation
-                    response.setParameter(Response.PARAM_HTTP_CERT_STATUS, "invalid");
+                    response.setParameter(Response.PARAM_HTTP_CERT_STATUS, SecureSpanConstants.INVALID);
                     return AssertionStatus.AUTH_FAILED;
                 } catch ( MissingCredentialsException mce ) {
                     response.setAuthenticationMissing(true);

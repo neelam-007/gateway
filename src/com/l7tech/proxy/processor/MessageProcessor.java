@@ -417,7 +417,7 @@ public class MessageProcessor {
             Header sessionStatus = postMethod.getResponseHeader(SecureSpanConstants.HttpHeaders.SESSION_STATUS_HTTP_HEADER);
             if (sessionStatus != null) {
                 log.info("Gateway response contained a session status header: " + sessionStatus.getName() + ": " + sessionStatus.getValue());
-                if (sessionStatus.getValue().equalsIgnoreCase("invalid")) {
+                if (sessionStatus.getValue().equalsIgnoreCase(SecureSpanConstants.INVALID)) {
                     log.info("sessionstatus:invalid header; will invalidate session and try again");
                     SsgSessionManager.invalidateSession(ssg);
                     throw new PolicyRetryableException();
@@ -426,7 +426,7 @@ public class MessageProcessor {
                 log.info("Gateway response contained no session status header");
 
             Header certStatusHeader = postMethod.getResponseHeader(SecureSpanConstants.HttpHeaders.CERT_STATUS);
-            if (certStatusHeader != null && "invalid".equalsIgnoreCase(certStatusHeader.getValue())) {
+            if (certStatusHeader != null && SecureSpanConstants.INVALID.equalsIgnoreCase(certStatusHeader.getValue())) {
                 log.info("Gateway response contained a certficate status:invalid header.  Will get new client cert.");
                 // Try to get a new client cert; if this succeeds, it'll replace the old one
                 try {
@@ -484,7 +484,7 @@ public class MessageProcessor {
                 return new SsgResponse(CannedSoapFaults.RESPONSE_NOT_XML, 500, null);
 
             SsgResponse response = new SsgResponse(responseString, status, headers);
-            if (status == 401) {
+            if (status == 401 || status == 402) {
                 req.setLastErrorResponse(response);
                 Header authHeader = postMethod.getResponseHeader("WWW-Authenticate");
                 log.info("Got auth header: " + (authHeader == null ? "<null>" : authHeader.getValue()));

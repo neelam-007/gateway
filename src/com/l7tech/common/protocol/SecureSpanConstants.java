@@ -79,6 +79,9 @@ public class SecureSpanConstants {
      */
     public static final String ADMIN_PROTOCOL_VERSION = "20031212";
 
+    public static final String INVALID = "invalid";
+    public static final String VALID = "valid";
+
     /**
      * Special HTTP query parameters used by the protocol used between the SecureSpanAgent and the SecureSpanGateway.
      */

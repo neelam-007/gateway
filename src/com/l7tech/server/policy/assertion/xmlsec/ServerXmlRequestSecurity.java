@@ -65,7 +65,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             xmlsecSession = getXmlSecSession(soapmsg);
         } catch (SessionInvalidException e) {
             // when the session is no longer valid we must inform the client proxy so that he generates another session
-            response.setParameter(Response.PARAM_HTTP_SESSION_STATUS, "invalid");
+            response.setParameter(Response.PARAM_HTTP_SESSION_STATUS, SecureSpanConstants.INVALID);
             return AssertionStatus.FALSIFIED;
         }
 
@@ -81,7 +81,7 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             gotSeq = checkSeqNrValidity(soapmsg, xmlsecSession);
         } catch (InvalidSequenceNumberException e) {
             // when the session is no longer valid we must inform the client proxy so that he generates another session
-            response.setParameter(Response.PARAM_HTTP_SESSION_STATUS, "invalid");
+            response.setParameter(Response.PARAM_HTTP_SESSION_STATUS, SecureSpanConstants.INVALID);
             // todo, control what the soap fault look like
             // in this case the policy is not violated
             // response.setPolicyViolated(true);

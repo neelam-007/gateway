@@ -9,6 +9,7 @@ package com.l7tech.server;
 import com.l7tech.common.security.xml.Session;
 import com.l7tech.common.security.xml.SessionNotFoundException;
 import com.l7tech.common.util.Locator;
+import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.logging.LogManager;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
@@ -90,7 +91,7 @@ public class MessageProcessor {
                 // If an xml-enc session id is provided, make sure it's still valid
                 // (because we can't wait for the XmlResponseSecurity to fail because it happens after routing)
                 if (checkForInvalidXmlSessIdRef(request)) {
-                    response.setParameter( Response.PARAM_HTTP_SESSION_STATUS, "invalid" );
+                    response.setParameter( Response.PARAM_HTTP_SESSION_STATUS, SecureSpanConstants.INVALID );
                     logger.info("Request referred to an invalid session id. Policy will not be executed.");
                     return AssertionStatus.FALSIFIED;
                 }
