@@ -9,6 +9,7 @@ package com.l7tech.util;
 import com.l7tech.message.Request;
 import com.l7tech.message.XmlRequest;
 import org.w3c.dom.*;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import javax.xml.soap.*;
@@ -32,6 +33,9 @@ public class SoapUtil {
     public static final String HEADER = "Header";
     public static final String BODY   = "Body";
 
+    static final String CBODY   = ":" + BODY;
+    static final String CHEADER = ":" + HEADER;
+
     public static Element getEnvelope( Request request ) throws SAXException, IOException {
         if ( request instanceof XmlRequest ) {
             XmlRequest xreq = (XmlRequest)request;
@@ -44,29 +48,33 @@ public class SoapUtil {
     }
 
     public static Element getHeaderElement( Request request ) throws SAXException, IOException {
-        return getEnvelopePart( request, HEADER );
+        return getEnvelopePart( request, CHEADER );
     }
 
     public static Element getBodyElement( Request request ) throws SAXException, IOException {
-        return getEnvelopePart( request, BODY );
+        return getEnvelopePart( request, CBODY );
     }
 
     static Element getEnvelopePart( Request request, String elementName ) throws SAXException, IOException {
         Element envelope = getEnvelope( request );
         String env;
-        NodeList elementList;
+        Node node;
         Element element = null;
         for ( int i = 0; i < ENVELOPE_URIS.size(); i++ ) {
             env = (String)ENVELOPE_URIS.get(i);
-            elementList = envelope.getElementsByTagNameNS( env, elementName );
-            int len = elementList.getLength();
-            if ( len == 1 ) {
-                element = (Element)elementList.item(0);
-                break;
-            } else if ( len == 0 )
-                continue;
-            else
-                throw new IllegalArgumentException( "SOAP envelope contains more than one " + elementName + " element!" );
+
+            node = envelope.getFirstChild();
+            while ( node != null ) {
+                if ( node.getNodeType() == Node.ELEMENT_NODE ) {
+                    element = (Element)node;
+                    String tn = element.getTagName();
+                    if ( tn.endsWith( elementName ) ) {
+                        String uri = element.getNamespaceURI();
+                        if ( uri.equals( env ) ) return element;
+                    }
+                }
+                node = node.getNextSibling();
+            }
         }
         return element;
     }
