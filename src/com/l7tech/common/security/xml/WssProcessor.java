@@ -45,10 +45,7 @@ public interface WssProcessor {
         boolean isPossessionProved();
     }
 
-    public interface XmlSecurityToken extends SecurityToken {
-    }
-
-    public interface SamlSecurityToken extends XmlSecurityToken {
+    public interface SamlSecurityToken extends SecurityToken {
     }
 
     public interface SecurityContextToken extends SecurityToken {
