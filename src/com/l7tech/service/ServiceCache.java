@@ -265,63 +265,6 @@ public class ServiceCache {
     }
 
     /**
-     * switch the cache
-     * @param newServiceCache a set containing the PublishedService objects to cache
-     *
-    public void replaceCache(Set newServiceCache) throws InterruptedException, IOException {
-        Sync write = rwlock.writeLock();
-        try {
-            write.acquire();
-            services.clear();
-            serverPolicies.clear();
-            serviceStatistics.clear();
-            for (Iterator i = newServiceCache.iterator(); i.hasNext();) {
-                PublishedService svc = (PublishedService)i.next();
-                cacheNoLock(svc);
-            }
-            for (int i = 0; i < resolvers.length; i++) {
-                resolvers[i].setServices(newServiceCache);
-            }
-        } catch (InterruptedException e) {
-            logger.log(Level.WARNING, "interruption in service cache", e);
-            Thread.currentThread().interrupt();
-            throw e;
-        } finally {
-            if (write != null) write.release();
-        }
-    }*/
-
-    /**
-     * check for potential resolution conflicts
-     *
-     * @deprecated should use the new resolution table instead of this to ensure uniqueness of resolution parameters
-     *
-    public void validate(PublishedService candidateService) throws WSDLException,
-                                                              DuplicateObjectException, InterruptedException {
-        // Make sure WSDL is valid
-        candidateService.parsedWsdl();
-        Sync read = rwlock.readLock();
-        try {
-            read.acquire();
-            Map localServices = services;
-            // Check for duplicate services
-            for (int i = 0; i < resolvers.length; i++) {
-                localServices = resolvers[i].matchingServices(candidateService, localServices);
-                if (localServices == null || localServices.isEmpty()) {
-                    return;
-                }
-            }
-        } catch (InterruptedException e) {
-            logger.log(Level.WARNING, "interruption in service cache", e);
-            Thread.currentThread().interrupt();
-            throw e;
-        } finally {
-            if (read != null) read.release();
-        }
-        throw new DuplicateObjectException( "Duplicate service resolution parameters!" );
-    }*/
-
-    /**
      * get all current service stats
      */ 
     public Collection getAllServiceStatistics() throws InterruptedException {
