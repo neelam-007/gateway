@@ -104,11 +104,27 @@ public class IdentityProviderConfigManagerClient implements IdentityProviderConf
     }
 
     public Collection findAll() throws FindException {
-        throw new FindException("Operation not supported in this manager implementation");
+        Collection headers = findAllHeaders();
+        Collection output = new java.util.ArrayList(headers.size());
+        Iterator iter = headers.iterator();
+        while (iter.hasNext()) {
+            EntityHeader thisHeader = (EntityHeader)iter.next();
+            IdentityProviderConfig conf = findByPrimaryKey(thisHeader.getOid());
+            output.add(conf);
+        }
+        return output;
     }
 
     public Collection findAll(int offset, int windowSize) throws FindException {
-        throw new FindException("Operation not supported in this manager implementation");
+        Collection headers = findAllHeaders(offset, windowSize);
+        Collection output = new java.util.ArrayList(headers.size());
+        Iterator iter = headers.iterator();
+        while (iter.hasNext()) {
+            EntityHeader thisHeader = (EntityHeader)iter.next();
+            IdentityProviderConfig conf = findByPrimaryKey(thisHeader.getOid());
+            output.add(conf);
+        }
+        return output;
     }
 
     // ************************************************
