@@ -210,9 +210,15 @@ public class IdentitiesSoapBindingImpl implements com.l7tech.adminws.identity.Id
         return identityProviderConfigManager;
         */
         if (identityProviderConfigManager == null){
-            // instantiate the server-side manager
-            identityProviderConfigManager = (com.l7tech.identity.IdentityProviderConfigManager)Locator.getDefault().lookup(com.l7tech.identity.IdentityProviderConfigManager.class);
-            if (identityProviderConfigManager == null) throw new java.rmi.RemoteException("Cannot instantiate the IdentityProviderConfigManager");
+            try {
+                // instantiate the server-side manager
+                identityProviderConfigManager = (com.l7tech.identity.IdentityProviderConfigManager)Locator.getDefault().lookup(com.l7tech.identity.IdentityProviderConfigManager.class);
+                if (identityProviderConfigManager == null) throw new java.rmi.RemoteException("Cannot instantiate the IdentityProviderConfigManager");
+            } catch (ClassCastException e) {
+                throw new RemoteException("ClassCastException in Locator.getDefault().lookup", e);
+            } catch (RuntimeException e) {
+                throw new RemoteException("RemoteException in Locator.getDefault().lookup: "+ e.getMessage(), e);
+            }
         }
         return identityProviderConfigManager;
     }
