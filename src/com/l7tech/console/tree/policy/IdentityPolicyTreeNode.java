@@ -5,6 +5,7 @@ import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
+import com.l7tech.identity.Group;
 
 import java.util.Iterator;
 import java.util.Set;
@@ -16,6 +17,7 @@ import java.util.Set;
  */
 public class IdentityPolicyTreeNode extends AssertionTreeNode {
     private IdentityPath path;
+    private final String iconResource;
 
     /**
      * Construct the new <code>IdentityPolicyTreeNode</code> for
@@ -30,6 +32,10 @@ public class IdentityPolicyTreeNode extends AssertionTreeNode {
             throw new IllegalArgumentException();
         }
         this.setAllowsChildren(true);
+        if (path.getPrincipal() instanceof Group)
+            iconResource = "com/l7tech/console/resources/group16.png";
+        else
+            iconResource = "com/l7tech/console/resources/user16.png";
     }
 
     /**
@@ -68,8 +74,7 @@ public class IdentityPolicyTreeNode extends AssertionTreeNode {
      * specify this node image resource
      */
     protected String iconResource(boolean open) {
-        return "com/l7tech/console/resources/user16.png";
-
+        return iconResource;
     }
 
     /**
