@@ -92,7 +92,7 @@ public class WssRoundTripTest extends TestCase {
     }
 
     public void testSignedEnvelope() throws Exception {
-        runRoundTripTest(new NamedTestDocument("EncryptedBodySignedEnvelope",
+        runRoundTripTest(new NamedTestDocument("SignedEnvelope",
                                                wssDecoratorTest.getSignedEnvelopeTestDocument()));
     }
 
