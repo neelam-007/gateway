@@ -18,14 +18,14 @@ import javax.security.auth.login.FailedLoginException;
  * $Id$<br/>
  */
 public class AdminSessionExpiredErrorHandler implements ErrorHandler {
-    public static final String MSG = "The Secure Span Manager is no longer logged in and is unable to " +
+    public static final String MSG = "The SecureSpan Manager is no longer logged in and is unable to " +
                                      "complete the operation.";
     public void handle(ErrorEvent e) {
         final Throwable t = e.getThrowable();
         if (isFailedLogin(t) && getMainWindow().isDisconnected()) {
             e.getLogger().log(e.getLevel(), MSG, t);
             ExceptionDialog d = new ExceptionDialog(getMainWindow(),
-                                                    "Secure Span Manager - Connection error",
+                                                    "SecureSpan Manager - Connection error",
                                                     MSG, t, e.getLevel());
             d.pack();
             Utilities.centerOnScreen(d);

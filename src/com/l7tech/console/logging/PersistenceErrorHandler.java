@@ -36,7 +36,7 @@ public class PersistenceErrorHandler implements ErrorHandler {
                 level = Level.SEVERE;
             }
             e.getLogger().log(level, ERROR_MESSAGE, t);
-            ExceptionDialog d = new ExceptionDialog(getMainWindow(), "Secure Span Manager - Gateway Error", ERROR_MESSAGE, t, level);
+            ExceptionDialog d = new ExceptionDialog(getMainWindow(), "SecureSpan Manager - Gateway Error", ERROR_MESSAGE, t, level);
             d.pack();
             Utilities.centerOnScreen(d);
             d.show();
