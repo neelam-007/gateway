@@ -29,7 +29,7 @@ multiplier="3/5"
 
 let java_ram="$system_ram*$multiplier" 
 
-default_java_opts="-Xms${java_ram}k -Xmx${java_ram}k -Xss256k -server "
+default_java_opts="-Xms${java_ram}k -Xmx${java_ram}k -Xss256k -server -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.Jdk14Logger "
 
 let maxnewsize="$java_ram/2"
 
