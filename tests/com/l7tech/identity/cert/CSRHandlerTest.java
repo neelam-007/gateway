@@ -6,6 +6,7 @@ import java.net.*;
 import java.io.*;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateFactory;
+import java.util.Enumeration;
 
 /**
  * User: flascell
@@ -16,7 +17,6 @@ import java.security.cert.CertificateFactory;
  */
 public class CSRHandlerTest {
     public static void main (String[] args) throws Exception {
-
         System.setProperty("javax.net.ssl.trustStore", System.getProperties().getProperty("user.home") + File.separator + ".l7tech" + File.separator + "trustStore");
         System.setProperty("javax.net.ssl.trustStorePassword", "password");
 
@@ -24,9 +24,8 @@ public class CSRHandlerTest {
         HttpURLConnection connection = (HttpURLConnection)url.openConnection();
         connection.setRequestMethod("POST");
         connection.setDoOutput(true);
-
-        // todo, authentication
-        // connection.setRequestProperty("Authorization", "Basic 309b9c7ab4c3ee2144fce9b071acd440");
+        // authentication for ssgadmin/ssgadminpasswd
+        connection.setRequestProperty("Authorization", "Basic c3NnYWRtaW46c3NnYWRtaW5wYXNzd2Q=");
 
         FileInputStream fis = new FileInputStream("/home/flascell/bogus.pkcs");
         byte[] buf = new byte[256];
