@@ -23,6 +23,13 @@ public class CSRHandler extends HttpServlet {
             return;
         }
         // todo, authenticate user
-        // todo, get the CSR from the payload and do it
+        // todo, get the CSR from the payload
+        byte[] cert = null;
+        // todo, generate the new cert
+        response.setStatus(HttpServletResponse.SC_OK);
+        response.setContentType("application/x-x509-ca-cert");
+        response.setContentLength(cert.length);
+        response.getOutputStream().write(cert);
+        response.flushBuffer();
     }
 }
