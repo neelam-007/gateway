@@ -37,6 +37,7 @@ public class ServerConfig {
     private static final String PARAM_IPS               = "IpAddresses";
     private static final String PARAM_HTTP_PORTS        = "HttpPorts";
     private static final String PARAM_HTTPS_PORTS       = "HttpsPorts";
+    private static final String PARAM_HOSTNAME          = "Hostname";
     private static final String JNDI_PREFIX             = "java:comp/env/";
 
     private static final String JNDI_SERVICE_RESOLVERS  = JNDI_PREFIX + PARAM_SERVICE_RESOLVERS;
@@ -46,6 +47,7 @@ public class ServerConfig {
     private static final String JNDI_IPS                = JNDI_PREFIX + PARAM_IPS;
     private static final String JNDI_HTTP_PORTS         = JNDI_PREFIX + PARAM_HTTP_PORTS;
     private static final String JNDI_HTTPS_PORTS        = JNDI_PREFIX + PARAM_HTTPS_PORTS;
+    private static final String JNDI_HOSTNAME           = JNDI_PREFIX + PARAM_HOSTNAME;
 
     public static final String PROP_SERVER_ID = "com.l7tech.server.serverId";
     public static final String PROP_RESOLVERS = "com.l7tech.server.serviceResolvers";
@@ -54,6 +56,7 @@ public class ServerConfig {
     public static final String PROP_IPS = "com.l7tech.server.ipAddresses";
     public static final String PROP_HTTP_PORTS = "com.l7tech.server.httpPorts";
     public static final String PROP_HTTPS_PORTS = "com.l7tech.server.httpsPorts";
+    public static final String PROP_HOSTNAME = "com.l7tech.server.hostname";
 
     public static final String DEFAULT_KEYSTORE_PROPS_PATH = "/ssg/etc/conf/keystore.properties";
     public static final String DEFAULT_HIBERNATE_PROPS_PATH = "/ssg/etc/conf/hibernate.properties";
@@ -97,6 +100,16 @@ public class ServerConfig {
         _serviceResolvers = getProperty( PROP_RESOLVERS, JNDI_SERVICE_RESOLVERS, DEFAULT_SERVICE_RESOLVERS );
         _keystorePropertiesPath = getProperty( PROP_KEYSTORE_PROPS_PATH, JNDI_KEYSTORE, DEFAULT_KEYSTORE_PROPS_PATH );
         _hibernatePropertiesPath = getProperty( PROP_HIBERNATE_PROPS_PATH, JNDI_HIBERNATE, DEFAULT_HIBERNATE_PROPS_PATH );
+        _hostname = getProperty( PROP_HOSTNAME, JNDI_HOSTNAME, null );
+
+        if ( _hostname == null ) {
+            try {
+                _hostname = InetAddress.getLocalHost().getHostName();
+            } catch (UnknownHostException e) {
+                logger.fine( "HostName parameter not set, assigning hostname " + _hostname );
+                e.printStackTrace();  //To change body of catch statement use Options | File Templates.
+            }
+        }
 
         try {
             String sid = getProperty( PROP_SERVER_ID, JNDI_SERVER_ID, null );
@@ -121,6 +134,7 @@ public class ServerConfig {
         logger.info( "KeystorePath = " + _keystorePropertiesPath );
         logger.info( "HibernatePath = " + _hibernatePropertiesPath );
         logger.info( "ServerId = " + _serverId );
+        logger.info( "Hostname = " + _hostname );
 
         String[] sHttpPorts = getProperty( PROP_HTTP_PORTS, JNDI_HTTP_PORTS, DEFAULT_HTTP_PORTS ).trim().split(",\\s*");
         ArrayList httpPortsList = new ArrayList();
@@ -249,12 +263,17 @@ public class ServerConfig {
         return Collections.unmodifiableList(_ipProtocolPorts).iterator();
     }
 
+    public String getHostname() {
+        return _hostname;
+    }
+
     private int _serverId;
     private long _serverBootTime;
     private String _serviceResolvers;
     private String _keystorePropertiesPath;
     private String _hibernatePropertiesPath;
     private ArrayList _ipProtocolPorts = new ArrayList();
+    private String _hostname;
 
     private static ServerConfig _instance;
     private Logger logger = LogManager.getInstance().getSystemLogger();
