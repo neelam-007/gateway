@@ -2,8 +2,6 @@ package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.xml.XpathExpression;
-import com.l7tech.common.xml.XpathEvaluator;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.XpathBasedAssertionPropertiesDialog;
 import com.l7tech.console.panels.XPathExpressionPanel;
@@ -17,19 +15,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.HashMap;
 import java.rmi.RemoteException;
-import java.io.IOException;
-
-import org.jaxen.JaxenException;
-import org.xml.sax.SAXException;
 
 /**
  * Action for editing XML security assertion properties
  */
 public abstract class XpathBasedAssertionPropertiesAction extends NodeAction {
     static final Logger log = Logger.getLogger(XpathBasedAssertionPropertiesAction.class.getName());
-    private XpathEvaluator testEvaluator;
 
     public static XpathBasedAssertionPropertiesAction actionForNode(XpathBasedAssertionTreeNode node) {
         if (node instanceof RequestWssConfidentialityTreeNode) {
@@ -56,14 +48,6 @@ public abstract class XpathBasedAssertionPropertiesAction extends NodeAction {
 
     protected XpathBasedAssertionPropertiesAction(XpathBasedAssertionTreeNode node) {
         super(node);
-        try {
-            testEvaluator = XpathEvaluator.newEvaluator(XmlUtil.stringToDocument("<blah xmlns=\"http://bzzt.com\"/>"),
-                                                        new HashMap());
-        } catch (IOException e) {
-            logger.log(Level.WARNING, "cannot create evaluator", e); // cannot happen
-        } catch (SAXException e) {
-            logger.log(Level.WARNING, "cannot create evaluator", e); // cannot happen
-        }
     }
 
     /**
@@ -150,20 +134,4 @@ public abstract class XpathBasedAssertionPropertiesAction extends NodeAction {
             });
         }
     };
-
-    private boolean isValidValue(String xpath) {
-        if (xpath == null) return false;
-        xpath = xpath.trim();
-        if (xpath.length() < 1) return false;
-         try {
-            testEvaluator.evaluate(xpath);
-        } catch (JaxenException e) {
-            log.fine(e.getMessage());
-            return false;
-        } catch (NullPointerException e) {
-            log.fine(e.getMessage());
-            return false;
-        }
-        return true;
-    }
 }

@@ -2,22 +2,25 @@ package com.l7tech.console.tree.policy;
 
 
 import com.l7tech.console.action.XpathBasedAssertionPropertiesAction;
+import com.l7tech.console.action.EditXmlSecurityRecipientContextAction;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.XpathBasedAssertion;
+import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertionBase;
 
 import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
- * Class <code>XmlDsigReqAssertionTreeNode</code> specifies the policy
- * element that represents the soap request signing requirement.
- * <p>
+ * Tree node for XpathBasedAssertion.
+ *
  * @author flascell
  */
 public abstract class XpathBasedAssertionTreeNode extends LeafAssertionTreeNode {
 
     public XpathBasedAssertionTreeNode(Assertion assertion) {
         super(assertion);
+        this.assertion = (XpathBasedAssertion)assertion;
     }
 
     /** Get the basic name of this node, ie "XML Request Security". */
@@ -37,6 +40,9 @@ public abstract class XpathBasedAssertionTreeNode extends LeafAssertionTreeNode 
         java.util.List list = new ArrayList();
         Action a = XpathBasedAssertionPropertiesAction.actionForNode(this);
         list.add(a);
+        if (assertion instanceof XmlSecurityAssertionBase) {
+            list.add(new EditXmlSecurityRecipientContextAction(this));
+        }
         list.addAll(Arrays.asList(super.getActions()));
         return (Action[]) list.toArray(new Action[]{});
     }
@@ -67,4 +73,6 @@ public abstract class XpathBasedAssertionTreeNode extends LeafAssertionTreeNode 
     protected String iconResource(boolean open) {
         return "com/l7tech/console/resources/xmlencryption.gif";
     }
+
+    private XpathBasedAssertion assertion;
 }
