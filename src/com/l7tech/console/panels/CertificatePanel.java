@@ -5,9 +5,12 @@ import com.l7tech.console.event.EntityEvent;
 import com.l7tech.console.event.EntityListener;
 import com.l7tech.console.util.Preferences;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.util.Registry;
 import com.l7tech.identity.UserBean;
-import com.l7tech.identity.cert.ClientCertManager;
+import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.objectmodel.*;
+import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.CertUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -17,14 +20,17 @@ import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateException;
 import java.util.Enumeration;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.rmi.RemoteException;
 
 /**
  * This class is the Certificate Info dialog
@@ -36,6 +42,7 @@ class CertificatePanel extends JPanel {
     private JLabel certStatusLabel;
     private EntityListener parentListener;
     private JComponent certificateView = new JLabel();
+    private IdentityAdmin identityAdmin = null;
 
     private final GridBagConstraints certificateViewConstraints = new GridBagConstraints(0, 1, 1, 1, 1.0, 1.0,
       GridBagConstraints.NORTHWEST,
@@ -51,6 +58,7 @@ class CertificatePanel extends JPanel {
         parentListener = l;
         initComponents();
         applyFormSecurity();
+        identityAdmin = Registry.getDefault().getIdentityAdmin();
     }
 
     /**
@@ -121,8 +129,10 @@ class CertificatePanel extends JPanel {
 
                         // revoke the user cert
                         try {
-                            final ClientCertManager man = (ClientCertManager)SsmApplication.getApplication().getBean("clientCertManager");
-                            man.revokeUserCert(user);
+                            identityAdmin.revokeCert(user);
+                            // reset values and redisplay
+                            cert = null;
+                            loadCertificateInfo();
                             // must tell parent to update user because version might have changed
                             EntityHeader eh = new EntityHeader();
                             eh.setStrId(user.getUniqueIdentifier());
@@ -133,10 +143,9 @@ class CertificatePanel extends JPanel {
                             log.log(Level.WARNING, "ERROR Revoking certificate", e);
                         } catch (ObjectNotFoundException e) {
                             log.log(Level.WARNING, "ERROR Revoking certificate", e);
+                        } catch (RemoteException e) {
+                            log.log(Level.WARNING, "ERROR Revoking certificate", e);
                         }
-                        // reset values and redisplay
-                        cert = null;
-                        loadCertificateInfo();
                     }
                 }
             });
@@ -240,13 +249,23 @@ class CertificatePanel extends JPanel {
     }
 
     private void getUserCert() {
-        ClientCertManager man = (ClientCertManager)SsmApplication.getApplication().getBean("clientCertManager");
         try {
-            cert = (X509Certificate)man.getUserCert(user);
+            String certstr = identityAdmin.getUserCert(user);
+            if (certstr == null) {
+                cert = null;
+                return;
+            }
+            byte[] certbytes = HexUtils.decodeBase64(certstr);
+            cert = CertUtils.decodeCert(certbytes);
         } catch (FindException e) {
+            log.log(Level.WARNING, "There was an error loading the certificate", e);
+        } catch (CertificateException e) {
+            log.log(Level.WARNING, "There was an error loading the certificate", e);
+        } catch (IOException e) {
             log.log(Level.WARNING, "There was an error loading the certificate", e);
         }
     }
+
 
     /**
      * UI Elements

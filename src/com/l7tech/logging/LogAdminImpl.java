@@ -1,13 +1,12 @@
 package com.l7tech.logging;
 
 import com.l7tech.objectmodel.PersistenceContext;
-import com.l7tech.remote.jini.export.RemoteService;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.support.ApplicationObjectSupport;
 
 import java.rmi.RemoteException;
 import java.sql.SQLException;
 import java.util.logging.Logger;
-
-import org.springframework.beans.factory.InitializingBean;
 
 /**
  * <code>Log</code> service implementation.
@@ -15,7 +14,7 @@ import org.springframework.beans.factory.InitializingBean;
  * @author  <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version $Id$
  */
-public class LogAdminImpl extends RemoteService implements LogAdmin, InitializingBean {
+public class LogAdminImpl extends ApplicationObjectSupport implements LogAdmin, InitializingBean {
     private ServerLogManager serverLogManager;
 
     /**
@@ -93,10 +92,10 @@ public class LogAdminImpl extends RemoteService implements LogAdmin, Initializin
     private final Logger logger = Logger.getLogger(getClass().getName());
 
     public void afterPropertiesSet() throws Exception {
-        checkServerLogManagerSet();
+        checkServerLogManager();
     }
 
-    private void checkServerLogManagerSet() {
+    private void checkServerLogManager() {
         if  (serverLogManager == null) {
             throw new IllegalArgumentException("server log manager is required");
         }

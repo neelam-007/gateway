@@ -6,6 +6,7 @@
 
 package com.l7tech.server.audit;
 
+import com.l7tech.admin.RoleUtils;
 import com.l7tech.common.audit.AuditAdmin;
 import com.l7tech.common.audit.AuditRecord;
 import com.l7tech.common.audit.AuditSearchCriteria;
@@ -14,10 +15,10 @@ import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.OpaqueId;
 import com.l7tech.logging.SSGLogRecord;
 import com.l7tech.objectmodel.*;
-import com.l7tech.remote.jini.export.RemoteService;
 import com.l7tech.server.ServerConfig;
 import net.sf.hibernate.HibernateException;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.support.ApplicationObjectSupport;
 
 import java.io.IOException;
 import java.io.PipedInputStream;
@@ -37,7 +38,7 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class AuditAdminImpl extends RemoteService implements AuditAdmin, InitializingBean {
+public class AuditAdminImpl extends ApplicationObjectSupport implements AuditAdmin, InitializingBean {
     private static final Logger logger = Logger.getLogger(AuditAdminImpl.class.getName());
     private static final long CONTEXT_TIMEOUT = 1000L * 60 * 5; // expire after 5 min of inactivity
     private static final int DEFAULT_DOWNLOAD_CHUNK_LENGTH = 8192;
@@ -90,7 +91,7 @@ public class AuditAdminImpl extends RemoteService implements AuditAdmin, Initial
     }
 
     public void deleteOldAuditRecords() throws RemoteException {
-        enforceAdminRole();
+        RoleUtils.enforceAdminRole();
         try {
             doInTransactionAndClose(new PersistenceAction() {
                 public Object run() throws ObjectModelException {
@@ -218,7 +219,7 @@ public class AuditAdminImpl extends RemoteService implements AuditAdmin, Initial
     }
 
     public OpaqueId downloadAllAudits(int chunkSizeInBytes) throws RemoteException {
-        enforceAdminRole();
+        RoleUtils.enforceAdminRole();
         try {
             final DownloadContext downloadContext;
             downloadContext = new DownloadContext(0);

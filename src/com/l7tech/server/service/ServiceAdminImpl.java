@@ -1,12 +1,11 @@
 package com.l7tech.server.service;
 
-import com.l7tech.common.util.Locator;
+import com.l7tech.admin.RoleUtils;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.remote.jini.export.RemoteService;
 import com.l7tech.server.policy.validator.ServerPolicyValidator;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ResolutionParameterTooLongException;
@@ -16,6 +15,8 @@ import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpState;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.methods.GetMethod;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.support.ApplicationObjectSupport;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -34,9 +35,11 @@ import java.util.logging.Logger;
  * User: flascelles<br/>
  * Date: Jun 6, 2003
  */
-public class ServiceAdminImpl extends RemoteService implements ServiceAdmin {
+public class ServiceAdminImpl extends ApplicationObjectSupport implements ServiceAdmin, InitializingBean {
 
     public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/serviceAdmin";
+
+    private ServiceManager serviceManager;
 
     public String resolveWsdlTarget(String url) throws IOException, MalformedURLException {
         try {
@@ -79,7 +82,7 @@ public class ServiceAdminImpl extends RemoteService implements ServiceAdmin {
     public PublishedService findServiceByID(String serviceID) throws RemoteException, FindException {
         try {
             long oid = toLong(serviceID);
-            PublishedService service = getServiceManager().findByPrimaryKey(oid);
+            PublishedService service = serviceManager.findByPrimaryKey(oid);
             if (service != null) {
                 logger.finest("Returning service id " + oid + ", version " + service.getVersion());
             }
@@ -91,7 +94,7 @@ public class ServiceAdminImpl extends RemoteService implements ServiceAdmin {
 
     public EntityHeader[] findAllPublishedServices() throws RemoteException, FindException {
         try {
-            Collection res = getServiceManager().findAllHeaders();
+            Collection res = serviceManager.findAllHeaders();
             return collectionToHeaderArray(res);
         } finally {
             closeContext();
@@ -101,7 +104,7 @@ public class ServiceAdminImpl extends RemoteService implements ServiceAdmin {
     public EntityHeader[] findAllPublishedServicesByOffset(int offset, int windowSize)
                     throws RemoteException, FindException {
         try {
-            Collection res = getServiceManager().findAllHeaders(offset, windowSize);
+            Collection res = serviceManager.findAllHeaders(offset, windowSize);
             return collectionToHeaderArray(res);
         } finally {
             closeContext();
@@ -110,7 +113,7 @@ public class ServiceAdminImpl extends RemoteService implements ServiceAdmin {
 
     public PolicyValidatorResult validatePolicy(String policyXml, long serviceid) throws RemoteException {
         try {
-            PublishedService service = getServiceManager().findByPrimaryKey(serviceid);
+            PublishedService service = serviceManager.findByPrimaryKey(serviceid);
             Assertion assertion = WspReader.parse(policyXml);
             PolicyValidator validator = new ServerPolicyValidator();
             return validator.validate(assertion, service);
@@ -135,7 +138,6 @@ public class ServiceAdminImpl extends RemoteService implements ServiceAdmin {
      */
     public long savePublishedService(PublishedService service) throws RemoteException,
                                     UpdateException, SaveException, VersionException, ResolutionParameterTooLongException {
-        ServiceManager manager = getServiceManager();
         PersistenceContext pc = null;
         try {
             pc = PersistenceContext.getCurrent();
@@ -146,7 +148,7 @@ public class ServiceAdminImpl extends RemoteService implements ServiceAdmin {
         }
 
         try {
-            enforceAdminRole();
+            RoleUtils.enforceAdminRole();
             long oid = PublishedService.DEFAULT_OID;
             pc.beginTransaction();
 
@@ -154,11 +156,11 @@ public class ServiceAdminImpl extends RemoteService implements ServiceAdmin {
                 // UPDATING EXISTING SERVICE
                 oid = service.getOid();
                 logger.fine("Updating PublishedService: " + oid);
-                manager.update(service);
+                serviceManager.update(service);
             } else {
                 // SAVING NEW SERVICE
                 logger.fine("Saving new PublishedService");
-                oid = manager.save(service);
+                oid = serviceManager.save(service);
             }
             pc.commitTransaction();
             return oid;
@@ -177,15 +179,13 @@ public class ServiceAdminImpl extends RemoteService implements ServiceAdmin {
     }
 
     public void deletePublishedService(String serviceID) throws RemoteException, DeleteException {
-        ServiceManager manager = null;
         PublishedService service = null;
         try {
             long oid = toLong(serviceID);
-            enforceAdminRole();
+            RoleUtils.enforceAdminRole();
             beginTransaction();
-            manager = getServiceManager();
-            service = manager.findByPrimaryKey(oid);
-            manager.delete(service);
+            service = serviceManager.findByPrimaryKey(oid);
+            serviceManager.delete(service);
             logger.info("Deleted PublishedService: " + oid);
         } catch (FindException e) {
             throw new DeleteException("Could not find object to delete.", e);
@@ -199,13 +199,13 @@ public class ServiceAdminImpl extends RemoteService implements ServiceAdmin {
         }
     }
 
+    public void setServiceManager(ServiceManager serviceManager) {
+        this.serviceManager = serviceManager;
+    }
     // ************************************************
     // PRIVATES
     // ************************************************
 
-    private ServiceManager getServiceManager() {
-        return (ServiceManager)Locator.getDefault().lookup(ServiceManager.class);
-    }
 
     private void beginTransaction() throws RemoteException {
         try {
@@ -270,4 +270,10 @@ public class ServiceAdminImpl extends RemoteService implements ServiceAdmin {
     }
 
     private final Logger logger = Logger.getLogger(getClass().getName());
+
+    public void afterPropertiesSet() throws Exception {
+        if  (serviceManager == null) {
+            throw new IllegalArgumentException("service manager is required");
+        }
+    }
 }

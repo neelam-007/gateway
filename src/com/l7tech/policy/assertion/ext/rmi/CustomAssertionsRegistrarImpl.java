@@ -1,29 +1,27 @@
 package com.l7tech.policy.assertion.ext.rmi;
 
-import com.l7tech.common.util.Locator;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
-import com.l7tech.remote.jini.export.RemoteService;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.support.ApplicationObjectSupport;
 
 import java.io.IOException;
 import java.rmi.RemoteException;
 import java.util.Collection;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author emil
  * @version 16-Feb-2004
  */
-public class CustomAssertionsRegistrarImpl extends RemoteService implements CustomAssertionsRegistrar {
-    static Logger logger = Logger.getLogger(CustomAssertionsRegistrar.class.getName());
+public class CustomAssertionsRegistrarImpl
+  extends ApplicationObjectSupport implements CustomAssertionsRegistrar, InitializingBean {
     protected CustomAssertionsRegistrar delegate;
 
-    public CustomAssertionsRegistrarImpl() {
-            getDelegate();
+    public void setDelegate(CustomAssertionsRegistrar delegate) {
+        this.delegate = delegate;
     }
 
     /**
@@ -31,7 +29,7 @@ public class CustomAssertionsRegistrarImpl extends RemoteService implements Cust
      * @throws java.rmi.RemoteException
      */
     public Collection getAssertions() throws RemoteException {
-        return getDelegate().getAssertions();
+        return delegate.getAssertions();
     }
 
     /**
@@ -41,7 +39,7 @@ public class CustomAssertionsRegistrarImpl extends RemoteService implements Cust
      * @throws java.rmi.RemoteException
      */
     public Collection getAssertions(Category c) throws RemoteException {
-        return getDelegate().getAssertions(c);
+        return delegate.getAssertions(c);
     }
 
     /**
@@ -57,7 +55,7 @@ public class CustomAssertionsRegistrarImpl extends RemoteService implements Cust
      */
     public Assertion resolvePolicy(EntityHeader eh)
       throws RemoteException, ObjectNotFoundException {
-        return getDelegate().resolvePolicy(eh);
+        return delegate.resolvePolicy(eh);
 
     }
 
@@ -71,19 +69,13 @@ public class CustomAssertionsRegistrarImpl extends RemoteService implements Cust
      * @throws java.io.IOException      on policy format error
      */
     public Assertion resolvePolicy(String xml) throws RemoteException, IOException {
-        return getDelegate().resolvePolicy(xml);
+        return delegate.resolvePolicy(xml);
     }
 
-    private CustomAssertionsRegistrar getDelegate() {
-        if (delegate != null) {
-            return delegate;
-        }
-        // todo: this to be done witrh spring
-        delegate = (CustomAssertionsRegistrar)Locator.getDefault().lookup(CustomAssertionsRegistrar.class);
+
+    public void afterPropertiesSet() throws Exception {
         if (delegate == null) {
-            throw new RuntimeException("Unable to obtain the 'custom assertions' registrar implementation");
+            throw new IllegalArgumentException("custom assertion registrar delegate required");
         }
-        return delegate;
     }
-
 }

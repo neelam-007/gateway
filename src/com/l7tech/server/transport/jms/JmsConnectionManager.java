@@ -18,6 +18,10 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationContext;
+import org.springframework.beans.BeansException;
+
 /**
  * Hibernate manager for JMS connections and endpoints.  Endpoints cannot be found
  * directly using this class, only by reference from their associated Connection.
@@ -25,8 +29,9 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class JmsConnectionManager extends HibernateEntityManager {
+public class JmsConnectionManager extends HibernateEntityManager implements ApplicationContextAware {
     private List _allProviders = null;
+    private ApplicationContext applicationContext;
 
     public Collection findAllProviders() throws FindException {
         // TODO make this real, eh?!!
@@ -148,4 +153,8 @@ public class JmsConnectionManager extends HibernateEntityManager {
 
     private final Logger _logger = Logger.getLogger(getClass().getName());
     private JmsEndpointManager _endpointManager;
+
+    public void setApplicationContext(ApplicationContext ctx) throws BeansException {
+        applicationContext = ctx;
+    }
 }

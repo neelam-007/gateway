@@ -1,16 +1,17 @@
 package com.l7tech.server.identity;
 
+import com.l7tech.admin.RoleUtils;
 import com.l7tech.common.Authorizer;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.Locator;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalUser;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.*;
-import com.l7tech.remote.jini.export.RemoteService;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.support.ApplicationObjectSupport;
 
 import javax.security.auth.Subject;
 import java.rmi.RemoteException;
@@ -26,8 +27,6 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.springframework.beans.factory.InitializingBean;
-
 /**
  * Server side implementation of the IdentityAdmin interface.
  * This was originally used with the Axis layer
@@ -37,8 +36,9 @@ import org.springframework.beans.factory.InitializingBean;
  * User: flascelles<br/>
  * Date: May 26, 2003
  */
-public class IdentityAdminImpl extends RemoteService
+public class IdentityAdminImpl extends ApplicationObjectSupport
   implements IdentityAdmin, InitializingBean {
+    private ClientCertManager clientCertManager;
 
     public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/identityAdmin";
 
@@ -96,7 +96,7 @@ public class IdentityAdminImpl extends RemoteService
       throws RemoteException, SaveException, UpdateException {
         beginTransaction();
         try {
-            enforceAdminRole();
+            RoleUtils.enforceAdminRole();
             if (identityProviderConfig.getOid() > 0) {
                 IdentityProviderConfigManager manager = getIdProvCfgMan();
                 IdentityProviderConfig originalConfig = manager.findByPrimaryKey(identityProviderConfig.getOid());
@@ -187,7 +187,7 @@ public class IdentityAdminImpl extends RemoteService
     public void deleteIdentityProviderConfig(long oid) throws RemoteException, DeleteException {
         beginTransaction();
         try {
-            enforceAdminRole();
+            RoleUtils.enforceAdminRole();
             IdentityProviderConfigManager manager = getIdProvCfgMan();
 
             final IdentityProviderConfig ipc = manager.findByPrimaryKey(oid);
@@ -289,7 +289,7 @@ public class IdentityAdminImpl extends RemoteService
       throws RemoteException, DeleteException, ObjectNotFoundException {
         beginTransaction();
         try {
-            enforceAdminRole();
+            RoleUtils.enforceAdminRole();
             UserManager userManager = retrieveUserManager(cfgid);
             if (userManager == null) throw new RemoteException("Cannot retrieve the UserManager");
             User user = userManager.findByPrimaryKey(userId);
@@ -320,7 +320,7 @@ public class IdentityAdminImpl extends RemoteService
       throws RemoteException, SaveException, UpdateException, ObjectNotFoundException {
         beginTransaction();
         try {
-            enforceAdminRole();
+            RoleUtils.enforceAdminRole();
             IdentityProvider provider = IdentityProviderFactory.getProvider(identityProviderConfigId);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
             UserManager userManager = provider.getUserManager();
@@ -391,7 +391,7 @@ public class IdentityAdminImpl extends RemoteService
       throws RemoteException, DeleteException, ObjectNotFoundException {
         beginTransaction();
         try {
-            enforceAdminRole();
+            RoleUtils.enforceAdminRole();
             GroupManager groupManager = retrieveGroupManager(cfgid);
             Group grp = groupManager.findByPrimaryKey(groupId);
             if (grp == null) throw new ObjectNotFoundException("Group does not exist");
@@ -418,7 +418,7 @@ public class IdentityAdminImpl extends RemoteService
       throws RemoteException, SaveException, UpdateException, ObjectNotFoundException {
         beginTransaction();
         try {
-            enforceAdminRole();
+            RoleUtils.enforceAdminRole();
             IdentityProvider provider = IdentityProviderFactory.getProvider(identityProviderConfigId);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
             GroupManager groupManager = provider.getGroupManager();
@@ -455,8 +455,7 @@ public class IdentityAdminImpl extends RemoteService
     public String getUserCert(User user) throws RemoteException, FindException, CertificateEncodingException {
         try {
             // get cert from internal CA
-            ClientCertManager manager = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
-            Certificate cert = manager.getUserCert(user);
+            Certificate cert = clientCertManager.getUserCert(user);
             if (cert == null) return null;
 
             String encodedcert = HexUtils.encodeBase64(cert.getEncoded());
@@ -469,10 +468,9 @@ public class IdentityAdminImpl extends RemoteService
     public void revokeCert(User user) throws RemoteException, UpdateException, ObjectNotFoundException {
         beginTransaction();
         try {
-            enforceAdminRole();
+            RoleUtils.enforceAdminRole();
             // revoke the cert in internal CA
-            ClientCertManager manager = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
-            manager.revokeUserCert(user);
+            clientCertManager.revokeUserCert(user);
             // internal users should have their password "revoked" along with their cert
 
             IdentityProvider provider = IdentityProviderFactory.getProvider(user.getProviderId());
@@ -512,10 +510,9 @@ public class IdentityAdminImpl extends RemoteService
     public void recordNewUserCert(User user, Certificate cert) throws RemoteException, UpdateException {
         beginTransaction();
         try {
-            enforceAdminRole();
+            RoleUtils.enforceAdminRole();
             // revoke the cert in internal CA
-            ClientCertManager manager = (ClientCertManager)Locator.getDefault().lookup(ClientCertManager.class);
-            manager.recordNewUserCert(user, cert);
+            clientCertManager.recordNewUserCert(user, cert);
         } finally {
             try {
                 endTransaction();
@@ -537,8 +534,6 @@ public class IdentityAdminImpl extends RemoteService
         try {
             getIdProvCfgMan().test(identityProviderConfig);
         } catch (InvalidIdProviderCfgException e) {
-            throw e;
-        } catch (RemoteException e) {
             throw e;
         } catch (Throwable t) {
             logger.log(Level.INFO, "Identity Provider test failed because an exception was thrown", t);
@@ -607,9 +602,14 @@ public class IdentityAdminImpl extends RemoteService
         this.identityProviderConfigManager = icf;
     }
 
+    public void setClientCertManager(ClientCertManager clientCertManager) {
+        this.clientCertManager = clientCertManager;
+    }
+
     public void afterPropertiesSet() throws Exception {
-         checkidentityProviderConfigManager();
-     }
+        checkidentityProviderConfigManager();
+        checkClientCertManager();
+    }
 
 
 
@@ -622,8 +622,14 @@ public class IdentityAdminImpl extends RemoteService
             throw new IllegalArgumentException("identity provider config is required");
         }
     }
+    private void checkClientCertManager() {
+        if (clientCertManager == null) {
+            throw new IllegalArgumentException("client certificate manager required");
+        }
+    }
 
-    private IdentityProviderConfigManager getIdProvCfgMan() throws RemoteException {
+
+    private IdentityProviderConfigManager getIdProvCfgMan() {
         return identityProviderConfigManager;
     }
 
@@ -708,17 +714,17 @@ public class IdentityAdminImpl extends RemoteService
 
     /**
      * Parse the String service ID to long (database format). Throws runtime exc
+     *
      * @param ID the ID, must not be null, and .
      * @return the ID representing <code>long</code>
-     *
      * @throws IllegalArgumentException if service ID is null
-     * @throws NumberFormatException on parse error
+     * @throws NumberFormatException    on parse error
      */
     private long toLong(String ID)
       throws IllegalArgumentException, NumberFormatException {
         if (ID == null) {
-                throw new IllegalArgumentException();
-            }
+            throw new IllegalArgumentException();
+        }
         return Long.parseLong(ID);
     }
 

@@ -8,9 +8,6 @@
     <bean id="securityProvider" class="com.l7tech.console.security.SecurityProviderImpl">
     </bean>
 
-    <bean id="clientCertManager" class="com.l7tech.identity.cert.ClientCertManagerRemote">
-    </bean>
-
     <bean id="registry" class="com.l7tech.console.util.registry.RegistryImpl">
     </bean>
 

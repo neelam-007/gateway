@@ -8,7 +8,6 @@ package com.l7tech.server;
 
 import com.l7tech.common.util.KeystoreInfo;
 import com.l7tech.common.util.KeystoreUtils;
-import com.l7tech.remote.jini.export.RemoteService;
 
 import java.io.File;
 import java.io.FileNotFoundException;

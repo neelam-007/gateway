@@ -1,7 +1,8 @@
 package com.l7tech.cluster;
 
+import com.l7tech.admin.RoleUtils;
 import com.l7tech.objectmodel.*;
-import com.l7tech.remote.jini.export.RemoteService;
+import org.springframework.context.support.ApplicationObjectSupport;
 
 import java.rmi.RemoteException;
 import java.sql.SQLException;
@@ -21,7 +22,7 @@ import java.util.logging.Logger;
  * $Id$<br/>
  *
  */
-public class ClusterStatusAdminImp extends RemoteService implements ClusterStatusAdmin {
+public class ClusterStatusAdminImp extends ApplicationObjectSupport implements ClusterStatusAdmin {
 
 
     /**
@@ -74,7 +75,7 @@ public class ClusterStatusAdminImp extends RemoteService implements ClusterStatu
             throw new UpdateException("internal error", e);
         }
         try {
-            enforceAdminRole();
+            RoleUtils.enforceAdminRole();
             try {
                 context.beginTransaction();
                 ciman.renameNode(nodeid, newName);
@@ -105,7 +106,7 @@ public class ClusterStatusAdminImp extends RemoteService implements ClusterStatu
             throw new DeleteException("internal error", e);
         }
         try {
-            enforceAdminRole();
+            RoleUtils.enforceAdminRole();
             try {
                 logger.info("removing stale node: " + nodeid);
                 context.beginTransaction();

@@ -6,13 +6,14 @@
 
 package com.l7tech.server;
 
+import com.l7tech.admin.RoleUtils;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
-import com.l7tech.common.util.Locator;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.identity.cert.TrustedCertManager;
 import com.l7tech.objectmodel.*;
-import com.l7tech.remote.jini.export.RemoteService;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.context.support.ApplicationObjectSupport;
 
 import javax.net.ssl.*;
 import java.io.IOException;
@@ -21,8 +22,8 @@ import java.net.URLConnection;
 import java.rmi.RemoteException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.security.cert.X509Certificate;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +34,7 @@ import java.util.logging.Logger;
  * @author alex
  * @version $Revision$
  */
-public class TrustedCertAdminImpl extends RemoteService implements TrustedCertAdmin {
+public class TrustedCertAdminImpl extends ApplicationObjectSupport implements TrustedCertAdmin, InitializingBean {
 
     public List findAllCerts() throws FindException, RemoteException {
         try {
@@ -73,7 +74,7 @@ public class TrustedCertAdminImpl extends RemoteService implements TrustedCertAd
 
     public long saveCert(final TrustedCert cert) throws SaveException, UpdateException, VersionException, RemoteException {
         try {
-            enforceAdminRole();
+            RoleUtils.enforceAdminRole();
             Long oid = (Long)doInTransactionAndClose(new PersistenceAction() {
                 public Object run() throws ObjectModelException {
                     long oid;
@@ -106,7 +107,7 @@ public class TrustedCertAdminImpl extends RemoteService implements TrustedCertAd
 
     public void deleteCert(final long oid) throws FindException, DeleteException, RemoteException {
         try {
-            enforceAdminRole();
+            RoleUtils.enforceAdminRole();
             doInTransactionAndClose(new PersistenceAction() {
                 public Object run() throws ObjectModelException {
                     getManager().delete(oid);
@@ -189,6 +190,20 @@ public class TrustedCertAdminImpl extends RemoteService implements TrustedCertAd
         return KeystoreUtils.getInstance().getRootCert();
     }
 
+    public void setTrustedCertManager(TrustedCertManager trustedCertManager) {
+        this.trustedCertManager = trustedCertManager;
+    }
+
+    public void afterPropertiesSet() throws Exception {
+        checktrustedCertManager();
+    }
+
+    private void checktrustedCertManager() {
+         if (trustedCertManager == null) {
+             throw new IllegalArgumentException("trusted cert manager is required");
+         }
+     }
+
     private Object doInTransactionAndClose(PersistenceAction r) throws ObjectModelException {
         HibernatePersistenceContext context = null;
         try {
@@ -202,12 +217,11 @@ public class TrustedCertAdminImpl extends RemoteService implements TrustedCertAd
     }
 
     private TrustedCertManager getManager() {
-        if ( _manager == null ) {
-            _manager = (TrustedCertManager)Locator.getDefault().lookup(TrustedCertManager.class);
-        }
-        return _manager;
+        return trustedCertManager;
     }
 
     private Logger logger = Logger.getLogger(getClass().getName());
-    private TrustedCertManager _manager;
+    private TrustedCertManager trustedCertManager;
+
+
 }

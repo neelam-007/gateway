@@ -17,11 +17,16 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationContext;
+import org.springframework.beans.BeansException;
+
 /**
  * @author alex
  * @version $Revision$
  */
-public class JmsEndpointManager extends HibernateEntityManager {
+public class JmsEndpointManager extends HibernateEntityManager implements ApplicationContextAware {
+    private ApplicationContext applicationContext;
 
     public JmsEndpoint findByPrimaryKey( long oid ) throws FindException {
         try {
@@ -140,4 +145,8 @@ public class JmsEndpointManager extends HibernateEntityManager {
     }
 
     private final Logger _logger = Logger.getLogger(getClass().getName());
+
+    public void setApplicationContext(ApplicationContext ctx) throws BeansException {
+        applicationContext = ctx;
+    }
 }

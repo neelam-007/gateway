@@ -4,7 +4,7 @@
  * $Id$
  */
 
-package com.l7tech.remote.jini.export;
+package com.l7tech.remote.rmi.codebase;
 
 import com.l7tech.common.util.HexUtils;
 

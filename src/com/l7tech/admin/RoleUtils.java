@@ -1,21 +1,23 @@
-package com.l7tech.remote.jini.export;
+/*
+ * Copyright (C) 2003-2004 Layer 7 Technologies Inc.
+ *
+ * $Id$
+ */
+package com.l7tech.admin;
 
 import com.l7tech.common.Authorizer;
 import com.l7tech.identity.Group;
-import org.springframework.context.support.ApplicationObjectSupport;
 
 import javax.security.auth.Subject;
-import java.security.AccessControlException;
 import java.security.AccessController;
+import java.security.AccessControlException;
 
 /**
- * <code>RemoteService</code> is extended by the concrete Jini services.
- *
- * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
- * @version 1.0
- * @deprecated
+ * A bag of utility method that deal with admin roles
+ * @author emil
+ * @version Dec 10, 2004
  */
-public abstract class RemoteService extends ApplicationObjectSupport {
+public class RoleUtils {
     /**
      * Returns a boolean indicating whether the authenticated user is included in the specified
      * logical "roles".
@@ -24,7 +26,7 @@ public abstract class RemoteService extends ApplicationObjectSupport {
      * @return a boolean indicating whether the user making this request belongs to one or more given
      *         roles; false if not or the user has not been authenticated
      */
-    protected boolean isUserInRole(String[] roles) {
+    public static boolean isUserInRole(String[] roles) {
         Subject subject = Subject.getSubject(AccessController.getContext());
         if (subject == null) {
             return false;
@@ -32,13 +34,12 @@ public abstract class RemoteService extends ApplicationObjectSupport {
         return Authorizer.getAuthorizer().isSubjectInRole(subject, roles);
     }
 
-
     /**
      * Makes sure that current subject has full write admin role.
      *
-     * @throws AccessControlException if not the case
+     * @throws java.security.AccessControlException if not the case
      */
-    protected void enforceAdminRole() throws AccessControlException {
+    public static void enforceAdminRole() throws AccessControlException {
         if (!isUserInRole(new String[]{Group.ADMIN_GROUP_NAME})) {
             throw new AccessControlException("Must be member of " + Group.ADMIN_GROUP_NAME +
               " to perform this operation.");

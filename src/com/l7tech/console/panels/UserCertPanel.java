@@ -5,14 +5,13 @@ import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.console.SsmApplication;
 import com.l7tech.console.event.WizardAdapter;
 import com.l7tech.console.event.WizardEvent;
 import com.l7tech.console.event.WizardListener;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.UserBean;
-import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.objectmodel.UpdateException;
@@ -24,6 +23,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.HierarchyEvent;
 import java.awt.event.HierarchyListener;
 import java.io.IOException;
+import java.rmi.RemoteException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
@@ -49,6 +49,7 @@ public class UserCertPanel extends JPanel {
     private JLabel certStatusLabel;
     private JComponent certificateView = new JLabel();
     private X509Certificate ssgcert = null;
+    IdentityAdmin identityAdmin = null;
     public static final GridBagConstraints CERTIFICATE_VIEW_CONSTRAINTS = new GridBagConstraints(0, 1, 2, 1, 1.0, 1.0,
             GridBagConstraints.NORTHWEST,
             GridBagConstraints.BOTH,
@@ -62,6 +63,7 @@ public class UserCertPanel extends JPanel {
         this.userPanel = userPanel;
         this.addHierarchyListener(hierarchyListener);
         initComponents();
+        identityAdmin = Registry.getDefault().getIdentityAdmin();
     }
 
     /**
@@ -125,16 +127,17 @@ public class UserCertPanel extends JPanel {
 
                         // remove the user cert
                         try {
-                            ClientCertManager man = (ClientCertManager)SsmApplication.getApplication().getBean("clientCertManager");
-                            man.revokeUserCert(user);
+                            identityAdmin.revokeCert(user);  //todo: dialog on error?
+                            // reset values and redisplay
+                            cert = null;
+                            loadCertificateInfo();
                         } catch (UpdateException e) {
                             log.log(Level.WARNING, "ERROR Removing certificate", e);
                         } catch (ObjectNotFoundException e) {
                             log.log(Level.WARNING, "ERROR Removing certificate", e);
+                        } catch (RemoteException e) {
+                            log.log(Level.WARNING, "ERROR Removing certificate", e);
                         }
-                        // reset values and redisplay
-                        cert = null;
-                        loadCertificateInfo();
                     }
                 }
             });
@@ -243,18 +246,25 @@ public class UserCertPanel extends JPanel {
     };
 
     private void getUserCert() {
-        final ClientCertManager man = (ClientCertManager)SsmApplication.getApplication().getBean("clientCertManager");
         try {
-            cert = (X509Certificate) man.getUserCert(user);
+            String certstr = identityAdmin.getUserCert(user);
+            if (certstr == null) {
+                cert = null;
+                return;
+            }
+            byte[] certbytes = HexUtils.decodeBase64(certstr);
+            cert =  CertUtils.decodeCert(certbytes);
         } catch (FindException e) {
+            log.log(Level.WARNING, "There was an error loading the certificate", e);
+        } catch (CertificateException e) {
+            log.log(Level.WARNING, "There was an error loading the certificate", e);
+        } catch (IOException e) {
             log.log(Level.WARNING, "There was an error loading the certificate", e);
         }
     }
 
     private void saveUserCert(TrustedCert tc) throws IOException, CertificateException, UpdateException {
-        final ClientCertManager man = (ClientCertManager)SsmApplication.getApplication().getBean("clientCertManager");
-
-        man.recordNewUserCert(user, tc.getCertificate());
+        identityAdmin.recordNewUserCert(user, tc.getCertificate());
     }
 
     /**
