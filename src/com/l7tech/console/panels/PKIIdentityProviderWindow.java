@@ -15,10 +15,7 @@ import java.util.ResourceBundle;
 import java.util.Locale;
 import java.util.logging.Logger;
 import java.awt.*;
-import java.awt.event.ActionListener;
-import java.awt.event.ActionEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.KeyEvent;
+import java.awt.event.*;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -88,20 +85,12 @@ public class PKIIdentityProviderWindow extends JDialog {
         enableOrDisableButtons();
         initializeSaveButtonState();
 
-        providerNameTextField.addKeyListener(new KeyListener() {
-            public void keyPressed(KeyEvent e) {
-                // don't care
-            }
-
+        providerNameTextField.addKeyListener(new KeyAdapter() {
             public void keyReleased(KeyEvent e) {
                 initializeSaveButtonState();
             }
-
-            public void keyTyped(KeyEvent e) {
-                // don't care
-            }
-
         });
+
         trustedCertTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             /**
              * Called whenever the value of the selection changes.
