@@ -128,7 +128,6 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                         }
                     }
 
-                    // TODO clear SSL Context when any TrustedCert changes
                     hconf.setHost(url.getHost(), port, protocol);
                 }
 
