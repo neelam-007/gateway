@@ -34,6 +34,7 @@ public class HibernatePersistenceContext extends PersistenceContext {
         _session = session;
         _manager = (HibernatePersistenceManager)PersistenceManager.getInstance();
         if ( Debug.isEnabled() ) {
+            logger.fine("Creating new HibernatePersistenceContext");
             try {
                 throw new Exception("HibernatePersistenceContext was created here");
             } catch ( Exception e ) {
