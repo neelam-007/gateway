@@ -51,6 +51,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(TrueAssertion.class, AnonymousAssertionTreeNode.class);
         assertionMap.put(XmlRequestSecurity.class, XmlRequestSecurityTreeNode.class);
         assertionMap.put(XmlResponseSecurity.class, XmlResponseSecurityTreeNode.class);
+        assertionMap.put(SamlSecurity.class, SamlTreeNode.class);
     }
 
     /**
