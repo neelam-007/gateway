@@ -80,6 +80,6 @@ if [ "$PASSWORD_LENGTH" -lt 31 ]; then
 fi
 
 # UPDATE DATABASE
-UPDATE_SYNTAX="UPDATE internal_user SET password='$ENCODED_ADMIN_PASSWD', login='$ACCOUNT_NAME', name='$ACCOUNT_NAME' WHERE oid=3"
+UPDATE_SYNTAX="UPDATE internal_user SET password='$ENCODED_ADMIN_PASSWD', login='$ACCOUNT_NAME', name='$ACCOUNT_NAME' WHERE objectid=3"
 RES=`mysql -h localhost -u $1 -p$2 ssg -e "${UPDATE_SYNTAX}"`
 echo $RES
