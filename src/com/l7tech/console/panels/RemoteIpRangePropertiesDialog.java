@@ -3,9 +3,10 @@ package com.l7tech.console.panels;
 import com.l7tech.console.action.Actions;
 
 import javax.swing.*;
+import javax.swing.text.NumberFormatter;
 import java.awt.*;
-import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 /**
  * Dialog for viewing and editing a RemoteIpRange assertion.
@@ -95,25 +96,34 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
     }
 
     private JPanel makeIPRangePanel() {
-        add1 = new JTextField("888");
-        add2 = new JTextField("888");
-        add3 = new JTextField("888");
-        add4 = new JTextField("888");
-        suffix = new JTextField("888");
+        NumberFormatter formatter = new NumberFormatter();
+        formatter.setMaximum(new Integer(255));
+        formatter.setMinimum(new Integer(0));
+
+        add1 = new JFormattedTextField(formatter);
+        add2 = new JFormattedTextField(formatter);
+        add3 = new JFormattedTextField(formatter);
+        add4 = new JFormattedTextField(formatter);
+        formatter = new NumberFormatter();
+        formatter.setMaximum(new Integer(32));
+        formatter.setMinimum(new Integer(0));
+        suffix = new JFormattedTextField(formatter);
 
         JPanel panel = new JPanel();
         panel.setLayout(new GridBagLayout());
         Insets insets = new Insets(0, 0, 0, CONTROL_SPACING);
+        int anchor = GridBagConstraints.WEST;
+        int fill = GridBagConstraints.HORIZONTAL;
 
-        panel.add(add1, new GridBagConstraints(0,0,1,1,0.2,0,GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,insets,0,0));
-        panel.add(new JLabel("."), new GridBagConstraints(1,0,1,1,0,0,GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,insets,0,0));
-        panel.add(add2, new GridBagConstraints(2,0,1,1,0.2,0,GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,insets,0,0));
-        panel.add(new JLabel("."), new GridBagConstraints(3,0,1,1,0,0,GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,insets,0,0));
-        panel.add(add3, new GridBagConstraints(4,0,1,1,0.2,0,GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,insets,0,0));
-        panel.add(new JLabel("."), new GridBagConstraints(5,0,1,1,0,0,GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,insets,0,0));
-        panel.add(add4, new GridBagConstraints(6,0,1,1,0.2,0,GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,insets,0,0));
-        panel.add(new JLabel("/"), new GridBagConstraints(7,0,1,1,0,0,GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,insets,0,0));
-        panel.add(suffix, new GridBagConstraints(8,0,1,1,0.2,0,GridBagConstraints.WEST, GridBagConstraints.HORIZONTAL,insets,0,0));
+        panel.add(add1, new GridBagConstraints(0,0,1,1,0.2,0,anchor,fill,insets,0,0));
+        panel.add(new JLabel("."), new GridBagConstraints(1,0,1,1,0,0,anchor,fill,insets,0,0));
+        panel.add(add2, new GridBagConstraints(2,0,1,1,0.2,0,anchor,fill,insets,0,0));
+        panel.add(new JLabel("."), new GridBagConstraints(3,0,1,1,0,0,anchor,fill,insets,0,0));
+        panel.add(add3, new GridBagConstraints(4,0,1,1,0.2,0,anchor,fill,insets,0,0));
+        panel.add(new JLabel("."), new GridBagConstraints(5,0,1,1,0,0,anchor,fill,insets,0,0));
+        panel.add(add4, new GridBagConstraints(6,0,1,1,0.2,0,anchor,fill,insets,0,0));
+        panel.add(new JLabel("/"), new GridBagConstraints(7,0,1,1,0,0,anchor,fill,insets,0,0));
+        panel.add(suffix, new GridBagConstraints(8,0,1,1,0.2,0,anchor,fill,insets,0,0));
 
         return panel;
     }
@@ -162,7 +172,7 @@ public class RemoteIpRangePropertiesDialog extends JDialog {
     private JButton cancelButton;
 
     private JComboBox includeExcludeCombo;
-    private JTextField add1, add2, add3, add4, suffix;
+    private JFormattedTextField add1, add2, add3, add4, suffix;
 
     private final static int BORDER_PADDING = 20;
     private final static int CONTROL_SPACING = 5;
