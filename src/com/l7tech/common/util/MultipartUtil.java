@@ -101,7 +101,7 @@ public class MultipartUtil {
             } else if (epos > 0) {
                 String aname = tok.substring(0,epos);
                 String avalue = tok.substring(epos+1);
-                value = unquote( avalue );
+                avalue = unquote( avalue );
 
                 params.put(aname,avalue);
             } else throw new IOException("Invalid Content-Type header format ('=' at position " + epos + ")");

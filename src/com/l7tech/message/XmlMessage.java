@@ -4,6 +4,10 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.util.Map;
+
+import com.l7tech.common.util.MultipartUtil;
+import com.l7tech.common.util.MultipartMessageReader;
 
 /**
  * Encapsulates a Message (i.e. a Request or Response) that contains XML.
@@ -25,4 +29,16 @@ public interface XmlMessage extends Message {
      */
     Document getDocument() throws SAXException, IOException;
     void setDocument(Document doc);
+    
+    public Map getAttachments() throws IOException;
+
+    public MultipartUtil.Part getAttachment(int position) throws IOException;
+
+    public String getMultipartBoundary();
+
+    public MultipartMessageReader getMultipartReader();
+
+    public MultipartUtil.Part getSoapPart() throws IOException;
+
+    public boolean isMultipart();
 }
