@@ -23,7 +23,10 @@ public class IdProvConfManagerClient implements GlobalIdProviderConfManager {
 
     public IdentityProvider getInternalIdentityProvider() {
         InternalIdentityProviderImp internalProvider = new InternalIdentityProviderImp();
-        internalProvider.initialize(new IdentityProviderConfig(IdentityProviderType.INTERNAL));
+        IdentityProviderConfig cfg = new IdentityProviderConfig(IdentityProviderType.INTERNAL);
+        cfg.setOid(IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID);
+        internalProvider.initialize(cfg);
+
         return internalProvider;
     }
 
