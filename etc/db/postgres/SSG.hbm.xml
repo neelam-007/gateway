@@ -5,6 +5,12 @@
 
 <!-- $Id$ -->
 
+<!-- 
+  This is the PostgreSQL version of the Hibernate mapping file.
+
+  NOTE: All changes to this file must also be made in ../mysql/SSG.hbm.xml! 
+-->
+
 <hibernate-mapping>
     <!-- "oid" is a built-in column in PostgreSQL, so all column="oid" have been changed to column="objectid" -->
 

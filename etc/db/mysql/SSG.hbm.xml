@@ -5,6 +5,12 @@
 
 <!-- $Id$ -->
 
+<!-- 
+   This is the MySQL version of Hibernate mapping file.
+     
+   NOTE: Any changes to this file must also be made to ../postgres/SSG.hbm.xml!
+ -->
+
 <hibernate-mapping>
     <class name="com.l7tech.identity.IdentityProviderConfig" table="identity_provider">
         <id name="oid" column="oid" type="long" unsaved-value="-1">
