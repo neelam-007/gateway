@@ -15,10 +15,10 @@ import com.l7tech.server.LifecycleException;
 import com.l7tech.server.ServerComponentLifecycle;
 
 import javax.jms.*;
-import javax.naming.Context;
 import javax.naming.NamingException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.lang.IllegalStateException;
 
 /**
  * Message processing runtime support for JMS messages.
@@ -40,13 +40,8 @@ public class JmsReceiver implements ServerComponentLifecycle {
     private final JmsReplyType _replyType;
     private final JmsConnection _connection;
     private final JmsEndpoint _inboundRequestEndpoint;
-    private final JmsEndpoint _outboundResponseEndpoint;
-    private final JmsEndpoint _failureEndpoint;
 
     // JMS stuff
-    private JmsBag _bag;
-    private Queue _jmsOutboundQueue;
-    private Queue _jmsFailureQueue;
 
     // Runtime stuff
     private boolean _initialized = false;
@@ -57,32 +52,12 @@ public class JmsReceiver implements ServerComponentLifecycle {
      * @param inbound   The {@link com.l7tech.common.transport.jms.JmsEndpoint} from which to receive requests
      * @param replyType A {@link com.l7tech.common.transport.jms.JmsReplyType} value indicating this receiver's
      *                  reply semantics
-     * @param outbound  The {@link com.l7tech.common.transport.jms.JmsEndpoint} into which replies should be sent
-     * @param failures  The {@link com.l7tech.common.transport.jms.JmsEndpoint} into which failures should be sent
      */
-    public JmsReceiver( JmsConnection connection, JmsEndpoint inbound, JmsReplyType replyType,
-                       JmsEndpoint outbound, JmsEndpoint failures) {
+    public JmsReceiver( JmsConnection connection, JmsEndpoint inbound, JmsReplyType replyType ) {
         _connection = connection;
         _inboundRequestEndpoint = inbound;
         if (replyType == null) replyType = JmsReplyType.AUTOMATIC;
         _replyType = replyType;
-        _outboundResponseEndpoint = outbound;
-        _failureEndpoint = failures;
-    }
-
-    /**
-     * Convenience constructor for automatic, one-way or reply-to-same configurations.
-     * <p/>
-     * Use this constructor when the replyType is either
-     * {@link com.l7tech.common.transport.jms.JmsReplyType#AUTOMATIC},
-     * {@link com.l7tech.common.transport.jms.JmsReplyType#NO_REPLY} or
-     *
-     * @param replyType A {@link com.l7tech.common.transport.jms.JmsReplyType} value indicating this receiver's
-     *                  reply semantics
-     * @param inbound   The {@link com.l7tech.common.transport.jms.JmsEndpoint} from which to receive requests
-     */
-    public JmsReceiver( JmsConnection connection, JmsEndpoint inbound, JmsReplyType replyType) {
-        this( connection, inbound, replyType, null, null);
     }
 
     /**
@@ -110,10 +85,6 @@ public class JmsReceiver implements ServerComponentLifecycle {
         return _inboundRequestEndpoint;
     }
 
-    JmsEndpoint getOutboundResponseEndpoint() {
-        return _outboundResponseEndpoint;
-    }
-
     /**
      * Finds the proper JMS destination to send a response to.
      * <p/>
@@ -138,27 +109,24 @@ public class JmsReceiver implements ServerComponentLifecycle {
                   "' for '" + toString() + "'");
                 return request.getJMSReplyTo();
             } else if (_replyType == JmsReplyType.REPLY_TO_OTHER) {
+                String msg = "REPLY_TO_OTHER not currently supported";
+                _logger.severe(msg);
+                throw new IllegalStateException(msg);
+/*
                 _logger.finer("Returning REPLY_TO_OTHER '" + _inboundRequestEndpoint.getDestinationName() +
                   "' for '" + toString() + "'");
-                return _jmsOutboundQueue;
+                return getJmsOutboundQueue();
+*/
             } else {
                 String msg = "Unknown JmsReplyType " + _replyType.toString();
                 _logger.severe(msg);
-                throw new java.lang.IllegalStateException(msg);
+                throw new IllegalStateException(msg);
             }
         }
     }
 
-    JmsEndpoint getFailureEndpoint() {
-        return _failureEndpoint;
-    }
-
     JmsReplyType getReplyType() {
         return _replyType;
-    }
-
-    Queue getJmsFailureQueue() {
-        return _jmsFailureQueue;
     }
 
     /**
@@ -169,22 +137,8 @@ public class JmsReceiver implements ServerComponentLifecycle {
     public synchronized void init(ComponentConfig config) throws LifecycleException {
         _logger.info( "Initializing " + toString() + "..." );
         try {
-            _bag = JmsUtil.connect( _connection, _inboundRequestEndpoint.getPasswordAuthentication() );
-
-            Context jndiContext = _bag.getJndiContext();
-            if (_outboundResponseEndpoint != null) {
-                _logger.fine( "Using " + _outboundResponseEndpoint.getDestinationName() + " for outbound response messages" );
-                String dname = _outboundResponseEndpoint.getDestinationName();
-                _jmsOutboundQueue = (Queue)jndiContext.lookup(dname);
-            }
-
-            if (_failureEndpoint != null) {
-                _logger.fine( "Using " + _outboundResponseEndpoint.getDestinationName() + " for failure messages" );
-                String dname = _failureEndpoint.getDestinationName();
-                _jmsFailureQueue = (Queue)jndiContext.lookup(dname);
-            }
-
             _initialized = true;
+            _loop = new MessageLoop();
             _logger.info( toString() + " initialized successfully" );
         } catch (NamingException e) {
             _logger.log(Level.WARNING, "Caught NamingException initializing JMS context for '" + _inboundRequestEndpoint.toString() + "'", e);
@@ -196,9 +150,10 @@ public class JmsReceiver implements ServerComponentLifecycle {
             _logger.log(Level.WARNING, "Caught JMSException initializing JMS context for '" + _inboundRequestEndpoint.toString() + "'", e);
             throw new LifecycleException(e.toString(), e);
         } finally {
-            if ( !_initialized && _bag != null ) _bag.close();
+            if ( !_initialized && _loop != null ) _loop.close();
         }
     }
+
 
     /**
      * Starts the receiver.
@@ -209,27 +164,45 @@ public class JmsReceiver implements ServerComponentLifecycle {
         if (!_initialized) throw new LifecycleException("Can't start '" + _inboundRequestEndpoint.toString() + "', it has not been successfully initialized!");
 
         try {
-            _loop = new MessageLoop(_bag);
             _loop.start();
         } catch (JMSException e) {
             throw new LifecycleException(e.getMessage(), e);
         } catch (NamingException e) {
             throw new LifecycleException(e.getMessage(), e);
+        } catch ( JmsConfigException e ) {
+            throw new LifecycleException(e.getMessage(), e);
         }
     }
 
     private class MessageLoop implements Runnable {
-        MessageLoop( JmsBag bag ) throws JMSException, NamingException {
-            _bag = bag;
+        MessageLoop() throws JMSException, NamingException, JmsConfigException {
+            Session session = getBag().getSession();
+            if ( !(session instanceof QueueSession) )
+                throw new IllegalArgumentException("Only QueueSession is supported");
+
             _thread = new Thread( this, toString() );
             _thread.setDaemon( true );
-            Session session = _bag.getSession();
-            if ( session instanceof QueueSession ) {
-                QueueSession queueSession = (QueueSession)session;
-                _queue = (Queue)bag.getJndiContext().lookup( _inboundRequestEndpoint.getDestinationName() );
-                _consumer = queueSession.createReceiver( _queue );
-            } else
-                throw new IllegalArgumentException("Only QueueSession is supported");
+        }
+
+        private synchronized JmsBag getBag() throws JmsConfigException, JMSException, NamingException {
+            if ( _bag == null ) {
+                _bag = JmsUtil.connect( _connection, _inboundRequestEndpoint.getPasswordAuthentication() );
+            }
+            return _bag;
+        }
+
+        private synchronized QueueReceiver getConsumer() throws JMSException, NamingException, JmsConfigException {
+            if ( _consumer == null ) {
+                _consumer = ((QueueSession)getBag().getSession()).createReceiver( getQueue() );
+            }
+            return _consumer;
+        }
+
+        private synchronized Queue getQueue() throws NamingException, JmsConfigException, JMSException {
+            if ( _queue == null ) {
+                _queue = (Queue)getBag().getJndiContext().lookup( _inboundRequestEndpoint.getDestinationName() );
+            }
+            return _queue;
         }
 
         public String toString() {
@@ -240,14 +213,14 @@ public class JmsReceiver implements ServerComponentLifecycle {
             return s.toString();
         }
 
-        public void start() throws JMSException {
+        synchronized void start() throws JMSException, NamingException, JmsConfigException {
             _logger.fine( "Starting " + toString() );
-            _bag.getConnection().start();
+            getBag().getConnection().start();
             _thread.start();
             _logger.fine( "Started " + toString() );
         }
 
-        public void stop() {
+        synchronized void stop() {
             _logger.fine( "Stopping " + toString() );
             _stop = true;
             _thread.interrupt();
@@ -255,8 +228,28 @@ public class JmsReceiver implements ServerComponentLifecycle {
                 _thread.join();
             } catch ( InterruptedException e ) {
                 Thread.currentThread().interrupt();
+            } finally {
+                cleanup();
+                _logger.fine( "Stopped " + toString() );
             }
-            _logger.fine( "Stopped " + toString() );
+        }
+
+        private synchronized void cleanup() {
+            if ( _consumer != null ) {
+                try {
+                    _consumer.close();
+                    _consumer = null;
+                } catch ( JMSException e ) {
+                    _logger.log( Level.INFO, "Caught JMSException during cleanup", e );
+                }
+            }
+
+            _queue = null;
+
+            if ( _bag != null ) {
+                _bag.close();
+                _bag = null;
+            }
         }
 
         public void run() {
@@ -266,18 +259,22 @@ public class JmsReceiver implements ServerComponentLifecycle {
             try {
                 while ( !_stop ) {
                     try {
-                        Message jmsMessage = _consumer.receive( RECEIVE_TIMEOUT );
+                        _logger.finest( "Polling for a message on " + _inboundRequestEndpoint.getDestinationName() );
+                        Message jmsMessage = getConsumer().receive( RECEIVE_TIMEOUT );
                         if ( jmsMessage != null ) {
+                            _logger.fine( "Received a message on " + _inboundRequestEndpoint.getDestinationName() );
                             oopses = 0;
                             // todo support concurrent JMS messages some day
-                            _handler.onMessage( JmsReceiver.this, _bag, jmsMessage );
+                            _handler.onMessage( JmsReceiver.this, getBag(), jmsMessage );
                         }
                     } catch ( Throwable e ) {
                         _logger.log( Level.WARNING,
                                      "Unable to receive message from JMS endpoint " +
                                      _inboundRequestEndpoint, e );
 
-                        if ( oopses++ <= MAXIMUM_OOPSES ) {
+                        cleanup();
+
+                        if ( ++oopses < MAXIMUM_OOPSES ) {
                             try {
                                 Thread.sleep(OOPS_RETRY);
                             } catch ( InterruptedException e1 ) {
@@ -308,6 +305,7 @@ public class JmsReceiver implements ServerComponentLifecycle {
         }
 
         // JMS stuff
+        private JmsBag _bag;
         private QueueReceiver _consumer;
         private Queue _queue;
 
@@ -320,9 +318,7 @@ public class JmsReceiver implements ServerComponentLifecycle {
      * Stops the receiver, e.g. temporarily.
      */
     public synchronized void stop() throws LifecycleException {
-        if ( _loop != null ) {
-            _loop.stop();
-        }
+        if ( _loop != null ) _loop.stop();
     }
 
     /**
@@ -333,11 +329,7 @@ public class JmsReceiver implements ServerComponentLifecycle {
      */
     public synchronized void close() throws LifecycleException {
         _initialized = false;
-        if ( _loop == null )
-            _bag.close();
-        else
-            _loop.close(); // This will close the bag too
-
+        if ( _loop != null ) _loop.close();
     }
 
     private final JmsRequestHandler _handler = new JmsRequestHandler();

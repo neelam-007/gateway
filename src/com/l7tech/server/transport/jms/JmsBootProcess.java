@@ -308,9 +308,7 @@ public class JmsBootProcess implements ServerComponentLifecycle {
         JmsReceiver receiver = new JmsReceiver(
                 connection,
                 endpoint,
-                endpoint.getReplyType(),
-                endpoint.getReplyEndpoint(),
-                endpoint.getFailureEndpoint());
+                endpoint.getReplyType() );
         return receiver;
     }
 

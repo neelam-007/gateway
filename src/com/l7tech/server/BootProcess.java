@@ -39,6 +39,7 @@ public class BootProcess implements ServerComponentLifecycle {
 
     public void init(ComponentConfig config) throws LifecycleException {
         try {
+            logger.info( "Initializing server" );
             setSystemProperties(config);
             HibernatePersistenceManager.initialize();
 
@@ -69,6 +70,8 @@ public class BootProcess implements ServerComponentLifecycle {
                     }
                 }
             }
+
+            logger.info( "Initialized server" );
         } catch (IOException e) {
             throw new LifecycleException(e.toString(), e);
         } catch (SQLException e) {
@@ -78,6 +81,8 @@ public class BootProcess implements ServerComponentLifecycle {
 
     public void start() throws LifecycleException {
         try {
+            logger.info( "Starting server" );
+
             initializeAdminServices();
             // make sure the ServiceManager is available. this will also build the service cache
             if (Locator.getDefault().lookup(ServiceManager.class) == null) {
@@ -124,6 +129,8 @@ public class BootProcess implements ServerComponentLifecycle {
             logger.info("Stopping component " + component);
             component.stop();
         }
+
+        logger.info("Stopped.");
     }
 
     public void close() throws LifecycleException {
@@ -149,6 +156,7 @@ public class BootProcess implements ServerComponentLifecycle {
         }
         // if we were updating cluster status, stop doing it
         StatusUpdater.stopUpdater();
+        logger.info("Closed.");
     }
 
     private void setSystemProperties(ComponentConfig config) throws IOException {

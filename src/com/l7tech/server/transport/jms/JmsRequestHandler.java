@@ -6,7 +6,6 @@
 
 package com.l7tech.server.transport.jms;
 
-import com.l7tech.common.transport.jms.JmsEndpoint;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.logging.LogManager;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -121,15 +120,7 @@ class JmsRequestHandler {
         try {
             Destination jmsReplyDest = receiver.getOutboundResponseDestination( jmsRequestMsg, jmsResponseMsg );
             if ( status != AssertionStatus.NONE ) {
-                // Send response to failure endpoint if defined
-                JmsEndpoint fail = receiver.getFailureEndpoint();
-
-                if ( fail == null ) {
-                    _logger.fine( "Failure response will be sent to response destination" );
-                } else {
-                    jmsReplyDest = receiver.getJmsFailureQueue();
-                    _logger.fine( "Failure response will be sent to " + fail.getDestinationName() );
-                }
+                // TODO send response to failure endpoint if defined
             }
 
             if ( jmsReplyDest == null ) {
