@@ -80,6 +80,24 @@ public class ClientWssBasic extends ClientWssCredentialSource {
         return AssertionStatus.NONE;
     }
 
+    /**
+     * @return the human-readable node name that is displayed.
+     */
+    public String getName() {
+        return "Require WS token - BASIC authentication";
+    }
+
+    /**
+     * subclasses override this method specifying the resource name of the
+     * icon to use when this assertion is displayed in the tree view.
+     *
+     * @param open for nodes that can be opened, can have children
+     * @return a string such as "com/l7tech/proxy/resources/tree/assertion.png"
+     */
+    public String iconResource(boolean open) {
+        return "com/l7tech/proxy/resources/tree/authentication.gif";
+    }
+
     protected static final String USERNAME_TOKEN_ELEMENT_NAME = "UsernameToken";
     protected WssBasic data;
 }

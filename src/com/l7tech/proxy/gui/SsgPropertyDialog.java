@@ -4,8 +4,6 @@ import com.l7tech.common.gui.IntegerField;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.gui.widgets.CertificatePanel;
 import com.l7tech.common.gui.widgets.WrappingLabel;
-import com.l7tech.console.tree.EntityTreeCellRenderer;
-import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
@@ -14,6 +12,8 @@ import com.l7tech.proxy.datamodel.SsgEvent;
 import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.SsgListener;
 import com.l7tech.proxy.gui.util.IconManager;
+import com.l7tech.proxy.gui.policy.PolicyTreeCellRenderer;
+import com.l7tech.proxy.gui.policy.PolicyTreeModel;
 import org.apache.log4j.Category;
 
 import javax.swing.*;
@@ -187,7 +187,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                             new Insets(4, 6, 0, 6), 0, 0));
 
             policyTree = new JTree((TreeModel)null);
-            policyTree.setCellRenderer(new EntityTreeCellRenderer());
+            policyTree.setCellRenderer(new PolicyTreeCellRenderer());
             JScrollPane policyTreeSp = new JScrollPane(policyTree);
             policyTreeSp.setPreferredSize(new Dimension(120, 120));
             pane.add(policyTreeSp,
@@ -211,7 +211,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         int row = policyTable.getSelectedRow();
         if (row >= 0 && row < displayPolicies.size())
             policy = ssg.lookupPolicy((PolicyAttachmentKey)displayPolicies.get(row));
-        policyTree.setModel(policy == null ? null : new PolicyTreeModel(policy.getAssertion()));
+        policyTree.setModel(policy == null ? null : new PolicyTreeModel(policy.getClientAssertion()));
     }
 
     private JComponent getIdentityPane() {

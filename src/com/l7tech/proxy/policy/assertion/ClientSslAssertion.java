@@ -41,5 +41,21 @@ public class ClientSslAssertion extends ClientAssertion {
         return AssertionStatus.NONE;
     }
 
+    /**
+     * @return the node name that is displayed
+     */
+    public String getName() {
+        String ret = "Require SSL transport";
+        if (SslAssertion.FORBIDDEN.equals(data.getOption()))
+            ret = "Forbid SSL transport";
+        else if (SslAssertion.OPTIONAL.equals(data.getOption()))
+            ret = "Optional SSL transport";
+        return ret;
+    }
+
+    public String iconResource(boolean open) {
+        return "com/l7tech/proxy/resources/tree/ssl.gif";
+    }
+
     protected SslAssertion data;
 }

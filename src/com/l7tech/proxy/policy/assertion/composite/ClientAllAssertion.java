@@ -75,5 +75,9 @@ public class ClientAllAssertion extends ClientCompositeAssertion {
         return result;
     }
 
+    public String getName() {
+        return "All assertions must evaluate to true";
+    }
+
     protected AllAssertion data;
 }

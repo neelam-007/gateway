@@ -14,6 +14,7 @@ import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgManagerStub;
 import com.l7tech.proxy.datamodel.SsgResponse;
+import com.l7tech.proxy.datamodel.Policy;
 
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -47,7 +48,7 @@ public class MessageViewerTest {
         ri.onPolicyUpdated(new Ssg(22, "whatever"),
                            new PolicyAttachmentKey("http://example.com/schemas/wompfoo",
                                                    "http://example.com/schemas/wompfoo#WompSomeFoos"),
-                           FalseAssertion.getInstance());
+                           new Policy(FalseAssertion.getInstance(), "policyVersion 2.0"));
         mv.addWindowListener(new WindowAdapter() {
             public void windowDeactivated(WindowEvent e) { killit(); }
             public void windowClosed(WindowEvent e) { killit(); }

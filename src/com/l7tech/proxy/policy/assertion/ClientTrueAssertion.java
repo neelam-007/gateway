@@ -32,4 +32,12 @@ public class ClientTrueAssertion extends ClientAssertion {
         // no action on response
         return AssertionStatus.NONE;
     }
+
+    public String getName() {
+        return "Automatic success";
+    }
+
+    public String iconResource(boolean open) {
+        return null;
+    }
 }

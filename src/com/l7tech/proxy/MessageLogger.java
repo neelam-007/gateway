@@ -12,6 +12,7 @@ import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgResponse;
+import com.l7tech.proxy.datamodel.Policy;
 import org.apache.log4j.Category;
 
 import java.io.IOException;
@@ -69,7 +70,7 @@ public class MessageLogger implements RequestInterceptor {
      * @param binding
      * @param policy
      */
-    public void onPolicyUpdated(Ssg ssg, PolicyAttachmentKey binding, Assertion policy) {
+    public void onPolicyUpdated(Ssg ssg, PolicyAttachmentKey binding, Policy policy) {
         log.info("Policy updated for SSG: " + ssg);
     }
 }

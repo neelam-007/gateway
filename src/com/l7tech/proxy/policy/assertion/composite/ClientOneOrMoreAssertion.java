@@ -75,5 +75,9 @@ public class ClientOneOrMoreAssertion extends ClientCompositeAssertion {
         return result;
     }
 
+    public String getName() {
+        return "One or more assertions must evaluate to true";
+    }
+
     protected OneOrMoreAssertion data;
 }

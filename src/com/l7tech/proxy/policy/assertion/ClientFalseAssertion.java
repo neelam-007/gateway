@@ -32,4 +32,12 @@ public class ClientFalseAssertion extends ClientAssertion {
         // no action on response
         return AssertionStatus.NONE;
     }
+
+    public String getName() {
+        return "Automatic failure";
+    }
+
+    public String iconResource(boolean open) {
+        return null;
+    }
 }

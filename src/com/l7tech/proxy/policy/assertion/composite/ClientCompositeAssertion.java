@@ -51,4 +51,11 @@ public abstract class ClientCompositeAssertion extends ClientAssertion {
     public String toString() {
         return "<" + this.getClass().getName() + " children=" + children + ">";
     }
+
+    public String iconResource(boolean open) {
+        if (open)
+            return "com/l7tech/proxy/resources/tree/folderOpen.gif";
+
+        return "com/l7tech/proxy/resources/tree/folder.gif";
+    }
 }

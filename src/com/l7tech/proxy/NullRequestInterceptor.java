@@ -1,7 +1,7 @@
 package com.l7tech.proxy;
 
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.proxy.datamodel.PendingRequest;
+import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgResponse;
@@ -53,6 +53,6 @@ public class NullRequestInterceptor implements RequestInterceptor {
      * @param binding
      * @param policy
      */
-    public void onPolicyUpdated(Ssg ssg, PolicyAttachmentKey binding, Assertion policy) {
+    public void onPolicyUpdated(Ssg ssg, PolicyAttachmentKey binding, Policy policy) {
     }
 }

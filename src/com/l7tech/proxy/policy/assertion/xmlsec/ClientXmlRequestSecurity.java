@@ -123,6 +123,14 @@ public class ClientXmlRequestSecurity extends ClientAssertion {
         return AssertionStatus.NONE;
     }
 
+    public String getName() {
+        return"XML Request Security - " + (data.isEncryption() ? "sign and encrypt" : "sign only");
+    }
+
+    public String iconResource(boolean open) {
+        return "com/l7tech/proxy/resources/tree/xmlencryption.gif";
+    }
+
     protected XmlRequestSecurity data;
     private static final Category log = Category.getInstance(ClientHttpClientCert.class);
 }

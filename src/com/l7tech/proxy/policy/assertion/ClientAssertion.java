@@ -13,11 +13,10 @@ import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ResponseValidationException;
-
-import java.security.GeneralSecurityException;
-import java.io.IOException;
-
 import org.xml.sax.SAXException;
+
+import java.io.IOException;
+import java.security.GeneralSecurityException;
 
 /**
  * @author alex
@@ -43,4 +42,18 @@ public abstract class ClientAssertion {
     public abstract AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response)
             throws BadCredentialsException, OperationCanceledException, GeneralSecurityException, IOException,
                    SAXException, ResponseValidationException;
+
+    /**
+     * @return the human-readable node name that is displayed.
+     */
+    public abstract String getName();
+
+    /**
+     * subclasses override this method specifying the resource name of the
+     * icon to use when this assertion is displayed in the tree view.
+     *
+     * @param open for nodes that can be opened, can have children
+     * @return a string such as "com/l7tech/proxy/resources/tree/assertion.png"
+     */
+    public abstract String iconResource(boolean open);
 }

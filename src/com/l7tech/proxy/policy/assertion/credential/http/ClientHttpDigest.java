@@ -40,5 +40,23 @@ public class ClientHttpDigest extends ClientAssertion {
         return AssertionStatus.NONE;
     }
 
+    /**
+     * @return the human-readable node name that is displayed.
+     */
+    public String getName() {
+        return "Require HTTP DIGEST authentication";
+    }
+
+    /**
+     * subclasses override this method specifying the resource name of the
+     * icon to use when this assertion is displayed in the tree view.
+     *
+     * @param open for nodes that can be opened, can have children
+     * @return a string such as "com/l7tech/proxy/resources/tree/assertion.png"
+     */
+    public String iconResource(boolean open) {
+        return "com/l7tech/proxy/resources/tree/authentication.gif";
+    }
+
     protected HttpDigest data;
 }

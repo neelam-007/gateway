@@ -1,15 +1,16 @@
 package com.l7tech.proxy.gui;
 
 import com.l7tech.common.util.XmlUtil;
-import com.l7tech.console.tree.EntityTreeCellRenderer;
-import com.l7tech.console.tree.policy.PolicyTreeModel;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.HttpHeaders;
 import com.l7tech.proxy.datamodel.PendingRequest;
+import com.l7tech.proxy.datamodel.Policy;
 import com.l7tech.proxy.datamodel.PolicyAttachmentKey;
 import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgResponse;
+import com.l7tech.proxy.gui.policy.PolicyTreeCellRenderer;
+import com.l7tech.proxy.gui.policy.PolicyTreeModel;
+import com.l7tech.proxy.policy.assertion.ClientAssertion;
 import org.apache.log4j.Category;
 import org.w3c.dom.Document;
 
@@ -72,10 +73,10 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
     }
 
     private static class SavedPolicyMessage extends SavedMessage {
-        private Assertion policy;
+        private ClientAssertion policy;
         private PolicyAttachmentKey key;
 
-        SavedPolicyMessage(final String title, PolicyAttachmentKey key, Assertion policy) {
+        SavedPolicyMessage(final String title, PolicyAttachmentKey key, ClientAssertion policy) {
             super(title);
             this.key = key;
             this.policy = policy;
@@ -83,7 +84,7 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
 
         public Component getComponent() {
             JTree policyTree = new JTree((TreeModel)null);
-            policyTree.setCellRenderer(new EntityTreeCellRenderer());
+            policyTree.setCellRenderer(new PolicyTreeCellRenderer());
             policyTree.setModel(policy == null ? null : new PolicyTreeModel(policy));
             return policyTree;
         }
@@ -226,8 +227,8 @@ public class MessageViewerModel extends AbstractListModel implements RequestInte
      * @param binding
      * @param policy
      */
-    public void onPolicyUpdated(Ssg ssg, PolicyAttachmentKey binding, Assertion policy) {
-        appendMessage(new SavedPolicyMessage("Policy updated", binding, policy));
+    public void onPolicyUpdated(Ssg ssg, PolicyAttachmentKey binding, Policy policy) {
+        appendMessage(new SavedPolicyMessage("Policy updated", binding, policy.getClientAssertion()));
     }
 
     /** Remove all saved messages from the list. */
