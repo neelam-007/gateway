@@ -468,7 +468,7 @@ public class MessageProcessor {
             // Invalid security token.  See if we need to drop a cached SAML assertion.
             // We'll assume that, if we sent a SAML token with the request, it is that token being
             // complained about.
-            // TODO check faultDetail for SamlFaultInfo then only drop our token if the AssertionID matches
+            // TODO check faultDetail for SamlFaultInfo then only drop our token if the Assertion ID matches
             if (context.getRequest().getXmlKnob().getOrMakeDecorationRequirements().getSenderSamlToken() != null) {
                 // TODO we should only trust this fault if it is signed
                 log.warning("Gateway reports " + responseFaultDetail.getFaultCode() +
