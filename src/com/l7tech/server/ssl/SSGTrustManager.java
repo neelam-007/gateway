@@ -35,7 +35,7 @@ public class SSGTrustManager implements X509TrustManager {
 
     public static SSGTrustManager initializeTrustManager() {
         X509TrustManager delegateTrustManager = null;
-        // todo, get existing trust manager
+        // todo, get existing trust manager used by the system
         return new SSGTrustManager(delegateTrustManager);
     }
 
