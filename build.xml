@@ -38,6 +38,7 @@
         <pathelement location="src"/>
         <fileset dir="lib">
             <include name="**/*.jar"/>
+	        <include name="**/*.zip"/>
             <!--
                * Issue with multiple parsers.
                * JDK 1.4 ships it's own parses and contributes to the
@@ -92,6 +93,10 @@
 
         <condition property="db.oracle">
             <equals arg1="${database.type}" arg2="oracle"/>
+        </condition>
+
+        <condition property="db.oracle8">
+            <equals arg1="${database.type}" arg2="oracle8"/>
         </condition>
     </target>
 
@@ -288,6 +293,9 @@
                 <include name="commons-pool.jar"/>
                 <include name="dom4j.jar"/>
                 <include name="hibernate2.jar"/>
+		<include name="spring-core.jar"/>
+		<include name="spring-orm.jar"/>
+		<include name="spring-dao.jar"/>
                 <include name="cglib-2.0-rc2.jar"/>
                 <include name="ehcache.jar"/>
                 <include name="jta.jar"/>
@@ -327,6 +335,7 @@
                 <include name="connector.jar" if="include.jms.mqseries"/>
 
                 <include name="ojdbc14.jar" if="db.oracle"/>
+		<include name="classes111.zip" if="db.oracle8"/>
                 <include name="mysql-connector-java-3.0.11-stable-bin.jar" if="db.mysql"/>
                 <include name="postgresql.jar" if="db.postgres"/>
             </lib>
@@ -512,6 +521,7 @@
 
     <target name="prepare.db">
         <antcall target="prepare.db.oracle"/>
+	<antcall target="prepare.db.oracle8"/>
 	<antcall target="prepare.db.mysql"/>
  	<antcall target="prepare.db.postgres"/>
     </target>
@@ -562,6 +572,17 @@
         </copy>
     </target>
 
+    <target name="prepare.db.oracle8" if="db.oracle8">
+        <echo>Copying Oracle 8 jars...</echo>
+        <copy todir="${build.lib}">
+            <fileset dir="${src.root}/lib/gateway/jdbc/oracle8">
+                <include name="*.jar"/>
+                <include name="*.zip"/>
+            </fileset>
+        </copy>
+    </target>
+
+
     <!--
       ** Create the directory structure, copy the resources, libs and
       ** update version tokens
@@ -579,6 +600,7 @@
         <copy todir="${build.lib}">
             <fileset dir="${src.root}/lib">
                 <include name="*.jar"/>
+		<include name="*.zip"/>
                 <exclude name="**/CVS/*"/>
                 <exclude name="**/**ant*"/>
                 <exclude name="**/optional.jar"/>
@@ -594,7 +616,9 @@
 
         <!-- the web.xml -->
         <copy todir="${build.etc}">
-            <fileset dir="${src.root}/etc" includes="web.xml"/>
+            <fileset dir="${src.root}/etc">
+		<include name="web.xml"/>
+	    </fileset>
         </copy>
 
         <!-- Resources -->
@@ -611,6 +635,7 @@
             <fileset dir="${src.root}/etc">
                 <include name="keystore.properties" if="dev.build"/>
                 <include name="ssglog.properties"/>
+		<include name="spring.xml"/>
             </fileset>
 
             <fileset dir="${src.root}/src">
@@ -688,7 +713,7 @@
         </replaceregexp>
     </target>
 
-    <target name="db.properties" depends="db.properties.mysql, db.properties.postgres, db.properties.oracle"/>
+    <target name="db.properties" depends="db.properties.mysql, db.properties.postgres, db.properties.oracle, db.properties.oracle8"/>
 
     <target name="db.properties.mysql" if="db.mysql">
         <echo>Setting database properties for MySQL...</echo>
@@ -715,6 +740,15 @@
         <property name="database.user" value="${oracle.database.user}"/>
         <property name="database.password" value="${oracle.database.password}"/>
         <property name="database.pingstmt" value="${oracle.database.pingstmt}"/>
+    </target>
+
+    <target name="db.properties.oracle8" if="db.oracle8">
+        <echo>Setting database properties for Oracle...</echo>
+        <property name="database.driver" value="${oracle8.database.driver}"/>
+        <property name="database.url" value="${oracle8.database.url}"/>
+        <property name="database.user" value="${oracle8.database.user}"/>
+        <property name="database.password" value="${oracle8.database.password}"/>
+        <property name="database.pingstmt" value="${oracle8.database.pingstmt}"/>
     </target>
 
     <!--
@@ -973,6 +1007,7 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
             <pathelement path="${src.root}/build/classes"/>
             <fileset dir="${src.root}/lib">
                 <include name="**/*.jar"/>
+		<include name="**/*.zip"/>
             </fileset>
         </path>
 
