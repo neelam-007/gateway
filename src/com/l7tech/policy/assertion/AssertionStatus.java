@@ -1,6 +1,5 @@
 package com.l7tech.policy.assertion;
 
-import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.SoapFaultUtils;
 
 /**
