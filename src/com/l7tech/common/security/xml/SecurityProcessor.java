@@ -7,10 +7,13 @@
 package com.l7tech.common.security.xml;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.cert.X509Certificate;
+import java.util.List;
+import java.util.Iterator;
 
 /**
  * The class security processor handles element processsing for
@@ -104,6 +107,16 @@ public abstract class SecurityProcessor {
      */
     abstract public Result processInPlace(Document document)
       throws SecurityProcessorException, GeneralSecurityException, IOException;
+
+    /* @return true iff. the given list of Nodes includes the current message's document element. */
+    protected boolean containsEnvelope(List elementMatches) {
+        for (Iterator i = elementMatches.iterator(); i.hasNext();) {
+            Node node = (Node)i.next();
+            if (node.getOwnerDocument().getDocumentElement() == node)
+                return true;
+        }
+        return false;
+    }
 
     /**
      * The class represents the result of the security operation
