@@ -90,14 +90,4 @@ public class RoutingAssertionPropertiesAction extends NodeAction {
     };
 
 
-    /**
-     * @return the published service cookie or null if not founds
-     */
-    private ServiceNode getServiceNodeCookie() {
-        for (Iterator i = ((AbstractTreeNode)node.getRoot()).cookies(); i.hasNext(); ) {
-            Object value = ((Cookie)i.next()).getValue();
-            if (value instanceof ServiceNode) return (ServiceNode)value;
-        }
-        return null;
-    }
 }
