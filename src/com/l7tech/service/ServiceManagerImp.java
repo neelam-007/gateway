@@ -295,6 +295,10 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         return "published_service";
     }
 
+    public void destroy() {
+        ServiceCache.getInstance().destroy();
+    }
+
     private static final Logger logger = LogManager.getInstance().getSystemLogger();
     private static final String F_VERSION = "version";
 }
