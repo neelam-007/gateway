@@ -129,9 +129,6 @@ public class BootProcess implements ServerComponentLifecycle {
             }
 
             logger.info(BuildInfo.getLongBuildString());
-            //
-            //SecureConversationContextManager.getInstance().loadFakeSession();
-            //
             logger.info("Boot process complete.");
         } catch (SQLException se) {
             throw new LifecycleException(se.toString(), se);
