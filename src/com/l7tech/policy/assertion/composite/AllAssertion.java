@@ -25,6 +25,9 @@ import java.util.List;
  * @version $Revision$
  */
 public class AllAssertion extends CompositeAssertion {
+    public AllAssertion() {
+    }
+
     public AllAssertion( List children ) {
         super( children );
     }
