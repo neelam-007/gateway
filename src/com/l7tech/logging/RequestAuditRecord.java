@@ -28,7 +28,7 @@ public class RequestAuditRecord extends AuditRecord {
     }
 
     public RequestAuditRecord( String message, AssertionStatus status ) {
-        super( Level.FINEST, message );
+        super( Level.INFO, message );
         _status = status;
 
         Request currentRequest = MessageProcessor.getCurrentRequest();
