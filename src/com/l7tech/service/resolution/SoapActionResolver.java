@@ -9,6 +9,7 @@ package com.l7tech.service.resolution;
 import com.l7tech.message.Request;
 
 import javax.wsdl.BindingOperation;
+import javax.wsdl.Definition;
 import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.soap.SOAPOperation;
 import java.util.Iterator;
@@ -26,7 +27,7 @@ public class SoapActionResolver extends WsdlOperationServiceResolver {
         return Request.PARAM_HTTP_SOAPACTION;
     }
 
-    protected String getTargetValue( BindingOperation operation ) {
+    protected String getTargetValue( Definition def, BindingOperation operation ) {
         Iterator eels = operation.getExtensibilityElements().iterator();
         ExtensibilityElement ee;
         while ( eels.hasNext() ) {

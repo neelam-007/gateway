@@ -34,7 +34,7 @@ public abstract class WsdlOperationServiceResolver extends NameValueServiceResol
                 BindingOperation operation;
                 while ( operations.hasNext() ) {
                     operation = (BindingOperation)operations.next();
-                    String value = getTargetValue( operation );
+                    String value = getTargetValue( wsdl.getDefinition(), operation );
                     values.add( value );
                 }
             }
@@ -45,6 +45,6 @@ public abstract class WsdlOperationServiceResolver extends NameValueServiceResol
         return values.toArray();
     }
 
-    protected abstract String getTargetValue( BindingOperation operation );
+    protected abstract String getTargetValue( Definition def, BindingOperation operation );
     private Logger logger = LogManager.getInstance().getSystemLogger();
 }

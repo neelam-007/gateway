@@ -14,6 +14,7 @@ import org.xml.sax.SAXException;
 
 import javax.wsdl.BindingInput;
 import javax.wsdl.BindingOperation;
+import javax.wsdl.Definition;
 import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.soap.SOAPBody;
 import java.io.IOException;
@@ -29,38 +30,37 @@ public class UrnResolver extends WsdlOperationServiceResolver {
         return Request.PARAM_SOAP_URN;
     }
 
-    protected String getTargetValue( BindingOperation operation ) {
+    protected String getTargetValue(Definition def, BindingOperation operation) {
         BindingInput input = operation.getBindingInput();
-        if (input == null) {
-            return null;
-        }
-        Iterator eels = input.getExtensibilityElements().iterator();
-        ExtensibilityElement ee;
-        while ( eels.hasNext() ) {
-            ee = (ExtensibilityElement)eels.next();
-            if ( ee instanceof SOAPBody ) {
-                SOAPBody body = (SOAPBody)ee;
-                return body.getNamespaceURI();
+        if (input != null) {
+            Iterator eels = input.getExtensibilityElements().iterator();
+            ExtensibilityElement ee;
+            while (eels.hasNext()) {
+                ee = (ExtensibilityElement)eels.next();
+                if (ee instanceof SOAPBody) {
+                    SOAPBody body = (SOAPBody)ee;
+                    return body.getNamespaceURI();
+                }
             }
         }
-        return null;
+        return def.getTargetNamespace();
     }
 
-    protected Object getRequestValue( Request request ) throws ServiceResolutionException {
+    protected Object getRequestValue(Request request) throws ServiceResolutionException {
         try {
-            Element body = ServerSoapUtil.getBodyElement( request );
+            Element body = ServerSoapUtil.getBodyElement(request);
             Node n = body.getFirstChild();
-            while ( n != null ) {
-                if ( n.getNodeType() == Node.ELEMENT_NODE )
+            while (n != null) {
+                if (n.getNodeType() == Node.ELEMENT_NODE)
                     return n.getNamespaceURI();
 
                 n = n.getNextSibling();
             }
             return null;
-        } catch ( SAXException se ) {
-            throw new ServiceResolutionException( se.getMessage(), se );
-        } catch ( IOException ioe ) {
-            throw new ServiceResolutionException( ioe.getMessage(), ioe );
+        } catch (SAXException se) {
+            throw new ServiceResolutionException(se.getMessage(), se);
+        } catch (IOException ioe) {
+            throw new ServiceResolutionException(ioe.getMessage(), ioe);
         }
     }
 
