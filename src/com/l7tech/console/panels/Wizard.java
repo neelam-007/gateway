@@ -476,7 +476,9 @@ public class Wizard extends JDialog {
             buttonFinish.setText("Finish");
             buttonFinish.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent evt) {
-                    finish(evt);
+                    if (wizardIterator.current().onNextButton()) {
+                        finish(evt);
+                    }
                 }
             });
         }
