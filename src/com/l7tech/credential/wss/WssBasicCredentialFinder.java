@@ -11,6 +11,7 @@ import com.l7tech.credential.CredentialFormat;
 import com.l7tech.credential.CredentialFinderException;
 import com.l7tech.message.Request;
 import com.l7tech.message.XmlRequest;
+import com.l7tech.message.SoapRequest;
 import com.l7tech.util.SAXParsingCompleteException;
 import com.l7tech.logging.LogManager;
 import com.l7tech.identity.User;
@@ -34,7 +35,7 @@ public class WssBasicCredentialFinder extends WssCredentialFinder {
     public PrincipalCredentials findCredentials(Request request) throws CredentialFinderException {
         String xmlreq = null;
         try {
-            xmlreq = request.getRequestXml();
+            xmlreq = ((SoapRequest)request).getRequestXml();
         } catch (IOException e) {
             LogManager.getInstance().getSystemLogger().log(Level.SEVERE, "Exception getting a xml request " + e.getMessage(), e);
             throw new CredentialFinderException("Exception getting the xml request " + e.getMessage(), e);
