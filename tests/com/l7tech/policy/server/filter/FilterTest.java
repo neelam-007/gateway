@@ -6,7 +6,9 @@
 
 package com.l7tech.policy.server.filter;
 
+import com.l7tech.identity.IdentityProviderConfigManager;
 import com.l7tech.identity.internal.InternalUser;
+import com.l7tech.objectmodel.HibernatePersistenceManager;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
@@ -35,9 +37,8 @@ import java.util.logging.Logger;
  */
 public class FilterTest extends TestCase {
     private static Logger log = Logger.getLogger(FilterTest.class.getName());
-    private static final String POLICY_USERSPECIFIC = "com/l7tech/policy/server/filter/userspecific.xml";
 
-    public FilterTest(String name) {
+    public FilterTest(String name) throws Exception {
         super(name);
     }
 
@@ -45,12 +46,14 @@ public class FilterTest extends TestCase {
         return new TestSuite(FilterTest.class);
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         junit.textui.TestRunner.run(suite());
     }
 
     public void testSimpleFilter() throws Exception {
-        long providerid = 0;
+        HibernatePersistenceManager.initialize();
+
+        long providerid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
         Assertion pol = new AllAssertion(Arrays.asList(new Assertion[] {
             new SslAssertion(),
             new HttpBasic(),
@@ -79,7 +82,7 @@ public class FilterTest extends TestCase {
     }
 
     public void testUserSpecificFilter() throws Exception {
-        long providerid = 0;
+        long providerid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
         //URL policyUrl = getClass().getClassLoader().getResource(POLICY_USERSPECIFIC);
         //Assertion policy = WspReader.parse(policyUrl.openStream());
         Assertion policy = new AllAssertion(Arrays.asList(new Assertion[] {
