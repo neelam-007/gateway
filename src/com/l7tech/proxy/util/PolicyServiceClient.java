@@ -6,23 +6,20 @@
 
 package com.l7tech.proxy.util;
 
+import com.l7tech.common.security.xml.WssDecorator;
+import com.l7tech.common.security.xml.WssDecoratorImpl;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
-import java.security.PrivateKey;
-import java.security.GeneralSecurityException;
-import java.security.cert.X509Certificate;
-import java.security.cert.CertificateException;
-import java.io.IOException;
-
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.SoapUtil;
-import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.security.xml.WssDecorator;
-import com.l7tech.common.security.xml.WssDecoratorImpl;
-
 import javax.xml.soap.SOAPConstants;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 
 /**
  * Builds request messages for the PolicyService and helps parse the responses.
@@ -43,9 +40,11 @@ public class PolicyServiceClient {
         req.setSignTimestamp(true);
         try {
             Element header = SoapUtil.getHeaderElement(msg);
+            Element body = SoapUtil.getBodyElement(msg);
             Element sid = XmlUtil.findOnlyOneChildElementByName(header, SoapUtil.L7_MESSAGEID_NAMESPACE,
                                                                 SoapUtil.L7_SERVICEID_ELEMENT);
             req.getElementsToSign().add(sid);
+            req.getElementsToSign().add(body);
             decorator.decorateMessage(msg, req);
         } catch (InvalidDocumentFormatException e) {
             throw new RuntimeException(e); // can't happen
