@@ -54,6 +54,8 @@ public abstract class WizardStepPanel extends JPanel {
         skippedPanels = new String[0];
     }
 
+    public void setNextPanel(WizardStepPanel next){this.nextPanel = next;}
+
     public final boolean hasNextPanel() {
         return nextPanel != null;
     }
