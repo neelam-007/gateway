@@ -2,13 +2,11 @@ package com.l7tech.console.tree;
 
 import com.l7tech.console.action.DeleteEntityAction;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.identity.IdentityProvider;
 
 import javax.swing.*;
-import java.util.logging.Level;
 
 /**
  * The class represents an entity gui node element in the
@@ -48,7 +46,7 @@ public abstract class EntityHeaderNode extends AbstractTreeNode {
      * @return actions appropriate to the node
      */
     public Action[] getActions() {
-        final DeleteEntityAction deleteAction = new DeleteEntityAction(this);
+        final DeleteEntityAction deleteAction = new DeleteEntityAction(this, provider);
         deleteAction.setEnabled(canDelete());
         return new Action[]{deleteAction};
     }
@@ -84,7 +82,7 @@ public abstract class EntityHeaderNode extends AbstractTreeNode {
             provider = Registry.getDefault().getProviderConfigManager().getIdentityProvider(oid);
             return provider;
         } catch (FindException e) {
-            throw new RuntimeException("Unable to locate the identity provider "+getEntityHeader().getName(), e);
+            throw new RuntimeException("Unable to locate the identity provider " + getEntityHeader().getName(), e);
         }
     }
 

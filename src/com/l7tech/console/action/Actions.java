@@ -5,15 +5,13 @@ import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.CannotDeleteAdminAccountException;
-import com.l7tech.identity.IdProvConfManagerServer;
+import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.ObjectNotFoundException;
 
 import javax.swing.*;
-import javax.swing.tree.TreeNode;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.io.File;
@@ -35,12 +33,12 @@ public class Actions {
      * @param bn - the node to be deleted
      * @return true if deleted, false otherwise
      */
-    static boolean deleteEntity(EntityHeaderNode bn) throws ObjectNotFoundException {
+    static boolean deleteEntity(EntityHeaderNode bn, IdentityProvider provider) throws ObjectNotFoundException {
         boolean rb = false;
         if (bn instanceof UserNode) {
-            return deleteUser((UserNode)bn);
+            return deleteUser((UserNode)bn, provider);
         } else if (bn instanceof GroupNode) {
-            return deleteGroup((GroupNode)bn);
+            return deleteGroup((GroupNode)bn, provider);
         } else if (bn instanceof ProviderNode) {
             return deleteProvider((ProviderNode)bn);
         } else {
@@ -51,18 +49,10 @@ public class Actions {
     }
 
     // Deletes the given user
-    private static boolean deleteUser(UserNode node) throws ObjectNotFoundException {
-        // Check that the user is not read-only
-        if (!isParentIdProviderInternal(node)) {
-            JOptionPane.showMessageDialog(getMainWindow(), "This user is read-only.",
-                                                "Read-only",
-                                                JOptionPane.INFORMATION_MESSAGE);
-            return false;
-        }
-
+    private static boolean deleteUser(UserNode node, IdentityProvider provider) throws ObjectNotFoundException {
+        if (provider.isReadOnly()) return false;
         // Make sure
-        if ((JOptionPane.showConfirmDialog(
-          getMainWindow(),
+        if ((JOptionPane.showConfirmDialog(getMainWindow(),
           "Are you sure you wish to delete " +
           node.getName() + "?",
           "Delete User",
@@ -73,13 +63,12 @@ public class Actions {
         // Delete the  node and update the tree
         try {
             EntityHeader eh = node.getEntityHeader();
-            Registry.getDefault().getInternalUserManager().delete(eh.getStrId());
+            provider.getUserManager().delete(eh.getStrId());
             return true;
         } catch (CannotDeleteAdminAccountException e) {
             log.log(Level.SEVERE, "Error deleting user", e);
             // Error deleting realm - display error msg
-            JOptionPane.showMessageDialog(
-              getMainWindow(),
+            JOptionPane.showMessageDialog(getMainWindow(),
               "User " +
               node.getName() +
               " is an administrator, and cannot be deleted.",
@@ -88,8 +77,7 @@ public class Actions {
         } catch (DeleteException e) {
             log.log(Level.SEVERE, "Error deleting user", e);
             // Error deleting realm - display error msg
-            JOptionPane.showMessageDialog(
-              getMainWindow(),
+            JOptionPane.showMessageDialog(getMainWindow(),
               "Error encountered while deleting " +
               node.getName() +
               ". Please try again later.",
@@ -101,18 +89,11 @@ public class Actions {
 
 
     // Deletes the given user
-    private static boolean deleteGroup(GroupNode node) throws ObjectNotFoundException {
-        // Check that the group is not read-only
-        if (!isParentIdProviderInternal(node)) {
-            JOptionPane.showMessageDialog(getMainWindow(), "This user is read-only.",
-                                                "Read-only",
-                                                JOptionPane.INFORMATION_MESSAGE);
-            return false;
-        }
+    private static boolean deleteGroup(GroupNode node, IdentityProvider provider) throws ObjectNotFoundException {
+        if (provider.isReadOnly()) return false;
 
         // Make sure
-        if ((JOptionPane.showConfirmDialog(
-          getMainWindow(),
+        if ((JOptionPane.showConfirmDialog(getMainWindow(),
           "Are you sure you wish to delete " +
           node.getName() + "?",
           "Delete Group",
@@ -123,13 +104,12 @@ public class Actions {
         // Delete the  node and update the tree
         try {
             EntityHeader eh = node.getEntityHeader();
-            Registry.getDefault().getInternalGroupManager().delete(eh.getStrId());
+            provider.getGroupManager().delete(eh.getStrId());
             return true;
         } catch (DeleteException e) {
             log.log(Level.SEVERE, "Error deleting group", e);
             // Error deleting realm - display error msg
-            JOptionPane.showMessageDialog(
-              getMainWindow(),
+            JOptionPane.showMessageDialog(getMainWindow(),
               "Error encountered while deleting " +
               node.getName() +
               ". Please try again later.",
@@ -143,8 +123,7 @@ public class Actions {
     // Deletes the given user
     private static boolean deleteProvider(ProviderNode node) {
         // Make sure
-        if ((JOptionPane.showConfirmDialog(
-          getMainWindow(),
+        if ((JOptionPane.showConfirmDialog(getMainWindow(),
           "Are you sure you wish to delete " +
           node.getName() + "?",
           "Delete Provider",
@@ -162,8 +141,7 @@ public class Actions {
         } catch (DeleteException e) {
             log.log(Level.SEVERE, "Error deleting provider", e);
             // Error deleting realm - display error msg
-            JOptionPane.showMessageDialog(
-              getMainWindow(),
+            JOptionPane.showMessageDialog(getMainWindow(),
               "Error encountered while deleting " +
               node.getName() +
               ". Please try again later.",
@@ -177,8 +155,7 @@ public class Actions {
     // Deletes the given saervice
     static boolean deleteService(ServiceNode node) {
         // Make sure
-        if ((JOptionPane.showConfirmDialog(
-          getMainWindow(),
+        if ((JOptionPane.showConfirmDialog(getMainWindow(),
           "Are you sure you wish to delete service " +
           node.getName() + "?",
           "Delete Service",
@@ -194,8 +171,7 @@ public class Actions {
             return true;
         } catch (Exception e) {
             log.log(Level.SEVERE, "Error deleting service", e);
-            JOptionPane.showMessageDialog(
-              getMainWindow(),
+            JOptionPane.showMessageDialog(getMainWindow(),
               "Error encountered while deleting " +
               node.getName() +
               ". Please try again later.",
@@ -212,8 +188,7 @@ public class Actions {
 
     static boolean deleteAssertion(AssertionTreeNode node) {
         // Make sure
-        if ((JOptionPane.showConfirmDialog(
-          getMainWindow(),
+        if ((JOptionPane.showConfirmDialog(getMainWindow(),
           "Are you sure you wish to delete assertion " +
           node.getName() + "?",
           "Delete assertion",
@@ -226,8 +201,7 @@ public class Actions {
 
     public static boolean deletePolicyTemplate(PolicyTemplateNode node) {
         // Make sure
-        if ((JOptionPane.showConfirmDialog(
-          getMainWindow(),
+        if ((JOptionPane.showConfirmDialog(getMainWindow(),
           "Are you sure you wish to delete template " +
           node.getName() + "?",
           "Delete Policy Template",
@@ -252,12 +226,12 @@ public class Actions {
 
     /**
      * invoke help programatically the F1 - help
+     *
      * @param c the event source component
      */
     public static void invokeHelp(Component c) {
         final KeyEvent ke =
-          new KeyEvent(
-            c,
+          new KeyEvent(c,
             KeyEvent.KEY_PRESSED,
             0,
             0,
@@ -270,22 +244,5 @@ public class Actions {
             }
         };
         SwingUtilities.invokeLater(r);
-    }
-
-    private static boolean isParentIdProviderInternal(EntityHeaderNode usernode) {
-        TreeNode parentNode = usernode.getParent();
-        while (parentNode != null) {
-            if (parentNode instanceof EntityHeaderNode) {
-                EntityHeader header = ((EntityHeaderNode)parentNode).getEntityHeader();
-                if (header.getType().equals(EntityType.ID_PROVIDER_CONFIG)) {
-                    // we found the parent, see if it's internal one
-                    if (header.getOid() != IdProvConfManagerServer.INTERNALPROVIDER_SPECIAL_OID) return false;
-                    return true;
-                }
-            }
-            parentNode = parentNode.getParent();
-        }
-        // assume it is unless proven otherwise
-        return true;
     }
 }

@@ -1,34 +1,38 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.table.DynamicTableModel;
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.logging.ErrorManager;
-import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.tree.TreeNodeFactory;
+import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.action.BaseAction;
-import com.l7tech.console.action.UserPropertiesAction;
+import com.l7tech.console.action.DeleteEntityAction;
 import com.l7tech.console.action.GroupPropertiesAction;
+import com.l7tech.console.action.UserPropertiesAction;
+import com.l7tech.console.event.EntityEvent;
+import com.l7tech.console.event.EntityListenerAdapter;
+import com.l7tech.console.logging.ErrorManager;
+import com.l7tech.console.table.DynamicTableModel;
+import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.console.tree.EntityHeaderNode;
+import com.l7tech.console.tree.TreeNodeFactory;
+import com.l7tech.console.util.Registry;
+import com.l7tech.identity.GroupBean;
 import com.l7tech.identity.IdentityProvider;
 import com.l7tech.identity.UserBean;
-import com.l7tech.identity.GroupBean;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
-import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.event.TableModelListener;
 import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.*;
+import java.security.Principal;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
-import java.security.Principal;
 
 /**
  * Find Dialog
@@ -45,18 +49,28 @@ public class FindIdentitiesDialog extends JDialog {
         oTypes.put(SearchType.ALL.getName(), SearchType.ALL);
     }
 
-    /** Resource bundle with default locale */
+    /**
+     * Resource bundle with default locale
+     */
     private ResourceBundle resources = null;
 
-    /** Command string for a cancel action (e.g., a button or menu item). */
+    /**
+     * Command string for a cancel action (e.g., a button or menu item).
+     */
     private String CMD_CANCEL = "cmd.cancel";
 
-    /** Command string for a close action (e.g., a button or menu item). */
+    /**
+     * Command string for a close action (e.g., a button or menu item).
+     */
     private String CMD_CLOSE = "cmd.close";
 
-    /** Command string for find action (e.g.,a button or menu item). */
+    /**
+     * Command string for find action (e.g.,a button or menu item).
+     */
     private String CMD_FIND = "cmd.find";
-    /** name search options */
+    /**
+     * name search options
+     */
     private static final
     String[] NAME_SEARCH_OPTIONS = {"equals", "starts with"};
 
@@ -70,12 +84,18 @@ public class FindIdentitiesDialog extends JDialog {
     private JTable searchResultTable = new JTable();
     private JPanel searchResultPanel = new JPanel();
 
-    /** cancle search */
+    /**
+     * cancle search
+     */
     private JButton stopSearchButton = null;
-    /** find button */
+    /**
+     * find button
+     */
     private JButton findButton = null;
 
-    /** result counter label */
+    /**
+     * result counter label
+     */
     final JLabel resultCounter = new JLabel();
 
 
@@ -83,10 +103,13 @@ public class FindIdentitiesDialog extends JDialog {
     private JTabbedPane searchTabs = new JTabbedPane();
     private Dimension origDimension = null;
 
-    /** the search info with search expression and parameters */
+    /**
+     * the search info with search expression and parameters
+     */
     private SearchInfo searchInfo = new SearchInfo();
     private DefaultComboBoxModel providersComboBoxModel;
-    Principal[] selections = new Principal[] {};
+    Principal[] selections = new Principal[]{};
+
     /**
      * Creates new FindDialog for a given context
      * 
@@ -230,8 +253,7 @@ public class FindIdentitiesDialog extends JDialog {
 
         // "from" label
         JLabel selectProviderLabel = new JLabel();
-        selectProviderLabel.setDisplayedMnemonic(
-          resources.getString("selectProviderText.mnemonic").charAt(0));
+        selectProviderLabel.setDisplayedMnemonic(resources.getString("selectProviderText.mnemonic").charAt(0));
         selectProviderLabel.setText(resources.getString("selectProviderText.label"));
 
         GridBagConstraints constraints = new GridBagConstraints();
@@ -247,12 +269,11 @@ public class FindIdentitiesDialog extends JDialog {
         providersComboBox = new JComboBox();
         providersComboBox.setModel(getProvidersComboBoxModel());
         providersComboBox.setRenderer(new DefaultListCellRenderer() {
-            public Component getListCellRendererComponent(
-              JList list,
-              Object value,
-              int index,
-              boolean isSelected,
-              boolean cellHasFocus) {
+            public Component getListCellRendererComponent(JList list,
+                                                          Object value,
+                                                          int index,
+                                                          boolean isSelected,
+                                                          boolean cellHasFocus) {
                 Component c = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 IdentityProvider ip = (IdentityProvider)value;
                 setText(ip.getConfig().getName());
@@ -281,8 +302,7 @@ public class FindIdentitiesDialog extends JDialog {
 
         // "type" label
         JLabel typeLabel = new JLabel();
-        typeLabel.setDisplayedMnemonic(
-          resources.getString("findType.mnemonic").charAt(0));
+        typeLabel.setDisplayedMnemonic(resources.getString("findType.mnemonic").charAt(0));
         typeLabel.setText(resources.getString("findType.label"));
 
         constraints = new GridBagConstraints();
@@ -306,8 +326,7 @@ public class FindIdentitiesDialog extends JDialog {
 
         // "find name" label
         JLabel findLabel = new JLabel();
-        findLabel.setDisplayedMnemonic(
-          resources.getString("findText.mnemonic").charAt(0));
+        findLabel.setDisplayedMnemonic(resources.getString("findText.mnemonic").charAt(0));
         findLabel.setText(resources.getString("findText.label"));
 
         constraints = new GridBagConstraints();
@@ -481,16 +500,15 @@ public class FindIdentitiesDialog extends JDialog {
         }
 
         if (!searchResultPanel.isVisible()) {
-            SwingUtilities.invokeLater(
-              new Runnable() {
-                  public void run() {
-                      searchResultPanel.setVisible(true);
-                      Dimension d = getSize();
-                      setSize(d.width, (int)(origDimension.height * 3));
-                      mainPanel.revalidate();
-                      mainPanel.repaint();
-                  }
-              });
+            SwingUtilities.invokeLater(new Runnable() {
+                public void run() {
+                    searchResultPanel.setVisible(true);
+                    Dimension d = getSize();
+                    setSize(d.width, (int)(origDimension.height * 3));
+                    mainPanel.revalidate();
+                    mainPanel.repaint();
+                }
+            });
         }
     }
 
@@ -522,12 +540,12 @@ public class FindIdentitiesDialog extends JDialog {
             public void actionPerformed(ActionEvent event) {
                 int rows[] = searchResultTable.getSelectedRows();
                 List principals = new ArrayList();
-                for (int i = 0; rows !=null && i < rows.length; i++) {
+                for (int i = 0; rows != null && i < rows.length; i++) {
                     int row = rows[i];
                     EntityHeader eh = (EntityHeader)searchResultTable.getModel().getValueAt(row, 0);
                     principals.add(headerToPrincipal(eh));
                 }
-                selections = (Principal[])principals.toArray(new Principal[] {});
+                selections = (Principal[])principals.toArray(new Principal[]{});
                 FindIdentitiesDialog.this.dispose();
             }
         });
@@ -577,6 +595,8 @@ public class FindIdentitiesDialog extends JDialog {
                   int keyCode = e.getKeyCode();
                   if (keyCode == KeyEvent.VK_ENTER) {
                       showEntityDialog(o);
+                  } else if (keyCode == KeyEvent.VK_DELETE) {
+                      deleteEntity(o, row);
                   }
               }
           });
@@ -589,7 +609,7 @@ public class FindIdentitiesDialog extends JDialog {
         newSearchButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
                 // reset search info
-                if (tableModel !=null) {
+                if (tableModel != null) {
                     try {
                         tableModel.clear();
                     } catch (InterruptedException e) {
@@ -648,28 +668,26 @@ public class FindIdentitiesDialog extends JDialog {
         String columns[] =
           new String[]{"Name", "Description"};
 
-        tableModel =
-          new DynamicTableModel(enum, columns.length, columns, oa);
+        tableModel = new DynamicTableModel(enum, columns.length, columns, oa);
         searchResultTable.setModel(tableModel);
 
         tableModel.
-          addTableModelListener(
-            new TableModelListener() {
-                int counter = 0;
+          addTableModelListener(new TableModelListener() {
+              int counter = 0;
 
-                /**
-                 * This fine grain notification tells listeners the exact range
-                 * of cells, rows, or columns that changed.
-                 */
-                public void tableChanged(TableModelEvent e) {
-                    if (e.getType() == TableModelEvent.INSERT) {
-                        counter += e.getLastRow() - e.getFirstRow();
-                        resultCounter.setText("[ " + counter + " objects found]");
-                        findButton.setEnabled(true);
-                        stopSearchButton.setEnabled(false);
-                    }
-                }
-            });
+              /**
+               * This fine grain notification tells listeners the exact range
+               * of cells, rows, or columns that changed.
+               */
+              public void tableChanged(TableModelEvent e) {
+                  if (e.getType() == TableModelEvent.INSERT) {
+                      counter += e.getLastRow() - e.getFirstRow();
+                      resultCounter.setText("[ " + counter + " objects found]");
+                      findButton.setEnabled(true);
+                      stopSearchButton.setEnabled(false);
+                  }
+              }
+          });
         findButton.setEnabled(false);
         stopSearchButton.setEnabled(true);
         SwingUtilities.invokeLater(new Runnable() {
@@ -703,7 +721,7 @@ public class FindIdentitiesDialog extends JDialog {
     /**
      * instantiate the dialog for given AbstractTreeNode
      * 
-     * @param o the <CODE>AbstractTreeNode</CODE> instance
+     * @param o the <CODE>Object</CODE> Expected entity header
      */
     private void showEntityDialog(Object o) {
         EntityEditorPanel panel = null;
@@ -735,6 +753,28 @@ public class FindIdentitiesDialog extends JDialog {
         Utilities.centerOnScreen(dialog);
         dialog.show();
     }
+
+    /**
+     * delete the given entity
+     *
+     * @param o the <CODE>AbstractTreeNode</CODE> instance
+     */
+    private void deleteEntity(Object o, final int row) {
+        if (o instanceof EntityHeader) {
+            EntityHeader eh = (EntityHeader)o;
+            AbstractTreeNode an = TreeNodeFactory.asTreeNode(eh);
+            final IdentityProvider ip = (IdentityProvider)providersComboBox.getSelectedItem();
+            DeleteEntityAction da = new DeleteEntityAction((EntityHeaderNode)an, ip);
+            final EntityListenerAdapter listener = new EntityListenerAdapter() {
+                public void entityRemoved(EntityEvent ev) {
+                    tableModel.removeRow(row);
+                }
+            };
+            da.addEntityListener(listener);
+            da.performAction();
+        }
+    }
+
 
     /**
      * the <CODE>TableCellRenderer</CODE> instance
@@ -887,7 +927,7 @@ public class FindIdentitiesDialog extends JDialog {
             g.setUniqueIdentifier(eh.getStrId());
             return g;
         }
-        throw new IllegalArgumentException("Don't know anything about "+eh.getType());
+        throw new IllegalArgumentException("Don't know anything about " + eh.getType());
     }
 }
 

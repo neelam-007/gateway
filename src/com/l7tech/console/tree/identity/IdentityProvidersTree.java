@@ -136,9 +136,10 @@ public class IdentityProvidersTree extends JTree implements DragGestureListener 
             int keyCode = e.getKeyCode();
             if (keyCode == KeyEvent.VK_DELETE) {
                 if (!node.canDelete()) return;
-                if (node instanceof EntityHeaderNode)
-                    new DeleteEntityAction((EntityHeaderNode)node).actionPerformed(null);
-                else if (node instanceof PolicyTemplateNode)
+                if (node instanceof EntityHeaderNode) {
+                    final EntityHeaderNode en = (EntityHeaderNode)node;
+                    new DeleteEntityAction(en, en.getProvider()).actionPerformed(null);
+                } else if (node instanceof PolicyTemplateNode)
                     new DeletePolicyTemplateAction((PolicyTemplateNode)node).actionPerformed(null);
             } else if (keyCode == KeyEvent.VK_ENTER) {
                 Action a = node.getPreferredAction();

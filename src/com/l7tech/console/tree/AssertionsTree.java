@@ -1,7 +1,6 @@
 package com.l7tech.console.tree;
 
 import com.l7tech.console.action.ActionManager;
-import com.l7tech.console.action.DeleteEntityAction;
 import com.l7tech.console.action.DeletePolicyTemplateAction;
 
 import javax.swing.*;
@@ -13,13 +12,13 @@ import javax.swing.tree.ExpandVetoException;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
-import java.awt.dnd.DragSource;
-import java.awt.dnd.DnDConstants;
-import java.awt.dnd.DragGestureListener;
-import java.awt.dnd.DragGestureEvent;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
+import java.awt.dnd.DnDConstants;
+import java.awt.dnd.DragGestureEvent;
+import java.awt.dnd.DragGestureListener;
+import java.awt.dnd.DragSource;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
@@ -34,7 +33,9 @@ import java.util.logging.Logger;
  */
 public class AssertionsTree extends JTree implements DragGestureListener {
     static final Logger log = Logger.getLogger(AssertionsTree.class.getName());
-    /** assertion data flavor for DnD*/
+    /**
+     * assertion data flavor for DnD
+     */
 
     public static final DataFlavor ASSERTION_DATAFLAVOR;
 
@@ -48,7 +49,9 @@ public class AssertionsTree extends JTree implements DragGestureListener {
         ASSERTION_DATAFLAVOR = df;
     }
 
-    /** component name */
+    /**
+     * component name
+     */
     public final static String NAME = "assertion.palette";
 
     /**
@@ -69,7 +72,9 @@ public class AssertionsTree extends JTree implements DragGestureListener {
         this(null);
     }
 
-    /** initialize */
+    /**
+     * initialize
+     */
     private void initialize() {
         addKeyListener(new TreeKeyListener());
         addMouseListener(new TreeMouseListener());
@@ -92,7 +97,7 @@ public class AssertionsTree extends JTree implements DragGestureListener {
         if (path == null)
             return;
         Transferable ta = createTransferable(path);
-        if (ta ==null) {
+        if (ta == null) {
             return;
         }
         setSelectionPath(path);	// Select this path in the tree
@@ -115,7 +120,9 @@ public class AssertionsTree extends JTree implements DragGestureListener {
      */
     class TreeKeyListener extends KeyAdapter {
 
-        /** Invoked when a key has been pressed.*/
+        /**
+         * Invoked when a key has been pressed.
+         */
         public void keyPressed(KeyEvent e) {
             JTree tree = (JTree)e.getSource();
             TreePath path = tree.getSelectionPath();
@@ -127,9 +134,7 @@ public class AssertionsTree extends JTree implements DragGestureListener {
             int keyCode = e.getKeyCode();
             if (keyCode == KeyEvent.VK_DELETE) {
                 if (!node.canDelete()) return;
-                if (node instanceof EntityHeaderNode)
-                    new DeleteEntityAction((EntityHeaderNode)node).actionPerformed(null);
-                else if (node instanceof PolicyTemplateNode)
+                if (node instanceof PolicyTemplateNode)
                     new DeletePolicyTemplateAction((PolicyTemplateNode)node).actionPerformed(null);
             } else if (keyCode == KeyEvent.VK_ENTER) {
                 Action a = node.getPreferredAction();
