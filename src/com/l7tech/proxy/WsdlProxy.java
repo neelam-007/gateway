@@ -160,12 +160,12 @@ public class WsdlProxy {
                         } catch (GeneralSecurityException e1) {
                             throw new DownloadException("Unable to discover Gateway's server certificate", e1);
                         } catch (BadCredentialsException e1) {
-                            log.warn("Certificate discovery service indicates bad password; setting status to 401 arificially");
+                            log.warn("Certificate discovery service indicates bad password; setting status to 401 artificially");
                             status = 401; // hack hack hack: fake up a 401 status to trigger password dialog below
                             // fall through and continue
                         }
-                    }
-                    throw e;
+                    } else
+                        throw e;
                 }
                 log.info("WsdlProxy: connection HTTP status " + status);
                 if (status == 200) {
