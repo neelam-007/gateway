@@ -14,9 +14,8 @@ import com.l7tech.service.ProtectedService;
  * @author alex
  */
 public class RoutingAssertion extends Assertion {
-    public RoutingAssertion( ProtectedService service ) {
-        super();
-        _protectedService = service;
+    public RoutingAssertion(String protectedServiceTarget) {
+        this.protectedServiceTarget = protectedServiceTarget;
     }
 
     /** Default constructor, for Hibernate only, don't call! */
@@ -24,17 +23,17 @@ public class RoutingAssertion extends Assertion {
         super();
     }
 
-    public ProtectedService getProtectedService() {
-        return _protectedService;
+    public String getProtectedServiceTarget() {
+        return protectedServiceTarget;
     }
 
-    public void setProtectedService(ProtectedService protectedService) {
-        _protectedService = protectedService;
+    public void setProtectedServiceTarget(String protectedServiceTarget) {
+        this.protectedServiceTarget = protectedServiceTarget;
     }
 
     public AssertionError checkRequest(Request request, Response response) throws PolicyAssertionException {
         return AssertionError.NONE;
     }
 
-    protected ProtectedService _protectedService;
+    protected String protectedServiceTarget;
 }
