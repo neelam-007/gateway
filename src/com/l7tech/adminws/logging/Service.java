@@ -28,6 +28,25 @@ public class Service implements Log {
         return logRecordsToStrings(records);
     }
 
+    /**
+     * Retrieve the system logs in between the startMsgNumber and endMsgNumber specified
+     * up to the specified size.
+     * NOTE: the log messages whose message number equal to startMsgNumber and endMsgNumber
+     * are not returned.
+     *
+     * @param startMsgNumber the message number to locate the start point.
+     *                       Start from beginning of the message buffer if it equals to -1.
+     * @param endMsgNumber   the message number to locate the end point.
+     *                       Retrieve messages until the end of the message buffer is hit if it equals to -1.
+     * @param size  the max. number of messages retrieved
+     * @return String[] the array of messages retrieved
+     * @throws RemoteException
+     */
+    public String[] getSystemLog(long startMsgNumber, long endMsgNumber, int size) throws RemoteException {
+        LogRecord[] records = LogManager.getInstance().getRecorded(startMsgNumber, endMsgNumber, size);
+        return logRecordsToStrings(records);
+    }
+
     public UptimeMetrics getUptime() throws RemoteException {
         try {
             return UptimeMonitor.getLastUptime();
@@ -52,7 +71,8 @@ public class Service implements Log {
         Calendar cal = Calendar.getInstance();
         for (int i = 0; i < logs.length; i++) {
             cal.setTimeInMillis( logs[i].getMillis() );
-            output[i] = sdf.format( cal.getTime() ) + delimiter +
+            output[i] = logs[i].getSequenceNumber() + delimiter +
+                        sdf.format( cal.getTime() ) + delimiter +
                         logs[i].getLevel().toString() + delimiter +
                         logs[i].getSourceClassName() + delimiter +
                         logs[i].getSourceMethodName() + delimiter +
