@@ -64,6 +64,9 @@ public abstract class AuditRecord extends SSGLogRecord {
         this.name = name;
     }
 
+    /** the IP address of the entity that caused this AuditRecord to be created. */
     protected String ipAddress;
+    
+    /** the name of the service or system affected by event that generated the AuditRecord */
     protected String name;
 }
