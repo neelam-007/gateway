@@ -66,7 +66,6 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             sslContext = SSLContext.getInstance("SSL");
             sslContext.init(null, new TrustManager[] { SslClientTrustManager.getInstance() }, null);
             final int timeout = Integer.getInteger(PROP_SSL_SESSION_TIMEOUT, DEFAULT_SSL_SESSION_TIMEOUT).intValue();
-            logger.info("SSL session timeout = " + timeout + " seconds");
             sslContext.getClientSessionContext().setSessionTimeout(timeout);
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Couldn't initialize SSL Context", e);
