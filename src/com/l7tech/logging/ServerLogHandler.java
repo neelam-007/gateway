@@ -58,6 +58,181 @@ public class ServerLogHandler extends Handler {
     public void flush() {
     }
 
+    /**
+     * Retrieve the system logs in between the startMsgNumber and endMsgNumber specified
+     * up to the specified size.
+     * NOTE: the log messages whose message number equals to startMsgNumber and endMsgNumber
+     * are not returned.
+     *
+     * @param highMsgNumber the message number to locate the start point.
+     *                       Start from beginning of the message buffer if it equals to -1.
+     * @param lowMsgNumber   the message number to locate the end point.
+     *                       Retrieve messages until the end of the message buffer is hit
+     *                       if it equals to -1.
+     * @param nodeId         the node id for which to retrieve server logs on. if left null, retreives
+     *                       log records for this node.
+     * @param size  the max. number of messages retrieved
+     * @return LogRecord[] the array of log records retrieved
+     */
+    public Collection getLogRecords(String nodeId, long highMsgNumber, long lowMsgNumber, int size) {
+        HibernatePersistenceContext context = null;
+        try {
+            boolean ok = false;
+            try {
+                context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
+                context.beginTransaction();
+                ok = true;
+            } catch (SQLException e) {
+                reportException("cannot get persistence context", e);
+                return Collections.EMPTY_LIST;
+            } catch ( TransactionException e ) {
+                reportException("cannot get persistence context", e);
+                return Collections.EMPTY_LIST;
+            } finally {
+                if ( context != null && !ok ) context.close();
+            }
+
+            String reqnode = nodeId;
+            if (reqnode == null) reqnode = nodeid;
+            Collection res = null;
+            try {
+                if (lowMsgNumber < 0 && highMsgNumber >= 0) {
+                    res = getRecordsBeforeLowId(reqnode, size, context, highMsgNumber);
+                } else if (lowMsgNumber >= 0 && highMsgNumber < 0) {
+                    res = getRecordsBeyondHighId(reqnode, size, context, lowMsgNumber);
+                } else if (lowMsgNumber >= 0 && highMsgNumber >= 0) {
+                    res = getRecordsInRange(reqnode, size, context, lowMsgNumber, highMsgNumber);
+                } else {
+                    res = getLastRecords(reqnode, size, context);
+                }
+            } catch (HibernateException e) {
+                reportException("Error getting log records", e);
+                return Collections.EMPTY_LIST;
+            } catch (SQLException e) {
+                reportException("Error getting log records", e);
+                return Collections.EMPTY_LIST;
+            } finally {
+                try {
+                    if ( context != null ) context.commitTransaction();
+                } catch ( TransactionException e ) {
+                    reportException("Error getting log records", e);
+                    return Collections.EMPTY_LIST;
+                }
+            }
+            if (res == null) return Collections.EMPTY_LIST;
+            return res;
+        } finally {
+            if ( context != null ) context.close();
+        }
+    }
+
+    public void close() throws SecurityException {
+        flusherDeamon.cancel();
+    }
+
+    public synchronized void initialize() throws IllegalStateException {
+        nodeid = ClusterInfoManager.getInstance().thisNodeId();
+        // start the deamon
+        if (flusherTask == null) {
+            flusherTask = new TimerTask() {
+                public void run() {
+                    cleanAndFlush();
+                }
+            };
+            flusherDeamon.schedule(flusherTask, FLUSH_FREQUENCY, FLUSH_FREQUENCY);
+        }
+    }
+
+    /**
+     * this clears all recorded log records for a given node. it is called by
+     * ClusterStatusAdmin.removeStaleNode
+     * @deprecated This method should not be used as RemoteException (OutOfMemory) is thrown in the
+     *             case when the table contains a huge numbers of records.
+     */
+    public static void cleanAllRecordsForNode(HibernatePersistenceContext context, String nodeid)
+                                                throws DeleteException {
+        String deleteSQLStatement = "from " + TABLE_NAME + " in class " + SSGLogRecord.class.getName() +
+                                    " where " + TABLE_NAME + "." + NODEID_COLNAME +
+                                    " = \'" + nodeid + "\'";
+        try {
+            context.getSession().delete(deleteSQLStatement);
+        } catch (HibernateException e) {
+            throw new DeleteException("exception deleting logs for node " + nodeid, e);
+        } catch (SQLException e) {
+            throw new DeleteException("exception deleting logs for node " + nodeid, e);
+        }
+    }
+
+    /**
+     * record a log record in tmp cache. it will eventually be flushed by a deamon thread
+     */
+    protected void add(SSGLogRecord arg) {
+        synchronized (cache) {
+            if (cache.size() >= MAX_CACHE_SIZE) {
+                // todo, maybe we should force a flush?
+                cache.remove(0);
+            }
+            cache.add(arg);
+        }
+    }
+
+    /**
+     * performs the regular maintenance task including cleaning the log table if necessary
+     * and flushing new cached log entries to database.
+     * this method is responsible to manager its own persistence context.
+     */
+    protected void cleanAndFlush() {
+        // get the persistence context
+        HibernatePersistenceContext context = null;
+        Session session = null;
+        try {
+            context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
+            session = context.getSession();
+        } catch (SQLException e) {
+            reportException("cannot get persistence context", e);
+            if ( context != null ) context.close();
+            return;
+        } catch (HibernateException e) {
+            reportException("cannot get session", e);
+            if ( context != null ) context.close();
+            return;
+        }
+
+        try {
+            context.beginTransaction();
+
+            /*
+            This commented out code used to delete previous records for this node before first dump
+            we decided to make this the responsibility of an external cron job.
+            if (fullClean) {
+                String deleteSQLStatement = "from " + TABLE_NAME + " in class " + SSGLogRecord.class.getName() +
+                                            " where " + TABLE_NAME + "." + NODEID_COLNAME +
+                                            " = \'" + nodeid + "\'";
+                session.iterate(deleteSQLStatement);
+                session.flush();
+            }*/
+            // flush new records
+            flushtodb(session);
+            context.commitTransaction();
+        }  catch(TransactionException e) {
+            reportException("Exception with hibernate transaction", e);
+        } finally {
+            if ( context != null ) context.close();
+        }
+    }
+
+    /**
+     * the log handler does not use the normal logger because in case of an error,
+     * that would cause some nasty loop.
+     */
+    protected static void reportException(String msg, Throwable e) {
+        if (e == null) System.err.println(msg);
+        else {
+            System.err.println(msg + " " + e.getMessage());
+            e.printStackTrace(System.err);
+        }
+    }
+
     private void flushtodb(Session session) {
         Object[] data = null;
         synchronized (cache) {
@@ -148,160 +323,6 @@ public class ServerLogHandler extends Handler {
         return found;
     }
 
-    /**
-     * Retrieve the system logs in between the startMsgNumber and endMsgNumber specified
-     * up to the specified size.
-     * NOTE: the log messages whose message number equals to startMsgNumber and endMsgNumber
-     * are not returned.
-     *
-     * @param highMsgNumber the message number to locate the start point.
-     *                       Start from beginning of the message buffer if it equals to -1.
-     * @param lowMsgNumber   the message number to locate the end point.
-     *                       Retrieve messages until the end of the message buffer is hit
-     *                       if it equals to -1.
-     * @param nodeId         the node id for which to retrieve server logs on. if left null, retreives
-     *                       log records for this node.
-     * @param size  the max. number of messages retrieved
-     * @return LogRecord[] the array of log records retrieved
-     */
-    public Collection getLogRecords(String nodeId, long highMsgNumber, long lowMsgNumber, int size) {
-        HibernatePersistenceContext context = null;
-        try {
-            context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-        } catch (SQLException e) {
-            reportException("cannot get persistence context", e);
-            return Collections.EMPTY_LIST;
-        }
-        String reqnode = nodeId;
-        if (reqnode == null) reqnode = nodeid;
-        Collection res = null;
-        try {
-            if (lowMsgNumber < 0 && highMsgNumber >= 0) {
-                res = getRecordsBeforeLowId(reqnode, size, context, highMsgNumber);
-            } else if (lowMsgNumber >= 0 && highMsgNumber < 0) {
-                res = getRecordsBeyondHighId(reqnode, size, context, lowMsgNumber);
-            } else if (lowMsgNumber >= 0 && highMsgNumber >= 0) {
-                res = getRecordsInRange(reqnode, size, context, lowMsgNumber, highMsgNumber);
-            } else {
-                res = getLastRecords(reqnode, size, context);
-            }
-        } catch (HibernateException e) {
-            reportException("Error getting log records", e);
-            return Collections.EMPTY_LIST;
-        } catch (SQLException e) {
-            reportException("Error getting log records", e);
-            return Collections.EMPTY_LIST;
-        }
-        if (res == null) return Collections.EMPTY_LIST;
-        return res;
-    }
-
-    public void close() throws SecurityException {
-        flusherDeamon.cancel();
-    }
-
-    /**
-     * record a log record in tmp cache. it will eventually be flushed by a deamon thread
-     */
-    protected void add(SSGLogRecord arg) {
-        synchronized (cache) {
-            if (cache.size() >= MAX_CACHE_SIZE) {
-                // todo, maybe we should force a flush?
-                cache.remove(0);
-            }
-            cache.add(arg);
-        }
-    }
-
-    public synchronized void initialize() throws IllegalStateException {
-        nodeid = ClusterInfoManager.getInstance().thisNodeId();
-        // start the deamon
-        if (flusherTask == null) {
-            flusherTask = new TimerTask() {
-                public void run() {
-                    cleanAndFlush();
-                }
-            };
-            flusherDeamon.schedule(flusherTask, FLUSH_FREQUENCY, FLUSH_FREQUENCY);
-        }
-    }
-
-    /**
-     * this clears all recorded log records for a given node. it is called by
-     * ClusterStatusAdmin.removeStaleNode
-     * @deprecated This method should not be used as RemoteException (OutOfMemory) is thrown in the
-     *             case when the table contains a huge numbers of records.
-     */
-    public static void cleanAllRecordsForNode(HibernatePersistenceContext context, String nodeid)
-                                                throws DeleteException {
-        String deleteSQLStatement = "from " + TABLE_NAME + " in class " + SSGLogRecord.class.getName() +
-                                    " where " + TABLE_NAME + "." + NODEID_COLNAME +
-                                    " = \'" + nodeid + "\'";
-        try {
-            context.getSession().delete(deleteSQLStatement);
-        } catch (HibernateException e) {
-            throw new DeleteException("exception deleting logs for node " + nodeid, e);
-        } catch (SQLException e) {
-            throw new DeleteException("exception deleting logs for node " + nodeid, e);
-        }
-    }
-
-    /**
-     * performs the regular maintenance task including cleaning the log table if necessary
-     * and flushing new cached log entries to database.
-     * this method is responsible to manager its own persistence context.
-     */
-    protected void cleanAndFlush() {
-        // get the persistence context
-        HibernatePersistenceContext context = null;
-        Session session = null;
-        try {
-            context = (HibernatePersistenceContext)PersistenceContext.getCurrent();
-            session = context.getSession();
-        } catch (SQLException e) {
-            reportException("cannot get persistence context", e);
-            if ( context != null ) context.close();
-            return;
-        } catch (HibernateException e) {
-            reportException("cannot get session", e);
-            if ( context != null ) context.close();
-            return;
-        }
-
-        try {
-            context.beginTransaction();
-
-            /*
-            This commented out code used to delete previous records for this node before first dump
-            we decided to make this the responsibility of an external cron job.
-            if (fullClean) {
-                String deleteSQLStatement = "from " + TABLE_NAME + " in class " + SSGLogRecord.class.getName() +
-                                            " where " + TABLE_NAME + "." + NODEID_COLNAME +
-                                            " = \'" + nodeid + "\'";
-                session.iterate(deleteSQLStatement);
-                session.flush();
-            }*/
-            // flush new records
-            flushtodb(session);
-            context.commitTransaction();
-        }  catch(TransactionException e) {
-            reportException("Exception with hibernate transaction", e);
-        } finally {
-            if ( context != null ) context.close();
-        }
-    }
-
-    /**
-     * the log handler does not use the normal logger because in case of an error,
-     * that would cause some nasty loop.
-     */
-    protected static void reportException(String msg, Throwable e) {
-        if (e == null) System.err.println(msg);
-        else {
-            System.err.println(msg + " " + e.getMessage());
-            e.printStackTrace(System.err);
-        }
-    }
 
     /**
      * where log records are stored waiting to be flushed to the database
