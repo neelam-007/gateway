@@ -52,7 +52,7 @@ public class XmlSecurityFolderNode extends AbstractTreeNode {
      * @return the name as a String
      */
     public String getName() {
-        return "XML security";
+        return "XML Security";
     }
 
     /**

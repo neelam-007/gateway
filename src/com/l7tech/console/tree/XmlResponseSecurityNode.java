@@ -63,7 +63,7 @@ public class XmlResponseSecurityNode extends AbstractTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Sign and/or Encrypt Response";
+        return "Sign/Encrypt Response";
 
     }
 

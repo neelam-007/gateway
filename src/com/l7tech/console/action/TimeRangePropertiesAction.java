@@ -28,7 +28,7 @@ public class TimeRangePropertiesAction extends BaseAction {
     }
 
     public String getName() {
-        return "Time And Day Availability Properties";
+        return "Time/Day Availability Properties";
     }
 
     public String getDescription() {

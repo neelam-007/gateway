@@ -66,7 +66,7 @@ public class SslTransportNode extends AbstractTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "SSL transport";
+        return "SSL Transport";
 
     }
 

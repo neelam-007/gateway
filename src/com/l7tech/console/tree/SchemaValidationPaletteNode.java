@@ -59,7 +59,7 @@ public class SchemaValidationPaletteNode extends AbstractTreeNode {
     protected void loadChildren() {}
 
     public String getName() {
-        return "Validate xml schema";
+        return "Validate XML Schema";
     }
 
     /**

@@ -21,7 +21,7 @@ import java.util.Arrays;
  * @version 1.1
  */
 public class PoliciesFolderNode extends AbstractTreeNode {
-    public static final String NAME = "Policy templates";
+    public static final String NAME = "Policy Templates";
     public static final String TEMPLATES_DIR = "policy.templates";
 
     /**

@@ -102,7 +102,7 @@ public class IdentityNode extends AbstractTreeNode {
     }
 
     public String getName() {
-        return "Grant access to users or groups";
+        return "Grant Access to Users/Groups";
     }
 
     protected void loadChildren() {

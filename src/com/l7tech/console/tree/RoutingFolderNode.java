@@ -46,7 +46,7 @@ public class RoutingFolderNode extends AbstractTreeNode {
      * @return the FQ name as a String
      */
     public String getName() {
-        return "Message routing";
+        return "Message Routing";
     }
 
     /**
