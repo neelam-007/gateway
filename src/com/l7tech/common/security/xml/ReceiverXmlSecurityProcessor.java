@@ -15,6 +15,7 @@ import com.l7tech.common.xml.MessageNotSoapException;
 import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 
 import java.io.IOException;
 import java.util.*;
@@ -52,27 +53,32 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                 }
             }
 
-            // precondition satisfied
-            atLeastOneElementSecurityApplied = true;
-
             XpathExpression elementXpath = elementSecurity.getElementXpath();
             List elementMatches = null;
             List cryptMatches = null;
-            if (elementXpath != null) {
+            if (elementXpath != null && !SoapUtil.SOAP_ENVELOPE_XPATH.equals(elementXpath)) {
                 // We have an element xpath
                 XpathEvaluator elementEval = XpathEvaluator.newEvaluator(document, elementXpath.getNamespaces());
                 try {
                     elementMatches = elementEval.select(elementXpath.getExpression());
-                    if (elementSecurity.isEncryption())
-                        cryptMatches = elementMatches;
+                    if (containsEnvelope(elementMatches)) {
+                        elementMatches = null; // mark for special handling, "sign env crypt body"
+                        /* FALLTHROUGH */
+                    } else {
+                        if (elementSecurity.isEncryption())
+                            cryptMatches = elementMatches;
+                        /* FALLTHROUGH */
+                    }
                 } catch (JaxenException e) {
                     return Result.error(e);
                 }
                 if ( elementMatches == null || elementMatches.size() == 0 ) {
                     return Result.error(new SecurityProcessorException("Precondition matched but element not found"));
                 }
-            } else {
-                // null element xpath.. this means envelope must be signed and body must encrypted
+            }
+
+            if (elementMatches == null) {
+                // null element xpath or /Envelope xpath.. this means envelope must be signed and body must encrypted
                 elementMatches = Arrays.asList(new Element[] { document.getDocumentElement() });
 
                 if (elementSecurity.isEncryption()) {
@@ -96,6 +102,9 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                     return Result.policyViolation(new SecurityProcessorException("Element " +
                                                                                  targetElement.getLocalName() +
                                                                                  " was not signed"));
+                // precondition satisfied
+                atLeastOneElementSecurityApplied = true;
+
                 signingTokens.addAll(elementSigningTokens);
             }
 
@@ -109,6 +118,8 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                             return Result.policyViolation(new SecurityProcessorException("Element " +
                                                                                          targetElement.getLocalName() +
                                                                                          " was non-empty but was not encrypted"));
+                        // precondition satisfied
+                        atLeastOneElementSecurityApplied = true;
                     }
                 }
             }
