@@ -1,32 +1,47 @@
 package com.l7tech.policy.assertion.ext;
 
-import com.l7tech.policy.assertion.CustomAssertionHolder;
-import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.identity.StubDataStore;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.ObjectNotFoundException;
-import com.l7tech.identity.StubDataStore;
+import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.CustomAssertionHolder;
+import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.proxy.policy.assertion.ClientTrueAssertion;
 import com.l7tech.service.PublishedService;
 
+import java.io.IOException;
 import java.rmi.RemoteException;
 import java.rmi.ServerException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.io.IOException;
+import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author emil
  * @version 16-Feb-2004
  */
 public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar {
+    static Logger logger = Logger.getLogger(CustomAssertionsRegistrar.class.getName());
+    static {
+        loadTestCustomAssertions();
+    }
+
+    private static void loadTestCustomAssertions() {
+        CustomAssertionDescriptor eh =
+                new CustomAssertionDescriptor("Test.Assertion",
+                                              TestAssertionProperties.class,
+                                              ClientTrueAssertion.class,
+                                              TestServiceInvocation.class, Category.IDENTITY, null);
+        CustomAssertions.register(eh);
+    }
+
     /**
      * @return the list of all assertions known to the runtime
      * @throws java.rmi.RemoteException
      */
     public Collection getAssertions() throws RemoteException {
-        return new ArrayList();
+        Set customAssertionDescriptors = CustomAssertions.getAssertions();
+        return asCustomAssertionHolders(customAssertionDescriptors);
     }
 
     /**
@@ -36,12 +51,8 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
      * @throws java.rmi.RemoteException
      */
     public Collection getAssertions(Category c) throws RemoteException {
-        CustomAssertionHolder ca = new CustomAssertionHolder();
-        ca.setCustomAssertion(new TestAssertionProperties());
-        List list = new ArrayList();
-        list.add(ca);
-        return list;
-
+        final Set customAssertionDescriptors = CustomAssertions.getAssertions(c);
+        return asCustomAssertionHolders(customAssertionDescriptors);
     }
 
     public Assertion resolvePolicy(EntityHeader eh) throws RemoteException, ObjectNotFoundException {
@@ -71,4 +82,22 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
       public Assertion resolvePolicy(String xml) throws RemoteException, IOException {
           return WspReader.parse(xml);
       }
+
+    private Collection asCustomAssertionHolders(final Set customAssertionDescriptors) {
+        Collection result = new ArrayList();
+        Iterator it = customAssertionDescriptors.iterator();
+        while (it.hasNext()) {
+            try {
+                Class ca = (Class)it.next();
+                CustomAssertionHolder ch = new CustomAssertionHolder();
+                final CustomAssertion cas = (CustomAssertion)ca.newInstance();
+                ch.setCustomAssertion(cas);
+                result.add(ch);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Unable to instantiate custom assertion", e);
+            }
+        }
+        return result;
+    }
+
 }
