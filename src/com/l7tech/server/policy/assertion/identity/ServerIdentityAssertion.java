@@ -107,8 +107,11 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
                     return AssertionStatus.AUTH_FAILED;
                 } catch ( FindException fe ) {
                     String err = "Couldn't find identity provider!";
-                    logger.log( Level.SEVERE, err, fe );
-                    throw new IdentityAssertionException( err, fe );
+                    logger.log(Level.SEVERE, err, fe);
+                    // fla fix, allow the policy to continue in case the credentials be valid for
+                    // another id assertion down the road (fix for bug 374)
+                    // throw new IdentityAssertionException( err, fe );
+                    return AssertionStatus.AUTH_FAILED;
                 }
 
             }
