@@ -11,6 +11,9 @@ import java.io.InputStream;
 
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.policy.assertion.xml.XslTransformation;
+import junit.framework.TestCase;
+import junit.framework.Test;
+import junit.framework.TestSuite;
 
 /**
  * Tests ServerXslTransformation and XslTransformation classes.
@@ -22,21 +25,37 @@ import com.l7tech.policy.assertion.xml.XslTransformation;
  * $Id$<br/>
  *
  */
-public class XslTransformationTest {
+public class XslTransformationTest extends TestCase {
 
-    public static void main(String[] args) throws Exception {
-        XslTransformationTest me = new XslTransformationTest();
-        me.testMaskWsse();
+    public static void main(String[] args) throws Throwable {
+        junit.textui.TestRunner.run(suite());
+        System.out.println("Test complete: " + XslTransformationTest.class);
     }
 
-    private void testMaskWsse() throws Exception {
+    public static Test suite() {
+        TestSuite suite = new TestSuite(XslTransformationTest.class);
+        return suite;
+    }
+
+    public void testMaskWsse() throws Exception {
         String xslStr = getResAsString(XSL_MASK_WSSE);
         XslTransformation assertion = new XslTransformation();
         assertion.setXslSrc(xslStr);
         assertion.setDirection(XslTransformation.APPLY_TO_REQUEST);
         ServerXslTransformation transformer = new ServerXslTransformation(assertion);
         String res = transformer.transform(getResAsDoc(SOAPMSG_WITH_WSSE));
+        // visual inspection - todo automate the verification of the transformation
+        System.out.println(res);
+    }
 
+    public void testSsgComment() throws Exception {
+        String xslStr = getResAsString(XSL_SSGCOMMENT);
+        XslTransformation assertion = new XslTransformation();
+        assertion.setXslSrc(xslStr);
+        assertion.setDirection(XslTransformation.APPLY_TO_REQUEST);
+        ServerXslTransformation transformer = new ServerXslTransformation(assertion);
+        String res = transformer.transform(getResAsDoc(SOAPMSG_WITH_WSSE));
+        // visual inspection - todo automate the verification of the transformation
         System.out.println(res);
     }
 
@@ -63,5 +82,6 @@ public class XslTransformationTest {
 
     private static final String RESOURCE_PATH = "/com/l7tech/server/policy/assertion/xml/";
 	private static final String XSL_MASK_WSSE = RESOURCE_PATH + "wssemask.xsl";
+    private static final String XSL_SSGCOMMENT = RESOURCE_PATH + "ssgwashere.xsl";
     private static final String SOAPMSG_WITH_WSSE = RESOURCE_PATH + "simpleRequestWithWsseHeader.xml";
 }
