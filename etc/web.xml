@@ -19,6 +19,11 @@
     </servlet>
 
     <servlet>
+        <servlet-name>ping</servlet-name>
+        <servlet-class>com.l7tech.server.PingServlet</servlet-class>
+    </servlet>
+
+    <servlet>
         <servlet-name>PolicyServlet</servlet-name>
         <servlet-class>com.l7tech.policy.server.PolicyServlet</servlet-class>
     </servlet>
@@ -92,6 +97,11 @@
     <servlet-mapping>
         <servlet-name>SoapMessageProcessingServlet</servlet-name>
         <url-pattern>/ssg/soap</url-pattern>
+    </servlet-mapping>
+
+    <servlet-mapping>
+        <servlet-name>ping</servlet-name>
+        <url-pattern>/ssg/ping</url-pattern>
     </servlet-mapping>
 
     <servlet-mapping>
