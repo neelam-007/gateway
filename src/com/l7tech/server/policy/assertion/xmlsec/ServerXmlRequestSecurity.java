@@ -87,14 +87,15 @@ public class ServerXmlRequestSecurity implements ServerAssertion {
             SecurityProcessor.Result result = verifier.processInPlace(soapmsg);
 
             // Handle unsuccessful results
-            if ( result.getType() == SecurityProcessor.Result.Type.NOT_APPLICABLE ) {
-                logger.log( Level.INFO, "No XML security expected in this request" );
+            if (result.getType() == SecurityProcessor.Result.Type.NOT_APPLICABLE) {
+                logger.log(Level.INFO, "No XML security expected in this request");
                 return AssertionStatus.NONE;
-            } else if ( result.getType() == SecurityProcessor.Result.Type.POLICY_VIOLATION ) {
+            } else if (result.getType() == SecurityProcessor.Result.Type.POLICY_VIOLATION) {
                 if (result.getThrowable() != null)
-                    logger.log( Level.INFO, result.getType().desc, result.getThrowable() );
+                    logger.log(Level.INFO, result.getType().desc, result.getThrowable());
                 else
-                    logger.log( Level.INFO, result.getType().desc );
+                    logger.log(Level.INFO, result.getType().desc);
+                logger.info("Returning " + AssertionStatus.AUTH_REQUIRED.getMessage());
                 response.setAuthenticationMissing(true);
                 response.setPolicyViolated(true);
                 return AssertionStatus.AUTH_REQUIRED;
