@@ -239,24 +239,6 @@ public class IdentityProviderFactory extends ApplicationObjectSupport implements
      * @see org.springframework.beans.factory.InitializingBean#afterPropertiesSet
      */
     public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
-        return bean;
-    }
-
-    /**
-     * Apply this BeanPostProcessor to the given new bean instance <i>after</i> any bean
-     * initialization callbacks (like InitializingBean's afterPropertiesSet or a custom
-     * init-method).
-     * This post processor finishes the construction of the identity povider by creating
-     * and attaching corresponding user and grop managers.
-     *
-     * @param bean     the new bean instance
-     * @param beanName the beanName of the bean
-     * @return the bean instance to use, either the original or a wrapped one
-     * @throws org.springframework.beans.BeansException
-     *          in case of errors
-     * @see org.springframework.beans.factory.InitializingBean#afterPropertiesSet
-     */
-    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
         if (INTERNAL_PROVIDER_BEAN_NAME.equals(beanName)) {
             final InternalIdentityProvider internalIdentityProvider = ((InternalIdentityProvider)bean);
             UserManager um = (UserManager)abstractBeanFactory.getBean("internalUserManager", new Object[]{InternalUserManager.class, bean});
@@ -277,7 +259,24 @@ public class IdentityProviderFactory extends ApplicationObjectSupport implements
             GroupManager gm = (GroupManager)abstractBeanFactory.getBean("ldapGroupManager", new Object[]{LdapGroupManager.class, bean});
             ldapIdentityProvider.setGroupManager((LdapGroupManager)gm);
         }
+        return bean;
+    }
 
+    /**
+     * Apply this BeanPostProcessor to the given new bean instance <i>after</i> any bean
+     * initialization callbacks (like InitializingBean's afterPropertiesSet or a custom
+     * init-method).
+     * This post processor finishes the construction of the identity povider by creating
+     * and attaching corresponding user and grop managers.
+     *
+     * @param bean     the new bean instance
+     * @param beanName the beanName of the bean
+     * @return the bean instance to use, either the original or a wrapped one
+     * @throws org.springframework.beans.BeansException
+     *          in case of errors
+     * @see org.springframework.beans.factory.InitializingBean#afterPropertiesSet
+     */
+    public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
         return bean;
     }
 
