@@ -139,6 +139,9 @@ class WsdlProxy {
 
         int status = 0;
 
+        // The reason for the last failure
+        Exception error = null;
+
         // Password retries for WSDL download
         PasswordAuthentication pw;
         for (int retries = 0; retries < 3; ++retries) {
@@ -156,7 +159,11 @@ class WsdlProxy {
                     status = httpClient.executeMethod(getMethod);
                     CurrentSslPeer.set(null);
                 } catch (SSLHandshakeException e) {
-                    if (ExceptionUtils.causedBy(e, ServerCertificateUntrustedException.class)) {
+                    error = e;
+                    ServerCertificateUntrustedException scue = (ServerCertificateUntrustedException)
+                            ExceptionUtils.getCauseIfCausedBy(e, ServerCertificateUntrustedException.class);
+                    if (scue != null) {
+                        error = scue;
                         try {
                             ssg.getRuntime().discoverServerCertificate(pw);
                             status = -1; // hack hack hack: fake status meaning "try again"
@@ -166,6 +173,7 @@ class WsdlProxy {
                         } catch (BadCredentialsException e1) {
                             log.log(Level.INFO, "Certificate discovery service indicates bad password; setting status to 401 artificially");
                             status = 401; // hack hack hack: fake up a 401 status to trigger password dialog below
+                            error = new BadCredentialsException("Unable to automatically establish authenticity of the Gateway SSL certificate using the current username and password");
                             // FALLTHROUGH -- get new credentials and try again
                         }
                     } else
@@ -181,8 +189,10 @@ class WsdlProxy {
                     // FALLTHROUGH - continue and try again with new password
                 } else if (status == -1) {
                     // FALLTHROUGH -- continue and try again with empty keystore
-                } else
+                } else {
+                    error = null;
                     break;
+                }
             } finally {
                 if (getMethod != null) {
                     getMethod.releaseConnection();
@@ -190,6 +200,8 @@ class WsdlProxy {
                 }
             }
         }
+        if (error != null)
+            throw new DownloadException("WsdlProxy: " + error.getMessage(), error);
         throw new DownloadException("WsdlProxy: download from Gateway failed with HTTP status " + status);
     }
 }
