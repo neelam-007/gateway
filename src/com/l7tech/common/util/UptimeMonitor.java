@@ -137,6 +137,7 @@ public class UptimeMonitor {
      */
     private void runMonitorThread() {
         logger.info("Uptime monitor thread is starting");
+        int failuresInRow = 0;
         for (;;) {
             Process up;
             try {
@@ -149,8 +150,11 @@ public class UptimeMonitor {
                 synchronized (this) {
                     this.result = snapshot;
                 }
+                failuresInRow = 0;
             } catch (IOException e) {
-                logger.log(Level.WARNING, "Unable to get system uptime from the uptime executable", e);
+                if (failuresInRow < 5)
+                    logger.log(Level.WARNING, "Unable to get system uptime from the uptime executable", e);
+                failuresInRow++;
             } catch (InterruptedException e) {
                 logger.info("Uptime monitor thread is shutting down");
                 return;
