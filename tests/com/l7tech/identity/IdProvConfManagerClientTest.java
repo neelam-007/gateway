@@ -26,6 +26,13 @@ public class IdProvConfManagerClientTest {
             EntityHeader obj = (EntityHeader)i.next();
             System.out.println(obj);
         }
+        GroupManager groupManager = provider.getGroupManager();
+        Collection headers = groupManager.findAllHeaders();
+        i = headers.iterator();
+        while (i.hasNext()) {
+            EntityHeader obj = (EntityHeader)i.next();
+            System.out.println(obj);
+        }
     }
 
     public static void testAddAndDeleteIDProviderConfig(IdProvConfManagerClient testee) throws Exception {
@@ -43,14 +50,79 @@ public class IdProvConfManagerClientTest {
         System.out.println("done");
     }
 
+    public static void testCreateGroup(IdProvConfManagerClient testee) throws Exception {
+        IdentityProvider provider = testee.getInternalIdentityProvider();
+        GroupManager groupMan = provider.getGroupManager();
+        Group newgrp = new Group();
+        System.out.println("creating group");
+        newgrp.setName("thepolice");
+        newgrp.setDescription("70s and early 80s rock");
+        System.out.println("saving group");
+        long grpId = groupMan.save(newgrp);
+        System.out.println("group saved oid=" + grpId);
+    }
+
+    public static void testAssignUserToGroup(IdProvConfManagerClient testee) throws Exception {
+        IdentityProvider provider = testee.getInternalIdentityProvider();
+        GroupManager groupMan = provider.getGroupManager();
+        System.out.println("get existing group");
+        Group thepolice = groupMan.findByPrimaryKey("4718592");
+        System.out.println("create new user");
+        UserManager userMan = provider.getUserManager();
+        User newUser = new User();
+        newUser.setName("stewart");
+        newUser.setLogin("scopeland");
+        newUser.setPassword("drumer");
+        System.out.println("saving new user");
+        long usrid = userMan.save(newUser);
+        System.out.println("add user to group");
+        thepolice.getMembers().add(newUser);
+        System.out.println("update the group");
+        groupMan.update(thepolice);
+        System.out.println("done");
+    }
+
+    public static void updateGroup(IdProvConfManagerClient testee) throws Exception {
+        IdentityProvider provider = testee.getInternalIdentityProvider();
+        GroupManager groupMan = provider.getGroupManager();
+        System.out.println("get existing group");
+        Group thepolice = groupMan.findByPrimaryKey("4718592");
+
+        System.out.println(thepolice);
+        thepolice.setDescription("very good band from the 80s");
+
+        System.out.println("update group");
+        groupMan.update(thepolice);
+        System.out.println("done");
+    }
+
+    public static void updateUser(IdProvConfManagerClient testee) throws Exception {
+        IdentityProvider provider = testee.getInternalIdentityProvider();
+        UserManager userMan = provider.getUserManager();
+        User newUser = new User();
+        newUser.setName("dskjldksjfldskjlfsdlj");
+        newUser.setLogin("kjsdhksfdjkgh");
+        newUser.setPassword("bassist");
+        System.out.println("saving new user");
+        long usrid = userMan.save(newUser);
+        newUser.setEmail("sting@thepolice.com");
+        System.out.println("update new user");
+        userMan.update(newUser);
+        System.out.println("done");
+    }
+
     public static void main(String[] args) throws Exception {
         ClientCredentialManager credsManager = (ClientCredentialManager)Locator.getDefault().lookup(ClientCredentialManager.class);
         PasswordAuthentication creds = new PasswordAuthentication("ssgadmin", "ssgadminpasswd".toCharArray());
         credsManager.login(creds);
 
         IdProvConfManagerClient manager = new IdProvConfManagerClient();
-        //testListContentOfInternalIDProvider(manager);
-        testAddAndDeleteIDProviderConfig(manager);
+        testListContentOfInternalIDProvider(manager);
+        //testAddAndDeleteIDProviderConfig(manager);
+        //testCreateGroup(manager);
+        // testAssignUserToGroup(manager);
+        //updateGroup(manager);
+        // updateUser(manager);
 
         System.exit(0);
     }
