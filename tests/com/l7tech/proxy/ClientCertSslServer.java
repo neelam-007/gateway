@@ -192,7 +192,7 @@ public class ClientCertSslServer {
         httpServer.start();
         SSLServerSocket sss = (SSLServerSocket) jl.getServerSocket();
         sss.setWantClientAuth(true);
-        sss.setNeedClientAuth(true);
+        //sss.setNeedClientAuth(true);
 
         Object obj = new Object();
         synchronized (obj) {
@@ -205,7 +205,7 @@ public class ClientCertSslServer {
 
     private static InetAddrPort getInetAddrPort() {
         try {
-            return new InetAddrPort("127.0.0.1", 5443);
+            return new InetAddrPort("127.0.0.1", PORT);
         } catch (UnknownHostException e) {
             e.printStackTrace(); // can't happen
             throw new RuntimeException(e);
