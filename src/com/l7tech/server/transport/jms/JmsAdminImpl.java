@@ -177,19 +177,17 @@ public class JmsAdminImpl extends RemoteService implements JmsAdmin {
     }
 
 
-
     /**
-     * Test the specified JmsEndpoint, which may or may not exist in the database.  The JmsEndpoint's JmsConnection
-     * must already exist in the database, however.  The Gateway will use the specified settings to open a JMS
+     * Test the specified JmsEndpoint on the specified JmsConnection, either or both of which may or may not exist in
+     * the database.  The Gateway will use the specified settings to open a JMS
      * connection and attempt to verify the existence of a Destination for this JmsEndpoint.
      *
-     * @param endpoint JmsEndpoint settings to test.  Might not yet have an OID, but its connectionOid must be valid.
-     * @throws RemoteException
+     * @param conn JmsConnection settings to test.  Might not yet have an OID.
+     * @param endpoint JmsEndpoint settings to test.  Might not yet have an OID or a valid connectionOid.
      * @throws FindException if the connection pointed to by the endpoint cannot be loaded
-     * @throws JmsTestException if a test connection could not be established
+     * @throws RemoteException
      */
-    public void testEndpoint(JmsEndpoint endpoint) throws RemoteException, FindException, JmsTestException {
-        JmsConnection conn = getConnectionManager().findConnectionByPrimaryKey( endpoint.getConnectionOid() );
+    public void testEndpoint(JmsConnection conn, JmsEndpoint endpoint) throws RemoteException, FindException, JmsTestException {
         JmsBag bag = null;
         MessageConsumer jmsQueueReceiver = null;
         TopicSubscriber jmsTopicSubscriber = null;

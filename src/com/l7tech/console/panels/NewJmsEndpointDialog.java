@@ -129,7 +129,7 @@ public class NewJmsEndpointDialog extends JDialog {
                         return;
 
                     try {
-                        Registry.getDefault().getJmsManager().testEndpoint(endpoint);
+                        Registry.getDefault().getJmsManager().testEndpoint(connection, endpoint);
                         JOptionPane.showMessageDialog(NewJmsEndpointDialog.this,
                                                       "The Gateway has verified the existence of this JMS Endpoint.",
                                                       "JMS Connection Successful",

@@ -80,6 +80,23 @@ public class OptionalCredentialsPanel extends JPanel {
         return requireCheckbox.isSelected();
     }
 
+    /**
+     * Set the state of the control.
+     * @param required   True if the username and password are needed.
+     * @param username  The username to display.  If null, the empty string will be set.
+     * @param password  The password to display.  If null, the empty string will be set.
+     */
+    public void setUsernameAndPasswordRequired(boolean required, String username, String password) {
+        if (username == null) username = "";
+        if (password == null) password = "";
+        requireCheckbox.setSelected(required);
+        usernameField.setEnabled(required);
+        usernameField.setText(username);
+        passwordField.setEnabled(required);
+        passwordField.setText(password);
+        enableOrDisableComponents();
+    }
+
     public String getUsername() {
         return usernameField.getText();
     }

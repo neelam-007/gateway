@@ -38,11 +38,11 @@ public class JmsEndpointsWindow extends JDialog {
     private JButton removeButton;
 
     public JmsEndpointsWindow(Frame owner) {
-        super(owner, "Known JMS Connections and Endpoints", true);
+        super(owner, "JMS Queues", true);
         Container p = getContentPane();
         p.setLayout(new GridBagLayout());
 
-        p.add(new JLabel("Known JMS connections and endpoints:"),
+        p.add(new JLabel("Known JMS queues:"),
               new GridBagConstraints(0, 0, 2, 1, 0.0, 0.0,
                       GridBagConstraints.CENTER,
                       GridBagConstraints.NONE,

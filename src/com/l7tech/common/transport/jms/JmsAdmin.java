@@ -77,13 +77,14 @@ public interface JmsAdmin extends Remote {
     void testConnection(JmsConnection connection) throws RemoteException, JmsTestException;
 
     /**
-     * Test the specified JmsEndpoint, which may or may not exist in the database.  The JmsEndpoint's JmsConnection
-     * must already exist in the database, however.  The Gateway will use the specified settings to open a JMS
+     * Test the specified JmsEndpoint on the specified JmsConnection, either or both of which may or may not exist in
+     * the database.  The Gateway will use the specified settings to open a JMS
      * connection and attempt to verify the existence of a Destination for this JmsEndpoint.
      *
-     * @param endpoint JmsEndpoint settings to test.  Might not yet have an OID, but its connectionOid must be valid.
+     * @param connection JmsConnection settings to test.  Might not yet have an OID.
+     * @param endpoint JmsEndpoint settings to test.  Might not yet have an OID or a valid connectionOid.
      * @throws FindException if the connection pointed to by the endpoint cannot be loaded
      * @throws RemoteException
      */
-    void testEndpoint(JmsEndpoint endpoint) throws RemoteException, JmsTestException, FindException;
+    void testEndpoint(JmsConnection connection, JmsEndpoint endpoint) throws RemoteException, JmsTestException, FindException;
 }

@@ -10,7 +10,6 @@ import com.l7tech.common.transport.jms.*;
 import com.l7tech.identity.StubDataStore;
 import com.l7tech.objectmodel.*;
 
-import javax.jms.JMSException;
 import java.rmi.RemoteException;
 import java.util.*;
 
@@ -109,7 +108,7 @@ public class JmsAdminStub implements JmsAdmin {
             throw new JmsTestException("Invalid JMS connection settings");
     }
 
-    public void testEndpoint(JmsEndpoint endpoint) throws RemoteException, JmsTestException {
+    public void testEndpoint(JmsConnection connection, JmsEndpoint endpoint) throws RemoteException, JmsTestException {
         // automatic success in stub mode, unless the name contains "FAIL"
         if (endpoint.getName().indexOf("FAIL") >= 0)
             throw new JmsTestException("Invalid Destination name");
