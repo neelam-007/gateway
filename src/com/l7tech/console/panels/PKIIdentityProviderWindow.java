@@ -81,6 +81,9 @@ public class PKIIdentityProviderWindow extends JDialog {
         // Hide the cert usage data column
         trustedCertTable.hideColumn(TrustedCertTableSorter.CERT_TABLE_CERT_USAGE_COLUMN_INDEX);
 
+        // initialize the button states
+        enableOrDisableButtons();
+
         trustedCertTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             /**
              * Called whenever the value of the selection changes.
@@ -115,13 +118,12 @@ public class PKIIdentityProviderWindow extends JDialog {
 
         propertiesButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent event) {
-                                CertPropertiesWindow cpw = null;
+
                 int row = trustedCertTable.getSelectedRow();
                 if (row >= 0) {
-                    cpw = new CertPropertiesWindow(thisDialog, (TrustedCert) trustedCertTable.getTableSorter().getData(row), false);
+                    CertPropertiesWindow cpw = new CertPropertiesWindow(thisDialog, (TrustedCert) trustedCertTable.getTableSorter().getData(row), false);
+                    cpw.show();
                 }
-
-                cpw.show();
             }
         });
 
