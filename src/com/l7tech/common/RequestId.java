@@ -49,6 +49,10 @@ public class RequestId implements Comparable {
                 _sequence == other._sequence );
     }
 
+    public int hashCode() {
+        return (int)(_serverId * 103 + _bootTime * 53 + _sequence);
+    }
+
     public String toString() {
         StringBuffer result = new StringBuffer();
         result.append( paddedHex( _serverId ) );
