@@ -52,7 +52,10 @@ public class Ssg implements Cloneable, Comparable {
     }
 
     public int hashCode() {
-        return name.hashCode() + localEndpoint.hashCode() + serverUrl.hashCode() + username.hashCode();
+        return (int)(name.hashCode() * 257L +
+                localEndpoint.hashCode() * 997L +
+                serverUrl.hashCode() * 1103L +
+                username.hashCode() * 37L);
     }
 
     /** Create a new Ssg instance with default field contents. */
