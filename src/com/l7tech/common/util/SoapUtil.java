@@ -216,11 +216,18 @@ public class SoapUtil {
         return null;
     }
 
-    public static SOAPMessage makeMessage() {
-        MessageFactory mf = null;
+    public static MessageFactory getAxisMessageFactory() {
         try {
-            mf = MessageFactory.newInstance();
-            SOAPMessage smsg = mf.createMessage();
+            return org.apache.axis.soap.MessageFactoryImpl.newInstance();
+        } catch (SOAPException e) {
+            throw new RuntimeException(e); // can't happen
+        }
+    }
+
+
+    public static SOAPMessage makeMessage() {
+        try {
+            SOAPMessage smsg = getAxisMessageFactory().createMessage();
             return smsg;
         } catch (SOAPException e) {
             throw new RuntimeException(e); // can't happen
@@ -641,7 +648,7 @@ public class SoapUtil {
      * @throws SOAPException on SOAP error
      */
     public static SOAPMessage asSOAPMessage(Document doc) throws SOAPException {
-        SOAPMessage sm = MessageFactory.newInstance().createMessage();
+        SOAPMessage sm = SoapUtil.getAxisMessageFactory().createMessage();
         sm.getSOAPPart().setContent(new DOMSource(doc));
         return sm;
     }
@@ -866,4 +873,5 @@ public class SoapUtil {
         element.appendChild(XmlUtil.createTextNode(factory, ISO8601Date.format(time)));
         return element;
     }
+
 }

@@ -23,6 +23,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import com.l7tech.common.util.SoapUtil;
+
 /**
  * The class creates and array of <code>SoapRequest</code> instances
  * from the given WSDL.
@@ -180,7 +182,7 @@ public class SoapMessageGenerator {
      */
     private Object[] generateEnvelope(BindingOperation bindingOperation)
       throws SOAPException {
-        MessageFactory messageFactory = MessageFactory.newInstance();
+        MessageFactory messageFactory = SoapUtil.getAxisMessageFactory();
         SOAPMessage soapMessage = messageFactory.createMessage();
         SOAPPart soapPart = soapMessage.getSOAPPart();
         SOAPEnvelope envelope = soapPart.getEnvelope();

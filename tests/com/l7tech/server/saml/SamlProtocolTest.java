@@ -95,7 +95,7 @@ public class SamlProtocolTest extends TestCase {
         SubjectConfirmationType subjectConfirmation = subject.addNewSubjectConfirmation();
         subjectConfirmation.setConfirmationMethodArray(new String[]{SamlConstants.CONFIRMATION_HOLDER_OF_KEY});
 
-        SOAPMessage sm = MessageFactory.newInstance().createMessage();
+        SOAPMessage sm = SoapUtil.getAxisMessageFactory().createMessage();
         SOAPBody body = sm.getSOAPPart().getEnvelope().getBody();
         // rdoc.save(System.out, xmlOptions);
         final Element documentElement = ((Document)rdoc.newDomNode(SamlUtilities.xmlOptions())).getDocumentElement();
@@ -113,7 +113,7 @@ public class SamlProtocolTest extends TestCase {
         MockHttpServletRequest requestMock = servletApi.getServletRequest();
         MockHttpServletResponse responseMock = servletApi.getServletResponse();
 
-        MessageFactory msgFactory = MessageFactory.newInstance();
+        MessageFactory msgFactory = SoapUtil.getAxisMessageFactory();
 
         SamlProtocolServlet servlet = new SamlProtocolServlet();
         servlet.init(servletApi.getServletConfig());

@@ -31,11 +31,7 @@ class SoapResponseGenerator {
     private MessageFactory msgFactory;
 
     SoapResponseGenerator() {
-        try {
-            msgFactory = MessageFactory.newInstance();
-        } catch (SOAPException e) {
-            throw new RuntimeException(e);
-        }
+        msgFactory = SoapUtil.getAxisMessageFactory();
     }
 
     /**
