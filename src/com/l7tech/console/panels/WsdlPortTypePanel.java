@@ -211,8 +211,10 @@ public class WsdlPortTypePanel extends WizardStepPanel {
           public void actionPerformed(ActionEvent e) {
               String newOperationName = null;
               boolean found = false;
+              int suffixAdd = 0;
+
               while (!found) {
-                  newOperationName = "NewOperation" + operationsModel.getRowCount();
+                  newOperationName = "NewOperation" + (operationsModel.getRowCount() +suffixAdd);
                   found = true;
                   int rows = operationsModel.getRowCount();
                   for (int i = 0; i < rows; i++) {
@@ -227,6 +229,7 @@ public class WsdlPortTypePanel extends WizardStepPanel {
                       operationsModel.addOperation(newOperationName);
                       break;
                   }
+                  suffixAdd++;
               }
           }
       };
@@ -435,8 +438,8 @@ public class WsdlPortTypePanel extends WizardStepPanel {
         final JButton _10;
         _10 = new JButton();
         addOperationButton = _10;
-        _10.setLabel("Add");
         _10.setText("Add");
+        _10.setLabel("Add");
         _8.add(_10, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 4, 0, 0, 0, null, null, null));
         final com.intellij.uiDesigner.core.Spacer _11;
         _11 = new com.intellij.uiDesigner.core.Spacer();
