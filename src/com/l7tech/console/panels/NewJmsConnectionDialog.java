@@ -7,25 +7,30 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.widgets.OptionalCredentialsPanel;
-import com.l7tech.common.transport.jms.JmsProvider;
 import com.l7tech.common.transport.jms.JmsConnection;
+import com.l7tech.common.transport.jms.JmsProvider;
 import com.l7tech.console.util.Registry;
-import com.l7tech.objectmodel.UpdateException;
-import com.l7tech.objectmodel.SaveException;
-import com.l7tech.objectmodel.VersionException;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.rmi.RemoteException;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 /**
  * Dialog that pops up when "New JMS Connection..." button is clicked.
  */
 public class NewJmsConnectionDialog extends JDialog {
     private JTextField nameTextField;
+    private String defaultName = "";
     private JComboBox driverComboBox;
+    private String driverName = "";
     private JTextField jndiUrlTextField; // Naming provider URL
     private JTextField qcfNameTextField; // Queue connection factory name
     private OptionalCredentialsPanel optionalCredentialsPanel;
@@ -81,6 +86,18 @@ public class NewJmsConnectionDialog extends JDialog {
 
         int y = 0;
 
+        p.add(new JLabel("Naming provider URL:"),
+              new GridBagConstraints(0, y, 1, 1, 0, 0,
+                                     GridBagConstraints.EAST,
+                                     GridBagConstraints.NONE,
+                                     new Insets(0, 0, 5, 3), 0, 0));
+
+        p.add(getJndiUrlTextField(),
+              new GridBagConstraints(1, y++, 1, 1, 0, 0,
+                                     GridBagConstraints.WEST,
+                                     GridBagConstraints.HORIZONTAL,
+                                     new Insets(0, 0, 5, 0), 0, 0));
+
         p.add(new JLabel("Driver:"),
               new GridBagConstraints(0, y, 1, 1, 0, 0,
                                      GridBagConstraints.EAST,
@@ -93,25 +110,13 @@ public class NewJmsConnectionDialog extends JDialog {
                                      GridBagConstraints.NONE,
                                      new Insets(0, 0, 5, 0), 0, 0));
 
-        p.add(new JLabel("Name:"),
+        p.add(new JLabel("Connection name:"),
               new GridBagConstraints(0, y, 1, 1, 0, 0,
                                      GridBagConstraints.EAST,
                                      GridBagConstraints.NONE,
                                      new Insets(0, 0, 5, 3), 0, 0));
 
         p.add(getNameTextField(),
-              new GridBagConstraints(1, y++, 1, 1, 0, 0,
-                                     GridBagConstraints.WEST,
-                                     GridBagConstraints.HORIZONTAL,
-                                     new Insets(0, 0, 5, 0), 0, 0));
-
-        p.add(new JLabel("Naming provider URL:"),
-              new GridBagConstraints(0, y, 1, 1, 0, 0,
-                                     GridBagConstraints.EAST,
-                                     GridBagConstraints.NONE,
-                                     new Insets(0, 0, 5, 3), 0, 0));
-
-        p.add(getJndiUrlTextField(),
               new GridBagConstraints(1, y++, 1, 1, 0, 0,
                                      GridBagConstraints.WEST,
                                      GridBagConstraints.HORIZONTAL,
@@ -142,6 +147,7 @@ public class NewJmsConnectionDialog extends JDialog {
                                      new Insets(0, 0, 0, 0), 0, 0));
 
         pack();
+        enableOrDisableComponents();
     }
 
     private JPanel getButtonPanel() {
@@ -178,6 +184,7 @@ public class NewJmsConnectionDialog extends JDialog {
     private JTextField getNameTextField() {
         if (nameTextField == null) {
             nameTextField = new JTextField();
+            nameTextField.getDocument().addDocumentListener(formPreener);
         }
         return nameTextField;
     }
@@ -190,6 +197,31 @@ public class NewJmsConnectionDialog extends JDialog {
                 for (int i = 0; i < providers.length; i++)
                     items[i] = new ProviderComboBoxItem(providers[i]);
                 driverComboBox = new JComboBox(items);
+                driverComboBox.setSelectedIndex(-1);
+                driverComboBox.addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        JmsProvider provider = ((ProviderComboBoxItem)getDriverComboBox().getSelectedItem()).getProvider();
+                        if (provider == null) {
+                            driverName = "";
+                            return;
+                        }
+
+                        // Queue connection factory name, defaulting to destination factory name
+                        String qcfName = provider.getDefaultQueueFactoryUrl();
+                        if (qcfName == null || qcfName.length() < 1)
+                            qcfName = provider.getDefaultDestinationFactoryUrl();
+                        if (qcfName != null)
+                            getQcfNameTextField().setText(qcfName);
+
+                        String curName = getNameTextField().getText();
+                        boolean wasDefaultName = defaultName.equals(curName) || curName.length() < 1;
+                        driverName = provider.getName();
+                        updateDefaultName();
+                        if (wasDefaultName)
+                            getNameTextField().setText(defaultName);
+                    }
+                });
+
             } catch (RemoteException e) {
                 throw new RuntimeException("Unable to obtain list of installed JMS providers from Gateway", e);
             }
@@ -197,9 +229,41 @@ public class NewJmsConnectionDialog extends JDialog {
         return driverComboBox;
     }
 
+    private static Pattern findHost = Pattern.compile("^[^:]*:/?/?/?(?:[^\\@/]*\\@)?([a-zA-Z0-9._\\-]*).*", Pattern.DOTALL);
+
+    // Make a default name for this connection based on available information
+    private void updateDefaultName() {
+        String d = (driverName == null || driverName.length() < 1) ? "unknown" : driverName;
+        String s = "unknown";
+        String urlStr = getJndiUrlTextField().getText();
+        Matcher matcher= findHost.matcher(urlStr);
+        if (matcher.matches() && matcher.group(1).length() > 0)
+            s = matcher.group(1);
+        defaultName = d + " on " + s;
+        System.err.println("Default name: " + defaultName);
+    }
+
+    private FormPreener formPreener = new FormPreener();
+    private class FormPreener implements DocumentListener {
+        public void insertUpdate(DocumentEvent e) { changed(e); }
+        public void removeUpdate(DocumentEvent e) { changed(e); }
+        public void changedUpdate(DocumentEvent e) { changed(e); }
+        private void changed(DocumentEvent e) {
+            if (!e.getDocument().equals(getNameTextField().getDocument())) {
+                String curName = getNameTextField().getText();
+                boolean wasDefaultName = defaultName.equals(curName) || curName.length() < 1;
+                updateDefaultName();
+                if (wasDefaultName && !curName.equals(defaultName))
+                    getNameTextField().setText(defaultName);
+            }
+            enableOrDisableComponents();
+        }
+    }
+
     private JTextField getJndiUrlTextField() {
         if (jndiUrlTextField == null) {
             jndiUrlTextField = new JTextField();
+            jndiUrlTextField.getDocument().addDocumentListener(formPreener);
         }
         return jndiUrlTextField;
     }
@@ -207,6 +271,7 @@ public class NewJmsConnectionDialog extends JDialog {
     private JTextField getQcfNameTextField() {
         if (qcfNameTextField == null) {
             qcfNameTextField = new JTextField();
+            qcfNameTextField.getDocument().addDocumentListener(formPreener);
         }
         return qcfNameTextField;
     }
@@ -241,6 +306,15 @@ public class NewJmsConnectionDialog extends JDialog {
                     JmsProvider provider = ((ProviderComboBoxItem)getDriverComboBox().getSelectedItem()).getProvider();
                     JmsConnection conn = provider.createConnection(getNameTextField().getText(),
                                                                    getJndiUrlTextField().getText());
+
+                    if (optionalCredentialsPanel.isUsernameAndPasswordRequired()) {
+                        conn.setUsername(optionalCredentialsPanel.getUsername());
+                        conn.setPassword(new String(optionalCredentialsPanel.getPassword()));
+                    }
+
+                    conn.setQueueFactoryUrl(qcfNameTextField.getText());
+
+
                     try {
                         long oid = Registry.getDefault().getJmsManager().saveConnection(conn);
                         conn.setOid(oid);
@@ -267,6 +341,12 @@ public class NewJmsConnectionDialog extends JDialog {
         if (getDriverComboBox().getSelectedItem() == null)
             return false;
         return true;
+    }
+
+    /** Adjust components based on the state of the form. */
+    private void enableOrDisableComponents() {
+        saveButton.setEnabled(validateForm());
+        testButton.setEnabled(validateForm());
     }
 
     private JButton getCancelButton() {
