@@ -25,6 +25,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 import java.security.GeneralSecurityException;
 
 /**
@@ -52,22 +53,40 @@ public class TokenServiceServlet extends HttpServlet {
         try {
             payload = extractXMLPayload(req);
         } catch (ParserConfigurationException e) {
-            // todo, some error
+            String msg = "Could not parse payload as xml. " + e.getMessage();
+            logger.log(Level.SEVERE, msg, e);
+            res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
+            return;
         } catch (SAXException e) {
-            // todo, some error
+            String msg = "Could not parse payload as xml. " + e.getMessage();
+            logger.log(Level.WARNING, msg, e);
+            res.sendError(HttpServletResponse.SC_BAD_REQUEST, msg);
+            return;
         }
         TokenService tokenService = new TokenService();
         Document response = null;
         try {
             response = tokenService.respondToRequestSecurityToken(payload, authenticator());
         } catch (InvalidDocumentFormatException e) {
-            // todo
+            String msg = "Request is not formattted as expected. " + e.getMessage();
+            logger.log(Level.INFO, msg, e);
+            res.sendError(HttpServletResponse.SC_BAD_REQUEST, msg);
+            return;
         } catch (TokenService.TokenServiceException e) {
-            // todo
+            String msg = "Could not respond to RequestSecurityToken. " + e.getMessage();
+            logger.log(Level.SEVERE, msg, e);
+            res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
+            return;
         } catch (WssProcessor.ProcessorException e) {
-            // todo
+            String msg = "Could not respond to RequestSecurityToken. " + e.getMessage();
+            logger.log(Level.SEVERE, msg, e);
+            res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
+            return;
         } catch (GeneralSecurityException e) {
-            // todo
+            String msg = "Could not respond to RequestSecurityToken. " + e.getMessage();
+            logger.log(Level.SEVERE, msg, e);
+            res.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, msg);
+            return;
         }
         outputRequestSecurityTokenResponse(response, res);
     }
