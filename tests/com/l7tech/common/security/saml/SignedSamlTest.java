@@ -3,7 +3,6 @@ package com.l7tech.common.security.saml;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.xml.WssDecorator;
 import com.l7tech.common.security.xml.WssDecoratorImpl;
-import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
@@ -13,25 +12,21 @@ import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import com.l7tech.server.saml.HolderOfKeyHelper;
 import com.l7tech.server.saml.SamlAssertionGenerator;
 import com.l7tech.server.saml.SamlAssertionHelper;
-import com.ibm.xml.dsig.*;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.apache.xerces.dom.DocumentImpl;
-import org.apache.xmlbeans.XmlOptions;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.DocumentFragment;
 import org.w3c.dom.Node;
+import org.xml.sax.SAXException;
 
-import javax.xml.namespace.QName;
+import java.io.IOException;
 import java.net.InetAddress;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -39,8 +34,6 @@ import java.util.logging.Logger;
  * @version $Revision$
  */
 public class SignedSamlTest extends TestCase {
-    public static final Logger log = Logger.getLogger(SignedSamlTest.class.getName());
-
     /**
      * test <code>SignedSamlTest</code> constructor
      */
@@ -76,80 +69,24 @@ public class SignedSamlTest extends TestCase {
         System.out.println("Client cert: " + clientCertChain[0]);
     }
 
-    private Document getUnsignedHolderOfKeyAssertion(String assertionId) throws Exception {
-        final String clientDn = clientCertChain[0].getSubjectDN().getName();
-        final Map clientCertDnMap = CertUtils.dnToAttributeMap(clientDn);
-        final String clientCertCn = (String)((List)clientCertDnMap.get("CN")).get(0);
-        System.out.println("Client CN = " + clientCertCn);
-
-        final String caDn = caCertChain[0].getSubjectDN().getName();
-        final Map caCertDnMap = CertUtils.dnToAttributeMap(caDn);
-        final String caCertCn = (String)((List)caCertDnMap.get("CN")).get(0);
-        System.out.println("CA CN = " + caCertCn);
-
+    private Document getUnsignedHolderOfKeyAssertion(String id) throws IOException, SAXException, CertificateException {
         LoginCredentials creds = new LoginCredentials(null, null, CredentialFormat.CLIENTCERT, RequestWssX509Cert.class, null, clientCertChain[0]);
         SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
         samlOptions.setClientAddress(InetAddress.getLocalHost());
-
         Document doc = new DocumentImpl();
         SignerInfo si = new SignerInfo(caPrivateKey, caCertChain);
         HolderOfKeyHelper hh = new HolderOfKeyHelper(doc, samlOptions, creds, si);
-        Document samlDoc = hh.createAssertion(assertionId);
+        Document samlDoc = hh.createAssertion(id);
         return samlDoc;
-    }
-
-    public void testSignedHolderOfKey() throws Exception {
-        Document assertionDoc = getSignedHolderOfKey("mySamlAssertion");
-        String s3 = XmlUtil.nodeToFormattedString(assertionDoc);
-        System.out.println("After signing: " + s3);
     }
 
     public Document getSignedHolderOfKey(final String assertionId) throws Exception {
         final Document assertionDoc = getUnsignedHolderOfKeyAssertion(assertionId);
 
-        final HashMap prefixMap = new HashMap();
-        prefixMap.put(Constants.NS_SAML, "saml");
-        prefixMap.put(SoapUtil.DIGSIG_URI, "ds");
-
-        final XmlOptions xmlOptions = new XmlOptions();
-        xmlOptions.setSaveSyntheticDocumentElement(new QName(Constants.NS_SAML, Constants.ELEMENT_ASSERTION));
-        xmlOptions.setSavePrettyPrint();
-        xmlOptions.setSaveAggresiveNamespaces();
-        xmlOptions.setSaveSuggestedPrefixes(prefixMap);
-
         String s2 = XmlUtil.nodeToFormattedString(assertionDoc);
         System.out.println("Before signing: " + s2);
 
-        TemplateGenerator template = new TemplateGenerator( assertionDoc, XSignature.SHA1,
-                                                            Canonicalizer.EXCLUSIVE, SignatureMethod.RSA);
-        template.setPrefix("ds");
-        Reference ref = template.createReference("#" + assertionId);
-        ref.addTransform(Transform.ENVELOPED);
-        ref.addTransform(Transform.C14N_EXCLUSIVE);
-        template.addReference(ref);
-
-        SignatureContext context = new SignatureContext();
-        context.setIDResolver(new IDResolver() {
-            public Element resolveID( Document document, String s ) {
-                if (assertionId.equals(s))
-                    return assertionDoc.getDocumentElement();
-                else
-                    throw new IllegalArgumentException("I don't know how to find " + s);
-            }
-        });
-
-        final Element signatureElement = template.getSignatureElement();
-        assertionDoc.getDocumentElement().appendChild(signatureElement);
-        KeyInfo keyInfo = new KeyInfo();
-        KeyInfo.X509Data x509 = new KeyInfo.X509Data();
-        x509.setCertificate(caCertChain[0]);
-        x509.setParameters(caCertChain[0], false, false, true);
-        keyInfo.setX509Data(new KeyInfo.X509Data[] { x509 });
-
-        signatureElement.appendChild(keyInfo.getKeyInfoElement(assertionDoc));
-
-        context.sign(signatureElement, caPrivateKey);
-        //SamlAssertionHelper.signAssertion(assertionDoc, caPrivateKey, caCertChain);
+        SamlAssertionHelper.signAssertion(assertionDoc, caPrivateKey, caCertChain);
 
         return assertionDoc;
     }
@@ -210,4 +147,5 @@ public class SignedSamlTest extends TestCase {
     private PrivateKey clientPrivateKey;
     private PublicKey clientPublicKey;
     private X509Certificate[] clientCertChain;
+    private Logger log = Logger.getLogger(getClass().getName());
 }

@@ -8,6 +8,7 @@ package com.l7tech.skunkworks;
 
 import com.l7tech.common.util.HexUtils;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.security.KeyStore;
 import java.security.Signature;
@@ -34,12 +35,14 @@ public class JceSignaturePlayground {
         int threads = Integer.valueOf(sthreads).intValue();
 
         FileInputStream fis = null;
-        KeyStore ks;
+        KeyStore ks = KeyStore.getInstance(kstype);
 
         try {
-            fis = new FileInputStream(keystore);
-            ks = KeyStore.getInstance(kstype);
-            ks.load(fis,storepass.toCharArray());
+            File keystoreFile = new File(keystore);
+            if (keystoreFile.exists()) {
+                fis = new FileInputStream(keystore);
+                ks.load(fis,storepass.toCharArray());
+            }
         } finally {
             if ( fis != null ) fis.close();
         }

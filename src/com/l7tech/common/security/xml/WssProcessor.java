@@ -7,8 +7,10 @@
 package com.l7tech.common.security.xml;
 
 import com.l7tech.common.xml.InvalidDocumentFormatException;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import x0Assertion.oasisNamesTcSAML1.AssertionType;
 
 import javax.crypto.SecretKey;
 import java.security.GeneralSecurityException;
@@ -28,16 +30,11 @@ public interface WssProcessor {
     }
 
     public interface SecurityToken extends ParsedElement {
-        /**
-         * Get the object format for this Security Token if applicable. Possible types
-         * are LoginCredentials for UsernameToken, X509Certificate for BinarySecurityToken
-         * or AssertionType for SamlSecurityToken.
-         */
-        Object asObject();
+        String getElementId();
     }
 
     public interface UsernameToken extends SecurityToken {
-        String getUsername();
+        LoginCredentials asLoginCredentials();
     }
 
     public interface X509SecurityToken extends SecurityToken {
@@ -46,6 +43,9 @@ public interface WssProcessor {
     }
 
     public interface SamlSecurityToken extends SecurityToken {
+        AssertionType asAssertion();
+        X509Certificate getSubjectCertificate();
+        boolean isPossessionProved();
     }
 
     public interface SecurityContextToken extends SecurityToken {

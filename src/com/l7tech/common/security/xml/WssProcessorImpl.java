@@ -20,10 +20,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
-import x0Assertion.oasisNamesTcSAML1.AssertionType;
-import x0Assertion.oasisNamesTcSAML1.SubjectConfirmationType;
-import x0Assertion.oasisNamesTcSAML1.SubjectStatementAbstractType;
-import x0Assertion.oasisNamesTcSAML1.SubjectType;
+import x0Assertion.oasisNamesTcSAML1.*;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
@@ -417,16 +414,25 @@ public class WssProcessorImpl implements WssProcessor {
         }
         // Remember this as a security token
         final LoginCredentials creds = new LoginCredentials(username, passwd.toCharArray(), null);
-        WssProcessor.SecurityToken rememberedSecToken = new WssProcessor.UsernameToken() {
-            public Object asObject() {
-                return creds;
-            }
+        WssProcessor.SecurityToken rememberedSecToken = new UsernameToken() {
             public Element asElement() {
                 return usernameTokenElement;
             }
 
             public String getUsername() {
                 return creds.getLogin();
+            }
+
+            public LoginCredentials asLoginCredentials() {
+                return creds;
+            }
+
+            public String getElementId() {
+                return SoapUtil.getElementWsuId(usernameTokenElement);
+            }
+
+            public String toString() {
+                return "UsernameToken: " + creds.getLogin();
             }
         };
         cntx.securityTokens.add(rememberedSecToken);
@@ -688,9 +694,10 @@ public class WssProcessorImpl implements WssProcessor {
     {
         logger.finest("Processing saml:Assertion XML SecurityToken");
         try {
-            AssertionType assertion = AssertionType.Factory.parse( securityTokenElement );
-            SamlSecurityToken saml = new SamlSecurityTokenImpl(securityTokenElement, assertion);
-            context.securityTokens.add(saml);
+            AssertionType assertion = AssertionDocument.Factory.parse( securityTokenElement ).getAssertion();
+            SamlSecurityToken samlToken = new SamlSecurityTokenImpl(securityTokenElement, assertion);
+            context.securityTokens.add(samlToken);
+            context.x509TokensById.put(samlToken.getElementId(), samlToken);
 
             // TODO verify sender-vouches + proof-of-possession
         } catch (XmlException e) {
@@ -698,7 +705,7 @@ public class WssProcessorImpl implements WssProcessor {
         }
     }
 
-    private X509SecurityTokenImpl resolveCertByRef(final Element parentElement, ProcessingStatusHolder cntx) {
+    private SigningSecurityTokenImpl resolveCertByRef(final Element parentElement, ProcessingStatusHolder cntx) {
         // TODO SAML
         // Looking for reference to a wsse:BinarySecurityToken or to a derived key
         // 1. look for a wsse:SecurityTokenReference element
@@ -725,9 +732,9 @@ public class WssProcessorImpl implements WssProcessor {
                     uriAttr = uriAttr.substring(1);
                 }
                 // try to see if this reference matches a previously parsed X509SecurityToken
-                final X509SecurityTokenImpl token = (X509SecurityTokenImpl) cntx.x509TokensById.get(uriAttr);
+                final SigningSecurityTokenImpl token = (SigningSecurityTokenImpl)cntx.x509TokensById.get(uriAttr);
                 if (token != null) {
-                    logger.finest("The keyInfo reffered to a previously parsed BinarySecurityToken  " + uriAttr);
+                    logger.finest("The keyInfo referred to a previously parsed BinarySecurityToken  " + uriAttr);
                     return token;
                 } else {
                     logger.fine("The reference " + uriAttr + " did not point to a X509Cert.");
@@ -768,7 +775,7 @@ public class WssProcessorImpl implements WssProcessor {
                 for (Iterator i = cntx.derivedKeyTokens.iterator(); i.hasNext();) {
                     Object maybeDerivedKey = i.next();
                     if (maybeDerivedKey instanceof DerivedKeyTokenImpl) {
-                        if (((DerivedKeyTokenImpl)maybeDerivedKey).getId().equals(uriAttr)) {
+                        if (((DerivedKeyTokenImpl)maybeDerivedKey).getElementId().equals(uriAttr)) {
                             return (DerivedKeyTokenImpl)maybeDerivedKey;
                         }
                     }
@@ -820,10 +827,10 @@ public class WssProcessorImpl implements WssProcessor {
         // Try to find ref to derived key
         final DerivedKeyTokenImpl dkt = resolveDerivedKeyByRef(keyInfoElement, cntx);
         // Try to resolve cert by reference
-        final X509SecurityTokenImpl signingCertToken = resolveCertByRef(keyInfoElement, cntx);
+        final SigningSecurityTokenImpl signingCertToken = resolveCertByRef(keyInfoElement, cntx);
 
         if (signingCertToken != null) {
-            signingCert = signingCertToken.asX509Certificate();
+            signingCert = signingCertToken.getCertificate();
         }
         if (signingCert == null) { //try to resolve it as embedded
             signingCert = resolveEmbeddedCert(keyInfoElement);
@@ -976,7 +983,7 @@ public class WssProcessorImpl implements WssProcessor {
         Element originalDocumentSecurityHeader = null;
     }
 
-    private static class X509SecurityTokenImpl extends PossessionProvedX509SecurityToken {
+    private static class X509SecurityTokenImpl extends SigningSecurityTokenImpl implements X509SecurityToken {
         private final X509Certificate finalcert;
         private final Element binarySecurityTokenElement;
 
@@ -985,7 +992,11 @@ public class WssProcessorImpl implements WssProcessor {
             this.binarySecurityTokenElement = binarySecurityTokenElement;
         }
 
-        public Object asObject() {
+        public String getElementId() {
+            return SoapUtil.getElementWsuId(binarySecurityTokenElement);
+        }
+
+        protected X509Certificate getCertificate() {
             return finalcert;
         }
 
@@ -996,55 +1007,48 @@ public class WssProcessorImpl implements WssProcessor {
         public X509Certificate asX509Certificate() {
             return finalcert;
         }
+
+        public String toString() {
+            return "X509SecurityToken: " + finalcert.toString();
+        }
+
     }
 
-    private static abstract class PossessionProvedX509SecurityToken implements X509SecurityToken {
+    private static abstract class SigningSecurityTokenImpl implements SecurityToken {
+        protected abstract X509Certificate getCertificate();
+
         public boolean isPossessionProved() {
             return possessionProved;
         }
 
         protected void onPossessionProved() {
-            this.possessionProved = true;
+            possessionProved = true;
         }
 
-        private boolean possessionProved;
+        private boolean possessionProved = false;
     }
 
-    private static class SamlSecurityTokenImpl extends PossessionProvedX509SecurityToken implements SamlSecurityToken {
+    private static class SamlSecurityTokenImpl extends SigningSecurityTokenImpl implements SamlSecurityToken {
         public SamlSecurityTokenImpl(Element element, AssertionType assertion) throws InvalidDocumentFormatException {
             this.element = element;
             this.assertion = assertion;
 
-            SubjectStatementAbstractType[] subjectStatements = assertion.getSubjectStatementArray();
-            for (int i = 0; i < subjectStatements.length; i++) {
-                SubjectStatementAbstractType subjectStatement = subjectStatements[i];
+            AuthenticationStatementType[] authStatements = assertion.getAuthenticationStatementArray();
 
-                SubjectType subject = subjectStatement.getSubject();
-                if (subject == null) continue;
+            AuthenticationStatementType authStatement = authStatements[0];
+            SubjectType subject = authStatement.getSubject();
+            SubjectConfirmationType subjectConfirmation = subject.getSubjectConfirmation();
+            KeyInfoType keyInfo = subjectConfirmation.getKeyInfo();
+            X509DataType[] x509datas = keyInfo.getX509DataArray();
+            X509DataType x509data = x509datas[0];
 
-                SubjectConfirmationType subjectConfirmation = subject.getSubjectConfirmation();
-                if (subjectConfirmation == null) continue;
-
-                KeyInfoType keyInfo = subjectConfirmation.getKeyInfo();
-                if (keyInfo == null) continue;
-
-                X509DataType[] x509datas = keyInfo.getX509DataArray();
-                if (x509datas == null || x509datas.length == 0) continue;
-
-                X509DataType x509data = x509datas[0];
-                try {
-                    this.certificate = CertUtils.decodeCert(x509data.getX509CertificateArray(0));
-                    break;
-                } catch ( CertificateException e ) {
-                    final String msg = "Certificate in SAML assertion could not be parsed";
-                    logger.log(Level.WARNING, msg, e );
-                    throw new InvalidDocumentFormatException(e);
-                }
+            try {
+                this.certificate = CertUtils.decodeCert(x509data.getX509CertificateArray(0));
+            } catch ( CertificateException e ) {
+                final String msg = "Certificate in SAML assertion could not be parsed";
+                logger.log(Level.WARNING, msg, e );
+                throw new InvalidDocumentFormatException(e);
             }
-        }
-
-        public Object asObject() {
-            return assertion;
         }
 
         public Element asElement() {
@@ -1055,8 +1059,24 @@ public class WssProcessorImpl implements WssProcessor {
          * May be null if the assertion has no SubjectConfirmation with a KeyInfo block inside.
          * @return the X509Certificate from the SAML Assertion's //SubjectConfirmation/KeyInfo. May be null.
          */
-        public X509Certificate asX509Certificate() {
+        public X509Certificate getCertificate() {
             return certificate;
+        }
+
+        public AssertionType asAssertion() {
+            return assertion;
+        }
+
+        public X509Certificate getSubjectCertificate() {
+            return certificate;
+        }
+
+        public String getElementId() {
+            return element.getAttribute(Constants.ATTR_ASSERTION_ID);
+        }
+
+        public String toString() {
+            return "SamlSecurityToken: " + assertion.toString();
         }
 
         private Element element;
@@ -1107,6 +1127,7 @@ public class WssProcessorImpl implements WssProcessor {
     private static final WssProcessor.SecurityToken[] PROTOTYPE_SECURITYTOKEN_ARRAY = new WssProcessor.SecurityToken[0];
 
     private static class DerivedKeyTokenImpl implements SecurityToken {
+
         private final Element dktel;
         private final Key finalKey;
         private final SecurityContextTokenImpl sct;
@@ -1117,13 +1138,11 @@ public class WssProcessorImpl implements WssProcessor {
             this.sct = sct;
         }
 
-        String getId() {
+        public String getElementId() {
             return SoapUtil.getElementWsuId(dktel);
         }
+
         Key getComputedDerivedKey() {
-            return finalKey;
-        }
-        public Object asObject() {
             return finalKey;
         }
         public Element asElement() {
@@ -1131,6 +1150,10 @@ public class WssProcessorImpl implements WssProcessor {
         }
         SecurityContextTokenImpl getSecurityContextToken() {
             return sct;
+        }
+
+        public String toString() {
+            return "DerivedKeyToken: " + finalKey.toString();
         }
     }
 
@@ -1149,9 +1172,11 @@ public class WssProcessorImpl implements WssProcessor {
         public WssProcessor.SecurityContext getSecurityContext() {
             return secContext;
         }
-        public Object asObject() {
-            return secContext;
+
+        public String getElementId() {
+            return SoapUtil.getElementWsuId(secConTokEl);
         }
+
         public Element asElement() {
             return secConTokEl;
         }
@@ -1166,6 +1191,10 @@ public class WssProcessorImpl implements WssProcessor {
 
         void onPossessionProved() {
             possessionProved = true;
+        }
+
+        public String toString() {
+            return "SecurityContextToken: " + secContext.toString();
         }
     }
 }

@@ -81,7 +81,13 @@ public class WssProcessorTest extends TestCase {
             log.info("The following security tokens were found:");
             for (int j = 0; j < tokens.length; j++) {
                 WssProcessor.SecurityToken token = tokens[j];
-                log.info("  " + token.asObject());
+                if (token instanceof WssProcessor.SamlSecurityToken) {
+                    log.info("Possession proved: " + ((WssProcessor.SamlSecurityToken)token).isPossessionProved());
+                } else if (token instanceof WssProcessor.X509SecurityToken) {
+                    log.info("Possession proved: " + ((WssProcessor.X509SecurityToken)token).isPossessionProved());
+                }
+
+                log.info("  " + token);
             }
         } else
             log.info("No security tokens were found.");
