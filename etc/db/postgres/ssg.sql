@@ -317,7 +317,7 @@ CREATE TABLE fed_user (
   UNIQUE KEY i_name (provider_oid, name)
 );
 
-DROP TABLE IF EXISTS fed_group;
+DROP TABLE fed_group;
 CREATE TABLE fed_group (
   objectid bigint NOT NULL,
   version integer NOT NULL,
@@ -330,7 +330,7 @@ CREATE TABLE fed_group (
   UNIQUE KEY i_name (provider_oid, name)
 );
 
-DROP TABLE IF EXISTS fed_user_group;
+DROP TABLE fed_user_group;
 CREATE TABLE fed_user_group (
   provider_oid bigint NOT NULL,
   fed_user_oid bigint NOT NULL,
@@ -338,7 +338,7 @@ CREATE TABLE fed_user_group (
   PRIMARY KEY (provider_oid,fed_user_oid,fed_group_oid)
 );
 
-DROP TABLE IF EXISTS fed_group_virtual;
+DROP TABLE fed_group_virtual;
 CREATE TABLE fed_group_virtual (
   objectid bigint NOT NULL,
   version integer NOT NULL,
@@ -357,4 +357,73 @@ CREATE TABLE fed_group_virtual (
   UNIQUE KEY i_name (provider_oid, name)
 );
 
+--
+-- Table structure for table `audit`
+--
 
+DROP TABLE audit;
+CREATE TABLE audit (
+  objectid bigint NOT NULL,
+  nodeid varchar(18) NOT NULL,
+  time bigint NOT NULL,
+  level varchar(12) NOT NULL,
+  message varchar(255) NOT NULL,
+  PRIMARY KEY  (objectid),
+  INDEX idx_nodeid (nodeid),
+  INDEX idx_time (time),
+  INDEX idx_level (level)
+);
+
+--
+-- Table structure for table `audit_admin`
+--
+
+DROP TABLE audit_admin;
+CREATE TABLE audit_admin (
+  objectid bigint NOT NULL,
+  admin_login varchar(32) NOT NULL,
+  entity_class varchar(255) default NULL,
+  entity_id bigint default NULL,
+  PRIMARY KEY  (objectid),
+  INDEX idx_class (entity_class),
+  INDEX idx_oid (entity_id)
+);
+
+--
+-- Table structure for table `audit_message`
+--
+
+DROP TABLE audit_message;
+CREATE TABLE audit_message (
+  objectid bigint NOT NULL,
+  status varchar(32) NOT NULL,
+  request_id varchar(40) NOT NULL,
+  client_address varchar(32) NOT NULL,
+  service_oid bigint,
+  service_name varchar(128),
+  user_name varchar(64),
+  authenticated boolean default 'F',
+  provider_oid bigint,
+  user_id varchar(128),
+  request_length integer NOT NULL,
+  response_length integer,
+  request_xml text,
+  response_xml text,
+  PRIMARY KEY  (objectid),
+  INDEX idx_status (status),
+  INDEX idx_request_id (request_id),
+  INDEX idx_client_address (client_address),
+  INDEX idx_service_oid (service_oid),
+  INDEX idx_provider_oid (provider_oid),
+  INDEX idx_user_id (user_id)
+);
+
+DROP TABLE audit_system;
+CREATE TABLE audit_system (
+  objectid bigint NOT NULL,
+  component varchar(32) NOT NULL,
+  action varchar(32) NOT NULL,
+  PRIMARY KEY (objectid),
+  INDEX idx_component (component),
+  INDEX idx_action (action)
+);

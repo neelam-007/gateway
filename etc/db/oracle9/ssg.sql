@@ -335,6 +335,73 @@ CREATE INDEX i_fgv_provider_oid ON fed_group_virtual (provider_oid);
 CREATE INDEX i_fgv_x509_subject_dn_pattern ON fed_group_virtual (x509_subject_dn_pattern);
 CREATE INDEX i_fgv_saml_email_pattern ON fed_group_virtual (saml_email_pattern);
 
+--
+-- Table structure for table `audit`
+--
 
+DROP TABLE audit;
+CREATE TABLE audit (
+  objectid number(38,0) NOT NULL,
+  nodeid varchar(18) NOT NULL,
+  time number(38,0) NOT NULL,
+  level varchar(12) NOT NULL,
+  message varchar(255) NOT NULL,
+  PRIMARY KEY  (objectid)
+);
+CREATE INDEX i_audit_nodeid ON audit (nodeid);
+CREATE INDEX i_audit_time ON audit (time);
+CREATE INDEX i_audit_level ON audit (level);
 
+--
+-- Table structure for table `audit_admin`
+--
 
+DROP TABLE audit_admin;
+CREATE TABLE audit_admin (
+  objectid number(38,0) NOT NULL,
+  admin_login varchar(32) NOT NULL,
+  entity_class varchar(255) default NULL,
+  entity_id number(38,0) default NULL,
+  PRIMARY KEY  (objectid)
+);
+CREATE INDEX i_audit_admin_class ON audit_admin (entity_class);
+CREATE INDEX i_audit_admin_oid ON audit_admin (entity_id);
+
+--
+-- Table structure for table `audit_message`
+--
+
+DROP TABLE audit_message;
+CREATE TABLE audit_message (
+  objectid number(38,0) NOT NULL,
+  status varchar(32) NOT NULL,
+  request_id varchar(40) NOT NULL,
+  client_address varchar(32) NOT NULL,
+  service_oid number(38,0),
+  service_name varchar(128),
+  user_name varchar(64),
+  authenticated char(1),
+  provider_oid number(38,0),
+  user_id varchar(128),
+  request_length integer NOT NULL,
+  response_length integer,
+  request_xml clob,
+  response_xml clob,
+  PRIMARY KEY  (objectid)
+);
+CREATE INDEX i_audit_message_status ON audit_message (status);
+CREATE INDEX i_audit_message_request_id ON audit_message (request_id);
+CREATE INDEX i_audit_message_client_address ON audit_message (client_address);
+CREATE INDEX i_audit_message_service_oid ON audit_message (service_oid);
+CREATE INDEX i_audit_message_provider_oid ON audit_message (provider_oid);
+CREATE INDEX i_audit_message_user_id ON audit_message (user_id);
+
+DROP TABLE audit_system;
+CREATE TABLE audit_system (
+  objectid number(38,0) NOT NULL default '0',
+  component varchar(32) NOT NULL,
+  action varchar(32) NOT NULL,
+  PRIMARY KEY (objectid)
+);
+CREATE INDEX i_audit_system_component ON audit_system (component);
+CREATE INDEX i_audit_system_action ON audit_system (action);
