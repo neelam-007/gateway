@@ -11,6 +11,7 @@ import com.l7tech.common.xml.XpathExpression;
 import com.l7tech.common.util.SoapUtil;
 
 import javax.xml.soap.SOAPConstants;
+import javax.xml.rpc.NamespaceConstants;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -47,7 +48,7 @@ public class RequestXpathAssertion extends XpathBasedAssertion {
 
     private void initDefaultXpath() {
         Map nsmap = new HashMap();
-        nsmap.put("soapenv", SOAPConstants.URI_NS_SOAP_ENVELOPE);
+        nsmap.put(NamespaceConstants.NSPREFIX_SOAP_ENVELOPE, SOAPConstants.URI_NS_SOAP_ENVELOPE);
         setXpathExpression(new XpathExpression(SoapUtil.SOAP_ENVELOPE_XPATH, nsmap));
     }
 
