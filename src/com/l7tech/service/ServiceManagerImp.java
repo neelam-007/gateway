@@ -6,11 +6,10 @@
 
 package com.l7tech.service;
 
-import com.l7tech.objectmodel.*;
 import com.l7tech.message.Request;
-import com.l7tech.service.resolution.*;
+import com.l7tech.objectmodel.*;
+import com.l7tech.service.resolution.ServiceResolutionException;
 
-import javax.naming.InitialContext;
 import java.rmi.RemoteException;
 import java.sql.SQLException;
 import java.util.*;
