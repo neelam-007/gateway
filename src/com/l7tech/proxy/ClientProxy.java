@@ -48,7 +48,7 @@ public class ClientProxy {
      * Get our RequestHandler.
      * @return the RequestHandler we are using.
      */
-    public RequestHandler getRequestHandler() {
+    public synchronized RequestHandler getRequestHandler() {
         if (requestHandler == null) {
             requestHandler = new RequestHandler(ssgFinder);
         }
@@ -59,7 +59,7 @@ public class ClientProxy {
     /**
      * Get our HttpServer.
      */
-    private HttpServer getHttpServer() {
+    private synchronized HttpServer getHttpServer() {
         mustNotBeDestroyed();
         if (httpServer == null) {
             httpServer = new HttpServer();
