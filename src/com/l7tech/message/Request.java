@@ -7,6 +7,7 @@
 package com.l7tech.message;
 
 import com.l7tech.policy.assertion.credential.PrincipalCredentials;
+import com.l7tech.common.protocol.SecureSpanConstants;
 
 /**
  * @author alex
@@ -55,7 +56,7 @@ public interface Request extends Message {
     /** The name of the parameter containing the HTTP Accept-Encoding header */
     public static final String PARAM_HTTP_ACCEPT_ENCODING   = PREFIX_HTTP_HEADER + ".Accept-Encoding";
     /** The name of the parameter containing the original URL requested of the Client Proxy */
-    public static final String PARAM_HTTP_L7_ORIGINAL_URL   = PREFIX_HTTP_HEADER + ".l7-original-url";
+    public static final String PARAM_HTTP_ORIGINAL_URL      = PREFIX_HTTP_HEADER + "." + SecureSpanConstants.HttpHeaders.ORIGINAL_URL;
 
     /** The name of the parameter containing the X.509 client certificate associated with this <code>Request</code>'s underlying <code>HttpServletRequest</code>. */
     public static final String PARAM_HTTP_X509CERT          = "javax.servlet.request.X509Certificate";
@@ -64,6 +65,9 @@ public interface Request extends Message {
     public static final String PARAM_HTTP_METHOD            = PREFIX_HTTP + ".method";
     /** The name of the parameter containing the HTTP URI (i.e. /ssg/soap) */
     public static final String PARAM_HTTP_REQUEST_URI       = PREFIX_HTTP + ".request-uri";
+
+    public static final String PARAM_HTTP_XML_NONCE         = PREFIX_HTTP_HEADER + "." + SecureSpanConstants.HttpHeaders.XML_NONCE_HEADER_NAME;
+    public static final String PARAM_HTTP_XML_SESSID        = PREFIX_HTTP_HEADER + "." + SecureSpanConstants.HttpHeaders.XML_SESSID_HEADER_NAME;
 
     /**
      * Returns the <code>PrincipalCredentials</code> associated with this request,
