@@ -1,9 +1,9 @@
 package com.l7tech.server.identity;
 
+import com.l7tech.common.Authorizer;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.Locator;
-import com.l7tech.common.Authorizer;
 import com.l7tech.identity.*;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.internal.InternalUser;
@@ -217,7 +217,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
                     logger.log(Level.WARNING, "exception rolling back", e1);
                 }
 
-                throw new DeleteException(e.toString());
+                throw new DeleteException(e.getMessage(), e);
             }
         }
     }
@@ -249,6 +249,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
             IdentityProvider provider = IdentityProviderFactory.getProvider(identityProviderConfigId);
             if (provider == null) throw new FindException("IdentityProvider could not be found");
             if (types != null) {
+                // TODO is this necessary?   EntityType already has a readResolve()
                 for (int i = 0; i < types.length; i++) {
                     types[i] = EntityType.fromValue(types[i].getVal());
                 }
