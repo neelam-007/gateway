@@ -181,7 +181,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
         }
     }
 
-    public String saveUser(long identityProviderConfigId, User user)
+    public String saveUser(long identityProviderConfigId, User user, Set groupHeaders )
                                     throws RemoteException, SaveException, UpdateException {
         beginTransaction();
         try {
@@ -189,16 +189,16 @@ public class IdentityAdminImpl implements IdentityAdmin {
             IdentityProvider provider = IdentityProviderFactory.makeProvider(cfg);
             UserManager userManager = provider.getUserManager();
 
-            // Groups are separate now
-
             String id = user.getUniqueIdentifier();
-            if ( id != null ) {
-                userManager.update(user);
-                logger.info("Updated User: " + user.getLogin() + "[" + id + "]");
-                return id;
+            if ( id == null ) {
+                id = userManager.save(user, groupHeaders);
+                logger.info("Saved User: " + user.getLogin() + " [" + id + "]" );
+            } else {
+                userManager.update(user, groupHeaders);
+                logger.info("Updated User: " + user.getLogin() + " [" + id + "]");
             }
-            logger.info("Saving User: " + user.getLogin());
-            return userManager.save(user);
+
+            return id;
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
             throw new RemoteException("Exception in saveUser", e);
@@ -252,7 +252,7 @@ public class IdentityAdminImpl implements IdentityAdmin {
         }
     }
 
-    public String saveGroup(long identityProviderConfigId, Group group)
+    public String saveGroup(long identityProviderConfigId, Group group, Set userHeaders )
                                 throws RemoteException, SaveException, UpdateException {
         beginTransaction();
         try {
@@ -261,14 +261,15 @@ public class IdentityAdminImpl implements IdentityAdmin {
             GroupManager groupManager = provider.getGroupManager();
 
             String id = group.getUniqueIdentifier();
-            if ( id != null ) {
-                groupManager.update(group);
-                logger.info("Updated Group: " + group.getName() + "[" + id + "]");
-                return id;
+            if ( id == null ) {
+                id = groupManager.save(group, userHeaders);
+                logger.info("Saved Group: " + group.getName() + " [" + id + "]" );
+            } else {
+                groupManager.update(group, userHeaders);
+                logger.info("Updated Group: " + group.getName() + " [" + id + "]");
             }
 
-            logger.info("Saving Group: " + group.getName());
-            return groupManager.save(group);
+            return id;
         } catch (FindException e) {
             logger.log(Level.SEVERE, null, e);
             throw new RemoteException("FindException in saveGroup", e);

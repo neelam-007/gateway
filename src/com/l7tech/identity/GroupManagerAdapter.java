@@ -40,6 +40,14 @@ public class GroupManagerAdapter implements GroupManager {
         throw new UnsupportedOperationException();
     }
 
+    public String save(Group group, Set userHeaders) throws SaveException {
+        throw new UnsupportedOperationException();
+    }
+
+    public void update(Group group, Set userHeaders) throws UpdateException {
+        throw new UnsupportedOperationException();
+    }
+
     public EntityHeader groupToHeader(Group group) {
         throw new UnsupportedOperationException();
     }

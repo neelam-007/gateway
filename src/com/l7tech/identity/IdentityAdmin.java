@@ -42,7 +42,7 @@ public interface IdentityAdmin  extends Remote {
 
     void deleteUser(long idProvCfgId, String userId) throws RemoteException, DeleteException;
 
-    String saveUser(long idProvCfgId, User user) throws RemoteException, SaveException, UpdateException;
+    String saveUser(long idProvCfgId, User user, Set groupHeaders ) throws RemoteException, SaveException, UpdateException;
 
     EntityHeader[] findAllGroups(long idProvCfgId) throws RemoteException, FindException;
 
@@ -54,7 +54,7 @@ public interface IdentityAdmin  extends Remote {
 
     void deleteGroup(long idProvCfgId, String groupId) throws RemoteException, DeleteException;
 
-    String saveGroup(long idProvCfgId, Group group)
+    String saveGroup(long idProvCfgId, Group group, Set userHeaders )
                                 throws RemoteException, SaveException, UpdateException;
 
     String getUserCert(User user) throws RemoteException, FindException, CertificateEncodingException;
@@ -68,9 +68,7 @@ public interface IdentityAdmin  extends Remote {
                                 throws RemoteException, InvalidIdProviderCfgException;
 
     Set getGroupHeaders( long providerId, String userId ) throws RemoteException, FindException;
-    void setGroupHeaders( long providerId, String userId, Set groupHeaders ) throws RemoteException, FindException, UpdateException;
 
     Set getUserHeaders( long providerId, String groupId ) throws RemoteException, FindException;
-    void setUserHeaders( long providerId, String groupId, Set groupHeaders ) throws RemoteException, FindException, UpdateException;
 
 }

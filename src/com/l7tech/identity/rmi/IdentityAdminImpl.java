@@ -91,8 +91,8 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
         delegate.deleteUser(idProvCfgId, userId);
     }
 
-    public String saveUser(long idProvCfgId, User user) throws RemoteException, SaveException, UpdateException {
-        return delegate.saveUser(idProvCfgId, user);
+    public String saveUser(long idProvCfgId, User user, Set groupHeaders ) throws RemoteException, SaveException, UpdateException {
+        return delegate.saveUser(idProvCfgId, user, groupHeaders );
     }
 
 
@@ -113,8 +113,8 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
         delegate.deleteGroup(idProvCfgId, groupId);
     }
 
-    public String saveGroup(long idProvCfgId, Group group) throws RemoteException, SaveException, UpdateException {
-        return delegate.saveGroup(idProvCfgId, group);
+    public String saveGroup(long idProvCfgId, Group group, Set userHeaders ) throws RemoteException, SaveException, UpdateException {
+        return delegate.saveGroup(idProvCfgId, group, userHeaders );
     }
 
     public String getUserCert(User user) throws RemoteException, FindException, CertificateEncodingException {
@@ -134,17 +134,20 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
         return delegate.getGroupHeaders(providerId, userId);
     }
 
+/*
     public void setGroupHeaders(long providerId, String userId, Set groupHeaders) throws RemoteException, FindException, UpdateException {
         delegate.setGroupHeaders(providerId, userId, groupHeaders);
     }
-
+*/
     public Set getUserHeaders(long providerId, String groupId) throws RemoteException, FindException {
         return delegate.getUserHeaders(providerId, groupId);
     }
 
+/*
     public void setUserHeaders(long providerId, String groupId, Set groupHeaders) throws RemoteException, FindException, UpdateException {
         delegate.setUserHeaders(providerId, groupId, groupHeaders);
     }
+*/
 
     // ************************************************
     // PRIVATES

@@ -14,6 +14,8 @@ public interface GroupManager extends EntityManager {
     void delete( String identifier ) throws DeleteException;
     String save( Group group ) throws SaveException;
     void update( Group group ) throws UpdateException;
+    String save( Group group, Set userHeaders ) throws SaveException;
+    void update( Group group, Set userHeaders ) throws UpdateException;
 
     EntityHeader groupToHeader( Group group );
     Group headerToGroup( EntityHeader header ) throws FindException;

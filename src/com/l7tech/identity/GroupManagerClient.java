@@ -47,9 +47,9 @@ public class GroupManagerClient extends GroupManagerAdapter implements GroupMana
         delete( group.getUniqueIdentifier() );
     }
 
-    public String save(Group group) throws SaveException {
+    public String save(Group group, Set userHeaders ) throws SaveException {
         try {
-            return manager.getStub().saveGroup(config.getOid(), group);
+            return manager.getStub().saveGroup(config.getOid(), group, userHeaders);
         } catch (UpdateException e) {
             throw new SaveException(e.getMessage(), e);
         } catch (RemoteException e) {
@@ -57,9 +57,9 @@ public class GroupManagerClient extends GroupManagerAdapter implements GroupMana
         }
     }
 
-    public void update(Group group) throws UpdateException {
+    public void update(Group group, Set userHeaders) throws UpdateException {
         try {
-            manager.getStub().saveGroup(config.getOid(), group);
+            manager.getStub().saveGroup(config.getOid(), group, userHeaders);
         } catch (SaveException e) {
             throw new UpdateException(e.getMessage(), e);
         } catch (RemoteException e) {
@@ -75,25 +75,9 @@ public class GroupManagerClient extends GroupManagerAdapter implements GroupMana
         }
     }
 
-    public void setGroupHeaders(String userId, Set groupHeaders) throws FindException, UpdateException {
-        try {
-            manager.getStub().setGroupHeaders( config.getOid(), userId, groupHeaders );
-        } catch (RemoteException e) {
-            throw new FindException( e.getMessage(), e );
-        }
-    }
-
     public Set getUserHeaders(String groupId) throws FindException {
         try {
             return manager.getStub().getUserHeaders( config.getOid(), groupId );
-        } catch (RemoteException e) {
-            throw new FindException( e.getMessage(), e );
-        }
-    }
-
-    public void setUserHeaders(String groupId, Set groupHeaders) throws FindException, UpdateException {
-        try {
-            manager.getStub().setUserHeaders( config.getOid(), groupId, groupHeaders );
         } catch (RemoteException e) {
             throw new FindException( e.getMessage(), e );
         }
