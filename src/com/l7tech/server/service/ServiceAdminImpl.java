@@ -196,7 +196,7 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
 
     public String[] findUDDIRegistryURLs() throws RemoteException, FindException {
         try {
-            if(uddiProps == null) uddiProps = readUDDIConfig();
+            uddiProps = readUDDIConfig();
         } catch (IOException ioe) {
             throw new FindException(ioe.getMessage());
         }
@@ -238,9 +238,10 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
 
         // note: we only support V3 agent
         try {
-            if(uddiProps == null) uddiProps = readUDDIConfig();
+            uddiProps = readUDDIConfig();
         } catch (IOException ioe) {
-
+            logger.severe("IOException caught. Could not load UDDI Registry properties");
+            throw new FindException("Could not load UDDI Registry propertie");
         }
         UddiAgentV3 uddiAgent = new UddiAgentV3(uddiURL, uddiProps);
 
@@ -251,10 +252,6 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
         String ssgConfigPath = ServerConfig.getInstance().getProperty("ssg.conf");
         String uddiConfigFileName = ssgConfigPath + "/" + UDDI_CONFIG_FILENAME;
         Properties props = new Properties();
-        if (uddiConfigFileName == null) {
-            logger.severe("Could not load UDDI Registry properties");
-            throw new RuntimeException("Could not load UDDI Registry propertie");
-        }
 
         FileInputStream propStream = null;
         try {
