@@ -15,6 +15,7 @@ import java.awt.event.*;
  * To change this template use Options | File Templates.
  */
 public abstract class PropertyDialog extends JDialog {
+    private static final String DFG = "defaultForeground";
     protected static Dimension MIN_SIZE = new Dimension(200, 150);
     protected JTabbedPane tabbedPane;
     protected JButton okButton;
@@ -62,16 +63,7 @@ public abstract class PropertyDialog extends JDialog {
                                               new Insets(0, 0, 0, 0),
                                               0, 0));
 
-        okButton = new JButton("Ok");
-        okButton.addActionListener(new ActionListener() {
-            public void actionPerformed(final ActionEvent e) {
-                commitChanges();
-                userClickedOk = true;
-                PropertyDialog.this.hide();
-                PropertyDialog.this.dispose();
-            }
-        });
-        buttonPane.add(okButton,
+        buttonPane.add(getOkButton(),
                        new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
                                               GridBagConstraints.EAST,
                                               GridBagConstraints.NONE,
@@ -101,6 +93,35 @@ public abstract class PropertyDialog extends JDialog {
                                                     GridBagConstraints.NONE,
                                                     new Insets(0, 5, 5, 5),
                                                     0, 0));
+    }
+
+    /** Get the OK button. */
+    protected JButton getOkButton() {
+        if (okButton == null) {
+            okButton = new JButton("Ok");
+            okButton.putClientProperty(DFG, okButton.getForeground());
+            okButton.addActionListener(new ActionListener() {
+                public void actionPerformed(final ActionEvent e) {
+                    commitChanges();
+                    userClickedOk = true;
+                    PropertyDialog.this.hide();
+                    PropertyDialog.this.dispose();
+                }
+            });
+        }
+        return okButton;
+    }
+
+    /** Grey out the Ok button. */
+    protected void disableOk() {
+        getOkButton().setForeground(Color.GRAY);
+        getOkButton().setEnabled(false);
+    }
+
+    /** Enable the Ok button. */
+    protected void enableOk() {
+        getOkButton().setForeground((Color)getOkButton().getClientProperty(DFG));
+        getOkButton().setEnabled(true);
     }
 
     /**
