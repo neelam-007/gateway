@@ -4,6 +4,8 @@ import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -18,15 +20,29 @@ public class FederatedIPSamlPanel extends IdentityProviderStepPanel {
     private JCheckBox senderVouchesCheckbox;
     private JCheckBox holderOfKeyCheckbox;
     private JTextField nameQualifierTextField;
+    private JTextField domainNameTextField;
 
+    /**
+     * Constructor
+     * @param next  The next step panel
+     */
     public FederatedIPSamlPanel(WizardStepPanel next) {
         super(next);
         initComponents();
     }
 
+    /**
+     *  Initialize the components
+     */
     private void initComponents() {
         setLayout(new BorderLayout());
         add(mainPanel, BorderLayout.CENTER);
+
+        domainNameCheckbox.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+                 domainNameTextField.setEnabled(domainNameCheckbox.isSelected());
+            }
+        });
     }
 
     public String getDescription() {
@@ -61,7 +77,11 @@ public class FederatedIPSamlPanel extends IdentityProviderStepPanel {
 
         if (iProviderConfig.getOid() != -1) {
             nameQualifierTextField.setText(iProviderConfig.getSamlConfig().getNameQualifier());
+            domainNameTextField.setText(iProviderConfig.getSamlConfig().getNameIdWindowsDomainName());
         }
+        
+        domainNameTextField.setEnabled(domainNameCheckbox.isSelected());
+
     }
 
 
@@ -83,6 +103,8 @@ public class FederatedIPSamlPanel extends IdentityProviderStepPanel {
         iProviderConfig.getSamlConfig().setSubjConfHolderOfKey(holderOfKeyCheckbox.isSelected());
         iProviderConfig.getSamlConfig().setSubjConfSenderVouches(senderVouchesCheckbox.isSelected());
         iProviderConfig.getSamlConfig().setNameQualifier(nameQualifierTextField.getText().trim());
+        iProviderConfig.getSamlConfig().setNameIdWindowsDomain(domainNameCheckbox.isSelected());
+        iProviderConfig.getSamlConfig().setNameIdWindowsDomainName(domainNameTextField.getText().trim());
     }
 
     {
@@ -139,74 +161,88 @@ public class FederatedIPSamlPanel extends IdentityProviderStepPanel {
         _8.add(_9, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 3, 0, null, null, null));
         final JPanel _10;
         _10 = new JPanel();
-        _10.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
+        _10.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 2, new Insets(0, 0, 0, 0), -1, -1));
         _8.add(_10, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 0, 3, 3, 3, null, null, null));
         final JCheckBox _11;
         _11 = new JCheckBox();
         domainNameCheckbox = _11;
         _11.setText("Windows Qualified Domain Name");
         _10.add(_11, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 3, 0, null, null, null));
-        final JCheckBox _12;
-        _12 = new JCheckBox();
-        x509SubjectNameCheckbox = _12;
-        _12.setText("X.509 Subject Name");
-        _8.add(_12, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 3, 0, null, null, null));
-        final JPanel _13;
-        _13 = new JPanel();
-        _13.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
-        _5.add(_13, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 3, 3, 3, null, null, null));
+        final JPanel _12;
+        _12 = new JPanel();
+        _12.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
+        _10.add(_12, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 3, 3, 3, null, null, null));
+        final JTextField _13;
+        _13 = new JTextField();
+        domainNameTextField = _13;
+        _12.add(_13, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 8, 1, 6, 0, null, new Dimension(150, -1), null));
         final com.intellij.uiDesigner.core.Spacer _14;
         _14 = new com.intellij.uiDesigner.core.Spacer();
-        _13.add(_14, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 2, 1, 6, null, null, null));
-        final JLabel _15;
-        _15 = new JLabel();
-        _15.setText("Format:");
-        _13.add(_15, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
-        final JPanel _16;
-        _16 = new JPanel();
-        _16.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 2, new Insets(5, 0, 10, 0), -1, -1));
-        _4.add(_16, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 3, null, null, null));
-        final JLabel _17;
-        _17 = new JLabel();
-        _17.setText("Name Identifier:");
-        _16.add(_17, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
-        final JPanel _18;
-        _18 = new JPanel();
-        _18.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 1, new Insets(5, 5, 5, 5), -1, -1));
-        _3.add(_18, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 0, 3, 3, 3, null, null, null));
-        _18.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), null));
+        _12.add(_14, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 1, 0, 1, new Dimension(20, -1), new Dimension(20, -1), new Dimension(20, -1)));
+        final com.intellij.uiDesigner.core.Spacer _15;
+        _15 = new com.intellij.uiDesigner.core.Spacer();
+        _10.add(_15, new com.intellij.uiDesigner.core.GridConstraints(1, 1, 1, 1, 0, 1, 0, 1, new Dimension(30, -1), new Dimension(30, -1), new Dimension(30, -1)));
+        final JCheckBox _16;
+        _16 = new JCheckBox();
+        x509SubjectNameCheckbox = _16;
+        _16.setText("X.509 Subject Name");
+        _8.add(_16, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 3, 0, null, null, null));
+        final JPanel _17;
+        _17 = new JPanel();
+        _17.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        _5.add(_17, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 3, 3, 3, null, null, null));
+        final com.intellij.uiDesigner.core.Spacer _18;
+        _18 = new com.intellij.uiDesigner.core.Spacer();
+        _17.add(_18, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 2, 1, 6, null, null, null));
         final JLabel _19;
         _19 = new JLabel();
-        _19.setText("Confirmation Methods:");
-        _18.add(_19, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
+        _19.setText("Format:");
+        _17.add(_19, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
         final JPanel _20;
         _20 = new JPanel();
-        _20.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
-        _18.add(_20, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 3, 3, 3, null, null, null));
-        final JCheckBox _21;
-        _21 = new JCheckBox();
-        holderOfKeyCheckbox = _21;
-        _21.setText("Holder of Key");
-        _20.add(_21, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 3, 0, null, null, null));
-        final JCheckBox _22;
-        _22 = new JCheckBox();
-        senderVouchesCheckbox = _22;
-        _22.setText("Sender Vouches");
-        _20.add(_22, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 3, 0, null, null, null));
-        final com.intellij.uiDesigner.core.Spacer _23;
-        _23 = new com.intellij.uiDesigner.core.Spacer();
-        _20.add(_23, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 0, 2, 1, 6, null, null, null));
+        _20.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 2, new Insets(5, 0, 10, 0), -1, -1));
+        _4.add(_20, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 3, null, null, null));
+        final JLabel _21;
+        _21 = new JLabel();
+        _21.setText("Name Identifier:");
+        _20.add(_21, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
+        final JPanel _22;
+        _22 = new JPanel();
+        _22.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(2, 1, new Insets(5, 5, 5, 5), -1, -1));
+        _3.add(_22, new com.intellij.uiDesigner.core.GridConstraints(0, 1, 1, 1, 0, 3, 0, 3, null, null, null));
+        _22.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), null));
+        final JLabel _23;
+        _23 = new JLabel();
+        _23.setText("Confirmation Methods:");
+        _22.add(_23, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
         final JPanel _24;
         _24 = new JPanel();
-        _24.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(5, 0, 5, 0), -1, -1));
-        _2.add(_24, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 3, null, null, null));
-        final JLabel _25;
-        _25 = new JLabel();
-        _25.setText("SAML Credential Source Configuration");
-        _24.add(_25, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
-        final com.intellij.uiDesigner.core.Spacer _26;
-        _26 = new com.intellij.uiDesigner.core.Spacer();
-        _2.add(_26, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 0, 2, 1, 6, null, null, null));
+        _24.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
+        _22.add(_24, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 0, 3, 3, 3, null, null, null));
+        final JCheckBox _25;
+        _25 = new JCheckBox();
+        holderOfKeyCheckbox = _25;
+        _25.setText("Holder of Key");
+        _24.add(_25, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 3, 0, null, null, null));
+        final JCheckBox _26;
+        _26 = new JCheckBox();
+        senderVouchesCheckbox = _26;
+        _26.setText("Sender Vouches");
+        _24.add(_26, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 8, 0, 3, 0, null, null, null));
+        final com.intellij.uiDesigner.core.Spacer _27;
+        _27 = new com.intellij.uiDesigner.core.Spacer();
+        _24.add(_27, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 0, 2, 1, 6, null, null, null));
+        final JPanel _28;
+        _28 = new JPanel();
+        _28.setLayout(new com.intellij.uiDesigner.core.GridLayoutManager(1, 1, new Insets(5, 0, 5, 0), -1, -1));
+        _2.add(_28, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 0, 3, 3, 3, null, null, null));
+        final JLabel _29;
+        _29 = new JLabel();
+        _29.setText("SAML Credential Source Configuration");
+        _28.add(_29, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 1, 8, 0, 0, 0, null, null, null));
+        final com.intellij.uiDesigner.core.Spacer _30;
+        _30 = new com.intellij.uiDesigner.core.Spacer();
+        _2.add(_30, new com.intellij.uiDesigner.core.GridConstraints(2, 0, 1, 1, 0, 2, 1, 6, null, null, null));
     }
 
 
