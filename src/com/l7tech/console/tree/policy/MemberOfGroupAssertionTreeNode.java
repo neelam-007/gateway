@@ -14,7 +14,7 @@ import java.util.Arrays;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 
-public class MemberOfGroupAssertionTreeNode extends LeafAssertionTreeNode {
+public class MemberOfGroupAssertionTreeNode extends IdentityAssertionTreeNode {
     /**
      * The <code>MemberOfGroupAssertionTreeNode</code> is the composite
      * assertion node that represents the group membership.
@@ -62,6 +62,6 @@ public class MemberOfGroupAssertionTreeNode extends LeafAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Group membership " + ((MemberOfGroup)getUserObject()).getGroupName();
+        return "Group membership " + ((MemberOfGroup)getUserObject()).getGroupName() + " [" + idProviderName() + "]";
     }
 }

@@ -13,7 +13,7 @@ import java.util.Arrays;
  * Class SpecificUserAssertionTreeNode.
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class SpecificUserAssertionTreeNode extends LeafAssertionTreeNode {
+public class SpecificUserAssertionTreeNode extends IdentityAssertionTreeNode {
 
     public SpecificUserAssertionTreeNode(SpecificUser assertion) {
         super(assertion);
@@ -55,6 +55,6 @@ public class SpecificUserAssertionTreeNode extends LeafAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Identity is "+ ((SpecificUser)getUserObject()).getUserLogin();
+        return "Identity is "+ ((SpecificUser)getUserObject()).getUserLogin() + " [" + idProviderName() + "]";
     }
 }
