@@ -2,29 +2,31 @@ package com.l7tech.console.tree.policy;
 
 
 import com.l7tech.console.tree.AbstractTreeNode;
+import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 import java.util.Iterator;
 import java.util.Set;
 
 /**
- * Class IdentityPolicyTreeNode. This is an assertion tree node
+ * Class IdentityPolicyTreeNode.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class IdentityViewsRootNode extends AssertionTreeNode {
-    private Set paths;
+public class IdentityPolicyTreeNode extends AssertionTreeNode {
+    private IdentityPath path;
 
     /**
      * Construct the new <code>IdentityPolicyTreeNode</code> for
      * the identity path.
      * <p>
-     * @param identityPaths the identity path collections
+     * @param path the identity patht
      */
-    public IdentityViewsRootNode(Set identityPaths, Assertion root) {
+    public IdentityPolicyTreeNode(IdentityPath path, Assertion root) {
         super(root);
-        this.paths = identityPaths;
-        if (identityPaths == null) {
+        this.path = path;
+        if (path == null) {
             throw new IllegalArgumentException();
         }
     }
@@ -33,11 +35,22 @@ public class IdentityViewsRootNode extends AssertionTreeNode {
      * subclasses override this method
      */
     protected void loadChildren() {
-        int index = 0;
+        CompositeAssertion assertion = (CompositeAssertion)asAssertion();
         children = null;
-        for (Iterator i = getIdentityPaths().iterator(); i.hasNext();) {
-            insert(new IdentityPolicyTreeNode((IdentityPath)i.next(), asAssertion()), index++);
+        insert(AssertionTreeNodeFactory.asTreeNode(assertion), 0);
+    }
+
+    protected boolean pathContains(Assertion a) {
+        Set paths = getIdentityPath().getPaths();
+        for (Iterator i = paths.iterator(); i.hasNext();) {
+            AssertionPath ap = (AssertionPath)i.next();
+            Assertion[] assertions = ap.getPath();
+            for (int j = assertions.length - 1; j >= 0; j--) {
+                Assertion ass = assertions[j];
+                if (ass.equals(a)) return true;
+            }
         }
+        return false;
     }
 
     /**
@@ -54,8 +67,8 @@ public class IdentityViewsRootNode extends AssertionTreeNode {
      * specify this node image resource
      */
     protected String iconResource(boolean open) {
+        return "com/l7tech/console/resources/user16.png";
 
-        return "com/l7tech/console/resources/identity.png";
     }
 
     /**
@@ -71,11 +84,10 @@ public class IdentityViewsRootNode extends AssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Identities";
+        return getIdentityPath().getPrincipal().getName();
     }
 
-
-    private Set getIdentityPaths() {
-        return paths;
+    public IdentityPath getIdentityPath() {
+        return path;
     }
 }

@@ -18,8 +18,14 @@ import java.awt.event.WindowEvent;
 import java.util.Iterator;
 import java.util.Set;
 
-/** * The splash screen class * * @author Emil Marceta * @version 1.2 */
-public class IdentityPolicyView extends JDialog { /* this class classloader */ private JPanel windowContentPane = null;
+/**
+ * The identities policy view
+ *
+ * @author Emil Marceta
+ * @version 1.2
+ */
+public class IdentityPolicyView extends JDialog {
+    private JPanel windowContentPane = null;
     private JScrollPane scrollPane = null;
     private JTree policyTree = null;
     private IdentityAssertion idAssertion;
@@ -50,7 +56,7 @@ public class IdentityPolicyView extends JDialog { /* this class classloader */ p
         for (Iterator i = paths.iterator(); i.hasNext();) {
             IdentityPath ip = (IdentityPath)i.next();
             if (ip.getPrincipal().getName().equals(extractName(idAssertion))) {
-                IdentityViewTreeNode n = new IdentityViewTreeNode(ip, root);
+                IdentityPolicyTreeNode n = new IdentityPolicyTreeNode(ip, root);
                 PolicyTreeModel model = new PolicyTreeModel(n);
                 FilteredTreeModel fm = new FilteredTreeModel((TreeNode)model.getRoot());
                 fm.setFilter(new IdentityNodeFilter());
@@ -119,7 +125,7 @@ public class IdentityPolicyView extends JDialog { /* this class classloader */ p
                 if (((CompositeAssertionTreeNode)node).getChildCount(this) == 0) return false;
             }
             TreeNode[] path = ((DefaultMutableTreeNode)node).getPath();
-            IdentityViewTreeNode in = (IdentityViewTreeNode)path[0];
+            IdentityPolicyTreeNode in = (IdentityPolicyTreeNode)path[0];
             AssertionTreeNode an = (AssertionTreeNode)node;
             IdentityPath ip = in.getIdentityPath();
             Set paths = ip.getPaths();

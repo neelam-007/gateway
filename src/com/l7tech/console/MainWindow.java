@@ -10,7 +10,6 @@ import com.l7tech.console.action.*;
 import com.l7tech.console.event.ConnectionEvent;
 import com.l7tech.console.event.ConnectionListener;
 import com.l7tech.console.event.WeakEventListenerList;
-import com.l7tech.console.event.ContainerVetoException;
 import com.l7tech.console.panels.*;
 import com.l7tech.console.tree.*;
 import com.l7tech.console.tree.policy.PolicyToolBar;
@@ -25,9 +24,9 @@ import javax.help.HelpSetException;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.event.EventListenerList;
+import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
-import javax.swing.tree.DefaultMutableTreeNode;
 import java.awt.*;
 import java.awt.event.*;
 import java.beans.PropertyChangeEvent;
@@ -90,8 +89,6 @@ public class MainWindow extends JFrame {
     private JPanel statusBarPane = null;
     private JLabel statusMsgLeft = null;
     private JLabel statusMsgRight = null;
-    private LogPanel logPane = null;
-    private StatisticsPanel statisticsPane = null;
 
 
     private JToolBar toolBarPane = null;

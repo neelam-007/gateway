@@ -380,7 +380,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
             }
 
             TreeNode[] path = ((DefaultMutableTreeNode)node).getPath();
-            IdentityViewTreeNode in = (IdentityViewTreeNode)path[1];
+            IdentityPolicyTreeNode in = (IdentityPolicyTreeNode)path[1];
             AssertionTreeNode an = (AssertionTreeNode)node;
             IdentityPath ip = in.getIdentityPath();
             Set paths = ip.getPaths();

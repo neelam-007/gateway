@@ -1,6 +1,7 @@
 package com.l7tech.console.tree;
 
 import javax.swing.tree.TreeNode;
+import javax.swing.tree.DefaultTreeModel;
 
 /**
  * FilteredTreeModel extends DirTreeModel and provides basic
@@ -8,7 +9,7 @@ import javax.swing.tree.TreeNode;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
-public class FilteredTreeModel extends DirTreeModel {
+public class FilteredTreeModel extends DefaultTreeModel {
     /**
      * Creates a new instance of FilteredTreeModel with root set
      * to the root of this model.
