@@ -219,7 +219,7 @@ public class JmsQueuesWindow extends JDialog {
 
     private JButton getAddButton() {
         if (addButton == null) {
-            addButton = new JButton("Add...");
+            addButton = new JButton("Add");
             addButton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent event) {
                     JmsQueuePropertiesDialog amew = JmsQueuePropertiesDialog.createInstance(getOwner(), null, null, false);
