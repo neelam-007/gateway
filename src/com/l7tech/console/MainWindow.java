@@ -643,11 +643,13 @@ public class MainWindow extends JFrame {
             public void focusLost(FocusEvent e) {
                 Component c = e.getOppositeComponent();
                 if (c == null) {
+                    log.finest("focusLost, no component in focus setting refreshAction to "+false);
                     refreshAction.setEnabled(false);
                     return;
                 }
 
                 boolean enable = c instanceof Refreshable && ((Refreshable)c).canRefresh();
+                log.finest("focusLost "+ c.getClass() +" setting refreshAction to "+enable);
                 refreshAction.setEnabled(enable);
             }
         };
@@ -998,6 +1000,7 @@ public class MainWindow extends JFrame {
     private JMenuBar getMainJMenuBar() {
         if (mainJMenuBar == null) {
             mainJMenuBar = new JMenuBar();
+            mainJMenuBar.setFocusable(false);
             mainJMenuBar.add(getFileMenu());
             mainJMenuBar.add(getEditMenu());
             mainJMenuBar.add(getViewMenu());
@@ -1578,13 +1581,14 @@ public class MainWindow extends JFrame {
         setName("MainWindow");
         setJMenuBar(getMainJMenuBar());
         setTitle(resapplication.getString("SSG"));
-        ImageIcon imageIcon =
-          new ImageIcon(ImageCache.getInstance().getIcon(RESOURCE_PATH + "/layer7_logo_small_32x32.png"));
+        Image icon = ImageCache.getInstance().getIcon(RESOURCE_PATH + "/layer7_logo_small_32x32.png");
+        ImageIcon imageIcon = new ImageIcon(icon);
         setIconImage(imageIcon.getImage());
-        getContentPane().setLayout(new BorderLayout());
-        getContentPane().add(getFrameContentPane(), BorderLayout.CENTER);
-        getContentPane().add(getStatusBarPane(), BorderLayout.SOUTH);
-
+        Container contentPane = getContentPane();
+        contentPane.setLayout(new BorderLayout());
+        contentPane.add(getFrameContentPane(), BorderLayout.CENTER);
+        contentPane.add(getStatusBarPane(), BorderLayout.SOUTH);
+        getRootPane().setFocusable(false);
 
         initListeners();
 
