@@ -17,6 +17,7 @@ import com.l7tech.proxy.datamodel.exceptions.PolicyRetryableException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.util.ClientLogger;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.common.security.xml.WssDecorator;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -27,6 +28,8 @@ import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * Holds request state while the client proxy is processing it.
@@ -53,62 +56,6 @@ public class PendingRequest {
     private PasswordAuthentication pw = null;
     private ClientSidePolicy clientSidePolicy = ClientSidePolicy.getPolicy();
 
-    public class WssDecoratorRequirements {
-        public X509Certificate getRecipientCertificate() {
-            return recipientCertificate;
-        }
-        public void setRecipientCertificate(X509Certificate recipientCertificate) {
-            this.recipientCertificate = recipientCertificate;
-        }
-        public X509Certificate getSenderCertificate() {
-            return senderCertificate;
-        }
-        public void setSenderCertificate(X509Certificate senderCertificate) {
-            this.senderCertificate = senderCertificate;
-        }
-        public PrivateKey getSenderPrivateKey() {
-            return senderPrivateKey;
-        }
-        public void setSenderPrivateKey(PrivateKey senderPrivateKey) {
-            this.senderPrivateKey = senderPrivateKey;
-        }
-        public boolean isSignTimestamp() {
-            return signTimestamp;
-        }
-        public void setSignTimestamp(boolean signTimestamp) {
-            this.signTimestamp = signTimestamp;
-        }
-        public Element[] getElementsToEncrypt() {
-            return elementsToEncrypt;
-        }
-        public void setElementsToEncrypt(Element[] elementsToEncrypt) {
-            this.elementsToEncrypt = elementsToEncrypt;
-        }
-        public Element[] getElementsToSign() {
-            return elementsToSign;
-        }
-        public void setElementsToSign(Element[] elementsToSign) {
-            this.elementsToSign = elementsToSign;
-        }
-        public LoginCredentials getUsernameTokenCredentials() {
-            return usernameTokenCredentials;
-        }
-        public void setUsernameTokenCredentials(LoginCredentials usernameTokenCredentials) {
-            this.usernameTokenCredentials = usernameTokenCredentials;
-        }
-        private X509Certificate recipientCertificate = null;
-        private X509Certificate senderCertificate = null;
-        private PrivateKey senderPrivateKey = null;
-        private boolean signTimestamp = false;
-        private Element[] elementsToEncrypt = null;
-        private Element[] elementsToSign = null;
-        private LoginCredentials usernameTokenCredentials = null;
-    }
-    private WssDecoratorRequirements wssRequirements = new WssDecoratorRequirements();
-    public WssDecoratorRequirements getWssRequirements() {
-        return wssRequirements;
-    }
-
     // Policy settings, filled in by traversing policy tree
     private static class PolicySettings {
         private Policy activePolicy= null; // the policy that we most recently started applying to this request, if any
@@ -117,6 +64,8 @@ public class PendingRequest {
         private boolean isBasicAuthRequired = false;
         private boolean isDigestAuthRequired = false;
         private boolean isNonceRequired = false;
+        private WssDecorator.DecorationRequirements wssRequirements = new WssDecorator.DecorationRequirements();
+        private Map pendingDecorations = new HashMap();
     }
     private PolicySettings policySettings = new PolicySettings();
 
@@ -357,5 +306,14 @@ public class PendingRequest {
     /** Set the policy we are going to apply to this request. */
     public void setActivePolicy(Policy policy) {
         this.policySettings.activePolicy = policy;
+    }
+
+    public WssDecorator.DecorationRequirements getWssRequirements() {
+        return policySettings.wssRequirements;
+    }
+
+    /** @return the Map of (assertion instance => ClientDecorator), containing deferred decorations to apply. */
+    public Map getPendingDecorations() {
+        return policySettings.pendingDecorations;
     }
 }

@@ -49,8 +49,10 @@ public class ClientAllAssertion extends ClientCompositeAssertion {
         for ( int i = 0; i < children.length; i++ ) {
             ClientAssertion assertion = children[i];
             result = assertion.decorateRequest(req);
-            if (result != AssertionStatus.NONE)
+            if (result != AssertionStatus.NONE) {
+                rollbackPendingDecorations(req);
                 return result;
+            }
         }
         return result;
     }
@@ -64,8 +66,10 @@ public class ClientAllAssertion extends ClientCompositeAssertion {
         for ( int i = 0; i < children.length; i++ ) {
             ClientAssertion assertion = children[i];
             result = assertion.unDecorateReply(request, response);
-            if (result != AssertionStatus.NONE)
+            if (result != AssertionStatus.NONE) {
+                rollbackPendingDecorations(request);
                 return result;
+            }
         }
         return result;
     }

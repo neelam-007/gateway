@@ -53,6 +53,8 @@ public class ClientExactlyOneAssertion extends ClientCompositeAssertion {
                 return thisResult;
             result = thisResult;
         }
+        if (result != AssertionStatus.NONE)
+            rollbackPendingDecorations(req);
         return result;
     }
 
@@ -69,6 +71,8 @@ public class ClientExactlyOneAssertion extends ClientCompositeAssertion {
                 return thisResult;
             result = thisResult;
         }
+        if (result != AssertionStatus.NONE)
+            rollbackPendingDecorations(request);
         return result;
     }
 

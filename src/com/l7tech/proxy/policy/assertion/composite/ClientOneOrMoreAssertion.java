@@ -52,6 +52,8 @@ public class ClientOneOrMoreAssertion extends ClientCompositeAssertion {
             if (result == AssertionStatus.NONE)
                 return result;
         }
+        if (result != AssertionStatus.NONE)
+            rollbackPendingDecorations(req);
         return result;
     }
 
@@ -67,6 +69,8 @@ public class ClientOneOrMoreAssertion extends ClientCompositeAssertion {
             if (result == AssertionStatus.NONE)
                 return result;
         }
+        if (result != AssertionStatus.NONE)
+            rollbackPendingDecorations(request);
         return result;
     }
 

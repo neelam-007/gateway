@@ -9,6 +9,8 @@ import com.l7tech.proxy.datamodel.SsgKeyStoreManager;
 import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import com.l7tech.proxy.policy.assertion.ClientDecorator;
+import com.l7tech.common.security.xml.WssDecorator;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -27,39 +29,51 @@ import java.security.cert.X509Certificate;
  * $Id$<br/>
  */
 public class ClientRequestWssX509Cert extends ClientAssertion {
+    private RequestWssX509Cert subject;
+
     public ClientRequestWssX509Cert(RequestWssX509Cert subject) {
+        this.subject = subject;
     }
     
-    public AssertionStatus decorateRequest(PendingRequest request) throws BadCredentialsException,
+    public AssertionStatus decorateRequest(final PendingRequest request) throws BadCredentialsException,
             OperationCanceledException, GeneralSecurityException, ClientCertificateException,
             IOException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException,
-            PolicyRetryableException, PolicyAssertionException {
-        PendingRequest.WssDecoratorRequirements wssReqs = request.getWssRequirements();
-        // get the client cert and private key
-        // We must have credentials to get the private key
-        Ssg ssg = request.getSsg();
-        PrivateKey userPrivateKey = null;
-        X509Certificate userCert = null;
-        X509Certificate ssgCert = null;
+            PolicyRetryableException, PolicyAssertionException
+    {
         request.getCredentials();
         request.prepareClientCertificate();
-        try {
-            userPrivateKey = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
-            userCert = SsgKeyStoreManager.getClientCert(ssg);
-            ssgCert = SsgKeyStoreManager.getServerCert(ssg);
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
-        wssReqs.setRecipientCertificate(ssgCert);
-        wssReqs.setSenderCertificate(userCert);
-        wssReqs.setSenderPrivateKey(userPrivateKey);
-        wssReqs.setSignTimestamp(true);
-        return null;
+
+        // add a pending decoration that will be applied only if the rest of this policy branch succeeds
+        request.getPendingDecorations().put(this, new ClientDecorator() {
+            public AssertionStatus decorateRequest(PendingRequest request)
+                    throws BadCredentialsException, OperationCanceledException, KeyStoreCorruptException
+            {
+                try {
+                    // get the client cert and private key
+                    // We must have credentials to get the private key
+                    Ssg ssg = request.getSsg();
+                    PrivateKey userPrivateKey = SsgKeyStoreManager.getClientCertPrivateKey(ssg);
+                    X509Certificate userCert = SsgKeyStoreManager.getClientCert(ssg);
+                    X509Certificate ssgCert = SsgKeyStoreManager.getServerCert(ssg);
+                    WssDecorator.DecorationRequirements wssReqs = request.getWssRequirements();
+                    wssReqs.setRecipientCertificate(ssgCert);
+                    wssReqs.setSenderCertificate(userCert);
+                    wssReqs.setSenderPrivateKey(userPrivateKey);
+                    wssReqs.setSignTimestamp(true);
+                    return AssertionStatus.NONE;
+                } catch (NoSuchAlgorithmException e) {
+                    throw new RuntimeException(e); // shouldn't happen
+                }
+            }
+        });
+
+        return AssertionStatus.NONE;
     }
 
     public AssertionStatus unDecorateReply(PendingRequest request, SsgResponse response) throws BadCredentialsException,
             OperationCanceledException, GeneralSecurityException, IOException, SAXException,
-            ResponseValidationException, KeyStoreCorruptException, PolicyAssertionException {
+            ResponseValidationException, KeyStoreCorruptException, PolicyAssertionException
+    {
         // no action on response
         return AssertionStatus.NONE;
     }

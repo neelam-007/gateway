@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.proxy.policy.ClientPolicyFactory;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import com.l7tech.proxy.datamodel.PendingRequest;
 
 /**
  * @author alex
@@ -37,6 +38,17 @@ public abstract class ClientCompositeAssertion extends ClientAssertion {
 
     public ClientAssertion[] getChildren() {
         return children;
+    }
+
+    /** Remove all this composite assertion's children's pending decorations. */
+    protected void rollbackPendingDecorations(PendingRequest request) {
+        request.getPendingDecorations().remove(this);
+        for (int i = 0; i < children.length; i++) {
+            ClientAssertion child = children[i];
+            if (child instanceof ClientCompositeAssertion)
+                ((ClientCompositeAssertion)child).rollbackPendingDecorations(request);
+            request.getPendingDecorations().remove(child);
+        }
     }
 
     /**

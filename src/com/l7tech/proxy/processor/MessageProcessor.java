@@ -18,6 +18,7 @@ import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.ConfigurationException;
 import com.l7tech.proxy.policy.assertion.ClientAssertion;
+import com.l7tech.proxy.policy.assertion.ClientDecorator;
 import com.l7tech.proxy.datamodel.HttpHeaders;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.PendingRequest;
@@ -57,6 +58,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.util.Map;
+import java.util.Iterator;
 
 /**
  * The core of the Client Proxy.
@@ -296,7 +299,14 @@ public class MessageProcessor {
         ClientAssertion rootAssertion = policy.getClientAssertion();
         if (rootAssertion != null) {
             try {
-            result = rootAssertion.decorateRequest(req);
+                result = rootAssertion.decorateRequest(req);
+
+                // Do any deferred decorations that weren't rolled back
+                Map deferredDecorations = req.getPendingDecorations();
+                for (Iterator i = deferredDecorations.values().iterator(); i.hasNext();) {
+                    ClientDecorator decorator = (ClientDecorator)i.next();
+                    decorator.decorateRequest(req);
+                }
             } catch (PolicyAssertionException e) {
                 // Before rethrowing, make sure we deactivate this cached policy.
                 policy.invalidate();

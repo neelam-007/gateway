@@ -11,12 +11,9 @@ import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.SsgResponse;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
-import com.l7tech.proxy.datamodel.exceptions.ClientCertificateException;
+import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ResponseValidationException;
-import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
-import com.l7tech.proxy.datamodel.exceptions.HttpChallengeRequiredException;
-import com.l7tech.proxy.datamodel.exceptions.PolicyRetryableException;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
@@ -26,16 +23,7 @@ import java.security.GeneralSecurityException;
  * @author alex
  * @version $Revision$
  */
-public abstract class ClientAssertion {
-    /**
-     * ClientProxy client-side processing of the given request.
-     * @param request    The request to decorate.
-     * @return AssertionStatus.NONE if this Assertion was applied to the request successfully; otherwise, some error code
-     * @throws PolicyAssertionException if the policy was invalid
-     */
-    public abstract AssertionStatus decorateRequest(PendingRequest request)
-            throws BadCredentialsException, OperationCanceledException, GeneralSecurityException,
-                   ClientCertificateException, IOException, SAXException, KeyStoreCorruptException, HttpChallengeRequiredException, PolicyRetryableException, PolicyAssertionException;
+public abstract class ClientAssertion implements ClientDecorator {
 
     /**
      * ClientProxy clinet-side processing of the given response.
