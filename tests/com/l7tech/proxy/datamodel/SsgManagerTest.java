@@ -1,15 +1,14 @@
 package com.l7tech.proxy.datamodel;
 
-import junit.framework.TestCase;
 import junit.framework.Test;
+import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import com.l7tech.util.ThreadPoolTest;
 
-import java.util.logging.Logger;
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.Arrays;
-import java.io.IOException;
+import java.util.logging.Logger;
 
 /**
  * Work the Client Proxy's SSG Manager a little bit.
