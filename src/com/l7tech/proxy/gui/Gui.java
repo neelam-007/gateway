@@ -350,7 +350,7 @@ public class Gui {
 
         showMessages = new JCheckBoxMenuItem( MENU_MESSAGES, false );
         showMessages.addActionListener( menuActionListener );
-        showMessages.setMnemonic( KeyEvent.VK_M );
+        //showMessages.setMnemonic( KeyEvent.VK_M );   removed due to apparent minor Swing bug, see Bug #783
         windowMenu.add( showMessages );
 
         menus.add( windowMenu );
