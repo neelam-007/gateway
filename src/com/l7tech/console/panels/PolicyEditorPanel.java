@@ -92,7 +92,6 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         splitPane.add(getPolicyTreePane(), "top");
         splitPane.add(getMessagePane(), "bottom");
         splitPane.setDividerSize(2);
-
         return splitPane;
     }
 
@@ -103,7 +102,8 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
         componentRegistry.unregisterComponent(PolicyTree.NAME);
         policyTree = (PolicyTree)componentRegistry.getPolicyTree();
         policyTree.setPolicyEditor(this);
-
+        policyTree.setRootVisible(false);
+        policyTree.setShowsRootHandles(true);
         policyTreePane = new JScrollPane(policyTree);
         return policyTreePane;
     }

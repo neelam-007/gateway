@@ -8,6 +8,7 @@ import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Cookie;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -58,10 +59,13 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
     public Action[] getActions() {
         java.util.List list = new ArrayList();
         list.addAll(Arrays.asList(super.getActions()));
+        CompositeAssertionTreeNode ca =
+          (CompositeAssertionTreeNode)((this instanceof CompositeAssertionTreeNode) ? this : this.getParent());
 
-        Action sp = new SavePolicyAction(this);
-        //sp.setEnabled(false);
-        list.add(sp);
+        Action a = new AddAllAssertionAction(ca);
+        list.add(a);
+        a = new AddOneOrMoreAssertionAction(ca);
+        list.add(a);
 
         Action da = new DeleteAssertionAction(this);
         da.setEnabled(canDelete());
@@ -71,9 +75,6 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
         ea.setEnabled(canDelete());
         list.add(ea);
 
-        Action vp = new ValidatePolicyAction((AssertionTreeNode)getRoot());
-        list.add(vp);
-
         Action mu = new AssertionMoveUpAction(this);
         mu.setEnabled(canMoveUp());
         list.add(mu);
@@ -81,6 +82,13 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
         Action md = new AssertionMoveDownAction(this);
         md.setEnabled(canMoveDown());
         list.add(md);
+
+        Action sp = new SavePolicyAction(this);
+        list.add(sp);
+
+        Action vp = new ValidatePolicyAction((AssertionTreeNode)getRoot());
+        list.add(vp);
+
 
         return (Action[])list.toArray(new Action[]{});
     }

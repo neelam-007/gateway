@@ -1,24 +1,23 @@
 package com.l7tech.console.tree.policy;
 
-import com.l7tech.console.action.AssertionMoveUpAction;
-import com.l7tech.console.action.AssertionMoveDownAction;
 import com.l7tech.console.action.AddAssertionAction;
+import com.l7tech.console.action.AssertionMoveDownAction;
+import com.l7tech.console.action.AssertionMoveUpAction;
 import com.l7tech.console.action.DeleteAssertionAction;
-import com.l7tech.console.tree.AbstractTreeNode;
-import com.l7tech.console.event.ConnectionListener;
 import com.l7tech.console.event.ConnectionEvent;
+import com.l7tech.console.event.ConnectionListener;
+import com.l7tech.console.tree.AbstractTreeNode;
 
 import javax.swing.*;
-import javax.swing.border.EtchedBorder;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
 import javax.swing.border.EmptyBorder;
-import javax.swing.tree.TreePath;
-import javax.swing.tree.TreeNode;
-import javax.swing.event.TreeSelectionListener;
-import javax.swing.event.TreeSelectionEvent;
-import javax.swing.event.TreeModelListener;
+import javax.swing.border.EtchedBorder;
 import javax.swing.event.TreeModelEvent;
+import javax.swing.event.TreeModelListener;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
+import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.util.logging.Logger;
 
@@ -38,6 +37,7 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
 
     public PolicyToolBar() {
         initialize();
+        disableAll();
     }
 
     /**
@@ -75,22 +75,18 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
         setFloatable(false);
 
         JButton b = add(getAddAssertionAction());
-        b.setEnabled(false);
         b.setMargin(new Insets(0, 0, 0, 0));
         addSeparator();
 
         b = add(getAssertionMoveUpAction());
-        b.setEnabled(false);
         b.setMargin(new Insets(0, 0, 0, 0));
         addSeparator();
 
         b = add(getAssertionMoveDownAction());
-        b.setEnabled(false);
         b.setMargin(new Insets(0, 0, 0, 0));
         addSeparator();
 
         b = add(getDeleteAssertionAction());
-        b.setEnabled(false);
         b.setMargin(new Insets(0, 0, 0, 0));
         addSeparator();
     }
@@ -165,14 +161,16 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
     }
 
     private void updateActions() {
-        if (lastAssertionNode == null && lastPaletteNode == null) {
+        final boolean validPNode = validPaletteNode();
+        final boolean validPolicyAssertionNode = validPolicyAssertionNode();
+        if (!validPolicyAssertionNode && !validPNode) {
             disableAll();
             return;
         }
-        if (lastAssertionNode != null) {
-            if (lastPaletteNode != null) {
+        if (validPolicyAssertionNode) {
+            if (validPNode) {
                 getAddAssertionAction().setEnabled(
-                  lastPaletteNode != null &&
+                  validPNode &&
                   lastAssertionNode.accept(lastPaletteNode));
             }
             getDeleteAssertionAction().setEnabled(lastAssertionNode.canDelete());
@@ -181,13 +179,20 @@ public class PolicyToolBar extends JToolBar implements ConnectionListener {
         }
     }
 
+    private boolean validPolicyAssertionNode() {
+        return lastAssertionNode != null;
+    }
+
+    private boolean validPaletteNode() {
+        return lastPaletteNode != null &&
+          !lastPaletteNode.getAllowsChildren();
+    }
+
     private void disableAll() {
-        Component[] components = getComponents();
-        for (int i = components.length - 1; i >= 0; i--) {
-            if (components[i] instanceof JButton) {
-                components[i].setEnabled(false);
-            }
-        }
+        getDeleteAssertionAction().setEnabled(false);
+        getAssertionMoveDownAction().setEnabled(false);
+        getAssertionMoveUpAction().setEnabled(false);
+        getAddAssertionAction().setEnabled(false);
     }
 
     private TreeSelectionListener

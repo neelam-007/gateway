@@ -126,12 +126,16 @@ public class PolicyTree extends JTree implements DragSourceListener,
          */
         protected void popUpMenuHandler(MouseEvent mouseEvent) {
             JTree tree = (JTree)mouseEvent.getSource();
+            AbstractTreeNode node = null;
 
             if (mouseEvent.isPopupTrigger()) {
                 int closestRow = tree.getClosestRowForLocation(mouseEvent.getX(), mouseEvent.getY());
-
-                if (closestRow != -1
-                  && tree.getRowBounds(closestRow).contains(mouseEvent.getX(), mouseEvent.getY())) {
+                if (closestRow == -1) {
+                    node = (AbstractTreeNode)tree.getModel().getRoot();
+                    if (node == null) {
+                        return;
+                    }
+                } else {
                     int[] rows = tree.getSelectionRows();
                     boolean found = false;
 
@@ -141,10 +145,15 @@ public class PolicyTree extends JTree implements DragSourceListener,
                             break;
                         }
                     }
+
                     if (!found) {
                         tree.setSelectionRow(closestRow);
                     }
-                    AbstractTreeNode node = (AbstractTreeNode)tree.getLastSelectedPathComponent();
+                    node = (AbstractTreeNode)tree.getLastSelectedPathComponent();
+                }
+
+                if (node != null) {
+
                     Action[] actions = node.getActions();
                     if (policyEditorPanel != null) {
                         policyEditorPanel.updateActions(actions);
@@ -153,6 +162,7 @@ public class PolicyTree extends JTree implements DragSourceListener,
                     if (menu != null) {
                         menu.show(mouseEvent.getComponent(), mouseEvent.getX(), mouseEvent.getY());
                     }
+
                 }
             }
         }
@@ -421,11 +431,8 @@ public class PolicyTree extends JTree implements DragSourceListener,
             TreePath path = getClosestPathForLocation(pt.x, pt.y);
             setSelectionPath(path);
             if (path != null) {
-                AssertionTreeNode target = (AssertionTreeNode)path.getLastPathComponent();
-                if (target instanceof CompositeAssertionTreeNode) {
-                    e.acceptDrag(e.getDropAction());
-                    return;
-                }
+                e.acceptDrag(e.getDropAction());
+                return;
             }
             e.rejectDrag();
         }
@@ -573,44 +580,44 @@ public class PolicyTree extends JTree implements DragSourceListener,
                 return false;
             }
 
-			// Do this if you want to prohibit dropping onto the drag source...
-			Point pt = e.getLocation();
-			TreePath path = getClosestPathForLocation(pt.x, pt.y);
-			if (path.equals(pathSource))
-				return false;
+            // Do this if you want to prohibit dropping onto the drag source...
+            Point pt = e.getLocation();
+            TreePath path = getClosestPathForLocation(pt.x, pt.y);
+            if (path.equals(pathSource))
+                return false;
 
             return true;
         }
     }
-    
 
-    // Autoscroll Interface...
-    // The following code was borrowed from the book:
-    //		Java Swing
-    //		By Robert Eckstein, Marc Loy & Dave Wood
-    //		Paperback - 1221 pages 1 Ed edition (September 1998)
-    //		O'Reilly & Associates; ISBN: 156592455X
-    //
-    // The relevant chapter of which can be found at:
-    //		http://www.oreilly.com/catalog/jswing/chapter/dnd.beta.pdf
+
+// Autoscroll Interface...
+// The following code was borrowed from the book:
+//		Java Swing
+//		By Robert Eckstein, Marc Loy & Dave Wood
+//		Paperback - 1221 pages 1 Ed edition (September 1998)
+//		O'Reilly & Associates; ISBN: 156592455X
+//
+// The relevant chapter of which can be found at:
+//		http://www.oreilly.com/catalog/jswing/chapter/dnd.beta.pdf
 	
     private static final int AUTOSCROLL_MARGIN = 12;
 
-    // Ok, we’ve been told to scroll because the mouse cursor is in our
-    // scroll zone.
+// Ok, we’ve been told to scroll because the mouse cursor is in our
+// scroll zone.
     public void autoscroll(Point pt) {
         // Figure out which row we’re on.
         int nRow = getRowForLocation(pt.x, pt.y);
 		
-        // If we are not on a row then ignore this autoscroll request
+// If we are not on a row then ignore this autoscroll request
         if (nRow < 0)
             return;
 
         Rectangle raOuter = getBounds();
-        // Now decide if the row is at the top of the screen or at the
-        // bottom. We do this to make the previous row (or the next
-        // row) visible as appropriate. If we’re at the absolute top or
-        // bottom, just return the first or last row respectively.
+// Now decide if the row is at the top of the screen or at the
+// bottom. We do this to make the previous row (or the next
+// row) visible as appropriate. If we’re at the absolute top or
+// bottom, just return the first or last row respectively.
 		
         nRow = (pt.y + raOuter.y <= AUTOSCROLL_MARGIN)			// Is row at top of screen? 
           ?
@@ -621,8 +628,8 @@ public class PolicyTree extends JTree implements DragSourceListener,
         scrollRowToVisible(nRow);
     }
 
-    // Calculate the insets for the *JTREE*, not the viewport
-    // the tree is in. This makes it a bit messy.
+// Calculate the insets for the *JTREE*, not the viewport
+// the tree is in. This makes it a bit messy.
     public Insets getAutoscrollInsets() {
         Rectangle raOuter = getBounds();
         Rectangle raInner = getParent().getBounds();
@@ -632,11 +639,11 @@ public class PolicyTree extends JTree implements DragSourceListener,
           raOuter.width - raInner.width - raInner.x + raOuter.x + AUTOSCROLL_MARGIN);
     }
 
-    // TreeModelListener interface implemntations
+// TreeModelListener interface implemntations
     public void treeNodesChanged(TreeModelEvent e) {
         log.fine("treeNodesChanged");
         sayWhat(e);
-        // We dont need to reset the selection path, since it has not moved
+// We dont need to reset the selection path, since it has not moved
     }
 
     public void treeNodesInserted(TreeModelEvent e) {
