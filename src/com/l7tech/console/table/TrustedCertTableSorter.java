@@ -1,19 +1,18 @@
 package com.l7tech.console.table;
 
-import com.l7tech.console.panels.CertManagerWindow;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.util.CertUtils;
 
 import javax.swing.table.DefaultTableModel;
-import java.util.logging.Logger;
-import java.util.Vector;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.Calendar;
 import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Comparator;
+import java.util.Vector;
+import java.util.logging.Logger;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -32,7 +31,7 @@ public class TrustedCertTableSorter extends FilteredDefaultTableModel {
     private boolean ascending = true;
     private int columnToSort = 1;
     private Vector rawdata = new Vector();
-    private Object[] sortedData = null;
+    private Object[] sortedData = new Object[0];
 
     /**
      * Constructor taking <CODE>DefaultTableModel</CODE> as the input parameter.
