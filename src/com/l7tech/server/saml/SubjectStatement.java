@@ -63,17 +63,24 @@ public class SubjectStatement {
 
     /**
      * Protected cxonstructor for subclassing that populates the subject statement properties
+     *
      * @param credentials  the source of this subject statement
-     * @param confirmation  the cvo
+     * @param confirmation the cvo
      */
     protected SubjectStatement(LoginCredentials credentials, Confirmation confirmation) {
         if (credentials == null) {
             throw new IllegalArgumentException();
         }
-        if (credentials.getLogin() == null) {
-            throw new IllegalArgumentException("Login name is required");
+        if (credentials.getLogin() == null) { // if login null, try the cert dn
+            final X509Certificate clientCert = credentials.getClientCert();
+            if (clientCert != null) {
+                setName(clientCert.getSubjectDN().getName());
+            } else {
+                throw new IllegalArgumentException("Login name is required");
+            }
+        } else {
+            setName(credentials.getLogin());
         }
-        setName(credentials.getLogin());
         setConfirmationMethod(confirmation.method);
 
         CredentialFormat format = credentials.getFormat();
@@ -117,7 +124,6 @@ public class SubjectStatement {
     }
 
     /**
-     *
      * @return whether this subject statement represents the sender vouches
      *         confirmation method
      */
