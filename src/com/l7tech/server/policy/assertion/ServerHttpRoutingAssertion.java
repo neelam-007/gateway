@@ -302,7 +302,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                     SubjectStatement statement = SubjectStatement.createAuthenticationStatement(context.getCredentials(), SubjectStatement.SENDER_VOUCHES);
                     ag.attachStatement(document, statement, samlOptions);
                 }
-                attachCookies(client, context, url);
+                attachCookies(client, context, url, auditor);
 
                 // Serialize the request
                 final InputStream bodyInputStream = reqMime.getEntireMessageBodyAsInputStream();
@@ -390,8 +390,9 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
      * @param client  the http client sender
      * @param context the context for this request
      * @param url
+     * @param auditor
      */
-    private void attachCookies(HttpClient client, PolicyEnforcementContext context, URL url) {
+    private void attachCookies(HttpClient client, PolicyEnforcementContext context, URL url, final Auditor auditor) {
         HttpServletRequest req = context.getHttpServletRequest();
         if (req == null)
             return;
@@ -402,7 +403,6 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         javax.servlet.http.Cookie[] cookies = req.getCookies();
         org.apache.commons.httpclient.Cookie cookieOut = null;
 
-        Auditor auditor = new Auditor(context.getAuditContext(), logger);
         // if no cookies found in the request but there is cookies in the udpatedCookies list (i.e. new cookies)
         if ((cookies == null || cookies.length == 0)) {
             if (updatedCookies.size() > 0) {
