@@ -26,7 +26,7 @@ public class RoutingAssertionTreeNode extends LeafAssertionTreeNode {
         if (url != null) {
             return "Route to " + url;
         }
-        return "default service route";
+        return "";
     }
 
     /**

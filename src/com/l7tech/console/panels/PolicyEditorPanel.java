@@ -9,9 +9,11 @@ import com.l7tech.console.tree.policy.*;
 import com.l7tech.console.util.PopUpMouseListener;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.WindowManager;
+import com.l7tech.console.logging.ErrorManager;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
@@ -21,6 +23,8 @@ import javax.swing.text.EditorKit;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
+import javax.swing.tree.DefaultTreeModel;
+import javax.wsdl.WSDLException;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -28,6 +32,7 @@ import java.awt.event.MouseEvent;
 import java.io.StringReader;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.logging.Level;
 
 /**
  * The class represnts the policy editor
@@ -270,8 +275,33 @@ public class PolicyEditorPanel extends JPanel {
             policyEditorToolbar.buttonSave.setEnabled(true);
         }
 
-        public void treeNodesInserted(TreeModelEvent e) {
+        public void treeNodesInserted(final TreeModelEvent e) {
             policyEditorToolbar.buttonSave.setEnabled(true);
+            //todo: refactor this out
+            SwingUtilities.invokeLater(
+              new Runnable() {
+                public void run() {
+                    try {
+                        TreePath path = e.getTreePath();
+                        TreeNode parent = (TreeNode)path.getLastPathComponent();
+                        int[] indices = e.getChildIndices();
+                        for (int i = 0; i < indices.length; i++) {
+                            int indice = indices[i];
+                            TreeNode node = parent.getChildAt(indice);
+                            if (node instanceof RoutingAssertionTreeNode) {
+                                RoutingAssertionTreeNode rn = (RoutingAssertionTreeNode)node;
+                                ((RoutingAssertion)rn.asAssertion()).setProtectedServiceUrl(service.parsedWsdl().getServiceURI());
+                                ((DefaultTreeModel)policyTree.getModel()).nodeChanged(node);
+                            }
+                        }
+                    } catch (WSDLException e1) {
+                        ErrorManager.getDefault().
+                          notify(Level.WARNING, e1,
+                            "Error parsing wsd l- service "+service.getName());
+                    }
+                }
+            });
+
 
         }
         public void treeNodesRemoved(TreeModelEvent e) {
@@ -283,4 +313,5 @@ public class PolicyEditorPanel extends JPanel {
         }
 
     };
+
 }

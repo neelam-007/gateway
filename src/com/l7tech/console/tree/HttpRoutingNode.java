@@ -68,7 +68,6 @@ public class HttpRoutingNode extends AbstractTreeNode {
      */
     public String getName() {
         return "HTTP transport routing";
-
     }
 
     /**
