@@ -10,7 +10,7 @@ package com.l7tech.identity;
  * @author alex
  * @version $Revision$
  */
-public abstract class AuthenticationException extends Exception {
+public class AuthenticationException extends Exception {
     public AuthenticationException() {
         super();
     }
