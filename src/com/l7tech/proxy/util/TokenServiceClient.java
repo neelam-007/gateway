@@ -7,30 +7,32 @@
 package com.l7tech.proxy.util;
 
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.common.util.*;
+import com.l7tech.common.security.xml.*;
+import com.l7tech.common.util.CausedIOException;
+import com.l7tech.common.util.ISO8601Date;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
-import com.l7tech.common.security.xml.*;
-import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.CurrentRequest;
+import com.l7tech.proxy.datamodel.Ssg;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import javax.xml.soap.SOAPConstants;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.Date;
+import java.text.ParseException;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.text.ParseException;
 
 /**
  * Builds request messages for TokenService and helps parse the responses.
