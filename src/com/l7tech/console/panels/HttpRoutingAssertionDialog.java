@@ -133,7 +133,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
 
 
         credentialsPanel.setLayout(new GridBagLayout());
-        credentialsPanel.setBorder(BorderFactory.createTitledBorder("Web Service Authentication"));
+        credentialsPanel.setBorder(BorderFactory.createTitledBorder("Service Authentication"));
         ButtonGroup methodGroup = new ButtonGroup();
 
         passwordMethod = new JRadioButton("Identity Authentication");
