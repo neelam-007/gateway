@@ -14,19 +14,19 @@ import com.l7tech.common.mime.ByteArrayStashManager;
 import com.l7tech.common.mime.ContentTypeHeader;
 import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.mime.NoSuchPartException;
-import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.security.saml.SamlAssertionGenerator;
+import com.l7tech.common.security.saml.SubjectStatement;
+import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.*;
-import com.l7tech.server.message.PolicyEnforcementContext;
-import com.l7tech.common.security.saml.SubjectStatement;
-import com.l7tech.server.transport.http.SslClientTrustManager;
-import com.l7tech.server.audit.AuditContext;
 import com.l7tech.server.AssertionMessages;
+import com.l7tech.server.audit.AuditContext;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.transport.http.SslClientTrustManager;
 import com.l7tech.service.PublishedService;
 import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.PostMethod;
@@ -47,7 +47,6 @@ import java.net.*;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.util.Vector;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -59,6 +58,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
     public static final String PROP_SSL_SESSION_TIMEOUT = HttpRoutingAssertion.class.getName() +
       ".sslSessionTimeoutSeconds";
     public static final int DEFAULT_SSL_SESSION_TIMEOUT = 10 * 60;
+    private SignerInfo senderVouchesSignerInfo;
 
     public ServerHttpRoutingAssertion(HttpRoutingAssertion assertion, ApplicationContext ctx) {
         super(ctx);
@@ -78,6 +78,8 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             sslContext.init(null, new TrustManager[]{trustManager}, null);
             final int timeout = Integer.getInteger(PROP_SSL_SESSION_TIMEOUT, DEFAULT_SSL_SESSION_TIMEOUT).intValue();
             sslContext.getClientSessionContext().setSessionTimeout(timeout);
+            final KeystoreUtils ku = (KeystoreUtils)applicationContext.getBean("keystore");
+            senderVouchesSignerInfo = ku.getSslSignerInfo();
         } catch (Exception e) {
             auditor.logAndAudit(AssertionMessages.SSL_CONTEXT_INIT_FAILED, null, e);
             throw new RuntimeException(e);
@@ -285,8 +287,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
                 if (httpRoutingAssertion.isAttachSamlSenderVouches()) {
                     Document document = context.getRequest().getXmlKnob().getDocumentWritable();
-                    SignerInfo si = KeystoreUtils.getInstance().getSignerInfo();
-                    SamlAssertionGenerator ag = new SamlAssertionGenerator(si);
+                    SamlAssertionGenerator ag = new SamlAssertionGenerator(senderVouchesSignerInfo);
                     SamlAssertionGenerator.Options samlOptions = new SamlAssertionGenerator.Options();
                     TcpKnob requestTcp = (TcpKnob)context.getRequest().getKnob(TcpKnob.class);
                     if (requestTcp != null) {

@@ -32,9 +32,10 @@ public class KeystoreUtils {
     public static final String KSTORE_TYPE = "keystoretype";
 
     public static final String PS = System.getProperty("file.separator");
+    private final ServerConfig serverConfig;
 
-    public static KeystoreUtils getInstance() {
-        return SingletonHolder.singleton;
+    public KeystoreUtils(ServerConfig serverConfig) {
+        this.serverConfig = serverConfig;
     }
 
     public byte[] readSSLCert() throws IOException {
@@ -203,12 +204,12 @@ public class KeystoreUtils {
 
 
     /**
-     * Returns the signer info containing the private key, cert and the public
+     * Returns the Ssl signer info containing the private key, cert and the public
      * key from this keystore.
      * 
      * @return the <code>SignerInfo</code> instance
      */
-    public SignerInfo getSignerInfo() throws IOException {
+    public SignerInfo getSslSignerInfo() throws IOException {
         byte[] buf = readSSLCert();
         X509Certificate[] certChain;
         try {
@@ -234,16 +235,9 @@ public class KeystoreUtils {
         return new SignerInfo(pkey, certChain);
     }
 
-    private static class SingletonHolder {
-        private static KeystoreUtils singleton = new KeystoreUtils();
-    }
-
-    protected KeystoreUtils() {
-    }
-
     private synchronized Properties getProps() {
         if (props == null) {
-            String propsPath = ServerConfig.getInstance().getProperty(ServerConfig.PARAM_KEYSTORE);
+            String propsPath = serverConfig.getProperty(ServerConfig.PARAM_KEYSTORE);
             InputStream inputStream = null;
             if (propsPath != null && propsPath.length() > 0) {
                 File f = new File(propsPath);

@@ -22,6 +22,7 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
+import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.security.cert.CertificateException;
@@ -44,9 +45,12 @@ import java.util.logging.Logger;
  * $Id$
  */
 public class ServerResponseWssConfidentiality implements ServerAssertion {
+    private SignerInfo signerInfo;
 
-    public ServerResponseWssConfidentiality(ResponseWssConfidentiality data) {
+    public ServerResponseWssConfidentiality(ResponseWssConfidentiality data, ApplicationContext ctx) throws IOException {
         responseWssConfidentiality = data;
+        KeystoreUtils ku = (KeystoreUtils)ctx.getBean("keystore");
+        signerInfo = ku.getSslSignerInfo();
     }
 
     /**
@@ -192,9 +196,8 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
                     wssReq.getElementsToEncrypt().addAll(selectedElements);
 
                     if (clientCert != null) {
-                        SignerInfo si = KeystoreUtils.getInstance().getSignerInfo();
-                        wssReq.setSenderMessageSigningCertificate(si.getCertificateChain()[0]);
-                        wssReq.setSenderMessageSigningPrivateKey(si.getPrivate());
+                        wssReq.setSenderMessageSigningCertificate(signerInfo.getCertificateChain()[0]);
+                        wssReq.setSenderMessageSigningPrivateKey(signerInfo.getPrivate());
                         wssReq.setRecipientCertificate(clientCert);
                         wssReq.setSignTimestamp();
                     }

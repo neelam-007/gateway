@@ -59,11 +59,18 @@ import java.util.logging.Level;
  * Date: Jun 11, 2003
  */
 public class PolicyServlet extends AuthenticatableHttpServlet {
+    private byte[] serverCertificate;
 
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
         dbf = DocumentBuilderFactory.newInstance();
         dbf.setNamespaceAware(true);
+        KeystoreUtils ku = (KeystoreUtils)getApplicationContext().getBean("keystore");
+        try {
+            serverCertificate = ku.readSSLCert();
+        } catch (IOException e) {
+            throw new ServletException(e);
+        }
     }
 
     /**
@@ -132,11 +139,6 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
     protected PolicyService getPolicyService() {
         return (PolicyService)getApplicationContext().getBean("policyService");
-//        X509Certificate cert = null;
-//        PrivateKey key = null;
-//        cert = KeystoreUtils.getInstance().getSslCert();
-//        key = KeystoreUtils.getInstance().getSSLPrivateKey();
-//        return new PolicyService(key, cert);
     }
 
     protected PolicyService.PolicyGetter normalPolicyGetter() {
@@ -267,7 +269,6 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         logger.finest("Request for root cert");
         // Find our certificate
         //byte[] cert = KeystoreUtils.getInstance().readRootCert();
-        byte[] cert = KeystoreUtils.getInstance().readSSLCert();
 
         // Insert Cert-Check-NNN: headers if we can.
         if (username != null && nonce != null) {
@@ -286,7 +287,7 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                         md5.update(info.ha1.getBytes());
                         md5.update(nonce.getBytes());
                         md5.update(String.valueOf(info.idProvider).getBytes());
-                        md5.update(cert);
+                        md5.update(serverCertificate);
                         md5.update(info.ha1.getBytes());
                         hash = HexUtils.encodeMd5Digest(md5.digest());
                     }
@@ -299,8 +300,8 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
         response.setStatus(200);
         response.setContentType("application/x-x509-ca-cert");
-        response.setContentLength(cert.length);
-        response.getOutputStream().write(cert);
+        response.setContentLength(serverCertificate.length);
+        response.getOutputStream().write(serverCertificate);
         response.flushBuffer();
     }
 

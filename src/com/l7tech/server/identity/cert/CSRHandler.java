@@ -60,9 +60,10 @@ public class CSRHandler extends AuthenticatableHttpServlet {
 
         String tmp = getServletConfig().getInitParameter("RootKeyStore");
         if (tmp == null || tmp.length() < 1) tmp = "../../kstores/ssgroot";
-        rootkstore = KeystoreUtils.getInstance().getRootKeystorePath();
-        rootkstorepasswd = KeystoreUtils.getInstance().getRootKeystorePasswd();
-        rootkstoretype = KeystoreUtils.getInstance().getKeyStoreType();
+        KeystoreUtils ku = (KeystoreUtils)getApplicationContext().getBean("keystore");
+        rootkstore = ku.getRootKeystorePath();
+        rootkstorepasswd = ku.getRootKeystorePasswd();
+        rootkstoretype = ku.getKeyStoreType();
         if (rootkstorepasswd == null || rootkstorepasswd.length() < 1) {
             String msg = "Key store password not found (root CA).";
             logger.log(Level.SEVERE, msg);

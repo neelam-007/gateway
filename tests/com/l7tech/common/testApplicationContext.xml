@@ -86,8 +86,11 @@
     </bean>
 
     <!-- ssl config  -->
-    <bean id="keystore" class="com.l7tech.common.util.KeystoreUtils" factory-method="getInstance"
-          depends-on="testKeys"/>
+    <bean id="keystore" class="com.l7tech.common.util.KeystoreUtils" depends-on="testKeys">
+        <constructor-arg>
+            <ref bean="serverConfig"/>
+        </constructor-arg>
+    </bean>
 
     <bean id="sslKeystoreType" class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
         <property name="targetObject">

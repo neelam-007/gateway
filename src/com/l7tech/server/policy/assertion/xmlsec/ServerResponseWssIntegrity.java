@@ -14,6 +14,7 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import org.jaxen.JaxenException;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
+import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
 import java.security.cert.CertificateException;
@@ -35,9 +36,12 @@ import java.util.logging.Logger;
  * $Id$
  */
 public class ServerResponseWssIntegrity implements ServerAssertion {
+    private SignerInfo signerInfo;
 
-    public ServerResponseWssIntegrity(ResponseWssIntegrity data) {
+    public ServerResponseWssIntegrity(ResponseWssIntegrity data, ApplicationContext ctx) throws IOException {
         responseWssIntegrity = data;
+        KeystoreUtils ku = (KeystoreUtils)ctx.getBean("keystore");
+        signerInfo = ku.getSslSignerInfo();
     }
 
     /**
@@ -98,7 +102,6 @@ public class ServerResponseWssIntegrity implements ServerAssertion {
                     return AssertionStatus.NONE;
                 }
 
-                SignerInfo si = KeystoreUtils.getInstance().getSignerInfo();
                 DecorationRequirements wssReq = null;
                 try {
                     if (!recipient.localRecipient()) {
@@ -113,8 +116,8 @@ public class ServerResponseWssIntegrity implements ServerAssertion {
                     logger.severe(msg);
                     return AssertionStatus.SERVER_ERROR;
                 }
-                wssReq.setSenderMessageSigningCertificate(si.getCertificateChain()[0]);
-                wssReq.setSenderMessageSigningPrivateKey(si.getPrivate());
+                wssReq.setSenderMessageSigningCertificate(signerInfo.getCertificateChain()[0]);
+                wssReq.setSenderMessageSigningPrivateKey(signerInfo.getPrivate());
                 wssReq.getElementsToSign().addAll(selectedElements);
                 wssReq.setSignTimestamp();
                 logger.fine("Designated " + selectedElements.size() + " response elements for signing");
