@@ -372,13 +372,8 @@ public class RSASigner {
      *@return                Description of the Return Value
      *@exception  Exception  Description of the Exception
      */
-    private X509Certificate makeBCCertificate(String dn, X509Name caname,
-                                              long validity, PublicKey publicKey, int keyusage)
-            throws Exception {
-        LogManager.getInstance().getSystemLogger().log(Level.INFO, "makeBCCertificate() dn= " + dn);
-        //start initialising the cert---------------------
+    private X509Certificate makeBCCertificate(String dn, X509Name caname, long validity, PublicKey publicKey, int keyusage) throws Exception {
         final String sigAlg = "SHA1WithRSA";
-
         Date firstDate = new Date();
         // Set back startdate ten minutes to avoid some problems with wrongly set clocks.
         firstDate.setTime(firstDate.getTime() - 10 * 60 * 1000);
@@ -457,13 +452,8 @@ public class RSASigner {
             ext.addObject(distp);
             certgen.addExtension(X509Extensions.CRLDistributionPoints.getId(), crldistcritical, ext);
         }*/
-
         X509Certificate cert = certgen.generateX509Certificate(privateKey);
-
         LogManager.getInstance().getSystemLogger().log(Level.FINE, "<makeBCCertificate()");
-
-        LogManager.getInstance().getSystemLogger().log(Level.INFO, "makeBCCertificate() exit subject dn= " + cert.getSubjectDN().toString());
-
         return (X509Certificate) cert;
     }
     // makeBCCertificate
