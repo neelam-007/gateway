@@ -40,6 +40,9 @@ import java.net.*;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.util.Vector;
+import java.util.Map;
+import java.util.Set;
+import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -135,7 +138,14 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 postMethod = new PostMethod(url.toString());
 
                 // TODO: Attachments
-                postMethod.setRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML + "; charset=" + ENCODING.toLowerCase());
+                if(request.isMultipart()) {
+                    postMethod.setRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.MULTIPART_CONTENT_TYPE +
+                            "; type=" + XmlUtil.TEXT_XML +
+                            "; charset=" + ENCODING.toLowerCase() +
+                            "; " + XmlUtil.MULTIPART_BOUNDARY + "=" + request.getMultipartBoundary());
+                } else {
+                    postMethod.setRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML + "; charset=" + ENCODING.toLowerCase());
+                }
 
                 String userAgent = httpRoutingAssertion.getUserAgent();
                 if (userAgent == null || userAgent.length() == 0) userAgent = DEFAULT_USER_AGENT;
@@ -227,7 +237,24 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                     }
                 }
                 attachCookies(client, request.getTransportMetadata(), url);
-                postMethod.setRequestBody(requestXml);
+
+                if(request.isMultipart()) {
+                    StringBuffer sb = new StringBuffer();
+                    sb.append(request.getMultipartBoundary() + "\n");
+                    //sb.append(XmlUtil.CONTENT_TYPE + ": " + XmlUtil.TEXT_XML + "; charset=" + ENCODING.toLowerCase() + "\n");
+                    Message.Part soapPart = request.getSoapPart();
+                    Map headerMap = soapPart.getHeaders();
+                    Set headerKeys = headerMap.keySet();
+                    Iterator headerItr = headerKeys.iterator();
+                    while(headerItr.hasNext()) {
+                        Message.HeaderValue headerValue = (Message.HeaderValue) headerMap.get(headerItr.next());
+                        sb.append(headerValue.getName()).append("=").append(headerValue.getValue()).append("\n");
+                    }
+                    sb.append(requestXml).append("\n");
+                    postMethod.setRequestBody(addAttachments(sb.toString(), request));
+                } else {
+                    postMethod.setRequestBody(requestXml);
+                }
 
                 if ( hconf == null ) {
                     client.executeMethod(postMethod);
@@ -295,6 +322,45 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         }
 
         return AssertionStatus.NONE;
+    }
+
+    private String addAttachments(String requestXml, XmlRequest request) throws IOException {
+        StringBuffer sb = new StringBuffer();
+
+        // append the SOAP part
+        sb.append(requestXml);
+
+        // add attachments
+        Map attachments = request.getRequestAttachments();
+        Set attachmentKeys = attachments.keySet();
+        Iterator itr = attachmentKeys.iterator();
+        while(itr.hasNext()) {
+            Object o = (Object) itr.next();
+            Message.Part part = (Message.Part) attachments.get(o);
+
+            sb.append("\n" + request.getMultipartBoundary() + "\n");
+
+            Map headers = part.getHeaders();
+            Set headerKeys = headers.keySet();
+            Iterator headerItr = headerKeys.iterator();
+            while(headerItr.hasNext()) {
+                String headerName = (String) headerItr.next();
+                Message.HeaderValue hv = (Message.HeaderValue) headers.get(headerName);
+                sb.append(hv.getName()).append("=").append(hv.getValue()).append("\n");
+
+                // append parameters of the header
+                Map parameters = hv.getParams();
+                Set paramKeys = parameters.keySet();
+                Iterator paramItr = paramKeys.iterator();
+                while(paramItr.hasNext()) {
+                    String paramName = (String) paramItr.next();
+                    sb.append(paramName).append("=").append(parameters.get(paramName)).append(";");
+                }
+            }
+            sb.append("\n" + part.getContent());
+        }
+
+        return sb.toString();
     }
 
     private URL getProtectedServiceUrl(PublishedService service, XmlRequest request) throws WSDLException, MalformedURLException {

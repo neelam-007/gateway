@@ -20,6 +20,7 @@ import org.xmlpull.v1.XmlPullParserException;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Encapsulates a SOAP request. Not thread-safe. Don't forget to call close() when you're done!
@@ -120,6 +121,22 @@ public abstract class SoapRequest extends XmlMessageAdapter implements SoapMessa
             _requestXml = getMessageXml(getRequestReader());
         }
         return _requestXml;
+    }
+
+    public Map getRequestAttachments() throws IOException {
+         return getMessageAttachments(getRequestReader());
+    }
+
+    public Part getRequestAttachment(int position) throws IOException {
+        return getMessagePart(getRequestReader(), position);
+    }
+
+    public Part getSoapPart() throws IOException {
+        return getMessagePart(getRequestReader(), 0);
+    }
+    
+    public String getMultipartBoundary() {
+        return multipartBoundary;
     }
 
     public void setRequestXml( String xml ) {

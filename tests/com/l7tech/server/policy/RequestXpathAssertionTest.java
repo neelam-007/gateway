@@ -102,6 +102,19 @@ public class RequestXpathAssertionTest extends TestCase {
                 return null;
             }
             public void setRequestXml(String xml) {}
+
+            public Map getRequestAttachments() throws IOException {
+                return null;
+            }
+            public Part getRequestAttachment(int position) throws IOException {
+                return null;
+            }
+            
+            public Part getSoapPart() throws IOException { return null; }
+
+            public boolean isMultipart() { return false; }
+            public String getMultipartBoundary() { return null; }
+
             public TransportMetadata getTransportMetadata() {
                 return null;
             }

@@ -7,6 +7,7 @@
 package com.l7tech.message;
 
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * @author alex
@@ -36,4 +37,14 @@ public interface XmlRequest extends Request, XmlMessage {
      * @param xml
      */
     void setRequestXml( String xml );
+
+    public Map getRequestAttachments() throws IOException;
+
+    public Part getRequestAttachment(int position) throws IOException;
+
+    public String getMultipartBoundary();
+
+    public Part getSoapPart() throws IOException;
+
+    public boolean isMultipart();
 }
