@@ -87,7 +87,7 @@ public class ServerSamlSecurity implements ServerAssertion {
             }
         }
 
-        if (samlAssertion != null) {
+        if (samlAssertion != null) { // todo, should this accept any type of SamlAssertion?
             if (!(samlAssertion instanceof SamlHolderOfKeyAssertion)) {
                 logger.warning("We got a request that presented a valid signature from a SAML assertion, but it was not a Holder-of-Key assertion.");
                 return AssertionStatus.BAD_REQUEST;
