@@ -154,24 +154,6 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
     }
 
     /**
-     * Store the message number of the selected row in the log table.
-     *
-     * @param msgNumber  The message number of the selected row.
-     */
-    private void setMsgNumOfSelectedRow(String msgNumber){
-         msgNumberOfSelectedRow = msgNumber;
-    }
-
-    /**
-     * Return the messsage number of the selected row in the log table.
-     *
-     * @return String  The message number of the selected row.
-     */
-    private String getMsgNumOfSelectedRow() {
-         return msgNumberOfSelectedRow;
-    }
-
-    /**
      * Apply the filter specified.
      *
      * @param newFilterLevel  The new filter applied
@@ -245,6 +227,8 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                 return msg.getMsgMethod();
             case LogPanel.LOG_REQUEST_ID_COLUMN_INDEX:
                 return msg.getReqId();
+            case LogPanel.LOG_NODE_ID_COLUMN_INDEX:
+                return msg.getNodeId();
             default:
                 throw new IllegalArgumentException("Bad Column");
         }
@@ -317,6 +301,10 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                 case LogPanel.LOG_REQUEST_ID_COLUMN_INDEX:
                     elementA = logMsgA.getReqId();
                     elementB = logMsgB.getReqId();
+                    break;
+                case LogPanel.LOG_NODE_ID_COLUMN_INDEX:
+                    elementA = logMsgA.getNodeId();
+                    elementB = logMsgB.getNodeId();
                     break;
                 default:
                     logger.warning("Bad Statistics Table Column: " + column);
@@ -415,16 +403,13 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
      *
      * @param msgFilterLevel  The filter level.
      * @param logPane   The object reference to the LogPanel.
-     * @param msgNumSelected  The message number of the log being selected by the user for viewing the details of the message.
      * @param restartTimer  Specifying whether the refresh timer is restarted after the data retrieval.
      * @param requests  The list of requests for retrieving logs. One request per node.
      * @param newRefresh  Specifying whether this refresh call is a new one or a part of the current refresh cycle.
      */
-    public void refreshLogs(final int msgFilterLevel, final LogPanel logPane, final String msgNumSelected, final boolean restartTimer, Vector requests, final boolean newRefresh) {
+    public void refreshLogs(final int msgFilterLevel, final LogPanel logPane, final boolean restartTimer, Vector requests, final boolean newRefresh) {
 
         long endMsgNumber = -1;
-
-        setMsgNumOfSelectedRow(msgNumSelected);
 
         if (newRefresh) {
 
@@ -464,6 +449,8 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                             appendLogs(getNewLogs());
                         }
 
+                        String msgNumSelected = logPane.getSelectedMsgNumber();
+
                         // filter the logs
                         filterData(msgFilterLevel);
 
@@ -475,7 +462,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                         logPane.updateTimeStamp();
                         logPane.updateMsgTotal();
 
-                        logPane.setSelectedRow(getMsgNumOfSelectedRow());
+                        logPane.setSelectedRow(msgNumSelected);
 
                         final Vector unfilledRequest = getUnfilledRequest();
 
@@ -484,7 +471,7 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                             SwingUtilities.invokeLater(
                                     new Runnable() {
                                         public void run() {
-                                            refreshLogs(msgFilterLevel, logPane, getMsgNumOfSelectedRow(), restartTimer, unfilledRequest, false);
+                                            refreshLogs(msgFilterLevel, logPane, restartTimer, unfilledRequest, false);
                                         }
                                     });
 

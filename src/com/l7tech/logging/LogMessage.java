@@ -23,6 +23,8 @@ public class LogMessage {
     private String msgDetails = null;
     private String nodeName = "";
     private String reqId = "";
+    private String nodeId = "";
+
     SimpleDateFormat sdf = new SimpleDateFormat( "yyyyMMdd HH:mm:ss.SSS" );
 
     public LogMessage(SSGLogRecord log) {
@@ -34,6 +36,7 @@ public class LogMessage {
         msgClass = log.getSourceClassName().toString();
         msgMethod = log.getSourceMethodName().toString();
         msgDetails = log.getMessage();
+        nodeId = log.getNodeId();
 
         if(log.getReqId() != null) {
              reqId = log.getReqId().toString();
@@ -84,6 +87,7 @@ public class LogMessage {
     public long getMsgNumber() {
         return msgNumber;
     }
+
     public String getTime() {
         return time;
     }
@@ -114,6 +118,10 @@ public class LogMessage {
 
     public void setNodeName(String nodeName) {
         this.nodeName = nodeName;
+    }
+
+    public String getNodeId() {
+        return nodeId;
     }
 
     public static void main(String[] args) {

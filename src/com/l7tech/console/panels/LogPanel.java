@@ -39,6 +39,7 @@ public class LogPanel extends JPanel {
     public static final int LOG_JAVA_CLASS_COLUMN_INDEX = 5;
     public static final int LOG_JAVA_METHOD_COLUMN_INDEX = 6;
     public static final int LOG_REQUEST_ID_COLUMN_INDEX = 7;
+    public static final int LOG_NODE_ID_COLUMN_INDEX = 8;
 
     public static final String MSG_TOTAL_PREFIX = "Total: ";
 
@@ -399,6 +400,7 @@ public class LogPanel extends JPanel {
         columnModel.addColumn(new TableColumn(LOG_JAVA_CLASS_COLUMN_INDEX, 0));   // min width is used
         columnModel.addColumn(new TableColumn(LOG_JAVA_METHOD_COLUMN_INDEX, 0));   // min width is used
         columnModel.addColumn(new TableColumn(LOG_REQUEST_ID_COLUMN_INDEX, 0));
+        columnModel.addColumn(new TableColumn(LOG_NODE_ID_COLUMN_INDEX, 0));
 
         for(int i = 0; i < columnModel.getColumnCount(); i++){
             columnModel.getColumn(i).setHeaderRenderer(iconHeaderRenderer);
@@ -429,6 +431,10 @@ public class LogPanel extends JPanel {
         columnModel.getColumn(LOG_REQUEST_ID_COLUMN_INDEX).setMaxWidth(0);
         columnModel.getColumn(LOG_REQUEST_ID_COLUMN_INDEX).setPreferredWidth(0);
 
+        columnModel.getColumn(LOG_NODE_ID_COLUMN_INDEX).setMinWidth(0);
+        columnModel.getColumn(LOG_NODE_ID_COLUMN_INDEX).setMaxWidth(0);
+        columnModel.getColumn(LOG_NODE_ID_COLUMN_INDEX).setPreferredWidth(0);
+
         return columnModel;
     }
 
@@ -456,7 +462,7 @@ public class LogPanel extends JPanel {
             return logTableModel;
         }
 
-        String[] cols = {"Message #", "Node", "Time", "Severity", "Message", "Class", "Method"};
+        String[] cols = {"Message #", "Node", "Time", "Severity", "Message", "Class", "Method", "Request Id", "Node Id"};
         String[][] rows = new String[][]{};
 
         logTableModel = new LogTableModel(rows, cols);
@@ -465,22 +471,34 @@ public class LogPanel extends JPanel {
     }
 
     /**
+     * Return the message number of the selected row in the log table.
+     *
+     * @return  String  The message number of the selected row in the log table.
+     */
+    public String getSelectedMsgNumber() {
+        // get the selected row index
+
+        int selectedRowIndexOld = getMsgTable().getSelectedRow();
+        String msgNumSelected = "-1";
+
+        // save the number of selected message
+        if (selectedRowIndexOld >= 0) {
+            msgNumSelected =
+                    getMsgTable().getValueAt(selectedRowIndexOld, LOG_NODE_ID_COLUMN_INDEX).toString().trim() +
+                    getMsgTable().getValueAt(selectedRowIndexOld, LOG_MSG_NUMBER_COLUMN_INDEX).toString().trim();
+        }
+
+        return msgNumSelected;
+    }
+
+    /**
      * Performs the log retrieval. This function is called when the refresh timer is expired.
      */
     public void refreshLogs() {
         getLogsRefreshTimer().stop();
 
-        // get the selected row index
-        int selectedRowIndexOld = getMsgTable().getSelectedRow();
-        String msgNumSelected = null;
-
-        // save the number of selected message
-        if (selectedRowIndexOld >= 0) {
-            msgNumSelected = getMsgTable().getValueAt(selectedRowIndexOld, 0).toString();
-        }
-
         // retrieve the new logs
-        ((FilteredLogTableSorter) getMsgTable().getModel()).refreshLogs(getMsgFilterLevel(), this, msgNumSelected, autoRefresh.isSelected(), new Vector(), true);
+        ((FilteredLogTableSorter) getMsgTable().getModel()).refreshLogs(getMsgFilterLevel(), this, autoRefresh.isSelected(), new Vector(), true);
 
     }
 
@@ -490,12 +508,16 @@ public class LogPanel extends JPanel {
      * @param msgNumber  The message number of the log being selected.
      */
     public void setSelectedRow(String msgNumber) {
+
         if (msgNumber != null) {
+
             // keep the current row selection
             int rowCount = getMsgTable().getRowCount();
             boolean rowFound = false;
             for (int i = 0; i < rowCount; i++) {
-                if (getMsgTable().getValueAt(i, 0).toString().equals(msgNumber)) {
+                String selctedMsgNum = getMsgTable().getValueAt(i, LOG_NODE_ID_COLUMN_INDEX).toString().trim() + getMsgTable().getValueAt(i, LOG_MSG_NUMBER_COLUMN_INDEX).toString().trim();
+
+                if (selctedMsgNum.equals(msgNumber)) {
                     getMsgTable().setRowSelectionInterval(i, i);
 
                     rowFound = true;
@@ -624,6 +646,9 @@ public class LogPanel extends JPanel {
 
         final JTable tableView = table;
         tableView.setColumnSelectionAllowed(false);
+
+        final LogPanel logPane = this;
+
         MouseAdapter listMouseListener = new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
 
@@ -632,14 +657,7 @@ public class LogPanel extends JPanel {
                 int column = tableView.convertColumnIndexToModel(viewColumn);
                 if (e.getClickCount() == 1 && column != -1) {
 
-                    // get the selected row index
-                    int selectedRowIndexOld = getMsgTable().getSelectedRow();
-                    String msgNumSelected = null;
-
-                    // save the number of selected message
-                    if (selectedRowIndexOld >= 0) {
-                        msgNumSelected = getMsgTable().getValueAt(selectedRowIndexOld, 0).toString();
-                    }
+                    String msgNumSelected = logPane.getSelectedMsgNumber();
 
                     ((FilteredLogTableSorter) tableView.getModel()).sortData(column, true);
                     ((FilteredLogTableSorter) tableView.getModel()).fireTableDataChanged();
