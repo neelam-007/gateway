@@ -6,8 +6,6 @@
 
 package com.l7tech.common.util;
 
-import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
-
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -168,7 +166,7 @@ public class CertUtils {
                     return; // success
                 } catch (Exception e) {
                     // Server SSL cert might have changed.  Attempt to reimport it
-                    throw new ServerCertificateUntrustedException("Unable to verify peer certificate with trusted cert: " + e);
+                    throw new CertificateException("Unable to verify peer certificate with trusted cert: " + e);
                 }
             } else if (cert.getSubjectDN().equals(trustedDN)) {
                 if (cert.equals(trustedCert)) {
@@ -178,6 +176,6 @@ public class CertUtils {
         }
 
         // We probably just havne't talked to this Ssg before.  Trigger a reimport of the certificate.
-        throw new ServerCertificateUntrustedException("Couldn't find trusted certificate in peer's certificate chain");
+        throw new CertificateException("Couldn't find trusted certificate in peer's certificate chain");
     }
 }
