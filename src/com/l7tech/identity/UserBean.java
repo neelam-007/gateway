@@ -157,6 +157,25 @@ public class UserBean implements User, Serializable {
         _version = version;
     }
 
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof UserBean)) return false;
+
+        final UserBean userBean = (UserBean)o;
+
+        if (_providerId != userBean._providerId) return false;
+        if (_uniqueId != null ? !_uniqueId.equals(userBean._uniqueId) : userBean._uniqueId != null) return false;
+
+        return true;
+    }
+
+    public int hashCode() {
+        int result;
+        result = (int)(_providerId ^ (_providerId >>> 32));
+        result = 29 * result + (_uniqueId != null ? _uniqueId.hashCode() : 0);
+        return result;
+    }
+
     protected long _providerId;
     protected String _uniqueId;
     protected String _name;

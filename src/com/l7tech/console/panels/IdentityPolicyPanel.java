@@ -122,9 +122,7 @@ public class IdentityPolicyPanel extends JPanel {
                 Object key = e.getItem();
                 CredentialSourceAssertion ca =
                   (CredentialSourceAssertion)Components.getCredentialsLocationMap().get(key);
-                ;
                 xmlSecOptions.setEnabled(ca instanceof XmlRequestSecurity);
-
             }
         });
         defaultUrlButton.addActionListener(new ActionListener() {
@@ -166,8 +164,7 @@ public class IdentityPolicyPanel extends JPanel {
     }
 
     private void exitHandler(ActionEvent e) {
-        Window w =
-          SwingUtilities.windowForComponent(this);
+        Window w = SwingUtilities.windowForComponent(this);
         w.dispose();
     }
 
@@ -238,11 +235,10 @@ public class IdentityPolicyPanel extends JPanel {
         Set othersRouteAssertions = new HashSet();
         for (Iterator iterator = otherPaths.iterator(); iterator.hasNext();) {
             IdentityPath ip = (IdentityPath)iterator.next();
-            othersRouteAssertions.addAll(ip.getEqualAssertions(RoutingAssertion.class));
+            othersRouteAssertions.addAll(ip.getAssignableAssertions(RoutingAssertion.class));
         }
 
-        Set principalRouteAssertions =
-          principalAssertionPaths.getEqualAssertions(RoutingAssertion.class);
+        Set principalRouteAssertions = principalAssertionPaths.getAssignableAssertions(RoutingAssertion.class);
         for (Iterator it = principalRouteAssertions.iterator(); it.hasNext();) {
             existingRoutingAssertion = (HttpRoutingAssertion)it.next();
             routeToUrlField.setText(existingRoutingAssertion.getProtectedServiceUrl());
@@ -452,9 +448,9 @@ public class IdentityPolicyPanel extends JPanel {
         _9 = new JCheckBox();
         sslCheckBox = _9;
         _9.setText("Require SSL/TLS encryption");
+        _9.setMargin(new Insets(2, 2, 2, 0));
         _9.setHorizontalTextPosition(10);
         _9.setContentAreaFilled(true);
-        _9.setMargin(new Insets(2, 2, 2, 0));
         _6.add(_9, new com.intellij.uiDesigner.core.GridConstraints(0, 0, 1, 2, 4, 0, 3, 0, null, null, null));
         final JLabel _10;
         _10 = new JLabel();
