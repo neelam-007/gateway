@@ -30,9 +30,10 @@ import java.util.logging.Logger;
  * $Id$<br/>
  */
 public class ServerRequestWssReplayProtection implements ServerAssertion {
-    private static final long EXPIRY_GRACE_TIME_MILLIS = 1000 * 60 * 1; // allow messages expired up to 1 minute ago
+    private static final long EXPIRY_GRACE_TIME_MILLIS = 1000L * 60 * 1; // allow messages expired up to 1 minute ago
     private static final long MAXIMUM_MESSAGE_AGE_MILLIS = 1000L * 60 * 60 * 24 * 30; // hard cap of 30 days old
     private static final long CACHE_ID_EXTRA_TIME_MILLIS = 1000L * 60 * 5; // cache IDs for at least 5 min extra
+    private static final long DEFAULT_EXPIRY_TIME = 1000L * 60 * 10; // if no Expires, assume expiry after 10 min
 
     public ServerRequestWssReplayProtection(RequestWssReplayProtection subject) {
         this.subject = subject;
@@ -66,18 +67,20 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
             return AssertionStatus.BAD_REQUEST;
         }
 
-        if (timestamp.getExpires() == null) {
-            logger.info("Timestamp in request has no Expires element.");
-            return AssertionStatus.BAD_REQUEST;
+        final long created = timestamp.getCreated().asDate().getTime();
+        final long now = System.currentTimeMillis();
+        long expires;
+        if (timestamp.getExpires() != null) {
+            expires = timestamp.getExpires().asDate().getTime();
+        } else {
+            logger.info("Timestamp in request has no Expires element; assuming expiry " + DEFAULT_EXPIRY_TIME + "ms after creation");
+            expires = created + DEFAULT_EXPIRY_TIME;
         }
 
-        final long now = System.currentTimeMillis();
-        final long expires = timestamp.getExpires().asDate().getTime();
         if (expires <= (now - EXPIRY_GRACE_TIME_MILLIS))
             // TODO we need a better exception for this than IOException
             throw new IOException("Request timestamp contained stale Expires date; rejecting entire request");
 
-        final long created = timestamp.getCreated().asDate().getTime();
         if (created > now)
             logger.info("Clock skew: message creation time is in the future: " + created + "; continuing anyway");
 
