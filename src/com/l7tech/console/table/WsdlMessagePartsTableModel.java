@@ -2,10 +2,12 @@ package com.l7tech.console.table;
 
 import javax.swing.table.AbstractTableModel;
 import javax.wsdl.Definition;
-import javax.wsdl.Message;
 import javax.wsdl.Part;
 import javax.xml.namespace.QName;
-import java.util.*;
+import java.util.AbstractList;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * Class <code>WsdlMessagePartsTableModel</code> is an implementation
@@ -154,6 +156,8 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
     public void addPart(Part p) {
         message.addPart(p);
         this.fireTableStructureChanged();
+        final int i = partsList.size();
+        this.fireTableRowsInserted(i,i);
     }
 
     /**
@@ -164,8 +168,10 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
     private Part removePart(String name) {
         Part removed = (Part)message.getParts().remove(name);
         if (removed != null) {
-            partsList.remove(removed);
-            this.fireTableStructureChanged();
+            AbstractList al = (AbstractList)partsList;
+            int index = al.indexOf(removed.getName());
+            partsList.remove(removed.getName());
+            this.fireTableRowsDeleted(index,index);
         }
         return removed;
     }
@@ -219,12 +225,15 @@ public class WsdlMessagePartsTableModel extends AbstractTableModel {
      */
     private Part getPartAt(int rowIndex) {
         //Iterator it = message.getParts().values().iterator();
-        Iterator it = message.getOrderedParts(null).iterator();
+        Iterator it = partsList.iterator();
         int row = 0;
         while (it.hasNext()) {
             Object o = it.next();
             if (row++ == rowIndex) {
-                Part p = (Part)o;
+                Part p = (Part)message.getPart(o.toString());
+                if (p == null) {
+                    throw new IllegalStateException("Internal error: Could not locate part "+o);
+                }
                 return p;
             }
         }

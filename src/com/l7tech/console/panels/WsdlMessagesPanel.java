@@ -6,10 +6,10 @@ import com.l7tech.console.table.WsdlMessagePartsTableModel;
 import com.l7tech.console.table.WsdlMessagesTableModel;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.event.CellEditorListener;
 import javax.swing.event.ChangeEvent;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.wsdl.Definition;
@@ -19,8 +19,8 @@ import javax.xml.namespace.QName;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.logging.Logger;
 import java.util.Iterator;
+import java.util.logging.Logger;
 
 /**
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
@@ -43,6 +43,8 @@ public class WsdlMessagesPanel extends WizardStepPanel {
     private Definition definition;
     private JComboBox partTypesComboBox;
     private CellEditorListener cellEditorListener;
+    private DefaultCellEditor messageNameCellEditor;
+    private boolean messageNameEditInProgress;
 
     public WsdlMessagesPanel(WizardStepPanel next) {
         super(next);
@@ -87,10 +89,10 @@ public class WsdlMessagesPanel extends WizardStepPanel {
 
         messagesTable.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
 
-        DefaultCellEditor cellEditor =
+        messageNameCellEditor =
           new DefaultCellEditor(new JTextField()) {
               Message message;
-
+              int editedRow;
               /**
                * Implements the <code>TableCellEditor</code> interface.
                */
@@ -98,7 +100,9 @@ public class WsdlMessagesPanel extends WizardStepPanel {
                 getTableCellEditorComponent(JTable table, Object value,
                                             boolean isSelected,
                                             int row, int column) {
+                  messageNameEditInProgress = true;
                   message = (Message)value;
+                  editedRow = row;
                   delegate.setValue(message.getQName().getLocalPart());
                   return editorComponent;
               }
@@ -111,16 +115,32 @@ public class WsdlMessagesPanel extends WizardStepPanel {
                */
               public Object getCellEditorValue() {
                   QName on = message.getQName();
-                  QName nn =
-                    new QName(on.getNamespaceURI(), (String)super.getCellEditorValue());
+                  QName nn = new QName(on.getNamespaceURI(), (String)super.getCellEditorValue());
                   Message nm = new WsdlMessagesTableModel.MutableMessage();
                   nm.setUndefined(false);
                   nm.setQName(nn);
+                  messagesTable.getSelectionModel().setSelectionInterval(editedRow, editedRow);
+                  /*Runnable r = new Runnable() {
+                      public void run() {
+                          messagesTable.getSelectionModel().setSelectionInterval(editedRow, editedRow);
+                      }
+                  };
+                  SwingUtilities.invokeLater(r);*/
                   return nm;
               }
           };
-        cellEditor.addCellEditorListener(cellEditorListener);
-        messagesTable.setDefaultEditor(Object.class, cellEditor);
+
+         cellEditorListener = new CellEditorListener() {
+            public void editingCanceled(ChangeEvent e) {
+                messageNameEditInProgress = false;
+            }
+
+            public void editingStopped(ChangeEvent e) {
+                messageNameEditInProgress = false;
+            }
+        };
+        messageNameCellEditor.addCellEditorListener(cellEditorListener);
+        messagesTable.setDefaultEditor(Object.class, messageNameCellEditor);
 
         //parts table
         partsTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -158,17 +178,6 @@ public class WsdlMessagesPanel extends WizardStepPanel {
         removeMessagePartButton.addActionListener(removePartActionListener);
         addMessagePartButton.setEnabled(false);
         removeMessagePartButton.setEnabled(false);
-
-
-        cellEditorListener = new CellEditorListener() {
-            public void editingCanceled(ChangeEvent e) {
-                log.finer("edting cancelled " + e.getSource());
-            }
-
-            public void editingStopped(ChangeEvent e) {
-                log.finer("edting stopped " + e.getSource());
-            }
-        };
     }
 
     /**
@@ -214,8 +223,7 @@ public class WsdlMessagesPanel extends WizardStepPanel {
 
     /**
      * Provides the wizard with the current data--either
-     * the default data or already-modified settings. This is a
-     * noop version that subclasses implement.
+     * the default data or already-modified settings.
      * 
      * @param settings the object representing wizard panel state
      * @throws IllegalArgumentException if the the data provided
@@ -225,8 +233,10 @@ public class WsdlMessagesPanel extends WizardStepPanel {
         if (!(settings instanceof Definition)) {
             throw new IllegalArgumentException("Unexpected type " + settings.getClass());
         }
-        definition = (Definition)settings;
-        updateMessageTable();
+        if (settings != definition) {
+            definition = (Definition)settings;
+            updateMessageTable();
+        }
     }
 
     /**
@@ -430,9 +440,17 @@ public class WsdlMessagesPanel extends WizardStepPanel {
            * Invoked when an action occurs.
            */
           public void actionPerformed(ActionEvent e) {
-              Part p = partsTableModel.addPart(getNewMessagePartArgumentName());
-              p.setTypeName(XmlSchemaConstants.QNAME_TYPE_STRING);
-              partsTableModel.fireTableDataChanged();
+              if (messageNameEditInProgress) {
+                  messageNameCellEditor.stopCellEditing();
+              }
+              Runnable r = new Runnable() {
+                  public void run() {
+                      Part p = partsTableModel.addPart(getNewMessagePartArgumentName());
+                      p.setTypeName(XmlSchemaConstants.QNAME_TYPE_STRING);
+                      partsTableModel.fireTableDataChanged();
+                  }
+              };
+              SwingUtilities.invokeLater(r);
           }
 
           private String getNewMessagePartArgumentName() {
@@ -561,8 +579,8 @@ public class WsdlMessagesPanel extends WizardStepPanel {
         _15 = new JButton();
         removeMessageButton = _15;
         _15.setText("Remove");
-        _15.setActionCommand("AddMessage");
         _15.setLabel("Remove");
+        _15.setActionCommand("AddMessage");
         _14.add(_15, new com.intellij.uiDesigner.core.GridConstraints(1, 0, 1, 1, 4, 0, 0, 0, new Dimension(-1, -1), new Dimension(-1, -1), new Dimension(-1, -1)));
         final JButton _16;
         _16 = new JButton();

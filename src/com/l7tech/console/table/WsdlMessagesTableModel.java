@@ -7,7 +7,9 @@ import javax.wsdl.Definition;
 import javax.wsdl.Message;
 import javax.wsdl.Part;
 import javax.xml.namespace.QName;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * Class <code>WsdlMessagesTableModel</code> is the TableModel
@@ -146,12 +148,13 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
      * 
      * @param name the message name local part
      */
-    public void removeMessage(QName name) {
-        Object removed = definition.removeMessage(name);
+    public Message removeMessage(QName name) {
+        Message removed = definition.removeMessage(name);
         if (removed != null) {
             messageList.remove(removed);
             this.fireTableStructureChanged();
         }
+        return removed;
     }
 
     /**
@@ -212,8 +215,8 @@ public class WsdlMessagesTableModel extends AbstractTableModel {
         for (int i = 0; i < size; i++) {
             Message m = (Message)messageList.get(i);
             if (m.getQName().equals(om.getQName())) {
-                Message rm = definition.removeMessage(om.getQName());
-                definition.addMessage(nm);
+                Message rm = removeMessage(m.getQName());
+                addMessage(nm);
                 if (rm != null) {
                     Iterator pi = om.getParts().values().iterator();
                     while (pi.hasNext()) {
