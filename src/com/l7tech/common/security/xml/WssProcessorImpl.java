@@ -108,21 +108,46 @@ public class WssProcessorImpl implements WssProcessor {
         while (securityChildToProcess != null) {
             boolean removeProcessedElement = false;
 
-            // TODO shouldn't we compare namespaces here as well as just localnames?
             if (securityChildToProcess.getLocalName().equals(SoapUtil.ENCRYPTEDKEY_EL_NAME)) {
-                processEncryptedKey(securityChildToProcess, recipientKey,
-                                    recipientCert, cntx);
-                // if this element is processed BEFORE the signature validation, it should be removed
-                // for the signature to validate properly
-                removeProcessedElement = true;
+                if (securityChildToProcess.getNamespaceURI().equals(SoapUtil.XMLENC_NS)) {
+                    // http://www.w3.org/2001/04/xmlenc#
+                    processEncryptedKey(securityChildToProcess, recipientKey,
+                                        recipientCert, cntx);
+                    // if this element is processed BEFORE the signature validation, it should be removed
+                    // for the signature to validate properly
+                    removeProcessedElement = true;
+                } else {
+                    logger.info("Encountered EncryptedKey element but not of right namespace (" +
+                                securityChildToProcess.getNamespaceURI() + ")");
+                }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.TIMESTAMP_EL_NAME)) {
-                processTimestamp(cntx, securityChildToProcess);
+                if (elementHasNamespace(securityChildToProcess, SoapUtil.WSU_URIS_ARRAY)) {
+                    processTimestamp(cntx, securityChildToProcess);
+                } else {
+                    logger.info("Encountered Timestamp element but not of right namespace (" +
+                                securityChildToProcess.getNamespaceURI() + ")");
+                }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.BINARYSECURITYTOKEN_EL_NAME)) {
-                processBinarySecurityToken(securityChildToProcess, cntx);
+                if (elementHasNamespace(securityChildToProcess, SoapUtil.SECURITY_URIS_ARRAY)) {
+                    processBinarySecurityToken(securityChildToProcess, cntx);
+                } else {
+                    logger.info("Encountered BinarySecurityToken element but not of right namespace (" +
+                                securityChildToProcess.getNamespaceURI() + ")");
+                }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.SIGNATURE_EL_NAME)) {
-                processSignature(securityChildToProcess, cntx);
+                if (securityChildToProcess.getNamespaceURI().equals(SoapUtil.DIGSIG_URI)) {
+                    processSignature(securityChildToProcess, cntx);
+                } else {
+                    logger.info("Encountered Signature element but not of right namespace (" +
+                                securityChildToProcess.getNamespaceURI() + ")");
+                }
             } else if (securityChildToProcess.getLocalName().equals(SoapUtil.USERNAME_TOK_EL_NAME)) {
-                processUsernameToken(securityChildToProcess, cntx);
+                if (elementHasNamespace(securityChildToProcess, SoapUtil.SECURITY_URIS_ARRAY)) {
+                    processUsernameToken(securityChildToProcess, cntx);
+                } else {
+                    logger.info("Encountered UsernameToken element but not of right namespace (" +
+                                securityChildToProcess.getNamespaceURI() + ")");
+                }
             } else {
                 // Unhandled child elements of the Security Header
                 String mu = securityChildToProcess.getAttributeNS(currentSoapNamespace,
@@ -216,6 +241,18 @@ public class WssProcessorImpl implements WssProcessor {
             soapHeader.getParentNode().removeChild(soapHeader);
 
         return produceResult(cntx);
+    }
+
+    /**
+     * checks that the namespace of the passed element is one of the namespaces
+     * passed
+     */
+    private boolean elementHasNamespace(Element el, String[] possibleNamespaces) {
+        String ns = el.getNamespaceURI();
+        for (int i = 0; i < possibleNamespaces.length; i++) {
+            if (ns.equals(possibleNamespaces[i])) return true;
+        }
+        return false;
     }
 
     private void processUsernameToken(final Element usernameTokenElement, ProcessingStatusHolder cntx)
