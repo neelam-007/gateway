@@ -138,6 +138,13 @@ public class MainWindow extends JFrame {
     private FocusAdapter actionsFocusListener;
     private ServicesTree servicesTree;
     private IdentityProvidersTree identityProvidersTree;
+    private JMenuItem validateMenuItem;
+    private JMenuItem importMenuItem;
+    private JMenuItem exportMenuItem;
+    private JMenuItem saveMenuItem;
+    private ValidatePolicyAction validatePolicyAction;
+    private ExportPolicyToFileAction exportPolicyAction;
+    private SavePolicyAction savePolicyAction;
 
     /**
      * MainWindow constructor comment.
@@ -294,16 +301,97 @@ public class MainWindow extends JFrame {
         if (fileMenu == null) {
             fileMenu = new JMenu();
             fileMenu.setFocusable(false);
-            fileMenu.setText(resapplication.getString("Session"));
+            fileMenu.setText(resapplication.getString("File"));
+
+            fileMenu.add(getSaveMenuItem());
+            fileMenu.add(getExportMenuItem());
+            fileMenu.add(getImportMenuItem());
+            fileMenu.add(getValidateMenuItem());
+
+            fileMenu.addSeparator();
+
             fileMenu.add(getConnectMenuItem());
             fileMenu.add(getDisconnectMenuItem());
             fileMenu.add(getMenuItemPreferences());
-
             fileMenu.add(getExitMenuItem());
             int mnemonic = fileMenu.getText().toCharArray()[0];
             fileMenu.setMnemonic(mnemonic);
         }
         return fileMenu;
+    }
+
+    private JMenuItem getValidateMenuItem() {
+        if (validateMenuItem == null) {
+            validateMenuItem = new JMenuItem(getValidateAction());
+            Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/validate.gif"));
+            validateMenuItem.setIcon(icon);
+            int mnemonic = validateMenuItem.getText().toCharArray()[0];
+            validateMenuItem.setMnemonic(mnemonic);
+            validateMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
+        }
+        return validateMenuItem;
+    }
+
+    private BaseAction getValidateAction() {
+        if (validatePolicyAction == null) {
+            validatePolicyAction = new ValidatePolicyAction();
+            validatePolicyAction.setEnabled(false);
+        }
+        return validatePolicyAction;
+    }
+
+    private JMenuItem getImportMenuItem() {
+        if (importMenuItem == null) {
+            // todo, action
+            importMenuItem = new JMenuItem("Import");
+            importMenuItem.setEnabled(false);
+            Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/saveTemplate.gif"));
+            importMenuItem.setIcon(icon);
+            int mnemonic = importMenuItem.getText().toCharArray()[0];
+            importMenuItem.setMnemonic(mnemonic);
+            importMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
+        }
+        return importMenuItem;
+    }
+
+    private JMenuItem getExportMenuItem() {
+        if (exportMenuItem == null) {
+            exportMenuItem = new JMenuItem(getExportPolicyAction());
+            Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/saveTemplate.gif"));
+            exportMenuItem.setIcon(icon);
+            int mnemonic = exportMenuItem.getText().toCharArray()[0];
+            exportMenuItem.setMnemonic(mnemonic);
+            exportMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
+        }
+        return exportMenuItem;
+    }
+
+    private BaseAction getExportPolicyAction() {
+        if (exportPolicyAction == null) {
+            exportPolicyAction = new ExportPolicyToFileAction();
+            exportPolicyAction.setEnabled(false);
+        }
+        return exportPolicyAction;
+    }
+
+    private JMenuItem getSaveMenuItem() {
+        if (saveMenuItem == null) {
+            saveMenuItem = new JMenuItem(getSaveAction());
+            Icon icon = new ImageIcon(cl.getResource(RESOURCE_PATH + "/Save16.gif"));
+            saveMenuItem.setIcon(icon);
+            int mnemonic = saveMenuItem.getText().toCharArray()[0];
+            saveMenuItem.setMnemonic(mnemonic);
+            saveMenuItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, ActionEvent.ALT_MASK));
+        }
+        return saveMenuItem;
+    }
+
+    private BaseAction getSaveAction() {
+        if (savePolicyAction == null) {
+            savePolicyAction = new SavePolicyAction();
+            savePolicyAction.setEnabled(false);
+        }
+        return savePolicyAction;
     }
 
     /**
