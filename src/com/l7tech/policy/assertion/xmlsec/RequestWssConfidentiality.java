@@ -1,7 +1,6 @@
 package com.l7tech.policy.assertion.xmlsec;
 
 import com.l7tech.common.xml.XpathExpression;
-import com.l7tech.policy.assertion.XpathBasedAssertion;
 
 /**
  * Enforces the XML security on the message elements or entire message
@@ -9,7 +8,7 @@ import com.l7tech.policy.assertion.XpathBasedAssertion;
  * @author flascell<br/>
  * @version Aug 27, 2003<br/>
  */
-public class RequestWssConfidentiality extends XpathBasedAssertion {
+public class RequestWssConfidentiality extends XmlSecurityAssertionBase {
     public RequestWssConfidentiality() {
         setXpathExpression(XpathExpression.soapBodyXpathValue());
     }

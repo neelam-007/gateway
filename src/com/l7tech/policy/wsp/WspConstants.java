@@ -686,6 +686,8 @@ public class WspConstants {
         },
         new BasicTypeMapping(Boolean.class, "boxedBooleanValue"),
 
+        new BeanTypeMapping(XmlSecurityRecipientContext.class, "xmlSecurityRecipientContext"),
+
         new BeanTypeMapping(TimeOfDayRange.class, "timeOfDayRange"),
         new BeanTypeMapping(TimeOfDay.class, "timeOfDay"),
 

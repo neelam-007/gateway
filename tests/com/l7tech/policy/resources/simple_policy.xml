@@ -69,6 +69,10 @@
                             </entry>
                         </Namespaces>
                     </XpathExpression>
+                    <RecipientContext xmlSecurityRecipientContext="included">
+                        <Base64edX509Certificate stringValueNull="null"/>
+                        <Actor stringValue=""/>
+                    </RecipientContext>
                 </RequestWssIntegrity>
                 <RequestWssConfidentiality>
                     <XpathExpression xpathExpressionValue="included">
@@ -80,6 +84,10 @@
                             </entry>
                         </Namespaces>
                     </XpathExpression>
+                    <RecipientContext xmlSecurityRecipientContext="included">
+                        <Base64edX509Certificate stringValueNull="null"/>
+                        <Actor stringValue=""/>
+                    </RecipientContext>
                 </RequestWssConfidentiality>
                 <ResponseWssIntegrity>
                     <XpathExpression xpathExpressionValue="included">
@@ -91,6 +99,10 @@
                             </entry>
                         </Namespaces>
                     </XpathExpression>
+                    <RecipientContext xmlSecurityRecipientContext="included">
+                        <Base64edX509Certificate stringValueNull="null"/>
+                        <Actor stringValue=""/>
+                    </RecipientContext>
                 </ResponseWssIntegrity>
                 <ResponseWssConfidentiality>
                     <XpathExpression xpathExpressionValue="included">
@@ -102,6 +114,10 @@
                             </entry>
                         </Namespaces>
                     </XpathExpression>
+                    <RecipientContext xmlSecurityRecipientContext="included">
+                        <Base64edX509Certificate stringValueNull="null"/>
+                        <Actor stringValue=""/>
+                    </RecipientContext>
                 </ResponseWssConfidentiality>
                 <RequestXpathAssertion>
                     <XpathExpression xpathExpressionValue="included">

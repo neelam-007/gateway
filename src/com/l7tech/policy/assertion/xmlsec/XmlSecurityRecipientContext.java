@@ -1,10 +1,11 @@
 package com.l7tech.policy.assertion.xmlsec;
 
+import java.io.Serializable;
+
 /**
  * The XML security recipient context is for attaching recipient/security header actor information to
  * xml security type assertions. Those assertions are the ones in com.l7tech.policy.assertion.xmlsec.
  *
- * todo: attach such an object to the assertions that need it
  * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
@@ -12,7 +13,7 @@ package com.l7tech.policy.assertion.xmlsec;
  * Date: Jan 14, 2005<br/>
  * $Id$
  */
-public class XmlSecurityRecipientContext {
+public class XmlSecurityRecipientContext implements Serializable {
     private String actor;
     private String base64edX509Certificate;
     private static final String LOCALRECIPIENT_ACTOR_VALUE = "";
@@ -34,7 +35,7 @@ public class XmlSecurityRecipientContext {
     /**
      * @return true if this instance represents the local system as a recipient, false otherwise.
      */
-    public boolean isLocalRecipient() {
+    public boolean localRecipient() {
         if (!actor.equals(LOCALRECIPIENT_ACTOR_VALUE)) {
             return false;
         } else if (base64edX509Certificate != null) {
