@@ -129,16 +129,10 @@ public class StatisticsPanel extends JPanel {
         columnModel.addColumn(new TableColumn(3, 50));
         columnModel.addColumn(new TableColumn(4, 80));
 
-        for(int i = 0; i <= 4; i++){
-             columnModel.getColumn(i).setHeaderRenderer(iconHeaderRenderer);
+        for(int i = 0; i < columnModel.getColumnCount(); i++){
+            columnModel.getColumn(i).setHeaderRenderer(iconHeaderRenderer);
+            columnModel.getColumn(i).setHeaderValue(getStatTableModel().getColumnName(i));
         }
-
-        columnModel.getColumn(0).setHeaderValue(getStatTableModel().getColumnName(0));
-        columnModel.getColumn(1).setHeaderValue(getStatTableModel().getColumnName(1));
-        columnModel.getColumn(2).setHeaderValue(getStatTableModel().getColumnName(2));
-        columnModel.getColumn(3).setHeaderValue(getStatTableModel().getColumnName(3));
-        columnModel.getColumn(4).setHeaderValue(getStatTableModel().getColumnName(4));
-
 
         columnModel.addColumnModelListener(new TableColumnModelListener(){
               public void columnMarginChanged(ChangeEvent e){
