@@ -45,8 +45,8 @@
                 </JmsRoutingAssertion>
                 <TrueAssertion/>
                 <MemberOfGroup>
-                    <GroupId stringValueNull="null"/>
                     <GroupName stringValueNull="null"/>
+                    <GroupId stringValueNull="null"/>
                     <IdentityProviderOid longValue="-1"/>
                 </MemberOfGroup>
                 <SpecificUser>
