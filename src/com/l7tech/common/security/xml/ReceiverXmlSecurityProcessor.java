@@ -199,7 +199,10 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
 
                     if ( envelopeProcessed ) {
                         preconditionMatched = true;
-                    } else if (!preconditionMatched) {
+                    } else if ( preconditionXpath == null ) {
+                        // It's probably the Body or somesuch
+                        preconditionMatched = true;
+                    } else if (!preconditionMatched ) {
                         // Retry the precondition check now that we've decrypted
                         List nodes = XpathEvaluator.newEvaluator(document, preconditionXpath.getNamespaces()).select(preconditionXpath.getExpression());
                         if (!nodes.isEmpty())
