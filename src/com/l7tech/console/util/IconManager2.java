@@ -9,11 +9,9 @@ import java.util.*;
 import java.net.URL;
 
 /**
- * The <code>IconManager</code> registers all loaded images into
- *
- * It registers all loaded images into the internal <code>Map</code>
- * as <code>SoftReference</code> instancese so Images are not loaded
- * twice.
+ * The <code>IconManager</code> registers all loaded images into the
+ * internal <code>Map</code> as <code>SoftReference</code> instancese
+ * so Images are not loaded twice.
  *
  * @author <a href="mailto:emarceta@layer7-tech.com>Emil Marceta</a>
  */
