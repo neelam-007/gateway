@@ -143,7 +143,7 @@ public class PolicyApplicationContext extends ProcessingContext {
     public void reset() throws SAXException, IOException {
         policySettings = new PolicySettings();
         final Document original = getRequest().getXmlKnob().getOriginalDocument();
-        getRequest().getXmlKnob().setDocument(original);
+        getRequest().getXmlKnob().setDocument((Document)original.cloneNode(true));
     }
 
     public Ssg getSsg() {
