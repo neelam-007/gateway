@@ -206,7 +206,31 @@ public class CertUtils {
     public static String extractUsernameFromClientCertificate(X509Certificate cert) throws IllegalArgumentException {
         Principal principal = cert.getSubjectDN();
         if (principal == null)
-            throw new IllegalArgumentException("Cert contains no subject DN");
+            throw new IllegalArgumentException("Cert contains no user subject DN");
+        return extractCommonName(principal);
+    }
+
+    /**
+     * Extract the username from the specified client certificate.  The certificate is expected to contain
+     * a distinguished name in the format "CN=username".  Other formats are not supported.
+     * @param cert the certificate to examine
+     * @return the username from the certificate.  Might be empty string, but won't be null.
+     * @throws IllegalArgumentException if the certificate does not contain DN of "CN=username"
+     * TODO: The certificate format restrictions will need to be relaxed to allow arbitrary client certificates
+     */
+    public static String extractIssuerNameFromClientCertificate (X509Certificate cert) throws IllegalArgumentException {
+        Principal principal = cert.getIssuerDN();
+        if (principal == null)
+            throw new IllegalArgumentException("Cert contains no issuer subject DN");
+        return extractCommonName(principal);
+    }
+
+    /**
+     * Extract the value of the CN attribute from the DN in the Principal.
+     * @param principal
+     * @return String  The value of CN attribute in the DN
+     */
+    private static String extractCommonName(Principal principal) {
         X500Principal certName = new X500Principal(principal.toString());
         String certNameString = certName.getName(X500Principal.RFC2253);
         if (certNameString == null || !certNameString.substring(0, 3).equalsIgnoreCase("cn="))
