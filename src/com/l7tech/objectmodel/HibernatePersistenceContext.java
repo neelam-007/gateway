@@ -86,6 +86,7 @@ public class HibernatePersistenceContext extends PersistenceContext {
             }
             if ( _session != null ) _session.close();
             _session = null;
+            super.releaseContext();
         } catch ( HibernateException he ) {
             logger.log(Level.SEVERE, null, he);
         } catch ( SQLException se ) {
