@@ -8,7 +8,6 @@ import com.l7tech.policy.wsp.WspReader;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import org.jdom.JDOMException;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -34,7 +33,7 @@ public class WspReaderTest extends TestCase {
         return new TestSuite(WspReaderTest.class);
     }
 
-    public void testParseWsp() throws IOException, JDOMException {
+    public void testParseWsp() throws IOException {
         WspReader wspReader = new WspReader();
         InputStream wspStream = cl.getResourceAsStream(SIMPLE_POLICY);
         Assertion policy = wspReader.parse(wspStream);
