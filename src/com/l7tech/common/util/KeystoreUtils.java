@@ -119,6 +119,30 @@ public class KeystoreUtils {
     }
 
     /**
+     * Load the <code>KeyStore</code> from a given keystore file that is protected with a specified
+     * password.
+     * @param path     the keystore file path
+     * @param password the keystore password
+     * @return
+     * @throws KeyStoreException        if the requested store (default type) is not available
+     * @throws IOException              if there is an I/O error or file does not exist
+     * @throws NoSuchAlgorithmException if the keystore integrity check algorithm is not available
+     * @throws CertificateException     if there is an certificate while loading the certificate(s)
+     */
+    public static KeyStore getKeyStore(String path, char[] password)
+      throws KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
+        KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+        FileInputStream fis = new FileInputStream(path);
+        try {
+            keyStore.load(fis, password);
+        } finally {
+            fis.close();
+        }
+        return keyStore;
+    }
+
+
+    /**
      * Returns the signer info containing the private key, cert and the public
      * key from this keystore.
      * 
