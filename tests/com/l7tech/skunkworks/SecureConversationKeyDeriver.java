@@ -1,5 +1,7 @@
 package com.l7tech.skunkworks;
 
+import org.w3c.dom.Element;
+
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.security.Key;
@@ -8,7 +10,7 @@ import java.security.InvalidKeyException;
 
 /**
  * Implement mechanism described in WS-Secure Conversation to derive
- * symmetric keys from a shared secret.
+ * symmetric keys from a shared secret. This is not thread safe.
  *
  * <p/>
  * <br/><br/>
@@ -18,6 +20,20 @@ import java.security.InvalidKeyException;
  * $Id$
  */
 public class SecureConversationKeyDeriver {
+
+    /**
+     * Derive the symmetric key using information provided in a DerivedKeyToken xml
+     * element. This would be used when decrypting or verifying the signature of a
+     * soap message using a secure conversation.
+     *
+     * @param derivedKeyToken the DerivedKeyToken xml element
+     * @param secret the secret associated with the session
+     * @return the resulting derived key
+     */
+    public byte[] derivedKeyTokenToKey(Element derivedKeyToken, byte[] secret) {
+        // todo
+        return null;
+    }
 
     /**
      * Function used to generate derived key as per WS-Secure Conversation. This mechanism
