@@ -4,6 +4,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspReader;
+import com.l7tech.policy.wsp.WspWriter;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -41,6 +42,12 @@ public class WspReaderTest extends TestCase {
         ExactlyOneAssertion eoa = (ExactlyOneAssertion)policy;
         assertTrue(eoa.getChildren().size() == 4);
         assertTrue(eoa.getChildren().get(0) instanceof AllAssertion);
+
+        // Do a round trip policyA -> xmlA -> policyB -> xmlB and verify that both XMLs match
+        String xmlA = WspWriter.getPolicyXml(policy);
+        Assertion policyB = WspReader.parse(xmlA);
+        String xmlB = WspWriter.getPolicyXml(policyB);
+        assertTrue(xmlA.equals(xmlB));
     }
 
     private interface throwingRunnable {
