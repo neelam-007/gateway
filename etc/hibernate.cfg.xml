@@ -3,6 +3,8 @@
         "-//Hibernate/Hibernate Configuration DTD//EN"
  "http://hibernate.sourceforge.net/hibernate-configuration.dtd">
 
+<!-- $Id$ -->
+
 <hibernate-configuration>
     <!-- shared properties -->
     <property name="show_sql">false</property>

@@ -3,6 +3,8 @@
         "-//Hibernate/Hibernate Mapping DTD//EN"
         "http://hibernate.sourceforge.net/hibernate-mapping-1.1.dtd">
 
+<!-- $Id$ -->
+
 <hibernate-mapping>
     <class name="com.l7tech.identity.imp.IdentityProviderConfigImp" table="identity_provider">
         <id name="oid" column="oid" type="long">
