@@ -6,12 +6,12 @@ import com.l7tech.common.xml.Wsdl;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ServiceAdmin;
-import com.mockobjects.servlet.MockHttpServletResponse;
 import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.springframework.context.ApplicationContext;
+import org.springframework.mock.web.MockHttpServletResponse;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -84,7 +84,7 @@ public class MockServletApiTest extends TestCase {
             servletApi.setPublishedService(publishedService);
             servletApi.setSoapRequest(soapRequest.getSOAPMessage(), soapRequest.getSOAPAction());
             HttpServletRequest mhreq = servletApi.getServletRequest();
-            MockHttpServletResponse mhres = new MockHttpServletResponse();
+            MockHttpServletResponse mhres = servletApi.getServletResponse();
             messageProcessingServlet = new SoapMessageProcessingServlet();
             messageProcessingServlet.init(servletApi.getServletConfig());
             messageProcessingServlet.doPost(mhreq, mhres);

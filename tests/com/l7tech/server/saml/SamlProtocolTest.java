@@ -1,19 +1,19 @@
 package com.l7tech.server.saml;
 
+import com.l7tech.common.security.Keys;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.xml.SignerInfo;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.server.MockServletApi;
-import com.mockobjects.dynamic.Mock;
-import com.mockobjects.servlet.MockServletOutputStream;
-import com.mockobjects.servlet.MockServletInputStream;
 import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.apache.xmlbeans.XmlOptions;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import x0Assertion.oasisNamesTcSAML1.NameIdentifierType;
@@ -25,16 +25,17 @@ import x0Protocol.oasisNamesTcSAML1.RequestType;
 import x0Protocol.oasisNamesTcSAML1.ResponseDocument;
 
 import javax.xml.soap.*;
-import javax.xml.transform.dom.DOMSource;
+import java.io.ByteArrayInputStream;
 import java.util.HashMap;
 import java.util.Map;
-import java.io.ByteArrayInputStream;
 
 /**
  * @author emil
  * @version 28-Jul-2004
  */
 public class SamlProtocolTest extends TestCase {
+    private static MockServletApi servletApi;
+
     /**
      * create the <code>TestSuite</code> for the
      * ServerPolicyFactoryTest <code>TestCase</code>
@@ -43,8 +44,9 @@ public class SamlProtocolTest extends TestCase {
         TestSuite suite = new TestSuite(SamlProtocolTest.class);
         TestSetup wrapper = new TestSetup(suite) {
             protected void setUp() throws Exception {
-                System.setProperty("com.l7tech.common.locator.properties", "/com/l7tech/common/locator/test.properties");
-                //Keys.createTestSsgKeystoreProperties();
+                Keys.createTestSsgKeystoreProperties();
+                servletApi = MockServletApi.defaultMessageProcessingServletApi("com/l7tech/common/testApplicationContext.xml");
+
             }
         };
 
@@ -81,7 +83,7 @@ public class SamlProtocolTest extends TestCase {
     /**
      * @throws Exception
      */
-    public void xtestAuthenticationQueryHandlerInSoap() throws Exception {
+    public void testAuthenticationQueryHandlerInSoap() throws Exception {
         RequestDocument rdoc = RequestDocument.Factory.newInstance();
         RequestType rt = rdoc.addNewRequest();
         AuthenticationQueryType at = rt.addNewAuthenticationQuery();
@@ -106,28 +108,20 @@ public class SamlProtocolTest extends TestCase {
         XmlUtil.nodeToOutputStream(msgOut, System.out);
     }
 
-    public void testBadRequestExpectedSoapFault() throws Exception {
-        MockServletApi servletApi = MockServletApi.defaultMessageProcessingServletApi("com/l7tech/common/testApplicationContext.xml");
+    public void xtestBadRequestExpectedSoapFault() throws Exception {
 
-        Mock requestMock = servletApi.getServletRequestMock();
-        Mock responseMock = servletApi.getServletResponseMock();
-        final MockServletOutputStream mockServletOutputStream = new MockServletOutputStream();
-        final MockServletInputStream mockServletInputStream = new MockServletInputStream();
-        requestMock.matchAndReturn("getInputStream", mockServletInputStream);
-        responseMock.matchAndReturn("getOutputStream", mockServletOutputStream);
-        responseMock.matchAndReturn("setContentType", "text/xml", null);
+        MockHttpServletRequest requestMock = servletApi.getServletRequest();
+        MockHttpServletResponse responseMock = servletApi.getServletResponse();
 
         MessageFactory msgFactory = MessageFactory.newInstance();
 
         SamlProtocolServlet servlet = new SamlProtocolServlet();
         servlet.init(servletApi.getServletConfig());
-        servlet.doPost(servletApi.getServletRequest(), servletApi.getServletResponse());
-        final String contents = mockServletOutputStream.getContents();
-        SOAPMessage msg = msgFactory.createMessage(new MimeHeaders(), new ByteArrayInputStream(contents.getBytes()));
+        servlet.doPost(requestMock, responseMock);
+        SOAPMessage msg = msgFactory.createMessage(new MimeHeaders(), new ByteArrayInputStream(responseMock.getContentAsByteArray()));
         SOAPPart soapPart = msg.getSOAPPart();
-        //todo: find out why the below call fails
-//        SOAPFault fault = soapPart.getEnvelope().getEntireMessageBody().getFault();
-//        assertTrue(fault != null);
+        SOAPFault fault = soapPart.getEnvelope().getBody().getFault();
+        assertTrue(fault != null);
     }
 
     /**
