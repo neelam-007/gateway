@@ -169,7 +169,7 @@ class DefinitionsTreeNode extends WsdlTreeNode {
      * @return  a string representation of the object.
      */
     public String toString() {
-        return definition.getQName().getNamespaceURI();
+        return definition.getTargetNamespace();
     }
 }
 
