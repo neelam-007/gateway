@@ -3,21 +3,29 @@
 ssgDir="/ssg/bin"
 ssgDBDir="/ssg/etc/sql"
 ssgDBName="ssg"
+geometryTable="/ssg/bin/upgrade.txt"
 
 echo "Please base on the release upgrade geometry (from release x to release y)"
 echo "to figure out the upgrade ssg and database script required to be run on this RPM upgrade."
 echo "If you have existed from this $0 script, you may invoke it manually, which locates at /ssg/bin/ directory."
-cat /ssg/bin/upgrade.txt | more
+echo "\n"
+if [ -e $geometryTable ]; then
+  cat /ssg/bin/upgrade.txt | more
+else
+  echo "ERROR: $geometryTable NOT found - the content of this file contains a release geometry table on assisting you to figure out the upgrade ssg and database script required to be run on this RPM upgrade"
+  echo "$0 exits"
+  exit
+fi
 echo "Does this upgrade require any \"ssg upgrade script\" to be run? (y/n)"
 read inputReqSsgUp
 if [ $inputReqSsgUp = y ]; then
   echo "Name of \"ssg upgrade script\"? (eg. upgrade_<releaseX>-<releaseY>.sh)"
   read inputNameSsgUp
   if [ -e $ssgDir/$inputNameSsgUp -a -x $ssgDir/$inputNameSsgUp ]; then
-    echo "Start running script \"$ssgDir/$inputNameSsgUp\"..."
+    echo "INFO: Start running script \"$ssgDir/$inputNameSsgUp\"..."
     $ssgDir/$inputNameSsgUp
   else
-    echo "$ssgDir/$inputNameSsgUp does not exist and/or not executable, so $ssgDir/$inputNameSsgUp did NOT run"
+    echo "ERROR: $ssgDir/$inputNameSsgUp does not exist and/or not executable, so $ssgDir/$inputNameSsgUp did NOT run"
   fi
 fi
 echo "Does this upgrade require any \"database upgrade script\" to be run? (y/n)" 
@@ -33,11 +41,11 @@ if [ $inputReqDBUp = y ]; then
     echo "You have selected $dbVendor"
     case $dbVendor in 
       MySQL)
-        echo "Start running $ssgDBDir/$inputNameDBUp script on $dbVendor database $ssgDBName - \"mysql $ssgDBName < $ssgDBDir/$inputNameDBUp\"..."
+        echo "INFO: Start running $ssgDBDir/$inputNameDBUp script on $dbVendor database $ssgDBName - \"mysql $ssgDBName < $ssgDBDir/$inputNameDBUp\"..."
         mysql $ssgDBName < $ssgDBDir/$inputNameDBUp
     ;;
       Postgres)
-        echo "Start running $ssgDBDir/$inputNameDBUp script on $dbVendor database $ssgDBName - \"psql $ssgDBName -f $ssgDBDir/$inputNameDBUp\"..."
+        echo "INFO: Start running $ssgDBDir/$inputNameDBUp script on $dbVendor database $ssgDBName - \"psql $ssgDBName -f $ssgDBDir/$inputNameDBUp\"..."
         psql $ssgDBName -f $ssgDBDir/$inputNameDBUp
     ;;
       Oracle)
@@ -45,14 +53,14 @@ if [ $inputReqDBUp = y ]; then
         read dbuser
         echo "Above user's password?"
         read dbpass
-        echo "Start running $ssgDBDir/$inputNameDBUp script on $dbVendor database $ssgDBName - \"sqlplus $dbuser/$dbpass @$ssgDBDir/$inputNameDBUp\"..."
+        echo "INFO: Start running $ssgDBDir/$inputNameDBUp script on $dbVendor database $ssgDBName - \"sqlplus $dbuser/$dbpass @$ssgDBDir/$inputNameDBUp\"..."
         sqlplus $dbuser/$dbpass @$ssgDBDir/$inputNameDBUp
     ;;
       *)
-        echo "Bad vendor selection, database upgrade script is NOT run"
+        echo "ERROR: Bad vendor selection, database upgrade script is NOT run"
     ;;
     esac
   else
-    echo "$ssgDBDir/$inputNameDBUp does not exist, so $ssgDBDir/$inputNameDBUp did NOT run"
+    echo "ERROR: $ssgDBDir/$inputNameDBUp does not exist, so $ssgDBDir/$inputNameDBUp did NOT run"
   fi
 fi
