@@ -26,9 +26,9 @@ public class PolicyAttachmentKey implements Serializable, Cloneable, Comparable 
      * @param proxyUri     the local part of the original local URL for this request (see URL.getFile())
      */
     public PolicyAttachmentKey(String uri, String soapAction, String proxyUri) {
-        this.uri = uri;
-        this.soapAction = soapAction;
-        this.proxyUri = proxyUri;
+        this.uri = uri != null ? uri : "";
+        this.soapAction = soapAction != null ? soapAction : "";
+        this.proxyUri = proxyUri != null ? proxyUri : "";
     }
 
     // String compare that treats null as being less than any other string
