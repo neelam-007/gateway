@@ -26,7 +26,6 @@ import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.PolicyRetryableException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
 import com.l7tech.proxy.util.CannedSoapFaults;
-import com.l7tech.proxy.util.ThreadLocalHttpClient;
 import com.l7tech.util.XmlUtil;
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
@@ -46,6 +45,7 @@ import java.security.cert.X509Certificate;
 
 /**
  * The core of the Client Proxy.
+ *
  * User: mike
  * Date: Aug 13, 2003
  * Time: 9:51:36 AM
@@ -229,6 +229,8 @@ public class MessageProcessor {
         try {
             url = ssg.getServerUrl();
             if (req.isSslRequired()) {
+                if (req.isSslForbidden())
+                    throw new ConfigurationException("SSL is both required and forbidden by policy");
                 if ("http".equalsIgnoreCase(url.getProtocol())) {
                     log.info("Changing http to https per policy for this request (using SSL port " +
                              ssg.getSslPort() + ")");
@@ -274,7 +276,7 @@ public class MessageProcessor {
         URL url = getUrl(req);
         Ssg ssg = req.getSsg();
 
-        HttpClient client = ThreadLocalHttpClient.getHttpClient();
+        HttpClient client = new HttpClient();
         HttpState state = client.getState();
         PostMethod postMethod = null;
         try {
@@ -345,6 +347,7 @@ public class MessageProcessor {
             if (status == 401) {
                 req.setLastErrorResponse(response);
                 Header authHeader = postMethod.getResponseHeader("WWW-Authenticate");
+                log.info("Got auth header: " + authHeader.getValue());
                 if (authHeader == null && SsgKeyStoreManager.isClientCertAvailabile(ssg) && "https".equals(url.getProtocol())) {
                     // 401 without an auth challenge, if the connection was made successfully over SSL,
                     // means we should delete our client certificate and retry.
@@ -396,15 +399,10 @@ public class MessageProcessor {
             password = new String(ssg.password());
         }
 
-        if (req.isBasicAuthRequired()) {
-            log.info("Enabling HTTP Basic auth with username=" + username);
+        if (req.isBasicAuthRequired() || req.isDigestAuthRequired()) {
+            log.info("Enabling HTTP Basic or Digest auth with username=" + username);
             postMethod.setDoAuthentication(true);
             state.setAuthenticationPreemptive(true);
-            state.setCredentials(null, null,
-                                 new UsernamePasswordCredentials(username, password));
-        } else if (req.isDigestAuthRequired()) {
-            log.info("Enabling HTTP Digest auth with username=" + username);
-            postMethod.setDoAuthentication(true);
             state.setCredentials(null, null,
                                  new UsernamePasswordCredentials(username, password));
         }
