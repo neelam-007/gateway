@@ -48,9 +48,12 @@ public class Constants {
 
     public static final String ELEMENT_ASSERTION = "Assertion";
 
+    public static final String ATTR_ASSERTION_ID = "AssertionID";
+
     /**
      * Cannot instantiate this class
      */
     private Constants() {
     }
+
 }
