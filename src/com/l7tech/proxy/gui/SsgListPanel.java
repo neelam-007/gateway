@@ -111,6 +111,22 @@ public class SsgListPanel extends JPanel {
         return ssgTableModel.getSsgAtRow(ssgTable.getSelectedRow());
     }
 
+    /**
+     * Set the selection bar to cover the specified Ssg, if it's in the table.
+     * Otherwise the selection will be left alone.
+     * @param ssg
+     */
+    private void selectSsg(Ssg ssg) {
+        int rows = ssgTableModel.getRowCount();
+        for (int i = 0; i < rows; ++i) {
+            Ssg rs = ssgTableModel.getSsgAtRow(i);
+            if (rs != null && rs == ssg) {
+                ssgTable.getSelectionModel().setSelectionInterval(i, i);
+                return;
+            }
+        }
+    }
+
     public Action getActionDeleteSsg() {
         if (actionDeleteSsg == null) {
             actionDeleteSsg = new AbstractAction("Delete", IconManager.getRemove()) {
@@ -176,6 +192,7 @@ public class SsgListPanel extends JPanel {
                             if (ssg.isDefaultSsg())
                                 ssgTableModel.setDefaultSsg(ssg);
                             ssgTableModel.editedSsg();
+                            selectSsg(ssg);
                         }
                     }
                 }
