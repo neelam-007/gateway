@@ -106,7 +106,7 @@ public class SecureSpanAgentOptions {
     /**
      * Get the ID to use for the SecureSpanAgent instance.  The ID is used to generate the keystore filename,
      * if one is not set explicitly.  If no ID has been set, the hashCode of the username is used as the ID.
-     * @return
+     * @return the ID that will be used by the newly-created SecureSpanAgent
      */
     public int getId() {
         if (id == 0)
@@ -118,7 +118,7 @@ public class SecureSpanAgentOptions {
      * Get the pathname of the custom KeyStore file that will be used for this Agent.
      * If no custom KeyStore is requested, the Agent will use the default KeyStore location ~/.l7tech/keyStoreNNN
      * where ~ is the home directory of the user owning this process, and NNN is the ID of this SecureSpanAgent.
-     * @return The path of the custome KeyStore file, or null if no custom KeyStore is being requested.
+     * @return The path of the custom KeyStore file, or null if no custom KeyStore is being requested.
      */
     public String getKeyStorePath() {
         return keyStorePath;
@@ -128,6 +128,7 @@ public class SecureSpanAgentOptions {
      * Set the pathname of the custom KeyStore file that will be used for this Agent.
      * If no custom KeyStore is requested, the Agent will use the default KeyStore location ~/.l7tech/keyStoreNNN
      * where ~ is the home directory of the user owning this process, and NNN is the ID of this SecureSpanAgent.
+     * @param keyStorePath The path of the custom KeyStore file, or null if you wish to use the default path.
      */
     public void setKeyStorePath(String keyStorePath) {
         this.keyStorePath = keyStorePath;
