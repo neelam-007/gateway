@@ -18,6 +18,7 @@ import java.rmi.RemoteException;
 public class FilteredLogTableModel extends FilteredDefaultTableModel{
 
      private static final int MAX_MESSAGE_BLOCK_SIZE = 100;
+     private static final int MAX_NUMBER_OF_LOG_MESSGAES = 4096;
 
      private Vector logsCache = new Vector();
 
@@ -50,9 +51,9 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel{
          String[] rawLogs = new String[]{};
          long startMsgNumber = -1;
          long endMsgNumber;
-         boolean newLogsReceived = false;
          boolean cleanUp = true;
          Vector newLogsCache = new Vector();
+         int accumulatedNewLogs = 0;
 
          if(logsCache.size() <= 0){
              // retrieve all logs
@@ -78,21 +79,33 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel{
                              }
                          }
 
-                         // indicate there is at least one new log received
-                         newLogsReceived = true;
-
                          Vector newLogs = new Vector();
                          for (int i = 0; i < rawLogs.length; i++) {
                              logMsg = new LogMessage(rawLogs[i]);
                              newLogs.add(logMsg);
                          }
 
-                         // update the startMsgNumber
-                         startMsgNumber = logMsg.getMsgNumber();
 
-                         newLogsCache.addAll(newLogs);
-                         updateLogTable(newLogs, msgFilterLevel);
-                         realModel.fireTableDataChanged();
+                         if(accumulatedNewLogs + rawLogs.length <= MAX_NUMBER_OF_LOG_MESSGAES){
+                             // update the startMsgNumber
+                             startMsgNumber = logMsg.getMsgNumber();
+
+                             newLogsCache.addAll(newLogs);
+                             updateLogTable(newLogs, msgFilterLevel);
+                             realModel.fireTableDataChanged();
+
+                             accumulatedNewLogs += rawLogs.length;
+                         }
+                         else{
+                             for(int i=0; accumulatedNewLogs < MAX_NUMBER_OF_LOG_MESSGAES; i++){
+                                 newLogsCache.add(newLogs.get(i));
+                                 accumulatedNewLogs++;
+
+                                 updateLogTable(newLogs, msgFilterLevel);
+                                 realModel.fireTableDataChanged();
+                             }
+                             break;
+                         }
                      }
 
                  } catch (RemoteException e) {
@@ -101,8 +114,12 @@ public class FilteredLogTableModel extends FilteredDefaultTableModel{
              } while (rawLogs.length == MAX_MESSAGE_BLOCK_SIZE);    // may be more messages for retrieval
 
             // append the old logs to the new logs
-             if (newLogsReceived) {
+             if (accumulatedNewLogs > 0) {
 
+                 while (logsCache.size() + newLogsCache.size() > MAX_NUMBER_OF_LOG_MESSGAES) {
+                     // remove the last element
+                     logsCache.remove(logsCache.size() - 1);
+                 }
                  updateLogTable(logsCache, msgFilterLevel);
                  realModel.fireTableDataChanged();
                  newLogsCache.addAll(logsCache);

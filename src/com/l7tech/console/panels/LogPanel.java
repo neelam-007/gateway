@@ -548,6 +548,7 @@ public class LogPanel extends JPanel {
     public void clearMsgTable(){
         ((FilteredLogTableModel)getMsgTable().getModel()).clearTable();
         getMsgDetails().setText("");
+        msgTotal.setText(MSG_TOTAL_PREFIX + "0");
     }
 
     private javax.swing.Timer getLogsRefreshTimer() {
