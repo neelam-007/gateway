@@ -31,6 +31,7 @@ import java.util.logging.Logger;
  * Time: 4:20:59 PM
  */
 public class XmlUtil {
+    public static final String XML_VERSION = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n";
     public static final String MULTIPART_CONTENT_TYPE = "multipart/related";
     public static final String MULTIPART_TYPE = "type";
     public static final String MULTIPART_BOUNDARY = "boundary";

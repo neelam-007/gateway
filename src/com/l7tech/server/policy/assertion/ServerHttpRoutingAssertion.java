@@ -241,7 +241,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
                     // add modified SOAP part
                     MultipartUtil.addModifiedSoapPart(sb,
-                            "<?xml version=\"1.0\" encoding=\"" + ENCODING.toLowerCase() + "\"?>" + "\n" + requestXml,
+                            XmlUtil.XML_VERSION + requestXml,
                             request.getSoapPart(),
                             request.getMultipartBoundary());
 
