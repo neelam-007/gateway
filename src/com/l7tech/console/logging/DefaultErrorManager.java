@@ -16,7 +16,8 @@ import java.util.logging.Logger;
  */
 public class DefaultErrorManager extends ErrorManager {
     static final Logger log = Logger.getLogger(DefaultErrorManager.class.getName());
-    private final JFrame mainFrame = WindowManager.getInstance().getMainWindow();
+    private JFrame mainFrame = null;
+
     /**
      * Log and notify the user about the problem or error
      *
@@ -26,10 +27,17 @@ public class DefaultErrorManager extends ErrorManager {
      */
     public void notify(Level level, Throwable t, String message) {
         log.log(level, message, t);
-        ExceptionDialog d = new ExceptionDialog(mainFrame, "Policy Editor - message", message, t, level);
+        ExceptionDialog d = new ExceptionDialog(getMainWindow(), "Policy Editor - message", message, t, level);
         d.pack();
         Utilities.centerOnScreen(d);
         d.show();
     }
 
+    private JFrame getMainWindow() {
+        if (mainFrame != null) return mainFrame;
+
+        mainFrame = WindowManager.getInstance().getMainWindow();
+
+        return mainFrame;
+    }
 }
