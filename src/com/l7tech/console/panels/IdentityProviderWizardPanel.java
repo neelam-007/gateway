@@ -8,12 +8,11 @@ import com.l7tech.identity.*;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.Assertion;
+import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.TrueAssertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
-import com.l7tech.policy.assertion.credential.CredentialSourceAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 
@@ -85,10 +84,10 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             }
         });
         SwingUtilities.invokeLater(new Runnable() {
-             public void run() {
-                 credentialsLocationComboBox.setSelectedIndex(0);
-             }
-         });
+            public void run() {
+                credentialsLocationComboBox.setSelectedIndex(0);
+            }
+        });
 
         credentialsAndTransportPanel = new JPanel();
         credentialsLocationjPanel = new JPanel();
@@ -280,8 +279,8 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
 
         add(identitiesPanel, BorderLayout.WEST);
         credentialsAndTransportPanel.setLayout(new BoxLayout(credentialsAndTransportPanel, BoxLayout.Y_AXIS));
-
         credentialsAndTransportPanel.setBorder(new TitledBorder("Credentials/transport"));
+
         credentialsLocationjPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
         sslPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
 
@@ -293,11 +292,11 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         sslCheckBox.setHorizontalTextPosition(SwingConstants.LEADING);
         sslPanel.add(sslCheckBox);
         credentialsAndTransportPanel.add(sslPanel);
+
         JPanel ra = new JPanel();
         ra.setLayout(new BorderLayout());
-        ra.add(Box.createGlue());
+        ra.add(Box.createGlue(), BorderLayout.CENTER);
         credentialsAndTransportPanel.add(ra);
-
         add(credentialsAndTransportPanel, java.awt.BorderLayout.CENTER);
     }
 
@@ -355,7 +354,7 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
           "service.  Specify where the credentials are validated, internal or other providers " +
           "like LDAP or check \"Anonymous Access\"\n" +
           "Also, choose the type of credentials expected to be presented, IE, HTTP Basic or " +
-          "Digest, and whether SSL/TLS transport security is required"+
+          "Digest, and whether SSL/TLS transport security is required" +
           "Choose Finish when you are satisfied.";
     }
 
@@ -380,11 +379,27 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
     public void readSettings(Object settings) throws IllegalArgumentException {
         PublishServiceWizard.ServiceAndAssertion
           collect = (PublishServiceWizard.ServiceAndAssertion)settings;
+        if (isSharedPolicy()) {
+            applySharedPolicySettings(collect);
+        } else {
+            applyIndividualPolicySettings(collect);
+        }
+
+    }
+
+    /**
+     * Provides the wizard with the current data as shared policy
+     *
+     * @param pa the object representing wizard panel state
+     * @exception IllegalArgumentException if the the data provided
+     * by the wizard are not valid.
+     */
+    private void applySharedPolicySettings(PublishServiceWizard.ServiceAndAssertion pa) {
         IdentityProvider ip = (IdentityProvider)providersComboBoxModel.getSelectedItem();
 
         java.util.List allAssertions = new ArrayList();
         java.util.List identityAssertions = new ArrayList();
-
+        pa.setSharedPolicy(true);
         if (sslCheckBox.isSelected()) {
             allAssertions.add(new SslAssertion());
         }
@@ -418,11 +433,64 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
 
         if (!allAssertions.isEmpty()) {
             allAssertions.add(new OneOrMoreAssertion(identityAssertions));
-            collect.setAssertion(new AllAssertion(allAssertions));
+            pa.setAssertion(new AllAssertion(allAssertions));
         } else {
-            collect.setAssertion(new AllAssertion());
+            pa.setAssertion(new AllAssertion());
         }
     }
+
+    /**
+     * Provides the wizard with the current data as individual policies
+     *
+     * @param pa the object representing wizard panel state
+     * @exception IllegalArgumentException if the the data provided
+     * by the wizard are not valid.
+     */
+    private void applyIndividualPolicySettings(PublishServiceWizard.ServiceAndAssertion pa) {
+        IdentityProvider ip = (IdentityProvider)providersComboBoxModel.getSelectedItem();
+        pa.setSharedPolicy(false);
+        java.util.List allAssertions = new ArrayList();
+
+
+        Iterator it = getIdentitiesInTableModel().getDataVector().iterator();
+        while (it.hasNext()) {
+
+            java.util.List identityAssertion = new ArrayList();
+
+
+            if (sslCheckBox.isSelected()) {
+                identityAssertion.add(new SslAssertion());
+            }
+
+            // crenedtials location, safe
+            Object o = credentialsLocationComboBox.getSelectedItem();
+            if (o != null) {
+                Assertion ca = (Assertion)Components.getCredentialsLocationMap().get(o);
+                if (ca != null && !(ca instanceof TrueAssertion)) // trueassertion is anonymous
+                    identityAssertion.add(ca);
+            }
+
+
+            java.util.List row = (java.util.List)it.next();
+            EntityHeader eh = (EntityHeader)row.get(0);
+            if (EntityType.USER.equals(eh.getType())) {
+                User u = new User();
+                u.setName(eh.getName());
+                u.setLogin(eh.getName());
+                identityAssertion.add(new SpecificUser(ip.getConfig().getOid(), u.getLogin()));
+            } else if (EntityType.GROUP.equals(eh.getType())) {
+                Group g = new Group();
+                g.setName(eh.getName());
+                g.getName();
+                MemberOfGroup ma = new MemberOfGroup(ip.getConfig().getOid(), g.getName());
+                identityAssertion.add(ma);
+            }
+            allAssertions.add(new AllAssertion(identityAssertion));
+        }
+        pa.setAssertion(new OneOrMoreAssertion(allAssertions));
+
+    }
+
 
     /** @return the wizard step label    */
     public String getStepLabel() {
@@ -435,6 +503,11 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
         return "Anonymous".equals(name);
     }
 
+    private boolean isSharedPolicy() {
+        return true;
+    }
+
+
     private void equalizeButtons() {
         JButton buttons[] = new JButton[]{
             buttonAdd,
@@ -443,6 +516,11 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             buttonRemoveAll
         };
         Utilities.equalizeComponentSizes(buttons);
+//        JComponent cboxes[] = new JComponent[]{
+//            sharedPolicyCheckBox,
+//            sslCheckBox
+//        };
+//        Utilities.equalizeComponentSizes(cboxes);
     }
 
 
@@ -507,15 +585,25 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
           public void initialize(IdentityProviderConfig config) {
           }
 
-          public IdentityProviderConfig getConfig() { return config; }
+          public IdentityProviderConfig getConfig() {
+              return config;
+          }
 
-          public UserManager getUserManager() { return null; }
+          public UserManager getUserManager() {
+              return null;
+          }
 
-          public GroupManager getGroupManager() { return null; }
+          public GroupManager getGroupManager() {
+              return null;
+          }
 
-          public boolean authenticate( PrincipalCredentials pc ) { return false; }
+          public boolean authenticate(PrincipalCredentials pc) {
+              return false;
+          }
 
-          public boolean isReadOnly() { return true; }
+          public boolean isReadOnly() {
+              return true;
+          }
 
           public Collection search(EntityType[] types, String searchString) throws FindException {
               throw new FindException("not implemented");

@@ -65,12 +65,21 @@ public class PublishServiceWizard extends JDialog {
         public String getServiceURI() {
             try {
                 Wsdl wsdl = service.parsedWsdl();
-                if (wsdl !=null) return wsdl.getServiceURI();
+                if (wsdl != null) return wsdl.getServiceURI();
             } catch (WSDLException e) {
             }
             return null;
         }
 
+        public boolean isSharedPolicy() {
+            return sharedPolicy;
+        }
+
+        public void setSharedPolicy(boolean sharedPolicy) {
+            this.sharedPolicy = sharedPolicy;
+        }
+
+        private boolean sharedPolicy = false;
         private RoutingAssertion routingAssertion = null;
         private PublishedService service = new PublishedService();
         private CompositeAssertion assertions = new AllAssertion();
@@ -160,7 +169,7 @@ public class PublishServiceWizard extends JDialog {
 
         titleLabel.setBorder(
           new CompoundBorder(new MatteBorder(new Insets(0, 0, 1, 0), new Color(0, 0, 0)),
-                             new EmptyBorder(new Insets(5, 5, 5, 5))));
+            new EmptyBorder(new Insets(5, 5, 5, 5))));
 
         titleLabel.setHorizontalAlignment(SwingConstants.TRAILING);
         titleLabel.setText("Publish Service wizard");
@@ -199,10 +208,25 @@ public class PublishServiceWizard extends JDialog {
                     }
                     // routing assertion?
                     if (saBundle.getRoutingAssertion() != null) {
-                        java.util.List ass = new ArrayList();
-                        ass.addAll(saBundle.getAssertion().getChildren());
-                        ass.add(saBundle.getRoutingAssertion());
-                        saBundle.getAssertion().setChildren(ass);
+                        if (saBundle.isSharedPolicy()) {
+                            java.util.List ass = new ArrayList();
+                            ass.addAll(saBundle.getAssertion().getChildren());
+                            ass.add(saBundle.getRoutingAssertion());
+                            saBundle.getAssertion().setChildren(ass);
+                        } else {
+
+                            for (Iterator it =
+                              saBundle.getAssertion().getChildren().iterator(); it.hasNext();) {
+                                Assertion a = (Assertion)it.next();
+                                if (a instanceof AllAssertion) {
+                                    AllAssertion aa = (AllAssertion)a;
+                                    java.util.List ass = new ArrayList();
+                                    ass.addAll(aa.getChildren());
+                                    ass.add(saBundle.getRoutingAssertion().clone());
+                                    aa.setChildren(ass);
+                                }
+                            }
+                        }
                     }
                     saBundle.setAssertion(
                       pruneEmptyCompositeAssertions(saBundle.getAssertion()));
@@ -221,7 +245,7 @@ public class PublishServiceWizard extends JDialog {
                     header.setName(saBundle.service.getName());
                     header.setOid(oid);
                     PublishServiceWizard.this.notify(header);
-                } catch (SaveException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                     JOptionPane.showMessageDialog(null,
                       "Unable to save the service '" + saBundle.service.getName() + "'\n",
