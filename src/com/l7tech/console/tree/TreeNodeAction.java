@@ -178,12 +178,8 @@ public class TreeNodeAction {
       return false;
     }
 
-    // Delete the realm node and update the tree
+    // Delete the  node and update the tree
     try {
-      // Try deleting realm
-//      RealmUpdater realmUp =
-//        (RealmUpdater)ServiceLocator.getInstance().getService(SOAPConstants.REALM_UPDATER, RealmUpdater.class);
-//      realmUp.deleteRealm(realmTreeNode.getObjectId().longValue());
 
       return true;
     } catch (Exception e) {

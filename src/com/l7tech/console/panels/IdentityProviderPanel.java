@@ -1,14 +1,21 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.IconManager;
+import com.l7tech.identity.IdentityProvider;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.identity.IdentityProviderConfig;
+import com.l7tech.objectmodel.EntityHeader;
+import com.l7tech.objectmodel.EntityType;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.Iterator;
 
 
@@ -28,7 +35,7 @@ public class IdentityProviderPanel extends WizardStepPanel {
         initComponents();
         equalizeButtons();
     }
-    
+
     /**
      * This method is called from within the constructor to
      * initialize the form.
@@ -66,6 +73,42 @@ public class IdentityProviderPanel extends WizardStepPanel {
 
 
         providersjComboBox.setModel(getProvidersComboBoxModel());
+        providersjComboBox.setRenderer(new ListCellRenderer () {
+            public Component getListCellRendererComponent(
+                    JList list,
+                    Object value,
+                    int index,
+                    boolean isSelected,
+                    boolean cellHasFocus) {
+                IdentityProvider ip = (IdentityProvider)value;
+                return new JLabel(ip.getConfig().getDescription());
+            }
+        });
+        providersjComboBox.addActionListener(new ActionListener() {
+            /** Invoked when an action occurs.  */
+            public void actionPerformed(ActionEvent e) {
+                e.getSource();
+                try {
+                    IdentityProvider ip = (IdentityProvider)providersComboBoxModel.getSelectedItem();
+                    DefaultTableModel modelOut = new DefaultTableModel();
+                    modelOut.addColumn("No permission");
+                    Iterator i = ip.getUserManager().findAllHeaders().iterator();
+                    while(i.hasNext()) {
+                        modelOut.addRow(new Object[] {i.next()});
+                    }
+                    i = ip.getGroupManager().findAllHeaders().iterator();
+                    while(i.hasNext()) {
+                        modelOut.addRow(new Object[] {i.next()});
+                    }
+                    usersOutjTable.setModel(modelOut);
+                    DefaultTableModel modelIn = new DefaultTableModel();
+                    modelIn.addColumn("Have permission");
+                    usersInjTable.setModel(modelIn);
+                } catch (FindException ex) {
+                    ex.printStackTrace();  //todo: fix this with better, general exception management
+                }
+            }
+        });
         providerSelectorjPanel.add(providersjComboBox);
 
         add(providerSelectorjPanel, java.awt.BorderLayout.NORTH);
@@ -74,33 +117,16 @@ public class IdentityProviderPanel extends WizardStepPanel {
 
         identitiesjPanel.setLayout(new BoxLayout(identitiesjPanel, BoxLayout.X_AXIS));
 
-        identitiesjPanel.setBorder(new EmptyBorder(new java.awt.Insets(20, 5, 10, 5)));
+        identitiesjPanel.setBorder(new EmptyBorder(new Insets(20, 5, 10, 5)));
         identitiesOutjScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         identitiesOutjScrollPane.setPreferredSize(new java.awt.Dimension(150, 50));
-        usersOutjTable.setModel(new DefaultTableModel(
-            new Object [][] {
-                {"bob"},
-                {"fred"},
-                {"bunky"},
-                {"spock"},
-                {"stuart"}
-            },
-            new String [] {
-                "Non Users"
-            }
-        ) {
-            boolean[] canEdit = new boolean [] {
-                false
-            };
+        usersOutjTable.setModel(getUsersOutTableModel());
 
-            public boolean isCellEditable(int rowIndex, int columnIndex) {
-                return canEdit [columnIndex];
-            }
-        });
-        usersOutjTable.setMinimumSize(new java.awt.Dimension(15, 15));
-        usersOutjTable.setPreferredSize(new java.awt.Dimension(50, 50));
+        /*usersOutjTable.setMinimumSize(new Dimension(15, 15));
+        usersOutjTable.setPreferredSize(new Dimension(50, 50));*/
         usersOutjTable.setShowHorizontalLines(false);
         usersOutjTable.setShowVerticalLines(false);
+        usersOutjTable.setDefaultRenderer(Object.class, tableRenderer);
         identitiesOutjScrollPane.getViewport().setBackground(usersOutjTable.getBackground());
         identitiesOutjScrollPane.setViewportView(usersOutjTable);
 
@@ -108,7 +134,7 @@ public class IdentityProviderPanel extends WizardStepPanel {
 
         usersLablejPanel.setLayout(new BoxLayout(usersLablejPanel, BoxLayout.Y_AXIS));
 
-        usersLablejPanel.setBorder(new EmptyBorder(new java.awt.Insets(5, 5, 5, 5)));
+        usersLablejPanel.setBorder(new EmptyBorder(new Insets(5, 5, 5, 5)));
         jButtonAdd.setText("Add");
         usersLablejPanel.add(jButtonAdd);
 
@@ -125,17 +151,8 @@ public class IdentityProviderPanel extends WizardStepPanel {
 
         identitiesInjScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         identitiesInjScrollPane.setPreferredSize(new java.awt.Dimension(150, 50));
-        usersInjTable.setModel(new DefaultTableModel(
-            new Object [][] {
-                {"alice"},
-                {"helmut"},
-                {"marketing-group"},
-                {"development-group"}
-            },
-            new String [] {
-                "Service users"
-            }
-        ));
+        usersInjTable.setModel(getUsersInTableModel());
+
         usersInjTable.setShowHorizontalLines(false);
         usersInjTable.setShowVerticalLines(false);
         identitiesInjScrollPane.getViewport().setBackground(usersInjTable.getBackground());
@@ -155,7 +172,7 @@ public class IdentityProviderPanel extends WizardStepPanel {
         credentialsAndTransportjPanel.setBorder(new TitledBorder("Credentials/transport"));
         credentialsLocationjPanel.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
         ssljPanel.setLayout(new java.awt.FlowLayout(java.awt.FlowLayout.LEFT));
-        credentialsLocationjComboBox.setModel(new DefaultComboBoxModel(new String[] { "HTTP Basic", "HTTP Digest", "Message Basic" }));
+        credentialsLocationjComboBox.setModel(new DefaultComboBoxModel(new String[]{"HTTP Basic", "HTTP Digest", "Message Basic"}));
         credentialsLocationjPanel.add(credentialsLocationjComboBox);
         credentialsAndTransportjPanel.add(credentialsLocationjPanel);
 
@@ -171,29 +188,51 @@ public class IdentityProviderPanel extends WizardStepPanel {
         add(credentialsAndTransportjPanel, java.awt.BorderLayout.CENTER);
     }
 
+    /**
+     * @return the list of providers combo box model
+     */
     private DefaultComboBoxModel getProvidersComboBoxModel() {
-        if (providersComboBoxModel !=null)
+        if (providersComboBoxModel != null)
             return providersComboBoxModel;
 
         providersComboBoxModel = new DefaultComboBoxModel();
-
         try {
-
             Iterator providers =
                     Registry.getDefault().getProviderConfigManager().findAllIdentityProviders().iterator();
-            while(providers.hasNext()) {
-                IdentityProviderConfig ip = (IdentityProviderConfig)providers.next();
-                providersComboBoxModel.addElement(ip.getDescription());
-
+            while (providers.hasNext()) {
+                providersComboBoxModel.addElement(providers.next());
             }
         } catch (FindException e) {
+             e.printStackTrace();  //todo: fix this with better, general exception management
         }
         return providersComboBoxModel;
     }
 
+    /**
+     * @return the table model representing the identities that
+     *         have permisison to use the service.
+     */
+    private DefaultTableModel getUsersInTableModel() {
+        if (usersInTableMode != null)
+            return usersInTableMode;
+
+        usersInTableMode = new DefaultTableModel();
+        return usersInTableMode;
+    }
+
+    /**
+     * @return the table model representing the identities that
+     *         are not permitted to use the service.
+     */
+    private DefaultTableModel getUsersOutTableModel() {
+        if (usersOutTableMode != null)
+            return usersOutTableMode;
+        usersOutTableMode = new DefaultTableModel();
+        return usersOutTableMode;
+    }
 
     public String getDescription() {
-        return "Select the identities (users, groups) that are allowed to access the published service"+
+        return "Select the identities (users, groups) that are allowed to access the published service" +
                 " Specify where the credentials are located and transport layewr security";
     }
 
@@ -203,19 +242,53 @@ public class IdentityProviderPanel extends WizardStepPanel {
     }
 
     private void equalizeButtons() {
-        JButton buttons[] = new JButton[] {
+        JButton buttons[] = new JButton[]{
             jButtonAdd,
             jButtonAddAll,
             jButtonRemove,
             jButtonRemoveAll
         };
         Utilities.equalizeButtonSizes(buttons);
-        
-        
     }
-    
+
+
+    private final TableCellRenderer
+            tableRenderer = new DefaultTableCellRenderer() {
+                /* This is the only method defined by ListCellRenderer.  We just
+                 * reconfigure the Jlabel each time we're called.
+                 */
+                public Component
+                        getTableCellRendererComponent(JTable table,
+                                                      Object value,
+                                                      boolean iss,
+                                                      boolean hasFocus,
+                                                      int row, int column) {
+                    if (iss) {
+                        this.setBackground(table.getSelectionBackground());
+                        this.setForeground(table.getSelectionForeground());
+                    } else {
+                        this.setBackground(table.getBackground());
+                        this.setForeground(table.getForeground());
+                    }
+                    this.setFont(new Font("Dialog", Font.PLAIN, 12));
+                        EntityHeader h = (EntityHeader) value;
+                        EntityType type = h.getType();
+                        ImageIcon icon = IconManager.getInstance().getIcon(type);
+                        if (icon != null) setIcon(icon);
+                        setText(h.getName());
+
+
+                    return this;
+                }
+
+            };
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private JTable usersInjTable;
+    private JTable usersOutjTable;
+    private DefaultTableModel usersInTableMode;
+    private DefaultTableModel usersOutTableMode;
+
     private JScrollPane identitiesOutjScrollPane;
     private JPanel ssljPanel;
 
@@ -234,7 +307,7 @@ public class IdentityProviderPanel extends WizardStepPanel {
     private JPanel credentialsAndTransportjPanel;
     private JPanel buttonjPanel;
     private JPanel usersLablejPanel;
-    private JTable usersOutjTable;
+
     private JCheckBox ssljCheckBox;
-    
+
 }

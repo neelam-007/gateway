@@ -1,27 +1,22 @@
 package com.l7tech.console.panels;
 
-import com.l7tech.console.table.ConsoleTableModel;
-import com.l7tech.console.util.*;
-import com.l7tech.identity.User;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.console.util.FilterListModel;
+import com.l7tech.console.util.IconManager;
+import com.l7tech.console.util.Registry;
+import com.l7tech.console.util.SortedListModel;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import javax.swing.event.ListDataListener;
-import javax.swing.event.ListDataEvent;
-import javax.swing.table.DefaultTableCellRenderer;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.*;
-import java.util.List;
 
 /**
  * This class is the New Group member Dialog for adding users to a group.
