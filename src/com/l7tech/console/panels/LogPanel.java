@@ -141,25 +141,29 @@ public class LogPanel extends JPanel {
                                     msg += "Admin user : " + aarec.getAdminLogin() + "\n";
                                     msg += "Admin IP   : " + arec.getIpAddress() + "\n";
                                     msg += "Action     : " + fixAction(aarec.getAction()) + "\n";
-                                    msg += "Entity type: " + aarec.getEntityClassname() + "\n";
+                                    msg += "Entity name: " + arec.getName() + "\n";
                                     msg += "Entity id  : " + aarec.getEntityOid() + "\n";
-                                } else if (arec instanceof MessageSummaryAuditRecord) {                                    
+                                    msg += "Entity type: " + fixType(aarec.getEntityClassname()) + "\n";
+                                } else if (arec instanceof MessageSummaryAuditRecord) {
                                     MessageSummaryAuditRecord sum = (MessageSummaryAuditRecord)arec;
                                     msg += "Event Type : Message Summary" + "\n";
                                     msg += "Client IP  : " + arec.getIpAddress() + "\n";
                                     msg += "Service    : " + sum.getServiceName() + "\n";
-                                    msg += "Rqst Length: " + sum.getRequestContentLength() + "\n";
-                                    msg += "Resp Length: " + sum.getResponseContentLength() + "\n";
+                                    msg += "Rqst Length: " + fixNegative(sum.getRequestContentLength(), "<No Request>") + "\n";
+                                    msg += "Resp Length: " + fixNegative(sum.getResponseContentLength(), "<No Response>") + "\n";
                                     msg += "User ID    : " + sum.getUserId() + "\n";
                                     msg += "User Name  : " + sum.getUserName() + "\n";
+                                    msg += "Entity name: " + arec.getName() + "\n";
                                 } else if (arec instanceof SystemAuditRecord) {
                                     SystemAuditRecord sys = (SystemAuditRecord)arec;
                                     msg += "Event Type : System Message" + "\n";
                                     msg += "Node IP    : " + arec.getIpAddress() + "\n";
                                     msg += "Action     : " + sys.getAction() + "\n";
-                                    msg += "Component  : " + sys.getComponent() + "\n";
+                                    msg += "Component  : " + fixComponent(sys.getComponent()) + "\n";
+                                    msg += "Entity name: " + arec.getName() + "\n";
                                 } else {
                                     msg += "Event Type : Unknown" + "\n";
+                                    msg += "Entity name: " + arec.getName() + "\n";
                                     msg += "IP Address : " + arec.getIpAddress() + "\n";
                                 }
                             }
@@ -174,6 +178,31 @@ public class LogPanel extends JPanel {
                 });
     }
 
+    private String fixNegative(int num, String s) {
+        return num < 0 ? s : String.valueOf(num);
+    }
+
+    private String fixComponent(String component) {
+        com.l7tech.common.Component c = com.l7tech.common.Component.fromCode(component);
+        if (c == null) return "Unknown Component '" + component + "'";
+        StringBuffer ret = new StringBuffer(c.getName());
+        while (c.getParent() != null && c.getParent() != c) {
+            ret.insert(0, ": ");
+            ret.insert(0, c.getParent().getName());
+            c = c.getParent();
+        }
+        return ret.toString();
+    }
+
+    /** Strip the "com.l7tech." from the start of a class name. */
+    private String fixType(String entityClassname) {
+        final String coml7tech = "com.l7tech.";
+        if (entityClassname.startsWith(coml7tech))
+            return entityClassname.substring(coml7tech.length());
+        return entityClassname;
+    }
+
+    /** Convert a single-character action into a human-readable String. */
     private String fixAction(char action) {
         switch (action) {
             case AdminAuditRecord.ACTION_CREATED:
