@@ -165,7 +165,7 @@ public class SecureSpanConstants {
          * <li>Sent by the Agent to the Gateway along with every request that was processed by a policy.
          * </ul>
          */
-        public static final String POLICY_VERSION = "l7-policy-version";
+        public static final String POLICY_VERSION = "L7-policy-version";
 
         /**
          * This header is returned by the ssg with value "invalid" when a client cert used for authentication was
@@ -177,7 +177,7 @@ public class SecureSpanConstants {
          * the SSL handshake.
          * </ul>
          */
-        public static final String CERT_STATUS = "l7-cert-status";
+        public static final String CERT_STATUS = "L7-cert-status";
 
         /**
          * Contains the ID of the session established to hold security context information needed
@@ -218,7 +218,7 @@ public class SecureSpanConstants {
          * header referencing a missing or expired session.
          * </ul>                             f
          */
-        public static final String SESSION_STATUS_HTTP_HEADER = "l7-session-status";
+        public static final String SESSION_STATUS_HTTP_HEADER = "L7-session-status";
 
         /**
          * Contains the URL of the policy that should be applied to a given request.  When included in
@@ -326,7 +326,7 @@ public class SecureSpanConstants {
          *
          * As part of the password change, the existing client cert (if it exists) is revoked.
          */
-        public static final String HEADER_NEWPASSWD = "l7-new-passwd";
+        public static final String HEADER_NEWPASSWD = "L7-new-passwd";
     }
 
     /**
