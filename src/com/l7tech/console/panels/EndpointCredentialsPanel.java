@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.service.PublishedService;
+import com.l7tech.service.Wsdl;
 import com.l7tech.credential.PrincipalCredentials;
 import com.l7tech.credential.CredentialFormat;
 import com.l7tech.identity.User;
@@ -15,6 +16,7 @@ import com.l7tech.policy.assertion.RoutingAssertion;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.wsdl.WSDLException;
 import java.awt.*;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
@@ -215,7 +217,14 @@ public class EndpointCredentialsPanel extends WizardStepPanel {
         JButton buttonDefaultUrl = new JButton();
         buttonDefaultUrl.addActionListener( new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                serviceUrlTextField.setText(service.getWsdlUrl());
+                try {
+                    Wsdl wsdl = service.parsedWsdl();
+                    if (wsdl !=null)
+                        serviceUrlTextField.setText(wsdl.getServiceURI());
+                } catch (WSDLException e1) {
+                    //todo: errormanger where are you?
+                }
+
             }
         });
         buttonDefaultUrl.setText("Default");
