@@ -116,7 +116,18 @@ public class PolicyManagerImpl implements PolicyManager {
                 }
                 if (!newUrl.getProtocol().equalsIgnoreCase("https"))
                     throw new ConfigurationException("Policy server sent us a 401 status with a non-https policy URL");
-                URL safeUrl = new URL("https", policyUrl.getHost(), newUrl.getPort(), newUrl.getFile());
+
+                int newPort = newUrl.getPort();
+                if (newPort == -1)
+                    newPort = 443;
+                if ((newPort == 443 || newPort == 8443) &&
+                        (request.getSsg().getSslPort() != 443) &&
+                        (request.getSsg().getSslPort() != 8443)) {
+                    // Work-around for disco.modulator Bug #826.  If we are expecting a non-default SSL port,
+                    // but the Gateway sends us a URL using the default SSL port, replace it with our non-default.
+                    newPort = request.getSsg().getSslPort();
+                }
+                URL safeUrl = new URL("https", policyUrl.getHost(), newPort, newUrl.getFile());
                 log.info("Policy download unauthorized, trying again with credentials at " + safeUrl);
 
                 // Make sure we actually have the credentials
