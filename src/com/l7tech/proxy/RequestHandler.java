@@ -5,6 +5,7 @@ import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgFinder;
 import com.l7tech.proxy.datamodel.exceptions.SsgNotFoundException;
 import com.l7tech.proxy.datamodel.SsgResponse;
+import com.l7tech.proxy.datamodel.CurrentRequest;
 import com.l7tech.proxy.processor.MessageProcessor;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
@@ -210,6 +211,7 @@ public class RequestHandler extends AbstractHttpHandler {
 
         try {
             PendingRequest pendingRequest = gatherRequest(request, requestEnvelope, ssg);
+            CurrentRequest.setCurrentRequest(pendingRequest);
             SsgResponse reply = messageProcessor.processMessage(pendingRequest);
             interceptor.onReceiveReply(reply);
             log.info("Returning result");
@@ -219,6 +221,8 @@ public class RequestHandler extends AbstractHttpHandler {
             e.printStackTrace(System.err);
             interceptor.onReplyError(e);
             throw new HttpException(500, e.toString());
+        } finally {
+            CurrentRequest.clearCurrentRequest();
         }
     }
 
