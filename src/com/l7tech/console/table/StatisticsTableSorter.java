@@ -47,10 +47,18 @@ public class StatisticsTableSorter extends FilteredDefaultTableModel {
     }
 
     public void sortData(int column, boolean orderToggle) {
-        columnToSort = column;
+
         if(orderToggle){
             ascending = ascending ? false : true;
         }
+
+        // always sort in ascending order if the user select a new column
+        if(column != columnToSort){
+            ascending = true;
+        }
+        // save the column index
+        columnToSort = column;
+
         Object[] sorted = data.toArray();
         Arrays.sort(sorted, new ColumnSorter(columnToSort, ascending));
         sortedData = sorted;
