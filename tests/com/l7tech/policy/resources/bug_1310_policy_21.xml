@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Policy xmlns="http://www.layer7tech.com/ws/policy">
+    <All>
+        <XmlRequestSecurity>
+            <Elements elementSecurityArrayValue="included">
+                <item elementSecurityValue="included">
+                    <Cipher stringValue="AES"/>
+                    <KeyLength intValue="128"/>
+                    <PreconditionXpath xpathExpressionValueNull="null"/>
+                    <ElementXpath xpathExpressionValue="included">
+                        <Expression stringValue="/soapenv:Envelope"/>
+                        <Namespaces mapValue="included">
+                            <entry>
+                                <key stringValue="xsi"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema-instance"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="s0"/>
+                                <value stringValue="http://www.quisque.com/fr/chasses/crypto/"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="xsd"/>
+                                <value stringValue="http://www.w3.org/2001/XMLSchema"/>
+                            </entry>
+                            <entry>
+                                <key stringValue="soapenv"/>
+                                <value stringValue="http://schemas.xmlsoap.org/soap/envelope/"/>
+                            </entry>
+                        </Namespaces>
+                    </ElementXpath>
+                    <Encryption booleanValue="true"/>
+                </item>
+            </Elements>
+        </XmlRequestSecurity>
+        <OneOrMore>
+            <SpecificUser>
+                <UserLogin stringValue="iipuser01"/>
+                <IdentityProviderOid longValue="-2"/>
+            </SpecificUser>
+            <SpecificUser>
+                <UserLogin stringValue="iipuser02"/>
+                <IdentityProviderOid longValue="-2"/>
+            </SpecificUser>
+            <SpecificUser>
+                <UserLogin stringValue="iipuser03"/>
+                <IdentityProviderOid longValue="-2"/>
+            </SpecificUser>
+            <SpecificUser>
+                <UserLogin stringValue="iipuser04"/>
+                <IdentityProviderOid longValue="-2"/>
+            </SpecificUser>
+            <SpecificUser>
+                <UserLogin stringValue="iipuser05"/>
+                <IdentityProviderOid longValue="-2"/>
+            </SpecificUser>
+            <SpecificUser>
+                <UserLogin stringValue="iipuser06"/>
+                <IdentityProviderOid longValue="-2"/>
+            </SpecificUser>
+            <SpecificUser>
+                <UserLogin stringValue="iipuser07"/>
+                <IdentityProviderOid longValue="-2"/>
+            </SpecificUser>
+            <SpecificUser>
+                <UserLogin stringValue="iipuser08"/>
+                <IdentityProviderOid longValue="-2"/>
+            </SpecificUser>
+            <SpecificUser>
+                <UserLogin stringValue="iipuser09"/>
+                <IdentityProviderOid longValue="-2"/>
+            </SpecificUser>
+            <SpecificUser>
+                <UserLogin stringValue="iipuser10"/>
+                <IdentityProviderOid longValue="-2"/>
+            </SpecificUser>
+            <SpecificUser>
+                <UserLogin stringValue="iipuser11"/>
+                <IdentityProviderOid longValue="-2"/>
+            </SpecificUser>
+            <SpecificUser>
+                <UserLogin stringValue="iipuser12"/>
+                <IdentityProviderOid longValue="-2"/>
+            </SpecificUser>
+            <SpecificUser>
+                <UserLogin stringValue="iipuser13"/>
+                <IdentityProviderOid longValue="-2"/>
+            </SpecificUser>
+            <SpecificUser>
+                <UserLogin stringValue="iipuser14"/>
+                <IdentityProviderOid longValue="-2"/>
+            </SpecificUser>
+            <SpecificUser>
+                <UserLogin stringValue="iipuser15"/>
+                <IdentityProviderOid longValue="-2"/>
+            </SpecificUser>
+            <SpecificUser>
+                <UserLogin stringValue="iipuser16"/>
+                <IdentityProviderOid longValue="-2"/>
+            </SpecificUser>
+            <SpecificUser>
+                <UserLogin stringValue="iipuser17"/>
+                <IdentityProviderOid longValue="-2"/>
+            </SpecificUser>
+            <SpecificUser>
+                <UserLogin stringValue="iipuser18"/>
+                <IdentityProviderOid longValue="-2"/>
+            </SpecificUser>
+            <SpecificUser>
+                <UserLogin stringValue="iipuser19"/>
+                <IdentityProviderOid longValue="-2"/>
+            </SpecificUser>
+            <SpecificUser>
+                <UserLogin stringValue="iipuser20"/>
+                <IdentityProviderOid longValue="-2"/>
+            </SpecificUser>
+        </OneOrMore>
+        <HttpRoutingAssertion>
+            <AttachSamlSenderVouches booleanValue="false"/>
+            <TaiCredentialChaining booleanValue="false"/>
+            <UserAgent stringValueNull="null"/>
+            <ProtectedServiceUrl stringValue="http://soran/performance/Cryptarithm_RESPONSE.xml"/>
+            <Login stringValue=""/>
+            <GroupMembershipStatement booleanValue="false"/>
+            <Password stringValue=""/>
+            <Realm stringValue=""/>
+            <MaxConnections intValue="100"/>
+            <SamlAssertionExpiry intValue="5"/>
+        </HttpRoutingAssertion>
+    </All>
+</Policy>

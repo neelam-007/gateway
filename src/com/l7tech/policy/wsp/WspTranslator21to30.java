@@ -211,9 +211,11 @@ public class WspTranslator21to30 implements WspTranslator {
                     if (expath.getNamespaces() != null)
                         seenNamespaceMap = expath.getNamespaces();
 
-                    if (SoapUtil.SOAP_ENVELOPE_XPATH.equals(expath.getExpression()))
+                    boolean expathIsSoapenv = SoapUtil.SOAP_ENVELOPE_XPATH.equals(expath.getExpression());
+                    if (expathIsSoapenv) {
                         if (pxref.target == null)
                             isCredentialSource = true;
+                    }
 
                     final XpathBasedAssertion elementSignatureAss;
                     if (isResponse)
@@ -229,7 +231,14 @@ public class WspTranslator21to30 implements WspTranslator {
                             elementEncryptionAss = new ResponseWssConfidentiality();
                         else
                             elementEncryptionAss = new RequestWssConfidentiality();
-                        elementEncryptionAss.setXpathExpression(expath);
+                        if (expathIsSoapenv) {
+                            // Bug #1310: Head off attempts to encrypt the entire envelope.
+                            // In version 2.1, sign+encrypt /soapenv:Envelope actually
+                            // meant to encrypt the Body and sign the Envelope.
+                            elementEncryptionAss.setXpathExpression(new XpathExpression(SoapUtil.SOAP_BODY_XPATH,
+                                                                                        expath.getNamespaces()));
+                        } else
+                            elementEncryptionAss.setXpathExpression(expath);
                         itemAll.addChild(elementEncryptionAss);
                     }
                 }

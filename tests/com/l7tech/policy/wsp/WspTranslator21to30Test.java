@@ -36,6 +36,7 @@ public class WspTranslator21to30Test extends TestCase {
     private static final String POLICY_21_BADPROPERTYNAME = RESOURCE_PATH + "/simple_policy_21_badpropertyname.xml";
     private static final String POLICY_21_REQRESPARTIAL = RESOURCE_PATH + "/policy_21_xmlReqResPartial.xml";
     private static final String POLICY_21_REQRESPFULL = RESOURCE_PATH + "/policy_21_xmlReqRespEncrypSignEntire.xml";
+    private static final String POLICY_21_BUG_1310 = RESOURCE_PATH + "/bug_1310_policy_21.xml";
     private static final String POLICY_30 = RESOURCE_PATH + "/simple_policy_30.xml";
 
     public WspTranslator21to30Test(String name) {
@@ -116,6 +117,21 @@ public class WspTranslator21to30Test extends TestCase {
 
     public void testTranslate21FullEncryptionPolicy() throws Exception {
         InputStream policy21Stream = cl.getResourceAsStream(POLICY_21_REQRESPFULL);
+
+        Document policy21 = XmlUtil.parse(policy21Stream);
+        assertTrue(WspVersionImpl.VERSION_2_1 == (WspReader.getPolicyVersion(policy21.getDocumentElement())));
+
+        Document policy30 = new WspTranslator21to30().translatePolicy(policy21.getDocumentElement()).getOwnerDocument();
+        assertTrue(WspVersionImpl.VERSION_3_0 == (WspReader.getPolicyVersion(policy30.getDocumentElement())));
+
+        Assertion root = WspReader.parse(policy30.getDocumentElement());
+        assertNotNull(root);
+
+        log.info("Upgraded policy: " + root);
+    }
+
+    public void testBug1310() throws Exception {
+        InputStream policy21Stream = cl.getResourceAsStream(POLICY_21_BUG_1310);
 
         Document policy21 = XmlUtil.parse(policy21Stream);
         assertTrue(WspVersionImpl.VERSION_2_1 == (WspReader.getPolicyVersion(policy21.getDocumentElement())));
