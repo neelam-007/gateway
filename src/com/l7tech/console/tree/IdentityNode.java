@@ -74,6 +74,7 @@ public class IdentityNode extends AbstractTreeNode {
         Frame f = TopComponents.getInstance().getMainWindow();
         FindIdentitiesDialog.Options options = new FindIdentitiesDialog.Options();
         options.disableOpenProperties();
+        options.disposeOnSelect();
         FindIdentitiesDialog fd = new FindIdentitiesDialog(f, true, options);
         fd.pack();
         Utilities.centerOnScreen(fd);

@@ -71,7 +71,10 @@ public class AddIdentityAssertionAction extends BaseAction {
           new Runnable() {
             public void run() {
                 JFrame f = TopComponents.getInstance().getMainWindow();
-                FindIdentitiesDialog fd = new FindIdentitiesDialog(f, true);
+                FindIdentitiesDialog.Options options = new FindIdentitiesDialog.Options();
+                options.disposeOnSelect();
+                options.disableOpenProperties();
+                FindIdentitiesDialog fd = new FindIdentitiesDialog(f, true, options);
                 fd.pack();
                 Utilities.centerOnScreen(fd);
                 Principal[] principals = fd.showDialog();

@@ -119,6 +119,7 @@ public class FindIdentitiesDialog extends JDialog {
      * </ul>
      */
     public static class Options {
+
         /**
          * Enable the delete action
          */
@@ -133,6 +134,14 @@ public class FindIdentitiesDialog extends JDialog {
         public void disableOpenProperties() {
             enableOpenProperties = false;
         }
+
+        /**
+         * Dispose on select Disabled by default.
+         */
+        public void disposeOnSelect() {
+            disposeOnSelect = true;
+        }
+
 
         /**
          * Set the selection mode. Use one of the values from
@@ -156,6 +165,7 @@ public class FindIdentitiesDialog extends JDialog {
 
         boolean enableDeleteAction = false;
         boolean enableOpenProperties = true;
+        private boolean disposeOnSelect = false;
         int selectionMode = ListSelectionModel.MULTIPLE_INTERVAL_SELECTION;
         long initialProviderOid = IdentityProviderConfigManager.INTERNALPROVIDER_SPECIAL_OID;
     }
@@ -611,8 +621,18 @@ public class FindIdentitiesDialog extends JDialog {
                     EntityHeader eh = (EntityHeader)searchResultTable.getModel().getValueAt(row, 0);
                     principals.add(headerToPrincipal(eh));
                 }
-                selections = (Principal[])principals.toArray(new Principal[]{});
-                FindIdentitiesDialog.this.dispose();
+                if (options.disposeOnSelect) {
+                    selections = (Principal[])principals.toArray(new Principal[]{});
+                    FindIdentitiesDialog.this.dispose();
+                } else {
+                    int row = searchResultTable.getSelectedRow();
+                    if (row == -1) return;
+                    Object o = searchResultTable.getModel().getValueAt(row, 0);
+                    if (o == null) return;
+                    if (options.enableOpenProperties) {
+                      showEntityDialog(o);
+                    }
+                }
             }
         });
         buttonPanel.add(selectButton);
