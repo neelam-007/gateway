@@ -9,19 +9,24 @@ import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.service.PublishedService;
 import com.l7tech.service.ResolutionParameterTooLongException;
 import com.l7tech.service.ServiceAdmin;
+import com.l7tech.common.uddi.WsdlInfo;
+import com.l7tech.server.ServerConfig;
+import com.l7tech.server.service.uddi.UddiAgentV3;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpState;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.springframework.context.ApplicationContext;
 import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
 import java.io.IOException;
+import java.io.FileInputStream;
+import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.RemoteException;
 import java.util.Collection;
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -36,10 +41,11 @@ import java.util.logging.Logger;
 public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmin {
 
     public static final String SERVICE_DEPENDENT_URL_PORTION = "/services/serviceAdmin";
+    private final String UDDI_CONFIG_FILENAME = "uddi.properties";
 
     private ServiceManager serviceManager;
     private PolicyValidator policyValidator;
-    private ApplicationContext applicationContext;
+    private Properties uddiProps = null;
     private final AccessManager accessManager;
 
     public ServiceAdminImpl(AccessManager accessManager) {
@@ -184,6 +190,63 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
             ++count;
         }
         return output;
+    }
+
+    /**
+     * Find all URLs of the WSDLs from UDDI Registry given the service name pattern.
+     *
+     * @param namePattern  The string of the service name (wildcard % is supported)
+     * @param caseSensitive  True if case sensitive, false otherwise.
+     * @return A list of URLs of the WSDLs of the services whose name matches the namePattern.
+     * @throws RemoteException  on remote communication error
+     * @throws FindException   if there was a problem accessing the requested information.
+     */
+    public WsdlInfo[] findWsdlUrlsFromUDDIRegistry(String namePattern, boolean caseSensitive) throws RemoteException, FindException {
+
+        // note: we only support V3 agent
+        if(uddiProps == null) uddiProps = readUDDIConfig();
+
+        UddiAgentV3 uddiAgent = new UddiAgentV3(uddiProps);
+
+        return uddiAgent.getWsdlByServiceName(namePattern, caseSensitive);
+    }
+
+    private Properties readUDDIConfig() {
+        String ssgConfigPath = ServerConfig.getInstance().getProperty("ssg.conf");
+        String uddiConfigFileName = ssgConfigPath + "/" + UDDI_CONFIG_FILENAME;
+        Properties props = new Properties();
+        if (uddiConfigFileName == null) {
+            logger.severe("Could not load UDDI Registry properties");
+            throw new RuntimeException("Could not load UDDI Registry propertie");
+        }
+
+        FileInputStream propStream = null;
+        try {
+            propStream = null;
+
+            File file = new File(uddiConfigFileName);
+            if (file.exists()) {
+                propStream = new FileInputStream(file);
+                props.load(propStream);
+                logger.info("Loading UDDI Registry properties from " + uddiConfigFileName);
+                return props;
+            } else {
+                logger.severe(uddiConfigFileName + " not found");
+                throw new RuntimeException("Couldn't load " + uddiConfigFileName + ", File not found!");
+            }
+
+        } catch (IOException ioe) {
+            logger.severe("Couldn't load " + uddiConfigFileName);
+            throw new RuntimeException("Couldn't load " + uddiConfigFileName);
+        } finally {
+            if (propStream != null) {
+                try {
+                    propStream.close();
+                } catch (IOException e) {
+                    logger.warning("io exception");
+                }
+            }
+        }
     }
 
     /**

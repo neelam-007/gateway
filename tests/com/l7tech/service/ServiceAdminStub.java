@@ -6,6 +6,7 @@ import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.service.ServiceManager;
+import com.l7tech.common.uddi.WsdlInfo;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -113,6 +114,24 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     public EntityHeader[] findAllPublishedServicesByOffset(int offset, int windowSize)
       throws RemoteException {
         throw new RuntimeException("Not Implemented");
+    }
+
+    /**
+     * Find all URLs of the WSDLs from UDDI Registry given the service name pattern.
+     *
+     * @param namePattern  The string of the service name (wildcard % is supported)
+     * @param caseSensitive  True if case sensitive, false otherwise.
+     * @return A list of URLs of the WSDLs of the services whose name matches the namePattern.
+     * @throws RemoteException  on remote communication error
+     */
+    public WsdlInfo[] findWsdlUrlsFromUDDIRegistry(String namePattern, boolean caseSensitive) throws RemoteException, FindException {
+        WsdlInfo[] siList = new WsdlInfo[3];
+
+        siList[0]= new WsdlInfo("Google Service", "http://api.google.com/GoogleSearch.wsdl");
+        siList[1]= new WsdlInfo("Delayed Quote Service", "http://services.xmethods.net/soap/urn:xmethods-delayed-quotes.wsdl");
+        siList[2]= new WsdlInfo("Stock Quote Service", "http://paris/wsdl/StockQuote_WSDL.wsdl");
+
+        return siList;
     }
 
     private EntityHeader fromService(PublishedService s) {

@@ -2,6 +2,7 @@ package com.l7tech.service;
 
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyValidatorResult;
+import com.l7tech.common.uddi.WsdlInfo;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -98,4 +99,16 @@ public interface ServiceAdmin {
      * @throws RemoteException on remote communication error
      */
     PolicyValidatorResult validatePolicy(String policyXml, long serviceId) throws RemoteException;
+
+    /**
+     * Find all URLs of the WSDLs from UDDI Registry given the service name pattern.
+     *
+     * @param namePattern The string of the service name (wildcard % is supported)
+     * @param caseSensitive  True if case sensitive, false otherwise.
+     * @return A list of URLs of the WSDLs of the services whose name matches the namePattern.
+     * @throws RemoteException           on remote communication error
+     * @throws FindException   if there was a problem accessing the requested information.
+     */
+    WsdlInfo[] findWsdlUrlsFromUDDIRegistry(String namePattern, boolean caseSensitive) throws RemoteException, FindException ;
+
 }

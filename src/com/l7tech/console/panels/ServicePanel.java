@@ -12,6 +12,8 @@ import com.l7tech.console.panels.PublishServiceWizard.ServiceAndAssertion;
 import com.l7tech.console.util.Registry;
 import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.MainWindow;
+import com.l7tech.console.event.WsdlListener;
+import com.l7tech.console.event.WsdlEvent;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.service.PublishedService;
 
@@ -22,6 +24,8 @@ import javax.swing.event.DocumentListener;
 import javax.wsdl.Port;
 import javax.wsdl.WSDLException;
 import java.awt.*;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 import java.io.StringReader;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -45,6 +49,7 @@ public class ServicePanel extends WizardStepPanel {
     // local service copy
     private PublishedService service = new PublishedService();
     private Wsdl wsdl;
+    private JButton wsdlUrlBrowseButton;
 
     /** Creates new form ServicePanel */
     public ServicePanel() {
@@ -64,6 +69,7 @@ public class ServicePanel extends WizardStepPanel {
         serviceUrlPanel = new JPanel();
         serviceUrlLabel = new JLabel();
         wsdlUrlTextField = new ContextMenuTextField();
+        wsdlUrlBrowseButton = new JButton("Browse");
 
         setLayout(new GridBagLayout());
 
@@ -100,6 +106,33 @@ public class ServicePanel extends WizardStepPanel {
                                                     GridBagConstraints.WEST,
                                                     GridBagConstraints.HORIZONTAL,
                                                     new Insets(0, 0, 0, 0), 0, 0));
+
+        wsdlUrlBrowseButton.setPreferredSize(new Dimension(30, 20));
+        serviceUrlPanel.add(wsdlUrlBrowseButton, new GridBagConstraints(2, 1, 1, 1, 100.0, 0.0,
+                                                            GridBagConstraints.WEST,
+                                                            GridBagConstraints.HORIZONTAL,
+                                                            new Insets(0, 5, 0, 0), 0, 0));
+        
+        wsdlUrlBrowseButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+
+                // open UDDI browser
+                SearchWsdlDialog swd = new SearchWsdlDialog(ServicePanel.this.getOwner());
+                swd.addWsdlListener(new WsdlListener() {
+
+                    public void wsdlSelected(WsdlEvent event) {
+                        String wsdlURL = event.getWsdlInfo().getWsdlUrl();
+
+                        // update the wsdlUrlTestField
+                        if(wsdlURL != null) wsdlUrlTextField.setText(wsdlURL);
+                    }
+                });
+                swd.setSize(700, 500);
+                swd.setModal(true);
+                swd.show();
+            }
+        });
+
         add(serviceUrlPanel,
             new GridBagConstraints(0, 2, 1, 1, 1.0, 0.0,
                                    GridBagConstraints.CENTER,
