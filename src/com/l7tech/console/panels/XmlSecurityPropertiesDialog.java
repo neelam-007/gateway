@@ -1,13 +1,13 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.TableUtil;
+import com.l7tech.common.security.xml.ElementSecurity;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.SoapMessageGenerator;
 import com.l7tech.common.xml.SoapMessageGenerator.Message;
 import com.l7tech.common.xml.Wsdl;
 import com.l7tech.common.xml.XpathEvaluator;
 import com.l7tech.common.xml.XpathExpression;
-import com.l7tech.common.security.xml.ElementSecurity;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.table.SecuredMessagePartsTableModel;
 import com.l7tech.console.table.SecuredMessagePartsTableModel.SecuredMessagePart;
@@ -26,7 +26,6 @@ import com.l7tech.console.xmlviewer.ViewerToolBar;
 import com.l7tech.console.xmlviewer.properties.ConfigurationProperties;
 import com.l7tech.console.xmlviewer.util.DocumentUtilities;
 import com.l7tech.objectmodel.FindException;
-import com.l7tech.common.security.xml.ElementSecurity;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertion;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
@@ -60,12 +59,14 @@ import java.net.URL;
 import java.rmi.RemoteException;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.logging.Logger;
 
 
 /**
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class XmlSecurityPropertiesDialog extends JDialog {
+    static final Logger log = Logger.getLogger(XmlSecurityPropertiesDialog.class.getName());
     private JPanel mainPanel;
     private JPanel messageViewerPanel;
     private JPanel messageViewerToolbarPanel;
@@ -115,7 +116,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
 
         okActionListener = okListener;
 
-        xmlSecAssertion = (XmlSecurityAssertion)node.asAssertion();
+        xmlSecAssertion = (XmlSecurityAssertion) node.asAssertion();
         serviceNode = AssertionTreeNode.getServiceNode(node);
         if (serviceNode == null) {
             throw new IllegalStateException("Unable to determine the service node for " + xmlSecAssertion);
@@ -204,10 +205,10 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                     java.util.List elements = new ArrayList();
                     Iterator it = securedMessagePartsTableModel.getSecuredMessageParts().iterator();
                     for (; it.hasNext();) {
-                        SecuredMessagePart sp = (SecuredMessagePartsTableModel.SecuredMessagePart)it.next();
+                        SecuredMessagePart sp = (SecuredMessagePartsTableModel.SecuredMessagePart) it.next();
                         elements.add(toElementSecurity(sp));
                     }
-                    xmlSecAssertion.setElements((ElementSecurity[])elements.toArray(new ElementSecurity[]{}));
+                    xmlSecAssertion.setElements((ElementSecurity[]) elements.toArray(new ElementSecurity[]{}));
                     XmlSecurityPropertiesDialog.this.dispose();
                 } catch (SOAPException e1) {
                     throw new RuntimeException(e1);
@@ -223,10 +224,10 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                 if (path == null) {
                     throw new IllegalStateException("No message/part selected (path is null)");
                 }
-                WsdlTreeNode node = (WsdlTreeNode)path.getLastPathComponent();
+                WsdlTreeNode node = (WsdlTreeNode) path.getLastPathComponent();
 
                 if (node instanceof BindingOperationTreeNode) {
-                    BindingOperationTreeNode bn = (BindingOperationTreeNode)node;
+                    BindingOperationTreeNode bn = (BindingOperationTreeNode) node;
                     BindingOperation bo = bn.getOperation();
                     String xpathExpression = SoapUtil.SOAP_BODY_XPATH;
                     xpathExpression = messageViewerToolBar.getXPath();
@@ -262,11 +263,11 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         try {
             final Wsdl wsdl = serviceNode.getPublishedService().parsedWsdl();
             final MutableTreeNode root = new DefaultMutableTreeNode();
-            final DefaultTreeModel treeModel = new DefaultTreeModel(root);
+            final DefaultTreeModel operationsTreeModel = new DefaultTreeModel(root);
 
-            populateOperations(wsdl, treeModel, root);
+            populateOperations(wsdl, operationsTreeModel, root);
 
-            operationsTree.setModel(treeModel);
+            operationsTree.setModel(operationsTreeModel);
             operationsTree.setRootVisible(false);
             operationsTree.setShowsRootHandles(true);
             operationsTree.setCellRenderer(wsdlTreeRenderer);
@@ -280,13 +281,34 @@ public class XmlSecurityPropertiesDialog extends JDialog {
 
             entireMessage.setSelected(envelopeAllOperations);
             messageParts.setSelected(!envelopeAllOperations);
+
             messageViewer.setViewerEnabled(!envelopeAllOperations);
             messageViewerToolBar.setToolbarEnabled(!envelopeAllOperations);
 
-            for (int i = 0; !envelopeAllOperations && i < elements.length; i++) {
-                ElementSecurity elementSecurity = elements[i];
-                securedMessagePartsTableModel.addPart(toSecureMessagePart(elementSecurity));
+            if (!envelopeAllOperations) {
+                for (int i = 0; i < elements.length; i++) {
+                    ElementSecurity elementSecurity = elements[i];
+                    securedMessagePartsTableModel.addPart(toSecureMessagePart(elementSecurity));
+                }
+
+                SecuredMessagePart sp = securedMessagePartsTableModel.getPartAt(0);
+                BindingOperation firstOperation = sp.getOperation();
+                DefaultMutableTreeNode wsdlTreeNode = (DefaultMutableTreeNode)operationsTreeModel.getRoot();
+                Enumeration enum = wsdlTreeNode.preorderEnumeration();
+                while (enum.hasMoreElements()) {
+                    DefaultMutableTreeNode treeNode = (DefaultMutableTreeNode)enum.nextElement();
+
+                    if (treeNode instanceof BindingOperationTreeNode) {
+                        BindingOperation bo = ((BindingOperationTreeNode)treeNode).getOperation();
+                        if (bo.getName().equals(firstOperation.getName())) {
+                            log.finest("Operation matched, selecting "+bo.getName());
+                            operationsTree.setSelectionPath(new TreePath(treeNode.getPath()));
+                            break;
+                        }
+                    }
+                }
             }
+
             adjustTableColumnSizes();
             getContentPane().setLayout(new BorderLayout());
             getContentPane().add(mainPanel);
@@ -327,7 +349,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         MutableTreeNode parentNode = root;
         int bindingsCounter = 0;
         for (Iterator iterator = collection.iterator(); iterator.hasNext();) {
-            Binding b = (Binding)iterator.next();
+            Binding b = (Binding) iterator.next();
             if (showBindings) {
                 final BindingTreeNode bindingTreeNode = new BindingTreeNode(b, wo);
                 treeModel.insertNodeInto(bindingTreeNode, root, bindingsCounter++);
@@ -337,7 +359,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
             java.util.List operations = b.getBindingOperations();
             int index = 0;
             for (Iterator itop = operations.iterator(); itop.hasNext();) {
-                BindingOperation bo = (BindingOperation)itop.next();
+                BindingOperation bo = (BindingOperation) itop.next();
                 treeModel.insertNodeInto(new BindingOperationTreeNode(bo, wo), parentNode, index++);
             }
         }
@@ -433,7 +455,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         java.util.List sparts = securedMessagePartsTableModel.getSecuredMessageParts();
         boolean alreadySelected = false;
         for (Iterator iterator = sparts.iterator(); iterator.hasNext();) {
-            SecuredMessagePart securedMessagePart = (SecuredMessagePart)iterator.next();
+            SecuredMessagePart securedMessagePart = (SecuredMessagePart) iterator.next();
             if (p.implies(securedMessagePart) || securedMessagePart.implies(p)) {
                 alreadySelected = true;
             }
@@ -474,7 +496,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
             this.setBackgroundNonSelectionColor(tree.getBackground());
             if (!(value instanceof WsdlTreeNode)) return this;
 
-            WsdlTreeNode node = (WsdlTreeNode)value;
+            WsdlTreeNode node = (WsdlTreeNode) value;
             setText(node.toString());
             Image image = expanded ? node.getOpenedIcon() : node.getIcon();
             Icon icon = null;
@@ -516,7 +538,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                           throw new RuntimeException(e1);
                       }
                   }
-                  BindingOperationTreeNode boperation = (BindingOperationTreeNode)lpc;
+                  BindingOperationTreeNode boperation = (BindingOperationTreeNode) lpc;
                   Message sreq = forOperation(boperation.getOperation());
                   messageViewerToolBar.setToolbarEnabled(true);
                   if (sreq == null) {
@@ -558,7 +580,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
                 removeButton.setEnabled(false);
                 return;
             }
-            String xe = (String)securedItemsTable.getModel().getValueAt(selectedRow, 1);
+            String xe = (String) securedItemsTable.getModel().getValueAt(selectedRow, 1);
             messageViewerToolBar.getXpathComboBox().getEditor().setItem(xe);
             final boolean selected = messageParts.isSelected();
             removeButton.setEnabled(selected);
@@ -590,11 +612,11 @@ public class XmlSecurityPropertiesDialog extends JDialog {
 
         Iterator it = serviceWsdl.getBindings().iterator();
         while (it.hasNext()) {
-            Binding binding = (Binding)it.next();
+            Binding binding = (Binding) it.next();
             if (binding.getQName().getLocalPart().equals(bindingName)) {
                 Iterator itop = binding.getBindingOperations().iterator();
                 while (itop.hasNext()) {
-                    BindingOperation bop = (BindingOperation)itop.next();
+                    BindingOperation bop = (BindingOperation) itop.next();
                     if (bop.getName().equals(opName)) {
                         return bop;
                     }
@@ -607,10 +629,10 @@ public class XmlSecurityPropertiesDialog extends JDialog {
     private BindingOperation getBindingOperationByOutput(String outputName) {
         Iterator it = serviceWsdl.getBindings().iterator();
         while (it.hasNext()) {
-            Binding binding = (Binding)it.next();
+            Binding binding = (Binding) it.next();
             Iterator itop = binding.getBindingOperations().iterator();
             while (itop.hasNext()) {
-                BindingOperation bop = (BindingOperation)itop.next();
+                BindingOperation bop = (BindingOperation) itop.next();
                 Output output = bop.getOperation().getOutput();
                 if (output == null) continue;
                 javax.wsdl.Message message = output.getMessage();
@@ -633,7 +655,7 @@ public class XmlSecurityPropertiesDialog extends JDialog {
         if (!it.hasNext()) {
             xp.setExpression(SoapUtil.SOAP_BODY_XPATH);
         } else {
-            SOAPElement se = (SOAPElement)it.next();
+            SOAPElement se = (SOAPElement) it.next();
             final Name elementName = se.getElementName();
 
             String prefix = elementName.getPrefix();
