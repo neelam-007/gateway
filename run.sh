@@ -71,22 +71,25 @@ if $cygwin; then
 fi
 export CLASSPATH
 
-case "$1" in 
+foo=$1
+shift
+
+case "$foo" in 
 	ssg)
 		# start tomcat?
 		exec $TOMCAT_HOME/bin/startup.sh run
 		;;
 	console)
 		target="com.l7tech.console.Main";
-		exec $JAVA_HOME/bin/java $JAVA_OPTS ${target}
+		exec $JAVA_HOME/bin/java $JAVA_OPTS ${target} 
 		;;
 	textproxy)
 		target="com.l7tech.proxy.Main";
-		exec $JAVA_HOME/bin/java $JAVA_OPTS ${target}
+		exec $JAVA_HOME/bin/java $* $JAVA_OPTS ${target}
 		;;
 	proxy)
 		target="com.l7tech.proxy.gui.Main";
-		exec $JAVA_HOME/bin/java $JAVA_OPTS ${target}
+		exec $JAVA_HOME/bin/java $* $JAVA_OPTS ${target}
 		;;
 	*)
 		echo "Usage: run.sh (ssg|console|proxy|textproxy)"
