@@ -71,7 +71,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         connectionManager.setMaxTotalConnections(max * 10);
         //connectionManager.setConnectionStaleCheckingEnabled( false );
 
-        Auditor auditor = new Auditor(AuditContext.getCurrent(ctx), Logger.getLogger(getClass().getName()));
+        Auditor auditor = new Auditor(AuditContext.getCurrent(ctx), logger);
         try {
             sslContext = SSLContext.getInstance("SSL");
             final SslClientTrustManager trustManager = (SslClientTrustManager)applicationContext.getBean("httpRoutingAssertionTrustManager");
@@ -101,8 +101,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
         PostMethod postMethod = null;
         InputStream inputStream = null;
-        Auditor auditor = new Auditor(context.getAuditContext(), Logger.getLogger(getClass().getName()));
-        auditor.logAndAudit(AssertionMessages.HTTP_ROUTING_ASSERTION);
+        Auditor auditor = new Auditor(context.getAuditContext(), logger);
 
         try {
             try {
@@ -155,7 +154,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                         } catch (InvalidDocumentFormatException e) {
                             String msg = "this option is not supported for non-soap messages. this message is " +
                                          "supposed to be soap but does not appear to be";
-                            logger.warning(msg);
+                            auditor.logAndAudit(AssertionMessages.NON_SOAP_NOT_SUPPORTED_WRONG_FORMAT, null, e);
                             throw new PolicyAssertionException(msg);
                         }
                         if (defaultSecHeader != null) {
@@ -168,7 +167,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                             } catch (InvalidDocumentFormatException e) {
                                 String msg = "this option is not supported for non-soap messages. this message is " +
                                              "supposed to be soap but does not appear to be";
-                                logger.warning(msg);
+                                auditor.logAndAudit(AssertionMessages.NON_SOAP_NOT_SUPPORTED_WRONG_FORMAT, null, e);
                                 throw new PolicyAssertionException(msg);
                             }
                             if (header != null) {
@@ -194,19 +193,17 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                             // should not hapen
                             String msg = "this option is not supported for non-soap messages. " +
                                          "something is wrong with this policy";
-                            logger.warning(msg);
+                            auditor.logAndAudit(AssertionMessages.NON_SOAP_NOT_SUPPORTED_WRONG_POLICY, null, e);
                             throw new PolicyAssertionException(msg);
                         }
                         if (secHeaderToPromote != null) {
                             // do it
-                            logger.fine("promoting actor " + actorDeservingPromotion);
+                            auditor.logAndAudit(AssertionMessages.PROMOMTING_ACTOR, new String[] {actorDeservingPromotion});
                             SoapUtil.nukeActorAttribute(secHeaderToPromote);
                         } else {
                             // this is not a big deal but might indicate something wrong
                             // with the assertion => logging as info
-                            logger.info("routing assertion asked for security header with actor " +
-                                        actorDeservingPromotion + " be promoted but there was no such " +
-                                        "security header present in the message.");
+                            auditor.logAndAudit(AssertionMessages.NO_SECURITY_HEADER, new String[] {actorDeservingPromotion});
                         }
                     }
                 }
@@ -237,7 +234,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 if (httpRoutingAssertion.isTaiCredentialChaining()) {
                     String chainId = null;
                     if (!context.isAuthenticated()) {
-                        logger.log(Level.FINE, "TAI credential chaining requested, but request was not authenticated.");
+                        auditor.logAndAudit(AssertionMessages.TAI_REQUEST_NOT_AUTHENTICATED);
                     } else {
                         User clientUser = context.getAuthenticatedUser();
                         if (clientUser != null) {
@@ -246,18 +243,17 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                             if (id == null || id.length() < 1) id = clientUser.getUniqueIdentifier();
 
                             if (id != null && id.length() > 0) {
-                                logger.log(Level.FINE, "TAI credential chaining requested; will chain username " + id);
+                                auditor.logAndAudit(AssertionMessages.TAI_REQUEST_CHAIN_USERNAME, new String[] {id});
                                 chainId = id;
                             } else
-                                logger.log(Level.WARNING, "TAI credential chaining requested, but request User did not have a unique identifier"); // can't happen
+                                auditor.logAndAudit(AssertionMessages.TAI_REQUEST_USER_ID_NOT_UNIQUE, new String[] {id});
                         } else {
                             final String login = context.getCredentials().getLogin();
                             if (login != null && login.length() > 0) {
-                                logger.log(Level.FINE, "TAI credential chaining requested, but there is no User; " +
-                                  "will chain pc.login " + login);
+                                auditor.logAndAudit(AssertionMessages.TAI_REQUEST_CHAIN_LOGIN, new String[] {login});
                                 chainId = login;
                             } else
-                                logger.log(Level.WARNING, "TAI credential chaining requested, and request was authenticated, but had no User or pc.login");
+                                auditor.logAndAudit(AssertionMessages.TAI_REQUEST_NO_USER_OR_LOGIN);
                         }
 
                         if (chainId != null && chainId.length() > 0) {
@@ -269,7 +265,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                             cookieOut.setValue(chainId);
                             cookieOut.setDomain(url.getHost());
                             cookieOut.setPath(url.getPath());
-                            logger.fine("Adding outgoing cookie: name = " + cookieOut.getName());
+                            auditor.logAndAudit(AssertionMessages.ADD_OUTGOING_COOKIE, new String[] {cookieOut.getName()});
                             client.getState().addCookie(cookieOut);
                         }
                     }
@@ -280,7 +276,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
                 if (login != null && login.length() > 0
                   && password != null && password.length() > 0) {
-                    logger.fine("Using login '" + login + "'");
+                    auditor.logAndAudit(AssertionMessages.LOGIN_INFO, new String[] {login});
                     HttpState state = client.getState();
                     postMethod.setDoAuthentication(true);
                     state.setAuthenticationPreemptive(true);
@@ -298,7 +294,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                             InetAddress clientAddress = InetAddress.getByName(requestTcp.getRemoteAddress());
                             samlOptions.setClientAddress(clientAddress);
                         } catch (UnknownHostException e) {
-                            logger.warning("Couldn't resolve client IP address");
+                            auditor.logAndAudit(AssertionMessages.CANNOT_RESOLVE_IP_ADDRESS, null, e);
                         }
                     }
                     samlOptions.setExpiryMinutes(httpRoutingAssertion.getSamlAssertionExpiry());
@@ -319,35 +315,35 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
                 int status = postMethod.getStatusCode();
                 if (status == 200)
-                    logger.fine("Request routed successfully");
+                    auditor.logAndAudit(AssertionMessages.ROUTED_OK);
                 else
-                    logger.info("Protected service (" + url + ") responded with status " + status);
+                    auditor.logAndAudit(AssertionMessages.RESPONSE_STATUS, new String[] {url.getPath(), String.valueOf(status)});
 
                 context.getResponse().getHttpResponseKnob().setStatus(status);
 
                 context.setRoutingStatus(RoutingStatus.ROUTED);
 
             } catch (WSDLException we) {
-                logger.log(Level.SEVERE, null, we);
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, we);
                 return AssertionStatus.FAILED;
             } catch (MalformedURLException mfe) {
-                logger.log(Level.SEVERE, null, mfe);
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, mfe);
                 return AssertionStatus.FAILED;
             } catch (IOException ioe) {
                 // TODO: Worry about what kinds of exceptions indicate failed routing, and which are "unrecoverable"
-                logger.log(Level.SEVERE, ioe.getMessage(), ioe);
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, ioe);
                 return AssertionStatus.FAILED;
             } catch (SAXException e) {
-                logger.log(Level.SEVERE, null, e);
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
                 return AssertionStatus.FAILED;
             } catch (SignatureException e) {
-                logger.log(Level.SEVERE, null, e);
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
                 return AssertionStatus.FAILED;
             } catch (CertificateException e) {
-                logger.log(Level.SEVERE, null, e);
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
                 return AssertionStatus.FAILED;
             } catch (NoSuchPartException e) {
-                logger.log(Level.SEVERE, null, e);
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
                 return AssertionStatus.FAILED;
             }
             // BEYOND THIS POINT, WE DONT RETURN FAILURE
@@ -357,7 +353,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 ContentTypeHeader outerContentType = ContentTypeHeader.parseValue(ctype);
                 context.getResponse().initialize(new ByteArrayStashManager(), outerContentType, responseStream); // TODO use a different StashManager?
             } catch (Exception e) {
-                logger.log(Level.FINE, "error reading response", e);
+                auditor.logAndAudit(AssertionMessages.ERROR_READING_RESPONSE, null, e);
                 // here we dont return error because we already routed
             }
         } finally {
@@ -405,6 +401,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
         javax.servlet.http.Cookie[] cookies = req.getCookies();
         org.apache.commons.httpclient.Cookie cookieOut = null;
 
+        Auditor auditor = new Auditor(context.getAuditContext(), logger);
         // if no cookies found in the request but there is cookies in the udpatedCookies list (i.e. new cookies)
         if ((cookies == null || cookies.length == 0)) {
             if (updatedCookies.size() > 0) {
@@ -420,7 +417,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                         cookieOut.setVersion(newCookie.getVersion());
                         cookieOut.setComment(newCookie.getComment());
                         // cookieOut.setExpiryDate(??); // how to translate the getMaxAge() to the date? em
-                        logger.fine("Adding outgoing cookie: name = " + cookieOut.getName() + ", version = " + cookieOut.getVersion());
+                        auditor.logAndAudit(AssertionMessages.ADD_OUTGOING_COOKIE_WITH_VERSION, new String[] {cookieOut.getName(), String.valueOf(cookieOut.getVersion())});
                         state.addCookie(cookieOut);
                     }
                 }
@@ -435,7 +432,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 updatedCookie = findCookieByName(updatedCookies, incomingCookie.getName());
                 if (updatedCookie != null) {
                     cookieOut.setValue(updatedCookie.getValue());
-                    logger.fine("Updating cookie: name = " + updatedCookie.getName());
+                    auditor.logAndAudit(AssertionMessages.UPDATE_COOKIE, new String[] {updatedCookie.getName()});
                 } else {
                     cookieOut.setValue(incomingCookie.getValue());
                 }
@@ -443,7 +440,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 cookieOut.setVersion(incomingCookie.getVersion());
                 cookieOut.setComment(incomingCookie.getComment());
                 // cookieOut.setExpiryDate(??); // how to translate the getMaxAge() to the date? em
-                logger.fine("Adding outgoing cookie: name = " + cookieOut.getName() + ", version = " + cookieOut.getVersion());
+                auditor.logAndAudit(AssertionMessages.ADD_OUTGOING_COOKIE_WITH_VERSION, new String[] {cookieOut.getName(), String.valueOf(cookieOut.getVersion())});
                 state.addCookie(cookieOut);
             }
         }
