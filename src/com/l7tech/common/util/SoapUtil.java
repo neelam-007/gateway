@@ -10,6 +10,7 @@ import org.w3c.dom.*;
 import org.w3c.dom.Node;
 
 import javax.xml.soap.*;
+import javax.xml.transform.dom.DOMSource;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -230,6 +231,19 @@ public class SoapUtil {
     }
 
     /**
+     * Load the DOM document into the SOAP message
+     * <p>
+     * @param doc the SOAP message as a DOM document
+     * @return the corresponding SOAP message
+     * @throws SOAPException on SOAP error
+     */
+    public static SOAPMessage asSOAPMessage(Document doc) throws SOAPException {
+        SOAPMessage sm = MessageFactory.newInstance().createMessage();
+        sm.getSOAPPart().setContent(new DOMSource(doc));
+        return sm;
+    }
+
+    /**
      * There is no built-in provision in jax-rpc for adding a DOM document object (that
      * represents an XML document) as a SOAP body subelement in a SOAP message. The document
      * object needs to be 'unmarshalled' into a javax.xml.soap.SOAPElement object. In other
@@ -246,7 +260,7 @@ public class SoapUtil {
      * @return the soap element containing the dom element marshalled into it
      * @throws SOAPException on soap error
      */
-    static public SOAPElement domToSOAPElement(SOAPElement soapElement, Node domNode)
+    public static SOAPElement domToSOAPElement(SOAPElement soapElement, Node domNode)
       throws SOAPException {
 
         //Test that domNode is of type org.w3c.dom.Node.ELEMENT_NODE.
