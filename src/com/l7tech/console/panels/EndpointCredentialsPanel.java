@@ -118,9 +118,11 @@ public class EndpointCredentialsPanel extends WizardStepPanel {
             getCredentials(),
             getCredentialFormat(),
             realmTextField.getText());
-        RoutingAssertion ra =
-          new RoutingAssertion(serviceUrlTextField.getText(), pc);
-        collect.setRoutingAssertion(ra);
+
+        // TODO: Fixme Emil!
+        //RoutingAssertion ra =
+        //  new RoutingAssertion(serviceUrlTextField.getText(), pc);
+        //collect.setRoutingAssertion(ra);
     }
 
     /**
