@@ -98,8 +98,8 @@ public abstract class SamlAssertionHelper {
         }
     }
 
-    public Document createSignedAssertion() throws IOException, SAXException, SignatureException, CertificateException {
-        Document doc = createAssertion(null);
+    public Document createSignedAssertion(String assertionID) throws IOException, SAXException, SignatureException, CertificateException {
+        Document doc = createAssertion(assertionID);
         signAssertion(doc, signerInfo.getPrivate(), signerInfo.getCertificateChain());
         return doc;
     }

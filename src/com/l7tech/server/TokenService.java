@@ -143,7 +143,7 @@ public class TokenService {
             options.setSignAssertion(true);
             SignerInfo signerInfo = new SignerInfo(getServerKey(), new X509Certificate[] { getServerCert() });
             HolderOfKeyHelper hok = new HolderOfKeyHelper(null, options, creds, signerInfo);
-            Document signedAssertionDoc = hok.createSignedAssertion(); // TODO use a better ID!
+            Document signedAssertionDoc = hok.createSignedAssertion(null); // TODO use a better ID!
             responseXml.append(XmlUtil.nodeToString(signedAssertionDoc));
             responseXml.append(WST_RST_RESPONSE_INFIX);
             responseXml.append(WST_RST_RESPONSE_SUFFIX);

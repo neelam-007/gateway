@@ -7,6 +7,7 @@
 package com.l7tech.common.security.xml;
 
 import com.l7tech.common.security.xml.processor.*;
+import com.l7tech.common.security.saml.SignedSamlTest;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.TestDocuments;
@@ -180,8 +181,17 @@ public class WssProcessorTest extends TestCase {
     }
 
     public void testSampleSignedSamlHolderOfKeyRequest() throws Exception {
+        SignedSamlTest sst = new SignedSamlTest("blah");
+        sst.setUp();
         doTest(makeEttkTestDocument("sample signed SAML holder-of-key request",
-                                    TestDocuments.SAMPLE_SIGNED_SAML_HOLDER_OF_KEY_REQUEST));
+                                    /*TestDocuments.SAMPLE_SIGNED_SAML_HOLDER_OF_KEY_REQUEST*/sst.getRequestSignedWithSamlToken()));
+    }
+
+    public void testSignedSamlSenderVouchesRequest() throws Exception {
+        SignedSamlTest sst = new SignedSamlTest("blah");
+        sst.setUp();
+        doTest(makeEttkTestDocument("Signed SAML sender-vouches request",
+                                    sst.getSignedRequestWithSenderVouchesToken()));
     }
 
     public void testNonSoapRequest() throws Exception {
@@ -198,6 +208,17 @@ public class WssProcessorTest extends TestCase {
         try {
             Document d = TestDocuments.getTestDocument(docname);
             return new TestDocument(testname, d,
+                                    TestDocuments.getEttkServerPrivateKey(),
+                                    TestDocuments.getEttkServerCertificate(),
+                                    null);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private TestDocument makeEttkTestDocument(String testname, Document doc) {
+        try {
+            return new TestDocument(testname, doc,
                                     TestDocuments.getEttkServerPrivateKey(),
                                     TestDocuments.getEttkServerCertificate(),
                                     null);

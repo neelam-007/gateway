@@ -152,8 +152,7 @@ public class SignedSamlTest extends TestCase {
         samlOptions.setId(bstId);
 
         SenderVouchesHelper svh = new SenderVouchesHelper(request, samlOptions, LoginCredentials.makeCertificateCredentials(clientCertChain[0], getClass()), new SignerInfo(caPrivateKey, caCertChain));
-        Document samlsvAssertion = svh.createSignedAssertion();
-        samlsvAssertion.getDocumentElement().setAttribute("Id", bstId);
+        Document samlsvAssertion = svh.createSignedAssertion(bstId);
 
         Node importedNode = request.importNode(samlsvAssertion.getDocumentElement(), true);
         security.replaceChild(importedNode, bst);

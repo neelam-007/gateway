@@ -397,7 +397,7 @@ public class WssDecoratorTest extends TestCase {
                                                       null,
                                                       subjectCert);
         HolderOfKeyHelper hh = new HolderOfKeyHelper(null, samlOptions, creds, si);
-        Document ass = hh.createSignedAssertion();
+        Document ass = hh.createSignedAssertion(null);
         return ass.getDocumentElement();
     }
 
