@@ -94,10 +94,17 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
         WssProcessor.SecurityToken signingToken = timestamp.getSigningSecurityToken();
 
         String messageIdStr = null;
-        if (signingToken instanceof WssProcessor.X509SecurityToken) {
-            // It was signed by a client certificate
-            logger.log(Level.FINER, "Timestamp was signed with an X509 BinarySecurityToken");
-            X509Certificate signingCert = ((WssProcessor.X509SecurityToken)signingToken).asX509Certificate();
+        if (signingToken instanceof WssProcessor.X509SecurityToken || signingToken instanceof WssProcessor.SamlSecurityToken) {
+            X509Certificate signingCert;
+            if (signingToken instanceof WssProcessor.X509SecurityToken) {
+                // It was signed by a client certificate
+                logger.log(Level.FINER, "Timestamp was signed with an X509 BinarySecurityToken");
+                signingCert = ((WssProcessor.X509SecurityToken)signingToken).asX509Certificate();
+            } else {
+                // It was signed by a SAML holder-of-key assertion
+                logger.log(Level.FINER, "Timestamp was signed with a SAML holder-of-key assertion");
+                signingCert = ((WssProcessor.SamlSecurityToken)signingToken).getSubjectCertificate();
+            }
 
             // Use cert info as sender id
             StringBuffer sb = new StringBuffer();

@@ -5,6 +5,8 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.proxy.ClientProxy;
 import com.l7tech.proxy.ssl.ClientProxyKeyManager;
 import com.l7tech.proxy.ssl.ClientProxyTrustManager;
+import com.l7tech.server.saml.SamlHolderOfKeyAssertion;
+
 import java.util.logging.Logger;
 import java.util.logging.Level;
 
@@ -96,6 +98,7 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private transient X509Certificate clientCert = null;
     private transient byte[] secureConversationSharedSecret = null;
     private transient String secureConversationId = null;
+    private transient SamlHolderOfKeyAssertion samlHolderOfKeyAssertion = null;
 
     public int compareTo(final Object o) {
         long id0 = getId();
@@ -883,5 +886,21 @@ public class Ssg implements Serializable, Cloneable, Comparable {
      */
     public synchronized void clearSessionCookies() {
         sessionCookies = new Cookie[0];
+    }
+
+    /**
+     * Transient record of SAML holder-of-key assertion for holder-of-key authentication.
+     * Don't use directly; go through PendingRequest to avoid races.
+     */
+    public void samlHolderOfKeyAssertion(SamlHolderOfKeyAssertion ass) {
+        samlHolderOfKeyAssertion = ass;
+    }
+
+    /**
+     * Transient record of SAML holder-of-key assertion for holder-of-key authentication.
+     * Don't use directly; go through PendingRequest to avoid races.
+     */
+    public SamlHolderOfKeyAssertion samlHolderOfKeyAssertion() {
+        return samlHolderOfKeyAssertion;
     }
 }

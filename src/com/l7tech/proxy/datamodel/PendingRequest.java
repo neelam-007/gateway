@@ -13,6 +13,7 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.proxy.RequestInterceptor;
 import com.l7tech.proxy.datamodel.exceptions.*;
 import com.l7tech.proxy.util.TokenServiceClient;
+import com.l7tech.server.saml.SamlHolderOfKeyAssertion;
 import org.w3c.dom.Document;
 
 import java.io.IOException;
@@ -52,6 +53,7 @@ public class PendingRequest {
     private ClientSidePolicy clientSidePolicy = ClientSidePolicy.getPolicy();
     private String secureConversationId = null;
     private byte[] secureConversationSharedSecret = null;
+    private SamlHolderOfKeyAssertion samlHolderOfKeyAssertion = null;
 
     // Policy settings, filled in by traversing policy tree
     private static class PolicySettings {
@@ -424,5 +426,62 @@ public class PendingRequest {
         if (secureConversationSharedSecret != null)
             return secureConversationSharedSecret;
         return secureConversationSharedSecret = ssg.secureConversationSharedSecret();
+    }
+
+    /**
+     * Get a valid holder-of-key SAML assertion for this SSG (or the Trusted SSG if this is a federated SSG).
+     * If we don't currently hold a valid holder-of-key SAML assertion we will apply for a new one.
+     *
+     * @return A SAML assertion with us as the subject and our trusted SSG as the issuer.  Never null.
+     * @throws OperationCanceledException   if the user cancels the login dialog
+     * @throws GeneralSecurityException     if there is a problem with a certificate, key, or signature
+     * @throws IOException                  if there is a problem reading from the network or a file
+     * @throws KeyStoreCorruptException     if our local key store or trust store is damaged
+     * @throws ClientCertificateException   if we need a client certificate but can't obtain one
+     * @throws BadCredentialsException      if we need a certificate but our username and password is wrong
+     * @throws PolicyRetryableException     if we should retry policy processing from the beginning
+     */
+    public SamlHolderOfKeyAssertion getOrCreateSamlHolderOfKeyAssertion()
+            throws OperationCanceledException, GeneralSecurityException, IOException, KeyStoreCorruptException,
+                   ClientCertificateException, BadCredentialsException, PolicyRetryableException
+    {
+        if (samlHolderOfKeyAssertion != null) {
+            // TODO check for expired assertion here
+            return samlHolderOfKeyAssertion;
+        }
+        SamlHolderOfKeyAssertion ssghok = ssg.samlHolderOfKeyAssertion();
+        return samlHolderOfKeyAssertion = ssghok != null ? ssghok : acquireSamlHolderOfKeyAssertion();
+    }
+
+    /**
+     * Get our SAML holder-of-key assertion for the current SSG (or Trusted SSG).
+     * @return our currently valid SAML holder-of-key assertion or null if we don't have one.
+     */
+    public SamlHolderOfKeyAssertion getSamlHolderOfKeyAssertion() {
+        if (samlHolderOfKeyAssertion != null) {
+            // TODO check for expired assertion here
+            return samlHolderOfKeyAssertion;
+        }
+        return samlHolderOfKeyAssertion = ssg.samlHolderOfKeyAssertion();
+    }
+
+    private SamlHolderOfKeyAssertion acquireSamlHolderOfKeyAssertion()
+            throws OperationCanceledException, GeneralSecurityException, ClientCertificateException,
+                   KeyStoreCorruptException, PolicyRetryableException, BadCredentialsException, IOException
+    {
+        prepareClientCertificate();
+        Ssg ssg = getSsg();
+        Ssg tokenServerSsg = ssg.getTrustedGateway();
+        if (tokenServerSsg == null) tokenServerSsg = ssg;
+        log.log(Level.INFO, "Applying for SAML holder-of-key assertion from Gateway " + tokenServerSsg.toString());
+        SamlHolderOfKeyAssertion s =
+                TokenServiceClient.obtainSamlHolderOfKeyAssertion(tokenServerSsg,
+                                                                   SsgKeyStoreManager.getClientCert(tokenServerSsg),
+                                                                   SsgKeyStoreManager.getClientCertPrivateKey(tokenServerSsg),
+                                                                   SsgKeyStoreManager.getServerCert(tokenServerSsg));
+        log.log(Level.INFO, "Obtained SAML holder-of-key assertion from Gateway " + tokenServerSsg.toString());
+        ssg.samlHolderOfKeyAssertion(s);
+        samlHolderOfKeyAssertion = s;
+        return samlHolderOfKeyAssertion;
     }
 }

@@ -104,15 +104,40 @@ public class TokenServiceClient {
     }
 
     public static SecureConversationSession obtainSecureConversationSession(Ssg ssg,
-                                                                     X509Certificate clientCertificate,
-                                                                     PrivateKey clientPrivateKey,
-                                                                     X509Certificate serverCertificate)
+                                                                            X509Certificate clientCertificate,
+                                                                            PrivateKey clientPrivateKey,
+                                                                            X509Certificate serverCertificate)
             throws IOException, GeneralSecurityException
     {
         URL url = new URL("http", ssg.getSsgAddress(), ssg.getSsgPort(), SecureSpanConstants.TOKEN_SERVICE_FILE);
         Document requestDoc = createRequestSecurityTokenMessage(clientCertificate, clientPrivateKey,
                                                                 TOKENTYPE_SECURITYCONTEXT);
-        log.log(Level.INFO, "Applying for new WS-SecureConversation SecurityContextToken for " + clientCertificate.getSubjectDN() +
+        Object result = obtainResponse(clientCertificate, url, ssg, requestDoc, clientPrivateKey, serverCertificate);
+
+        if (!(result instanceof SecureConversationSession))
+            throw new IOException("Token server returned unwanted token type " + result.getClass());
+        return (SecureConversationSession)result;
+    }
+
+    public static SamlHolderOfKeyAssertion obtainSamlHolderOfKeyAssertion(Ssg ssg,
+                                                                          X509Certificate clientCertificate,
+                                                                          PrivateKey clientPrivateKey,
+                                                                          X509Certificate serverCertificate)
+            throws IOException, GeneralSecurityException
+    {
+        URL url = new URL("http", ssg.getSsgAddress(), ssg.getSsgPort(), SecureSpanConstants.TOKEN_SERVICE_FILE);
+        Document requestDoc = createRequestSecurityTokenMessage(clientCertificate, clientPrivateKey,
+                                                                "saml:Assertion");
+        requestDoc.getDocumentElement().setAttribute("xmlns:saml", SamlConstants.NS_SAML);
+        Object result = obtainResponse(clientCertificate, url, ssg, requestDoc, clientPrivateKey, serverCertificate);
+
+        if (!(result instanceof SamlHolderOfKeyAssertion))
+            throw new IOException("Token server returned unwanted token type " + result.getClass());
+        return (SamlHolderOfKeyAssertion)result;
+    }
+
+    private static Object obtainResponse(X509Certificate clientCertificate, URL url, Ssg ssg, Document requestDoc, PrivateKey clientPrivateKey, X509Certificate serverCertificate) throws IOException, GeneralSecurityException {
+        log.log(Level.INFO, "Applying for new Security Token for " + clientCertificate.getSubjectDN() +
                             " with token server " + url.toString());
 
         CurrentRequest.setPeerSsg(ssg);
@@ -144,9 +169,7 @@ public class TokenServiceClient {
         } catch (WssProcessor.ProcessorException e) {
             throw new CausedIOException("Unable to obtain token from token server", e);
         }
-        if (!(result instanceof SecureConversationSession))
-            throw new IOException("Token server returned unwanted token type " + result.getClass());
-        return (SecureConversationSession)result;
+        return result;
     }
 
 

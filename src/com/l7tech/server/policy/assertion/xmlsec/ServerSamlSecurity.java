@@ -1,30 +1,20 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import com.l7tech.common.security.saml.InvalidAssertionException;
-import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.security.xml.WssProcessor;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.message.SoapRequest;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.credential.CredentialFormat;
+import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
 import com.l7tech.server.policy.assertion.ServerAssertion;
-import org.apache.xmlbeans.XmlError;
-import org.apache.xmlbeans.XmlException;
-import org.apache.xmlbeans.XmlOptions;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
-import x0Assertion.oasisNamesTcSAML1.AssertionDocument;
-import x0Assertion.oasisNamesTcSAML1.AssertionType;
-import x0Assertion.oasisNamesTcSAML1.ConditionsType;
+import com.l7tech.server.saml.SamlAssertion;
+import com.l7tech.server.saml.SamlHolderOfKeyAssertion;
+import sun.security.x509.X500Name;
 
 import java.io.IOException;
-import java.io.StringWriter;
-import java.text.DateFormat;
-import java.util.*;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -35,8 +25,6 @@ import java.util.logging.Logger;
  */
 public class ServerSamlSecurity implements ServerAssertion {
     private SamlSecurity assertion;
-    private static final String ASSERTION_EL_NAME = "Assertion";
-    private static final String SAML_NS = "urn:oasis:names:tc:SAML:1.0:assertion";
 
     /**
      * Create the server side saml security policy element
@@ -60,109 +48,62 @@ public class ServerSamlSecurity implements ServerAssertion {
      *          something is wrong in the policy dont throw this if there is an issue with the request or the response
      */
     public AssertionStatus checkRequest(Request request, Response response)
-      throws IOException, PolicyAssertionException {
-        try {
-            SoapRequest sr = (SoapRequest)request;
-            Document document = sr.getDocument();
-            Element assertionElement = getAssertionElement(document);
+            throws IOException, PolicyAssertionException {
+        if (!(request instanceof SoapRequest)) {
+            logger.info("Request is not a SoapRequest; assertion therefore fails");
+            return AssertionStatus.NOT_APPLICABLE;
+        }
+        SoapRequest soapreq = (SoapRequest)request;
+        WssProcessor.ProcessorResult wssResults = soapreq.getWssProcessorOutput();
+        if (wssResults == null)
+            throw new IOException("This request was not processed for WSS level security.");
 
-            //the asssertion validation is expensive, we may think
-            XmlOptions xo = new XmlOptions();
-            xo.setLoadLineNumbers();
-            AssertionDocument doc = AssertionDocument.Factory.parse(assertionElement, xo);
+        WssProcessor.SecurityToken[] tokens = wssResults.getSecurityTokens();
+        if (tokens == null) {
+            logger.info("No tokens were processed from this request. Returning AUTH_REQUIRED.");
+            response.setAuthenticationMissing(true);
+            return AssertionStatus.AUTH_REQUIRED;
+        }
 
-            xo = new XmlOptions();
-            Collection errors = new ArrayList();
-            xo.setErrorListener(errors);
-            xo.setSavePrettyPrint();
-            xo.setSavePrettyPrintIndent(2);
-            if(!doc.validate(xo)) {
-                for (Iterator iterator = errors.iterator(); iterator.hasNext();) {
-                    XmlError xerr = (XmlError)iterator.next();
-                    logger.warning("Error validating SAML assertion" +xerr);
+        SamlAssertion samlAssertion = null;
+        for (int i = 0; i < tokens.length; i++) {
+            WssProcessor.SecurityToken tok = tokens[i];
+            if (tok instanceof WssProcessor.SamlSecurityToken) {
+                WssProcessor.SamlSecurityToken samlToken = (WssProcessor.SamlSecurityToken)tok;
+                if (samlToken.isPossessionProved()) {
+                    SamlAssertion gotAss = samlToken.asSamlAssertion();
+                    if (samlAssertion != null) {
+                        logger.severe("We got a request that presented more than one valid signature from more " +
+                                      "than one SAML assertion.  This is not currently supported.");
+                        return AssertionStatus.BAD_REQUEST;
+                    }
+                    samlAssertion = gotAss;
                 }
-                StringWriter sw = new StringWriter();
-                doc.save(sw, xo);
-                logger.warning("Aborting request (invalid SAML assertion) \n"+sw.toString());
-                return AssertionStatus.FALSIFIED;
             }
-
-            AssertionType at = doc.getAssertion();
-            // TODO rewrite as holder-of-key credential source; populate LoginCredentials, stuff in request, and return
-            // TODO rewrite as holder-of-key credential source; populate LoginCredentials, stuff in request, and return
-            // TODO rewrite as holder-of-key credential source; populate LoginCredentials, stuff in request, and return
-            // TODO rewrite as holder-of-key credential source; populate LoginCredentials, stuff in request, and return
-            // TODO rewrite as holder-of-key credential source; populate LoginCredentials, stuff in request, and return
-            // TODO rewrite as holder-of-key credential source; populate LoginCredentials, stuff in request, and return
-            return AssertionStatus.NOT_YET_IMPLEMENTED;
-        } catch (NoSuchElementException e) {
-            logger.log(Level.SEVERE, "SAML Assertion element missing", e);
-            return AssertionStatus.FALSIFIED;
-        } catch (SAXException e) {
-            logger.log(Level.SEVERE, "error getting the xml document", e);
-            return AssertionStatus.FALSIFIED;
-        } catch (XmlException e) {
-            logger.log(Level.SEVERE, "error parsing the SAML assertion", e);
-            return AssertionStatus.FALSIFIED;
-        }
-    }
-
-    private boolean validateIntervalConditions(AssertionType at)
-      throws InvalidAssertionException {
-        checkNonNullAssertionElement("Assertion", at);
-        Calendar now = Calendar.getInstance();
-        now.setTimeZone(TimeZone.getTimeZone("GMT")); // spec says UTC, that is GMT for our purpose
-        now.setTime(new Date());
-        ConditionsType type = at.getConditions();
-        checkNonNullAssertionElement("Conditions", type);
-        Calendar notBefore = type.getNotBefore();
-        checkNonNullAssertionElement("Not Before", notBefore);
-        Calendar notAfter = type.getNotOnOrAfter();
-        checkNonNullAssertionElement("Not After", notAfter);
-        final boolean retb = (notBefore.before(now) && notAfter.after(now));
-
-        if (!retb && logger.getLevel().intValue() <= Level.INFO.intValue()) {
-            StringBuffer sb = new StringBuffer();
-            DateFormat df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.LONG);
-            df.setTimeZone(TimeZone.getTimeZone("GMT"));
-            sb.append("Date/time range check failed").append("\n")
-              .append("Time Now is:"+df.format(now.getTime())).append("\n")
-              .append("Not Before is:"+df.format(notBefore.getTime())).append("\n")
-              .append("Not After is:"+df.format(notAfter.getTime()));
-            logger.info(sb.toString());
-
-        }
-        return retb;
-    }
-
-    /**
-     * Returns the Security element from the header of a soap message. If the
-     * message does not have a header throwsNoSuchElementException
-     * 
-     * @param document DOM document containing the soap message
-     * @return the security element (never null)
-     */
-    private Element getAssertionElement(Document document)
-      throws NoSuchElementException, IOException {
-        NodeList listSecurityElements = document.getElementsByTagNameNS(SAML_NS, ASSERTION_EL_NAME);
-        if (listSecurityElements.getLength() > 0) {
-            return (Element)listSecurityElements.item(0);
         }
 
-        throw new NoSuchElementException("No security header in message\n" + XmlUtil.nodeToFormattedString(document));
-    }
+        if (samlAssertion != null) {
+            if (!(samlAssertion instanceof SamlHolderOfKeyAssertion)) {
+                logger.warning("We got a request that presented a valid signature from a SAML assertion, but it was not a Holder-of-Key assertion.");
+                return AssertionStatus.BAD_REQUEST;
+            }
+            SamlHolderOfKeyAssertion hok = (SamlHolderOfKeyAssertion)samlAssertion;
 
-    /**
-     * helper that checks assertion elements for <b>null</b>
-     * @param element the element to check
-     * @throws InvalidAssertionException if null
-     */
-    private void checkNonNullAssertionElement(String name, Object element)
-      throws InvalidAssertionException {
-        if (element == null) {
-            name = (name == null) ? "" : name;
-            throw new InvalidAssertionException("The required element '"+name+" ' is null");
+            X500Name x500name = new X500Name(hok.getSubjectCertificate().getSubjectX500Principal().getName());
+            String subjectCN = x500name.getCommonName();
+            request.setPrincipalCredentials(new LoginCredentials(subjectCN,
+                                                                 null,
+                                                                 CredentialFormat.SAML,
+                                                                 assertion.getClass(),
+                                                                 null,
+                                                                 samlAssertion));
+            logger.fine("SAML holder-of-key assertion loaded as principal credential for CN:" + subjectCN);
+            return AssertionStatus.NONE;
         }
+
+        logger.info("This assertion did not find a proven SAML assertion to use as credentials. Returning AUTH_REQUIRED.");
+        response.setAuthenticationMissing(true);
+        return AssertionStatus.AUTH_REQUIRED;
     }
 
     private final Logger logger = Logger.getLogger(getClass().getName());

@@ -55,6 +55,7 @@ public class AllAssertions {
         new RequestXpathAssertion(),
         new ResponseXpathAssertion(),
         new RequestWssReplayProtection(),
+        new SamlSecurity(),
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),
         // TODO new DayOfWeekAssertion(),
@@ -98,6 +99,7 @@ public class AllAssertions {
         new RequestXpathAssertion(),
         new ResponseXpathAssertion(),
         new RequestWssReplayProtection(),
+        new SamlSecurity(),
         CUSTOM_ASSERTION_HOLDER,
         new UnknownAssertion()
         // TODO new TimeOfDayAssertion(),
@@ -135,6 +137,7 @@ public class AllAssertions {
         new RequestXpathAssertion(),
         new ResponseXpathAssertion(),
         new RequestWssReplayProtection(),
+        new SamlSecurity(),
         new CustomAssertionHolder(),
         new UnknownAssertion()
         // TODO new TimeOfDayAssertion(),
