@@ -29,14 +29,6 @@ public class UserNode extends EntityHeaderNode {
     public UserNode(EntityHeader e)
       throws IllegalArgumentException {
         super(e);
-        // assume that the strid is a valuable piece of information if it;s something else than a number
-        String strid = e.getStrId();
-        try {
-            Long.parseLong(strid);
-            tooltip = null;
-        } catch (NumberFormatException nfe) {
-            tooltip = strid;
-        }
     }
 
     /**
@@ -106,9 +98,4 @@ public class UserNode extends EntityHeaderNode {
         return "com/l7tech/console/resources/user16.png";
     }
 
-    public String getTooltipText() {
-        return tooltip;
-    }
-
-    private String tooltip = null;
 }
