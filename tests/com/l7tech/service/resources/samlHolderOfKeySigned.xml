@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <saml:Assertion AssertionID="mySamlAssertion" xmlns:saml="urn:oasis:names:tc:SAML:1.0:assertion">
+    <saml:Conditions NotBefore="2004-08-04T17:31:44.567-07:00" NotOnOrAfter="2004-08-04T17:33:44.567-07:00"/>
     <saml:AuthenticationStatement
-        AuthenticationInstant="2004-08-04T17:21:43.436-07:00" AuthenticationMethod="urn:oasis:names:tc:SAML:1.0:am:X509-PKI">
+        AuthenticationInstant="2004-08-04T17:31:44.567-07:00" AuthenticationMethod="urn:oasis:names:tc:SAML:1.0:am:X509-PKI">
         <saml:Subject>
             <saml:NameIdentifier
                 Format="urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName" NameQualifier="root.locutus.l7tech.com">CN=joe</saml:NameIdentifier>
@@ -27,13 +28,13 @@
                     <ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
                 </ds:Transforms>
                 <ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
-                <ds:DigestValue>n8ME2eXxUn7SWAy123Ek92/CsrI=</ds:DigestValue>
+                <ds:DigestValue>iQRqvuHX3uWP+tjmGkMHZ6B2BXE=</ds:DigestValue>
             </ds:Reference>
         </ds:SignedInfo>
         <ds:SignatureValue>
-            HE08/OM2/cv0LEd90+O2H0RuXGAze3YhCfGmkA7TI+qewbx+hZkXe55n4sENGuny0/mKtQN0
-            JSSOTU723yCJNL51u7gKoSbWtXuIWMrAR3q+HVxpCo5eT4/q++fhV1J/Ns3u+OqtafuF/FyA
-            kP7/HkuO+QJxZmx5K3e+AqHvM5g=   </ds:SignatureValue>
+            NF/95Gxs7mZJ3HBH+bnTuHqMkMOnHf/yrd85ng06otAJAXtQCxeGWLS4wpMz7afvnhhGGiTV
+            QoH7sRiA3qORdveF5ZxhXPCHo1LIxh3PLFMkqNXKSRD7ix834PpPu7Ui60ADCFlpZfq22ER2
+            HqwUP6JiFgSWiEx2cbuPdcPBuRg=   </ds:SignatureValue>
         <KeyInfo>
             <X509Data>
                 <X509SubjectName>CN=root.locutus.l7tech.com</X509SubjectName>

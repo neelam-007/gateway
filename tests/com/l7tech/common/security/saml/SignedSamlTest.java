@@ -87,8 +87,6 @@ public class SignedSamlTest extends TestCase {
     }
 
     private AssertionType getUnsignedHolderOfKeyAssertion() throws Exception {
-        final Calendar now = Calendar.getInstance();
-
         final String clientDn = clientCertChain[0].getSubjectDN().getName();
         final Map clientCertDnMap = CertUtils.dnToAttributeMap(clientDn);
         final String clientCertCn = (String)((List)clientCertDnMap.get("CN")).get(0);
@@ -116,11 +114,19 @@ public class SignedSamlTest extends TestCase {
         AssertionType samlAssertion = AssertionType.Factory.newInstance();
         samlAssertion.setAssertionID(ASSERTION_ID);
 
+        final Calendar cal = Calendar.getInstance();
+
         AuthenticationStatementType samlAuthStatement = samlAssertion.addNewAuthenticationStatement();
-        samlAuthStatement.setAuthenticationInstant(now);
+        samlAuthStatement.setAuthenticationInstant(cal);
         samlAuthStatement.setSubject(samlSubject);
         samlAuthStatement.setAuthenticationMethod(Constants.X509_PKI_AUTHENTICATION);
         samlAuthStatement.addNewSubjectLocality().setIPAddress(addressToString(InetAddress.getLocalHost()));
+
+        ConditionsType conditions = samlAssertion.addNewConditions();
+        conditions.setNotBefore(cal);
+        cal.add(Calendar.SECOND, EXPIRY_SECONDS);
+        conditions.setNotOnOrAfter(cal);
+
         return samlAssertion;
     }
 
@@ -211,4 +217,5 @@ public class SignedSamlTest extends TestCase {
                                                   "/.l7tech/key1.p12";
     private static final String ASSERTION_ID = "mySamlAssertion";
     private static final String CA_ALIAS = "ssgroot";
+    private static final int EXPIRY_SECONDS = 2 * 60;
 }

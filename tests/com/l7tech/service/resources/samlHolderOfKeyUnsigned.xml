@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <saml:Assertion AssertionID="mySamlAssertion" xmlns:saml="urn:oasis:names:tc:SAML:1.0:assertion">
+    <saml:Conditions NotBefore="2004-08-04T17:31:44.567-07:00" NotOnOrAfter="2004-08-04T17:33:44.567-07:00"/>
     <saml:AuthenticationStatement
-        AuthenticationInstant="2004-08-04T17:21:43.436-07:00" AuthenticationMethod="urn:oasis:names:tc:SAML:1.0:am:X509-PKI">
+        AuthenticationInstant="2004-08-04T17:31:44.567-07:00" AuthenticationMethod="urn:oasis:names:tc:SAML:1.0:am:X509-PKI">
         <saml:Subject>
             <saml:NameIdentifier
                 Format="urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName" NameQualifier="root.locutus.l7tech.com">CN=joe</saml:NameIdentifier>
