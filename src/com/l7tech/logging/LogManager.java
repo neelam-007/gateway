@@ -10,14 +10,24 @@ import java.util.logging.LogRecord;
  * Date: Jul 3, 2003
  * Time: 9:42:52 AM
  *
- * Get access to the
  */
 public abstract class LogManager {
+
+    /**
+     * Provides access to the actual log manager
+     */
     public static LogManager getInstance() {
         if (singleton == null) {
-            singleton = (LogManager)Locator.getDefault().lookup(LogManager.class);
-            // todo, use the locator to load appropriate version
-            // singleton = new ServerLogManager();
+            try {
+                singleton = (LogManager)Locator.getDefault().lookup(LogManager.class);
+            } catch (Throwable e) {
+                // this cannot fail !
+                System.err.println("Critical error Locating LogManager");
+                e.printStackTrace(System.err);
+            } finally {
+                // we cannot leave without instantiating the logger
+                if (singleton == null) singleton = new BasicLogManager();
+            }
         }
         return singleton;
     }
