@@ -2,12 +2,14 @@ package com.l7tech.server.policy.assertion.xml;
 
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.audit.Auditor;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.AssertionMessages;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -51,31 +53,33 @@ public class ServerSchemaValidation implements ServerAssertion {
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException,
                                                                               PolicyAssertionException {
 
+        Auditor auditor = new Auditor(context.getAuditContext(), logger);
+
         // decide which document to act upon based on routing status
         RoutingStatus routing = context.getRoutingStatus();
         if (routing == RoutingStatus.ROUTED || routing == RoutingStatus.ATTEMPTED) {
             // try to validate response
             try {
-                logger.finest("validating response document");
+                auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_VALIDATE_RESPONSE);
                 if (!context.getResponse().isXml()) {
-                    logger.info("Response not XML; cannot validate schema");
+                    auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_RESPONSE_NOT_XML);
                     return AssertionStatus.NOT_APPLICABLE;
                 }
 
-                return checkRequest(context.getResponse().getXmlKnob().getDocumentReadOnly());
+                return checkRequest(context.getResponse().getXmlKnob().getDocumentReadOnly(), auditor);
             } catch (SAXException e) {
                 throw new PolicyAssertionException("could not parse response document", e);
             }
         } else {
             // try to validate request
             try {
-                logger.finest("validating request document");
+                auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_VALIDATE_REQUEST);
                 if (!context.getRequest().isXml()) {
-                    logger.info("Request not XML; cannot validate schema");
+                    auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_REQUEST_NOT_XML);
                     return AssertionStatus.NOT_APPLICABLE;
                 }
 
-                return checkRequest(context.getRequest().getXmlKnob().getDocumentReadOnly());
+                return checkRequest(context.getRequest().getXmlKnob().getDocumentReadOnly(), auditor);
             } catch (SAXException e) {
                 throw new PolicyAssertionException("could not parse request document", e);
             }
@@ -85,18 +89,19 @@ public class ServerSchemaValidation implements ServerAssertion {
     /**
      * validates the soap envelope's body's child against the schema passed in constructor
      * @param soapmsg the full soap envelope.
+     * @param auditor the object to add associated logs to audit record in the current context
      */
-    AssertionStatus checkRequest(Document soapmsg) throws IOException {
+    AssertionStatus checkRequest(Document soapmsg, Auditor auditor) throws IOException {
         String[] bodystr = null;
         try {
             bodystr = getXMLElementsToValidate(soapmsg);
         } catch (ParserConfigurationException e) {
             String msg = "parser configuration exception";
-            logger.log(Level.WARNING, msg, e);
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, e);
             throw new IOException(msg + "-" + e.getMessage());
         }
         if (bodystr == null || bodystr.length < 1) {
-            logger.fine("empty body. nothing to validate");
+            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_EMPTY_BODY);
             return AssertionStatus.FAILED;
         }
         ByteArrayInputStream schemaIS = new ByteArrayInputStream(data.getSchema().getBytes());
@@ -112,7 +117,7 @@ public class ServerSchemaValidation implements ServerAssertion {
             db.setEntityResolver(XmlUtil.getSafeEntityResolver());
         } catch (ParserConfigurationException e) {
             String msg = "parser configuration exception";
-            logger.log(Level.WARNING, msg, e);
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, e);
             throw new IOException(msg + "-" + e.getMessage());
         }
         SchameValidationErrorHandler reporter = new SchameValidationErrorHandler();
@@ -123,19 +128,18 @@ public class ServerSchemaValidation implements ServerAssertion {
                 db.parse(source);
             } catch (SAXException e) {
                 String msg = "parsing exception";
-                logger.log(Level.WARNING, msg, e);
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, e);
                 throw new IOException(msg + "-" + e.getMessage());
             }
             Collection errors = reporter.recordedErrors();
             if (!errors.isEmpty()) {
                 for (Iterator it = errors.iterator(); it.hasNext();) {
-                    String msg = "assertion failure: " + it.next().toString();
-                    logger.fine(msg);
+                    auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, new String[] {it.next().toString()});
                 }
                 return AssertionStatus.FAILED;
             }
         }
-        logger.finest("schema validation success");
+        auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_SUCCEEDED);
         return AssertionStatus.NONE;
     }
 
