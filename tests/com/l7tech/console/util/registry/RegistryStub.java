@@ -3,6 +3,8 @@ package com.l7tech.console.util.registry;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.*;
 
+import java.io.FileNotFoundException;
+
 
 /**
  * Test, stub registry.
@@ -11,6 +13,11 @@ import com.l7tech.identity.*;
  * @version 1.0
  */
 public class RegistryStub extends Registry {
+    /**
+     * default constructor
+     */
+    public RegistryStub() {
+    }
     /**
      * @return the identity provider config manager
      */
@@ -39,6 +46,16 @@ public class RegistryStub extends Registry {
         return gm;
     }
 
-    private UserManager um = new UserManagerStub();
-    private GroupManager gm = new GroupManagerStub();
+    StubDataStore dataStore = null;
+    {
+        try {
+          dataStore = new StubDataStore(StubDataStore.PATH);
+        } catch(FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private UserManager um = new UserManagerStub(dataStore);
+    private GroupManager gm = new GroupManagerStub(dataStore);
+
 }

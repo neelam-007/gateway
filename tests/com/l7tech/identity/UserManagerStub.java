@@ -13,40 +13,43 @@ import java.util.*;
  * @version 1.0
  */
 public class UserManagerStub implements UserManager {
-
-    public UserManagerStub() {
-        initialize();
+    /**
+     * initialize the user manager with the data store
+     * @param dataStore the datastore to use
+     */
+    public UserManagerStub(StubDataStore dataStore) {
+        this.dataStore = dataStore;
     }
 
     public User findByPrimaryKey(long oid) throws FindException {
-        return (User) users.get(new Long(oid));
+        return (User)dataStore.getUsers().get(new Long(oid));
     }
 
     public void delete(User user) throws DeleteException {
-        if (users.remove(new Long(user.getOid())) == null) {
+        if (dataStore.getUsers().remove(new Long(user.getOid())) == null) {
             throw new DeleteException("Could not find user oid= " + user.getOid());
         }
     }
 
     public long save(User user) throws SaveException {
-        long oid = nextSequence();
+        long oid = dataStore.nextObjectId();
         user.setOid(oid);
         Long key = new Long(oid);
-        if (users.get(key) != null) {
+        if (dataStore.getUsers().get(key) != null) {
             throw new SaveException("Record exists, user oid= " + user.getOid());
         }
-        users.put(key, user);
+        dataStore.getUsers().put(key, user);
         return oid;
 
     }
 
     public void update(User user) throws UpdateException {
         Long key = new Long(user.getOid());
-        if (users.get(key) == null) {
+        if (dataStore.getUsers().get(key) == null) {
             throw new UpdateException("Record missing, user oid= " + user.getOid());
         }
-        users.remove(key);
-        users.put(key, user);
+        dataStore.getUsers().remove(key);
+        dataStore.getUsers().put(key, user);
 
     }
 
@@ -62,9 +65,9 @@ public class UserManagerStub implements UserManager {
     public Collection findAllHeaders() throws FindException {
         Collection list = new ArrayList();
         for (Iterator i =
-                users.keySet().iterator(); i.hasNext();) {
+                dataStore.getUsers().keySet().iterator(); i.hasNext();) {
             Long key = (Long) i.next();
-            list.add(fromUser((User) users.get(key)));
+            list.add(fromUser((User) dataStore.getUsers().get(key)));
         }
         return list;
     }
@@ -78,11 +81,11 @@ public class UserManagerStub implements UserManager {
         int index = 0;
         int count = 0;
         for (Iterator i =
-                users.keySet().iterator(); i.hasNext(); index++) {
+                dataStore.getUsers().keySet().iterator(); i.hasNext(); index++) {
             Long key = (Long) i.next();
 
             if (index >= offset && count <= windowSize) {
-                list.add(fromUser((User) users.get(key)));
+                list.add(fromUser((User) dataStore.getUsers().get(key)));
                 count++;
             }
         }
@@ -97,9 +100,9 @@ public class UserManagerStub implements UserManager {
     public Collection findAll() throws FindException {
         Collection list = new ArrayList();
         for (Iterator i =
-                users.keySet().iterator(); i.hasNext();) {
+                dataStore.getUsers().keySet().iterator(); i.hasNext();) {
             Long key = (Long) i.next();
-            list.add(users.get(key));
+            list.add(dataStore.getUsers().get(key));
         }
         return list;
     }
@@ -113,19 +116,15 @@ public class UserManagerStub implements UserManager {
         int index = 0;
         int count = 0;
         for (Iterator i =
-                users.keySet().iterator(); i.hasNext(); index++) {
+                dataStore.getUsers().keySet().iterator(); i.hasNext(); index++) {
             Long key = (Long) i.next();
 
             if (index >= offset && count <= windowSize) {
-                list.add(users.get(key));
+                list.add(dataStore.getUsers().get(key));
                 count++;
             }
         }
         return list;
-    }
-
-
-    private void initialize() {
     }
 
     private EntityHeader fromUser(User u) {
@@ -133,13 +132,6 @@ public class UserManagerStub implements UserManager {
                 new EntityHeaderImp(u.getOid(), User.class, u.getName());
     }
 
-    /**
-     * @return the next sequence
-     */
-    private long nextSequence() {
-        return ++sequenceId;
-    }
+    private StubDataStore dataStore;
 
-    private Map users = new HashMap();
-    private long sequenceId = 0;
 }

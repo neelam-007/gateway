@@ -13,39 +13,40 @@ import java.util.*;
  * @version 1.0
  */
 public class GroupManagerStub implements GroupManager {
+    private StubDataStore dataStore;
 
-    public GroupManagerStub() {
-        initialize();
+    public GroupManagerStub(StubDataStore dataStore) {
+            this.dataStore = dataStore;
     }
 
     public Group findByPrimaryKey(long oid) throws FindException {
-        return (Group) groups.get(new Long(oid));
+        return (Group) dataStore.getGroups().get(new Long(oid));
     }
 
     public void delete(Group group) throws DeleteException {
-        if (groups.remove(new Long(group.getOid())) == null) {
+        if (dataStore.getGroups().remove(new Long(group.getOid())) == null) {
             throw new DeleteException("Could not find group oid= " + group.getOid());
         }
     }
 
     public long save(Group group) throws SaveException {
-        long oid = nextSequence();
+        long oid = dataStore.nextObjectId();
         group.setOid(oid);
         Long key = new Long(oid);
-        if (groups.get(key) != null) {
+        if (dataStore.getGroups().get(key) != null) {
             throw new SaveException("Record exists, group oid= " + group.getOid());
         }
-        groups.put(key, group);
+        dataStore.getGroups().put(key, group);
         return oid;
     }
 
     public void update(Group group) throws UpdateException {
         Long key = new Long(group.getOid());
-        if (groups.get(key) == null) {
+        if (dataStore.getGroups().get(key) == null) {
             throw new UpdateException("Record missing, group oid= " + group.getOid());
         }
-        groups.remove(key);
-        groups.put(key, group);
+        dataStore.getGroups().remove(key);
+        dataStore.getGroups().put(key, group);
     }
 
     public void setIdentityProviderOid(long oid) {
@@ -59,9 +60,9 @@ public class GroupManagerStub implements GroupManager {
     public Collection findAllHeaders() throws FindException {
         Collection list = new ArrayList();
         for (Iterator i =
-                groups.keySet().iterator(); i.hasNext();) {
+                dataStore.getGroups().keySet().iterator(); i.hasNext();) {
             Long key = (Long) i.next();
-            list.add(fromGroup((Group) groups.get(key)));
+            list.add(fromGroup((Group) dataStore.getGroups().get(key)));
         }
         return list;
     }
@@ -75,11 +76,11 @@ public class GroupManagerStub implements GroupManager {
         int index = 0;
         int count = 0;
         for (Iterator i =
-                groups.keySet().iterator(); i.hasNext(); index++) {
+                dataStore.getGroups().keySet().iterator(); i.hasNext(); index++) {
             Long key = (Long) i.next();
 
             if (index >= offset && count <= windowSize) {
-                list.add(fromGroup((Group) groups.get(key)));
+                list.add(fromGroup((Group) dataStore.getGroups().get(key)));
                 count++;
             }
         }
@@ -94,9 +95,9 @@ public class GroupManagerStub implements GroupManager {
     public Collection findAll() throws FindException {
         Collection list = new ArrayList();
         for (Iterator i =
-                groups.keySet().iterator(); i.hasNext();) {
+                dataStore.getGroups().keySet().iterator(); i.hasNext();) {
             Long key = (Long) i.next();
-            list.add(groups.get(key));
+            list.add(dataStore.getGroups().get(key));
         }
         return list;
     }
@@ -110,32 +111,20 @@ public class GroupManagerStub implements GroupManager {
         int index = 0;
         int count = 0;
         for (Iterator i =
-                groups.keySet().iterator(); i.hasNext(); index++) {
+                dataStore.getGroups().keySet().iterator(); i.hasNext(); index++) {
             Long key = (Long) i.next();
 
             if (index >= offset && count <= windowSize) {
-                list.add(groups.get(key));
+                list.add(dataStore.getGroups().get(key));
                 count++;
             }
         }
         return list;
     }
 
-    private void initialize() {
-    }
 
     private EntityHeader fromGroup(Group g) {
         return
                 new EntityHeaderImp(g.getOid(), Group.class, g.getName());
     }
-
-    /**
-     * @return the next sequence
-     */
-    private long nextSequence() {
-        return ++sequenceId;
-    }
-
-    private Map groups = new HashMap();
-    private long sequenceId = 0;
 }
