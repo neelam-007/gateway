@@ -7,9 +7,11 @@
 package com.l7tech.proxy;
 
 import com.l7tech.common.util.CertificateDownloader;
+import com.l7tech.common.util.SslUtils;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.proxy.datamodel.ClientKeyManager;
 import com.l7tech.proxy.datamodel.Managers;
 import com.l7tech.proxy.datamodel.PendingRequest;
 import com.l7tech.proxy.datamodel.PolicyManager;
@@ -22,17 +24,23 @@ import org.apache.commons.httpclient.HttpState;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.log4j.Category;
+import org.bouncycastle.jce.PKCS10CertificationRequest;
+import org.bouncycastle.jce.provider.JDKKeyPairGenerator;
 
 import javax.net.ssl.SSLHandshakeException;
+import javax.security.auth.login.LoginException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.GeneralSecurityException;
+import java.security.KeyPair;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 
 /**
  * Class that processes messages in request->response fashion.
@@ -59,25 +67,42 @@ public class MessageProcessor {
      * @throws PolicyAssertionException if the policy could not be fulfilled for this request to this SSG
      * @throws ConfigurationException if the SSG configuration is not valid
      * @throws IOException if there was a problem obtaining the response from the server
-     * @throws CertificateException if the SSG provides a certificate that makes no sense
-     * @throws KeyStoreException if the SSG key could not be stored in our trustStore
+     * @throws GeneralSecurityException if there was a problem with the login or the certificates
      */
     public String processMessage(PendingRequest pendingRequest)
-            throws PolicyAssertionException, ConfigurationException, IOException,
-            CertificateException, KeyStoreException
+            throws PolicyAssertionException, ConfigurationException, IOException, GeneralSecurityException
     {
+        if (pendingRequest.incrementTimesAttempted() > 10)
+            throw new ConfigurationException("Unable to fulfil request after 10 attempts to contact the SSG; giving up");
+        Ssg ssg = pendingRequest.getSsg();
         Assertion policy = policyManager.getPolicy(pendingRequest);
         AssertionStatus result = policy.decorateRequest(pendingRequest);
         if (result != AssertionStatus.NONE) {
             if (pendingRequest.isCredentialsWouldHaveHelped()) {
                 log.info("Policy failed, possibly due to lack of credentials.  Will ask for some, then try again");
-                Managers.getCredentialManager().getCredentials(pendingRequest.getSsg());
+                Managers.getCredentialManager().getCredentials(ssg);
                 pendingRequest.reset();
                 result = policy.decorateRequest(pendingRequest);
             }
             if (pendingRequest.isClientCertWouldHaveHelped()) {
-                log.info("Policy failed, possibly due to lack of a client certificate.  Will request one, then try again.");
-                // TODO: make CSR, send to server over SSL, download cert, and store it.
+                if (!ssg.isCredentialsConfigured()) {
+                    log.warn("Could not find username and password for SSG " + ssg + "; will try without them");
+                } else {
+                    log.info("Policy failed, possibly due to lack of a client certificate.  Will request one, then try again.");
+                    JDKKeyPairGenerator.RSA kpg = new JDKKeyPairGenerator.RSA();
+                    KeyPair keyPair = kpg.generateKeyPair();
+                    PKCS10CertificationRequest csr = SslUtils.makeCsr(ssg.getUsername(),
+                                                                      ssg.getSsgAddress(),
+                                                                      keyPair.getPublic(),
+                                                                      keyPair.getPrivate());
+                    X509Certificate cert = SslUtils.obtainClientCertificate(ssg.getServerSslUrl(),
+                                                                            ssg.getUsername(),
+                                                                            ssg.getPassword(),
+                                                                            csr);
+                    ClientKeyManager.saveClientCertificate(ssg, keyPair.getPrivate(), cert);
+                    pendingRequest.reset();
+                    result = policy.decorateRequest(pendingRequest);
+                }
             }
         }
         if (result != AssertionStatus.NONE)
@@ -98,14 +123,13 @@ public class MessageProcessor {
      */
     // You might want to close your eyes for this part
     private String callSsg(PendingRequest pendingRequest)
-            throws ConfigurationException, IOException, PolicyAssertionException,
-                   CertificateException, KeyStoreException
+            throws ConfigurationException, IOException, PolicyAssertionException, GeneralSecurityException
     {
         Ssg ssg = pendingRequest.getSsg();
 
         URL url = null;
         try {
-            url = new URL(ssg.getServerUrl());
+            url = ssg.getServerUrl();
             if (pendingRequest.isSslRequired()) {
                 if ("http".equalsIgnoreCase(url.getProtocol())) {
                     log.info("Changing http to https per policy for this request (using SSL port " +
@@ -149,11 +173,9 @@ public class MessageProcessor {
             try {
                 status = client.executeMethod(postMethod);
             } catch (SSLHandshakeException e) {
-                try {
-                    return installCertificate(pendingRequest);
-                } catch (NoSuchAlgorithmException e1) {
-                    throw new RuntimeException(e1); // can't happen
-                }
+                installSsgServerCertificate(pendingRequest);
+                postMethod.releaseConnection(); // free up our thread's HTTP client
+                return callSsg(pendingRequest); // try again
             }
             log.info("POST to SSG completed with HTTP status code " + status);
             Header policyUrlHeader = postMethod.getResponseHeader("PolicyUrl");
@@ -212,23 +234,23 @@ public class MessageProcessor {
     }
 
     /**
-     * Get credentials, and download and install the SSG certificate.
+     * Get credentials, and download and install the SSG certificate.  If this completes successfully, the
+     * next attempt to connect to the SSG via SSL should succeed.
      *
-     * @return Soap message to send back to the client.
      * @throws KeyStoreException if the SSG key could not be stored in our trustStore
      */
-    private String installCertificate(PendingRequest req)
-            throws IOException, CertificateException, NoSuchAlgorithmException, KeyStoreException
+    private void installSsgServerCertificate(PendingRequest req)
+            throws IOException, CertificateException, NoSuchAlgorithmException, KeyStoreException, LoginException
     {
         Ssg ssg = req.getSsg();
-        CertificateDownloader cd = new CertificateDownloader(new URL(ssg.getServerUrl()),
+        CertificateDownloader cd = new CertificateDownloader(ssg.getServerUrl(),
                                                              ssg.getUsername(),
                                                              ssg.getPassword());
 
         for (;;) {
             while (ssg.getUsername() == null || ssg.getUsername().length() < 1 || ssg.getPassword() == null) {
                 if (!ssg.isPromptForUsernameAndPassword() || req.getTimesCredentialsUpdated() > 2)
-                    return CannedSoapFaults.UNAUTHORIZED;
+                    throw new LoginException("User canceled the login dialog.");
 
                 Managers.getCredentialManager().getCredentials(ssg);
                 req.incrementTimesCredentialsUpdated();
@@ -237,12 +259,11 @@ public class MessageProcessor {
             cd.setPassword(ssg.getPassword());
 
             if (cd.downloadCertificate()) {
-                ClientProxy.importCertificate(ssg, cd.getCertificate());
-                Managers.getCredentialManager().notifyCertificateUpdated(ssg);
-                return CannedSoapFaults.TRY_AGAIN;
+                ClientKeyManager.saveSsgCertificate(ssg, (X509Certificate) cd.getCertificate());
+                return; // Success.
             } else {
                 if (!ssg.isPromptForUsernameAndPassword() || req.getTimesCredentialsUpdated() > 2)
-                    return CannedSoapFaults.UNAUTHORIZED;
+                    throw new LoginException("User canceled the login dialog.");
                 Managers.getCredentialManager().notifyInvalidCredentials(ssg);
                 Managers.getCredentialManager().getCredentials(req.getSsg());
                 req.incrementTimesCredentialsUpdated();

@@ -40,6 +40,15 @@ public class SsgManagerStub implements SsgManager {
         throw new SsgNotFoundException();
     }
 
+    public Ssg getSsgByHostname(String hostname) throws SsgNotFoundException {
+        for (Iterator i = ssgs.iterator(); i.hasNext();) {
+            Ssg ssg = (Ssg) i.next();
+            if (ssg.getSsgAddress().equals(hostname))
+                return ssg;
+        }
+        throw new SsgNotFoundException();
+    }
+
     /**
      * Get the next unused Id.
      */
@@ -78,6 +87,9 @@ public class SsgManagerStub implements SsgManager {
                 return ssg;
         }
         throw new SsgNotFoundException();
+    }
+
+    public void onSsgUpdated(Ssg ssg) {
     }
 
     /**

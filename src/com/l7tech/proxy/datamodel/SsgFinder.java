@@ -37,10 +37,26 @@ public interface SsgFinder {
     Ssg getSsgByEndpoint(String endpoint) throws SsgNotFoundException;
 
     /**
+     * Find the Ssg with the specified hostname.  If multiple Ssgs have the same hostname only one of them
+     * will be returned.
+     * @param hostname The hostname to look for.
+     * @return A registered Ssg with that hostname.
+     * @throws SsgNotFoundException if no Ssg was registered with the specified hostname.
+     */
+    Ssg getSsgByHostname(String hostname) throws SsgNotFoundException;
+
+    /**
      * Get the default SSG.
      * Returns the first SSG that has its Default flag set.  Usually there is only one such SSG.
      * @return the Default SSG
      * @throws com.l7tech.proxy.datamodel.SsgNotFoundException if no Default SSG was found
      */
     Ssg getDefaultSsg() throws SsgNotFoundException;
+
+    /**
+     * Notify that one of an Ssg's fields might have changed, possibly requiring a rebuild of one or
+     * more lookup caches.
+     * @param ssg The SSG that was modified.  If null, will assume all Ssgs may have been modified.
+     */
+    void onSsgUpdated(Ssg ssg);
 }

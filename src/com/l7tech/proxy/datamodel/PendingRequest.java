@@ -27,6 +27,12 @@ public class PendingRequest {
     /** Number of times credentials have been updated while processing this request. */
     private int timesCredentialsUpdated = 0;
 
+    /**
+     * Number of attempts we have made to contact the SSG for this request.
+     * Breaker to prevent runaway repetition/recursion.
+     */
+    private int timesAttempted = 0;
+
     // Policy settings, filled in by traversing poliy tree
     private static class PolicySettings {
         private boolean isSslRequired = false;
@@ -173,8 +179,9 @@ public class PendingRequest {
         this.timesCredentialsUpdated = timesCredentialsUpdated;
     }
 
-    public void incrementTimesCredentialsUpdated() {
-        this.timesCredentialsUpdated++;
+    /** Record that the credentials have been updated for this request.  Returns the new counter value. */
+    public int incrementTimesCredentialsUpdated() {
+        return ++this.timesCredentialsUpdated;
     }
 
     public boolean isCredentialsWouldHaveHelped() {
@@ -191,5 +198,18 @@ public class PendingRequest {
 
     public void setClientCertWouldHaveHelped(boolean clientCertWouldHaveHelped) {
         this.policySettings.clientCertWouldHaveHelped = clientCertWouldHaveHelped;
+    }
+
+    public int getTimesAttempted() {
+        return timesAttempted;
+    }
+
+    public void setTimesAttempted(int timesAttempted) {
+        this.timesAttempted = timesAttempted;
+    }
+
+    /** Record that a new attempt to call the SSG on behalf of this request has begun.  Returns the new counter value. */
+    public int incrementTimesAttempted() {
+        return ++timesAttempted;
     }
 }

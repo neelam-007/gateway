@@ -38,9 +38,9 @@ public class Ssg implements Serializable, Cloneable, Comparable {
     private transient char[] password = null;
     private boolean defaultSsg = false;
 
-    private transient HashMap policyMap = new HashMap();
+    private transient HashMap policyMap = new HashMap(); /* Policy cache */
     private transient boolean promptForUsernameAndPassword = true;
-    private transient int numTimesLogonDialogCanceled = 0;
+    private transient int numTimesLogonDialogCanceled = 0; /* Breaker to prevent spamming user with dialogs. */
     private transient KeyStore keyStore = null;
     private transient Boolean haveClientCert = null;
 
@@ -237,15 +237,40 @@ public class Ssg implements Serializable, Cloneable, Comparable {
         this.ssgPort = ssgPort;
     }
 
-    public String getServerUrl() {
+    public URL getServerUrl() {
         URL url = null;
         try {
             url = new URL(SSG_PROTOCOL, getSsgAddress(), getSsgPort(), getSsgFile());
         } catch (MalformedURLException e) {
             log.error(e);
-            return "";
+            try {
+                return new URL("");
+            } catch (MalformedURLException e1) {
+                log.error("This can't have happened", e);
+                return null; // totally can't happen
+            }
         }
-        return url.toString();
+        return url;
+    }
+
+    public URL getServerSslUrl() {
+        URL url = null;
+        try {
+            url = new URL("https", getSsgAddress(), getSslPort(), getSsgFile());
+        } catch (MalformedURLException e) {
+            log.error(e);
+            try {
+                return new URL("");
+            } catch (MalformedURLException e1) {
+                log.error("This can't have happened", e);
+                return null; // totally can't happen
+            }
+        }
+        return url;
+    }
+
+    public boolean isCredentialsConfigured() {
+        return getUsername() != null && getPassword() != null && getUsername().length() > 0;
     }
 
     public String getSsgFile() {

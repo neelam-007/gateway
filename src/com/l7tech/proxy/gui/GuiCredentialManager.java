@@ -92,26 +92,4 @@ public class GuiCredentialManager implements CredentialManager {
             log.error(e);
         }
     }
-
-    // Avoid pestering the user incessantly when the cert is updated.
-    static long lastHassle = 0;
-    static int timesHassled = 0;
-
-    /**
-     * Notify that the client must be restarted for a certificate change to take effect.
-     */
-    public synchronized void notifyCertificateUpdated(final Ssg ssg) {
-        long now = System.currentTimeMillis();
-        if (timesHassled > 2 || now - lastHassle < 1000 * 15)
-            return;
-
-        timesHassled++;
-        lastHassle = now;
-        SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                Gui.getInstance().errorMessage("Security certificate was updated for SSG " + ssg + ".\n" +
-                                               "The Client Proxy must be restarted for the changes to take effect.");
-            }
-        });
-    }
 }

@@ -65,6 +65,7 @@ public class SsgListModel extends AbstractListModel {
 
     public void editedSsg() {
         saveSsgList();
+        ssgManager.onSsgUpdated(null);
         fireContentsChanged(this, 0, getSize());
     }
 

@@ -20,6 +20,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.HashMap;
 
 import com.l7tech.common.util.FileUtils;
 
@@ -37,6 +38,7 @@ public class SsgFinderImpl implements SsgFinder {
     protected static final String STORE_FILE = STORE_DIR + File.separator + "ssgs.xml";
 
     protected SortedSet ssgs = new TreeSet();
+    protected HashMap hostCache = new HashMap();
     protected boolean init = false; // should be private; relaxed for performace
     private long nextId = 1;
 
@@ -60,6 +62,17 @@ public class SsgFinderImpl implements SsgFinder {
         if (!init) {
             load();
             init = true;
+        }
+    }
+
+    /**
+     * Rebuild our SSG-to-hostname cache.
+     */
+    protected synchronized void rebuildHostCache() {
+        hostCache.clear();
+        for (Iterator i = ssgs.iterator(); i.hasNext();) {
+            Ssg ssg = (Ssg) i.next();
+            hostCache.put(ssg.getSsgAddress(), ssg);
         }
     }
 
@@ -94,6 +107,7 @@ public class SsgFinderImpl implements SsgFinder {
             if (in != null)
                 try { in.close(); } catch (IOException e) {}
         }
+        rebuildHostCache();
         init = true;
     }
 
@@ -163,6 +177,20 @@ public class SsgFinderImpl implements SsgFinder {
     }
 
     /**
+     * Find the Ssg with the specified hostname.  If multiple Ssgs have the same hostname only one of them
+     * will be returned.
+     * @param hostname The hostname to look for.
+     * @return A registered Ssg with that hostname.
+     * @throws SsgNotFoundException if no Ssg was registered with the specified hostname.
+     */
+    public Ssg getSsgByHostname(String hostname) throws SsgNotFoundException {
+        Ssg ssg = (Ssg) hostCache.get(hostname);
+        if (ssg == null)
+            throw new SsgNotFoundException("No SSG was found with the specified hostname.");
+        return ssg;
+    }
+
+    /**
      * Get the default SSG.
      * Returns the first SSG that has its Default flag set.  Usually there is only one such SSG.
      * @return the Default SSG
@@ -175,6 +203,15 @@ public class SsgFinderImpl implements SsgFinder {
                 return ssg;
         }
         throw new SsgNotFoundException("No default SSG is currently registered.");
+    }
+
+    /**
+     * Notify that one of an Ssg's fields might have changed, possibly requiring a rebuild of one or
+     * more lookup caches.
+     * @param ssg The SSG that was modified.  If null, will assume that all SSGs might have been modified.
+     */
+    public void onSsgUpdated(Ssg ssg) {
+        rebuildHostCache();
     }
 
     /**

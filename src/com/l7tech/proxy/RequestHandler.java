@@ -18,10 +18,8 @@ import javax.xml.soap.SOAPBody;
 import javax.xml.soap.SOAPElement;
 import javax.xml.soap.SOAPException;
 import java.io.IOException;
+import java.security.GeneralSecurityException;
 import java.util.Iterator;
-import java.security.cert.CertificateException;
-import java.security.NoSuchAlgorithmException;
-import java.security.KeyStoreException;
 
 /**
  * Handle an incoming HTTP request, and proxy it if it's a SOAP request we know how to deal with.
@@ -213,12 +211,9 @@ public class RequestHandler extends AbstractHttpHandler {
         } catch (ConfigurationException e) {
             interceptor.onMessageError(e);
             throw new HttpException(500, "Invalid SSG configuration: " + e.toString());
-        } catch (CertificateException e) {
+        } catch (GeneralSecurityException e) {
             interceptor.onReplyError(e);
-            throw new HttpException(500, "The SSG provided an invalid security certificate: " + e.toString());
-        } catch (KeyStoreException e) {
-            interceptor.onReplyError(e);
-            throw new HttpException(500, "Unable to save the SSG's security certificate: " + e.toString());
+            throw new HttpException(500, e.toString());
         }
     }
 

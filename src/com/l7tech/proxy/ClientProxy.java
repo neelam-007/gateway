@@ -1,41 +1,27 @@
 package com.l7tech.proxy;
 
-import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.SsgFinder;
+import com.l7tech.proxy.ssl.ClientProxyKeyManager;
+import com.l7tech.proxy.ssl.ClientProxySecureProtocolSocketFactory;
+import com.l7tech.proxy.ssl.ClientProxyTrustManager;
 import org.apache.commons.httpclient.protocol.Protocol;
-import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 import org.apache.log4j.Category;
 import org.mortbay.http.HttpContext;
 import org.mortbay.http.HttpServer;
 import org.mortbay.http.SocketListener;
 import org.mortbay.util.MultiException;
 
-import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocket;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.MalformedURLException;
-import java.net.Socket;
 import java.net.URL;
 import java.net.UnknownHostException;
 import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.Principal;
-import java.security.PrivateKey;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.util.Properties;
 
 /**
  * Encapsulates an HTTP proxy that processes SOAP messages.
@@ -47,9 +33,6 @@ public class ClientProxy {
     private static final Category log = Category.getInstance(ClientProxy.class);
     public static final String PROXY_CONFIG =
             System.getProperties().getProperty("user.home") + File.separator + ".l7tech";
-    public static final File TRUST_STORE_FILE =
-            new File(PROXY_CONFIG + File.separator + "trustStore");
-    public static final String TRUST_STORE_PASSWORD = "password";
 
     private SsgFinder ssgFinder;
     private HttpServer httpServer;
@@ -88,117 +71,15 @@ public class ClientProxy {
             throw new IllegalStateException("ClientProxy is currently running");
     }
 
-    private class ClientProxyKeyManager implements X509KeyManager {
-        X509KeyManager defaultKeyManager = null;
-
-        X509KeyManager getDefaultKeyManager() {
-            try {
-                return defaultKeyManager = (X509KeyManager) KeyManagerFactory.getInstance("SunX509", "SunJSSE").getKeyManagers()[0];
-            } catch (NoSuchAlgorithmException e) {
-                log.error(e);
-                return null;
-            } catch (NoSuchProviderException e) {
-                log.error(e);
-                return null;
-            }
-        }
-
-        public PrivateKey getPrivateKey(String s) {
-            log.info("ClientProxyKeyManager: getPrivateKey: s=" + s);
-            return getDefaultKeyManager().getPrivateKey(s);
-        }
-
-        public X509Certificate[] getCertificateChain(String s) {
-            log.info("ClientProxyKeyManager: getCertificateChain: s=" + s);
-            return getDefaultKeyManager().getCertificateChain(s);
-        }
-
-        public String[] getClientAliases(String s, Principal[] principals) {
-            log.info("ClientProxyKeyManager: getClientAliases");
-            return getDefaultKeyManager().getClientAliases(s, principals);
-        }
-
-        public String[] getServerAliases(String s, Principal[] principals) {
-            log.info("ClientProxyKeyManager: getServerAliases");
-            return getDefaultKeyManager().getServerAliases(s, principals);
-        }
-
-        public String chooseServerAlias(String s, Principal[] principals, Socket socket) {
-            log.info("ClientProxyKeyManager: chooseServerAlias: s=" + s + "  principals=" + principals + "  socket=" + socket);
-            return getDefaultKeyManager().chooseServerAlias(s, principals, socket);
-        }
-
-        public String chooseClientAlias(String[] strings, Principal[] principals, Socket socket) {
-            InetAddress ia = socket.getInetAddress();
-            String hostname = ia.getHostName();
-            log.info("ClientProxyKeyManager: chooseClientAlias: ia=" + ia + "  hostname=" + hostname);
-
-            return getDefaultKeyManager().chooseClientAlias(strings, principals, socket);
-        }
-    }
-
-    private class ClientProxyTrustManager implements X509TrustManager {
-        public X509Certificate[] getAcceptedIssuers() {
-            log.info("ClientProxyTrustManager.getAcceptedIssuers()");
-            return new X509Certificate[0];
-        }
-
-        public void checkClientTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-            log.info("ClientProxyTrustManager.checkClientTrusted()");
-        }
-
-        public void checkServerTrusted(X509Certificate[] x509Certificates, String s) throws CertificateException {
-            log.info("ClientProxyTrustManager.checkServerTrusted()");
-        }
-    }
-
-    private class ClientProxySecureProtocolSocketFactory implements SecureProtocolSocketFactory {
-        private SSLContext sslContext;
-
-        ClientProxySecureProtocolSocketFactory(SSLContext ctx) {
-            this.sslContext = ctx;
-        }
-
-        public Socket createSocket(Socket socket, String host, int port, boolean autoClose)
-                throws IOException, UnknownHostException
-        {
-            log.info("ClientProxySecureProtocolSocketFactory.createSocket1(): host=" + host);
-            final SSLSocket sock = (SSLSocket) sslContext.getSocketFactory().createSocket(socket, host, port, autoClose);
-            log.info("Socket is type: " + sock.getClass());
-            return sock;
-        }
-
-        public Socket createSocket(String host, int port, InetAddress clientHost, int clientPort)
-                throws IOException, UnknownHostException
-        {
-            log.info("ClientProxySecureProtocolSocketFactory.createSocket2(): host=" + host);
-            final SSLSocket sock = (SSLSocket) sslContext.getSocketFactory().createSocket(host, port, clientHost, clientPort);
-            log.info("Socket is type: " + sock.getClass());
-            return sock;
-        }
-
-        public Socket createSocket(String host, int port) throws IOException, UnknownHostException {
-            log.info("ClientProxySecureProtocolSocketFactory.createSocket3(): host=" + host);
-            final SSLSocket sock = (SSLSocket) sslContext.getSocketFactory().createSocket(host, port);
-            log.info("Socket is type: " + sock.getClass());
-            return sock;
-        }
-    }
-
     public synchronized void init()
             throws NoSuchAlgorithmException, NoSuchProviderException, KeyManagementException
     {
         if (isInitialized)
             return;
 
-        // Set up SSL trust store
-        // TODO: we still need better cert management than this grody hack
-        Properties props = System.getProperties();
-        props.put("java.protocol.handler.pkgs", "com.sun.net.ssl.internal.www.protocol");
-        props.put("javax.net.ssl.trustStore", TRUST_STORE_FILE.getAbsolutePath());
-        props.put("javax.net.ssl.trustStorePassword", TRUST_STORE_PASSWORD);
-        ClientProxyKeyManager keyManager = new ClientProxyKeyManager();
-        ClientProxyTrustManager trustManager = new ClientProxyTrustManager();
+        // Set up SSL context
+        ClientProxyKeyManager keyManager = new ClientProxyKeyManager(ssgFinder);
+        ClientProxyTrustManager trustManager = new ClientProxyTrustManager(ssgFinder);
         SSLContext sslContext = SSLContext.getInstance("SSL", "SunJSSE");
         sslContext.init(new X509KeyManager[] {keyManager},
                         new X509TrustManager[] {trustManager},
@@ -307,35 +188,5 @@ public class ClientProxy {
 
         isDestroyed = true;
     }
-
-    public synchronized static void importCertificate(Ssg ssg, Certificate cert)
-            throws KeyStoreException, CertificateException, NoSuchAlgorithmException, IOException
-    {
-        String alias = "ssg" + ssg.getId();
-
-        KeyStore ks = KeyStore.getInstance("JKS");
-        try {
-            FileInputStream ksfis = new FileInputStream(ClientProxy.TRUST_STORE_FILE);
-            try {
-                ks.load(ksfis, ClientProxy.TRUST_STORE_PASSWORD.toCharArray());
-            } finally {
-                ksfis.close();
-            }
-        } catch (FileNotFoundException e) {
-            // Create a new one.
-            ks.load(null, ClientProxy.TRUST_STORE_PASSWORD.toCharArray());
-        }
-
-        log.info("Adding certificate: " + cert);
-        ks.setCertificateEntry(alias, cert);
-
-        FileOutputStream ksfos = null;
-        try {
-            ksfos = new FileOutputStream(ClientProxy.TRUST_STORE_FILE);
-            ks.store(ksfos, ClientProxy.TRUST_STORE_PASSWORD.toCharArray());
-        } finally {
-            if (ksfos != null)
-                ksfos.close();
-        }
-    }
 }
+

@@ -8,6 +8,8 @@ package com.l7tech.common.util;
 
 import java.io.InputStream;
 import java.io.IOException;
+import java.net.URLConnection;
+import java.net.URL;
 
 /**
  * Utility for hex encoding.
@@ -62,5 +64,21 @@ public class HexUtils {
             }
         }
         /* NOTREACHED */
+    }
+
+    /**
+     * Execute an HTTP GET on URL and return contents as a byte array.
+     * @param url
+     * @return
+     * @throws java.io.IOException If any connection problems arise, or if number of bytes read does not equal expected number of bytes in HTTP header.
+     */
+    public static byte[] slurpUrl(URL url) throws IOException {
+        URLConnection urlConnection = url.openConnection();
+        int len = urlConnection.getContentLength();
+        if (len < 0) throw new IOException("HTTP header byte count mismatch at URL: " + url.toString());
+        byte[] byteArray = new byte[len];
+        InputStream bin = urlConnection.getInputStream();
+        if (bin.read(byteArray, 0, len) != len) throw new IOException("Could not load bytes at URL: " + url.toString());
+        return byteArray;
     }
 }

@@ -17,6 +17,7 @@ import java.security.PublicKey;
 import java.security.GeneralSecurityException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.cert.Certificate;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -32,6 +33,8 @@ import org.apache.log4j.Category;
  */
 public class ClientKeyManager {
     private static final Category log = Category.getInstance(ClientKeyManager.class);
+    private static final String ALIAS = "clientProxy";
+    private static final String SSG_ALIAS = "ssgCa";
 
     /**
      * Very quickly check if a client certificate is available for the specified SSG.
@@ -55,17 +58,29 @@ public class ClientKeyManager {
         return ssg.getHaveClientCert().booleanValue();
     }
 
+    public static X509Certificate getServerCert(Ssg ssg)
+            throws NoSuchAlgorithmException, CertificateException, KeyStoreException, IOException
+    {
+        return (X509Certificate) getKeyStore(ssg).getCertificate(SSG_ALIAS);
+    }
+
     public static X509Certificate getClientCert(Ssg ssg)
             throws NoSuchAlgorithmException, IOException, CertificateException, KeyStoreException
     {
-        return (X509Certificate) getKeyStore(ssg).getCertificate("clientProxy");
+        return (X509Certificate) getKeyStore(ssg).getCertificate(ALIAS);
+    }
+
+    public static X509Certificate[] getClientCertificateChain(Ssg ssg)
+            throws NoSuchAlgorithmException, CertificateException, KeyStoreException, IOException
+    {
+        return (X509Certificate[]) getKeyStore(ssg).getCertificateChain(ALIAS);
     }
 
     public static PrivateKey getPrivateKey(Ssg ssg)
             throws NoSuchAlgorithmException, IOException, CertificateException, KeyStoreException,
                    UnrecoverableKeyException
     {
-        return (PrivateKey) getKeyStore(ssg).getKey("clientProxy", ssg.getPassword());
+        return (PrivateKey) getKeyStore(ssg).getKey(ALIAS, ssg.getPassword());
     }
 
     public static PublicKey getPublicKey(Ssg ssg)
@@ -112,6 +127,29 @@ public class ClientKeyManager {
                                          }
                                      });
 
+        }
+    }
+
+    public static void saveSsgCertificate(final Ssg ssg, X509Certificate cert)
+            throws NoSuchAlgorithmException, CertificateException, KeyStoreException, IOException
+    {
+        synchronized (ssg) {
+            log.info("Saving SSG certificate to disk");
+            getKeyStore(ssg).setCertificateEntry(SSG_ALIAS, cert);
+            saveKeyStore(ssg);
+        }
+    }
+
+    public static void saveClientCertificate(final Ssg ssg, PrivateKey privateKey, X509Certificate cert)
+            throws NoSuchAlgorithmException, CertificateException, KeyStoreException, IOException
+    {
+        synchronized (ssg) {
+            log.info("Saving client certificate to disk");
+            if (ssg.getPassword() == null)
+                throw new IllegalArgumentException("SSG " + ssg + " does not have a password set.");
+            getKeyStore(ssg).setKeyEntry(ALIAS, privateKey, ssg.getPassword(), new Certificate[] { cert });
+            saveKeyStore(ssg);
+            ssg.setHaveClientCert(Boolean.TRUE);
         }
     }
 
