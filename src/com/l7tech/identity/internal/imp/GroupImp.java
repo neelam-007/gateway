@@ -5,7 +5,7 @@ package com.l7tech.identity.internal.imp;
 
 import java.util.Collection;
 
-import com.l7tech.identity.internal.Group;
+import com.l7tech.identity.Group;
 import com.l7tech.objectmodel.imp.NamedEntityImp;
 
 /**

@@ -1,7 +1,6 @@
 package com.l7tech.identity.internal;
 
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.IdentityProvider;
+import com.l7tech.identity.*;
 import com.l7tech.objectmodel.PersistenceManager;
 
 /**

@@ -1,6 +1,7 @@
-package com.l7tech.identity.internal;
+package com.l7tech.identity;
 
 import com.l7tech.objectmodel.EntityManager;
+import com.l7tech.identity.User;
 
 import java.util.Collection;
 
