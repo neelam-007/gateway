@@ -67,9 +67,10 @@ public class UptimeMonitor {
     private static UptimeMetrics findUptime(String[] uptimePaths) {
         for (int i = 0; i < uptimePaths.length; i++) {
             String uptimePath = uptimePaths[i];
+            Process up = null;
             try {
                 UptimeMetrics snapshot = runUptime(uptimePath);
-                Process up = Runtime.getRuntime().exec(uptimePath);
+                up = Runtime.getRuntime().exec(uptimePath);
                 up.waitFor();
                 foundUptime = uptimePath;
                 logger.info("Using uptime executable: " + foundUptime);
@@ -79,6 +80,9 @@ public class UptimeMonitor {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 return null;
+            } finally {
+                if (up != null)
+                    up.destroy();
             }
         }
         logger.warning("Did not find uptime executable on this system");
@@ -144,13 +148,22 @@ public class UptimeMonitor {
      * @throws InterruptedException  if this thread was interrupted
      */
     private static UptimeMetrics runUptime(String uptimePath) throws IOException, InterruptedException {
-        Process up = Runtime.getRuntime().exec(uptimePath);
-        InputStream got = new BufferedInputStream(up.getInputStream());
-        byte[] buff = HexUtils.slurpStream(got, 512);
-        String uptimeOutput = new String(buff);
-        UptimeMetrics snapshot = new UptimeMetrics(uptimeOutput, ServerConfig.getInstance().getServerBootTime() );
-        up.waitFor();
-        return snapshot;
+        Process up = null;
+        InputStream got = null;
+        try {
+            up = Runtime.getRuntime().exec(uptimePath);
+            got = new BufferedInputStream(up.getInputStream());
+            byte[] buff = HexUtils.slurpStream(got, 512);
+            String uptimeOutput = new String(buff);
+            UptimeMetrics snapshot = new UptimeMetrics(uptimeOutput, ServerConfig.getInstance().getServerBootTime() );
+            up.waitFor();
+            return snapshot;
+        } finally {
+            if (got != null)
+                got.close();
+            if (up != null)
+                up.destroy();
+        }
     }
 
     /**
