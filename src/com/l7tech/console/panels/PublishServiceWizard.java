@@ -332,7 +332,13 @@ public class PublishServiceWizard extends JDialog {
         getContentPane().add(mainjPanel, BorderLayout.CENTER);
 
         pack();
-        setSize(new Dimension(620, 420));
+        stepsjPanel.setPreferredSize(stepsjPanel.getSize());
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        if (screenSize.getWidth() > 640)
+            setSize(new Dimension(720, 440));
+        else
+            setSize(new Dimension(620, 440));
+
         Utilities.centerOnScreen(this);
     }
 
