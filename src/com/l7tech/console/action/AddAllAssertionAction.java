@@ -9,8 +9,6 @@ import com.l7tech.policy.assertion.composite.CompositeAssertion;
 
 import javax.swing.*;
 import javax.swing.tree.DefaultTreeModel;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,16 +22,28 @@ import java.util.logging.Logger;
  */
 public class AddAllAssertionAction extends SecureAction {
     private static final Logger log = Logger.getLogger(AddAllAssertionAction.class.getName());
-    AssertionTreeNode treeNode;
+    private AssertionTreeNode treeNode;
+    private int insertPosition = 0;
 
     /**
      * @param n the assertion tree node must be composite
      */
     public AddAllAssertionAction(AssertionTreeNode n) {
-        treeNode = n;
+        this(n, 0);
+    }
+
+    /**
+     * Create the <code>AddAllAssertionAction</code> that adds
+     *
+     * @param treeNode
+     * @param insertPosition the insert position
+     */
+    public AddAllAssertionAction(AssertionTreeNode treeNode, int insertPosition) {
         if (!(treeNode.getUserObject() instanceof CompositeAssertion)) {
             throw new IllegalArgumentException();
         }
+        this.insertPosition = insertPosition;
+        this.treeNode = treeNode;
     }
 
     /**
@@ -57,9 +67,10 @@ public class AddAllAssertionAction extends SecureAction {
         return "com/l7tech/console/resources/folder.gif";
     }
 
-    /** Actually perform the action.
+    /**
+     * Actually perform the action.
      * This is the method which should be called programmatically.
-
+     * <p/>
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
@@ -74,7 +85,7 @@ public class AddAllAssertionAction extends SecureAction {
 
                     AssertionTreeNode an =
                       AssertionTreeNodeFactory.asTreeNode(new AllAssertion());
-                    model.insertNodeInto(an, treeNode, treeNode.getChildCount());
+                    model.insertNodeInto(an, treeNode, insertPosition);
                 } else {
                     log.log(Level.WARNING, "Unable to reach the palette tree.");
                 }

@@ -167,10 +167,10 @@ public abstract class AssertionTreeNode extends AbstractTreeNode {
         list.addAll(Arrays.asList(super.getActions()));
         CompositeAssertionTreeNode ca =
           (CompositeAssertionTreeNode)((this instanceof CompositeAssertionTreeNode) ? this : this.getParent());
-
-        Action a = new AddAllAssertionAction(ca);
+        int position = (this instanceof CompositeAssertionTreeNode) ? 0 : this.getParent().getIndex(this) + 1;
+        Action a = new AddAllAssertionAction(ca, position);
         list.add(a);
-        a = new AddOneOrMoreAssertionAction(ca);
+        a = new AddOneOrMoreAssertionAction(ca, position);
         list.add(a);
 
         Action da = new DeleteAssertionAction(this);

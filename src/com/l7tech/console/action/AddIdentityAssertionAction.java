@@ -33,12 +33,18 @@ import java.util.logging.Level;
  */
 public class AddIdentityAssertionAction extends SecureAction {
     private AssertionTreeNode node;
+    private int inserPosition = 0;
 
     public AddIdentityAssertionAction(AssertionTreeNode n) {
-        node = n;
-         if (!(node.getUserObject() instanceof CompositeAssertion)) {
+        this(n, 0);
+    }
+
+    public AddIdentityAssertionAction(AssertionTreeNode node, int inserPosition) {
+        if (!(node.getUserObject() instanceof CompositeAssertion)) {
             throw new IllegalArgumentException();
         }
+        this.inserPosition = inserPosition;
+        this.node = node;
     }
 
     /**
@@ -62,15 +68,15 @@ public class AddIdentityAssertionAction extends SecureAction {
         return "com/l7tech/console/resources/user16.png";
     }
 
-    /** Actually perform the action.
+    /**
+     * Actually perform the action.
      * This is the method which should be called programmatically.
-
+     * <p/>
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
-        SwingUtilities.invokeLater(
-          new Runnable() {
+        SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 JFrame f = TopComponents.getInstance().getMainWindow();
                 FindIdentitiesDialog.Options options = new FindIdentitiesDialog.Options();
@@ -86,7 +92,7 @@ public class AddIdentityAssertionAction extends SecureAction {
                 IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
 
                 try {
-                    for (int i = 0; headers !=null && i < headers.length; i++) {
+                    for (int i = 0; headers != null && i < headers.length; i++) {
                         EntityHeader header = headers[i];
                         if (header.getType() == EntityType.USER) {
                             User u = admin.findUserByPrimaryKey(providerId, header.getStrId());
@@ -102,12 +108,13 @@ public class AddIdentityAssertionAction extends SecureAction {
                 }
 
                 JTree tree = (JTree)TopComponents.getInstance().getComponent(PolicyTree.NAME);
+                int pos = inserPosition;
                 if (tree != null) {
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                     for (Iterator idit = identityAssertions.iterator(); idit.hasNext();) {
                         Assertion ass = (Assertion)idit.next();
                         AssertionTreeNode an = AssertionTreeNodeFactory.asTreeNode(ass);
-                        model.insertNodeInto(an, node, node.getChildCount());
+                        model.insertNodeInto(an, node, pos++);
                     }
                 } else {
                     log.log(Level.WARNING, "Unable to reach the policy tree.");

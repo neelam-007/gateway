@@ -22,16 +22,22 @@ import java.util.logging.Logger;
  */
 public class AddOneOrMoreAssertionAction extends SecureAction {
     private static final Logger log = Logger.getLogger(AddOneOrMoreAssertionAction.class.getName());
-    AssertionTreeNode treeNode;
+    private AssertionTreeNode treeNode;
+    private int insertPosition = 0;
 
     /**
      * @param n the assertion tree node must be composite
      */
     public AddOneOrMoreAssertionAction(AssertionTreeNode n) {
-        treeNode = n;
+        this(n, 0);
+    }
+
+    public AddOneOrMoreAssertionAction(AssertionTreeNode treeNode, int insertPosition) {
         if (!(treeNode.getUserObject() instanceof CompositeAssertion)) {
             throw new IllegalArgumentException();
         }
+        this.insertPosition = insertPosition;
+        this.treeNode = treeNode;
     }
 
     /**
@@ -55,9 +61,10 @@ public class AddOneOrMoreAssertionAction extends SecureAction {
         return "com/l7tech/console/resources/folder.gif";
     }
 
-    /** Actually perform the action.
+    /**
+     * Actually perform the action.
      * This is the method which should be called programmatically.
-
+     * <p/>
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
@@ -70,8 +77,7 @@ public class AddOneOrMoreAssertionAction extends SecureAction {
                 if (tree != null) {
                     DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
                     OneOrMoreAssertion oom = new OneOrMoreAssertion();
-                    model.insertNodeInto(AssertionTreeNodeFactory.asTreeNode(oom),
-                                         treeNode, treeNode.getChildCount());
+                    model.insertNodeInto(AssertionTreeNodeFactory.asTreeNode(oom), treeNode, insertPosition);
                 } else {
                     log.log(Level.WARNING, "Unable to reach the palette tree.");
                 }
