@@ -42,6 +42,103 @@ public abstract class AbstractLdapGroupManagerServer extends LdapManager impleme
     protected abstract User getUserFromGroupMember( String member ) throws FindException;
 
     public Group findByPrimaryKey(String dn) throws FindException {
+        // if the group is a posixGroup, use standard method
+        if (dn.indexOf(getConstants().groupNameAttribute() + "=") >= 0) {
+            return buildSelfDescriptiveGroup(dn);
+        } else { // otherwise, use the OU method for building a group
+            return buildOUGroup(dn);
+        }
+    }
+
+    public Collection findAllHeaders() throws FindException {
+        Collection res = buildSelfDescriptiveGroupHeaders();
+        // list the OU based groups
+        try {
+            NamingEnumeration answer = null;
+            String filter = "(objectclass=" + AbstractLdapConstants.oUObjClassName() + ")";
+            SearchControls sc = new SearchControls();
+            sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+            DirContext context = getBrowseContext();
+            answer = context.search(config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), filter, sc);
+            while (answer.hasMore())
+            {
+                EntityHeader header = headerFromOuSearchResult((SearchResult)answer.next());
+                if (header != null) {
+                    res.add(header);
+                }
+            }
+        } catch (NamingException e) {
+            logger.log(Level.SEVERE, e.getMessage(), e);
+        }
+        return res;
+    }
+
+    public Collection findAllHeaders(int offset, int windowSize) throws FindException {
+        Collection res = buildSelfDescriptiveGroupHeaders(offset, windowSize);
+        if (res.size() < windowSize) {
+            int sofar = res.size();
+            try {
+                NamingEnumeration answer = null;
+                String filter = "(objectclass=" + AbstractLdapConstants.oUObjClassName() + ")";
+                SearchControls sc = new SearchControls();
+                sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+                DirContext context = getBrowseContext();
+                answer = context.search(config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE), filter, sc);
+                while (answer.hasMore())
+                {
+                    EntityHeader header = headerFromOuSearchResult((SearchResult)answer.next());
+                    if (header != null) {
+                        res.add(header);
+                        ++sofar;
+                        if (sofar >= windowSize) break;
+                    }
+                }
+            } catch (NamingException e) {
+                logger.log(Level.SEVERE, e.getMessage(), e);
+            }
+        }
+        return res;
+    }
+
+    public EntityHeader headerFromOuSearchResult(SearchResult sr) throws NamingException {
+        Attributes atts = sr.getAttributes();
+        Object tmp = extractOneAttributeValue(atts, AbstractLdapConstants.oUObjAttrName());
+        String ou = null;
+        if (tmp != null) ou = tmp.toString();
+
+        if (ou != null && ou != null) {
+            String dn = sr.getName() + "," + config.getProperty(LdapConfigSettings.LDAP_SEARCH_BASE);
+            EntityHeader header = new EntityHeader(dn, EntityType.GROUP, dn, null);
+            return header;
+        }
+        return null;
+    }
+
+    private Group buildOUGroup(String dn) throws FindException{
+        try {
+            DirContext context = getBrowseContext();
+            Attributes attributes = context.getAttributes(dn);
+            AbstractLdapConstants constants = getConstants();
+            Group out = new Group();
+            out.setProviderId(config.getOid());
+            out.setName(dn);
+            Object tmp = extractOneAttributeValue(attributes, constants.descriptionAttribute() );
+            if (tmp != null) out.setDescription(tmp.toString());
+            // todo, build group memberships
+            return out;
+        } catch (NamingException e) {
+            logger.log(Level.SEVERE, null, e);
+            throw new FindException(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Builds a group object from a ldap objectClass that lists its members as part of its attributes
+     * @param dn dn of the group
+     * @return
+     * @throws FindException
+     */
+    protected Group buildSelfDescriptiveGroup(String dn) throws FindException {
         if (!valid) {
             logger.severe("invalid group manager");
             throw new FindException("invalid manager");
@@ -115,7 +212,10 @@ public abstract class AbstractLdapGroupManagerServer extends LdapManager impleme
         return findByPrimaryKey(header.getStrId());
     }
 
-    public Collection findAllHeaders() throws FindException {
+    /**
+     * builds a collection of group headers for all self descriptive groups
+     */
+    protected Collection buildSelfDescriptiveGroupHeaders() throws FindException {
         AbstractLdapConstants constants = getConstants();
         if (!valid) {
             logger.severe("invalid group manager");
@@ -157,7 +257,10 @@ public abstract class AbstractLdapGroupManagerServer extends LdapManager impleme
         return output;
     }
 
-    public Collection findAllHeaders(int offset, int windowSize) throws FindException {
+    /**
+     * builds a collection of group headers for all self descriptive groups
+     */
+    protected Collection buildSelfDescriptiveGroupHeaders(int offset, int windowSize) throws FindException {
         AbstractLdapConstants constants = getConstants();
         if (!valid) {
             logger.severe("invalid group manager");
@@ -242,5 +345,5 @@ public abstract class AbstractLdapGroupManagerServer extends LdapManager impleme
     }
 
     private volatile boolean valid = true;
-    private Logger logger = LogManager.getInstance().getSystemLogger();
+    protected Logger logger = LogManager.getInstance().getSystemLogger();
 }
