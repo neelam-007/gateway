@@ -91,12 +91,16 @@
             <equals arg1="${database.type}" arg2="postgres"/>
         </condition>
 
-        <condition property="db.oracle">
-            <equals arg1="${database.type}" arg2="oracle"/>
-        </condition>
-
         <condition property="db.oracle8">
             <equals arg1="${database.type}" arg2="oracle8"/>
+        </condition>
+
+        <condition property="db.oracle9">
+            <equals arg1="${database.type}" arg2="oracle9"/>
+        </condition>
+
+        <condition property="db.oracle10">
+            <equals arg1="${database.type}" arg2="oracle10"/>
         </condition>
     </target>
 
@@ -334,8 +338,10 @@
                 <include name="com.ibm.mqjms.jar" if="include.jms.mqseries"/>
                 <include name="connector.jar" if="include.jms.mqseries"/>
 
-                <include name="ojdbc14.jar" if="db.oracle"/>
-		        <include name="classes111.jar" if="db.oracle8"/>
+                <include name="classes111.jar" if="db.oracle8"/>
+                <include name="ojdbc14.jar" if="db.oracle9"/>
+                <include name="ojdbc14.jar" if="db.oracle10"/>
+
                 <include name="mysql-connector-java-3.0.11-stable-bin.jar" if="db.mysql"/>
                 <include name="postgresql.jar" if="db.postgres"/>
             </lib>
@@ -521,8 +527,9 @@
     </target>
 
     <target name="prepare.db">
-        <antcall target="prepare.db.oracle"/>
         <antcall target="prepare.db.oracle8"/>
+        <antcall target="prepare.db.oracle9"/>
+        <antcall target="prepare.db.oracle10"/>
         <antcall target="prepare.db.mysql"/>
         <antcall target="prepare.db.postgres"/>
     </target>
@@ -563,20 +570,30 @@
         </copy>
     </target>
 
-    <target name="prepare.db.oracle" if="db.oracle">
-        <echo>Copying Oracle jars...</echo>
+    <target name="prepare.db.oracle8" if="db.oracle8">
+        <echo>Copying Oracle 8 jars...</echo>
         <copy todir="${build.lib}">
-            <fileset dir="${src.root}/lib/gateway/jdbc/oracle">
+            <fileset dir="${src.root}/lib/gateway/jdbc/oracle8">
                 <include name="*.jar"/>
                 <include name="*.zip"/>
             </fileset>
         </copy>
     </target>
 
-    <target name="prepare.db.oracle8" if="db.oracle8">
-        <echo>Copying Oracle 8 jars...</echo>
+    <target name="prepare.db.oracle9" if="db.oracle9">
+        <echo>Copying Oracle 9 jars...</echo>
         <copy todir="${build.lib}">
-            <fileset dir="${src.root}/lib/gateway/jdbc/oracle8">
+            <fileset dir="${src.root}/lib/gateway/jdbc/oracle9">
+                <include name="*.jar"/>
+                <include name="*.zip"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="prepare.db.oracle10" if="db.oracle10">
+        <echo>Copying Oracle 10 jars...</echo>
+        <copy todir="${build.lib}">
+            <fileset dir="${src.root}/lib/gateway/jdbc/oracle10">
                 <include name="*.jar"/>
                 <include name="*.zip"/>
             </fileset>
@@ -710,7 +727,7 @@
         </copy>
     </target>
 
-    <target name="db.properties" depends="db.properties.mysql, db.properties.postgres, db.properties.oracle, db.properties.oracle8"/>
+    <target name="db.properties" depends="db.properties.mysql, db.properties.postgres, db.properties.oracle8, db.properties.oracle9, db.properties.oracle10"/>
 
     <target name="db.properties.mysql" if="db.mysql">
         <echo>Setting database properties for MySQL...</echo>
@@ -730,22 +747,32 @@
         <property name="database.pingstmt" value="${pg.database.pingstmt}"/>
     </target>
 
-    <target name="db.properties.oracle" if="db.oracle">
-        <echo>Setting database properties for Oracle...</echo>
-        <property name="database.driver" value="${oracle.database.driver}"/>
-        <property name="database.url" value="${oracle.database.url}"/>
-        <property name="database.user" value="${oracle.database.user}"/>
-        <property name="database.password" value="${oracle.database.password}"/>
-        <property name="database.pingstmt" value="${oracle.database.pingstmt}"/>
-    </target>
-
     <target name="db.properties.oracle8" if="db.oracle8">
-        <echo>Setting database properties for Oracle...</echo>
+        <echo>Setting database properties for Oracle 8...</echo>
         <property name="database.driver" value="${oracle8.database.driver}"/>
         <property name="database.url" value="${oracle8.database.url}"/>
         <property name="database.user" value="${oracle8.database.user}"/>
         <property name="database.password" value="${oracle8.database.password}"/>
         <property name="database.pingstmt" value="${oracle8.database.pingstmt}"/>
+    </target>
+
+    <target name="db.properties.oracle9" if="db.oracle9">
+        <echo>Setting database properties for Oracle 9...</echo>
+        <property name="database.driver" value="${oracle9.database.driver}"/>
+        <property name="database.url" value="${oracle9.database.url}"/>
+        <property name="database.user" value="${oracle9.database.user}"/>
+        <property name="database.password" value="${oracle9.database.password}"/>
+        <property name="database.pingstmt" value="${oracle9.database.pingstmt}"/>
+    </target>
+
+
+    <target name="db.properties.oracle10" if="db.oracle10">
+        <echo>Setting database properties for Oracle 10...</echo>
+        <property name="database.driver" value="${oracle10.database.driver}"/>
+        <property name="database.url" value="${oracle10.database.url}"/>
+        <property name="database.user" value="${oracle10.database.user}"/>
+        <property name="database.password" value="${oracle10.database.password}"/>
+        <property name="database.pingstmt" value="${oracle10.database.pingstmt}"/>
     </target>
 
     <!--
@@ -966,23 +993,44 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
     </target>
 
     <target name="INTERNAL-ssg-install-keystores" if="install.full" depends="INTERNAL-ssg-install-genpass">
+        <path id="keytool.classpath">
+            <fileset dir="${src.root}/lib/crypto/bc">
+                <include name="*.jar"/>
+            </fileset>
+        </path>
+
+        <pathconvert refid="keytool.classpath" property="keytool.cp" pathSep=":"/>
+
+        <echo>${keytool.cp}</echo>
+
         <!-- Create CA keystore -->
 
+        <echo>Generating CA key &amp; cert...</echo>
         <delete file="${install.src.ca.keystore}"/>
         <fail unless="install.ca.hostname" message="install.ca.hostname property not set! Check install.properties!"/>
-        <java classname="sun.security.tools.KeyTool">
+
+        <exec executable="java">
+            <arg line="-classpath ${keytool.cp}"/>
+            <arg line="sun.security.tools.KeyTool"/>
+            <arg line="-provider org.bouncycastle.jce.provider.BouncyCastleProvider"/>
+            <arg line="-storetype BCPKCS12"/>
             <arg line="-keystore ${install.src.ca.keystore}"/>
-            <arg line="-genkey"/>
-            <arg line="-alias ${install.alias.ca.keystore}"/>
-            <arg line="-dname cn=${install.ca.hostname}"/>
-            <arg line="-keyalg RSA"/>
             <arg line="-keypass ${install.pass.ca.keystore}"/>
             <arg line="-storepass ${install.pass.ca.keystore}"/>
-        </java>
+            <arg line="-alias ${install.alias.ca.keystore}"/>
+            <arg line="-genkey"/>
+            <arg line="-dname cn=${install.ca.hostname}"/>
+            <arg line="-keyalg RSA"/>
+            <arg line="-sigalg SHA1withRSA"/>
+        </exec>
 
         <!-- $KEYTOOL -export -alias ssgroot -storepass "$KEYSTORE_PASSWORD" -file "$ROOT_CERT_FILE" -keystore "$ROOT_KEYSTORE_FILE" -->
+        <echo>Exporting CA cert...</echo>
         <delete file="${install.src.ca.cer}"/>
-        <java classname="sun.security.tools.KeyTool">
+        <java classname="sun.security.tools.KeyTool" fork="true">
+            <classpath refid="keytool.classpath"/>
+            <arg line="-provider org.bouncycastle.jce.provider.BouncyCastleProvider"/>
+            <arg line="-storetype BCPKCS12"/>
             <arg line="-keystore ${install.src.ca.keystore}"/>
             <arg line="-export"/>
             <arg line="-alias ${install.alias.ca.keystore}"/>
@@ -992,25 +1040,34 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         </java>
 
         <!-- Create SSL keystore -->
+        <echo>Generating SSL key &amp; cert...</echo>
         <delete file="${install.src.ssl.keystore}"/>
         <fail unless="install.ssg.hostname" message="install.ssg.hostname property not set! Check install.properties!"/>
-        <java classname="sun.security.tools.KeyTool">
+        <java classname="sun.security.tools.KeyTool" fork="true">
+            <classpath refid="keytool.classpath"/>
+            <arg line="-provider org.bouncycastle.jce.provider.BouncyCastleProvider"/>
+            <arg line="-storetype BCPKCS12"/>
             <arg line="-keystore ${install.src.ssl.keystore}"/>
             <arg line="-genkey"/>
             <arg line="-alias ${install.alias.ssl.keystore}"/>
             <arg line="-dname cn=${install.ssg.hostname}"/>
-            <arg line="-keyalg RSA"/>
+<!--            <arg line="-keyalg RSA"/>-->
+<!--            <arg line="-sigalg SHA1withRSA"/>-->
             <arg line="-keypass ${install.pass.ssl.keystore}"/>
             <arg line="-storepass ${install.pass.ssl.keystore}"/>
         </java>
 
         <!-- Create SSL CSR -->
+        <echo>Exporting SSL CSR...</echo>
         <delete file="${install.src.ssl.csr}"/>
-        <java classname="sun.security.tools.KeyTool">
+        <java classname="sun.security.tools.KeyTool" fork="true">
+            <classpath refid="keytool.classpath"/>
+            <arg line="-provider org.bouncycastle.jce.provider.BouncyCastleProvider"/>
+            <arg line="-storetype BCPKCS12"/>
             <arg line="-certreq"/>
             <arg line="-keyalg RSA"/>
             <arg line="-alias ${install.alias.ssl.keystore}"/>
-            <arg line="-file ${install.src.ssl.csr}"/>
+            <arg line="-file '${install.src.ssl.csr}'"/>
             <arg line="-keystore ${install.src.ssl.keystore}"/>
             <arg line="-storepass ${install.pass.ssl.keystore}"/>
         </java>
@@ -1039,8 +1096,11 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         $KEYTOOL -import -noprompt -file $ROOT_CERT_FILE -alias ssgroot -keystore $SSL_KEYSTORE_FILE -storepass $KEYSTORE_PASSWORD
         $KEYTOOL -import -noprompt -file $SSL_CERT_FILE -alias tomcat -keystore $SSL_KEYSTORE_FILE -storepass $KEYSTORE_PASSWORD
         -->
-        <echo>Importing signed SSL certificate...</echo>
-        <java classname="sun.security.tools.KeyTool">
+        <echo>Importing CA certificate into SSL keystore...</echo>
+        <java classname="sun.security.tools.KeyTool" fork="true">
+            <classpath refid="keytool.classpath"/>
+            <arg line="-provider org.bouncycastle.jce.provider.BouncyCastleProvider"/>
+            <arg line="-storetype BCPKCS12"/>
             <arg line="-import"/>
             <arg line="-noprompt"/>
             <arg line="-file ${install.src.ca.cer}"/>
@@ -1048,7 +1108,12 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
             <arg line="-keystore ${install.src.ssl.keystore}"/>
             <arg line="-storepass ${install.pass.ssl.keystore}"/>
         </java>
-        <java classname="sun.security.tools.KeyTool">
+
+        <echo>Importing signed SSL certificate into SSL keystore...</echo>
+        <java classname="sun.security.tools.KeyTool" fork="true">
+            <classpath refid="keytool.classpath"/>
+            <arg line="-provider org.bouncycastle.jce.provider.BouncyCastleProvider"/>
+            <arg line="-storetype BCPKCS12"/>
             <arg line="-import"/>
             <arg line="-noprompt"/>
             <arg line="-file ${install.src.ssl.cer}"/>
