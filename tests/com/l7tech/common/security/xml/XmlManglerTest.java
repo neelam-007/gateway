@@ -55,7 +55,7 @@ public class XmlManglerTest extends TestCase {
         junit.textui.TestRunner.run(suite());
     }
 
-    private static class RawKey implements SecretKey {
+    public static class RawKey implements SecretKey {
         private byte[] bytes;
 
         // Generate a random Raw Key with the specified number of bytes
@@ -107,7 +107,7 @@ public class XmlManglerTest extends TestCase {
         return soapDocument;
     }
 
-    private Document makeTestMessage() throws Exception {
+    public static Document makeTestMessage() throws Exception {
         MessageFactory mf = MessageFactory.newInstance();
         SOAPMessage soapMsg = mf.createMessage();
         SOAPEnvelope env = soapMsg.getSOAPPart().getEnvelope();
@@ -133,9 +133,9 @@ public class XmlManglerTest extends TestCase {
         Document soapDocument = makeTestMessage();
         Key encryptionKey = new RawKey(32);
 
-        log.info("Document before encryption: \n" + documentToString(soapDocument));
+        //log.info("Document before encryption: \n" + documentToString(soapDocument));
         XmlMangler.encryptXml(soapDocument, encryptionKey.getEncoded(), "MyKeyName");
-        log.info("Document after encryption: \n" + documentToString(soapDocument));
+        //log.info("Document after encryption: \n" + documentToString(soapDocument));
 
         Node cval = soapDocument.getElementsByTagNameNS(xmlencNS, "CipherValue").item(0);
         assertTrue(cval != null);
@@ -155,7 +155,7 @@ public class XmlManglerTest extends TestCase {
 
         Document decrypted = stringToDocument(documentToString(crypted));
         XmlMangler.decryptXml(decrypted, encryptionKey);
-        log.info("Document after decryption: \n" + documentToString(decrypted));
+        //log.info("Document after decryption: \n" + documentToString(decrypted));
     }
 
     public void testDecryptingAMessageThatsNotEncrypted() throws Exception {
