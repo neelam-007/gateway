@@ -7,7 +7,6 @@
 package com.l7tech.common.locator;
 
 import com.l7tech.common.util.Locator;
-import com.l7tech.console.panels.PublishServiceWizardTest;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.GroupManagerStub;
@@ -33,7 +32,7 @@ import java.util.List;
  * Locator for use during tests, that uses stub versions of all manager classes.
   */
 public class StubModeLocator extends Locator {
-    private static final Category log = Category.getInstance(PublishServiceWizardTest.class);
+    private static final Category log = Category.getInstance(StubModeLocator.class);
 
     public StubModeLocator() {
         log.info("New StubModeLocator");
