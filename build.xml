@@ -546,6 +546,7 @@
         <property name="install.src.ssglog.properties" value="${install.src.conf}/ssglog.properties"/>
         <property name="install.src.server.xml" value="${install.src.tomcat}/conf/server.xml"/>
 	    <property name="install.src.logs" value="${install.src.base}/${install.rel.logs}"/>
+        <property name="install.src.web-inf" value="${install.src.tomcat}/webapps/ROOT/WEB-INF"/>
 
         <!-- Absolute target paths -->
         <property name="install.target.base" value="/ssg"/>
@@ -719,9 +720,15 @@ ssgadmin.md5 = '${install.pass.ssgadmin.md5}'
         <echo>Expanding ${install.src.war}...</echo>
         <unwar src="${install.src.war}" dest="${install.src.tomcat}/webapps/ROOT"/>
 
+        <!-- Hack hibernate.properties -->
+        <echo>Patching ${install.src.web-inf}/classes/hibernate.properties...</echo>
+        <replaceregexp file="${install.src.web-inf}/classes/hibernate.properties}">
+            <regexp pattern="hibernate.connection.password\s*=\s*.*$"/>
+            <substitution expression="hibernate.connection.password = ${install.pass.dbuser}"/>
+        </replaceregexp>
+
      	<!-- Hack server.xml -->
         <echo>Patching ${install.src.server.xml}...</echo>
-
         <replaceregexp file="${install.src.server.xml}">
           <regexp pattern='keystoreFile\s*=\s*"[a-zA-Z0-9 \/\-\.\\]*"'/>
           <substitution expression='keystoreFile="${install.target.ssl.keystore}"'/>
