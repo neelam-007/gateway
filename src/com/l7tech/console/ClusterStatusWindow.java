@@ -546,17 +546,17 @@ public class ClusterStatusWindow extends JFrame {
             // the second last update time stamp is -1 the very first time when the node status is retrieved
             // the node status is unknown in this case
             if (su.getSecondLastUpdateTimeStamp() == -1) {
-                su.setStatus(-1);
+                su.setStatus(GatewayStatus.NODE_STATUS_UNKNOWN);
             } else if (su.getLastUpdateTimeStamp() != su.getSecondLastUpdateTimeStamp()) {
-                su.setStatus(1);
+                su.setStatus(GatewayStatus.NODE_STATUS_ACTIVE);
                 su.resetTimeStampUpdateFailureCount();
             } else {
                 if (su.getTimeStampUpdateFailureCount() >= GatewayStatus.MAX_UPDATE_FAILURE_COUNT) {
-                    su.setStatus(0);
+                    su.setStatus(GatewayStatus.NODE_STATUS_INACTIVE);
                     //su.resetTimeStampUpdateFailureCount();
                 } else {
-                    // has not hit the limit, the node status is considered is active
-                    su.setStatus(1);
+                    // has not hit the limit, the node status does not change
+                    su.setStatus(su.getLastState());
                 }
             }
 
@@ -738,7 +738,7 @@ public class ClusterStatusWindow extends JFrame {
 
         for (Iterator i = currentNodeList.keySet().iterator(); i.hasNext();) {
             GatewayStatus su = (GatewayStatus) currentNodeList.get(i.next());
-            su.setStatus(-1);
+            su.setStatus(GatewayStatus.NODE_STATUS_UNKNOWN);
             cs.add(su);
         }
 

@@ -19,9 +19,13 @@ public class GatewayStatus {
     public static final int STATUS_REFRESH_TIMER = 1000 * REFRESH_INTERVAL;
     public static final int NUMBER_OF_SAMPLE_PER_MINUTE = 60 / REFRESH_INTERVAL;
     public static final int MAX_UPDATE_FAILURE_COUNT = 2;
+    public static final int NODE_STATUS_UNKNOWN = -1;
+    public static final int NODE_STATUS_ACTIVE = 1;
+    public static final int NODE_STATUS_INACTIVE = 0;
 
     private final ClusterNodeInfo clusterInfo;
     private int status;
+    private int lastState;
     private int loadSharing;
     private boolean addRequestCounterInCache;
     private boolean addCompletedCounterInCache;
@@ -43,6 +47,8 @@ public class GatewayStatus {
         // the second last update time stamp is -1 to indicate this is the first time the node status is retrieved
         secondLastUpdateTimeStamp = -1;
         timeStampUpdateFailureCount = 0;
+
+        lastState = NODE_STATUS_UNKNOWN;
     }
 
     /**
@@ -57,6 +63,20 @@ public class GatewayStatus {
      */
     public int getStatus() {
         return status;
+    }
+
+    /**
+     * Get last node state
+     */
+    public int getLastState() {
+        return lastState;
+    }
+
+    /**
+     * Set last node state
+     */
+    public void setLastState(int state) {
+        lastState = state;
     }
 
     /**
