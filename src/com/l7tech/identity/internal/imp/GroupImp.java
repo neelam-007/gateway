@@ -20,6 +20,10 @@ public class GroupImp extends NamedEntityImp implements Group {
         return _members;
     }
 
+    public Collection getMemberHeaders() {
+        return null;
+    }
+
     public void setDescription(String description) {
         _description = description;
     }
