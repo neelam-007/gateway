@@ -174,7 +174,7 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
         String res = getServiceUrlTextField().getText();
         boolean ok = true;
         try {
-            new URL(res);
+            if (res != null && res.length() > 0) new URL(res);
         } catch (MalformedURLException e) {
             ok = false;
         }
@@ -189,6 +189,7 @@ public class ProtectedServiceWizardPanel extends WizardStepPanel {
                     ok = false;
                 }
         }
+        if (res != null && res.length() < 1) return null;
         return res;
     }
 
