@@ -3,6 +3,7 @@ package com.l7tech.console.tree.policy;
 
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.xmlsec.SamlSecurity;
+import com.l7tech.console.action.SamlSecurityPropertiesAction;
 
 import javax.swing.*;
 import java.util.ArrayList;
@@ -21,7 +22,16 @@ public class SamlTreeNode extends LeafAssertionTreeNode {
 
     public String getName() {
         SamlSecurity ss = (SamlSecurity)asAssertion();
-        return "SAML Holder-of-key authentication";
+        if (ss.getConfirmationMethodType() == SamlSecurity.CONFIRMATION_METHOD_HOLDER_OF_KEY) {
+            return "SAML holder-of-key authentication";
+        } else if (ss.getConfirmationMethodType() == SamlSecurity.CONFIRMATION_METHOD_SENDER_VOUCHES) {
+            return "SAML sender-vouches authentication";
+        } else if (ss.getConfirmationMethodType() == SamlSecurity.CONFIRMATION_METHOD_WHATEVER) {
+            return "SAML holder-of-key or sender-vouches authentication";
+        } else {
+            logger.warning("The SAML Security assertion is not configured properly.");
+            return "SAML authentication (confirmation not specified)";
+        }
     }
 
     /**
@@ -32,8 +42,7 @@ public class SamlTreeNode extends LeafAssertionTreeNode {
      */
     public Action[] getActions() {
         java.util.List list = new ArrayList();
-        // Action disabled until there is something to configure
-        //list.add(new SamlPropertiesAction(this));
+        list.add(new SamlSecurityPropertiesAction(this));
         list.addAll(Arrays.asList(super.getActions()));
         return (Action[])list.toArray(new Action[]{});
     }
@@ -44,9 +53,7 @@ public class SamlTreeNode extends LeafAssertionTreeNode {
      * @return <code>null</code> indicating there should be none default action
      */
     public Action getPreferredAction() {
-        //return new SamlPropertiesAction(this);
-        // action disabled until there is something to configure
-        return null;
+        return new SamlSecurityPropertiesAction(this);
     }
 
     /**

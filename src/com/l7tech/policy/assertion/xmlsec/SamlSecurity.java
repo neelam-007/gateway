@@ -12,10 +12,10 @@ public class SamlSecurity extends CredentialSourceAssertion {
     public static final int CONFIRMATION_METHOD_WHATEVER = 2;
 
     /**
-     * Default constructor (sets confirmation method type as whatever)
+     * Default constructor (sets confirmation method type as HOK)
      */
     public SamlSecurity() {
-        this.confirmationMethodType = CONFIRMATION_METHOD_WHATEVER;
+        this.confirmationMethodType = CONFIRMATION_METHOD_HOLDER_OF_KEY;
     }
 
     /**
