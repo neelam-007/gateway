@@ -276,7 +276,7 @@ public class SsgListPanel extends JPanel {
                 }
             };
             actionEmptyCookieCache.putValue(Action.SHORT_DESCRIPTION, "Delete session cookies of all SSGs from the cache.");
-            actionEmptyCookieCache.putValue(Action.MNEMONIC_KEY, new Integer(KeyEvent.VK_D));
+            actionEmptyCookieCache.putValue(Action.MNEMONIC_KEY, new Integer(KeyEvent.VK_C));
         }
         return actionEmptyCookieCache;
     }
