@@ -372,6 +372,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         if (ssgPass == null || ssgPass.length < 1) {
             ssgPass = PasswordDialog.getPassword(Gui.getInstance().getFrame(),
                                                  "Enter new password for Gateway " + ssgName());
+            if (ssgPass == null)
+                return;
             identityPane.getUserPasswordField().setText(new String(ssgPass));
         }
 
@@ -403,6 +405,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         } catch (Exception e) {
             log.log(Level.WARNING, "Unable to import certificate", e);
             Gui.errorMessage("Unable to import certificate\n\n" + (e.getMessage() != null ? e.getMessage() : e.getClass().getName()));
+            return;
         }
 
         String clientCertUsername = lookupClientCertUsername(ssg);
