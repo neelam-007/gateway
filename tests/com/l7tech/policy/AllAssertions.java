@@ -102,6 +102,7 @@ public class AllAssertions {
         new AuditAssertion(),
         new WsTrustCredentialExchange(),
         CUSTOM_ASSERTION_HOLDER,
+        new Regex(),
         new UnknownAssertion()
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),
@@ -143,6 +144,7 @@ public class AllAssertions {
         new AuditAssertion(),
         new CustomAssertionHolder(),
         new WsTrustCredentialExchange(),
+        new Regex(),
         new UnknownAssertion()
         // TODO new TimeOfDayAssertion(),
         // TODO new DateRangeAssertion(),

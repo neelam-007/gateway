@@ -12,7 +12,7 @@ package com.l7tech.policy.assertion;
 public class Regex extends Assertion {
     private String regex;
     private String replacement;
-
+    private boolean caseInsensitive;
 
     /**
      * Test whether the assertion is a credential source. The <code>RegexAssertion</code>
@@ -38,5 +38,13 @@ public class Regex extends Assertion {
 
     public void setReplacement(String replacement) {
         this.replacement = replacement;
+    }
+
+    public boolean isCaseInsensitive() {
+        return caseInsensitive;
+    }
+
+    public void setCaseInsensitive(boolean caseInsensitive) {
+        this.caseInsensitive = caseInsensitive;
     }
 }

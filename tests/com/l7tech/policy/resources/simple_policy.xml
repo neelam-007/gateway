@@ -207,6 +207,11 @@
                     <RequestType requestTypeNull="null"/>
                     <AppliesTo stringValueNull="null"/>
                 </WsTrustCredentialExchange>
+                <Regex>
+                    <Regex stringValueNull="null"/>
+                    <Replacement stringValueNull="null"/>
+                    <CaseInsensitive booleanValue="false"/>
+                </Regex>
                 <UnknownAssertion>
                     <DetailMessage stringValueNull="null"/>
                     <OriginalXml stringValueNull="null"/>
@@ -267,8 +272,8 @@
                                     <ContentTypes stringArrayValue="included">
                                     <item stringValue="application/x-zip-compressed"/>
                                     </ContentTypes>
-                                    <MaxLength intValue="0"/>
                                     <Name stringValue="portfolioData"/>
+                                    <MaxLength intValue="0"/>
                                     </value>
                                     </entry>
                                     </Multipart>

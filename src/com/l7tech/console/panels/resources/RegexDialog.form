@@ -3,7 +3,7 @@
   <grid id="7fd87" binding="mainPanel" row-count="7" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
-      <xy x="84" y="89" width="691" height="413"/>
+      <xy x="31" y="89" width="744" height="521"/>
       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
     </constraints>
     <properties/>
@@ -12,15 +12,15 @@
       <grid id="851aa" row-count="2" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <xy x="20" y="0" width="651" height="137"/>
-          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="7" hsize-policy="3" anchor="0" fill="3"/>
+          <xy x="20" y="20" width="704" height="85"/>
+          <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
         </constraints>
         <properties/>
         <border type="none"/>
         <children>
           <component id="be412" class="javax.swing.JLabel">
             <constraints>
-              <xy x="0" y="3" width="99" height="14"/>
+              <xy x="0" y="1" width="124" height="17"/>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
@@ -29,7 +29,7 @@
           </component>
           <scrollpane id="c7763" binding="regexTextAreaScrollPane">
             <constraints>
-              <xy x="0" y="25" width="329" height="112"/>
+              <xy x="0" y="25" width="357" height="60"/>
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="6" anchor="0" fill="3"/>
             </constraints>
             <properties/>
@@ -37,82 +37,80 @@
             <children>
               <component id="e2d63" class="javax.swing.JTextArea" binding="regexTextArea">
                 <constraints/>
-                <properties/>
+                <properties>
+                  <rows value="3"/>
+                </properties>
               </component>
             </children>
           </scrollpane>
           <scrollpane id="de99e" binding="replaceTextAreaScrollPane">
             <constraints>
-              <xy x="359" y="25" width="292" height="112"/>
-              <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="7" hsize-policy="6" anchor="0" fill="3"/>
+              <xy x="367" y="25" width="253" height="60"/>
+              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="7" hsize-policy="6" anchor="0" fill="3"/>
             </constraints>
             <properties/>
             <border type="none"/>
             <children>
               <component id="9038" class="javax.swing.JTextArea" binding="replaceTextArea">
                 <constraints/>
-                <properties/>
+                <properties>
+                  <rows value="3"/>
+                </properties>
               </component>
             </children>
           </scrollpane>
           <component id="18718" class="javax.swing.JLabel">
             <constraints>
-              <xy x="359" y="3" width="62" height="14"/>
-              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+              <xy x="367" y="1" width="79" height="17"/>
+              <grid row="0" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
               <text value="Replacement"/>
             </properties>
           </component>
+          <grid id="371d0" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
+            <constraints>
+              <xy x="630" y="25" width="74" height="60"/>
+              <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="8e33d" class="javax.swing.JButton" binding="okButton">
+                <constraints>
+                  <xy x="0" y="1" width="74" height="27"/>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="2" fill="1"/>
+                </constraints>
+                <properties>
+                  <text value="OK"/>
+                </properties>
+              </component>
+              <component id="86ac1" class="javax.swing.JButton" binding="cancelButton">
+                <constraints>
+                  <xy x="0" y="33" width="74" height="27"/>
+                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="1" fill="1"/>
+                </constraints>
+                <properties>
+                  <text value="Cancel"/>
+                </properties>
+              </component>
+            </children>
+          </grid>
         </children>
       </grid>
       <vspacer id="c2a2c">
         <constraints>
-          <xy x="350" y="393" width="11" height="20"/>
+          <xy x="376" y="501" width="11" height="20"/>
           <grid row="6" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
             <minimum-size width="-1" height="15"/>
           </grid>
         </constraints>
       </vspacer>
-      <grid id="4fa7a" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+      <grid id="d9176" binding="testPanel" row-count="5" column-count="2" same-size-horizontally="true" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <xy x="20" y="162" width="651" height="40"/>
-          <grid row="2" column="1" row-span="2" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
-        </constraints>
-        <properties/>
-        <border type="none"/>
-        <children>
-          <hspacer id="d2219">
-            <constraints>
-              <xy x="0" y="14" width="527" height="11"/>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
-            </constraints>
-          </hspacer>
-          <component id="8e33d" class="javax.swing.JButton" binding="okButton">
-            <constraints>
-              <xy x="527" y="8" width="48" height="24"/>
-              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
-            </constraints>
-            <properties>
-              <text value="OK"/>
-            </properties>
-          </component>
-          <component id="86ac1" class="javax.swing.JButton" binding="cancelButton">
-            <constraints>
-              <xy x="585" y="8" width="66" height="24"/>
-              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
-            </constraints>
-            <properties>
-              <text value="Cancel"/>
-            </properties>
-          </component>
-        </children>
-      </grid>
-      <grid id="d9176" binding="testPanel" row-count="3" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-        <margin top="0" left="0" bottom="0" right="0"/>
-        <constraints>
-          <xy x="20" y="227" width="651" height="166"/>
+          <xy x="20" y="180" width="704" height="321"/>
           <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3"/>
         </constraints>
         <properties/>
@@ -120,8 +118,8 @@
         <children>
           <component id="94aaa" class="javax.swing.JLabel">
             <constraints>
-              <xy x="0" y="3" width="82" height="14"/>
-              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+              <xy x="0" y="21" width="104" height="17"/>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
               <text value="Test Input Match"/>
@@ -129,8 +127,8 @@
           </component>
           <component id="d89ee" class="javax.swing.JLabel">
             <constraints>
-              <xy x="389" y="3" width="30" height="14"/>
-              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+              <xy x="357" y="21" width="37" height="17"/>
+              <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
               <text value="Result"/>
@@ -138,59 +136,121 @@
           </component>
           <scrollpane id="8a8e2" binding="testInputTextAreaScrollPane">
             <constraints>
-              <xy x="0" y="25" width="314" height="112"/>
-              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="6" anchor="0" fill="3"/>
+              <xy x="0" y="45" width="347" height="224"/>
+              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3"/>
             </constraints>
             <properties/>
             <border type="none"/>
             <children>
               <component id="df463" class="javax.swing.JTextArea" binding="testInputTextArea">
                 <constraints/>
-                <properties/>
+                <properties>
+                  <rows value="10"/>
+                </properties>
               </component>
             </children>
           </scrollpane>
           <scrollpane id="b0caa" binding="testResultTextAreaScrollPane">
             <constraints>
-              <xy x="389" y="25" width="262" height="112"/>
-              <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="7" hsize-policy="6" anchor="0" fill="3"/>
+              <xy x="357" y="45" width="347" height="224"/>
+              <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3"/>
             </constraints>
             <properties/>
             <border type="none"/>
             <children>
               <component id="c00b9" class="javax.swing.JTextArea" binding="testResultTextArea">
                 <constraints/>
-                <properties/>
+                <properties>
+                  <rows value="10"/>
+                </properties>
               </component>
             </children>
           </scrollpane>
-          <component id="589ad" class="javax.swing.JButton" binding="testButton">
+          <grid id="e6075" row-count="1" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <xy x="324" y="142" width="55" height="24"/>
-              <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
+              <xy x="0" y="294" width="704" height="27"/>
+              <grid row="4" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
             </constraints>
-            <properties>
-              <text value="Test"/>
-            </properties>
-          </component>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <component id="74f85" class="javax.swing.JButton" binding="testButton">
+                <constraints>
+                  <xy x="285" y="0" width="60" height="27"/>
+                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="Test"/>
+                </properties>
+              </component>
+              <component id="62aa1" class="javax.swing.JButton" binding="clearTestOutputButton">
+                <constraints>
+                  <xy x="355" y="0" width="64" height="27"/>
+                  <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="1"/>
+                </constraints>
+                <properties>
+                  <horizontalAlignment value="0"/>
+                  <text value="Clear"/>
+                </properties>
+              </component>
+              <hspacer id="2563d">
+                <constraints>
+                  <xy x="419" y="8" width="285" height="11"/>
+                  <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
+                </constraints>
+              </hspacer>
+              <hspacer id="54500">
+                <constraints>
+                  <xy x="0" y="8" width="285" height="11"/>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
+                </constraints>
+              </hspacer>
+            </children>
+          </grid>
         </children>
       </grid>
       <hspacer id="b52d">
         <constraints>
-          <xy x="671" y="63" width="20" height="11"/>
-          <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+          <xy x="724" y="57" width="20" height="11"/>
+          <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
             <minimum-size width="15" height="-1"/>
           </grid>
         </constraints>
       </hspacer>
       <hspacer id="ae39d">
         <constraints>
-          <xy x="0" y="63" width="20" height="11"/>
-          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+          <xy x="0" y="57" width="20" height="11"/>
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
             <minimum-size width="15" height="-1"/>
           </grid>
         </constraints>
       </hspacer>
+      <vspacer id="ecdd6">
+        <constraints>
+          <xy x="366" y="0" width="11" height="20"/>
+          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+            <minimum-size width="-1" height="15"/>
+          </grid>
+        </constraints>
+      </vspacer>
+      <component id="1204c" class="javax.swing.JCheckBox" binding="caseInsensitivecheckBox">
+        <constraints>
+          <xy x="20" y="130" width="181" height="25"/>
+          <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+        </constraints>
+        <properties>
+          <text value="Case-insensitive matching"/>
+        </properties>
+      </component>
+      <vspacer id="6a976">
+        <constraints>
+          <xy x="366" y="160" width="11" height="20"/>
+          <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+            <minimum-size width="-1" height="20"/>
+          </grid>
+        </constraints>
+      </vspacer>
     </children>
   </grid>
 </form>

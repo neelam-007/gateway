@@ -167,6 +167,7 @@ public class WspConstants {
         new AssertionMapping(new AuditAssertion(), "AuditAssertion"),
         new AssertionMapping(new WsTrustCredentialExchange(), "WsTrustCredentialExchange"),
         new SerializedJavaClassMapping(CustomAssertionHolder.class, "CustomAssertion"),
+        new AssertionMapping(new Regex(), "Regex"),
         new AssertionMapping(new UnknownAssertion(), "UnknownAssertion"),
 
         // Special types

@@ -149,8 +149,48 @@ public class RegexAssertionTest extends TestCase {
         assertEquals(verifiedTokens, tokenCount);
     }
 
-    private static Assertion getPolicy(String matchPattern, String replace) {
 
+    public void testTwoRegexExpressionsInSequence() throws Exception {
+        final String matchToken = "QQQ";
+        ServicesHelper.ServiceDescriptor descriptor =  servicesHelper.publish("stockQuote", TestDocuments.WSDL, getPolicy("QQQ", "ZZZ", "ZZZ", "OOO"));
+        Wsdl wsdl = Wsdl.newInstance(null, new StringReader(descriptor.getWsdlXml()));
+        wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
+
+        SoapMessageGenerator sm = new SoapMessageGenerator(new SoapMessageGenerator.MessageInputGenerator() {
+            public String generate(String messagePartName, String operationName, Definition definition) {
+                ++tokenCount;
+                return matchToken;
+            }
+        });
+
+        int verifiedTokens = 0;
+        Pattern verifier = Pattern.compile("OOO");
+        SoapMessageGenerator.Message[] requests = sm.generateRequests(wsdl);
+        for (int i = 0; i < requests.length; i++) {
+            SoapMessageGenerator.Message request = requests[i];
+            SOAPMessage msg = request.getSOAPMessage();
+
+            servletApi.reset();
+            MockHttpServletRequest mhreq = servletApi.getServletRequest();
+            mhreq.addHeader(SoapUtil.SOAPACTION, request.getSOAPAction());
+            ByteArrayOutputStream bo = new ByteArrayOutputStream();
+            msg.writeTo(bo);
+            mhreq.setContent(bo.toByteArray());
+            MockHttpServletResponse mhres = servletApi.getServletResponse();
+            messageProcessingServlet = new SoapMessageProcessingServlet();
+            messageProcessingServlet.init(servletApi.getServletConfig());
+            messageProcessingServlet.doPost(mhreq, mhres);
+            String result = new String(mhres.getContentAsByteArray(), mhres.getCharacterEncoding());
+            Matcher matcher = verifier.matcher(result);
+            while(matcher.find()) {
+                ++verifiedTokens;
+            }
+        }
+        assertEquals(verifiedTokens, tokenCount);
+    }
+
+
+    private static Assertion getPolicy(String matchPattern, String replace) {
         Regex regex = new Regex();
         regex.setRegex(matchPattern);
         regex.setReplacement(replace);
@@ -162,4 +202,22 @@ public class RegexAssertionTest extends TestCase {
         return policy;
     }
 
+
+    private static Assertion getPolicy(String matchPattern, String replace, String matchPattern2, String replace2) {
+        Regex regex = new Regex();
+        regex.setRegex(matchPattern);
+        regex.setReplacement(replace);
+
+        Regex regex2 = new Regex();
+        regex2.setRegex(matchPattern2);
+        regex2.setReplacement(replace2);
+
+        Assertion policy = new AllAssertion(Arrays.asList(new Assertion[]{
+                    regex,
+                    regex2,
+                    new Echo()
+                  }));
+
+        return policy;
+    }
 }

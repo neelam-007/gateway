@@ -37,7 +37,11 @@ public class ServerRegex implements ServerAssertion {
         auditor = new Auditor(this, springContext, logger);
         String regExExpression = ass.getRegex();
         try {
-            regexPattern = Pattern.compile(regExExpression);
+            int flags = Pattern.DOTALL | Pattern.MULTILINE;
+            if (regexAssertion.isCaseInsensitive()) {
+                flags |= Pattern.CASE_INSENSITIVE;
+            }
+            regexPattern = Pattern.compile(regExExpression, flags);
         } catch (Exception e) {
             compileException = e;
         }
