@@ -14,6 +14,7 @@ public interface GroupManager extends EntityManager {
     void delete( Group group ) throws DeleteException, ObjectNotFoundException;
     void delete( String identifier ) throws DeleteException, ObjectNotFoundException;
     void deleteAll( long ipoid ) throws DeleteException, ObjectNotFoundException;
+    void deleteAllVirtual( long ipoid ) throws DeleteException, ObjectNotFoundException;
     String save( Group group ) throws SaveException;
     void update( Group group ) throws UpdateException, ObjectNotFoundException;
     String save( Group group, Set userHeaders ) throws SaveException;

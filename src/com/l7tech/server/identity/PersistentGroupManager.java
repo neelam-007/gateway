@@ -7,6 +7,7 @@
 package com.l7tech.server.identity;
 
 import com.l7tech.identity.*;
+import com.l7tech.identity.fed.VirtualGroup;
 import com.l7tech.identity.internal.GroupMembership;
 import com.l7tech.objectmodel.*;
 import com.l7tech.objectmodel.ObjectNotFoundException;
@@ -188,6 +189,30 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
     public void deleteAll(long ipoid) throws DeleteException, ObjectNotFoundException {
         StringBuffer hql = new StringBuffer("FROM ");
         hql.append(getTableName()).append(" IN CLASS ").append(getImpClass());
+        hql.append(" WHERE provider_oid = ?");
+
+        try {
+            getContext().getSession().delete(hql.toString(), new Long(ipoid), Hibernate.LONG);
+        } catch ( SQLException e ) {
+            logger.log( Level.SEVERE, e.getMessage(), e );
+            throw new DeleteException(e.getMessage(), e);
+        } catch ( HibernateException e ) {
+            logger.log( Level.SEVERE, e.getMessage(), e );
+            throw new DeleteException(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Delete all virutal groups of the identity provider given the identity provider Id
+     *
+     * Must be called in a transaction!
+     * @param ipoid  The identity provider id
+     * @throws DeleteException
+     * @throws ObjectNotFoundException
+     */
+    public void deleteAllVirtual(long ipoid) throws DeleteException, ObjectNotFoundException {
+        StringBuffer hql = new StringBuffer("FROM ");
+        hql.append(getTableName()).append(" IN CLASS ").append(VirtualGroup.class.getName());
         hql.append(" WHERE provider_oid = ?");
 
         try {

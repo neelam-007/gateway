@@ -102,6 +102,13 @@ public class LdapGroupManager implements GroupManager {
     /**
      * throws an UnsupportedOperationException
      */
+    public void deleteAllVirtual(long ipoid) throws DeleteException, ObjectNotFoundException {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * throws an UnsupportedOperationException
+     */
     public void delete(String identifier) throws DeleteException, ObjectNotFoundException {
         throw new UnsupportedOperationException();
     }

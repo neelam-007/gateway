@@ -164,12 +164,18 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
      * Delete all virtual groups of the identity provider given the identity provider Id
      *
      * Must be called in a transaction!
-     * @param cfgid  The identity provider id
+     * @param ipoid  The identity provider id
      * @throws RemoteException
      * @throws DeleteException
      */
-    private void deleteAllVirtualGroups(long cfgid) throws RemoteException, DeleteException {
-        //todo:
+    private void deleteAllVirtualGroups(long ipoid) throws RemoteException, DeleteException {
+        try {
+            GroupManager groupManager = retrieveGroupManager(ipoid);
+            if (groupManager == null) throw new RemoteException("Cannot retrieve the GroupManager");
+            groupManager.deleteAllVirtual(ipoid);
+        } catch (ObjectNotFoundException e) {
+            throw new DeleteException("This object cannot be found (it no longer exist?).", e);
+        }
     }
 
 
@@ -183,7 +189,7 @@ public class IdentityAdminImpl extends RemoteService implements IdentityAdmin {
             if(ipc.type() == IdentityProviderType.FEDERATED) {
                 deleteAllUsers(oid);
                 deleteAllGroups(oid);
-                //deleteAllVirtualGroups(oid);
+                deleteAllVirtualGroups(oid);
             }
 
             manager.delete(ipc);
