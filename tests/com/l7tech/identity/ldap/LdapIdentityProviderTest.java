@@ -4,10 +4,13 @@ import com.l7tech.identity.GroupManager;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
-import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.server.identity.ldap.LdapConfigTemplateManager;
 import com.l7tech.server.identity.ldap.LdapIdentityProvider;
+import com.l7tech.server.identity.ldap.LdapUserManager;
+import com.l7tech.server.identity.ldap.LdapGroupManager;
+import com.l7tech.server.identity.cert.ClientCertManagerImp;
+import com.l7tech.server.ServerConfig;
 import com.l7tech.common.ApplicationContexts;
 import junit.framework.TestCase;
 
@@ -103,8 +106,16 @@ public class LdapIdentityProviderTest extends TestCase {
         return spock;
     }
 
-    private LdapIdentityProvider getSpockProvider() throws IOException {
+    private LdapIdentityProvider getSpockProvider() throws Exception {
         LdapIdentityProvider spock =  new LdapIdentityProvider(getConfigForSpock());
+        LdapUserManager usman = new LdapUserManager(spock);
+        spock.setUserManager(usman);
+        LdapGroupManager grpman = new LdapGroupManager(spock);
+        spock.setGroupManager(grpman);
+        spock.setClientCertManager(new ClientCertManagerImp());
+        spock.setServerConfig(ServerConfig.getInstance());
+
+        spock.afterPropertiesSet();
         return spock;
     }
 
@@ -196,14 +207,13 @@ public class LdapIdentityProviderTest extends TestCase {
         //me.localProvider.test();
         //me.testGetUsers();
         //me.testGetGroupsAndMembers();
-        LoginCredentials creds = new LoginCredentials("flascelles", "rockclimbing".toCharArray(), WssBasic.class);
-        for (int i = 0; i < 3; i++) {
-            me.localProvider.authenticate(creds);
-            me.localProvider.authenticate(creds);
-            // wait one minute
-            Thread.sleep(10001);
-        }
+        LoginCredentials creds = new LoginCredentials("flascelles", "".toCharArray(), null);
+        User authenticated = me.localProvider.authenticate(creds);
+        System.out.println("USER " + authenticated);
+
+
     }
+
     private ApplicationContext applicationContext = ApplicationContexts.getTestApplicationContext();
     private LdapIdentityProvider localProvider;
 }
