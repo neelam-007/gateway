@@ -1,5 +1,7 @@
 package com.l7tech.logging;
 
+import com.l7tech.common.RequestId;
+
 import java.util.StringTokenizer;
 import java.util.Calendar;
 import java.text.SimpleDateFormat;
@@ -20,6 +22,7 @@ public class LogMessage {
     private String msgMethod = null;
     private String msgDetails = null;
     private String nodeName = "";
+    private String reqId = "";
     SimpleDateFormat sdf = new SimpleDateFormat( "yyyyMMdd HH:mm:ss.SSS" );
 
     public LogMessage(SSGLogRecord log) {
@@ -31,6 +34,10 @@ public class LogMessage {
         msgClass = log.getSourceClassName().toString();
         msgMethod = log.getSourceMethodName().toString();
         msgDetails = log.getMessage();
+
+        if(log.getReqId() != null) {
+             reqId = log.getReqId().toString();
+        }
     }
 
     public LogMessage(String log){
@@ -85,16 +92,20 @@ public class LogMessage {
         return severity;
     }
 
-    public String getMessageClass() {
+    public String getMsgClass() {
         return msgClass;
     }
 
-    public String getMessageMethod() {
+    public String getMsgMethod() {
         return msgMethod;
     }
 
-    public String getMessageDetails(){
+    public String getMsgDetails(){
         return msgDetails;
+    }
+
+    public String getReqId() {
+        return reqId;
     }
 
     public String getNodeName() {
@@ -110,9 +121,9 @@ public class LogMessage {
         System.out.println("msgNumber : " + logRec.getMsgNumber());
         System.out.println("time: " + logRec.getTime());
         System.out.println("severity: " + logRec.getSeverity());
-        System.out.println("msgClass: " + logRec.getMessageClass());
-        System.out.println("msgMethod: " + logRec.getMessageMethod());
-        System.out.println("msgDetails: " + logRec.getMessageDetails());
+        System.out.println("msgClass: " + logRec.getMsgClass());
+        System.out.println("msgMethod: " + logRec.getMsgMethod());
+        System.out.println("msgDetails: " + logRec.getMsgDetails());
 
     }
 }

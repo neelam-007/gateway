@@ -158,11 +158,13 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
             case LogPanel.LOG_SEVERITY_COLUMN_INDEX:
                 return msg.getSeverity();
             case LogPanel.LOG_MSG_DETAILS_COLUMN_INDEX:
-                return msg.getMessageDetails();
+                return msg.getMsgDetails();
             case LogPanel.LOG_JAVA_CLASS_COLUMN_INDEX:
-                return msg.getMessageClass();
+                return msg.getMsgClass();
             case LogPanel.LOG_JAVA_METHOD_COLUMN_INDEX:
-                return msg.getMessageMethod();
+                return msg.getMsgMethod();
+            case LogPanel.LOG_REQUEST_ID_COLUMN_INDEX:
+                return msg.getReqId();
             default:
                 throw new IllegalArgumentException("Bad Column");
         }
@@ -203,18 +205,21 @@ public class FilteredLogTableSorter extends FilteredLogTableModel {
                     elementB = logMsgB.getSeverity();
                     break;
                 case LogPanel.LOG_MSG_DETAILS_COLUMN_INDEX:
-                    elementA = logMsgA.getMessageDetails();
-                    elementB = logMsgB.getMessageDetails();
+                    elementA = logMsgA.getMsgDetails();
+                    elementB = logMsgB.getMsgDetails();
                     break;
                 case LogPanel.LOG_JAVA_CLASS_COLUMN_INDEX:
-                    elementA = logMsgA.getMessageClass();
-                    elementB = logMsgB.getMessageClass();
+                    elementA = logMsgA.getMsgClass();
+                    elementB = logMsgB.getMsgClass();
                     break;
                 case LogPanel.LOG_JAVA_METHOD_COLUMN_INDEX:
-                    elementA = logMsgA.getMessageMethod();
-                    elementB = logMsgB.getMessageMethod();
+                    elementA = logMsgA.getMsgMethod();
+                    elementB = logMsgB.getMsgMethod();
                     break;
-                default:
+                case LogPanel.LOG_REQUEST_ID_COLUMN_INDEX:
+                    elementA = logMsgA.getReqId();
+                    elementB = logMsgB.getReqId();
+                    break;default:
                     logger.warning("Bad Statistics Table Column: " + column);
                     break;
             }
