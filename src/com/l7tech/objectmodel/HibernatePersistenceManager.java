@@ -46,7 +46,6 @@ public class HibernatePersistenceManager extends PersistenceManager {
         FileInputStream fis = null;
         try {
             Configuration cfg = new Configuration();
-            cfg.addResource(DEFAULT_HIBERNATE_RESOURCEPATH, getClass().getClassLoader());
 
             if (properties != null) {
                 logger.info("Loading database configuration from presupplied properties");
@@ -64,6 +63,7 @@ public class HibernatePersistenceManager extends PersistenceManager {
                     logger.info("Loading database configuration from system classpath");
                 }
             }
+            cfg.addResource(DEFAULT_HIBERNATE_RESOURCEPATH, getClass().getClassLoader());
             _sessionFactory = cfg.buildSessionFactory();
 
             String temp = cfg.getProperty("hibernate.dbcp.validationQuery");
