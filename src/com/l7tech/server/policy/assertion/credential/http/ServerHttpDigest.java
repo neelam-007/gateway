@@ -53,14 +53,6 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
      */
     protected String realm( Request request ) {
         return HttpDigest.REALM;
-        /*
-        String realm = _data.getRealm();
-        if ( realm == null || realm.length() == 0 ) {
-            realm = request.getParameter( Request.PARAM_SERVER_NAME ) + ":"
-                + request.getParameter( Request.PARAM_SERVER_PORT );
-        }
-        return realm;
-        */
     }
 
     protected AssertionStatus doCheckCredentials(Request request, Response response) {
@@ -86,10 +78,10 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
         DigestSessions sessions = DigestSessions.getInstance();
 
         if ( sessions.use( nonce ) ) {
-            logger.fine( "Nonce " + nonce + " still valid" );
+            logger.fine( "Nonce " + nonce + " for user " + userName + " still valid" );
             return AssertionStatus.NONE;
         } else {
-            logger.info( "Nonce " + nonce + " expired" );
+            logger.info( "Nonce " + nonce + " for user " + userName + " expired" );
             sessions.invalidate( nonce );
             return AssertionStatus.AUTH_FAILED;
         }
@@ -141,13 +133,16 @@ public class ServerHttpDigest extends ServerHttpCredentialSource implements Serv
         if ( nonce == null || nonce.length() == 0 ) {
             // New session
             String newNonce = sessions.generate( request, _data.getNonceTimeout(), _data.getMaxNonceCount() );
+            logger.fine( "Generated new nonce " + newNonce );
             return myChallengeParams( newNonce );
         } else {
             // Existing digest session
             if ( !sessions.use( nonce ) ) {
                 // Nonce has been invalidated or is expired
+                logger.info( "Nonce " + nonce + " is invalid or expired" );
                 sessions.invalidate( nonce );
                 nonce = sessions.generate( request, _data.getNonceTimeout(), _data.getMaxNonceCount() );
+                logger.fine( "Generated new nonce " + nonce );
             }
             return myChallengeParams( nonce );
         }
