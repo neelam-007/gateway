@@ -13,7 +13,6 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.security.xml.processor.ProcessorException;
 import com.l7tech.common.security.xml.processor.BadSecurityContextException;
 import com.l7tech.server.message.PolicyEnforcementContext;
-import org.w3c.dom.Document;
 
 import java.security.GeneralSecurityException;
 
@@ -34,28 +33,18 @@ public interface TokenService {
      * @return AssertionStatus.NONE if all is good, other return values indicate an error in which case
      * context.getFaultDetail() is to contain an error to return to the requestor
      */
-    AssertionStatus respondToSecurityTokenRequest(PolicyEnforcementContext context) throws InvalidDocumentFormatException,
-                                                                                TokenServiceImpl.TokenServiceException,
-                                                                                ProcessorException,
-                                                                                BadSecurityContextException,
-                                                                                GeneralSecurityException,
-                                                                                AuthenticationException;
-
-    /**
-     * Handles the request for a security token (either secure conversation context or saml thing).
-     * @deprecated should use method that uses PolicyEnforcementContext (once it's fully implemented)
-     * @param request the request for the secure conversation context
-     * @param authenticator resolved credentials such as an X509Certificate to an actual user to associate the context with
-     * @return
-     */
-    Document respondToRequestSecurityToken(Document request, CredentialsAuthenticator authenticator, String clientAddress)
-      throws InvalidDocumentFormatException, TokenServiceImpl.TokenServiceException,
-      ProcessorException, GeneralSecurityException,
-      AuthenticationException, BadSecurityContextException;
+    AssertionStatus respondToSecurityTokenRequest(PolicyEnforcementContext context,
+                                                  CredentialsAuthenticator authenticator)
+                                                  throws InvalidDocumentFormatException,
+                                                         TokenServiceImpl.TokenServiceException,
+                                                         ProcessorException,
+                                                         BadSecurityContextException,
+                                                         GeneralSecurityException,
+                                                         AuthenticationException;
 
     /**
      * <code>CredentialsAuthenticator</code> are passed to the
-     * {@link TokenService#respondToRequestSecurityToken(org.w3c.dom.Document, com.l7tech.server.TokenService.CredentialsAuthenticator, String)
+     * TokenService#respondToRequestSecurityToken()
      * as authentication strategies.
      */
     public interface CredentialsAuthenticator {

@@ -88,12 +88,14 @@ public class TokenServiceImpl implements TokenService {
      * @return AssertionStatus.NONE if all is good, other return values indicate an error in which case
      * context.getFaultDetail() is to contain an error to return to the requestor.
      */
-    public AssertionStatus respondToSecurityTokenRequest(PolicyEnforcementContext context) throws InvalidDocumentFormatException,
-                                                                                TokenServiceImpl.TokenServiceException,
-                                                                                ProcessorException, 
-                                                                                BadSecurityContextException,
-                                                                                GeneralSecurityException,
-                                                                                AuthenticationException {
+    public AssertionStatus respondToSecurityTokenRequest(PolicyEnforcementContext context,
+                                                         CredentialsAuthenticator authenticator)
+                                                         throws InvalidDocumentFormatException,
+                                                                TokenServiceImpl.TokenServiceException,
+                                                                ProcessorException,
+                                                                BadSecurityContextException,
+                                                                GeneralSecurityException,
+                                                                AuthenticationException {
         try {
             WssProcessor trogdor = new WssProcessorImpl();
             final XmlKnob reqXml = context.getRequest().getXmlKnob();
@@ -124,9 +126,11 @@ public class TokenServiceImpl implements TokenService {
             throw new ProcessorException(e);
         }
 
-        User authenticatedUser = null;
-        if (context.isAuthenticated()) {
-                authenticatedUser = context.getAuthenticatedUser();
+        // at this point, we should have credentials
+        User authenticatedUser = authenticator.authenticate(context.getCredentials());
+        if (authenticatedUser != null) {
+            context.setAuthenticated(true);
+            context.setAuthenticatedUser(authenticatedUser);
         }
 
         if (authenticatedUser == null) {
@@ -145,22 +149,18 @@ public class TokenServiceImpl implements TokenService {
             return status;
         }
 
-
+        Document response = null;
         if (isRequestForSecureConversationContext(context)) {
-            //response = handleSecureConversationContextRequest(authenticatedUser, clientCert);
+            response = handleSecureConversationContextRequest(context, authenticatedUser);
         } else if (isRequestForSAMLToken(context)) {
-            //response = handleSamlRequest(creds, clientAddress);
+            response = handleSamlRequest(context);
         } else {
             throw new InvalidDocumentFormatException("This request cannot be recognized as a valid " +
                                                      "RequestSecurityToken");
         }
-
-
-        // todo
-        // handle request
-
-        throw new UnsupportedOperationException("TODO!");
-
+        // put response document back into context
+        context.getResponse().initialize(response);
+        return AssertionStatus.NONE;
     }
 
     /**
@@ -211,7 +211,6 @@ public class TokenServiceImpl implements TokenService {
             base.addChild(root);
 
             logger.fine("TokenService enforcing policy: " + base.toString());
-            ServerPolicyFactory policyFactory = new ServerPolicyFactory();
             tokenServicePolicy = policyFactory.makeServerPolicy(base);
         }
         return tokenServicePolicy;
@@ -220,76 +219,20 @@ public class TokenServiceImpl implements TokenService {
     /**
      * specify the server key and cert at construction time instead of letting the object try to retreive them
      */
-    public TokenServiceImpl(PrivateKey privateServerKey, X509Certificate serverCert) {
+    public TokenServiceImpl(PrivateKey privateServerKey, X509Certificate serverCert, ServerPolicyFactory policyFactory) {
         if (privateServerKey == null || serverCert == null) {
             throw new IllegalArgumentException("Server key and server cert must be provided to create a TokenService");
         }
         this.privateServerKey = privateServerKey;
         this.serverCert = serverCert;
+        this.policyFactory = policyFactory;
     }
 
-    /**
-     * Handles the request for a security token (either secure conversation context or saml thing).
-     * @deprecated should use method that uses PolicyEnforcementContext (once it's fully implemented)
-     * @param request the request for the secure conversation context
-     * @param authenticator resolved credentials such as an X509Certificate to an actual user to associate the context with
-     * @return
-     */
-    public Document respondToRequestSecurityToken(Document request, CredentialsAuthenticator authenticator, String clientAddress)
-                                                    throws InvalidDocumentFormatException, TokenServiceException,
-                                                           ProcessorException, GeneralSecurityException,
-                                                           AuthenticationException, BadSecurityContextException {
-        // Pass request to the trogdorminator!
-        WssProcessor trogdor = new WssProcessorImpl();
-        X509Certificate serverSSLcert = getServerCert();
-        PrivateKey sslPrivateKey = getServerKey();
+    private Document handleSamlRequest(PolicyEnforcementContext context) throws TokenServiceException,
+                                                                                GeneralSecurityException {
+        String clientAddress = context.getHttpServletRequest().getRemoteAddr();
+        LoginCredentials creds = context.getCredentials();
 
-        // Authenticate the request, check who signed it
-        ProcessorResult wssOutput = trogdor.undecorateMessage(request,
-                                                                           serverSSLcert,
-                                                                           sslPrivateKey,
-                                                                           SecureConversationContextManager.getInstance());
-        SecurityToken[] tokens = wssOutput.getSecurityTokens();
-        X509Certificate clientCert = null;
-        for (int i = 0; i < tokens.length; i++) {
-            SecurityToken token = tokens[i];
-            if (token instanceof X509SecurityToken) {
-                X509SecurityToken x509token = (X509SecurityToken)token;
-                if (x509token.isPossessionProved()) {
-                    if (clientCert != null) {
-                        String msg = "Request included more than one X509 security token whose key ownership " +
-                                     "was proven";
-                        logger.log(Level.WARNING,  msg);
-                        throw new TokenServiceException(msg);
-                    }
-                    clientCert = x509token.asX509Certificate();
-                }
-            }
-        }
-
-        final LoginCredentials creds = LoginCredentials.makeCertificateCredentials(clientCert,RequestWssX509Cert.class);
-        User authenticatedUser = authenticator.authenticate(creds);
-        if (authenticatedUser == null) {
-            logger.info("Throwing AuthenticationException because credentials cannot be authenticated.");
-            throw new AuthenticationException("Cert found, but cannot associate to a user.");
-            
-        }
-        // Actually handle the request
-        Document response = null;
-        if (isValidRequestForSecureConversationContext(wssOutput.getUndecoratedMessage(), wssOutput)) {
-            response = handleSecureConversationContextRequest(authenticatedUser, clientCert);
-        } else if (isValidRequestForSAMLToken(wssOutput.getUndecoratedMessage(), wssOutput)) {
-            response = handleSamlRequest(creds, clientAddress);
-        } else {
-            throw new InvalidDocumentFormatException("This request cannot be recognized as a valid " +
-                                                     "RequestSecurityToken");
-        }
-        return response;
-    }
-
-    private Document handleSamlRequest(LoginCredentials creds, String clientAddress)
-        throws TokenServiceException, GeneralSecurityException
-    {
         StringBuffer responseXml = new StringBuffer(WST_RST_RESPONSE_PREFIX);
         try {
             SamlAssertionGenerator.Options options = new SamlAssertionGenerator.Options();
@@ -312,7 +255,7 @@ public class TokenServiceImpl implements TokenService {
         }
     }
 
-    private Document handleSecureConversationContextRequest(User requestor, X509Certificate requestorCert)
+    private Document handleSecureConversationContextRequest(PolicyEnforcementContext context, User requestor)
                                                                 throws TokenServiceException, GeneralSecurityException {
         SecureConversationSession newSession = null;
         try {
@@ -324,28 +267,63 @@ public class TokenServiceImpl implements TokenService {
         Document response = null;
         Calendar exp = Calendar.getInstance();
         exp.setTimeInMillis(newSession.getExpiration());
-        String encryptedKeyRawXML = produceEncryptedKeyXml(newSession.getSharedSecret(), requestorCert);
+
+
+        ProcessorResult wssOutput = null;
         try {
-            String xmlStr = WST_RST_RESPONSE_PREFIX +
-                                      "<wsc:SecurityContextToken>" +
-                                        "<wsc:Identifier>" + newSession.getIdentifier() + "</wsc:Identifier>" +
-                                      "</wsc:SecurityContextToken>" +
-                            WST_RST_RESPONSE_INFIX +
-                                    "<wst:RequestedProofToken>" +
-                                      encryptedKeyRawXML +
-                                    "</wst:RequestedProofToken>" +
-                                    "<wst:Lifetime>" +
-                                      "<wsu:Expires>" + ISO8601Date.format(exp.getTime()) + "</wsu:Expires>" +
-                                    "</wst:Lifetime>" +
-                                  WST_RST_RESPONSE_SUFFIX;
-            response = XmlUtil.stringToDocument(xmlStr);
-        } catch (IOException e) {
-            throw new TokenServiceException(e);
+            wssOutput = context.getRequest().getXmlKnob().getProcessorResult();
         } catch (SAXException e) {
-            throw new TokenServiceException(e);
+            throw new TokenServiceException(e); // should no happen at this point
         }
 
-        return prepareSignedResponse( response );
+        SecurityToken[] tokens = wssOutput.getSecurityTokens();
+        X509Certificate clientCert = null;
+        for (int i = 0; i < tokens.length; i++) {
+            SecurityToken token = tokens[i];
+            if (token instanceof X509SecurityToken) {
+                X509SecurityToken x509token = (X509SecurityToken)token;
+                if (x509token.isPossessionProved()) {
+                    if (clientCert != null) {
+                        String msg = "Request included more than one X509 security token whose key ownership " +
+                                     "was proven";
+                        logger.log(Level.WARNING,  msg);
+                        throw new TokenServiceException(msg);
+                    }
+                    clientCert = x509token.asX509Certificate();
+                }
+            }
+        }
+        // different response formats based on whether the request should be encrypted against a requesting cert
+        // or whether the response's secret should be in clear and encrypted at transport level.
+        if (clientCert != null) {
+            String encryptedKeyRawXML = produceEncryptedKeyXml(newSession.getSharedSecret(), clientCert);
+            try {
+                String xmlStr = WST_RST_RESPONSE_PREFIX +
+                                          "<wsc:SecurityContextToken>" +
+                                            "<wsc:Identifier>" + newSession.getIdentifier() + "</wsc:Identifier>" +
+                                          "</wsc:SecurityContextToken>" +
+                                WST_RST_RESPONSE_INFIX +
+                                        "<wst:RequestedProofToken>" +
+                                          encryptedKeyRawXML +
+                                        "</wst:RequestedProofToken>" +
+                                        "<wst:Lifetime>" +
+                                          "<wsu:Expires>" + ISO8601Date.format(exp.getTime()) + "</wsu:Expires>" +
+                                        "</wst:Lifetime>" +
+                                      WST_RST_RESPONSE_SUFFIX;
+                response = XmlUtil.stringToDocument(xmlStr);
+            } catch (IOException e) {
+                throw new TokenServiceException(e);
+            } catch (SAXException e) {
+                throw new TokenServiceException(e);
+            }
+
+            return prepareSignedResponse( response );
+        } else {
+            // todo (remove severe message and implement)
+            logger.severe("Not implemented yet. Todo, add support for BinarySecret responses.");
+            throw new UnsupportedOperationException("BinarySecret responses not yet supported.");
+
+        }
     }
 
     private Document prepareSignedResponse( Document response ) throws TokenServiceException {
@@ -472,55 +450,7 @@ public class TokenServiceImpl implements TokenService {
         return true;
     }
 
-    // todo, delete this when redesign is complete
-    private boolean isValidRequestForSecureConversationContext(Document request,
-                                                               ProcessorResult wssOutput)
-                                                                        throws InvalidDocumentFormatException {
-        Element body = SoapUtil.getBodyElement(request);
-        // body must include wst:RequestSecurityToken element
-        Element maybeRSTEl = XmlUtil.findFirstChildElement(body);
-        if (!maybeRSTEl.getLocalName().equals(RST_ELNAME)) {
-            logger.fine("Body's child does not seem to be a RST (" + maybeRSTEl.getLocalName() + ")");
-            return false;
-        }
-        if (!maybeRSTEl.getNamespaceURI().equals(SoapUtil.WST_NAMESPACE)) {
-            logger.fine("Trust namespace not recognized (" + maybeRSTEl.getNamespaceURI() + ")");
-            return false;
-        }
-        // validate <wst:TokenType>http://schemas.xmlsoap.org/ws/2004/04/sct</wst:TokenType>
-        Element tokenTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE, TOKTYPE_ELNAME);
-        if (tokenTypeEl == null) {
-            logger.warning("Token type not specified. This is not supported.");
-            return false;
-        }
-        String value = XmlUtil.getTextValue(tokenTypeEl);
-        if (!value.equals("http://schemas.xmlsoap.org/ws/2004/04/security/sc/sct")) {
-            return false;
-        }
-        // validate <wst:RequestType>http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue</wst:RequestType>
-        Element reqTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE, REQTYPE_ELNAME);
-        if (reqTypeEl == null) {
-            logger.warning("Request type not specified. This is not supported.");
-            return false;
-        }
-        value = XmlUtil.getTextValue(reqTypeEl);
-        if (!value.equals("http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue")) {
-            logger.warning("RequestType not supported." + value);
-            return false;
-        }
-        // make sure body was signed
-        SignedElement[] signedElements = wssOutput.getElementsThatWereSigned();
-        for (int i = 0; i < signedElements.length; i++) {
-            SignedElement signedElement = signedElements[i];
-            if (signedElement.asElement() == body) {
-                return true;
-            }
-        }
-        logger.warning("Seems like the body was not signed.");
-        return false;
-    }
-
-    /**
+     /**
      * checks if this request is for a saml assertion
      * does not check things like whether the body is signed since this is the
      * responsibility of the policy
@@ -587,68 +517,6 @@ public class TokenServiceImpl implements TokenService {
         return false;
     }
 
-    // todo, delete this when redesign is complete
-    private boolean isValidRequestForSAMLToken(Document request, ProcessorResult wssOutput) throws InvalidDocumentFormatException {
-        Element body = SoapUtil.getBodyElement(request);
-        Element maybeRSTEl = XmlUtil.findFirstChildElement(body);
-
-        // body must include wst:RequestSecurityToken element
-        if (!maybeRSTEl.getLocalName().equals(RST_ELNAME)) {
-            logger.fine("Body's child does not seem to be a RST (" + maybeRSTEl.getLocalName() + ")");
-            return false;
-        }
-        if (!maybeRSTEl.getNamespaceURI().equals(SoapUtil.WST_NAMESPACE)) {
-            logger.fine("Trust namespace not recognized (" + maybeRSTEl.getNamespaceURI() + ")");
-            return false;
-        }
-        Element tokenTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE, TOKTYPE_ELNAME);
-        if (tokenTypeEl == null) {
-            logger.warning("Token type not specified. This is not supported.");
-            return false;
-        }
-
-        // validate <wst:RequestType>http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue</wst:RequestType>
-        Element reqTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE, REQTYPE_ELNAME);
-        if (reqTypeEl == null) {
-            logger.warning("Request type not specified. This is not supported.");
-            return false;
-        }
-        String value = XmlUtil.getTextValue(reqTypeEl);
-        if (!value.equals("http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue")) {
-            logger.warning("RequestType '" + value + "' not supported.");
-            return false;
-        }
-        // make sure body was signed
-        boolean signed = false;
-        SignedElement[] signedElements = wssOutput.getElementsThatWereSigned();
-        for (int i = 0; i < signedElements.length; i++) {
-            SignedElement signedElement = signedElements[i];
-            if (signedElement.asElement() == body) {
-                signed = true;
-            }
-        }
-        if (!signed) {
-            logger.warning("Seems like the body was not signed.");
-            return false;
-        }
-
-        // validate <wst:TokenType>saml:Assertion</wst:TokenType>
-        String qname = XmlUtil.getTextValue(tokenTypeEl);
-        Map namespaces = XmlUtil.getAncestorNamespaces(tokenTypeEl);
-        String samlPrefix = (String)namespaces.get(SamlConstants.NS_SAML);
-        int cpos = qname.indexOf(":");
-        if (cpos > 0) {
-            String qprefix = qname.substring(0,cpos);
-            String qlpart = qname.substring(cpos+1);
-            if (qprefix.equals(samlPrefix) && SamlConstants.ELEMENT_ASSERTION.equals(qlpart)) {
-                return true;
-            }
-        }
-
-        logger.warning("TokenType '" + qname + "' is not a valid saml:Assertion QName");
-        return false;
-    }
-
     private synchronized PrivateKey getServerKey() {
         return privateServerKey;
     }
@@ -660,6 +528,7 @@ public class TokenServiceImpl implements TokenService {
     private PrivateKey privateServerKey = null;
     private X509Certificate serverCert = null;
     private ServerAssertion tokenServicePolicy = null;
+    private ServerPolicyFactory policyFactory = null;
 
     private final Logger logger = Logger.getLogger(getClass().getName());
     private final static String RST_ELNAME = "RequestSecurityToken";
