@@ -85,9 +85,9 @@ public class SecurityContextTokenHandler {
         if (listSecurityElements.getLength() < 1) {
             // element does not exist
             Element securityEl = SoapUtil.getOrMakeSecurityElement(soapMsg);
-            Element securityContxTokEl = soapMsg.createElementNS(WSC_NAMESPACE, SCTOKEN_ELNAME);
-            // use same prefix as parent
-            securityContxTokEl.setPrefix("wsc");
+            Element securityContxTokEl = soapMsg.createElementNS(WSC_NAMESPACE, SCTOKEN_ELNAME);            
+            securityContxTokEl.setAttribute("xmlns:" + DEF_WSC_NAMESPACE_PREFIX, WSC_NAMESPACE);
+            securityContxTokEl.setPrefix(DEF_WSC_NAMESPACE_PREFIX);
             securityEl.insertBefore(securityContxTokEl, null);
             return securityContxTokEl;
         } else {
@@ -101,4 +101,5 @@ public class SecurityContextTokenHandler {
     public static final String WSC_NAMESPACE = "http://schemas.xmlsoap.org/ws/2004/04/sc";
     public static final String SCTOKEN_ELNAME = "SecurityContextToken";
     public static final String SCTOKEN_ID_ELNAME = "Identifier";
+    public static final String DEF_WSC_NAMESPACE_PREFIX = "wsc";
 }
