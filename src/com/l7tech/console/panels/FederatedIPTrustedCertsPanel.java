@@ -9,8 +9,11 @@ import com.l7tech.console.util.TopComponents;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
 import com.l7tech.common.security.TrustedCert;
+import com.l7tech.common.security.TrustedCertAdmin;
+import com.l7tech.common.util.Locator;
 import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.EntityType;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
@@ -23,6 +26,7 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.rmi.RemoteException;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -70,25 +74,54 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
 
         FederatedIdentityProviderConfig iProviderConfig = (FederatedIdentityProviderConfig) settings;
 
-        Set trustedCerts = iProviderConfig.getTrustedCerts();
+        long[] oids = iProviderConfig.getTrustedCertOids();
+        Vector certs = new Vector();
+        TrustedCert cert = null;
 
-        if (trustedCerts != null) {
+        for (int i = 0; i < oids.length; i++) {
 
-            Vector certs = new Vector();
+            try {
+                cert = getTrustedCertAdmin().findCertByPrimaryKey(oids[i]);
 
-            for (Iterator iterator = trustedCerts.iterator(); iterator.hasNext();) {
-                Object o = (Object) iterator.next();
-                if (!(o instanceof TrustedCert)) {
-                    throw new IllegalArgumentException("The cert must be TrustedCert object");
+                if (cert != null) {
+                    certs.add(cert);
                 }
-                certs.add(o);
 
+            } catch (RemoteException re) {
+                JOptionPane.showMessageDialog(this, resources.getString("cert.remote.exception"),
+                        resources.getString("load.error.title"),
+                        JOptionPane.ERROR_MESSAGE);
+            } catch (FindException e) {
+                JOptionPane.showMessageDialog(this, resources.getString("cert.find.error"),
+                        resources.getString("load.error.title"),
+                        JOptionPane.ERROR_MESSAGE);
             }
+        }
 
+        if (certs.size() > 0) {
             trustedCertTable.getTableSorter().setData(certs);
+            trustedCertTable.getTableSorter().getRealModel().setRowCount(certs.size());
+            trustedCertTable.getTableSorter().fireTableDataChanged();
         }
     }
 
+
+    /**
+     * Retrieve the object reference of the Trusted Cert Admin service
+     *
+     * @return TrustedCertAdmin  - The object reference.
+     * @throws RuntimeException if the object reference of the Trusted Cert Admin service is not found.
+     */
+    private TrustedCertAdmin getTrustedCertAdmin() throws RuntimeException {
+        TrustedCertAdmin tca =
+                (TrustedCertAdmin) Locator.
+                getDefault().lookup(TrustedCertAdmin.class);
+        if (tca == null) {
+            throw new RuntimeException("Could not find registered " + TrustedCertAdmin.class);
+        }
+
+        return tca;
+    }
 
     /**
      * Store the values of all fields on the panel to the wizard object which is a used for
@@ -104,14 +137,14 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
         FederatedIdentityProviderConfig iProviderConfig = (FederatedIdentityProviderConfig) settings;
 
         Vector data = trustedCertTable.getTableSorter().getAllData();
-        HashSet trustedCerts = new HashSet();
+        long[] oids = new long[data.size()];
 
         for (int i = 0; i < data.size(); i++) {
-            Object o = (Object) data.elementAt(i);
-            trustedCerts.add(o);
+            TrustedCert tc = (TrustedCert) data.elementAt(i);
+            oids[i] = tc.getOid();
         }
 
-        iProviderConfig.setTrustedCerts(trustedCerts);
+        iProviderConfig.setTrustedCertOids(oids);
 
     }
 
