@@ -1,12 +1,13 @@
 package com.l7tech.common.security.xml;
 
 /**
- * User: flascell
- * Date: Aug 20, 2003
- * Time: 10:33:00 AM
- * $Id$
+ * Expresses the fact that no digital signature were found.
  *
- * Express the fact that no digital signature were found.
+ * <br/><br/>
+ * Layer 7 technologies, inc.<br/>
+ * User: flascell<br/>
+ * Date: Aug 20, 2003<br/>
+ * $Id$
  */
 public class SignatureNotFoundException extends Exception {
     public SignatureNotFoundException(String msg) {

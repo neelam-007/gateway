@@ -1,14 +1,14 @@
 package com.l7tech.common.security.xml;
 
 /**
- * LAYER 7 TECHNOLOGIES, INC
- *
- * User: flascell
- * Date: Aug 28, 2003
- * Time: 3:21:13 PM
+ * Indicates that an expected XML Element was not present.
+ * 
+ * <br/><br/>
+ * Layer 7 technologies, inc.<br/>
+ * User: flascell<br/>
+ * Date: Aug 28, 2003<br/>
  * $Id$
  *
- * Indicates that an expected XML Element was not present.
  */
 public class XMLSecurityElementNotFoundException extends Exception {
     public XMLSecurityElementNotFoundException() {

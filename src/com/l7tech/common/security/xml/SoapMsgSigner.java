@@ -12,13 +12,15 @@ import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.RSAPrivateKey;
 
 /**
- * User: flascell
- * Date: Aug 19, 2003
- * Time: 2:44:50 PM
- * $Id$
- * <p/>
  * Signs soap messages.
+ *
  * Meant to be used by both server-side and proxy-side dsig assertions
+ *  
+ * <br/><br/>
+ * Layer 7 technologies, inc.<br/>
+ * User: flascell<br/>
+ * Date: Aug 19, 2003<br/>
+ * $Id$
  */
 public class SoapMsgSigner {
 

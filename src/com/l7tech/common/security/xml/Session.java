@@ -2,11 +2,13 @@ package com.l7tech.common.security.xml;
 
 
 /**
- * User: flascell
- * Date: Aug 25, 2003
- * Time: 3:43:45 PM
- *
  * XML-ENC session
+ *
+ * <br/><br/>
+ * Layer 7 technologies, inc.<br/>
+ * User: flascell<br/>
+ * Date: Aug 25, 2003<br/>
+ *
  */
 public class Session {
 

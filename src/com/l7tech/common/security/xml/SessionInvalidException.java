@@ -1,11 +1,12 @@
 package com.l7tech.common.security.xml;
 
 /**
- * User: flascell
- * Date: Aug 25, 2003
- * Time: 5:24:48 PM
- *
  * A session is invalid because it has expired.
+ *
+ * <br/><br/>
+ * Layer 7 technologies, inc.<br/>
+ * User: flascell<br/>
+ * Date: Aug 25, 2003<br/>
  */
 public class SessionInvalidException extends Exception {
     public SessionInvalidException() {

@@ -1,12 +1,14 @@
 package com.l7tech.common.security.xml;
 
 /**
- * User: flascell
- * Date: Aug 20, 2003
- * Time: 10:52:49 AM
+ * A signature is invalid or of type unsupported.
+ *
+ * <br/><br/>
+ * Layer 7 technologies, inc.<br/>
+ * User: flascell<br/>
+ * Date: Aug 20, 2003<br/>
  * $Id$
  *
- * A signature is invalid or of type unsupported
  */
 public class InvalidSignatureException extends Exception {
     public InvalidSignatureException(String msg) {

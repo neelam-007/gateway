@@ -4,17 +4,8 @@ import org.w3c.dom.*;
 import com.l7tech.common.util.SoapUtil;
 
 /**
- * LAYER 7 TECHNOLOGIES, INC
- *
- * User: flascell
- * Date: Aug 28, 2003
- * Time: 10:31:55 AM
- * $Id$
- * <p>
  * Appends or reads nonces, sequence numbers, and session ids from a
  * WS Secure Conversation Token header inside a soap message.
- *
- * <p>
  *
  * Format for requests :
  * <PRE>
@@ -59,6 +50,13 @@ import com.l7tech.common.util.SoapUtil;
  * &lt;/S:Envelope&gt;
  * </PRE>
  *
+ * <br/><br/>
+ * Layer 7 technologies, inc.<br/>
+ * User: flascell<br/>
+ * Date: Aug 28, 2003<br/>
+ * Time: 10:31:55 AM<br/>
+ * $Id$
+
  */
 public class SecureConversationTokenHandler {
 

@@ -3,14 +3,13 @@ package com.l7tech.common.security;
 import javax.crypto.SecretKey;
 
 /**
- * LAYER 7 TECHNOLOGIES, INC
- *
- * User: flascell, mike
- * Date: Aug 28, 2003
- * Time: 9:17:45 AM
- * $Id$
- *
  * Key Used by the xml mangler
+ *
+ * <br/><br/>
+ * Layer 7 technologies, inc.<br/>
+ * User: flascell, mike<br/>
+ * Date: Aug 28, 2003<br/>
+ * $Id$
  */
 public class AesKey implements SecretKey {
     private byte[] bytes;
