@@ -22,6 +22,18 @@ import java.util.Set;
  * @version $Revision$
  */
 public class MemberOfGroup extends IdentityAssertion {
+    public MemberOfGroup() {
+        super();
+    }
+
+    public void setGroup( Group group ) {
+        _group = group;
+    }
+
+    public Group getGroup() {
+        return _group;
+    }
+
     public MemberOfGroup( IdentityProvider provider, Group group ) {
         super( provider );
         _group = group;

@@ -23,6 +23,10 @@ public abstract class IdentityAssertion extends Assertion {
         _identityProvider = provider;
     }
 
+    protected IdentityAssertion() {
+        super();
+    }
+
     public AssertionError checkRequest(Request request, Response response) throws PolicyAssertionException {
         return doCheckRequest( request, response );
     }
@@ -50,6 +54,14 @@ public abstract class IdentityAssertion extends Assertion {
                 }
             }
         }
+    }
+
+    public void setIdentityProvider( IdentityProvider provider ) {
+        _identityProvider = provider;
+    }
+
+    public IdentityProvider getIdentityProvider() {
+        return _identityProvider;
     }
 
     protected abstract AssertionError doCheckPrincipal( Principal p );
