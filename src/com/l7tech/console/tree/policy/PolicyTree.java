@@ -283,7 +283,9 @@ public class PolicyTree extends JTree implements DragSourceListener,
 
 
     private boolean isRootPath(TreePath path) {
-        return isRootVisible() && getRowForPath(path) == 0;
+        TreePath rp = new TreePath(getModel().getRoot());
+        return rp.equals(path);
+        // return isRootVisible() && getRowForPath(path) == 0;
     }
 
 

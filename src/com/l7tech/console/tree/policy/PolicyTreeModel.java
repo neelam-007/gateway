@@ -7,7 +7,6 @@ import com.l7tech.service.PublishedService;
 
 import javax.swing.tree.DefaultTreeModel;
 import java.io.IOException;
-import java.util.Set;
 
 
 /**
@@ -51,17 +50,6 @@ public class PolicyTreeModel extends DefaultTreeModel {
      */
     protected PolicyTreeModel(AbstractTreeNode root) {
         super(root);
-    }
-
-    /**
-     * Creates a new identity view of PolicyTreeModel for the asserton
-     * tree.
-     *
-     * @param root the assertion root
-     */
-    public static PolicyTreeModel identitityModel(Assertion root) {
-        Set paths = IdentityPath.getPaths(root);
-        return new PolicyTreeModel(new IdentityViewsRootNode(paths, root));
     }
 }
 

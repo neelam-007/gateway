@@ -3,6 +3,7 @@ package com.l7tech.console.tree.policy;
 import com.l7tech.console.panels.IdentityPolicyPanel;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.ServiceNode;
+import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Cookie;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
@@ -10,6 +11,7 @@ import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 
 import javax.swing.*;
+import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -66,14 +68,18 @@ public class IdentityPolicyView extends JDialog {
 
     private JPanel getIdentityPolicyPanel()
       throws FindException, IOException {
-        if (idPanel !=null) {
+        if (idPanel != null) {
             return idPanel;
         }
-        IdentityAssertion ia = (IdentityAssertion)idAssertion.asAssertion();
-        idPanel = new IdentityPolicyPanel(serviceNode.getPublishedService(),
-                                          (AssertionTreeNode)idAssertion.getRoot(),
-                                          IdentityPath.extractIdentity(ia));
-        return idPanel;
+        JTree tree =
+          (JTree)ComponentRegistry.
+          getInstance().getComponent(PolicyTree.NAME);
+        if (tree != null) {
+            DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+            idPanel = new IdentityPolicyPanel(serviceNode.getPublishedService(), model, idAssertion);
+            return idPanel;
+        }
+        throw new IllegalStateException("Internal error: Could not get the policy tree.");
     }
 
     /** * @param e java.awt.event.WindowEvent */
@@ -102,7 +108,7 @@ public class IdentityPolicyView extends JDialog {
      * @return the published service cookie or null if not founds
      */
     private ServiceNode getServiceNodeCookie() {
-        for (Iterator i = ((AbstractTreeNode)idAssertion.getRoot()).cookies(); i.hasNext(); ) {
+        for (Iterator i = ((AbstractTreeNode)idAssertion.getRoot()).cookies(); i.hasNext();) {
             Object value = ((Cookie)i.next()).getValue();
             if (value instanceof ServiceNode) return (ServiceNode)value;
         }
