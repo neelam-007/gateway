@@ -166,9 +166,17 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                 }
                 // verifiy element signature
 
-                // verify that this cert is signed with the root cert of this ssg
-                documentCertificates = SoapMsgSigner.validateSignature(document, messagePartElement);
-                logger.fine("signature of response message verified");
+                SignatureNotFoundException signatureNotFoundException = null;
+                XMLSecurityElementNotFoundException xmlSecurityElementNotFoundException = null;
+
+                try {
+                    // verify that this cert is signed with the root cert of this ssg
+                    documentCertificates = SoapMsgSigner.validateSignature(document, messagePartElement);
+                    logger.fine("signature of response message verified");
+                } catch ( SignatureNotFoundException e ) {
+                    logger.fine("signature of response not found");
+                    signatureNotFoundException = e;
+                }
 
                 if (elementSecurity.isEncryption()) { //element security is required
                     if (messagePartElement.hasChildNodes()) {
@@ -184,14 +192,25 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                                     logger.warning(msg);
                                     throw new SecurityProcessorException(msg);
                                 }
-                                XmlMangler.decryptElement(bodyElement, decryptionKey);
+
+                                try {
+                                    // Bug 838: Save exception in case this really is the correct operation; otherwise ignore it
+                                    XmlMangler.decryptElement(bodyElement, decryptionKey);
+                                } catch ( XMLSecurityElementNotFoundException e ) {
+                                    xmlSecurityElementNotFoundException = e;
+                                }
                             } catch ( XmlUtil.MultipleChildElementsException e ) {
                                 String msg = "Message contained multiple SOAP:Body elements";
                                 logger.warning(msg);
                                 throw new SecurityProcessorException( msg );
                             }
                         } else {
-                            XmlMangler.decryptElement(messagePartElement, decryptionKey);
+                            try {
+                                // Bug 838: Save exception in case this really is the correct operation; otherwise ignore it
+                                XmlMangler.decryptElement(messagePartElement, decryptionKey);
+                            } catch ( XMLSecurityElementNotFoundException e ) {
+                                xmlSecurityElementNotFoundException = e;
+                            }
                         }
                     } else {
                         logger.warning("Encrypt requested XPath '" + elementXpath.getExpression() + "'" + " but no child nodes exist, skipping encryption");
@@ -211,10 +230,14 @@ class ReceiverXmlSecurityProcessor extends SecurityProcessor {
                 }
 
                 if (!preconditionMatched) {
-                    String msg = "Operation did not match, even after decryption.  Rejecting message.";
-                    logger.warning( msg );
-                    throw new SecurityProcessorException( msg );
+                    String msg = "Operation did not match, even after decryption.  Ignoring Security element for message.";
+                    logger.info( msg );
+                    continue;
                 }
+
+                // Bug 838: Precondition must have matched; make sure these two exceptions get propagated
+                if ( xmlSecurityElementNotFoundException != null ) throw xmlSecurityElementNotFoundException;
+                if ( signatureNotFoundException != null ) throw signatureNotFoundException;
 
                 logger.fine("response message element decrypted");
             }
