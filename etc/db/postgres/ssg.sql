@@ -53,6 +53,8 @@ CREATE TABLE internal_group (
   description text
 );
 
+alter table internal_group add unique ( name );
+
 
 --
 -- Dumping data for table 'internal_group'
@@ -78,6 +80,9 @@ CREATE TABLE internal_user (
   cert text DEFAULT NULL,
   cert_reset_counter INT DEFAULT '0'
 );
+
+alter table internal_user add unique ( login );
+alter table internal_user add unique ( name );
 
 --
 -- Dumping data for table 'internal_user'
