@@ -532,6 +532,7 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
     // listener for policy tree changes
     TreeModelListener policyTreeModellistener = new TreeModelListener() {
         public void treeNodesChanged(TreeModelEvent e) {
+            if (!(e instanceof PolicyTreeModelEvent)) return; // do not validate this
             if (!initialValidate) {
                 enableButtonSave();
                 SwingUtilities.invokeLater(new Runnable() {

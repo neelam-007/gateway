@@ -4,6 +4,8 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.MainWindow;
 import com.l7tech.console.panels.XmlSecurityPropertiesDialog;
 import com.l7tech.console.tree.XmlRequestSecurityNode;
+import com.l7tech.console.tree.policy.AssertionTreeNode;
+import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.XmlSecurityTreeNode;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Registry;
@@ -11,7 +13,6 @@ import com.l7tech.policy.assertion.xmlsec.ElementSecurity;
 import com.l7tech.policy.assertion.xmlsec.XmlSecurityAssertion;
 
 import javax.swing.*;
-import javax.swing.tree.DefaultTreeModel;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.logging.Level;
@@ -101,8 +102,8 @@ public class XmlSecurityPropertiesAction extends NodeAction {
                 public void run() {
                     JTree tree = ComponentRegistry.getInstance().getPolicyTree();
                     if (tree != null) {
-                        DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                        model.nodeChanged(node);
+                        PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+                        model.assertionTreeNodeChanged((AssertionTreeNode)node);
                     } else {
                         log.log(Level.WARNING, "Unable to reach the palette tree.");
                     }

@@ -4,26 +4,25 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.event.PolicyListenerAdapter;
+import com.l7tech.console.panels.XslTransformationPropertiesDialog;
+import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.XslTransformationTreeNode;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.panels.XslTransformationPropertiesDialog;
 
 import javax.swing.*;
-import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Action for viewing or editing the properties of a Xsl Transformation Assertion node.
- *
+ * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Feb 6, 2004<br/>
  * $Id$<br/>
- *
  */
 public class XslTransformationPropertiesAction extends BaseAction {
 
@@ -50,25 +49,14 @@ public class XslTransformationPropertiesAction extends BaseAction {
         dlg.pack();
         Utilities.centerOnScreen(dlg);
         dlg.show();
-        assertionChanged();
-    }
-
-    public void assertionChanged() {
-        JTree tree = ComponentRegistry.getInstance().getPolicyTree();
-        if (tree != null) {
-            DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-            model.nodeChanged(node);
-        } else {
-            log.log(Level.WARNING, "Unable to reach the palette tree.");
-        }
     }
 
     private final PolicyListener listener = new PolicyListenerAdapter() {
         public void assertionsChanged(PolicyEvent e) {
             JTree tree = ComponentRegistry.getInstance().getPolicyTree();
             if (tree != null) {
-                DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                model.nodeChanged(node);
+                PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+                model.assertionTreeNodeChanged(node);
                 log.finest("model invalidated");
             } else {
                 log.log(Level.WARNING, "Unable to reach the palette tree.");

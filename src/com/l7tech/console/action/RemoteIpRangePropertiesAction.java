@@ -1,29 +1,28 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.ComponentRegistry;
-import com.l7tech.console.panels.RemoteIpRangePropertiesDialog;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.event.PolicyListenerAdapter;
-import com.l7tech.console.event.PolicyEvent;
+import com.l7tech.console.panels.RemoteIpRangePropertiesDialog;
+import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.RemoteIpRangeTreeNode;
-import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.console.util.ComponentRegistry;
+import com.l7tech.console.util.Registry;
 
 import javax.swing.*;
-import javax.swing.tree.DefaultTreeModel;
 import java.awt.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Action for viewing or editing the properties of a RemoteIpRange assertion.
- *
+ * <p/>
  * <br/><br/>
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Feb 23, 2004<br/>
  * $Id$<br/>
- *
  */
 public class RemoteIpRangePropertiesAction extends BaseAction {
 
@@ -56,8 +55,8 @@ public class RemoteIpRangePropertiesAction extends BaseAction {
         public void assertionsChanged(PolicyEvent e) {
             JTree tree = ComponentRegistry.getInstance().getPolicyTree();
             if (tree != null) {
-                DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                model.nodeChanged(subject);
+                PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+                model.assertionTreeNodeChanged(subject);
                 log.finest("model invalidated");
             } else {
                 log.log(Level.WARNING, "Unable to reach the palette tree.");

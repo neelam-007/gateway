@@ -1,13 +1,14 @@
 package com.l7tech.console.action;
 
 import com.l7tech.console.tree.SslTransportNode;
+import com.l7tech.console.tree.policy.AssertionTreeNode;
+import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.SslAssertionTreeNode;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.SslAssertion;
 
 import javax.swing.*;
-import javax.swing.tree.DefaultTreeModel;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -47,9 +48,10 @@ public class SslPropertiesAction extends NodeAction {
         return "com/l7tech/console/resources/Properties16.gif";
     }
 
-    /** Actually perform the action.
+    /**
+     * Actually perform the action.
      * This is the method which should be called programmatically.
-
+     * <p/>
      * note on threading usage: do not access GUI components
      * without explicitly asking for the AWT event thread!
      */
@@ -64,8 +66,7 @@ public class SslPropertiesAction extends NodeAction {
         SslAssertion sslAssertion = (SslAssertion)node.asAssertion();
 
         String s =
-          (String)JOptionPane.showInputDialog(
-            Registry.getDefault().
+          (String)JOptionPane.showInputDialog(Registry.getDefault().
           getComponentRegistry().getMainWindow(),
             "Please select the SSL/TLS assertion options:\n",
             "SSL/TLS Assertion properties",
@@ -86,11 +87,10 @@ public class SslPropertiesAction extends NodeAction {
     }
 
     public void assertionChanged() {
-        JTree tree =
-          (JTree)ComponentRegistry.getInstance().getPolicyTree();
+        JTree tree = (JTree)ComponentRegistry.getInstance().getPolicyTree();
         if (tree != null) {
-            DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-            model.nodeChanged(node);
+            PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+            model.assertionTreeNodeChanged((AssertionTreeNode)node);
         } else {
             log.log(Level.WARNING, "Unable to reach the palette tree.");
         }

@@ -1,20 +1,16 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.tree.SslTransportNode;
-import com.l7tech.console.tree.policy.SslAssertionTreeNode;
+import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.console.panels.SamlPropertiesDialog;
+import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.tree.policy.SamlTreeNode;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.panels.SamlPropertiesDialog;
-import com.l7tech.policy.assertion.SslAssertion;
-import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
-import javax.swing.tree.DefaultTreeModel;
-import java.util.Iterator;
+import java.awt.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.awt.*;
 
 /**
  * The <code>SamlPropertiesAction</code> edits the SAML assertion
@@ -72,7 +68,7 @@ public class SamlPropertiesAction extends BaseAction {
         JTree tree =
           (JTree)ComponentRegistry.getInstance().getPolicyTree();
         if (tree != null) {
-            DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
+            PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
             model.nodeChanged(assertion);
         } else {
             log.log(Level.WARNING, "Unable to reach the palette tree.");

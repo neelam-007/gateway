@@ -5,13 +5,14 @@ import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.event.PolicyListenerAdapter;
 import com.l7tech.console.panels.HttpRoutingAssertionDialog;
+import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.HttpRoutingAssertionTreeNode;
+import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 
 import javax.swing.*;
-import javax.swing.tree.DefaultTreeModel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -57,27 +58,26 @@ public class HttpRoutingAssertionPropertiesAction extends NodeAction {
      * without explicitly asking for the AWT event thread!
      */
     public void performAction() {
-        SwingUtilities.invokeLater(
-          new Runnable() {
-              public void run() {
-                  JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
-                  HttpRoutingAssertionDialog d =
-                    new HttpRoutingAssertionDialog(f, (HttpRoutingAssertion)node.asAssertion(), getServiceNodeCookie());
-                  d.setModal(true);
-                  d.pack();
-                  Utilities.centerOnScreen(d);
-                  d.addPolicyListener(listener);
-                  d.show();
-              }
-          });
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                JFrame f = Registry.getDefault().getComponentRegistry().getMainWindow();
+                HttpRoutingAssertionDialog d =
+                  new HttpRoutingAssertionDialog(f, (HttpRoutingAssertion)node.asAssertion(), getServiceNodeCookie());
+                d.setModal(true);
+                d.pack();
+                Utilities.centerOnScreen(d);
+                d.addPolicyListener(listener);
+                d.show();
+            }
+        });
     }
 
     private final PolicyListener listener = new PolicyListenerAdapter() {
         public void assertionsChanged(PolicyEvent e) {
             JTree tree = ComponentRegistry.getInstance().getPolicyTree();
             if (tree != null) {
-                DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-                model.nodeChanged(node);
+                PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+                model.assertionTreeNodeChanged((AssertionTreeNode)node);
             } else {
                 log.log(Level.WARNING, "Unable to reach the palette tree.");
             }

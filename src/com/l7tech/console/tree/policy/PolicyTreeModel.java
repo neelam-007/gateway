@@ -1,9 +1,6 @@
 package com.l7tech.console.tree.policy;
 
-import com.l7tech.console.event.PolicyChangeVetoException;
-import com.l7tech.console.event.PolicyEvent;
-import com.l7tech.console.event.PolicyWillChangeListener;
-import com.l7tech.console.event.WeakEventListenerList;
+import com.l7tech.console.event.*;
 import com.l7tech.console.tree.AbstractTreeNode;
 import com.l7tech.console.tree.NodeFilter;
 import com.l7tech.console.tree.ServiceNode;
@@ -20,6 +17,8 @@ import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
 import com.l7tech.service.PublishedService;
 
 import javax.swing.event.EventListenerList;
+import javax.swing.event.TreeModelEvent;
+import javax.swing.event.TreeModelListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.MutableTreeNode;
@@ -68,12 +67,12 @@ public class PolicyTreeModel extends DefaultTreeModel {
 
     private static void validatePolicyTree(Assertion policy) {
         Iterator it = policy.preorderIterator();
-        while(it.hasNext()) {
+        while (it.hasNext()) {
             Assertion a = (Assertion)it.next();
             if (a instanceof CompositeAssertion) {
                 final CompositeAssertion compositeAssertion = (CompositeAssertion)a;
                 Iterator children = compositeAssertion.children();
-                while(children.hasNext()) {
+                while (children.hasNext()) {
                     Assertion ass = (Assertion)children.next();
                     if (ass.getParent() != a) {
                         ass.setParent(compositeAssertion);
@@ -133,6 +132,26 @@ public class PolicyTreeModel extends DefaultTreeModel {
         eventListenerList.remove(PolicyWillChangeListener.class, listener);
     }
 
+
+    /**
+     * add the PolicyListener
+     *
+     * @param listener the PolicyListener
+     */
+    public void addPolicyListener(PolicyListener listener) {
+        eventListenerList.add(PolicyListener.class, listener);
+    }
+
+    /**
+     * remove the the PolicyListener
+     *
+     * @param listener the PolicyListener
+     */
+    public void removePolicyListener(PolicyListener listener) {
+        eventListenerList.remove(PolicyListener.class, listener);
+    }
+
+
     private void fireWillReceiveListeners(PolicyEvent event)
       throws PolicyChangeVetoException {
         EventListener[] listeners = eventListenerList.getListeners(PolicyWillChangeListener.class);
@@ -178,6 +197,77 @@ public class PolicyTreeModel extends DefaultTreeModel {
                 }
             }
             return false;
+        }
+    }
+
+
+    /**
+     * Invoke this method after you've changed the assertion properties.
+     */
+    public void assertionTreeNodeChanged(AssertionTreeNode node) {
+        if (eventListenerList != null && node != null) {
+            AssertionTreeNode parent = (AssertionTreeNode)node.getParent();
+
+            if (parent != null) {
+                int anIndex = parent.getIndex(node);
+                if (anIndex != -1) {
+                    int[] cIndexs = new int[1];
+
+                    cIndexs[0] = anIndex;
+                    assertionNodesChanged(parent, cIndexs);
+                }
+            } else if (node == getRoot()) {
+                assertionNodesChanged(node, null);
+            }
+        }
+    }
+
+    /**
+     * Invoke this method after you've changed how the children identified by
+     * childIndicies are to be represented in the tree.
+     */
+    public void assertionNodesChanged(AssertionTreeNode node, int[] childIndices) {
+        if (node != null) {
+            if (childIndices != null) {
+                int cCount = childIndices.length;
+
+                if (cCount > 0) {
+                    Object[] cChildren = new Object[cCount];
+
+                    for (int counter = 0; counter < cCount; counter++)
+                        cChildren[counter] = node.getChildAt(childIndices[counter]);
+                    fireAssertionTreeNodesChanged(this, getPathToRoot(node), childIndices, cChildren);
+                }
+            } else if (node == getRoot()) {
+                fireAssertionTreeNodesChanged(this, getPathToRoot(node), null, null);
+            }
+        }
+    }
+
+    /**
+     * Notifies all listeners that have registered interest for
+     * notification on this event type.  The event instance
+     * is lazily created using the parameters passed into
+     * the fire method.
+     *
+     * @param source       the node being changed
+     * @param path         the path to the root node
+     * @param childIndices the indices of the changed elements
+     * @param children     the changed elements
+     * @see EventListenerList
+     */
+    protected void fireAssertionTreeNodesChanged(Object source, Object[] path, int[] childIndices, Object[] children) {
+        Object[] listeners = eventListenerList.getListenerList();
+        TreeModelEvent e = null;
+        // Process the listeners last to first, notifying
+        // those that are interested in this event
+        for (int i = listeners.length - 2; i >= 0; i -= 2) {
+            if (listeners[i] == TreeModelListener.class) {
+                // Lazily create the event:
+                if (e == null)
+                    e = new PolicyTreeModelEvent(source, path, childIndices, children);
+                ((TreeModelListener)listeners[i + 1]).treeNodesChanged(e);
+            }
         }
     }
 
@@ -229,9 +319,9 @@ public class PolicyTreeModel extends DefaultTreeModel {
         super.insertNodeInto(newChild, parent, index);
     }
 
-     /**
+    /**
      * Invoke this to move (after remove node) to insert newChild at location index in parents
-      * children without advice support. Will trigger only the validation advice
+     * children without advice support. Will trigger only the validation advice
      */
     void moveNodeInto(AssertionTreeNode newChild, DefaultMutableTreeNode parent, int index) {
         checkArgumentIsAssertionTreeNode(newChild);

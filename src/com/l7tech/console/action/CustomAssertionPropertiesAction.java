@@ -3,14 +3,15 @@ package com.l7tech.console.action;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.beaneditor.BeanAdapter;
 import com.l7tech.console.beaneditor.BeanEditor;
+import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.CustomAssertionTreeNode;
+import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.ComponentRegistry;
 import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 
 import javax.swing.*;
-import javax.swing.tree.DefaultTreeModel;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -77,11 +78,10 @@ public class CustomAssertionPropertiesAction extends NodeAction {
     }
 
     public void assertionChanged() {
-        JTree tree =
-          (JTree)ComponentRegistry.getInstance().getPolicyTree();
+        JTree tree = (JTree)ComponentRegistry.getInstance().getPolicyTree();
         if (tree != null) {
-            DefaultTreeModel model = (DefaultTreeModel)tree.getModel();
-            model.nodeChanged(node);
+            PolicyTreeModel model = (PolicyTreeModel)tree.getModel();
+            model.assertionTreeNodeChanged((AssertionTreeNode)node);
         } else {
             log.log(Level.WARNING, "Unable to reach the palette tree.");
         }
