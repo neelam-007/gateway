@@ -2,21 +2,20 @@ package com.l7tech.cluster;
 
 import com.l7tech.logging.LogManager;
 import com.l7tech.remote.jini.lookup.ServiceLookup;
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.HostnameVerifier;
-import javax.net.ssl.SSLSession;
-
 import net.jini.config.ConfigurationException;
 import net.jini.core.lookup.ServiceMatches;
 import net.jini.core.lookup.ServiceRegistrar;
 import net.jini.core.lookup.ServiceTemplate;
 import net.jini.security.ProxyPreparer;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLSession;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
-import java.net.HttpURLConnection;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
@@ -106,9 +105,7 @@ public class InterNodeServiceLookup extends ServiceLookup {
         try {
             cached = (ServiceRegistrar)oi.readObject();
             registrars.put(host, cached);
-
             // todo, change locator host to the host value (READ ONLY?!)
-
             return cached;
         } finally {
             if (oi != null) oi.close();
