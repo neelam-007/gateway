@@ -2,6 +2,7 @@ package com.l7tech.adminws;
 
 import com.l7tech.jini.lookup.ServiceLookup;
 import com.l7tech.common.util.Locator;
+import com.l7tech.common.VersionException;
 
 import javax.security.auth.login.LoginException;
 import java.net.PasswordAuthentication;

@@ -1,7 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.adminws.ClientCredentialManager;
-import com.l7tech.adminws.VersionException;
+import com.l7tech.common.VersionException;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.CertificateDownloader;
 import com.l7tech.common.util.ExceptionUtils;

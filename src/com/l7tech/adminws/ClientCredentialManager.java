@@ -2,6 +2,7 @@ package com.l7tech.adminws;
 
 import com.l7tech.console.event.ConnectionListener;
 import com.l7tech.console.event.ConnectionEvent;
+import com.l7tech.common.VersionException;
 
 import javax.security.auth.Subject;
 import javax.security.auth.login.LoginException;
