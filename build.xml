@@ -319,7 +319,7 @@
         <!-- the ssg war -->
         <war warfile="${build.dir}/${war}" webxml="${build.etc}/web.xml">
             <lib dir="${build.dir}/lib"
-                 excludes="commons-logging.jar, jh.jar, kunststoff.jar, servlet.jar, xercesImpl.jar, xml-apis.jar, catalina.jar">
+                 excludes="commons-logging.jar, jh.jar, kunststoff.jar, servlet.jar, catalina.jar">
             </lib>
             <classes dir="${build.classes}"/>
 
