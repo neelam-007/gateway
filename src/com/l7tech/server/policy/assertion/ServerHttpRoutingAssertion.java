@@ -348,10 +348,6 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 inputStream.close();
                 inputStream =null;
             }
-
-            if (multipartReader != null && multipartReader.getFileCache() != null) {
-                multipartReader.deleteCacheFile();
-            }
         }
 
         return AssertionStatus.NONE;
