@@ -106,6 +106,7 @@
         <property name="resetCounter" column="reset_counter" type="int"/>
     </class>
 
+    <!--
     <class name="com.l7tech.server.url.UrlCacheRow" table="urlcache">
         <id name="oid" column="objectid" type="long" unsaved-value="-1">
             <generator class="hilo.long"/>
@@ -116,7 +117,10 @@
         <property name="url" column="url" type="string"/>
         <property name="content" column="content" type="string"/>
         <property name="size" column="size" type="int"/>
+        <property name="refreshInterval" column="refresh_interval" type="int"/>
+        <property name="maxAge" column="max_age" type="int"/>
     </class>
+    -->
 
     <class name="com.l7tech.service.resolution.ResolutionParameters" table="service_resolution">
         <composite-id>
