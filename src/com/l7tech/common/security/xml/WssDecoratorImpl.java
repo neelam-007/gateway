@@ -124,11 +124,9 @@ public class WssDecoratorImpl implements WssDecorator {
             // todo -- support more than one layer of actor-wrapped security header
             SoapUtil.removeSoapAttr(oldSecurity, SoapUtil.ACTOR_ATTR_NAME);
             SoapUtil.removeSoapAttr(oldSecurity, SoapUtil.ROLE_ATTR_NAME);
-            SoapUtil.setSoapAttr(message, oldSecurity, SoapUtil.ACTOR_ATTR_NAME, ACTOR_LAYER7_WRAPPED);
+            SoapUtil.setSoapAttr(message, oldSecurity, SoapUtil.ACTOR_ATTR_NAME, SoapUtil.ACTOR_LAYER7_WRAPPED);
         }
 
         return SoapUtil.makeSecurityElement(message);
     }
-
-    private static final String ACTOR_LAYER7_WRAPPED = "http://www.layer7tech.com/ws/actor-wrapped";
 }
