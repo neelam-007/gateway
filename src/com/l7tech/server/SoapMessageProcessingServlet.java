@@ -6,8 +6,8 @@
 
 package com.l7tech.server;
 
+import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.protocol.SecureSpanConstants;
-import com.l7tech.common.util.MultipartUtil;
 import com.l7tech.common.util.SoapFaultUtils;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.SoapFaultDetail;
@@ -118,7 +118,7 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                             StringBuffer sb = new StringBuffer();
 
                             // add modified SOAP part
-                            MultipartUtil.addModifiedSoapPart(sb,
+                            MimeUtil.addModifiedSoapPart(sb,
                                     protRespXml,
                                     sresp.getSoapPart(),
                                     sresp.getMultipartBoundary());

@@ -6,6 +6,7 @@
 
 package com.l7tech.proxy.util;
 
+import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.CertificateRequest;
 import com.l7tech.common.util.CertUtils;
@@ -83,8 +84,8 @@ public class SslUtils {
         PostMethod post = new PostMethod(url.toExternalForm());
         try {
             post.setRequestBody(PASSWORD_CHANGE_BODY); // dummy body, just as placeholder for POST
-            post.setRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
-            post.setRequestHeader(XmlUtil.CONTENT_LENGTH, String.valueOf(PASSWORD_CHANGE_BODY.length()));
+            post.setRequestHeader(MimeUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
+            post.setRequestHeader(MimeUtil.CONTENT_LENGTH, String.valueOf(PASSWORD_CHANGE_BODY.length()));
             post.setRequestHeader(SecureSpanConstants.HttpHeaders.HEADER_NEWPASSWD,
                                   HexUtils.encodeBase64(new String(newpassword).getBytes(), true));
             CurrentRequest.setPeerSsg(ssg);
@@ -146,8 +147,8 @@ public class SslUtils {
             byte[] csrBytes = csr.getEncoded();
             ByteArrayInputStream bais = new ByteArrayInputStream(csrBytes);
             post.setRequestBody(bais);
-            post.setRequestHeader(XmlUtil.CONTENT_TYPE, "application/pkcs10");
-            post.setRequestHeader(XmlUtil.CONTENT_LENGTH, String.valueOf(csrBytes.length));
+            post.setRequestHeader(MimeUtil.CONTENT_TYPE, "application/pkcs10");
+            post.setRequestHeader(MimeUtil.CONTENT_LENGTH, String.valueOf(csrBytes.length));
 
             CurrentRequest.setPeerSsg(ssg);
             int result = hc.executeMethod(post);

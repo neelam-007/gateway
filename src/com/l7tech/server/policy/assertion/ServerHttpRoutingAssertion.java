@@ -7,9 +7,12 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.BuildInfo;
-import com.l7tech.common.attachments.MultipartMessageReader;
+import com.l7tech.common.mime.MimeUtil;
+import com.l7tech.common.mime.MultipartMessageReader;
 import com.l7tech.common.security.xml.SignerInfo;
-import com.l7tech.common.util.*;
+import com.l7tech.common.util.KeystoreUtils;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.identity.User;
 import com.l7tech.message.*;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -139,12 +142,12 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
 
                 multipartReader = request.getMultipartReader();
                 if (request.isMultipart()) {
-                    postMethod.setRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.MULTIPART_CONTENT_TYPE +
+                    postMethod.setRequestHeader(MimeUtil.CONTENT_TYPE, MimeUtil.MULTIPART_CONTENT_TYPE +
                       "; type=\"" + XmlUtil.TEXT_XML + "\"" +
-                      "; start=\"" + multipartReader.getSoapPart().getHeader(XmlUtil.CONTENT_ID).getValue() + "\"" +
-                      "; " + XmlUtil.MULTIPART_BOUNDARY + "=\"" + request.getMultipartBoundary() + "\"");
+                      "; start=\"" + multipartReader.getSoapPart().getHeader(MimeUtil.CONTENT_ID).getValue() + "\"" +
+                      "; " + MimeUtil.MULTIPART_BOUNDARY + "=\"" + request.getMultipartBoundary() + "\"");
                 } else {
-                    postMethod.setRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML + "; charset=" + ENCODING.toLowerCase());
+                    postMethod.setRequestHeader(MimeUtil.CONTENT_TYPE, XmlUtil.TEXT_XML + "; charset=" + ENCODING.toLowerCase());
                 }
 
                 String userAgent = httpRoutingAssertion.getUserAgent();
@@ -242,7 +245,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                     StringBuffer sb = new StringBuffer();
 
                     // add modified SOAP part
-                    MultipartUtil.addModifiedSoapPart(sb,
+                    MimeUtil.addModifiedSoapPart(sb,
                       XmlUtil.XML_VERSION + requestXml,
                       request.getSoapPart(),
                       request.getMultipartBoundary());
@@ -329,7 +332,7 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
             // BEYOND THIS POINT, WE DONT RETURN FAILURE
             try {
                 InputStream responseStream = postMethod.getResponseBodyAsStream();
-                String ctype = postMethod.getResponseHeader(XmlUtil.CONTENT_TYPE).getValue();
+                String ctype = postMethod.getResponseHeader(MimeUtil.CONTENT_TYPE).getValue();
                 response.setParameter(Response.PARAM_HTTP_CONTENT_TYPE, ctype);
                 response.setProtectedResponseStream(responseStream);
 

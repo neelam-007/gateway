@@ -1,7 +1,7 @@
 package com.l7tech.server.policy;
 
 import com.l7tech.common.RequestId;
-import com.l7tech.common.util.MultipartUtil;
+import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.XpathEvaluator;
@@ -132,7 +132,7 @@ public class RequestXpathAssertionTest extends TestCase {
                 return null;
             }
             
-            public MultipartUtil.Part getSoapPart() throws IOException { return null; }
+            public PartInfo getSoapPart() throws IOException { return null; }
 
             public boolean isMultipart() { return false; }
             public String getMultipartBoundary() { return null; }

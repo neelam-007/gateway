@@ -6,6 +6,8 @@
 
 package com.l7tech.common.util;
 
+import com.l7tech.common.io.InputStreamChannel;
+
 import java.io.*;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;

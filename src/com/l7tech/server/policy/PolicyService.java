@@ -121,17 +121,10 @@ public class PolicyService {
     public void respondToPolicyDownloadRequest(SoapRequest request,
                                                SoapResponse response,
                                                boolean signResponse,
-                                               PolicyGetter policyGetter)
-    {
+                                               PolicyGetter policyGetter) throws IOException, SAXException {
         // We need a Document
         Document requestDoc = null;
-        try {
-            requestDoc = request.getDocument();
-        } catch (SAXException e) {
-            throw new IllegalArgumentException("Request must contain an xml document");
-        } catch (IOException e) {
-            throw new IllegalArgumentException("Request must contain an xml document");
-        }
+        requestDoc = request.getDocument();
 
         // Process request for message level security stuff
         ProcessorResult wssOutput = null;

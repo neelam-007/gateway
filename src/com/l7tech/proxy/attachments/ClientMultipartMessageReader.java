@@ -1,12 +1,12 @@
 package com.l7tech.proxy.attachments;
 
-import com.l7tech.common.attachments.MultipartMessageReader;
+import com.l7tech.common.mime.MultipartMessageReader;
 import com.l7tech.proxy.ClientProxy;
 
-import java.io.InputStream;
-import java.io.PushbackInputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.PushbackInputStream;
 import java.util.logging.Logger;
 
 /**

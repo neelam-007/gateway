@@ -1,7 +1,9 @@
 package com.l7tech.proxy;
 
+import com.l7tech.common.mime.MimeHeader;
+import com.l7tech.common.mime.MimeUtil;
+import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.util.HexUtils;
-import com.l7tech.common.util.MultipartUtil;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.Wsdl;
@@ -201,16 +203,16 @@ public class RequestHandler extends AbstractHttpHandler {
         try {
             // TODO: PERF: this XML parsing is causing a performance bottleneck
             final String ctype = request.getContentType();
-            final boolean multipart = (ctype != null && ctype.startsWith(XmlUtil.MULTIPART_CONTENT_TYPE));
+            final boolean multipart = (ctype != null && ctype.startsWith(MimeUtil.MULTIPART_CONTENT_TYPE));
 
             Document envelope = null;
             ClientMultipartMessageReader multipartReader = null;
 
             if (multipart) {
-                MultipartUtil.HeaderValue contentTypeHeader = MultipartUtil.parseHeader(XmlUtil.CONTENT_TYPE + ": " + ctype);
-                String multipartBoundary = MultipartUtil.unquote((String)contentTypeHeader.getParam(XmlUtil.MULTIPART_BOUNDARY));
+                MimeHeader contentTypeHeader = MimeUtil.parseHeader(MimeUtil.CONTENT_TYPE + ": " + ctype);
+                String multipartBoundary = MimeUtil.unquote((String)contentTypeHeader.getParam(MimeUtil.MULTIPART_BOUNDARY));
                 if (multipartBoundary == null) throw new IOException("Multipart header did not contain a boundary");
-                final String innerType = MultipartUtil.unquote(((String)contentTypeHeader.getParam(XmlUtil.MULTIPART_TYPE)));
+                final String innerType = MimeUtil.unquote(((String)contentTypeHeader.getParam(MimeUtil.MULTIPART_TYPE)));
                 if (innerType == null) throw new IOException("Missing inner Content-Type");
                 if (innerType.startsWith(XmlUtil.TEXT_XML)) {
                     multipartReader = new ClientMultipartMessageReader(request.getInputStream(), multipartBoundary);
@@ -219,15 +221,15 @@ public class RequestHandler extends AbstractHttpHandler {
                     multipartReader.setFileCacheId(String.valueOf(System.currentTimeMillis()));
 
                     // get SOAP part
-                    MultipartUtil.Part soapPart = multipartReader.getSoapPart();
+                    PartInfo soapPart = multipartReader.getSoapPart();
 
                     // store all attachments to cache
                     multipartReader.storeAllAttachmentsToCache();
 
-                    if (!soapPart.getHeader(XmlUtil.CONTENT_TYPE).getValue().equals(innerType))
+                    if (!soapPart.getHeader(MimeUtil.CONTENT_TYPE).getValue().equals(innerType))
                         throw new IOException("Content-Type of first part doesn't match type of Multipart header");
 
-                    envelope = XmlUtil.stringToDocument(soapPart.getContent());
+                    envelope = XmlUtil.stringToDocument(new String(soapPart.getContent(), soapPart.getContentType().getEncoding()));
 
                 } else
                     throw new IOException("Expected first part of multipart message to be XML");
@@ -299,7 +301,7 @@ public class RequestHandler extends AbstractHttpHandler {
     private void sendChallenge(HttpResponse response) throws IOException {
         response.addField("WWW-Authenticate", "Basic realm=\"SecureSpan Bridge\"");
         response.setReason("Unauthorized");
-        response.addField(XmlUtil.CONTENT_TYPE, "text/html");
+        response.addField(MimeUtil.CONTENT_TYPE, "text/html");
         response.setStatus(401);
         response.getOutputStream().write("<title>A user name and password are required</title>A user name and password are required.".getBytes());
         response.commit();
@@ -320,15 +322,15 @@ public class RequestHandler extends AbstractHttpHandler {
 
             ClientMultipartMessageReader multipartReader = null;
             if ((multipartReader = ssgResponse.getMultipartReader()) != null) {
-                response.addField(XmlUtil.CONTENT_TYPE, XmlUtil.MULTIPART_CONTENT_TYPE +
+                response.addField(MimeUtil.CONTENT_TYPE, MimeUtil.MULTIPART_CONTENT_TYPE +
                   "; type=\"" + XmlUtil.TEXT_XML + "\"" +
-                  "; start=\"" + multipartReader.getSoapPart().getHeader(XmlUtil.CONTENT_ID).getValue() + "\"" +
-                  "; " + XmlUtil.MULTIPART_BOUNDARY + "=\"" + multipartReader.getMultipartBoundary() + "\"");
+                  "; start=\"" + multipartReader.getSoapPart().getHeader(MimeUtil.CONTENT_ID).getValue() + "\"" +
+                  "; " + MimeUtil.MULTIPART_BOUNDARY + "=\"" + multipartReader.getMultipartBoundary() + "\"");
 
                 StringBuffer sb = new StringBuffer();
 
                 // add modified SOAP part
-                MultipartUtil.addModifiedSoapPart(sb,
+                MimeUtil.addModifiedSoapPart(sb,
                   XmlUtil.XML_VERSION + ssgResponse.getResponseAsString(),
                   multipartReader.getSoapPart(),
                   multipartReader.getMultipartBoundary());
@@ -346,7 +348,7 @@ public class RequestHandler extends AbstractHttpHandler {
                 }
 
             } else {
-                response.addField(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
+                response.addField(MimeUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
                 os.write(ssgResponse.getResponseAsString().getBytes());
             }
             response.commit();
@@ -387,7 +389,7 @@ public class RequestHandler extends AbstractHttpHandler {
             return;
         }
 
-        response.addField(XmlUtil.CONTENT_TYPE, "text/html");
+        response.addField(MimeUtil.CONTENT_TYPE, "text/html");
         PrintStream o = new PrintStream(response.getOutputStream());
         o.println("<html><head><title>SecureSpan Bridge</title></head>" +
           "<body><h2>SecureSpan Bridge</h2>");
@@ -551,7 +553,7 @@ public class RequestHandler extends AbstractHttpHandler {
             if (soapPort != null)
                 wsdl.setPortUrl(soapPort, newUrl);
 
-            response.addField(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
+            response.addField(MimeUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
             wsdl.toOutputStream(response.getOutputStream());
             response.commit();
             return;

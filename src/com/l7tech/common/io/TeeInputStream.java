@@ -3,12 +3,12 @@
  *
  * $Id$
  */
-package com.l7tech.common.util;
+package com.l7tech.common.io;
 
 import java.io.FilterInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.IOException;
 
 /**
  * <code>TeeInputStream</code> is a {@link FilterInputStream } which sends all

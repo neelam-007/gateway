@@ -6,14 +6,20 @@
 
 package com.l7tech.proxy.processor;
 
-import com.l7tech.common.attachments.MultipartMessageReader;
+import com.l7tech.common.mime.MimeHeader;
+import com.l7tech.common.mime.MimeUtil;
+import com.l7tech.common.mime.MultipartMessageReader;
+import com.l7tech.common.mime.PartInfo;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
 import com.l7tech.common.security.xml.processor.*;
-import com.l7tech.common.util.*;
+import com.l7tech.common.util.CertificateDownloader;
+import com.l7tech.common.util.ExceptionUtils;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.policy.assertion.AssertionStatus;
@@ -545,16 +551,16 @@ public class MessageProcessor {
 
             InputStream is = null;
             if (req.isMultipart()) {
-                postMethod.addRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.MULTIPART_CONTENT_TYPE +
+                postMethod.addRequestHeader(MimeUtil.CONTENT_TYPE, MimeUtil.MULTIPART_CONTENT_TYPE +
                   "; type=" + XmlUtil.TEXT_XML +
-                  "; " + XmlUtil.MULTIPART_BOUNDARY + "=" + req.getMultipartReader().getMultipartBoundary());
+                  "; " + MimeUtil.MULTIPART_BOUNDARY + "=" + req.getMultipartReader().getMultipartBoundary());
 
                 StringBuffer sb = new StringBuffer();
 
                 MultipartMessageReader requestMultipartReader = req.getMultipartReader();
 
                 // add modified SOAP part
-                MultipartUtil.addModifiedSoapPart(sb,
+                MimeUtil.addModifiedSoapPart(sb,
                   postBody,
                   requestMultipartReader.getSoapPart(),
                   requestMultipartReader.getMultipartBoundary());
@@ -586,7 +592,7 @@ public class MessageProcessor {
                 postMethod.setRequestBody(pushbackInputStream);
             } else { // non multipart
                 postMethod.setRequestBody(postBody);
-                postMethod.addRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
+                postMethod.addRequestHeader(MimeUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
             }
 
             log.info("Posting request to Gateway " + ssg + ", url " + url);
@@ -660,29 +666,29 @@ public class MessageProcessor {
 
             HttpHeaders headers = new HttpHeaders(postMethod.getResponseHeaders());
 
-            Header contentType = postMethod.getResponseHeader(XmlUtil.CONTENT_TYPE);
+            Header contentType = postMethod.getResponseHeader(MimeUtil.CONTENT_TYPE);
             log.info("Response Content-Type: " + contentType);
             if (contentType == null || contentType.getValue() == null || contentType.getValue().indexOf(XmlUtil.TEXT_XML) < 0)
                 return new SsgResponse(XmlUtil.stringToDocument(CannedSoapFaults.RESPONSE_NOT_XML), null, 500, null, null);
 
             String responseString = null;
             ClientMultipartMessageReader responseMultipartReader = null;
-            if (contentType.getValue().startsWith(XmlUtil.MULTIPART_CONTENT_TYPE)) {
-                MultipartUtil.HeaderValue contentTypeHeader = MultipartUtil.parseHeader(XmlUtil.CONTENT_TYPE + ": " + contentType.getValue());
+            if (contentType.getValue().startsWith(MimeUtil.MULTIPART_CONTENT_TYPE)) {
+                MimeHeader contentTypeHeader = MimeUtil.parseHeader(MimeUtil.CONTENT_TYPE + ": " + contentType.getValue());
 
-                String multipartBoundary = MultipartUtil.unquote((String)contentTypeHeader.getParam(XmlUtil.MULTIPART_BOUNDARY));
+                String multipartBoundary = MimeUtil.unquote((String)contentTypeHeader.getParam(MimeUtil.MULTIPART_BOUNDARY));
                 if (multipartBoundary == null) throw new IOException("Multipart header '" + contentTypeHeader.getName() + "' did not contain a boundary");
 
-                String innerType = MultipartUtil.unquote((String)contentTypeHeader.getParam(XmlUtil.MULTIPART_TYPE));
+                String innerType = MimeUtil.unquote((String)contentTypeHeader.getParam(MimeUtil.MULTIPART_TYPE));
                 if (innerType.startsWith(XmlUtil.TEXT_XML)) {
 
                     InputStream respIs = postMethod.getResponseBodyAsStream();
                     responseMultipartReader = new ClientMultipartMessageReader(respIs, multipartBoundary);
 
-                    MultipartUtil.Part part = responseMultipartReader.getSoapPart();
-                    if (!part.getHeader(XmlUtil.CONTENT_TYPE).getValue().equals(innerType)) throw new IOException("Content-Type of first part doesn't match type of Multipart header");
+                    PartInfo part = responseMultipartReader.getSoapPart();
+                    if (!part.getHeader(MimeUtil.CONTENT_TYPE).getValue().equals(innerType)) throw new IOException("Content-Type of first part doesn't match type of Multipart header");
 
-                    responseString = part.getContent();
+                    responseString = new String(part.getContent(), part.getHeaders().getContentType().getEncoding());
                 } else
                     throw new IOException("Expected first part of multipart message to be XML (was '" + innerType + "')");
 

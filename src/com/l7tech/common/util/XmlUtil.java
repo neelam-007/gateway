@@ -32,14 +32,7 @@ import java.util.logging.Logger;
  */
 public class XmlUtil {
     public static final String XML_VERSION = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n";
-    public static final String MULTIPART_CONTENT_TYPE = "multipart/related";
-    public static final String MULTIPART_TYPE = "type";
-    public static final String MULTIPART_BOUNDARY = "boundary";
-    public static final String MULTIPART_BOUNDARY_PREFIX = "--";
-    public static final String CONTENT_TYPE = "Content-Type";
-    public static final String CONTENT_ID = "Content-Id";
     public static final String TEXT_XML = "text/xml";
-    public static final String IMAGE_GIF = "image/gif";
 
     private static final EntityResolver SAFE_ENTITY_RESOLVER = new EntityResolver() {
         public InputSource resolveEntity( String publicId, String systemId ) throws SAXException {
@@ -620,7 +613,6 @@ public class XmlUtil {
     }
 
     private static final Logger logger = Logger.getLogger(XmlUtil.class.getName());
-    public static final String CONTENT_LENGTH = "Content-Length";
     private static DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
     static {
         dbf.setNamespaceAware(true);

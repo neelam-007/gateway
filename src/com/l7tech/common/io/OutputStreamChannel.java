@@ -3,7 +3,7 @@
  *
  * $Id$
  */
-package com.l7tech.common.util;
+package com.l7tech.common.io;
 
 import java.io.IOException;
 import java.io.OutputStream;

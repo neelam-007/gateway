@@ -95,7 +95,7 @@ class JmsRequestHandler {
                 tresp.setText( responseXml );
             } else if ( jmsResponse instanceof BytesMessage ) {
                 BytesMessage bresp = (BytesMessage)jmsResponse;
-                bresp.writeBytes( responseXml.getBytes( JmsUtil.DEFAULT_ENCODING ) ); // TODO ENCODING
+                bresp.writeBytes( responseXml.getBytes( JmsUtil.DEFAULT_ENCODING ) ); // TODO DEFAULT_ENCODING
             } else {
                 throw new JmsRuntimeException( "Can't send a " + jmsResponse.getClass().getName() +
                                                ". Only BytesMessage and TextMessage are supported" );

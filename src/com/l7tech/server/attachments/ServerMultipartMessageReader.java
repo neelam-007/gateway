@@ -1,15 +1,23 @@
 package com.l7tech.server.attachments;
 
+import com.l7tech.common.mime.MimeHeader;
+import com.l7tech.common.mime.MimeUtil;
+import com.l7tech.common.mime.MultipartMessageReader;
+import com.l7tech.common.mime.PartInfo;
 import com.l7tech.server.ServerConfig;
-import com.l7tech.common.attachments.MultipartMessageReader;
-import com.l7tech.common.util.MultipartUtil;
-import com.l7tech.common.util.XmlUtil;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PushbackInputStream;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
+ * // TODO make this go away
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
  * <p> @author fpang </p>
  * $Id$
@@ -68,12 +76,12 @@ public class ServerMultipartMessageReader extends MultipartMessageReader {
         while (itr.hasNext()) {
             Object o = (Object) itr.next();
             Object val  = (Object) multipartParts.get(o);
-            if(val instanceof MultipartUtil.Part) {
-                MultipartUtil.Part part = (MultipartUtil.Part) val;
+            if(val instanceof PartInfo) {
+                PartInfo part = (PartInfo) val;
 
                 // excluding the SOAP part
                 if(part.getPosition() > 0) {
-                    attachments.put(part.getHeader(XmlUtil.CONTENT_ID).getValue(), part);
+                    attachments.put(part.getHeader(MimeUtil.CONTENT_ID).getValue(), part);
                 }
             } else {
                 throw new RuntimeException("The entry retrived from multipartParts object is not the type of com.l7tech.Message.Part");
@@ -89,7 +97,7 @@ public class ServerMultipartMessageReader extends MultipartMessageReader {
      * @return Part The part parsed.  Return NULL if not found.
      * @throws IOException
      */
-    public MultipartUtil.Part getMessagePart(int position) throws IOException {
+    public PartInfo getMessagePart(int position) throws IOException {
 
         if(multipartParts.size() <= position) {
             if(position == 0) {
@@ -109,7 +117,7 @@ public class ServerMultipartMessageReader extends MultipartMessageReader {
      * @return Part The part parsed.  Return NULL if not found.
      * @throws IOException
      */
-    public MultipartUtil.Part getMessagePart(String cid) throws IOException {
+    public PartInfo getMessagePart(String cid) throws IOException {
         return parseMultipart(cid);
     }
 
@@ -120,9 +128,9 @@ public class ServerMultipartMessageReader extends MultipartMessageReader {
      * @return Part The part parsed.  Return NULL if not found.
      * @throws IOException if there is error reading the input data stream.
      */
-    private MultipartUtil.Part getMessagePartFromMap(String cid) throws IOException {
+    private PartInfo getMessagePartFromMap(String cid) throws IOException {
 
-        MultipartUtil.Part part = null;
+        PartInfo part = null;
 
         Set keys = multipartParts.keySet();
 
@@ -130,7 +138,7 @@ public class ServerMultipartMessageReader extends MultipartMessageReader {
         while (itr.hasNext()) {
             String partName = (String) itr.next();
             if(validateContentId(cid, partName))  {
-                MultipartUtil.Part currentPart = (MultipartUtil.Part) multipartParts.get(partName);
+                PartInfo currentPart = (PartInfo) multipartParts.get(partName);
                 part = currentPart;
                 break;
             }
@@ -147,7 +155,7 @@ public class ServerMultipartMessageReader extends MultipartMessageReader {
      */
     private boolean validateContentId(String cid, String cidInPartHeader) throws IOException {
         if(cid.equals(cidInPartHeader) ||
-                   cid.endsWith(MultipartUtil.removeConentIdBrackets(cidInPartHeader))) {
+                   cid.endsWith(MimeUtil.removeConentIdBrackets(cidInPartHeader))) {
             return true;
         }
         return false;
@@ -160,9 +168,9 @@ public class ServerMultipartMessageReader extends MultipartMessageReader {
      * @return Part The part parsed. Return NULL if not found.
      * @throws IOException if there is error reading the input data stream.
      */
-    private MultipartUtil.Part parseMultipart(String cid) throws IOException {
+    private PartInfo parseMultipart(String cid) throws IOException {
 
-        MultipartUtil.Part part = null;
+        PartInfo part = null;
         boolean partFound = false;
 
         if( cid == null) throw new IllegalArgumentException("Cannot find the MIME part. The content id cannot NULL");
@@ -172,26 +180,26 @@ public class ServerMultipartMessageReader extends MultipartMessageReader {
         String line;
 
         while (!partFound && (line = readLine()) != null)  {
-            part = new MultipartUtil.Part();
+            //part = new PartInfo();
             boolean headers = true;
             do {
                 if (headers) {
                     if (line.length() == 0) {
                         headers = false;
                         addLineDelimiter();
-                        part.setContentLength(storeRawPartContent());
+//                        part.setContentLength(storeRawPartContent());
                         break;
                     }
                     storeRawHeader(line);
-                    MultipartUtil.HeaderValue header = MultipartUtil.parseHeader(line);
-                    part.getHeaders().put(header.getName(), header);
+                    MimeHeader header = MimeUtil.parseHeader(line);
+                    part.getHeaders().add(header);
                 }
             } while ((line = readLine()) != null);
 
             // MIME part must has at least one header
             if(part.getHeaders().size() > 0) {
-                part.setPostion(multipartParts.size());
-                String contentId = part.getHeader(XmlUtil.CONTENT_ID).getValue();
+//                part.setPostion(multipartParts.size());
+                String contentId = part.getHeader(MimeUtil.CONTENT_ID).getValue();
                 multipartParts.put(contentId, part);
                 if(validateContentId(cid, contentId)) {
                     // the requested MIME part is found, stop here.

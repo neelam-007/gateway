@@ -6,7 +6,7 @@
 
 package com.l7tech.message;
 
-import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 
 import java.util.Collection;
@@ -21,8 +21,8 @@ public interface Message {
     static final String PREFIX_HTTP        = PREFIX + ".http";
     static final String PREFIX_HTTP_HEADER = "header";
 
-    public static final String PARAM_HTTP_CONTENT_TYPE      = PREFIX_HTTP_HEADER + "." + XmlUtil.CONTENT_TYPE;
-    public static final String PARAM_HTTP_CONTENT_LENGTH    = PREFIX_HTTP_HEADER + "." + XmlUtil.CONTENT_LENGTH;
+    public static final String PARAM_HTTP_CONTENT_TYPE      = PREFIX_HTTP_HEADER + "." + MimeUtil.CONTENT_TYPE;
+    public static final String PARAM_HTTP_CONTENT_LENGTH    = PREFIX_HTTP_HEADER + "." + MimeUtil.CONTENT_LENGTH;
     public static final String PARAM_HTTP_DATE              = PREFIX_HTTP_HEADER + ".Date";
 
     TransportMetadata getTransportMetadata();

@@ -1,5 +1,6 @@
 package com.l7tech.server.saml;
 
+import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
@@ -74,7 +75,7 @@ public class Requester {
      */
     public ResponseDocument sendRequest(RequestDocument doc) throws SamlException {
         PostMethod postMethod = new PostMethod(serviceUrl);
-        postMethod.setRequestHeader(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML + "; charset=" + ENCODING.toLowerCase());
+        postMethod.setRequestHeader(MimeUtil.CONTENT_TYPE, XmlUtil.TEXT_XML + "; charset=" + ENCODING.toLowerCase());
         postMethod.setRequestBody(doc.newInputStream(SamlUtilities.xmlOptions()));
         try {
             int status = client.executeMethod(postMethod);

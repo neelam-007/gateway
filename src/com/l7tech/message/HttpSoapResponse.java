@@ -6,12 +6,13 @@
 
 package com.l7tech.message;
 
+import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
 
 import javax.servlet.http.HttpServletResponse;
-import java.util.Iterator;
 import java.io.IOException;
+import java.util.Iterator;
 
 /**
  * Encapsulates a SOAP response using HTTP transport.  Not thread-safe.
@@ -50,9 +51,9 @@ public class HttpSoapResponse extends SoapResponse {
 
                 if ( PARAM_HTTP_CONTENT_TYPE.equals( name ) ) {
                     if(sresp.isMultipart()) {
-                        hresponse.setContentType(XmlUtil.MULTIPART_CONTENT_TYPE +
+                        hresponse.setContentType(MimeUtil.MULTIPART_CONTENT_TYPE +
                             "; type=\"" + XmlUtil.TEXT_XML + "\"" +
-                            "; " + XmlUtil.MULTIPART_BOUNDARY + "=\"" + sresp.getMultipartBoundary()  + "\"");
+                            "; " + MimeUtil.MULTIPART_BOUNDARY + "=\"" + sresp.getMultipartBoundary()  + "\"");
                     } else {
                         hresponse.setContentType( (String)ovalue );
                     }

@@ -1,6 +1,6 @@
 package com.l7tech.message;
 
-import com.l7tech.common.util.MultipartUtil;
+import com.l7tech.common.mime.PartInfo;
 import com.l7tech.server.attachments.ServerMultipartMessageReader;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
@@ -40,7 +40,7 @@ public interface XmlMessage extends Message {
 
     public ServerMultipartMessageReader getMultipartReader();
 
-    public MultipartUtil.Part getSoapPart() throws IOException;
+    public PartInfo getSoapPart() throws IOException;
 
     public boolean isMultipart() throws IOException;
 }

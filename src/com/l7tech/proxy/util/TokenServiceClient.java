@@ -6,6 +6,7 @@
 
 package com.l7tech.proxy.util;
 
+import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.xml.XencUtil;
@@ -162,7 +163,7 @@ public class TokenServiceClient {
             CurrentRequest.setPeerSsg(null);
             conn.setDoOutput(true);
             conn.setAllowUserInteraction(false);
-            conn.setRequestProperty(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
+            conn.setRequestProperty(MimeUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
             XmlUtil.nodeToOutputStream(requestDoc, conn.getOutputStream());
             int len = conn.getContentLength();
             log.log(Level.FINEST, "Token server response content length=" + len);

@@ -6,6 +6,7 @@
 
 package com.l7tech.proxy.util;
 
+import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
@@ -364,7 +365,7 @@ public class PolicyServiceClient {
             conn.setRequestProperty("Authorization", httpBasicAuthorization);
         conn.setDoOutput(true);
         conn.setAllowUserInteraction(false);
-        conn.setRequestProperty(XmlUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
+        conn.setRequestProperty(MimeUtil.CONTENT_TYPE, XmlUtil.TEXT_XML);
         XmlUtil.nodeToOutputStream(requestDoc, conn.getOutputStream());
         final int code = httpConn.getResponseCode();
         log.log(Level.FINE, "Policy server responded with: " + code + " " + httpConn.getResponseMessage());

@@ -2,13 +2,13 @@ package com.l7tech.server.identity.cert;
 
 import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.cluster.ClusterNodeInfo;
+import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.util.Locator;
-import com.l7tech.common.util.XmlUtil;
 import com.l7tech.identity.BadCredentialsException;
-import com.l7tech.identity.User;
 import com.l7tech.identity.IssuedCertNotPresentedException;
+import com.l7tech.identity.User;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.cert.RsaCertificateSigner;
 import com.l7tech.objectmodel.*;
@@ -304,7 +304,7 @@ public class CSRHandler extends AuthenticatableHttpServlet {
                 logger.severe("non https connection(?): " + connection.getClass().getName());
             }
 
-            connection.setRequestProperty(XmlUtil.CONTENT_TYPE, req.getContentType());
+            connection.setRequestProperty(MimeUtil.CONTENT_TYPE, req.getContentType());
             connection.setRequestProperty(ROUTED_FROM_PEER, "Yes");
             connection.setRequestProperty(AUTH_HEADER_NAME, req.getHeader(AUTH_HEADER_NAME));
             OutputStream outputstream = connection.getOutputStream();

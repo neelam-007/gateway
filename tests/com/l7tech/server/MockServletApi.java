@@ -1,6 +1,6 @@
 package com.l7tech.server;
 
-import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.mime.MimeUtil;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.message.Message;
 import com.l7tech.message.Request;
@@ -71,7 +71,7 @@ public class MockServletApi {
                 servletRequestMock.matchAndReturn("getHeader", "WWW-Authenticate", null);
 
                 servletRequestMock.matchAndReturn("getAttribute", Message.PARAM_HTTP_CONTENT_TYPE, null);
-                servletRequestMock.matchAndReturn("getHeader", XmlUtil.CONTENT_TYPE, null);
+                servletRequestMock.matchAndReturn("getHeader", MimeUtil.CONTENT_TYPE, null);
                 servletRequestMock.matchAndReturn("getScheme", "http");
                 servletRequestMock.matchAndReturn("getServerName", InetAddress.getLocalHost().getHostName());
                 servletRequestMock.matchAndReturn("getServerPort", 8080);

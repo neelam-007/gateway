@@ -1,0 +1,182 @@
+/*
+ * Copyright (C) 2004 Layer 7 Technologies Inc.
+ *
+ * $Id$
+ */
+
+package com.l7tech.common.mime;
+
+import com.l7tech.common.util.CausedIOException;
+
+import javax.mail.internet.HeaderTokenizer;
+import javax.mail.internet.MimeUtility;
+import javax.mail.internet.ParseException;
+import java.io.IOException;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.logging.Logger;
+
+/**
+ * Represents a MIME Content-Type header.
+ */
+public class ContentTypeHeader extends MimeHeader {
+    private static final Logger logger = Logger.getLogger(ContentTypeHeader.class.getName());
+    private final String type;
+    private final String subtype;
+
+    /**
+     * Create a new ContentTypeHeader with the specified type, subtype, and parameters.  Currently
+     * if the type is "multipart", the subtype may only be "related".
+     *
+     * @param type   the major type, ie "text". may not be null
+     * @param subtype the minor type, ie "xml". may not be null
+     * @param params the parameters, ie {charset=>"utf8"}.  might be null
+     * @throws IllegalArgumentException if type is multipart, but boundary param is missing or empty
+     * @throws IllegalArgumentException if type is multipart, but the subtype is other than "related"
+     */
+    ContentTypeHeader(String type, String subtype, Map params) {
+        super(MimeUtil.CONTENT_TYPE, type + "/" + subtype, params);
+        this.type = type;
+        this.subtype = subtype;
+
+        if ("multipart".equalsIgnoreCase(type)) {
+            String boundary = (String)this.params.get("boundary");
+            if (boundary == null || boundary.length() < 1)
+                throw new IllegalArgumentException("Content-Type of type multipart must include a boundary parameter (RFC 2045 sec 5)");
+        }
+    }
+
+    /**
+     * Parse a MIME Content-Type: header, not including the header name and colon.
+     * Example: <code>parseHeader("text/html; charset=\"UTF-8\"")</code>
+     *
+     * @param contentTypeHeaderValue
+     * @return
+     * @throws java.io.IOException
+     */
+    public static ContentTypeHeader parseValue(String contentTypeHeaderValue) throws IOException {
+        HeaderTokenizer ht = new HeaderTokenizer(contentTypeHeaderValue, HeaderTokenizer.MIME, true);
+        HeaderTokenizer.Token token;
+        try {
+            // Get type
+            token = ht.next();
+            if (token.getType() == HeaderTokenizer.Token.EOF)
+                throw new IOException("MIME Content-Type type missing");
+            if (token.getType() != HeaderTokenizer.Token.ATOM)
+                throw new IOException("MIME Content-Type supertype is not an atom: " + token.getValue());
+
+            String type = token.getValue();
+
+            // Eat slash
+            token = ht.next();
+            if (token.getType() != '/')
+                throw new IOException("MIME Content-Type supertype is not followed by a slash: " + token.getValue());
+
+            // Get subtype
+            token = ht.next();
+            if (token.getType() == HeaderTokenizer.Token.EOF)
+                throw new IOException("MIME Content-Type subtype missing");
+            if (token.getType() != HeaderTokenizer.Token.ATOM)
+                throw new IOException("MIME Content-Type subtype is not an atom: " + token.getValue());
+            String subtype = token.getValue();
+
+            // Check for parameters
+            Map params = new TreeMap(String.CASE_INSENSITIVE_ORDER);
+            for (;;) {
+                token = ht.next();
+
+                if (token.getType() == HeaderTokenizer.Token.EOF)
+                    break;
+
+                if (token.getType() != ';')
+                    throw new IOException("MIME Content-Type parameter is not introduced with a semicolon: " + token.getValue());
+
+                // Get name
+                token = ht.next();
+                if (token.getType() == HeaderTokenizer.Token.EOF)
+                    throw new IOException("MIME Content-Type parameter name missing");
+
+                if (token.getType() != HeaderTokenizer.Token.ATOM)
+                    throw new IOException("MIME Content-Type parameter name is not an atom: " + token.getValue());
+
+                String name = token.getValue();
+                if (params.containsKey(name))
+                    throw new IOException("MIME Content-Type parameter name occurs more than once: " + token.getValue());
+
+                // eat =
+                token = ht.next();
+                if (token.getType() != '=')
+                    throw new IOException("MIME Content-Type parameter name is not followed by an equals: " + token.getValue());
+
+                // Get value
+                token = ht.next();
+                if (token.getType() == HeaderTokenizer.Token.EOF)
+                    throw new IOException("MIME Content-Type parameter value missing");
+
+                if (token.getType() != HeaderTokenizer.Token.ATOM && token.getType() != HeaderTokenizer.Token.QUOTEDSTRING)
+                    throw new IOException("MIME Content-Type parameter value is not an atom or quoted string: " + token.getValue());
+
+                String value = token.getValue();
+                params.put(name, value);
+            }
+
+            return new ContentTypeHeader(type, subtype, params);
+        } catch (ParseException e) {
+            throw new CausedIOException("Unable to parse MIME header", e);
+        }
+    }
+
+    /**
+     * @return the name of the Java encoding corresponding to the charset of this content-type header,
+     *         or UTF-8 if there isn't any.  Always returns some string, never null.  The returned encoding
+     *         is not guaranteed to be meaningful on this system, however.
+     */
+    public String getEncoding() {
+        String mimeCharset = (String)getParam("charset");
+        String javaCharset = null;
+        if (mimeCharset == null) {
+            logger.info("No charset value found in Content-Type header; assuming UTF-8");
+            javaCharset = "UTF-8";
+        } else {
+            javaCharset = MimeUtility.javaCharset(mimeCharset);
+        }
+        return javaCharset;
+    }
+
+    /** @return the type, ie "text".  never null */
+    public String getType() {
+        return type;
+    }
+
+    /** @return the subtype, ie "xml". never null */
+    public String getSubtype() {
+        return subtype;
+    }
+
+    /**
+     * Get the multipart boundary, if this content type isMultipart.
+     *
+     * @return the Multipart boundary.  Never null or empty.
+     * @throws IllegalStateException if not isMultipart().
+     */
+    public String getMultipartBoundary() {
+        if (!isMultipart())
+            throw new IllegalStateException("Content-Type is not multipart");
+        return getParam(MimeUtil.MULTIPART_BOUNDARY);
+    }
+
+    /** @return true if the type is "text" */
+    public boolean isText() {
+        return "text".equalsIgnoreCase(getType());
+    }
+
+    /** @return true if the type is "multipart" */
+    public boolean isMultipart() {
+        return "multipart".equalsIgnoreCase(getType());
+    }
+
+    /** @return true if the type is "text/xml" */
+    public boolean isXml() {
+        return isText() && "xml".equalsIgnoreCase(getSubtype());
+    }
+}

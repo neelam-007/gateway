@@ -1,31 +1,33 @@
 package com.l7tech.server.policy.assertion;
 
-import com.l7tech.policy.assertion.AssertionStatus;
-import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.RequestSwAAssertion;
+import com.l7tech.common.mime.MimeUtil;
+import com.l7tech.common.mime.PartInfo;
+import com.l7tech.common.wsdl.BindingInfo;
+import com.l7tech.common.wsdl.BindingOperationInfo;
+import com.l7tech.common.wsdl.MimePartInfo;
 import com.l7tech.message.Request;
 import com.l7tech.message.Response;
 import com.l7tech.message.SoapRequest;
 import com.l7tech.message.XmlRequest;
-import com.l7tech.common.wsdl.BindingInfo;
-import com.l7tech.common.wsdl.BindingOperationInfo;
-import com.l7tech.common.wsdl.MimePartInfo;
-import com.l7tech.common.util.XmlUtil;
-import com.l7tech.common.util.MultipartUtil;
+import com.l7tech.policy.assertion.AssertionStatus;
+import com.l7tech.policy.assertion.PolicyAssertionException;
+import com.l7tech.policy.assertion.RequestSwAAssertion;
 import com.l7tech.server.attachments.ServerMultipartMessageReader;
+import org.jaxen.JaxenException;
+import org.jaxen.dom.DOMXPath;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.xml.sax.SAXException;
 
 import java.io.IOException;
-import java.util.logging.Logger;
-import java.util.logging.Level;
-import java.util.Map;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
-
-import org.w3c.dom.*;
-import org.xml.sax.SAXException;
-import org.jaxen.dom.DOMXPath;
-import org.jaxen.JaxenException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
@@ -198,11 +200,11 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                             multipartReader = xreq.getMultipartReader();
 
                             if (multipartReader == null) throw new IllegalStateException("ServerMultipartMessageReader must be created first before use");
-                            MultipartUtil.Part mimepartRequest = multipartReader.getMessagePart(mimePartCID);
+                            PartInfo mimepartRequest = multipartReader.getMessagePart(mimePartCID);
 
                             if (mimepartRequest != null) {
                                 // validate the content type
-                                if (!part.validateContentType(mimepartRequest.getHeader(XmlUtil.CONTENT_TYPE).getValue())) {
+                                if (!part.validateContentType(mimepartRequest.getHeader(MimeUtil.CONTENT_TYPE).getValue())) {
                                     if (part.getContentTypes().length > 1) {
                                         logger.info("The content type of the attachment " + mimePartCID + " must be one of the types: " + part.retrieveAllContentTypes());
                                     } else {
@@ -244,7 +246,7 @@ public class ServerRequestSwAAssertion implements ServerAssertion {
                         Iterator attItr = attachments.keySet().iterator();
                         while (attItr.hasNext()) {
                             String attachmentName = (String)attItr.next();
-                            MultipartUtil.Part attachment = (MultipartUtil.Part)attachments.get(attachmentName);
+                            PartInfo attachment = (PartInfo)attachments.get(attachmentName);
                             if (!attachment.isValidated()) {
                                 logger.info("Unexpected attachment " + attachmentName + " found in the request.");
                                 return AssertionStatus.FALSIFIED;

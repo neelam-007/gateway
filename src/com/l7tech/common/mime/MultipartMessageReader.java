@@ -1,7 +1,4 @@
-package com.l7tech.common.attachments;
-
-import com.l7tech.common.util.MultipartUtil;
-import com.l7tech.common.util.XmlUtil;
+package com.l7tech.common.mime;
 
 import java.io.*;
 import java.util.HashMap;
@@ -11,6 +8,11 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 /**
+ * One instance of this is created per request or response of type multipart/related.  It contains information
+ * about all attachments pertaining to this message and the current state of the MIME parsing.
+ *
+ * @deprecated replaced by MultipartMessageReader
+ *
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
  * <p> @author fpang </p>
  * $Id$
@@ -82,7 +84,7 @@ abstract public class MultipartMessageReader {
      * @return the XML as a String
      * @throws java.io.IOException if a multipart message has an invalid format, or the content cannot be read
      */
-    public MultipartUtil.Part getSoapPart() throws IOException {
+    public PartInfo getSoapPart() throws IOException {
         return parseMultipart(0);
     }
 
@@ -92,15 +94,15 @@ abstract public class MultipartMessageReader {
      * @param position The position of the part to be retrieved.
      * @return Part The part parsed.  Return NULL if not found.
      */
-    protected MultipartUtil.Part getMessagePartFromMap(int position) {
+    protected PartInfo getMessagePartFromMap(int position) {
 
-        MultipartUtil.Part part = null;
+        PartInfo part = null;
 
         Set keys = multipartParts.keySet();
 
         Iterator itr = keys.iterator();
         while (itr.hasNext()) {
-            MultipartUtil.Part currentPart = (MultipartUtil.Part)multipartParts.get(itr.next());
+            PartInfo currentPart = (PartInfo)multipartParts.get(itr.next());
             if (currentPart.getPosition() == position) {
                 part = currentPart;
                 break;
@@ -115,21 +117,25 @@ abstract public class MultipartMessageReader {
      * @return The SOAP part found. NULL if not found.
      * @throws java.io.IOException if there is error reading the input data stream.
      */
-    protected MultipartUtil.Part parseSoapPart() throws IOException {
+    protected PartInfo parseSoapPart() throws IOException {
         StringBuffer xml = new StringBuffer();
-        MultipartUtil.Part part = null;
+        PartInfo part = null;
 
         if (multipartParts.size() > 0) {
             // the part to be retrived is already parsed
             return getMessagePartFromMap(0);
         }
 
+        // Our InputStream is positioned to the first byte of the first MIME section, which is presumed
+        // to be XML.
+
+
         // If it is the first time to parse soap part
         String firstBoundary = null;
 
         while ((firstBoundary = readLine()) != null) {
             if (firstBoundary.trim().equals("")) continue;
-            if (firstBoundary.equals(XmlUtil.MULTIPART_BOUNDARY_PREFIX + multipartBoundary)) {
+            if (firstBoundary.equals(MimeUtil.MULTIPART_BOUNDARY_PREFIX + multipartBoundary)) {
                 break;
             } else {
                 throw new IOException("Initial multipart boundary not found");
@@ -138,7 +144,8 @@ abstract public class MultipartMessageReader {
 
         String line;
 
-        part = new MultipartUtil.Part();
+        //part = new PartInfo();
+        part = null; // TODO rewriting
         boolean headers = true;
 
         while ((line = readLine()) != null) {
@@ -147,8 +154,8 @@ abstract public class MultipartMessageReader {
                     headers = false;
                     continue;
                 }
-                MultipartUtil.HeaderValue header = MultipartUtil.parseHeader(line);
-                part.getHeaders().put(header.getName(), header);
+                MimeHeader header = MimeUtil.parseHeader(line);
+                part.getHeaders().add(header);
             } else {
                 if (line.startsWith("--" + multipartBoundary)) {
                     // The boundary is on a line by itself so the previous content doesn't actually contain the last \n
@@ -163,17 +170,17 @@ abstract public class MultipartMessageReader {
             }
         }
 
-        part.setContent(xml.toString());
+        //part.setContent(xml.toString().getBytes());
 
         // MIME part must has at least one header
-        if (part.getHeaders().size() > 0) {
-            part.setPostion(multipartParts.size());
-            multipartParts.put(part.getHeader(XmlUtil.CONTENT_ID).getValue(), part);
-        } else {
-            if (part.getContent().length() > 0) {
+        if (part.getHeaders().size() <= 0) {
+            if (part.getContent().length > 0) {
                 logger.info("An incomplete MIME part is received. Headers not found");
             }
             part = null;
+        } else {
+            //part.setPostion(multipartParts.size());
+            multipartParts.put(part.getHeader(MimeUtil.CONTENT_ID).getValue(), part);
         }
         return part;
     }
@@ -185,9 +192,9 @@ abstract public class MultipartMessageReader {
      * @return Part The part parsed.  Return NULL if not found.
      * @throws java.io.IOException
      */
-    protected MultipartUtil.Part parseMultipart(int lastPartPosition) throws IOException {
+    protected PartInfo parseMultipart(int lastPartPosition) throws IOException {
 
-        MultipartUtil.Part part = null;
+        PartInfo part = null;
 
         if (lastPartPosition == 0) {
             return parseSoapPart();
@@ -201,26 +208,26 @@ abstract public class MultipartMessageReader {
         String line;
         while ((multipartParts.size() <= lastPartPosition) && ((line = readLine()) != null)) {
 
-            part = new MultipartUtil.Part();
+            //part = new PartInfo();
             boolean headers = true;
             do {
                 if (headers) {
                     if (line.length() == 0) {
                         headers = false;
                         addLineDelimiter();
-                        part.setContentLength(storeRawPartContent());
+                        //part.setContentLength(storeRawPartContent());
                         break;
                     }
                     storeRawHeader(line);
-                    MultipartUtil.HeaderValue header = MultipartUtil.parseHeader(line);
-                    part.getHeaders().put(header.getName(), header);
+                    MimeHeader header = MimeUtil.parseHeader(line);
+                    part.getHeaders().add(header);
                 }
             } while ((line = readLine()) != null);
 
             // MIME part must has at least one header
             if (part.getHeaders().size() > 0) {
-                part.setPostion(multipartParts.size());
-                multipartParts.put(part.getHeader(XmlUtil.CONTENT_ID).getValue(), part);
+                //part.setPostion(multipartParts.size());
+                multipartParts.put(part.getHeader(MimeUtil.CONTENT_ID).getValue(), part);
             }
         }
         if (multipartParts.size() >= 2) atLeastOneAttachmentParsed = true;

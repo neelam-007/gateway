@@ -296,7 +296,7 @@ public class ServerJmsRoutingAssertion extends ServerRoutingAssertion {
             logger.finer( "Creating request as BytesMessage" );
             BytesMessage bmsg = bag.getSession().createBytesMessage();
             ByteArrayOutputStream baos = new ByteArrayOutputStream(BUFFER_SIZE);
-            baos.write( xreq.getRequestXml().getBytes(JmsUtil.DEFAULT_ENCODING) ); // TODO ENCODING #@)($*&!)!
+            baos.write( xreq.getRequestXml().getBytes(JmsUtil.DEFAULT_ENCODING) ); // TODO DEFAULT_ENCODING #@)($*&!)!
             bmsg.writeBytes( baos.toByteArray() );
             msg = bmsg;
         }

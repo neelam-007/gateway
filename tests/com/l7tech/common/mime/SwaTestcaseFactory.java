@@ -10,6 +10,7 @@ import javax.mail.internet.HeaderTokenizer;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Random;
+import java.util.logging.Logger;
 
 /**
  * Spews streams of random bytes that look like Soap-with-Attachments (except without all the SOAP)
@@ -17,10 +18,18 @@ import java.util.Random;
  * @author alex
  * @version $Revision$
  */
-public class SwaTestcaseFactory {
-    private SwaTestcaseFactory(int num, int max) {
+class SwaTestcaseFactory {
+    private static final Logger logger = Logger.getLogger(SwaTestcaseFactory.class.getName());
+
+    /**
+     * Create a factory for producing random SOAP-with-attachments test messages.
+     *
+     * @param num number of parts to produce in each multipart/related message
+     * @param partSize the size of each part
+     */
+    SwaTestcaseFactory(int num, int partSize) {
         this.numParts = num;
-        this.maxSize = max;
+        this.partSize = partSize;
         this.boundary = randomBoundary();
     }
 
@@ -52,9 +61,13 @@ public class SwaTestcaseFactory {
      */
     private byte[] randomBinary(int max) {
         byte[] bytes = new byte[max];
-        int oopsPos = random.nextInt(max);
-        int oopsLen = random.nextInt(boundary.length-1)+1;
+        int oopsPos = random.nextInt(max - boundary.length - 3);
+        int oopsLen = random.nextInt(boundary.length - 2) + 1;
         random.nextBytes(bytes);
+        bytes[oopsPos++] = '\r';
+        bytes[oopsPos++] = '\n';
+        bytes[oopsPos++] = '-';
+        bytes[oopsPos++] = '-';
         for (int i = 0; i < oopsLen; i++) {
             bytes[oopsPos + i] = boundary[i];
         }
@@ -62,14 +75,22 @@ public class SwaTestcaseFactory {
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length < 2) throw new Exception("Usage: " + SwaTestcaseFactory.class.getName() + " numParts partSize");
-        int numParts = Integer.parseInt(args[0]);
-        int maxSize = Integer.parseInt(args[1]);
+        //if (args.length < 2) throw new Exception("Usage: " + SwaTestcaseFactory.class.getName() + " numParts partSize");
+        int numParts;
+        int maxSize;
+        if (args.length < 2) {
+            numParts = 8;
+            maxSize = 2047;
+            logger.info("Using default arguments: " + numParts + " " + maxSize);
+        } else {
+            numParts = Integer.parseInt(args[0]);
+            maxSize = Integer.parseInt(args[1]);
+        }
         SwaTestcaseFactory me = new SwaTestcaseFactory(numParts, maxSize);
-        System.out.write(me.doIt());
+        System.out.write(me.makeTestMessage());
     }
 
-    private byte[] doIt() throws IOException {
+    public byte[] makeTestMessage() throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream(40960);
         baos.write(("Content-Type: multipart/related; boundary=\"" + new String(boundary) + "\"").getBytes());
         baos.write(CRLF);
@@ -86,7 +107,7 @@ public class SwaTestcaseFactory {
             baos.write(boundary);
             baos.write(CRLF);
 
-            baos.write(("Content-Length: " + maxSize).getBytes());
+            baos.write(("Content-Length: " + (partSize + trailingBlanks * 2)).getBytes());
             baos.write(CRLF);
             baos.write(("Content-Type: application/octet-stream").getBytes());
             baos.write(CRLF);
@@ -94,7 +115,7 @@ public class SwaTestcaseFactory {
             baos.write(CRLF);
             baos.write(CRLF);
 
-            baos.write(randomBinary(maxSize));
+            baos.write(randomBinary(partSize));
             for (int j = 0; j < trailingBlanks; j++) {
                 baos.write(CRLF);
             }
@@ -109,7 +130,7 @@ public class SwaTestcaseFactory {
     }
 
     private final int numParts;
-    private final int maxSize;
+    private final int partSize;
     private final byte[] boundary;
     private final Random random = new Random();
     public static final byte[] CRLF = "\r\n".getBytes();
