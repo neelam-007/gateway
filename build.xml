@@ -290,7 +290,8 @@
       ** respective archives (war, jar).
       ** This target is invoked by other targets such as deploy and dist.
       -->
-    <target name="package" depends="init-dev, compile, package.gateway, package.agent, package.manager"/>
+    <target name="package" depends="init-dev, compile, package.gateway, package.agent, package.manager, package.installclients, package.api"/>
+
 
     <target name="package.gateway">
         <!-- the ssg war -->
@@ -465,6 +466,15 @@
         </jar>
     </target>
 
+    <target name="package.installclients" unless="ssg.only">
+        <exec executable="perl" failonerror="true" dir="installer">
+            <env key="JAVA_HOME" value="${java.home}"/>
+            <arg line="make_installers.pl"/>
+            <arg line="-N"/>
+        </exec>
+        <!-- invoke the dssm webstart target (conditional) -->
+    </target>
+
     <target name="package.api" unless="ssg.only">
         <!--
            ** Layer7 API jar, pack and sign
@@ -487,13 +497,6 @@
         <signjar keystore="${src.root}/etc/ssgKeyStore" alias="signer" storepass="password">
             <fileset dir="${build.dir}" includes="layer7-api.jar"/>
         </signjar>
-
-        <exec executable="perl" failonerror="true" dir="installer">
-            <env key="JAVA_HOME" value="${java.home}"/>
-            <arg line="make_installers.pl"/>
-            <arg line="-N"/>
-        </exec>
-        <!-- invoke the dssm webstart target (conditional) -->
     </target>
 
 
