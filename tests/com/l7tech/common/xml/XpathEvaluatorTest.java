@@ -35,6 +35,27 @@ public class XpathEvaluatorTest extends TestCase {
         return new TestSuite(XpathEvaluatorTest.class);
     }
 
+    public void testOtherFunctions() throws Exception {
+        Document doc = TestDocuments.getTestDocument(TestDocuments.TEST_SOAP_XML);
+        System.out.println(XmlUtil.nodeToFormattedString(doc));
+        SOAPMessage sm = SoapUtil.asSOAPMessage(doc);
+        Map namespaces = XpathEvaluator.getNamespaces(sm);
+        XpathEvaluator xe = XpathEvaluator.newEvaluator(doc, namespaces);
+        List nodes = xe.select("string(//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/symbol)");
+        assertTrue("Size should have been >0", nodes.size() > 0);
+        for (Iterator iterator = nodes.iterator(); iterator.hasNext();) {
+            String obj = (String)iterator.next();
+            assertTrue("Value must be DIS", obj.equals("DIS"));
+        }
+
+        nodes = xe.select("namespace-uri(//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice)");
+        assertTrue("Size should have been >0", nodes.size() > 0);
+        for (Iterator iterator = nodes.iterator(); iterator.hasNext();) {
+            String obj = (String)iterator.next();
+            assertTrue("Value must be DIS", obj.equals("Some-URI"));
+        }
+    }
+
     public void testContains() throws Exception {
         Document doc = TestDocuments.getTestDocument(TestDocuments.TEST_SOAP_XML);
         System.out.println(XmlUtil.nodeToFormattedString(doc));
@@ -60,6 +81,13 @@ public class XpathEvaluatorTest extends TestCase {
         for (Iterator iterator = nodes.iterator(); iterator.hasNext();) {
             Boolean bool = (Boolean) iterator.next();
             assertTrue("Should return true", bool.booleanValue());
+        }
+
+        nodes = xe.select("not(contains(//SOAP-ENV:Envelope/SOAP-ENV:Body/m:GetLastTradePrice/symbol,'DI'))");
+        assertTrue("Size should have been >0", nodes.size() > 0);
+        for (Iterator iterator = nodes.iterator(); iterator.hasNext();) {
+            Boolean bool = (Boolean) iterator.next();
+            assertTrue("Should return false", !bool.booleanValue());
         }
     }
 
