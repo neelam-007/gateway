@@ -156,8 +156,14 @@ public class WssProcessorImpl implements WssProcessor {
                                                                  "but its identifier was not extracted.");
                     } else {
                         if (securityContextFinder == null)
-                            throw new ProcessorException("SecurityContextToken element found in message, but caller did not provide a SecurityContextFinder");                            
+                            throw new ProcessorException("SecurityContextToken element found in message, but caller " +
+                                                         "did not provide a SecurityContextFinder");
                         final SecurityContext secContext = securityContextFinder.getSecurityContext(identifier);
+                        if (secContext == null) {
+                            throw new GeneralSecurityException("The identifier " + identifier +
+                                                               " did not resolve to an existing secure conversation " +
+                                                               "session on this server");
+                        }
                         SecurityContextTokenImpl secConTok = new SecurityContextTokenImpl(secContext,
                                                                                           secConTokEl,
                                                                                           identifier);
@@ -339,7 +345,7 @@ public class WssProcessorImpl implements WssProcessor {
         Key resultingKey = null;
         try {
             resultingKey = keyDeriver.derivedKeyTokenToKey(derivedKeyEl,
-                                                               sct.getSecurityContext().getSharedSecret().getEncoded());
+                                                           sct.getSecurityContext().getSharedSecret().getEncoded());
         } catch (NoSuchAlgorithmException e) {
             throw new InvalidDocumentFormatException(e);
         }
