@@ -25,7 +25,7 @@ public class OptionalCredentialsPanel extends JPanel {
     public OptionalCredentialsPanel() {
         setLayout(new GridBagLayout());
 
-        requireCheckbox = new JCheckBox("Requires username and password");
+        requireCheckbox = new JCheckBox("Requires user name and password:");
         requireCheckbox.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 enableOrDisableComponents();
@@ -37,7 +37,7 @@ public class OptionalCredentialsPanel extends JPanel {
                                    GridBagConstraints.NONE,
                                    new Insets(0, 0, 5, 0), 0, 0));
 
-        add(new JLabel("Username:"),
+        add(new JLabel("User Name:"),
             new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
                                    GridBagConstraints.EAST,
                                    GridBagConstraints.NONE,
