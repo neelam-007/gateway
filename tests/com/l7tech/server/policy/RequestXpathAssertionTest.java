@@ -21,10 +21,7 @@ import org.xml.sax.InputSource;
 import javax.servlet.ServletOutputStream;
 import javax.wsdl.Definition;
 import javax.xml.soap.SOAPConstants;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URL;
+import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -89,14 +86,14 @@ public class RequestXpathAssertionTest extends TestCase {
     }
 
     public void testXmethods() throws Exception {
-        final String XMETHODS_WSDL_URL = "http://www.xmethods.net/sd/StockQuoteService.wsdl";
+        final String XMETHODS_WSDL_PATH = "com/l7tech/service/resources/xmethods-StockQuoteService.wsdl";
         final String XMETHODS_URN = "urn:xmethods-delayed-quotes";
         final String XMETHODS_SOAPACTION = XMETHODS_URN + "#getQuote";
 
-        URL xmethodsWsdlUrl = new URL(XMETHODS_WSDL_URL);
-        Wsdl xmethodsWsdl = Wsdl.newInstance("", new InputSource(xmethodsWsdlUrl.openStream()));
-        HexUtils.Slurpage slurpedWsdl = HexUtils.slurpUrl(xmethodsWsdlUrl);
-        String xml = new String(slurpedWsdl.bytes, "UTF-8");
+        InputStream xmethodsWsdlStream = getClass().getClassLoader().getResourceAsStream( XMETHODS_WSDL_PATH );
+        byte[] slurpedWsdl = HexUtils.slurpStream( xmethodsWsdlStream, 65536 );
+        String xml = new String(slurpedWsdl, "UTF-8");
+        Wsdl xmethodsWsdl = Wsdl.newInstance("", new InputSource(new ByteArrayInputStream(slurpedWsdl)) );
         _service.setWsdlXml(xml);
         _serviceCache.cache(_service);
 
