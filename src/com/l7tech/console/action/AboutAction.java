@@ -22,7 +22,7 @@ public class AboutAction extends BaseAction {
      * @return the aciton description
      */
     public String getDescription() {
-        return "Show aboutthe program information";
+        return "Show about the program information";
     }
 
     /**
