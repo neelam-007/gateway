@@ -269,7 +269,7 @@
         <!-- the ssg war -->
         <war warfile="${build.dir}/${war}" webxml="${build.etc}/web.xml">
             <lib dir="${build.dir}/lib"
-                excludes="commons-logging.jar, jh.jar, kunststoff.jar, servlet.jar, catalina.jar">
+                excludes="commons-logging.jar, jh.jar, kunststoff.jar, servlet.jar, catalina.jar, jedit-syntax.jar, forms_rt.jar, mockobjects*, systray*">
             </lib>
             <classes dir="${build.classes}"/>
 
