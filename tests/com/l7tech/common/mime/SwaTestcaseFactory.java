@@ -67,7 +67,7 @@ class SwaTestcaseFactory {
         random.nextBytes(bytes);
 
         // Generate a random number of "red herring" fake almost-boundaries
-        int numOopses = random.nextInt((max / (random.nextInt(150) + 100)) + random.nextInt(4));
+        int numOopses = random.nextInt(((max / (random.nextInt(150) + 100)) + 1) + random.nextInt(4));
         for (int oopsNum = 0; oopsNum < numOopses; oopsNum++) {
             // Position it right to the end; we'll truncate it if necessary
             int oopsPos = random.nextInt(max);
@@ -149,6 +149,10 @@ class SwaTestcaseFactory {
     public byte[] getBoundary() {
         if (boundary == null) throw new IllegalStateException("No message has been generated yet");
         return boundary;
+    }
+
+    public Random getRandom() {
+        return random;
     }
 
     private final int numParts;

@@ -12,10 +12,7 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.PushbackInputStream;
+import java.io.*;
 import java.util.logging.Logger;
 import java.util.Random;
 
@@ -54,14 +51,15 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
 
     public void testSinglepart() throws Exception {
         // A singlepart message will not contain the boundary, so should throw.
-        byte[] crap = new byte[11000];
-        new Random(98899).nextBytes(crap);
 
         // A random boundary
         final SwaTestcaseFactory stfu = makeStfu(1, 100, 10);
         stfu.makeTestMessage();
         byte[] rawBoundary = stfu.getBoundary();
         byte[] boundary = new String("--" + new String(rawBoundary)).getBytes();
+
+        byte[] crap = new byte[11000];
+        stfu.getRandom().nextBytes(crap);
 
         // Make sure we didn't include the boundary in our generated test garbage by accident (unlikely)
         assertEquals(-1, HexUtils.matchSubarrayOrPrefix(crap, 0, crap.length, boundary, 0));
@@ -72,7 +70,8 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         MimeBoundaryTerminatedInputStream mbti = new MimeBoundaryTerminatedInputStream(boundary, in, pushSize);
 
         try {
-            HexUtils.copyStream(mbti, new NullOutputStream());
+            copyStreamInIrregularChunks(mbti, new NullOutputStream(),
+                                        stfu.getRandom(), 1, 128, 0, 10);
             fail("Failed to throw exception when reading a message that contained no MIME boundaries");
         } catch (IOException e) {
             // Ok
@@ -123,6 +122,16 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         byte[] testMsg = stfu.makeTestMessage();
         log.info("Constructed test MIME multipart message " + testMsg.length + " bytes long");
         readParts(testMsg, numparts, 3);
+    }
+    
+    public void testRandomBlockSize() throws Exception {
+        int numparts = 20;
+        int size = 10;
+        SwaTestcaseFactory stfu = makeStfu(numparts, size, 5);
+        byte[] testMsg = stfu.makeTestMessage();
+        log.info("Constructed test MIME multipart message " + testMsg.length + " bytes long");
+        //log.info("Message: \n" + new String(testMsg));
+        readParts(testMsg, numparts, stfu.getRandom(), 1, 100, 0, 5);
     }
 
     public void testHugeBlockSize() throws Exception {
@@ -277,10 +286,78 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         }
     }
 
+    public static long copyStreamInIrregularChunks(InputStream in,
+                                  OutputStream out, 
+                                  Random random, 
+                                  int blockSizeLow, 
+                                  int blockSizeHigh,
+                                  int blockExtraLow,
+                                  int blockExtraHigh)
+            throws IOException 
+    {
+        if (blockSizeHigh < blockSizeLow) throw new IllegalArgumentException();
+        if (blockSizeLow < 1) throw new IllegalArgumentException("Minimum blocksize too small");
+        if (blockExtraHigh < blockExtraLow) throw new IllegalArgumentException();
+        if (blockExtraLow < 0) throw new IllegalArgumentException();
+        if (in == null || out == null) throw new NullPointerException();
+        int got;
+        long total = 0;
+        int blocksize;
+        int extra;
+        for (;;) {
+            if (blockSizeLow == blockSizeHigh && blockExtraLow == 0 && blockExtraHigh ==0) {
+                extra = 0;
+                blocksize = blockSizeLow;
+            } else {
+                extra = random.nextInt(blockExtraHigh - blockExtraLow + 1) + 1;
+                blocksize = random.nextInt(blockSizeHigh - blockSizeLow + 1) + 1;
+            }
+            byte[] buf = new byte[blocksize + extra];
+
+            // randomize buffer content before read
+            random.nextBytes(buf);
+
+            if (extra < 1) {
+                // simple full-buffer read
+                got = in.read(buf);
+            } else {
+                // Save a backup of the
+                byte[] bufBak = new byte[buf.length];
+                System.arraycopy(buf, 0, bufBak, 0, buf.length);
+                int start = random.nextInt(extra);
+
+                got = in.read(buf, start, blocksize);
+
+                // Ensure that no portions of the buffer outside the area we asked to write into were overwritten
+                if (start > 0)
+                    assertTrue(HexUtils.compareArrays(buf, 0, bufBak, 0, start));
+                if (start < extra)
+                    assertTrue(HexUtils.compareArrays(buf, start + blocksize, bufBak, start + blocksize, extra - start));
+            }
+            if (got <= 0)
+                break;
+            out.write(buf, 0, got);
+            total += got;
+        }
+        return total;
+    }
+    
     private static class TooManyPartsException extends Exception {}
     private static class NotEnoughPartsException extends Exception {}
 
     private void readParts(byte[] testMsg, int numparts, int blockSize) throws IOException, TooManyPartsException, NotEnoughPartsException {
+        readParts(testMsg, numparts, new Random(), blockSize, blockSize, 0, 0);
+    }
+    
+    private void readParts(byte[] testMsg,
+                           int numparts,
+                           Random random,
+                           int blockSizeLow,
+                           int blockSizeHigh,
+                           int blockExtraLow,
+                           int blockExtraHigh)
+            throws IOException, TooManyPartsException, NotEnoughPartsException
+    {
         ByteArrayInputStream bais = new ByteArrayInputStream(testMsg);
         int psize = 4096;
         PushbackInputStream pis = new PushbackInputStream(bais, psize);
@@ -293,11 +370,11 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         MimeBoundaryTerminatedInputStream mbtis = new MimeBoundaryTerminatedInputStream(boundary, pis, psize);
 
         ByteArrayOutputStream preamble = new ByteArrayOutputStream();
-        HexUtils.copyStream(mbtis, preamble, blockSize);
+        copyStreamInIrregularChunks(mbtis, preamble, random, blockSizeLow, blockSizeHigh, blockExtraLow, blockExtraHigh);
         log.info("Successfully read " + preamble.toByteArray().length + " bytes of preamble");
 
         MimeHeaders innerHeaders;
-        ByteArrayOutputStream part1;
+        ByteArrayOutputStream partOut;
         int total;
 
         for (int partNum = 0; partNum < numparts; partNum++) {
@@ -306,9 +383,9 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
 
             // Read first part and count bytes
             mbtis = new MimeBoundaryTerminatedInputStream(boundary, pis, psize);
-            part1 = new ByteArrayOutputStream();
-            HexUtils.copyStream(mbtis, part1, blockSize);
-            total = part1.toByteArray().length;
+            partOut = new ByteArrayOutputStream();
+            copyStreamInIrregularChunks(mbtis, partOut, random, blockSizeLow, blockSizeHigh, blockExtraLow, blockExtraHigh);
+            total = partOut.toByteArray().length;
             assertTrue(total > 0);
             log.info("Successfully read " + total + " bytes of part #" + partNum);
 
@@ -316,7 +393,7 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
                 assertEquals(total, innerHeaders.getContentLength());
                 log.info("Verified that length of part matched its declared Content-Length.");
             } else
-                log.info("(Not verifying length -- part1 had no Content-Length header)");
+                log.info("(Not verifying length -- partOut had no Content-Length header)");
 
             if (partNum >= numparts - 1) {
                 if (!mbtis.isLastPartProcessed()) {
