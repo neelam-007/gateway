@@ -46,7 +46,7 @@ public class AbstractLocatorTest extends TestCase {
                 }
 
                 System.setProperty("com.l7tech.util.locator.properties",
-                        "/com/l7tech/console/resources/services.properties");
+                        "/com/l7tech/util/locator/test.properties");
 
             }
 
