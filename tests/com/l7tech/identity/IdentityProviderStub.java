@@ -2,8 +2,6 @@ package com.l7tech.identity;
 
 import com.l7tech.console.util.Registry;
 
-import java.security.Principal;
-
 /**
  * Test stub for identity manager.
  *
@@ -31,7 +29,7 @@ public class IdentityProviderStub implements IdentityProvider {
         return Registry.getDefault().getInternalGroupManager();
     }
 
-    public boolean authenticate(Principal user, byte[] credentials) {
+    public boolean authenticate( User user, byte[] credentials) {
         return false;
     }
 

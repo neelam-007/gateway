@@ -414,7 +414,7 @@ public class PolicyAddIdentitiesDialog extends JDialog {
               return null;
           }
 
-          public boolean authenticate(Principal user, byte[] credentials) {
+          public boolean authenticate( User user, byte[] credentials) {
               return false;
           }
 

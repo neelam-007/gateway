@@ -29,7 +29,7 @@ public class IdentityProviderClient implements com.l7tech.identity.IdentityProvi
         return groupManager;
     }
 
-    public boolean authenticate(Principal user, byte[] credentials) {
+    public boolean authenticate( User user, byte[] credentials) {
         return false;
     }
 

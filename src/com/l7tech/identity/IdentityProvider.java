@@ -10,7 +10,7 @@ public interface IdentityProvider {
     IdentityProviderConfig getConfig();
     UserManager getUserManager();
     GroupManager getGroupManager();
-    boolean authenticate( Principal user, byte[] credentials );
+    boolean authenticate( User user, byte[] credentials );
     /**
      * If true, the save, update and delete methods wont be supported on the usermanager and groupmanager objects
      */

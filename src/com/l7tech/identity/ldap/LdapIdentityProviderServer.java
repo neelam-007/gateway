@@ -1,11 +1,6 @@
 package com.l7tech.identity.ldap;
 
-import com.l7tech.identity.IdentityProviderConfig;
-import com.l7tech.identity.UserManager;
-import com.l7tech.identity.GroupManager;
-import com.l7tech.identity.IdentityProviderType;
-
-import java.security.Principal;
+import com.l7tech.identity.*;
 
 /**
  * Layer 7 Technologies, inc.
@@ -33,7 +28,7 @@ public class LdapIdentityProviderServer implements com.l7tech.identity.IdentityP
         return groupManager;
     }
 
-    public boolean authenticate(Principal user, byte[] credentials) {
+    public boolean authenticate( User user, byte[] credentials) {
         return false;
     }
 

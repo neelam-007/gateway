@@ -531,7 +531,7 @@ public class IdentityProviderPanel extends WizardStepPanel {
 
           public GroupManager getGroupManager() { return null; }
 
-          public boolean authenticate(Principal user, byte[] credentials) { return false; }
+          public boolean authenticate( User user, byte[] credentials) { return false; }
 
           public boolean isReadOnly() { return true; }
 
