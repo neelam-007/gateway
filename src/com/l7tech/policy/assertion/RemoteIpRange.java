@@ -16,7 +16,7 @@ import java.util.StringTokenizer;
 public class RemoteIpRange extends Assertion {
 
     public RemoteIpRange() {
-        startIp = "192.168.0.0";
+        startIp = "192.168.1.0";
         networkMask = 24;
         allowRange = true;
     }
