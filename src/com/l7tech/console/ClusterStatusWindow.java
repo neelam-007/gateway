@@ -12,6 +12,7 @@ import com.l7tech.cluster.ServiceUsage;
 import com.l7tech.console.icons.ArrowIcon;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.common.util.Locator;
+import com.l7tech.objectmodel.FindException;
 
 import javax.swing.*;
 import javax.swing.table.*;
@@ -20,6 +21,7 @@ import java.util.Hashtable;
 import java.util.Vector;
 import java.awt.*;
 import java.awt.event.*;
+
 
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
@@ -426,7 +428,12 @@ public class ClusterStatusWindow extends JFrame {
         ClusterStatusAdmin clusterStatusService = (ClusterStatusAdmin) Locator.getDefault().lookup(ClusterStatusAdmin.class);
         if (clusterStatusService == null) throw new IllegalStateException("cannot obtain ClusterStatusAdmin remote reference");
 
-        ClusterNodeInfo[] cluster = clusterStatusService.getClusterStatus();
+        ClusterNodeInfo[] cluster = new ClusterNodeInfo[0];
+        try {
+            cluster = clusterStatusService.getClusterStatus();
+        } catch (FindException e) {
+            System.err.println("ERROR " + e.getMessage());
+        }
         if (cluster != null) {
             System.out.println("Number of node is: " + cluster.length);
         }
@@ -450,7 +457,12 @@ public class ClusterStatusWindow extends JFrame {
         dummyData.add(node7);
         dummyData.add(node8);
 
-        ServiceUsage[] serviceStat = clusterStatusService.getServiceUsage();
+        ServiceUsage[] serviceStat = new ServiceUsage[0];
+        try {
+            serviceStat = clusterStatusService.getServiceUsage();
+        } catch (FindException e) {
+            System.err.println("ERROR " + e.getMessage());
+        }
         if (serviceStat != null) {
              System.out.println("Number of service statistics is: " + serviceStat.length);
         }
