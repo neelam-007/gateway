@@ -198,5 +198,43 @@ CREATE TABLE urlcache (
   url mediumtext NOT NULL default '',
   size integer NOT NULL default '0',
   content text,
-  PRIMARY KEY(oid);
+  PRIMARY KEY(oid)
 ) TYPE=InnoDB;
+
+
+--
+-- Table structure for table 'cluster_info'
+--
+
+DROP TABLE cluster_info;
+CREATE TABLE cluster_info (
+  mac varchar(18) NOT NULL default '',
+  address varchar(16) NOT NULL default '',
+  ismaster TINYINT(1) NOT NULL default '0',
+  uptime bigint NOT NULL default '0',
+  avgload double NOT NULL default '0',
+  statustimestamp bigint NOT NULL default '0',
+  PRIMARY KEY(nodeid)
+)  TYPE=InnoDB;
+
+--
+-- Dumping data for table 'cluster_info'
+--
+
+--
+-- Table structure for table 'service_usage'
+--
+
+DROP TABLE service_usage;
+CREATE TABLE service_usage (
+  serviceid bigint NOT NULL default '0',
+  nodeid bigint NOT NULL default '0',
+  requestnr bigint NOT NULL default '0',
+  authorizedreqnr bigint NOT NULL default '0',
+  completedreqnr bigint NOT NULL default '0',
+  primary key(serviceid, nodeid)
+) TYPE=InnoDB;
+
+--
+-- Dumping data for table 'service_usage'
+--

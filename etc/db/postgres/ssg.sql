@@ -159,6 +159,10 @@ CREATE TABLE service_resolution (
 -- Dumping data for table 'service_resolution'
 --
 
+--
+-- Table structure for table 'urlcache'
+--
+
 DROP TABLE urlcache;
 CREATE TABLE urlcache (
   objectid bigint NOT NULL default '0',
@@ -169,3 +173,43 @@ CREATE TABLE urlcache (
   PRIMARY KEY(oid)
 );
 
+--
+-- Dumping data for table 'urlcache'
+--
+
+--
+-- Table structure for table 'cluster_info'
+--
+
+DROP TABLE cluster_info;
+CREATE TABLE cluster_info (
+  mac varchar(18) NOT NULL default '',
+  address varchar(16) NOT NULL default '',
+  ismaster boolean NOT NULL default 'f',
+  uptime bigint NOT NULL default '0',
+  avgload float8 NOT NULL default '0',
+  statustimestamp bigint NOT NULL default '0',
+  PRIMARY KEY(mac)
+);
+
+--
+-- Dumping data for table 'cluster_info'
+--
+
+--
+-- Table structure for table 'service_usage'
+--
+
+DROP TABLE service_usage;
+CREATE TABLE service_usage (
+  serviceid bigint NOT NULL default '0',
+  nodeid bigint NOT NULL default '0',
+  requestnr bigint NOT NULL default '0',
+  authorizedreqnr bigint NOT NULL default '0',
+  completedreqnr bigint NOT NULL default '0',
+  primary key(serviceid, nodeid)
+);
+
+--
+-- Dumping data for table 'service_usage'
+--
