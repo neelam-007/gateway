@@ -126,9 +126,7 @@ public class ClientXmlResponseSecurity extends ClientAssertion {
 
     private void handleResponseThrowable(Throwable e) throws ResponseValidationException {
         Throwable cause = ExceptionUtils.unnestToRoot(e);
-        if (cause instanceof SignatureNotFoundException) {
-            throw new ResponseValidationException("Response from Gateway did not contain a signature as required by policy", e);
-        } else if (cause instanceof InvalidSignatureException) {
+        if (cause instanceof InvalidSignatureException) {
             throw new ResponseValidationException("Response from Gateway contained an invalid signature", e);
         } else if (cause instanceof SignatureException) {
             throw new ResponseValidationException("Response from Gateway was signed, but not by the Gateway CA key we expected", e);
