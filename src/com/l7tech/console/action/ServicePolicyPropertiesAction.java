@@ -60,6 +60,11 @@ public class ServicePolicyPropertiesAction extends NodeAction {
                       ComponentRegistry windowManager =
                         Registry.getDefault().getComponentRegistry();
                       WorkSpacePanel wpanel = windowManager.getCurrentWorkspace();
+
+                      // clear work space here will prompt user to save or cancel the changes in the current policy first
+                      // it makes sure the user will see the updated policy if the policy is saved
+                      wpanel.clearWorkspace();
+
                       serviceNode.clearServiceHolder();
                       PolicyEditorPanel pep = new PolicyEditorPanel(serviceNode);
                       wpanel.setComponent(pep);
