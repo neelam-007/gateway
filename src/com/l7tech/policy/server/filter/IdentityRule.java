@@ -128,8 +128,8 @@ public class IdentityRule extends Filter {
                     Group grp = gman.findByName(grpmemship.getGroupName());
                     Set members = gman.getUserHeaders( grp );
                     for (Iterator jj = members.iterator(); jj.hasNext();) {
-                        User memberx = (User)jj.next();
-                        if (memberx.getLogin().equals(user.getLogin())) {
+                        EntityHeader memberx = (EntityHeader)jj.next();
+                        if (memberx.getName().equals(user.getLogin())) {
                             return true;
                         }
                     }
