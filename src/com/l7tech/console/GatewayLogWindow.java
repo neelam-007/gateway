@@ -3,10 +3,12 @@ package com.l7tech.console;
 import com.l7tech.common.gui.util.ImageCache;
 import com.l7tech.console.action.AboutAction;
 import com.l7tech.console.panels.LogPanel;
+import com.l7tech.console.util.Registry;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.awt.event.ActionListener;
 import java.awt.*;
 import java.util.ResourceBundle;
 
@@ -31,10 +33,36 @@ public class GatewayLogWindow extends JFrame {
         setJMenuBar(getClusterWindowMenuBar());
         getContentPane().setLayout(new BorderLayout());
         getContentPane().add(getJFrameContentPane(), BorderLayout.CENTER);
+
+        // exitMenuItem listener
+        getExitMenuItem().
+                addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        exitMenuEventHandler(e);
+                    }
+                });
+
+        // HelpTopics listener
+        getHelpTopicsMenuItem().
+                addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        Registry.getDefault().getComponentRegistry().getMainWindow().showHelpTopics();
+                    }
+                });
+
         pack();
         //todo: need to reorganize this
         getLogPane().onConnect();
         getLogPane().refreshLogs();
+    }
+
+    /**
+     * @param event ActionEvent
+     * @see ActionEvent for details
+     */
+    private void exitMenuEventHandler(ActionEvent event) {
+        Registry.getDefault().getComponentRegistry().getMainWindow().getLogMenuItem().setSelected(false);
+        this.dispose();
     }
 
     private JPanel getJFrameContentPane() {

@@ -1,7 +1,9 @@
 package com.l7tech.console;
 
 import com.l7tech.console.action.AboutAction;
+import com.l7tech.console.action.ActionVetoException;
 import com.l7tech.console.util.BarIndicator;
+import com.l7tech.console.util.Registry;
 import com.l7tech.console.panels.StatisticsPanel;
 import com.l7tech.common.gui.util.ImageCache;
 
@@ -12,6 +14,7 @@ import java.util.Hashtable;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.awt.event.ActionListener;
 
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
@@ -38,11 +41,38 @@ public class ClusterStatusWindow extends JFrame {
         setJMenuBar(getClusterWindowMenuBar());
         getContentPane().setLayout(new BorderLayout());
         getContentPane().add(getJFrameContentPane(), BorderLayout.CENTER);
+        // exitMenuItem listener
+        getExitMenuItem().
+                addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        exitMenuEventHandler(e);
+                    }
+                });
+
+        // HelpTopics listener
+        getHelpTopicsMenuItem().
+                addActionListener(new ActionListener() {
+                    public void actionPerformed(ActionEvent e) {
+                        Registry.getDefault().getComponentRegistry().getMainWindow().showHelpTopics();
+                    }
+                });
+
         pack();
+
         //todo: need to reorganize this
         getStatisticsPane().onConnect();
         getStatisticsPane().refreshStatistics();
     }
+
+    /**
+     * @param event ActionEvent
+     * @see ActionEvent for details
+     */
+    private void exitMenuEventHandler(ActionEvent event) {
+        Registry.getDefault().getComponentRegistry().getMainWindow().getStatMenuItem().setSelected(false);
+        this.dispose();
+    }
+
 
     private JPanel getJFrameContentPane() {
         if (frameContentPane == null) {
