@@ -8,6 +8,7 @@ package com.l7tech.proxy.gui.dialogs;
 
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.proxy.datamodel.Ssg;
+import com.l7tech.proxy.gui.util.IconManager;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -32,6 +33,8 @@ public class FederatedSsgIdentityPanel extends SsgIdentityPanel {
     private JButton wsTrustCertButton;
     private JTextField wspAppliesToField;
 
+    private final ImageIcon imageIcon;
+
     public FederatedSsgIdentityPanel(Ssg ssg) {
         setLayout(new BorderLayout());
         add(mainPanel);
@@ -44,6 +47,7 @@ public class FederatedSsgIdentityPanel extends SsgIdentityPanel {
             wsTrustPanel.setVisible(false);
             clientCertButton.setVisible(true);
             trustedSsgLabel.setText(ssg.getTrustedGateway().toString());
+            imageIcon = IconManager.getSmallFederatedSsgDiagram();
         } else {
             trustedGatewayPanel.setVisible(false);
             wsTrustPanel.setVisible(true);
@@ -58,9 +62,14 @@ public class FederatedSsgIdentityPanel extends SsgIdentityPanel {
             // TODO enable this setting as soon as it is configurable
             wstSavePasswordCheckBox.setSelected(true);
             wstSavePasswordCheckBox.setVisible(false);
+            imageIcon = IconManager.getSmallFederatedSsgWithTokenServiceDiagram();
         }
 
         updateButtons();
+    }
+
+    public ImageIcon getGeneralPaneImageIcon() {
+        return imageIcon;
     }
 
     private void updateButtons() {

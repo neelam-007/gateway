@@ -17,7 +17,6 @@ import com.l7tech.proxy.datamodel.exceptions.CertificateAlreadyIssuedException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.gui.Gui;
-import com.l7tech.proxy.gui.util.IconManager;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
 
 import javax.net.ssl.SSLException;
@@ -59,6 +58,8 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     //   View for General pane
     private JComponent generalPane;
     private JTextField fieldServerAddress;
+    private ImageIcon generalPaneImageIcon;
+    private JLabel imageLabel;
 
     //   View for Identity pane
     private SsgIdentityPanel ssgIdentityPane;
@@ -75,9 +76,9 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
     /** Create an SsgPropertyDialog ready to edit an Ssg instance. */
     private SsgPropertyDialog(ClientProxy clientProxy, final Ssg ssg) {
-        super("Gateway Properties");
+        super("Gateway Account Properties");
         this.clientProxy = clientProxy;
-        tabbedPane.add("General", getGeneralPane());
+        tabbedPane.add("General", getGeneralPane(ssg));
         tabbedPane.add("Identity", getIdentityPane(ssg));
         tabbedPane.add("Network", getNetworkPane());
         tabbedPane.add("Bridge Policy", getBridgePolicyPane());
@@ -282,7 +283,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                 JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
                                         "A certificate for the SecureSpan gateway " + ssgName() + "\n" +
                                         "was not found.",
-                                        "Gateway Certificate Not Found",
+                                        "Gateway Server Certificate Not Found",
                                         JOptionPane.INFORMATION_MESSAGE);
                                 return;
                             }
@@ -308,23 +309,23 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
         PasswordAuthentication creds = ssg.getRuntime().getCredentialManager().getCredentials(ssg);
 
-        // make sure that the hostname is set
+        // make sure that the host name is set
         String newHost = fieldServerAddress.getText();
         if (newHost == null || newHost.length() < 1)
             newHost = ssg.getSsgAddress();
         if (newHost == null || newHost.length() < 1) {
-            newHost = JOptionPane.showInputDialog(this, "Please enter a Gateway hostname.");
+            newHost = JOptionPane.showInputDialog(this, "Please enter a Gateway host name.");
             if (newHost == null) throw new OperationCanceledException();
         }
         if (newHost == null || newHost.length() < 1) {
             JOptionPane.showMessageDialog(this,
-                                          "You must set a gateway hostname before you can apply for a client " +
+                                          "You must set a gateway host name before you can apply for a client " +
                                           "certificate.", "Cannot apply for client certificate",
                                           JOptionPane.ERROR_MESSAGE);
             throw new OperationCanceledException();
         }
 
-        // Save the hostname we're about to use in the bean and in the GUI
+        // Save the host name we're about to use in the bean and in the GUI
         ssg.setSsgAddress(newHost);
         fieldServerAddress.setText(newHost);
         checkOk();
@@ -429,24 +430,30 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         return networkPane;
     }
 
+    private JLabel getImageLabel(Ssg ssg) {
+        if (imageLabel == null) {
+            imageLabel = new JLabel(getIdentityPane(ssg).getGeneralPaneImageIcon());
+            imageLabel.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
+        }
+        return imageLabel;
+    }
+
     /** Create panel controls.  Should be called only from a constructor. */
-    private JComponent getGeneralPane() {
+    private JComponent getGeneralPane(Ssg ssg) {
         if (generalPane == null) {
             gridY = 0;
             JPanel pane = new JPanel(new GridBagLayout());
             generalPane = new JScrollPane(pane);
             generalPane.setBorder(BorderFactory.createEmptyBorder());
 
-            JLabel image = new JLabel(IconManager.getSplashImageIcon());
-            image.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
-            pane.add(image,
+            pane.add(getImageLabel(ssg),
                      new GridBagConstraints(0, gridY++, 2, 1, 0.0, 0.0,
                                             GridBagConstraints.CENTER,
                                             GridBagConstraints.NONE,
                                             new Insets(25, 5, 0, 0), 0, 0));
 
             String splaintext = "Enter the host name or Internet address of the SecureSpan " +
-                    "Gateway that will process Web service requests.";
+                    "Gateway that will process service requests.";
             WrappingLabel splain01 = new WrappingLabel(splaintext, 3);
             pane.add(splain01,
                      new GridBagConstraints(0, gridY++, 2, 1, 1000.0, 0.0,
@@ -454,7 +461,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                             GridBagConstraints.HORIZONTAL,
                                             new Insets(25, 25, 0, 25), 0, 0));
 
-            pane.add(new JLabel("Gateway Hostname:"),
+            pane.add(new JLabel("Gateway Host Name:"),
                      new GridBagConstraints(0, gridY, 1, 1, 0.0, 0.0,
                                             GridBagConstraints.EAST,
                                             GridBagConstraints.NONE,
@@ -526,7 +533,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
         if (fieldServerAddress == null) {
             fieldServerAddress = new ContextMenuTextField();
             fieldServerAddress.setPreferredSize(new Dimension(220, 20));
-            fieldServerAddress.setToolTipText("<HTML>Gateway hostname or address, for example<br><address>gateway.example.com");
+            fieldServerAddress.setToolTipText("<HTML>Gateway host name or address, for example<br><address>gateway.example.com");
             fieldServerAddress.getDocument().addDocumentListener(new DocumentListener() {
                 public void  insertUpdate(DocumentEvent e) { checkOk(); }
                 public void  removeUpdate(DocumentEvent e) { checkOk(); }

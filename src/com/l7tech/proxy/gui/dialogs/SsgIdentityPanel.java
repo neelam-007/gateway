@@ -11,4 +11,6 @@ abstract class SsgIdentityPanel extends JPanel {
     public abstract JButton getClientCertButton();
 
     public abstract JButton getSsgCertButton();
+
+    public abstract ImageIcon getGeneralPaneImageIcon();
 }

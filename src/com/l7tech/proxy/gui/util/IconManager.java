@@ -26,6 +26,9 @@ public class IconManager {
     private static ImageIcon trustedSsgDiagram;
     private static ImageIcon federatedSsgDiagram;
     private static ImageIcon federatedSsgWithTokenServiceDiagram;
+    private static ImageIcon smtrustedSsgDiagram;
+    private static ImageIcon smfederatedSsgDiagram;
+    private static ImageIcon smfederatedSsgWithTokenServiceDiagram;
 
     private static ImageIcon loadImageIcon(String path) {
         URL url = cl.getResource(path);
@@ -44,10 +47,22 @@ public class IconManager {
         return trustedSsgDiagram;
     }
 
+    public static ImageIcon getSmallTrustedSsgDiagram() {
+        if (smtrustedSsgDiagram == null)
+            smtrustedSsgDiagram = loadImageIcon(Gui.RESOURCE_PATH + "/dia_small_trusted_ssg.png");
+        return smtrustedSsgDiagram;
+    }
+
     public static ImageIcon getFederatedSsgDiagram() {
         if (federatedSsgDiagram == null)
             federatedSsgDiagram = loadImageIcon(Gui.RESOURCE_PATH + "/dia_federated_ssg.png");
         return federatedSsgDiagram;
+    }
+
+    public static ImageIcon getSmallFederatedSsgDiagram() {
+        if (smfederatedSsgDiagram == null)
+            smfederatedSsgDiagram = loadImageIcon(Gui.RESOURCE_PATH + "/dia_small_federated_ssg.png");
+        return smfederatedSsgDiagram;
     }
 
     public static ImageIcon getFederatedSsgWithTokenServiceDiagram() {
@@ -58,6 +73,16 @@ public class IconManager {
             federatedSsgWithTokenServiceDiagram = loadImageIcon(Gui.RESOURCE_PATH + path);
         }
         return federatedSsgWithTokenServiceDiagram;
+    }
+
+    public static ImageIcon getSmallFederatedSsgWithTokenServiceDiagram() {
+        if (smfederatedSsgWithTokenServiceDiagram == null) {
+            String path = "/dia_small_federated_ssg_with_tokenservice.png";
+            if (Boolean.getBoolean("noibm") || Boolean.getBoolean("interoperability") || Boolean.getBoolean("interop"))
+                path = "/dia_small_federated_ssg_with_tokenservice_noibm.png";
+            smfederatedSsgWithTokenServiceDiagram = loadImageIcon(Gui.RESOURCE_PATH + path);
+        }
+        return smfederatedSsgWithTokenServiceDiagram;
     }
 
     public static ImageIcon getAdd() {
