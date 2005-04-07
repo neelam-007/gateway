@@ -25,7 +25,6 @@ import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.MockServletApi;
 import com.l7tech.server.SoapMessageProcessingServlet;
 import com.l7tech.service.PublishedService;
-import com.l7tech.service.ResolutionParameterTooLongException;
 import com.l7tech.service.ServiceAdmin;
 import junit.extensions.TestSetup;
 import junit.framework.Test;
@@ -282,7 +281,7 @@ public class SamlProcessingTest extends TestCase {
 
     private static void initializeServicesAndPolicies(ApplicationContext context)
       throws IOException, FindException, DeleteException, UpdateException,
-      SaveException, VersionException, ResolutionParameterTooLongException, SAXException {
+      SaveException, VersionException, SAXException {
 
         ServiceAdmin serviceAdmin = (ServiceAdmin)context.getBean("serviceAdmin");
         EntityHeader[] headers = serviceAdmin.findAllPublishedServices();

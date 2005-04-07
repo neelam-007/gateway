@@ -1,15 +1,14 @@
 package com.l7tech.service;
 
+import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.Assertion;
-import com.l7tech.common.xml.TestDocuments;
-
-import java.rmi.RemoteException;
-import java.io.IOException;
-import java.util.Collection;
-import java.util.ArrayList;
-
 import org.xml.sax.SAXException;
+
+import java.io.IOException;
+import java.rmi.RemoteException;
+import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * The test class that helps preparing and publishing services in the
@@ -46,8 +45,7 @@ public class ServicesHelper {
      * @return the service descritpor corresponding to the published service
      */
     public ServiceDescriptor publish(String name, String wsdlResource, final Assertion policy)
-      throws IOException, SAXException, SaveException, ResolutionParameterTooLongException,
-             VersionException, UpdateException {
+      throws IOException, SAXException, SaveException, VersionException, UpdateException {
 
         ServiceDescriptor descriptor =
           new ServiceDescriptor(name, TestDocuments.getTestDocumentAsXml(wsdlResource), policy);

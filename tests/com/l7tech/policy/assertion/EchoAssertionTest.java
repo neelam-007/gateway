@@ -10,7 +10,6 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.server.MockServletApi;
 import com.l7tech.server.SoapMessageProcessingServlet;
-import com.l7tech.service.ResolutionParameterTooLongException;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.service.ServicesHelper;
 import junit.framework.Test;
@@ -107,7 +106,7 @@ public class EchoAssertionTest extends TestCase {
 
     private static void initializeServicesAndPolicies()
       throws IOException, FindException, DeleteException, UpdateException,
-      SaveException, VersionException, ResolutionParameterTooLongException, SAXException {
+      SaveException, VersionException, SAXException {
         servicesHelper.deleteAllServices();
         servicesHelper.publish(TestDocuments.WSDL_DOC_LITERAL, TestDocuments.WSDL_DOC_LITERAL, getPolicy());
         servicesHelper.publish(TestDocuments.WSDL_DOC_LITERAL2, TestDocuments.WSDL_DOC_LITERAL2, getPolicy());
