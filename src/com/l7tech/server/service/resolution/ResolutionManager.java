@@ -4,7 +4,6 @@ import com.l7tech.objectmodel.DeleteException;
 import com.l7tech.objectmodel.DuplicateObjectException;
 import com.l7tech.objectmodel.UpdateException;
 import com.l7tech.service.PublishedService;
-import com.l7tech.service.ResolutionParameterTooLongException;
 import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Query;
 import net.sf.hibernate.Session;
@@ -43,8 +42,7 @@ public class ResolutionManager extends HibernateDaoSupport {
      *                                  the passed service and the ones of another service. should rollback at that point.
      * @throws UpdateException          something went wrong, should rollback at that point
      */
-    public void recordResolutionParameters(PublishedService service) throws DuplicateObjectException, UpdateException,
-      ResolutionParameterTooLongException {
+    public void recordResolutionParameters(PublishedService service) throws DuplicateObjectException, UpdateException {
         Collection distinctItemsToSave = getDistinct(service);
         Collection existingParameters = existingResolutionParameters(service.getOid());
 
@@ -105,7 +103,7 @@ public class ResolutionManager extends HibernateDaoSupport {
         return true;
     }
 
-    private Collection getDistinct(PublishedService service) throws ResolutionParameterTooLongException {
+    private Collection getDistinct(PublishedService service) {
         ArrayList listOfParameters = new ArrayList();
         SoapActionResolver soapresolver = new SoapActionResolver();
         UrnResolver urnresolver = new UrnResolver();

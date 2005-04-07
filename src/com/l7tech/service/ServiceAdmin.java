@@ -58,11 +58,9 @@ public interface ServiceAdmin {
      * @throws SaveException   if the requested information could not be saved
      * @throws UpdateException if the requested information could not be updated
      * @throws VersionException if the service version conflict is detected
-     * @throws ResolutionParameterTooLongException if the service resolution parameters were too long
      */
     long savePublishedService(PublishedService service)
-      throws RemoteException, UpdateException, SaveException,
-      VersionException, ResolutionParameterTooLongException;
+                    throws RemoteException, UpdateException, SaveException, VersionException;
 
     /**
      * Delete a {@link PublishedService} by its unique identifier.

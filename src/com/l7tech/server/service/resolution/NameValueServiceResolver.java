@@ -26,8 +26,8 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
             Iterator i = services.iterator();
 
             write.acquire();
-            _valueToServiceMapMap = new HashMap();
-            _serviceOidToValuesArrayMap = new HashMap();
+            _valueToServiceMapMap.clear();
+            _serviceOidToValuesArrayMap.clear();
             PublishedService service;
             Object[] values;
             Map serviceMap;
@@ -148,6 +148,8 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
 
     protected abstract Object getRequestValue( Message request ) throws ServiceResolutionException;
 
+    protected abstract int getMaxLength();
+
     protected boolean matches( PublishedService candidateService, PublishedService matchService ) {
         // Get the match values for this service
         Set candidateValues = new HashSet( Arrays.asList( getTargetValues( candidateService ) ) );
@@ -186,6 +188,13 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
 
     public Set resolve( Message request, Set serviceSubset ) throws ServiceResolutionException {
         Object value = getRequestValue(request);
+        if (value instanceof String) {
+            String s = (String)value;
+            if (s.length() > getMaxLength()) {
+                s = s.substring(0,getMaxLength());
+                value = s;
+            }
+        }
         Map serviceMap = getServiceMap( value );
 
         if ( serviceMap == null || serviceMap.isEmpty() ) return Collections.EMPTY_SET;
@@ -214,8 +223,8 @@ public abstract class NameValueServiceResolver extends ServiceResolver {
         return resultSet;
     }
 
-    private Map _valueToServiceMapMap = new HashMap();
-    private Map _serviceOidToValuesArrayMap = new HashMap();
-    private ReadWriteLock _rwlock = new ReentrantWriterPreferenceReadWriteLock();
+    private final Map _valueToServiceMapMap = new HashMap();
+    private final Map _serviceOidToValuesArrayMap = new HashMap();
+    private final ReadWriteLock _rwlock = new ReentrantWriterPreferenceReadWriteLock();
     private final Logger logger = Logger.getLogger(getClass().getName());
 }

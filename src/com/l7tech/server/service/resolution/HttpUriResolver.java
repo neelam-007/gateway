@@ -29,7 +29,9 @@ public class HttpUriResolver extends NameValueServiceResolver {
 
     protected Object[] doGetTargetValues( PublishedService service ) {
         String uri = service.getRoutingUri();
+        int max = getMaxLength();
         if (uri == null) uri = "";
+        if (uri.length() > max) uri = uri.substring(0, max);
         return new String[] {uri};
     }
 
@@ -60,6 +62,10 @@ public class HttpUriResolver extends NameValueServiceResolver {
                 throw new ServiceResolutionException( err );
             }
         }
+    }
+
+    protected int getMaxLength() {
+        return ResolutionParameters.MAX_LENGTH_RES_PARAMETER;
     }
 
     public int getSpeed() {

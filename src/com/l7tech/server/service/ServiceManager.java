@@ -5,7 +5,6 @@ import com.l7tech.objectmodel.*;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.service.PublishedService;
-import com.l7tech.service.ResolutionParameterTooLongException;
 import com.l7tech.service.ServiceStatistics;
 
 import java.util.Collection;
@@ -46,7 +45,7 @@ public interface ServiceManager extends EntityManager {
      * @return
      * @throws SaveException
      */
-    long save(PublishedService service) throws SaveException, ResolutionParameterTooLongException;
+    long save(PublishedService service) throws SaveException;
 
     /**
      * updates a policy service. call this instead of save if the service
@@ -57,7 +56,7 @@ public interface ServiceManager extends EntityManager {
      * @param service
      * @throws UpdateException
      */
-    void update(PublishedService service) throws UpdateException, VersionException, ResolutionParameterTooLongException;
+    void update(PublishedService service) throws UpdateException, VersionException;
 
     /**
      * deletes the service

@@ -1,10 +1,10 @@
 package com.l7tech.server.service.resolution;
 
-import com.l7tech.objectmodel.imp.EntityImp;
-import com.l7tech.service.ResolutionParameterTooLongException;
 import com.l7tech.common.util.HashCode;
+import com.l7tech.objectmodel.imp.EntityImp;
 
 import java.io.Serializable;
+import java.util.logging.Logger;
 
 /**
  * Object representation of a row in the serviceresolution table.
@@ -20,6 +20,7 @@ import java.io.Serializable;
  * $Id$
  */
 public class ResolutionParameters extends EntityImp implements Serializable {
+    private static final Logger logger = Logger.getLogger(ResolutionParameters.class.getName());
     // todo, ideally, this should fail at the database layer but mysql truncs silently
     public static final int MAX_LENGTH_RES_PARAMETER = 255;
 
@@ -27,26 +28,25 @@ public class ResolutionParameters extends EntityImp implements Serializable {
         return soapaction;
     }
 
-    public void setSoapaction(String soapaction) throws ResolutionParameterTooLongException {
-        if (soapaction == null) soapaction = ""; // Oracle doesn't distinguish between "" and NULL
-        if (soapaction.length() > MAX_LENGTH_RES_PARAMETER) {
-            throw new ResolutionParameterTooLongException("The soapaction " + soapaction + " is too " +
-              "long to remember as a resolution parameter.");
-        }
-        this.soapaction = soapaction;
+    public void setSoapaction(String soapaction) {
+        this.soapaction = truncate(soapaction, MAX_LENGTH_RES_PARAMETER, "soapaction");
+    }
+
+    private String truncate(String value, int max, String field) {
+        if (value == null) return ""; // Oracle doesn't distinguish between "" and NULL
+        if (value.length() > max) {
+            logger.warning("The " + field + " " + value + " is too long to remember as a resolution parameter.");
+            return value.substring(0, max);
+        } else
+            return value;
     }
 
     public String getUrn() {
         return urn;
     }
 
-    public void setUrn(String urn) throws ResolutionParameterTooLongException {
-        if (urn == null) urn = ""; // Oracle
-        if (urn != null && urn.length() > MAX_LENGTH_RES_PARAMETER) {
-            throw new ResolutionParameterTooLongException("The namespace " + urn + " is too " +
-              "long to remember as a resolution parameter.");
-        }
-        this.urn = urn;
+    public void setUrn(String urn) {
+        this.urn = truncate(urn, MAX_LENGTH_RES_PARAMETER, "namespace");
     }
 
     public long getServiceid() {
@@ -61,14 +61,8 @@ public class ResolutionParameters extends EntityImp implements Serializable {
         return uri;
     }
 
-    public void setUri(String uri) throws ResolutionParameterTooLongException {
-        if (uri == null) uri = ""; // Oracle
-        if (uri != null && uri.length() > MAX_LENGTH_RES_PARAMETER) {
-            throw new ResolutionParameterTooLongException("The URI " + uri + " is too " +
-              "long to remember as a resolution parameter.");
-        }
-        this.uri = uri;
-
+    public void setUri(String uri) {
+        this.uri = truncate(uri, MAX_LENGTH_RES_PARAMETER, "URI");
     }
 
     /**

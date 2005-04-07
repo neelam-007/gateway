@@ -27,6 +27,7 @@ public abstract class WsdlOperationServiceResolver extends NameValueServiceResol
             return new Object[0];
         }
         List values = new ArrayList(2);
+        int max = getMaxLength();
         try {
             Wsdl wsdl = service.parsedWsdl();
             if (wsdl == null) return new Object[0];
@@ -35,6 +36,7 @@ public abstract class WsdlOperationServiceResolver extends NameValueServiceResol
             while ( operations.hasNext() ) {
                 operation = (BindingOperation)operations.next();
                 String value = getTargetValue( wsdl.getDefinition(), operation );
+                if (value.length() > max) value = value.substring(0, max);
                 if ( value != null ) values.add( value );
             }
         } catch ( WSDLException we ) {

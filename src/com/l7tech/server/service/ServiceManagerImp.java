@@ -13,7 +13,6 @@ import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.server.service.resolution.ResolutionManager;
 import com.l7tech.server.service.resolution.ServiceResolutionException;
 import com.l7tech.service.PublishedService;
-import com.l7tech.service.ResolutionParameterTooLongException;
 import com.l7tech.service.ServiceStatistics;
 import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Session;
@@ -57,7 +56,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         return (PublishedService)findByPrimaryKey(getImpClass(), oid);
     }
 
-    public long save(PublishedService service) throws SaveException, ResolutionParameterTooLongException {
+    public long save(PublishedService service) throws SaveException {
         // 1. record the service
         long oid = ((Long)getHibernateTemplate().save(service)).longValue();
         logger.info("Saved service #" + oid);
@@ -118,8 +117,7 @@ public class ServiceManagerImp extends HibernateEntityManager implements Service
         }
     }
 
-    public void update(PublishedService service) throws UpdateException, VersionException,
-      ResolutionParameterTooLongException {
+    public void update(PublishedService service) throws UpdateException, VersionException {
         PublishedService original = null;
         // check for original service
         try {

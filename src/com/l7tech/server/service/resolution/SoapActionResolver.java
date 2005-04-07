@@ -39,6 +39,10 @@ public class SoapActionResolver extends WsdlOperationServiceResolver {
         return null;
     }
 
+    protected int getMaxLength() {
+        return ResolutionParameters.MAX_LENGTH_RES_PARAMETER;
+    }
+
     protected Object getRequestValue( Message request ) throws ServiceResolutionException {
         HttpRequestKnob httpReqKnob = (HttpRequestKnob)request.getKnob(HttpRequestKnob.class);
         if (httpReqKnob == null)

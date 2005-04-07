@@ -1,18 +1,16 @@
 package com.l7tech.server.service;
 
 import com.l7tech.admin.AccessManager;
+import com.l7tech.common.uddi.WsdlInfo;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspReader;
-import com.l7tech.service.PublishedService;
-import com.l7tech.service.ResolutionParameterTooLongException;
-import com.l7tech.service.ServiceAdmin;
-import com.l7tech.common.uddi.WsdlInfo;
-import com.l7tech.common.xml.TarariLoader;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.service.uddi.UddiAgentV3;
+import com.l7tech.service.PublishedService;
+import com.l7tech.service.ServiceAdmin;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpState;
@@ -20,10 +18,10 @@ import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.springframework.orm.hibernate.support.HibernateDaoSupport;
 
-import java.io.IOException;
-import java.io.FileInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.rmi.RemoteException;
@@ -136,9 +134,9 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
      * @throws RemoteException
      *
      */
-    public long savePublishedService(PublishedService service) throws RemoteException,
-                                    UpdateException, SaveException, VersionException, ResolutionParameterTooLongException {
-
+    public long savePublishedService(PublishedService service)
+            throws RemoteException, UpdateException, SaveException, VersionException
+    {
             accessManager.enforceAdminRole();
             long oid = PublishedService.DEFAULT_OID;
 

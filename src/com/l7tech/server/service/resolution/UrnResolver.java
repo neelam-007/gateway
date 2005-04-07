@@ -41,6 +41,10 @@ public class UrnResolver extends WsdlOperationServiceResolver {
         return def.getTargetNamespace();
     }
 
+    protected int getMaxLength() {
+        return ResolutionParameters.MAX_LENGTH_RES_PARAMETER;
+    }
+
     protected Object getRequestValue(Message request) throws ServiceResolutionException {
         try {
             if (request.isSoap()) {

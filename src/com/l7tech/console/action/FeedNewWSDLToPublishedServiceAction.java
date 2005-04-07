@@ -1,7 +1,6 @@
 package com.l7tech.console.action;
 
 import com.l7tech.service.PublishedService;
-import com.l7tech.service.ResolutionParameterTooLongException;
 import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.console.tree.ServicesTree;
 import com.l7tech.console.util.Registry;
@@ -124,10 +123,6 @@ public class FeedNewWSDLToPublishedServiceAction extends NodeAction {
             logger.log(Level.WARNING, "version mismatch", e);
             throw new RuntimeException("The service's version number is no longer valid. Perhaps " +
                                        "another administrator has changed the service since you loaded it?", e);
-        } catch (ResolutionParameterTooLongException e) {
-            logger.log(Level.WARNING, "resolution parameter too long", e);
-            throw new RuntimeException("The WSDL contains resolution parameters that are too long. " +
-                                       "Consult log for more information.", e);
         }
     }
 }

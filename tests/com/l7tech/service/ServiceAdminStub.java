@@ -54,8 +54,8 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
      * @throws RemoteException
      */
     public long savePublishedService(PublishedService service)
-      throws RemoteException, UpdateException, SaveException,
-      VersionException, ResolutionParameterTooLongException {
+            throws RemoteException, UpdateException, SaveException, VersionException
+    {
         return serviceManager.save(service);
     }
 
