@@ -38,6 +38,7 @@ public class AllPolicyTests extends TestCase {
         suite.addTest(new TestSuite(DefaultPolicyPathBuilderTest.class));
         suite.addTest(new TestSuite(DefaultPolicyValidatorTest.class));
         suite.addTest(new TestSuite(PolicyCloneTest.class));
+        suite.addTest(new TestSuite(ExpandVariablesTest.class));
         return suite;
     }
 
