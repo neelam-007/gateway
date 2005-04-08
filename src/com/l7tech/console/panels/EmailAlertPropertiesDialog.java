@@ -24,6 +24,7 @@ public class EmailAlertPropertiesDialog extends JDialog {
     public static final String TITLE = "Email Alert Properties";
     private JPanel mainPanel;
     private JTextField addressField;
+    private JTextField fromAddressField;
     private JTextField hostField;
     private JTextField portField;
     private JTextField subjectField;
@@ -91,6 +92,7 @@ public class EmailAlertPropertiesDialog extends JDialog {
         addressField.setText(assertion.getTargetEmailAddress());
         subjectField.setText(assertion.getSubject());
         messageField.setText(assertion.getMessage());
+        fromAddressField.setText(assertion.getSourceEmailAddress());
     }
 
     private void viewToModel() {
@@ -99,12 +101,14 @@ public class EmailAlertPropertiesDialog extends JDialog {
         assertion.setTargetEmailAddress(addressField.getText());
         assertion.setSubject(subjectField.getText());
         assertion.setMessage(messageField.getText());
+        assertion.setSourceEmailAddress(fromAddressField.getText());
     }
 
     private void updateEnableDisableState() {
         boolean ok = true;
         if (addressField.getText().length() < 1) ok = false;
         if (hostField.getText().length() < 1) ok = false;
+        if (fromAddressField.getText().length() < 1) ok = false;
         if (!isValidInt(portField.getText())) ok = false;
         int port = safeParseInt(portField.getText(), EmailAlertAssertion.DEFAULT_PORT);
         if (port < 1 || port > 65535) ok = false;

@@ -16,8 +16,10 @@ public class EmailAlertAssertion extends Assertion {
     public static final int DEFAULT_PORT = 25;
     public static final String DEFAULT_SUBJECT = "Layer 7 SecureSpan Gateway Email Alert";
     public static final String DEFAULT_MESSAGE = "This is an alert message from a Layer 7 SecureSpan Gateway.";
+    public static final String DEFAULT_FROM = "L7SSG@NOMAILBOX";
 
     private String targetEmailAddress = "";
+    private String sourceEmailAddress = DEFAULT_FROM;
     private String smtpHost = DEFAULT_HOST;
     private int smtpPort = DEFAULT_PORT;
     private String subject = DEFAULT_SUBJECT;
@@ -80,5 +82,15 @@ public class EmailAlertAssertion extends Assertion {
     public void setMessage(String message) {
         if (message == null) message = "";
         this.message = message;
+    }
+
+    /** @return the source email address.  May be empty but never null. */
+    public String getSourceEmailAddress() {
+        return sourceEmailAddress;
+    }
+
+    public void setSourceEmailAddress(String sourceEmailAddress) {
+        if (sourceEmailAddress == null) sourceEmailAddress = DEFAULT_FROM;
+        this.sourceEmailAddress = sourceEmailAddress;
     }
 }
