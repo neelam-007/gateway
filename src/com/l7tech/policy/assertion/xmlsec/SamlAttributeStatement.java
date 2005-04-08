@@ -67,5 +67,15 @@ public class SamlAttributeStatement implements Serializable {
             this.value = value;
         }
 
+    public String toString() {
+        StringBuffer sb = new StringBuffer();
+        sb.append("[ ")
+          .append("namespace="+ (namespace == null ? "null" : namespace))
+          .append(", name="+ (name == null ? "null" : name))
+          .append(", value="+ (value == null ? "null" : value))
+          .append(" ]");
+        return sb.toString();
     }
+    }
+
 }
