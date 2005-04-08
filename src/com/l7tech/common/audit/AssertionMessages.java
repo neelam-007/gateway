@@ -271,4 +271,6 @@ public class AssertionMessages extends Messages {
 
     // Email and SNMP alerts
     public static final M EMAILALERT_MESSAGE_SENT = m(6700, Level.INFO, "Email message sent");
+    public static final M EMAILALERT_BAD_TO_ADDR  = m(6701, Level.WARNING, "Bad destination email address");
+    public static final M EMAILALERT_BAD_FROM_ADDR= m(6702, Level.WARNING, "Bad source email address");
 }
