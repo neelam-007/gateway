@@ -71,7 +71,9 @@ public class SamlAssertionValidate {
     public void validate(Document soapMessageDoc, LoginCredentials credentials, ProcessorResult wssResults, Collection validationResults) {
         String securityNS = wssResults.getSecurityNS();
         if (null == securityNS) {  // assume no security header was found
-            validationResults.add(new Error("No Security Header found", soapMessageDoc, null, null));
+            Error result = new Error("No Security Header found", soapMessageDoc, null, null);
+            validationResults.add(result);
+            logger.finer(result.toString());
             return;
         }
         try {
@@ -89,13 +91,14 @@ public class SamlAssertionValidate {
                     statementList.addAll(Arrays.asList(assertionType.getAttributeStatementArray()));
 
                     StatementAbstractType[] statementArray = (StatementAbstractType[])statementList.toArray(new StatementAbstractType[]{});
-
+                    boolean assertionMatch = false;
                     for (int j = 0; j < statementArray.length; j++) {
                         StatementAbstractType statementAbstractType = statementArray[j];
                         Set keys = validators.keySet();
                         for (Iterator iterator = keys.iterator(); iterator.hasNext();) {
                             Class clazz = (Class)iterator.next();
                             if (clazz.isAssignableFrom(statementAbstractType.getClass())) {
+                                assertionMatch = true;
                                 SamlStatementValidate statementValidate = (SamlStatementValidate)validators.get(clazz);
                                 validateSubjectConfirmation((SubjectStatementAbstractType)statementAbstractType, validationResults);
                                 validateConditions(assertionType, validationResults);
@@ -103,19 +106,33 @@ public class SamlAssertionValidate {
                             }
                         }
                     }
+
+                    if (!assertionMatch) {
+                        Error result = new Error("No SAML assertion has been presented that matches specified constraints", soapMessageDoc, null, null);
+                        validationResults.add(result);
+                        logger.finer(result.toString());
+                        return;
+                    }
+
                 }
             }
 
             if (assertion == null) {
-                validationResults.add(new Error("No SAML assertion found in security Header", soapMessageDoc, null, null));
+                Error result = new Error("No SAML assertion found in security Header", soapMessageDoc, null, null);
+                validationResults.add(result);
+                logger.finer(result.toString());
                 return;
             }
             final SigningSecurityToken[] signingTokens = wssResults.getSigningTokens(assertion.asElement());
             if (signingTokens.length == 0) {
-                validationResults.add(new Error("Unsigned SAML assertion found in security Header", soapMessageDoc, null, null));
+                Error result = new Error("Unsigned SAML assertion found in security Header", soapMessageDoc, null, null);
+                validationResults.add(result);
+                logger.finer(result.toString());
                 return;
             } else if (signingTokens.length > 1) {
-                validationResults.add(new Error("SAML assertion was signed by more than one security token", soapMessageDoc, null, null));
+                Error result = new Error("SAML assertion was signed by more than one security token", soapMessageDoc, null, null);
+                validationResults.add(result);
+                logger.finer(result.toString());
                 return;
             }
 
@@ -125,7 +142,9 @@ public class SamlAssertionValidate {
                         X509SigningSecurityToken signingSecurityToken = (X509SigningSecurityToken)signingTokens[0];
                         assertion.setIssuerCertificate(signingSecurityToken.getMessageSigningCertificate());
                     } else {
-                        validationResults.add(new Error("Assertion was signed by non-X509 SecurityToken " + signingTokens[0].getClass(), soapMessageDoc, null, null));
+                        Error result = new Error("Assertion was signed by non-X509 SecurityToken " + signingTokens[0].getClass(), soapMessageDoc, null, null);
+                        validationResults.add(result);
+                        logger.finer(result.toString());
                         return;
                     }
                 }
@@ -135,41 +154,55 @@ public class SamlAssertionValidate {
             if (assertion.isHolderOfKey() && requestWssSaml.isRequireHolderOfKeyWithMessageSignature()) {
                 X509Certificate subjectCertificate = assertion.getSubjectCertificate();
                 if (subjectCertificate == null) {
-                    validationResults.add(new Error("Subject Certificate is required for Holder-Of-Key Assertion", soapMessageDoc, null, null));
+                    Error result = new Error("Subject Certificate is required for Holder-Of-Key Assertion", soapMessageDoc, null, null);
+                    validationResults.add(result);
+                    logger.finer(result.toString());
                     return;
                 }
 
                 if (!isBodySigned(assertion.getSignedElements())) {
-                    validationResults.add(new Error("Can't validate proof of posession; the SOAP Body has not been signed with Subject Certificate", soapMessageDoc, null, null));
+                    Error result = new Error("Can't validate proof of posession; the SOAP Body has not been signed with Subject Certificate", soapMessageDoc, null, null);
+                    validationResults.add(result);
+                    logger.finer(result.toString());
                     return;
                 }
 
             } else if (assertion.isSenderVouches() && requestWssSaml.isRequireSenderVouchesWithMessageSignature()) {
                 if (!isBodySigned(senderVouchesSigningToken.getSignedElements())) {
-                    validationResults.add(new Error("Can't validate proof of posession; the SOAP Body has not been signed", soapMessageDoc, null, null));
+                    Error result = new Error("Can't validate proof of posession; the SOAP Body has not been signed", soapMessageDoc, null, null);
+                    validationResults.add(result);
+                    logger.finer(result.toString());
                     return;
                 }
             } else {
                 if (credentials == null || credentials.getClientCert() == null) {
-                    validationResults.add(new Error("No SSL Client Certificate Proof Of Posession found", soapMessageDoc, null, null));
+                    Error result = new Error("No SSL Client Certificate Proof Of Posession found", soapMessageDoc, null, null);
+                    validationResults.add(result);
+                    logger.finer(result.toString());
                     return;
                 }
                 X509Certificate sslCert = credentials.getClientCert();
                 if (assertion.isHolderOfKey()) {
                     X509Certificate subjectCertificate = assertion.getSubjectCertificate();
                     if (subjectCertificate == null) {
-                        validationResults.add(new Error("Subject Certificate is required for Holder-Of-Key Assertion", soapMessageDoc, null, null));
+                        Error result = new Error("Subject Certificate is required for Holder-Of-Key Assertion", soapMessageDoc, null, null);
+                        validationResults.add(result);
+                        logger.finer(result.toString());
                         return;
                     }
                     if (!sslCert.equals(subjectCertificate)) {
-                        validationResults.add(new Error("SSL Certificate and Holder-Of-Key Subject Certificate mismatch", soapMessageDoc, null, null));
+                        Error result = new Error("SSL Certificate and Holder-Of-Key Subject Certificate mismatch", soapMessageDoc, null, null);
+                        validationResults.add(result);
+                        logger.finer(result.toString());
                         return;
                     }
                 } else if (assertion.isSenderVouches()) {
                     if (senderVouchesSigningToken instanceof X509SecurityToken) {
                         X509SecurityToken x509SecurityToken = (X509SecurityToken)senderVouchesSigningToken;
                         if (!x509SecurityToken.asX509Certificate().equals(sslCert)) {
-                            validationResults.add(new Error("SSL Certificate and Sender-Vouches Issuer ertificate mismatch", soapMessageDoc, null, null));
+                            Error result = new Error("SSL Certificate and Sender-Vouches Issuer ertificate mismatch", soapMessageDoc, null, null);
+                            validationResults.add(result);
+                            logger.finer(result.toString());
                             return;
                         }
                     }
@@ -203,7 +236,7 @@ public class SamlAssertionValidate {
         ConditionsType conditionsType = assertionType.getConditions();
         if (!requestWssSaml.isCheckAssertionValidity()) {
             logger.finer("No Assertion Validity requested");
-        }  else {
+        } else {
             if (conditionsType == null) {
                 logger.finer("Can't validate conditions, no Conditions have been presented");
                 StringWriter sw = new StringWriter();
@@ -214,25 +247,25 @@ public class SamlAssertionValidate {
             Calendar notBefore = conditionsType.getNotBefore();
             Calendar notOnOrAfter = conditionsType.getNotOnOrAfter();
             if (notBefore == null || notOnOrAfter == null) {
-                   logger.finer("No Validity Period conditions have been presented, cannot validate Conditions");
-                   StringWriter sw = new StringWriter();
-                   assertionType.save(sw);
-                   validationResults.add(new Error("No Validity Period conditions have been presented, cannot validate Conditions", sw.toString(), null, null));
-                   return;
-               }
+                logger.finer("No Validity Period conditions have been presented, cannot validate Conditions");
+                StringWriter sw = new StringWriter();
+                assertionType.save(sw);
+                validationResults.add(new Error("No Validity Period conditions have been presented, cannot validate Conditions", sw.toString(), null, null));
+                return;
+            }
 
             Calendar now = Calendar.getInstance(UTC_TIME_ZONE);
             now.clear(Calendar.MILLISECOND); //clear millis xsd:dateTime does not have it
             if (now.before(notBefore)) {
                 logger.finer("Condition 'Not Before' check failed, now :" + now.toString() + " Not Before:" + notBefore.toString());
                 validationResults.add(new Error("Condition 'Not Before' check failed",
-                    conditionsType.toString(), new Object[]{notBefore.toString(), now.toString()}, null));
+                                                conditionsType.toString(), new Object[]{notBefore.toString(), now.toString()}, null));
             }
 
             if (now.equals(notOnOrAfter) || now.after(notOnOrAfter)) {
                 logger.finer("Condition 'Not On Or After' check failed, now :" + now.toString() + " Not Before:" + notOnOrAfter.toString());
                 validationResults.add(new Error("Condition 'Not On Or After' check failed",
-                    conditionsType.toString(), new Object[]{notOnOrAfter.toString(), now.toString()}, null));
+                                                conditionsType.toString(), new Object[]{notOnOrAfter.toString(), now.toString()}, null));
             }
         }
 
@@ -243,10 +276,11 @@ public class SamlAssertionValidate {
         }
 
         if (conditionsType == null) {
-            logger.finer("Can't validate audience restrictions, no Conditions have been presented");
             StringWriter sw = new StringWriter();
             assertionType.save(sw);
-            validationResults.add(new Error("Can't validate conditions, no Conditions have been found", sw.toString(), null, null));
+            Error result = new Error("Can't validate conditions, no Conditions have been found", sw.toString(), null, null);
+            validationResults.add(result);
+            logger.finer(result.toString());
             return;
         }
 
@@ -264,8 +298,10 @@ public class SamlAssertionValidate {
             }
         }
         if (!audienceRestrictionMatch) {
-            validationResults.add(new Error("Audience Restriction Check Failed",
-                conditionsType.toString(), new Object[]{audienceRestriction}, null));
+            Error result = new Error("Audience Restriction Check Failed",
+                                     conditionsType.toString(), new Object[]{audienceRestriction}, null);
+            logger.finer(result.toString());
+            validationResults.add(result);
         }
     }
 
@@ -280,9 +316,11 @@ public class SamlAssertionValidate {
             if (nameIdentifierType != null) {
                 String presentedNameQualifier = nameIdentifierType.getNameQualifier();
                 if (!nameQualifier.equals(presentedNameQualifier)) {
-                    validationResults.add(new Error("Name Qualifiers does not match presented/required",
-                        subjectStatementAbstractType.toString(),
-                        new Object[]{presentedNameQualifier, nameQualifier}, null));
+                    Error result = new Error("Name Qualifiers does not match presented/required",
+                                             subjectStatementAbstractType.toString(),
+                                             new Object[]{presentedNameQualifier, nameQualifier}, null);
+                    validationResults.add(result);
+                    logger.finer(result.toString());
                     return;
                 } else {
                     logger.fine("Matched Name Qualifier " + nameQualifier);
@@ -305,9 +343,11 @@ public class SamlAssertionValidate {
             }
         }
         if (!nameFormatMatch) {
-            validationResults.add(new Error("Name Format does not match presented/required",
-                subjectStatementAbstractType.toString(),
-                new Object[]{presentedNameFormat, Arrays.asList(nameFormats)}, null));
+            Error result = new Error("Name Format does not match presented/required",
+                                     subjectStatementAbstractType.toString(),
+                                     new Object[]{presentedNameFormat, Arrays.asList(nameFormats)}, null);
+            validationResults.add(result);
+            logger.finer(result.toString());
             return;
         }
         String[] confirmations = requestWssSaml.getSubjectConfirmations();
@@ -335,9 +375,11 @@ public class SamlAssertionValidate {
             if (requestWssSaml.isNoSubjectConfirmation()) {
                 acceptedConfirmations.add("None");
             }
-            validationResults.add(new Error("Subject Confirmations mismatch presented/accepted {0}/{1}",
-                subjectStatementAbstractType.toString(),
-                new Object[]{presentedConfirmations, acceptedConfirmations}, null));
+            Error result = new Error("Subject Confirmations mismatch presented/accepted {0}/{1}",
+                                     subjectStatementAbstractType.toString(),
+                                     new Object[]{presentedConfirmations, acceptedConfirmations}, null);
+            validationResults.add(result);
+            logger.finer(result.toString());
             return;
         }
     }
@@ -345,35 +387,29 @@ public class SamlAssertionValidate {
     static class Error {
         private final String reason;
         private final Object context;
-        private final Object[] values;
+        private final Object[] arguments;
         private final Exception exception;
         private final String formattedReason;
 
-        protected Error(String reason, Object context, Object[] values, Exception exception) {
+        protected Error(String reason, Object context, Object args, Exception exception) {
             this.reason = reason;
             if (reason == null) {
                 throw new IllegalArgumentException("Reason is required");
             }
             this.context = context;
-            this.values = (values != null ? values : new Object[]{});
-            this.formattedReason = MessageFormat.format(reason, values);
+            this.arguments = getArguments(args);
+            this.formattedReason = MessageFormat.format(reason, arguments);
             this.exception = exception;
         }
 
-        public Object getContext() {
-            return context;
-        }
-
-        public String getReason() {
-            return reason;
-        }
-
-        public Object[] getValues() {
-            return values;
-        }
-
-        public Exception getException() {
-            return exception;
+        private Object[] getArguments(Object args) {
+            if (args == null) {
+                return new Object[]{};
+            }
+            if (args instanceof Object[]) {
+                return (Object[])args;
+            }
+            return new Object[]{args};
         }
 
         public String toString() {

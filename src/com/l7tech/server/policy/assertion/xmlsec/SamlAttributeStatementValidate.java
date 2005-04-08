@@ -57,7 +57,11 @@ class SamlAttributeStatementValidate extends SamlStatementValidate {
         for (int i = 0; i < expectedAttributes.length; i++) {
             SamlAttributeStatement.Attribute expectedAttribute = expectedAttributes[i];
             if (!isAttributePresented(expectedAttribute, receivedAttributes, validationResults)) {
-                validationResults.add(new SamlAssertionValidate.Error("No matching Attribute has been presented", expectedAttribute, null, null));
+                SamlAssertionValidate.Error result = new SamlAssertionValidate.Error("No matching Attribute presented. Required {0}", null, expectedAttribute, null);
+                if (logger.isLoggable(Level.FINER)) {
+                    logger.finer(result.toString());
+                }
+                validationResults.add(result);
                 return;
             }
         }
@@ -75,7 +79,9 @@ class SamlAttributeStatementValidate extends SamlStatementValidate {
         String nameSpace = expectedAttribute.getNamespace();
         String value = expectedAttribute.getValue();
         if (isEmpty(name) || isEmpty(value)) {
-            validationResults.add(new SamlAssertionValidate.Error("Invalid Attribute constraint (name or value is null)", expectedAttribute, null, null));
+            SamlAssertionValidate.Error result = new SamlAssertionValidate.Error("Invalid Attribute constraint (name or value is null)", null, null, null);
+            validationResults.add(result);
+            logger.finer(result.toString());
             return false;
         }
 

@@ -47,7 +47,9 @@ class SamlAuthenticationStatementValidate extends SamlStatementValidate {
         AuthenticationStatementType authenticationStatementType = (AuthenticationStatementType)statementAbstractType;
         String authenticationMethod = authenticationStatementType.getAuthenticationMethod();
         if (authenticationMethod == null) {
-            validationResults.add(new SamlAssertionValidate.Error("No Authentication Method specified", authenticationStatementType.toString(), null, null));
+            SamlAssertionValidate.Error result = new SamlAssertionValidate.Error("No Authentication Method specified", authenticationStatementType.toString(), null, null);
+            validationResults.add(result);
+            logger.finer(result.toString());
             return;
         }
         String[] methods = authenticationStatementConstraints.getAuthenticationMethods();
