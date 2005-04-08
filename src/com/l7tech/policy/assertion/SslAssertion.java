@@ -5,11 +5,11 @@
  */
 package com.l7tech.policy.assertion;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.io.Serializable;
 
 /**
  * @author alex
@@ -66,6 +66,10 @@ public class SslAssertion extends ConfidentialityAssertion {
             result = _numeric;
             result = 29 * result + (_name != null ? _name.hashCode() : 0);
             return result;
+        }
+
+        public String toString() {
+            return _keyName;
         }
     }
 
@@ -150,6 +154,10 @@ public class SslAssertion extends ConfidentialityAssertion {
         if (requireClientAuthentication) {
             _option = REQUIRED;
         }
+    }
+
+    public String toString() {
+        return super.toString() + " clientCert=" + isRequireClientAuthentication() + " option=" + getOption();
     }
 
     protected Set _cipherSuites = Collections.EMPTY_SET;

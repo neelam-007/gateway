@@ -7,6 +7,7 @@
 package com.l7tech.proxy.gui.dialogs;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
@@ -17,6 +18,7 @@ import com.l7tech.proxy.datamodel.exceptions.PolicyLockedException;
 import com.l7tech.proxy.gui.Gui;
 import com.l7tech.proxy.gui.policy.PolicyTreeCellRenderer;
 import com.l7tech.proxy.gui.policy.PolicyTreeModel;
+import org.xml.sax.SAXException;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -214,8 +216,7 @@ class SsgPoliciesPanel extends JPanel {
                         FileInputStream policyIs = null;
                         try {
                             policyIs = new FileInputStream(got);
-                            // TODO use a less-strict WspVisitor that ignores unrecognized policy assertions
-                            Assertion rootAssertion = WspReader.parse(policyIs);
+                            Assertion rootAssertion = WspReader.parsePermissively(XmlUtil.parse(policyIs).getDocumentElement());
                             policyIs.close();
                             policyIs = null;
 
@@ -243,6 +244,7 @@ class SsgPoliciesPanel extends JPanel {
                             log.log(Level.INFO, "Policy import successful");
 
                         } catch (NullPointerException nfe) {
+                            // TODO Figure out: which third-party bug was this awful catch block put here to work around, and is it safe to remove yet?
                             log.log(Level.WARNING, "Error importing policy", nfe);
                             JOptionPane.showMessageDialog(getRootPane(),
                               "Unable to import the specified file: " + nfe.getMessage(),
@@ -259,6 +261,12 @@ class SsgPoliciesPanel extends JPanel {
                             JOptionPane.showMessageDialog(getRootPane(),
                               "Unable to save the new policy: " + e.getMessage() + "\nPlease try again.",
                               "Unable to save policy",
+                              JOptionPane.ERROR_MESSAGE);
+                        } catch (SAXException e) {
+                            log.log(Level.WARNING, "Error importing policy", e);
+                            JOptionPane.showMessageDialog(getRootPane(),
+                              "Unable to import the specified file due to malformed XML: " + e.getMessage(),
+                              "Unable to read file",
                               JOptionPane.ERROR_MESSAGE);
                         } finally {
                             if (policyIs != null) try { policyIs.close(); } catch (IOException e) {}

@@ -27,6 +27,10 @@ class BeanTypeMapping extends ComplexTypeMapping {
         super(clazz, externalName);
     }
 
+    public BeanTypeMapping(Class clazz, String externalName, String nsUri, String nsPrefix) {
+        super(clazz, externalName, nsUri, nsPrefix);
+    }
+
     protected void populateElement(Element element, TypedReference object) {
         try {
             emitBeanProperties(object.target, element);
@@ -96,8 +100,22 @@ class BeanTypeMapping extends ComplexTypeMapping {
      * @throws java.lang.reflect.InvocationTargetException
      * @throws IllegalAccessException
      */
-    static void emitBeanProperties(Object bean, Element element)
-      throws InvocationTargetException, IllegalAccessException {
+    private void emitBeanProperties(Object bean, Element element) throws InvocationTargetException, IllegalAccessException
+    {
+        // Create a template object if we can, so we can avoid saving properties that are just defaulted anyway
+        Object defaultTemplate = null;
+        if (constructor != null) {
+            try {
+                defaultTemplate = constructor.newInstance(new Object[0]);
+            } catch (InstantiationException e) {
+                defaultTemplate = null;
+            } catch (IllegalAccessException e) {
+                defaultTemplate = null;
+            } catch (InvocationTargetException e) {
+                defaultTemplate = null;
+            }
+        }
+
         Class ac = bean.getClass();
         Map setters = new HashMap();
         Map getters = new HashMap();
@@ -133,8 +151,18 @@ class BeanTypeMapping extends ComplexTypeMapping {
             TypeMapping tm = TypeMappingUtils.findTypeMappingByClass(returnType);
             if (tm == null)
                 throw new InvalidPolicyTreeException("class " + bean.getClass() + " has property \"" + parm + "\" with unsupported type " + returnType);
-            final Object[] args = new Object[0];
-            Object value = TypeMappingUtils.invokeMethod(getter, bean, args);
+            final Object[] noArgs = new Object[0];
+            Object value = TypeMappingUtils.invokeMethod(getter, bean, noArgs);
+
+            if (defaultTemplate != null) {
+                // See if we can skip saving this property.  We'll skip it if the default object has the same value.
+                Object defaultValue = TypeMappingUtils.invokeMethod(getter, defaultTemplate, noArgs);
+                if (value == defaultValue)
+                    continue;
+                if (value != null && value.equals(defaultValue))
+                    continue;
+            }
+
             TypedReference tr = new TypedReference(returnType, value, parm);
             tm.freeze(tr, element);
         }

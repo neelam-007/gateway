@@ -41,7 +41,6 @@
                 <Regex/>
                 <UnknownAssertion/>
                 <SnmpTrap/>
-                <EmailAlert/>
             </OneOrMore>
         </All>
         <ExactlyOne>

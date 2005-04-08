@@ -48,16 +48,16 @@ class ObjectTypeMapping extends BasicTypeMapping {
     }
 
     private TypedReference doThaw(Element source, WspVisitor visitor, boolean recursing) throws InvalidPolicyStreamException {
-        if (!WspConstants.L7_POLICY_NS.equals(source.getNamespaceURI()))
-            throw new InvalidPolicyStreamException("Policy contains node \"" + source.getNodeName() +
+        if (!getNsUri().equals(getNsUri()))
+            throw new InvalidPolicyStreamException("Policy contains node \"" + source.getLocalName() +
               "\" with unrecognized namespace URI \"" + source.getNamespaceURI() + "\"");
 
         NamedNodeMap attrs = source.getAttributes();
         if (attrs.getLength() == 0) {
             // Appears to be an anonymous element  <Typename>..</Typename>
-            TypeMapping tm = TypeMappingUtils.findTypeMappingByExternalName(source.getNodeName());
+            TypeMapping tm = TypeMappingUtils.findTypeMappingByExternalName(source.getLocalName());
             if (tm == null) {
-                final InvalidPolicyStreamException e = new InvalidPolicyStreamException("Unrecognized anonymous element " + source.getNodeName());
+                final InvalidPolicyStreamException e = new InvalidPolicyStreamException("Unrecognized anonymous element " + source.getLocalName());
                 if (recursing) throw e;
                 final Element newSource = visitor.invalidElement(source, e);
 
@@ -78,7 +78,7 @@ class ObjectTypeMapping extends BasicTypeMapping {
         if (typeName == null)
             typeName = attr.getNodeName();
         if (typeName == null)
-            throw new RuntimeException("Policy contains an attribute with a null LocalName");
+            throw new RuntimeException("Policy contains an attribute with a null NodeName");
         boolean isNull = false;
         if (typeName.endsWith("Null") && typeName.length() > 4) {
             typeName = typeName.substring(0, typeName.length() - 4);
@@ -87,12 +87,12 @@ class ObjectTypeMapping extends BasicTypeMapping {
 
         if (externalName.equals(typeName)) {
             // This is describing an actual Object, and not some subclass
-            return new TypedReference(clazz, isNull ? null : new Object(), source.getNodeName());
+            return new TypedReference(clazz, isNull ? null : new Object(), source.getLocalName());
         }
 
         TypeMapping tm = TypeMappingUtils.findTypeMappingByExternalName(typeName);
         if (tm == null)
-            throw new InvalidPolicyStreamException("Policy contains unrecognized type name \"" + source.getNodeName() + "\"");
+            throw new InvalidPolicyStreamException("Policy contains unrecognized type name \"" + source.getLocalName() + "\"");
 
         return tm.thaw(source, visitor);
     }

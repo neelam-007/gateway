@@ -14,16 +14,18 @@ import java.lang.reflect.Constructor;
  * Superclass for type mappings whose values can't be represented just as simple strings.
  */
 class ComplexTypeMapping extends BasicTypeMapping {
-    protected Constructor constructor; // default, no-arguments constructor for this type
+    protected final Constructor constructor; // default, no-arguments constructor for this type
 
     ComplexTypeMapping(Class clazz, String externalName) {
         super(clazz, externalName);
+        Constructor ctor;
         try {
             // Try to find the default constructor
-            constructor = clazz.getConstructor(new Class[0]);
+            ctor = clazz.getConstructor(new Class[0]);
         } catch (Exception e) {
-            constructor = null;
+            ctor = null;
         }
+        constructor = ctor;
     }
 
     ComplexTypeMapping(Class clazz, String externalName, Constructor constructor) {
@@ -31,8 +33,20 @@ class ComplexTypeMapping extends BasicTypeMapping {
         this.constructor = constructor;
     }
 
+    ComplexTypeMapping(Class clazz, String externalName, String nsUri, String nsPrefix) {
+        super(clazz, externalName, nsUri, nsPrefix);
+        Constructor ctor;
+        try {
+            // Try to find the default constructor
+            ctor = clazz.getConstructor(new Class[0]);
+        } catch (Exception e) {
+            ctor = null;
+        }
+        constructor = ctor;
+    }
+
     protected Element freezeAnonymous(TypedReference object, Element container) {
-        Element elm = container.getOwnerDocument().createElementNS(WspConstants.L7_POLICY_NS, externalName);
+        Element elm = container.getOwnerDocument().createElementNS(getNsUri(), getNsPrefix() + externalName);
         if (object.target == null)
             throw new InvalidPolicyTreeException("Null objects may not be serialized in Anonymous format");
         populateElement(elm, object);

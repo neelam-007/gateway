@@ -18,4 +18,9 @@ class AssertionMapping extends BeanTypeMapping {
         super(a.getClass(), externalName);
         this.source = a;
     }
+
+    public AssertionMapping(Assertion a, String externalName, String nsUri, String nsPrefix) {
+        super(a.getClass(), externalName, nsUri, nsPrefix);
+        this.source = a;
+    }
 }

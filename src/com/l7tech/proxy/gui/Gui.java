@@ -1,4 +1,6 @@
-/* $Id$ */
+/*
+ * $Id$
+ */
 package com.l7tech.proxy.gui;
 
 import com.l7tech.common.gui.ExceptionDialog;

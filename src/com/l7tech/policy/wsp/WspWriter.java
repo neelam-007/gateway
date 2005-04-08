@@ -29,7 +29,8 @@ public class WspWriter {
         try {
             return XmlUtil.stringToDocument("<wsp:Policy " +
                                             "xmlns:wsp=\"" + WspConstants.WSP_POLICY_NS + "\" " +
-                                            "xmlns=\"" + WspConstants.L7_POLICY_NS + "\"/>");
+                                            "xmlns=\"" + WspConstants.L7_POLICY_NS + "\" " +
+                                            "/>");
         } catch (IOException e) {
             throw new RuntimeException(e); // can't happen
         } catch (SAXException e) {

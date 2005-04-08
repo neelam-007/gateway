@@ -19,6 +19,7 @@ import java.util.logging.Logger;
  */
 class PermissiveWspVisitor implements WspVisitor {
     private static final Logger logger = Logger.getLogger(PermissiveWspVisitor.class.getName());
+    public static final WspVisitor INSTANCE = new PermissiveWspVisitor();
 
     /** Log the unknown property and continue. */
     public void unknownProperty(Element originalObject,

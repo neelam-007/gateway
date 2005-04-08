@@ -9,16 +9,14 @@ package com.l7tech.policy.wsp;
 import java.io.IOException;
 
 /**
- *
- * User: mike
- * Date: Sep 8, 2003
- * Time: 1:34:19 PM
+ * Exception thrown if a policy document cannot be parsed into a policy tree for reasons due to the content
+ * of the policy document.
  */
 public class InvalidPolicyStreamException extends IOException {
-    public InvalidPolicyStreamException() {
+    InvalidPolicyStreamException() {
     }
 
-    public InvalidPolicyStreamException(String s) {
+    InvalidPolicyStreamException(String s) {
         super(s);
     }
 
@@ -27,7 +25,7 @@ public class InvalidPolicyStreamException extends IOException {
         initCause(cause);
     }
 
-    public InvalidPolicyStreamException(String s, Throwable cause) {
+    InvalidPolicyStreamException(String s, Throwable cause) {
         super(s);
         initCause(cause);
     }

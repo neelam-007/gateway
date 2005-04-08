@@ -7,10 +7,8 @@
 package com.l7tech.policy.wsp;
 
 /**
- *
- * User: mike
- * Date: Sep 8, 2003
- * Time: 1:34:31 PM
+ * Exception thrown if a policy tree cannot be serialized to XML for reasons related to the content
+ * of the policy tree.
  */
 class InvalidPolicyTreeException extends IllegalArgumentException {
     public InvalidPolicyTreeException() {

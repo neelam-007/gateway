@@ -6,6 +6,7 @@
 
 package com.l7tech.policy;
 
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
@@ -171,7 +172,7 @@ public class DefaultPolicyPathBuilderTest extends TestCase {
     }
 
     public void testBug763MonsterPolicy() throws Exception {
-        Assertion policy = WspReader.parse(TestDocuments.getInputStream(TestDocuments.BUG_763_MONSTER_POLICY));
+        Assertion policy = WspReader.parse(XmlUtil.parse(TestDocuments.getInputStream(TestDocuments.BUG_763_MONSTER_POLICY)).getDocumentElement());
         DefaultPolicyPathBuilder builder = new DefaultPolicyPathBuilder();
 
         PolicyPathResult result = builder.generate(policy);

@@ -16,20 +16,30 @@ import java.lang.reflect.Constructor;
  * TypeMapping to use for basic concrete types whose values are represented most naturally by simple strings.
  */
 class BasicTypeMapping implements TypeMapping {
-    protected String externalName;
-    protected Class clazz;
-    protected boolean isNullable;
-    protected Constructor stringConstructor;  // constructor-from-string, if this type has one
+    protected final String externalName;
+    protected final Class clazz;
+    protected final boolean isNullable;
+    protected final Constructor stringConstructor;  // constructor-from-string, if this type has one
+    protected final String nsPrefix;
+    protected final String nsUri;
 
-    BasicTypeMapping(Class clazz, String externalName) {
+    BasicTypeMapping(Class clazz, String externalName, String nsUri, String prefix) {
         this.clazz = clazz;
         this.externalName = externalName;
         this.isNullable = TypeMappingUtils.isNullableType(clazz);
+        this.nsUri = nsUri;
+        this.nsPrefix = prefix;
+        Constructor stringCons;
         try {
-            stringConstructor = clazz.getConstructor(new Class[]{String.class});
+            stringCons = clazz.getConstructor(new Class[]{String.class});
         } catch (Exception e) {
-            stringConstructor = null;
+            stringCons = null;
         }
+        this.stringConstructor = stringCons;
+    }
+
+    BasicTypeMapping(Class clazz, String externalName) {
+        this(clazz, externalName, WspConstants.L7_POLICY_NS, ""); // Default ot default NS with no NS prefix
     }
 
     public Class getMappedClass() { return clazz; }
@@ -59,7 +69,7 @@ class BasicTypeMapping implements TypeMapping {
      * Return the new element, without appending it to the container yet.
      */
     protected Element freezeNamed(TypedReference object, Element container) {
-        Element elm = container.getOwnerDocument().createElementNS(WspConstants.L7_POLICY_NS, object.name);
+        Element elm = container.getOwnerDocument().createElementNS(getNsUri(), getNsPrefix() + object.name);
         if (object.target == null) {
             if (!isNullable)  // sanity check
                 throw new InvalidPolicyTreeException("Assertion has property \"" + object.name + "\" which mustn't be null yet is");
@@ -70,6 +80,20 @@ class BasicTypeMapping implements TypeMapping {
             populateElement(elm, object); // hook for more complex types
         }
         return elm;
+    }
+
+    /**
+     * @return the namespace prefix to use for serialized elements created by this type mapping, ie "l7p31:".
+     *         Includes the trailing colon if any.  Never null, but may be empty if the elements should be
+     *         created in the default namespace.
+     */
+    protected String getNsPrefix() {
+        return nsPrefix;
+    }
+
+    /** @return the namespace URI to use for serialized elements created by this type mapping, ie WspConstants.L7_POLICY_NS_31. */
+    protected String getNsUri() {
+        return nsUri;
     }
 
     /**
@@ -159,7 +183,7 @@ class BasicTypeMapping implements TypeMapping {
         }
 
         if (value == null)
-            return new TypedReference(clazz, null, source.getNodeName());
+            return new TypedReference(clazz, null, source.getLocalName());
 
         return createObject(source, value, visitor);
     }
@@ -177,7 +201,7 @@ class BasicTypeMapping implements TypeMapping {
     protected TypedReference createObject(Element element, String value, WspVisitor visitor) throws InvalidPolicyStreamException {
         if (value == null)
             throw new InvalidPolicyStreamException("Null values not supported"); // can't happen
-        TypedReference tr = new TypedReference(clazz, stringToObject(value), element.getNodeName());
+        TypedReference tr = new TypedReference(clazz, stringToObject(value), element.getLocalName());
         if (tr.target != null)
             populateObject(tr, element, visitor);
         return tr;

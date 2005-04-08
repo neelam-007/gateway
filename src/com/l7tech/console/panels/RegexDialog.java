@@ -15,8 +15,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
-import java.text.ParseException;
 import java.text.NumberFormat;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -228,7 +228,6 @@ public class RegexDialog extends JDialog {
             }
         }, 700);
 
-
         Integer mimePartIndex = new Integer(regexAssertion.getMimePart());
         NumberFormat fmt = NumberFormat.getNumberInstance();
         fmt.setMaximumIntegerDigits(2);
@@ -242,6 +241,12 @@ public class RegexDialog extends JDialog {
         DefaultFormatterFactory fmtFactory = new DefaultFormatterFactory(defaultFormat);
         mimePartTextField.setFormatterFactory(fmtFactory);
         mimePartTextField.setValue(mimePartIndex);
+
+        caseInsensitivecheckBox.addItemListener(new ItemListener() {
+            public void itemStateChanged(ItemEvent e) {
+                updatePattern();
+            }
+        });
     }
 
     private boolean shouldEnableTestButton() {

@@ -28,6 +28,7 @@ import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.policy.assertion.xml.XslTransformation;
 import com.l7tech.policy.assertion.xmlsec.*;
+import org.w3c.dom.Element;
 
 /**
  * Contains the registry of types we can serialize to a policy.
@@ -36,6 +37,21 @@ public class WspConstants {
     public static final String WSP_POLICY_NS = SoapUtil.WSP_NAMESPACE;
     public static final String L7_POLICY_NS = "http://www.layer7tech.com/ws/policy";
     public static final String POLICY_ELNAME = "Policy";
+
+    // Valid namespaces for a root <Policy> element.
+    public static final String[] POLICY_NAMESPACES = {
+        WSP_POLICY_NS,
+        L7_POLICY_NS,
+    };
+
+    static boolean isRecognizedPolicyNsUri(String nsUri) {
+        for (int i = 0; i < POLICY_NAMESPACES.length; i++) {
+            String policyNamespace = POLICY_NAMESPACES[i];
+            if (policyNamespace.equals(nsUri))
+                return true;
+        }
+        return false;
+    }
 
     static String[] ignoreAssertionProperties = {
         "Parent", // Parent links will be reconstructed when tree is deserialized
@@ -134,7 +150,12 @@ public class WspConstants {
         new AssertionMapping(new SecureConversation(), "SecureConversation"),
         new AssertionMapping(new RequestWssReplayProtection(), "RequestWssReplayProtection"),
         new AssertionMapping(new RequestWssSaml(), "RequestWssSaml"),
-        new AssertionMapping(new RequestXpathAssertion(), "RequestXpathAssertion"),
+        new AssertionMapping(new RequestXpathAssertion(), "RequestXpathAssertion") {
+            // Compatibility with old 2.1 instances of this assertion
+            protected void populateObject(TypedReference object, Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
+                super.populateObject(object, source, new WspUpgradeUtilFrom21.RequestXpathAssertionPropertyVisitor(visitor));
+            }
+        },
         new AssertionMapping(new ResponseXpathAssertion(), "ResponseXpathAssertion"),
         new AssertionMapping(new SchemaValidation(), "SchemaValidation"),
         new AssertionMapping(new XslTransformation(), "XslTransformation"),
@@ -162,6 +183,10 @@ public class WspConstants {
         new BeanTypeMapping(TimeOfDayRange.class, "timeOfDayRange"),
         new BeanTypeMapping(TimeOfDay.class, "timeOfDay"),
 
+        // Backward compatibility with old policy documents
+        WspUpgradeUtilFrom21.xmlRequestSecurityCompatibilityMapping,
+        WspUpgradeUtilFrom21.xmlResponseSecurityCompatibilityMapping,
+        WspUpgradeUtilFrom30.httpClientCertCompatibilityMapping,
+        WspUpgradeUtilFrom30.samlSecurityCompatibilityMapping,
     };
-
 }
