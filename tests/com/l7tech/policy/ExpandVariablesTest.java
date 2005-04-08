@@ -45,7 +45,7 @@ public class ExpandVariablesTest extends TestCase {
         String inputMessage = "Blah message blah ${var1}";
         String expectedOutputMessage = "Blah message blah value_variable1";
         String processedMessage = expander.process(inputMessage);
-        assertTrue(processedMessage.contains(value));
+        assertTrue(processedMessage.indexOf(value) >= 0);
         assertEquals(processedMessage, expectedOutputMessage);
     }
 
@@ -60,7 +60,7 @@ public class ExpandVariablesTest extends TestCase {
         String inputMessage = "Blah message blah ${var1} and more blah ${var2}";
         String expectedOutputMessage = "Blah message blah value_variable1 and more blah value_variable2";
         String processedMessage = expander.process(inputMessage);
-        assertTrue(processedMessage.contains(value1));
+        assertTrue(processedMessage.indexOf(value1) >= 0);
         assertEquals(processedMessage, expectedOutputMessage);
     }
 
