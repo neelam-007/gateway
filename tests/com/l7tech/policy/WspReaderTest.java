@@ -30,7 +30,6 @@ public class WspReaderTest extends TestCase {
     private static final ClassLoader cl = WspReaderTest.class.getClassLoader();
     private static String RESOURCE_PATH = "com/l7tech/policy/resources";
     private static String SIMPLE_POLICY = RESOURCE_PATH + "/simple_policy.xml";
-    private static final String POLICY_21 = RESOURCE_PATH + "/simple_policy_21.xml";
 
     public WspReaderTest(String name) {
         super(name);
@@ -40,9 +39,9 @@ public class WspReaderTest extends TestCase {
         return new TestSuite(WspReaderTest.class);
     }
 
-    public void testParseWsp() throws IOException {
+    public void testParseWsp() throws Exception {
         InputStream wspStream = cl.getResourceAsStream(SIMPLE_POLICY);
-        Assertion policy = WspReader.parse(wspStream);
+        Assertion policy = WspReader.parse(XmlUtil.parse(wspStream).getDocumentElement());
         log.info("Got back policy: " + policy);
         assertTrue(policy != null);
         assertTrue(policy instanceof ExactlyOneAssertion);
@@ -79,7 +78,7 @@ public class WspReaderTest extends TestCase {
     public void testParseNonXml() {
         mustThrow(IOException.class, new throwingRunnable() {
             public void run() throws IOException {
-                Assertion policy = WspReader.parse("asdfhaodh/asdfu2h$9ha98h");
+                WspReader.parse("asdfhaodh/asdfu2h$9ha98h");
             }
         });
     }
@@ -87,7 +86,7 @@ public class WspReaderTest extends TestCase {
     public void testParseStrangeXml() {
         mustThrow(IOException.class,  new throwingRunnable() {
             public void run() throws IOException {
-                Assertion policy = WspReader.parse("<foo><bar blee=\"1\"/></foo>");
+                WspReader.parse("<foo><bar blee=\"1\"/></foo>");
             }
         });
     }
@@ -121,17 +120,31 @@ public class WspReaderTest extends TestCase {
 
     }
 
-    public void testSeamlessPolicyUpgrade() throws Exception {
-        InputStream policy21Stream = null;
+    private static final Object[][] VERSIONS = {
+        new Object[] { "simple_policy_21.xml", "2.1" },
+        new Object[] { "simple_policy_30.xml", "3.0" },
+        new Object[] { "simple_policy_31.xml", "3.1" },
+    };
+
+    private void trySeamlessPolicyUpgrade(String policyFile) throws Exception {
+        InputStream policyStream = null;
         try {
-            policy21Stream = cl.getResourceAsStream(POLICY_21);
-            
-            Document policy21 = XmlUtil.parse(policy21Stream);
-            Assertion root = WspReader.parse(policy21.getDocumentElement());
+            log.info("Trying to parse policy document; " + policyFile);
+            policyStream = cl.getResourceAsStream(RESOURCE_PATH + "/" + policyFile);
+            Document policy = XmlUtil.parse(policyStream);
+            Assertion root = WspReader.parse(policy.getDocumentElement());
             assertTrue(root != null);
             assertTrue(root instanceof ExactlyOneAssertion);
         } finally {
-            if (policy21Stream != null) policy21Stream.close();
+            if (policyStream != null) policyStream.close();
+        }
+    }
+
+    public void testSeamlessPolicyUpgrades() throws Exception {
+        for (int i = 0; i < VERSIONS.length; i++) {
+            Object[] version = VERSIONS[i];
+            String policyFile = (String)version[0];
+            trySeamlessPolicyUpgrade(policyFile);
         }
     }
 
