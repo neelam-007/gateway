@@ -48,17 +48,23 @@ public class ServerEmailAlertAssertion implements ServerAssertion {
         props.setProperty("mail.from", MAIL_FROM);
         props.setProperty("mail.smtp.port", Integer.toString(ass.getSmtpPort()));
 
+        InternetAddress addr;
         try {
-            address = new InternetAddress(ass.getTargetEmailAddress());
+            addr = new InternetAddress(ass.getTargetEmailAddress());
         } catch (AddressException e) {
-            throw (IllegalArgumentException)new IllegalArgumentException("Invalid email address").initCause(e);
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {"Unable to initialize EmailAlertAssert: invalid destination email address"}, e);
+            addr = null;
         }
+        address = addr;
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
+        if (address == null) {
+            auditor.logAndAudit(AssertionMessages.EMAILALERT_BAD_TO_ADDR);
+            return AssertionStatus.FAILED;
+        }
+
         try {
-
-
             Session session = Session.getDefaultInstance(props, null);
             MimeMessage message = new MimeMessage(session);
             message.addRecipient(javax.mail.Message.RecipientType.TO, address);
