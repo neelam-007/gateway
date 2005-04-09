@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.common.message;
@@ -82,6 +80,11 @@ public class XmlFacet extends MessageFacet {
         public PartIterator getParts() throws IOException {
             ensureFirstPartValid();
             return new PartIteratorWrapper(mk.getParts());
+        }
+
+        public PartInfo getPart(int num) throws IOException, NoSuchPartException {
+            ensureFirstPartValid();
+            return mk.getPart(num);
         }
 
         public PartInfo getPartByContentId(String contentId) throws IOException, NoSuchPartException {

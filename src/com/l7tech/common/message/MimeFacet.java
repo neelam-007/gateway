@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.common.message;
@@ -43,6 +41,10 @@ class MimeFacet extends MessageFacet {
 
         public PartIterator getParts() {
             return getMimeBody().iterator();
+        }
+
+        public PartInfo getPart(int num) throws IOException, NoSuchPartException {
+            return getMimeBody().getPart(num);
         }
 
         private MimeBody getMimeBody() {
