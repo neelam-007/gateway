@@ -15,6 +15,9 @@ import com.l7tech.policy.assertion.Regex;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.server.MockServletApi;
 import com.l7tech.server.SoapMessageProcessingServlet;
+import com.l7tech.server.TestMessageProcessor;
+import com.l7tech.server.MessageProcessorListener;
+import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.service.ServiceAdmin;
 import com.l7tech.service.ServicesHelper;
 import junit.framework.Test;
@@ -39,6 +42,8 @@ public class RegexAssertionTest extends TestCase {
     private SoapMessageProcessingServlet messageProcessingServlet;
     private static ServicesHelper servicesHelper;
     private int tokenCount = 0;
+    private static TestMessageProcessor messageProcessor;
+
     /**
      * test <code>EchoAssertionTest</code> constructor
      */
@@ -54,6 +59,7 @@ public class RegexAssertionTest extends TestCase {
         TestSuite suite = new TestSuite(RegexAssertionTest.class);
         servletApi = MockServletApi.defaultMessageProcessingServletApi("com/l7tech/common/testApplicationContext.xml");
         servicesHelper = new ServicesHelper((ServiceAdmin)servletApi.getApplicationContext().getBean("serviceAdmin"));
+        messageProcessor = (TestMessageProcessor)servletApi.getApplicationContext().getBean("messageProcessor");
         return suite;
     }
 
@@ -73,7 +79,7 @@ public class RegexAssertionTest extends TestCase {
 
     public void testSimpleReplace() throws Exception {
         final String matchToken = "QQQ";
-        ServicesHelper.ServiceDescriptor descriptor =  servicesHelper.publish("stockQuote", TestDocuments.WSDL, getPolicy("QQQ", "ZZZ"));
+        ServicesHelper.ServiceDescriptor descriptor = servicesHelper.publish("stockQuote", TestDocuments.WSDL, getPolicy("QQQ", "ZZZ"));
         Wsdl wsdl = Wsdl.newInstance(null, new StringReader(descriptor.getWsdlXml()));
         wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
 
@@ -103,7 +109,7 @@ public class RegexAssertionTest extends TestCase {
             messageProcessingServlet.doPost(mhreq, mhres);
             String result = new String(mhres.getContentAsByteArray(), mhres.getCharacterEncoding());
             Matcher matcher = verifier.matcher(result);
-            while(matcher.find()) {
+            while (matcher.find()) {
                 ++verifiedTokens;
             }
         }
@@ -112,7 +118,7 @@ public class RegexAssertionTest extends TestCase {
 
     public void testBackReferenceReplace() throws Exception {
         final String matchToken = "QQQ";
-        ServicesHelper.ServiceDescriptor descriptor =  servicesHelper.publish("stockQuote", TestDocuments.WSDL, getPolicy("QQQ", "$0ZZZ"));
+        ServicesHelper.ServiceDescriptor descriptor = servicesHelper.publish("stockQuote", TestDocuments.WSDL, getPolicy("QQQ", "$0ZZZ"));
         Wsdl wsdl = Wsdl.newInstance(null, new StringReader(descriptor.getWsdlXml()));
         wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
 
@@ -142,7 +148,7 @@ public class RegexAssertionTest extends TestCase {
             messageProcessingServlet.doPost(mhreq, mhres);
             String result = new String(mhres.getContentAsByteArray(), mhres.getCharacterEncoding());
             Matcher matcher = verifier.matcher(result);
-            while(matcher.find()) {
+            while (matcher.find()) {
                 ++verifiedTokens;
             }
         }
@@ -152,7 +158,7 @@ public class RegexAssertionTest extends TestCase {
 
     public void testTwoRegexExpressionsInSequence() throws Exception {
         final String matchToken = "QQQ";
-        ServicesHelper.ServiceDescriptor descriptor =  servicesHelper.publish("stockQuote", TestDocuments.WSDL, getPolicy("QQQ", "ZZZ", "ZZZ", "OOO"));
+        ServicesHelper.ServiceDescriptor descriptor = servicesHelper.publish("stockQuote", TestDocuments.WSDL, getPolicy("QQQ", "ZZZ", "ZZZ", "OOO"));
         Wsdl wsdl = Wsdl.newInstance(null, new StringReader(descriptor.getWsdlXml()));
         wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
 
@@ -182,10 +188,60 @@ public class RegexAssertionTest extends TestCase {
             messageProcessingServlet.doPost(mhreq, mhres);
             String result = new String(mhres.getContentAsByteArray(), mhres.getCharacterEncoding());
             Matcher matcher = verifier.matcher(result);
-            while(matcher.find()) {
+            while (matcher.find()) {
                 ++verifiedTokens;
             }
         }
+        assertEquals(verifiedTokens, tokenCount);
+    }
+
+
+    public void testSimpleReplaceWithVariables() throws Exception {
+        final String matchToken = "QQQ";
+        ServicesHelper.ServiceDescriptor descriptor = servicesHelper.publish("stockQuote", TestDocuments.WSDL, getPolicy("QQQ", "${bingo}"));
+        Wsdl wsdl = Wsdl.newInstance(null, new StringReader(descriptor.getWsdlXml()));
+        wsdl.setShowBindings(Wsdl.SOAP_BINDINGS);
+
+        SoapMessageGenerator sm = new SoapMessageGenerator(new SoapMessageGenerator.MessageInputGenerator() {
+            public String generate(String messagePartName, String operationName, Definition definition) {
+                ++tokenCount;
+                return matchToken;
+            }
+        });
+        MessageProcessorListener procesorListener = new MessageProcessorListener() {
+            public void beforeProcessMessage(PolicyEnforcementContext context) {
+                context.setVariable("bingo", "ZZZ");
+            }
+
+            public void afterProcessMessage(PolicyEnforcementContext context) {
+            }
+        };
+        messageProcessor.addProcessorListener(procesorListener);
+
+        int verifiedTokens = 0;
+        Pattern verifier = Pattern.compile("ZZZ");
+        SoapMessageGenerator.Message[] requests = sm.generateRequests(wsdl);
+        for (int i = 0; i < requests.length; i++) {
+            SoapMessageGenerator.Message request = requests[i];
+            SOAPMessage msg = request.getSOAPMessage();
+
+            ByteArrayOutputStream bo = new ByteArrayOutputStream();
+            msg.writeTo(bo);
+            servletApi.reset();
+            MockHttpServletRequest mhreq = servletApi.getServletRequest();
+            mhreq.addHeader(SoapUtil.SOAPACTION, request.getSOAPAction());
+            mhreq.setContent(bo.toByteArray());
+            MockHttpServletResponse mhres = servletApi.getServletResponse();
+            messageProcessingServlet = new SoapMessageProcessingServlet();
+            messageProcessingServlet.init(servletApi.getServletConfig());
+            messageProcessingServlet.doPost(mhreq, mhres);
+            String result = new String(mhres.getContentAsByteArray(), mhres.getCharacterEncoding());
+            Matcher matcher = verifier.matcher(result);
+            while (matcher.find()) {
+                ++verifiedTokens;
+            }
+        }
+        messageProcessor.removeProcessorListener(procesorListener);
         assertEquals(verifiedTokens, tokenCount);
     }
 
@@ -196,9 +252,9 @@ public class RegexAssertionTest extends TestCase {
         regex.setReplacement(replace);
         regex.setReplace(true);
         Assertion policy = new AllAssertion(Arrays.asList(new Assertion[]{
-                    regex,
-                    new Echo()
-                  }));
+                                                              regex,
+                                                              new Echo()
+                                                            }));
 
         return policy;
     }
@@ -216,10 +272,10 @@ public class RegexAssertionTest extends TestCase {
         regex2.setReplacement(replace2);
 
         Assertion policy = new AllAssertion(Arrays.asList(new Assertion[]{
-                    regex,
-                    regex2,
-                    new Echo()
-                  }));
+                                                              regex,
+                                                              regex2,
+                                                              new Echo()
+                                                            }));
 
         return policy;
     }

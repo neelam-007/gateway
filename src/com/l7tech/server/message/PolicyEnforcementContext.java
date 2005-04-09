@@ -45,7 +45,7 @@ public class PolicyEnforcementContext extends ProcessingContext {
     private PublishedService service;
     private final Vector updatedCookies = new Vector();
     private AuditContext auditContext = null;
-    private final Map vars = new HashMap();
+    private final Map variables = new HashMap();
     private long routingStartTime;
     private long routingEndTime;
 
@@ -208,11 +208,20 @@ public class PolicyEnforcementContext extends ProcessingContext {
     }
 
     public void setVariable(String name, Object value) {
-        vars.put(name, value);
+        variables.put(name, value);
     }
 
     public Object getVariable(String name) {
-        return vars.get(name);
+        return variables.get(name);
+    }
+
+    /**
+     * Returns the read-only (unmodifiable) <code>Map</code> of context variables
+     *
+     * @return the unmodifiable map of context variables.
+     */
+    public Map getVariables() {
+        return Collections.unmodifiableMap(variables);
     }
 
     public void routingStarted() {

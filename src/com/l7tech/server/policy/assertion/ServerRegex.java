@@ -6,6 +6,7 @@
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.policy.assertion.*;
+import com.l7tech.policy.ExpandVariables;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.audit.AssertionMessages;
@@ -31,7 +32,7 @@ public class ServerRegex implements ServerAssertion {
     private Pattern regexPattern;
     private Exception compileException;
     private Regex regexAssertion;
-
+    private final ExpandVariables expandVariables = new ExpandVariables();
 
     public ServerRegex(Regex ass, ApplicationContext springContext) {
         regexAssertion = ass;
@@ -68,7 +69,7 @@ public class ServerRegex implements ServerAssertion {
               context.getResponse().getMimeKnob().getFirstPart() :
               context.getRequest().getMimeKnob().getFirstPart();
 
-            final String replacement = regexAssertion.getReplacement();
+            String replacement = regexAssertion.getReplacement();
             final boolean isReplacement = regexAssertion.isReplace();
 
             // replacement set and replacement null
@@ -83,6 +84,7 @@ public class ServerRegex implements ServerAssertion {
             Matcher matcher = regexPattern.matcher(new String(message, encoding));
             if (isReplacement) {
                 logger.log(Level.FINE, "Replace requested: Match pattern '{0}', replace pattern '{1}'", new Object[]{regexAssertion.getRegex(), replacement});
+                replacement = expandVariables.process(replacement, context.getVariables());
                 String result = matcher.replaceAll(replacement);
                 firstPart.setBodyBytes(result.getBytes(encoding));
             } else {
@@ -94,6 +96,9 @@ public class ServerRegex implements ServerAssertion {
             }
             return AssertionStatus.NONE;
         } catch (NoSuchPartException e) {
+            auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
+            return AssertionStatus.FAILED;
+        } catch (ExpandVariables.VariableNotFoundException e) {
             auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
             return AssertionStatus.FAILED;
         }

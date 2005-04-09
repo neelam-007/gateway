@@ -142,7 +142,7 @@
     </bean>
 
     <!-- server Message Processor -->
-    <bean id="messageProcessor" class="com.l7tech.server.MessageProcessor">
+    <bean id="messageProcessor" class="com.l7tech.server.TestMessageProcessor">
         <constructor-arg>
             <ref bean="serviceManager"/>
         </constructor-arg>
