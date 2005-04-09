@@ -165,7 +165,7 @@ public class ContentTypeHeader extends MimeHeader {
      */
     public String getEncoding() {
         if (javaEncoding == null) {
-            this.mimeCharset = (String)getParam("charset");
+            this.mimeCharset = getParam("charset");
 
             if (mimeCharset == null) {
                 logger.finest("No charset value found in Content-Type header; assuming " + ENCODING);
@@ -208,14 +208,32 @@ public class ContentTypeHeader extends MimeHeader {
         return "text".equalsIgnoreCase(getType());
     }
 
+    public boolean isApplication() {
+        return "application".equalsIgnoreCase(getType());
+    }
+
     /** @return true if the type is "multipart" */
     public boolean isMultipart() {
         return "multipart".equalsIgnoreCase(getType());
     }
 
-    /** @return true if the type is "text/xml" */
+    /** @return true if the type is "text/xml", "application/xml" or "application/<em>anything</em>+xml*/
     public boolean isXml() {
-        return isText() && "xml".equalsIgnoreCase(getSubtype());
+        if (isText() && "xml".equalsIgnoreCase(getSubtype())) return true;
+        if (isApplication()) {
+            if ("xml".equalsIgnoreCase(getSubtype())) {
+                return true;
+            } else {
+                int ppos = getSubtype().indexOf("+");
+                if (ppos >= 0) {
+                    if ("xml".equalsIgnoreCase(getSubtype().substring(ppos+1))) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -231,7 +249,7 @@ public class ContentTypeHeader extends MimeHeader {
                 return false;
         if (subtype != null && !subtype.equals("*")) {
             // If they wan't text/enriched, we'll consider ourselves to match if we are text/plain
-            if (type.equals("text") && subtype.equals("enriched") && getSubtype().equals("plain"))
+            if ("text".equals(type) && "enriched".equals(subtype) && "plain".equals(getSubtype()))
                 return true;
             if (!getSubtype().equals(subtype))
                 return false;
