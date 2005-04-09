@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.proxy.util;
@@ -282,12 +281,7 @@ public class PolicyServiceClient {
         if (body == null) throw new MessageNotSoapException("Policy server response is missing body");
         Element payload = XmlUtil.findOnlyOneChildElementByName(body, SoapUtil.WSX_NAMESPACE, "GetPolicyResponse");
         if (payload == null) throw new MissingRequiredElementException("Policy server response is missing wsx:GetPolicyResponse");
-        Element policy = XmlUtil.findOnlyOneChildElementByName(payload,
-                                                               new String[] {
-                                                                    WspConstants.L7_POLICY_NS,
-                                                                    WspConstants.WSP_POLICY_NS
-                                                               },
-                                                               "Policy");
+        Element policy = XmlUtil.findOnlyOneChildElementByName(payload, WspConstants.POLICY_NAMESPACES, "Policy");
         if (policy == null) throw new MissingRequiredElementException("Policy server response is missing Policy element");
         Assertion assertion = null;
         try {

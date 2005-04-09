@@ -1,5 +1,5 @@
 /*
- * $Id$
+ * Ultimate holder of everything related to an SSB GUI.
  */
 package com.l7tech.proxy.gui;
 
@@ -162,13 +162,22 @@ public class Gui {
     }
 
     private void initSystemTray() {
-        if ( !SysTrayMenu.isAvailable() || sysTrayMenu != null )
+        if ( sysTrayMenu != null )
             return;
 
-        URL si = getClass().getClassLoader().getResource( SYSTRAY_ICON + SysTrayMenuIcon.getExtension() );
-        if ( si == null )
+        if ( !SysTrayMenu.isAvailable() ) {
+            log.info("System tray disabled: system tray support not available");
             return;
+        }
 
+        final String systrayIconFilename = SYSTRAY_ICON + SysTrayMenuIcon.getExtension();
+        URL si = getClass().getClassLoader().getResource( systrayIconFilename );
+        if ( si == null ) {
+            log.info("System tray disabled: system tray icon not found: " + systrayIconFilename);
+            return;
+        }
+
+        log.info("Enabling system tray");
         SysTrayMenuIcon systrayMenuIcon = new SysTrayMenuIcon( si );
 
         systrayMenuIcon.setActionCommand( "show" );

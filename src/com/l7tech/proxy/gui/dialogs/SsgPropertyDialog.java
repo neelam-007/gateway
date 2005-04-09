@@ -21,7 +21,7 @@ import com.l7tech.proxy.ssl.CurrentSslPeer;
 
 import javax.net.ssl.SSLException;
 import javax.swing.*;
-import javax.swing.border.BevelBorder;
+import javax.swing.border.Border;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileFilter;
@@ -58,7 +58,6 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     //   View for General pane
     private JComponent generalPane;
     private JTextField fieldServerAddress;
-    private ImageIcon generalPaneImageIcon;
     private JLabel imageLabel;
 
     //   View for Identity pane
@@ -433,7 +432,10 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     private JLabel getImageLabel(Ssg ssg) {
         if (imageLabel == null) {
             imageLabel = new JLabel(getIdentityPane(ssg).getGeneralPaneImageIcon());
-            imageLabel.setBorder(BorderFactory.createBevelBorder(BevelBorder.LOWERED));
+            final Border white = BorderFactory.createLineBorder(Color.WHITE, 12);
+            final Border lowered = BorderFactory.createLineBorder(Color.BLACK);
+            final Border border = BorderFactory.createCompoundBorder(lowered, white);
+            imageLabel.setBorder(border);
         }
         return imageLabel;
     }

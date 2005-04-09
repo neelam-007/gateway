@@ -5,7 +5,6 @@ import javax.swing.*;
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
  * <p> @author fpang </p>
- * $Id$
  */
 abstract class SsgIdentityPanel extends JPanel {
     public abstract JButton getClientCertButton();

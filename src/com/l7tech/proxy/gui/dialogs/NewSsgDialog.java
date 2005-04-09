@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.proxy.gui.dialogs;
@@ -54,7 +53,7 @@ public class NewSsgDialog extends JDialog {
         setContentPane(rootPanel);
 
         imagePanel.setBackground(Color.WHITE);
-        imagePanel.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 2, Color.BLACK));
+        imagePanel.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, Color.BLACK));
 
         ButtonGroup bg1 = new ButtonGroup();
         bg1.add(radioTrustedGateway);
