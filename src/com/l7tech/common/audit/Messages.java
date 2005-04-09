@@ -45,7 +45,7 @@ public class Messages {
         return (M)adm;
     }
 
-    protected static final class M extends AuditDetailMessage {
+    public static final class M extends AuditDetailMessage {
         public M(int id, Level level, String message) {
             super(id, level, message);
         }
