@@ -148,6 +148,33 @@ public class WspReaderTest extends TestCase {
         }
     }
 
+    public void testSeamlessUpgradeFrom21() throws Exception {
+        InputStream is = cl.getResourceAsStream(RESOURCE_PATH + "/" + "simple_policy_21.xml");
+        Document doc = XmlUtil.parse(is);
+        Assertion ass = WspReader.parse(doc.getDocumentElement());
+        log.info("Policy tree constructed after reading 2.1 policy XML:\n" + ass);
+        assertTrue(ass != null);
+        assertTrue(ass instanceof ExactlyOneAssertion);
+    }
+
+    public void testSeamlessUpgradeFrom30() throws Exception {
+        InputStream is = cl.getResourceAsStream(RESOURCE_PATH + "/" + "simple_policy_30.xml");
+        Document doc = XmlUtil.parse(is);
+        Assertion ass = WspReader.parse(doc.getDocumentElement());
+        log.info("Policy tree constructed after reading 3.0 policy XML:\n" + ass);
+        assertTrue(ass != null);
+        assertTrue(ass instanceof ExactlyOneAssertion);
+    }
+
+    public void testSeamlessUpgradeFrom31() throws Exception {
+        InputStream is = cl.getResourceAsStream(RESOURCE_PATH + "/" + "simple_policy_31.xml");
+        Document doc = XmlUtil.parse(is);
+        Assertion ass = WspReader.parse(doc.getDocumentElement());
+        log.info("Policy tree constructed after reading 3.1 policy XML:\n" + ass);
+        assertTrue(ass != null);
+        assertTrue(ass instanceof ExactlyOneAssertion);
+    }
+
     public static void main(String[] args) {
         junit.textui.TestRunner.run(suite());
     }
