@@ -273,4 +273,12 @@ public class AssertionMessages extends Messages {
     public static final M EMAILALERT_MESSAGE_SENT = m(6700, Level.INFO, "Email message sent");
     public static final M EMAILALERT_BAD_TO_ADDR  = m(6701, Level.WARNING, "Bad destination email address");
     public static final M EMAILALERT_BAD_FROM_ADDR= m(6702, Level.WARNING, "Bad source email address");
+
+    // HTTP Form POST
+    public static final M HTTPFORM_WRONG_TYPE    = m(6800, Level.WARNING, "Request had unsupoprted Content-Type: {0}");
+    public static final M HTTPFORM_NON_HTTP      = m(6801, Level.WARNING, "Request was not received via HTTP");
+    public static final M HTTPFORM_MULTIVALUE    = m(6802, Level.WARNING, "Field {0} had multiple values; skipping");
+    public static final M HTTPFORM_NO_SUCH_FIELD = m(6803, Level.WARNING, "Field {0} could not be found");
+    public static final M HTTPFORM_NO_PARTS      = m(6804, Level.WARNING, "No MIME parts were found");
+    public static final M HTTPFORM_BAD_MIME      = m(6805, Level.WARNING, "Unable to write new MIME message");
 }

@@ -481,4 +481,10 @@ public class MimeBoundaryTerminatedInputStreamTest extends TestCase {
         String mess = "\r\n--foo\r\nContent-Type: application/octet-stream\r\nContent-Length: 0\r\n\r\n--foo--";
 //        readParts(mess.getBytes(), 1, 512);
     }
+
+    public void testMakeMimeMessage() throws Exception {
+        byte[] boundary = MimeUtil.randomBoundary();
+        byte[] msg = MimeUtil.makeMultipartMessage( boundary, new byte[][] { "foo".getBytes(), "bar".getBytes() }, new String[] { "text/plain", "text/plain"} );
+        System.out.println(new String(msg));
+    }
 }

@@ -11,6 +11,8 @@ import org.apache.commons.httpclient.Cookie;
 import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
+import java.util.Map;
+import java.util.Enumeration;
 
 /**
  * Information about a request that arrived over HTTP.
@@ -79,4 +81,12 @@ public interface HttpRequestKnob extends TcpKnob {
      * @return true iff. this request arrived over SSL
      */
     boolean isSecure();
+
+    String getParameter(String name);
+
+    Map getParameterMap();
+
+    String[] getParameterValues(String s);
+
+    Enumeration getParameterNames();
 }

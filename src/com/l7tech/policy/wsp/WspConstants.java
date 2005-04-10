@@ -167,6 +167,7 @@ public class WspConstants {
         new AssertionMapping(new Regex(), "Regex"),
         new AssertionMapping(new SnmpTrapAssertion(), "SnmpTrap"),
         new AssertionMapping(new EmailAlertAssertion(), "EmailAlert"),
+        new AssertionMapping(new HttpFormPost(), "HttpFormPost"),
         new AssertionMapping(new UnknownAssertion(), "UnknownAssertion"),
 
         // Special types
@@ -182,6 +183,8 @@ public class WspConstants {
         new BeanTypeMapping(XmlSecurityRecipientContext.class, "xmlSecurityRecipientContext"),
         new BeanTypeMapping(TimeOfDayRange.class, "timeOfDayRange"),
         new BeanTypeMapping(TimeOfDay.class, "timeOfDay"),
+        new BeanTypeMapping(HttpFormPost.FieldInfo.class, "fieldInfo"),
+        new ArrayTypeMapping(new HttpFormPost.FieldInfo[0], "fieldInfoArray"),
 
         // Backward compatibility with old policy documents
         WspUpgradeUtilFrom21.xmlRequestSecurityCompatibilityMapping,

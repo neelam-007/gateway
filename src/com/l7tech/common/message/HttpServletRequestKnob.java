@@ -6,14 +6,13 @@
 
 package com.l7tech.common.message;
 
+import com.l7tech.common.util.IteratorEnumeration;
+
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.List;
+import java.util.*;
 
 /**
  * Implementation of {@link HttpRequestKnob} that knows how to obtain the HTTP request transport metadata
@@ -21,10 +20,17 @@ import java.util.List;
  */
 public class HttpServletRequestKnob implements HttpRequestKnob {
     private final HttpServletRequest request;
+    private final Map paramMap; // Necessary because you can't get parameters after reading the request's InputStream
     private static final String SERVLET_REQUEST_ATTR_X509CERTIFICATE = "javax.servlet.request.X509Certificate";
 
     public HttpServletRequestKnob(HttpServletRequest request) {
         if (request == null) throw new NullPointerException();
+        Enumeration names = request.getParameterNames();
+        Map params = new HashMap();
+        while (names.hasMoreElements()) {
+            params.put(names.nextElement(), request.getParameterValues((String)request.getParameterNames().nextElement()));
+        }
+        this.paramMap = Collections.unmodifiableMap(params);
         this.request = request;
     }
 
@@ -57,6 +63,24 @@ public class HttpServletRequestKnob implements HttpRequestKnob {
 
     public String getRequestUri() {
         return request.getRequestURI();
+    }
+
+    public String getParameter(String name) {
+        String[] values = (String[]) paramMap.get(name);
+        if (values == null) return null;
+        return values[0];
+    }
+
+    public Map getParameterMap() {
+        return paramMap;
+    }
+
+    public String[] getParameterValues(String s) {
+        return (String[]) paramMap.get(s);
+    }
+
+    public Enumeration getParameterNames() {
+        return new IteratorEnumeration(paramMap.keySet().iterator());
     }
 
     public String getRequestUrl() {

@@ -75,6 +75,7 @@ public class AssertionTreeNodeFactory {
         assertionMap.put(XpathCredentialSource.class, XpathCredentialSourceTreeNode.class);
         assertionMap.put(SamlBrowserArtifact.class, SamlBrowserArtifactTreeNode.class);
         assertionMap.put(Regex.class, RegexPolicyNode.class);
+        assertionMap.put(HttpFormPost.class, HttpFormPostPolicyNode.class);
     }
 
     /**

@@ -4,9 +4,12 @@ import com.l7tech.common.util.CausedIOException;
 
 import javax.mail.Header;
 import javax.mail.MessagingException;
+import javax.mail.internet.HeaderTokenizer;
 import javax.mail.internet.InternetHeaders;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.SecureRandom;
 import java.util.Enumeration;
 
 /**
@@ -26,6 +29,8 @@ public class MimeUtil {
     public static final String MULTIPART_BOUNDARY = "boundary";
     public static final String MULTIPART_BOUNDARY_PREFIX = "--";
     public static final String CONTENT_ID = "Content-Id";
+    private static SecureRandom random = new SecureRandom();
+    public static final byte[] CRLF = "\r\n".getBytes();
 
     /**
      * Read a set of MIME headers and the delimiter line, and leave the InputStream positioned at the first byte
@@ -59,5 +64,65 @@ public class MimeUtil {
             result.add(mh);
         }
         return result;
+    }
+
+    /**
+     * Generates a random boundary consisting of between 1 and 40 legal characters,
+     * plus a prefix of 0-5 hyphens and the magic quoted-printable-proof "=_"
+     * @return
+     */
+    public static byte[] randomBoundary() {
+        StringBuffer bb = new StringBuffer();
+
+        for (int i = 0; i < random.nextInt(5); i++) {
+            bb.append('-');
+        }
+
+        bb.append("=_");
+
+        for (int i = 0; i < random.nextInt(40)+1; i++) {
+            byte printable = (byte)(random.nextInt(127-32)+32);
+            if (HeaderTokenizer.MIME.indexOf(printable) < 0)
+                bb.append(new String(new byte[] { printable }));
+        }
+
+        return bb.toString().getBytes();
+    }
+
+    public static byte[] makeMultipartMessage(byte[] boundary ,byte[][] parts, String[] contentTypes) throws IOException {
+        int numParts = parts.length;
+        int size = 192 + (boundary.length * parts.length);
+        for (int i = 0; i < parts.length; i++) {
+            if (parts[i] != null) size += parts[i].length;
+            if (contentTypes[i] != null) size += contentTypes[i].length();
+        }
+
+        if (size < 256) size = 256;
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(size);
+        baos.write(("Content-Type: multipart/related; boundary=\"" + new String(boundary) + "\"").getBytes());
+        baos.write(CRLF);
+        baos.write(CRLF);
+
+        for (int i = 0; i < numParts; i++) {
+            baos.write(CRLF);
+            baos.write("--".getBytes());
+            baos.write(boundary);
+            baos.write(CRLF);
+
+            baos.write(("Content-Length: " + parts[i].length).getBytes());
+            baos.write(CRLF);
+            baos.write(("Content-Type: " + contentTypes[i]).getBytes());
+            baos.write(CRLF);
+            baos.write(CRLF);
+
+            baos.write(parts[i]);
+        }
+
+        baos.write(CRLF);
+        baos.write("--".getBytes());
+        baos.write(boundary);
+        baos.write("--".getBytes());
+        baos.write(CRLF);
+        return baos.toByteArray();
     }
 }

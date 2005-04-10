@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.console.panels.HttpFormPostDialog">
+  <grid id="f1e34" binding="mainPanel" row-count="6" column-count="5" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+    <margin top="0" left="0" bottom="0" right="0"/>
+    <constraints>
+      <xy x="104" y="93" width="451" height="288"/>
+      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+    </constraints>
+    <properties/>
+    <border type="none"/>
+    <children>
+      <hspacer id="aab2a">
+        <constraints>
+          <xy x="0" y="127" width="20" height="11"/>
+          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+            <minimum-size width="16" height="-1"/>
+          </grid>
+        </constraints>
+      </hspacer>
+      <grid id="cf484" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <xy x="20" y="245" width="411" height="23"/>
+          <grid row="4" column="1" row-span="1" col-span="3" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <component id="3b6d4" class="javax.swing.JButton" binding="okButton">
+            <constraints>
+              <xy x="116" y="0" width="75" height="23"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0">
+                <minimum-size width="75" height="-1"/>
+              </grid>
+            </constraints>
+            <properties>
+              <text value="OK"/>
+            </properties>
+          </component>
+          <component id="1b92c" class="javax.swing.JButton" binding="cancelButton">
+            <constraints>
+              <xy x="221" y="0" width="75" height="23"/>
+              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0">
+                <minimum-size width="75" height="-1"/>
+              </grid>
+            </constraints>
+            <properties>
+              <text value="Cancel"/>
+            </properties>
+          </component>
+        </children>
+      </grid>
+      <grid id="fea15" row-count="7" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <xy x="340" y="45" width="91" height="175"/>
+          <grid row="2" column="3" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <component id="c74e6" class="javax.swing.JButton" binding="addButton">
+            <constraints>
+              <xy x="0" y="0" width="91" height="23"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
+            </constraints>
+            <properties>
+              <text value="Add..."/>
+            </properties>
+          </component>
+          <component id="af726" class="javax.swing.JButton" binding="modifyButton">
+            <constraints>
+              <xy x="0" y="28" width="91" height="23"/>
+              <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
+            </constraints>
+            <properties>
+              <text value="Modify"/>
+            </properties>
+          </component>
+          <vspacer id="828a7">
+            <constraints>
+              <xy x="40" y="155" width="11" height="20"/>
+              <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
+            </constraints>
+          </vspacer>
+          <component id="d2513" class="javax.swing.JButton" binding="removeButton">
+            <constraints>
+              <xy x="0" y="56" width="91" height="23"/>
+              <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
+            </constraints>
+            <properties>
+              <text value="Remove"/>
+            </properties>
+          </component>
+          <component id="7a504" class="javax.swing.JButton" binding="moveUpButton">
+            <constraints>
+              <xy x="0" y="104" width="91" height="23"/>
+              <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
+            </constraints>
+            <properties>
+              <text value="Move Up"/>
+            </properties>
+          </component>
+          <component id="f9f82" class="javax.swing.JButton" binding="moveDownButton">
+            <constraints>
+              <xy x="0" y="132" width="91" height="23"/>
+              <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
+            </constraints>
+            <properties>
+              <text value="Move Down"/>
+            </properties>
+          </component>
+          <vspacer id="4168e">
+            <constraints>
+              <xy x="40" y="84" width="11" height="20"/>
+              <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+                <minimum-size width="-1" height="16"/>
+              </grid>
+            </constraints>
+          </vspacer>
+        </children>
+      </grid>
+      <scrollpane id="1288">
+        <constraints>
+          <xy x="20" y="45" width="290" height="175"/>
+          <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <component id="bfe5" class="javax.swing.JList" binding="fieldList">
+            <constraints/>
+            <properties>
+              <selectionMode value="0"/>
+            </properties>
+          </component>
+        </children>
+      </scrollpane>
+      <vspacer id="75f40">
+        <constraints>
+          <xy x="159" y="0" width="11" height="20"/>
+          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+            <minimum-size width="-1" height="16"/>
+          </grid>
+        </constraints>
+      </vspacer>
+      <hspacer id="bfac7">
+        <constraints>
+          <xy x="431" y="127" width="20" height="11"/>
+          <grid row="2" column="4" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+            <minimum-size width="16" height="-1"/>
+          </grid>
+        </constraints>
+      </hspacer>
+      <vspacer id="4ed2b">
+        <constraints>
+          <xy x="380" y="225" width="11" height="20"/>
+          <grid row="3" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+            <minimum-size width="-1" height="12"/>
+          </grid>
+        </constraints>
+      </vspacer>
+      <vspacer id="71955">
+        <constraints>
+          <xy x="159" y="268" width="11" height="20"/>
+          <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+            <minimum-size width="-1" height="12"/>
+          </grid>
+        </constraints>
+      </vspacer>
+      <component id="544eb" class="javax.swing.JLabel">
+        <constraints>
+          <xy x="20" y="22" width="243" height="15"/>
+          <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+        </constraints>
+        <properties>
+          <text value="HTTP POST Fields:"/>
+        </properties>
+      </component>
+    </children>
+  </grid>
+</form>

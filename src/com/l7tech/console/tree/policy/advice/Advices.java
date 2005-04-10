@@ -96,6 +96,7 @@ public class Advices {
         advicesMap.put(XpathCredentialSource.class, new Class[] {AddXpathCredentialSourceAdvice.class});
         advicesMap.put(SamlBrowserArtifact.class, new Class[] {AddSamlBrowserArtifactAdvice.class});
         advicesMap.put(Regex.class, new Class[] {RegexAdvice.class});
+        advicesMap.put(HttpFormPost.class, new Class[] {HttpFormPostAdvice.class});
         advicesMap.put(SnmpTrapAssertion.class, new Class[] {AddSnmpTrapAssertionAdvice.class});
         advicesMap.put(EmailAlertAssertion.class, new Class[] {AddEmailAlertAssertionAdvice.class});
     }

@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.l7tech.console.panels.HttpPostFormFieldInfoDialog">
+  <grid id="2e46" binding="mainPanel" row-count="8" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+    <margin top="0" left="0" bottom="0" right="0"/>
+    <constraints>
+      <xy x="134" y="123" width="240" height="183"/>
+      <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+    </constraints>
+    <properties/>
+    <border type="none"/>
+    <children>
+      <component id="83abd" class="javax.swing.JLabel">
+        <constraints>
+          <xy x="20" y="22" width="55" height="15"/>
+          <grid row="1" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+        </constraints>
+        <properties>
+          <text value="Field Name:"/>
+        </properties>
+      </component>
+      <component id="a64e1" class="javax.swing.JTextField" binding="fieldNameField">
+        <constraints>
+          <xy x="40" y="45" width="180" height="20"/>
+          <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
+            <preferred-size width="150" height="-1"/>
+          </grid>
+        </constraints>
+        <properties/>
+      </component>
+      <component id="4ca63" class="javax.swing.JLabel">
+        <constraints>
+          <xy x="20" y="72" width="95" height="15"/>
+          <grid row="3" column="1" row-span="1" col-span="2" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
+        </constraints>
+        <properties>
+          <text value="MIME Content-Type:"/>
+        </properties>
+      </component>
+      <component id="6d7b7" class="javax.swing.JTextField" binding="contentTypeField">
+        <constraints>
+          <xy x="40" y="95" width="180" height="20"/>
+          <grid row="4" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
+            <preferred-size width="150" height="-1"/>
+          </grid>
+        </constraints>
+        <properties/>
+      </component>
+      <hspacer id="2d793">
+        <constraints>
+          <xy x="20" y="49" width="20" height="11"/>
+          <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+            <minimum-size width="12" height="-1"/>
+          </grid>
+        </constraints>
+      </hspacer>
+      <grid id="61ce" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <xy x="40" y="140" width="180" height="23"/>
+          <grid row="6" column="2" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <component id="a0330" class="javax.swing.JButton" binding="okButton">
+            <constraints>
+              <xy x="0" y="0" width="75" height="23"/>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="4" fill="0">
+                <minimum-size width="75" height="-1"/>
+              </grid>
+            </constraints>
+            <properties>
+              <text value="OK"/>
+            </properties>
+          </component>
+          <component id="69180" class="javax.swing.JButton" binding="cancelButton">
+            <constraints>
+              <xy x="105" y="0" width="75" height="23"/>
+              <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0">
+                <minimum-size width="75" height="-1"/>
+              </grid>
+            </constraints>
+            <properties>
+              <text value="Cancel"/>
+            </properties>
+          </component>
+        </children>
+      </grid>
+      <hspacer id="c3347">
+        <constraints>
+          <xy x="0" y="24" width="20" height="11"/>
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+            <minimum-size width="16" height="-1"/>
+          </grid>
+        </constraints>
+      </hspacer>
+      <vspacer id="94b78">
+        <constraints>
+          <xy x="124" y="120" width="11" height="20"/>
+          <grid row="5" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+            <minimum-size width="-1" height="8"/>
+          </grid>
+        </constraints>
+      </vspacer>
+      <vspacer id="ed414">
+        <constraints>
+          <xy x="124" y="163" width="11" height="20"/>
+          <grid row="7" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+            <minimum-size width="-1" height="16"/>
+          </grid>
+        </constraints>
+      </vspacer>
+      <hspacer id="38e25">
+        <constraints>
+          <xy x="220" y="49" width="20" height="11"/>
+          <grid row="2" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+            <minimum-size width="16" height="-1"/>
+          </grid>
+        </constraints>
+      </hspacer>
+      <vspacer id="b6f3f">
+        <constraints>
+          <xy x="124" y="0" width="11" height="20"/>
+          <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="2">
+            <minimum-size width="-1" height="8"/>
+          </grid>
+        </constraints>
+      </vspacer>
+    </children>
+  </grid>
+</form>

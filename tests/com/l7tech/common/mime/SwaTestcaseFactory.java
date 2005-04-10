@@ -6,7 +6,6 @@
 
 package com.l7tech.common.mime;
 
-import javax.mail.internet.HeaderTokenizer;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Random;
@@ -31,30 +30,7 @@ class SwaTestcaseFactory {
         this.numParts = num;
         this.partSize = partSize;
         this.random = new Random(seed);
-        this.boundary = randomBoundary();
-    }
-
-    /**
-     * Generates a random boundary consisting of between 1 and 40 legal characters,
-     * plus a prefix of 0-5 hyphens and the magic quoted-printable-proof "=_"
-     * @return
-     */
-    private byte[] randomBoundary() {
-        StringBuffer bb = new StringBuffer();
-
-        for (int i = 0; i < random.nextInt(5); i++) {
-            bb.append('-');
-        }
-
-        bb.append("=_");
-
-        for (int i = 0; i < random.nextInt(40)+1; i++) {
-            byte printable = (byte)(random.nextInt(127-32)+32);
-            if (HeaderTokenizer.MIME.indexOf(printable) < 0)
-                bb.append(new String(new byte[] { printable }));
-        }
-
-        return bb.toString().getBytes();
+        this.boundary = MimeUtil.randomBoundary();
     }
 
     /**
@@ -106,8 +82,8 @@ class SwaTestcaseFactory {
     public byte[] makeTestMessage() throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream(40960);
         baos.write(("Content-Type: multipart/related; boundary=\"" + new String(boundary) + "\"").getBytes());
-        baos.write(CRLF);
-        baos.write(CRLF);
+        baos.write(MimeUtil.CRLF);
+        baos.write(MimeUtil.CRLF);
         byte[] preamble = new byte[random.nextInt(1024)];
         baos.write("This preamble should be ignored by a SwA parser:\r\n".getBytes());
         random.nextBytes(preamble);
@@ -115,30 +91,30 @@ class SwaTestcaseFactory {
         baos.write("\r\nThat about wraps it up for preamble.\r\n".getBytes());
         for (int i = 0; i < numParts; i++) {
             int trailingBlanks = random.nextInt(5);
-            baos.write(CRLF);
+            baos.write(MimeUtil.CRLF);
             baos.write("--".getBytes());
             baos.write(boundary);
-            baos.write(CRLF);
+            baos.write(MimeUtil.CRLF);
 
             baos.write(("Content-Length: " + (partSize + trailingBlanks * 2)).getBytes());
-            baos.write(CRLF);
+            baos.write(MimeUtil.CRLF);
             baos.write(("Content-Type: application/octet-stream").getBytes());
-            baos.write(CRLF);
+            baos.write(MimeUtil.CRLF);
             baos.write(("X-L7-Trailing-blank-lines: " + trailingBlanks).getBytes());
-            baos.write(CRLF);
-            baos.write(CRLF);
+            baos.write(MimeUtil.CRLF);
+            baos.write(MimeUtil.CRLF);
 
             baos.write(randomBinary(partSize));
             for (int j = 0; j < trailingBlanks; j++) {
-                baos.write(CRLF);
+                baos.write(MimeUtil.CRLF);
             }
         }
 
-        baos.write(CRLF);
+        baos.write(MimeUtil.CRLF);
         baos.write("--".getBytes());
         baos.write(boundary);
         baos.write("--".getBytes());
-        baos.write(CRLF);
+        baos.write(MimeUtil.CRLF);
         return baos.toByteArray();
     }
 
@@ -159,5 +135,4 @@ class SwaTestcaseFactory {
     private final int partSize;
     private final byte[] boundary;
     private final Random random;
-    public static final byte[] CRLF = "\r\n".getBytes();
 }
