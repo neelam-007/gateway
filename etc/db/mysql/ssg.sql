@@ -166,9 +166,9 @@ DROP TABLE IF EXISTS service_resolution;
 CREATE TABLE service_resolution (
   objectid bigint(20) NOT NULL,
   serviceid bigint NOT NULL,
-  soapaction varchar(255) default '',
-  urn varchar(255) default '',
-  uri varchar(255) default '',
+  soapaction varchar(255) character set latin1 default '',
+  urn varchar(255) character set latin1 default '',
+  uri varchar(255) character set latin1 default '',
   unique(soapaction, urn, uri),
   PRIMARY KEY (objectid)
 ) TYPE=InnoDB;
