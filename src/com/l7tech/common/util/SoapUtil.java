@@ -6,15 +6,22 @@
 
 package com.l7tech.common.util;
 
+import com.l7tech.common.message.Message;
+import com.l7tech.common.message.XmlKnob;
+import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.security.saml.SamlConstants;
-import com.l7tech.common.xml.ElementAlreadyExistsException;
-import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.common.xml.MessageNotSoapException;
-import com.l7tech.common.xml.TooManyChildElementsException;
+import com.l7tech.common.xml.*;
 import org.w3c.dom.*;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
+import javax.wsdl.*;
+import javax.wsdl.extensions.ExtensibilityElement;
+import javax.wsdl.extensions.mime.MIMEMultipartRelated;
+import javax.wsdl.extensions.mime.MIMEPart;
+import javax.wsdl.extensions.soap.SOAPOperation;
+import javax.wsdl.extensions.soap.SOAPBinding;
+import javax.xml.namespace.QName;
 import javax.xml.rpc.NamespaceConstants;
 import javax.xml.soap.*;
 import javax.xml.transform.dom.DOMSource;
@@ -1007,5 +1014,177 @@ public class SoapUtil {
         return VALUETYPE_SAML.equals(valueType) ||
                VALUETYPE_SAML_ASSERTIONID.equals(valueType) ||
                VALUETYPE_SAML_ASSERTION1_1.equals(valueType);
+    }
+
+    public static String findSoapAction(BindingOperation operation) {
+        Iterator eels = operation.getExtensibilityElements().iterator();
+        ExtensibilityElement ee;
+        while ( eels.hasNext() ) {
+            ee = (ExtensibilityElement)eels.next();
+            if ( ee instanceof SOAPOperation ) {
+                SOAPOperation sop = (SOAPOperation)ee;
+                return sop.getSoapActionURI();
+            }
+        }
+        return null;
+    }
+
+    public static String stripQuotes(String soapAction) {
+        if (soapAction == null) return null;
+        if (    ( soapAction.startsWith("\"") && soapAction.endsWith("\"") )
+             || ( soapAction.startsWith("'") && soapAction.endsWith( "'" ) ) ) {
+            return soapAction.substring( 1, soapAction.length()-1 );
+        } else {
+            return soapAction;
+        }
+    }
+
+    private static boolean bothNullOrEqual(String s1, String s2) {
+        return (s1 == null && s2 == null) || s1.equals(s2);
+    }
+
+    public static Operation getOperation(Wsdl wsdl, Message request)
+            throws IOException, SAXException, InvalidDocumentFormatException,
+                   WsdlMissingSoapPortException, MessageNotSoapException
+    {
+        XmlKnob requestXml = (XmlKnob)request.getKnob(XmlKnob.class);
+        if (requestXml == null) throw new MessageNotSoapException("Not an XML message");
+        Document requestDoc = requestXml.getDocumentReadOnly();
+        Element payload = getPayloadElement(requestDoc);
+        if (payload == null) throw new MessageNotSoapException("No payload element");
+
+        Operation operation = null;
+
+        Map bindings = wsdl.getDefinition().getBindings();
+        if (bindings.isEmpty()) throw new WsdlMissingSoapPortException(wsdl.getDefinition().getDocumentBaseURI());
+        boolean foundSoapBinding = false;
+        bindings: for (Iterator h = bindings.keySet().iterator(); h.hasNext();) {
+            QName bindingName = (QName)h.next();
+            Binding binding = (Binding)bindings.get(bindingName);
+            SOAPBinding soapBinding = null;
+            List bindingEels = binding.getExtensibilityElements();
+            for (Iterator bindit = bindingEels.iterator(); bindit.hasNext();) {
+                ExtensibilityElement element = (ExtensibilityElement)bindit.next();
+                if (element instanceof SOAPBinding) {
+                    foundSoapBinding = true;
+                    soapBinding = (SOAPBinding)element;
+                }
+            }
+
+            if (soapBinding == null)
+                continue bindings; // This isn't a SOAP binding; we don't care
+
+            List bindingOperations = binding.getBindingOperations();
+
+            for (Iterator i = bindingOperations.iterator(); i.hasNext();) {
+                // Look for RPC (element name = operation name)
+                BindingOperation bindingOperation = (BindingOperation)i.next();
+                Operation candidateOperation = bindingOperation.getOperation();
+
+                if ("rpc".equals(wsdl.getBindingStyle(bindingOperation))) {
+                    BindingInput binput = bindingOperation.getBindingInput();
+                    String ns = null;
+                    List bindingInputEels = binput.getExtensibilityElements();
+                    if (bindingInputEels != null) {
+                        for (Iterator j = bindingInputEels.iterator(); j.hasNext();) {
+                            ExtensibilityElement eel = (ExtensibilityElement)j.next();
+                            if (eel instanceof javax.wsdl.extensions.soap.SOAPBody) {
+                                javax.wsdl.extensions.soap.SOAPBody body = (javax.wsdl.extensions.soap.SOAPBody)eel;
+                                ns = body.getNamespaceURI();
+                            } else if (eel instanceof MIMEMultipartRelated) {
+                                MIMEMultipartRelated mime = (MIMEMultipartRelated)eel;
+                                List parts = mime.getMIMEParts();
+                                if (parts.size() >= 1) {
+                                    MIMEPart firstPart = (MIMEPart)parts.get(0);
+                                    List mimeEels = firstPart.getExtensibilityElements();
+                                    for (Iterator k = mimeEels.iterator(); k.hasNext();) {
+                                        ExtensibilityElement mimeEel = (ExtensibilityElement)k.next();
+                                        if (mimeEel instanceof javax.wsdl.extensions.soap.SOAPBody ) {
+                                            javax.wsdl.extensions.soap.SOAPBody body = (javax.wsdl.extensions.soap.SOAPBody)mimeEel;
+                                            ns = body.getNamespaceURI();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if (ns == null) ns = wsdl.getDefinition().getTargetNamespace();
+                    if (payload.getLocalName().equals(bindingOperation.getName()) &&
+                            bothNullOrEqual(payload.getNamespaceURI(), ns)) {
+                        if (operation != null && operation != candidateOperation) {
+                            warnMultipleOperations(payload, wsdl);
+                        }
+                        operation = candidateOperation;
+                    }
+                }
+
+                // Try to match the abstract Operation's input message
+                Input input = candidateOperation.getInput();
+                javax.wsdl.Message inputMessage = null;
+                if (input != null) {
+                    inputMessage = input.getMessage();
+                    QName expectedElementQname = inputMessage.getQName();
+                    if (payload != null && expectedElementQname != null) {
+                        if (bothNullOrEqual(payload.getNamespaceURI(), expectedElementQname.getNamespaceURI())) {
+                            if (bothNullOrEqual(payload.getLocalName(), expectedElementQname.getLocalPart())) {
+                                if (operation != null && operation != candidateOperation) {
+                                    warnMultipleOperations(payload, wsdl);
+                                }
+                                operation = candidateOperation;
+                            }
+                        }
+                    }
+
+                    // Try to match message parts
+                    Map parts = inputMessage.getParts();
+                    for (Iterator j = parts.keySet().iterator(); j.hasNext();) {
+                        String partName = (String)j.next();
+                        Part part = (Part)inputMessage.getParts().get(partName);
+                        QName elementName = part.getElementName();
+                        if (elementName != null && payload != null &&
+                                bothNullOrEqual(elementName.getLocalPart(), payload.getLocalName()) &&
+                                bothNullOrEqual(elementName.getNamespaceURI(), payload.getNamespaceURI()) )
+                        {
+                            if (operation != null && operation != candidateOperation) {
+                                warnMultipleOperations(payload, wsdl);
+                            }
+                            operation = candidateOperation;
+                        }
+                    }
+                }
+            }
+
+            // Finally try to match based on SOAPAction
+            if (operation == null) {
+                HttpRequestKnob requestHttp = (HttpRequestKnob)request.getKnob(HttpRequestKnob.class);
+                String requestSoapAction = requestHttp == null ? null : stripQuotes(requestHttp.getHeaderSingleValue(SOAPACTION));
+                List matchingOperationsBySoapAction = new ArrayList();
+                for (Iterator i = bindingOperations.iterator(); i.hasNext();) {
+                    BindingOperation bindingOperation = (BindingOperation)i.next();
+
+                    String candidateSoapAction = stripQuotes(findSoapAction(bindingOperation));
+                    Operation candidateOperation = bindingOperation.getOperation();
+                    if (candidateSoapAction != null && candidateSoapAction.length() > 0 &&
+                            candidateSoapAction.equals(requestSoapAction)) {
+                        matchingOperationsBySoapAction.add(candidateOperation);
+                    }
+                }
+
+                if (matchingOperationsBySoapAction.size() == 1) {
+                    operation = (Operation)matchingOperationsBySoapAction.get(0);
+                }
+            }
+        }
+
+        if (!foundSoapBinding) throw new WsdlMissingSoapPortException(wsdl.getDefinition().getDocumentBaseURI());
+
+        return operation;
+    }
+
+    private static void warnMultipleOperations(Element payload, Wsdl wsdl) {
+        log.warning("Found multiple candidate operations for message " +
+                    payload.getLocalName() + "{" + payload.getNamespaceURI() + "} " +
+                    "in WSDL " + wsdl.getDefinition().getDocumentBaseURI());
     }
 }

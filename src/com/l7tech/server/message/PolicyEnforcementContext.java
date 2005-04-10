@@ -10,14 +10,21 @@ import com.l7tech.common.RequestId;
 import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.ProcessingContext;
+import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.SoapFaultDetail;
+import com.l7tech.common.xml.Wsdl;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionResult;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.server.RequestIdGenerator;
 import com.l7tech.server.policy.assertion.ServerAssertion;
 import com.l7tech.service.PublishedService;
+import org.xml.sax.SAXException;
 
+import javax.wsdl.Operation;
+import javax.wsdl.WSDLException;
+import java.io.IOException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -239,4 +246,24 @@ public class PolicyEnforcementContext extends ProcessingContext {
     public long getRoutingEndTime() {
         return routingEndTime;
     }
+
+    public Operation getOperation()
+            throws IOException, SAXException, WSDLException, InvalidDocumentFormatException
+    {
+        if (operationAttempted)
+            return cachedOperation;
+
+        operationAttempted = true;
+        PublishedService service = getService();
+        if (service == null || service.getWsdlXml() == null || service.getWsdlXml().length() <= 0) {
+            return null;
+        }
+
+        Wsdl wsdl = service.parsedWsdl();
+        cachedOperation = SoapUtil.getOperation(wsdl, getRequest());
+        return cachedOperation;
+    }
+
+    private boolean operationAttempted = false;
+    private Operation cachedOperation = null;
 }

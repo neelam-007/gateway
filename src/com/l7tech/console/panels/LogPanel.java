@@ -142,8 +142,11 @@ public class LogPanel extends JPanel {
                     msg += "Event Type : Message Summary" + "\n";
                     msg += "Client IP  : " + arec.getIpAddress() + "\n";
                     msg += "Service    : " + sum.getName() + "\n";
+                    msg += "Operation  : " + sum.getOperationName() + "\n";
                     msg += "Rqst Length: " + fixNegative(sum.getRequestContentLength(), "<Not Saved>") + "\n";
                     msg += "Resp Length: " + fixNegative(sum.getResponseContentLength(), "<Not Saved>") + "\n";
+                    msg += "Resp Status: " + sum.getResponseHttpStatus() + "\n";
+                    msg += "Resp Time  : " + sum.getRoutingLatency() + "\n";
                     msg += "User ID    : " + sum.getUserId() + "\n";
                     msg += "User Name  : " + sum.getUserName() + "\n";
                     msg += "Entity name: " + arec.getName() + "\n";

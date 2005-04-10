@@ -12,10 +12,7 @@ import com.l7tech.common.util.SoapUtil;
 
 import javax.wsdl.BindingOperation;
 import javax.wsdl.Definition;
-import javax.wsdl.extensions.ExtensibilityElement;
-import javax.wsdl.extensions.soap.SOAPOperation;
 import java.io.IOException;
-import java.util.Iterator;
 
 /**
  * @author alex
@@ -26,17 +23,8 @@ public class SoapActionResolver extends WsdlOperationServiceResolver {
         return FAST;
     }
 
-    protected String getTargetValue( Definition def, BindingOperation operation ) {
-        Iterator eels = operation.getExtensibilityElements().iterator();
-        ExtensibilityElement ee;
-        while ( eels.hasNext() ) {
-            ee = (ExtensibilityElement)eels.next();
-            if ( ee instanceof SOAPOperation ) {
-                SOAPOperation sop = (SOAPOperation)ee;
-                return sop.getSoapActionURI();
-            }
-        }
-        return null;
+    protected String getTargetValue(Definition def, BindingOperation operation) {
+        return SoapUtil.findSoapAction(operation);
     }
 
     protected int getMaxLength() {
@@ -55,12 +43,7 @@ public class SoapActionResolver extends WsdlOperationServiceResolver {
         }
         if (soapAction == null) return null;
         // Strip leading and trailing quotes
-        if (    ( soapAction.startsWith("\"") && soapAction.endsWith("\"") )
-             || ( soapAction.startsWith("'") && soapAction.endsWith( "'" ) ) ) {
-            return soapAction.substring( 1, soapAction.length()-1 );
-        } else {
-            return soapAction;
-        }
+        return SoapUtil.stripQuotes(soapAction);
 
     }
 

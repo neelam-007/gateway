@@ -8,16 +8,20 @@ package com.l7tech.server.audit;
 
 import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.common.audit.MessageSummaryAuditRecord;
+import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.MimeKnob;
 import com.l7tech.common.message.TcpKnob;
-import com.l7tech.common.message.HttpResponseKnob;
 import com.l7tech.common.util.HexUtils;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.service.PublishedService;
+
+import javax.wsdl.Operation;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A MessageSummaryAuditRecord must be generated upon the conclusion of the processing of a message,
@@ -28,6 +32,8 @@ import com.l7tech.service.PublishedService;
  */
 public class MessageSummaryAuditFactory {
     private final String nodeId;
+    private static final Logger logger = Logger.getLogger(MessageSummaryAuditFactory.class.getName());
+
     public MessageSummaryAuditFactory(ClusterInfoManager clusterInfoManager) {
         if (clusterInfoManager == null) {
             throw new IllegalArgumentException("Cluster Info Manager is required");
@@ -121,13 +127,13 @@ public class MessageSummaryAuditFactory {
 
         int routingLatency = (int)(context.getRoutingEndTime() - context.getRoutingStartTime());
 
-        // TODO
-        // TODO
-        // TODO
         String operationName = null;
-        // TODO
-        // TODO
-        // TODO
+        try {
+            Operation op = context.getOperation();
+            if (op != null) operationName = op.getName();
+        } catch (Exception e) {
+            logger.log(Level.INFO, "Couldn't determine operation name", e);
+        }
 
         return new MessageSummaryAuditRecord(context.getAuditLevel(), nodeId, requestId, status, clientAddr,
                                              context.isAuditSaveRequest() ? requestXml : null,

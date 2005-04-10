@@ -1,5 +1,6 @@
 package com.l7tech.common.xml;
 
+import com.l7tech.common.util.SoapUtil;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -14,14 +15,12 @@ import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.UnknownExtensibilityElement;
 import javax.wsdl.extensions.soap.SOAPOperation;
 import javax.xml.namespace.QName;
-import javax.xml.soap.*;
 import javax.xml.rpc.NamespaceConstants;
+import javax.xml.soap.*;
 import java.io.*;
-import java.util.*;
-import java.rmi.RemoteException;
 import java.net.MalformedURLException;
-
-import com.l7tech.common.util.SoapUtil;
+import java.rmi.RemoteException;
+import java.util.*;
 
 /**
  * The class creates and array of <code>SoapRequest</code> instances
@@ -286,7 +285,7 @@ public class SoapMessageGenerator {
             String prefix = "ns1";
             while (it.hasNext()) {
                 Object key = it.next();
-                if (targetNameSpace.equals(namespaces.get(key))) {
+                if (targetNameSpace != null && targetNameSpace.equals(namespaces.get(key))) {
                     prefix = key.toString();
                     break;
                 }
