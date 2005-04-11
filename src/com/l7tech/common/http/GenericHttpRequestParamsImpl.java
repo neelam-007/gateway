@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.common.http;
@@ -56,13 +55,16 @@ public class GenericHttpRequestParamsImpl implements GenericHttpRequestParams {
                                         SSLSocketFactory sslSocketFactory,
                                         ContentTypeHeader contentType,
                                         Long contentLength,
-                                        HttpHeader[] extraHeaders, boolean followRedirects) {
+                                        HttpHeader[] extraHeaders,
+                                        boolean followRedirects)
+    {
         this(targetUrl);
         this.sslSocketFactory = sslSocketFactory;
         this.passwordAuthentication = passwordAuthentication;
         this.contentType = contentType;
         this.contentLength = contentLength;
         setExtraHeaders(extraHeaders);
+        this.followRedirects = followRedirects;
     }
 
     /**
