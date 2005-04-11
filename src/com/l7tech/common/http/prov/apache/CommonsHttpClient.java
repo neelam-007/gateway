@@ -68,6 +68,7 @@ public class CommonsHttpClient implements GenericHttpClient {
         final HttpMethod httpMethod = method == POST ? new PostMethod(targetUrl.toString())
                                                      : new GetMethod(targetUrl.toString());
 
+        httpMethod.setFollowRedirects(params.isFollowRedirects());
         PasswordAuthentication pw = params.getPasswordAuthentication();
         if (pw != null) {
             httpMethod.setDoAuthentication(true);
