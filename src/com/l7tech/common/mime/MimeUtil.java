@@ -89,7 +89,17 @@ public class MimeUtil {
         return bb.toString().getBytes();
     }
 
-    public static byte[] makeMultipartMessage(byte[] boundary ,byte[][] parts, String[] contentTypes) throws IOException {
+    /**
+     * Construct a MIME multipart message body out of the specified boundary delimiter, array of part bodies,
+     * and array of corresponding content types.
+     *
+     * @param boundary      the boundary to use.  Does not include leading "--".  Must not be null.
+     * @param parts         an array of byte arrays.  May not be null or empty.  Individual byte arrays may be empty but not null.
+     * @param contentTypes  an array of content types.  Must be the same length as parts.  May not be null.
+     * @return a newly-constructed MIME multipart message body, starting with the opening delimiter and ending with a
+     *         closing delimiter followed by an extra "--".
+     */
+    public static byte[] makeMultipartMessage(byte[] boundary, byte[][] parts, String[] contentTypes) {
         int numParts = parts.length;
         int size = 192 + (boundary.length * parts.length);
         for (int i = 0; i < parts.length; i++) {
@@ -98,31 +108,35 @@ public class MimeUtil {
         }
 
         if (size < 256) size = 256;
-        ByteArrayOutputStream baos = new ByteArrayOutputStream(size);
-        baos.write(("Content-Type: multipart/related; boundary=\"" + new String(boundary) + "\"").getBytes());
-        baos.write(CRLF);
-        baos.write(CRLF);
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream(size);
+            baos.write(("Content-Type: multipart/related; boundary=\"" + new String(boundary) + "\"").getBytes());
+            baos.write(CRLF);
+            baos.write(CRLF);
 
-        for (int i = 0; i < numParts; i++) {
+            for (int i = 0; i < numParts; i++) {
+                baos.write(CRLF);
+                baos.write("--".getBytes());
+                baos.write(boundary);
+                baos.write(CRLF);
+
+                baos.write(("Content-Length: " + parts[i].length).getBytes());
+                baos.write(CRLF);
+                baos.write(("Content-Type: " + contentTypes[i]).getBytes());
+                baos.write(CRLF);
+                baos.write(CRLF);
+
+                baos.write(parts[i]);
+            }
+
             baos.write(CRLF);
             baos.write("--".getBytes());
             baos.write(boundary);
+            baos.write("--".getBytes());
             baos.write(CRLF);
-
-            baos.write(("Content-Length: " + parts[i].length).getBytes());
-            baos.write(CRLF);
-            baos.write(("Content-Type: " + contentTypes[i]).getBytes());
-            baos.write(CRLF);
-            baos.write(CRLF);
-
-            baos.write(parts[i]);
+            return baos.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException(e); // can't happen
         }
-
-        baos.write(CRLF);
-        baos.write("--".getBytes());
-        baos.write(boundary);
-        baos.write("--".getBytes());
-        baos.write(CRLF);
-        return baos.toByteArray();
     }
 }

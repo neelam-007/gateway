@@ -49,13 +49,14 @@ public class GenericHttpRequestParamsImpl implements GenericHttpRequestParams {
      * @param contentType {@see #getContentType}
      * @param contentLength {@see #getContentLength}
      * @param extraHeaders {@see #getExtraHeaders}
+     * @param followRedirects
      */
-    public GenericHttpRequestParamsImpl(URL targetUrl,
-                                    PasswordAuthentication passwordAuthentication,
-                                    SSLSocketFactory sslSocketFactory,
-                                    ContentTypeHeader contentType,
-                                    Long contentLength,
-                                    HttpHeader[] extraHeaders) {
+    private GenericHttpRequestParamsImpl(URL targetUrl,
+                                        PasswordAuthentication passwordAuthentication,
+                                        SSLSocketFactory sslSocketFactory,
+                                        ContentTypeHeader contentType,
+                                        Long contentLength,
+                                        HttpHeader[] extraHeaders, boolean followRedirects) {
         this(targetUrl);
         this.sslSocketFactory = sslSocketFactory;
         this.passwordAuthentication = passwordAuthentication;
@@ -75,7 +76,8 @@ public class GenericHttpRequestParamsImpl implements GenericHttpRequestParams {
              original.getSslSocketFactory(),
              original.getContentType(),
              original.getContentLength(),
-             original.getExtraHeaders());
+             original.getExtraHeaders(),
+             original.isFollowRedirects());
     }
 
     public URL getTargetUrl() {
