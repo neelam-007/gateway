@@ -16,7 +16,6 @@ import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.policy.assertion.credential.wss.WssDigest;
 import com.l7tech.policy.assertion.ext.Category;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
@@ -36,7 +35,6 @@ public class AllAssertions {
         new HttpBasic(),
         new HttpDigest(),
         new WssBasic(),
-        new WssDigest(),
         new AllAssertion(),
         new ExactlyOneAssertion(),
         new OneOrMoreAssertion(),
@@ -80,7 +78,6 @@ public class AllAssertions {
         new HttpBasic(),
         new HttpDigest(),
         new WssBasic(),
-        new WssDigest(),
         new AllAssertion(),
         new ExactlyOneAssertion(),
         new OneOrMoreAssertion(),
@@ -122,7 +119,6 @@ public class AllAssertions {
         new HttpBasic(),
         new HttpDigest(),
         new WssBasic(),
-        new WssDigest(),
         new AllAssertion(),
         new ExactlyOneAssertion(),
         new OneOrMoreAssertion(),
@@ -162,7 +158,6 @@ public class AllAssertions {
         new HttpBasic(),
         new HttpDigest(),
         new WssBasic(),
-        new WssDigest(),
         new RequestWssX509Cert(),
         new SecureConversation(),
         new RequestWssSaml(),

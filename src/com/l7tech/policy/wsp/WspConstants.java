@@ -22,7 +22,6 @@ import com.l7tech.policy.assertion.credential.WsTrustCredentialExchange;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.policy.assertion.credential.wss.WssDigest;
 import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
@@ -131,7 +130,6 @@ public class WspConstants {
         new AssertionMapping(new HttpBasic(), "HttpBasic"),
         new AssertionMapping(new HttpDigest(), "HttpDigest"),
         new AssertionMapping(new WssBasic(), "WssBasic"),
-        new AssertionMapping(new WssDigest(), "WssDigest"),
         new AssertionMapping(new FalseAssertion(), "FalseAssertion"),
         new AssertionMapping(new SslAssertion(), "SslAssertion"),
         new AssertionMapping(new JmsRoutingAssertion(), "JmsRoutingAssertion"),
@@ -191,5 +189,6 @@ public class WspConstants {
         WspUpgradeUtilFrom21.xmlResponseSecurityCompatibilityMapping,
         WspUpgradeUtilFrom30.httpClientCertCompatibilityMapping,
         WspUpgradeUtilFrom30.samlSecurityCompatibilityMapping,
+        WspUpgradeUtilFrom30.wssDigestCompatibilityMapping,
     };
 }

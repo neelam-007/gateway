@@ -1,14 +1,15 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.policy.wsp;
 
+import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
+import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import org.w3c.dom.Element;
 
 /**
@@ -26,10 +27,20 @@ class WspUpgradeUtilFrom30 {
             };
     
     public static TypeMapping samlSecurityCompatibilityMapping =
-            new CompatibilityAssertionMapping(new FalseAssertion(), "SamlSecurity") {
+            new CompatibilityAssertionMapping(new RequestWssSaml(), "SamlSecurity") {
                 protected void configureAssertion(Assertion ass, Element source, WspVisitor visitor) {
-                    // TODO this needs to be implemented
+                    RequestWssSaml saml = (RequestWssSaml)ass;
+                    saml.setRequireHolderOfKeyWithMessageSignature(true);
+                    saml.setSubjectConfirmations(new String[]{SamlConstants.CONFIRMATION_HOLDER_OF_KEY});
+                    saml.setNameFormats(new String[] { SamlConstants.NAMEIDENTIFIER_X509_SUBJECT });
+                }
+            };
 
+    /** WssDigest was never implemented and never will be.  Just map it to FalseAssertion for backward compat. */
+    public static TypeMapping wssDigestCompatibilityMapping =
+            new CompatibilityAssertionMapping(new FalseAssertion(), "WssDigest") {
+                protected void configureAssertion(Assertion assertion, Element source, WspVisitor visitor) {
+                    // FalseAssertion has nothing to configure
                 }
             };
 }

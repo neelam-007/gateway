@@ -7,7 +7,6 @@
                 <HttpBasic/>
                 <HttpDigest/>
                 <WssBasic/>
-                <WssDigest/>
                 <All/>
                 <ExactlyOne/>
                 <OneOrMore/>

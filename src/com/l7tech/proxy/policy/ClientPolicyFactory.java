@@ -15,7 +15,6 @@ import com.l7tech.policy.assertion.composite.OneOrMoreAssertion;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
 import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
-import com.l7tech.policy.assertion.credential.wss.WssDigest;
 import com.l7tech.policy.assertion.xmlsec.RequestWssIntegrity;
 import com.l7tech.policy.assertion.xmlsec.ResponseWssIntegrity;
 import com.l7tech.proxy.policy.assertion.*;
@@ -25,7 +24,6 @@ import com.l7tech.proxy.policy.assertion.composite.ClientOneOrMoreAssertion;
 import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpBasic;
 import com.l7tech.proxy.policy.assertion.credential.http.ClientHttpDigest;
 import com.l7tech.proxy.policy.assertion.credential.wss.ClientWssBasic;
-import com.l7tech.proxy.policy.assertion.credential.wss.ClientWssDigest;
 import com.l7tech.proxy.policy.assertion.xmlsec.ClientRequestWssIntegrity;
 import com.l7tech.proxy.policy.assertion.xmlsec.ClientResponseWssIntegrity;
 
@@ -74,7 +72,6 @@ public class ClientPolicyFactory extends PolicyFactory {
         new ClientHttpBasic(new HttpBasic()),
         new ClientHttpDigest(new HttpDigest()),
         new ClientWssBasic(new WssBasic()),
-        new ClientWssDigest(new WssDigest()),
         new ClientAllAssertion(new AllAssertion()),
         new ClientExactlyOneAssertion(new ExactlyOneAssertion()),
         new ClientOneOrMoreAssertion(new OneOrMoreAssertion()),
