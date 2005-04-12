@@ -1,21 +1,19 @@
 package com.l7tech.server.policy.filter;
 
-import com.l7tech.identity.User;
+import com.l7tech.common.util.ConstructorInvocation;
 import com.l7tech.identity.IdentityProviderConfigManager;
+import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.service.PublishedService;
-import com.l7tech.common.util.ConstructorInvocation;
-
-import java.io.IOException;
-import java.util.logging.Logger;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * Manages the filters that are applied to the policies before they are sent back to a requestor.
@@ -23,7 +21,6 @@ import org.apache.commons.logging.LogFactory;
  * <br/><br/>
  * User: flascell<br/>
  * Date: Aug 14, 2003<br/>
- * $Id$
  */
 public class FilterManager {
     private final Log logger = LogFactory.getLog(getClass());
@@ -117,7 +114,7 @@ public class FilterManager {
         Assertion rootassertion = null;
         // modify the assertion tree
         try {
-            rootassertion = WspReader.parse(localCopyOfService.getPolicyXml());
+            rootassertion = WspReader.parsePermissively(localCopyOfService.getPolicyXml());
         } catch (IOException e) {
             throw new FilteringException(e);
         }

@@ -285,7 +285,7 @@ public class PolicyServiceClient {
         if (policy == null) throw new MissingRequiredElementException("Policy server response is missing Policy element");
         Assertion assertion = null;
         try {
-            assertion = WspReader.parse(policy);
+            assertion = WspReader.parsePermissively(policy);
         } catch (InvalidPolicyStreamException e) {
             throw new InvalidDocumentFormatException("Policy server response contained a Policy that could not be parsed", e);
         }

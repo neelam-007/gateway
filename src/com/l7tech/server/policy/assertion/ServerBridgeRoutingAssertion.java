@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.server.policy.assertion;
@@ -106,7 +105,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
         final Policy hardcodedPolicy;
         if (policyXml != null) {
             try {
-                Assertion a = WspReader.parse(policyXml);
+                Assertion a = WspReader.parsePermissively(policyXml);
                 hardcodedPolicy = new Policy(a, null);
             } catch (IOException e) {
                 logger.log(Level.WARNING,

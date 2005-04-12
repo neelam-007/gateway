@@ -1,12 +1,12 @@
 package com.l7tech.service;
 
+import com.l7tech.common.uddi.WsdlInfo;
 import com.l7tech.objectmodel.*;
 import com.l7tech.policy.PolicyValidator;
 import com.l7tech.policy.PolicyValidatorResult;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.service.ServiceManager;
-import com.l7tech.common.uddi.WsdlInfo;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -82,7 +82,7 @@ public class ServiceAdminStub extends ApplicationObjectSupport implements Servic
     public PolicyValidatorResult validatePolicy(String policyXml, long serviceId) throws RemoteException {
         try {
             PublishedService service = serviceManager.findByPrimaryKey(serviceId);
-            Assertion assertion = WspReader.parse(policyXml);
+            Assertion assertion = WspReader.parsePermissively(policyXml);
             return policyValidator.validate(assertion, service);
         } catch (FindException e) {
             throw new RemoteException("cannot get existing service: " + serviceId, e);

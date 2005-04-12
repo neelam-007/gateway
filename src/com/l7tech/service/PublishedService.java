@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.service;
@@ -27,7 +26,6 @@ import java.util.logging.Logger;
  * A service that is published by the SecureSpan Gateway.  Primarily contains references to a WSDL and a policy.
  *
  * @author alex
- * @version $Revision$
  */
 public class PublishedService extends NamedEntityImp {
     public static final String ROUTINGURI_PREFIX = "/xml/";
@@ -56,7 +54,7 @@ public class PublishedService extends NamedEntityImp {
             return FalseAssertion.getInstance();
         } else {
             if (_rootAssertion == null)
-                _rootAssertion = WspReader.parse(policyXml);
+                _rootAssertion = WspReader.parsePermissively(policyXml);
         }
 
         return _rootAssertion;

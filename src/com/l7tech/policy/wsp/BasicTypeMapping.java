@@ -1,14 +1,11 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.policy.wsp;
 
 import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
 
 import java.lang.reflect.Constructor;
 
@@ -128,23 +125,9 @@ class BasicTypeMapping implements TypeMapping {
     private TypedReference doThaw(Element source, WspVisitor visitor, boolean recursing)
             throws InvalidPolicyStreamException
     {
-        NamedNodeMap attrs = source.getAttributes();
-        switch (attrs.getLength()) {
-            case 0:
-                // Anonymous element
-                return thawAnonymous(source, visitor);
-
-            case 1:
-                // Named element
-                return thawNamed(source, visitor);
-
-            default:
-                final BadAttributeCountException e = new BadAttributeCountException(
-                        "Policy contains a " + source.getNodeName() +
-                        " element with more than one attribute");
-                if (recursing) throw e;
-                return doThaw(visitor.invalidElement(source, e), visitor, true);
-        }
+        if (TypeMappingUtils.findTypeName(source) == null)
+            return thawAnonymous(source, visitor);
+        return thawNamed(source, visitor);
     }
 
     protected TypedReference thawNamed(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
@@ -152,19 +135,8 @@ class BasicTypeMapping implements TypeMapping {
     }
 
     private TypedReference doThawNamed(Element source, WspVisitor visitor, boolean recursing) throws InvalidPolicyStreamException {
-        NamedNodeMap attrs = source.getAttributes();
-        if (attrs.getLength() != 1)
-        {
-            final BadAttributeCountException e = new BadAttributeCountException("Policy contains a " +
-                                                                                                   source.getNodeName() +
-                                                                                                   " element that doesn't have exactly one attribute");
-            if (recursing) throw e;
-            return doThawNamed(visitor.invalidElement(source, e), visitor, true);
-        }
-        Node attr = attrs.item(0);
-        String typeName = attr.getLocalName();
-        if (typeName == null) typeName = attr.getNodeName();
-        String value = attr.getNodeValue();
+        String typeName = TypeMappingUtils.findTypeName(source);
+        String value = source.getAttribute(typeName);        
 
         if (typeName.endsWith("Null") && typeName.length() > 4) {
             typeName = typeName.substring(0, typeName.length() - 4);

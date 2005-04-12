@@ -1,14 +1,11 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.policy.wsp;
 
 import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
 
 /**
  * TypeMapping that knows how to map any Object to a policy XML.  When serializing any object that is some conrete
@@ -52,12 +49,15 @@ class ObjectTypeMapping extends BasicTypeMapping {
             throw new InvalidPolicyStreamException("Policy contains node \"" + source.getLocalName() +
               "\" with unrecognized namespace URI \"" + source.getNamespaceURI() + "\"");
 
-        NamedNodeMap attrs = source.getAttributes();
-        if (attrs.getLength() == 0) {
+
+        // Check for a named element   <Refname typenameValue="..."/>
+        String typeName = TypeMappingUtils.findTypeName(source);
+
+        if (typeName == null) {
             // Appears to be an anonymous element  <Typename>..</Typename>
             TypeMapping tm = TypeMappingUtils.findTypeMappingByExternalName(source.getLocalName());
             if (tm == null) {
-                final InvalidPolicyStreamException e = new InvalidPolicyStreamException("Unrecognized anonymous element " + source.getLocalName());
+                final InvalidPolicyStreamException e = new InvalidPolicyStreamException(source.getLocalName());
                 if (recursing) throw e;
                 final Element newSource = visitor.invalidElement(source, e);
 
@@ -66,19 +66,6 @@ class ObjectTypeMapping extends BasicTypeMapping {
             return tm.thaw(source, visitor);
         }
 
-        // Nope, must be a named element   <Refname typenameValue="..."/>
-        if (attrs.getLength() != 1) {
-            final InvalidPolicyStreamException e = new BadAttributeCountException("Policy contains a " + source.getNodeName() +
-                              " element that doesn't have exactly one attribute");
-            if (recursing) throw e;
-            return doThaw(visitor.invalidElement(source, e), visitor, true);
-        }
-        Node attr = attrs.item(0);
-        String typeName = attr.getLocalName();
-        if (typeName == null)
-            typeName = attr.getNodeName();
-        if (typeName == null)
-            throw new RuntimeException("Policy contains an attribute with a null NodeName");
         boolean isNull = false;
         if (typeName.endsWith("Null") && typeName.length() > 4) {
             typeName = typeName.substring(0, typeName.length() - 4);
@@ -96,4 +83,5 @@ class ObjectTypeMapping extends BasicTypeMapping {
 
         return tm.thaw(source, visitor);
     }
+
 }

@@ -51,20 +51,6 @@ public class WspReader {
 
     /**
      * Reads an XML-encoded policy document from the given element and
-     * returns the corresponding policy tree.  Unrecognized policy assertions, or unrecognized properties of
-     * recognized assertions, will immediately abort processing with an InvalidPolicyStreamException.
-     *
-     * @param policyElement an element of type WspConstants.L7_POLICY_NS_CURRENT:WspConstants.POLICY_ELNAME
-     * @return the policy tree it contained.  A null return means a valid &lt;Policy/&gt; tag was present, but
-     *         it was empty.
-     * @throws InvalidPolicyStreamException if the stream did not contain a valid policy
-     */
-    public static Assertion parse(Element policyElement) throws InvalidPolicyStreamException {
-        return parse(findPolicyElement(policyElement), StrictWspVisitor.INSTANCE);
-    }
-
-    /**
-     * Reads an XML-encoded policy document from the given element and
      * returns the corresponding policy tree.  Unrecognized chunks of XML will be preserved inside
      * {@link com.l7tech.policy.assertion.UnknownAssertion} instances, and processing will try to continue.
      *
@@ -93,19 +79,6 @@ public class WspReader {
         return root;
     }
 
-    /**
-     * Reads an XML-encoded policy document from the given input stream and
-     * returns the corresponding policy tree.  Supported formats are wsp:Policy and exp:Export.  For exp:Export,
-     * encoded external entity references are ignored by this parser.
-     *
-     * @param wspStream the stream to read
-     * @return the policy tree it contained.  A null return means a valid &lt;Policy/&gt; tag was present, but it was empty.
-     * @throws IOException if the stream did not contain a valid policy
-     */
-    public static Assertion parse(InputStream wspStream) throws IOException {
-        return parse(wspStream, StrictWspVisitor.INSTANCE);
-    }
-
     static Assertion parse(InputStream wspStream, WspVisitor visitor) throws IOException {
         try {
             Document doc = XmlUtil.parse(wspStream);
@@ -130,7 +103,7 @@ public class WspReader {
      * @return          the policy tree it contained, or null
      * @throws IOException if the policy was not valid.
      */
-    public static Assertion parse(String wspXml) throws IOException {
+    public static Assertion parseStrictly(String wspXml) throws IOException {
         return parse(wspXml, StrictWspVisitor.INSTANCE);
     }
 

@@ -115,7 +115,7 @@ public class ServiceAdminImpl extends HibernateDaoSupport implements ServiceAdmi
     public PolicyValidatorResult validatePolicy(String policyXml, long serviceid) throws RemoteException {
         try {
             PublishedService service = serviceManager.findByPrimaryKey(serviceid);
-            Assertion assertion = WspReader.parse(policyXml);
+            Assertion assertion = WspReader.parseStrictly(policyXml);
             return policyValidator.validate(assertion, service);
         } catch (FindException e) {
             logger.log(Level.WARNING, "cannot get existing service: " + serviceid, e);

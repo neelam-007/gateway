@@ -75,7 +75,7 @@ public class CustomAssertionsRegistrarImpl
             if (svc == null) {
                 throw new ObjectNotFoundException("service not found, " + eh);
             }
-            return WspReader.parse(svc.getPolicyXml());
+            return WspReader.parsePermissively(svc.getPolicyXml());
         } catch (FindException e) {
             ServerException se = new ServerException("Internal server error " + e.getMessage());
             se.initCause(e);
@@ -97,7 +97,7 @@ public class CustomAssertionsRegistrarImpl
      * @throws IOException              on policy format error
      */
     public Assertion resolvePolicy(String xml) throws RemoteException, IOException {
-        return WspReader.parse(xml);
+        return WspReader.parsePermissively(xml);
     }
 
     private Collection asCustomAssertionHolders(final Set customAssertionDescriptors) {

@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.policy;
@@ -173,7 +172,7 @@ public class SamplePolicyTest extends TestCase {
 
         String sxml = WspWriter.getPolicyXml(testin);
         log.info("Serialized to: " + sxml);
-        Assertion testout = WspReader.parse(sxml);
+        Assertion testout = WspReader.parsePermissively(sxml);
 
         Iterator it = testout.preorderIterator();
         while (it.hasNext()) {

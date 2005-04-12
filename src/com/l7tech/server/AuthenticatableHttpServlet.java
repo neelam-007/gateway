@@ -42,7 +42,6 @@ import java.util.logging.Logger;
  * <p/>
  * User: flascell<br/>
  * Date: Sep 15, 2003<br/>
- * $Id$
  */
 public abstract class AuthenticatableHttpServlet extends HttpServlet {
     public static final String PARAM_HTTP_X509CERT = "javax.servlet.request.X509Certificate";
@@ -287,7 +286,7 @@ public abstract class AuthenticatableHttpServlet extends HttpServlet {
     protected boolean policyAllowAnonymous(PublishedService policy) throws IOException {
         // logic: a policy allows anonymous if and only if it does not contains any CredentialSourceAssertion
         // com.l7tech.policy.assertion.credential.CredentialSourceAssertion
-        Assertion rootassertion = WspReader.parse(policy.getPolicyXml());
+        Assertion rootassertion = WspReader.parsePermissively(policy.getPolicyXml());
 
         Iterator it = rootassertion.preorderIterator();
         boolean allIdentitiesAreFederated = true;

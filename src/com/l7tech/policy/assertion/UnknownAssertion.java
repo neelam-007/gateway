@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.policy.assertion;
@@ -17,7 +16,6 @@ package com.l7tech.policy.assertion;
 public class UnknownAssertion extends Assertion {
     private String detailMessage;
     private String originalXml = null;
-    private Throwable problemEncountered = null;
 
     public UnknownAssertion() {
     }
@@ -26,9 +24,17 @@ public class UnknownAssertion extends Assertion {
         this.detailMessage = detailMessage;
     }
 
-    public UnknownAssertion(Throwable problemEncountered, String originalXml) {
-        this.detailMessage = "Unknown assertion '" + problemEncountered.getMessage() + "'";
+    public UnknownAssertion(String detailMessage, String originalXml) {
+        this.detailMessage = detailMessage == null ? "Unknown assertion" : detailMessage;
         this.originalXml = originalXml;
+    }
+
+    public static UnknownAssertion create(String unknownAssertionName, String originalXml) {
+        return new UnknownAssertion("Unknown assertion: " + unknownAssertionName, originalXml);
+    }
+
+    public static UnknownAssertion create(String unknownAssertionName, String originalXml, ClassNotFoundException e) {
+        return new UnknownAssertion("Code not available for assertion: " + unknownAssertionName, originalXml);
     }
 
     /**

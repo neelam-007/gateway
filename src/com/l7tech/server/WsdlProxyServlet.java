@@ -59,7 +59,6 @@ import java.util.logging.Level;
  * <p/>
  * User: flascell<br/>
  * Date: Sep 15, 2003<br/>
- * $Id$
  */
 public class WsdlProxyServlet extends AuthenticatableHttpServlet {
 
@@ -313,7 +312,7 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
     private boolean userCanSeeThisService(User requestor, PublishedService svc) throws IOException {
         // start at the top
         Assertion rootassertion = null;
-        rootassertion = WspReader.parse(svc.getPolicyXml());
+        rootassertion = WspReader.parsePermissively(svc.getPolicyXml());
         return checkForIdPotential(rootassertion, requestor);
     }
 

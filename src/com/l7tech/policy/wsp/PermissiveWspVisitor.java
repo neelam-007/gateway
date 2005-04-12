@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.policy.wsp;
@@ -40,14 +39,19 @@ class PermissiveWspVisitor implements WspVisitor {
     {
         if ("UnknownAssertion".equals(problematicElement.getLocalName()))
             throw new InvalidPolicyStreamException("Unable to handle invalid UnknownAssertion");
+        String elName = problematicElement.getLocalName();
+        if (elName == null || elName.length() < 1) elName = problematicElement.getNodeName();
         UnknownAssertion ua;
+        ua = UnknownAssertion.create(elName, null);
+        Element node = WspWriter.toElement(ua);
         try {
-            ua = new UnknownAssertion(problemEncountered,
-                                      XmlUtil.nodeToString(problematicElement));
+            // Preserve original XML, if possible, but only after encapsulating it
+            final String originalXml = XmlUtil.nodeToString(problematicElement);
+            Element oxNode = XmlUtil.createAndAppendElementNS(node, "OriginalXml", node.getNamespaceURI(), "p");
+            oxNode.setAttribute("stringValue", originalXml);
         } catch (IOException e) {
             throw new RuntimeException("Unable to encapsulate invalid element", e); // shouldn't happen
         }
-        Element node = WspWriter.toElement(ua);
         return (Element)problematicElement.getOwnerDocument().importNode(node, true);
     }
 }

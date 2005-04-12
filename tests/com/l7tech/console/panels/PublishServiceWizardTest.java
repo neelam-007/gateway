@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.console.panels;
@@ -48,7 +47,7 @@ public class PublishServiceWizardTest {
             EntityHeader serviceHeader = services[i];
             PublishedService service = registry.getServiceManager().findServiceByID(serviceHeader.getStrId());
             String policyXml = service.getPolicyXml();
-            Assertion assertion = WspReader.parse(policyXml);
+            Assertion assertion = WspReader.parsePermissively(policyXml);
             log.info("--------------------------------\nService: " + service.getName() + "\n------------\n");
             log.info(assertion.toString());
             log.info("--------------------------------\n");

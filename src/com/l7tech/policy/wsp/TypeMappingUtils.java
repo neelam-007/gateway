@@ -1,12 +1,12 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.policy.wsp;
 
 import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
@@ -144,5 +144,29 @@ class TypeMappingUtils {
      */
     static TypedReference thawElement(Element source, WspVisitor visitor) throws InvalidPolicyStreamException {
         return WspConstants.typeMappingObject.thaw(source, visitor);
+    }
+
+    /**
+     * Find the typeValue or typeValueNull attribute, if this element has one.
+     *
+     * @param source the element to examine
+     * @return a String such as "typeValue" or "typeValueNull" if this attribute is a named reference, or null
+     *         if no type name was found and hence the attribute should be assumed to be an anonymous reference.
+     */
+    static String findTypeName(Element source) throws InvalidPolicyStreamException {
+        NamedNodeMap attrs = source.getAttributes();
+        int numAttr = attrs.getLength();
+        String foundTypeName = null;
+        for (int i = 0; i < numAttr; ++i) {
+            Node attr = attrs.item(i);
+            if ("xmlns".equals(attr.getPrefix())) continue; // Ignore namespace decls
+            String typeName = attr.getLocalName();
+            if (typeName == null || typeName.length() < 1) typeName = attr.getNodeName();
+            if (typeName == null || typeName.length() < 1) throw new RuntimeException("Policy contains an attribute with no LocalName or NodeName"); // can't happen
+            if ("xmlns".equals(typeName)) continue; // Ignore namespace decls
+            if (foundTypeName != null) throw new InvalidPolicyStreamException("Policy contains an element '" + source.getNodeName() + "' with more than one non-xmlns attribute");
+            foundTypeName = typeName;
+        }
+        return foundTypeName;
     }
 }

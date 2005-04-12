@@ -63,7 +63,7 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
             throw new ObjectNotFoundException("service " + eh);
         }
         try {
-            return WspReader.parse(svc.getPolicyXml());
+            return WspReader.parsePermissively(svc.getPolicyXml());
         } catch (IOException e) {
             ServerException se = new ServerException(e.getMessage());
             se.initCause(e);
@@ -81,7 +81,7 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
      * @throws IOException              on policy format error
      */
     public Assertion resolvePolicy(String xml) throws RemoteException, IOException {
-        return WspReader.parse(xml);
+        return WspReader.parsePermissively(xml);
     }
 
     private Collection asCustomAssertionHolders(final Set customAssertionDescriptors) {

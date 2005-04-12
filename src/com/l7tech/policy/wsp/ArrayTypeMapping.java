@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.policy.wsp;
@@ -23,6 +22,11 @@ class ArrayTypeMapping extends ComplexTypeMapping {
         this.prototype = prototype;
     }
 
+    public ArrayTypeMapping(Object[] prototype, String externalName, String nsUri, String nsPrefix) {
+        super(prototype.getClass(), externalName, nsUri, nsPrefix);
+        this.prototype = prototype;
+    }
+
     protected void populateElement(Element newElement, TypedReference object) throws InvalidPolicyTreeException {
         Object[] array = (Object[])object.target;
         for (int i = 0; i < array.length; i++) {
@@ -40,7 +44,7 @@ class ArrayTypeMapping extends ComplexTypeMapping {
             objects.add(ktr.target);
         }
         try {
-            return new TypedReference(clazz, objects.toArray(prototype), element.getNodeName());
+            return new TypedReference(clazz, objects.toArray(prototype), element.getLocalName());
         } catch (ArrayStoreException e) {
             throw new InvalidPolicyStreamException("Array item with incompatible type", e);
         }

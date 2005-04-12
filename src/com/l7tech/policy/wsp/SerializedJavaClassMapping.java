@@ -70,8 +70,9 @@ class SerializedJavaClassMapping extends BeanTypeMapping {
             try {
                 return new TypedReference(clazz, base64ToObject(textNode.getData()), element.getLocalName());
             } catch (ClassNotFoundException e) {
-                UnknownAssertion ua = new UnknownAssertion(e,
-                                                           XmlUtil.nodeToString(element));
+                UnknownAssertion ua = UnknownAssertion.create(element.getLocalName(),
+                                                              XmlUtil.nodeToString(element),
+                                                              e);
                 return new TypedReference(UnknownAssertion.class, ua, element.getLocalName());
             }
         } catch (IOException e) {

@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.policy.wsp;
@@ -166,7 +165,9 @@ public class WspConstants {
         new AssertionMapping(new SnmpTrapAssertion(), "SnmpTrap"),
         new AssertionMapping(new EmailAlertAssertion(), "EmailAlert"),
         new AssertionMapping(new HttpFormPost(), "HttpFormPost"),
-        new AssertionMapping(new UnknownAssertion(), "UnknownAssertion"),
+
+        // Special mapping for UnknownAssertion which attempts to preserve original XML element, if any
+        new UnknownAssertionMapping(),
 
         // Special types
         new BeanTypeMapping(XpathExpression.class, "xpathExpressionValue"),
