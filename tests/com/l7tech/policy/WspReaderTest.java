@@ -41,7 +41,7 @@ public class WspReaderTest extends TestCase {
 
     public void testParseWsp() throws Exception {
         InputStream wspStream = cl.getResourceAsStream(SIMPLE_POLICY);
-        Assertion policy = WspReader.parse(XmlUtil.parse(wspStream).getDocumentElement());
+        Assertion policy = WspReader.parsePermissively(XmlUtil.parse(wspStream).getDocumentElement());
         log.info("Got back policy: " + policy);
         assertTrue(policy != null);
         assertTrue(policy instanceof ExactlyOneAssertion);
@@ -51,7 +51,7 @@ public class WspReaderTest extends TestCase {
 
         // Do a round trip policyA -> xmlA -> policyB -> xmlB and verify that both XMLs match
         String xmlA = WspWriter.getPolicyXml(policy);
-        Assertion policyB = WspReader.parse(xmlA);
+        Assertion policyB = WspReader.parseStrictly(xmlA);
         String xmlB = WspWriter.getPolicyXml(policyB);
         assertEquals(xmlA, xmlB);
     }
@@ -78,7 +78,7 @@ public class WspReaderTest extends TestCase {
     public void testParseNonXml() {
         mustThrow(IOException.class, new throwingRunnable() {
             public void run() throws IOException {
-                WspReader.parse("asdfhaodh/asdfu2h$9ha98h");
+                WspReader.parseStrictly("asdfhaodh/asdfu2h$9ha98h");
             }
         });
     }
@@ -86,7 +86,7 @@ public class WspReaderTest extends TestCase {
     public void testParseStrangeXml() {
         mustThrow(IOException.class,  new throwingRunnable() {
             public void run() throws IOException {
-                WspReader.parse("<foo><bar blee=\"1\"/></foo>");
+                WspReader.parseStrictly("<foo><bar blee=\"1\"/></foo>");
             }
         });
     }
@@ -94,7 +94,7 @@ public class WspReaderTest extends TestCase {
     public void testParseSwAPolicy() throws Exception {
         Assertion policy = WspWriterTest.createSoapWithAttachmentsPolicy();
         String serialized = WspWriter.getPolicyXml(policy);
-        Assertion parsedPolicy = WspReader.parse(serialized);
+        Assertion parsedPolicy = WspReader.parseStrictly(serialized);
         assertTrue(parsedPolicy instanceof AllAssertion);
         AllAssertion all = (AllAssertion)parsedPolicy;
         Assertion kid = (Assertion)all.getChildren().get(0);
@@ -132,7 +132,7 @@ public class WspReaderTest extends TestCase {
             log.info("Trying to parse policy document; " + policyFile);
             policyStream = cl.getResourceAsStream(RESOURCE_PATH + "/" + policyFile);
             Document policy = XmlUtil.parse(policyStream);
-            Assertion root = WspReader.parse(policy.getDocumentElement());
+            Assertion root = WspReader.parsePermissively(policy.getDocumentElement());
             assertTrue(root != null);
             assertTrue(root instanceof ExactlyOneAssertion);
         } finally {
@@ -151,7 +151,7 @@ public class WspReaderTest extends TestCase {
     public void testSeamlessUpgradeFrom21() throws Exception {
         InputStream is = cl.getResourceAsStream(RESOURCE_PATH + "/" + "simple_policy_21.xml");
         Document doc = XmlUtil.parse(is);
-        Assertion ass = WspReader.parse(doc.getDocumentElement());
+        Assertion ass = WspReader.parsePermissively(doc.getDocumentElement());
         log.info("Policy tree constructed after reading 2.1 policy XML:\n" + ass);
         assertTrue(ass != null);
         assertTrue(ass instanceof ExactlyOneAssertion);
@@ -160,7 +160,7 @@ public class WspReaderTest extends TestCase {
     public void testSeamlessUpgradeFrom30() throws Exception {
         InputStream is = cl.getResourceAsStream(RESOURCE_PATH + "/" + "simple_policy_30.xml");
         Document doc = XmlUtil.parse(is);
-        Assertion ass = WspReader.parse(doc.getDocumentElement());
+        Assertion ass = WspReader.parsePermissively(doc.getDocumentElement());
         log.info("Policy tree constructed after reading 3.0 policy XML:\n" + ass);
         assertTrue(ass != null);
         assertTrue(ass instanceof ExactlyOneAssertion);
@@ -169,10 +169,45 @@ public class WspReaderTest extends TestCase {
     public void testSeamlessUpgradeFrom31() throws Exception {
         InputStream is = cl.getResourceAsStream(RESOURCE_PATH + "/" + "simple_policy_31.xml");
         Document doc = XmlUtil.parse(is);
-        Assertion ass = WspReader.parse(doc.getDocumentElement());
+        Assertion ass = WspReader.parsePermissively(doc.getDocumentElement());
         log.info("Policy tree constructed after reading 3.1 policy XML:\n" + ass);
         assertTrue(ass != null);
         assertTrue(ass instanceof ExactlyOneAssertion);
+    }
+
+    public void testUnknownElementGetsPreserved() throws Exception {
+
+
+        String policyXml = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+                "<wsp:Policy xmlns=\"http://www.layer7tech.com/ws/policy\" xmlns:wsp=\"http://schemas.xmlsoap.org/ws/200" +
+                "2/12/policy\">\n" +
+                "    <All>\n" +
+                "        <HttpRoutingAssertion>\n" +
+                "            <ProtectedServiceUrl stringValue=\"http://hugh/ACMEWarehouseWS/Service1.asmx\"/>\n" +
+                "        </HttpRoutingAssertion>\n" +
+                "        <EmailAlert>\n" +
+                "            <Message stringValue=\"Woot!  Hola!\n" +
+                "\n" +
+                "Blah blah blah!\n" +
+                "\"/>\n" +
+                "            <TargetEmailAddress stringValue=\"mlyons@layer7-tech.com\"/>\n" +
+                "            <SourceEmailAddress stringValue=\"mlyons-4@layer7-tech.com\"/>\n" +
+                "            <Subject stringValue=\"ALERT ALERT from EmailAlertAssertion asdfhasdhf\"/>\n" +
+                "        </EmailAlert>\n" +
+                "    </All>\n" +
+                "</wsp:Policy>\n";
+
+        Assertion p = WspReader.parsePermissively(policyXml);
+        String parsed1 = p.toString();
+        log.info("Parsed data including unknown element: " + parsed1);
+
+        String out = WspWriter.getPolicyXml(p);
+        Assertion p2 = WspReader.parsePermissively(out);
+        String parsed2 = p2.toString();
+        log.info("After reparsing: " + parsed2);
+
+        assertEquals(parsed1, parsed2);
+
     }
 
     public static void main(String[] args) {

@@ -4,6 +4,7 @@ import com.l7tech.common.wsdl.BindingInfo;
 import com.l7tech.common.wsdl.BindingOperationInfo;
 import com.l7tech.common.wsdl.MimePartInfo;
 import com.l7tech.common.xml.XpathExpression;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.*;
 import com.l7tech.policy.assertion.composite.AllAssertion;
 import com.l7tech.policy.assertion.composite.ExactlyOneAssertion;
@@ -23,6 +24,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
+
+import org.w3c.dom.Document;
 
 /**
  * Test serializing policy tree to XML.
@@ -112,6 +115,74 @@ public class WspWriterTest extends TestCase {
     public static void testNestedMaps() throws Exception {
         Assertion policy = createSoapWithAttachmentsPolicy();
         log.info("Serialized complex policy: " + WspWriter.getPolicyXml(policy));
+    }
+
+    public void testUnknownAssertionPreservesOriginalElement() throws Exception {
+        UnknownAssertion uk = new UnknownAssertion(null, "<FooAssertion/>");
+        AllAssertion aa = new AllAssertion(Arrays.asList(new Assertion[] {
+            new TrueAssertion(),
+            uk,
+            new FalseAssertion(),
+        }));
+        String got = WspWriter.getPolicyXml(aa);
+        Document doc = XmlUtil.stringToDocument(got);
+        assertTrue(doc.getDocumentElement().getFirstChild().getNextSibling().getFirstChild().getNextSibling().getNextSibling().getNextSibling().getNodeName().equals("FooAssertion"));
+        log.info("Serialized: " + got);
+    }
+
+    public void testUnknownAssertionPreservesOriginalElementIgnoringSurroundingText() throws Exception {
+        UnknownAssertion uk = new UnknownAssertion(null, "asdf\n\nasdfq  <FooBarBazAssertion/>qgrqegr");
+        AllAssertion aa = new AllAssertion(Arrays.asList(new Assertion[] {
+            new TrueAssertion(),
+            uk,
+            new FalseAssertion(),
+        }));
+        String got = WspWriter.getPolicyXml(aa);
+        Document doc = XmlUtil.stringToDocument(got);
+        assertTrue(doc.getDocumentElement().getFirstChild().getNextSibling().getFirstChild().getNextSibling().getNextSibling().getNextSibling().getNodeName().equals("FooBarBazAssertion"));
+        log.info("Serialized: " + got);
+    }
+
+    public void testUnknownAssertionFallbackOnBadForm() throws Exception {
+        UnknownAssertion uk = new UnknownAssertion(null, "foo>blah<>not<well<formed/>");
+        AllAssertion aa = new AllAssertion(Arrays.asList(new Assertion[] {
+            new TrueAssertion(),
+            uk,
+            new FalseAssertion(),
+        }));
+
+        String got = WspWriter.getPolicyXml(aa);
+        Document doc = XmlUtil.stringToDocument(got);
+        assertTrue(doc.getDocumentElement().getFirstChild().getNextSibling().getFirstChild().getNextSibling().getNextSibling().getNextSibling().getNodeName().equals("UnknownAssertion"));
+        log.info("Serialized: " + got);
+    }
+
+    public void testUnknownAssertionFallbackOnMultipleElements() throws Exception {
+        UnknownAssertion uk = new UnknownAssertion(null, "<foo/>blahblah<bar/>");
+        AllAssertion aa = new AllAssertion(Arrays.asList(new Assertion[] {
+            new TrueAssertion(),
+            uk,
+            new FalseAssertion(),
+        }));
+
+        String got = WspWriter.getPolicyXml(aa);
+        Document doc = XmlUtil.stringToDocument(got);
+        assertTrue(doc.getDocumentElement().getFirstChild().getNextSibling().getFirstChild().getNextSibling().getNextSibling().getNextSibling().getNodeName().equals("UnknownAssertion"));
+        log.info("Serialized: " + got);
+    }
+
+    public void testUnknownAssertionFallbackOnNoElement() throws Exception {
+        UnknownAssertion uk = new UnknownAssertion(null, "asdf asdhfkajsl laskfh");
+        AllAssertion aa = new AllAssertion(Arrays.asList(new Assertion[] {
+            new TrueAssertion(),
+            uk,
+            new FalseAssertion(),
+        }));
+
+        String got = WspWriter.getPolicyXml(aa);
+        Document doc = XmlUtil.stringToDocument(got);
+        assertTrue(doc.getDocumentElement().getFirstChild().getNextSibling().getFirstChild().getNextSibling().getNextSibling().getNextSibling().getNodeName().equals("UnknownAssertion"));
+        log.info("Serialized: " + got);
     }
 
     public static Assertion createSoapWithAttachmentsPolicy() {
