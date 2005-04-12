@@ -1,11 +1,13 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.proxy;
 
+import com.l7tech.common.http.GenericHttpException;
+import com.l7tech.common.http.GenericHttpRequestParamsImpl;
+import com.l7tech.common.http.SimpleHttpClient;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.common.util.XmlUtil;
@@ -14,15 +16,11 @@ import com.l7tech.proxy.datamodel.Ssg;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
-import com.l7tech.proxy.ssl.CurrentSslPeer;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.UsernamePasswordCredentials;
-import org.apache.commons.httpclient.methods.GetMethod;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
-import javax.net.ssl.SSLHandshakeException;
 import javax.wsdl.WSDLException;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -124,7 +122,6 @@ class WsdlProxy {
             throws OperationCanceledException, IOException, DownloadException,
                    WSDLException, SAXException, ServiceNotFoundException
     {
-        HttpClient httpClient = new HttpClient();
         String file = SecureSpanConstants.WSDL_PROXY_FILE;
         if (serviceoid != 0)
             file += "?serviceoid=" + serviceoid;
@@ -134,76 +131,61 @@ class WsdlProxy {
         } catch (MalformedURLException e) {
             throw new RuntimeException(e); // can't happen
         }
-        httpClient.getState().setAuthenticationPreemptive(true);
 
         int status = 0;
 
         // The reason for the last failure
         Exception error = null;
 
-        // TODO change this to use GenericHttpClient
-        // TODO change this to use GenericHttpClient
-        // TODO change this to use GenericHttpClient
-        // TODO change this to use GenericHttpClient
-        // TODO change this to use GenericHttpClient
-        
+        SimpleHttpClient client = ssg.getRuntime().getHttpClient();
+        GenericHttpRequestParamsImpl params = new GenericHttpRequestParamsImpl(url);
+        params.setPreemptiveAuthentication(true);
+
         // Password retries for WSDL download
         PasswordAuthentication pw;
         for (int retries = 0; retries < 3; ++retries) {
-            GetMethod getMethod = null;
+            pw = ssg.getRuntime().getCredentialManager().getCredentials(ssg);
+            params.setPasswordAuthentication(pw);
+            log.info("WsdlProxy: Attempting download from Gateway from URL: " + url);
+            SimpleHttpClient.SimpleHttpResponse result = null;
             try {
-                pw = ssg.getRuntime().getCredentialManager().getCredentials(ssg);
-                getMethod = new GetMethod(url.toString());
-                if (pw != null)
-                    httpClient.getState().setCredentials(null,
-                                                         null,
-                                                         new UsernamePasswordCredentials(pw.getUserName(),
-                                                                                         new String(pw.getPassword())));
-                log.info("WsdlProxy: Attempting download from Gateway from URL: " + url);
-                try {
-                    CurrentSslPeer.set(ssg);
-                    status = httpClient.executeMethod(getMethod);
-                    CurrentSslPeer.set(null);
-                } catch (SSLHandshakeException e) {
-                    error = e;
-                    ServerCertificateUntrustedException scue = (ServerCertificateUntrustedException)
-                            ExceptionUtils.getCauseIfCausedBy(e, ServerCertificateUntrustedException.class);
-                    if (scue != null) {
-                        error = scue;
-                        try {
-                            ssg.getRuntime().discoverServerCertificate(pw);
-                            status = -1; // hack hack hack: fake status meaning "try again"
-                            continue;
-                        } catch (GeneralSecurityException e1) {
-                            throw new DownloadException("Unable to discover Gateway's server certificate", e1);
-                        } catch (BadCredentialsException e1) {
-                            log.log(Level.INFO, "Certificate discovery service indicates bad password; setting status to 401 artificially");
-                            status = 401; // hack hack hack: fake up a 401 status to trigger password dialog below
-                            error = new BadCredentialsException("Unable to automatically establish authenticity of the Gateway SSL certificate using the current username and password");
-                            // FALLTHROUGH -- get new credentials and try again
-                        }
-                    } else
-                        throw e;
-                }
-                log.info("WsdlProxy: connection HTTP status " + status);
-                if (status == 200) {
-                    return sr.readStream(getMethod.getResponseBodyAsStream());
-                } else if (status == 404) {
-                    throw new ServiceNotFoundException("No service was found on Gateway " + ssg + " with serviceoid " + serviceoid);
-                } else if (status == 401) {
-                    pw = ssg.getRuntime().getCredentialManager().getNewCredentials(ssg, true);
-                    // FALLTHROUGH - continue and try again with new password
-                } else if (status == -1) {
-                    // FALLTHROUGH -- continue and try again with empty keystore
-                } else {
-                    error = null;
-                    break;
-                }
-            } finally {
-                if (getMethod != null) {
-                    getMethod.releaseConnection();
-                    getMethod = null;
-                }
+                result = client.get(params);
+                status = result.getStatus();
+            } catch (GenericHttpException e) {
+                error = e;
+                ServerCertificateUntrustedException scue = (ServerCertificateUntrustedException)
+                        ExceptionUtils.getCauseIfCausedBy(e, ServerCertificateUntrustedException.class);
+                if (scue != null) {
+                    error = scue;
+                    try {
+                        ssg.getRuntime().discoverServerCertificate(pw);
+                        status = -1; // hack hack hack: fake status meaning "try again"
+                        continue;
+                    } catch (GeneralSecurityException e1) {
+                        throw new DownloadException("Unable to discover Gateway's server certificate", e1);
+                    } catch (BadCredentialsException e1) {
+                        log.log(Level.INFO, "Certificate discovery service indicates bad password; setting status to 401 artificially");
+                        status = 401; // hack hack hack: fake up a 401 status to trigger password dialog below
+                        error = new BadCredentialsException("Unable to automatically establish authenticity of the Gateway SSL certificate using the current username and password");
+                        // FALLTHROUGH -- get new credentials and try again
+                    }
+                } else
+                    throw e;
+            }
+
+            log.info("WsdlProxy: connection HTTP status " + status);
+            if (status == 200 && result != null) {
+                return sr.readStream(new ByteArrayInputStream(result.getBytes()));
+            } else if (status == 404) {
+                throw new ServiceNotFoundException("No service was found on Gateway " + ssg + " with serviceoid " + serviceoid);
+            } else if (status == 401) {
+                pw = ssg.getRuntime().getCredentialManager().getNewCredentials(ssg, true);
+                // FALLTHROUGH - continue and try again with new password
+            } else if (status == -1) {
+                // FALLTHROUGH -- continue and try again with empty keystore
+            } else {
+                error = null;
+                break;
             }
         }
         if (error != null)
