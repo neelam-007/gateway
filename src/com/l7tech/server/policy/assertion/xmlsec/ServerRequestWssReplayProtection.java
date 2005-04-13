@@ -1,6 +1,5 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
-import com.l7tech.cluster.DistributedMessageIdManager;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.security.token.SamlSecurityToken;
