@@ -243,6 +243,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
 
         ssg.setSsgPort(normalPort);
         ssg.setSslPort(sslPort);
+        ssg.setSsgFile(url.getFile());
 
         // TODO make this fully configurable
         ssg.setUseSslByDefault(true);
