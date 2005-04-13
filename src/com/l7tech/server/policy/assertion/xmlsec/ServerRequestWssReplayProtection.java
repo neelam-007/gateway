@@ -157,8 +157,8 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
 
         MessageId messageId = new MessageId(messageIdStr, expires + CACHE_ID_EXTRA_TIME_MILLIS);
         try {
-            DistributedMessageIdManager dmm = (DistributedMessageIdManager)applicationContext.getBean("distributedMessageIdManager");
-            dmm.assertMessageIdIsUnique(messageId);
+            MessageIdManager mim = (MessageIdManager)applicationContext.getBean("distributedMessageIdManager");
+            mim.assertMessageIdIsUnique(messageId);
             auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_PROTECTION_SUCCEEDED, new String[]{ messageIdStr});
         } catch (MessageIdManager.DuplicateMessageIdException e) {
             // TODO we need a better exception for this than IOException
