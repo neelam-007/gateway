@@ -1,4 +1,3 @@
-# $Id$
 Summary: Secure Span Gateway
 Name: ssg
 Version: 3.1
@@ -36,6 +35,7 @@ mkdir %{buildroot}/etc/iptables
 mkdir %{buildroot}/etc/sysconfig
 
 mv %{buildroot}/ssg/bin/ssg-initd %{buildroot}/etc/init.d/ssg 
+mv %{buildroot}/ssg/bin/tarari-initd %{buildroot}/etc/init.d/tarari
 mv %{buildroot}/ssg/bin/my.cnf %{buildroot}/etc/my.cnf.ssg
 mv %{buildroot}/ssg/bin/iptables %{buildroot}/etc/sysconfig/iptables
 mv %{buildroot}/ssg/bin/ssgruntimedefs.sh %{buildroot}/etc/profile.d/ssgruntimedefs.sh
@@ -47,6 +47,7 @@ rm -rf %{buildroot}/ssg/j2sdk1.4.2_05/demo
 %files 
 %defattr(-,root,root)
 /etc/init.d/ssg 
+/etc/init.d/tarari
 /etc/init.d/back_route
 /etc/init.d/tcp_tune
 /etc/profile.d/ssgruntimedefs.sh
