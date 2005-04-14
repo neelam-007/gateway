@@ -32,7 +32,6 @@ import java.util.logging.Logger;
  * <p/>
  * User: flascell<br/>
  * Date: Nov 26, 2003<br/>
- * $Id$
  */
 public class ServiceCache extends ApplicationObjectSupport implements DisposableBean {
 
@@ -454,7 +453,7 @@ public class ServiceCache extends ApplicationObjectSupport implements Disposable
     private final Map serviceStatistics = new HashMap();
 
     // the resolvers
-    private final NameValueServiceResolver[] resolvers = {new HttpUriResolver(), new SoapActionResolver(), new UrnResolver()};
+    private final NameValueServiceResolver[] resolvers = {new OriginalUrlServiceOidResolver(), new HttpUriResolver(), new SoapActionResolver(), new UrnResolver()};
 
     // read-write lock for thread safety
     private final ReadWriteLock rwlock = new WriterPreferenceReadWriteLock();

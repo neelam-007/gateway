@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.common.protocol;
@@ -26,6 +25,12 @@ public class SecureSpanConstants {
      * The filename portion of the URL of the message processing service on the Gateway.
      */
     public static final String SSG_FILE = "/ssg/soap";
+
+    /**
+     * The prefix of the filename portion of the URL of the message processing service that requires a service OID in the URL.
+     * The full URL will end in something like "/ssg/service/283761".
+     */
+    public static final String SERVICE_FILE = "/service/";
 
     /**
      * The filename portion of the URL of the policy servlet on the Gateway.

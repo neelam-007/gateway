@@ -61,9 +61,6 @@ import java.util.logging.Level;
  * Date: Sep 15, 2003<br/>
  */
 public class WsdlProxyServlet extends AuthenticatableHttpServlet {
-
-    public static final String SOAP_PROCESSING_SERVLET_URI = SecureSpanConstants.SSG_FILE;
-
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
     }
@@ -231,9 +228,8 @@ public class WsdlProxyServlet extends AuthenticatableHttpServlet {
         String routinguri = svc.getRoutingUri();
         if (routinguri == null || routinguri.length() < 1) {
             ssgurl = new URL("http" + "://" + req.getServerName() + ":" +
-                             port + SOAP_PROCESSING_SERVLET_URI + "?" +
-                             SecureSpanConstants.HttpQueryParameters.PARAM_SERVICEOID +
-                             "=" + Long.toString(svc.getOid()));
+                             port + SecureSpanConstants.SERVICE_FILE +
+                             Long.toString(svc.getOid()));
         } else {
             ssgurl = new URL("http" + "://" + req.getServerName() + ":" +
                              port + routinguri);
