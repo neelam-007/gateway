@@ -70,9 +70,12 @@ public class TimeOfDay implements Comparable, Serializable {
             return -1;
     }
 
-    public boolean equals( Object o ) {
+    public boolean equals(Object o) {
+        if (o == null) {
+            return false;
+        }
         TimeOfDay other = (TimeOfDay)o;
-        if ( other._secondsSinceMidnight == _secondsSinceMidnight )
+        if (other._secondsSinceMidnight == _secondsSinceMidnight)
             return true;
         else
             return false;
