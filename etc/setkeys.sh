@@ -2,7 +2,6 @@
 # -----------------------------------------------------------------------------
 # FILE [setkeys.sh]
 # LAYER 7 TECHNOLOGIES
-# $Id$
 #
 # GENERATES A CA KEYSTORE AND OR AN SSL KEYSTORE
 #

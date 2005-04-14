@@ -12,6 +12,11 @@
 . /etc/rc.d/init.d/functions
 . /etc/profile.d/tarari.sh
 
+if [ ! -e /usr/local/Tarari/bin/load_xmlcp ]; then
+	echo "Tarari Not Installed"
+	exit
+fi
+
 tarariStart="/usr/local/Tarari/bin/load_xmlcp"
 tarariStop="/usr/local/Tarari/bin/unload_xmlcp"
 USER=`whoami`

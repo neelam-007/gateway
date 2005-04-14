@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 use strict;
 #
-# Upgrade Keystores $Id$
+# Upgrade Keystores 
 # Take the existing keys, hide the originals, convert to the other format
 # 
 

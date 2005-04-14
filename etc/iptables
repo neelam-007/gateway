@@ -1,5 +1,4 @@
 # /etc/sysconfig/iptables
-# $Id$
 # note, for public net on eth1, s/eth0/eth1/
 # 
 *nat

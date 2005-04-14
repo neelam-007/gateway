@@ -3,8 +3,6 @@
         "-//Hibernate/Hibernate Mapping DTD 2.0//EN"
         "http://hibernate.sourceforge.net/hibernate-mapping-2.0.dtd">
 
-<!-- $Id$ -->
-
 <!--
   This is the unified (PostgreSQL & MySQL) version of the Hibernate mapping file.
 -->

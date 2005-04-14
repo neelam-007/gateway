@@ -1,5 +1,4 @@
 #!/usr/bin/perl
-# $Id$
 # Script to prompt for configuration values
 # save a text file 
 # and then apply
