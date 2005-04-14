@@ -30,6 +30,7 @@ import java.awt.event.*;
 import java.util.*;
 import java.util.List;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Find Dialog
@@ -38,6 +39,7 @@ import java.util.logging.Level;
  * @version 1.2
  */
 public class FindIdentitiesDialog extends JDialog {
+    final Logger logger = Logger.getLogger(FindIdentitiesDialog.class.getName());
     static Map oTypes = new TreeMap(); // sorted
 
     static {
@@ -862,7 +864,13 @@ public class FindIdentitiesDialog extends JDialog {
 
         if (o instanceof EntityHeader) {
             EntityHeader eh = (EntityHeader)o;
-            AbstractTreeNode an = TreeNodeFactory.asTreeNode(eh);
+            AbstractTreeNode an = null;
+            try {
+                an = TreeNodeFactory.asTreeNode(eh);
+            } catch (IllegalArgumentException e) {
+                logger.log(Level.FINE, "entity does not resolve an AbstractTreeNode", e);
+                return;
+            }
             BaseAction action = (BaseAction)an.getPreferredAction();
 
             // null in the case of UserNode
@@ -939,6 +947,7 @@ public class FindIdentitiesDialog extends JDialog {
       tableRenderer = new DefaultTableCellRenderer() {
           Icon groupIcon = new ImageIcon(Utilities.loadImage(GroupPanel.GROUP_ICON_RESOURCE));
           Icon userIcon = new ImageIcon(Utilities.loadImage(UserPanel.USER_ICON_RESOURCE));
+          Icon stopIcon = new ImageIcon(Utilities.loadImage("com/l7tech/console/resources/Stop16.gif"));
 
           /**
            * Returns the default table cell renderer.
@@ -963,6 +972,8 @@ public class FindIdentitiesDialog extends JDialog {
                       setIcon(userIcon);
                   else if (EntityType.GROUP.equals(eh.getType())) {
                       setIcon(groupIcon);
+                  } else if (EntityType.MAXED_OUT_SEARCH_RESULT.equals(eh.getType())) {
+                      setIcon(stopIcon);
                   }
                   setText(eh.getName());
               } else {

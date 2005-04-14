@@ -8,6 +8,7 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.KeystoreUtils;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import com.l7tech.identity.*;
+import com.l7tech.identity.AuthenticationException;
 import com.l7tech.identity.cert.ClientCertManager;
 import com.l7tech.identity.ldap.GroupMappingConfig;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
@@ -20,10 +21,7 @@ import com.l7tech.policy.assertion.credential.http.HttpDigest;
 import com.l7tech.server.ServerConfig;
 import org.springframework.beans.factory.InitializingBean;
 
-import javax.naming.CommunicationException;
-import javax.naming.Context;
-import javax.naming.NamingEnumeration;
-import javax.naming.NamingException;
+import javax.naming.*;
 import javax.naming.directory.*;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -335,6 +333,34 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
         }
     }
 
+    private long getMaxSearchResultSize() {
+        if (maxSearchResultSize <= 0) {
+            String tmp = serverConfig.getProperty(ServerConfig.MAX_LDAP_SEARCH_RESULT_SIZE);
+            if (tmp == null) {
+                logger.info(ServerConfig.MAX_LDAP_SEARCH_RESULT_SIZE + " is not set. using default value.");
+                maxSearchResultSize = 100;
+            } else {
+                long tmpl = 0;
+                try {
+                    tmpl = Long.parseLong(tmp);
+                    if (tmpl <= 0) {
+                        logger.info(ServerConfig.MAX_LDAP_SEARCH_RESULT_SIZE + " has invalid value: " + tmp +
+                                    ". using default value.");
+                        maxSearchResultSize = 100;
+                    } else {
+                        logger.info("read system value " + ServerConfig.MAX_LDAP_SEARCH_RESULT_SIZE + " of " + tmp);
+                        maxSearchResultSize = tmpl;
+                    }
+                } catch (NumberFormatException e) {
+                    logger.log(Level.WARNING, "the property " + ServerConfig.MAX_LDAP_SEARCH_RESULT_SIZE +
+                                              " has an invalid format. falling back on default value.", e);
+                    maxSearchResultSize = 100;
+                }
+            }
+        }
+        return maxSearchResultSize;
+    }
+
     /**
      * searches the ldap provider for identities
      *
@@ -381,6 +407,7 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
             }
             SearchControls sc = new SearchControls();
             sc.setSearchScope(SearchControls.SUBTREE_SCOPE);
+            sc.setCountLimit(getMaxSearchResultSize());
             context = getBrowseContext();
             answer = context.search(config.getSearchBase(), filter, sc);
             while (answer.hasMore()) {
@@ -397,6 +424,18 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
                       "entry will not be presented as part of the search results.");
             }
             if (answer != null) answer.close();
+        } catch (SizeLimitExceededException e) {
+            // add something to the result that indicates the fact that the search criteria is too wide
+            logger.log(Level.FINE, "the search results exceede the maximum. adding a " +
+                                   "EntityType.MAXED_OUT_SEARCH_RESULT to the results",
+                                   e);
+            EntityHeader maxExceeded = new EntityHeader("noid",
+                                                        EntityType.MAXED_OUT_SEARCH_RESULT,
+                                                        "Search criterion too wide",
+                                                        "This search exceeded yeilded too many entities, " +
+                                                        "please narrow your search criterion.");
+            output.add(maxExceeded);
+            // dont throw here, we still want to return what we got
         } catch (NamingException e) {
             logger.log(Level.WARNING, "error searching with filter: " + filter, e);
         } finally {
@@ -886,4 +925,5 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
     private ServerConfig serverConfig;
     private final BigInteger fileTimeConversionfactor = new BigInteger("116444736000000000");
     private final BigInteger fileTimeConversionfactor2 = new BigInteger("10000");
+    private long maxSearchResultSize = -1;
 }

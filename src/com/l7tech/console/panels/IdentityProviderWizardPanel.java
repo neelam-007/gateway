@@ -324,7 +324,14 @@ public class IdentityProviderWizardPanel extends WizardStepPanel {
             IdentityAdmin admin = Registry.getDefault().getIdentityAdmin();
             Iterator i = Arrays.asList(admin.findAllUsers(ipc.getOid())).iterator();
             while (i.hasNext()) {
-                modelOut.addRow(fromHeader((EntityHeader)i.next(), ipc));
+                EntityHeader header = (EntityHeader)i.next();
+                if (EntityType.MAXED_OUT_SEARCH_RESULT.equals(header.getType())) {
+                    // indicate that the search is too wide
+                    JOptionPane.showMessageDialog(identitiesInTable, "Not all identities can be displayed " +
+                                                                     "because the search criterion is too wide");
+                } else {
+                    modelOut.addRow(fromHeader(header, ipc));
+                }
             }
 
             i = Arrays.asList(admin.findAllGroups(ipc.getOid())).iterator();

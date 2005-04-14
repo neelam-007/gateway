@@ -32,6 +32,7 @@ public class EntityType implements Serializable {
     public static final EntityType TRUSTED_CERT = new EntityType(7, TrustedCert.class);
     public static final EntityType ALERT_TRIGGER = new EntityType(8, AlertEvent.class);
     public static final EntityType ALERT_ACTION = new EntityType(9, Notification.class);
+    public static final EntityType MAXED_OUT_SEARCH_RESULT = new EntityType(10, String.class);
     public static final EntityType UNDEFINED = new EntityType(-1, null);
 
     private int val;
@@ -120,6 +121,8 @@ public class EntityType implements Serializable {
                 return "ALERT_TRIGGER";
             case 9:
                 return "ALERT_ACTION";
+            case 10:
+                return "MAXED_OUT_SEARCH_RESULT";
             default:
                 return "?";
         }
@@ -167,6 +170,8 @@ public class EntityType implements Serializable {
                 return ALERT_TRIGGER;
             case 9:
                 return ALERT_ACTION;
+            case 10:
+                return MAXED_OUT_SEARCH_RESULT;
             default:
                 return UNDEFINED;
         }
