@@ -1,0 +1,59 @@
+#!/bin/bash
+#
+# Startup script for the Secure Span Gateway Server
+#
+# chkconfig: - 98 02
+# description: Layer7's Secure Span Gateway Daemon \
+#	       secures and provides access for SOAP services
+# processname: tomcat
+# config: /ssg/tomcat
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+. /etc/profile.d/tarari.sh
+
+tarariStart="/usr/local/Tarari/bin/load_xmlcp"
+tarariStop="/usr/local/Tarari/bin/unload_xmlcp"
+USER=`whoami`
+
+start() {
+        echo -n $"Starting Tarari: "
+	if [ "$USER" = "root" ]; then
+        	$tarariStart > /dev/null 2>&1
+		RETVAL=$?
+	else
+		echo "Need to be root to run this script";
+		exit
+	fi	
+        echo
+        return $RETVAL
+}
+stop() {
+	echo -n $"Stopping Tarari: "
+	if [ "$USER" = "root" ]; then
+        	$tarariStop  > /dev/null 2>&1
+        	RETVAL=$?
+	else
+		echo "Need to be root to run this script";
+		exit
+	fi	
+	echo
+        return $RETVAL
+
+}
+
+# See how we were called.
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  restart)
+	stop
+	start
+	;;
+esac
+
+exit $RETVAL
