@@ -616,7 +616,7 @@ public class PolicyApplicationContext extends ProcessingContext {
             ConfigurationException, PolicyLockedException
     {
         final Ssg ssg = getSsg();
-        final PolicyAttachmentKey pak = getPolicyAttachmentKey();
+        final PolicyAttachmentKey pak = new PolicyAttachmentKey(getPolicyAttachmentKey());
         Policy policy = new PolicyDownloader(this).downloadPolicy(pak, serviceid);
         ssg.getRuntime().getPolicyManager().setPolicy(pak, policy);
         if (requestInterceptor != null)

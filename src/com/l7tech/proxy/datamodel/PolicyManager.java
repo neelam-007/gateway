@@ -44,7 +44,9 @@ public interface PolicyManager extends Serializable {
     Policy findMatchingPolicy(PolicyAttachmentKey policyAttachmentKey);
 
     /**
-     * Set a policy, if this PolicyManager allows this.
+     * Set a policy, if this PolicyManager allows this.  When calling this method, be very careful that you
+     * are not about to reuse a PolicyAttachmentKey instance that is already being used to index another policy
+     * elsewhere in the system.  If there is any doubt, make a copy of it before calling setPolicy().
      *
      * @param key    the {@link PolicyAttachmentKey} under which to file this {@link Policy}.  May not be null.
      * @param policy the Policy to file.  May not be null.
