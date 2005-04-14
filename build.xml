@@ -519,7 +519,7 @@
                 <exclude name="com/l7tech/common/security/saml/**/*"/>
                 <exclude name="com/l7tech/common/message/**/*"/>
                 <exclude name="com/l7tech/common/xml/saml/**/*"/>
-                <exclude name="com/l7tech/common/xml/tarari/**/*"/>
+                <exclude name="com/l7tech/common/xml/tarari/*.class"/>
                 <include name="com/l7tech/common/xml/tarari/util/*.class" />
                 <exclude name="com/l7tech/common/security/wstrust/**/*" />
                 <include name="com/l7tech/common/security/TrustedCert*.class"/>
