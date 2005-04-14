@@ -159,7 +159,7 @@ class BeanTypeMapping extends ComplexTypeMapping {
                 Object defaultValue = TypeMappingUtils.invokeMethod(getter, defaultTemplate, noArgs);
                 if (value == defaultValue)
                     continue;
-                if (value != null && value.equals(defaultValue))
+                if (value != null && defaultValue != null && value.equals(defaultValue))
                     continue;
             }
 
