@@ -1275,6 +1275,7 @@
                 <include name="install.pl"/>
                 <include name="upgrade.sh"/>
                 <include name="buildVersion.txt"/>
+                <include name="passServiceUsage.sh"/>
                 <include name="ssgruntimedefs.sh"/>
                 <include name="clean_db.pl"/>
                 <include name="dbfaildetect.sh"/>
