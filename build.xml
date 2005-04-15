@@ -234,7 +234,7 @@
             <test name="com.l7tech.proxy.policy.ClientXpathAssertionsTest" haltonfailure="no"/>
             <test name="com.l7tech.server.policy.ServerPolicyFactoryTest" haltonfailure="no"/>
             <test name="com.l7tech.server.policy.filter.FilterTest" haltonfailure="no"/>
-            <test name="com.l7tech.common.security.xml.WssRoundTripTest" haltonfailure="no"/>
+            <test name="com.l7tech.common.security.xml.WssRoundTripTest" haltonfailure="no" fork="yes"/>
             <test name="com.l7tech.server.policy.PolicyServiceTest" haltonfailure="no"/>
             <test name="com.l7tech.common.message.KnobblyMessageTest" haltonfailure="no"/>
             <test name="com.l7tech.proxy.FunctionalTest" haltonfailure="no"/>
@@ -267,29 +267,29 @@
             <formatter type="plain"/>
             <sysproperty key="src.root" value="${src.root}"/>
 
-            <test name="com.l7tech.common.util.ThreadPoolTest" haltonfailure="no"/>
+            <test name="com.l7tech.common.util.ThreadPoolTest" haltonfailure="no" fork="yes"/>
             <test name="com.l7tech.proxy.ClientPolicyTest" haltonfailure="no"/>
             <test name="com.l7tech.server.policy.RequestXpathAssertionTest" fork="yes" haltonfailure="no"/>
             <test name="com.l7tech.common.mime.StashManagerTest" haltonfailure="no" fork="yes"/>
-            <test name="com.l7tech.common.mime.MimeBoundaryTerminatedInputStreamTest" haltonfailure="no"/>
+            <test name="com.l7tech.common.mime.MimeBoundaryTerminatedInputStreamTest" haltonfailure="no" fork="yes"/>
             <test name="com.l7tech.common.util.ExceptionUtilsTest" haltonfailure="no"/>
             <test name="com.l7tech.identity.StubDataStoreTest" haltonfailure="no"/>
             <test name="com.l7tech.common.util.XmlUtilTest" haltonfailure="no"/>
-            <test name="com.l7tech.server.MockServletApiTest" haltonfailure="no"/>
+            <test name="com.l7tech.server.MockServletApiTest" haltonfailure="no" fork="yes"/>
             <test name="com.l7tech.server.saml.SamlProcessingTest" haltonfailure="no" fork="yes"/>
-            <test name="com.l7tech.server.TokenServiceTest" haltonfailure="no"/>
+            <test name="com.l7tech.server.TokenServiceTest" haltonfailure="no" fork="yes"/>
             <test name="com.l7tech.proxy.datamodel.SsgManagerTest" haltonfailure="no"/>
             <test name="com.l7tech.proxy.datamodel.SsgTest" haltonfailure="no"/>
-            <test name="com.l7tech.common.security.xml.WssDecoratorTest" haltonfailure="no"/>
-            <test name="com.l7tech.common.security.xml.WssProcessorTest" haltonfailure="no"/>
+            <test name="com.l7tech.common.security.xml.WssDecoratorTest" haltonfailure="no" fork="yes"/>
+            <test name="com.l7tech.common.security.xml.WssProcessorTest" haltonfailure="no" fork="yes"/>
             <test name="com.l7tech.common.security.KeysTest" haltonfailure="no"/>
             <test name="com.l7tech.common.xml.XpathEvaluatorTest" haltonfailure="no"/>
             <test name="com.l7tech.common.xml.SoapMessageGeneratorTest" haltonfailure="no" fork="yes"/>
             <test name="com.l7tech.common.mime.MimeHeaderTest" haltonfailure="no"/>
             <test name="com.l7tech.common.mime.MimeHeadersTest" haltonfailure="no"/>
-            <test name="com.l7tech.common.mime.MimeBodyTest" haltonfailure="no"/>
+            <test name="com.l7tech.common.mime.MimeBodyTest" haltonfailure="no" fork="yes"/>
             <test name="com.l7tech.common.io.failover.FailoverStrategyTest" haltonfailure="no"/>
-            <test name="com.l7tech.service.WsdlTest" haltonfailure="no"/>
+            <test name="com.l7tech.service.WsdlTest" haltonfailure="no" fork="yes"/>
             <test name="com.l7tech.common.xml.tarari.util.TarariXpathConverterTest" haltonfailure="no"/>
 
             <!--
