@@ -53,7 +53,7 @@ stop() {
 	find_tomcat;
 	if [ -z "$pid" ] ; then
 		echo "SSG Not Running"
-		exit
+		return
 	fi
 	echo -n $"Stopping $prog: "
 	if [ "$USER" = "root" ]; then
@@ -71,12 +71,12 @@ stop() {
 		find_tomcat;
 		if [ -z "$pid" ] ; then
  			echo "Success"
-			exit
+			return
 		fi
 		count=`expr $count + 1`
 		if [ "$count" -gt "$tries" ]; then
 			reallystop
-			exit
+			return
 		fi  
 		stop;
 		
@@ -85,7 +85,7 @@ stop() {
 		count=`expr $count + 1`
 		if [ "$count" -gt "$tries" ]; then
 			reallystop
-			exit
+			return
 		fi  
 		stop;
 	fi 
