@@ -1,7 +1,7 @@
 Summary: Secure Span Gateway
 Name: ssg
 Version: 3.1
-Release: m0a
+Release: m3d
 Group: Applications/Internet
 Copyright: Copyright Layer7 Technologies 2003-2004
 URL: http://www.layer7tech.com
@@ -29,6 +29,7 @@ tar -xzf /tmp/ssg.tar.gz
 
 %build
 mkdir %{buildroot}/etc/
+mkdir %{buildroot}/etc/snmp/
 mkdir %{buildroot}/etc/profile.d/
 mkdir %{buildroot}/etc/init.d/
 mkdir %{buildroot}/etc/iptables
@@ -43,8 +44,7 @@ mv %{buildroot}/ssg/bin/ssgruntimedefs.sh %{buildroot}/etc/profile.d/ssgruntimed
 mv %{buildroot}/ssg/bin/tarari.sh %{buildroot}/etc/profile.d/tarari.sh
 mv %{buildroot}/ssg/bin/back_route %{buildroot}/etc/init.d/back_route
 mv %{buildroot}/ssg/bin/tcp_tune.sh %{buildroot}/etc/init.d/tcp_tune
-mv %{buildroot}/ssg/bin/snmpd.conf %{buildroot}/etc/snmp/snmpd.conf
-rm -rf %{buildroot}/ssg/j2sdk1.4.2_05/demo
+mv %{buildroot}/ssg/bin/snmpd.conf %{buildroot}/etc/snmp/snmpd.conf 
 
 %files 
 %defattr(-,root,root)
@@ -52,6 +52,7 @@ rm -rf %{buildroot}/ssg/j2sdk1.4.2_05/demo
 /etc/init.d/tarari
 /etc/init.d/back_route
 /etc/init.d/tcp_tune
+/etc/snmp/snmpd.conf
 /etc/profile.d/ssgruntimedefs.sh
 /etc/profile.d/tarari.sh
 /etc/init.d/snmpd
