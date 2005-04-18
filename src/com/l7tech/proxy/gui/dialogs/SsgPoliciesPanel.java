@@ -144,7 +144,7 @@ class SsgPoliciesPanel extends JPanel {
         colLk.setHeaderValue("Lock");
         colLk.setCellRenderer(policyTable.getDefaultRenderer(Boolean.class));
         colLk.setCellEditor(policyTable.getDefaultEditor(Boolean.class));
-        setColumnSize(colLk, " Lock ", new JCheckBox());
+        setColumnSize(colLk, "  Lock  ", new JCheckBox());
         policyTable.getTableHeader().setReorderingAllowed(false);
         JScrollPane policyTableSp = new JScrollPane(policyTable);
         policyTableSp.setPreferredSize(new Dimension(120, 120));
@@ -194,8 +194,8 @@ class SsgPoliciesPanel extends JPanel {
     }
 
     private void setColumnSize(TableColumn col, String columnTitle, JComponent cellComponent) {
-        int lockWidth = (int)(new JLabel(columnTitle).getPreferredSize().getWidth() + 7);
-        int matchWidth = (int)cellComponent.getPreferredSize().getWidth() + 7;
+        int lockWidth = (int)new JLabel(columnTitle).getPreferredSize().getWidth() + 8;
+        int matchWidth = (int)cellComponent.getPreferredSize().getWidth() + 8;
         int width = Math.max(lockWidth, matchWidth);
         col.setMinWidth(width);
         col.setMaxWidth(width);
@@ -233,7 +233,7 @@ class SsgPoliciesPanel extends JPanel {
                             pakDlg.setPolicyAttachmentKey(oldPak);
 
                             Utilities.centerOnScreen(pakDlg);
-                            pakDlg.show();
+                            pakDlg.setVisible(true);
 
                             PolicyAttachmentKey newPak = pakDlg.getPolicyAttachmentKey();
                             if (newPak != null) {
@@ -350,7 +350,7 @@ class SsgPoliciesPanel extends JPanel {
                                                                                      true);
                     pakDlg.setPolicyAttachmentKey(pak);
                     Utilities.centerOnScreen(pakDlg);
-                    pakDlg.show();
+                    pakDlg.setVisible(true);
                     PolicyAttachmentKey newPak = pakDlg.getPolicyAttachmentKey();
                     if (newPak == null)
                         return;
