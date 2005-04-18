@@ -87,6 +87,9 @@ fi
 /sbin/chkconfig back_route on
 /sbin/chkconfig snmpd on
 
+echo "Layer 7 SecureSpan(tm) Gateway v3.1\nKernel \r on an \m\n" >/etc/issue
+echo "Layer 7 SecureSpan(tm) Gateway v3.1\nKernel \r on an \m\n" >/etc/issue.net
+
 %postun
 if [ -e /etc/SSG_INSTALL ]; then
 	rm /etc/SSG_INSTALL
