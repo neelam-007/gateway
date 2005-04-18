@@ -1286,6 +1286,7 @@
                 <include name="back_route"/>
                 <include name="upgrade_keystore2.1_3.0.pl"/>
                 <include name="upgrade_keystore_config2.1_3.0.sh"/>
+                <include name="snmpd.conf"/>
             </fileset>
             <fileset dir="${src.root}/etc/db/mysql">
                 <include name="my.cnf"/>
