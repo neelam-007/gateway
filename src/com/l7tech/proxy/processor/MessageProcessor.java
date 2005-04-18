@@ -146,11 +146,11 @@ public class MessageProcessor {
                         } catch (ServerCertificateUntrustedException e) {
                             if (context.getSsg().isFederatedGateway()) {
                                 SslPeer sslPeer = CurrentSslPeer.get();
-                                if (sslPeer == context.getSsg())
+                                if (sslPeer == ssg)
                                     ssg.getRuntime().getSsgKeyStoreManager().installSsgServerCertificate(ssg, null);
-                                else if (sslPeer == context.getSsg().getTrustedGateway())
-                                    ((Ssg)sslPeer).getRuntime().getSsgKeyStoreManager().installSsgServerCertificate(ssg, context.getFederatedCredentials());
-                                else if (sslPeer != null)
+                                else if (sslPeer == context.getSsg().getTrustedGateway()) {
+                                    ((Ssg)sslPeer).getRuntime().getSsgKeyStoreManager().installSsgServerCertificate((Ssg)sslPeer, context.getFederatedCredentials());
+                                } else if (sslPeer != null)
                                     // We were talking to something else, probably a token provider.
                                     handleSslExceptionForWsTrustTokenService(ssg, sslPeer, e);
                                 else
@@ -281,7 +281,7 @@ public class MessageProcessor {
     {
         WsTrustSamlTokenStrategy strat = federatedSsg.getWsTrustSamlTokenStrategy();
         if (strat == null)
-            throw (SSLException)new SSLException("SSL connection failure, but no third-party WS-Trust configured: " + e.getMessage()).initCause(e);
+            throw (SSLException)new SSLException("SSL connection failure to something other than our Gateway (or its Trusted Gateway, if applicable), but no third-party WS-Trust is configured: " + e.getMessage()).initCause(e);
         strat.handleSslException(sslPeer, e);
 
         // Update SSGs
