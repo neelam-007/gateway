@@ -33,6 +33,7 @@ mkdir %{buildroot}/etc/profile.d/
 mkdir %{buildroot}/etc/init.d/
 mkdir %{buildroot}/etc/iptables
 mkdir %{buildroot}/etc/sysconfig
+mkdir %{buildroot}/etc/snmp/
 
 mv %{buildroot}/ssg/bin/ssg-initd %{buildroot}/etc/init.d/ssg 
 mv %{buildroot}/ssg/bin/tarari-initd %{buildroot}/etc/init.d/tarari
@@ -42,6 +43,7 @@ mv %{buildroot}/ssg/bin/ssgruntimedefs.sh %{buildroot}/etc/profile.d/ssgruntimed
 mv %{buildroot}/ssg/bin/tarari.sh %{buildroot}/etc/profile.d/tarari.sh
 mv %{buildroot}/ssg/bin/back_route %{buildroot}/etc/init.d/back_route
 mv %{buildroot}/ssg/bin/tcp_tune.sh %{buildroot}/etc/init.d/tcp_tune
+mv %{buildroot}/ssg/bin/snmpd.conf %{buildroot}/etc/snmp/snmpd.conf
 rm -rf %{buildroot}/ssg/j2sdk1.4.2_05/demo
 
 %files 
@@ -52,6 +54,7 @@ rm -rf %{buildroot}/ssg/j2sdk1.4.2_05/demo
 /etc/init.d/tcp_tune
 /etc/profile.d/ssgruntimedefs.sh
 /etc/profile.d/tarari.sh
+/etc/init.d/snmpd
 %config(noreplace) /etc/my.cnf.ssg
 %config(noreplace) /etc/sysconfig/iptables
 %defattr(-,gateway,gateway)
@@ -81,6 +84,7 @@ fi
 /sbin/chkconfig ssg on
 /sbin/chkconfig tcp_tune on
 /sbin/chkconfig back_route on
+/sbin/chkconfig snmpd on
 
 %postun
 if [ -e /etc/SSG_INSTALL ]; then
