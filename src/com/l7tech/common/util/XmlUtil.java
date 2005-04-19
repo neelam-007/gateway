@@ -74,8 +74,24 @@ public class XmlUtil {
         }
     };
 
+    private static ThreadLocal documentBuilderAllowingDoctype = new ThreadLocal() {
+        protected synchronized Object initialValue() {
+            try {
+                DocumentBuilder builder = dbfAllowingDoctype.newDocumentBuilder();
+                builder.setEntityResolver(SAFE_ENTITY_RESOLVER);
+                return builder;
+            } catch (ParserConfigurationException e) {
+                throw new RuntimeException(e); // can't happen
+            }
+        }
+    };
+
     private static DocumentBuilder getDocumentBuilder() {
         return (DocumentBuilder)documentBuilder.get();
+    }
+
+    private static DocumentBuilder getDocumentBuilderAllowingDoctype() {
+        return (DocumentBuilder)documentBuilderAllowingDoctype.get();
     }
 
     public static Document createEmptyDocument(String rootElementName, String rootPrefix, String rootNs) {
@@ -107,7 +123,21 @@ public class XmlUtil {
     }
 
     public static Document parse(InputStream input) throws IOException, SAXException {
-        return getDocumentBuilder().parse(input); // TODO wtf is there no version that takes an encoding :(
+        return parse(input, false);
+    }
+
+    /**
+     * @param input the InputStream that will produce the document's bytes
+     * @param allowDoctype true to allow DOCTYPE processing instructions. <b>NOTE</b>: Don't allow DOCTYPEs on "foreign" documents (e.g. any document received over a network interface).
+     * @return the parsed DOM Document
+     * @throws IOException
+     * @throws SAXException
+     */
+    public static Document parse(InputStream input, boolean allowDoctype) throws IOException, SAXException {
+        DocumentBuilder parser = allowDoctype
+                ? getDocumentBuilderAllowingDoctype()
+                : getDocumentBuilder();
+        return parser.parse(input); // TODO wtf is there no version that takes an encoding :(
     }
 
     private static ThreadLocal formattedXMLSerializer = new ThreadLocal() {
@@ -683,5 +713,11 @@ public class XmlUtil {
     private static DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
     static {
         dbf.setNamespaceAware(true);
+        dbf.setAttribute("http://apache.org/xml/features/disallow-doctype-decl", Boolean.TRUE);
+    }
+
+    private static DocumentBuilderFactory dbfAllowingDoctype = DocumentBuilderFactory.newInstance();
+    static {
+        dbfAllowingDoctype.setNamespaceAware(true);
     }
 }
