@@ -458,6 +458,9 @@ public class PolicyApplicationContext extends ProcessingContext {
         if (ssg.isFederatedGateway())
             prepareClientCertificate();
 
+        if (ssg.getServerCertificate() == null)
+            throw new ServerCertificateUntrustedException(); // Trigger server cert disco
+
         if (ssg.getClientCertificate() == null) {
             PasswordAuthentication pw = getCredentialsForTrustedSsg();
             logger.log(Level.INFO, "Establishing new WS-SecureConversation session with Gateway " + ssg.toString() + " using HTTP Basic over SSL");
