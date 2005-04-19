@@ -43,7 +43,7 @@ mv %{buildroot}/ssg/bin/ssgruntimedefs.sh %{buildroot}/etc/profile.d/ssgruntimed
 mv %{buildroot}/ssg/bin/tarari.sh %{buildroot}/etc/profile.d/tarari.sh
 mv %{buildroot}/ssg/bin/back_route %{buildroot}/etc/init.d/back_route
 mv %{buildroot}/ssg/bin/tcp_tune.sh %{buildroot}/etc/init.d/tcp_tune
-mv %{buildroot}/ssg/bin/snmpd.conf_example %{buildroot}/etc/snmp/snmpd.conf_example
+mv %{buildroot}/ssg/bin/snmpd.conf %{buildroot}/etc/snmp/snmpd.conf_example
 
 %files 
 %defattr(-,root,root)
