@@ -34,7 +34,6 @@ mkdir %{buildroot}/etc/profile.d/
 mkdir %{buildroot}/etc/init.d/
 mkdir %{buildroot}/etc/iptables
 mkdir %{buildroot}/etc/sysconfig
-mkdir %{buildroot}/etc/snmp/
 
 mv %{buildroot}/ssg/bin/ssg-initd %{buildroot}/etc/init.d/ssg 
 mv %{buildroot}/ssg/bin/tarari-initd %{buildroot}/etc/init.d/tarari
@@ -44,7 +43,7 @@ mv %{buildroot}/ssg/bin/ssgruntimedefs.sh %{buildroot}/etc/profile.d/ssgruntimed
 mv %{buildroot}/ssg/bin/tarari.sh %{buildroot}/etc/profile.d/tarari.sh
 mv %{buildroot}/ssg/bin/back_route %{buildroot}/etc/init.d/back_route
 mv %{buildroot}/ssg/bin/tcp_tune.sh %{buildroot}/etc/init.d/tcp_tune
-mv %{buildroot}/ssg/bin/snmpd.conf %{buildroot}/etc/snmp/snmpd.conf 
+mv %{buildroot}/ssg/bin/snmpd.conf_example %{buildroot}/etc/snmp/snmpd.conf_example
 
 %files 
 %defattr(-,root,root)
@@ -52,10 +51,8 @@ mv %{buildroot}/ssg/bin/snmpd.conf %{buildroot}/etc/snmp/snmpd.conf
 /etc/init.d/tarari
 /etc/init.d/back_route
 /etc/init.d/tcp_tune
-/etc/snmp/snmpd.conf
 /etc/profile.d/ssgruntimedefs.sh
 /etc/profile.d/tarari.sh
-/etc/init.d/snmpd
 %config(noreplace) /etc/my.cnf.ssg
 %config(noreplace) /etc/sysconfig/iptables
 %defattr(-,gateway,gateway)
@@ -85,7 +82,6 @@ fi
 /sbin/chkconfig ssg on
 /sbin/chkconfig tcp_tune on
 /sbin/chkconfig back_route on
-/sbin/chkconfig snmpd on
 
 echo "Layer 7 SecureSpan(tm) Gateway v3.1\nKernel \r on an \m\n" >/etc/issue
 echo "Layer 7 SecureSpan(tm) Gateway v3.1\nKernel \r on an \m\n" >/etc/issue.net
