@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.common.security.wstrust;
@@ -580,7 +579,8 @@ public class TokenServiceClient {
             XencUtil.checkEncryptionMethod(encryptedKeyEl);
 
             // Extract the encrypted key
-            if (clientPrivateKey == null) throw new InvalidDocumentFormatException("Was not expecting to receive an encrypted token: client private key not available");
+            if (clientPrivateKey == null)
+                throw new InvalidDocumentFormatException("Was not expecting to receive an encrypted token: client private key not available");
             sharedSecret = XencUtil.decryptKey(encryptedKeyEl, clientPrivateKey);
         } else if (binarySecretEl != null && clientPrivateKey == null) {
             String base64edsecret = XmlUtil.getTextValue(binarySecretEl);
