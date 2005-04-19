@@ -236,7 +236,8 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
             }
         }
 
-        return new AdminInfo(address, login);
+        //return new AdminInfo(address, login);
+        return new AdminInfo(login, address);
     }
 
     private static class AdminInfo {
