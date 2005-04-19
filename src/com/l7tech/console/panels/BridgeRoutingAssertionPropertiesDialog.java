@@ -1,38 +1,33 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.console.event.PolicyListener;
 import com.l7tech.console.tree.ServiceNode;
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.BridgeRoutingAssertion;
+import org.xml.sax.SAXException;
 
 import javax.swing.*;
+import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Allows properties of a {@link com.l7tech.policy.assertion.BridgeRoutingAssertion} to be edited.
  */
 public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
-    private static final Logger log = Logger.getLogger(BridgeRoutingAssertionPropertiesDialog.class.getName());
+    private static final Logger logger = Logger.getLogger(BridgeRoutingAssertionPropertiesDialog.class.getName());
 
     private JPanel rootPanel;
-    private JRadioButton rbServerCertAutoDisco;
-    private JRadioButton rbServerCertManual;
-    private JLabel labelServerCertManual;
-    private JButton buttonServerCertImport;
-    private JRadioButton rbClientCertUseGatewaySsl;
-    private JRadioButton rbClientCertManual;
-    private JButton buttonClientCertImport;
-    private JLabel labelClientCertManual;
     private JRadioButton rbPolicyAutoDisco;
     private JRadioButton rbPolicyManual;
     private JTextArea policyXmlText;
@@ -42,6 +37,7 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
 
     private final HttpRoutingAssertionDialog httpDialog;
     private final BridgeRoutingAssertion assertion;
+    private JLabel xmlMessages;
 
     public BridgeRoutingAssertionPropertiesDialog(Frame owner, BridgeRoutingAssertion a, ServiceNode sn) {
         super(owner, true);
@@ -57,7 +53,7 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
 
         buttonHttpProperties.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                httpDialog.show();
+                httpDialog.setVisible(true);
             }
         });
 
@@ -67,7 +63,7 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
             public void actionPerformed(ActionEvent e) {
                 copyViewToModel();
 
-                fireEventAssertionChanged(assertion);
+                httpDialog.fireEventAssertionChanged(assertion);
                 BridgeRoutingAssertionPropertiesDialog.this.dispose();
             }
         });
@@ -85,25 +81,41 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
             }
         };
 
-        ButtonGroup bg1 = new ButtonGroup();
-        bg1.add(rbClientCertManual);
-        bg1.add(rbClientCertUseGatewaySsl);
-        rbClientCertManual.addActionListener(updateEnableStates);
-        rbClientCertUseGatewaySsl.addActionListener(updateEnableStates);
-
         ButtonGroup bg2 = new ButtonGroup();
         bg2.add(rbPolicyAutoDisco);
         bg2.add(rbPolicyManual);
         rbPolicyAutoDisco.addActionListener(updateEnableStates);
         rbPolicyManual.addActionListener(updateEnableStates);
 
-        ButtonGroup bg3 = new ButtonGroup();
-        bg3.add(rbServerCertAutoDisco);
-        bg3.add(rbServerCertManual);
-        rbServerCertAutoDisco.addActionListener(updateEnableStates);
-        rbServerCertManual.addActionListener(updateEnableStates);
-
         Utilities.enableGrayOnDisabled(policyXmlText);
+
+        final Utilities.DefaultContextMenuFactory cmf =
+                new Utilities.DefaultContextMenuFactory() {
+                    public JPopupMenu createContextMenu(final JTextComponent tc) {
+                        final JPopupMenu m = super.createContextMenu(tc);
+                        if (tc.isEditable()) {
+                            m.add(new JSeparator());
+                            JMenuItem reformXml = new JMenuItem("Reformat All XML");
+                            reformXml.addActionListener(new ActionListener() {
+                                public void actionPerformed(ActionEvent e) {
+                                    String xml = tc.getText();
+                                    try {
+                                        tc.setText(XmlUtil.nodeToFormattedString(XmlUtil.stringToDocument(xml)));
+                                        xmlMessages.setText("");
+                                    } catch (IOException e1) {
+                                        logger.log(Level.SEVERE, "Unable to reformat XML", e1); // Can't happen
+                                    } catch (SAXException e1) {
+                                        logger.log(Level.SEVERE, "Unable to reformat XML", e1); // Oh well
+                                        xmlMessages.setText("XML is not well-formed");
+                                    }
+                                }
+                            });
+                            m.add(reformXml);
+                        }
+                        return m;
+                    }
+                };
+        policyXmlText.addMouseListener(Utilities.createContextMenuMouseListener(policyXmlText, cmf));
 
         copyModelToView();
         updateEnableStates();
@@ -135,12 +147,4 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
         httpDialog.addPolicyListener(listener);
     }
 
-    /**
-     * notfy the listeners
-     *
-     * @param a the assertion
-     */
-    private void fireEventAssertionChanged(final Assertion a) {
-        httpDialog.fireEventAssertionChanged(assertion);
-    }
 }
