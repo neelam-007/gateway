@@ -147,11 +147,15 @@ public class SoapMessageProcessingServlet extends HttpServlet {
                 }
 
                 if (status == AssertionStatus.NONE) {
-                    logger.fine("servlet transport returning 200");
                     // Transmit the response and return
+                    hresponse.setStatus(routeStat);
                     hresponse.setContentType(response.getMimeKnob().getOuterContentType().getFullValue());
-                    HexUtils.copyStream(response.getMimeKnob().getEntireMessageBodyAsInputStream(),
-                      hresponse.getOutputStream());
+                    OutputStream responseos = hresponse.getOutputStream();
+                    HexUtils.copyStream(response.getMimeKnob().getEntireMessageBodyAsInputStream(), responseos);
+                    responseos.close();
+                    logger.fine("servlet transport returned status " + routeStat +
+                                ". content-type " + response.getMimeKnob().getOuterContentType().getFullValue());
+
                     return;
                 } else if (context.getFaultDetail() != null) {
                     logger.fine("returning special soap fault");
