@@ -95,4 +95,56 @@ public class FailoverStrategyTest extends TestCase {
         // Make sure we got them all
         assertEquals(set.size(), servers.length);
     }
+
+    public void testOrderedStickyFailoverStrategy() throws Exception {
+        OrderedStickyFailoverStrategy s = new OrderedStickyFailoverStrategy(servers);
+        s.setProbeTime(100);
+
+        assertEquals("Must initially prefer first server", SA, s.selectService()); s.reportSuccess(SA);
+        assertEquals("Must be sticky", SA, s.selectService());
+
+        s.reportFailure(SA);
+        assertEquals("Must use preference order for failover", SB, s.selectService()); s.reportSuccess(SB);
+
+        for (int i = 0; i < 20; ++i) {
+            assertEquals("Must be sticky", SB, s.selectService()); s.reportSuccess(SB);
+        }
+
+        Thread.sleep(110);
+
+        // Should start seeing probes of SA now
+        int saCount = 0;
+        for (int i = 0; i < 20; ++i) {
+            Object got = s.selectService();
+            if (got == SA) {
+                saCount++;
+                s.reportFailure(got);
+            } else {
+                assertEquals("Must be sticky", SB, got);
+                s.reportSuccess(got);
+            }
+        }
+
+        assertTrue("Should have probed for higher-pref server", saCount > 0);
+        assertTrue("Should not have probe for higher-pref server more than once", saCount < 2);
+
+        // Simulate A coming back up
+
+        // Time for another probe
+        Thread.sleep(110);
+        boolean sawSa = false;
+        for (int i = 0; i < 20; ++i) {
+            Object got = s.selectService();
+            s.reportSuccess(got);
+            if (got == SA) {
+                sawSa = true;
+            } else {
+                assertFalse("Should have upgraded to higher-pref server", sawSa);
+            }
+        }
+
+        assertEquals("Should be sticky after recover", SA, s.selectService()); s.reportSuccess(SA);
+
+        // TODO test two servers going down
+    }
 }
