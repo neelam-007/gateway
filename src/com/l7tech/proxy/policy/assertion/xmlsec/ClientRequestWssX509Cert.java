@@ -47,6 +47,8 @@ public class ClientRequestWssX509Cert extends ClientAssertion {
         final PrivateKey userPrivateKey = ssg.getClientCertificatePrivateKey();
         final X509Certificate userCert = ssg.getClientCertificate();
         final X509Certificate ssgCert = ssg.getServerCertificate();
+        if (ssgCert == null)
+            throw new ServerCertificateUntrustedException(); // Trigger server cert disco
 
         // add a pending decoration that will be applied only if the rest of this policy branch succeeds
         context.getPendingDecorations().put(this, new ClientDecorator() {
