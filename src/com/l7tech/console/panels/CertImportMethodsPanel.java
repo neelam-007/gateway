@@ -50,7 +50,7 @@ public class CertImportMethodsPanel extends WizardStepPanel {
     private JTextArea copyAndPasteTextArea;
     private JTextField urlConnTextField;
     private X509Certificate cert = null;
-    private boolean sslOptionAllowed;
+    private boolean defaultToSslOption;
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.CertificateDialog", Locale.getDefault());
     private static Logger logger = Logger.getLogger(CertImportMethodsPanel.class.getName());
 
@@ -59,9 +59,9 @@ public class CertImportMethodsPanel extends WizardStepPanel {
      *
      * @param next  The next step panel
      */
-    public CertImportMethodsPanel(WizardStepPanel next, boolean sslOptionAllowed) {
+    public CertImportMethodsPanel(WizardStepPanel next, boolean defaultToSslOption) {
         super(next);
-        this.sslOptionAllowed = sslOptionAllowed;
+        this.defaultToSslOption = defaultToSslOption;
         initialize();
     }
 
@@ -98,11 +98,9 @@ public class CertImportMethodsPanel extends WizardStepPanel {
         bg.add(urlConnRadioButton);
 
         // urlConnection as the default
-        if (sslOptionAllowed) {
+        if (defaultToSslOption) {
             urlConnRadioButton.setSelected(true);
         } else {
-            urlConnRadioButton.setEnabled(false);
-            urlConnTextField.setEditable(false);
             fileRadioButton.setSelected(true);
         }
 
