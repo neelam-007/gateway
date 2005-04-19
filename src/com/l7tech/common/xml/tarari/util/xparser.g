@@ -12,7 +12,7 @@ options {
    // ...
 
     import java.io.PrintWriter ;
-    import java.util.HashMap ;
+    import java.util.Map ;
 }
 
 
@@ -22,13 +22,17 @@ options {
 }
 {
     PrintWriter wp ;
-    HashMap prefixTab ;
+    Map prefixTab = null;
     int inPred = 0;
 
     private static class PrefixedName {
         private String nsPrefix = null;
         private String localName = null;
 	    private String pass = null; // passthrough unchanged
+    }
+
+    public void setPrefixTab(Map prefixTab) {
+        this.prefixTab = prefixTab;
     }
 
     public void myReportError( String msg ) throws TokenStreamException {
@@ -42,11 +46,10 @@ options {
 
 // ... grammar rules
 
-mainModule	
+mainModule
 {
-    prefixTab = new HashMap() ;
 }
-	:	prolog pathList
+	:	pathExpr
 	{
 	}
 	;
@@ -55,53 +58,7 @@ mainModule
 		myReportError( ex.toString() ) ;
 	}
 
-prolog    	
-{
-}
-	:	("declare" namespaceDecl 
-		separator)* 
-	;
-	exception
-	catch [ RecognitionException ex ] {
-		myReportError( ex.toString() ) ;
-	}
-
-separator	 //returns [PTNode *n]
-{
-}
-	:	SEMI (NL)*
-	;
-
-namespaceDecl  
-{
-    String c1, c2 ;
-}
-	:	 "namespace" c1=ncName EQ c2=stringLiteral
-	{
-         if ( prefixTab.containsKey( c1 ) ) {
-		throw new TokenStreamException("prefix redeclared. Fatal error") ;
-         }
-         prefixTab.put( c1, c2 ) ;
-	 //System.out.println("Declared namespace " + c1 + "=" + c2 ) ; 
-	}
-	;
-	exception
-	catch [ RecognitionException ex ] {
-		myReportError( ex.toString() ) ;
-	}
-
-pathList	
-{
-}
-	:	(  pathExpr )*
-	;
-	exception
-	catch [ RecognitionException ex ] {
-		myReportError( ex.toString() ) ;
-	}
-
-
-pathExpr	
+pathExpr
 {
     String s = "";
 }
@@ -150,7 +107,7 @@ axisStep	 returns [String s]
     PrefixedName pn = null;
     s = "";
 }
-	:	pn=forwardStep ( existingPredicate=predicate 
+	:	pn=forwardStep ( existingPredicate=predicate
     )?
 	{
 	    StringBuffer sbuf = new StringBuffer();
@@ -308,7 +265,7 @@ nameTest	 returns [PrefixedName ret]
 		} else {
 			ret.pass = c1;
 		}
-	} 
+	}
 	;
 	exception
 	catch [ RecognitionException ex ] {
@@ -321,7 +278,7 @@ predicate	 returns [String n]
   String ss = null;
 }
 	:  SQLEFT { inPred++; if (inPred > 1) throw new RecognitionException("Nested predicates not supported"); } (ss=simplepredicate
-        {   
+        {
             n = ss ;
         }
         |   y:INTEGER
@@ -384,7 +341,7 @@ stringLiteral	 returns [String n]
 	:  z:STRING
 	{
 		n = z.getText() ;
-	} 
+	}
 	;
 	exception
 	catch [ RecognitionException ex ] {
@@ -426,21 +383,21 @@ options {
 
 // lexer token defs
 
-WS     :       
+WS     :
 	  (	' '
         |       '\t'
       )+
       {
         _ttype = Token.SKIP ;
-      } 
+      }
     ;
 
 NL     :
          (  '\n' { newline() ; }
-        |       '\r' '\n' { newline() ;} 
+        |       '\r' '\n' { newline() ;}
           )+
         ;
-        
+
 
 SQLEFT  :  '['
         ;
@@ -469,9 +426,6 @@ EQ  : '='
 DASH : '-'
      ;
 
-ASSIGN  : ':' '='
-	;
-
 COL   : ':'
       ;
 
@@ -479,7 +433,7 @@ STRING : '"'!  (ESC | ~('\\' | '"')  )* '"'!
 	;
 
 protected
-ESC    : '\\' ( '"' )? 
+ESC    : '\\' ( '"' )?
 	;
 
 protected
@@ -501,12 +455,12 @@ options {
 STAR    : '*'
 	;
 
-protected 
+protected
 IDSTART  : (  'a'..'z' | 'A' .. 'Z' )
          ;
 
 protected
-IDV      : ( 'a'..'z' | 'A'..'Z' | '_' | '0' .. '9' )+
+IDV      : ( 'a'..'z' | 'A'..'Z' | '_' | '0' .. '9' | DASH )+
          ;
 
 protected

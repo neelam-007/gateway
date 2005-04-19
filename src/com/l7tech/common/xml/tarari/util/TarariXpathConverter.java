@@ -6,9 +6,7 @@ import antlr.TokenStreamException;
 
 import java.io.*;
 import java.text.ParseException;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -46,20 +44,6 @@ public class TarariXpathConverter {
 
         // Build input stream
         StringBuffer in = new StringBuffer();
-        Set nsEntries = nsmap.entrySet();
-        for (Iterator i = nsEntries.iterator(); i.hasNext();) {
-            Map.Entry entry = (Map.Entry)i.next();
-            String prefix = (String)entry.getKey();
-            String uri = (String)entry.getValue();
-            in.append("declare namespace ");
-            in.append(prefix);
-            in.append('=');
-            in.append('"');
-            in.append(uri);
-            in.append('"');
-            in.append(';');
-            in.append('\n');
-        }
         in.append(xpath);
         in.append('\n');
 
@@ -73,6 +57,7 @@ public class TarariXpathConverter {
         try {
             PrintWriter outWriter = new PrintWriter(new OutputStreamWriter(out, "UTF-8"));
             XprParser parser = new XprParser(xprLexer);
+            parser.setPrefixTab(nsmap);
             parser.setOutFile(outWriter);
             parser.mainModule();
             outWriter.flush();

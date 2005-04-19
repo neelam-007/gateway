@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.common.xml.tarari.util;
@@ -201,5 +200,24 @@ public class TarariXpathConverterTest extends TestCase {
         gave = "/e:employees/e:emp";
         got = TarariXpathConverter.convertToTarariXpath(smallMap, gave);
         assertEquals("Undeclared prefix should pass-through as literal match", gave, got);
+    }
+
+    public void testDashInPrefixBug1711() throws Exception {
+        Map map = new HashMap();
+        map.put("SOAP-ENV", "http://blah");
+        map.put("soapenv", "http://blah");
+        map.put("typens", "http://bletch");
+
+        String gave = "/soapenv:Envelope/soapenv:Body/typens:BrowseNodeSearchRequest";
+        String got = TarariXpathConverter.convertToTarariXpath(map, gave);
+        assertTrue("Unused namespace prefix containing a dash should be ignored", got != null && got.length() > 1);
+
+        gave = "/soapenv:Envelope/SOAP-ENV:Body/typens:BrowseNodeSearchRequest";
+        got = TarariXpathConverter.convertToTarariXpath(map, gave);
+        assertTrue("Namespace prefix containing a dash should work", got != null && got.length() > 1);
+
+        gave = "/BLEE-BLOO:Envelope/FOO-BAR:Body/BLETCH-BLOTCH:BrowseNodeSearchRequest";
+        got = TarariXpathConverter.convertToTarariXpath(map, gave);
+        assertEquals("Undeclared namespaces with dashes should pass through unchanged", gave, got);                
     }
 }

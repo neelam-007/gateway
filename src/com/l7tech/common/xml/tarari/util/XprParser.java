@@ -6,19 +6,23 @@ import antlr.*;
 import antlr.collections.impl.BitSet;
 
 import java.io.PrintWriter;
-import java.util.HashMap;
+import java.util.Map;
 
 public class XprParser extends antlr.LLkParser       implements XprParserTokenTypes
  {
 
     PrintWriter wp ;
-    HashMap prefixTab ;
+    Map prefixTab = null;
     int inPred = 0;
 
     private static class PrefixedName {
         private String nsPrefix = null;
         private String localName = null;
 	    private String pass = null; // passthrough unchanged
+    }
+
+    public void setPrefixTab(Map prefixTab) {
+        this.prefixTab = prefixTab;
     }
 
     public void myReportError( String msg ) throws TokenStreamException {
@@ -55,12 +59,10 @@ public XprParser(ParserSharedInputState state) {
 	public final void mainModule() throws RecognitionException, TokenStreamException {
 		
 		
-		prefixTab = new HashMap() ;
 		
 		
 		try {      // for error handling
-			prolog();
-			pathList();
+			pathExpr();
 			
 				
 		}
@@ -69,159 +71,6 @@ public XprParser(ParserSharedInputState state) {
 					myReportError( ex.toString() ) ;
 				
 		}
-	}
-	
-	public final void prolog() throws RecognitionException, TokenStreamException {
-		
-		
-		
-		
-		try {      // for error handling
-			{
-			_loop4:
-			do {
-				if ((LA(1)==LITERAL_declare)) {
-					match(LITERAL_declare);
-					namespaceDecl();
-					separator();
-				}
-				else {
-					break _loop4;
-				}
-				
-			} while (true);
-			}
-		}
-		catch ( RecognitionException ex ) {
-			
-					myReportError( ex.toString() ) ;
-				
-		}
-	}
-	
-	public final void pathList() throws RecognitionException, TokenStreamException {
-		
-		
-		
-		
-		try {      // for error handling
-			{
-			_loop11:
-			do {
-				if ((LA(1)==SLASH)) {
-					pathExpr();
-				}
-				else {
-					break _loop11;
-				}
-				
-			} while (true);
-			}
-		}
-		catch ( RecognitionException ex ) {
-			
-					myReportError( ex.toString() ) ;
-				
-		}
-	}
-	
-	public final void namespaceDecl() throws RecognitionException, TokenStreamException {
-		
-		
-		String c1, c2 ;
-		
-		
-		try {      // for error handling
-			match(LITERAL_namespace);
-			c1=ncName();
-			match(EQ);
-			c2=stringLiteral();
-			
-			if ( prefixTab.containsKey( c1 ) ) {
-					throw new TokenStreamException("prefix redeclared. Fatal error") ;
-			}
-			prefixTab.put( c1, c2 ) ;
-				 //System.out.println("Declared namespace " + c1 + "=" + c2 ) ; 
-				
-		}
-		catch ( RecognitionException ex ) {
-			
-					myReportError( ex.toString() ) ;
-				
-		}
-	}
-	
-	public final void separator() throws RecognitionException, TokenStreamException {
-		
-		
-		
-		
-		try {      // for error handling
-			match(SEMI);
-			{
-			_loop7:
-			do {
-				if ((LA(1)==NL)) {
-					match(NL);
-				}
-				else {
-					break _loop7;
-				}
-				
-			} while (true);
-			}
-		}
-		catch (RecognitionException ex) {
-			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_0);
-		}
-	}
-	
-	public final String  ncName() throws RecognitionException, TokenStreamException {
-		String n;
-		
-		Token  z = null;
-		
-		n = null ;
-		
-		
-		try {      // for error handling
-			z = LT(1);
-			match(ID);
-			
-			n = z.getText() ;
-				
-		}
-		catch ( RecognitionException ex ) {
-			
-					myReportError( ex.toString() ) ;
-				
-		}
-		return n;
-	}
-	
-	public final String  stringLiteral() throws RecognitionException, TokenStreamException {
-		String n;
-		
-		Token  z = null;
-		
-		n = null ;
-		
-		
-		try {      // for error handling
-			z = LT(1);
-			match(STRING);
-			
-					n = z.getText() ;
-				
-		}
-		catch ( RecognitionException ex ) {
-			
-					myReportError( ex.toString() ) ;
-				
-		}
-		return n;
 	}
 	
 	public final void pathExpr() throws RecognitionException, TokenStreamException {
@@ -254,8 +103,8 @@ public XprParser(ParserSharedInputState state) {
 		
 		try {      // for error handling
 			{
-			int _cnt15=0;
-			_loop15:
+			int _cnt5=0;
+			_loop5:
 			do {
 				if ((LA(1)==SLASH)) {
 					match(SLASH);
@@ -264,10 +113,10 @@ public XprParser(ParserSharedInputState state) {
 					s += ss;
 				}
 				else {
-					if ( _cnt15>=1 ) { break _loop15; } else {throw new NoViableAltException(LT(1), getFilename());}
+					if ( _cnt5>=1 ) { break _loop5; } else {throw new NoViableAltException(LT(1), getFilename());}
 				}
 				
-				_cnt15++;
+				_cnt5++;
 			} while (true);
 			}
 		}
@@ -432,7 +281,7 @@ public XprParser(ParserSharedInputState state) {
 			match(SQLEFT);
 			inPred++; if (inPred > 1) throw new RecognitionException("Nested predicates not supported");
 			{
-			if ((_tokenSet_1.member(LA(1)))) {
+			if ((_tokenSet_0.member(LA(1)))) {
 				ss=simplepredicate();
 				
 				n = ss ;
@@ -445,7 +294,7 @@ public XprParser(ParserSharedInputState state) {
 				n = "position() = "+y.getText() ;
 				
 			}
-			else if ((_tokenSet_2.member(LA(1)))) {
+			else if ((_tokenSet_1.member(LA(1)))) {
 				ss=stepExpr();
 				
 					   n = ss;
@@ -721,6 +570,29 @@ public XprParser(ParserSharedInputState state) {
 		return ret;
 	}
 	
+	public final String  ncName() throws RecognitionException, TokenStreamException {
+		String n;
+		
+		Token  z = null;
+		
+		n = null ;
+		
+		
+		try {      // for error handling
+			z = LT(1);
+			match(ID);
+			
+			n = z.getText() ;
+				
+		}
+		catch ( RecognitionException ex ) {
+			
+					myReportError( ex.toString() ) ;
+				
+		}
+		return n;
+	}
+	
 	public final String  simplepredicate() throws RecognitionException, TokenStreamException {
 		String n;
 		
@@ -731,29 +603,29 @@ public XprParser(ParserSharedInputState state) {
 		
 		try {      // for error handling
 			{
-			int _cnt34=0;
-			_loop34:
+			int _cnt24=0;
+			_loop24:
 			do {
-				if ((_tokenSet_1.member(LA(1)))) {
+				if ((_tokenSet_0.member(LA(1)))) {
 					ss=simplepredicatenoint();
 					n+=ss;
 				}
 				else {
-					if ( _cnt34>=1 ) { break _loop34; } else {throw new NoViableAltException(LT(1), getFilename());}
+					if ( _cnt24>=1 ) { break _loop24; } else {throw new NoViableAltException(LT(1), getFilename());}
 				}
 				
-				_cnt34++;
+				_cnt24++;
 			} while (true);
 			}
 			{
-			_loop36:
+			_loop26:
 			do {
-				if ((_tokenSet_3.member(LA(1)))) {
+				if ((_tokenSet_2.member(LA(1)))) {
 					ss=simplepredicateint();
 					n+=ss;
 				}
 				else {
-					break _loop36;
+					break _loop26;
 				}
 				
 			} while (true);
@@ -762,7 +634,7 @@ public XprParser(ParserSharedInputState state) {
 		catch (RecognitionException ex) {
 			reportError(ex);
 			consume();
-			consumeUntil(_tokenSet_4);
+			consumeUntil(_tokenSet_3);
 		}
 		return n;
 	}
@@ -783,8 +655,8 @@ public XprParser(ParserSharedInputState state) {
 		
 		try {      // for error handling
 			{
-			int _cnt42=0;
-			_loop42:
+			int _cnt32=0;
+			_loop32:
 			do {
 				if ((LA(1)==ID)) {
 					a = LT(1);
@@ -822,17 +694,17 @@ public XprParser(ParserSharedInputState state) {
 					n+=g.getText();
 				}
 				else {
-					if ( _cnt42>=1 ) { break _loop42; } else {throw new NoViableAltException(LT(1), getFilename());}
+					if ( _cnt32>=1 ) { break _loop32; } else {throw new NoViableAltException(LT(1), getFilename());}
 				}
 				
-				_cnt42++;
+				_cnt32++;
 			} while (true);
 			}
 		}
 		catch (RecognitionException ex) {
 			reportError(ex);
 			consume();
-			consumeUntil(_tokenSet_5);
+			consumeUntil(_tokenSet_4);
 		}
 		return n;
 	}
@@ -854,8 +726,8 @@ public XprParser(ParserSharedInputState state) {
 		
 		try {      // for error handling
 			{
-			int _cnt39=0;
-			_loop39:
+			int _cnt29=0;
+			_loop29:
 			do {
 				if ((LA(1)==ID)) {
 					a = LT(1);
@@ -898,17 +770,40 @@ public XprParser(ParserSharedInputState state) {
 					n+=h.getText();
 				}
 				else {
-					if ( _cnt39>=1 ) { break _loop39; } else {throw new NoViableAltException(LT(1), getFilename());}
+					if ( _cnt29>=1 ) { break _loop29; } else {throw new NoViableAltException(LT(1), getFilename());}
 				}
 				
-				_cnt39++;
+				_cnt29++;
 			} while (true);
 			}
 		}
 		catch (RecognitionException ex) {
 			reportError(ex);
 			consume();
-			consumeUntil(_tokenSet_5);
+			consumeUntil(_tokenSet_4);
+		}
+		return n;
+	}
+	
+	public final String  stringLiteral() throws RecognitionException, TokenStreamException {
+		String n;
+		
+		Token  z = null;
+		
+		n = null ;
+		
+		
+		try {      // for error handling
+			z = LT(1);
+			match(STRING);
+			
+					n = z.getText() ;
+				
+		}
+		catch ( RecognitionException ex ) {
+			
+					myReportError( ex.toString() ) ;
+				
 		}
 		return n;
 	}
@@ -919,11 +814,7 @@ public XprParser(ParserSharedInputState state) {
 		"EOF",
 		"<2>",
 		"NULL_TREE_LOOKAHEAD",
-		"\"declare\"",
-		"SEMI",
 		"NL",
-		"\"namespace\"",
-		"EQ",
 		"SLASH",
 		"AT",
 		"\"text\"",
@@ -936,40 +827,36 @@ public XprParser(ParserSharedInputState state) {
 		"SQRIGHT",
 		"ID",
 		"DASH",
+		"EQ",
 		"STRING",
 		"PARENLEFT",
 		"PARENRIGHT"
 	};
 	
 	private static final long[] mk_tokenSet_0() {
-		long[] data = { 530L, 0L};
+		long[] data = { 2066432L, 0L};
 		return data;
 	}
 	public static final BitSet _tokenSet_0 = new BitSet(mk_tokenSet_0());
 	private static final long[] mk_tokenSet_1() {
-		long[] data = { 16285952L, 0L};
+		long[] data = { 34016L, 0L};
 		return data;
 	}
 	public static final BitSet _tokenSet_1 = new BitSet(mk_tokenSet_1());
 	private static final long[] mk_tokenSet_2() {
-		long[] data = { 544256L, 0L};
+		long[] data = { 2074624L, 0L};
 		return data;
 	}
 	public static final BitSet _tokenSet_2 = new BitSet(mk_tokenSet_2());
 	private static final long[] mk_tokenSet_3() {
-		long[] data = { 16417024L, 0L};
+		long[] data = { 16384L, 0L};
 		return data;
 	}
 	public static final BitSet _tokenSet_3 = new BitSet(mk_tokenSet_3());
 	private static final long[] mk_tokenSet_4() {
-		long[] data = { 262144L, 0L};
+		long[] data = { 2091008L, 0L};
 		return data;
 	}
 	public static final BitSet _tokenSet_4 = new BitSet(mk_tokenSet_4());
-	private static final long[] mk_tokenSet_5() {
-		long[] data = { 16679168L, 0L};
-		return data;
-	}
-	public static final BitSet _tokenSet_5 = new BitSet(mk_tokenSet_5());
 	
 	}
