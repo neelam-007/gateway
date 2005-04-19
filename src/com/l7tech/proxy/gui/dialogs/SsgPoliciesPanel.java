@@ -292,7 +292,13 @@ class SsgPoliciesPanel extends JPanel {
                     fc.setDialogType(JFileChooser.SAVE_DIALOG);
 
                     if (JFileChooser.APPROVE_OPTION == fc.showSaveDialog(getRootPane())) {
-                        File got = fc.getSelectedFile();
+                        String name = fc.getSelectedFile().getPath();
+                        // add extension if not present (bugzilla #1673)
+                        if (!name.endsWith(".xml") && !name.endsWith(".XML")) {
+                            name = name + ".xml";
+                        }
+                        //File got = fc.getSelectedFile();
+                        File got = new File(name);
                         FileOutputStream os = null;
                         try {
                             os = new FileOutputStream(got);
