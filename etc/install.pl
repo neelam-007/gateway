@@ -609,6 +609,10 @@ EOF
 	print "------or\n";
         print "------# mysql -p<database root user password> ssg < /ssg/etc/sql/ssg.sql\n";
 	print "note 1: if it is not the first node of the cluster database - base on the </etc/my.cnf>, SSG database will be replicating after you've started mysql on node 2; SSG database and tables will be created by the replicator as well, so you don't need to manually creating SSG database and tables on node 2\n";
+        print "MANUAL TASK: SNMP\n";
+        print "---(1) Configure </etc/snmp/snmpd.conf> according to your organization's security policy\n";
+        print "------ Please refer to </etc/snmp/snmpd.conf_example>\n";
+        print "---(2) Start SNMP daemon\n";
         print "MANUAL TASK: After you are satisfied with the installation, you now can delete any backup files that install.pl have backed up during the installation - /etc/sysconfig/network-scripts/*.bckup_*; /etc/sysconfig/*.bckup_*; /etc/hosts.bckup_*; /etc/my.cnf.bckup_*; /etc/ntp.conf.bckup_*; /etc/ntp/step-tickers.bckup_*\n"; 
         print "INFO: <$0> script done\n"; 
 }
