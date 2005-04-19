@@ -51,6 +51,7 @@ mv %{buildroot}/ssg/bin/snmpd.conf_example %{buildroot}/etc/snmp/snmpd.conf_exam
 /etc/init.d/tarari
 /etc/init.d/back_route
 /etc/init.d/tcp_tune
+/etc/snmp/snmpd.conf_example
 /etc/profile.d/ssgruntimedefs.sh
 /etc/profile.d/tarari.sh
 %config(noreplace) /etc/my.cnf.ssg
