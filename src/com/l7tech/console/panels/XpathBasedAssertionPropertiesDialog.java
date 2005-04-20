@@ -581,7 +581,9 @@ public class XpathBasedAssertionPropertiesDialog extends JDialog {
                 hardwareAccelStatusLabel.setText(" ");
                 hardwareAccelStatusLabel.setToolTipText(null);
             } else {
-                hardwareAccelStatusLabel.setText("(No hardware accel: " + hardwareFeedBack.getShortMessage() + ")");
+                hardwareAccelStatusLabel.setText("This expression cannot be hardware accelerated (tarari: \'" +
+                                                 hardwareFeedBack.getShortMessage() + "\'); it  will be " +
+                                                 "processed in the software layer instead.");
                 hardwareAccelStatusLabel.setToolTipText(hardwareFeedBack.getDetailedMessage());
 
                 if (xpathField instanceof SquigglyTextField) {
