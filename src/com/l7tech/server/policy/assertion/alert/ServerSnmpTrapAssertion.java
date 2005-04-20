@@ -64,6 +64,7 @@ public class ServerSnmpTrapAssertion implements ServerAssertion {
         SecurityProtocols.getInstance().addDefaultProtocols();
 
         int[] oi = new int[OID_BASE.length + 1];
+        System.arraycopy(OID_BASE, 0, oi, 0, OID_BASE.length);
         oi[oi.length - 1] = ass.getOid();
         oid = new OID(oi);
         communityBytes = ass.getCommunity().getBytes();
