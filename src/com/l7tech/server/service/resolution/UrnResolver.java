@@ -13,10 +13,13 @@ import org.xml.sax.SAXException;
 import javax.wsdl.BindingInput;
 import javax.wsdl.BindingOperation;
 import javax.wsdl.Definition;
+import javax.wsdl.Part;
 import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.soap.SOAPBody;
+import javax.xml.namespace.QName;
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * @author alex
@@ -26,6 +29,7 @@ public class UrnResolver extends WsdlOperationServiceResolver {
 
     protected String getTargetValue(Definition def, BindingOperation operation) {
         BindingInput input = operation.getBindingInput();
+        String uri = null;
         if (input != null) {
             Iterator eels = input.getExtensibilityElements().iterator();
             ExtensibilityElement ee;
@@ -33,11 +37,24 @@ public class UrnResolver extends WsdlOperationServiceResolver {
                 ee = (ExtensibilityElement)eels.next();
                 if (ee instanceof SOAPBody) {
                     SOAPBody body = (SOAPBody)ee;
-                    String uri = body.getNamespaceURI();
-                    if ( uri != null ) return uri;
+                    uri = body.getNamespaceURI();
+                    if (uri != null) return uri;
                 }
             }
         }
+
+        if (uri == null) {
+            List parts = operation.getOperation().getInput().getMessage().getOrderedParts(null);
+            if (parts.size() > 0) {
+                Part firstPart = (Part)parts.get(0);
+                QName elementName = firstPart.getElementName();
+                if (elementName != null) {
+                    uri = elementName.getNamespaceURI();
+                    if (uri != null) return uri;
+                }
+            }
+        }
+
         return def.getTargetNamespace();
     }
 
