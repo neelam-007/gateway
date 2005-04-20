@@ -95,7 +95,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
     /**
      * Attempt to build an "edit properties" dialog box for the given Ssg.
      * @param ssg The ssg whose properties we intend to edit
-     * @return The property dialog that will edit said properties.  Call show() on it to run it.
+     * @return The property dialog that will edit said properties.  Call setVisible(true) on it to run it.
      */
     public static SsgPropertyDialog makeSsgPropertyDialog(ClientProxy clientProxy, final Ssg ssg) {
         return new SsgPropertyDialog(clientProxy, ssg);
@@ -220,7 +220,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                         NoClientCert dlg = new NoClientCert(SsgPropertyDialog.this, ssgName());
                         dlg.pack();
                         Utilities.centerOnScreen(dlg);
-                        dlg.show();
+                        dlg.setVisible(true);
                         dlg.dispose();
                         int r = dlg.getExitCondition();
                         if (r == NoClientCert.REQUESTED_IMPORT) {
@@ -258,7 +258,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                         /* FALLTHROUGH and display newly-acquired client certificate */
                     }
                     if (cert != null)
-                        new CertDialog(cert, "Client Certificate", "Client Certificate for Gateway " + ssgName()).show();
+                        new CertDialog(cert, "Client Certificate", "Client Certificate for Gateway " + ssgName()).setVisible(true);
                 } catch (OperationCanceledException e1) {
                     return;
                 } catch (Exception e1) {
@@ -286,7 +286,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                         JOptionPane.INFORMATION_MESSAGE);
                                 return;
                             }
-                            new CertDialog(cert, "Server Certificate", "Server Certificate for Gateway " + ssgName()).show();
+                            new CertDialog(cert, "Server Certificate", "Server Certificate for Gateway " + ssgName()).setVisible(true);
                         } catch (Exception e1) {
                             log.log(Level.SEVERE, "Unable to access server certificate", e1);
                             Gui.criticalErrorMessage("Unable to access server certificate",
@@ -515,7 +515,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
             JButton cb = new JButton("OK");
             cb.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    CertDialog.this.hide();
+                    CertDialog.this.setVisible(false);
                 }
             });
             return cb;
@@ -694,6 +694,12 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
 
     public void dataChanged(SsgEvent evt) {
         // Take no action; we don't override the user's data.
+    }
+
+    public void setVisible(boolean b) {
+        if (b)
+            getFieldServerAddress().requestFocus();
+        super.setVisible(b);
     }
 
     public void show() {

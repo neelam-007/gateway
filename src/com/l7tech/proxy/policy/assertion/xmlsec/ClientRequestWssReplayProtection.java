@@ -44,6 +44,8 @@ public class ClientRequestWssReplayProtection extends ClientAssertion {
         if (!context.getDefaultWssRequirements().hasSignatureSource())
             context.prepareClientCertificate();
 
+        context.getSsg().getServerCertificateAlways();
+
         // add a pending decoration that will be applied only if the rest of this policy branch succeeds
         context.getPendingDecorations().put(this, new ClientDecorator() {
             public AssertionStatus decorateRequest(PolicyApplicationContext context)
@@ -62,7 +64,7 @@ public class ClientRequestWssReplayProtection extends ClientAssertion {
                     final Ssg ssg = context.getSsg();
                     final PrivateKey userPrivateKey = ssg.getClientCertificatePrivateKey();
                     final X509Certificate userCert = ssg.getClientCertificate();
-                    final X509Certificate ssgCert = ssg.getServerCertificate();
+                    final X509Certificate ssgCert = ssg.getServerCertificateAlways();
                     wssReqs.setRecipientCertificate(ssgCert);
                     wssReqs.setSenderMessageSigningCertificate(userCert);
                     wssReqs.setSenderMessageSigningPrivateKey(userPrivateKey);

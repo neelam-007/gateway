@@ -6,6 +6,8 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.proxy.datamodel.exceptions.BadCredentialsException;
 import com.l7tech.proxy.datamodel.exceptions.KeyStoreCorruptException;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
+import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
+import com.l7tech.proxy.ssl.CurrentSslPeer;
 import com.l7tech.proxy.ssl.SslPeer;
 
 import javax.net.ssl.SSLContext;
@@ -526,6 +528,7 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
         fireSsgEvent(SsgEvent.createDataChangedEvent(this));
     }
 
+    /** @return This Ssg's server cert, or null if it is not currently known or configured. */
     public X509Certificate getServerCertificate() {
         for (;;) {
             try {
@@ -540,6 +543,22 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
                 /* FALLTHROUGH and retry */
             }
         }
+    }
+
+    /**
+     * Get the server cert, or throw an exception which will eventually fault it in.
+     *
+     * @return this Ssg's server certificate.  Never null.
+     * @throws ServerCertificateUntrustedException if the cert is not currently configured.  If this is thrown,
+     *         {@link com.l7tech.proxy.ssl.CurrentSslPeer#get()} will be set to return this Ssg instance.
+     */
+    public X509Certificate getServerCertificateAlways() throws ServerCertificateUntrustedException {
+        X509Certificate cert = getServerCertificate();
+        if (cert == null) {
+            CurrentSslPeer.set(this);
+            throw new ServerCertificateUntrustedException("Server certificate for " + this + " needed, but not yet configured");
+        }
+        return cert;
     }
 
     public X509Certificate getClientCertificate() {

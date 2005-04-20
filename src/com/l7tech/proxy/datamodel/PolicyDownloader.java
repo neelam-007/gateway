@@ -51,9 +51,7 @@ public class PolicyDownloader {
                    ClientCertificateException, PolicyRetryableException, ConfigurationException
     {
         final boolean useSsl = ssg.isUseSslByDefault();
-        final X509Certificate serverCert = ssg.getServerCertificate();
-        if (serverCert == null)
-            throw new ServerCertificateUntrustedException("Server certificate not yet known");
+        final X509Certificate serverCert = ssg.getServerCertificateAlways();
 
         // Try anonymous download first
         try {

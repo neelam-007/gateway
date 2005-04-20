@@ -58,7 +58,7 @@ public class ClientRequestWssConfidentiality extends ClientAssertion {
                    PolicyRetryableException, ClientCertificateException
     {
         final Ssg ssg = context.getSsg();
-        final X509Certificate serverCert = ssg.getServerCertificate();
+        final X509Certificate serverCert = ssg.getServerCertificateAlways();
 
         // add a pending decoration that will be applied only if the rest of this policy branch succeeds
         context.getPendingDecorations().put(this, new ClientDecorator() {

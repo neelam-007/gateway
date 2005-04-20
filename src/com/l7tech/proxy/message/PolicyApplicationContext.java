@@ -458,22 +458,19 @@ public class PolicyApplicationContext extends ProcessingContext {
         if (ssg.isFederatedGateway())
             prepareClientCertificate();
 
-        if (ssg.getServerCertificate() == null)
-            throw new ServerCertificateUntrustedException(); // Trigger server cert disco
-
         if (ssg.getClientCertificate() == null) {
             PasswordAuthentication pw = getCredentialsForTrustedSsg();
             logger.log(Level.INFO, "Establishing new WS-SecureConversation session with Gateway " + ssg.toString() + " using HTTP Basic over SSL");
             URL url = new URL("https", ssg.getSsgAddress(), ssg.getSslPort(), SecureSpanConstants.TOKEN_SERVICE_FILE);
 
-            s = TokenServiceClient.obtainSecureConversationSessionWithSslAndOptionalHttpBasic(ssg.getRuntime().getHttpClient(), pw, url, ssg.getServerCertificate());
+            s = TokenServiceClient.obtainSecureConversationSessionWithSslAndOptionalHttpBasic(ssg.getRuntime().getHttpClient(), pw, url, ssg.getServerCertificateAlways());
         } else {
             logger.log(Level.INFO, "Establishing new WS-SecureConversation session with Gateway " + ssg.toString() + " using a WS-S signed request");
             URL url = new URL("http", ssg.getSsgAddress(), ssg.getSsgPort(), SecureSpanConstants.TOKEN_SERVICE_FILE);
             Date timestampCreatedDate = ssg.getRuntime().getDateTranslatorToSsg().translate(new Date());
 
             s = TokenServiceClient.obtainSecureConversationSessionUsingWssSignature(ssg.getRuntime().getHttpClient(), url, timestampCreatedDate,
-                                                                   ssg.getServerCertificate(), ssg.getClientCertificate(),
+                                                                   ssg.getServerCertificateAlways(), ssg.getClientCertificate(),
                                                                    ssg.getClientCertificatePrivateKey());
         }
         logger.log(Level.INFO, "WS-SecureConversation session established with Gateway " + ssg.toString() + "; session ID=" + s.getSessionId());
