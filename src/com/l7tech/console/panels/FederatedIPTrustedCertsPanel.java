@@ -1,8 +1,5 @@
 package com.l7tech.console.panels;
 
-import com.intellij.uiDesigner.core.GridConstraints;
-import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.Spacer;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
@@ -15,8 +12,9 @@ import com.l7tech.console.util.Registry;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;
 import com.l7tech.identity.fed.FederatedIdentityProviderConfig;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.FindException;
+import com.l7tech.objectmodel.*;
+import com.intellij.uiDesigner.core.GridLayoutManager;
+import com.intellij.uiDesigner.core.GridConstraints;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -28,8 +26,10 @@ import java.io.IOException;
 import java.rmi.RemoteException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.cert.CertificateExpiredException;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * This class provides the step panel for the Federated Identity Provider dialog.
@@ -54,6 +54,7 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
     public static final String RESOURCE_PATH = "com/l7tech/console/resources";
     private static ResourceBundle resources = ResourceBundle.getBundle("com.l7tech.console.resources.FederatedIdentityProviderDialog", Locale.getDefault());
     private static Logger logger = Logger.getLogger(FederatedIPTrustedCertsPanel.class.getName());
+    private JButton createCertButton;
 
     /**
      * Construstor
@@ -283,6 +284,85 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
             }
         });
 
+        createCertButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent event) {
+
+                Dialog thisDlg = null;
+                Container tmp = FederatedIPTrustedCertsPanel.this;
+                do {
+                    if (tmp instanceof Dialog) {
+                        thisDlg = (Dialog)tmp;
+                        break;
+                    } else {
+                        tmp = tmp.getParent();
+                    }
+                } while (tmp != null);
+                final Dialog thisdlg2 = thisDlg;
+
+                CertImportMethodsPanel sp = new CertImportMethodsPanel(new CertDetailsPanel(new CertUsagePanel(null)), true);
+                Wizard w = new AddCertificateWizard(thisdlg2, sp);
+                w.addWizardListener(new WizardListener() {
+                    public void wizardFinished(WizardEvent e) {
+                        Wizard w = (Wizard)e.getSource();
+                        Object o = w.getWizardInput();
+                        if (o instanceof TrustedCert) {
+                            final TrustedCert tc = (TrustedCert)o;
+                            if (tc != null) {
+                                long newid = 0;
+                                try {
+                                    newid = getTrustedCertAdmin().saveCert(tc);
+                                    tc.setOid(newid);
+                                    certListener.certSelected(new CertEvent(this, tc));
+                                } catch (SaveException e1) {
+                                    logger.log(Level.WARNING, "error saving cert", e);
+                                    if (embeddedCertificateExpiredException(e1) != null) {
+                                        JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
+                                                                      "The cert is expired",
+                                                                      "Error saving cert",
+                                                                      JOptionPane.ERROR_MESSAGE);
+                                    } else if (embeddedDuplicateObjectException(e1) != null) {
+                                        JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
+                                                                      "This cert has already been imported",
+                                                                      "Error saving cert",
+                                                                      JOptionPane.ERROR_MESSAGE);
+                                    } else {
+                                        JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
+                                                                      "Could not save cert",
+                                                                      "Error saving cert",
+                                                                      JOptionPane.ERROR_MESSAGE);
+                                    }
+                                } catch (UpdateException e1) {
+                                    logger.log(Level.WARNING, "error saving cert", e);
+                                    JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
+                                                                      "Could not save cert",
+                                                                      "Error saving cert",
+                                                                      JOptionPane.ERROR_MESSAGE);
+                                } catch (VersionException e1) {
+                                    logger.log(Level.WARNING, "error saving cert", e);
+                                    JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
+                                                                      "Could not save cert",
+                                                                      "Error saving cert",
+                                                                      JOptionPane.ERROR_MESSAGE);
+                                } catch (RemoteException e1) {
+                                    logger.log(Level.WARNING, "error saving cert", e);
+                                    JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
+                                                                      "Could not save cert",
+                                                                      "Error saving cert",
+                                                                      JOptionPane.ERROR_MESSAGE);
+                                }
+                            }
+                        }
+                    }
+                    public void wizardSelectionChanged(WizardEvent e) {}
+                    public void wizardCanceled(WizardEvent e) {}
+                });
+                w.pack();
+                w.setSize(780, 560);
+                Utilities.centerOnScreen(w);
+                w.setVisible(true);
+            }
+        });
+
 
     }
 
@@ -411,45 +491,31 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
 
     };
 
-    {
-// GUI initializer generated by IntelliJ IDEA GUI Designer
-// !!! IMPORTANT !!!
-// DO NOT EDIT OR ADD ANY CODE HERE!
-        $$$setupUI$$$();
+    private Throwable embeddedCertificateExpiredException(Exception e) {
+        if (e instanceof CertificateExpiredException) {
+            return e;
+        }
+        Throwable t = e.getCause();
+        while (t != null) {
+            if (t instanceof CertificateExpiredException) {
+                return t;
+            }
+            t = t.getCause();
+        }
+        return null;
     }
 
-    /**
-     * Method generated by IntelliJ IDEA GUI Designer
-     * !!! IMPORTANT !!!
-     * DO NOT edit this method OR call it in your code!
-     */
-    private void $$$setupUI$$$() {
-        mainPanel = new JPanel();
-        mainPanel.setLayout(new GridLayoutManager(2, 1, new Insets(10, 10, 10, 10), -1, -1));
-        final JPanel panel1 = new JPanel();
-        panel1.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        mainPanel.add(panel1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null));
-        final JPanel panel2 = new JPanel();
-        panel2.setLayout(new GridLayoutManager(1, 2, new Insets(5, 0, 0, 0), -1, -1));
-        panel1.add(panel2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null));
-        final JPanel panel3 = new JPanel();
-        panel3.setLayout(new GridLayoutManager(4, 1, new Insets(0, 0, 0, 0), -1, -1));
-        panel2.add(panel3, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null));
-        addButton = new JButton();
-        addButton.setText("Add");
-        panel3.add(addButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
-        removeButton = new JButton();
-        removeButton.setText("Remove");
-        panel3.add(removeButton, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
-        propertiesButton = new JButton();
-        propertiesButton.setText("Properties");
-        panel3.add(propertiesButton, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
-        final Spacer spacer1 = new Spacer();
-        panel3.add(spacer1, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null));
-        certScrollPane = new JScrollPane();
-        panel2.add(certScrollPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(450, 300), null));
-        final JLabel label1 = new JLabel();
-        label1.setText("Trusted Certificates:");
-        mainPanel.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null));
+    private Throwable embeddedDuplicateObjectException(Exception e) {
+        if (e instanceof DuplicateObjectException) {
+            return e;
+        }
+        Throwable t = e.getCause();
+        while (t != null) {
+            if (t instanceof DuplicateObjectException) {
+                return t;
+            }
+            t = t.getCause();
+        }
+        return null;
     }
 }

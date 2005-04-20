@@ -20,6 +20,11 @@ public class CertificateWizard extends Wizard {
         initResources();
     }
 
+    public CertificateWizard(Dialog parent, final WizardStepPanel panel) {
+        super(parent, panel);
+        initResources();
+    }
+
     /**
      * Loads locale-specific resources: strings  etc
      */

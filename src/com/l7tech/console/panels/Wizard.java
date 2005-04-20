@@ -58,14 +58,12 @@ public class Wizard extends JDialog {
      */
     public Wizard(Frame parent, WizardStepPanel panel) {
         super(parent, true);
-        Actions.setEscKeyStrokeDisposes(this);
-        if (panel == null) {
-            throw new IllegalArgumentException("panel == null");
-        }
-        this.startPanel = panel;
-        wizardIterator = new Wizard.Iterator(startPanel);
-        layoutComponents();
-        initialize();
+        initialize(panel);
+    }
+
+    public Wizard(Dialog parent, WizardStepPanel panel) {
+        super(parent, true);
+        initialize(panel);
     }
 
     /**
@@ -215,7 +213,16 @@ public class Wizard extends JDialog {
     /**
      * initialize the wizard state
      */
-    private void initialize() {
+    private void initialize(WizardStepPanel panel) {
+
+        Actions.setEscKeyStrokeDisposes(this);
+        if (panel == null) {
+            throw new IllegalArgumentException("panel == null");
+        }
+        this.startPanel = panel;
+        wizardIterator = new Wizard.Iterator(startPanel);
+        layoutComponents();
+
         // add stepStateListener to the startPanel
         initializePanel(startPanel);
 

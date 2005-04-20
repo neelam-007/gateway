@@ -22,6 +22,15 @@ public class AddCertificateWizard extends CertificateWizard {
      */
     public AddCertificateWizard(Frame parent, final WizardStepPanel panel) {
         super(parent, panel);
+        init();
+    }
+
+    public AddCertificateWizard(Dialog parent, final WizardStepPanel panel) {
+        super(parent, panel);
+        init();
+    }
+
+    private void init() {
         setResizable(true);
         setTitle("Add Certificate Wizard");
         setShowDescription(false);
