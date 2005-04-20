@@ -83,6 +83,7 @@ fi
 /sbin/chkconfig ssg on
 /sbin/chkconfig tcp_tune on
 /sbin/chkconfig back_route on
+/sbin/chkconfig tarari on
 
 echo "Layer 7 SecureSpan(tm) Gateway v3.1\nKernel \r on an \m\n" >/etc/issue
 echo "Layer 7 SecureSpan(tm) Gateway v3.1\nKernel \r on an \m\n" >/etc/issue.net
