@@ -31,6 +31,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /**
  * XML encryption on the soap response sent from the ssg server to the requestor (probably proxy).
@@ -43,17 +44,29 @@ import java.util.logging.Logger;
  * <p/>
  * User: flascell<br/>
  * Date: Aug 26, 2003<br/>
- * $Id$
  */
 public class ServerResponseWssConfidentiality implements ServerAssertion {
     private SignerInfo signerInfo;
     private final Auditor auditor;
+    private final X509Certificate recipientContextCert;
 
     public ServerResponseWssConfidentiality(ResponseWssConfidentiality data, ApplicationContext ctx) throws IOException {
         responseWssConfidentiality = data;
         KeystoreUtils ku = (KeystoreUtils)ctx.getBean("keystore");
         signerInfo = ku.getSslSignerInfo();
         this.auditor = new Auditor(this, ctx, logger);
+
+        X509Certificate rccert = null;
+        if (!responseWssConfidentiality.getRecipientContext().localRecipient()) {
+            try {
+                rccert = CertUtils.decodeCert(HexUtils.decodeBase64(
+                        responseWssConfidentiality.getRecipientContext().getBase64edX509Certificate(), true));
+            } catch (CertificateException e) {
+                logger.log(Level.WARNING, "Assertion will always fail: recipient cert cannot be decoded: " + e.getMessage(), e);
+                rccert = null;
+            }
+        }
+        recipientContextCert = rccert;
     }
 
     /**
@@ -74,14 +87,12 @@ public class ServerResponseWssConfidentiality implements ServerAssertion {
 
         if (!responseWssConfidentiality.getRecipientContext().localRecipient()) {
             X509Certificate clientCert = null;
-            try {
-            clientCert = CertUtils.decodeCert(HexUtils.decodeBase64(
-                            responseWssConfidentiality.getRecipientContext().getBase64edX509Certificate(), true));
-            } catch (CertificateException e) {
+            if (recipientContextCert == null) {
                 String msg = "cannot retrieve the recipient cert";
-                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg}, e);
-                throw new PolicyAssertionException(msg, e);
+                auditor.logAndAudit(AssertionMessages.EXCEPTION_WARNING_WITH_MORE_INFO, new String[] {msg});
+                throw new PolicyAssertionException(msg);
             }
+            clientCert = recipientContextCert;
             context.addDeferredAssertion(this, deferredDecoration(clientCert, null,
                                          responseWssConfidentiality.getRecipientContext()));
             return AssertionStatus.NONE;
