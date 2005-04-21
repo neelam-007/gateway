@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.policy.assertion;
@@ -27,6 +26,12 @@ public class BridgeRoutingAssertion extends HttpRoutingAssertion {
     /** @param policyXml the hardcoded policy for this Bridge instance, or null to discover policies automatically. */
     public void setPolicyXml(String policyXml) {
         this.policyXml = policyXml;
+    }
+
+    /** Configure this BRA using the settings from the specified BRA. */
+    public void copyFrom(BridgeRoutingAssertion source) {
+        super.copyFrom(source);
+        this.setPolicyXml(source.getPolicyXml());
     }
 
     protected String policyXml = null;

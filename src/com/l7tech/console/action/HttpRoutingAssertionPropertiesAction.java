@@ -9,9 +9,11 @@ import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.HttpRoutingAssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 
 import javax.swing.*;
+import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -61,7 +63,16 @@ public class HttpRoutingAssertionPropertiesAction extends NodeAction {
             public void run() {
                 JFrame f = TopComponents.getInstance().getMainWindow();
                 HttpRoutingAssertionDialog d =
-                  new HttpRoutingAssertionDialog(f, (HttpRoutingAssertion)node.asAssertion(), getServiceNodeCookie());
+                        null;
+                try {
+                    d = new HttpRoutingAssertionDialog(f, (HttpRoutingAssertion)node.asAssertion(), getServiceNodeCookie().getPublishedService());
+                } catch (FindException e) {
+                    log.log(Level.WARNING, e.getMessage(), e);
+                    throw new RuntimeException(e);
+                } catch (RemoteException e) {
+                    log.log(Level.WARNING, e.getMessage(), e);
+                    throw new RuntimeException(e);
+                }
                 d.setModal(true);
                 d.pack();
                 Utilities.centerOnScreen(d);

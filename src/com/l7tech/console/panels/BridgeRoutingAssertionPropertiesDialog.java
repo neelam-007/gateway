@@ -8,8 +8,8 @@ package com.l7tech.console.panels;
 import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.console.event.PolicyListener;
-import com.l7tech.console.tree.ServiceNode;
 import com.l7tech.policy.assertion.BridgeRoutingAssertion;
+import com.l7tech.service.PublishedService;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
@@ -39,14 +39,14 @@ public class BridgeRoutingAssertionPropertiesDialog extends JDialog {
     private final BridgeRoutingAssertion assertion;
     private JLabel xmlMessages;
 
-    public BridgeRoutingAssertionPropertiesDialog(Frame owner, BridgeRoutingAssertion a, ServiceNode sn) {
+    public BridgeRoutingAssertionPropertiesDialog(Frame owner, BridgeRoutingAssertion a, PublishedService service) {
         super(owner, true);
         setTitle("Bridge Routing Assertion Properties");
         this.assertion = a;
 
         setContentPane(rootPanel);
 
-        httpDialog = new HttpRoutingAssertionDialog(owner, a, sn);
+        httpDialog = new HttpRoutingAssertionDialog(owner, a, service);
         httpDialog.setModal(true);
         httpDialog.pack();
         Utilities.centerOnScreen(httpDialog);

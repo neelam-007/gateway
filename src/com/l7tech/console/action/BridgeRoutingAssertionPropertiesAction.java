@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.console.action;
@@ -15,9 +14,11 @@ import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.BridgeRoutingAssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
 import com.l7tech.console.util.TopComponents;
+import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.BridgeRoutingAssertion;
 
 import javax.swing.*;
+import java.rmi.RemoteException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -25,7 +26,7 @@ import java.util.logging.Logger;
  * Action for showing {@link com.l7tech.policy.assertion.BridgeRoutingAssertion} properties dialog.
  */
 public class BridgeRoutingAssertionPropertiesAction extends NodeAction {
-    private static final Logger logger = Logger.getLogger(BridgeRoutingAssertionPropertiesAction.class.getName());
+    private static final Logger log = Logger.getLogger(BridgeRoutingAssertionPropertiesAction.class.getName());
 
     public BridgeRoutingAssertionPropertiesAction(BridgeRoutingAssertionTreeNode node) {
         super(node);
@@ -62,13 +63,21 @@ public class BridgeRoutingAssertionPropertiesAction extends NodeAction {
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {
                 JFrame f = TopComponents.getInstance().getMainWindow();
-                BridgeRoutingAssertionPropertiesDialog d =
-                  new BridgeRoutingAssertionPropertiesDialog(f, (BridgeRoutingAssertion)node.asAssertion(), getServiceNodeCookie());
+                BridgeRoutingAssertionPropertiesDialog d = null;
+                try {
+                    d = new BridgeRoutingAssertionPropertiesDialog(f, (BridgeRoutingAssertion)node.asAssertion(), getServiceNodeCookie().getPublishedService());
+                } catch (FindException e) {
+                    log.log(Level.WARNING, e.getMessage(), e);
+                    throw new RuntimeException(e);
+                } catch (RemoteException e) {
+                    log.log(Level.WARNING, e.getMessage(), e);
+                    throw new RuntimeException(e);
+                }
                 d.setModal(true);
                 d.pack();
                 Utilities.centerOnScreen(d);
                 d.addPolicyListener(listener);
-                d.show();
+                d.setVisible(true);
             }
         });
     }

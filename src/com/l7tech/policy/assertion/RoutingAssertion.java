@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.policy.assertion;
@@ -106,5 +105,14 @@ public abstract class RoutingAssertion extends Assertion implements Cloneable, S
         this.currentSecurityHeaderHandling = currentSecurityHeaderHandling;
     }
 
+    /** Subclasses can choose to offer this functionality by adding a public method that chains to this one. */
+    protected void copyFrom(RoutingAssertion source) {
+        this.setAttachSamlSenderVouches(source.isAttachSamlSenderVouches());
+        this.setCurrentSecurityHeaderHandling(source.getCurrentSecurityHeaderHandling());
+        this.setGroupMembershipStatement(source.isGroupMembershipStatement());
+        this.setSamlAssertionExpiry(source.getSamlAssertionExpiry());
+        this.setTaiCredentialChaining(source.isTaiCredentialChaining());
+        this.setXmlSecurityActorToPromote(source.getXmlSecurityActorToPromote());
+    }
 }
 

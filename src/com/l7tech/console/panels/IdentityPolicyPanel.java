@@ -50,8 +50,10 @@ public class IdentityPolicyPanel extends JPanel {
     private JPasswordField passwordRouteField;
     private JTextField realmRouteField;
     private JRadioButton httpRoutingRadioButton;
+    private JRadioButton bridgeRoutingRadioButton;
     private JRadioButton jmsRoutingRadioButton;
     private JComboBox jmsQueueComboBox;
+    private JButton configureBridgeRoutingButton;
 
     private Principal principal;
     private IdentityPath principalAssertionPaths;
@@ -64,6 +66,7 @@ public class IdentityPolicyPanel extends JPanel {
     private Assertion existingCredAssertion = null;
 
     private RoutingAssertion existingRoutingAssertion = null;
+    private BridgeRoutingAssertion guiBraConfig = new BridgeRoutingAssertion();
     private boolean routeEdited;
     private boolean routeModifiable = true;
     private boolean initializing = false;
@@ -109,6 +112,7 @@ public class IdentityPolicyPanel extends JPanel {
     private void initialize() {
         ButtonGroup routingProtocolButtonGroup = new ButtonGroup();
         routingProtocolButtonGroup.add(jmsRoutingRadioButton);
+        routingProtocolButtonGroup.add(bridgeRoutingRadioButton);
         routingProtocolButtonGroup.add(httpRoutingRadioButton);
         ActionListener routingRadioButtonListener = new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -120,8 +124,23 @@ public class IdentityPolicyPanel extends JPanel {
         };
         httpRoutingRadioButton.addActionListener(routingRadioButtonListener);
         jmsRoutingRadioButton.addActionListener(routingRadioButtonListener);
+        bridgeRoutingRadioButton.addActionListener(routingRadioButtonListener);
         jmsQueueComboBox.setModel(new DefaultComboBoxModel(JmsUtilities.loadQueueItems()));
         jmsQueueComboBox.addActionListener(routingRadioButtonListener);
+        Utilities.enableGrayOnDisabled(configureBridgeRoutingButton);
+
+        configureBridgeRoutingButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                BridgeRoutingAssertionPropertiesDialog d =
+                        new BridgeRoutingAssertionPropertiesDialog(TopComponents.getInstance().getMainWindow(),
+                                                                   guiBraConfig,
+                                                                   service);
+                d.setModal(true);
+                d.pack();
+                Utilities.centerOnScreen(d);
+                d.setVisible(true);
+            }
+        });
 
         cancelButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -253,12 +272,15 @@ public class IdentityPolicyPanel extends JPanel {
         Set principalRouteAssertions = principalAssertionPaths.getAssignableAssertions(RoutingAssertion.class);
         for (Iterator it = principalRouteAssertions.iterator(); it.hasNext();) {
             existingRoutingAssertion = (RoutingAssertion) it.next();
-            if (existingRoutingAssertion instanceof HttpRoutingAssertion) {
+            if (existingRoutingAssertion instanceof BridgeRoutingAssertion) {
+                guiBraConfig.copyFrom((BridgeRoutingAssertion)existingRoutingAssertion);
+            } else if (existingRoutingAssertion instanceof HttpRoutingAssertion) {
                 HttpRoutingAssertion hra = (HttpRoutingAssertion) existingRoutingAssertion;
                 routeToUrlField.setText(hra.getProtectedServiceUrl());
                 userRouteField.setText(hra.getLogin());
                 passwordRouteField.setText(hra.getPassword());
                 realmRouteField.setText(hra.getRealm());
+                guiBraConfig.setProtectedServiceUrl(hra.getProtectedServiceUrl());
             } else if (existingRoutingAssertion instanceof JmsRoutingAssertion) {
                 JmsRoutingAssertion jra = (JmsRoutingAssertion) existingRoutingAssertion;
                 JmsUtilities.selectEndpoint(jmsQueueComboBox, jra.getEndpointOid());
@@ -275,23 +297,26 @@ public class IdentityPolicyPanel extends JPanel {
         boolean isJms = existingRoutingAssertion instanceof JmsRoutingAssertion;
         if (!isJms)
             jmsQueueComboBox.setSelectedIndex(-1);
+        boolean isBridge = existingRoutingAssertion instanceof BridgeRoutingAssertion;
+        boolean isHttp = existingRoutingAssertion instanceof HttpRoutingAssertion && !isBridge;
         jmsRoutingRadioButton.setSelected(isJms);
         jmsRoutingRadioButton.setEnabled(routeModifiable);
-        httpRoutingRadioButton.setSelected(!isJms);
+        httpRoutingRadioButton.setSelected(isHttp);
         httpRoutingRadioButton.setEnabled(routeModifiable);
+        bridgeRoutingRadioButton.setSelected(isBridge);
+        bridgeRoutingRadioButton.setEnabled(routeModifiable);
         enableOrDisableRoutingControls();
     }
 
-    private Boolean wasJms = null;
-
     private void enableOrDisableRoutingControls() {
         boolean isJms = jmsRoutingRadioButton.isSelected();
-        if (wasJms != null && wasJms.booleanValue() == isJms)
-        // no change
-            return;
-        wasJms = Boolean.valueOf(isJms);
+        boolean isHttp = httpRoutingRadioButton.isSelected();
+        boolean isBridge = bridgeRoutingRadioButton.isSelected();
 
-        boolean enableHttp = routeModifiable && !isJms;
+        boolean enableHttp = routeModifiable && isHttp;
+        boolean enableJms = routeModifiable && isJms;
+        boolean enableBridge = routeModifiable && isBridge;
+
         routeToUrlField.setEditable(enableHttp);
         userRouteField.setEditable(enableHttp);
         passwordRouteField.setEditable(enableHttp);
@@ -310,8 +335,8 @@ public class IdentityPolicyPanel extends JPanel {
             realmRouteField.setForeground(Color.GRAY);
         }
 
-        boolean enableJms = routeModifiable && isJms;
         jmsQueueComboBox.setEnabled(enableJms);
+        configureBridgeRoutingButton.setEnabled(enableBridge);
     }
 
     private DocumentListener wasRouteEditedListener = new DocumentListener() {
@@ -480,8 +505,22 @@ public class IdentityPolicyPanel extends JPanel {
             httpRa.setPassword(new String(passwordRouteField.getPassword()));
             httpRa.setRealm(realmRouteField.getText());
             return httpRa;
+        } else if (bridgeRoutingRadioButton.isSelected()) {
+            BridgeRoutingAssertion bra = new BridgeRoutingAssertion();
+            bra.copyFrom(guiBraConfig);
+            final String psurl = guiBraConfig.getProtectedServiceUrl();
+            if (psurl == null || psurl.length() < 1) {
+                try {
+                    bra.setProtectedServiceUrl(service.serviceUrl().toExternalForm());
+                } catch (WSDLException e) {
+                    // todo warn user
+                } catch (MalformedURLException e) {
+                    // todo warn user
+                }
+            }
+            return bra;
         } else
-            throw new IllegalStateException("Neither type of routin assertion is selected");
+            throw new IllegalStateException("Unknown type of routing assertion is selected");
     }
 
 

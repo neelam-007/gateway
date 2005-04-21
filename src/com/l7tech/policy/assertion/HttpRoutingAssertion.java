@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.policy.assertion;
@@ -126,6 +125,19 @@ public class HttpRoutingAssertion extends RoutingAssertion {
      */
     public void setFailoverStrategyName(String failoverStrategyName) {
         this._failoverStrategyName = failoverStrategyName;
+    }
+
+    /** Subclasses can choose to offer this functionality by adding a public method that chains to this one. */
+    protected void copyFrom(HttpRoutingAssertion source) {
+        super.copyFrom(source);
+        this.setCustomIpAddresses((String[])source.getCustomIpAddresses());
+        this.setFailoverStrategyName(source.getFailoverStrategyName());
+        this.setLogin(source.getLogin());
+        this.setMaxConnections(source.getMaxConnections());
+        this.setPassword(source.getPassword());
+        this.setProtectedServiceUrl(source.getProtectedServiceUrl());
+        this.setRealm(source.getRealm());
+        this.setUserAgent(source.getUserAgent());
     }
 
     protected String _protectedServiceUrl;

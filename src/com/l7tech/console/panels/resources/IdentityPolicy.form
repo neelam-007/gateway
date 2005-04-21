@@ -3,7 +3,7 @@
   <grid id="2238c" binding="mainPanel" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="5" left="5" bottom="5" right="5"/>
     <constraints>
-      <xy x="22" y="37" width="709" height="410"/>
+      <xy x="22" y="37" width="709" height="439"/>
       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
     </constraints>
     <properties/>
@@ -11,7 +11,7 @@
     <children>
       <tabbedpane id="27da4">
         <constraints>
-          <xy x="5" y="25" width="699" height="306"/>
+          <xy x="5" y="25" width="699" height="355"/>
           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3">
             <preferred-size width="200" height="200"/>
           </grid>
@@ -30,7 +30,7 @@
               <grid id="d2585" row-count="3" column-count="5" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                 <margin top="5" left="10" bottom="0" right="0"/>
                 <constraints>
-                  <xy x="20" y="10" width="674" height="248"/>
+                  <xy x="20" y="10" width="674" height="298"/>
                   <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
                 </constraints>
                 <properties/>
@@ -38,13 +38,13 @@
                 <children>
                   <vspacer id="2ddda">
                     <constraints>
-                      <xy x="638" y="57" width="11" height="191"/>
+                      <xy x="638" y="55" width="11" height="243"/>
                       <grid row="2" column="3" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
                     </constraints>
                   </vspacer>
                   <component id="ac967" class="javax.swing.JCheckBox" binding="sslCheckBox">
                     <constraints>
-                      <xy x="434" y="5" width="180" height="23"/>
+                      <xy x="459" y="5" width="155" height="22"/>
                       <grid row="0" column="0" row-span="1" col-span="2" vsize-policy="0" hsize-policy="3" anchor="4" fill="0"/>
                     </constraints>
                     <properties>
@@ -56,7 +56,7 @@
                   </component>
                   <component id="33b7" class="javax.swing.JLabel">
                     <constraints>
-                      <xy x="10" y="37" width="132" height="15"/>
+                      <xy x="10" y="36" width="113" height="14"/>
                       <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0"/>
                     </constraints>
                     <properties>
@@ -65,14 +65,14 @@
                   </component>
                   <component id="55f93" class="javax.swing.JComboBox" binding="authMethodComboBox">
                     <constraints>
-                      <xy x="152" y="33" width="462" height="24"/>
+                      <xy x="133" y="32" width="481" height="23"/>
                       <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1"/>
                     </constraints>
                     <properties/>
                   </component>
                   <hspacer id="70577">
                     <constraints>
-                      <xy x="152" y="147" width="462" height="11"/>
+                      <xy x="133" y="171" width="481" height="11"/>
                       <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
                     </constraints>
                   </hspacer>
@@ -80,7 +80,7 @@
               </grid>
             </children>
           </grid>
-          <grid id="72a8f" row-count="7" column-count="6" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+          <grid id="72a8f" row-count="9" column-count="6" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="10" left="10" bottom="0" right="0"/>
             <constraints>
               <tabbedpane title="Routing"/>
@@ -90,7 +90,7 @@
             <children>
               <component id="795b7" class="javax.swing.JLabel">
                 <constraints>
-                  <xy x="52" y="43" width="70" height="15"/>
+                  <xy x="45" y="42" width="61" height="14"/>
                   <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0"/>
                 </constraints>
                 <properties>
@@ -99,7 +99,7 @@
               </component>
               <component id="81bc3" class="javax.swing.JTextField" binding="routeToUrlField">
                 <constraints>
-                  <xy x="132" y="39" width="200" height="22"/>
+                  <xy x="116" y="38" width="200" height="21"/>
                   <grid row="1" column="2" row-span="1" col-span="2" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
                     <minimum-size width="200" height="-1"/>
                     <preferred-size width="150" height="-1"/>
@@ -110,7 +110,7 @@
               <grid id="dbffe" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                 <margin top="5" left="0" bottom="5" right="0"/>
                 <constraints>
-                  <xy x="30" y="88" width="408" height="113"/>
+                  <xy x="30" y="86" width="379" height="111"/>
                   <grid row="3" column="1" row-span="1" col-span="4" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
                 </constraints>
                 <properties/>
@@ -118,7 +118,7 @@
                 <children>
                   <component id="ac2fe" class="javax.swing.JLabel">
                     <constraints>
-                      <xy x="36" y="29" width="68" height="15"/>
+                      <xy x="6" y="28" width="56" height="14"/>
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0"/>
                     </constraints>
                     <properties>
@@ -127,7 +127,7 @@
                   </component>
                   <component id="cd19f" class="javax.swing.JLabel">
                     <constraints>
-                      <xy x="45" y="56" width="59" height="15"/>
+                      <xy x="12" y="55" width="50" height="14"/>
                       <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0"/>
                     </constraints>
                     <properties>
@@ -136,7 +136,7 @@
                   </component>
                   <component id="66739" class="javax.swing.JLabel">
                     <constraints>
-                      <xy x="6" y="83" width="98" height="15"/>
+                      <xy x="29" y="82" width="33" height="14"/>
                       <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0"/>
                     </constraints>
                     <properties>
@@ -145,7 +145,7 @@
                   </component>
                   <component id="8ca79" class="javax.swing.JTextField" binding="userRouteField">
                     <constraints>
-                      <xy x="114" y="26" width="288" height="22"/>
+                      <xy x="72" y="25" width="301" height="21"/>
                       <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
                         <preferred-size width="150" height="-1"/>
                       </grid>
@@ -154,7 +154,7 @@
                   </component>
                   <component id="49142" class="javax.swing.JTextField" binding="realmRouteField">
                     <constraints>
-                      <xy x="114" y="80" width="288" height="22"/>
+                      <xy x="72" y="79" width="301" height="21"/>
                       <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
                         <preferred-size width="150" height="-1"/>
                       </grid>
@@ -163,7 +163,7 @@
                   </component>
                   <component id="2e063" class="javax.swing.JPasswordField" binding="passwordRouteField">
                     <constraints>
-                      <xy x="114" y="53" width="288" height="22"/>
+                      <xy x="72" y="51" width="301" height="23"/>
                       <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
                         <preferred-size width="150" height="-1"/>
                       </grid>
@@ -174,7 +174,7 @@
               </grid>
               <component id="225d6" class="javax.swing.JButton" binding="defaultUrlButton">
                 <constraints>
-                  <xy x="342" y="38" width="96" height="25"/>
+                  <xy x="326" y="37" width="83" height="24"/>
                   <grid row="1" column="4" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="1"/>
                 </constraints>
                 <properties>
@@ -184,7 +184,7 @@
               </component>
               <hspacer id="d6530">
                 <constraints>
-                  <xy x="438" y="45" width="256" height="11"/>
+                  <xy x="409" y="43" width="285" height="11"/>
                   <grid row="1" column="5" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1">
                     <minimum-size width="5" height="-1"/>
                   </grid>
@@ -192,13 +192,13 @@
               </hspacer>
               <vspacer id="b6d59">
                 <constraints>
-                  <xy x="316" y="68" width="11" height="20"/>
+                  <xy x="300" y="66" width="11" height="20"/>
                   <grid row="2" column="3" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
                 </constraints>
               </vspacer>
               <component id="f9753" class="javax.swing.JRadioButton" binding="httpRoutingRadioButton">
                 <constraints>
-                  <xy x="10" y="10" width="188" height="23"/>
+                  <xy x="10" y="10" width="162" height="22"/>
                   <grid row="0" column="0" row-span="1" col-span="5" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
                 </constraints>
                 <properties>
@@ -207,8 +207,8 @@
               </component>
               <component id="aa236" class="javax.swing.JRadioButton" binding="jmsRoutingRadioButton">
                 <constraints>
-                  <xy x="10" y="206" width="176" height="23"/>
-                  <grid row="4" column="0" row-span="1" col-span="5" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+                  <xy x="10" y="258" width="156" height="22"/>
+                  <grid row="6" column="0" row-span="1" col-span="5" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
                 </constraints>
                 <properties>
                   <text value="Route Outgoing Using JMS:"/>
@@ -216,15 +216,15 @@
               </component>
               <component id="45d3b" class="javax.swing.JComboBox" binding="jmsQueueComboBox">
                 <constraints>
-                  <xy x="132" y="234" width="306" height="24"/>
-                  <grid row="5" column="2" row-span="1" col-span="3" vsize-policy="0" hsize-policy="2" anchor="8" fill="1"/>
+                  <xy x="116" y="285" width="293" height="23"/>
+                  <grid row="7" column="2" row-span="1" col-span="3" vsize-policy="0" hsize-policy="2" anchor="8" fill="1"/>
                 </constraints>
                 <properties/>
               </component>
               <component id="5b413" class="javax.swing.JLabel">
                 <constraints>
-                  <xy x="57" y="238" width="65" height="15"/>
-                  <grid row="5" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0"/>
+                  <xy x="48" y="289" width="58" height="14"/>
+                  <grid row="7" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="4" fill="0"/>
                 </constraints>
                 <properties>
                   <text value="JMS Queue:"/>
@@ -232,26 +232,69 @@
               </component>
               <vspacer id="b5515">
                 <constraints>
-                  <xy x="216" y="258" width="11" height="20"/>
-                  <grid row="6" column="2" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2">
+                  <xy x="200" y="308" width="11" height="20"/>
+                  <grid row="8" column="2" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2">
                     <minimum-size width="-1" height="5"/>
                   </grid>
                 </constraints>
               </vspacer>
+              <component id="45704" class="javax.swing.JRadioButton" binding="bridgeRoutingRadioButton">
+                <constraints>
+                  <xy x="10" y="202" width="227" height="22"/>
+                  <grid row="4" column="0" row-span="1" col-span="5" vsize-policy="0" hsize-policy="3" anchor="8" fill="0"/>
+                </constraints>
+                <properties>
+                  <text value="Route Outgoing Using SecureSpan Bridge:"/>
+                </properties>
+              </component>
+              <grid id="df79c" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                <margin top="0" left="0" bottom="0" right="0"/>
+                <constraints>
+                  <xy x="30" y="229" width="379" height="24"/>
+                  <grid row="5" column="1" row-span="1" col-span="4" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="5cef5" class="javax.swing.JButton" binding="configureBridgeRoutingButton">
+                    <constraints>
+                      <xy x="0" y="0" width="214" height="24"/>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="1"/>
+                    </constraints>
+                    <properties>
+                      <text value="Configure SecureSpan Bridge Routing"/>
+                    </properties>
+                  </component>
+                  <hspacer id="f52d9">
+                    <constraints>
+                      <xy x="214" y="6" width="165" height="11"/>
+                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
+                    </constraints>
+                  </hspacer>
+                </children>
+              </grid>
+              <hspacer id="a01f6">
+                <constraints>
+                  <xy x="10" y="235" width="20" height="11"/>
+                  <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="0" anchor="0" fill="1">
+                    <minimum-size width="20" height="-1"/>
+                  </grid>
+                </constraints>
+              </hspacer>
             </children>
           </grid>
         </children>
       </tabbedpane>
       <vspacer id="c4749">
         <constraints>
-          <xy x="349" y="336" width="11" height="39"/>
+          <xy x="349" y="385" width="11" height="20"/>
           <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2"/>
         </constraints>
       </vspacer>
       <grid id="3b7f0" row-count="1" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="5" left="0" bottom="0" right="0"/>
         <constraints>
-          <xy x="5" y="375" width="699" height="30"/>
+          <xy x="5" y="405" width="699" height="29"/>
           <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
         </constraints>
         <properties/>
@@ -259,7 +302,7 @@
         <children>
           <component id="26e6a" class="javax.swing.JButton" binding="helpButton">
             <constraints>
-              <xy x="638" y="5" width="61" height="25"/>
+              <xy x="644" y="5" width="55" height="24"/>
               <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
             </constraints>
             <properties>
@@ -268,7 +311,7 @@
           </component>
           <component id="684c6" class="javax.swing.JButton" binding="cancelButton">
             <constraints>
-              <xy x="556" y="5" width="72" height="25"/>
+              <xy x="568" y="5" width="66" height="24"/>
               <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
             </constraints>
             <properties>
@@ -277,7 +320,7 @@
           </component>
           <component id="cdef9" class="javax.swing.JButton" binding="okButton">
             <constraints>
-              <xy x="495" y="5" width="51" height="25"/>
+              <xy x="510" y="5" width="48" height="24"/>
               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1"/>
             </constraints>
             <properties>
@@ -286,7 +329,7 @@
           </component>
           <hspacer id="c59e5">
             <constraints>
-              <xy x="0" y="12" width="495" height="11"/>
+              <xy x="0" y="11" width="510" height="11"/>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1"/>
             </constraints>
           </hspacer>

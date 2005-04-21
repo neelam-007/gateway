@@ -6,14 +6,13 @@ import com.l7tech.common.xml.Wsdl;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
-import com.l7tech.console.tree.ServiceNode;
-import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.AssertionPath;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
 import com.l7tech.policy.assertion.RoutingAssertion;
 import com.l7tech.policy.assertion.composite.CompositeAssertion;
 import com.l7tech.policy.assertion.xmlsec.SecurityHeaderAddressable;
+import com.l7tech.service.PublishedService;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -25,7 +24,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.EventListener;
 import java.util.Iterator;
@@ -46,7 +44,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
     private JPanel buttonPanel;
     private JButton okButton;
     private EventListenerList listenerList = new EventListenerList();
-    private ServiceNode service;
+    private PublishedService service;
 
     private JComboBox authenticationMethodComboBox;
     private JTextField identityTextField;
@@ -76,11 +74,11 @@ public class HttpRoutingAssertionDialog extends JDialog {
     /**
      * Creates new form ServicePanel
      */
-    public HttpRoutingAssertionDialog(Frame owner, HttpRoutingAssertion a, ServiceNode sn) {
+    public HttpRoutingAssertionDialog(Frame owner, HttpRoutingAssertion a, PublishedService service) {
         super(owner, true);
         setTitle("HTTP(S) Routing Properties");
         assertion = a;
-        this.service = sn;
+        this.service = service;
         initComponents();
         initFormData();
     }
@@ -112,6 +110,8 @@ public class HttpRoutingAssertionDialog extends JDialog {
         SwingUtilities.invokeLater(
           new Runnable() {
               public void run() {
+                  if (a == null) return;
+                  if (a.getParent() == null || a.getParent().getChildren() == null) return;
                   int[] indices = new int[a.getParent().getChildren().indexOf(a)];
                   PolicyEvent event = new
                     PolicyEvent(this, new AssertionPath(a.getPath()), indices, new Assertion[]{a});
@@ -210,18 +210,12 @@ public class HttpRoutingAssertionDialog extends JDialog {
                 updateEnableDisable();
             }
         });
-        try {
-            if (!service.getPublishedService().isSoap()) {
-                samlMethod.setEnabled(false);
-                promoteActorRadio.setEnabled(false);
-                removeSecHeaderRadio.setEnabled(false);
-                passthroughSecHeaderRadio.setEnabled(false);
-                promoteActorCombo.setEnabled(false);
-            }
-        } catch (FindException e) {
-            log.log(Level.WARNING, "cannot get corresponding service", e);
-        } catch (RemoteException e) {
-            log.log(Level.WARNING, "cannot get corresponding service", e);
+        if (!service.isSoap()) {
+            samlMethod.setEnabled(false);
+            promoteActorRadio.setEnabled(false);
+            removeSecHeaderRadio.setEnabled(false);
+            passthroughSecHeaderRadio.setEnabled(false);
+            promoteActorCombo.setEnabled(false);
         }
     }
 
@@ -340,7 +334,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
                 if (service != null) {
 
                     try {
-                        Wsdl wsdl = service.getPublishedService().parsedWsdl();
+                        Wsdl wsdl = service.parsedWsdl();
                         String serviceURI = null;
                         if (wsdl != null) {
                             serviceURI = wsdl.getServiceURI();
@@ -348,10 +342,6 @@ public class HttpRoutingAssertionDialog extends JDialog {
                         } else {
                             log.log(Level.INFO, "Can't retrieve WSDL from the published service");
                         }
-                    } catch (java.rmi.RemoteException re) {
-                        log.log(Level.INFO, "HttpRoutingAssertionDialog", re);
-                    } catch (FindException fe) {
-                        log.log(Level.INFO, "HttpRoutingAssertionDialog", fe);
                     } catch (javax.wsdl.WSDLException we) {
                         log.log(Level.INFO, "HttpRoutingAssertionDialog", we);
                     }
