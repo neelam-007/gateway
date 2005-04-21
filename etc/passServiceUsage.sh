@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # layer 7 technologies, inc
-# this belongs in /ssg/etc/bin
+# this belongs in /ssg/bin
 #
 
 PATH=$PATH:/bin:/usr/bin
