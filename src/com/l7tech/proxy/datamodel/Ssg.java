@@ -74,7 +74,7 @@ public class Ssg implements Serializable, Cloneable, Comparable, SslPeer {
     private transient Set listeners = new HashSet(); // List of weak references to listeners
     private transient SsgRuntime runtime = new SsgRuntime(this);
     private transient X509Certificate lastSeenPeerCertificate = null;
-    private String failoverStrategyName = FailoverStrategyFactory.STICKY.getName();
+    private String failoverStrategyName = FailoverStrategyFactory.ORDERED.getName();
 
     /**
      * Get the {@link SsgRuntime} for this Ssg, providing access to behaviour, strategies, and transient settings.
