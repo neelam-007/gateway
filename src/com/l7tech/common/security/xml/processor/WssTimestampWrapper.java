@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.common.security.xml.processor;
@@ -51,8 +50,8 @@ public class WssTimestampWrapper implements WssTimestamp {
         return delegate.isSigned();
     }
 
-    public SecurityToken getSigningSecurityToken() {
-        return delegate.getSigningSecurityToken();
+    public SecurityToken[] getSigningSecurityTokens() {
+        return delegate.getSigningSecurityTokens();
     }
 
     public Element asElement() {

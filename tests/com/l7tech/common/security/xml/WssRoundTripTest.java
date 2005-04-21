@@ -265,7 +265,11 @@ public class WssRoundTripTest extends TestCase {
         // If timestamp was supposed to be signed, make sure it actually was
         if (td.signTimestamp) {
             assertTrue("Timestamp was supposed to have been signed", r.getTimestamp().isSigned());
-            SecurityToken signer = r.getTimestamp().getSigningSecurityToken();
+            SecurityToken[] signers = r.getTimestamp().getSigningSecurityTokens();
+            assertNotNull(signers);
+            // Martha can currently only produce messages with a single timestamp-covering signature in the default sec header
+            assertTrue(signers.length == 1);
+            SecurityToken signer = signers[0];
             if (signer instanceof X509SecurityToken) {
                 assertTrue("Timestamp signing security token must match sender cert",
                            ((X509SecurityToken)signer).asX509Certificate().equals(td.senderCert));

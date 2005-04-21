@@ -1,5 +1,6 @@
 package com.l7tech.server.policy.assertion.xmlsec;
 
+import com.l7tech.cluster.DistributedMessageIdManager;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.security.token.SamlSecurityToken;
@@ -27,16 +28,8 @@ import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
 
 /**
- * This assertion verifies that the message contained an
- * xml digital signature but does not care about which elements
- * were signed. The cert used for the signature is
- * recorded in request.setPrincipalCredentials.
- * <p/>
- * <br/><br/>
- * LAYER 7 TECHNOLOGIES, INC<br/>
- * User: flascell<br/>
- * Date: Jul 14, 2004<br/>
- * $Id$<br/>
+ * This assertion asserts that this message had a signed timestamp, and that no message with this timestamp signed
+ * by one of the same signing tokens has been seen recently.
  */
 public class ServerRequestWssReplayProtection implements ServerAssertion {
     private static final long EXPIRY_GRACE_TIME_MILLIS = 1000L * 60 * 1; // allow messages expired up to 1 minute ago
@@ -115,53 +108,57 @@ public class ServerRequestWssReplayProtection implements ServerAssertion {
             throw new IOException("Request timestamp contained Created older than the maximum message age hard cap");
         }
 
-        SecurityToken signingToken = timestamp.getSigningSecurityToken();
+        SecurityToken[] signingTokens = timestamp.getSigningSecurityTokens();
 
-        String messageIdStr = null;
-        if (signingToken instanceof X509SecurityToken || signingToken instanceof SamlSecurityToken) {
-            X509Certificate signingCert;
-            if (signingToken instanceof X509SecurityToken) {
-                // It was signed by a client certificate
-                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_CERT);
-                signingCert = ((X509SecurityToken)signingToken).asX509Certificate();
-            } else {
-                // It was signed by a SAML holder-of-key assertion
-                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_SAML_HOK);
-                signingCert = ((SamlSecurityToken)signingToken).getSubjectCertificate();
+        for (int i = 0; i < signingTokens.length; i++) {
+            SecurityToken signingToken = signingTokens[i];
+
+            String messageIdStr = null;
+            if (signingToken instanceof X509SecurityToken || signingToken instanceof SamlSecurityToken) {
+                X509Certificate signingCert;
+                if (signingToken instanceof X509SecurityToken) {
+                    // It was signed by a client certificate
+                    auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_CERT);
+                    signingCert = ((X509SecurityToken)signingToken).asX509Certificate();
+                } else {
+                    // It was signed by a SAML holder-of-key assertion
+                    auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_SAML_HOK);
+                    signingCert = ((SamlSecurityToken)signingToken).getSubjectCertificate();
+                }
+
+                // Use cert info as sender id
+                MessageDigest md = HexUtils.getSha1();
+                md.update(new Long(created).toString().getBytes("UTF-8"));
+                md.update(signingCert.getSubjectDN().toString().getBytes("UTF-8"));
+                md.update(signingCert.getIssuerDN().toString().getBytes("UTF-8"));
+                md.update(skiToString(signingCert).getBytes("UTF-8"));
+                byte[] digest = md.digest();
+                messageIdStr = HexUtils.hexDump(digest);
+            } else if (signingToken instanceof SecurityContextToken) {
+                // It was signed by a WS-SecureConversation session's derived key
+                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_SC_KEY);
+                String sessionID = ((SecurityContextToken)signingToken).getContextIdentifier();
+
+                // Use session ID as sender ID
+                StringBuffer sb = new StringBuffer();
+                sb.append(created);
+                sb.append(";");
+                sb.append("SessionID=");
+                sb.append(sessionID);
+                messageIdStr = sb.toString();
+            } else
+                throw new IOException("Unable to generate replay-protection ID for timestamp -- " +
+                                      "it was signed, but not with an unsupported token type " + signingToken.getClass().getName());
+
+            MessageId messageId = new MessageId(messageIdStr, expires + CACHE_ID_EXTRA_TIME_MILLIS);
+            try {
+                DistributedMessageIdManager dmm = (DistributedMessageIdManager)applicationContext.getBean("distributedMessageIdManager");
+                dmm.assertMessageIdIsUnique(messageId);
+                auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_PROTECTION_SUCCEEDED, new String[]{ messageIdStr});
+            } catch (MessageIdManager.DuplicateMessageIdException e) {
+                // TODO we need a better exception for this than IOException
+                throw new IOException("Duplicated message ID detected; ID=" + messageIdStr);
             }
-
-            // Use cert info as sender id
-            MessageDigest md = HexUtils.getSha1();
-            md.update(new Long(created).toString().getBytes("UTF-8"));
-            md.update(signingCert.getSubjectDN().toString().getBytes("UTF-8"));
-            md.update(signingCert.getIssuerDN().toString().getBytes("UTF-8"));
-            md.update(skiToString(signingCert).getBytes("UTF-8"));
-            byte[] digest = md.digest();
-            messageIdStr = HexUtils.hexDump(digest);
-        } else if (signingToken instanceof SecurityContextToken) {
-            // It was signed by a WS-SecureConversation session's derived key
-            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_TIMESTAMP_SIGNED_WITH_SC_KEY);
-            String sessionID = ((SecurityContextToken)signingToken).getContextIdentifier();
-
-            // Use session ID as sender ID
-            StringBuffer sb = new StringBuffer();
-            sb.append(created);
-            sb.append(";");
-            sb.append("SessionID=");
-            sb.append(sessionID);
-            messageIdStr = sb.toString();
-        } else
-            throw new IOException("Unable to generate replay-protection ID for timestamp -- " +
-                                  "it was signed, but not with an unsupported token type " + signingToken.getClass().getName());
-
-        MessageId messageId = new MessageId(messageIdStr, expires + CACHE_ID_EXTRA_TIME_MILLIS);
-        try {
-            MessageIdManager mim = (MessageIdManager)applicationContext.getBean("distributedMessageIdManager");
-            mim.assertMessageIdIsUnique(messageId);
-            auditor.logAndAudit(AssertionMessages.REQUEST_WSS_REPLAY_PROTECTION_SUCCEEDED, new String[]{ messageIdStr});
-        } catch (MessageIdManager.DuplicateMessageIdException e) {
-            // TODO we need a better exception for this than IOException
-            throw new IOException("Duplicated message ID detected; ID=" + messageIdStr);
         }
 
         return AssertionStatus.NONE;

@@ -22,9 +22,9 @@ import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.UnsupportedDocumentFormatException;
 import com.l7tech.common.xml.saml.SamlAssertion;
 import org.w3c.dom.*;
-import org.xml.sax.SAXException;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayOutputStream;
@@ -1082,9 +1082,9 @@ public class WssProcessorImpl implements WssProcessor {
 
                 // Update timestamp with signature information
                 if (signingCertToken != null) {
-                    cntx.timestamp.setSigningSecurityToken(signingCertToken);
+                    cntx.timestamp.addSigningSecurityToken(signingCertToken);
                 } else if (dkt != null) {
-                    cntx.timestamp.setSigningSecurityToken(dkt.getSecurityContextToken());
+                    cntx.timestamp.addSigningSecurityToken(dkt.getSecurityContextToken());
                 }
             }
         }
@@ -1249,7 +1249,7 @@ public class WssProcessorImpl implements WssProcessor {
     private static class TimestampImpl extends ParsedElementImpl implements WssTimestamp {
         private final TimestampDate createdTimestampDate;
         private final TimestampDate expiresTimestampDate;
-        private SecurityToken signingToken = null;
+        private List signingSecurityTokens = new ArrayList();
 
         public TimestampImpl(TimestampDate createdTimestampDate, TimestampDate expiresTimestampDate, Element timestampElement) {
             super(timestampElement);
@@ -1266,15 +1266,15 @@ public class WssProcessorImpl implements WssProcessor {
         }
 
         public boolean isSigned() {
-            return signingToken != null;
+            return !signingSecurityTokens.isEmpty();
         }
 
-        public SecurityToken getSigningSecurityToken() {
-            return signingToken;
+        public SecurityToken[] getSigningSecurityTokens() {
+            return (SecurityToken[])signingSecurityTokens.toArray(new SecurityToken[0]);
         }
 
-        private void setSigningSecurityToken(SecurityToken token) {
-            this.signingToken = token;
+        private void addSigningSecurityToken(SecurityToken token) {
+            signingSecurityTokens.add(token);
         }
     }
 
