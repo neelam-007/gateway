@@ -47,11 +47,11 @@ public class Gui {
 
     private static final String SYSTRAY_TOOLTIP = "SecureSpan Bridge";
     private static final String WINDOW_TITLE = APP_NAME;
-    private static final String MESSAGE_WINDOW_TITLE = "Message Window";
+    private static final String MESSAGE_WINDOW_TITLE = "Recent Message Traffic";
     private static final String MENU_FILE = "File";
     private static final String MENU_FILE_QUIT = "Exit";
     private static final String MENU_WINDOW = "Window";
-    private static final String MENU_MESSAGES = "Message Window";
+    private static final String MENU_MESSAGES = "Recent Message Traffic";
     private static final String MENU_HELP = "Help";
     private static final String MENU_HELP_ABOUT = "About";
     private static final String MENU_HELP_HELP = "Help System";

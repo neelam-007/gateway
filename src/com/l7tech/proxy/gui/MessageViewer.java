@@ -103,7 +103,7 @@ class MessageViewer extends JFrame {
             }
         });
 
-        final JButton clearButton = new JButton("Clear");
+        final JButton clearButton = new JButton("Clear Recent Messages");
         clearButton.addActionListener(new ActionListener() {
             public void actionPerformed(final ActionEvent e) {
                 messageViewerModel.clear();
@@ -111,7 +111,7 @@ class MessageViewer extends JFrame {
                 messageView.validate();
             }
         });
-        final JButton hideButton = new JButton("Hide");
+        final JButton hideButton = new JButton("Close");
         final Action hideAction = new AbstractAction() {
                     public void actionPerformed(final ActionEvent e) {
                         MessageViewer.this.setVisible(false);
