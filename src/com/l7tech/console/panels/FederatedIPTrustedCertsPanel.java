@@ -5,6 +5,7 @@ import com.l7tech.common.security.TrustedCert;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.ExceptionUtils;
 import com.l7tech.console.event.*;
 import com.l7tech.console.table.TrustedCertTableSorter;
 import com.l7tech.console.table.TrustedCertsTable;
@@ -27,6 +28,7 @@ import java.rmi.RemoteException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.cert.CertificateExpiredException;
+import java.security.cert.CertificateNotYetValidException;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.logging.Level;
@@ -315,14 +317,19 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
                                     certListener.certSelected(new CertEvent(this, tc));
                                 } catch (SaveException e1) {
                                     logger.log(Level.WARNING, "error saving cert", e);
-                                    if (embeddedCertificateExpiredException(e1) != null) {
+                                    if (ExceptionUtils.causedBy(e1, CertificateExpiredException.class)) {
                                         JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
                                                                       "The cert is expired",
                                                                       "Error saving cert",
                                                                       JOptionPane.ERROR_MESSAGE);
-                                    } else if (embeddedDuplicateObjectException(e1) != null) {
+                                    } else if (ExceptionUtils.causedBy(e1, DuplicateObjectException.class)) {
                                         JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
                                                                       "This cert has already been imported",
+                                                                      "Error saving cert",
+                                                                      JOptionPane.ERROR_MESSAGE);
+                                    } else if (ExceptionUtils.causedBy(e1, CertificateNotYetValidException.class)) {
+                                        JOptionPane.showMessageDialog(FederatedIPTrustedCertsPanel.this,
+                                                                      "This cert is not yet valid",
                                                                       "Error saving cert",
                                                                       JOptionPane.ERROR_MESSAGE);
                                     } else {
@@ -491,31 +498,4 @@ public class FederatedIPTrustedCertsPanel extends IdentityProviderStepPanel {
 
     };
 
-    private Throwable embeddedCertificateExpiredException(Exception e) {
-        if (e instanceof CertificateExpiredException) {
-            return e;
-        }
-        Throwable t = e.getCause();
-        while (t != null) {
-            if (t instanceof CertificateExpiredException) {
-                return t;
-            }
-            t = t.getCause();
-        }
-        return null;
-    }
-
-    private Throwable embeddedDuplicateObjectException(Exception e) {
-        if (e instanceof DuplicateObjectException) {
-            return e;
-        }
-        Throwable t = e.getCause();
-        while (t != null) {
-            if (t instanceof DuplicateObjectException) {
-                return t;
-            }
-            t = t.getCause();
-        }
-        return null;
-    }
 }
