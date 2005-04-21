@@ -36,6 +36,7 @@ public class FailoverStrategyTest extends TestCase {
     public static final String SB = "b";
     public static final String SC = "c";
     private final Object[] servers = { SA, SB, SC };
+    private final Object[] twoservers = { SA, SB };
 
     public void testStickyFailoverStrategy() throws Exception {
         FailoverStrategy s = AbstractFailoverStrategy.makeSynchronized(new StickyFailoverStrategy(servers));
@@ -146,5 +147,20 @@ public class FailoverStrategyTest extends TestCase {
         assertEquals("Should be sticky after recover", SA, s.selectService()); s.reportSuccess(SA);
 
         // TODO test two servers going down
+    }
+
+    public void testBug1718_OrderedStickyAllServersDown() throws Exception {
+        OrderedStickyFailoverStrategy s = new OrderedStickyFailoverStrategy(twoservers);
+
+        Object got = s.selectService();
+        assertEquals(got, SA);
+        s.reportFailure(got);
+
+        got = s.selectService();
+        assertEquals(got, SB);
+        s.reportFailure(got);
+
+        got = s.selectService();
+        assertTrue(got == SA || got == SB);
     }
 }

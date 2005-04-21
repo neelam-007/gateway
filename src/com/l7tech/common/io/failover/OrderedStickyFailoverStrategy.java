@@ -71,6 +71,11 @@ public class OrderedStickyFailoverStrategy extends AbstractFailoverStrategy {
             }
         }
 
+        if (current >= servers.length) {
+            // Nothing is up
+            return servers[0];
+        }
+
         return servers[current];
     }
 
