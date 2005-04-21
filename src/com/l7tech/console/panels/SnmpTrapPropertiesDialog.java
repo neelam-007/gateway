@@ -34,11 +34,14 @@ public class SnmpTrapPropertiesDialog extends JDialog {
     private JButton okButton;
     private JButton cancelButton;
 
+    private Window owner;
+
     private final SnmpTrapAssertion assertion;
     private boolean confirmed = false;
 
     public SnmpTrapPropertiesDialog(Dialog owner, SnmpTrapAssertion assertion) throws HeadlessException {
         super(owner, TITLE, true);
+        this.owner = owner;
         if (assertion == null) throw new NullPointerException();
         this.assertion = assertion;
         init();
@@ -46,6 +49,7 @@ public class SnmpTrapPropertiesDialog extends JDialog {
 
     public SnmpTrapPropertiesDialog(Frame owner, SnmpTrapAssertion assertion) throws HeadlessException {
         super(owner, TITLE, true);
+        this.owner = owner;
         if (assertion == null) throw new NullPointerException();
         this.assertion = assertion;
         init();
@@ -63,10 +67,11 @@ public class SnmpTrapPropertiesDialog extends JDialog {
 
         okButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                viewToModel();
-                confirmed = true;
-                hide();
-                dispose();
+                if (viewToModel()) {
+                    confirmed = true;
+                    hide();
+                    dispose();
+                }
             }
         });
 
@@ -100,15 +105,21 @@ public class SnmpTrapPropertiesDialog extends JDialog {
         modelToView();
     }
 
-    private void viewToModel() {
+    private boolean viewToModel() {
         assertion.setCommunity(communityField.getText());
         assertion.setTargetHostname(hostnameField.getText());
         int port = SnmpTrapAssertion.DEFAULT_PORT;
         if (rbCustomPort.isSelected())
             port = safeParseInt(portField.getText(), port);
         assertion.setTargetPort(port);
-        assertion.setOid(safeParseInt(oidField.getText(), 0));
+        int oid = safeParseInt(oidField.getText(), 1);
+        if (oid == 0) {
+            JOptionPane.showMessageDialog(owner, "Last part of OID must not be zero.", "Invalid OID", JOptionPane.ERROR_MESSAGE);
+            return false;
+        }
+        assertion.setOid(oid);
         assertion.setErrorMessage(messageField.getText());
+        return true;
     }
 
     private void updateEnableDisableState() {

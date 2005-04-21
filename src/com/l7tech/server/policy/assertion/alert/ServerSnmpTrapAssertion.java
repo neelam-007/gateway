@@ -8,11 +8,13 @@ package com.l7tech.server.policy.assertion.alert;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.util.UptimeMetrics;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.alert.SnmpTrapAssertion;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.l7tech.server.util.UptimeMonitor;
 import org.snmp4j.MessageDispatcher;
 import org.snmp4j.MessageDispatcherImpl;
 import org.snmp4j.MessageException;
@@ -23,14 +25,12 @@ import org.snmp4j.mp.SnmpConstants;
 import org.snmp4j.security.SecurityLevel;
 import org.snmp4j.security.SecurityModel;
 import org.snmp4j.security.SecurityProtocols;
-import org.snmp4j.smi.OID;
-import org.snmp4j.smi.OctetString;
-import org.snmp4j.smi.UdpAddress;
-import org.snmp4j.smi.VariableBinding;
+import org.snmp4j.smi.*;
 import org.snmp4j.transport.DefaultUdpTransportMapping;
 import org.springframework.context.ApplicationContext;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.logging.Logger;
@@ -45,7 +45,8 @@ public class ServerSnmpTrapAssertion implements ServerAssertion {
     private final ApplicationContext applicationContext;
     private final Auditor auditor;
     private final SnmpTrapAssertion ass;
-    private final OID oid;
+    private final OID trapOid;
+    private final OID messageOid;
     private final MessageDispatcher dispatcher;
     private final byte[] communityBytes;
     private final OctetString errorMessage;
@@ -53,6 +54,7 @@ public class ServerSnmpTrapAssertion implements ServerAssertion {
     public ServerSnmpTrapAssertion(SnmpTrapAssertion ass, ApplicationContext applicationContext) {
         this.applicationContext = applicationContext;
         auditor = new Auditor(this, applicationContext, logger);
+
         this.ass = ass;
         dispatcher = new MessageDispatcherImpl();
         dispatcher.addMessageProcessingModel(new MPv2c());
@@ -63,19 +65,40 @@ public class ServerSnmpTrapAssertion implements ServerAssertion {
         }
         SecurityProtocols.getInstance().addDefaultProtocols();
 
-        int[] oi = new int[OID_BASE.length + 1];
-        System.arraycopy(OID_BASE, 0, oi, 0, OID_BASE.length);
-        oi[oi.length - 1] = ass.getOid();
-        oid = new OID(oi);
+        int[] trapOi = new int[OID_BASE.length + 1];
+        int[] msgOi = new int[OID_BASE.length + 1];
+        System.arraycopy(OID_BASE, 0, trapOi, 0, OID_BASE.length);
+        System.arraycopy(OID_BASE, 0, msgOi, 0, OID_BASE.length);
+        int lastPart = ass.getOid();
+        if (lastPart == 0) {
+            auditor.logAndAudit(AssertionMessages.SNMP_BAD_TRAP_OID);
+            lastPart = 1;
+        }
+        trapOi[trapOi.length - 1] = lastPart;
+        msgOi[msgOi.length - 1] = 0;
+        trapOid = new OID(trapOi);
+        messageOid = new OID(msgOi);
         communityBytes = ass.getCommunity().getBytes();
-        errorMessage = new OctetString(ass.getErrorMessage());
+        try {
+            errorMessage = new OctetString(ass.getErrorMessage().getBytes("UTF-8"));
+        } catch (UnsupportedEncodingException e) {
+            throw new RuntimeException(e); // Can't happen
+        }
     }
 
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException, PolicyAssertionException {
         PDU pdu = new PDU();
         pdu.setType(PDU.TRAP);
+        UptimeMetrics um = UptimeMonitor.getLastUptime();
+        long uptimeSeconds;
+        if (um == null)
+            uptimeSeconds = 0;
+        else
+            uptimeSeconds = (um.getDays() * 86400) + (um.getHours() * 60 * 60) + (um.getMinutes() * 60);
 
-        pdu.add(new VariableBinding(oid, errorMessage));
+        pdu.add(new VariableBinding(SnmpConstants.sysUpTime, new TimeTicks(uptimeSeconds * 100))); // TimeTicks is s/100
+        pdu.add(new VariableBinding(SnmpConstants.snmpTrapOID, trapOid));
+        pdu.add(new VariableBinding(messageOid, errorMessage));
 
         try {
             // TODO consider caching this DNS lookup for a while (just not forever).
