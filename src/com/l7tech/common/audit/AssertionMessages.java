@@ -5,7 +5,6 @@ import java.util.logging.Level;
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
  * <p> @author fpang </p>
- * $Id$
  */
 public class AssertionMessages extends Messages {
 
@@ -109,7 +108,7 @@ public class AssertionMessages extends Messages {
     public static final M ACCEL_XPATH_NO_HARDWARE                 = m(4750, Level.INFO, "Hardware acceleration not available; falling back to software xpath processing.");
     public static final M ACCEL_XPATH_UNSUPPORTED_PATTERN         = m(4751, Level.INFO, "Hardware acceleration not available for this xpath expression; falling back to software xpath processing.");
     public static final M ACCEL_XPATH_NO_CONTEXT                  = m(4752, Level.WARNING, "This message has no hardware acceleration context; falling back to software xpath processing.");
-    
+
     // ServerRequestWssX509Cert messages
     public static final M REQUEST_WSS_X509_FOR_ANOTHER_USER       = m(4800, Level.FINE, "This is intended for another recipient, there is nothing to validate here.");
     public static final M REQUEST_WSS_X509_NON_SOAP               = m(4801, Level.INFO, "Request not SOAP; unable to check for WS-Security signature");
@@ -273,6 +272,7 @@ public class AssertionMessages extends Messages {
     public static final M EMAILALERT_MESSAGE_SENT = m(6700, Level.INFO, "Email message sent");
     public static final M EMAILALERT_BAD_TO_ADDR  = m(6701, Level.WARNING, "Bad destination email address");
     public static final M EMAILALERT_BAD_FROM_ADDR= m(6702, Level.WARNING, "Bad source email address");
+    public static final M SNMP_BAD_TRAP_OID       = m(6703, Level.WARNING, "The OID ending with zero is reserved for the message field.  Using .1 for the trap OID instead.");
 
     // HTTP Form POST
     public static final M HTTPFORM_WRONG_TYPE    = m(6800, Level.WARNING, "Request had unsupoprted Content-Type: {0}");
