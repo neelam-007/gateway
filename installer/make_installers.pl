@@ -17,8 +17,8 @@ my %pathmap = (
 
 # List of known NSI files
 my %nsis = (
-  Bridge => "proxy/win32/Bridge",
-  Manager => "console/win32/Manager"
+Bridge => "proxy/win32/Bridge",
+Manager => "console/win32/Manager"
 );
 my @FILES = keys %nsis;
 my %fileversions = ();
@@ -79,7 +79,7 @@ sub nsi_file_replace {
 	my $includes = shift;
 	local $_;
 	my $new = "${nsi}_new.nsi";
-	my $nsi = "${nsi}.nsi";
+	$nsi = "${nsi}.nsi";
 
 	open(NSI, "<$nsi") or die "unable to read $nsi: $!";
 	open(NEW, ">$new") or die "unable to write $new: $!";
@@ -183,18 +183,44 @@ sub make_tar_file {
 		docopy("$BUILD_PATH/$include", "./$dir");
 	}
 
-	my $extra;
+	my $run_command="";
 	if ($file eq "Bridge") {
-	    $extra = "-server -Dcom.l7tech.proxy.listener.maxthreads=300 \$JAVA_OPTS ";
-    } else {
-        $extra = "";
+	    $run_command=<<EOF;
+
+# run under daemon mode if invoked as Bridge.sh -bd
+\$extra="-server -Dcom.l7tech.proxy.listener.maxthreads=300 ";
+
+if ["\$1" eq "-bd"]; then
+	\$run="-classpath $file.jar com.l7tech.proxy.Main"
+else
+	\$run="-jar $file.jar"
+fi
+
+EOF
+	} else {
+	    $run_command=<<EOM;
+
+\$run="-jar $file.jar";
+
+EOM
     }
 
 	create_file("./$dir/$file.sh", <<"EOM", 0755);
 #!/bin/sh
+# $file Startup script for UNIX systems
+# set l7 opts to java opts if empty
+
+if ["\$L7_OPTS" = "" -a "\$JAVA_OPTS" != "" ]; then
+	\$L7_OPTS=\$JAVA_OPTS
+fi
+
+# 
 
 cd `dirname \$0`
-java $extra-jar $file.jar
+
+$run_command
+
+\$JAVA_HOME/bin/java \$L7_OPTS \$extra \$run
 EOM
 
 	unlink("$dir.tar.gz");
