@@ -67,10 +67,11 @@ public class PolicyServiceClient {
         Document msg = createGetPolicyRequest(serviceId);
         WssDecorator decorator = new WssDecoratorImpl();
         DecorationRequirements req = new DecorationRequirements();
-        boolean canSign = clientCert != null && clientKey != null;
+        boolean canSign = clientKey != null && (samlAss != null || clientCert != null);
         if (samlAss != null) {
             if (samlAss.isBearerToken())
                 canSign = false;
+            // if we make a signature, include the saml token in it
             req.setSenderSamlToken(samlAss.asElement(), canSign);
         }
         if (canSign) {
@@ -79,16 +80,12 @@ public class PolicyServiceClient {
             req.setSignTimestamp();
         }
         try {
-            Element header = SoapUtil.getHeaderElement(msg);
-            if (header == null) throw new IllegalStateException("missing header"); // can't happen
-            Element body = SoapUtil.getBodyElement(msg);
-            if (body == null) throw new IllegalStateException("missing body"); // can't happen
-            Element sid = XmlUtil.findOnlyOneChildElementByName(header, SoapUtil.L7_MESSAGEID_NAMESPACE,
-                                                                SoapUtil.L7_SERVICEID_ELEMENT);
-            if (sid == null) throw new IllegalStateException("missing sid"); // can't happen
-            Element mid = SoapUtil.getL7aMessageIdElement(msg); // correlation ID
-            if (mid == null) throw new IllegalStateException("missing mid"); // can't happen
             if (canSign) {
+                Element header = SoapUtil.getHeaderElement(msg);
+                Element body = SoapUtil.getBodyElement(msg);
+                Element sid = XmlUtil.findOnlyOneChildElementByName(header, SoapUtil.L7_MESSAGEID_NAMESPACE,
+                                                                    SoapUtil.L7_SERVICEID_ELEMENT);
+                Element mid = SoapUtil.getL7aMessageIdElement(msg); // correlation ID
                 req.getElementsToSign().add(sid);
                 req.getElementsToSign().add(body);
                 req.getElementsToSign().add(mid);
