@@ -1,12 +1,13 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.server.policy.assertion;
 
 import com.l7tech.common.BuildInfo;
+import com.l7tech.common.xml.SoapFaultDetailImpl;
+import com.l7tech.common.xml.SoapFaultDetail;
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
 import com.l7tech.common.io.failover.FailoverStrategy;
@@ -22,8 +23,7 @@ import com.l7tech.common.mime.StashManager;
 import com.l7tech.common.security.saml.SamlAssertionGenerator;
 import com.l7tech.common.security.saml.SubjectStatement;
 import com.l7tech.common.security.xml.SignerInfo;
-import com.l7tech.common.util.KeystoreUtils;
-import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.util.*;
 import com.l7tech.identity.User;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.HttpRoutingAssertion;
@@ -39,6 +39,8 @@ import org.apache.commons.httpclient.protocol.Protocol;
 import org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 import org.springframework.context.ApplicationContext;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Text;
 import org.xml.sax.SAXException;
 
 import javax.net.ssl.SSLContext;
@@ -351,10 +353,47 @@ public class ServerHttpRoutingAssertion extends ServerRoutingAssertion {
                 auditor.logAndAudit(AssertionMessages.EXCEPTION_SEVERE, null, e);
                 return AssertionStatus.FAILED;
             }
-            // BEYOND THIS POINT, WE DONT RETURN FAILURE
+            // BEYOND THIS POINT, WE DONT RETURN AssertionStatus.FAILED because routing has occured
             try {
                 InputStream responseStream = postMethod.getResponseBodyAsStream();
                 String ctype = postMethod.getResponseHeader(MimeUtil.CONTENT_TYPE).getValue();
+
+                // Special case for bugzilla #1406, we encapsulate downstream ugly html error pages in a neat soapfault
+                int status = context.getResponse().getHttpResponseKnob().getStatus();
+                if (status != 200) {
+                    boolean encapsulatePayloadInSoapFault = false;
+                    // html and xhtml are type we automatically consider to be non-xml (probably not a soap fault)
+                    if (ctype != null && (ctype.indexOf("html") >= 0 || ctype.indexOf("HTML") >= 0)) {
+                        encapsulatePayloadInSoapFault = true;
+                    } else if (ctype != null && ctype.indexOf("xml") < 0 && ctype.indexOf("XML") < 0) {
+                        encapsulatePayloadInSoapFault = true;
+                    }
+                    if (encapsulatePayloadInSoapFault) {
+                        logger.warning("downstream service returned error" +
+                                       " (" + status + ") " +
+                                       "with non-xml payload. encapsulating error in soapfault");
+                        Document faultDetails = XmlUtil.stringToDocument("<downstreamResponse><status>" + status +
+                                                                         "</status></downstreamResponse>");
+                        if (responseStream != null) {
+                            byte[] tmp = HexUtils.slurpStream(responseStream);
+                            if (tmp != null) {
+                                Element plEl = faultDetails.createElement("payload");
+                                Text plTx = faultDetails.createTextNode(new String(tmp));
+                                plEl.appendChild(plTx);
+                                faultDetails.getDocumentElement().appendChild(plEl);
+                            }
+                        }
+
+
+                        SoapFaultDetail sfd = new SoapFaultDetailImpl(SoapFaultUtils.FC_SERVER,
+                                                                      "downstream service " +
+                                                                      "returned error with non-xml response",
+                                                                      faultDetails.getDocumentElement());
+                        context.setFaultDetail(sfd);
+                        return AssertionStatus.FALSIFIED;
+                    }
+                }
+
                 ContentTypeHeader outerContentType = ContentTypeHeader.parseValue(ctype);
                 final StashManager stashManager = StashManagerFactory.createStashManager();
                 context.getResponse().initialize(stashManager, outerContentType, responseStream);
