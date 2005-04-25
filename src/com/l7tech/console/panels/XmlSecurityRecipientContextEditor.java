@@ -189,6 +189,7 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
                 w.setSize(800, 560);
                 Utilities.centerOnScreen(w);
                 w.setVisible(true);
+                XmlSecurityRecipientContextEditor.this.pack();
             }
         });
     }
