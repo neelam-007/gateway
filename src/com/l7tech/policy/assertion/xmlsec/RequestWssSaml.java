@@ -1,7 +1,7 @@
 package com.l7tech.policy.assertion.xmlsec;
 
-import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.common.security.saml.SamlConstants;
+import com.l7tech.policy.assertion.Assertion;
 
 /**
  * The <code>RequestWssSaml</code> assertion describes the common SAML constraints
@@ -184,10 +184,22 @@ public class RequestWssSaml extends Assertion implements SecurityHeaderAddressab
         }
     }
 
+    /**
+     * This flag requires the lack of a subject confirmation.  A request that has a subject confirmation will
+     * not be accepted if this flag is set.
+     *
+     * @return If this is set, the request will be REQUIRED to have no subject confirmation.
+     */
     public boolean isNoSubjectConfirmation() {
         return noSubjectConfirmation;
     }
 
+    /**
+     * This flag requires the lack of a subject confirmation.  A request that has a subject confirmation will
+     * not be accepted if this flag is set.
+     *
+     * @param noSubjectConfirmation If this is set, the request will be REQUIRED to have no subject confirmation.
+     */
     public void setNoSubjectConfirmation(boolean noSubjectConfirmation) {
         this.noSubjectConfirmation = noSubjectConfirmation;
     }

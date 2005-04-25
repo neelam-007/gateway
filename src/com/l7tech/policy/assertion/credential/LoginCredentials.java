@@ -83,6 +83,7 @@ public class LoginCredentials {
         this(login, credentials, CredentialFormat.CLEARTEXT, credentialSource, null);
     }
 
+    /** @return the login name, or null if there isn't one. */
     public String getLogin() {
         return login;
     }

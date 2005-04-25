@@ -3,6 +3,7 @@ package com.l7tech.server.policy;
 import com.l7tech.common.audit.AuditContext;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.XmlKnob;
+import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.DecoratorException;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
@@ -32,6 +33,7 @@ import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
+import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import com.l7tech.policy.assertion.xmlsec.SecureConversation;
 import com.l7tech.policy.wsp.WspWriter;
 import com.l7tech.server.message.PolicyEnforcementContext;
@@ -75,7 +77,7 @@ public class PolicyService extends ApplicationObjectSupport {
          * allowd to download the policy
          */
     private static final Assertion[] ALL_CREDENTIAL_ASSERTIONS_TYPES = new Assertion[]{
-          new RequestWssSaml(),
+          RequestWssSaml.newHolderOfKey(),
           new RequestWssX509Cert(),
           new SecureConversation(),
           new HttpDigest(),
@@ -108,6 +110,10 @@ public class PolicyService extends ApplicationObjectSupport {
                 // Lighed saml requirements for policy download
                 RequestWssSaml requestWssSaml = (RequestWssSaml)assertion;
                 requestWssSaml.setCheckAssertionValidity(false);
+                requestWssSaml.setNameFormats(SamlConstants.ALL_NAMEIDENTIFIERS);
+                final SamlAuthenticationStatement as = new SamlAuthenticationStatement();
+                as.setAuthenticationMethods(SamlConstants.ALL_AUTHENTICATIONS);
+                requestWssSaml.setAuthenticationStatement(as);
             }
 
             allCredentialAssertions.add(assertion);
@@ -269,12 +275,12 @@ public class PolicyService extends ApplicationObjectSupport {
                 return;
             }
         } else {
-            response.initialize(makeUnauthorizedPolicyDownloadFault(status.getMessage()));
+            response.initialize(makeUnauthorizedPolicyDownloadFault(status.getMessage(), context.getFaultDetail()));
             return;
         }
 
         if (policyDoc == null) {
-            response.initialize(makeUnauthorizedPolicyDownloadFault("No such policy available to you."));
+            response.initialize(makeUnauthorizedPolicyDownloadFault("No such policy available to you.", context.getFaultDetail()));
             return;
         }
 
@@ -291,13 +297,38 @@ public class PolicyService extends ApplicationObjectSupport {
         return;
     }
 
-    private Document makeUnauthorizedPolicyDownloadFault(String msg) {
+    private Document makeUnauthorizedPolicyDownloadFault(String msg, SoapFaultDetail faultDetail) {
         Document fault = null;
         try {
             Element detailEl = null;
             if (msg != null) {
                 detailEl = SoapFaultUtils.makeFaultDetailsSubElement("more", msg);
             }
+            if (faultDetail != null) {
+                final Document factory;
+                final Element holder;
+                if (detailEl != null) {
+                    factory = detailEl.getOwnerDocument();
+                    holder = factory.createElement("details");
+                } else {
+                    factory = XmlUtil.stringToDocument("<holder/>");
+                    holder = factory.getDocumentElement();
+                }
+                if (detailEl != null)
+                    holder.appendChild(detailEl);
+
+                final String faultString = faultDetail.getFaultString();
+                if (faultString != null) {
+                    Element mess = factory.createElement("message");
+                    mess.appendChild(XmlUtil.createTextNode(factory, faultString));
+                    holder.appendChild(mess);
+                }
+
+                final Element fd = faultDetail.getFaultDetail();
+                if (fd != null)
+                    holder.appendChild(fd);
+            }
+
             fault = SoapFaultUtils.generateSoapFaultDocument(SoapFaultUtils.FC_SERVER,
                                                              "unauthorized policy download",
                                                              detailEl,

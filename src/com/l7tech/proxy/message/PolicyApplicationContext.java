@@ -417,7 +417,8 @@ public class PolicyApplicationContext extends ProcessingContext {
             }
         } catch (CertificateAlreadyIssuedException e) {
             // Bug #380 - if we haven't updated policy yet, try that first - mlyons
-            if (!isPolicyUpdated()) {
+            //            but not if it's a federated gw, since in that case we may have needed the cert to DL the policy
+            if (!isPolicyUpdated() && !ssg.isFederatedGateway()) {
                 getSsg().getRuntime().getPolicyManager().flushPolicy(getPolicyAttachmentKey());
                 throw new PolicyRetryableException();
             } else {

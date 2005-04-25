@@ -68,7 +68,7 @@ public class ClientRequestWssSaml extends ClientAssertion {
                         wssReqs = context.getAlternateWssRequirements(data.getRecipientContext());
                     }
                     if (privateKey != null) {
-                        wssReqs.setSenderSamlToken(ass.asElement(), true); // sign the assertion into the msg   
+                        wssReqs.setSenderSamlToken(ass.asElement(), !ass.isHolderOfKey());
                         wssReqs.setSignTimestamp();
                         wssReqs.setSenderMessageSigningPrivateKey(privateKey);
                     } else {

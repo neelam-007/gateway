@@ -5,9 +5,6 @@
  */
 package com.l7tech.common.security.saml;
 
-import com.l7tech.common.security.saml.SamlConstants;
-import com.l7tech.common.security.saml.AuthenticationStatement;
-import com.l7tech.common.security.saml.AuthorizationStatement;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 
@@ -73,17 +70,6 @@ public class SubjectStatement {
         if (credentials == null) {
             throw new IllegalArgumentException();
         }
-        if (credentials.getLogin() == null) { // if login null, try the cert dn
-            final X509Certificate clientCert = credentials.getClientCert();
-            if (clientCert != null) {
-                setName(clientCert.getSubjectDN().getName());
-            } else {
-                throw new IllegalArgumentException("Login name is required");
-            }
-        } else {
-            setName(credentials.getLogin());
-        }
-        setConfirmationMethod(confirmation.method);
 
         CredentialFormat format = credentials.getFormat();
         if (confirmation.equals(HOLDER_OF_KEY)) {
@@ -93,12 +79,18 @@ public class SubjectStatement {
             }
         }
 
-        if (CredentialFormat.CLIENTCERT.equals(format)) {
-            setKeyInfo(credentials.getClientCert());
+        final X509Certificate clientCert = credentials.getClientCert();
+        if (clientCert != null) {
+            setKeyInfo(clientCert);
             setNameFormat(SamlConstants.NAMEIDENTIFIER_X509_SUBJECT);
+            setName(clientCert.getSubjectDN().getName());
         } else {
             setNameFormat(SamlConstants.NAMEIDENTIFIER_UNSPECIFIED);
+            final String login = credentials.getLogin();
+            setName(login == null ? "" : login);
         }
+
+        setConfirmationMethod(confirmation.method);
     }
 
     public String getName() {

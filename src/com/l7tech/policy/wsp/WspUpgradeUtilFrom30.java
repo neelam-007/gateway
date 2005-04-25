@@ -10,6 +10,7 @@ import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.FalseAssertion;
 import com.l7tech.policy.assertion.SslAssertion;
 import com.l7tech.policy.assertion.xmlsec.RequestWssSaml;
+import com.l7tech.policy.assertion.xmlsec.SamlAuthenticationStatement;
 import org.w3c.dom.Element;
 
 /**
@@ -31,8 +32,11 @@ class WspUpgradeUtilFrom30 {
                 protected void configureAssertion(Assertion ass, Element source, WspVisitor visitor) {
                     RequestWssSaml saml = (RequestWssSaml)ass;
                     saml.setRequireHolderOfKeyWithMessageSignature(true);
-                    saml.setSubjectConfirmations(new String[]{SamlConstants.CONFIRMATION_HOLDER_OF_KEY});
-                    saml.setNameFormats(new String[] { SamlConstants.NAMEIDENTIFIER_X509_SUBJECT });
+                    saml.setSubjectConfirmations(new String[] { SamlConstants.CONFIRMATION_HOLDER_OF_KEY });
+                    saml.setNameFormats(SamlConstants.ALL_NAMEIDENTIFIERS);
+                    final SamlAuthenticationStatement as = new SamlAuthenticationStatement();
+                    as.setAuthenticationMethods(SamlConstants.ALL_AUTHENTICATIONS);
+                    saml.setAuthenticationStatement(as);
                 }
             };
 

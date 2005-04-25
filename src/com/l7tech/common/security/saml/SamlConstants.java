@@ -32,12 +32,32 @@ public class SamlConstants {
     public static final String XML_DSIG_AUTHENTICATION = "urn:ietf:rfc:3075";
     public static final String UNSPECIFIED_AUTHENTICATION = "urn:oasis:names:tc:SAML:1.0:am:unspecified";
 
+    public static final String[] ALL_AUTHENTICATIONS = new String[] {
+        PASSWORD_AUTHENTICATION,
+        KERBEROS_AUTHENTICATION,
+        SRP_AUTHENTICATION,
+        HARDWARE_TOKEN_AUTHENTICATION,
+        SSL_TLS_CERTIFICATE_AUTHENTICATION,
+        X509_PKI_AUTHENTICATION,
+        PGP_AUTHENTICATION,
+        SPKI_AUTHENTICATION,
+        XKMS_AUTHENTICATION,
+        XML_DSIG_AUTHENTICATION,
+        UNSPECIFIED_AUTHENTICATION,
+    };
 
     /** name identifiers */
     public static final String NAMEIDENTIFIER_X509_SUBJECT = "urn:oasis:names:tc:SAML:1.1:nameid-format:X509SubjectName";
     public static final String NAMEIDENTIFIER_EMAIL = "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress";
     public static final String NAMEIDENTIFIER_WINDOWS = "urn:oasis:names:tc:SAML:1.1:nameid-format:WindowsDomainQualifiedName";
     public static final String NAMEIDENTIFIER_UNSPECIFIED = "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified";
+
+    public static final String[] ALL_NAMEIDENTIFIERS = {
+        NAMEIDENTIFIER_X509_SUBJECT,
+        NAMEIDENTIFIER_EMAIL,
+        NAMEIDENTIFIER_WINDOWS,
+        NAMEIDENTIFIER_UNSPECIFIED,
+    };
 
     /** SAML response status codes see saml core spec section 3.4.3.1 */
     public static final String STATUS_SUCCESS = "Success";

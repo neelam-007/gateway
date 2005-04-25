@@ -72,7 +72,7 @@ public class PolicyServiceClient {
             if (samlAss.isBearerToken())
                 canSign = false;
             // if we make a signature, include the saml token in it
-            req.setSenderSamlToken(samlAss.asElement(), canSign);
+            req.setSenderSamlToken(samlAss.asElement(), canSign && !samlAss.isHolderOfKey());
         }
         if (canSign) {
             req.setSenderMessageSigningCertificate(clientCert);
@@ -290,13 +290,15 @@ public class PolicyServiceClient {
     }
 
     private static void translateSoapFault(Element fault) throws InvalidDocumentFormatException, BadCredentialsException {
-        // TODO use a proper fault URI for this error 
+        // TODO use a proper fault URI for this error
         final String s = "unauthorized policy download";
         final String faultXml;
         try {
             faultXml = XmlUtil.nodeToString(fault);
-            if (faultXml.indexOf(s) >= 0)
+            if (faultXml.indexOf(s) >= 0) {
+                log.info("Auth failed from policy service: " + faultXml);
                 throw new BadCredentialsException(s);
+            }
             log.severe("Unexpected SOAP fault from policy service: " + faultXml);
             throw new InvalidDocumentFormatException("Unexpected SOAP fault from policy service");
         } catch (IOException e) {
@@ -353,7 +355,6 @@ public class PolicyServiceClient {
             log.log(Level.FINEST, "Policy server response content length=" + len);
 
             Document response = conn.getDocument();
-
 
             final long millisAfter = System.currentTimeMillis();
             final long roundTripMillis = millisAfter - millisBefore;
