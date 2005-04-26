@@ -15,7 +15,8 @@ CREATE TABLE audit_detail (
    exception MEDIUMTEXT,
    PRIMARY KEY (objectid),
    KEY idx_component_id (component_id),
-   KEY idx_audit_oid (audit_oid)
+   KEY idx_audit_oid (audit_oid),
+   FOREIGN KEY (audit_oid) REFERENCES audit_main (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB;
 
 DROP TABLE IF EXISTS audit_detail_params;
@@ -23,11 +24,10 @@ CREATE TABLE audit_detail_params (
    audit_detail_oid bigint(20) NOT NULL,
    position integer NOT NULL,
    value varchar(255) NOT NULL,
-   PRIMARY KEY (audit_detail_oid, position)
+   PRIMARY KEY (audit_detail_oid, position),
+   FOREIGN KEY (audit_detail_oid) REFERENCES audit_detail (objectid) ON DELETE CASCADE
 ) Type=InnoDB;
 
-ALTER TABLE audit_detail_params ADD FOREIGN KEY (audit_detail_oid) REFERENCES audit_detail (objectid) ON DELETE CASCADE
-ALTER TABLE audit_detail ADD FOREIGN KEY (audit_oid) REFERENCES audit_main (objectid) ON DELETE CASCADE
 ALTER TABLE audit_system ADD FOREIGN KEY (objectid) REFERENCES audit_main (objectid) ON DELETE CASCADE
 ALTER TABLE audit_message ADD FOREIGN KEY (objectid) REFERENCES audit_main (objectid) ON DELETE CASCADE
 ALTER TABLE audit_admin ADD FOREIGN KEY (objectid) REFERENCES audit_main (objectid) ON DELETE CASCADE
