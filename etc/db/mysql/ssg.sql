@@ -12,6 +12,8 @@
 ---------------------------------------------------------
 -- Server version	3.23.56-log
 
+SET FOREIGN_KEY_CHECKS = 0;
+
 --
 -- Table structure for table 'hibernate_unique_key'
 --
@@ -364,7 +366,8 @@ CREATE TABLE audit_admin (
   action char(1),
   PRIMARY KEY  (objectid),
   KEY idx_class (entity_class),
-  KEY idx_oid (entity_id)
+  KEY idx_oid (entity_id),
+  FOREIGN KEY (objectid) REFERENCES audit_main (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB;
 
 --
@@ -393,7 +396,8 @@ CREATE TABLE audit_message (
   KEY idx_request_id (request_id),
   KEY idx_service_oid (service_oid),
   KEY idx_provider_oid (provider_oid),
-  KEY idx_user_id (user_id)
+  KEY idx_user_id (user_id),
+  FOREIGN KEY (objectid) REFERENCES audit_main (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB;
 
 DROP TABLE IF EXISTS audit_system;
@@ -403,7 +407,8 @@ CREATE TABLE audit_system (
   action varchar(32) NOT NULL,
   PRIMARY KEY (objectid),
   KEY idx_component_id (component_id),
-  KEY idx_action (action)
+  KEY idx_action (action),
+  FOREIGN KEY (objectid) REFERENCES audit_main (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB;
 
 DROP TABLE IF EXISTS audit_detail;
@@ -417,7 +422,8 @@ CREATE TABLE audit_detail (
   exception MEDIUMTEXT,
   PRIMARY KEY (objectid),
   KEY idx_component_id (component_id),
-  KEY idx_audit_oid (audit_oid)
+  KEY idx_audit_oid (audit_oid),
+  FOREIGN KEY (audit_oid) REFERENCES audit_main (objectid) ON DELETE CASCADE
 ) TYPE=InnoDB;
 
 DROP TABLE IF EXISTS audit_detail_params;
@@ -425,7 +431,8 @@ CREATE TABLE audit_detail_params (
   audit_detail_oid bigint(20) NOT NULL,
   position integer NOT NULL,
   value varchar(255) NOT NULL,
-  PRIMARY KEY (audit_detail_oid, position)
+  PRIMARY KEY (audit_detail_oid, position),
+  FOREIGN KEY (audit_detail_oid) REFERENCES audit_detail (objectid) ON DELETE CASCADE
 ) Type=InnoDB;
 
 DROP TABLE IF EXISTS message_id;
@@ -433,3 +440,5 @@ CREATE TABLE message_id (
   messageid varchar(255) NOT NULL PRIMARY KEY,
   expires bigint(20) NOT NULL
 ) TYPE=InnoDB;
+
+SET FOREIGN_KEY_CHECKS = 1;
