@@ -76,6 +76,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
     private final MessageProcessor messageProcessor;
     private X509Certificate serverCert;
     private final Auditor auditor;
+    private final boolean useClientCert;
 
     public ServerBridgeRoutingAssertion(BridgeRoutingAssertion assertion, ApplicationContext ctx) {
         super(ctx);
@@ -97,6 +98,7 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
             logger.warning("BridgeRoutingAssertion: URL is invalid; assertion is therefore nonfunctional.");
             ssg = null;
             messageProcessor = null;
+            useClientCert = false;
             return;
             //throw (IllegalArgumentException)new IllegalArgumentException("Bad protected service URL").initCause(e);
         }
@@ -113,16 +115,13 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
                            e);
                 ssg = null;
                 messageProcessor = null;
+                useClientCert = false;
                 return;
             }
         } else
             hardcodedPolicy = null;
 
         gatewayHostname = url.getHost();
-
-        String username = assertion.getLogin();
-        final String pass = assertion.getPassword();
-        char[] password = pass == null ? null : pass.toCharArray();
 
         ssg = new Ssg(1, gatewayHostname) {
             public synchronized String getKeyStorePath() {
@@ -146,17 +145,31 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
             }
 
             public X509Certificate getClientCertificate() {
-                return signerInfo.getCertificateChain()[0];
+                return useClientCert ? signerInfo.getCertificateChain()[0] : null;
             }
 
             public PrivateKey getClientCertificatePrivateKey() {
-                return signerInfo.getPrivate();
+                return useClientCert ? signerInfo.getPrivate() : null;
             }
         };
 
         ssg.getRuntime().setCachedServerCert(null);
-        ssg.setUsername(username);
-        ssg.getRuntime().setCachedPassword(password);
+
+        String username = assertion.getLogin();
+        char[] password = null;
+        if (username != null) {
+            final String pass = assertion.getPassword();
+            password = pass == null ? null : pass.toCharArray();
+        }
+
+
+        if (username != null && password != null && username.length() > 0) {
+            ssg.setUsername(username);
+            ssg.getRuntime().setCachedPassword(password);
+            useClientCert = false;
+        } else {
+            useClientCert = true;
+        }
 
         final SslClientTrustManager trustManager = (SslClientTrustManager)applicationContext.getBean("httpRoutingAssertionTrustManager");
         ssg.getRuntime().setTrustManager(trustManager);
@@ -470,11 +483,11 @@ public class ServerBridgeRoutingAssertion extends ServerRoutingAssertion {
         }
 
         protected X509Certificate getClientCert() throws KeyStoreCorruptException {
-            return signerInfo.getCertificateChain()[0];
+            return useClientCert ? signerInfo.getCertificateChain()[0] : null;
         }
 
         public PrivateKey getClientCertPrivateKey() throws NoSuchAlgorithmException, BadCredentialsException, OperationCanceledException, KeyStoreCorruptException {
-            return signerInfo.getPrivate();
+            return useClientCert ? signerInfo.getPrivate() : null;
         }
 
         protected boolean isClientCertAvailabile() throws KeyStoreCorruptException {
