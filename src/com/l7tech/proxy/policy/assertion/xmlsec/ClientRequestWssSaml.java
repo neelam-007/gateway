@@ -27,9 +27,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Unimplemented on the client-side.
- * @author mike
- * @version 1.0
+ * Client-side support for the SAML security assertion.
  */
 public class ClientRequestWssSaml extends ClientAssertion {
     private static final Logger logger = Logger.getLogger(ClientRequestWssSaml.class.getName());
