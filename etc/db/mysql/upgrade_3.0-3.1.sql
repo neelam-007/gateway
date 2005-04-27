@@ -40,3 +40,6 @@ alter table internal_user modify column login varchar(255);
 alter table audit_admin  modify column admin_login varchar(255);
 alter table fed_user  modify column login varchar(255);
 
+ALTER TABLE audit_message ADD operation_name VARCHAR(255);
+ALTER TABLE audit_message ADD response_status INTEGER;
+ALTER TABLE audit_message ADD routing_latency INTEGER;
