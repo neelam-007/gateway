@@ -91,13 +91,12 @@ fi
 # aliases to start and stop ssg
 alias startssg='/etc/rc.d/init.d/ssg start'
 alias stopssg='/etc/rc.d/init.d/ssg stop'
-# make temp files
 
 
 if [ -z "$JAVA_OPTS" ]; then
+    # IF java opts are empty, use these we just built
+    #, otherwise don't replace
     JAVA_OPTS=$default_java_opts;
-else
-    JAVA_OPTS="$default_java_opts";
 fi
 
 export SSG_HOME
