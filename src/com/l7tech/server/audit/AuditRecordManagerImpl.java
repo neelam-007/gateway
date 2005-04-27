@@ -16,12 +16,12 @@ import com.l7tech.server.ServerConfig;
 import com.l7tech.server.event.admin.AuditPurgeInitiated;
 import com.l7tech.server.event.system.AuditPurgeEvent;
 import net.sf.hibernate.Criteria;
-import net.sf.hibernate.Hibernate;
 import net.sf.hibernate.HibernateException;
 import net.sf.hibernate.Session;
 import net.sf.hibernate.expression.Expression;
-import net.sf.hibernate.type.Type;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 
@@ -107,30 +107,30 @@ public class AuditRecordManagerImpl extends HibernateEntityManager implements Au
 
     public void deleteOldAuditRecords() throws DeleteException {
         serverConfig.getSpringContext().publishEvent(new AuditPurgeInitiated(this));
+        String sMinAgeHours = serverConfig.getProperty(ServerConfig.PARAM_AUDIT_PURGE_MINIMUM_AGE);
+        if (sMinAgeHours == null || sMinAgeHours.length() == 0) sMinAgeHours = "168";
+        int minAgeHours = 168;
         try {
-            String sMinAgeHours = serverConfig.getProperty(ServerConfig.PARAM_AUDIT_PURGE_MINIMUM_AGE);
-            if (sMinAgeHours == null || sMinAgeHours.length() == 0) sMinAgeHours = "168";
-            int minAgeHours = 168;
-            try {
-                minAgeHours = Integer.valueOf(sMinAgeHours).intValue();
-            } catch (NumberFormatException e) {
-                logger.info(ServerConfig.PARAM_AUDIT_PURGE_MINIMUM_AGE + " value '" + sMinAgeHours +
-                            "' is not a valid number. Using " + minAgeHours + " instead." );
-            }
+            minAgeHours = Integer.valueOf(sMinAgeHours).intValue();
+        } catch (NumberFormatException e) {
+            logger.info(ServerConfig.PARAM_AUDIT_PURGE_MINIMUM_AGE + " value '" + sMinAgeHours +
+                    "' is not a valid number. Using " + minAgeHours + " instead.");
+        }
 
-            long maxTime = System.currentTimeMillis() - (minAgeHours * 60 * 60 * 1000);
+        long maxTime = System.currentTimeMillis() - (minAgeHours * 60 * 60 * 1000);
 
+        PreparedStatement deleteStmt = null;
+        try {
             Session s = getSession();
-            StringBuffer query = new StringBuffer("FROM audit IN CLASS ").append(getInterfaceClass().getName());
-            query.append(" WHERE audit.").append(PROP_LEVEL).append(" <> ?");
-            query.append(" AND audit.").append(PROP_TIME).append(" < ?");
-            int numDeleted = s.delete( query.toString(),
-                                       new Object[] { Level.SEVERE.getName(), new Long(maxTime) },
-                                       new Type[] { Hibernate.STRING, Hibernate.LONG } );
-
-            serverConfig.getSpringContext().publishEvent(new AuditPurgeEvent( this, numDeleted ));
-        } catch ( HibernateException e ) {
-            throw new DeleteException("Couldn't purge audit events", e);
+            deleteStmt = s.connection().prepareStatement("DELETE FROM audit_main WHERE audit_level <> ? AND time < ?");
+            deleteStmt.setString(1, Level.SEVERE.getName());
+            deleteStmt.setLong(2, maxTime);
+            int numDeleted = deleteStmt.executeUpdate();
+            serverConfig.getSpringContext().publishEvent(new AuditPurgeEvent(this, numDeleted));
+        } catch (Exception e) {
+            throw new DeleteException("Couldn't delete audit records", e);
+        } finally {
+            if (deleteStmt != null) try { deleteStmt.close(); } catch (SQLException e) { }
         }
     }
 
