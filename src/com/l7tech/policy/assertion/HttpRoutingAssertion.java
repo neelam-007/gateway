@@ -147,5 +147,5 @@ public class HttpRoutingAssertion extends RoutingAssertion {
     protected String _userAgent;
     protected int _maxConnections;
     protected String[] _customIpAddresses = null;
-    protected String _failoverStrategyName = "sticky";
+    protected String _failoverStrategyName = "ordered";
 }
