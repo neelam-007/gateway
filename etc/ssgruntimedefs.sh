@@ -47,18 +47,14 @@ if [ $cpucount = 1 ]; then
 	# single cpu
 else
 	# java 1.5 doesn't seem to want the other options
-	default_java_opts="$default_java_opts -XX:+UseParNewGC -XX:ParallelGCThreads=$cpucount "
+	if [ `expr $JAVA_HOME : ".*1\.4.*"` != 0 ]; then 
+		default_java_opts="$default_java_opts -XX:+UseParNewGC -XX:ParallelGCThreads=$cpucount "
+		default_java_opts="$default_java_opts -XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=90"
+		default_java_opts="$default_java_opts -XX:SurvivorRatio=128 -XX:MaxTenuringThreshold=0"
+	else 
+		default_java_opts="$default_java_opts -XX:+UseParNewGC -XX:ParallelGCThreads=$cpucount "
+	fi
 fi
-#
-#	# default is 1.4.2
-#	if [ $cpucount = 1 ]; then
-#		echo -n ""
-#		# single cpu
-#	else
-#		default_java_opts="$default_java_opts -XX:+UseParNewGC -XX:ParallelGCThreads=$cpucount "
-#		default_java_opts="$default_java_opts -XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=90"
-#		default_java_opts="$default_java_opts -XX:SurvivorRatio=128 -XX:MaxTenuringThreshold=0"
-#	fi
 
 ulimit -s 2048
 
@@ -96,19 +92,13 @@ fi
 alias startssg='/etc/rc.d/init.d/ssg start'
 alias stopssg='/etc/rc.d/init.d/ssg stop'
 # make temp files
-tmpfile=`mktemp`;
 
-echo $JAVA_OPTS > $tmpfile
 
 if [ -z "$JAVA_OPTS" ]; then
     JAVA_OPTS=$default_java_opts;
 else
     JAVA_OPTS="$default_java_opts";
 fi
-
-rm $tmpfile
-
-unset default_java_opts
 
 export SSG_HOME
 export JAVA_HOME
