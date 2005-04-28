@@ -87,7 +87,7 @@ public class TimeRangeTreeNode extends LeafAssertionTreeNode {
     }
 
     private TimeOfDay utcToLocalTime(TimeOfDay utc) {
-        int totOffsetInMin = Calendar.getInstance().getTimeZone().getRawOffset() / (1000*60);
+        int totOffsetInMin = Calendar.getInstance().getTimeZone().getOffset(System.currentTimeMillis()) / (1000*60);
         int hroffset = totOffsetInMin/60;
         int minoffset = totOffsetInMin%60;
         int utchr = utc.getHour() + hroffset;

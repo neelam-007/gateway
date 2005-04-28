@@ -79,7 +79,7 @@ public class TimeRangePropertiesDialog extends JDialog {
         Actions.setEscKeyStrokeDisposes(this);
         
         // calculate UTC offset
-        int totOffsetInMin = Calendar.getInstance().getTimeZone().getRawOffset() / (1000*60);
+        int totOffsetInMin = Calendar.getInstance().getTimeZone().getOffset(System.currentTimeMillis()) / (1000*60);
         hroffset = totOffsetInMin/60;
         minoffset = totOffsetInMin%60;
 
