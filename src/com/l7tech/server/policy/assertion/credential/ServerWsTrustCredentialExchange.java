@@ -7,10 +7,7 @@ package com.l7tech.server.policy.assertion.credential;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
-import com.l7tech.common.http.GenericHttpHeader;
-import com.l7tech.common.http.GenericHttpRequestParamsImpl;
-import com.l7tech.common.http.HttpHeader;
-import com.l7tech.common.http.SimpleHttpClient;
+import com.l7tech.common.http.*;
 import com.l7tech.common.http.prov.jdk.UrlConnectionHttpClient;
 import com.l7tech.common.message.XmlKnob;
 import com.l7tech.common.mime.ContentTypeHeader;
@@ -148,7 +145,6 @@ public class ServerWsTrustCredentialExchange implements ServerAssertion {
 
         try {
             // Get RSTR
-            // TODO do we want to let this IOException propagate and terminate policy processing?
             SimpleHttpClient.SimpleXmlResponse response = httpClient.postXml(params, rstDoc);
             int status = response.getStatus();
             if (status != 200) {
@@ -194,6 +190,9 @@ public class ServerWsTrustCredentialExchange implements ServerAssertion {
                 auditor.logAndAudit(AssertionMessages.WSTRUST_DECORATION_FAILED, null, e);
                 return AssertionStatus.FAILED;
             }
+        } catch (GenericHttpException e) {
+            auditor.logAndAudit(AssertionMessages.WSTRUST_SERVER_HTTP_FAILED, null, e);
+            return AssertionStatus.FAILED;
         } catch (SAXException e) {
             auditor.logAndAudit(AssertionMessages.ERROR_READING_RESPONSE, null, e);
             return AssertionStatus.FAILED;
