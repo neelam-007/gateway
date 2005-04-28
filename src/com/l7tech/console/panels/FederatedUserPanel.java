@@ -23,6 +23,7 @@ import java.awt.event.HierarchyListener;
 import java.util.NoSuchElementException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.security.cert.X509Certificate;
 
 /**
  * UserPanel - edits the <CODE>User/CODE> instances.
@@ -71,7 +72,7 @@ public class FederatedUserPanel extends UserPanel {
     private JTextField emailTextField;
     private final String USER_DOES_NOT_EXIST_MSG = "This user no longer exists";
 
-    private final MainWindow mainWindow = TopComponents.getInstance().getMainWindow();
+    final MainWindow mainWindow = TopComponents.getInstance().getMainWindow();
 
     private final ActionListener closeDlgListener = new ActionListener() {
         public void actionPerformed(ActionEvent e) {
@@ -108,16 +109,16 @@ public class FederatedUserPanel extends UserPanel {
             // Here is where we would use the node context to retrieve Panel content
             if (!(object instanceof EntityHeader)) {
                 throw new IllegalArgumentException("Invalid argument type: "
-                        + "\nExpected: EntityHeader"
-                        + "\nReceived: " + object.getClass().getName());
+                  + "\nExpected: EntityHeader"
+                  + "\nReceived: " + object.getClass().getName());
             }
 
-            userHeader = (EntityHeader) object;
+            userHeader = (EntityHeader)object;
 
             if (!EntityType.USER.equals(userHeader.getType())) {
                 throw new IllegalArgumentException("Invalid argument type: "
-                        + "\nExpected: User "
-                        + "\nReceived: " + userHeader.getType());
+                  + "\nExpected: User "
+                  + "\nReceived: " + userHeader.getType());
             }
 
             if (config == null) {
@@ -164,10 +165,10 @@ public class FederatedUserPanel extends UserPanel {
 
         // Add the main panel
         add(getMainPanel(),
-                new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
-                        GridBagConstraints.CENTER,
-                        GridBagConstraints.BOTH,
-                        new Insets(8, 8, 8, 8), 0, 0));
+            new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
+                                   GridBagConstraints.CENTER,
+                                   GridBagConstraints.BOTH,
+                                   new Insets(8, 8, 8, 8), 0, 0));
     }
 
     /**
@@ -183,17 +184,17 @@ public class FederatedUserPanel extends UserPanel {
 
         // Add GroupTabbedPane
         mainPanel.add(getTabbedPane(),
-                new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
-                        GridBagConstraints.CENTER,
-                        GridBagConstraints.BOTH,
-                        new Insets(0, 0, 0, 0), 0, 0));
+                      new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
+                                             GridBagConstraints.CENTER,
+                                             GridBagConstraints.BOTH,
+                                             new Insets(0, 0, 0, 0), 0, 0));
 
         // Add buttonPanel
         mainPanel.add(getButtonPanel(),
-                new GridBagConstraints(0, 1, 1, 1, 1.0, 0.0,
-                        GridBagConstraints.CENTER,
-                        GridBagConstraints.BOTH,
-                        new Insets(0, 0, 0, 0), 0, 0));
+                      new GridBagConstraints(0, 1, 1, 1, 1.0, 0.0,
+                                             GridBagConstraints.CENTER,
+                                             GridBagConstraints.BOTH,
+                                             new Insets(0, 0, 0, 0), 0, 0));
 
         // Return panel
         return mainPanel;
@@ -213,7 +214,7 @@ public class FederatedUserPanel extends UserPanel {
         tabbedPane.add(getDetailsPanel(), DETAILS_LABEL);
         tabbedPane.add(groupPanel, MEMBERSHIP_LABEL);
 
-       tabbedPane.add(certPanel, CERTIFICATE_LABEL);
+        tabbedPane.add(certPanel, CERTIFICATE_LABEL);
 
         // Return tabbed pane
         return tabbedPane;
@@ -230,96 +231,96 @@ public class FederatedUserPanel extends UserPanel {
         detailsPanel.setLayout(new GridBagLayout());
 
         detailsPanel.add(new JLabel(new ImageIcon(ImageCache.getInstance().getIcon(USER_ICON_RESOURCE))),
-                new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
-                        GridBagConstraints.WEST,
-                        GridBagConstraints.NONE,
-                        new Insets(5, 10, 0, 0), 0, 0));
+                         new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
+                                                GridBagConstraints.WEST,
+                                                GridBagConstraints.NONE,
+                                                new Insets(5, 10, 0, 0), 0, 0));
 
         detailsPanel.add(getNameLabel(),
-                new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
-                        GridBagConstraints.WEST,
-                        GridBagConstraints.NONE,
-                        new Insets(10, 15, 0, 0), 0, 0));
+                         new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
+                                                GridBagConstraints.WEST,
+                                                GridBagConstraints.NONE,
+                                                new Insets(10, 15, 0, 0), 0, 0));
 
         detailsPanel.add(new JSeparator(JSeparator.HORIZONTAL),
-                new GridBagConstraints(0, 1, 2, 1, 0.0, 0.0,
-                        GridBagConstraints.WEST,
-                        GridBagConstraints.BOTH,
-                        new Insets(10, 10, 0, 10), 0, 0));
-
-        detailsPanel.add(getX509SubjectNameLabel(),
-                new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
-                        GridBagConstraints.WEST,
-                        GridBagConstraints.NONE,
-                        new Insets(10, 10, 0, 0), 0, 0));
-
-        detailsPanel.add(getX509SubjectNameTextField(),
-                new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
-                        GridBagConstraints.WEST,
-                        GridBagConstraints.HORIZONTAL,
-                        new Insets(10, 15, 0, 10), 0, 0));
+                         new GridBagConstraints(0, 1, 2, 1, 0.0, 0.0,
+                                                GridBagConstraints.WEST,
+                                                GridBagConstraints.BOTH,
+                                                new Insets(10, 10, 0, 10), 0, 0));
 
         detailsPanel.add(getLoginLabel(),
-                new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
-                        GridBagConstraints.WEST,
-                        GridBagConstraints.NONE,
-                        new Insets(10, 10, 0, 0), 0, 0));
+                         new GridBagConstraints(0, 2, 1, 1, 0.0, 0.0,
+                                                GridBagConstraints.WEST,
+                                                GridBagConstraints.NONE,
+                                                new Insets(10, 10, 0, 0), 0, 0));
 
         detailsPanel.add(getLoginTextField(),
-                new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0,
-                        GridBagConstraints.WEST,
-                        GridBagConstraints.HORIZONTAL,
-                        new Insets(10, 15, 0, 10), 0, 0));
+                         new GridBagConstraints(1, 2, 1, 1, 1.0, 0.0,
+                                                GridBagConstraints.WEST,
+                                                GridBagConstraints.HORIZONTAL,
+                                                new Insets(10, 15, 0, 10), 0, 0));
+
+        detailsPanel.add(getX509SubjectNameLabel(),
+                         new GridBagConstraints(0, 3, 1, 1, 0.0, 0.0,
+                                                GridBagConstraints.WEST,
+                                                GridBagConstraints.NONE,
+                                                new Insets(10, 10, 0, 0), 0, 0));
+
+        detailsPanel.add(getX509SubjectNameTextField(),
+                         new GridBagConstraints(1, 3, 1, 1, 1.0, 0.0,
+                                                GridBagConstraints.WEST,
+                                                GridBagConstraints.HORIZONTAL,
+                                                new Insets(10, 15, 0, 10), 0, 0));
 
         detailsPanel.add(getEmailLabel(),
-                new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
-                        GridBagConstraints.WEST,
-                        GridBagConstraints.NONE,
-                        new Insets(10, 10, 0, 0), 0, 0));
+                         new GridBagConstraints(0, 4, 1, 1, 0.0, 0.0,
+                                                GridBagConstraints.WEST,
+                                                GridBagConstraints.NONE,
+                                                new Insets(10, 10, 0, 0), 0, 0));
 
         detailsPanel.add(getEmailTextField(),
-                new GridBagConstraints(1, 4, 1, 1, 1.0, 0.0,
-                        GridBagConstraints.WEST,
-                        GridBagConstraints.HORIZONTAL,
-                        new Insets(10, 15, 0, 10), 0, 0));
+                         new GridBagConstraints(1, 4, 1, 1, 1.0, 0.0,
+                                                GridBagConstraints.WEST,
+                                                GridBagConstraints.HORIZONTAL,
+                                                new Insets(10, 15, 0, 10), 0, 0));
 
         detailsPanel.add(getFirstNameLabel(),
-                new GridBagConstraints(0, 5, 1, 1, 0.0, 0.0,
-                        GridBagConstraints.WEST,
-                        GridBagConstraints.NONE,
-                        new Insets(10, 10, 0, 0), 0, 0));
+                         new GridBagConstraints(0, 5, 1, 1, 0.0, 0.0,
+                                                GridBagConstraints.WEST,
+                                                GridBagConstraints.NONE,
+                                                new Insets(10, 10, 0, 0), 0, 0));
 
         detailsPanel.add(getFirstNameTextField(),
-                new GridBagConstraints(1, 5, 1, 1, 1.0, 0.0,
-                        GridBagConstraints.WEST,
-                        GridBagConstraints.HORIZONTAL,
-                        new Insets(10, 15, 0, 10), 0, 0));
+                         new GridBagConstraints(1, 5, 1, 1, 1.0, 0.0,
+                                                GridBagConstraints.WEST,
+                                                GridBagConstraints.HORIZONTAL,
+                                                new Insets(10, 15, 0, 10), 0, 0));
 
         detailsPanel.add(getLastNameLabel(),
-                new GridBagConstraints(0, 6, 1, 1, 0.0, 0.0,
-                        GridBagConstraints.WEST,
-                        GridBagConstraints.NONE,
-                        new Insets(10, 10, 0, 0), 0, 0));
+                         new GridBagConstraints(0, 6, 1, 1, 0.0, 0.0,
+                                                GridBagConstraints.WEST,
+                                                GridBagConstraints.NONE,
+                                                new Insets(10, 10, 0, 0), 0, 0));
 
         detailsPanel.add(getLastNameTextField(),
-                new GridBagConstraints(1, 6, 1, 1, 1.0, 0.0,
-                        GridBagConstraints.WEST,
-                        GridBagConstraints.HORIZONTAL,
-                        new Insets(10, 15, 0, 10), 0, 0));
+                         new GridBagConstraints(1, 6, 1, 1, 1.0, 0.0,
+                                                GridBagConstraints.WEST,
+                                                GridBagConstraints.HORIZONTAL,
+                                                new Insets(10, 15, 0, 10), 0, 0));
 
         detailsPanel.add(new JSeparator(JSeparator.HORIZONTAL),
-                new GridBagConstraints(0, 11, 2, 1, 0.0, 0.0,
-                        GridBagConstraints.WEST,
-                        GridBagConstraints.BOTH,
-                        new Insets(15, 10, 0, 10), 0, 0));
+                         new GridBagConstraints(0, 11, 2, 1, 0.0, 0.0,
+                                                GridBagConstraints.WEST,
+                                                GridBagConstraints.BOTH,
+                                                new Insets(15, 10, 0, 10), 0, 0));
 
-         Component strut = Box.createVerticalStrut(8);
+        Component strut = Box.createVerticalStrut(8);
 
-         detailsPanel.add(strut,
-           new GridBagConstraints(0, 13, 2, 1, 1.0, 1.0,
-             GridBagConstraints.CENTER,
-             GridBagConstraints.BOTH,
-             new Insets(10, 0, 0, 0), 0, 0));
+        detailsPanel.add(strut,
+                         new GridBagConstraints(0, 13, 2, 1, 1.0, 1.0,
+                                                GridBagConstraints.CENTER,
+                                                GridBagConstraints.BOTH,
+                                                new Insets(10, 0, 0, 0), 0, 0));
 
         Utilities.equalizeLabelSizes(new JLabel[]{
             getLastNameLabel(),
@@ -536,28 +537,28 @@ public class FederatedUserPanel extends UserPanel {
             Component hStrut = Box.createHorizontalStrut(8);
             // add components
             buttonPanel.add(hStrut,
-                    new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
-                            GridBagConstraints.CENTER,
-                            GridBagConstraints.BOTH,
-                            new Insets(0, 0, 0, 0), 0, 0));
+                            new GridBagConstraints(0, 0, 1, 1, 1.0, 1.0,
+                                                   GridBagConstraints.CENTER,
+                                                   GridBagConstraints.BOTH,
+                                                   new Insets(0, 0, 0, 0), 0, 0));
 
             buttonPanel.add(getOKButton(),
-                    new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
-                            GridBagConstraints.CENTER,
-                            GridBagConstraints.NONE,
-                            new Insets(5, 5, 5, 5), 0, 0));
+                            new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
+                                                   GridBagConstraints.CENTER,
+                                                   GridBagConstraints.NONE,
+                                                   new Insets(5, 5, 5, 5), 0, 0));
 
             buttonPanel.add(getCancelButton(),
-                    new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
-                            GridBagConstraints.CENTER,
-                            GridBagConstraints.NONE,
-                            new Insets(5, 5, 5, 5), 0, 0));
+                            new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
+                                                   GridBagConstraints.CENTER,
+                                                   GridBagConstraints.NONE,
+                                                   new Insets(5, 5, 5, 5), 0, 0));
 
             JButton buttons[] = new JButton[]
-            {
-                getOKButton(),
-                getCancelButton()
-            };
+              {
+                  getOKButton(),
+                  getCancelButton()
+              };
             Utilities.equalizeButtonSizes(buttons);
         }
         return buttonPanel;
@@ -701,7 +702,7 @@ public class FederatedUserPanel extends UserPanel {
     }
 
     // debug
-    public static void main(String[] args) {
+      public static void main(String[] args) {
 
         FederatedUserPanel panel = new FederatedUserPanel();
         EntityHeader eh = new EntityHeader();
@@ -718,26 +719,28 @@ public class FederatedUserPanel extends UserPanel {
 
     // hierarchy listener
     private final
-    HierarchyListener hierarchyListener =
-            new HierarchyListener() {
-                /**
-                 * Called when the hierarchy has been changed.
-                 */
-                public void hierarchyChanged(HierarchyEvent e) {
-                    int eID = e.getID();
-                    long flags = e.getChangeFlags();
+      HierarchyListener hierarchyListener =
+      new HierarchyListener() {
+          /**
+           * Called when the hierarchy has been changed.
+           */
+          public void hierarchyChanged(HierarchyEvent e) {
+              int eID = e.getID();
+              long flags = e.getChangeFlags();
 
-                    if (eID == HierarchyEvent.HIERARCHY_CHANGED &&
-                            ((flags & HierarchyEvent.DISPLAYABILITY_CHANGED) == HierarchyEvent.DISPLAYABILITY_CHANGED)) {
-                        if (FederatedUserPanel.this.isDisplayable()) {
-                            JDialog d = (JDialog) SwingUtilities.windowForComponent(FederatedUserPanel.this);
-                            if (d != null) {
-                                d.setTitle(userHeader.getName() + " Properties");
-                            }
-                        }
-                    }
-                }
-            };
+              if (eID == HierarchyEvent.HIERARCHY_CHANGED &&
+                ((flags & HierarchyEvent.DISPLAYABILITY_CHANGED) == HierarchyEvent.DISPLAYABILITY_CHANGED)) {
+                  if (FederatedUserPanel.this.isDisplayable()) {
+                      JDialog d = (JDialog)SwingUtilities.windowForComponent(FederatedUserPanel.this);
+                      if (d != null) {
+                          d.setTitle(userHeader.getName() + " Properties");
+                      }
+                  }
+                  X509Certificate cert = certPanel.getUserCert();
+                  getX509SubjectNameTextField().setEditable(cert == null);
+              }
+          }
+      };
 
 
 }

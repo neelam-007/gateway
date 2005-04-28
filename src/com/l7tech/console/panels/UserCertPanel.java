@@ -45,7 +45,7 @@ public class UserCertPanel extends JPanel {
     private JButton importCertButton;
     private User user;
     private X509Certificate cert;
-    private UserPanel userPanel;
+    private FederatedUserPanel userPanel;
     private JLabel certStatusLabel;
     private JComponent certificateView = new JLabel();
     private X509Certificate ssgcert = null;
@@ -59,7 +59,7 @@ public class UserCertPanel extends JPanel {
     /**
      * Create a new CertificatePanel
      */
-    public UserCertPanel(UserPanel userPanel) {
+    public UserCertPanel(FederatedUserPanel userPanel) {
         this.userPanel = userPanel;
         this.addHierarchyListener(hierarchyListener);
         initComponents();
@@ -131,6 +131,8 @@ public class UserCertPanel extends JPanel {
                             // reset values and redisplay
                             cert = null;
                             loadCertificateInfo();
+                            userPanel.getX509SubjectNameTextField().setEditable(true);
+
                         } catch (UpdateException e) {
                             log.log(Level.WARNING, "ERROR Removing certificate", e);
                         } catch (ObjectNotFoundException e) {
@@ -245,15 +247,18 @@ public class UserCertPanel extends JPanel {
         }
     };
 
-    private void getUserCert() {
+    X509Certificate getUserCert() {
         try {
+            if (user == null) {
+                user = userPanel.getUser();
+            }
             String certstr = identityAdmin.getUserCert(user);
             if (certstr == null) {
                 cert = null;
-                return;
+            }  else {
+                byte[] certbytes = HexUtils.decodeBase64(certstr);
+                cert =  CertUtils.decodeCert(certbytes);
             }
-            byte[] certbytes = HexUtils.decodeBase64(certstr);
-            cert =  CertUtils.decodeCert(certbytes);
         } catch (FindException e) {
             log.log(Level.WARNING, "There was an error loading the certificate", e);
         } catch (CertificateException e) {
@@ -261,6 +266,7 @@ public class UserCertPanel extends JPanel {
         } catch (IOException e) {
             log.log(Level.WARNING, "There was an error loading the certificate", e);
         }
+        return cert;
     }
 
     private void saveUserCert(TrustedCert tc) throws IOException, CertificateException, UpdateException {
@@ -308,17 +314,17 @@ public class UserCertPanel extends JPanel {
                                                       "Cannot add this cert",
                                                       JOptionPane.ERROR_MESSAGE);
                                     } else {
-                                        FederatedUserPanel fup = (FederatedUserPanel) userPanel;
+                                        FederatedUserPanel fup = userPanel;
                                         if (userPanel.getUser().getSubjectDn().length() > 0) {
 
                                             if (subjectDNFromCert.compareToIgnoreCase(fup.getX509SubjectNameTextField().getText()) != 0) {
                                                 //prompt you if he wants to replace the subject DN name
                                                 Object[] options = {"Replace", "Cancel"};
-                                                int result = JOptionPane.showOptionDialog(null,
+                                                int result = JOptionPane.showOptionDialog(fup.mainWindow,
                                                         "<html>The User's Subject DN is different from the one appearing in certificate being imported." +
                                                         "<br>The user's Subject DN: " +  fup.getX509SubjectNameTextField().getText() +
                                                         "<br>The Subject DN in the certiticate: " + subjectDNFromCert  +
-                                                        "<br>Do you want to replace the Subject DN with the one from the certificate" +
+                                                        "<br>The Subject DN will be replaced with the one from the certificate" +
                                                         "?<br>" +
                                                         "<center>The certificate will not be added if this operation is cancelled." +
                                                         "</center></html>",
@@ -327,7 +333,6 @@ public class UserCertPanel extends JPanel {
                                                         null, options, options[1]);
                                                 if (result == 0) {
                                                     fup.getX509SubjectNameTextField().setText(subjectDNFromCert);
-
                                                     certImported = true;
                                                 }
                                             } else {
@@ -337,6 +342,9 @@ public class UserCertPanel extends JPanel {
                                             // simply copy the dn to the user panel
                                             fup.getX509SubjectNameTextField().setText(subjectDNFromCert);
                                             certImported = true;
+                                        }
+                                        if (certImported) {
+                                            fup.getX509SubjectNameTextField().setEditable(false);
                                         }
                                     }
                                 }
