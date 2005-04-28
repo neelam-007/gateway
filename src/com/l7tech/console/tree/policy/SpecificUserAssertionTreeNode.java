@@ -1,7 +1,6 @@
 package com.l7tech.console.tree.policy;
 
 
-import com.l7tech.console.action.IdentityPolicyAction;
 import com.l7tech.policy.assertion.identity.SpecificUser;
 
 import javax.swing.*;
@@ -36,8 +35,8 @@ public class SpecificUserAssertionTreeNode extends IdentityAssertionTreeNode {
      */
     public Action[] getActions() {
         java.util.List list = new ArrayList();
-        Action a = new IdentityPolicyAction(this);
-        list.add(a);
+        //Action a = new IdentityPolicyAction(this);
+        //list.add(a);
         list.addAll(Arrays.asList(super.getActions()));
         return (Action[])list.toArray(new Action[]{});
     }
@@ -57,7 +56,7 @@ public class SpecificUserAssertionTreeNode extends IdentityAssertionTreeNode {
      * @return <code>null</code> indicating there should be none default action
      */
     public Action getPreferredAction() {
-        return new IdentityPolicyAction(this);
+        return null;
     }
 
     /**
@@ -76,8 +75,8 @@ public class SpecificUserAssertionTreeNode extends IdentityAssertionTreeNode {
 
     private String getUserName() {
         SpecificUser specificUser = (SpecificUser)getUserObject();
-        String userName = specificUser.getUserName();
-        if (userName == null) userName = specificUser.getUserLogin();
+        String userName = specificUser.getUserLogin();
+        if (userName == null) userName = specificUser.getUserName();
         if (userName == null) userName = specificUser.getUserUid();
         return userName;
     }
