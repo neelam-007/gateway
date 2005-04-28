@@ -200,7 +200,7 @@ EOF
 	} else {
 	    $run_command=<<EOM;
 
-\$run="-jar $file.jar";
+run="-jar $file.jar";
 
 EOM
     }
@@ -210,8 +210,14 @@ EOM
 # $file Startup script for UNIX systems
 # set l7 opts to java opts if empty
 
-if ["\$L7_OPTS" = "" -a "\$JAVA_OPTS" != "" ]; then
-	\$L7_OPTS=\$JAVA_OPTS
+
+if [ `expr "\$JAVA_OPTS" : ".*headless.*"` != 0 ]; then
+	echo "Headless mode java options for SSG found, disabling"
+	JAVA_OPTS="";
+fi
+
+if [ "\$L7_OPTS" = "" -a "\$JAVA_OPTS" != "" ]; then
+	L7_OPTS=\$JAVA_OPTS
 fi
 
 # 
