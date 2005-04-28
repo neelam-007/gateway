@@ -1,0 +1,59 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+   <soapenv:Header>
+      <wsa:Action xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://schemas.xmlsoap.org/ws/2005/02/security/trust/RSTR/Validate</wsa:Action>
+   </soapenv:Header>
+   <soapenv:Body>
+      <wst:RequestSecurityTokenResponse wsu:Id="uuid38d2bfd0-0103-ed68-28f8-9119ab46159a" xmlns:wst="http://schemas.xmlsoap.org/ws/2005/02/trust" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+         <wst:RequestedSecurityToken>
+            <saml:Assertion AssertionID="Assertion-uuid38d2bc2e-0103-fd68-0f9c-9119ab46159a" IssueInstant="2005-04-12T23:51:04Z" Issuer="https://ip1.example.com" MajorVersion="1" MinorVersion="1" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:saml="urn:oasis:names:tc:SAML:1.0:assertion">
+               <saml:Conditions NotBefore="2005-04-12T23:50:04Z" NotOnOrAfter="2005-04-12T23:56:04Z">
+                  <saml:AudienceRestrictionCondition>
+                     <saml:Audience>https://s.example.com/EchoService</saml:Audience>
+                  </saml:AudienceRestrictionCondition>
+              </saml:Conditions>
+               <saml:AuthenticationStatement AuthenticationInstant="2005-04-12T23:51:04Z" AuthenticationMethod="urn:oasis:names:tc:SAML:1.0:am:password">
+                  <saml:Subject>
+                     <saml:NameIdentifier Format="urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress">testuser@ip1.example.com</saml:NameIdentifier>
+                  </saml:Subject>
+               </saml:AuthenticationStatement>
+               <saml:AttributeStatement>
+                  <saml:Subject>
+                     <saml:NameIdentifier Format="urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress">testuser@ip1.example.com</saml:NameIdentifier>
+                  </saml:Subject>
+                  <saml:Attribute AttributeName="commonName" AttributeNamespace="http://example.com/federation/v1/commonName">
+                     <saml:AttributeValue>testuser</saml:AttributeValue>
+                  </saml:Attribute>
+               </saml:AttributeStatement>
+               <ds:Signature Id="uuid38d2bcb6-0103-fa11-e566-9119ab46159a" xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+                  <ds:SignedInfo>
+                     <ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+                     <ds:SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+                     <ds:Reference URI="#Assertion-uuid38d2bc2e-0103-fd68-0f9c-9119ab46159a">
+                        <ds:Transforms>
+                           <ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+                           <ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#">
+                              <xc14n:InclusiveNamespaces PrefixList="saml ds" xmlns:xc14n="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+                           </ds:Transform>
+                        </ds:Transforms>
+                        <ds:DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+                        <ds:DigestValue>hh55f71BdOW/E3EcBW7Ml1qcB44=</ds:DigestValue>
+                     </ds:Reference>
+                  </ds:SignedInfo>
+                  <ds:SignatureValue>g3THRB8RhY39pCIuJWZo7REOwQAxNOKHu3hUuDBrc9orFrE3/7yvUvyW64sZBnniVJDqPtpg6/dXCDQVUEzdmGVI2/896UFGAH/QOUuJGeHcxyUq1NSa5XtfwVNouBtupH484oQ+QfOolbkTmP1w6FHdFaIv/oyUAUbbcsu4XGA=</ds:SignatureValue>
+                  <ds:KeyInfo>
+                     <ds:X509Data>
+                        <ds:X509Certificate>MIICBzCCAXCgAwIBAgIEQH26vjANBgkqhkiG9w0BAQQFADBIMQswCQYDVQQGEwJVUzEPMA0GA1UEChMGVGl2b2xpMQ4wDAYDVQQLEwVUQU1lQjEYMBYGA1UEAxMPZmltZGVtby5pYm0uY29tMB4XDTA0MDQxNDIyMjcxMFoXDTE3MTIyMjIyMjcxMFowSDELMAkGA1UEBhMCVVMxDzANBgNVBAoTBlRpdm9saTEOMAwGA1UECxMFVEFNZUIxGDAWBgNVBAMTD2ZpbWRlbW8uaWJtLmNvbTCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAiZ0D1X6rk8+ZwNBTVZt7C85m421a8A52Ksjw40t+jNvbLYDp/W66AMMYD7rB5qgniZ5K1p9W8ivM9WbPxc2u/60tFPg0e/Q/r/fxegW1K1umnay+5MaUvN3p4XUCRrfg79OvurvXQ7GZa1/wOp5vBIdXzg6i9CVAqL29JGi6GYUCAwEAATANBgkqhkiG9w0BAQQFAAOBgQBXiAhxm91I4m+g3YX+dyGc352TSKO8HvAIBkHHFFwIkzhNgO+zLhxg5UMkOg12X9ucW7leZ1IB0Z6+JXBrXIWmU3UPum+QxmlaE0OG9zhp9LEfzsE5+ff+7XpS0wpJklY6c+cqHj4aTGfOhSE6u7BLdI26cZNdzxdhikBMZPgdyQ==</ds:X509Certificate>
+                     </ds:X509Data>
+                  </ds:KeyInfo>
+               </ds:Signature>
+            </saml:Assertion>
+         </wst:RequestedSecurityToken>
+         <wst:RequestedTokenReference>
+            <wss:KeyIdentifier ValueType="saml:Assertion" xmlns:saml="urn:oasis:names:tc:SAML:1.0:assertion" xmlns:wss="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd">Assertion-uuid38d2bc2e-0103-fd68-0f9c-9119ab46159a</wss:KeyIdentifier>
+         </wst:RequestedTokenReference>
+         <wst:Status>
+            <wst:Code>http://schemas.xmlsoap.org/ws/2005/02/security/trust/status/valid</wst:Code>
+         </wst:Status>
+      </wst:RequestSecurityTokenResponse>
+   </soapenv:Body>
+</soapenv:Envelope>

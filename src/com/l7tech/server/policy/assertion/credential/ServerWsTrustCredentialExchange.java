@@ -148,6 +148,7 @@ public class ServerWsTrustCredentialExchange implements ServerAssertion {
 
         try {
             // Get RSTR
+            // TODO do we want to let this IOException propagate and terminate policy processing?
             SimpleHttpClient.SimpleXmlResponse response = httpClient.postXml(params, rstDoc);
             int status = response.getStatus();
             if (status != 200) {

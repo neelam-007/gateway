@@ -44,6 +44,14 @@ import java.util.logging.Logger;
 public class TokenServiceClient {
     public static final Logger log = Logger.getLogger(TokenServiceClient.class.getName());
 
+    // TODO replace these system props with a mechanism that is configurable per-request
+    public static final String PROP_WSP_NS = "com.l7tech.common.security.wstrust.ns.wsp";
+    public static final String PROP_WSA_NS = "com.l7tech.common.security.wstrust.ns.wsa";
+    public static final String PROP_WST_NS = "com.l7tech.common.security.wstrust.ns.wst";
+    private static String tscWspNs = System.getProperty(PROP_WSP_NS, SoapUtil.WSP_NAMESPACE);
+    private static String tscWsaNs = System.getProperty(PROP_WSA_NS, SoapUtil.WSA_NAMESPACE2);
+    private static String tscWstNs = System.getProperty(PROP_WST_NS, SoapUtil.WST_NAMESPACE);
+
     /**
      * Create a signed SOAP message containing a WS-Trust RequestSecurityToken message asking for the
      * specified token type.
@@ -114,7 +122,7 @@ public class TokenServiceClient {
 
         Document msg = XmlUtil.stringToDocument("<soap:Envelope xmlns:soap=\"" + SOAPConstants.URI_NS_SOAP_ENVELOPE + "\"" + extraNs + ">" +
                                                     "<soap:Header/><soap:Body>" +
-                                                    "<wst:RequestSecurityToken xmlns:wst=\"" + SoapUtil.WST_NAMESPACE + "\">" +
+                                                    "<wst:RequestSecurityToken xmlns:wst=\"" + tscWstNs + "\">" +
                                                     "</wst:RequestSecurityToken>" +
                                                     "</soap:Body></soap:Envelope>");
         Element env = msg.getDocumentElement();
@@ -123,16 +131,16 @@ public class TokenServiceClient {
 
         // Add AppliesTo, if provided
         if (appliesToAddress != null && appliesToAddress.length() > 0) {
-            Element appliesTo = XmlUtil.createAndAppendElementNS(rst, "AppliesTo", SoapUtil.WSP_NAMESPACE, "wsp");
-            Element endpointRef = XmlUtil.createAndAppendElementNS(appliesTo, "EndpointReference", SoapUtil.WSA_NAMESPACE, "wsa");
-            Element address = XmlUtil.createAndAppendElementNS(endpointRef, "Address", SoapUtil.WSA_NAMESPACE, "wsa");
+            Element appliesTo = XmlUtil.createAndAppendElementNS(rst, "AppliesTo", tscWspNs, "wsp");
+            Element endpointRef = XmlUtil.createAndAppendElementNS(appliesTo, "EndpointReference", tscWsaNs, "wsa");
+            Element address = XmlUtil.createAndAppendElementNS(endpointRef, "Address", tscWsaNs, "wsa");
             address.appendChild(XmlUtil.createTextNode(address, appliesToAddress));
         }
 
         // Add Issuer, if provided
         if (wstIssuerAddress != null && wstIssuerAddress.length() > 0) {
-            Element issuer = XmlUtil.createAndAppendElementNS(rst, "Issuer", SoapUtil.WST_NAMESPACE, "wst");
-            Element address = XmlUtil.createAndAppendElementNS(issuer, "Address", SoapUtil.WSA_NAMESPACE, "wsa");
+            Element issuer = XmlUtil.createAndAppendElementNS(rst, "Issuer", tscWstNs, "wst");
+            Element address = XmlUtil.createAndAppendElementNS(issuer, "Address", tscWsaNs, "wsa");
             address.appendChild(XmlUtil.createTextNode(address, wstIssuerAddress));
         }
 
@@ -141,14 +149,14 @@ public class TokenServiceClient {
             final String tokenTypeUri = desiredTokenType.getWstTokenTypeUri();
             if (tokenTypeUri != null) {
                 // Add TokenType element
-                Element tokenType = XmlUtil.createAndPrependElementNS(rst, "TokenType", SoapUtil.WST_NAMESPACE, "wst");
+                Element tokenType = XmlUtil.createAndPrependElementNS(rst, "TokenType", tscWstNs, "wst");
                 tokenType.appendChild(XmlUtil.createTextNode(msg, tokenTypeUri));
             }
         }
 
         // Add Base, if provided.  Base is not required to be the same token type as the token type we are requesting.
         if (base != null) {
-            Element baseEl = XmlUtil.createAndPrependElementNS(rst, "Base", SoapUtil.WST_NAMESPACE, "wst");
+            Element baseEl = XmlUtil.createAndPrependElementNS(rst, "Base", tscWstNs, "wst");
             Element tokenEl = base.asElement();
 
             // Ensure all prefixes inherited from token's original context are available to the token
@@ -449,13 +457,13 @@ public class TokenServiceClient {
         if (env == null) throw new InvalidDocumentFormatException("Response had no document element"); // can't happen
         Element body = XmlUtil.findOnlyOneChildElementByName(env, env.getNamespaceURI(), "Body");
         if (body == null) throw new MessageNotSoapException("Response has no SOAP Body");
-        Element rstr = XmlUtil.findOnlyOneChildElementByName(body, SoapUtil.WST_NAMESPACE, "RequestSecurityTokenResponse");
+        Element rstr = XmlUtil.findOnlyOneChildElementByName(body, tscWstNs, "RequestSecurityTokenResponse");
         if (rstr == null) throw new InvalidDocumentFormatException("Response body does not contain wst:RequestSecurityTokenResponse");
 
         if (serverCertificate != null)
             verifySignature(rstr, serverCertificate, response, clientCertificate, clientPrivateKey);
 
-        Element rst = XmlUtil.findOnlyOneChildElementByName(rstr, SoapUtil.WST_NAMESPACE, "RequestedSecurityToken");
+        Element rst = XmlUtil.findOnlyOneChildElementByName(rstr, tscWstNs, "RequestedSecurityToken");
         if (rst == null) throw new InvalidDocumentFormatException("Response contained no RequestedSecurityToken");
 
         // See what kind of requested security token we got
@@ -544,7 +552,7 @@ public class TokenServiceClient {
         if (identifier == null || identifier.length() < 4) throw new InvalidDocumentFormatException("Response wsc:Identifier was empty or too short");
 
         // Extract optional expiry date
-        Element lifeTimeEl = XmlUtil.findOnlyOneChildElementByName(rstr, SoapUtil.WST_NAMESPACE, "Lifetime");
+        Element lifeTimeEl = XmlUtil.findOnlyOneChildElementByName(rstr, tscWstNs, "Lifetime");
         Date expires = null;
         if (lifeTimeEl != null) {
             Element expiresEl = XmlUtil.findOnlyOneChildElementByName(lifeTimeEl, SoapUtil.WSU_URIS_ARRAY, "Expires");
@@ -561,7 +569,7 @@ public class TokenServiceClient {
         }
 
         // Extract shared secret
-        Element rpt = XmlUtil.findOnlyOneChildElementByName(rstr, SoapUtil.WST_NAMESPACE, "RequestedProofToken");
+        Element rpt = XmlUtil.findOnlyOneChildElementByName(rstr, tscWstNs, "RequestedProofToken");
         if (rpt == null) throw new InvalidDocumentFormatException("Response contained no RequestedProofToken");
 
         Element encryptedKeyEl = XmlUtil.findOnlyOneChildElementByName(rpt, SoapUtil.XMLENC_NS, "EncryptedKey");
@@ -614,5 +622,29 @@ public class TokenServiceClient {
                 return finalExpires;
             }
         };
+    }
+
+    /**
+     * Change the WS-Policy namespace used in token service requests.
+     * TODO: Replace this with a mechanism for configuring this per-request.
+     */
+    public static void setTscWspNs(String tscWspNs) {
+        TokenServiceClient.tscWspNs = tscWspNs;
+    }
+
+    /**
+     * Change the WS-Addressing namespace used in token service requests.
+     * TODO: Replace this with a mechanism for configuring this per-request.
+     */
+    public static void setTscWsaNs(String tscWsaNs) {
+        TokenServiceClient.tscWsaNs = tscWsaNs;
+    }
+
+    /**
+     * Change the WS-Trust namespace used in token service requests.
+     * TODO: Replace this with a mechanism for configuring this per-request.
+     */
+    public static void setTscWstNs(String tscWstNs) {
+        TokenServiceClient.tscWstNs = tscWstNs;
     }
 }

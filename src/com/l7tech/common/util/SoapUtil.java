@@ -6,9 +6,9 @@
 
 package com.l7tech.common.util;
 
+import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.message.Message;
 import com.l7tech.common.message.XmlKnob;
-import com.l7tech.common.message.HttpRequestKnob;
 import com.l7tech.common.security.saml.SamlConstants;
 import com.l7tech.common.xml.*;
 import org.w3c.dom.*;
@@ -19,8 +19,8 @@ import javax.wsdl.*;
 import javax.wsdl.extensions.ExtensibilityElement;
 import javax.wsdl.extensions.mime.MIMEMultipartRelated;
 import javax.wsdl.extensions.mime.MIMEPart;
-import javax.wsdl.extensions.soap.SOAPOperation;
 import javax.wsdl.extensions.soap.SOAPBinding;
+import javax.wsdl.extensions.soap.SOAPOperation;
 import javax.xml.namespace.QName;
 import javax.xml.rpc.NamespaceConstants;
 import javax.xml.soap.*;
@@ -69,6 +69,7 @@ public class SoapUtil {
 
     public static final String WSP_NAMESPACE = "http://schemas.xmlsoap.org/ws/2002/12/policy";
     public static final String WSA_NAMESPACE = "http://schemas.xmlsoap.org/ws/2004/03/addressing";
+    public static final String WSA_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2004/08/addressing"; // Used by FIM
 
     public static final String L7_MESSAGEID_NAMESPACE = "http://www.layer7tech.com/ws/addr";
     public static final String L7_MESSAGEID_PREFIX = "L7a";

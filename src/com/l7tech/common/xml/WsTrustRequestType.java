@@ -1,8 +1,8 @@
 package com.l7tech.common.xml;
 
 import java.io.Serializable;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author alex
@@ -10,7 +10,7 @@ import java.util.HashMap;
 public final class WsTrustRequestType implements Serializable {
     private static final Map valueMap = new HashMap();
     public static final WsTrustRequestType ISSUE = new WsTrustRequestType("Issue", "http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue");
-    public static final WsTrustRequestType VALIDATE = new WsTrustRequestType("Validate", "http://schemas.xmlsoap.org/ws/2004/04/security/trust/Validate");
+    public static final WsTrustRequestType VALIDATE = new WsTrustRequestType("Validate", "http://schemas.xmlsoap.org/ws/2005/02/security/trust/Validate");
 
     private final String name;
     private final String uri;

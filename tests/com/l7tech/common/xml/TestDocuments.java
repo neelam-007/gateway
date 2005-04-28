@@ -7,6 +7,7 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
+import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -14,7 +15,9 @@ import java.net.URL;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.PrivateKey;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPrivateKey;
 import java.util.Properties;
 
 /**
@@ -60,11 +63,18 @@ public final class TestDocuments {
 
     public static final String DOTNET_SEC_TOK_REQ = DIR + "dotNetSecurityTokenRequest.xml";
 
+    public static final String FIM2005APR_CLIENT_RST = DIR + "fim/fim2005apr_client_rst.xml";
+    public static final String FIM2005APR_CLIENT_RSTR = DIR + "fim/fim2005apr_client_rstr.xml";
+    public static final String FIM2005APR_CLIENT_REQ = DIR +"fim/fim2005apr_client_req.xml";
+    public static final String FIM2005APR_SERVER_RST = DIR + "fim/fim2005apr_server_rst.xml";
+    public static final String FIM2005APR_SERVER_RSTR = DIR + "fim/fim2005apr_server_rstr.xml";
 
-    public static final String ETTK_KS = DIR + "ibmEttkKeystore.db";
-    public static final String ETTK_KS_PROPERTIES = DIR + "ibmEttkKeystore.properties";
-    public static final String SSL_KS = DIR + "rikerssl.ks";
-    public static final String SSL_CER = DIR + "rikerssl.cer";
+
+    private static final String ETTK_KS = DIR + "ibmEttkKeystore.db";
+    private static final String ETTK_KS_PROPERTIES = DIR + "ibmEttkKeystore.properties";
+    private static final String SSL_KS = DIR + "rikerssl.ks";
+    private static final String SSL_CER = DIR + "rikerssl.cer";
+    private static final String FIM_SIGNER_KS = DIR + "fim/fimsigner.p12";
 
     public static final String WEBLOGIC_WSDL = DIR + "weblogic_wsdl.xml";
 
@@ -242,4 +252,58 @@ public final class TestDocuments {
             }
         };
     }
+
+
+    private static X509Certificate fimValidationCertificate = null;
+    public static synchronized X509Certificate getFimValidationCertificate() {
+        if (fimValidationCertificate != null) return fimValidationCertificate;
+        ByteArrayInputStream bais = new ByteArrayInputStream(FIM2005APR_VALIDATION_CERT_PEM.getBytes());
+        try {
+            return fimValidationCertificate = (X509Certificate)CertUtils.getFactory().generateCertificate(bais);
+        } catch (CertificateException e) {
+            throw new RuntimeException(e); // can't happen
+        }
+    }
+
+    private static KeyStore fimSigningKeyStore = null;
+    private static synchronized KeyStore getFimSigningKeyStore() throws Exception {
+        if (fimSigningKeyStore != null) return fimSigningKeyStore;
+        String keystorePassword = "foo";
+        KeyStore keyStore = KeyStore.getInstance("PKCS12");
+        InputStream fis = null;
+        try {
+            fis = getInputStream(FIM_SIGNER_KS);
+            keyStore.load(fis, keystorePassword.toCharArray());
+        } finally {
+            if (fis != null)
+                fis.close();
+        }
+        return fimSigningKeyStore = keyStore;
+    }
+
+    private static X509Certificate fimSigningCertificate = null;
+    public static synchronized X509Certificate getFimSigningCertificate() throws Exception {
+        if (fimSigningCertificate != null) return fimSigningCertificate;
+        return fimSigningCertificate = (X509Certificate)getFimSigningKeyStore().getCertificate("ws-trust-test-cert");
+    }
+
+    private static RSAPrivateKey fimSigningPrivateKey = null;
+    public static synchronized RSAPrivateKey getFimSigningPrivateKey() throws Exception {
+        if (fimSigningPrivateKey != null) return fimSigningPrivateKey;
+        return fimSigningPrivateKey = (RSAPrivateKey)getFimSigningKeyStore().getKey("ws-trust-test-cert", "foo".toCharArray());
+    }
+
+    public static final String FIM2005APR_VALIDATION_CERT_PEM = "-----BEGIN CERTIFICATE-----\n" +
+            "MIICBzCCAXCgAwIBAgIEQH26vjANBgkqhkiG9w0BAQQFADBIMQswCQYDVQQGEwJVUzEPMA0GA1UE\n" +
+            "ChMGVGl2b2xpMQ4wDAYDVQQLEwVUQU1lQjEYMBYGA1UEAxMPZmltZGVtby5pYm0uY29tMB4XDTA0\n" +
+            "MDQxNDIyMjcxMFoXDTE3MTIyMjIyMjcxMFowSDELMAkGA1UEBhMCVVMxDzANBgNVBAoTBlRpdm9s\n" +
+            "aTEOMAwGA1UECxMFVEFNZUIxGDAWBgNVBAMTD2ZpbWRlbW8uaWJtLmNvbTCBnzANBgkqhkiG9w0B\n" +
+            "AQEFAAOBjQAwgYkCgYEAiZ0D1X6rk8+ZwNBTVZt7C85m421a8A52Ksjw40t+jNvbLYDp/W66AMMY\n" +
+            "D7rB5qgniZ5K1p9W8ivM9WbPxc2u/60tFPg0e/Q/r/fxegW1K1umnay+5MaUvN3p4XUCRrfg79Ov\n" +
+            "urvXQ7GZa1/wOp5vBIdXzg6i9CVAqL29JGi6GYUCAwEAATANBgkqhkiG9w0BAQQFAAOBgQBXiAhx\n" +
+            "m91I4m+g3YX+dyGc352TSKO8HvAIBkHHFFwIkzhNgO+zLhxg5UMkOg12X9ucW7leZ1IB0Z6+JXBr\n" +
+            "XIWmU3UPum+QxmlaE0OG9zhp9LEfzsE5+ff+7XpS0wpJklY6c+cqHj4aTGfOhSE6u7BLdI26cZNd\n" +
+            "zxdhikBMZPgdyQ==\n" +
+            "-----END CERTIFICATE-----";
+
 }

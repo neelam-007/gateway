@@ -1,0 +1,24 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:soapenc="http://schemas.xmlsoap.org/soap/encoding/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<soapenv:Header>
+  <wsa:Action xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing">http://schemas.xmlsoap.org/ws/2005/02/security/trust/RSTR/Validate
+  </wsa:Action>
+</soapenv:Header>
+  <soapenv:Body>
+    <wst:RequestSecurityTokenResponse wsu:Id="uuid3d8961fc-0103-e1b2-e859-ca8df86608cc" xmlns:wst="http://schemas.xmlsoap.org/ws/2005/02/trust" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+     <wst:RequestedSecurityToken>
+       <wss:UsernameToken wsu:Id="username3d8961fb-0103-fc53-b5f0-ca8df86608cc" xmlns:wss="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd" xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd">
+          <wss:Username>testuser</wss:Username>
+          <wss:Nonce EncodingType="Base64Binary">7QKv3vtqVJo7eqCJN4Dj4Q==
+          </wss:Nonce>
+          <wsu:Created>2005-04-13T21:49:03Z</wsu:Created>
+        </wss:UsernameToken>
+      </wst:RequestedSecurityToken>
+      <wst:RequestedTokenReference>
+        <wss:Reference URI="#username3d8961fb-0103-fc53-b5f0-ca8df86608cc" xmlns:wss="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd"/>
+      </wst:RequestedTokenReference>
+      <wst:Status>
+<wst:Code>http://schemas.xmlsoap.org/ws/2005/02/security/trust/status/valid</wst:Code>
+      </wst:Status>
+    </wst:RequestSecurityTokenResponse>
+  </soapenv:Body>
+</soapenv:Envelope>
