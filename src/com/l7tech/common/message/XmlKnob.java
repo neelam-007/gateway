@@ -44,7 +44,7 @@ public interface XmlKnob extends MessageKnob {
     /**
      * Get the writable instance of the current working Document.  If the original Document has not been saved yet,
      * a clone of the working Document will be saved at this point.  Also, the underlying MIME bytestream will be marked
-     * as dirty.
+     * as out-of-date.
      * <p>
      * The actual Document instance returned by this method is guaranteed to refer to the same underlying
      * object as would have been returned by an earlier call to {@link #getDocumentReadOnly}, assuming no other
