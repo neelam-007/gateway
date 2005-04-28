@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.server.identity.fed;
@@ -28,7 +26,6 @@ import java.util.logging.Logger;
 
 /**
  * @author alex
- * @version $Revision$
  */
 public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
     SamlAuthorizationHandler( FederatedIdentityProvider provider, TrustedCertManager trustedCertManager, ClientCertManager clientCertManager, Set certOidSet ) {
@@ -139,6 +136,8 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
             FederatedUser u = null;
             if (SamlConstants.NAMEIDENTIFIER_EMAIL.equals(niFormat)) {
                 u = (FederatedUser)getUserManager().findByEmail(niValue);
+            } else if (SamlConstants.NAMEIDENTIFIER_X509_SUBJECT.equals(niFormat)) {
+                u = (FederatedUser)getUserManager().findBySubjectDN(niValue);
             } else if (SamlConstants.NAMEIDENTIFIER_WINDOWS.equals(niFormat) ||
                        SamlConstants.NAMEIDENTIFIER_UNSPECIFIED.equals(niFormat) ||
                        niFormat == null) {
@@ -159,7 +158,6 @@ public class SamlAuthorizationHandler extends FederatedAuthorizationHandler {
     {
         final String niFormat = assertion.getNameIdentifierFormat();
         final String niValue = assertion.getNameIdentifierValue();
-        final String niQualifier = assertion.getNameQualifier();
         try {
             FederatedUser u = getUserManager().findBySubjectDN(certSubjectDn);
             if (u == null) {
