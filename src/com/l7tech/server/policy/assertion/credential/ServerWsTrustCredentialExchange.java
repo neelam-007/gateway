@@ -155,13 +155,6 @@ public class ServerWsTrustCredentialExchange implements ServerAssertion {
             Document rstrDoc = response.getDocument();
             Object rstrObj = TokenServiceClient.parseUnsignedRequestSecurityTokenResponse(rstrDoc);
 
-            if (!(rstrObj instanceof SamlAssertion)) {
-                auditor.logAndAudit(AssertionMessages.WSTRUST_RSTR_NOT_SAML);
-                return AssertionStatus.AUTH_REQUIRED;
-            }
-
-            final SamlAssertion samlAssertion = (SamlAssertion) rstrObj;
-
             if (originalTokenElement == null) {
                 auditor.logAndAudit(AssertionMessages.WSTRUST_ORIGINAL_TOKEN_NOT_XML);
                 return AssertionStatus.NONE;
@@ -172,18 +165,31 @@ public class ServerWsTrustCredentialExchange implements ServerAssertion {
             securityEl.removeChild(originalTokenElement);
             // Check for empty Security header, remove
             // TODO make this optional?
+            // TODO what if Security header isn't empty?
             if (securityEl.getFirstChild() == null) {
                 securityEl.getParentNode().removeChild(securityEl);
             }
 
             DecorationRequirements decoReq = new DecorationRequirements();
-            decoReq.setSenderSamlToken(samlAssertion.asElement(), false);
             WssDecorator deco = new WssDecoratorImpl();
+            if (rstrObj instanceof SamlAssertion) {
+                final SamlAssertion samlAssertion = (SamlAssertion) rstrObj;
+
+                context.setCredentials(LoginCredentials.makeSamlCredentials(samlAssertion, assertion.getClass()));
+                decoReq.setSenderSamlToken(samlAssertion.asElement(), false);
+            } else if (rstrObj instanceof UsernameToken) {
+                UsernameToken ut = (UsernameToken) rstrObj;
+                LoginCredentials creds = ut.asLoginCredentials();
+                context.setCredentials(creds);
+                decoReq.setUsernameTokenCredentials(creds);
+            } else {
+                auditor.logAndAudit(AssertionMessages.WSTRUST_RSTR_BAD_TYPE);
+                return AssertionStatus.AUTH_REQUIRED;
+            }
+
             try {
                 deco.decorateMessage(requestDoc, decoReq);
                 requestXml.setDocument(requestDoc);
-
-                context.setCredentials(LoginCredentials.makeSamlCredentials(samlAssertion, assertion.getClass()));
                 requestXml.setProcessorResult(trogdor.undecorateMessage(context.getRequest(), null, null, null));
                 return AssertionStatus.NONE;
             } catch (Exception e) {

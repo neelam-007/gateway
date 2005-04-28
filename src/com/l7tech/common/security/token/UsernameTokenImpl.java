@@ -11,6 +11,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
 import com.l7tech.common.xml.UnsupportedDocumentFormatException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
@@ -32,7 +33,8 @@ public class UsernameTokenImpl implements UsernameToken {
 
     /** Create a UsernameTokenImpl from the given Element.  The Element will be parsed during the construction. */
     public UsernameTokenImpl(final Element usernameTokenElement)
-                                        throws InvalidDocumentFormatException, UnsupportedDocumentFormatException {
+                                        throws InvalidDocumentFormatException, UnsupportedDocumentFormatException
+    {
         String applicableWsseNS = usernameTokenElement.getNamespaceURI();
         // Get the Username child element
         Element usernameEl = XmlUtil.findOnlyOneChildElementByName(usernameTokenElement,
@@ -49,23 +51,23 @@ public class UsernameTokenImpl implements UsernameToken {
         Element passwdEl = XmlUtil.findOnlyOneChildElementByName(usernameTokenElement,
                                                                  applicableWsseNS,
                                                                  SoapUtil.UNTOK_PASSWORD_EL_NAME);
-        if (passwdEl == null) {
-            throw new UnsupportedDocumentFormatException("The usernametoken element does not contain a password element");
-        }
-        String passwd = XmlUtil.getTextValue(passwdEl).trim();
-        if (passwd.length() < 1) {
-            throw new InvalidDocumentFormatException("The usernametoken has an empty password element");
-        }
-        // Verify the password type to be supported
-        String passwdType = passwdEl.getAttribute(SoapUtil.UNTOK_PSSWD_TYPE_ATTR_NAME).trim();
-        if (passwdType.length() > 0) {
-            if (!passwdType.endsWith("PasswordText")) {
-                throw new UnsupportedDocumentFormatException("This username token password type is not supported: " + passwdType);
+        String passwd = null;
+        if (passwdEl != null) {
+            passwd = XmlUtil.getTextValue(passwdEl).trim();
+            if (passwd.length() < 1) {
+                throw new InvalidDocumentFormatException("The usernametoken has an empty password element");
+            }
+            // Verify the password type to be supported
+            String passwdType = passwdEl.getAttribute(SoapUtil.UNTOK_PSSWD_TYPE_ATTR_NAME).trim();
+            if (passwdType.length() > 0) {
+                if (!passwdType.endsWith("PasswordText")) {
+                    throw new UnsupportedDocumentFormatException("This username token password type is not supported: " + passwdType);
+                }
             }
         }
         // Remember this as a security token
         this.element = usernameTokenElement;
-        this.creds = new LoginCredentials(username, passwd.toCharArray(), null);
+        this.creds = new LoginCredentials(username, passwd == null ? null : passwd.toCharArray(), WssBasic.class);
         this.elementId = null;
     }
 
@@ -93,19 +95,22 @@ public class UsernameTokenImpl implements UsernameToken {
         String securityNs = untokEl.getNamespaceURI();
         Element usernameEl = nodeFactory.createElementNS(securityNs, "Username");
         usernameEl.setPrefix(untokEl.getPrefix());
-        Element passwdEl = nodeFactory.createElementNS(securityNs, "Password");
-        passwdEl.setPrefix(untokEl.getPrefix());
         // attach them
         untokEl.appendChild(usernameEl);
-        untokEl.appendChild(passwdEl);
         // fill in username value
         Text txtNode = XmlUtil.createTextNode(nodeFactory, creds.getLogin());
         usernameEl.appendChild(txtNode);
         // fill in password value and type
-        txtNode = XmlUtil.createTextNode(nodeFactory, new String(creds.getCredentials()));
-        passwdEl.appendChild(txtNode);
-        passwdEl.setAttribute("Type",
+        char[] pass = creds.getCredentials();
+        if (pass != null) {
+            Element passwdEl = nodeFactory.createElementNS(securityNs, "Password");
+            passwdEl.setPrefix(untokEl.getPrefix());
+            untokEl.appendChild(passwdEl);
+            txtNode = XmlUtil.createTextNode(nodeFactory, new String(creds.getCredentials()));
+            passwdEl.appendChild(txtNode);
+            passwdEl.setAttribute("Type",
                               "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText");
+        }
     }
 
     /** @return XML serialized version of this SecurityToken using the specified Security namespace and owner document. */

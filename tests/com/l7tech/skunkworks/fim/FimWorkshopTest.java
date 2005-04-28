@@ -18,6 +18,7 @@ import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.TestDocuments;
 import com.l7tech.common.xml.WsTrustRequestType;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -125,8 +126,23 @@ public class FimWorkshopTest extends TestCase {
         initFimNs();
         Document serverRst = TestDocuments.getTestDocument(TestDocuments.FIM2005APR_SERVER_RST);
 
-        // TODO
-        fail("TODO");
+        // Get the saml assertion
+        Document clientRstr = TestDocuments.getTestDocument(TestDocuments.FIM2005APR_CLIENT_RSTR);
+        SamlSecurityToken samlToken =
+                (SamlSecurityToken)TokenServiceClient.parseUnsignedRequestSecurityTokenResponse(clientRstr);
+
+        String appliesTo = "http://s.example.com/services/EchoService";
+        Document got = TokenServiceClient.createRequestSecurityTokenMessage(null,
+                                                                            WsTrustRequestType.VALIDATE,
+                                                                            samlToken,
+                                                                            appliesTo,
+                                                                            null);
+
+        String gotStr = XmlUtil.nodeToFormattedString(got);
+        String wantStr = XmlUtil.nodeToFormattedString(serverRst);
+
+        // Uncomment to test
+        //assertEquals(wantStr, gotStr);
     }
 
     public void testParseServerRstr() throws Exception {
@@ -142,6 +158,8 @@ public class FimWorkshopTest extends TestCase {
         LoginCredentials pc = ut.asLoginCredentials();
         assertNotNull(pc);
         assertEquals("testuser", pc.getLogin());
+        assertNull(pc.getCredentials());
+        assertEquals(WssBasic.class, pc.getCredentialSourceAssertion());
         log.info("Got username token: " + XmlUtil.nodeToFormattedString(ut.asElement()));
     }
 }

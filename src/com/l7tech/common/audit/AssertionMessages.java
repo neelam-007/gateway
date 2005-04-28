@@ -25,7 +25,7 @@ public class AssertionMessages extends Messages {
     public static final M ADD_OUTGOING_COOKIE                  = m(4013, Level.FINE, "Adding outgoing cookie: name = {0}");
     public static final M LOGIN_INFO                           = m(4014, Level.FINE, "Using login '{0}'");
     public static final M ROUTED_OK                            = m(4015, Level.FINE, "Request routed successfully");
-    public static final M RESPONSE_STATUS                      = m(4016, Level.FINE, "Protected service ({0}) responded with status {1}");
+    public static final M RESPONSE_STATUS                      = m(4016, Level.WARNING, "Protected service ({0}) responded with status {1}");
     public static final M ADD_OUTGOING_COOKIE_WITH_VERSION     = m(4017, Level.FINE, "Adding outgoing cookie: name = {0}, version = {1}");
     public static final M UPDATE_COOKIE                        = m(4018, Level.FINE,  "Updating cookie: name = {0}");
     public static final M BRIDGE_NO_ATTACHMENTS                = m(4019, Level.WARNING, "Bridge Routing Assertion does not currently support SOAP-with-attachments.  Ignoring additional MIME parts");
@@ -223,7 +223,7 @@ public class AssertionMessages extends Messages {
 
     // ServerWsTrustCredentialExchange
     public static final M WSTRUST_NO_SUITABLE_CREDENTIALS = m(6200, Level.INFO, "The current request did not contain credentials of any supported type");
-    public static final M WSTRUST_RSTR_NOT_SAML           = m(6201, Level.WARNING, "WS-Trust response did not contain SAML assertion");
+    public static final M WSTRUST_RSTR_BAD_TYPE           = m(6201, Level.WARNING, "WS-Trust response did not contain a security token of a supported type");
     public static final M WSTRUST_RSTR_STATUS_NON_200     = m(6202, Level.WARNING, "WS-Trust response had non-200 status");
     public static final M WSTRUST_NON_XML_MESSAGE         = m(6203, Level.INFO, "Can't replace security token in non-XML message");
     public static final M WSTRUST_DECORATION_FAILED       = m(6204, Level.WARNING, "Unable to replace security token");
@@ -233,10 +233,12 @@ public class AssertionMessages extends Messages {
 
 
     //ServerRegex
-    public static final M REGEX_PATTERN_INVALID = m(6300, Level.WARNING, "Regex pattern '{0}' compile error: {1}; assertion therefore fails.");
-    public static final M REGEX_TOO_BIG         = m(6301, Level.WARNING, "Regular expression cannot be evaluated; content is too large (>= " + 1024 * 512 + " bytes)");
-    public static final M REGEX_NO_REPLACEMENT  = m(6302, Level.WARNING, "Replace requested, and no replace string specified (null).");
-    public static final M REGEX_NO_SUCH_PART    = m(6303, Level.WARNING, "Cannot search or replace in nonexistent part #{0}");
+    public static final M REGEX_PATTERN_INVALID   = m(6300, Level.WARNING, "Regex pattern '{0}' compile error: {1}; assertion therefore fails.");
+    public static final M REGEX_TOO_BIG           = m(6301, Level.WARNING, "Regular expression cannot be evaluated; content is too large (>= " + 1024 * 512 + " bytes)");
+    public static final M REGEX_NO_REPLACEMENT    = m(6302, Level.WARNING, "Replace requested, and no replace string specified (null).");
+    public static final M REGEX_NO_SUCH_PART      = m(6303, Level.WARNING, "Cannot search or replace in nonexistent part #{0}");
+    public static final M REGEX_NO_ENCODING       = m(6304, Level.INFO, "Character encoding not specified; will use default {0}");
+    public static final M REGEX_ENCODING_OVERRIDE = m(6305, Level.FINE, "Using overridden character encoding {0}");
 
     // SAML Browser/POST
     public static final M SAMLBROWSERPOST_LOGINFORM_NON_200           = m(6400, Level.WARNING, "HTTP GET for login form resulted in non-200 status");
@@ -276,10 +278,15 @@ public class AssertionMessages extends Messages {
     public static final M SNMP_BAD_TRAP_OID       = m(6703, Level.WARNING, "The OID ending with zero is reserved for the message field.  Using .1 for the trap OID instead.");
 
     // HTTP Form POST
-    public static final M HTTPFORM_WRONG_TYPE    = m(6800, Level.WARNING, "Request had unsupoprted Content-Type: {0}");
+    public static final M HTTPFORM_WRONG_TYPE    = m(6800, Level.WARNING, "Request does not appear to be an HTTP form submission ({0})");
     public static final M HTTPFORM_NON_HTTP      = m(6801, Level.WARNING, "Request was not received via HTTP");
     public static final M HTTPFORM_MULTIVALUE    = m(6802, Level.WARNING, "Field {0} had multiple values; skipping");
     public static final M HTTPFORM_NO_SUCH_FIELD = m(6803, Level.WARNING, "Field {0} could not be found");
     public static final M HTTPFORM_NO_PARTS      = m(6804, Level.WARNING, "No MIME parts were found");
     public static final M HTTPFORM_BAD_MIME      = m(6805, Level.WARNING, "Unable to write new MIME message");
+    public static final M HTTPFORM_TOO_BIG       = m(6806, Level.WARNING, "Field {0} is too large (>= " + 512 * 1024 + " bytes)");
+
+    // HTTP Form POST
+    public static final M INVERSE_HTTPFORM_NO_SUCH_PART = m(6901, Level.WARNING, "Message has no part #{0}");
+    public static final M INVERSE_HTTPFORM_TOO_BIG = m(6902, Level.WARNING, "Part #{0} is too large (>= " + 512 * 1024 + " bytes)");
 }

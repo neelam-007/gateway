@@ -488,6 +488,17 @@ public class TokenServiceClient {
             }
         }
 
+        Element usernameTokenEl = XmlUtil.findOnlyOneChildElementByName(rst, SoapUtil.SECURITY_URIS_ARRAY, "UsernameToken");
+        if (usernameTokenEl != null) {
+            // It's a... um... I dunno
+            try {
+                return new UsernameTokenImpl(usernameTokenEl);
+            } catch (UnsupportedDocumentFormatException e) {
+                throw new InvalidDocumentFormatException(e);
+            }
+        }
+
+
         Element what = XmlUtil.findFirstChildElement(rst);
         throw new InvalidDocumentFormatException("Token server returned unrecognized security token " + what.getLocalName() +
                                                  " (namespace=" + what.getNamespaceURI() + ")");
