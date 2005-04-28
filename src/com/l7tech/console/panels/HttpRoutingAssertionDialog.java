@@ -570,7 +570,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
                             assertion.setFailoverStrategyName(getIpListPanel().getFailoverStrategyName());
                         } else {
                             assertion.setCustomIpAddresses(null);
-                            assertion.setFailoverStrategyName("sticky");
+                            assertion.setFailoverStrategyName(getIpListPanel().getFailoverStrategyName());
                         }
 
                         if (promoteActorRadio.isSelected()) {
