@@ -3,7 +3,7 @@
  *
  * $Id$
  */
-package com.l7tech.console.security;
+package com.l7tech.common.audit;
 
 import org.springframework.context.ApplicationEvent;
 

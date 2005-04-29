@@ -8,6 +8,7 @@ package com.l7tech.server.audit;
 import com.l7tech.cluster.ClusterInfoManager;
 import com.l7tech.common.audit.AdminAuditRecord;
 import com.l7tech.common.audit.AuditContext;
+import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.identity.User;
 import com.l7tech.objectmodel.Entity;
 import com.l7tech.objectmodel.NamedEntity;
@@ -74,6 +75,11 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
 
         if (event instanceof AdminEvent || event instanceof PersistenceEvent) {
             auditContext.setCurrentRecord(makeAuditRecord((AdminEvent)event));
+            auditContext.flush();
+        }
+
+        if (event instanceof LogonEvent) {
+            auditContext.setCurrentRecord(makeAuditRecord((LogonEvent)event));
             auditContext.flush();
         }
     }
@@ -203,6 +209,17 @@ public class AdminAuditListener extends ApplicationObjectSupport implements Appl
             if (info == null) return null;
 
             return new AdminAuditRecord(level(event), nodeId, 0, "<none>", "", 'D', event.getNote(), info.login, info.ip);
+        } else if (genericEvent instanceof LogonEvent) {
+            LogonEvent le = (LogonEvent)genericEvent;
+            User admin = (User)le.getSource();
+            String ip = null;
+            try {
+                ip = UnicastRemoteObject.getClientHost();
+            } catch (ServerNotActiveException e) {
+                logger.log(Level.WARNING, "cannot get remote ip", e);
+            }
+            return new AdminAuditRecord(Level.INFO, nodeId, 0, "<none>", "", AdminAuditRecord.ACTION_LOGIN,
+                                        "Administrator logged in", admin.getLogin(),ip);
         } else {
             throw new IllegalArgumentException("Can't handle events of type " + genericEvent.getClass().getName());
         }

@@ -1,8 +1,9 @@
 package com.l7tech.console.action;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.console.GatewayAuditWindow;
-import com.l7tech.console.security.LogonEvent;
+import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.Group;
 import com.l7tech.logging.GenericLogAdmin;

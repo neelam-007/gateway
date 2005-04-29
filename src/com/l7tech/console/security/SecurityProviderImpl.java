@@ -3,6 +3,7 @@ package com.l7tech.console.security;
 import com.l7tech.admin.AdminContext;
 import com.l7tech.admin.AdminLogin;
 import com.l7tech.common.VersionException;
+import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.protocol.SecureSpanConstants;
 import com.l7tech.spring.remoting.rmi.ResettableRmiProxyFactoryBean;
 import com.l7tech.identity.UserBean;

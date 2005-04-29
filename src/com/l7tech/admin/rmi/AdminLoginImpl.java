@@ -12,6 +12,7 @@ import com.l7tech.objectmodel.EntityHeader;
 import com.l7tech.objectmodel.FindException;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.server.identity.IdentityProviderFactory;
+import com.l7tech.common.audit.LogonEvent;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -59,6 +60,7 @@ public class AdminLoginImpl extends ApplicationObjectSupport
             }
             logger.info("" + getHighestRole(roles) + " "+user.getLogin() + " logged in from IP " + UnicastRemoteObject.getClientHost());
             AdminContext adminContext = (AdminContext)getApplicationContext().getBean("adminContextRemote");
+            getApplicationContext().publishEvent(new LogonEvent(user, LogonEvent.LOGON));
             return adminContext;
         } catch (AuthenticationException e) {
             logger.trace("Authentication failed", e);

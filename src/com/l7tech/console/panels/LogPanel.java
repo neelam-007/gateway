@@ -238,6 +238,8 @@ public class LogPanel extends JPanel {
                 return "Object Changed";
             case AdminAuditRecord.ACTION_DELETED:
                 return "Object Deleted";
+            case AdminAuditRecord.ACTION_LOGIN:
+                return "Admin Login";
             default:
                 return "Unknown Action '" + action + "'";
         }

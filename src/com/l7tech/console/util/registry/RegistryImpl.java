@@ -2,10 +2,11 @@ package com.l7tech.console.util.registry;
 
 import com.l7tech.admin.AdminContext;
 import com.l7tech.common.audit.AuditAdmin;
+import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.common.security.TrustedCertAdmin;
 import com.l7tech.common.transport.jms.JmsAdmin;
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.security.LogonEvent;
+import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.IdentityProviderConfig;

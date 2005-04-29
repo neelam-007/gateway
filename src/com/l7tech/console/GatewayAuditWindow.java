@@ -7,11 +7,12 @@
 package com.l7tech.console;
 
 import com.l7tech.common.gui.util.ImageCache;
+import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.action.DeleteAuditEventsAction;
 import com.l7tech.console.action.DownloadAuditEventsAction;
 import com.l7tech.console.panels.LogPanel;
-import com.l7tech.console.security.LogonEvent;
+import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.util.TopComponents;
 

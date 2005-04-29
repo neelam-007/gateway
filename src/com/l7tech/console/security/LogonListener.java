@@ -5,6 +5,8 @@
  */
 package com.l7tech.console.security;
 
+import com.l7tech.common.audit.LogonEvent;
+
 import java.util.EventListener;
 
 

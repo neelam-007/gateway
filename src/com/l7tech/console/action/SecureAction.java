@@ -1,10 +1,11 @@
 package com.l7tech.console.action;
 
-import com.l7tech.console.security.LogonEvent;
+import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.util.Registry;
 import com.l7tech.identity.Group;
+import com.l7tech.common.audit.LogonEvent;
 
 import javax.security.auth.Subject;
 import java.awt.event.ActionEvent;
