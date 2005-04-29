@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 package com.l7tech.console.panels;
 
@@ -18,7 +16,6 @@ import java.net.URL;
 
 /**
  * @author alex
- * @version $Revision$
  */
 public class SamlBrowserArtifactPropertiesDialog extends JDialog {
     private SamlBrowserArtifact samlBrowserArtifactAssertion;

@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.PasswordAuthentication;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -103,7 +104,7 @@ public class ServerSamlBrowserArtifact implements ServerAssertion {
                     return AssertionStatus.FAILED;
                 }
 
-                context.setVariable("samlBrowserArtifact.artifact", artifacts[0]);
+                context.setVariable("samlBrowserArtifact.artifact", URLEncoder.encode(artifacts[0], "UTF-8"));
                 return AssertionStatus.NONE;
             } else {
                 auditor.logAndAudit(AssertionMessages.SAMLBROWSERARTIFACT_RESPONSE_NON_302);
