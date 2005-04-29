@@ -52,7 +52,9 @@ public class UrnResolver extends WsdlOperationServiceResolver {
             }
         }
 
-        return def.getTargetNamespace();
+        if (uri == null) uri = def.getTargetNamespace();
+
+        return uri;
     }
 
     protected int getMaxLength() {
