@@ -2,6 +2,7 @@ package com.l7tech.console.panels;
 
 import com.l7tech.common.audit.*;
 import com.l7tech.common.gui.widgets.ContextMenuTextArea;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.console.table.AssociatedLogsTable;
 import com.l7tech.console.table.FilteredLogTableSorter;
 import com.l7tech.console.util.ArrowIcon;
@@ -76,6 +77,16 @@ public class LogPanel extends JPanel {
     private JScrollPane detailsScrollPane;
     private LogMessage displayedLogMessage = null;
     private AssociatedLogsTable associatedLogsTable = null;
+    private JScrollPane requestXmlScrollPane;
+    private JTextArea requestXmlTextArea;
+    private JPanel requestXmlPanel;
+    private JCheckBox requestReformatCheckbox;
+    private JPanel responseXmlPanel;
+    private JScrollPane responseXmlScrollPane;
+    private JCheckBox responseReformatCheckbox;
+    private JTextArea responseXmlTextArea;
+    private String unformattedRequestXml;
+    private String unformattedResponseXml;
 
     /**
      * Constructor
@@ -128,6 +139,10 @@ public class LogPanel extends JPanel {
                 AuditRecord arec = (AuditRecord)rec;
                 msg += "\n";
 
+                boolean reqXmlVisible = false;
+                boolean respXmlVisible = false;
+                String reqXmlDisplayed = "";
+                String respXmlDisplayed = "";
                 if (arec instanceof AdminAuditRecord) {
                     AdminAuditRecord aarec = (AdminAuditRecord)arec;
                     msg += "Event Type : Administrator Action" + "\n";
@@ -150,6 +165,16 @@ public class LogPanel extends JPanel {
                     msg += "User ID    : " + sum.getUserId() + "\n";
                     msg += "User Name  : " + sum.getUserName() + "\n";
                     msg += "Entity name: " + arec.getName() + "\n";
+
+                    if (sum.getRequestXml() != null) {
+                        reqXmlVisible = true;
+                        reqXmlDisplayed = sum.getRequestXml();
+                    }
+
+                    if (sum.getResponseXml() != null) {
+                        respXmlVisible = true;
+                        respXmlDisplayed = sum.getResponseXml();
+                    }
                 } else if (arec instanceof SystemAuditRecord) {
                     SystemAuditRecord sys = (SystemAuditRecord)arec;
                     msg += "Event Type : System Message" + "\n";
@@ -162,6 +187,34 @@ public class LogPanel extends JPanel {
                     msg += "Entity name: " + arec.getName() + "\n";
                     msg += "IP Address : " + arec.getIpAddress() + "\n";
                 }
+
+                unformattedRequestXml = reqXmlDisplayed;
+                if (reqXmlVisible && reqXmlDisplayed != null && reqXmlDisplayed.length() > 0 &&
+                            getRequestReformatCheckbox().isSelected()) {
+                    reqXmlDisplayed = reformat(reqXmlDisplayed);
+                }
+
+                unformattedResponseXml = respXmlDisplayed;
+                if (respXmlVisible && respXmlDisplayed != null && respXmlDisplayed.length() > 0 &&
+                            getResponseReformatCheckbox().isSelected()) {
+                    respXmlDisplayed = reformat(respXmlDisplayed);
+                }
+
+                JTextArea requestXmlTextArea = getRequestXmlTextArea();
+                requestXmlTextArea.setText(reqXmlDisplayed);
+                requestXmlTextArea.getCaret().setDot(0);
+                requestXmlTextArea.setEnabled(reqXmlVisible);
+                getRequestReformatCheckbox().setEnabled(reqXmlVisible);
+                getRequestXmlScrollPane().setEnabled(reqXmlVisible);
+                getMsgDetailsPane().setEnabledAt(2, reqXmlVisible);
+
+                JTextArea responseXmlTextArea = getResponseXmlTextArea();
+                responseXmlTextArea.setText(respXmlDisplayed);
+                responseXmlTextArea.getCaret().setDot(0);
+                responseXmlTextArea.setEnabled(respXmlVisible);
+                getResponseReformatCheckbox().setEnabled(respXmlVisible);
+                getResponseXmlScrollPane().setEnabled(respXmlVisible);
+                getMsgDetailsPane().setEnabledAt(3, respXmlVisible);
 
                 // clear the associated log table
                 getAssociatedLogsTable().getTableSorter().clear();
@@ -193,6 +246,15 @@ public class LogPanel extends JPanel {
                 // Scroll to top
                 getMsgDetails().getCaret().setDot(1);
         }
+    }
+
+    private String reformat(String xml) {
+        try {
+            xml = XmlUtil.nodeToFormattedString(XmlUtil.stringToDocument(xml));
+        } catch (Exception e) {
+            xml = "Can't reformat XML: " + e.toString();
+        }
+        return xml;
     }
 
     private String nonull(String s, String n) {
@@ -474,6 +536,10 @@ public class LogPanel extends JPanel {
         JScrollPane associatedLogsScrollPane = getAssociatedLogsScrollPane();
         msgDetailsPane.addTab("Associated Logs", associatedLogsScrollPane);
 
+        msgDetailsPane.addTab("Request XML", getRequestXmlPanel());
+
+        msgDetailsPane.addTab("Response XML", getResponseXmlPanel());
+
         return msgDetailsPane;
     }
 
@@ -506,6 +572,20 @@ public class LogPanel extends JPanel {
         return detailsScrollPane;
     }
 
+    private JScrollPane getRequestXmlScrollPane() {
+        if (requestXmlScrollPane != null) return requestXmlScrollPane;
+        requestXmlScrollPane = new JScrollPane();
+        requestXmlScrollPane.setViewportView(getRequestXmlTextArea());
+        return requestXmlScrollPane;
+    }
+
+    private JScrollPane getResponseXmlScrollPane() {
+        if (responseXmlScrollPane != null) return responseXmlScrollPane;
+        responseXmlScrollPane = new JScrollPane();
+        responseXmlScrollPane.setViewportView(getResponseXmlTextArea());
+        return responseXmlScrollPane;
+    }
+
     /**
      * Return MsgDetails property value
      * @return  JTextArea
@@ -518,6 +598,82 @@ public class LogPanel extends JPanel {
         msgDetails.setEditable(false);
 
         return msgDetails;
+    }
+
+    private JPanel getRequestXmlPanel() {
+        if (requestXmlPanel != null) return requestXmlPanel;
+        requestXmlPanel = new JPanel();
+        requestXmlPanel.setLayout(new BorderLayout());
+        requestXmlPanel.add(getRequestXmlScrollPane(), BorderLayout.CENTER);
+        requestXmlPanel.add(getRequestReformatCheckbox(), BorderLayout.SOUTH);
+        return requestXmlPanel;
+    }
+
+    private JCheckBox getRequestReformatCheckbox() {
+        if (requestReformatCheckbox != null) return requestReformatCheckbox;
+        requestReformatCheckbox = new JCheckBox("Reformat Request XML");
+        requestReformatCheckbox.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                JTextArea requestTextArea = getRequestXmlTextArea();
+                String text = requestTextArea.getText();
+                if (requestTextArea.isEnabled() && requestTextArea.isShowing() &&
+                            text != null && text.length() > 0) {
+                    if (requestReformatCheckbox.isSelected()) {
+                        unformattedRequestXml = text;
+                        requestTextArea.setText(reformat(unformattedRequestXml));
+                    } else {
+                        requestTextArea.setText(unformattedRequestXml);
+                    }
+                    requestTextArea.getCaret().setDot(0);
+                }
+            }
+        });
+        return requestReformatCheckbox;
+    }
+
+    private JTextArea getRequestXmlTextArea() {
+        if (requestXmlTextArea != null) return requestXmlTextArea;
+        requestXmlTextArea = new ContextMenuTextArea();
+        requestXmlTextArea.setEditable(false);
+        return requestXmlTextArea;
+    }
+
+    private JPanel getResponseXmlPanel() {
+        if (responseXmlPanel != null) return responseXmlPanel;
+        responseXmlPanel = new JPanel();
+        responseXmlPanel.setLayout(new BorderLayout());
+        responseXmlPanel.add(getResponseXmlScrollPane(), BorderLayout.CENTER);
+        responseXmlPanel.add(getResponseReformatCheckbox(), BorderLayout.SOUTH);
+        return responseXmlPanel;
+    }
+
+    private JCheckBox getResponseReformatCheckbox() {
+        if (responseReformatCheckbox != null) return responseReformatCheckbox;
+        responseReformatCheckbox = new JCheckBox("Reformat Response XML");
+        responseReformatCheckbox.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                JTextArea responseTextArea = getResponseXmlTextArea();
+                String text = responseTextArea.getText();
+                if (responseTextArea.isEnabled() && responseTextArea.isShowing() &&
+                            text != null && text.length() > 0) {
+                    if (responseReformatCheckbox.isSelected()) {
+                        unformattedResponseXml = text;
+                        responseTextArea.setText(reformat(unformattedResponseXml));
+                    } else {
+                        responseTextArea.setText(unformattedResponseXml);
+                    }
+                    responseTextArea.getCaret().setDot(0);
+                }
+            }
+        });
+        return responseReformatCheckbox;
+    }
+
+    private JTextArea getResponseXmlTextArea() {
+        if (responseXmlTextArea != null) return responseXmlTextArea;
+        responseXmlTextArea = new ContextMenuTextArea();
+        responseXmlTextArea.setEditable(false);
+        return responseXmlTextArea;
     }
 
     /**

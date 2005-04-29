@@ -65,6 +65,14 @@ class PathValidator {
             }
         }
 
+        if (a instanceof AuditAssertion) {
+            AuditAssertion auditAssertion = (AuditAssertion) a;
+            if (auditAssertion.isSaveRequest() || auditAssertion.isSaveResponse()) {
+                result.addWarning(new PolicyValidatorResult.Warning(a, assertionPath,
+                  "Saving request or response XML may result in excessive disk space usage; do not enable for production services", null));
+            }
+        }
+
         if (isComposite(a)) {
             processComposite((CompositeAssertion)a);
         } else if (a.isCredentialSource()) {

@@ -6,16 +6,17 @@
 
 package com.l7tech.console.action;
 
+import com.l7tech.console.panels.AuditAssertionDialog;
 import com.l7tech.console.tree.policy.AssertionTreeNode;
 import com.l7tech.console.tree.policy.AuditAssertionTreeNode;
 import com.l7tech.console.tree.policy.PolicyTreeModel;
-import com.l7tech.console.util.TopComponents;
 import com.l7tech.console.util.Registry;
-import com.l7tech.policy.assertion.AuditAssertion;
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.common.gui.util.Utilities;
 
 import javax.swing.*;
-import java.util.logging.Level;
 import java.rmi.RemoteException;
+import java.util.logging.Level;
 
 /**
  * Display properties dialog for AuditAssertion.
@@ -46,19 +47,14 @@ public class AuditAssertionPropertiesAction extends SecureAction {
             logger.log(Level.SEVERE, "Cannot call AuditAdmin.serverMessageAuditThreshold", e);
             thresold = Level.INFO;
         }
-        String msg = "Record audit events at the following level beyond this point:\n(NOTE: the server is " +
-                     "currently not recording below level " + thresold.getName() + ")\n";
-        String s =
-          (String)JOptionPane.showInputDialog(TopComponents.getInstance().getMainWindow(),
-            msg,
-            "Audit Properties",
-            JOptionPane.PLAIN_MESSAGE,
-            new ImageIcon(subject.getIcon()),
-            AuditAssertion.ALLOWED_LEVELS,
-            subject.getAssertion().getLevel());
 
-        if (s != null) {
-            subject.getAssertion().setLevel(s);
+        AuditAssertionDialog aad = new AuditAssertionDialog(TopComponents.getInstance().getMainWindow(), subject.getAssertion(), thresold.getName());
+        aad.pack();
+        Utilities.centerOnScreen(aad);
+        Actions.setEscKeyStrokeDisposes(aad);
+        aad.setVisible(true);
+        if (aad.isModified()) {
+            subject.setUserObject(aad.getAssertion());
             assertionChanged();
         }
     }
