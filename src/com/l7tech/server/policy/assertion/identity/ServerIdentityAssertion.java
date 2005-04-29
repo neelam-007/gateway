@@ -16,6 +16,8 @@ import com.l7tech.policy.assertion.AssertionResult;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.identity.IdentityAssertion;
+import com.l7tech.policy.assertion.identity.SpecificUser;
+import com.l7tech.policy.assertion.identity.MemberOfGroup;
 import com.l7tech.server.identity.IdentityProviderFactory;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
@@ -36,6 +38,7 @@ import java.util.logging.Logger;
 public abstract class ServerIdentityAssertion implements ServerAssertion {
     private final ApplicationContext applicationContext;
     private final Auditor auditor;
+    private final Logger logger = Logger.getLogger(ServerIdentityAssertion.class.getName());
 
     public ServerIdentityAssertion(IdentityAssertion data, ApplicationContext ctx) {
         _data = data;
@@ -129,20 +132,29 @@ public abstract class ServerIdentityAssertion implements ServerAssertion {
 
     private AssertionStatus authFailed(PolicyEnforcementContext context, LoginCredentials pc, Exception e) {
         context.addResult(new AssertionResult(_data, AssertionStatus.AUTH_FAILED, e == null ? "" : e.getMessage(), e));
-        StringBuffer message = new StringBuffer();
-        message.append("Authentication failed for ");
         String name = pc.getLogin();
         if (name == null || name.length() == 0) {
             X509Certificate cert = pc.getClientCert();
             if (cert != null) name = cert.getSubjectDN().getName();
         }
-        message.append(name);
-        if (e != null) {
-            message.append(": ");
-            message.append(e.getMessage());
+
+        String identityToAssert = null;
+        if (_data instanceof SpecificUser) {
+            SpecificUser su = (SpecificUser)_data;
+            String idtomatch = su.getUserLogin();
+            if (idtomatch == null) {
+                idtomatch = su.getUserName();
+            }
+            identityToAssert = idtomatch;
+            logger.info("could not verify identity " + idtomatch + " with credentials from " + name);
+        } else if (_data instanceof MemberOfGroup) {
+            MemberOfGroup mog = (MemberOfGroup)_data;
+            String groupname = mog.getGroupName();
+            identityToAssert = groupname;
+            logger.info("cound not verify membership of group " + groupname + " with credentials from " + name);
         }
-        // fla note: this is debug information since ServerSpecificUser.checkUser is already logging failure or success
-        auditor.logAndAudit(AssertionMessages.AUTHENTICATION_FAILED, new String[] {name});
+
+        auditor.logAndAudit(AssertionMessages.AUTHENTICATION_FAILED, new String[] {identityToAssert});
         return AssertionStatus.AUTH_FAILED;
     }
 

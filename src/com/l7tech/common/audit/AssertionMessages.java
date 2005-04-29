@@ -46,7 +46,7 @@ public class AssertionMessages extends Messages {
     public static final M ID_PROVIDER_NOT_EXIST                   = m(4205, Level.WARNING, "id assertion refers to an id provider which does not exist anymore");
     public static final M AUTHENTICATED                           = m(4206, Level.FINEST, "Authenticated {0}");
     public static final M INVALID_CERT                            = m(4207, Level.INFO, "Invalid client cert for {0}");
-    public static final M AUTHENTICATION_FAILED                   = m(4208, Level.SEVERE, "Authentication failed for {0}");
+    public static final M AUTHENTICATION_FAILED                   = m(4208, Level.INFO, "Authentication failed for {0}");
 
     // ServerRequestWssOperation messages
     public static final M NOTHING_TO_VALIDATE                     = m(4300, Level.FINE, "This is intended for another recipient, there is nothing to validate here.");
