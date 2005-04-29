@@ -711,9 +711,11 @@ public class XmlUtil {
 
     private static final Logger logger = Logger.getLogger(XmlUtil.class.getName());
     private static DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+    public static final String XERCES_DISALLOW_DOCTYPE = "http://apache.org/xml/features/disallow-doctype-decl";
+
     static {
         dbf.setNamespaceAware(true);
-        dbf.setAttribute("http://apache.org/xml/features/disallow-doctype-decl", Boolean.TRUE);
+        dbf.setAttribute(XERCES_DISALLOW_DOCTYPE, Boolean.TRUE);
     }
 
     private static DocumentBuilderFactory dbfAllowingDoctype = DocumentBuilderFactory.newInstance();

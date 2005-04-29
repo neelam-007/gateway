@@ -1,6 +1,7 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.common.gui.util.Utilities;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.event.PolicyEvent;
 import com.l7tech.console.event.PolicyListener;
@@ -15,14 +16,11 @@ import org.apache.xml.serialize.XMLSerializer;
 import org.dom4j.DocumentException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 import javax.swing.*;
 import javax.swing.event.EventListenerList;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -226,19 +224,13 @@ public class SchemaValidationPropertiesDialog extends JDialog {
     }
 
     private Document stringToDoc(String str) {
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        dbf.setNamespaceAware(true);
         Document doc = null;
-        InputSource source = new InputSource(new ByteArrayInputStream(str.getBytes()));
         try {
-            doc = dbf.newDocumentBuilder().parse(source);
+            doc = XmlUtil.stringToDocument(str);
         } catch (SAXException e) {
             log.log(Level.WARNING, "cannot parse doc", e);
             return null;
         } catch (IOException e) {
-            log.log(Level.WARNING, "cannot parse doc", e);
-            return null;
-        } catch (ParserConfigurationException e) {
             log.log(Level.WARNING, "cannot parse doc", e);
             return null;
         }
@@ -309,21 +301,14 @@ public class SchemaValidationPropertiesDialog extends JDialog {
         }
 
         // try to get document
-        InputSource is = new InputSource(fis);
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        dbf.setNamespaceAware(true);
         Document doc = null;
         try {
-            doc = dbf.newDocumentBuilder().parse(is);
+            doc = XmlUtil.parse(fis);
         } catch (SAXException e) {
             displayError(resources.getString("error.noxmlaturl") + " " + filename, null);
             log.log(Level.FINE, "cannot parse " + filename, e);
             return;
         } catch (IOException e) {
-            displayError(resources.getString("error.noxmlaturl") + " " + filename, null);
-            log.log(Level.FINE, "cannot parse " + filename, e);
-            return;
-        } catch (ParserConfigurationException e) {
             displayError(resources.getString("error.noxmlaturl") + " " + filename, null);
             log.log(Level.FINE, "cannot parse " + filename, e);
             return;
@@ -364,27 +349,22 @@ public class SchemaValidationPropertiesDialog extends JDialog {
             return;
         }
         // try to get document
-        InputSource is = null;
+        InputStream is = null;
         try {
-            is = new InputSource(url.openStream());
+            is = url.openStream();
         } catch (IOException e) {
             displayError(resources.getString("error.urlnocontent") + " " + urlstr, null);
             return;
         }
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        dbf.setNamespaceAware(true);
+
         Document doc = null;
         try {
-            doc = dbf.newDocumentBuilder().parse(is);
+            doc = XmlUtil.parse(is);
         } catch (SAXException e) {
             displayError(resources.getString("error.noxmlaturl") + " " + urlstr, null);
             log.log(Level.FINE, "cannot parse " + urlstr, e);
             return;
         } catch (IOException e) {
-            displayError(resources.getString("error.noxmlaturl") + " " + urlstr, null);
-            log.log(Level.FINE, "cannot parse " + urlstr, e);
-            return;
-        } catch (ParserConfigurationException e) {
             displayError(resources.getString("error.noxmlaturl") + " " + urlstr, null);
             log.log(Level.FINE, "cannot parse " + urlstr, e);
             return;

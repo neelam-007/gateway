@@ -31,7 +31,6 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.rmi.RemoteException;
@@ -63,8 +62,6 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
     public void init(ServletConfig config) throws ServletException {
         super.init(config);
-        dbf = DocumentBuilderFactory.newInstance();
-        dbf.setNamespaceAware(true);
         KeystoreUtils ku = (KeystoreUtils)getApplicationContext().getBean("keystore");
         try {
             serverCertificate = ku.readSSLCert();
@@ -393,7 +390,5 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         httpServletResponse.getOutputStream().close();
         return;
     }
-
-    private DocumentBuilderFactory dbf;
 }
 

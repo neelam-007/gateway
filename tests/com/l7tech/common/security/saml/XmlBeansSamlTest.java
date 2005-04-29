@@ -1,25 +1,22 @@
 package com.l7tech.common.security.saml;
 
+import com.l7tech.common.util.XmlUtil;
+import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
-import junit.framework.Test;
-
-import java.net.URL;
-import java.util.*;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.FileNotFoundException;
-import java.io.StringWriter;
-import java.math.BigInteger;
-
-import org.apache.xmlbeans.XmlOptions;
 import org.apache.xmlbeans.XmlError;
+import org.apache.xmlbeans.XmlOptions;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 import x0Assertion.oasisNamesTcSAML1.*;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringWriter;
+import java.math.BigInteger;
+import java.net.URL;
+import java.util.*;
 
 
 /**
@@ -131,15 +128,13 @@ public class XmlBeansSamlTest extends TestCase {
     }
 
     private Document getDocument(String resourceName)
-      throws IOException, ParserConfigurationException, SAXException {
+      throws IOException, SAXException {
         ClassLoader cl = getClass().getClassLoader();
         InputStream is = cl.getResourceAsStream(resourceName);
         if (is == null) {
             throw new FileNotFoundException(resourceName);
         }
-        DocumentBuilderFactory df = DocumentBuilderFactory.newInstance();
-        df.setNamespaceAware(true);
-        return df.newDocumentBuilder().parse(is);
+        return XmlUtil.parse(is);
     }
 
     /**
