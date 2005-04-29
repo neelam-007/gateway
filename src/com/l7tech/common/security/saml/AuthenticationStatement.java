@@ -31,12 +31,12 @@ class AuthenticationStatement extends SubjectStatement {
 
     private static final String mapAuthMethod(Class credentialSourceClass) {
         String authMethod = SamlConstants.UNSPECIFIED_AUTHENTICATION;
-        if (credentialSourceClass.isAssignableFrom(SslAssertion.class)) {
+        if (SslAssertion.class.isAssignableFrom(credentialSourceClass)) {
             authMethod = SamlConstants.SSL_TLS_CERTIFICATE_AUTHENTICATION;
-        } else if (credentialSourceClass.isAssignableFrom(RequestWssX509Cert.class)) {
+        } else if (RequestWssX509Cert.class.isAssignableFrom(credentialSourceClass)) {
             authMethod = SamlConstants.XML_DSIG_AUTHENTICATION;
-        } else if (credentialSourceClass.isAssignableFrom(HttpCredentialSourceAssertion.class) ||
-          credentialSourceClass.isAssignableFrom(WssBasic.class)) {
+        } else if (HttpCredentialSourceAssertion.class.isAssignableFrom(credentialSourceClass) ||
+          WssBasic.class.isAssignableFrom(credentialSourceClass)) {
             authMethod = SamlConstants.PASSWORD_AUTHENTICATION;
         }
         return authMethod;
