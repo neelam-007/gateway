@@ -37,10 +37,16 @@ public class TarariMessageContextImpl implements TarariMessageContext {
         return compilerGeneration;
     }
 
+    /**
+     * @return the XMLDocument. Never null.
+     */
     public XMLDocument getTarariDoc() {
         return tarariDoc;
     }
 
+    /**
+     * @return the RAXContext. Never null.
+     */
     public RAXContext getRaxContext() {
         return raxContext;
     }

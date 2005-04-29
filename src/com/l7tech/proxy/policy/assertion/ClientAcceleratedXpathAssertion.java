@@ -65,7 +65,7 @@ public class ClientAcceleratedXpathAssertion extends ClientXpathAssertion {
             // Register this Xpath with the tarari hardware
             GlobalTarariContext tarariContext = TarariLoader.getGlobalContext();
             if (tarariContext != null)
-                tarariContext.add(expr);
+                tarariContext.addXpath(expr);
         } catch (InvalidXpathException e) {
             logger.log(Level.WARNING, "Assertion will always fail: Invalid Xpath expression: " + expr, e);
             expr = null;
@@ -129,7 +129,7 @@ public class ClientAcceleratedXpathAssertion extends ClientXpathAssertion {
                 return null;
             }
 
-            int index = tarariContext.getIndex(expr, tmc.getCompilerGeneration());
+            int index = tarariContext.getXpathIndex(expr, tmc.getCompilerGeneration());
             if (index < 1) {
                 logger.log(Level.INFO, "Hardware acceleration not available for this xpath expression; falling back to software xpath processing.");
                 return null;
@@ -159,7 +159,7 @@ public class ClientAcceleratedXpathAssertion extends ClientXpathAssertion {
             // Decrement the reference count for this Xpath with the Tarari hardware
             GlobalTarariContext tarariContext = TarariLoader.getGlobalContext();
             if (tarariContext != null)
-                tarariContext.remove(expr);
+                tarariContext.removeXpath(expr);
         }
         super.finalize();
     }

@@ -1,18 +1,24 @@
 package com.l7tech.server.policy.assertion.xml;
 
 import com.l7tech.common.ApplicationContexts;
+import com.l7tech.common.audit.BootMessages;
+import com.l7tech.common.xml.tarari.GlobalTarariContext;
+import com.l7tech.common.xml.TarariLoader;
+import com.l7tech.common.mime.ContentTypeHeader;
+import com.l7tech.common.mime.NoSuchPartException;
+import com.l7tech.common.message.Message;
 import com.l7tech.common.util.HexUtils;
+import com.l7tech.common.util.XmlUtil;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
+import com.l7tech.server.message.PolicyEnforcementContext;
+import com.l7tech.server.StashManagerFactory;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.w3c.dom.Document;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.logging.Logger;
@@ -43,13 +49,20 @@ public class SchemaValidationTest extends TestCase {
         System.out.println("Test complete: " + SchemaValidationTest.class);
     }
 
+    protected void setUp() throws Exception {
+        GlobalTarariContext context = TarariLoader.getGlobalContext();
+        if (context != null) {
+            context.compile();
+        }
+    }
+
     public void testEcho() throws Exception {
         SchemaValidation assertion = new SchemaValidation();
         InputStream is = getClass().getResourceAsStream(ECHO3_XSD);
         String xsd = new String(HexUtils.slurpStream(is, 10000));
         assertion.setSchema(xsd);
         ServerSchemaValidation serverAssertion = new ServerSchemaValidation(assertion, ApplicationContexts.getTestApplicationContext());
-        AssertionStatus res = serverAssertion.checkRequest(getResAsDoc(ECHO_REQ));
+        AssertionStatus res = serverAssertion.checkRequest(getResAsContext(ECHO_REQ));
         System.out.println("result is " + res);
     }
 
@@ -63,7 +76,7 @@ public class SchemaValidationTest extends TestCase {
         String[] resources = {DOCLIT_WITH2BODYCHILDREN_REQ};
         boolean[] expectedResults = {true};
         for (int i = 0; i < resources.length; i++) {
-            AssertionStatus res = serverAssertion.checkRequest(getResAsDoc(resources[i]));
+            AssertionStatus res = serverAssertion.checkRequest(getResAsContext(resources[i]));
             //System.out.println("DOCUMENT " + resources[i] +
             //                    (res == AssertionStatus.NONE ? " VALIDATES OK" : " DOES NOT VALIDATE"));
             if (expectedResults[i]) {
@@ -84,7 +97,7 @@ public class SchemaValidationTest extends TestCase {
         String[] resources = {LISTREQ_PATH, BAD_LISTREQ_PATH, LISTRES_PATH};
         boolean[] expectedResults = {true, false, true};
         for (int i = 0; i < resources.length; i++) {
-            AssertionStatus res = serverAssertion.checkRequest(getResAsDoc(resources[i]));
+            AssertionStatus res = serverAssertion.checkRequest(getResAsContext(resources[i]));
             //System.out.println("DOCUMENT " + resources[i] +
             //                    (res == AssertionStatus.NONE ? " VALIDATES OK" : " DOES NOT VALIDATE"));
             if (expectedResults[i]) {
@@ -96,19 +109,26 @@ public class SchemaValidationTest extends TestCase {
     }
 
 
-    private InputSource getRes(String path) throws IOException {
+    private InputStream getRes(String path) throws IOException {
         InputStream is = getClass().getResourceAsStream(path);
         if (is == null) {
             throw new IOException("\ncannot load resource " + path + ".\ncheck your runtime properties.\n");
         }
-        return new InputSource(is);
+        return is;
     }
 
-    private Document getResAsDoc(String path) throws IOException, ParserConfigurationException,
-                                                          SAXException, IllegalArgumentException {
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        dbf.setNamespaceAware(true);
-        return dbf.newDocumentBuilder().parse(getRes(path));
+    private Document getResAsDoc(String path)
+            throws IOException, SAXException, IllegalArgumentException
+    {
+        return XmlUtil.parse(getRes(path));
+    }
+
+    private PolicyEnforcementContext getResAsContext(String path) throws IOException, NoSuchPartException {
+        return new PolicyEnforcementContext(
+                new Message(StashManagerFactory.createStashManager(),
+                        ContentTypeHeader.XML_DEFAULT,
+                        getRes(path)),
+                new Message());
     }
 
     private static final String RESOURCE_PATH = "/com/l7tech/server/policy/assertion/xml/";

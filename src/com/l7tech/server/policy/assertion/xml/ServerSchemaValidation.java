@@ -2,15 +2,26 @@ package com.l7tech.server.policy.assertion.xml;
 
 import com.l7tech.common.audit.AssertionMessages;
 import com.l7tech.common.audit.Auditor;
+import com.l7tech.common.message.Message;
+import com.l7tech.common.message.TarariKnob;
+import com.l7tech.common.mime.NoSuchPartException;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
+import com.l7tech.common.xml.TarariLoader;
+import com.l7tech.common.xml.tarari.GlobalTarariContext;
+import com.l7tech.common.xml.tarari.TarariMessageContext;
+import com.l7tech.common.xml.tarari.TarariMessageContextImpl;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
 import com.l7tech.policy.assertion.RoutingStatus;
 import com.l7tech.policy.assertion.xml.SchemaValidation;
 import com.l7tech.server.message.PolicyEnforcementContext;
 import com.l7tech.server.policy.assertion.ServerAssertion;
+import com.tarari.xml.XMLDocument;
+import com.tarari.xml.XMLStreamProcessor;
+import com.tarari.xml.tokenizer.XMLTokenizerException;
 import org.springframework.context.ApplicationContext;
+import org.w3.x2001.xmlSchema.SchemaDocument;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -25,6 +36,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -43,10 +55,22 @@ import java.util.logging.Logger;
  */
 public class ServerSchemaValidation implements ServerAssertion {
     private final Auditor auditor;
+    private final GlobalTarariContext tarariContext;
+    private String tarariNamespaceUri = null;
 
     public ServerSchemaValidation(SchemaValidation data, ApplicationContext springContext) {
         this.data = data;
         auditor = new Auditor(this, springContext, logger);
+        tarariContext = TarariLoader.getGlobalContext();
+        if (tarariContext != null) {
+            try {
+                SchemaDocument sdoc = SchemaDocument.Factory.parse(new StringReader(data.getSchema()));
+                tarariNamespaceUri = sdoc.getSchema().getTargetNamespace();
+                tarariContext.addSchema(tarariNamespaceUri, data.getSchema());
+            } catch (Exception e) {
+                auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FAILED, null, e);
+            }
+        }
     }
 
     /**
@@ -55,37 +79,56 @@ public class ServerSchemaValidation implements ServerAssertion {
      */
     public AssertionStatus checkRequest(PolicyEnforcementContext context) throws IOException,
                                                                               PolicyAssertionException {
-
-
         // decide which document to act upon based on routing status
         RoutingStatus routing = context.getRoutingStatus();
+        Message msg;
         if (routing == RoutingStatus.ROUTED || routing == RoutingStatus.ATTEMPTED) {
             // try to validate response
-            try {
-                auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_VALIDATE_RESPONSE);
-                if (!context.getResponse().isXml()) {
-                    auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_RESPONSE_NOT_XML);
-                    return AssertionStatus.NOT_APPLICABLE;
-                }
-
-                return checkRequest(context.getResponse().getXmlKnob().getDocumentReadOnly());
-            } catch (SAXException e) {
-                throw new PolicyAssertionException("could not parse response document", e);
+            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_VALIDATE_RESPONSE);
+            if (!context.getResponse().isXml()) {
+                auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_RESPONSE_NOT_XML);
+                return AssertionStatus.NOT_APPLICABLE;
             }
+
+            msg = context.getResponse();
         } else {
             // try to validate request
-            try {
-                auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_VALIDATE_REQUEST);
-                if (!context.getRequest().isXml()) {
-                    auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_REQUEST_NOT_XML);
-                    return AssertionStatus.NOT_APPLICABLE;
-                }
-
-                return checkRequest(context.getRequest().getXmlKnob().getDocumentReadOnly());
-            } catch (SAXException e) {
-                throw new PolicyAssertionException("could not parse request document", e);
+            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_VALIDATE_REQUEST);
+            if (!context.getRequest().isXml()) {
+                auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_REQUEST_NOT_XML);
+                return AssertionStatus.NOT_APPLICABLE;
             }
+
+            msg = context.getRequest();
         }
+
+
+        try {
+            if (tarariNamespaceUri != null) {
+                msg.isSoap(); // Prime the pump
+                TarariKnob tk = (TarariKnob) msg.getKnob(TarariKnob.class);
+                if (tk != null) {
+                    TarariMessageContext tmc = tk.getContext();
+                    if (tmc instanceof TarariMessageContextImpl) {
+                        TarariMessageContextImpl tarariMessageContext = (TarariMessageContextImpl) tmc;
+                        XMLDocument tdoc = tarariMessageContext.getTarariDoc();
+                        try {
+                            XMLStreamProcessor.tokenize(tdoc, true);
+                            return AssertionStatus.NONE;
+                        } catch (XMLTokenizerException e) {
+                            auditor.logAndAudit(AssertionMessages.SCHEMA_VALIDATION_FALLBACK, null, e);
+                        }
+                    }
+                }
+            }
+
+            return checkRequest(msg.getXmlKnob().getDocumentReadOnly());
+        } catch (SAXException e) {
+            throw new PolicyAssertionException("could not parse request or response document", e);
+        } catch (NoSuchPartException e) {
+            throw new RuntimeException(e); // Can't happen
+        }
+
     }
 
     /**
@@ -101,6 +144,7 @@ public class ServerSchemaValidation implements ServerAssertion {
         }
         ByteArrayInputStream schemaIS = new ByteArrayInputStream(data.getSchema().getBytes());
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setAttribute(XmlUtil.XERCES_DISALLOW_DOCTYPE, Boolean.TRUE);
 	    dbf.setNamespaceAware(true);
 	    dbf.setValidating(true);
         dbf.setAttribute(XmlUtil.JAXP_SCHEMA_LANGUAGE, XmlUtil.W3C_XML_SCHEMA);
@@ -198,6 +242,16 @@ public class ServerSchemaValidation implements ServerAssertion {
             return errors;
         }
         private final ArrayList errors = new ArrayList();
+    }
+
+    protected void finalize() throws Throwable {
+        if (tarariNamespaceUri != null) {
+            // Decrement the reference count for this Xpath with the Tarari hardware
+            GlobalTarariContext tarariContext = TarariLoader.getGlobalContext();
+            if (tarariContext != null)
+                tarariContext.removeSchema(tarariNamespaceUri);
+        }
+        super.finalize();
     }
 
     private SchemaValidation data;

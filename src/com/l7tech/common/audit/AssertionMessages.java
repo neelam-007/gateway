@@ -175,6 +175,8 @@ public class AssertionMessages extends Messages {
     public static final M SCHEMA_VALIDATION_FAILED                          = m(5604, Level.FINE, "Assertion failure: {0}");
     public static final M SCHEMA_VALIDATION_SUCCEEDED                       = m(5605, Level.FINEST, "Schema validation success");
     public static final M SCHEMA_VALIDATION_EMPTY_BODY                      = m(5606, Level.FINE, "Empty body. Nothing to validate");
+    public static final M SCHEMA_VALIDATION_NO_ACCEL                        = m(5607, Level.WARNING, "Schema can not be hardware-accelerated");
+    public static final M SCHEMA_VALIDATION_FALLBACK                        = m(5608, Level.WARNING, "Hardware-accelerated schema validation failed; falling back to software");
 
     // ServerTimeRange
     public static final M TIME_RANGE_NOTHING_TO_CHECK                       = m(5700, Level.FINEST, "Nothing to check.");

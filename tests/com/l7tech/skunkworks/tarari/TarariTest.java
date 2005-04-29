@@ -30,11 +30,11 @@ public class TarariTest {
         String[] xpathArray = (String[])xpathList.toArray(new String[0]);
         for (Iterator i = xpathList.iterator(); i.hasNext();) {
             String xpath = (String)i.next();
-            tarariContext.add(xpath);
+            tarariContext.addXpath(xpath);
         }
 
-        tarariContext.remove("//");
-        tarariContext.add("//*[local-name()='Envelope']");
+        tarariContext.removeXpath("//");
+        tarariContext.addXpath("//*[local-name()='Envelope']");
         tarariContext.compile();
 
         InputStream is = TestDocuments.getInputStream(docName);
@@ -49,7 +49,7 @@ public class TarariTest {
         System.out.println("SOAP");
 
         for (int i = 0; i < xpathArray.length; i++) {
-            int index = tarariContext.getIndex(xpathArray[i], tarariContext.getCompilerGeneration());
+            int index = tarariContext.getXpathIndex(xpathArray[i], tarariContext.getCompilerGeneration());
             System.out.print("XPath " + xpathArray[i]);
             if (index < 1) {
                 System.out.println(" could not be compiled");

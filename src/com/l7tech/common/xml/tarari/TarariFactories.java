@@ -115,7 +115,7 @@ public class TarariFactories implements SoapInfoFactory, TarariMessageContextFac
             XMLDocument tarariDoc = null;
             tarariDoc = new XMLDocument(inputStream);
             XPathProcessor tproc = new XPathProcessor(tarariDoc);
-            RAXContext context = tproc.processXPaths();
+            RAXContext context = tproc.processXPaths(false);
             return new TarariMessageContextImpl(tarariDoc, context, TarariLoader.getGlobalContext().getCompilerGeneration());
         } catch (XPathProcessorException e) {
             TarariUtil.translateException(e);

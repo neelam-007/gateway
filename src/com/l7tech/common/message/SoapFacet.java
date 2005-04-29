@@ -63,11 +63,19 @@ class SoapFacet extends MessageFacet {
         SoapInfoFactory fac = TarariLoader.getSoapInfoFactory();
         if (mcfac != null && fac != null) {
             try {
-                InputStream inputStream = message.getMimeKnob().getFirstPart().getInputStream(false);
-                TarariMessageContext mc = mcfac.makeMessageContext(inputStream);
-                SoapInfo soapInfo = fac.getSoapInfo(mc);
-                message.attachKnob(TarariKnob.class, new TarariKnob(message, mc));
-                return soapInfo;
+                MimeKnob mime = message.getMimeKnob();
+                String encoding = mime.getOuterContentType().getEncoding();
+                InputStream is = null;
+                if ("utf8".equalsIgnoreCase(encoding) || "utf-8".equalsIgnoreCase(encoding)) {
+                    is = mime.getFirstPart().getInputStream(false);
+
+                    TarariMessageContext mc = mcfac.makeMessageContext(is);
+                    SoapInfo soapInfo = fac.getSoapInfo(mc);
+                    message.attachKnob(TarariKnob.class, new TarariKnob(message, mc));
+                    return soapInfo;
+                } else {
+                    logger.info("Document encoding '" + encoding + "' not supported with hardware acceleration");
+                }
             } catch (SoftwareFallbackException e) {
                 // TODO if this happens a lot for perfectly reasonable reasons, downgrade to something below INFO
                 logger.log(Level.INFO, "Falling back from hardware to software processing", e);
