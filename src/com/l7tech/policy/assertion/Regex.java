@@ -21,6 +21,8 @@ public class Regex extends Assertion {
      * part or any other Integer (zero-based) for a specific MIME part.
      */
     private int mimePart = 0;
+    private boolean proceedIfPatternMatches = true;
+    private String encoding;
 
     /**
      * Test whether the assertion is a credential source. The <code>RegexAssertion</code>
@@ -65,12 +67,33 @@ public class Regex extends Assertion {
     }
 
     /**
-     * Set hte boolean tooggle that enables replace
+     * Set the boolean tooggle that enables replace
      * @param replace
      */
     public void setReplace(boolean replace) {
         this.replace = replace;
     }
+
+    /**
+     * Defaults to true; sets whether the server assertion should
+     * pass if pattern matches or not. This does not have any effect
+     * if replace is set.
+     *
+     * @return true if server assertion should pass, false if not
+     */
+    public boolean isProceedIfPatternMatches() {
+        return proceedIfPatternMatches;
+    }
+
+    /**
+     * Set whether the proceed if pattern matches.
+     *
+     * @param proceedIfPatternMatches
+     */
+    public void setProceedIfPatternMatches(boolean proceedIfPatternMatches) {
+        this.proceedIfPatternMatches = proceedIfPatternMatches;
+    }
+
 
     /**
      * @return the mime part of the this regex will match against
@@ -87,4 +110,21 @@ public class Regex extends Assertion {
         this.mimePart = mimePart;
     }
 
+    /**
+     * @return the name of the character encoding to use when translating the selected {@link #mimePart}'s
+     * bytes into a String, and vice versa.  If null, the charset parameter of the MIME part's declared
+     * Content-Type header will be used.
+     */
+    public String getEncoding() {
+        return encoding;
+    }
+
+    /**
+     * @param encoding the name of the character encoding to use when translating the selected {@link #mimePart}'s
+     * bytes into a String, and vice versa.  Set to null to use the charset parameter from the MIME part's
+     * Content-Type header.
+     */
+    public void setEncoding(String encoding) {
+        this.encoding = encoding;
+    }
 }

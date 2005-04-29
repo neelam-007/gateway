@@ -1,11 +1,5 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
-<<<<<<< ServerRegex.java
- * $Id$
-=======
- * $Id$
->>>>>>> 1.5.4.3
  */
 package com.l7tech.server.policy.assertion;
 
@@ -40,6 +34,7 @@ public class ServerRegex implements ServerAssertion {
     private Exception compileException;
     private Regex regexAssertion;
     private final ExpandVariables expandVariables = new ExpandVariables();
+    public static final String ENCODING = "UTF-8";
 
     public ServerRegex(Regex ass, ApplicationContext springContext) {
         regexAssertion = ass;
@@ -88,27 +83,49 @@ public class ServerRegex implements ServerAssertion {
             }
 
             InputStream is = messagePart.getInputStream(false);
-            byte[] message = HexUtils.slurpStream(is, Regex.MAX_LENGTH);
-            if (message.length == Regex.MAX_LENGTH) {
+            byte[] messageBytes = HexUtils.slurpStream(is, Regex.MAX_LENGTH);
+            if (messageBytes.length == Regex.MAX_LENGTH) {
                 auditor.logAndAudit(AssertionMessages.REGEX_TOO_BIG);
                 return AssertionStatus.FAILED;
             }
 
-            final String encoding = messagePart.getContentType().getEncoding();
-            Matcher matcher = regexPattern.matcher(new String(message, encoding));
+            String encoding = regexAssertion.getEncoding();
+            if (encoding != null && encoding.length() > 0) {
+                auditor.logAndAudit(AssertionMessages.REGEX_ENCODING_OVERRIDE, new String[] { encoding });
+            } else if (encoding == null || encoding.length() == 0) {
+                encoding = messagePart.getContentType().getEncoding();
+            }
+
+            if (encoding == null) {
+                auditor.logAndAudit(AssertionMessages.REGEX_NO_ENCODING, new String[] { ENCODING });
+                encoding = ENCODING;
+            }
+
+            Matcher matcher = regexPattern.matcher(new String(messageBytes, encoding));
+            AssertionStatus assertionStatus = AssertionStatus.FAILED;
             if (isReplacement) {
                 logger.log(Level.FINE, "Replace requested: Match pattern '{0}', replace pattern '{1}'", new Object[]{regexAssertion.getRegex(), replacement});
                 replacement = expandVariables.process(replacement, context.getVariables());
                 String result = matcher.replaceAll(replacement);
                 messagePart.setBodyBytes(result.getBytes(encoding));
+                assertionStatus = AssertionStatus.NONE;
             } else {
-                logger.fine("Verifying match for pattern " + regexAssertion.getRegex());
-                if (!matcher.find()) {
-                    logger.fine("No match for " + regexAssertion.getRegex());
-                    return AssertionStatus.FALSIFIED;
+                final boolean matched = matcher.find();
+                if (matched && regexAssertion.isProceedIfPatternMatches()) {
+                    logger.fine("Proceeding : Matched " + regexAssertion.getRegex());
+                    assertionStatus = AssertionStatus.NONE;
+                } else if (!matched && regexAssertion.isProceedIfPatternMatches()) {
+                    logger.fine("Failing : Not matched " + regexAssertion.getRegex());
+                    assertionStatus = AssertionStatus.FAILED;
+                } else if (!matched && !regexAssertion.isProceedIfPatternMatches()) {
+                    logger.fine("Proceeding : Not matched and proceed if no match requested " + regexAssertion.getRegex());
+                    assertionStatus = AssertionStatus.NONE;
+                } else if (matched && !regexAssertion.isProceedIfPatternMatches()) {
+                    logger.fine("Failing : Matched and proceed if no match requested " + regexAssertion.getRegex());
+                     assertionStatus = AssertionStatus.FAILED;
                 }
             }
-            return AssertionStatus.NONE;
+            return assertionStatus;
         } catch (NoSuchPartException e) {
             auditor.logAndAudit(AssertionMessages.REGEX_NO_SUCH_PART, new String[] { Integer.toString(whichPart) });
             return AssertionStatus.FAILED;
