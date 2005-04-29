@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.proxy.gui;
@@ -37,7 +36,7 @@ class ChangePasswordAction extends AbstractAction {
     private SsgListPanel ssgListPanel;
 
     public ChangePasswordAction(SsgListPanel ssgListPanel) {
-        super("Change Password/Revoke Certificate", IconManager.getCert());
+        super("Change Account Password", IconManager.getCert());
         this.ssgListPanel = ssgListPanel;
     }
 
@@ -67,21 +66,18 @@ class ChangePasswordAction extends AbstractAction {
                         String message;
                         if (ssg.getClientCertificate() != null) {
                             certoptions = new Object[] {"Revoke Certificate", "Cancel"};
-                            title = "Revoke Client Certificate";
-                            message = "You are about to send a request to\n" +
-                                    "the Gateway \"" + ssg + "\" for it\n" +
-                                    "to change your password for this account\n" +
-                                    "and revoke your current Client Certificate.\n" +
-                                    "Are you sure you wish to proceed?\n\n" +
-                                    "This action cannot be undone.";
+                            title = "Change Account Password";
+                            message = "WARNING: Changing your account password\n" +
+                                      "on gateway \"" + ssg + "\" will also revoke\n" +
+                                      "your current client certificate and cannot\n" +
+                                      "be undone. Are you sure you wish to proceed?";
+
                         } else {
                             certoptions = new Object[] {"Change Password", "Cancel"};
-                            title = "Change Password";
-                            message = "You are about to send a request to\n" +
-                                    "the Gateway \"" + ssg + "\" for it\n" +
-                                    "to change your password for this account.\n" +
-                                    "Are you sure you wish to proceed?\n\n" +
-                                    "This action cannot be undone.";
+                            title = "Change Account Password";
+                            message = "WARNING: Changing your account password\n" +
+                                      "on gateway \"" + ssg + "\" cannot be undone.\n" +
+                                      "Are you sure you wish to proceed?";
                         }
                         int res2 = JOptionPane.showOptionDialog(null, message, title,
                                                                 0, JOptionPane.WARNING_MESSAGE,
