@@ -67,7 +67,7 @@ public abstract class WsdlOperationServiceResolver extends NameValueServiceResol
             while (operations.hasNext()) {
                 operation = (BindingOperation)operations.next();
                 String value = getTargetValue(wsdl.getDefinition(), operation);
-                if (value != null) out.add(value);
+                out.add(value); // Bug 1741: Ensure we don't return an empty set, it confuses ResolutionManager.
             }
         } catch ( WSDLException we ) {
             logger.log(Level.SEVERE, null, we);
