@@ -20,6 +20,7 @@ public class RegexDialogTest {
         Regex r = new Regex();
         r.setRegex("aaaa");
         r.setReplacement("bbbb");
+        r.setEncoding("UTF-8");
         RegexDialog rd = new RegexDialog(null, r);
         rd.pack();
         rd.setVisible(true);

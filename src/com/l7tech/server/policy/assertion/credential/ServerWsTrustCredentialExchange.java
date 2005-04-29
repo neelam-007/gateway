@@ -1,7 +1,5 @@
 /*
 * Copyright (C) 2004 Layer 7 Technologies Inc.
-*
-* $Id$
 */
 package com.l7tech.server.policy.assertion.credential;
 
@@ -48,7 +46,6 @@ import java.util.logging.Logger;
 
 /**
  * @author alex
- * @version $Revision$
  */
 public class ServerWsTrustCredentialExchange implements ServerAssertion {
     private static final Logger logger = Logger.getLogger(ServerWsTrustCredentialExchange.class.getName());
@@ -117,12 +114,13 @@ public class ServerWsTrustCredentialExchange implements ServerAssertion {
         // Try to get non-WSS credentials
         if (originalToken == null) {
             LoginCredentials creds = context.getCredentials();
-
-            Object payload = creds.getPayload();
-            if (payload instanceof SecurityToken) {
-                originalToken = (SecurityToken)payload;
-            } else if (creds.getFormat() == CredentialFormat.CLEARTEXT) {
-                originalToken = new UsernameTokenImpl(creds.getLogin(), creds.getCredentials());
+            if (creds != null) {
+                Object payload = creds.getPayload();
+                if (payload instanceof SecurityToken) {
+                    originalToken = (SecurityToken)payload;
+                } else if (creds.getFormat() == CredentialFormat.CLEARTEXT) {
+                    originalToken = new UsernameTokenImpl(creds.getLogin(), creds.getCredentials());
+                }
             }
         }
 

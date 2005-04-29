@@ -53,6 +53,7 @@ public class RegexDialog extends JDialog {
     private JLabel testInputTextAreaLabel;
     private JLabel testResultTextAreaLabel;
     private JFormattedTextField mimePartTextField;
+    private JFormattedTextField encodingField;
 
     public RegexDialog(Frame owner, Regex regexAssertion)
       throws HeadlessException {
@@ -76,6 +77,11 @@ public class RegexDialog extends JDialog {
         if (regexAssertion.getRegex() != null) {
             regexTextArea.setText(regexAssertion.getRegex());
         }
+
+        if (regexAssertion.getEncoding() != null) {
+            encodingField.setText(regexAssertion.getEncoding());
+        }
+
         ButtonGroup group = new ButtonGroup();
         group.add(matchRadioButton);
         group.add(matchAndReplaceRadioButton);
@@ -113,6 +119,11 @@ public class RegexDialog extends JDialog {
                 regexAssertion.setReplace(matchAndReplaceRadioButton.isSelected());
                 Object val = mimePartTextField.getValue();
                 regexAssertion.setMimePart(val != null ? ((Integer)val).intValue() : 0);
+
+                String enc = encodingField.getText();
+                if (enc != null && enc.length() > 0)
+                    regexAssertion.setEncoding(enc);
+
                 beanEditSupport.fireEditAccepted(regexAssertion);
             }
         });
