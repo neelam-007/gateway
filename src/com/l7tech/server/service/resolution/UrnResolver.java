@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
- *
- * $Id$
  */
 
 package com.l7tech.server.service.resolution;
@@ -23,7 +21,6 @@ import java.util.List;
 
 /**
  * @author alex
- * @version $Revision$
  */
 public class UrnResolver extends WsdlOperationServiceResolver {
 
