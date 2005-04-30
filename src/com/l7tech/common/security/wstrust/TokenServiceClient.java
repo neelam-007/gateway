@@ -458,12 +458,14 @@ public class TokenServiceClient {
         Element body = XmlUtil.findOnlyOneChildElementByName(env, env.getNamespaceURI(), "Body");
         if (body == null) throw new MessageNotSoapException("Response has no SOAP Body");
         Element rstr = XmlUtil.findOnlyOneChildElementByName(body, tscWstNs, "RequestSecurityTokenResponse");
+        if (rstr == null) rstr = XmlUtil.findOnlyOneChildElementByName(body, SoapUtil.WST_NAMESPACE_ARRAY, "RequestSecurityTokenResponse");
         if (rstr == null) throw new InvalidDocumentFormatException("Response body does not contain wst:RequestSecurityTokenResponse");
 
         if (serverCertificate != null)
             verifySignature(rstr, serverCertificate, response, clientCertificate, clientPrivateKey);
 
         Element rst = XmlUtil.findOnlyOneChildElementByName(rstr, tscWstNs, "RequestedSecurityToken");
+        if (rst == null) rst = XmlUtil.findOnlyOneChildElementByName(rstr, SoapUtil.WST_NAMESPACE_ARRAY, "RequestedSecurityToken");
         if (rst == null) throw new InvalidDocumentFormatException("Response contained no RequestedSecurityToken");
 
         // See what kind of requested security token we got
@@ -564,6 +566,7 @@ public class TokenServiceClient {
 
         // Extract optional expiry date
         Element lifeTimeEl = XmlUtil.findOnlyOneChildElementByName(rstr, tscWstNs, "Lifetime");
+        if (lifeTimeEl == null) lifeTimeEl = XmlUtil.findOnlyOneChildElementByName(rstr, SoapUtil.WST_NAMESPACE_ARRAY, "Lifetime");
         Date expires = null;
         if (lifeTimeEl != null) {
             Element expiresEl = XmlUtil.findOnlyOneChildElementByName(lifeTimeEl, SoapUtil.WSU_URIS_ARRAY, "Expires");
@@ -581,6 +584,7 @@ public class TokenServiceClient {
 
         // Extract shared secret
         Element rpt = XmlUtil.findOnlyOneChildElementByName(rstr, tscWstNs, "RequestedProofToken");
+        if (rpt == null) rpt = XmlUtil.findOnlyOneChildElementByName(rstr, SoapUtil.WST_NAMESPACE_ARRAY, "RequestedProofToken");
         if (rpt == null) throw new InvalidDocumentFormatException("Response contained no RequestedProofToken");
 
         Element encryptedKeyEl = XmlUtil.findOnlyOneChildElementByName(rpt, SoapUtil.XMLENC_NS, "EncryptedKey");
