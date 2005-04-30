@@ -6,10 +6,10 @@
 
 package com.l7tech.proxy.policy.assertion.credential.wss;
 
+import com.l7tech.common.security.token.UsernameTokenImpl;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.policy.assertion.AssertionStatus;
 import com.l7tech.policy.assertion.PolicyAssertionException;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.proxy.datamodel.exceptions.OperationCanceledException;
 import com.l7tech.proxy.message.PolicyApplicationContext;
@@ -71,7 +71,7 @@ public class ClientWssBasic extends ClientWssCredentialSource {
                     }
                 }
 
-                wssReqs.setUsernameTokenCredentials(new LoginCredentials(username, password, WssBasic.class));
+                wssReqs.setUsernameTokenCredentials(new UsernameTokenImpl(username, password));
                 if (!context.getClientSidePolicy().isPlaintextAuthAllowed())
                     context.setSslRequired(true); // force SSL when using WSS basic
                 return AssertionStatus.NONE;

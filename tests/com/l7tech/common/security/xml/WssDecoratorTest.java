@@ -6,10 +6,12 @@
 
 package com.l7tech.common.security.xml;
 
+import com.l7tech.common.message.Message;
 import com.l7tech.common.mime.MimeBodyTest;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.saml.SamlAssertionGenerator;
 import com.l7tech.common.security.saml.SubjectStatement;
+import com.l7tech.common.security.token.UsernameTokenImpl;
 import com.l7tech.common.security.xml.decorator.DecorationRequirements;
 import com.l7tech.common.security.xml.decorator.WssDecorator;
 import com.l7tech.common.security.xml.decorator.WssDecoratorImpl;
@@ -17,11 +19,9 @@ import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.MessageNotSoapException;
 import com.l7tech.common.xml.TestDocuments;
-import com.l7tech.common.message.Message;
 import com.l7tech.policy.assertion.credential.CredentialFormat;
 import com.l7tech.policy.assertion.credential.LoginCredentials;
 import com.l7tech.policy.assertion.credential.http.HttpBasic;
-import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import com.l7tech.policy.assertion.xmlsec.RequestWssX509Cert;
 import junit.framework.Test;
 import junit.framework.TestCase;
@@ -187,7 +187,7 @@ public class WssDecoratorTest extends TestCase {
         Document doc = TestDocuments.getTestDocument(TestDocuments.PLACEORDER_CLEARTEXT);
         log.info("Before decoration:" + XmlUtil.nodeToFormattedString(doc));
         DecorationRequirements reqs = new DecorationRequirements();
-        reqs.setUsernameTokenCredentials(new LoginCredentials("franco", "blahblah".toCharArray(), WssBasic.class));
+        reqs.setUsernameTokenCredentials(new UsernameTokenImpl("franco", "blahblah".toCharArray()));
 
         decorator.decorateMessage(doc, reqs);
         log.info("Decorated message:" + XmlUtil.nodeToFormattedString(doc));

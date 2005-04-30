@@ -17,18 +17,24 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Text;
 
 /**
- * A simple implementation of the UsernameToken SecurityToken.  Not threadsafe.
+ * A simple implementation of the UsernameToken SecurityToken.  Not threadsafe.  The credentials can't be changed
+ * once the instance is created.
  */
 public class UsernameTokenImpl implements UsernameToken {
     private Element element;
     private LoginCredentials creds;
     private String elementId;
 
-    /** Create a UsernameTokenImpl from the given username and password. */
-    public UsernameTokenImpl(String username, char[] password) {
+    /** Create a UsernameTokenImpl from the given credentials, which must be cleartext. */
+    public UsernameTokenImpl(LoginCredentials pc) {
         this.element = null;
         this.elementId = null;
-        this.creds = new LoginCredentials(username, password, null);
+        this.creds = pc;
+    }
+
+    /** Create a UsernameTokenImpl from the given username and password. */
+    public UsernameTokenImpl(String username, char[] password) {
+        this(new LoginCredentials(username, password, null));
     }
 
     /** Create a UsernameTokenImpl from the given Element.  The Element will be parsed during the construction. */
@@ -113,21 +119,21 @@ public class UsernameTokenImpl implements UsernameToken {
         }
     }
 
-    /** @return XML serialized version of this SecurityToken using the specified Security namespace and owner document. */
     public Element asElement(Document factory, String securityNs, String securityPrefix) {
+        // If there's already an element, import it to preserve the existing XML instead of creating new XML
+        if (element != null) {
+            if (element.getOwnerDocument() == factory)
+                return element; // already imported
+            Element imported = (Element)factory.importNode(element, true);
+            return element = imported;
+        }
+
         Element untokEl = factory.createElementNS(securityNs, "UsernameToken");
         untokEl.setPrefix(securityPrefix);
         fillInDetails(untokEl);
-        //return element = XmlUtil.findFirstChildElement(factory.getDocumentElement());
-        // mike, i assume, you mean to return that instead:
         return element = untokEl;
     }
 
-    /**
-     * @return XML serialized version of this SecurityToken.  This will return an existing element, if there is one.
-     *         Otherwise, a new element will be created as the root of a new document and returned.
-     *         This will use the default security namespace and prefix.
-     */
     public Element asElement() {
         if (element == null) {
             Document doc = XmlUtil.createEmptyDocument("UsernameToken", "wsse", SoapUtil.SECURITY_NAMESPACE);

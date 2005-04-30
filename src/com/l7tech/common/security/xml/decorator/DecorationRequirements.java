@@ -6,9 +6,9 @@
 
 package com.l7tech.common.security.xml.decorator;
 
-import com.l7tech.common.util.SoapUtil;
+import com.l7tech.common.security.token.UsernameToken;
 import com.l7tech.common.security.xml.SecurityActor;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
+import com.l7tech.common.util.SoapUtil;
 import org.w3c.dom.Element;
 
 import java.security.PrivateKey;
@@ -109,11 +109,11 @@ public class DecorationRequirements {
         return elementsToSign;
     }
 
-    public LoginCredentials getUsernameTokenCredentials() {
+    public UsernameToken getUsernameTokenCredentials() {
         return usernameTokenCredentials;
     }
 
-    public void setUsernameTokenCredentials(LoginCredentials usernameTokenCredentials) {
+    public void setUsernameTokenCredentials(UsernameToken usernameTokenCredentials) {
         this.usernameTokenCredentials = usernameTokenCredentials;
     }
 
@@ -246,7 +246,7 @@ public class DecorationRequirements {
     private X509Certificate recipientCertificate = null;
     private X509Certificate senderMessageSigningCertificate = null;
     private PrivateKey senderMessageSigningPrivateKey = null;
-    private LoginCredentials usernameTokenCredentials = null;
+    private UsernameToken usernameTokenCredentials = null;
     private Element senderSamlToken = null;
     private SecureConversationSession secureConversationSession = null;
     private boolean signTimestamp;

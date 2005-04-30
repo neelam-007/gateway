@@ -179,7 +179,7 @@ public class ServerWsTrustCredentialExchange implements ServerAssertion {
                 UsernameToken ut = (UsernameToken) rstrObj;
                 LoginCredentials creds = ut.asLoginCredentials();
                 context.setCredentials(creds);
-                decoReq.setUsernameTokenCredentials(creds);
+                decoReq.setUsernameTokenCredentials(new UsernameTokenImpl(creds));
             } else {
                 auditor.logAndAudit(AssertionMessages.WSTRUST_RSTR_BAD_TYPE);
                 return AssertionStatus.AUTH_REQUIRED;

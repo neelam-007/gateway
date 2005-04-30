@@ -19,7 +19,7 @@ import com.ibm.xml.enc.type.EncryptionMethod;
 import com.l7tech.common.security.AesKey;
 import com.l7tech.common.security.JceProvider;
 import com.l7tech.common.security.saml.SamlConstants;
-import com.l7tech.common.security.token.UsernameTokenImpl;
+import com.l7tech.common.security.token.UsernameToken;
 import com.l7tech.common.security.xml.SecureConversationKeyDeriver;
 import com.l7tech.common.security.xml.XencUtil;
 import com.l7tech.common.util.CertUtils;
@@ -27,8 +27,6 @@ import com.l7tech.common.util.HexUtils;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
-import com.l7tech.policy.assertion.credential.CredentialFormat;
-import com.l7tech.policy.assertion.credential.LoginCredentials;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -38,8 +36,8 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
 import javax.crypto.SecretKey;
-import java.io.IOException;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.security.*;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
@@ -103,10 +101,8 @@ public class WssDecoratorImpl implements WssDecorator {
         if (relatesTo != null && !signList.isEmpty())
             signList.add(relatesTo);
 
-        if (decorationRequirements.getUsernameTokenCredentials() != null &&
-          decorationRequirements.getUsernameTokenCredentials().getFormat() == CredentialFormat.CLEARTEXT) {
+        if (decorationRequirements.getUsernameTokenCredentials() != null)
             createUsernameToken(securityHeader, decorationRequirements.getUsernameTokenCredentials());
-        }
 
         Element bst = null;
         if (decorationRequirements.getSenderMessageSigningCertificate() != null && !signList.isEmpty())
@@ -481,18 +477,17 @@ public class WssDecoratorImpl implements WssDecorator {
         inclusiveNamespaces.setAttribute("PrefixList", "");
     }
 
-    private static Element createUsernameToken(Element securityHeader, LoginCredentials creds) {
+    private static Element createUsernameToken(Element securityHeader, UsernameToken ut) {
         // What this element looks like:
         // <wsse:UsernameToken>
         //    <wsse:Username>username</wsse:Username>
         //    <wsse:Password Type="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText">password</wsse:Password>
         // </wsse:UsernameToken>
         // create elements
-        UsernameTokenImpl ut = new UsernameTokenImpl(creds.getLogin(),
-                                                     creds.getCredentials());
         Element token = ut.asElement(securityHeader.getOwnerDocument(),
                                      securityHeader.getNamespaceURI(),
                                      securityHeader.getPrefix());
+
         securityHeader.appendChild(token);
         return token;
     }
