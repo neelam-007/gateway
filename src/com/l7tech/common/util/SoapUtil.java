@@ -64,12 +64,29 @@ public class SoapUtil {
     public static final String WSU_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2002/07/utility";
     public static final String WSU_NAMESPACE3 = "http://schemas.xmlsoap.org/ws/2003/06/utility";
     public static final String WSSC_NAMESPACE = "http://schemas.xmlsoap.org/ws/2004/04/sc";
-    public static final String WST_NAMESPACE = "http://schemas.xmlsoap.org/ws/2004/04/trust";
+
+    public static final String WST_NAMESPACE  = "http://schemas.xmlsoap.org/ws/2004/04/trust";
+    public static final String WST_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2005/02/trust"; // FIM
+    public static final String[] WST_NAMESPACE_ARRAY = {
+        WST_NAMESPACE,
+        WST_NAMESPACE2,   // Seen in Tivoli Fim example messages
+    };
+
     public static final String WSX_NAMESPACE = "http://schemas.xmlsoap.org/ws/2004/03/mex";
 
     public static final String WSP_NAMESPACE = "http://schemas.xmlsoap.org/ws/2002/12/policy";
+    public static final String WSP_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2004/09/policy"; // FIM
+    public static final String[] WSP_NAMESPACE_ARRAY = {
+        WSP_NAMESPACE,
+        WSP_NAMESPACE2,    // Seen in Tivoli Fim example messages
+    };
+
     public static final String WSA_NAMESPACE = "http://schemas.xmlsoap.org/ws/2004/03/addressing";
-    public static final String WSA_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2004/08/addressing"; // Used by FIM
+    public static final String WSA_NAMESPACE2 = "http://schemas.xmlsoap.org/ws/2004/08/addressing"; // FIM
+    public static final String[] WSA_NAMESPACE_ARRAY = {
+        WSA_NAMESPACE,
+        WSA_NAMESPACE2,    // Seen in Tivoli Fim example messages
+    };
 
     public static final String L7_MESSAGEID_NAMESPACE = "http://www.layer7tech.com/ws/addr";
     public static final String L7_MESSAGEID_PREFIX = "L7a";
