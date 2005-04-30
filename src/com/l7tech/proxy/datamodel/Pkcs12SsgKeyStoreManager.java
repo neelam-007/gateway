@@ -12,6 +12,7 @@ import com.l7tech.common.util.CausedIOException;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.common.util.FileUtils;
 import com.l7tech.proxy.datamodel.exceptions.*;
+import com.l7tech.proxy.ssl.CertLoader;
 import com.l7tech.proxy.ssl.CurrentSslPeer;
 import com.l7tech.proxy.util.SslUtils;
 
@@ -69,8 +70,10 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
         Ssg trusted = ssg.getTrustedGateway();
         if (trusted != null)
             return trusted.getRuntime().getSsgKeyStoreManager().isClientCertAvailabile();
-        if (ssg.isFederatedGateway())
-            throw new RuntimeException("Not supported for WS-Trust federation");
+        if (ssg.isFederatedGateway()) {
+            if (CertLoader.getConfiguredCertLoader() == null)
+                throw new RuntimeException("Not supported for WS-Trust federation without custom keystore");
+        }
         if (ssg.getRuntime().getHaveClientCert() == null)
             ssg.getRuntime().setHaveClientCert(getClientCert() == null ? Boolean.FALSE : Boolean.TRUE);
         return ssg.getRuntime().getHaveClientCert().booleanValue();
@@ -122,6 +125,12 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
         if (trusted != null)
             return trusted.getRuntime().getSsgKeyStoreManager().getClientCert();
         if (ssg.isFederatedGateway()) {
+            CertLoader cc = CertLoader.getConfiguredCertLoader();
+            if (cc != null) {
+                log.log(Level.FINE, "Using preconfigured keystore for federated client cert");
+                return cc.getCertChain()[0];
+            }
+
             log.log(Level.FINE, "No client cert for Federated Gateway; returning null");
             return null;
         }
@@ -170,8 +179,15 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
         Ssg trusted = ssg.getTrustedGateway();
         if (trusted != null)
             return trusted.getRuntime().getSsgKeyStoreManager().getClientCertPrivateKey();
-        if (ssg.isFederatedGateway())
-            throw new RuntimeException("Not supported for WS-Trust federation");
+        if (ssg.isFederatedGateway()) {
+            CertLoader cc = CertLoader.getConfiguredCertLoader();
+            if (cc != null) {
+                log.log(Level.FINE, "Using preconfigured keystore for federated private key");
+                return cc.getPrivateKey();
+            }
+
+            throw new RuntimeException("Not supported for WS-Trust federation without custom keystore");
+        }
 
         synchronized (ssg) {
             if (!isClientCertAvailabile())
@@ -213,8 +229,10 @@ public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
         Ssg trusted = ssg.getTrustedGateway();
         if (trusted != null)
             return trusted.getRuntime().getSsgKeyStoreManager().isPasswordWorkedForPrivateKey();
-        if (ssg.isFederatedGateway())
-            throw new RuntimeException("Not supported for WS-Trust federation");
+        if (ssg.isFederatedGateway()) {
+            if (CertLoader.getConfiguredCertLoader() == null)
+                throw new RuntimeException("Not supported for WS-Trust federation without custom keystore");
+        }
         return ssg.getRuntime().isPasswordCorrectForPrivateKey();
     }
 
