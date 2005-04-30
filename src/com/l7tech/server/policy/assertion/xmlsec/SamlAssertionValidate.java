@@ -351,7 +351,15 @@ public class SamlAssertionValidate {
             return;
         }
         String[] confirmations = requestWssSaml.getSubjectConfirmations();
-        List presentedConfirmations = Arrays.asList(subject.getSubjectConfirmation().getConfirmationMethodArray());
+        final SubjectConfirmationType subjectConfirmation = subject.getSubjectConfirmation();
+        List presentedConfirmations = null;
+        if (subjectConfirmation != null) {
+            final String[] confirmationMethodArray = subjectConfirmation.getConfirmationMethodArray();
+            if (confirmationMethodArray != null)
+                presentedConfirmations = Arrays.asList(confirmationMethodArray);
+        }
+        if (presentedConfirmations == null)
+            presentedConfirmations = Collections.EMPTY_LIST;
 
         // if no confirmations have been presented, and that is what corresponds to assertion requirements
         // no confirmation check is performed
