@@ -97,7 +97,6 @@ public class WsTrustCredentialExchangePropertiesDialog extends JDialog {
             ok = false;
         }
         ok = ok && appliesToField.getText() != null && appliesToField.getText().length() > 0;
-        ok = ok && issuerField.getText() != null && issuerField.getText().length() > 0;
         okButton.setEnabled(ok);
     }
 }
