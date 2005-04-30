@@ -93,6 +93,7 @@ public class FimWorkshopTest extends TestCase {
         assertNull(saml.getConfirmationMethod());
         assertTrue(saml.isExpiringSoon(0));
         assertNotNull(saml.getAssertionId());
+        saml.verifyEmbeddedIssuerSignature();
     }
 
     public void testParseClientRequest() throws Exception {
