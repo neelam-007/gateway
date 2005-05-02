@@ -1,9 +1,9 @@
 Summary: Secure Span Gateway
 Name: ssg
 Version: 3.1
-Release: m3d
+Release: rc1
 Group: Applications/Internet
-Copyright: Copyright Layer7 Technologies 2003-2004
+Copyright: Copyright Layer7 Technologies 2003-2005
 URL: http://www.layer7tech.com
 Packager: Layer7 Technologies, <support@layer7tech.com> 
 Source0: /tmp/ssg.tar.gz
@@ -16,7 +16,7 @@ provides: ssg
 %description
 SSG software distribution on standard system
 Does: ssg, network config, profiles
-Does not: overwrite mysql config, set up db clustering, failover
+Modifies startup config to run only expected services
 
 %clean 
 rm -fr %{buildroot}
@@ -63,10 +63,8 @@ mv %{buildroot}/ssg/bin/snmpd.conf %{buildroot}/etc/snmp/snmpd.conf_example
 
 
 %pre
-/ssg/bin/upgrade.sh getFromRelease
-if [ `grep ^gateway: /etc/passwd` ]
-then
-  echo "user/group gateway already existed"
+if [ `grep ^gateway: /etc/passwd` ]; then
+  echo "user/group gateway already exists"
 else
   adduser gateway
 fi
@@ -74,26 +72,48 @@ fi
 %post
 # Check for existence of install crumbs left by install.pl
 if [ -e /etc/SSG_INSTALL ]; then 
-	echo "Running upgrade script"
-	/ssg/bin/upgrade.sh doUpgrade
+	echo "** Run upgrade script: /ssg/bin/upgrade.sh doUpgrade **"
 else 
-	echo "**Run interactive /ssg/bin/install.pl to configure this system**"
+	# Enable required services
+	echo " First Time Install: Modifying startup configuration"
+	echo " Examine results with /sbin/chkconfig --list"
+
+	# turn no matter what is on off
+	cd /etc/init.d/
+	for x in *; do /sbin/chkconfig $x off; done
+	cd 
+
+	# enable only what we want and expect to be on
+	/sbin/chkconfig network on
+	/sbin/chkconfig anacron on
+	/sbin/chkconfig kudzu on
+	/sbin/chkconfig smartd on
+	/sbin/chkconfig crond on
+	/sbin/chkconfig ntpd on
+	/sbin/chkconfig sshd on
+	/sbin/chkconfig rhnsd on
+	/sbin/chkconfig acpid on
+	/sbin/chkconfig cpuspeed on
+	/sbin/chkconfig iptables on
+	/sbin/chkconfig syslog on
+	/sbin/chkconfig lm_sensors on
+	/sbin/chkconfig apmd on
+	/sbin/chkconfig mysql on
+	/sbin/chkconfig ssg on
+	/sbin/chkconfig tcp_tune on
+	/sbin/chkconfig back_route on
+	/sbin/chkconfig tarari on
+	echo "** Run interactive /ssg/bin/install.pl to configure this system **"
 fi
-# Enable required services
-/sbin/chkconfig ssg on
-/sbin/chkconfig tcp_tune on
-/sbin/chkconfig back_route on
-/sbin/chkconfig tarari on
 
 echo "Layer 7 SecureSpan(tm) Gateway v3.1\nKernel \r on an \m\n" >/etc/issue
 echo "Layer 7 SecureSpan(tm) Gateway v3.1\nKernel \r on an \m\n" >/etc/issue.net
 
 %postun
-if [ -e /etc/SSG_INSTALL ]; then
-	rm /etc/SSG_INSTALL
-fi
 
 %changelog 
 
 * Thu Oct 28 2004 JWT 
 - Build 3079. Does not yet overwrite mysql configuration files. Provides relatively small version of install.pl
+* Mon May 02 2005 JWT
+- Build 3133. Now modifies startup to run only needed services. Modifies Issue files to show SSG id 
