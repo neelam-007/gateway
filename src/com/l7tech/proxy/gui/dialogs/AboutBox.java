@@ -39,6 +39,12 @@ public class AboutBox extends JDialog {
                                         GridBagConstraints.NONE,
                                         new Insets(0, 20, 8, 0), 0, 0));
 
+        pane.add(getVmDetailsPanel(),
+                 new GridBagConstraints(0, 2, 1, 1, 1.0, 1.0,
+                                        GridBagConstraints.WEST,
+                                        GridBagConstraints.NONE,
+                                        new Insets(0, 20, 3, 0), 0, 0));
+
         JButton okButton = new JButton(" Close ");
         getRootPane().setDefaultButton(okButton);
 
@@ -50,12 +56,41 @@ public class AboutBox extends JDialog {
         okButton.addActionListener(closeAction);
         Utilities.runActionOnEscapeKey(getRootPane(), closeAction);
         pane.add(okButton,
-                 new GridBagConstraints(1, 1, 1, 1, 1.0, 1.0,
+                 new GridBagConstraints(1, 3, 1, 1, 1.0, 1.0,
                                         GridBagConstraints.SOUTHEAST,
                                         GridBagConstraints.NONE,
                                         new Insets(5, 0, 8, 20), 0, 0));
         pack();
         Utilities.centerOnScreen(this);
+    }
+
+    private JPanel getVmDetailsPanel() {
+        JPanel pane = new JPanel();
+        pane.setLayout(new GridBagLayout());
+        JLabel vmVersion = new JLabel(System.getProperty("java.version"));
+        JLabel vmVendor = new JLabel(System.getProperty("java.vm.vendor"));
+        pane.add(new JLabel("JVM"),
+                 new GridBagConstraints(0, 0, 1, 1, 0.0, 0.0,
+                                        GridBagConstraints.WEST,
+                                        GridBagConstraints.NONE,
+                                        new Insets(0,0,0,5), 0, 0));
+        pane.add(vmVersion,
+                 new GridBagConstraints(1, 0, 1, 1, 1.0, 1.0,
+                                        GridBagConstraints.WEST,
+                                        GridBagConstraints.NONE,
+                                        new Insets(0,0,0,0), 0, 0));
+        pane.add(new JLabel("Vendor"),
+                 new GridBagConstraints(0, 1, 1, 1, 0.0, 0.0,
+                                        GridBagConstraints.WEST,
+                                        GridBagConstraints.NONE,
+                                        new Insets(0,0,0,5), 0, 0));
+        pane.add(vmVendor,
+                 new GridBagConstraints(1, 1, 1, 1, 1.0, 1.0,
+                                        GridBagConstraints.WEST,
+                                        GridBagConstraints.NONE,
+                                        new Insets(0,0,0,0), 0, 0));
+
+        return pane;
     }
 
     /*

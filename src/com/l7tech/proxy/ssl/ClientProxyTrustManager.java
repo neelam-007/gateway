@@ -6,12 +6,13 @@
 
 package com.l7tech.proxy.ssl;
 
+import com.ibm.util.x500name.X500Name;
+import com.ibm.util.x500name.RDNAttribute;
 import com.l7tech.common.util.CertUtils;
 import com.l7tech.proxy.datamodel.exceptions.ServerCertificateUntrustedException;
-import sun.security.x509.X500Name;
 
 import javax.net.ssl.X509TrustManager;
-import java.io.IOException;
+import javax.security.auth.x500.X500Principal;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.logging.Level;
@@ -27,25 +28,6 @@ import java.util.logging.Logger;
  */
 public class ClientProxyTrustManager implements X509TrustManager {
     private static final Logger log = Logger.getLogger(ClientProxyTrustManager.class.getName());
-
-    private static class CausedCertificateException extends CertificateException {
-        public CausedCertificateException() {
-        }
-
-        public CausedCertificateException(String msg) {
-            super(msg);
-        }
-
-        public CausedCertificateException(Throwable cause) {
-            super();
-            initCause(cause);
-        }
-
-        public CausedCertificateException(String msg, Throwable cause) {
-            super(msg);
-            initCause(cause);
-        }
-    }
 
     public ClientProxyTrustManager() {}
 
@@ -80,20 +62,14 @@ public class ClientProxyTrustManager implements X509TrustManager {
         // Verify the hostname
         String expectedHostname = peer.getHostname();
         String cn = "";
-        try {
-            X509Certificate cert = x509Certificates[0];
-            cn = new X500Name(cert.getSubjectX500Principal().toString()).getCommonName();
-        } catch (IOException e) {
-            log.log(Level.SEVERE, e.getMessage(), e); // log in case SSL layer obscures our diagnostic info
-            throw new CausedCertificateException(e);
-        }
-        if (!cn.equals(expectedHostname)) {
+        X509Certificate cert = x509Certificates[0];
+        cn = extractCommonName(cert.getSubjectX500Principal());
+
+        if (!cn.equalsIgnoreCase(expectedHostname)) {
             final String msg = "Server certificate name (" + cn +
                     ") did not match the hostname we connected to (" + expectedHostname + ")";
             log.log(Level.SEVERE, msg);
-            throw new HostnameMismatchException(expectedHostname,
-                                                cn,
-                                                msg);
+            throw new HostnameMismatchException(expectedHostname, cn, msg);
         }
 
         // Get the trusted CA key for this SSG.
@@ -115,5 +91,18 @@ public class ClientProxyTrustManager implements X509TrustManager {
             log.warning(e.getMessage()); // log in case SSL layer obscures our diagnostic info
             throw e;
         }
+    }
+
+    /** extract the common name */
+    private String extractCommonName(X500Principal subjectX500Principal) throws CertificateException {
+        String principal = subjectX500Principal.toString();
+        X500Name x500Name = new X500Name(principal);
+        RDNAttribute attribute = x500Name.attribute("cn");
+        if (attribute == null) {
+            String msg = "Could not determine the Common Name (CN) value for " + principal;
+            log.log(Level.SEVERE, msg);
+            throw new CertificateException(msg);
+        }
+        return attribute.valueToString();
     }
 }

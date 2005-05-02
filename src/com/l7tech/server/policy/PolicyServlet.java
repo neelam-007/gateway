@@ -33,6 +33,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.ByteArrayOutputStream;
 import java.rmi.RemoteException;
 import java.util.*;
 import java.util.logging.Level;
@@ -89,8 +90,8 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
 
             Message request = new Message();
             request.initialize(new ByteArrayStashManager(),
-              ContentTypeHeader.parseValue(servletRequest.getContentType()),
-              servletRequest.getInputStream());
+                               ContentTypeHeader.parseValue(servletRequest.getContentType()),
+                               servletRequest.getInputStream());
             request.attachHttpRequestKnob(new HttpServletRequestKnob(servletRequest));
 
             Message response = new Message();
@@ -265,10 +266,15 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         logger.finest("Request for root cert");
         // Find our certificate
         //byte[] cert = KeystoreUtils.getInstance().readRootCert();
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        bos.write("-----BEGIN CERTIFICATE-----\n".getBytes());
+        bos.write(HexUtils.encodeBase64(serverCertificate).getBytes("UTF-8"));
+        bos.write("\n-----END CERTIFICATE-----\n".getBytes());
+        byte[] pemEncodedServerCertificate = bos.toByteArray();
 
         // Insert Cert-Check-NNN: headers if we can.
         if (username != null && nonce != null) {
-            Collection checks = findCheckInfos(username, serverCertificate, nonce);
+            Collection checks = findCheckInfos(username, pemEncodedServerCertificate, nonce);
             for (Iterator i = checks.iterator(); i.hasNext();) {
                 CertificateCheckInfo info = (CertificateCheckInfo)i.next();
                 if (info != null) {
@@ -279,9 +285,9 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
         }
 
         response.setStatus(200);
-        response.setContentType("application/x-x509-ca-cert");
-        response.setContentLength(serverCertificate.length);
-        response.getOutputStream().write(serverCertificate);
+        response.setContentType("application/x-x509-server-cert");
+        response.setContentLength(pemEncodedServerCertificate.length);
+        response.getOutputStream().write(pemEncodedServerCertificate);
         response.flushBuffer();
     }
 
@@ -293,9 +299,9 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
                 exceptiondetails = SoapFaultUtils.makeFaultDetailsSubElement("more", details);
             }
             fault = SoapFaultUtils.generateSoapFaultDocument(SoapFaultUtils.FC_SERVER,
-              msg,
-              exceptiondetails,
-              "");
+                                                             msg,
+                                                             exceptiondetails,
+                                                             "");
         } catch (SAXException e) {
             throw new RuntimeException(e); // should not happen
         }
@@ -339,7 +345,8 @@ public class PolicyServlet extends AuthenticatableHttpServlet {
      *
      * @param username
      * @return A collection of {@link CertificateCheckInfo} instances.
-     * @throws com.l7tech.objectmodel.FindException if the ID Provider list could not be determined.
+     * @throws com.l7tech.objectmodel.FindException
+     *          if the ID Provider list could not be determined.
      */
     private Collection findCheckInfos(String username, byte[] certBytes, String nonce) throws FindException {
         IdentityProviderConfigManager configManager = getIdentityProviderConfigManager();
