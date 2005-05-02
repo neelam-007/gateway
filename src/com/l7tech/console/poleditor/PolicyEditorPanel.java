@@ -852,15 +852,12 @@ public class PolicyEditorPanel extends JPanel implements VetoableContainerListen
                     pubService = service;
 
                     try {
-                        String oldPolicy = serviceNode.getPublishedService().getPolicyXml();
                         super.performAction();
-                        String newPolicy = getNewPolicyXml();
-                        if (newPolicy != null && !newPolicy.equals(oldPolicy)) {
+                        if (policyImportSuccess) {
+                            String newPolicy = getNewPolicyXml();
                             serviceNode.getPublishedService().setPolicyXml(newPolicy);
                             rootAssertion = null;
                             renderPolicy(false);
-                        } else {
-                            log.info("Policy import aborted (?)");
                         }
                     } catch (FindException e) {
                         log.log(Level.WARNING, "problem getting service", e);

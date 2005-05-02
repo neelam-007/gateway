@@ -61,14 +61,13 @@ public class ImportPolicyFromFileAction extends SecureAction {
         return "com/l7tech/console/resources/saveTemplate.gif";
     }
 
-    /** Actually perform the action.
+    /**
+     * Actually perform the action.
      * This is the method which should be called programmatically.
-
-     * note on threading usage: do not access GUI components
-     * without explicitly asking for the AWT event thread!
      */
     protected void performAction() {
         newPolicyXml = null;
+        policyImportSuccess = false;
         if (pubService == null) {
             log.severe("This action was called without a service set.");
             throw new IllegalStateException("no service specified");
@@ -117,6 +116,7 @@ public class ImportPolicyFromFileAction extends SecureAction {
             if (newRoot != null) {
                 newPolicyXml = WspWriter.getPolicyXml(newRoot);
                 pubService.setPolicyXml(newPolicyXml);
+                policyImportSuccess = true;
             }
         } catch (IOException e) {
             log.log(Level.WARNING, "could not localize or read policy from " + chooser.getSelectedFile().getPath(), e);
@@ -128,4 +128,5 @@ public class ImportPolicyFromFileAction extends SecureAction {
     }
 
     private String newPolicyXml = null;
+    protected boolean policyImportSuccess = false;
 }
