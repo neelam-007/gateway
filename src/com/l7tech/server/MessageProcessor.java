@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 package com.l7tech.server;
 
@@ -45,8 +44,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
+ * The server side component processing messages from any transport layer.
+ *
  * @author alex
- * @version $Revision$
  */
 public class MessageProcessor extends ApplicationObjectSupport implements InitializingBean {
     private final ServiceManager serviceManager;
@@ -285,7 +285,7 @@ public class MessageProcessor extends ApplicationObjectSupport implements Initia
                 RoutingStatus rstat = context.getRoutingStatus();
 
                 boolean authorized = false;
-                if (rstat == RoutingStatus.ATTEMPTED) {
+                if (rstat != RoutingStatus.NONE) { // not attempted! see bugzilla 1733
                     /* If policy execution got as far as the routing assertion,
                        we consider the request to have been authorized, whether
                        or not the routing itself was successful. */
