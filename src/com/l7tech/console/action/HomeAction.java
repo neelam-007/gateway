@@ -12,14 +12,12 @@ import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.text.html.HTMLDocument;
-import javax.swing.text.EditorKit;
-import javax.swing.text.StyledEditorKit;
 import javax.swing.tree.DefaultMutableTreeNode;
 import java.awt.*;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.net.URL;
-import java.util.*;
-import java.util.List;
 
 /**
  * The <code>HomeAction</code> displays the dds the new user.
@@ -141,7 +139,15 @@ public class HomeAction extends SecureAction {
         try {
             htmlPane.setPage(url);
             // bugzilla 1165, disable the up/dn actions tha cause NPE
-            disableActions(htmlPane.getEditorKit(), new String[] {StyledEditorKit.upAction, StyledEditorKit.downAction});
+            // fla, i changed the fix because it was causing another bug (#1720)
+            htmlPane.addKeyListener(new KeyAdapter () {
+                public void keyPressed(KeyEvent e) {
+                    if (e.getKeyCode() == KeyEvent.VK_UP || e.getKeyCode() == KeyEvent.VK_DOWN) {
+                        e.consume();
+                    }
+                }
+            });
+            //disableActions(htmlPane.getEditorKit(), new String[] {StyledEditorKit.upAction, StyledEditorKit.downAction});
             return htmlPane;
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -152,7 +158,7 @@ public class HomeAction extends SecureAction {
      * disable editor actions by name
      * @param editorKit  the editr kit
      * @param actionNames the action names to disable
-     */
+
     private void disableActions(EditorKit editorKit, String[] actionNames) {
         Action[] actions = editorKit.getActions();
         List namesList = Arrays.asList(actionNames);
@@ -166,7 +172,7 @@ public class HomeAction extends SecureAction {
                 }
             }
         }
-    }
+    }*/
 
 
     /**
