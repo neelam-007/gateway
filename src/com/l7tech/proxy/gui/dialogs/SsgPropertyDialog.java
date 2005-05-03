@@ -119,7 +119,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                                  GridBagConstraints.CENTER,
                                                  GridBagConstraints.BOTH,
                                                  new Insets(0, 0, 0, 0), 0, 0));
-            cbUseSslByDefault = new JCheckBox("Use SSL By Default");
+            cbUseSslByDefault = new JCheckBox("Use SSL by Default");
             pane.add(cbUseSslByDefault,
                      new GridBagConstraints(0, y++, 1, 1, 1.0, 0.0,
                                             GridBagConstraints.WEST,

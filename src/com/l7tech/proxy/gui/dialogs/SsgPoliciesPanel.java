@@ -110,7 +110,7 @@ class SsgPoliciesPanel extends JPanel {
                                         GridBagConstraints.NONE,
                                         new Insets(14, 6, 0, 6), 0, 0));
 
-        pane.add(new JLabel("Web Services with Cached Policies:"),
+        pane.add(new JLabel("Services with Cached Policies:"),
                  new GridBagConstraints(0, y, 2, 1, 0.0, 0.0,
                                         GridBagConstraints.WEST,
                                         GridBagConstraints.HORIZONTAL,
@@ -156,10 +156,10 @@ class SsgPoliciesPanel extends JPanel {
         JPanel policyButtons = new JPanel();
         policyButtons.setLayout(new BoxLayout(policyButtons, BoxLayout.Y_AXIS));
         policyButtons.add(getChangeButton());
-        policyButtons.add(getExportButton());
         policyButtons.add(getDeleteButton());
         policyButtons.add(Box.createGlue());
         policyButtons.add(getImportButton());
+        policyButtons.add(getExportButton());
         Utilities.equalizeButtonSizes(new AbstractButton[] { getImportButton(),
                                                              getExportButton(),
                                                              getChangeButton(),
@@ -352,7 +352,7 @@ class SsgPoliciesPanel extends JPanel {
                     Policy policy = policyCache.getPolicy(pak);
                     if (policy == null) return;
                     PolicyAttachmentKeyDialog pakDlg = new PolicyAttachmentKeyDialog(Gui.getInstance().getFrame(),
-                                                                                     "Edit Policy Attachment Key",
+                                                                                     "Configure Policy Attachment Key",
                                                                                      true);
                     pakDlg.setPolicyAttachmentKey(pak);
                     Utilities.centerOnScreen(pakDlg);

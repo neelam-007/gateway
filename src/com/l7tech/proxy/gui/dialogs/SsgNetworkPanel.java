@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.proxy.gui.dialogs;
@@ -59,7 +58,7 @@ class SsgNetworkPanel extends JPanel {
 
         WrappingLabel splain01 = new WrappingLabel("The SecureSpan Bridge listens for incoming messages at the " +
                                                    "following local proxy URL, then routes the messages to the " +
-                                                   "SecureSpan Gateway.", 2);
+                                                   "SecureSpan Gateway:", 2);
         //x,y,rows,col,anchor,fill,sizex,sizey,minsize,prefsize,maxsize
         GridConstraints gc = new GridConstraints(0, 0, 1, 1,
                                                  GridConstraints.ANCHOR_NORTHWEST,

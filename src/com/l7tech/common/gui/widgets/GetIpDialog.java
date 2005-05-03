@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.common.gui.widgets;
@@ -66,7 +65,7 @@ public class GetIpDialog extends JDialog {
                                      GridBagConstraints.BOTH,
                                      new Insets(0, 5, 0, 5), 0, 0));
 
-        okButton = new JButton("Ok");
+        okButton = new JButton("OK");
         JButton cancelButton = new JButton("Cancel");
         Action buttonAction = new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
