@@ -1,7 +1,6 @@
 package com.l7tech.console.panels;
 
 import com.l7tech.console.util.Registry;
-import com.l7tech.console.util.ArrowIcon;
 import com.l7tech.identity.IdentityAdmin;
 import com.l7tech.identity.ldap.LdapIdentityProviderConfig;
 import com.l7tech.objectmodel.FindException;
@@ -23,7 +22,6 @@ import java.util.logging.Logger;
  *
  * <p> Copyright (C) 2003 Layer 7 Technologies Inc.</p>
  *
- * $Id$
  */
 
 public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
@@ -99,7 +97,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
 
     private JButton getUpButton() {
         if (upbutton == null) {
-            upbutton = new JButton(new ArrowIcon(ArrowIcon.UP)) {
+            /*upbutton = new JButton(new ArrowIcon(ArrowIcon.UP)) {
                 int fixedsize = ArrowIcon.DEFAULT_SIZE+6;
                 public Dimension getSize() {
                     return new Dimension(fixedsize, fixedsize);
@@ -113,7 +111,8 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                     }
                     super.setBounds(x, y, fixedsize, fixedsize);
                 }
-            };
+            };*/
+            upbutton = new JButton("Move Up");
             upbutton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     int currentPos = getLdapHostList().getSelectedIndex();
@@ -134,7 +133,7 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
 
     private JButton getDownButton() {
         if (downbutton == null) {
-            downbutton = new JButton(new ArrowIcon(ArrowIcon.DOWN)) {
+            /*downbutton = new JButton(new ArrowIcon(ArrowIcon.DOWN)) {
                 int fixedsize = ArrowIcon.DEFAULT_SIZE+6;
                 public Dimension getSize() {
                     return new Dimension(fixedsize, fixedsize);
@@ -148,7 +147,8 @@ public class LdapIdentityProviderConfigPanel extends IdentityProviderStepPanel {
                     }
                     super.setBounds(x, y, fixedsize, fixedsize);
                 }
-            };
+            };*/
+            downbutton = new JButton("Move Down");
             downbutton.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     int currentPos = getLdapHostList().getSelectedIndex();
