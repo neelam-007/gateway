@@ -14,8 +14,6 @@ import javax.swing.event.HyperlinkListener;
 import javax.swing.text.html.HTMLDocument;
 import javax.swing.tree.DefaultMutableTreeNode;
 import java.awt.*;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.net.URL;
 
@@ -138,15 +136,9 @@ public class HomeAction extends SecureAction {
         });
         try {
             htmlPane.setPage(url);
-            // bugzilla 1165, disable the up/dn actions tha cause NPE
-            // fla, i changed the fix because it was causing another bug (#1720)
-            htmlPane.addKeyListener(new KeyAdapter () {
-                public void keyPressed(KeyEvent e) {
-                    if (e.getKeyCode() == KeyEvent.VK_UP || e.getKeyCode() == KeyEvent.VK_DOWN) {
-                        e.consume();
-                    }
-                }
-            });
+            // bugzilla 1165, disable the up/dn actions tha cause NPE.
+            // this fix is removed because it only happens
+            // under JDK 1.4 and because it causes another anoyying bug (see bugzilla 1720)
             //disableActions(htmlPane.getEditorKit(), new String[] {StyledEditorKit.upAction, StyledEditorKit.downAction});
             return htmlPane;
         } catch (IOException e) {
