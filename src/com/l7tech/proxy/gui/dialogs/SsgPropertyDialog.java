@@ -156,7 +156,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                                               JOptionPane.INFORMATION_MESSAGE);
                                 return;
                             }
-                            new CertDialog(cert, "WS-Trust Server Certificate", "WS-Trust Server Certificate").show();
+                            new CertDialog(cert, "WS-Trust Server Certificate", "WS-Trust Server Certificate").setVisible(true);
                         } catch (GeneralSecurityException e1) {
                             log.log(Level.SEVERE, "Unable to access WS-Trust server certificate", e1);
                             Gui.criticalErrorMessage("Unable to access WS-Trust server certificate",
@@ -280,13 +280,13 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                             X509Certificate cert = ssg.getServerCertificate();
                             if (cert == null) {
                                 JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
-                                        "A certificate for the SecureSpan gateway " + ssgName() + "\n" +
+                                        "A certificate for the SecureSpan Gateway " + ssgName() + "\n" +
                                         "was not found.",
                                         "Gateway Server Certificate Not Found",
                                         JOptionPane.INFORMATION_MESSAGE);
                                 return;
                             }
-                            new CertDialog(cert, "Server Certificate", "Server Certificate for Gateway " + ssgName()).setVisible(true);
+                            new CertDialog(cert, "View Server Certificate", "Server Certificate for the SecureSpan Gateway " + ssgName()).setVisible(true);
                         } catch (Exception e1) {
                             log.log(Level.SEVERE, "Unable to access server certificate", e1);
                             Gui.criticalErrorMessage("Unable to access server certificate",

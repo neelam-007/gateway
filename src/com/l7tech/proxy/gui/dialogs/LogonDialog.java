@@ -1,7 +1,6 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
- * $Id$
  */
 
 package com.l7tech.proxy.gui.dialogs;
@@ -166,7 +165,7 @@ public class LogonDialog extends JDialog {
         contents.add(reason, constraints);
 
         // ssg name label
-        JLabel ssgNameLabel = new JLabel("for Gateway:");
+        JLabel ssgNameLabel = new JLabel("for the SecureSpan Gateway:");
         constraints.gridx = 1;
         constraints.gridy = 2;
         constraints.gridwidth = 1;

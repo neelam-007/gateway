@@ -52,7 +52,7 @@ public class NoClientCert extends JDialog {
     private void initialize(String ssgName) {
         setContentPane(mainPanel);
         setTitle("Client Certificate Not Found");
-        lbl1.setText("You do not have a client certificate for use with");
+        lbl1.setText("There is no client certificate for use with");
         lbl2.setText("the SecureSpan Gateway " + ssgName + ".");
         closeButton.addActionListener(new ActionListener(){
             public void actionPerformed(ActionEvent e) {
