@@ -561,11 +561,9 @@
                 <include name="com/l7tech/policy/assertion/ext/Category.class"/>
                 <include name="com/l7tech/policy/assertion/ext/CustomAssertion.class"/>
                 <include name="com/l7tech/policy/assertion/ext/CustomAssertionsRegistrar.class"/>
+                <include name="com/l7tech/policy/assertion/ext/CustomAssertionDescriptor.class"/>
                 <exclude name="com/l7tech/policy/assertion/ext/*Impl*"/>
-                <exclude name="com/l7tech/policy/assertion/ext/*Boot*"/>
                 <exclude name="com/l7tech/policy/assertion/ext/CustomAssertions.class"/>
-                <exclude name="com/l7tech/policy/assertion/ext/*Netegrity*"/>
-                <exclude name="com/l7tech/policy/assertion/ext/*Descriptor*"/>
                 <exclude name="com/l7tech/policy/assertion/ext/*Service*"/>
                 <exclude name="com/l7tech/policy/assertion/ext/*Security*"/>
                 <include name="com/l7tech/service/ServiceAdmin.class"/>
