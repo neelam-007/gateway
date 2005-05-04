@@ -67,7 +67,7 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
 
     private void initialize() {
         setContentPane(mainPanel);
-        setTitle("XML Security Recipient Context");
+        setTitle("Change WSS Recipient");
         ButtonGroup bg = new ButtonGroup();
         bg.add(specificRecipientRradio);
         bg.add(defaultRadio);
@@ -169,7 +169,7 @@ public class XmlSecurityRecipientContextEditor extends JDialog {
 
                 JFrame f = TopComponents.getInstance().getMainWindow();
                 Wizard w = new AddCertificateWizard(f, panel1);
-                w.setTitle("Define new XML security recipient");
+                w.setTitle("Add WSS Recipient Wizard");
 
                 w.addWizardListener(new WizardListener() {
                     public void wizardSelectionChanged(WizardEvent e) {}

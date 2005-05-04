@@ -44,8 +44,8 @@ public class RecipientSecurityHeaderWizardStep extends WizardStepPanel {
     }
 
     public String getDescription() {
-        return "The actor attribute is located in the 'Security' soap header and is used to identify the " +
-               "intended recipient of the xml security decorations.";
+        return "The actor attribute is located in the 'Security' SOAP header and is used to identify the " +
+               "intended recipient of the WSS decorations.";
     }
 
     public String getStepLabel() {

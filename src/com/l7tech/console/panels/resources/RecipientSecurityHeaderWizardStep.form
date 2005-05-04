@@ -12,7 +12,7 @@
       <grid id="f9403" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
-          <xy x="10" y="35" width="696" height="394"/>
+          <xy x="10" y="35" width="686" height="394"/>
           <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3"/>
         </constraints>
         <properties/>
@@ -24,12 +24,12 @@
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
             </constraints>
             <properties>
-              <text value="Actor attribute value:"/>
+              <text value="Actor Attribute Value:"/>
             </properties>
           </component>
           <component id="f76f1" class="javax.swing.JTextField" binding="actorAttributeValueField">
             <constraints>
-              <xy x="131" y="186" width="565" height="22"/>
+              <xy x="131" y="186" width="555" height="22"/>
               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1">
                 <preferred-size width="150" height="-1"/>
               </grid>
@@ -40,11 +40,11 @@
       </grid>
       <component id="2d33b" class="javax.swing.JLabel">
         <constraints>
-          <xy x="10" y="12" width="375" height="15"/>
+          <xy x="10" y="12" width="413" height="15"/>
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0"/>
         </constraints>
         <properties>
-          <text value="Enter the actor attribute value to associate with this recipient cert"/>
+          <text value="Enter the actor attribute value to associate with this recipient certificate:"/>
         </properties>
       </component>
     </children>
