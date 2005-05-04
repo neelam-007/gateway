@@ -32,7 +32,6 @@ import java.util.logging.Level;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Jun 17, 2004<br/>
- * $Id$<br/>
  */
 public class PasswdServlet extends AuthenticatableHttpServlet {
     public void init(ServletConfig config) throws ServletException {
@@ -77,9 +76,9 @@ public class PasswdServlet extends AuthenticatableHttpServlet {
         // get the new password
         String str_newpasswd = req.getHeader(SecureSpanConstants.HttpHeaders.HEADER_NEWPASSWD);
         if (str_newpasswd == null || str_newpasswd.length() < 1) {
-            logger.warning("The request did not include a new password, returning 400.");
-            sendBackError(res, HttpServletResponse.SC_BAD_REQUEST, "Please provide new password in http header " +
-              SecureSpanConstants.HttpHeaders.HEADER_NEWPASSWD);
+            logger.warning("The request did not include a new password in header " +
+                           SecureSpanConstants.HttpHeaders.HEADER_NEWPASSWD + ", returning 400.");
+            sendBackError(res, HttpServletResponse.SC_BAD_REQUEST, "Missing or empty new password.");
             return;
         }
         // unbase 64 it
