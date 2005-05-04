@@ -432,8 +432,8 @@ public class LdapIdentityProvider implements IdentityProvider, InitializingBean 
             EntityHeader maxExceeded = new EntityHeader("noid",
                                                         EntityType.MAXED_OUT_SEARCH_RESULT,
                                                         "Search criterion too wide",
-                                                        "This search exceeded yeilded too many entities, " +
-                                                        "please narrow your search criterion.");
+                                                        "This search yields too many entities. " +
+                                                        "Please narrow your search criterion.");
             output.add(maxExceeded);
             // dont throw here, we still want to return what we got
         } catch (NamingException e) {
