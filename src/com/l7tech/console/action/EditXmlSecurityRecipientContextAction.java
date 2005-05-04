@@ -32,7 +32,7 @@ public class EditXmlSecurityRecipientContextAction extends NodeAction {
     }
 
     public String getName() {
-        return "WSS Security Recipient";
+        return "WSS Recipient";
     }
 
     public String getDescription() {
