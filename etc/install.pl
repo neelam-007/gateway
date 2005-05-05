@@ -66,6 +66,14 @@ my $dbconfig = "/ssg/etc/conf/hibernate.properties";
 my $ntp_config = "/etc/ntp.conf";
 my $ntp_step_tickers = "/etc/ntp/step-tickers";
 
+sub trimwhitespace($) {
+	# Remove whitespace from the start and end of the string
+	my $string = shift;
+	$string =~ s/^\s+//;
+	$string =~ s/\s+$//;
+	return $string;
+}
+
 # then change the local files as appropriate
 
 open (STDOUT, "| tee $script_log");
@@ -116,6 +124,8 @@ LOOP:
 
 close (STDOUT);
 
+exit;
+
 sub change_os_config {
 	my $host = (split(/\./,$Conf{hostname}))[0];
 	my $cluster = (split(/\./,$Conf{gc_clusternm}))[0];
@@ -126,7 +136,7 @@ sub change_os_config {
 	open (TMP, ">$fname");
 	print TMP <<EOM;
 cd /etc/init.d/
-for x in *; do /sbin/chkconfig $x off; done
+for x in *; do /sbin/chkconfig \$x off; done
 cd 
 
 # enable only what we want and expect to be on
@@ -152,7 +162,7 @@ cd
 
 EOM
 	close TMP;
-	exec ("sh $fname");
+	system ("sh $fname");
 	unlink $fname;
 
 	print ("INFO: Files will be backed up suffixed with PID of $pid\n");
@@ -824,10 +834,4 @@ EOF
 
 }
 
-sub trimwhitespace($) {
-# Remove whitespace from the start and end of the string
-	my $string = shift;
-	$string =~ s/^\s+//;
-	$string =~ s/\s+$//;
-	return $string;
-}
+
