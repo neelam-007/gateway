@@ -1261,7 +1261,8 @@
         <!-- Copy misc. stuff -->
         <copy todir="${install.src.sql}">
             <fileset dir="${src.root}/etc/db/${database.type}">
-                <include name="*.sql"/>
+                <include name="ssg.sql"/>
+		<include name="upgrade_3.0-3.1.sql"/> 
             </fileset>
         </copy>
         <copy todir="${install.src.bin}">
@@ -1276,14 +1277,11 @@
                 <include name="passServiceUsage.sh"/>
                 <include name="ssgruntimedefs.sh"/>
                 <include name="clean_db.pl"/>
-                <include name="dbfaildetect.sh"/>
                 <include name="iptables"/>
                 <include name="iptables-singlenet"/>
                 <include name="ssg-initd"/>
                 <include name="tcp_tune.sh"/>
                 <include name="back_route"/>
-                <include name="upgrade_keystore2.1_3.0.pl"/>
-                <include name="upgrade_keystore_config2.1_3.0.sh"/>
                 <include name="snmpd.conf"/>
             </fileset>
             <fileset dir="${src.root}/etc/db/mysql">
