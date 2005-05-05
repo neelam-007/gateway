@@ -243,7 +243,7 @@ public class HttpRoutingAssertionDialog extends JDialog {
         if (xmlSecurityHeaderPanel == null) {
 
             xmlSecurityHeaderPanel = new JPanel();
-            xmlSecurityHeaderPanel.setBorder(BorderFactory.createTitledBorder("Current XML security header handling"));
+            xmlSecurityHeaderPanel.setBorder(BorderFactory.createTitledBorder("Current WSS header handling"));
             xmlSecurityHeaderPanel.setLayout(new BoxLayout(xmlSecurityHeaderPanel, BoxLayout.Y_AXIS));
 
             ActionListener disenableCombo = new ActionListener() {
