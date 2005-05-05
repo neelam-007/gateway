@@ -258,8 +258,8 @@ public class StatisticsPanel extends JPanel {
             ServiceUsage stats = (ServiceUsage) rawStatsList.get(i);
             long completedCount = stats.getCompleted();
 
-            updateStatCache(stats.getServiceName(), completedCount);
-            long lastMinuteCompletedCount = getLastMinuteCompletedCount(stats.getServiceName());
+            updateStatCache(stats.getServiceid(), completedCount);
+            long lastMinuteCompletedCount = getLastMinuteCompletedCount(stats.getServiceid());
 
             StatisticsRecord statsRec = new StatisticsRecord(stats.getServiceName(),
                     stats.getRequests(),
@@ -317,11 +317,11 @@ public class StatisticsPanel extends JPanel {
         getStatTotalColumnModel().setColumnMargin(((DefaultTableColumnModel) e.getSource()).getColumnMargin());
     }
 
-    public void updateStatCache(String serviceName, long completedCount) {
+    public void updateStatCache(long serviceid, long completedCount) {
 
         Vector lastMinuteCounts = null;
-
-        lastMinuteCounts = (Vector) lastMinuteCompletedCountsCache.get(serviceName);
+        Long svcId = new Long(serviceid);
+        lastMinuteCounts = (Vector) lastMinuteCompletedCountsCache.get(svcId);
 
         if (lastMinuteCounts != null) {
             if(lastMinuteCounts.size() <= NUMBER_OF_SAMPLE_PER_MINUTE){
@@ -338,7 +338,7 @@ public class StatisticsPanel extends JPanel {
                         - ((Long) lastMinuteCounts.get(lastMinuteCounts.size() - 2)).longValue() < 0) {
 
                     // this could happen when a node is removed from the cluster
-                    logger.info("New total completed count is less than the previous count. Service Name: " + serviceName);
+                    logger.info("New total completed count is less than the previous count. Service Id: " + serviceid);
 
                     // should clean up the cache
                     lastMinuteCounts.removeAllElements();
@@ -347,16 +347,16 @@ public class StatisticsPanel extends JPanel {
         } else {
             Vector newList = new Vector();
             newList.add(new Long(completedCount));
-            lastMinuteCompletedCountsCache.put(serviceName, newList);
+            lastMinuteCompletedCountsCache.put(svcId, newList);
         }
     }
 
-    private long getLastMinuteCompletedCount(String serviceName){
+    private long getLastMinuteCompletedCount(long serviceid){
 
         long lastMinuteCompletedCount = 0;
         Vector lastMinuteCounts = null;
 
-        lastMinuteCounts = (Vector) lastMinuteCompletedCountsCache.get(serviceName);
+        lastMinuteCounts = (Vector) lastMinuteCompletedCountsCache.get(new Long(serviceid));
 
         if (lastMinuteCounts != null) {
             int index = lastMinuteCounts.size() - 1;
