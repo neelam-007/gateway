@@ -35,10 +35,9 @@ public class UddiAgentV3 {
 
     /**
      * Constructor
-     * @throws FindException   if there was a problem accessing the requested information.
      * @param props The properties of the UDDI Agent.
      */
-    public UddiAgentV3(String uddiURL, Properties props) throws FindException {
+    public UddiAgentV3(String uddiURL, Properties props) {
    //     inquiryURL = props.getProperty(INQUIRY_URL_PROP_NAME);
    //     if (inquiryURL == null) throw new FindException("UDDI inquiry URL is not specified.\n Please ensure the property INQUIRY_URL_PROP_NAME is specified in the uddi.properties.");
         inquiryURL = uddiURL;
@@ -304,7 +303,7 @@ public class UddiAgentV3 {
         // % denotes wildcard of string (any number of characters), underscore denotes wildcard of a single character
 
         int listHead = 1;
-        int includeCount = 0;
+
         int actualCount = 0;
         HashMap wsdlUrls = new HashMap();
 
@@ -316,7 +315,6 @@ public class UddiAgentV3 {
             ListDescription listDescription = services.getListDescription();
 
             if (listDescription != null) {
-                includeCount = listDescription.getIncludeCount();
                 actualCount = listDescription.getActualCount();
                 listHead = listDescription.getListHead();
 
