@@ -119,19 +119,55 @@ close (STDOUT);
 sub change_os_config {
 	my $host = (split(/\./,$Conf{hostname}))[0];
 	my $cluster = (split(/\./,$Conf{gc_clusternm}))[0];
+	
+	print "Cleaning up startup config\n";
+	print "Examine results with /sbin/chkconfig --list\n";
+	my $fname="/tmp/startup$$.sh";
+	open (TMP, ">$fname");
+	print TMP <<EOM;
+cd /etc/init.d/
+for x in *; do /sbin/chkconfig $x off; done
+cd 
 
-	print ("INFO: Current PID and files will be back up suffixed with PID of $pid\n");
+# enable only what we want and expect to be on
+/sbin/chkconfig network on
+/sbin/chkconfig anacron on
+/sbin/chkconfig kudzu on
+/sbin/chkconfig smartd on
+/sbin/chkconfig crond on
+/sbin/chkconfig ntpd on
+/sbin/chkconfig sshd on
+/sbin/chkconfig rhnsd on
+/sbin/chkconfig acpid on
+/sbin/chkconfig cpuspeed on
+/sbin/chkconfig iptables on
+/sbin/chkconfig syslog on
+/sbin/chkconfig lm_sensors on
+/sbin/chkconfig apmd on
+/sbin/chkconfig mysql on
+/sbin/chkconfig ssg on
+/sbin/chkconfig tcp_tune on
+/sbin/chkconfig back_route on
+/sbin/chkconfig tarari on
+
+EOM
+	close TMP;
+	exec ("sh $fname");
+	unlink $fname;
+
+	print ("INFO: Files will be backed up suffixed with PID of $pid\n");
 	# lets start small
+	
 
 	# 1. the front network config - file affected: $front_conf
 	print "INFO: Starting Front End Network Configuration... \n";
 
 	if ($Conf{net_front} eq 'y') {
 		if (($Conf{net_front_dhcp} eq 'n') && $Conf{net_front_ip} && $Conf{net_front_mask} && $Conf{net_front_rt}) {
-			if ( -e $front_conf ) {
-				print "INFO: $front_conf existed, now renaming $front_conf to $front_conf.bckup_$pid\n";
-				rename( $front_conf, "$front_conf.bckup_$pid");
-			}
+			#if ( -e $front_conf ) {
+			#	print "INFO: $front_conf existed, now renaming $front_conf to $front_conf.bckup_$pid\n";
+			#	#rename( $front_conf, "$front_conf.bckup_$pid");
+			#}
 			open (OUT, ">$front_conf");
 			print OUT <<EOF;
 DEVICE=eth1
@@ -170,10 +206,10 @@ EOF
         print "INFO: Starting Back End Network Configuration... \n";
 
 	if ($Conf{net_back} eq 'y') {
-		if ( -e $back_conf ) {
-        		print "INFO: $back_conf existed, now renaming $back_conf to $back_conf.bckup_$pid\n";
-               		rename( $back_conf, "$back_conf.bckup_$pid");
-       		} 
+		#if ( -e $back_conf ) {
+        	#	#print "INFO: $back_conf existed, now renaming $back_conf to $back_conf.bckup_$pid\n";
+               	#	#rename( $back_conf, "$back_conf.bckup_$pid");
+       		#} 
 
 		if (($Conf{net_back_dhcp} eq 'n') && $Conf{net_back_ip} && $Conf{net_back_mask}) {
 			open (OUT, ">$back_conf");
@@ -211,10 +247,10 @@ EOF
 	# 3. hostname - file affected:$hosts_file, $network_file
 	# 3a. hostname for cluster - file affected: $cluster_hostname_file
 	print "INFO: Configuring node hostname for $network_file\n";
-        if ( -e $network_file ) {
-                print "INFO: $network_file existed, now renaming $network_file to $network_file.bckup_$pid\n";
-                rename( $network_file, "$network_file.bckup_$pid");
-        }
+        #if ( -e $network_file ) {
+        #        print "INFO: $network_file existed, now renaming $network_file to $network_file.bckup_$pid\n";
+        #        rename( $network_file, "$network_file.bckup_$pid");
+        #}
 
         open (NETWORK_FILE, ">$network_file") or die "Can't open $network_file!\n";
         print NETWORK_FILE <<EOF;
@@ -618,17 +654,6 @@ EOF
 }
 	
 
-sub readconfig {
-	open (SV,"<$save_file");
-	while (<SV>) {
-		if ( /(.*)=(.*)/) {
-			$Conf{$1} = $2;
-		}
-	}
-	close SV;
-}
-
-
 
 sub getparams {
 		print <<EOF;
@@ -697,8 +722,21 @@ EOF
 	return $t;
 }
 
+
+sub readconfig {
+	open (SV,"<$save_file");
+	while (<SV>) {
+		if ( /(.*)=(.*)/) {
+			$Conf{$1} = $2;
+		}
+	}
+	close SV;
+}
+
 sub writefile {
 	open (SV, ">$save_file");
+	# FIXME: upgrade this every version
+	print SV "# SSG_INSTALL V3.1\n"; 
  	my @fieldlist=@list;
 	{ my $i; @fieldlist= grep { ++$i % 2 } @fieldlist; }
 	foreach  my $f (@fieldlist) {
@@ -725,13 +763,26 @@ DESCRIPTION
 
     After this script has been run, the input parameters are saved at $save_file.  
     If you re-run the script, the $save_file will be read in as default values.  
-    However, if you want to remove the default values, you may like to remove the $save_file before re-running the script. 
-    $save_file is also used by "/etc/init.d/back_route" file; therefore, $save_file must contain the proper values in order for "/etc/init.d/back_route" working properly.
+    However, if you want to revert to no defaults, you can remove the 
+    $save_file before re-running the script. 
 
-    Private network HAS TO BE on eth0, NOT eth1.
+    $save_file is also used by "/etc/init.d/back_route" file; 
+    therefore, $save_file must contain the proper values 
+    in order for "/etc/init.d/back_route" working properly.
+
+    Assumes private network is eth0, public on eth1. Other network configurations 
+    must be completed manually.
 
     Network Architecture Assumption: 
-    [Load Balancer] <-Public Network (eth1)-> [SSG Cluster] <-Private Network (eth0)-> [Router] <-> [WebServices]
+                  [Users]
+                    <->
+               [Load Balancer] 
+          <-Public Network (eth1)-> 
+                [SSG Cluster] 
+          <-Private Network (eth0)-> 
+                 [Router] 
+                    <-> 
+               [WebServices]
 
     List of property files may subject to be configured base on input parameters:
     * $front_conf
@@ -745,14 +796,16 @@ DESCRIPTION
     * $ntp_config
     * $ntp_step_tickers
 
-    Base on input parameters, this script may grant database access for MySQL database:
+    Based on input parameters, this script may grant database access for MySQL database:
     * GRANT ALL ON ssg.* to <db username>@\'%\' identified by \'<db user password>\';
     * GRANT ALL ON ssg.* to <db_username>@\'localhost\' identified by \'<db user password>\';
-    * GRANT REPLICATION SLAVE ON *.* to <db replicator username>@\'%\' identified by \'<db replicator password>\';
-    However, this script will not revoke any access that has been granted. You will need to perform manual revoke access if necessary.
+    * GRANT REPLICATION SLAVE ON *.* to <db replicator username>@\'%\' 
+            identified by \'<db replicator password>\';
+    However, this script will not revoke any access that has been granted. 
+    You will need to perform manual revoke access if necessary.
 
     $setkey will be run to generate CA and SSL keys if this is a non cluster SSG, or this node is the first node of a cluster SSG. 
-    For the rest of the nodes (not the first node), CA and SSL keys will be copied from the first node of the cluster.
+    CA and SSL keys will be copied from the first node of the cluster for subsequent nodes.
 
     The STDOUT of $0 will be logged at $script_log
 
@@ -762,7 +815,9 @@ OPTION
 
     $0 can be run without any option
       - if $save_file does not exist, script will invoke initial install 
-      - if $save_file already existed (implies reinstall/reconfigure SSG), script will ask for configuration again to change any values, then re-run OS configuration
+      - if $save_file already exists (implies reinstall/reconfigure SSG), script will ask for 
+           configuration again to change any values, then re-run OS configuration
+
 ===========================
 
 EOF
