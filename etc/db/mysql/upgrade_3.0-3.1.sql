@@ -28,9 +28,9 @@ CREATE TABLE audit_detail_params (
    FOREIGN KEY (audit_detail_oid) REFERENCES audit_detail (objectid) ON DELETE CASCADE
 ) Type=InnoDB;
 
-ALTER TABLE audit_system ADD FOREIGN KEY (objectid) REFERENCES audit_main (objectid) ON DELETE CASCADE
-ALTER TABLE audit_message ADD FOREIGN KEY (objectid) REFERENCES audit_main (objectid) ON DELETE CASCADE
-ALTER TABLE audit_admin ADD FOREIGN KEY (objectid) REFERENCES audit_main (objectid) ON DELETE CASCADE
+ALTER TABLE audit_system ADD FOREIGN KEY (objectid) REFERENCES audit_main (objectid) ON DELETE CASCADE;
+ALTER TABLE audit_message ADD FOREIGN KEY (objectid) REFERENCES audit_main (objectid) ON DELETE CASCADE;
+ALTER TABLE audit_admin ADD FOREIGN KEY (objectid) REFERENCES audit_main (objectid) ON DELETE CASCADE;
 
 ALTER TABLE audit_system ADD component_id integer;
 UPDATE audit_system SET component_id = 1000000 WHERE component = 'GS';
