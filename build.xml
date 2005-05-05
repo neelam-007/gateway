@@ -1276,9 +1276,11 @@
                 <include name="buildVersion.txt"/>
                 <include name="passServiceUsage.sh"/>
                 <include name="ssgruntimedefs.sh"/>
+                <include name="tarari.sh"/>
                 <include name="clean_db.pl"/>
                 <include name="iptables"/>
                 <include name="iptables-singlenet"/>
+                <include name="tarari-initd"/>
                 <include name="ssg-initd"/>
                 <include name="tcp_tune.sh"/>
                 <include name="back_route"/>
