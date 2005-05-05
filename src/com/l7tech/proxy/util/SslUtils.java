@@ -134,6 +134,9 @@ public class SslUtils {
                                                                 char[] oldpassword, char[] newpassword)
             throws IOException, BadCredentialsException, BadPasswordFormatException, PasswordNotWritableException
     {
+        // fla added to fix #1757
+        // preemptively try to get the private key to resolve corrupted key store before initiating the ssl connection
+        ssg.getClientCertificatePrivateKey();
         URL url = ssg.getServerPasswordChangeUrl();
         SimpleHttpClient client = ssg.getRuntime().getHttpClient();
         GenericHttpRequestParamsImpl params = new GenericHttpRequestParamsImpl(url);
