@@ -23,7 +23,7 @@ public class WssBasicAuthAssertionTreeNode extends LeafAssertionTreeNode {
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Require WS UsernameToken Basic Authentication";
+        return "Require WSS UsernameToken Basic Authentication";
     }
 
     public Action[] getActions() {
