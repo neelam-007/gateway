@@ -27,9 +27,11 @@ public class UddiAgentV3 {
 
     public static final String INQUIRY_URL_PROP_NAME = "uddi.url.inquiry";
     private static final String RESULT_ROWS_MAX = "uddi.result.max_rows";
+    private static final String RESULT_BATCH_SIZE = "uddi.result.batch_size";
     private final Logger logger = Logger.getLogger(getClass().getName());
     private String inquiryURL;
     private int resultRowsMax;
+    private int resultBatchSize;
 
     /**
      * Constructor
@@ -42,6 +44,8 @@ public class UddiAgentV3 {
         inquiryURL = uddiURL;
         String rowsMax = props.getProperty(RESULT_ROWS_MAX, "100");     // default 100 rows max
         resultRowsMax = Integer.parseInt(rowsMax);
+        String batchSize = props.getProperty(RESULT_BATCH_SIZE, "100");
+        resultBatchSize = Integer.parseInt(batchSize);
     }
 
     /**
@@ -157,7 +161,7 @@ public class UddiAgentV3 {
             logger.warning("Exception caught: " + e.getMessage());
             throw new FindException(e.getMessage());
         }
-        find_service.setMaxRows(new Integer(resultRowsMax));
+        find_service.setMaxRows(new Integer(resultBatchSize));
         find_service.setListHead(new Integer(listHead));
         return find_service;
     }
@@ -172,7 +176,7 @@ public class UddiAgentV3 {
     private Find_binding createFindBindingByServiceKey(String servicesKey) throws InvalidParameterException {
         Find_binding find_binding = new Find_binding();
         find_binding.setServiceKey(servicesKey);
-        find_binding.setMaxRows(new Integer(resultRowsMax));
+        find_binding.setMaxRows(new Integer(resultBatchSize));
         return find_binding;
     }
 
@@ -317,14 +321,24 @@ public class UddiAgentV3 {
                 listHead = listDescription.getListHead();
 
                 wsdlUrlsChunk = retrieveWsdlUrl(services);
-                wsdlUrls.putAll(wsdlUrlsChunk);
-                listHead += resultRowsMax;
-
+                int chunkSize = wsdlUrlsChunk.size();
+                if (wsdlUrls.size() + chunkSize <= resultRowsMax) {
+                    listHead += chunkSize;
+                    wsdlUrls.putAll(wsdlUrlsChunk);
+                } else {
+                    Iterator it = wsdlUrlsChunk.keySet().iterator();
+                    for ( int wc = 0; wc < wsdlUrlsChunk.size() && wsdlUrls.size() < resultRowsMax && it.hasNext(); wc++) {
+                        String key = (String) it.next();
+                        Object value = wsdlUrlsChunk.get(key);
+                        wsdlUrls.put(key, value);
+                    }
+                    break;
+                }
             } else {
                 break;
             }
 
-        } while (actualCount >= listHead );
+        } while (actualCount >= listHead);
 
         WsdlInfo[] siList = new WsdlInfo[wsdlUrls.size()];
         Iterator itr = wsdlUrls.keySet().iterator();
