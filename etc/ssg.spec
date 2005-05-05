@@ -72,40 +72,17 @@ fi
 %post
 # Check for existence of install crumbs left by install.pl
 if [ -e /etc/SSG_INSTALL ]; then 
-	echo "** Run upgrade script: /ssg/bin/upgrade.sh doUpgrade **"
+	if [ grep "# SSG_INSTALL V3.1" /etc/SSG_INSTALL ]; then
+		# reinstall or minor upgrade
+		echo -n ""
+	else 
+		echo "** Upgrading from 3.0 to 3.1: Run upgrade script: /ssg/bin/upgrade.sh doUpgrade **"
+	fi
 else 
-	# Enable required services
-	echo " First Time Install: Modifying startup configuration"
-	echo " Examine results with /sbin/chkconfig --list"
-
-	# turn no matter what is on off
-	cd /etc/init.d/
-	for x in *; do /sbin/chkconfig $x off; done
-	cd 
-
-	# enable only what we want and expect to be on
-	/sbin/chkconfig network on
-	/sbin/chkconfig anacron on
-	/sbin/chkconfig kudzu on
-	/sbin/chkconfig smartd on
-	/sbin/chkconfig crond on
-	/sbin/chkconfig ntpd on
-	/sbin/chkconfig sshd on
-	/sbin/chkconfig rhnsd on
-	/sbin/chkconfig acpid on
-	/sbin/chkconfig cpuspeed on
-	/sbin/chkconfig iptables on
-	/sbin/chkconfig syslog on
-	/sbin/chkconfig lm_sensors on
-	/sbin/chkconfig apmd on
-	/sbin/chkconfig mysql on
-	/sbin/chkconfig ssg on
-	/sbin/chkconfig tcp_tune on
-	/sbin/chkconfig back_route on
-	/sbin/chkconfig tarari on
-	echo "** Run interactive /ssg/bin/install.pl to configure this system **"
+	echo "** New system: Run interactive /ssg/bin/install.pl to configure this system **"
 fi
 
+# FIXME: update for new version
 echo "Layer 7 SecureSpan(tm) Gateway v3.1\nKernel \r on an \m\n" >/etc/issue
 echo "Layer 7 SecureSpan(tm) Gateway v3.1\nKernel \r on an \m\n" >/etc/issue.net
 
@@ -113,7 +90,7 @@ echo "Layer 7 SecureSpan(tm) Gateway v3.1\nKernel \r on an \m\n" >/etc/issue.net
 
 %changelog 
 
+* Mon May 02 2005 JWT
+- Build 3133. Modifies Issue files to show SSG id 
 * Thu Oct 28 2004 JWT 
 - Build 3079. Does not yet overwrite mysql configuration files. Provides relatively small version of install.pl
-* Mon May 02 2005 JWT
-- Build 3133. Now modifies startup to run only needed services. Modifies Issue files to show SSG id 
