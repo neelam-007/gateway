@@ -17,13 +17,19 @@ import java.util.Arrays;
 public class WssBasicAuthAssertionTreeNode extends LeafAssertionTreeNode {
     public WssBasicAuthAssertionTreeNode(WssBasic assertion) {
         super(assertion);
+        this.assertion = assertion;
     }
 
     /**
      * @return the node name that is displayed
      */
     public String getName() {
-        return "Require WSS UsernameToken Basic Authentication";
+        if (!assertion.getRecipientContext().localRecipient()) {
+            return "Require WSS UsernameToken Basic Authentication [\'" +
+                   assertion.getRecipientContext().getActor() + "\' actor]";
+        } else {
+            return "Require WSS UsernameToken Basic Authentication";
+        }
     }
 
     public Action[] getActions() {
@@ -50,4 +56,6 @@ public class WssBasicAuthAssertionTreeNode extends LeafAssertionTreeNode {
     protected String iconResource(boolean open) {
         return "com/l7tech/console/resources/authentication.gif";
     }
+
+    private WssBasic assertion;
 }
