@@ -48,7 +48,7 @@ public class ResettableRmiProxyFactoryBean extends RemoteInvocationBasedAccessor
         // RMI properties, see bug parade 4322806
         // todo: maybe this should be setable - em
         System.setProperty("sun.rmi.transport.tcp.handshakeTimeout", "5000");
-        System.setProperty("sun.rmi.transport.tcp.responseTimeout", "15000");
+        System.setProperty("sun.rmi.transport.tcp.responseTimeout", "30000");
     }
 
     public void setRegistryClientSocketFactory(RMIClientSocketFactory csf) {
