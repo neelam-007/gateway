@@ -76,8 +76,8 @@ public class SpecificUserAssertionTreeNode extends IdentityAssertionTreeNode {
     private String getUserName() {
         SpecificUser specificUser = (SpecificUser)getUserObject();
         String userName = specificUser.getUserLogin();
-        if (userName == null) userName = specificUser.getUserName();
-        if (userName == null) userName = specificUser.getUserUid();
+        if (userName == null || "".equals(userName)) userName = specificUser.getUserName();
+        if (userName == null || "".equals(userName)) userName = specificUser.getUserUid();
         return userName;
     }
 
