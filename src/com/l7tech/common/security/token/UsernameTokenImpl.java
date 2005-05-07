@@ -1,11 +1,12 @@
 /*
  * Copyright (C) 2004 Layer 7 Technologies Inc.
  *
- * $Id$
+ * 
  */
 
 package com.l7tech.common.security.token;
 
+import com.l7tech.common.util.ISO8601Date;
 import com.l7tech.common.util.SoapUtil;
 import com.l7tech.common.util.XmlUtil;
 import com.l7tech.common.xml.InvalidDocumentFormatException;
@@ -15,6 +16,8 @@ import com.l7tech.policy.assertion.credential.wss.WssBasic;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Text;
+
+import java.util.Date;
 
 /**
  * A simple implementation of the UsernameToken SecurityToken.  Not threadsafe.  The credentials can't be changed
@@ -117,6 +120,8 @@ public class UsernameTokenImpl implements UsernameToken {
             passwdEl.setAttribute("Type",
                               "http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-username-token-profile-1.0#PasswordText");
         }
+        Element createdEl = XmlUtil.createAndAppendElementNS(untokEl, "Created", SoapUtil.WSU_NAMESPACE, "wsu");
+        createdEl.appendChild(XmlUtil.createTextNode(untokEl, ISO8601Date.format(new Date())));
     }
 
     public Element asElement(Document factory, String securityNs, String securityPrefix) {
