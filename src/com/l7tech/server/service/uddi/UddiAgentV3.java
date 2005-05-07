@@ -72,7 +72,7 @@ public class UddiAgentV3 {
      */
     private ServiceList retrieveServiceByName(String serviceName, boolean caseSensitive, int listHead) throws FindException {
 
-        Find_service find_service = createFindServcieByName(serviceName, caseSensitive, listHead);
+        Find_service find_service = createFindServiceByName(serviceName, caseSensitive, listHead);
         ServiceList services = null;
         try {
             services = findService(find_service);
@@ -143,7 +143,7 @@ public class UddiAgentV3 {
      * @return Object, which represents find_service UDDI call.
      * @throws FindException   if there was a problem accessing the requested information.
      */
-    private Find_service createFindServcieByName(String serviceName, boolean caseSensitive, int listHead) throws FindException {
+    private Find_service createFindServiceByName(String serviceName, boolean caseSensitive, int listHead) throws FindException {
         Find_service find_service = new Find_service();
         try {
             NameArrayList businessKey = new NameArrayList(new Name(serviceName));
@@ -316,12 +316,11 @@ public class UddiAgentV3 {
 
             if (listDescription != null) {
                 actualCount = listDescription.getActualCount();
-                listHead = listDescription.getListHead();
+                listHead = listDescription.getListHead() + listDescription.getIncludeCount();
 
                 wsdlUrlsChunk = retrieveWsdlUrl(services);
                 int chunkSize = wsdlUrlsChunk.size();
                 if (wsdlUrls.size() + chunkSize <= resultRowsMax) {
-                    listHead += chunkSize;
                     wsdlUrls.putAll(wsdlUrlsChunk);
                 } else {
                     Iterator it = wsdlUrlsChunk.keySet().iterator();
