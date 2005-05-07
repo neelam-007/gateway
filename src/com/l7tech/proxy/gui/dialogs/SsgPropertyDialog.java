@@ -193,7 +193,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                             log.log(Level.INFO, "Unable to obtain token from WS-Trust server", e);
                             JOptionPane.showMessageDialog(Gui.getInstance().getFrame(),
                                                           "A security token could not be obtained using these WS-Trust settings.\n\n" +
-                                                          "The error was: \n    " + HexUtils.wrapString(e.getMessage(), 80, 25, "\n    "),
+                                                          "The error was: \n    " + HexUtils.wrapString(ExceptionUtils.getMessage(e), 80, 25, "\n    "),
                                                           "Unable to Obtain Token",
                                                           JOptionPane.ERROR_MESSAGE);
                         }
