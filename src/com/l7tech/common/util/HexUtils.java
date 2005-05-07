@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
- * $Id$
+ * 
  */
 
 package com.l7tech.common.util;
@@ -462,6 +462,7 @@ public class HexUtils {
 
     /** Insert carriage returns into the given string before every columns characters, preferring to insert them before new words begin. */
     public static String wrapString(String in, int maxcol, int maxlines, String wrapSequence) {
+        if (in == null) return "null";
         StringBuffer out = new StringBuffer();
         StringTokenizer tok = new StringTokenizer(in);
         int col = 0;
