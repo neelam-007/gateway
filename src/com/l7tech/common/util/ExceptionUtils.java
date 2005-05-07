@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2003 Layer 7 Technologies Inc.
  *
- * $Id$
+ * 
  */
 
 package com.l7tech.common.util;
@@ -66,5 +66,26 @@ public class ExceptionUtils {
         return new RuntimeException(t);
     }
 
+    /**
+     * Get the message for the specified exception.  If the exception itself has a null message,
+     * checks for a message in its cause.  If all causes have been exhaused, returns the
+     * classname of the original exception.
+     *
+     * @param t the Throwable to examine.  Must not be null.
+     * @return a diagnostic message that can be displayed.  Never null.
+     */
+    public static String getMessage(final Throwable t) {
+        if (t == null)
+            return "null";
 
+        Throwable current = t;
+        while (current != null) {
+            String msg = current.getMessage();
+            if (msg != null)
+                return msg;
+            current = current.getCause();
+        }
+
+        return t.getClass().getName();
+    }
 }
