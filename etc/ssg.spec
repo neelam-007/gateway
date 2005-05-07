@@ -45,6 +45,9 @@ mv %{buildroot}/ssg/bin/back_route %{buildroot}/etc/init.d/back_route
 mv %{buildroot}/ssg/bin/tcp_tune.sh %{buildroot}/etc/init.d/tcp_tune
 mv %{buildroot}/ssg/bin/snmpd.conf %{buildroot}/etc/snmp/snmpd.conf_example
 
+chmod 755 /etc/init.d/*
+chmod 755 /etc/profile.d/*.sh
+
 %files 
 %defattr(-,root,root)
 /etc/init.d/ssg 
@@ -82,7 +85,6 @@ else
 	echo "** New system: Run interactive /ssg/bin/install.pl to configure this system **"
 fi
 
-# FIXME: update for new version
 echo "Layer 7 SecureSpan(tm) Gateway v3.1\nKernel \r on an \m\n" >/etc/issue
 echo "Layer 7 SecureSpan(tm) Gateway v3.1\nKernel \r on an \m\n" >/etc/issue.net
 

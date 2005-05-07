@@ -17,6 +17,13 @@ fi
 if [ "$release" = "Red Hat Linux release 9 (Shrike)" ]; then
 	old_rel=1;
 fi
+# options from the sun specjbb2000 run
+#Disks            2 x 73GB Internal    | Command Line     java -d64 -Xbatch   
+#                 ULTRA320 SCSI        |                  -Xmn8g -Xms12g      
+#Other H/W                             |                  -Xmx12g             
+#                                      |                  -XX:+AggressiveHeap 
+#                                      |                  -Xss256k   
+#
 
 cpucount=`cat /proc/cpuinfo  |grep "cpu MHz" |wc -l| tr -d \ `
 
@@ -24,15 +31,14 @@ let cpucount="$cpucount*1"; # sanitize
 
 system_ram=`cat /proc/meminfo |grep MemTotal |cut -c 15-23`
 
-multiplier="1/2"
-# 50 % ram? 
-
+multiplier="3/5"
 let java_ram="$system_ram*$multiplier" 
+# 60 % ram 
+let maxnewsize="$java_ram*3/5"
+# 60 % of java ram is new pool 
 
-default_java_opts="-Xms${java_ram}k -Xmx${java_ram}k -Xss256k -server -Djava.awt.headless=true -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.Jdk14Logger "
-
-let maxnewsize="$java_ram/2"
-
+default_java_opts="-Xms${java_ram}k -Xmx${java_ram}k -Xss256k -server -Djava.awt.headless=true "
+default_java_opts="$default_java_opts -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.Jdk14Logger "
 default_java_opts="$default_java_opts -XX:NewSize=${maxnewsize}k -XX:MaxNewSize=${maxnewsize}k "
 
 
@@ -43,8 +49,8 @@ else
 fi
 
 if [ $cpucount = 1 ]; then
-	echo -n ""
 	# single cpu
+	default_java_opts="$default_java_opts -XX:+AggressiveHeap -XX:+DisableExplicitGC -Xbatch"
 else
 	# java 1.5 doesn't seem to want the other options
 	if [ `expr $JAVA_HOME : ".*1\.4.*"` != 0 ]; then 
@@ -52,7 +58,9 @@ else
 		default_java_opts="$default_java_opts -XX:+UseConcMarkSweepGC -XX:CMSInitiatingOccupancyFraction=90"
 		default_java_opts="$default_java_opts -XX:SurvivorRatio=128 -XX:MaxTenuringThreshold=0"
 	else 
-		default_java_opts="$default_java_opts -XX:+UseParNewGC -XX:ParallelGCThreads=$cpucount "
+		# at the moment, 1.5 seems self tuning. Lets try this option
+		default_java_opts="$default_java_opts -XX:+AggressiveHeap -XX:+DisableExplicitGC -Xbatch"
+		# default_java_opts="$default_java_opts -XX:+UseParNewGC -XX:ParallelGCThreads=$cpucount "
 	fi
 fi
 
@@ -93,11 +101,11 @@ alias startssg='/etc/rc.d/init.d/ssg start'
 alias stopssg='/etc/rc.d/init.d/ssg stop'
 
 
-if [ -z "$JAVA_OPTS" ]; then
+#if [ -z "$JAVA_OPTS" ]; then
     # IF java opts are empty, use these we just built
     #, otherwise don't replace
     JAVA_OPTS=$default_java_opts;
-fi
+#fi
 
 export SSG_HOME
 export JAVA_HOME
