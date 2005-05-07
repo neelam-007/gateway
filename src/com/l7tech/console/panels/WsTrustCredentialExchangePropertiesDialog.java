@@ -96,7 +96,6 @@ public class WsTrustCredentialExchangePropertiesDialog extends JDialog {
         } catch (MalformedURLException e) {
             ok = false;
         }
-        ok = ok && appliesToField.getText() != null && appliesToField.getText().length() > 0;
         okButton.setEnabled(ok);
     }
 }
