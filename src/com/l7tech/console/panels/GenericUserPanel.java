@@ -160,7 +160,9 @@ public class GenericUserPanel extends UserPanel {
             initialize();
             setData(user);
         } catch (Exception e) {
-            ErrorManager.getDefault().notify(Level.SEVERE, e, "Error while editing user " + userHeader.getName());
+            // fla bugfix bugzilla #1783 this is supposed to passthrough.
+            if (e instanceof NoSuchElementException) throw (NoSuchElementException)e;
+            else ErrorManager.getDefault().notify(Level.SEVERE, e, "Error while editing user " + userHeader.getName());
         }
     }
 
