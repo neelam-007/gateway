@@ -161,7 +161,7 @@ public abstract class PersistentGroupManager extends HibernateEntityManager impl
         }
     }
 
-    protected abstract GroupMembership newMembership(long userOid, long groupOid);
+    public abstract GroupMembership newMembership(long userOid, long groupOid);
 
     protected abstract Class getMembershipClass();
 

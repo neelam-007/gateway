@@ -33,7 +33,7 @@ public class InternalGroupManager extends PersistentGroupManager {
     protected InternalGroupManager() {
     }
 
-    protected GroupMembership newMembership( long userOid, long groupOid ) {
+    public GroupMembership newMembership( long userOid, long groupOid ) {
         return new GroupMembership(userOid,groupOid);
     }
 

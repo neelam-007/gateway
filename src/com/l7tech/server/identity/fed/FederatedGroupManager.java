@@ -49,7 +49,7 @@ public class FederatedGroupManager extends PersistentGroupManager {
     protected FederatedGroupManager() {
     }
 
-    protected GroupMembership newMembership( long userOid, long groupOid ) {
+    public GroupMembership newMembership( long userOid, long groupOid ) {
         return new FederatedGroupMembership(providerConfig.getOid(), userOid, groupOid);
     }
 
