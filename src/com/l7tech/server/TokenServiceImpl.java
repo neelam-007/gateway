@@ -51,6 +51,7 @@ import java.security.GeneralSecurityException;
 import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Map;
 import java.util.logging.Level;
@@ -432,12 +433,12 @@ public class TokenServiceImpl implements TokenService {
             logger.fine("Body's child does not seem to be a RST (" + maybeRSTEl.getLocalName() + ")");
             return false;
         }
-        if (!maybeRSTEl.getNamespaceURI().equals(SoapUtil.WST_NAMESPACE)) {
+        if (!Arrays.asList(SoapUtil.WST_NAMESPACE_ARRAY).contains(maybeRSTEl.getNamespaceURI())) {
             logger.fine("Trust namespace not recognized (" + maybeRSTEl.getNamespaceURI() + ")");
             return false;
         }
         // validate <wst:TokenType>http://schemas.xmlsoap.org/ws/2004/04/sct</wst:TokenType>
-        Element tokenTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE, TOKTYPE_ELNAME);
+        Element tokenTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE_ARRAY, TOKTYPE_ELNAME);
         if (tokenTypeEl == null) {
             logger.warning("Token type not specified. This is not supported.");
             return false;
@@ -447,13 +448,13 @@ public class TokenServiceImpl implements TokenService {
             return false;
         }
         // validate <wst:RequestType>http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue</wst:RequestType>
-        Element reqTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE, REQTYPE_ELNAME);
+        Element reqTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE_ARRAY, REQTYPE_ELNAME);
         if (reqTypeEl == null) {
             logger.warning("Request type not specified. This is not supported.");
             return false;
         }
         value = XmlUtil.getTextValue(reqTypeEl);
-        if (!value.equals("http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue")) {
+        if (!value.endsWith("/trust/Issue")) {
             logger.warning("RequestType not supported." + value);
             return false;
         }
@@ -488,24 +489,25 @@ public class TokenServiceImpl implements TokenService {
             logger.fine("Body's child does not seem to be a RST (" + maybeRSTEl.getLocalName() + ")");
             return false;
         }
-        if (!maybeRSTEl.getNamespaceURI().equals(SoapUtil.WST_NAMESPACE)) {
+        if (!Arrays.asList(SoapUtil.WST_NAMESPACE_ARRAY).contains(maybeRSTEl.getNamespaceURI())) {
             logger.fine("Trust namespace not recognized (" + maybeRSTEl.getNamespaceURI() + ")");
             return false;
         }
-        Element tokenTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE, TOKTYPE_ELNAME);
+        Element tokenTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE_ARRAY, TOKTYPE_ELNAME);
         if (tokenTypeEl == null) {
             logger.warning("Token type not specified. This is not supported.");
             return false;
         }
 
         // validate <wst:RequestType>http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue</wst:RequestType>
-        Element reqTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE, REQTYPE_ELNAME);
+        Element reqTypeEl = XmlUtil.findOnlyOneChildElementByName(maybeRSTEl, SoapUtil.WST_NAMESPACE_ARRAY, REQTYPE_ELNAME);
         if (reqTypeEl == null) {
             logger.warning("Request type not specified. This is not supported.");
             return false;
         }
         String value = XmlUtil.getTextValue(reqTypeEl);
-        if (!value.equals("http://schemas.xmlsoap.org/ws/2004/04/security/trust/Issue")) {
+
+        if (!value.endsWith("/trust/Issue")) {
             logger.warning("RequestType '" + value + "' not supported.");
             return false;
         }
