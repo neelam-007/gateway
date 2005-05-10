@@ -33,6 +33,7 @@ public class NewSsgDialog extends JDialog {
     private ImageIcon lastImage = null;
     private SsgFinder ssgFinder;
     private Ssg ssg;
+    private boolean confirmed = false;
 
     public NewSsgDialog(Ssg newSsg, SsgFinder ssgFinder, Frame owner, String title, boolean modal) throws HeadlessException {
         super(owner, title, modal);
@@ -76,6 +77,7 @@ public class NewSsgDialog extends JDialog {
         final AbstractAction cancelAction = new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
                 ssg = null;
+                confirmed = false;
                 hide();
                 dispose();
             }
@@ -84,6 +86,7 @@ public class NewSsgDialog extends JDialog {
         cancelButton.addActionListener(cancelAction);
         createButton.addActionListener(new AbstractAction() {
             public void actionPerformed(ActionEvent e) {
+                confirmed = true;
                 hide();
                 dispose();
             }
@@ -126,7 +129,7 @@ public class NewSsgDialog extends JDialog {
 
     /** @return the appropriately-configured Ssg, or null if the dialog was canceled. */
     public Ssg getSsg() {
-        if (ssg == null)
+        if (ssg == null || !confirmed)
             return null;
 
         // Configure the Ssg
