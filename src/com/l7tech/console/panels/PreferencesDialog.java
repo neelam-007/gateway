@@ -4,6 +4,8 @@ import com.l7tech.common.gui.util.Utilities;
 import com.l7tech.console.action.Actions;
 import com.l7tech.console.text.MaxLengthDocument;
 import com.l7tech.console.util.Preferences;
+import com.l7tech.console.util.TopComponents;
+import com.l7tech.console.MainWindow;
 
 import javax.swing.*;
 import java.awt.*;
@@ -355,6 +357,10 @@ public class PreferencesDialog extends JDialog {
             }
 
             getPreferences().setProperty(Preferences.INACTIVITY_TIMEOUT, Integer.toString(timeout));
+            MainWindow mainWindow = TopComponents.getInstance().getMainWindow();            
+            if (mainWindow !=null) {
+                mainWindow.setInactivitiyTimeout(timeout);
+            }
 
             return true;
         } catch (IOException e) {

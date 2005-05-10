@@ -11,7 +11,6 @@ import com.l7tech.console.panels.LogonDialog;
 import com.l7tech.console.panels.PreferencesDialog;
 import com.l7tech.console.panels.WorkSpacePanel;
 import com.l7tech.console.poleditor.PolicyEditorPanel;
-import com.l7tech.common.audit.LogonEvent;
 import com.l7tech.console.security.LogonListener;
 import com.l7tech.console.security.SecurityProvider;
 import com.l7tech.console.tree.*;
@@ -1784,7 +1783,7 @@ public class MainWindow extends JFrame {
      *
      * @param newTimeout new inactivity timeout
      */
-    void setInactivitiyTimeout(int newTimeout) {
+    public void setInactivitiyTimeout(int newTimeout) {
         int inactivityTimeout = newTimeout * 60 * 1000;
         if (!isConnected()) return;
 
