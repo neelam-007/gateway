@@ -24,6 +24,7 @@ my @list=(
 	dbhostname    => "--Non cluster DB Env, DB hostname or IP (must be reach-able by this node) if DB is not on localhost          ",
 	dbuser        => "SSG Database - Username                                                                                      ",
 	dbpass        => "SSG Database - Password for the above user                                                                   ",
+        dbrootpass    => "SSG Database - Password for the database root user                                                           ",
 	net_front     => "Public Network Configuration (Front), /etc/sysconfig/network-scripts/ifcfg-eth1 (y/n)                        ",
         net_front_dhcp=> "Public Network Config - Network is DHCP; ifcfg-eth1 BOOTPROTO (reply 'y' to dhcp , 'n' to static IP) (y/n)   ",
 	net_front_ip  => "--Public Network Config - Node Public IP; ifcfg-eth1 IPADDR (eg. 192.168.1.8)                                ",
@@ -399,7 +400,11 @@ EOF
 		print TMP $sql;
 		close TMP;
 		print "INFO: Now run following SQL... \n$sql\n";
-		my $success=`mysql -u root </tmp/sql.grants`;
+		if ($Conf{"dbrootpass"}) {
+			my $success=`mysql -u root -p'$Conf{dbrootpass}' </tmp/sql.grants`;
+		} else {
+			my $success=`mysql -u root </tmp/sql.grants`;
+		}
 		#unlink "/tmp/sql.grants";
 	} else {
 		print "WARNING: DB user username/password not granted to local database\n";
@@ -413,7 +418,11 @@ EOF
                 print TMP $sql;
                 close TMP;
                 print "INFO: Now run following SQL... \n$sql\n";
-                my $success=`mysql -u root </tmp/sqlReplicator.grants`;
+		if ($Conf{"dbrootpass"}) {
+			my $success=`mysql -u root -p'$Conf{dbrootpass}' </tmp/sqlReplicator.grants`;
+		} else {
+			my $success=`mysql -u root </tmp/sqlReplicator.grants`;
+		}
                 #unlink "/tmp/sqlReplicator.grants";
         } else {
                 print "WARNING: DB replicator username/password not granted to local database (OK for non cluster database, and this host is not a database server)\n";
