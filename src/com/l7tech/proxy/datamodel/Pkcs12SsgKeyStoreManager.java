@@ -41,8 +41,9 @@ import java.util.logging.Logger;
  * key and an unused copy of the client certificate.
  */
 public class Pkcs12SsgKeyStoreManager extends SsgKeyStoreManager {
-    private static final String CLIENT_CERT_ALIAS = "getCachedClientCert";
-    private static final String SERVER_CERT_ALIAS = "setCachedServerCert";
+    private static final String CLIENT_CERT_ALIAS = "clientCert";
+    private static final String SERVER_CERT_ALIAS = "serverCert";
+
     /**
      * This is the password that will be used for obfuscating the trust store, and checking it for
      * corruption when it is reloaded.
