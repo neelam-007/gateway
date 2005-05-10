@@ -358,7 +358,7 @@ public class PreferencesDialog extends JDialog {
 
             getPreferences().setProperty(Preferences.INACTIVITY_TIMEOUT, Integer.toString(timeout));
             MainWindow mainWindow = TopComponents.getInstance().getMainWindow();            
-            if (mainWindow !=null) {
+            if (mainWindow != null) {
                 mainWindow.setInactivitiyTimeout(timeout);
             }
 
