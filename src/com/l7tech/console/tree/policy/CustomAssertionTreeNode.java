@@ -2,17 +2,23 @@ package com.l7tech.console.tree.policy;
 
 
 import com.l7tech.console.action.CustomAssertionPropertiesAction;
+import com.l7tech.console.util.Registry;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
 import com.l7tech.policy.assertion.ext.Category;
+import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
+import com.l7tech.policy.assertion.ext.CustomAssertionUI;
+import com.l7tech.common.gui.util.ImageCache;
 
 import javax.swing.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.logging.Level;
 import java.beans.BeanInfo;
 import java.beans.Introspector;
 import java.beans.IntrospectionException;
 import java.beans.PropertyDescriptor;
+import java.awt.*;
 
 /**
  * Class <code>CustomAssertionTreeNode</code> contains the custom
@@ -21,9 +27,13 @@ import java.beans.PropertyDescriptor;
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
 public class CustomAssertionTreeNode extends LeafAssertionTreeNode {
+    private CustomAssertionsRegistrar registrar;
+    private Image defaultImageIcon;
 
     public CustomAssertionTreeNode(CustomAssertionHolder assertion) {
         super(assertion);
+        registrar = Registry.getDefault().getCustomAssertionsRegistrar();
+
     }
 
     /**
@@ -46,7 +56,7 @@ public class CustomAssertionTreeNode extends LeafAssertionTreeNode {
         CustomAssertionHolder cha = (CustomAssertionHolder)asAssertion();
         return cha.getCategory();
     }
-    
+
     /**
      * Test if the node can be deleted. Default is <code>true</code>
      *
@@ -93,6 +103,50 @@ public class CustomAssertionTreeNode extends LeafAssertionTreeNode {
         }
         list.addAll(Arrays.asList(super.getActions()));
         return (Action[])list.toArray(new Action[]{});
+    }
+
+    /**
+     * loads the icon specified by subclass iconResource()
+     * implementation.
+     *
+     * @return the <code>ImageIcon</code> or null if not found
+     */
+    public Image getIcon() {
+        return getCutomAssertionIcon();
+    }
+    /**
+      * loads the icon specified by subclass iconResource()
+      * implementation.
+      *
+      * @return the <code>ImageIcon</code> or null if not found
+      */
+     public Image getOpenedIcon() {
+         return getCutomAssertionIcon();
+     }
+
+
+    private Image getCutomAssertionIcon() {
+        if (defaultImageIcon != null) {
+            return defaultImageIcon;
+        }
+        CustomAssertion customAssertion = ((CustomAssertionHolder)asAssertion()).getCustomAssertion();
+        CustomAssertionUI ui = registrar.getUI(customAssertion.getClass());
+        if (ui == null) {
+            defaultImageIcon = ImageCache.getInstance().getIcon(iconResource(false));
+        } else {
+            try {
+                ImageIcon icon = ui.getSmallIcon();
+                if (icon != null) {
+                    defaultImageIcon = icon.getImage();
+                    return defaultImageIcon;
+                }
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Unable to get the custom assertion icon", e);
+            }
+            defaultImageIcon = ImageCache.getInstance().getIcon(iconResource(false));
+        }
+
+        return defaultImageIcon;
     }
 
 

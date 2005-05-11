@@ -56,18 +56,22 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
     private CustomAssertionDescriptor descriptor;
     private ServiceInvocation serviceInvocation;
     private final Auditor auditor;
+    private CustomAssertionsRegistrar customAssertionRegistrar;
+    private ApplicationContext applicationContext;
 
     public ServerCustomAssertionHolder(CustomAssertionHolder ca, ApplicationContext springContext) {
         if (ca == null || ca.getCustomAssertion() == null) {
             throw new IllegalArgumentException();
         }
+        this.applicationContext = springContext;
         customAssertion = ca.getCustomAssertion(); // ignore hoder
         isAuthAssertion = Category.ACCESS_CONTROL.equals(ca.getCategory());
+        // auditor
         auditor = new Auditor(this, springContext, logger);
     }
 
     private void initialize() throws PolicyAssertionException {
-        descriptor = CustomAssertions.getDescriptor(customAssertion.getClass());
+        descriptor = getCustomAssertionRegistrar().getDescriptor(customAssertion.getClass());
 
         if (!checkDescriptor(descriptor)) {
             logger.warning("Invalid custom assertion descriptor detected for '" + customAssertion.getClass() + "'\n" +
@@ -105,7 +109,7 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
 
         try {
             PublishedService service = context.getService();
-            final CustomAssertionDescriptor descriptor = CustomAssertions.getDescriptor(customAssertion.getClass());
+            final CustomAssertionDescriptor descriptor = getCustomAssertionRegistrar().getDescriptor(customAssertion.getClass());
 
             if (!checkDescriptor(descriptor)) {
                 auditor.logAndAudit(AssertionMessages.CA_INVALID_CA_DESCRIPTOR, new String[] {customAssertion.getClass().getName()});
@@ -160,6 +164,16 @@ public class ServerCustomAssertionHolder implements ServerAssertion {
 
     private boolean isPostRouting(PolicyEnforcementContext context) {
         return RoutingStatus.ROUTED.equals(context.getRoutingStatus()) || RoutingStatus.ATTEMPTED.equals(context.getRoutingStatus());
+    }
+
+
+    private CustomAssertionsRegistrar getCustomAssertionRegistrar() {
+        if (customAssertionRegistrar !=null) {
+            return customAssertionRegistrar;
+        }
+        customAssertionRegistrar = (CustomAssertionsRegistrar)applicationContext.getBean("customAssertionRegistrar");
+
+        return customAssertionRegistrar;
     }
 
     /**

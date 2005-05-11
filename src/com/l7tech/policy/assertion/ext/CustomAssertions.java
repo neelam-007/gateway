@@ -9,7 +9,7 @@ import java.util.logging.Logger;
  *
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  */
-public class CustomAssertions {
+class CustomAssertions {
     static Logger logger = Logger.getLogger(CustomAssertions.class.getName());
 
     /**
@@ -27,9 +27,9 @@ public class CustomAssertions {
      * <b>null<b>
      *
      * @param a the assertion class
-     * @return the server assertion class or <b>null</b>
+     * @return the custom assertion descriptor class or <b>null</b>
      */
-    public static CustomAssertionDescriptor getDescriptor(Class a) {
+    static CustomAssertionDescriptor getDescriptor(Class a) {
         for (Iterator iterator = assertions.values().iterator(); iterator.hasNext();) {
             CustomAssertionDescriptor cd = (CustomAssertionDescriptor)iterator.next();
             if (a.equals(cd.getAssertion())) {
@@ -38,6 +38,28 @@ public class CustomAssertions {
         }
         return null;
     }
+
+    /**
+   * Return the <code>CustomAssertionUI</code> for a given assertion or
+   * <b>null<b>
+   *
+   * @param a the assertion class
+   * @return the custom assertion UI class or <b>null</b>
+   */
+  static CustomAssertionUI getUI(Class a) {
+      for (Iterator iterator = assertions.values().iterator(); iterator.hasNext();) {
+          CustomAssertionDescriptor cd = (CustomAssertionDescriptor)iterator.next();
+          if (a.equals(cd.getAssertion())) {
+              try {
+                  return (CustomAssertionUI)cd.getUiClass().newInstance();
+              } catch (Exception e) {
+                  throw new RuntimeException(e);
+              }
+          }
+      }
+      return null;
+  }
+
 
     /**
      * Return all the registered <code>CustomAssertionDescriptor</code>

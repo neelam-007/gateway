@@ -1,18 +1,16 @@
 package com.l7tech.policy.assertion.ext;
 
-import com.l7tech.identity.StubDataStore;
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.proxy.policy.assertion.ClientTrueAssertion;
-import com.l7tech.service.PublishedService;
 
 import java.io.IOException;
 import java.rmi.RemoteException;
-import java.rmi.ServerException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -32,6 +30,7 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
           new CustomAssertionDescriptor("Test.Assertion",
             TestAssertionProperties.class,
             ClientTrueAssertion.class,
+            null,
             TestServiceInvocation.class, Category.ACCESS_CONTROL, null);
         CustomAssertions.register(eh);
     }
@@ -56,19 +55,15 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
         return asCustomAssertionHolders(customAssertionDescriptors);
     }
 
-    public Assertion resolvePolicy(EntityHeader eh) throws RemoteException, ObjectNotFoundException {
-        final Map publishedServices = StubDataStore.defaultStore().getPublishedServices();
-        PublishedService svc = (PublishedService)publishedServices.get(new Long(eh.getOid()));
-        if (svc == null) {
-            throw new ObjectNotFoundException("service " + eh);
-        }
-        try {
-            return WspReader.parsePermissively(svc.getPolicyXml());
-        } catch (IOException e) {
-            ServerException se = new ServerException(e.getMessage());
-            se.initCause(e);
-            throw se;
-        }
+    /**
+     * Return the <code>CustomAssertionUI</code> class for a given assertion or
+     * <b>null<b>
+     *
+     * @param a the assertion class
+     * @return the custom assertion UI class or <b>null</b>
+     */
+    public CustomAssertionUI getUI(Class a) {
+        return CustomAssertions.getUI(a);
     }
 
     /**
@@ -84,22 +79,33 @@ public class CustomAssertionsRegistrarStub implements CustomAssertionsRegistrar 
         return WspReader.parsePermissively(xml);
     }
 
+    /**
+     * Return the <code>CustomAssertionDescriptor</code> for a given assertion or
+     * <b>null<b>
+     *
+     * @param a the assertion class
+     * @return the custom assertion descriptor class or <b>null</b>
+     */
+    public CustomAssertionDescriptor getDescriptor(Class a) {
+        return CustomAssertions.getDescriptor(a);
+    }
+
     private Collection asCustomAssertionHolders(final Set customAssertionDescriptors) {
-          Collection result = new ArrayList();
-          Iterator it = customAssertionDescriptors.iterator();
-          while (it.hasNext()) {
-              try {
-                  CustomAssertionDescriptor cd = (CustomAssertionDescriptor)it.next();
-                  Class ca = cd.getAssertion();
-                  CustomAssertionHolder ch = new CustomAssertionHolder();
-                  final CustomAssertion cas = (CustomAssertion)ca.newInstance();
-                  ch.setCustomAssertion(cas);
-                  ch.setCategory(cd.getCategory());
-                  result.add(ch);
-              } catch (Exception e) {
-                  logger.log(Level.WARNING, "Unable to instantiate custom assertion", e);
-              }
-          }
-          return result;
-      }
+        Collection result = new ArrayList();
+        Iterator it = customAssertionDescriptors.iterator();
+        while (it.hasNext()) {
+            try {
+                CustomAssertionDescriptor cd = (CustomAssertionDescriptor)it.next();
+                Class ca = cd.getAssertion();
+                CustomAssertionHolder ch = new CustomAssertionHolder();
+                final CustomAssertion cas = (CustomAssertion)ca.newInstance();
+                ch.setCustomAssertion(cas);
+                ch.setCategory(cd.getCategory());
+                result.add(ch);
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Unable to instantiate custom assertion", e);
+            }
+        }
+        return result;
+    }
 }

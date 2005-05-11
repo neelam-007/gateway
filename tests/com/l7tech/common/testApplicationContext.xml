@@ -63,6 +63,10 @@
     <!-- server side trusted cert manager -->
     <bean id="trustedCertManager" class="com.l7tech.server.identity.cert.TestTrustedCertManager">
     </bean>
+    
+    <!-- server side custom assertions registrar -->
+    <bean id="customAssertionRegistrar" class="com.l7tech.policy.assertion.ext.CustomAssertionsRegistrarStub">
+    </bean>
 
     <!-- server side client cert manager -->
     <bean id="clientCertManager" class="com.l7tech.server.identity.cert.ClientCertManagerStub">

@@ -1,15 +1,10 @@
 package com.l7tech.policy.assertion.ext;
 
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.EntityType;
-import com.l7tech.objectmodel.FindException;
-import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.wsp.WspReader;
 import com.l7tech.server.ServerConfig;
 import com.l7tech.server.service.ServiceManager;
-import com.l7tech.service.PublishedService;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -18,7 +13,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.rmi.RemoteException;
-import java.rmi.ServerException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -56,36 +50,29 @@ public class CustomAssertionsRegistrarImpl
     }
 
     /**
-     * Resolve the policy with the custom assertions support for a
-     * given service. The server is asked will resolve registered
-     * custom elements.
+     * Return the <code>CustomAssertionDescriptor</code> for a given assertion or
+     * <b>null<b>
+     * Note that this method may not be invoked from management console. Server
+     * classes may not deserialize into the ssm envirnoment.
      *
-     * @param eh the netity header representing the service
-     * @return the policy tree
-     * @throws RemoteException         on remote invocation error
-     * @throws ObjectNotFoundException if the service cannot be found
+     * @param a the assertion class
+     * @return the custom assertion descriptor class or <b>null</b>
      */
-    public Assertion resolvePolicy(EntityHeader eh)
-      throws RemoteException, ObjectNotFoundException {
-        if (!EntityType.SERVICE.equals(eh.getType())) {
-            throw new IllegalArgumentException("type " + eh.getType());
-        }
-        try {
-            PublishedService svc = serviceManager.findByPrimaryKey(eh.getOid());
-            if (svc == null) {
-                throw new ObjectNotFoundException("service not found, " + eh);
-            }
-            return WspReader.parsePermissively(svc.getPolicyXml());
-        } catch (FindException e) {
-            ServerException se = new ServerException("Internal server error " + e.getMessage());
-            se.initCause(e);
-            throw se;
-        } catch (IOException e) {
-            ServerException se = new ServerException("Internal server error " + e.getMessage());
-            se.initCause(e);
-            throw se;
-        }
+    public CustomAssertionDescriptor getDescriptor(Class a) {
+        return CustomAssertions.getDescriptor(a);
     }
+
+    /**
+     * Return the <code>CustomAssertionUI</code> class for a given assertion or
+     * <b>null<b>
+     *
+     * @param a the assertion class
+     * @return the custom assertion UI class or <b>null</b>
+     */
+    public CustomAssertionUI getUI(Class a) {
+        return CustomAssertions.getUI(a);
+    }
+
 
     /**
      * Resolve the policy in the xml string format with the custom assertions
@@ -124,7 +111,7 @@ public class CustomAssertionsRegistrarImpl
     }
 
     //-------------- custom assertion loading stuff -------------------------
-    private synchronized void init(ServerConfig config) {
+      private synchronized void init(ServerConfig config) {
         if (initialized) return;
         fileName = config.getProperty(KEY_CONFIG_FILE);
         if (fileName == null) {
@@ -173,6 +160,7 @@ public class CustomAssertionsRegistrarImpl
         String clientClass = null;
         String serverClass = null;
         String assertionClass = null;
+        String editorClass = null;
         String securityManagerClass = null;
         Category category = Category.UNFILLED;
 
@@ -185,6 +173,8 @@ public class CustomAssertionsRegistrarImpl
                     clientClass = (String)properties.get(key);
                 } else if (key.endsWith(".server")) {
                     serverClass = (String)properties.get(key);
+                } else if (key.endsWith(".ui")) {
+                    editorClass = (String)properties.get(key);
                 } else if (key.endsWith(".security.manager")) {
                     securityManagerClass = (String)properties.get(key);
                 } else if (key.endsWith(".category")) {
@@ -210,12 +200,17 @@ public class CustomAssertionsRegistrarImpl
             if (clientClass != null && !"".equals(clientClass)) {
                 ca = Class.forName(clientClass);
             }
+            Class eClass = null;
+            if (editorClass != null && !"".equals(editorClass)) {
+                eClass = Class.forName(editorClass);
+            }
+
             Class sa = Class.forName(serverClass);
             SecurityManager sm = null;
             if (securityManagerClass != null) {
                 sm = (SecurityManager)Class.forName(securityManagerClass).newInstance();
             }
-            CustomAssertionDescriptor eh = new CustomAssertionDescriptor(baseKey, a, ca, sa, category, sm);
+            CustomAssertionDescriptor eh = new CustomAssertionDescriptor(baseKey, a, ca, eClass, sa, category, sm);
             CustomAssertions.register(eh);
             logger.info("Registered custom assertion " + eh);
         } catch (ClassNotFoundException e) {

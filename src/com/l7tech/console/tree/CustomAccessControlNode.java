@@ -3,26 +3,36 @@ package com.l7tech.console.tree;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.CustomAssertionHolder;
 import com.l7tech.policy.assertion.ext.CustomAssertion;
+import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
+import com.l7tech.policy.assertion.ext.CustomAssertionUI;
+import com.l7tech.common.gui.util.ImageCache;
+import com.l7tech.console.util.Registry;
 
 import javax.swing.*;
+import java.awt.*;
+import java.util.logging.Level;
 
 /**
- * The class represents an entity gui node element in the
- * TreeModel.
+ * The class represents an custom access control gui node element in the
+ * policy tree.
  * 
  * @author <a href="mailto:emarceta@layer7-tech.com">Emil Marceta</a>
  * @version 1.1
  */
 public class CustomAccessControlNode extends AbstractTreeNode {
+    private CustomAssertionsRegistrar registrar;
+    private Image defaultImageIcon;
+
     /**
-     * construct the <CODE>CustomProviderNode</CODE> instance for a given
-     * <CODE>id</CODE>
+     * construct the <CODE>CustomAccessControlNode</CODE> instance for a given
+     * <CODE>CustomAssertionHolder</CODE>
      * 
      * @param ca the e represented by this <CODE>EntityHeaderNode</CODE>
      */
     public CustomAccessControlNode(CustomAssertionHolder ca) {
         super(ca);
         setAllowsChildren(false);
+        this.registrar = Registry.getDefault().getCustomAssertionsRegistrar();
     }
 
     /**
@@ -74,6 +84,51 @@ public class CustomAccessControlNode extends AbstractTreeNode {
             name = "Unspecified custom assertion (class '" + ca.getClass() + "')";
         }
         return name;
+    }
+
+    /**
+     * loads the icon specified by subclass iconResource()
+     * implementation.
+     *
+     * @return the <code>ImageIcon</code> or null if not found
+     */
+    public Image getIcon() {
+        return getCutomAssertionIcon();
+    }
+
+    private Image getCutomAssertionIcon() {
+        if (defaultImageIcon !=null) {
+            return defaultImageIcon;
+        }
+        CustomAssertion customAssertion = ((CustomAssertionHolder)asAssertion()).getCustomAssertion();
+        CustomAssertionUI ui = registrar.getUI(customAssertion.getClass());
+        if (ui == null) {
+            defaultImageIcon = ImageCache.getInstance().getIcon(iconResource(false));
+        } else {
+            try {
+                ImageIcon icon = ui.getSmallIcon();
+                if (icon !=null) {
+                    defaultImageIcon = icon.getImage();
+                    return defaultImageIcon;
+                }
+            } catch (Exception e) {
+                logger.log(Level.WARNING, "Unable to get the custom assertion icon", e);
+            }
+            defaultImageIcon = ImageCache.getInstance().getIcon(iconResource(false));
+        }
+
+        return defaultImageIcon;
+    }
+
+    /**
+     * Finds an icon for this node when opened. This icon should
+     * represent the node only when it is opened (when it can have
+     * children).
+     *
+     * @return icon to use to represent the bean when opened
+     */
+    public Image getOpenedIcon() {
+        return getCutomAssertionIcon();
     }
 
     protected String iconResource(boolean open) {

@@ -1,10 +1,10 @@
 package com.l7tech.policy.assertion.ext.rmi;
 
-import com.l7tech.objectmodel.EntityHeader;
-import com.l7tech.objectmodel.ObjectNotFoundException;
 import com.l7tech.policy.assertion.Assertion;
 import com.l7tech.policy.assertion.ext.Category;
+import com.l7tech.policy.assertion.ext.CustomAssertionDescriptor;
 import com.l7tech.policy.assertion.ext.CustomAssertionsRegistrar;
+import com.l7tech.policy.assertion.ext.CustomAssertionUI;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.support.ApplicationObjectSupport;
 
@@ -43,20 +43,25 @@ public class CustomAssertionsRegistrarImpl
     }
 
     /**
-     * Resolve the policy with the custom assertions support for a
-     * given service. The server is asked will resolve registered
-     * custom elements.
+     * Return the <code>CustomAssertionDescriptor</code> for a given assertion or
+     * <b>null<b>
      *
-     * @param eh the netity header representing the service
-     * @return the policy tree
-     * @throws java.rmi.RemoteException on remote invocation error
-     * @throws com.l7tech.objectmodel.ObjectNotFoundException
-     *                                  if the service cannot be found
+     * @param a the assertion class
+     * @return the custom assertion descriptor class or <b>null</b>
      */
-    public Assertion resolvePolicy(EntityHeader eh)
-      throws RemoteException, ObjectNotFoundException {
-        return delegate.resolvePolicy(eh);
+    public CustomAssertionDescriptor getDescriptor(Class a) {
+        return delegate.getDescriptor(a);
+    }
 
+    /**
+     * Return the <code>CustomAssertionUI</code> class for a given assertion or
+     * <b>null<b>
+     *
+     * @param a the assertion class
+     * @return the custom assertion UI class or <b>null</b>
+     */
+    public CustomAssertionUI getUI(Class a) {
+        return delegate.getUI(a);
     }
 
     /**

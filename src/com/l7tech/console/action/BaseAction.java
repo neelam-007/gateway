@@ -48,6 +48,22 @@ public abstract class BaseAction extends AbstractAction {
     }
 
     /**
+     * Full constructorr. Defines an <code>Action</code> object with
+     * action name, icon and description.
+     */
+    public BaseAction(String name, String desc, Image img) {
+        if (name != null) {
+            putValue(Action.NAME, getName());
+        }
+        if (desc != null) {
+            putValue(Action.SHORT_DESCRIPTION, desc);
+        }
+        if (img != null) {
+            putValue(Action.SMALL_ICON, new ImageIcon(img));
+        }
+    }
+
+    /**
      * Adds an <code>ActionListener</code> to the button.
      * @param l the <code>ActionListener</code> to be added
      */
