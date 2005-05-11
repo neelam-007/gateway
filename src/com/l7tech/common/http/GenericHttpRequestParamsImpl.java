@@ -48,7 +48,8 @@ public class GenericHttpRequestParamsImpl implements GenericHttpRequestParams {
      * @param contentType {@see #getContentType}
      * @param contentLength {@see #getContentLength}
      * @param extraHeaders {@see #getExtraHeaders}
-     * @param followRedirects
+     * @param preemptiveAuthentication {@see #isPreemptiveAuthentication}
+     * @param followRedirects {@see #isFollowRedirects}
      */
     private GenericHttpRequestParamsImpl(URL targetUrl,
                                         PasswordAuthentication passwordAuthentication,
@@ -56,6 +57,7 @@ public class GenericHttpRequestParamsImpl implements GenericHttpRequestParams {
                                         ContentTypeHeader contentType,
                                         Long contentLength,
                                         HttpHeader[] extraHeaders,
+                                        boolean preemptiveAuthentication,
                                         boolean followRedirects)
     {
         this(targetUrl);
@@ -64,6 +66,7 @@ public class GenericHttpRequestParamsImpl implements GenericHttpRequestParams {
         this.contentType = contentType;
         this.contentLength = contentLength;
         setExtraHeaders(extraHeaders);
+        this.preemptiveAuthentication = preemptiveAuthentication;
         this.followRedirects = followRedirects;
     }
 
@@ -79,6 +82,7 @@ public class GenericHttpRequestParamsImpl implements GenericHttpRequestParams {
              original.getContentType(),
              original.getContentLength(),
              original.getExtraHeaders(),
+             original.isPreemptiveAuthentication(),
              original.isFollowRedirects());
     }
 
