@@ -8,6 +8,8 @@ import com.l7tech.proxy.gui.dialogs.SsgPropertyDialog;
 import com.l7tech.proxy.gui.util.IconManager;
 
 import javax.swing.*;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.event.ListSelectionEvent;
 import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -85,10 +87,15 @@ class SsgListPanel extends JPanel {
         ssgTable.getColumnModel().getColumn(3).setHeaderValue("User Name");
         ssgTable.getSelectionModel().setSelectionInterval(0, 0);
         ssgTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        ssgTable.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+            public void valueChanged(ListSelectionEvent e) {
+                updateEnableDisableState();
+            }
+        });
         ssgTable.getTableHeader().setReorderingAllowed(false);
         ssgTable.getTableHeader().addMouseListener(new MouseAdapter() {
             public void mouseClicked(MouseEvent e) {
-                if (ssgTableModel.getRowCount() < 3)
+                if (ssgTableModel.getRowCount() < 3) // not enought items in list to bother worth resorting
                     return;
                 int columnIndex = ssgTable.getColumnModel().getColumnIndexAtX(e.getX());
                 int column = ssgTable.convertColumnIndexToModel(columnIndex);
@@ -118,6 +125,14 @@ class SsgListPanel extends JPanel {
         toolBar.add(new JButton(getActionEditSsg()));
         toolBar.add(new JButton(getActionSetDefaultSsg()));
         toolBar.add(new JButton(getActionDeleteSsg()));
+    }
+
+    private void updateEnableDisableState() {
+        boolean haveSsg = getSelectedSsg() != null;
+        getActionDeleteSsg().setEnabled(haveSsg);
+        getActionEditSsg().setEnabled(haveSsg);
+        getActionSetDefaultSsg().setEnabled(haveSsg);
+        getChangePasswordAction().setEnabled(haveSsg);
     }
 
     /**
