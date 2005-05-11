@@ -24,7 +24,6 @@ import java.util.logging.Logger;
  * LAYER 7 TECHNOLOGIES, INC<br/>
  * User: flascell<br/>
  * Date: Jul 23, 2004<br/>
- * $Id$
  */
 public class PolicyImporter {
 
@@ -77,6 +76,14 @@ public class PolicyImporter {
             policy = XmlUtil.findFirstChildElementByName(readDoc.getDocumentElement(),
                                                          WspConstants.WSP_POLICY_NS,
                                                          WspConstants.POLICY_ELNAME);
+        }
+
+        if (policy == null) {
+            Element re = readDoc.getDocumentElement();
+            if (WspConstants.POLICY_ELNAME.equals(re.getLocalName()) &&
+                    (WspConstants.L7_POLICY_NS.equals(re.getNamespaceURI()) ||
+                     WspConstants.WSP_POLICY_NS.equals(re.getNamespaceURI())))
+                policy = re;
         }
 
         if (policy != null) {
