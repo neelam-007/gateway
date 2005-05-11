@@ -250,6 +250,7 @@ public class SsgPropertyDialog extends PropertyDialog implements SsgListener {
                                         ssgName() + " because of credentials provided. Contact the " +
                                         "gateway administrator for more information.";
                                 log.log(Level.WARNING, msg, csrex);
+                                ssg.getRuntime().setCachedPassword(null); // Bug #1592
                                 Gui.errorMessage(msg);
                                 return;
                             }
