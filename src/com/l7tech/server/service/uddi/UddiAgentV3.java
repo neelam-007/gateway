@@ -1,27 +1,24 @@
 package com.l7tech.server.service.uddi;
 
-import org.systinet.uddi.client.v3.struct.*;
-import org.systinet.uddi.client.v3.struct.ServiceInfo;
-import org.systinet.uddi.client.v3.UDDI_Inquiry_PortType;
-import org.systinet.uddi.client.v3.UDDIInquiryStub;
-import org.systinet.uddi.client.UDDIException;
-import org.systinet.uddi.client.base.StringArrayList;
-import org.systinet.uddi.InvalidParameterException;
-
-import javax.xml.soap.SOAPException;
-import java.util.Properties;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.logging.Logger;
-import java.lang.reflect.UndeclaredThrowableException;
-
 import com.l7tech.common.uddi.WsdlInfo;
 import com.l7tech.objectmodel.FindException;
+import org.systinet.uddi.InvalidParameterException;
+import org.systinet.uddi.client.UDDIException;
+import org.systinet.uddi.client.base.StringArrayList;
+import org.systinet.uddi.client.v3.UDDIInquiryStub;
+import org.systinet.uddi.client.v3.UDDI_Inquiry_PortType;
+import org.systinet.uddi.client.v3.struct.*;
+
+import javax.xml.soap.SOAPException;
+import java.lang.reflect.UndeclaredThrowableException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Properties;
+import java.util.logging.Logger;
 
 /**
  * <p> Copyright (C) 2004 Layer 7 Technologies Inc.</p>
  * <p> @author fpang </p>
- * $Id$
  */
 public class UddiAgentV3 {
 
@@ -306,6 +303,7 @@ public class UddiAgentV3 {
 
         int actualCount = 0;
         HashMap wsdlUrls = new HashMap();
+        boolean maxedOutSearch = false;
 
         do {
             HashMap wsdlUrlsChunk;
@@ -329,6 +327,7 @@ public class UddiAgentV3 {
                         Object value = wsdlUrlsChunk.get(key);
                         wsdlUrls.put(key, value);
                     }
+                    maxedOutSearch = true;
                     break;
                 }
             } else {
@@ -337,14 +336,18 @@ public class UddiAgentV3 {
 
         } while (actualCount >= listHead);
 
-        WsdlInfo[] siList = new WsdlInfo[wsdlUrls.size()];
+        WsdlInfo[] siList = new WsdlInfo[wsdlUrls.size() + (maxedOutSearch ? 1 : 0)];
         Iterator itr = wsdlUrls.keySet().iterator();
 
-        for (int i = 0; i < siList.length; i++) {
-            Object key = (Object) itr.next();
+        int i = 0;
+        while (itr.hasNext()) {
+            Object key = (Object)itr.next();
 
-            siList[i] = new WsdlInfo((String) key, (String) wsdlUrls.get(key));
+            siList[i++] = new WsdlInfo((String) key, (String) wsdlUrls.get(key));
         }
+
+        if (maxedOutSearch)
+            siList[i] = WsdlInfo.MAXED_OUT_SEARCH_RESULT;
 
         return siList;
     }
