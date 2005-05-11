@@ -106,7 +106,9 @@ public class CertUtils {
         certificate.checkValidity();
         final long now = System.currentTimeMillis();
         final long expires = certificate.getNotAfter().getTime();
-        int days = (int)(.5f + ((expires - now) * 1000 * 86400));
+        // fla, bugfix 1791 (what kind of math is this?!)
+        // int days = (int)(.5f + ((expires - now) * 1000 * 86400));
+        int days = (int)((expires - now) / (1000*86400));
         return new CertificateExpiry(days);
     }
 
