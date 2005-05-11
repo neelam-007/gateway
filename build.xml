@@ -1,5 +1,5 @@
 <project name="UneasyRooster" default="dev" basedir=".">
-    <!-- Uncomment for jikes/emacs to be used
+<!-- Uncomment for jikes/emacs to be used
     <property name="build.compiler" value="jikes"/>
     <property name="build.compiler.emacs" value="true"/> -->
 
@@ -12,7 +12,7 @@
     <!-- override configuration with user properties -->
     <property file="${user.home}/build.properties"/>
 
-    <!--
+<!--
       ** Set default build properties
       ** Properties that were not specified in user properties
     -->
@@ -22,14 +22,14 @@
     <property name="dev.build.home" value="${src.root}/build"/>
 
     <!-- distribution archive names -->
-    <!--
+<!--
     <property name="war" value="${app.name}.war"/>
     -->
     <property name="war" value="ROOT.war"/>
     <property name="tar" value="${app.name}.tar"/>
     <property name="tar.gz" value="${app.name}_${app.version}.tar.gz"/>
 
-    <!-- ear not used
+<!-- ear not used
       <property name="ear"        value="${app.name}.ear"/>
     -->
 
@@ -39,7 +39,7 @@
         <fileset dir="lib">
             <include name="**/*.jar"/>
             <include name="**/*.zip"/>
-            <!--
+<!--
                * Issue with multiple parsers.
                * JDK 1.4 ships it's own parses and contributes to the
                * overall parser mess. java.beans.XmlEncoder and other
@@ -68,20 +68,20 @@
     </path>
 
     <taskdef name="javac2"
-        classname="com.intellij.uiDesigner.ant.Javac2"
-        classpathref="uidesigner.classpath"/>
-    <!--
+             classname="com.intellij.uiDesigner.ant.Javac2"
+             classpathref="uidesigner.classpath"/>
+<!--
        * jars that go in $TOMCAT_HOME/common/lib
        * currently in ant this is used in conjunction with
        * fileset (look for patternset id usage throughout this
        * build.xml for examples)
     -->
-    <!-- obsolete in recent Tomcat versions
+<!-- obsolete in recent Tomcat versions
     <property name="common.lib.jars"
               value="saaj.jar, jaxrpc.jar"/>
 
               -->
-    <!--
+<!--
       ** init dev target The "dev" target depends on this target.
       -->
     <target name="init-dev">
@@ -119,7 +119,7 @@
     <target name="cleandev" depends="clean, dev"/>
     <target name="redeploy" depends="undeploy, deploy"/>
 
-    <!--
+<!--
       ** configure and invoke developer's build
       -->
     <target name="dev" depends="init-dev">
@@ -129,7 +129,7 @@
 
         <antcall target="INTERNAL-buildinfo"/>
 
-        <antcall target="compile">
+        <antcall target="compile13">
         </antcall>
         <antcall target="compile-tests">
         </antcall>
@@ -138,16 +138,16 @@
         </antcall>
     </target>
 
-    <!--
+<!--
       ** configure and invoke developer's build for source files
       ** that match the pattern passed as -Dcompile.pattern
       -->
     <target name="compile-one" depends="init-dev" if="compile.pattern">
         <echo message="Compiling **/*${compile.pattern}* in ${src.root}."/>
         <javac srcdir="src" destdir="${build.classes}" debug="on"
-            optimize="off"
-            includes="**/*${compile.pattern}*" deprecation="on" depend="on"
-            verbose="no">
+               optimize="off"
+               includes="**/*${compile.pattern}*" deprecation="on" depend="on"
+               verbose="no">
             <classpath refid="project.classpath"/>
         </javac>
     </target>
@@ -157,7 +157,7 @@
         <delete file="${war}"/>
     </target>
 
-    <!--
+<!--
       ** developer's 'deploy' target.
       ** compile and package the application.
       ** Then deploy a package into the ${tomcat.home}/webapps ($TOMCAT_HOME/webapps)
@@ -169,7 +169,7 @@
         <antcall target="package"/>
         <antcall target="ssm-webstart"/>
 
-        <!--
+<!--
         <delete dir="${tomcat.home}/webapps/${app.name}"/>
         <delete dir="${tomcat.home}/webapps/${app.name}"/>
         -->
@@ -193,19 +193,19 @@
             </fileset>
         </copy>
 
-        <!--
+<!--
           ** Java 1.4 changed the rules as to to how packages beginning in java.* and javax.*
           **  get loaded. Specifically, they only get loaded from endorsed directories.
           ** jaxrpc.jar and saaj.jar contain javax packages, so may not get picked up.
           ** Copy such libraries into $TOMCAT_HOME/common/lib
           **  -->
-        <!-- Obsolete in later Tomcat versions
+<!-- Obsolete in later Tomcat versions
         <copy todir="${tomcat.home}/common/lib">
             <fileset dir="${src.root}/lib" includes="${common.lib.jars}"/>
         </copy>
         -->
 
-        <!--
+<!--
           this server.xml is ready to be modified by sslGen.sh who will later
           make the ssl cert and record it's keystore password in it
         -->
@@ -218,7 +218,7 @@
 
     </target>
 
-    <!--
+<!--
       ** configure and invoke unit tests
       -->
     <target name="test" depends="dev">
@@ -239,11 +239,11 @@
             <test name="com.l7tech.common.message.KnobblyMessageTest" haltonfailure="no"/>
             <test name="com.l7tech.proxy.FunctionalTest" haltonfailure="no"/>
 
-            <!--
+<!--
              ** add policy tests into the com.l7tech.policy.AllPolicyTests class
             -->
             <test name="com.l7tech.policy.AllPolicyTests" haltonfailure="no"/>
-            <!--
+<!--
             ** TODO: make sure -security flag is added to the 'nightly' build/test
             ** Tomcat config. When done enable the tests below.
             **
@@ -251,7 +251,7 @@
            <test name="com.l7tech.identity.ClientTest" haltonfailure="no"/>
            <test name="com.l7tech.service.ServiceAdminTest" haltonfailure="no"/>
            -->
-            <!--
+<!--
               ** add fast precheckin tests here **
               -->
         </junit>
@@ -292,13 +292,13 @@
             <test name="com.l7tech.service.WsdlTest" haltonfailure="no" fork="yes"/>
             <test name="com.l7tech.common.xml.tarari.util.TarariXpathConverterTest" haltonfailure="no"/>
 
-            <!--
+<!--
               ** add possibly-slow intensive nightly tests here **
               -->
         </junit>
     </target>
 
-    <!--
+<!--
       ** Clean the directory structure.
       ** This is used only by developer's build.
       -->
@@ -340,23 +340,24 @@
     <!-- javadoc target -->
     <target name="javadoc" depends="prepare">
         <javadoc packagenames="com.*" sourcepath="src"
-            destdir="${javadoc.home}">
+                 destdir="${javadoc.home}">
             <classpath refid="project.classpath"/>
         </javadoc>
     </target>
 
-    <!--
+<!--
       ** Non 'build' targets from this point; just various helper targets.
       ** Please do not invoke below targets as main targets.
     -->
 
-    <!--
+<!--
       ** 'package' target.
       ** package the application ( both client and server) in their
       ** respective archives (war, jar).
       ** This target is invoked by other targets such as deploy and dist.
       -->
-    <target name="package" depends="init-dev, compile, package.gateway, package.bridge, package.manager, package.installclients, package.api"/>
+    <target name="package"
+            depends="init-dev, compile, package.gateway, package.bridge, package.manager, package.installclients, package.api"/>
 
 
     <target name="package.gateway">
@@ -365,7 +366,7 @@
             <lib dir="${build.dir}/lib">
                 <include name="axis.jar"/>
                 <!-- These go in the system classpath now  -->
-                <!--
+<!--
                 <include name="bcprov-jdk15-127.jar"/> - because the SSL keystore is BCPKCS12
                 -->
                 <include name="jgroups.jar"/>
@@ -413,7 +414,7 @@
                 <include name="wsdl4j.jar" unless="include.systinet"/>
 
                 <include name="saxpath.jar"/>
-		<include name="xalan-2.5.2.jar"/>
+                <include name="xalan-2.5.2.jar"/>
                 <include name="xbean.jar"/>
                 <include name="xbean-common.jar"/>
                 <include name="xbean-saml.jar"/>
@@ -485,7 +486,7 @@
                 <exclude name="com/l7tech/common/xml/tarari/TarariUtil.class"/>
                 <exclude name="com/l7tech/common/xml/tarari/TarariFactories.class"/>
                 <exclude name="com/l7tech/common/xml/tarari/TarariMessageContextImpl.class"/>
-                <exclude name="com/l7tech/common/xml/tarari/util/**/*" />
+                <exclude name="com/l7tech/common/xml/tarari/util/**/*"/>
 
                 <exclude name="com/l7tech/common/audit/**/*"/>
                 <exclude name="com/l7tech/common/alert/**/*"/>
@@ -586,7 +587,7 @@
     </target>
 
     <target name="package.api" unless="ssg.only">
-        <!--
+<!--
            ** Layer7 API jar, pack and sign
          -->
         <jar jarfile="${build.dir}/layer7-api.jar" manifest="${src.root}/etc/layer7-api.mf">
@@ -594,9 +595,13 @@
                 <include name="com/l7tech/policy/assertion/Assertion.class"/>
                 <include name="com/l7tech/policy/assertion/PolicyAssertionException.class"/>
                 <include name="com/l7tech/policy/assertion/composite/CompositeAssertion.class"/>
+                <include name="com/l7tech/policy/assertion/ext/AssertionEditor.class"/>
+                <include name="com/l7tech/policy/assertion/ext/AssertionEditorSupport.class"/>
                 <include name="com/l7tech/policy/assertion/ext/Category.class"/>
                 <include name="com/l7tech/policy/assertion/ext/CustomAssertion.class"/>
+                <include name="com/l7tech/policy/assertion/ext/CustomAssertionUI.class"/>
                 <include name="com/l7tech/policy/assertion/ext/CustomAssertionPrincipal.class"/>
+                <include name="com/l7tech/policy/assertion/ext/EditListener.class"/>
                 <include name="com/l7tech/policy/assertion/ext/SecurityContext.class"/>
                 <include name="com/l7tech/policy/assertion/ext/ServiceRequest.class"/>
                 <include name="com/l7tech/policy/assertion/ext/ServiceResponse.class"/>
@@ -610,13 +615,13 @@
     </target>
 
 
-    <!--
+<!--
       ** Ensure that all classes in the Bridge and Manager jar files are loadable when the classpath
       ** contains only the jars and their declared dependency jars.
       -->
     <target name="testpackage" depends="package">
         <javac srcdir="tools" destdir="tools" debug="on" optimize="off"
-            deprecation="on" depend="on" verbose="no"/>
+               deprecation="on" depend="on" verbose="no"/>
         <exec executable="perl" failonerror="true">
             <env key="JAVA_HOME" value="${java.home}"/>
             <arg line="tools/checkjar.pl"/>
@@ -631,7 +636,7 @@
         </exec>
     </target>
 
-    <!--
+<!--
       ** The SSM Webstart target. Signs the SSM components, and adds the bundle into the applicaiton (war)
       ** The target is conditional, set the ssm.webstart property to enable it.
       -->
@@ -643,16 +648,19 @@
                                                        axis.jar,commons-httpclient-2.0.2.jar,commons-lang-1.0.1.jar,commons-collections-2.1.1.jar, commons-logging-1.0.4.jar, forms_rt.jar,jedit-syntax.jar,
                                                        jaxen-1.1-beta-2-l7.jar,saxpath.jar,jaxrpc.jar,saaj.jar, dom4j.jar, commons-discovery.jar"/>
         </signjar>
-        <signjar jar="${build.dir}/Manager.jar" keystore="${src.root}/etc/ssgKeyStore" alias="signer" storepass="password"/>
+        <signjar jar="${build.dir}/Manager.jar" keystore="${src.root}/etc/ssgKeyStore" alias="signer"
+                 storepass="password"/>
 
         <war warfile="${build.dir}/${war}" update="true">
             <!-- SSM webstart -->
             <zipfileset dir="${src.root}/etc/jnlp" includes="ssm.jnlp" prefix="ssm"/>
-            <zipfileset dir="${src.root}/src/com/l7tech/console/resources" includes="layer7_logo_small_64x64.gif" prefix="ssm/images"/>
+            <zipfileset dir="${src.root}/src/com/l7tech/console/resources" includes="layer7_logo_small_64x64.gif"
+                        prefix="ssm/images"/>
             <zipfileset dir="${build.dir}/lib" includes="jh.jar,kunststoff.jar,
                                                          looks-1.1.3.jar,odmg.jar,hibernate2.jar,oswego-concurrent.jar,wsdl4j.jar,qname.jar, xercesImpl.jar,xml-apis.jar,
                                                          axis.jar,commons-httpclient-2.0.2.jar,commons-lang-1.0.1.jar,commons-collections-2.1.1.jar, commons-logging-1.0.4.jar, forms_rt.jar,jedit-syntax.jar,
-                                                         jaxen-1.1-beta-2-l7.jar,saxpath.jar,jaxrpc.jar,saaj.jar, dom4j.jar,commons-discovery.jar" prefix="ssm/lib"/>
+                                                         jaxen-1.1-beta-2-l7.jar,saxpath.jar,jaxrpc.jar,saaj.jar, dom4j.jar,commons-discovery.jar"
+                        prefix="ssm/lib"/>
             <zipfileset dir="${build.dir}" includes="Manager.jar" prefix="ssm"/>
         </war>
     </target>
@@ -747,7 +755,7 @@
         </copy>
     </target>
 
-    <!--
+<!--
       ** Create the directory structure, copy the resources, libs and
       ** update version tokens
       -->
@@ -848,7 +856,7 @@
         <!-- html and other static web files -->
         <copy todir="${doc.root}">
             <fileset dir="${src.root}/web" includes="**/*"
-                excludes="**/CVS/*"/>
+                     excludes="**/CVS/*"/>
         </copy>
 
         <mkdir dir="${javadoc.home}"/>
@@ -862,12 +870,13 @@
         </propertyfile>
     </target>
 
-    <!--
+<!--
       ** main compile target
       -->
-    <target name="compile" depends="prepare, configure_properties.dev, compile.forms" unless="compile.pattern">
+    <target name="compile" depends="prepare, configure_properties.dev, compile13"
+            unless="compile.pattern">
         <javac srcdir="src" destdir="${build.classes}" debug="on" optimize="off"
-            deprecation="on" depend="on" verbose="no" target="1.4" source="1.4" >
+               deprecation="on" depend="on" verbose="no" target="1.4" source="1.4">
             <classpath refid="project.classpath"/>
         </javac>
         <copy todir="${build.classes}">
@@ -879,13 +888,44 @@
                 <include name="serverconfig.properties"/>
             </fileset>
         </copy>
+        <antcall target="compile.forms"/>
         <antcall target="compile-rmi"/>
+    </target>
 
+    <!--
+     ** 1.3 compile target - the files that require 1.3 source/target flags
+     ** This is required by custom assertion library to support integration with components
+     ** such as Tivoli that require 1.3 VM
+    -->
+    <target name="compile13" depends="prepare, configure_properties.dev" unless="compile.pattern">
+        <javac srcdir="src" destdir="${build.classes}" debug="on" optimize="off"
+               deprecation="on" depend="on" verbose="no" target="1.3" source="1.3" listfiles="yes">
+            <!--
+                This has to bee in sinch with layer7-api jar package.
+                todo: find some better way to manage this centrally (ant 'references' or similar)
+            -->
+            <include name="com/l7tech/policy/assertion/Assertion.java"/>
+            <include name="com/l7tech/policy/assertion/PolicyAssertionException.java"/>
+            <include name="com/l7tech/policy/assertion/composite/CompositeAssertion.java"/>
+            <include name="com/l7tech/policy/assertion/ext/AssertionEditor.java"/>
+            <include name="com/l7tech/policy/assertion/ext/AssertionEditorSupport.java"/>
+            <include name="com/l7tech/policy/assertion/ext/Category.java"/>
+            <include name="com/l7tech/policy/assertion/ext/CustomAssertion.java"/>
+            <include name="com/l7tech/policy/assertion/ext/CustomAssertionUI.java"/>
+            <include name="com/l7tech/policy/assertion/ext/CustomAssertionPrincipal.java"/>
+            <include name="com/l7tech/policy/assertion/ext/EditListener.java"/>
+            <include name="com/l7tech/policy/assertion/ext/SecurityContext.java"/>
+            <include name="com/l7tech/policy/assertion/ext/ServiceRequest.java"/>
+            <include name="com/l7tech/policy/assertion/ext/ServiceResponse.java"/>
+            <include name="com/l7tech/policy/assertion/ext/ServiceInvocation.java"/>
+
+            <classpath refid="project.classpath"/>
+        </javac>
     </target>
 
     <target name="compile.forms">
         <javac2 srcdir="src" destdir="${build.classes}" debug="on" target="1.4" optimize="on" source="1.4"
-            classpathref="project.classpath"/>
+                classpathref="project.classpath"/>
     </target>
 
     <!-- Compile RMI stubs -->
@@ -896,7 +936,8 @@
         </rmic>
     </target>
 
-    <target name="db.properties" depends="db.properties.mysql, db.properties.postgres, db.properties.oracle8, db.properties.oracle9, db.properties.oracle10"/>
+    <target name="db.properties"
+            depends="db.properties.mysql, db.properties.postgres, db.properties.oracle8, db.properties.oracle9, db.properties.oracle10"/>
 
     <target name="db.properties.mysql" if="db.mysql">
         <echo>Setting database properties for MySQL...</echo>
@@ -944,7 +985,7 @@
         <property name="database.pingstmt" value="${oracle10.database.pingstmt}"/>
     </target>
 
-    <!--
+<!--
      ** token replacement target.
      ** This should be done ONLY for non distribution builds.
      -->
@@ -956,20 +997,20 @@
         <echo message="database.pingstmt = '${database.pingstmt}'"/>
 
         <replace file="${build.classes}/hibernate.properties"
-            token="DB_DRIVER" value="${database.driver}"/>
+                 token="DB_DRIVER" value="${database.driver}"/>
         <replace file="${build.classes}/hibernate.properties"
-            token="DB_URL" value="${database.url}"/>
+                 token="DB_URL" value="${database.url}"/>
         <replace file="${build.classes}/hibernate.properties"
-            token="DB_USER" value="${database.user}"/>
+                 token="DB_USER" value="${database.user}"/>
         <replace file="${build.classes}/hibernate.properties"
-            token="DB_PASSWORD" value="${database.password}"/>
+                 token="DB_PASSWORD" value="${database.password}"/>
         <replace file="${build.classes}/hibernate.properties"
-            token="DB_PINGSTMT" value="${database.pingstmt}"/>
+                 token="DB_PINGSTMT" value="${database.pingstmt}"/>
         <replace file="${build.etc}/web.xml"
-            token="TOMCAT_HOME" value="${tomcat.home}"/>
+                 token="TOMCAT_HOME" value="${tomcat.home}"/>
     </target>
 
-    <!--
+<!--
      ** token replacement target.
      ** This should be done ONLY for non distribution builds.
      -->
@@ -980,7 +1021,7 @@
     <!-- ** main compile target -->
     <target name="compile-tests" depends="compile">
         <javac srcdir="tests" destdir="${build.classes}" debug="on" optimize="off"
-            deprecation="on" depend="on" verbose="no">
+               deprecation="on" depend="on" verbose="no">
             <classpath refid="project.classpath"/>
         </javac>
         <copy todir="${build.classes}">
@@ -1014,7 +1055,7 @@
             <arg line="start"/>
         </exec>
 
-        <!--
+<!--
         <java classname="org.apache.catalina.startup.Bootstrap"
             dir="${tomcat.home}"
             fork="yes"
@@ -1041,7 +1082,7 @@
             <arg line="stop"/>
         </exec>
 
-        <!--
+<!--
         <java classname="org.apache.catlina.startup.Bootstrap"
             dir="${tomcat.home}"
             fork="yes">
@@ -1071,7 +1112,8 @@
     </target>
 
     <target name="INTERNAL-ssg-install-optional-1" depends="INTERNAL-ssg-install-properties-full"/>
-    <target name="INTERNAL-ssg-install-optional-2" depends="INTERNAL-ssg-install-war, INTERNAL-ssg-install-keystores, INTERNAL-ssg-install-properties-upgrade"/>
+    <target name="INTERNAL-ssg-install-optional-2"
+            depends="INTERNAL-ssg-install-war, INTERNAL-ssg-install-keystores, INTERNAL-ssg-install-properties-upgrade"/>
 
     <target name="INTERNAL-ssg-install-war">
         <!-- Expand ROOT-bxxxx.war into tomcat/webapps -->
@@ -1082,19 +1124,20 @@
     <target name="INTERNAL-ssg-install-properties-full" if="install.full" depends="db.properties">
         <!-- Copy hibernate.properties -->
         <property name="install.src.hibernate.properties" value="${install.src.conf}/hibernate.properties"/>
-        <!--
+<!--
                 <property name="database.driver" value="${my.database.driver}"/>
                 <property name="database.url" value="${my.database.url}"/>
         -->
 
-        <copy file="${src.root}/etc/db/${database.type}/hibernate.properties" tofile="${install.src.hibernate.properties}"/>
+        <copy file="${src.root}/etc/db/${database.type}/hibernate.properties"
+              tofile="${install.src.hibernate.properties}"/>
 
         <replace file="${install.src.hibernate.properties}"
-            token="DB_URL" value="${database.url}"/>
+                 token="DB_URL" value="${database.url}"/>
         <replace file="${install.src.hibernate.properties}"
-            token="DB_DRIVER" value="${database.driver}"/>
+                 token="DB_DRIVER" value="${database.driver}"/>
         <replace file="${install.src.hibernate.properties}"
-            token="DB_PINGSTMT" value="${database.pingstmt}"/>
+                 token="DB_PINGSTMT" value="${database.pingstmt}"/>
 
         <copy file="${src.root}/etc/system.properties" todir="${install.src.conf}"/>
 
@@ -1144,7 +1187,8 @@
 
         <!-- Copy hibernate.properties -->
         <property name="install.src.hibernate.properties.dist" value="${install.src.conf}/hibernate.properties-dist"/>
-        <copy file="${src.root}/etc/db/${database.type}/hibernate.properties" tofile="${install.src.hibernate.properties.dist}"/>
+        <copy file="${src.root}/etc/db/${database.type}/hibernate.properties"
+              tofile="${install.src.hibernate.properties.dist}"/>
 
         <!-- Copy cluster_hostname -->
         <copy file="${src.root}/etc/cluster_hostname" tofile="${install.src.cluster_hostname}-dist"/>
@@ -1161,10 +1205,12 @@
     </target>
 
     <target name="INTERNAL-ssg-install" depends="init-dev">
-        <fail unless="install.build.number" message="Set the install.build.number property before running this target!"/>
+        <fail unless="install.build.number"
+              message="Set the install.build.number property before running this target!"/>
         <property file="etc/install.properties"/>
 
-        <fail unless="install.tomcat.tar.gz" message="Set the install.tomcat.tar.gz property or create install.properties!"/>
+        <fail unless="install.tomcat.tar.gz"
+              message="Set the install.tomcat.tar.gz property or create install.properties!"/>
         <fail unless="install.jdk.tar.gz" message="Set the install.jdk.tar.gz property or create install.properties!"/>
 
         <condition property="tomcat.exists">
@@ -1175,7 +1221,8 @@
             <available file="${install.jdk.tar.gz}"/>
         </condition>
 
-        <fail unless="tomcat.exists" message="Couldn't find ${install.tomcat.tar.gz}! Check your install.properties file!"/>
+        <fail unless="tomcat.exists"
+              message="Couldn't find ${install.tomcat.tar.gz}! Check your install.properties file!"/>
         <fail unless="jdk.exists" message="Couldn't find ${install.jdk.tar.gz}! Check your install.properties file!"/>
 
         <!-- Relative pathnames -->
@@ -1262,7 +1309,7 @@
         <copy todir="${install.src.sql}">
             <fileset dir="${src.root}/etc/db/${database.type}">
                 <include name="ssg.sql"/>
-		<include name="upgrade_3.0-3.1.sql"/> 
+                <include name="upgrade_3.0-3.1.sql"/> 
             </fileset>
         </copy>
         <copy todir="${install.src.bin}">
@@ -1343,7 +1390,8 @@
         </condition>
         <fail unless="rightdir" message="You must run this target from the ${src.root} directory!"/>
 
-        <input message="This will increment the OFFICIAL build count in CVS.  Are you sure you want to do this?" validargs="Y,y,N,n" addproperty="sure"/>
+        <input message="This will increment the OFFICIAL build count in CVS.  Are you sure you want to do this?"
+               validargs="Y,y,N,n" addproperty="sure"/>
 
         <condition property="die">
             <not>
