@@ -95,6 +95,8 @@ public class RemoteReferenceResolver {
             }
             return true;
         } else {
+            if (resolvedReferences == null)
+                return true;
             boolean ret = true;
             for (int i = 0; i < resolvedReferences.length; i++) {
                 if (!resolvedReferences[i].localizeAssertion(rootAssertion)) {
