@@ -37,9 +37,10 @@ let java_ram="$system_ram*$multiplier"
 let maxnewsize="$java_ram*3/5"
 # 60 % of java ram is new pool 
 
-default_java_opts="-Xms${java_ram}k -Xmx${java_ram}k -Xss256k -server -Djava.awt.headless=true "
-default_java_opts="$default_java_opts -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.Jdk14Logger "
+default_java_opts="-Xms${java_ram}k -Xmx${java_ram}k -Xss256k -server"
 default_java_opts="$default_java_opts -XX:NewSize=${maxnewsize}k -XX:MaxNewSize=${maxnewsize}k "
+default_java_opts="$default_java_opts -Dorg.apache.commons.logging.Log=org.apache.commons.logging.impl.Jdk14Logger "
+default_java_opts="$default_java_opts -Djava.awt.headless=true "
 
 
 if [ -e /ssg/etc/conf/JVM ]; then
