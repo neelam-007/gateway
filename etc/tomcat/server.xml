@@ -1,51 +1,27 @@
-<!--
-	Layer 7 Technologies, inc.
-	Tomcat configuration file for use with L7's custom tomcat version.
+<!-- Minimal Layer 7 SSG Configuration file -->
 
-	Open ports 8080 and 8443.
-	OS level iptables responsible for forwarding from ports 80 and 443
--->
-<Server port="8005" shutdown="SHUTDOWN" debug="0">
+<Server port="8005" shutdown="SHUTDOWN">
+  <!-- Define the Tomcat Stand-Alone Service -->
+  <Service name="Catalina">
 
-    <Service name="Tomcat-Standalone">
+    <!-- Define a non-SSL HTTP/1.1 Connector on port 8080 -->
+    <Connector port="8080"
+               maxThreads="150" minSpareThreads="25" maxSpareThreads="75"
+               enableLookups="false" redirectPort="8443" acceptCount="100"
+               connectionTimeout="20000" disableUploadTimeout="true" />
+    <!-- Define a SSL HTTP/1.1 Connector on port 8443 -->
+    <Connector port="8443" 
+               maxThreads="150" minSpareThreads="25" maxSpareThreads="75"
+               enableLookups="false" disableUploadTimeout="true"
+               acceptCount="100" scheme="https" secure="true"
+               clientAuth="want" sslProtocol="TLS" keystoreFile="/ssg/etc/keys/ssl.ks" keystorePass="blahblah" keystoreType="PKCS12"/>
 
-        <Connector className="org.apache.catalina.connector.http.HttpConnector"
-            port="8080" minProcessors="5" maxProcessors="250"
-            enableLookups="true" redirectPort="8443"
-            acceptCount="10" debug="0" connectionTimeout="60000"/>
-
-        <Connector className="org.apache.catalina.connector.http.HttpConnector"
-            port="8443" minProcessors="5" maxProcessors="250"
-            enableLookups="true"
-            acceptCount="10" debug="0" scheme="https" secure="true">
-
-            <!-- comment out  clientAuth="true" when using tomcat 4.1.24 instead of our own custom build -->
-            <Factory className="org.apache.catalina.net.SSLServerSocketFactory"
-                clientAuth="true" clientAuthOptional="true"
-                protocol="TLS" keystoreFile="kstores/ssl.ks" keystorePass="tralala" keystoreType="BCPKCS12"/>
-
-        </Connector>
-
-        <Engine name="Standalone" defaultHost="localhost" debug="0">
-
-            <Logger className="org.apache.catalina.logger.FileLogger"
-                prefix="catalina_log." suffix=".txt"
-                timestamp="true"/>
-
-            <Realm className="org.apache.catalina.realm.MemoryRealm"/>
-
-            <Host name="localhost" debug="0" appBase="webapps"
-                unpackWARs="true" autoDeploy="true">
-
-                <Logger className="org.apache.catalina.logger.FileLogger"
-                    directory="logs" prefix="localhost_log." suffix=".txt"
-                    timestamp="true"/>
-
-            </Host>
-
-        </Engine>
-
-    </Service>
-
+    <!-- Define the top level container in our container hierarchy -->
+    <Engine name="Catalina" defaultHost="localhost">
+      <Host name="localhost" appBase="webapps"
+       unpackWARs="true" autoDeploy="true"
+       xmlValidation="false" xmlNamespaceAware="false">
+      </Host>
+    </Engine>
+  </Service>
 </Server>
-
